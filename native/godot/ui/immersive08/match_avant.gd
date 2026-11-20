@@ -152,6 +152,23 @@ func _bouton_lien(caption: String, callback: Callable, node_name: String, size: 
 	button.pressed.connect(callback)
 	return button
 
+## Pictogramme à gauche d'un lien (dessiné dans le lien : le clic le couvre) ; `taille` en pixels d'un écran 1080p.
+func _icone_dans_lien(lien: Button, texture: Texture2D, taille: float) -> void:
+	for look in ["normal", "hover", "pressed", "focus", "disabled"]:
+		var style := lien.get_theme_stylebox(look) as StyleBoxFlat
+		if style != null: style.content_margin_left = M(taille + 12)
+	var image := TextureRect.new()
+	image.name = "LienIcone"
+	image.texture = texture
+	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	image.set_anchors_and_offsets_preset(Control.PRESET_CENTER_LEFT)
+	image.offset_left = M(4)
+	image.offset_right = M(4 + taille)
+	image.offset_top = -M(taille / 2.0)
+	image.offset_bottom = M(taille / 2.0)
+	lien.add_child(image)
 # ---- Navigation -------------------------------------------------------------------------------------------------
 
 func _aller(route: String) -> void:
@@ -169,6 +186,17 @@ func _ouvrir_club(club: Dictionary) -> void:
 	var id: Variant = club.get("id")
 	if not (id is int or id is float): return
 	if not app.navigation_controller.open_entity({"kind": "club", "id": str(int(id))}): _aller("Classements")
+
+## « ← Retour » : l'écran d'où l'on vient (historique, comme Alt+←) ; sans historique, la Préparation.
+func _retour_precedent() -> void:
+	var nav: Node = app.get("navigation_controller")
+	if is_instance_valid(nav) and nav.cursor >= 0 and nav.cursor < nav.history.size():
+		# L'avant-match n'est pas encore une étape d'historique juste après l'ouverture : on rejoint alors l'étape courante.
+		var direction := -1 if nav.history[nav.cursor].route == "Match" else 0
+		if nav._destination(direction) >= 0:
+			nav._travel(direction)
+			return
+	_aller("Préparation")
 
 ## Ouvre une sous-page (« delegation », « espoir ») : une étape d'historique, Échap ou « Retour » la ferme.
 func ouvrir_page(nom: String) -> void:
@@ -356,25 +384,22 @@ func _bandeau(next: Dictionary, play: Button, etat: Dictionary, en_page: bool) -
 	ligne.add_theme_constant_override("separation", M(18))
 	barre.add_child(ligne)
 	# Menu : menu de la carrière (Échap), seule fenêtre de l'écran avec la mini-fiche.
+	# Lien texte ivoire (style commun, sans cadre) avec le pictogramme ☰ dessiné à gauche.
 	var menu := Button.new()
 	menu.name = "MatchMenu"
 	menu.text = "Menu"
 	menu.set_meta("immersive_style_applied", true)
-
+	C.style_bouton_lien(menu, roundi(15 / .75))
 	menu.add_theme_font_override("font", C.BODY)
-	menu.add_theme_font_size_override("font_size", maxi(12, M(15)))
-	for look in ["normal", "hover", "pressed", "focus"]:
-		var style := StyleBoxFlat.new()
-		style.bg_color = Color(Charte.NUIT, .55) if look != "hover" else Charte.PANNEAU_2
-		style.border_color = Charte.IVOIRE if look == "focus" else Charte.IVOIRE_3
-		style.set_border_width_all(2 if look == "focus" else 1)
-		style.set_corner_radius_all(0)
-		style.content_margin_left = M(12)
-		style.content_margin_right = M(12)
-		style.content_margin_top = M(6)
-		style.content_margin_bottom = M(6)
-		menu.add_theme_stylebox_override(look, style)
-	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: menu.add_theme_color_override(key, Charte.IVOIRE)
+	for look in ["normal", "hover", "pressed", "focus", "disabled"]:
+		(menu.get_theme_stylebox(look) as StyleBoxFlat).content_margin_left = M(28)
+	var burger := Burger.new()
+	burger.set_anchors_and_offsets_preset(Control.PRESET_CENTER_LEFT)
+	burger.offset_left = M(6)
+	burger.offset_right = M(22)
+	burger.offset_top = -M(7)
+	burger.offset_bottom = M(7)
+	menu.add_child(burger)
 	menu.tooltip_text = "Menu : sauvegardes, réglages, quitter · Échap"
 	menu.accessibility_name = "Menu · Échap"
 	menu.pressed.connect(app.pause_menu)
@@ -388,17 +413,37 @@ func _bandeau(next: Dictionary, play: Button, etat: Dictionary, en_page: bool) -
 	status.name = "MatchPrematchStatus"
 	status.visible = false
 	ligne.add_child(status)
+	var nav: Node = app.get("navigation_controller")
 	if en_page:
 		var retour := _bouton_lien("← Retour à l'avant-match", fermer_page, "MatchPageBack", 15)
+		retour.tooltip_text = "Retour à l'avant-match · Alt+←"
 		retour.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		ligne.add_child(retour)
-	elif not next.is_empty():
-		ligne.add_child(_statut_feuille(etat))
+	else:
+		# Sans barre haute, un lien visible vers l'écran d'où l'on vient (Précédent de l'historique, Alt+←).
+		var precedent := _bouton_lien("← Retour", _retour_precedent, "MatchBack", 15)
+		precedent.tooltip_text = "Écran précédent · Alt+←"
+		precedent.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		ligne.add_child(precedent)
+		if not next.is_empty(): ligne.add_child(_statut_feuille(etat))
 	var espace := Control.new()
 	espace.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	C.fill(espace)
 	ligne.add_child(espace)
-	match_date = texte(date_courte(str(next.get("date", ""))) if not next.is_empty() else "", 15, Charte.IVOIRE, false, 500)
+	# Icône du ciel, date et heure du coup d'envoi (données du prochain match).
+	if next.get("meteo") is Dictionary:
+		var ciel := TextureRect.new()
+		ciel.name = "MatchPrematchSky"
+		ciel.texture = icone_meteo(next.meteo, Charte.IVOIRE)
+		ciel.custom_minimum_size = Vector2(M(20), M(20))
+		ciel.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ciel.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ciel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		ciel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ligne.add_child(ciel)
+		ligne.move_child(ciel, ligne.get_child_count() - 1)
+	var heure_match := " · " + str(next.get("kickoffLocal")) if next.get("kickoffLocal") is String and not str(next.get("kickoffLocal")).is_empty() else ""
+	match_date = texte((date_courte(str(next.get("date", ""))) + heure_match) if not next.is_empty() else "", 15, Charte.IVOIRE, false, 500)
 	match_date.name = "MatchPrematchDate"
 	match_date.add_theme_font_override("font", C.BODY)
 	match_date.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -435,25 +480,28 @@ func _statut_feuille(etat: Dictionary) -> Control:
 	ligne.add_theme_constant_override("separation", M(6))
 	ligne.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var alerte: bool = etat.incomplete or etat.avertissements > 0
-	var symbole := C.icon("warning" if alerte else "check", roundi(16 / .75), Charte.D if etat.incomplete else Charte.N if alerte else Charte.V)
-	symbole.custom_minimum_size = Vector2(M(16), M(16))
-	symbole.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	ligne.add_child(symbole)
-	var lien := _bouton_lien(str(etat.mot), func(): _aller("Composition"), "MatchOpenSheetStatus", 15)
-	lien.tooltip_text = "Ouvrir la composition"
-	ligne.add_child(lien)
 	var suite: Array[String] = []
 	if etat.incomplete and not etat.erreurs.is_empty(): suite.append(str(etat.erreurs[0]))
 	elif etat.avertissements > 0: suite.append("(%d avertissement%s)" % [etat.avertissements, "s" if etat.avertissements > 1 else ""])
 	suite.append("%d / %d" % [etat.remplis, etat.total])
 	if etat.moyenne >= 0: suite.append("condition moyenne %d %%" % roundi(etat.moyenne))
-	var reste := texte(" · ".join(suite), 15, Charte.IVOIRE, false, 500)
-	reste.add_theme_font_override("font", C.BODY)
-	reste.name = "MatchSheetStatusDetail"
-	reste.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	ligne.add_child(reste)
+	# Toute la ligne est un seul lien (symbole, mot et détail) vers la Composition.
+	var lien := _bouton_lien("%s  %s" % [etat.mot, " · ".join(suite)], func(): _aller("Composition"), "MatchOpenSheetStatus", 15)
+	_icone_dans_lien(lien, C.icon_texture("warning" if alerte else "check", Charte.D if etat.incomplete else Charte.N if alerte else Charte.V), 16)
+	lien.tooltip_text = "Ouvrir la composition"
+	lien.accessibility_name = "%s, %s. Ouvrir la composition" % [etat.mot, " · ".join(suite)]
+	ligne.add_child(lien)
 	return ligne
 
+## Pictogramme ☰ du lien « Menu » : trois traits ivoire.
+class Burger extends Control:
+	func _ready() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		resized.connect(queue_redraw)
+	func _draw() -> void:
+		for i in 3:
+			var y := size.y * (0.18 + 0.32 * i)
+			draw_line(Vector2(0, y), Vector2(size.x, y), Charte.IVOIRE, maxf(1.0, size.y * 0.11))
 ## Le bouton or : aplat or, bord droit incliné de 10° (charte §7), texte nuit, « Entrée » à droite. Le seul or de l'écran.
 class PlaqueOr extends Control:
 	var couleur := Color.WHITE
@@ -679,7 +727,8 @@ func _affiche(model: Dictionary, next: Dictionary, data: Dictionary, nous: int) 
 		var plaque := _plaque(clubs[side], side == 1, anneau, couleurs[side])
 		plaques.append(plaque)
 		colonne.add_child(plaque)
-		colonne.add_child(_classement(clubs[side], side, forme[side] if forme.size() > side and forme[side] is Array else []))
+		var detail_forme: Array = data.get("formeMatchs", [[], []])
+		colonne.add_child(_classement(clubs[side], side, forme[side] if forme.size() > side and forme[side] is Array else [], detail_forme[side] if detail_forme.size() > side and detail_forme[side] is Array else []))
 	rangee.add_child(colonnes[0])
 	rangee.add_child(_centre(next, data, nous))
 	rangee.add_child(colonnes[1])
@@ -725,10 +774,7 @@ func _ligne_meteo(next: Dictionary, nous: int) -> Control:
 	bouton.set_meta("immersive_style_applied", true)
 	C.style_bouton_lien(bouton, roundi(14 / .75))
 	bouton.add_theme_font_override("font", C.BODY)
-	bouton.icon = icone_meteo(meteo, Charte.IVOIRE)
-	bouton.expand_icon = true
-	bouton.add_theme_constant_override("icon_max_width", M(18))
-	bouton.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_icone_dans_lien(bouton, icone_meteo(meteo, Charte.IVOIRE), 18)
 	bouton.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var ciel := MeteoTexte.libelle(annonce)
 	var vent: String = ["", "Vent", "Grand vent"][clampi(int(meteo.get("vent", 0)), 0, 2)]
@@ -744,7 +790,7 @@ func _ligne_meteo(next: Dictionary, nous: int) -> Control:
 	enveloppe.add_child(bouton)
 	return enveloppe
 ## Rang, points et forme d'un club : rang cliquable (Classements), pastilles V / N / D à lettre et forme.
-func _classement(club: Dictionary, side: int, forme: Array) -> Control:
+func _classement(club: Dictionary, side: int, forme: Array, matchs: Array = []) -> Control:
 	var ligne := HBoxContainer.new()
 	ligne.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ligne.add_theme_constant_override("separation", M(8))
@@ -759,13 +805,25 @@ func _classement(club: Dictionary, side: int, forme: Array) -> Control:
 	pastilles.name = "MatchPosterForm"
 	pastilles.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pastilles.add_theme_constant_override("separation", M(5))
-	for resultat in forme:
+	for index in forme.size():
+		var resultat: Variant = forme[index]
 		var p := pastille(str(resultat), 24)
-		p.pressed.connect(func(): _ouvrir_club(club))
-		p.tooltip_text = "Forme sur les 5 derniers matchs, du plus ancien au plus récent · fiche du club"
+		var rencontre: Dictionary = matchs[index] if index < matchs.size() and matchs[index] is Dictionary else {}
+		p.pressed.connect(_ouvrir_match.bind(club, rencontre))
+		var quand := " du " + date_courte(str(rencontre.get("date"))) if rencontre.get("date") is String else ""
+		p.tooltip_text = "%s : le match%s (les 5 derniers, du plus ancien au plus récent)" % [{"V": "Victoire", "N": "Nul", "D": "Défaite"}.get(str(resultat), "Résultat"), quand]
+		p.accessibility_name = p.tooltip_text
 		pastilles.add_child(p)
 	ligne.add_child(pastilles)
 	return ligne
+
+## Pastille de forme : le calendrier à la date du match qu'elle représente, sinon la fiche du club.
+func _ouvrir_match(club: Dictionary, rencontre: Dictionary) -> void:
+	var nav: Node = app.get("navigation_controller")
+	# Le résumé d'un match s'ouvre dans une fenêtre de lecture : on préfère le calendrier, à la date du match (un écran).
+	var date := str(rencontre.get("date")) if rencontre.get("date") != null else ""
+	if is_instance_valid(nav) and not date.is_empty() and nav.open_entity({"kind": "date", "id": date}): return
+	_ouvrir_club(club)
 
 ## Pastille de résultat : lettre dedans, forme différente par résultat (V plein, N carré arrondi, D anneau) ; un bouton.
 static func pastille(result: String, size: float) -> Button:
@@ -813,6 +871,16 @@ static func phrase_vent(next: Dictionary, nous: int) -> String:
 	var nom := "nous" if premiere == nous else MeteoTexte.nom_camp(annonce, premiere)
 	if premiere == nous: return "dans notre dos en 1re période, dans le leur après la pause"
 	return "dans le dos de %s en 1re période, dans %s après la pause" % [nom, qui.call(seconde)]
+
+## Le vent en deux lignes courtes, une par période : « 1re période · notre dos » / « 2e période · dos adverse ».
+static func phrase_vent_lignes(next: Dictionary, nous: int) -> Array[String]:
+	var annonce := MeteoTexte.annonce(next)
+	var premiere := MeteoTexte.camp_vent(annonce, 1)
+	var resultat: Array[String] = []
+	if premiere < 0: return resultat
+	resultat.append("1re période · " + ("notre dos" if premiere == nous else "dos adverse"))
+	resultat.append("2e période · " + ("dos adverse" if premiere == nous else "notre dos"))
+	return resultat
 
 ## Icône du ciel (vent, pluie, soleil, nuage) dessinée en SVG, comme les icônes du jeu.
 static func icone_meteo(meteo: Dictionary, color: Color) -> Texture2D:
@@ -1026,7 +1094,7 @@ func _feuille(model: Dictionary, etat: Dictionary) -> Control:
 		rangee.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		barres.add_child(rangee)
 		rangees.append(rangee)
-	barres.custom_minimum_size.y = M(190 if deux_rangees else 130)
+	barres.custom_minimum_size.y = M(230 if deux_rangees else 130)
 	for i in 15:
 		var barre := Barre.new()
 		barre.name = "FeuilleBarre%d" % (i + 1)
@@ -1035,7 +1103,7 @@ func _feuille(model: Dictionary, etat: Dictionary) -> Control:
 		barre.mini = CONDITION_MINI
 		barre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		barre.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		barre.custom_minimum_size = Vector2(M(18), M(92 if deux_rangees else 110))
+		barre.custom_minimum_size = Vector2(M(18), M(112 if deux_rangees else 110))
 		if not str(ids[i]).is_empty():
 			barre.tooltip_text = ""
 			barre.accessibility_name = "N° %d, %s, condition %d %%" % [i + 1, noms[i], roundi(conditions[i])]
@@ -1052,35 +1120,49 @@ func _feuille(model: Dictionary, etat: Dictionary) -> Control:
 		vide.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		rangees[1].add_child(vide)
 	column.add_child(barres)
-	var note_texte := ""
-	if etat.incomplete:
-		note_texte = str(etat.erreurs[0]) if not etat.erreurs.is_empty() else "Il manque des joueurs sur la feuille."
-	elif etat.bas.size() > 0:
-		var morceaux: Array[String] = []
-		for b: Dictionary in etat.bas.slice(0, 2): morceaux.append("%s (n° %d) à %d %%" % [b.name, b.slot + 1, b.condition])
-		note_texte = "%d titulaire%s sous %d %% : %s" % [etat.bas.size(), "s" if etat.bas.size() > 1 else "", CONDITION_MINI, ", ".join(morceaux)]
-	else:
-		note_texte = "Tous les titulaires à %d %% ou plus" % CONDITION_MINI
 	var alerte: bool = etat.incomplete or etat.bas.size() > 0
 	var note := HBoxContainer.new()
+	note.name = "FeuilleAlerte"
 	note.add_theme_constant_override("separation", M(6))
 	note.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var symbole := C.icon("warning" if alerte else "check", roundi(14 / .75), Charte.D if alerte else Charte.V)
 	symbole.custom_minimum_size = Vector2(M(14), M(14))
-	symbole.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	symbole.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	note.add_child(symbole)
-	var phrase := lignes(note_texte, 13, Charte.IVOIRE, 2, false, 500)
-	phrase.name = "FeuilleAlerte"
-	C.fill(phrase)
-	note.add_child(phrase)
+	if etat.incomplete or etat.bas.is_empty():
+		var texte_simple := (str(etat.erreurs[0]) if not etat.erreurs.is_empty() else "Il manque des joueurs sur la feuille.") if etat.incomplete else "Tous les titulaires à %d %% ou plus" % CONDITION_MINI
+		var phrase := lignes(texte_simple, 13, Charte.IVOIRE, 2, false, 500)
+		phrase.name = "FeuilleAlerteTexte"
+		C.fill(phrase)
+		note.add_child(phrase)
+	else:
+		# Les joueurs sous le repère sont des noms : clic = fiche complète, survol = mini-fiche.
+		var flux := HFlowContainer.new()
+		flux.add_theme_constant_override("h_separation", M(4))
+		flux.add_theme_constant_override("v_separation", 0)
+		flux.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		C.fill(flux)
+		var intro_alerte := texte("%d titulaire%s sous %d %% :" % [etat.bas.size(), "s" if etat.bas.size() > 1 else "", CONDITION_MINI], 13, Charte.IVOIRE, false, 500)
+		intro_alerte.add_theme_font_override("font", C.BODY)
+		flux.add_child(intro_alerte)
+		for b: Dictionary in etat.bas.slice(0, 2):
+			var identifiant := str(b.id)
+			var nom_lien := _bouton_lien(str(b.name), _ouvrir_joueur.bind(identifiant), "FeuilleAlerteNom_" + identifiant.validate_node_name(), 13, true)
+			nom_lien.tooltip_text = ""
+			MiniFiche.lier(app, nom_lien, identifiant, "squad")
+			flux.add_child(nom_lien)
+			var suite_nom := texte("(n° %d) à %d %%" % [b.slot + 1, b.condition], 13, Charte.IVOIRE, false, 500)
+			suite_nom.add_theme_font_override("font", C.BODY)
+			flux.add_child(suite_nom)
+		note.add_child(flux)
 	column.add_child(note)
+	# L'état du groupe est un lien entier (blessés, fatigue, forme) vers l'Effectif.
 	var injured := int(Present.group(model).get("injured", 0))
-	var groupe := lignes(("%d blessé%s écarté%s" % [injured, "s" if injured > 1 else "", "s" if injured > 1 else ""] if injured > 0 else "Aucun blessé") + " · état du groupe", 13, Charte.IVOIRE_2, 1, false, 500)
-	groupe.name = "FeuilleGroupe"
+	var groupe := _bouton_lien(("%d blessé%s écarté%s" % [injured, "s" if injured > 1 else "", "s" if injured > 1 else ""] if injured > 0 else "Aucun blessé") + " · état du groupe →", func(): _aller("Effectif"), "MatchOpenSquad", 13)
+	groupe.tooltip_text = "Ouvrir l'effectif : blessures, fatigue, forme"
 	column.add_child(groupe)
 	_pousse(column)
-	_liens(column, [["Vérifier la feuille →", func(): _aller("Composition"), "MatchOpenSheet", "Ouvrir la composition"],
-		["État du groupe →", func(): _aller("Effectif"), "MatchOpenSquad", "Ouvrir l'effectif : blessures, fatigue, forme"]])
+	_liens(column, [["Vérifier la feuille →", func(): _aller("Composition"), "MatchOpenSheet", "Ouvrir la composition"]])
 	return _tile_of(column)
 
 ## Barre de condition d'un titulaire : valeur au-dessus (jamais la couleur seule), numéro dessous, repère à 80 %.
@@ -1112,10 +1194,10 @@ class Barre extends Button:
 			draw_rect(Rect2(zone.position.x, zone.end.y - hauteur, zone.size.x, hauteur), Charte.IVOIRE_3 if bas_niveau else Charte.IVOIRE_2)
 		var y_mini := zone.end.y - zone.size.y * float(mini) / 100.0
 		for x in range(0, int(zone.size.x), 6): draw_line(Vector2(zone.position.x + x, y_mini), Vector2(minf(zone.end.x, zone.position.x + x + 3), y_mini), Color(Charte.IVOIRE, .7), 1.0)
-		var texte_valeur := "%d" % roundi(valeur) if valeur >= 0.0 else "—"
+		# Sous le repère : « ! » devant la valeur, toujours (le signal ne tient jamais à la couleur seule).
+		var texte_valeur := ("!" if bas_niveau else "") + ("%d" % roundi(valeur) if valeur >= 0.0 else "—")
 		var y_valeur := haut - 4.0 - (float(taille) if etage and numero % 2 == 0 else 0.0)
-		draw_string(police, Vector2(-3.0, y_valeur), texte_valeur, HORIZONTAL_ALIGNMENT_CENTER, size.x + 6.0, taille, Charte.D if bas_niveau else Charte.IVOIRE)
-		if bas_niveau and not etage: draw_string(police, Vector2(0, y_valeur - float(taille)), "!", HORIZONTAL_ALIGNMENT_CENTER, size.x, taille, Charte.D)
+		draw_string(police, Vector2(-4.0, y_valeur), texte_valeur, HORIZONTAL_ALIGNMENT_CENTER, size.x + 8.0, taille, Charte.D if bas_niveau else Charte.IVOIRE)
 		draw_string(police, Vector2(0, size.y - 3.0), str(numero), HORIZONTAL_ALIGNMENT_CENTER, size.x, taille, Charte.IVOIRE_2)
 		if is_hovered() or has_focus(): draw_rect(Rect2(0, 0, size.x, size.y), Charte.IVOIRE, false, 2.0 if has_focus() else 1.0)
 
@@ -1156,7 +1238,9 @@ func _meteo(model: Dictionary, next: Dictionary, nous: int, data: Dictionary) ->
 		vent.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		vent.add_child(_jauge_vent(int(meteo.get("vent", 0))))
 		var mot_vent: String = ["Pas de vent notable", "Vent", "Grand vent"][clampi(int(meteo.get("vent", 0)), 0, 2)]
-		var detail_vent := lignes(mot_vent + (" · " + phrase if not phrase.is_empty() else ""), 13, Charte.IVOIRE, 3, false, 500)
+		# Deux lignes, une par période (sinon le mot du vent seul) : jamais tronquées, même en 1280.
+		var lignes_vent := phrase_vent_lignes(next, nous)
+		var detail_vent := lignes("\n".join(lignes_vent) if not lignes_vent.is_empty() else mot_vent, 13, Charte.IVOIRE, 2, false, 500)
 		detail_vent.name = "MeteoVent"
 		C.fill(detail_vent)
 		vent.add_child(detail_vent)
@@ -1285,11 +1369,10 @@ func _adversaire(model: Dictionary, next: Dictionary, data: Dictionary, nous: in
 		numero.add_child(n)
 		ligne.add_child(numero)
 		var id := str(joueur.get("id", ""))
-		var lien := _bouton_lien(str(joueur.get("name", "")), _ouvrir_joueur_adverse.bind(id), "SurveilleNom_" + str(joueur.get("categorie", "")), 13, true)
-		lien.tooltip_text = "Dossier adverse"
+		# Clic : le XV de son club (fiche du club adverse) ; survol : ce que le jeu connaît de lui.
+		var lien := _bouton_lien(str(joueur.get("name", "")), _ouvrir_club.bind(eux), "SurveilleNom_" + str(joueur.get("categorie", "")), 13, true)
 		lien.set_meta("joueur_id", id)
-		MiniFiche.lier(app, lien, id, "market")
-		if lien.tooltip_text.is_empty(): lien.tooltip_text = ""
+		_lier_mini_adverse(lien, joueur, eux)
 		ligne.add_child(lien)
 		var detail := "%s · %s" % [str(joueur.get("poste", "")), str(joueur.get("role", ""))]
 		if joueur.get("chiffre") is String: detail += " · " + str(joueur.chiffre)
@@ -1304,13 +1387,72 @@ func _adversaire(model: Dictionary, next: Dictionary, data: Dictionary, nous: in
 	if not plan.is_empty():
 		var route := "Plan de jeu" if str(plan.get("action", "")) == "consignes" else "Composition"
 		liens.append([str(plan.get("libelle", "Ouvrir la composition")) + " →", func(): _aller(route), "MatchCounterPlan", "Conseil de Gabi : " + str(plan.get("conseil", ""))])
-	liens.append(["Dossier adverse →", _ouvrir_preparation, "MatchOpenPreparation", "Préparation, dossier de l'adversaire"])
-	liens.append(["Rapport de force →", _ouvrir_preparation, "MatchOpenForces", "Préparation, rapport de force"])
+	liens.append(["Dossier adverse →", _ouvrir_preparation, "MatchOpenPreparation", "Préparation : dossier de l'adversaire et rapport de force"])
 	_liens(column, liens)
 	return _tile_of(column)
 
-func _ouvrir_joueur_adverse(_id: String) -> void:
-	_ouvrir_preparation()
+## Mini-fiche d'un joueur adverse au survol (ou touche I au clavier) : ce que le jeu connaît de lui, sans inventer.
+func _lier_mini_adverse(controle: Control, joueur: Dictionary, club: Dictionary) -> void:
+	controle.tooltip_text = ""
+	controle.mouse_entered.connect(func(): _montrer_mini_adverse(joueur, club, controle))
+	controle.mouse_exited.connect(func(): MiniFiche.cacher(app, controle))
+	controle.focus_exited.connect(func(): MiniFiche.cacher(app, controle))
+	controle.tree_exiting.connect(func(): MiniFiche.cacher(app, controle))
+	controle.gui_input.connect(func(event: InputEvent):
+		var touche := event as InputEventKey
+		if touche == null or not touche.pressed or touche.echo or touche.keycode != KEY_I: return
+		if MiniFiche.visible_pour(app, controle): MiniFiche.cacher(app, controle)
+		else: _montrer_mini_adverse(joueur, club, controle)
+		controle.accept_event())
+
+func _montrer_mini_adverse(joueur: Dictionary, club: Dictionary, ancre: Control) -> void:
+	MiniFiche.cacher(app)
+	if not is_instance_valid(ancre) or not ancre.is_inside_tree(): return
+	var fiche := PanelContainer.new()
+	fiche.name = MiniFiche.NOM
+	fiche.z_index = 100
+	var fond := StyleBoxFlat.new()
+	fond.bg_color = Charte.PANNEAU_3
+	fond.border_color = Charte.FILET
+	fond.set_border_width_all(1)
+	fond.set_corner_radius_all(0)
+	for cote in ["left", "right"]: fond.set("content_margin_" + cote, M(18))
+	fond.content_margin_top = M(14)
+	fond.content_margin_bottom = M(14)
+	fiche.add_theme_stylebox_override("panel", fond)
+	var colonne := VBoxContainer.new()
+	colonne.add_theme_constant_override("separation", M(4))
+	colonne.custom_minimum_size.x = M(340)
+	fiche.add_child(colonne)
+	var nom := italique(texte(str(joueur.get("name", "—")).to_upper(), 24, Charte.IVOIRE, true, 800), true)
+	nom.name = "MiniFicheNom"
+	colonne.add_child(nom)
+	var poste_ligne: Array[String] = []
+	if joueur.get("numero") != null: poste_ligne.append("n° %d" % int(joueur.numero))
+	if not str(joueur.get("poste", "")).is_empty(): poste_ligne.append(str(joueur.poste))
+	poste_ligne.append(G.club_name(club))
+	var poste := texte(" · ".join(poste_ligne), 14, Charte.IVOIRE_2, false, 500)
+	poste.add_theme_font_override("font", C.BODY)
+	colonne.add_child(poste)
+	var connu: Array[String] = []
+	if not str(joueur.get("role", "")).is_empty(): connu.append("Rôle : " + str(joueur.role))
+	if joueur.get("chiffre") is String: connu.append("%s%s" % [str(joueur.chiffre), (" · " + str(joueur.detail)) if joueur.get("detail") is String else ""])
+	elif joueur.get("detail") == null: connu.append("Titulaire probable")
+	for ligne_connue in connu:
+		var l := lignes(ligne_connue, 14, Charte.IVOIRE, 2, false, 500)
+		colonne.add_child(l)
+	var inconnu := lignes("Âge, niveau et attributs : — (à observer)", 13, Charte.IVOIRE_3, 2, false, 500)
+	inconnu.name = "MiniFicheInconnu"
+	colonne.add_child(inconnu)
+	var pied := texte("Clic : le XV de son club", 14, Charte.IVOIRE, false, 700)
+	pied.add_theme_font_override("font", C.BODY)
+	pied.name = "MiniFichePied"
+	colonne.add_child(pied)
+	MiniFiche._ignorer_souris(fiche)
+	fiche.set_meta("ancre", ancre)
+	app.add_child(fiche)
+	fiche.size = fiche.get_combined_minimum_size()
+	MiniFiche.placer(fiche, ancre, app.get_viewport_rect().size)
 
 ## « Mêlée : 64 contre 67 ▼ −3 » depuis `forces` (moyennes de la saison, la nôtre contre la leur) ; ligne omise sans donnée.
 func _force_relative(column: VBoxContainer, data: Dictionary, nous: int) -> void:
@@ -1428,9 +1570,20 @@ func _gabi(data: Dictionary) -> Control:
 	medaillon.set_meta("compact", true)
 	bas.add_child(medaillon)
 	column.add_child(bas)
-	if is_instance_valid(app.get("coach")) and app.coach.has_method("installer_bandeau"): app.coach.installer_bandeau(medaillon)
+	if is_instance_valid(app.get("coach")) and app.coach.has_method("installer_bandeau"):
+		app.coach.installer_bandeau(medaillon)
+		_relayer_gabi.call_deferred()
 	else: medaillon.hide()
 	return _tile_of(column)
+
+## Le médaillon de Gabi attend que sa zone ait une taille : le portrait ne se place qu'à la mise en page suivante (comme dans la coque).
+func _relayer_gabi() -> void:
+	if not is_inside_tree(): return
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if not is_instance_valid(app): return
+	var coach: Variant = app.get("coach")
+	if is_instance_valid(coach) and coach.has_method("_layout"): coach._layout()
 
 ## Contrôle « rien ne déborde » (tests) : chaque tuile contient son contenu, l'écran tient dans sa zone.
 func overflows() -> Array:

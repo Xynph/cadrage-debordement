@@ -11,6 +11,7 @@ const Charte = preload("res://ui/charte.gd")
 const Espoir = preload("res://ui/espoir_appel.gd")
 const Delegation = preload("res://ui/delegation_dialog.gd")
 const P = preload("res://ui/immersive08/projection.gd")
+const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 
 ## Page demandée (« delegation » ou « espoir »), prête à être ajoutée sous le bandeau.
 static func construire(ecran, app: Control, model: Dictionary, page: String) -> Control:
@@ -117,6 +118,7 @@ static func _espoir(ecran, app: Control, model: Dictionary, corps: VBoxContainer
 	var fixture: Variant = model.get("next")
 	corps.add_child(_paragraphe(ecran, Espoir.vacancy_text(model), 16, Charte.N))
 	var choix := Espoir.add_choices(corps, model, true)
+	_joueurs_proposes(ecran, app, corps, model)
 	var a22 := P.reduced_bench_number(model) != 0
 	var note := "Comme en vrai, le jeune est prêté à l'équipe première pour ce match seulement : pas de contrat professionnel, il retourne au centre ensuite et gagne de l'expérience."
 	if a22: note += "\nÀ 22, tu commences avec 15 titulaires et 7 remplaçants ; si la première ligne ne peut plus être complétée, les mêlées deviennent non disputées."
@@ -126,3 +128,24 @@ static func _espoir(ecran, app: Control, model: Dictionary, corps: VBoxContainer
 		var payload: Dictionary = choix.call().payload
 		app.management_ui["avant_page"] = ""
 		if app.route == "Match" and app.model.get("next") == fixture: app._command("begin_match", payload))
+
+## Les jeunes proposés sont des noms : clic = fiche complète (Formation), survol = mini-fiche.
+static func _joueurs_proposes(ecran, app: Control, corps: VBoxContainer, model: Dictionary) -> void:
+	var offre := Espoir.offer(model)
+	if offre.is_empty(): return
+	var ligne := HFlowContainer.new()
+	ligne.name = "FeuilleJeunesProposes"
+	ligne.add_theme_constant_override("h_separation", ecran.M(10))
+	var intro: Label = ecran.texte("Jeunes proposés :", 15, Charte.IVOIRE_2, false, 500)
+	intro.add_theme_font_override("font", C.BODY)
+	ligne.add_child(intro)
+	var vus := {}
+	for slot_offre: Dictionary in offre.slots:
+		for candidat: Dictionary in slot_offre.get("candidates", []):
+			var identifiant := str(candidat.get("id", ""))
+			if identifiant.is_empty() or vus.has(identifiant): continue
+			vus[identifiant] = true
+			var lien: Button = ecran._bouton_lien(str(candidat.get("name", "Jeune")), func(): app.navigation_controller.open_entity({"kind": "academy", "id": identifiant}), "FeuilleJeune_" + identifiant.validate_node_name(), 15)
+			MiniFiche.lier(app, lien, identifiant, "academy")
+			ligne.add_child(lien)
+	corps.add_child(ligne)

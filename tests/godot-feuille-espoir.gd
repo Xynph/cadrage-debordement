@@ -80,7 +80,7 @@ func run() -> void:
 	app._navigate("Match")
 	await settle(40)
 	var statut := app.find_child("MatchOpenSheetStatus", true, false) as Button
-	check(statut != null and statut.is_visible_in_tree() and statut.text == "Feuille incomplète", "L'avant-match annonce la feuille incomplète")
+	check(statut != null and statut.is_visible_in_tree() and statut.text.begins_with("Feuille incomplète"), "L'avant-match annonce la feuille incomplète")
 	var coup := bouton_texte("COUP D'ENVOI")
 	check(coup != null and not coup.disabled, "Bouton « COUP D'ENVOI » actif (feuille incomplète)")
 	if coup == null: fin(); return

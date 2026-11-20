@@ -145,12 +145,12 @@ func controler_da() -> void:
 		if not b.is_visible_in_tree() or b.disabled: continue
 		verifier(b.pressed.get_connections().size() > 0, "écran 12 : « %s » (%s) est branché" % [b.text, b.name])
 	var attendus := [["MatchOpenSheet", "Composition"], ["MatchOpenSquad", "Effectif"], ["MatchOpenWeatherPlan", "Plan de jeu"], ["MatchOpenPlaybook", "Plan de jeu"],
-		["MatchOpenTalk", "Vestiaire"], ["MatchOpenPreparation", "Préparation"], ["MatchOpenForces", "Préparation"], ["MatchFixtureWeather", "Plan de jeu"],
+		["MatchOpenTalk", "Vestiaire"], ["MatchOpenPreparation", "Préparation"], ["MatchFixtureWeather", "Plan de jeu"],
 		["MatchPosterStanding0", "Classements"], ["MatchOpenSheetStatus", "Composition"]]
 	for lien: Array in attendus:
 		var bouton := app.match_screen.find_child(lien[0], true, false) as Button
 		if bouton == null:
-			verifier(lien[0] in ["MatchFixtureWeather", "MatchOpenForces"], "écran 12 : lien " + lien[0] + " présent")
+			verifier(lien[0] == "MatchFixtureWeather", "écran 12 : lien " + lien[0] + " présent")
 			continue
 		bouton.pressed.emit()
 		await poser(10)
@@ -196,6 +196,49 @@ func controler_da() -> void:
 		(app.find_child("MatchDelegationCancel", true, false) as Button).pressed.emit()
 		await poser(12)
 		verifier(app.find_child("MatchDelegationPage", true, false) == null and app.find_child("MatchPrematchTiles", true, false) != null, "écran 12 : « Annuler » ramène à l'avant-match")
+		tableau = app.match_screen.find_child("MatchOpening", true, false)
+	# Revue adverse : Menu sans cadre, retour visible, ligne d'alerte et joueurs adverses = noms cliquables.
+	var menu := tableau.find_child("MatchMenu", true, false) as Button
+	var cadre_menu := menu.get_theme_stylebox("normal") as StyleBoxFlat if menu != null else null
+	verifier(cadre_menu != null and cadre_menu.border_width_left == 0 and cadre_menu.border_width_top == 0, "écran 12 : « Menu » en lien texte, sans cadre")
+	verifier(tableau.find_child("MatchBack", true, false) != null, "écran 12 : lien « ← Retour » visible")
+	var alerte_nom: Button = null
+	for b: Button in tableau.find_children("FeuilleAlerteNom_*", "Button", true, false): alerte_nom = b; break
+	if alerte_nom != null:
+		alerte_nom.mouse_entered.emit()
+		await poser(4)
+		verifier(MiniFiche.actuelle(app) != null, "écran 12 : nom de la ligne d'alerte = mini-fiche au survol")
+		alerte_nom.mouse_exited.emit()
+		await poser(3)
+		alerte_nom.pressed.emit()
+		await poser(10)
+		verifier(app.route == "Effectif" and app.get_meta("immersive08_full_player", false), "écran 12 : nom de la ligne d'alerte = fiche complète (route %s)" % app.route)
+		app._navigate("Match")
+		await poser(10)
+		tableau = app.match_screen.find_child("MatchOpening", true, false)
+	var surveille: Button = null
+	for b: Button in tableau.find_children("SurveilleNom_*", "Button", true, false): surveille = b; break
+	if surveille != null:
+		surveille.mouse_entered.emit()
+		await poser(4)
+		var mini_adverse := MiniFiche.actuelle(app)
+		verifier(mini_adverse != null and mini_adverse.find_child("MiniFicheInconnu", true, false) != null, "écran 12 : joueur adverse = mini-fiche de ce que le jeu connaît")
+		surveille.mouse_exited.emit()
+		await poser(3)
+		surveille.pressed.emit()
+		await poser(10)
+		verifier(app.route != "Match" and app.route != "Préparation" and fenetres_visibles().is_empty(), "écran 12 : joueur adverse = le XV de son club (route %s)" % app.route)
+		app._navigate("Match")
+		await poser(10)
+		tableau = app.match_screen.find_child("MatchOpening", true, false)
+	var pastille_forme := tableau.find_child("PastilleV", true, false) as Button
+	if pastille_forme == null: pastille_forme = tableau.find_child("PastilleD", true, false) as Button
+	if pastille_forme != null:
+		pastille_forme.pressed.emit()
+		await poser(10)
+		verifier(app.route != "Match" and fenetres_visibles().is_empty(), "écran 12 : pastille de forme = le match qu'elle représente (route %s)" % app.route)
+		app._navigate("Match")
+		await poser(10)
 		tableau = app.match_screen.find_child("MatchOpening", true, false)
 	# Verrou d'ouverture de 0,5 s sur Entrée et Espace (fiche UX 12 §7).
 	tableau._ouvert_a = Time.get_ticks_msec()
@@ -299,8 +342,8 @@ func avant_match() -> void:
 			verifier(bandeau.contains("Grand vent") and ligne_ciel != null and ligne_ciel.is_visible_in_tree(), "affiche : ciel cliquable « %s »" % bandeau)
 			var vent := textes_de(app.match_screen.find_child("MeteoVent", true, false))
 			textes.ecran_match_vent = vent
-			verifier(vent.contains("en 1re période") and vent.contains("après la pause"), "tuile météo : vent des deux périodes « %s »" % vent)
-			verifier(vent.contains("notre dos") if nous == 1 else vent.contains("dans le nôtre"), "tuile météo : vent par rapport à notre camp « %s »" % vent)
+			verifier(vent.contains("1re période") and vent.contains("2e période"), "tuile météo : vent des deux périodes « %s »" % vent)
+			verifier(vent.contains("1re période · notre dos") if nous == 1 else vent.contains("1re période · dos adverse"), "tuile météo : vent par rapport à notre camp « %s »" % vent)
 		await capturer("meteo-ciel-" + nom, func(): app.match_screen.update_frame(copie))
 	textes.photos = photos
 	# Arbitre du match (clubLife.avantMatch.arbitre) dans la tuile des conditions : nom, profil d'une ligne et

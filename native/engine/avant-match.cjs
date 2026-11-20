@@ -264,6 +264,8 @@ function factory(){
   const own=s.club,pair=[f.homeId,f.awayId];if(!pair.includes(own))return null;
   const adv=pair.find(id=>id!==own);
   const data={fixtureId:f.id,forme:pair.map(id=>forme(s,id)),forces:forces(s,pair),confrontations:confrontations(s,own,adv),aSurveiller:aSurveiller(s,adv),rangs:rangs(s,pair)};
+  // Les cinq derniers matchs de chaque club avec leur identifiant et leur date : chaque pastille de forme ouvre son match.
+  data.formeMatchs=pair.map(id=>matchs(s,id,s.season).slice(-5).map(r=>({fixtureId:r.fixtureId==null?null:String(r.fixtureId),date:r.date||null,issue:issue(r,id)})));
   data.arbitre=arbitre(f);
   data.planAdverse=planAdverse(s,f);
   data.gabi=gabi(s,f,own,adv,data);

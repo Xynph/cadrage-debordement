@@ -36,6 +36,7 @@ const EXTRAS := [
 	{"id": "presse-portraits", "libelle": "Presse : Portraits", "type": "presse_onglet", "onglet": 3},
 	{"id": "fiche-club", "libelle": "Fiche d'un club adverse", "type": "club"},
 	{"id": "options", "libelle": "Options", "type": "options"},
+	{"id": "avant-match-delegation", "libelle": "Avant-match · sous-page Déléguer le match", "type": "avant_delegation"},
 ]
 ## Écrans du match en direct : le coup d'envoi est donné une fois, après tous les autres écrans.
 const EN_DIRECT := [
@@ -471,6 +472,15 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			var mini_fiche: Control = load("res://ui/immersive08/mini_fiche.gd").montrer(app, str(lien.get_meta("entity_id", "")), "squad", lien)
 			await stabiliser()
 			if mini_fiche == null or not is_instance_valid(mini_fiche): return {"statut": "echec", "note": "mini-fiche non affichée"}
+		"avant_delegation":
+			# Sous-page de l'avant-match (aucune fenêtre) : ouverte par le même appel que le lien « Déléguer le match ».
+			app._navigate("Match")
+			await stabiliser()
+			var avant: Control = app.match_screen.find_child("MatchOpening", true, false) if app.match_screen != null else null
+			if avant == null or not avant.is_visible_in_tree(): return {"statut": "indisponible", "note": "avant-match absent (match en cours ou aucune rencontre)"}
+			avant.ouvrir_page("delegation")
+			await stabiliser()
+			if app.find_child("MatchDelegationPage", true, false) == null: return {"statut": "echec", "note": "sous-page de délégation non ouverte"}
 		"club":
 			var id := club_adverse()
 			if id.is_empty(): return {"statut": "indisponible", "note": "aucun club adverse connu"}
@@ -494,6 +504,9 @@ func refermer(ecran: Dictionary) -> void:
 		var mois: Node = app.find_child("CarnetCalendar", true, false)
 		if mois != null and mois.has_method("_view_as"): mois._view_as("month")
 	if str(ecran.type) == "mini_fiche": load("res://ui/immersive08/mini_fiche.gd").cacher(app)
+	if str(ecran.type) == "avant_delegation":
+		var avant: Control = app.match_screen.find_child("MatchOpening", true, false) if app.match_screen != null else null
+		if avant != null: avant.fermer_page()
 	fermer_fenetres()
 
 func surface() -> Control:

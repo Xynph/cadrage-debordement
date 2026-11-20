@@ -9,6 +9,7 @@ const FocusLater := preload("res://ui/focus_later.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const P = preload("res://ui/immersive08/projection.gd")
+const Charte = preload("res://ui/charte.gd")
 
 ## Offre du moteur pour la feuille actuelle, ou {} (feuille valide, match en cours, aucun jeune apte).
 static func offer(model: Dictionary) -> Dictionary:
@@ -87,8 +88,16 @@ static func add_choices(parent: Control, model: Dictionary, with_22: bool = true
 		radio.button_group = group
 		radio.text = str(entry.label)
 		radio.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		radio.custom_minimum_size = Vector2(560, 36)
+		radio.custom_minimum_size = Vector2(C.px(560), maxi(36, C.px(40)))
+		# Aux jetons de la charte : texte ivoire (DM Sans), plus la police et les couleurs par défaut de Godot.
+		radio.add_theme_font_override("font", C.BODY)
 		radio.add_theme_font_size_override("font_size", maxi(16, C.px(19)))
+		for cle in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color", "font_checked_color"]: radio.add_theme_color_override(cle, Charte.IVOIRE)
+		radio.add_theme_color_override("icon_normal_color", Charte.IVOIRE_2)
+		radio.add_theme_color_override("icon_pressed_color", Charte.IVOIRE)
+		radio.add_theme_color_override("icon_hover_color", Charte.IVOIRE)
+		radio.add_theme_color_override("icon_focus_color", Charte.IVOIRE)
+		radio.add_theme_color_override("icon_hover_pressed_color", Charte.IVOIRE)
 		radio.button_pressed = index == 0
 		radio.set_meta("choix_id", entry.id)
 		if on_change.is_valid(): radio.toggled.connect(func(_on: bool): on_change.call())
