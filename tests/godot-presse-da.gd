@@ -71,31 +71,52 @@ func click(button: Button) -> void:
 	check(windows(app).is_empty(), "Aucune fenêtre après le clic sur " + nom)
 
 func conference_ouverte() -> void:
-	# Conférence ouverte (arrivée au club) : réponses en place, Publier expliqué, Gabi demande confirmation en ligne.
+	# La conférence d'arrivée s'ouvre en avançant (recette de godot-presse-promesses) : jamais de saut silencieux.
+	var arrived: bool = await Flow.reach_press_conference(app, self, check)
+	check(arrived, "Une conférence avec questions ouvertes est atteinte (" + str(app.model.get("meta", {}).get("calendarToday", "")) + ")")
 	var conference: Dictionary = app.model.clubLife.press.conference
-	# Carrière neuve : pas toujours de conférence ouverte (l'invitation vient plus tard) ; le parcours est alors vu en capture.
-	if not conference.get("available", false): print("PRESSE DA : aucune conférence ouverte au départ, parcours des réponses non exercé")
-	if conference.get("available", false):
-		app.set_meta("press_mail_origin", conference.invitationId)
-		app.management_ui.press_tab = 1
-		app._navigate("Presse")
-		await settle(10)
-		var submit := page().find_child("PressSubmit", true, false) as Button
-		var missing := page().find_child("PressSubmitMissing", true, false) as Label
-		check(submit != null and submit.disabled and missing != null and missing.text.contains("sans réponse"), "Publier désactivé, avec la raison écrite")
-		check_buttons("Conférence ouverte")
-		for question: Dictionary in conference.questions:
-			var reponse := page().find_child("PressAnswer_" + str(question.id) + "_" + str(question.answers[0].id), true, false) as Button
-			check(reponse != null, "Réponse cliquable " + str(question.id))
-			if reponse != null: await click(reponse)
-		check(submit != null and not submit.disabled and missing.text.is_empty(), "Toutes les réponses choisies : Publier actif, raison effacée")
-		var ask := page().find_child("PressDelegateAsk", true, false) as Button
-		var confirm := page().find_child("PressDelegate", true, false) as Button
+	check(conference.get("available", false) and conference.get("questions", []).size() >= 2, "Le moteur fournit au moins deux questions ouvertes")
+	if not arrived or not conference.get("available", false):
+		return finish()
+	# Écran Presse de la coque avec l'origine du courrier posée (comme « Ouvrir la conférence » de la Réception).
+	# La salle de presse 3D prend la main dès que l'origine du courrier est posée avant la navigation : on ouvre
+	# d'abord la page, puis on pose l'origine et on monte l'onglet (cas d'une conférence sans rendez-vous de salle).
+	app.management_ui.press_tab = 0
+	if app.has_meta("press_mail_origin"): app.remove_meta("press_mail_origin")
+	app._navigate("Presse")
+	await settle(10)
+	check(page() != null, "La page Presse est construite")
+	if page() == null: return finish()
+	app.set_meta("press_mail_origin", conference.invitationId)
+	page()._select(1)
+	await settle(10)
+	var submit := page().find_child("PressSubmit", true, false) as Button
+	var missing := page().find_child("PressSubmitMissing", true, false) as Label
+	check(submit != null and missing != null, "Page Presse : bouton Publier et sa raison présents")
+	if submit == null or missing == null: return finish()
+	check(page().is_visible_in_tree(), "La page Presse est visible (aucune salle par-dessus)")
+	check(submit.disabled and missing.text.contains("sans réponse"), "Publier désactivé, avec la raison écrite")
+	check_buttons("Conférence ouverte")
+	for question: Dictionary in conference.questions:
+		var reponse := page().find_child("PressAnswer_" + str(question.id) + "_" + str(question.answers[0].id), true, false) as Button
+		check(reponse != null, "Réponse cliquable " + str(question.id))
+		if reponse != null: await click(reponse)
+	check(not submit.disabled and missing.text.is_empty(), "Toutes les réponses choisies : Publier actif, raison effacée")
+	check(page().find_child("PressDraftStatus", true, false) != null and str((page().find_child("PressDraftStatus", true, false) as Label).text).begins_with(str(conference.questions.size())), "Le brouillon compte les réponses")
+	var journaliste := page().find_children("PressPersonLink_*", "Button", true, false)
+	check(not journaliste.is_empty(), "Les noms de journalistes des questions sont des liens")
+	var ask := page().find_child("PressDelegateAsk", true, false) as Button
+	var confirm := page().find_child("PressDelegate", true, false) as Button
+	var delegation: Dictionary = conference.get("delegation", {})
+	if bool(delegation.get("allowed", false)):
+		check(ask != null and confirm != null and not confirm.visible, "Gabi : rien ne part au premier clic")
 		if ask != null:
-			check(confirm != null and not confirm.visible, "Gabi : rien ne part au premier clic")
 			await click(ask)
 			check(confirm.visible and page().find_child("PressDelegateCancel", true, false).visible, "Gabi : confirmation en ligne")
-
+			await click(page().find_child("PressDelegateCancel", true, false))
+			check(ask.visible and not confirm.visible, "Gabi : annuler revient à l'état de départ")
+	else:
+		check(ask == null, "Gabi non proposée quand la délégation est refusée : " + str(delegation.get("reason", "")))
 func run() -> void:
 	root.size = Vector2i(1920, 1080)
 	app = load("res://main.tscn").instantiate()
