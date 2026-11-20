@@ -73,13 +73,25 @@ function creer(jeu, club = 102) {
 
 // Avance jour par jour jusqu'au jour du prochain match du manager (`matchReady`).
 // Garde : la saison Monde compte jusqu'à ~70 jours de préparation avant le premier match (club 102 : 68 jours).
+// Saison close (club hors phase finale, ou phase finale terminée) : plus de match ni de journée à valider,
+// on passe à la saison suivante comme le manager (« Saison suivante »), puis on continue à chercher le match.
+function saisonSuivante(jeu, model) {
+  if (model.meta.phase !== 'ended') return model;
+  assert.equal(model.meta.canAdvanceSeason, true, 'saison close : passage à la saison suivante autorisé');
+  return jeu.regler(jeu.call('next_season', { confirmed: true }));
+}
+
 function jusquAuMatch(jeu, model, garde = 150) {
   if (!model.meta.calendarCadence) { // cadence hebdomadaire : semaine sans match = on la clôt
-    for (let w = 0; w < garde; w++) { model = jeu.regler(model); if (model.next) return model; model = jeu.call('finish_round'); }
+    for (let w = 0; w < garde; w++) {
+      model = saisonSuivante(jeu, jeu.regler(model));
+      if (model.next) return model;
+      model = jeu.call('finish_round');
+    }
     assert.fail('aucun match en ' + garde + ' semaines');
   }
   for (let j = 0; j < garde; j++) {
-    model = jeu.regler(model);
+    model = saisonSuivante(jeu, jeu.regler(model));
     if (model.meta.calendarCadence?.matchReady && model.next) return model;
     assert.equal(model.meta.calendarCadence?.canAdvance, true, 'journée autorisée (' + model.meta.calendarToday + ')');
     model = jeu.call('advance_day', { fromDate: model.meta.calendarToday });

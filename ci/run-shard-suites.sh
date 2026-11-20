@@ -104,6 +104,9 @@ budget() {
     # 334 s sur main (Tests JavaScript 44443910094) et 420 s dépassées sur la PR #943 (Suites 1/7, run 44447171817) : la phase « rapide » seule
     # (4 x 3 000 matchs) prend 273 s sur le runner lent ; moteur JS seul, sans lien avec le lot. Budget ≈ 2,7 fois main.
     tests/match-rating-curve.cjs) echo 900s ;;
+    # Outil Monde en fin de saison (#1058) : saison 1 entière validée par le moteur, puis premier match de la saison 2 ;
+    # 117 s en local, 180 s dépassées en CI (Suites 6/10). Budget ≈ 3,5 fois.
+    tests/carriere-monde-fin-de-saison.cjs) echo 420s ;;
     # Suites Monde de 76 à 131 s (main 44443910094 et PR #943 44447171817), sans limite propre donc à 180 s : même ralentissement du runner ; budget ≈ 2,5-3 fois.
     tests/ai-roster-cycle.cjs|tests/continuer-arrets-saison.cjs|tests/essais-realistes.cjs|tests/reactivite-projection-rapide-semaines.cjs|tests/reactivite-projection-verification-direct.cjs|tests/sauvegarde-journal-plantage-monde.cjs) echo 300s ;;
     tests/avant-match-donnees.cjs|tests/reactivite-projection-verification-semaines.cjs) echo 360s ;;
