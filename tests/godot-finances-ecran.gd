@@ -8,7 +8,7 @@ const Finance = preload("res://ui/immersive08/finance_canvas.gd")
 const U = preload("res://ui/immersive08/club_ui.gd")
 const TABS := ["summary", "cash", "wages", "transfers", "budget", "clubs"]
 ## Zones cliquables dont le clic doit mener ailleurs (écran ou onglet différent) ; les tris et pages restent sur place.
-const PREFIXES := ["FinanceMetricLink", "FinanceVerdictLink", "FinanceWatch", "FinanceDueRow", "FinanceAllocationRow", "FinanceLedgerRow_", "FinanceCommitmentLink", "FinanceAdjustBudget", "FinanceRecruitment", "FinanceTransferContracts", "FinanceBudgetDecisions", "FinanceTotalLink", "FinanceProjection", "FinanceMargin", "FinancePlayersPayroll", "FinanceForecastWeeks", "FinanceNothingCommitted", "FinanceWagesScope", "FinanceWagesSeasonEnd", "FinanceWagesCount"]
+const PREFIXES := ["FinanceMetricLink", "FinanceVerdictLink", "FinanceWatch", "FinanceDueRow", "FinanceAllocationRow", "FinanceLedgerRow_", "FinanceCommitmentLink", "FinanceAdjustBudget", "FinanceRecruitment", "FinanceTransferContracts", "FinanceBudgetDecisions", "FinanceTotalLink", "FinanceProjection", "FinanceMargin", "FinancePlayersPayroll", "FinanceForecastWeeks", "FinanceNothingCommitted", "FinanceWagesScope", "FinanceWagesSeasonEnd", "FinanceWagesCount", "FinanceVerdictMargin", "FinanceVerdictAutonomy"]
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -130,8 +130,57 @@ func run() -> void:
 		(noms_joueurs[0] as Button).pressed.emit()
 		await settle()
 		check(app.route == "Effectif" and open_windows() == fenetres_avant, "Un nom de joueur ouvre la fiche complète (%s)" % app.route)
-	# Courbe : graduations rondes, le zéro (ligne pointillée) est une graduation.
+	# Synthèse : deux pastilles du verdict (marge → Budget, autonomie → Trésorerie).
+	for cas: Array in [["FinanceVerdictMarginLien", "budget"], ["FinanceVerdictAutonomyLien", "cash"]]:
+		await ouvrir("summary")
+		var pastille := named(cas[0]) as Button
+		check(pastille != null or Finance.verdict(app, app.model.get("finance", {}), U.strategy(app.model).get("finance", {})).margin == null, "Verdict : pastille « %s » présente" % cas[0])
+		if pastille == null: continue
+		check(not (named(cas[0].trim_suffix("Lien") + "Texte") as Label).text.is_empty(), "Verdict : pastille « %s » écrite" % cas[0])
+		pastille.pressed.emit()
+		await settle()
+		check(app.route == "Finances" and str(app.management_ui.get(Finance.KEY, "")) == cas[1], "« %s » ouvre l'onglet %s (%s)" % [cas[0], cas[1], etat()])
+	# Solde sur 12 mois : une semaine par relevé, chaque semaine ouvre une petite fenêtre ; Échap, ✕ et clic à côté la ferment.
 	await ouvrir("summary")
+	var solde := named("FinanceSoldePlot")
+	check(solde != null and named("FinanceLedgerPlot") == null, "Synthèse : « Solde sur 12 mois » remplace les 12 derniers mouvements")
+	var semaines := Finance.solde_semaines(app, app.model.get("finance", {}))
+	check(not semaines.is_empty() and semaines.size() <= 52, "Solde : semaines relevées (%d)" % semaines.size())
+	# Avant-saison (aucune semaine de championnat close) : seul le solde du jour, rien d'inventé.
+	if int(app.model.meta.get("week", 0)) == 0: check(semaines.size() == 1 and semaines[0].variation == null, "Solde : avant la première semaine, le seul point est la trésorerie du jour")
+	else: check((app.model.get("finance", {}).get("cashHistory", []) as Array).size() > 0, "Moteur : historique de trésorerie hebdomadaire rempli")
+	if solde != null: check((solde.get("semaines") as Array).size() == semaines.size() and solde.call("graduations").size() >= 2, "Solde : courbe et graduations")
+	for i in range(1, semaines.size()):
+		check(is_equal_approx(float(semaines[i].variation), float(semaines[i].cash) - float(semaines[i - 1].cash)), "Solde : variation de la semaine %d = écart de solde" % i)
+	var fermetures := ["echap", "croix", "voile", "tresorerie"]
+	for fermeture: String in fermetures:
+		await ouvrir("summary")
+		var semaine := named("FinanceSoldeSemaine_0") as Button
+		check(semaine != null, "Solde : la semaine en cours est cliquable")
+		if semaine == null: break
+		var avant := etat()
+		semaine.pressed.emit()
+		await settle()
+		var fenetre := named("FinanceSoldeFenetre")
+		check(fenetre != null and fenetre.is_visible_in_tree() and etat() == avant, "Solde : un clic ouvre la petite fenêtre de la semaine sur place")
+		check(named("FinanceSoldeFenetreSoldeValeur") != null and (named("FinanceSoldeFenetreSoldeValeur") as Label).text == U.amount(semaines.back().cash), "Petite fenêtre : solde de la semaine")
+		check(open_windows() == fenetres_avant, "Petite fenêtre dessinée dans l'écran, sans fenêtre système")
+		match fermeture:
+			"echap":
+				var echap := InputEventKey.new()
+				echap.keycode = KEY_ESCAPE
+				echap.physical_keycode = KEY_ESCAPE
+				echap.pressed = true
+				app.get_viewport().push_input(echap)
+			"croix": (named("FinanceSoldeFenetreFermer") as Button).pressed.emit()
+			"voile": (named("FinanceSoldeFenetreVoile") as Button).pressed.emit()
+			"tresorerie": (named("FinanceSoldeFenetreTresorerieLien") as Button).pressed.emit()
+		await settle()
+		check(named("FinanceSoldeFenetre") == null, "Petite fenêtre fermée par " + fermeture)
+		if fermeture == "tresorerie": check(str(app.management_ui.get(Finance.KEY, "")) == "cash", "Petite fenêtre : la pastille Trésorerie ouvre l'onglet")
+		else: check(etat() == avant and app.route == "Finances", "Fermeture par %s : on reste sur la Synthèse (%s)" % [fermeture, etat()])
+	# Courbe des mouvements (onglet Trésorerie) : graduations rondes, le zéro (ligne pointillée) est une graduation.
+	await ouvrir("cash")
 	var courbe := named("FinanceLedgerPlot")
 	if courbe != null and not (courbe.get("operations") as Array).is_empty():
 		check(courbe.call("graduations").any(func(v: float): return is_zero_approx(v)), "Courbe : le zéro est une graduation (%s)" % str(courbe.call("graduations")))
