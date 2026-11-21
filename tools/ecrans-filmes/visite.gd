@@ -67,6 +67,8 @@ const EXTRAS := [
 	{"id": "contrats-fenetre-echeance", "libelle": "Effectif · Contrats · petite fenêtre des échéances", "type": "effectif_onglet", "onglet": 2, "ouvrir": "ContractReviewStatEnding"},
 	{"id": "effectif-condition", "libelle": "Effectif · onglet Condition", "type": "effectif_onglet", "onglet": 1},
 	{"id": "effectif-developpement", "libelle": "Effectif · onglet Développement", "type": "effectif_onglet", "onglet": 3},
+	## Forme récente (21/11/2026) : petite fenêtre du dernier match noté d’un joueur.
+	{"id": "effectif-forme-fenetre", "libelle": "Effectif · petite fenêtre d'un match de la forme récente", "type": "effectif_onglet", "onglet": 0, "ouvrir": "FormeMatch4"},
 	{"id": "finances-tresorerie", "libelle": "Finances · onglet Trésorerie (colonne de verdict)", "type": "finances_onglet", "onglet": "cash"},
 	{"id": "finances-salaires", "libelle": "Finances · onglet Salaires", "type": "finances_onglet", "onglet": "wages"},
 	{"id": "finances-budget", "libelle": "Finances · onglet Budget", "type": "finances_onglet", "onglet": "budget"},
@@ -917,6 +919,10 @@ func capturer(entree: Dictionary, o: Dictionary, taille: Vector2i) -> void:
 	fermer_aide()
 	await stabiliser()
 	fermer_aide()
+	# CD_FILM_SURVOL_LIGNE=1 : une ligne survolée (et une choisie) dans chaque liste visible (ui/survol_ligne.gd).
+	if OS.get_environment("CD_FILM_SURVOL_LIGNE") == "1":
+		print("ECRANS_FILMES survol de ligne : ", load("res://ui/survol_ligne.gd").simuler(self), " liste(s)")
+		await stabiliser()
 	var prise: Dictionary = await image_stable()
 	var image: Image = prise.image
 	if image == null:

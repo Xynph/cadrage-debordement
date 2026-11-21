@@ -15,6 +15,7 @@ const CarteSurvol = preload("res://ui/carte_joueur_survol.gd")
 const Notes = preload("res://ui/notes_match.gd")
 const R = preload("res://ui/immersive08/reperes.gd")
 const Sales = preload("res://ui/player_sales_view.gd")
+const Listes = preload("res://ui/immersive08/listes_joueurs.gd")
 const ROW_HEIGHT := 34
 const GROUP_HEIGHT := 30
 const FIRST_ROWS := 26
@@ -44,6 +45,12 @@ var _marques_tuiles: Dictionary = {}
 var _colonnes_actives: Array = []
 ## Vrai pendant que le focus mémorisé est rendu : il ne doit pas déplacer la sélection choisie ailleurs (palette, retour de fiche).
 var _restaurant := false
+## Rangées au-dessus du tableau (choix de Léo du 21/11/2026) : tuiles des totaux de la liste filtrée, puis pastilles de poste.
+const Y_TOTAUX := Y_FILTRES + 52.0
+const Y_POSTES := Y_FILTRES + 122.0
+const DY_RANGEES := 118.0
+var _dy := 0.0
+var _bandeau_totaux: Control
 
 static func build(owner_app: Control) -> Control:
 	var page: Control = load("res://ui/immersive08/squad_canvas.gd").new()
@@ -70,7 +77,9 @@ func _build() -> void:
 		add_child(review)
 		D.place(review, Rect2(0, Y_FILTRES, LARGEUR, HAUT_PAGE - Y_FILTRES - 40))
 		return
+	_dy = DY_RANGEES
 	_filtres()
+	_rangees_listes()
 	_tableau()
 	_refresh(true)
 	_restaurer()
@@ -78,6 +87,8 @@ func _build() -> void:
 ## Rend la lecture (focus, défilement) puis, si personne n'a fait défiler la liste, ramène le joueur choisi dans la zone visible.
 func _restaurer() -> void:
 	_restaurant = true
+	# Une case de forme porte le même nom sur chaque ligne : on ne lui rend pas le focus (il sauterait en tête de liste).
+	if str(state.get("focus", "")).begins_with("FormeMatch"): state.focus = ""
 	await U.restore(app, self, "roster")
 	_restaurant = false
 	if not is_instance_valid(self) or not is_inside_tree() or int(state.get("scroll", 0)) > 0: return
@@ -633,7 +644,8 @@ func _colonnes(vue: int, etroit: bool, surveillance: bool) -> Array:
 			if etroit:
 				colonnes = [num, joueur, {"k": "poste", "t": "POSTE", "s": "Poste", "x": 640.0, "w": 330.0, "a": gauche}, {"k": "niveau", "t": "NIV.", "s": "Niveau", "x": 1000.0, "w": 100.0, "a": centre}, {"k": "cond", "t": "CONDITION", "s": "Condition", "x": 1150.0, "w": 300.0, "a": gauche}, {"k": "contrat", "t": "FIN DE CONTRAT", "s": "Échéance", "x": 1500.0, "w": 320.0, "a": gauche}, {"k": "statut", "t": "STATUT", "s": "Statut", "x": 1840.0, "w": 390.0, "a": gauche}]
 			else:
-				colonnes = [num, joueur, {"k": "poste", "t": "POSTE", "s": "Poste", "x": 560.0, "w": 250.0, "a": gauche}, {"k": "niveau", "t": "NIV.", "s": "Niveau", "x": 960.0, "w": 80.0, "a": centre}, {"k": "pot", "t": "POT.", "s": "Potentiel", "x": 1060.0, "w": 140.0, "a": centre}, {"k": "cond", "t": "CONDITION", "s": "Condition", "x": 1240.0, "w": 280.0, "a": gauche}, {"k": "age", "t": "ÂGE", "s": "Âge", "x": 1540.0, "w": 70.0, "a": droite}, {"k": "contrat", "t": "FIN DE CONTRAT", "s": "Échéance", "x": 1640.0, "w": 230.0, "a": gauche}, {"k": "statut", "t": "STATUT", "s": "Statut", "x": 1890.0, "w": 280.0, "a": gauche}]
+				# Forme récente dans la vue d'ensemble (choix de Léo du 21/11/2026).
+				colonnes = [num, joueur, {"k": "poste", "t": "POSTE", "s": "Poste", "x": 560.0, "w": 230.0, "a": gauche}, {"k": "niveau", "t": "NIV.", "s": "Niveau", "x": 810.0, "w": 80.0, "a": centre}, {"k": "pot", "t": "POT.", "s": "Potentiel", "x": 910.0, "w": 120.0, "a": centre}, {"k": "cond", "t": "CONDITION", "s": "Condition", "x": 1060.0, "w": 250.0, "a": gauche}, {"k": "forme", "t": "FORME", "s": "Forme", "x": 1340.0, "w": 250.0, "a": gauche}, {"k": "age", "t": "ÂGE", "s": "Âge", "x": 1590.0, "w": 60.0, "a": droite}, {"k": "contrat", "t": "FIN DE CONTRAT", "s": "Échéance", "x": 1680.0, "w": 200.0, "a": gauche}, {"k": "statut", "t": "STATUT", "s": "Statut", "x": 1890.0, "w": 280.0, "a": gauche}]
 	if surveillance:
 		var sans: Array = colonnes.filter(func(c: Dictionary): return c.k not in ["age", "contrat", "forme", "min", "moy"])
 		var index := 0
@@ -655,7 +667,7 @@ func _tableau() -> void:
 	table.name = "ImmersiveRosterTable"
 	table.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(table)
-	D.place(table, Rect2(0, Y_ENTETE, LARGEUR, HAUT_PAGE - Y_ENTETE))
+	D.place(table, Rect2(0, Y_ENTETE + _dy, LARGEUR, HAUT_PAGE - Y_ENTETE - _dy))
 	_colonnes_actives = _colonnes(int(state.get("immersive_tab", 0)), _etroit(), state.family == U.WATCH_FILTER)
 	var entete := Control.new()
 	entete.name = "RosterHeader"
@@ -678,7 +690,11 @@ func _tableau() -> void:
 		tri.add_theme_stylebox_override("hover", _plat(Color(Charte.PANNEAU_2, .7)))
 		tri.add_theme_stylebox_override("focus", _plat(Color.TRANSPARENT, Charte.IVOIRE, 1))
 		entete.add_child(tri)
-		D.place(tri, C.reach_rect(Rect2(x - 6, 0, largeur + 12, 36)))
+		# En-tête souligné à la largeur de son texte, derrière la légende (choix de Léo du 21/11/2026).
+		var lt := _largeur(str(colonne.t) + " ▼", 17, true, 700) + 26.0
+		var x0: float = x - 13.0 if colonne.a == HORIZONTAL_ALIGNMENT_LEFT else (x + largeur - lt + 13.0 if colonne.a == HORIZONTAL_ALIGNMENT_RIGHT else x + largeur / 2.0 - lt / 2.0)
+		D.place(tri, C.reach_rect(Rect2(x0, 2, lt, 32)))
+		entete.move_child(tri, legende.get_index())
 		sort_headers[cle] = {"label": legende, "caption": str(colonne.t), "button": tri}
 		tri.pressed.connect(_toggle_sort.bind(cle))
 	var defile := ScrollContainer.new()
@@ -687,18 +703,18 @@ func _tableau() -> void:
 	defile.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	defile.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	table.add_child(defile)
-	D.place(defile, Rect2(0, Y_LIGNES - Y_ENTETE, LARGEUR, Y_PIED - Y_LIGNES - 8))
+	D.place(defile, Rect2(0, Y_LIGNES - Y_ENTETE, LARGEUR, Y_PIED - Y_LIGNES - 8 - _dy))
 	rows = C.v(2)
 	rows.add_theme_constant_override("separation", C.px(2))
 	rows.name = "ImmersiveRosterRows"
 	rows.custom_minimum_size.x = C.px(LARGEUR)
 	C.fill(rows)
 	defile.add_child(rows)
-	count = D.text(table, 0, Y_PIED - Y_ENTETE + 26, "", 18, C.MUTED, 500, 1000, HORIZONTAL_ALIGNMENT_LEFT, true)
+	count = D.text(table, 0, Y_PIED - Y_ENTETE - _dy + 26, "", 18, C.MUTED, 500, 1000, HORIZONTAL_ALIGNMENT_LEFT, true)
 	count.name = "RosterCount"
 	# Raccourcis clavier derrière un « ? » (21/11) : plus de ligne de mode d'emploi au pied du tableau.
 	var aide := "Raccourcis\n↑↓ : choisir un joueur\nEntrée : fiche complète\nMaj Espace : comparer\n/ : chercher dans le tableau\nCtrl Tab : onglet suivant\nÉchap : Menu\nSurvol d'un nom : aperçu · clic : fiche"
-	R.rond(table, LARGEUR - 30, Y_PIED - Y_ENTETE + 18, aide, "?", "RosterScrollHint", 28)
+	R.rond(table, LARGEUR - 30, Y_PIED - Y_ENTETE - _dy + 18, aide, "?", "RosterScrollHint", 28)
 
 
 static func _known_number(value: Variant) -> bool:
@@ -837,6 +853,7 @@ func _players() -> Array:
 			var copie: Dictionary = player.duplicate()
 			copie.matchNotes = Notes.joueur(app.model,str(player.get("id","")))
 			source.append(copie)
+	source = Listes.filtrer_groupe(source, str(state.get("poste_groupe", "")))
 	return ordered_players(source,state,int(app.model.meta.get("season",1)))
 
 
@@ -865,6 +882,7 @@ func _sort_header_state() -> void:
 		if key == "Moyenne": header.button.tooltip_text += "\nMoyenne de la saison en cours (notes de match de 1 à 10)."
 		if key == "Forme": header.button.tooltip_text += "\nCinq dernières notes de match, la plus récente à droite."
 		header.button.accessibility_name = str(header.caption)+" · "+("tri "+direction if active else "trier")
+		Listes.styler_entete(header.button, header.label, active, state.descending, header.caption)
 
 func _refresh(reveal: bool) -> void:
 	_sort_header_state()
@@ -873,6 +891,7 @@ func _refresh(reveal: bool) -> void:
 	if app.selected_player.is_empty() and not players.is_empty():app.selected_player=str(players[0].id)
 	state.visible_player=app.selected_player
 	count.text="%d / %d joueurs" % [players.size(),app.model.get("squad",[]).size()]
+	_totaux(players)
 	if compare != null: compare.text="Comparer %d/3 →" % app.management_ui.compare.size()
 	# Construction progressive : les lignes visibles sont créées tout de suite, le reste sur les
 	# images suivantes (60 lignes d'un coup coûtaient plus de 100 ms avant la première image).
@@ -1018,14 +1037,10 @@ func _row(player:Dictionary,index:int) -> void:
 	row.set_meta("player_id",id)
 	row.set_meta("index",index)
 	row.custom_minimum_size=Vector2(C.px(LARGEUR),C.px(h))
-	row.clip_contents=true
+	row.clip_contents = true
 	row.focus_mode = Control.FOCUS_ALL
-	row.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	row.accessibility_name = "%s · %s · %s · ouvrir la fiche" % [str(player.name), primary_caption(player), str(statut.t)]
-	row.add_theme_stylebox_override("normal",_plat(Charte.SELECTION if selectionne else Color.TRANSPARENT))
-	row.add_theme_stylebox_override("hover",_plat(Charte.PANNEAU_2))
-	row.add_theme_stylebox_override("pressed",_plat(Charte.PANNEAU_3))
-	row.add_theme_stylebox_override("focus",_plat(Color.TRANSPARENT,Charte.IVOIRE,1))
+	load("res://ui/survol_ligne.gd").appliquer(row, selectionne, Color.TRANSPARENT, app.accent)
 	rows.add_child(row)
 	var filet := Panel.new()
 	filet.name = "RosterFilet"
@@ -1034,9 +1049,6 @@ func _row(player:Dictionary,index:int) -> void:
 	row.add_child(filet)
 	filet.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	filet.offset_top = -1.0
-	var marque := _marqueur(row, Rect2(0, 0, 5, h))
-	marque.name = "RosterMarqueur"
-	marque.visible = selectionne
 	row.pressed.connect(func(): _ouvrir(id, ""))
 	row.focus_entered.connect(func(): if not _restaurant: _selectionner(id))
 	row.gui_input.connect(_row_key.bind(row))
@@ -1115,7 +1127,7 @@ func _row(player:Dictionary,index:int) -> void:
 				else:
 					D.text(row,x + l / 2.0,base,"—",19,C.FAINT,500,52,HORIZONTAL_ALIGNMENT_CENTER,true).name = "RosterNoteAverage"
 			"forme":
-				Notes.pastilles(row,Vector2(x,5),Notes.forme(notes),Vector2(25,h-10),3.5,0.5).name = "RosterForm"
+				Listes.dessiner_forme(self, row, Rect2(x, 1, l, h - 2), notes, str(player.name)).name = "RosterForm"
 			"motif":
 				D.text(row,x,base,reason,19,C.IVORY,600,l,HORIZONTAL_ALIGNMENT_LEFT,true).name="RosterWatchReason"
 			"statut":
@@ -1248,7 +1260,7 @@ func _ouvrir(id: String, section: String) -> void:
 	app.selected_player = id
 	app.navigation_controller.open_entity({"kind":"player", "id":id, "section":section})
 
-## Le focus clavier (ou le retour de fiche) déplace le marqueur de sélection sans reconstruire la liste.
+## Le focus clavier (ou le retour de fiche) change le joueur courant sans reconstruire la liste ni colorer la ligne.
 func _selectionner(id: String) -> void:
 	if app.selected_player == id: return
 	app.selected_player = id
@@ -1256,10 +1268,7 @@ func _selectionner(id: String) -> void:
 	for ligne: Node in rows.get_children():
 		if ligne is Button and ligne.has_meta("player_id"):
 			var choisi: bool = ligne.get_meta("player_id") == id
-			var index: int = int(ligne.get_meta("index", 0))
-			ligne.add_theme_stylebox_override("normal", _plat(Charte.SELECTION if choisi else Color.TRANSPARENT))
-			var marque := ligne.get_node_or_null("RosterMarqueur")
-			if marque != null: marque.visible = choisi
+			load("res://ui/survol_ligne.gd").appliquer(ligne, choisi, Color.TRANSPARENT, app.accent)
 	app._observe_navigation()
 
 func _row_key(event: InputEvent, current: Button) -> void:
@@ -1279,3 +1288,46 @@ func _row_key(event: InputEvent, current: Button) -> void:
 	items[target].grab_focus()
 	scroll.ensure_control_visible(items[target])
 	state.scroll = scroll.scroll_vertical
+
+
+# ---------------------------------------------------------------- pastilles de poste et tuiles des totaux
+
+func _choisir_groupe(id: String) -> void:
+	state.poste_groupe = id
+	state.scroll = 0
+	state.focus = "PostePastille_" + (id if not id.is_empty() else "tous")
+	app._render(false)
+
+func _rangees_listes() -> void:
+	var joueurs: Array = app.model.get("squad", [])
+	Listes.pastilles_postes(self, Vector2(0, Y_POSTES), Listes.compter_groupes(joueurs), joueurs.size(), str(state.get("poste_groupe", "")), _choisir_groupe)
+	_bandeau_totaux = Control.new()
+	_bandeau_totaux.name = "RosterTuilesTotaux"
+	add_child(_bandeau_totaux)
+	D.place(_bandeau_totaux, Rect2(0, Y_TOTAUX, LARGEUR, 62))
+
+## Chiffres de la liste filtrée : {id, v, cap, c (couleur), act}. Pas de tuile « fins de contrat » : la tuile du haut
+## de l'écran la donne déjà.
+func _definitions_totaux(players: Array) -> Array:
+	var t := Listes.calculer(players)
+	var masse := G.salary_amount(t.masse) + " " + G.salary_period(true)
+	return [
+		{"id": "Joueurs", "v": str(t.n), "cap": "joueurs", "c": Charte.IVOIRE, "act": func(): _tous_les_joueurs()},
+		{"id": "Lignes", "v": "%d · %d" % [t.avants, t.arrieres], "cap": "av. · arr.", "c": Charte.IVOIRE, "act": func(): _toggle_sort("Poste")},
+		{"id": "Niveau", "v": "—" if t.niveau == null else str(roundi(float(t.niveau))), "cap": "niveau moyen", "c": Charte.couleur_attribut(t.niveau) if t.niveau != null else Charte.IVOIRE, "act": func(): _toggle_sort("Niveau")},
+		{"id": "Condition", "v": "—" if t.condition == null else "%d %%" % roundi(float(t.condition)), "cap": "condition moy.", "c": Charte.CONDITION, "act": func(): _toggle_sort("Condition")},
+		{"id": "Age", "v": Listes.decimal(t.age), "cap": "âge moyen", "c": Charte.IVOIRE, "act": func(): _toggle_sort("Âge")},
+		{"id": "Masse", "v": masse, "cap": "masse salariale", "c": R.BLEU, "act": func(): app._navigate("Finances")},
+	]
+
+func _totaux(players: Array) -> void:
+	if _bandeau_totaux == null: return
+	for enfant in _bandeau_totaux.get_children():
+		_bandeau_totaux.remove_child(enfant)
+		enfant.queue_free()
+	var x := 0.0
+	for d: Dictionary in _definitions_totaux(players):
+		var l := maxf(R.largeur(str(d.v), 34, 800) + R.largeur(str(d.cap).to_upper(), 17) + 52.0, 180.0)
+		var tuile := R.tuile(_bandeau_totaux, Rect2(x, 0, l, 60), str(d.v), str(d.cap), d.c, "TotalTuile_" + str(d.id), 34)
+		R.cliquable(tuile, d.act, "TotalTuileOuvrir_" + str(d.id), str(d.cap))
+		x += l + 12.0

@@ -28,7 +28,8 @@ const ROW := 32
 const WARM := Charte.IVOIRE
 const WIN := Charte.V
 const DRAW := Charte.N
-const LOSS := Charte.D
+# Défaite en rouge (charte : perte), toujours avec sa lettre D (choix de Léo, 21/11/2026).
+const LOSS := Charte.PERTE
 const PRIMARY := Charte.PANNEAU_3
 const LABELS := {"league": "Championnat", "pool":"Poules", "barrage": "Barrage", "elimination": "Match de barrage", "r16":"Huitième de finale", "quarter":"Quart de finale", "semi": "Demi-finale", "final": "Finale", "third-place": "Petite finale", "access": "Barrage d’accession", "cup": "Coupe", "ended":"Compétition terminée"}
 const JAPAN_COMPETITIONS := ["jlo-d1", "jlo-d2", "jlo-d1-d2"]
@@ -836,22 +837,12 @@ func _ligne_classement(parent: Node, club: Dictionary, index: int, stride: int) 
 		row.set_meta("zone_kind", str(zone_info.get("kind", "")))
 		row.set_meta("zone_label", str(zone_info.get("label", "")))
 	var normal := StyleBoxFlat.new()
-	normal.bg_color = Charte.PANNEAU_3 if mine else (Charte.PANNEAU_2 if index % 2 == 1 else Charte.PANNEAU)
+	normal.bg_color = Charte.PANNEAU_3 if mine else Charte.PANNEAU
 	normal.set_corner_radius_all(Charte.RAYON_PETIT)
-	var hover := StyleBoxFlat.new()
-	hover.bg_color = Charte.PANNEAU_3
-	hover.set_corner_radius_all(Charte.RAYON_PETIT)
-	var focus := StyleBoxFlat.new()
-	focus.bg_color = Color(0, 0, 0, 0)
-	focus.border_color = Charte.IVOIRE
-	focus.set_border_width_all(maxi(2, C.px(2)))
-	focus.set_corner_radius_all(Charte.RAYON_PETIT)
-	row.add_theme_stylebox_override("normal", normal)
-	row.add_theme_stylebox_override("hover", hover)
-	row.add_theme_stylebox_override("pressed", hover)
-	row.add_theme_stylebox_override("focus", focus)
+	# Survol : bande + liseré club ; à droite de la bande de zone (places 1 à 6) quand la ligne en a une.
+	var decal := (5.0 + 3.0) * C.density if zone.a > 0 else 0.0
+	load("res://ui/survol_ligne.gd").appliquer(row, false, normal.bg_color, app.accent, Charte.RAYON_PETIT, decal)
 	row.set_meta("immersive_style_applied", true)
-	row.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	Link.bind(row, app, {"kind":"club", "id":str(club.id)}, "Ouvrir le club · " + G.club_name(club))
 	# Après le lien (qui pose « Ouvrir · … ») : la place et la zone restent annoncées.
 	row.accessibility_name += standing
@@ -1361,18 +1352,8 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 	if current:
 		normal.border_color = Charte.IVOIRE
 		normal.border_width_left = maxi(3, C.px(4))
-	var hover := StyleBoxFlat.new()
-	hover.bg_color = Charte.PANNEAU_3
-	hover.set_corner_radius_all(Charte.RAYON_PETIT)
-	var focus := StyleBoxFlat.new()
-	focus.bg_color = Color(0, 0, 0, 0)
-	focus.border_color = Charte.IVOIRE
-	focus.set_border_width_all(maxi(2, C.px(2)))
-	focus.set_corner_radius_all(Charte.RAYON_PETIT)
-	row.add_theme_stylebox_override("normal", normal)
-	row.add_theme_stylebox_override("hover", hover)
-	row.add_theme_stylebox_override("pressed", hover)
-	row.add_theme_stylebox_override("focus", focus)
+	load("res://ui/survol_ligne.gd").appliquer(row, false, normal.bg_color, app.accent)
+	if current: row.add_theme_stylebox_override("normal", normal)
 	if target_available(app, "fixture", fixture.get("id", "")):
 		Link.bind(row, app, {"kind":"fixture", "id":str(fixture.get("id", ""))}, "Ouvrir la rencontre · " + row.accessibility_name)
 	else:
@@ -1697,6 +1678,8 @@ static func _crest(parent: Node, club: Dictionary, area: Rect2) -> void:
 	var shield := G.crest(club, C.px(minf(area.size.x, area.size.y)))
 	parent.add_child(shield)
 	D.place(shield, area)
+	# Mini-carte club au survol de l’écusson (choix de Léo, 21/11/2026).
+	preload("res://ui/carte_club_survol.gd").lier(shield, club)
 
 static func _icon(parent: Node, icon_id: String, area: Rect2, color: Color) -> void:
 	var icon := C.icon(icon_id, int(area.size.x), color)

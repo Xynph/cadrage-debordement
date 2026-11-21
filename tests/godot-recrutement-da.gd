@@ -9,6 +9,7 @@ extends SceneTree
 ## Imprime une ligne RECRUTEMENT_DA {checks, failures}. Captures (rendu graphique) : CD_RECRUTEMENT_DA_CAPTURES=<dossier>.
 const Flow = preload("helpers/contextual_flow.gd")
 const Charte = preload("res://ui/charte.gd")
+const Listes = preload("res://ui/immersive08/listes_joueurs.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -99,6 +100,7 @@ func run() -> void:
 	await names_open_sheets()
 	await colors()
 	await needs_and_sort()
+	await listes()
 	await subpages()
 	await dossier_page()
 	await observation_confirmation()
@@ -379,6 +381,56 @@ func needs_and_sort() -> void:
 		etoile.pressed.emit()
 		await settle(6)
 		check(str(app.management_ui.market.get("sort", "")) == "Suivi", "★ trie les pistes suivies d'abord")
+
+## Listes (choix de Léo du 21/11/2026) : en-tête trié souligné ▲/▼, pastilles de poste, forme récente en cases.
+func listes() -> void:
+	app._navigate("Recrutement", false)
+	await settle(8)
+	await press("MarketSort_Niveau")
+	var tri := node("MarketSort_Niveau") as Button
+	check(str(app.management_ui.market.get("sort", "")) == "Niveau", "Clic sur l'en-tête NIV. : tri par niveau")
+	check(tri != null and (tri.text.ends_with(" ▲") or tri.text.ends_with(" ▼")), "En-tête trié : flèche ▲ ou ▼")
+	check(tri != null and (tri.get_theme_stylebox("normal") as StyleBoxFlat).border_width_bottom > 0, "En-tête trié : souligné")
+	check(node("PostePastille_tous") is Button, "Pastille Tous postes")
+	await press("PostePastille_deuxieme")
+	var lignes: Array = app.root_content.find_children("MarketPlayer_*", "Button", true, false)
+	var hors: Array = lignes.filter(func(r: Node): return Listes.groupe_de(app.model.market.filter(func(p: Dictionary): return str(p.id) == str(r.get_meta("player_id")))[0]) != "deuxieme")
+	check(hors.is_empty(), "Pastille 2e ligne : que des deuxième ligne (%d lignes)" % lignes.size())
+	await press("PostePastille_tous")
+	app.management_ui.market.position = "Tous"
+	app.management_ui.market.search = ""
+	app._navigate("Recrutement", false)
+	await settle(8)
+	lignes = app.root_content.find_children("MarketPlayer_*", "Button", true, false)
+	check(not lignes.is_empty(), "Liste du marché")
+	if lignes.is_empty(): return
+	var id := str(lignes[0].get_meta("player_id"))
+	var matchs := []
+	for k in 5: matchs.append({"note": 5.0 + k, "semaine": k, "adversaire": "Rivaux %d" % k, "adversaireId": 1, "scorePour": 10, "scoreContre": 15 + k})
+	for p: Dictionary in app.model.market:
+		if str(p.id) == id: p["formeRecente"] = {"forme": [5.0, 6.0, 7.0, 8.0, 9.0], "matchs": matchs}
+	app._navigate("Recrutement", false)
+	await settle(10)
+	var ligne := node("MarketPlayer_" + id.replace(":", "_"))
+	var case_ := ligne.find_child("FormeMatch4", true, false) as Button if ligne != null else null
+	check(case_ != null, "Recrutement : cinq cases de forme pour une piste qui a joué")
+	if case_ == null: return
+	check(case_.tooltip_text.contains("Rivaux 4"), "Survol d'une case : adversaire")
+	case_.pressed.emit()
+	await settle(8)
+	var score := node("FormeMatchScore") as Label
+	check(node("FormeMatchFenetre") != null and score != null and score.text == "10 – 19", "Clic sur une case : petite fenêtre du match avec le score")
+	var echap := InputEventKey.new()
+	echap.keycode = KEY_ESCAPE
+	for down in [true, false]:
+		echap.pressed = down
+		Input.parse_input_event(echap)
+		await process_frame
+	await settle(8)
+	check(node("FormeMatchFenetre") == null and app.route == "Recrutement", "Échap ferme la petite fenêtre du match")
+	for p: Dictionary in app.model.market: p.erase("formeRecente")
+	app._navigate("Recrutement", false)
+	await settle(8)
 
 ## Dossier : sous-page (retour au catalogue, Échap), jamais une fenêtre.
 func dossier_page() -> void:

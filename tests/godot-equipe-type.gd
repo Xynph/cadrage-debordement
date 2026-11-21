@@ -114,10 +114,10 @@ func executer() -> void:
 	for b: Node in vue.find_children("EquipeTypeLigue_*", "", true, false):
 		if not (b as Button).has_theme_color_override("font_color") or (b as Button).get_theme_color("font_color").v > 0.5: pass
 	vue.queue_free(); await poser(6)
-	# Entrée depuis l'actualité (vignette du fil du club).
-	app._navigate("Club"); await poser(30)
+	# Entrée depuis le courrier du Bureau (vignette de la lettre « XV de la journée »).
+	app._navigate("Bureau"); await poser(30)
 	var vignette := app.find_child("EquipeTypeVignette", true, false) as Button
-	verifier(vignette != null, "vignette cliquable dans l'actualité du club")
+	verifier(vignette != null, "vignette cliquable dans le courrier du Bureau")
 	if vignette:
 		vignette.pressed.emit(); await poser(20)
 		verifier(app.get_node_or_null("EquipeTypeVue") != null, "vue ouverte depuis l'actualité")

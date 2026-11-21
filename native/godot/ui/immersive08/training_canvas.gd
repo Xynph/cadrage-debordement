@@ -161,7 +161,9 @@ func _metrics(meta: Dictionary) -> void:
 		D.text(metrics, x + 81, 40, value[1], 24, C.IVORY, 500, 144)
 		D.text(metrics, x + 81, 85, value[2], 38, value[3], 700, 144)
 		var destination: String = ["Condition de l'effectif : ouvrir la fatigue", "Moral : ouvrir le vestiaire", "Charge moyenne : ouvrir la fatigue", "Joueurs à surveiller : ouvrir la fatigue"][i]
-		_zone(metrics, Rect2(x + 4, 4, 224, 98), "TrainingMetric" + str(i), destination, func(): _open_metric(i))
+		var zone := _zone(metrics, Rect2(x + 4, 4, 224, 98), "TrainingMetric" + str(i), destination, func(): _open_metric(i))
+		# Mini-courbe au survol de la condition et du moral (relevé hebdomadaire du moteur).
+		if i < 2: preload("res://ui/mini_courbe_survol.gd").lier(app, zone, ["condition", "morale"][i], ["Condition du groupe", "Moral du vestiaire"][i])
 
 func _week(fixture: Dictionary) -> void:
 	var focus: Dictionary = training.get("collective", {})

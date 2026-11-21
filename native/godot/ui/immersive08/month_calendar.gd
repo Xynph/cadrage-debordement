@@ -4,6 +4,7 @@ const FocusLater := preload("res://ui/focus_later.gd")
 const BanqueImages = preload("res://ui/banque_images.gd")
 
 const C = preload("res://ui/immersive08/components.gd")
+const CarteClub = preload("res://ui/carte_club_survol.gd")
 const Charte = preload("res://ui/charte.gd")
 const G = preload("res://ui/game_skin.gd")
 const P = preload("res://ui/immersive08/projection.gd")
@@ -583,7 +584,9 @@ func _match_chip(fixture: Dictionary) -> PanelContainer:
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(row)
 	var club := _opponent(fixture)
-	row.add_child(G.crest(club,C.px(32)))
+	var ecusson := G.crest(club,C.px(32))
+	row.add_child(ecusson)
+	CarteClub.lier(ecusson, club)
 	var text := C.v(0)
 	text.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(C.fill(text))
@@ -929,6 +932,7 @@ func _open_preparation(fixture: Dictionary) -> void:
 
 func _club_badge(club: Dictionary, id: String) -> Control:
 	var crest := G.crest(club,C.px(50))
+	CarteClub.lier(crest, club)
 	if not Competition.target_available(app,"club",club.get("id","")): return crest
 	var link := Button.new()
 	link.name = id

@@ -110,9 +110,10 @@ static func render(app: Control) -> bool:
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	app.root_content.add_child(background)
-	# Fond photo très discret de l'écran (banque d'images « fond-* »), voilé sur l'ardoise (charte finale, choix de Léo
-	# du 20/11/2026 : on garde les photos) ; FOND_PHOTO = false donne l'aplat seul.
-	var fond := fond_ecran(app.route, str(app.model.get("meta", {}).get("phase", ""))) if FOND_PHOTO else ""
+	# Photo de fond propre à chaque page (banque d'images), voilée sur l'ardoise comme l'Effectif (charte finale ;
+	# Léo, 21/11/2026 : « pas la même photo partout »). FOND_PHOTO = false donne l'aplat seul.
+	var ui_gestion: Variant = app.get("management_ui")
+	var fond := fond_ecran(app.route, str(app.model.get("meta", {}).get("phase", "")), ui_gestion if ui_gestion is Dictionary else {}) if FOND_PHOTO else ""
 	if not fond.is_empty():
 		var photo := TextureRect.new()
 		photo.name = "ScreenBackdrop"
@@ -1025,9 +1026,22 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	round_label.name = "ImmersiveRound"
 	app._update_header_date()
 	right -= date_width + 27.0
-	# Recherche : 400 (300 px à 1920), réduite jusqu'à 293 (220 px) si le fil manque de place.
 	var crumbs := _crumbs(app)
 	var crumbs_width := _crumbs_width(crumbs)
+	# Compte à rebours du prochain match (choix de Léo, 21/11/2026) → avant-match ; il cède la place au fil d'Ariane
+	# et à la recherche réduite (forme courte sans le mot DOM./EXT., ou rien).
+	var Rebours = preload("res://ui/rebours_match.gd")
+	var fil_entier := func(prise: float) -> bool:
+		var reste := right - prise
+		var recherche := clampf(reste - crumbs_left - minf(crumbs_width, 520.0) - 27.0, 293.0, 400.0)
+		return reste - recherche - 27.0 - crumbs_left >= crumbs_width
+	var place_rebours := 0.0
+	for prise: float in [Rebours.PLEINE + Rebours.ECART, Rebours.COURTE + Rebours.ECART]:
+		if fil_entier.call(prise):
+			place_rebours = prise
+			break
+	right -= Rebours.poser(panel, app, right + 12.0, ch, cy, _shell_button, place_rebours)
+	# Recherche : 400 (300 px à 1920), réduite jusqu'à 293 (220 px) si le fil manque de place.
 	var search_width := clampf(right - crumbs_left - minf(crumbs_width, 520.0) - 27.0, 293.0, 400.0)
 	var search := _search_field(panel, app, Rect2(right - search_width, cy, search_width, ch))
 	right -= search_width + 27.0
@@ -1550,15 +1564,28 @@ static func _existing_page(app: Control, immersive_match: bool) -> void:
 	elif COMPACT_ART.has(app.route): Legacy.apply(app.body.get_child(0), app.accent)
 
 
-## Fonds d'écran de la banque d'images par route (très atténués : les panneaux restent la lecture).
+## Fonds d'écran de la banque d'images par page : une photo par thème, jamais la même sur deux pages voisines
+## (même groupe du rail ou onglets d'un même écran). Même voile pour toutes (FOND_OPACITE, réglage de l'Effectif) :
+## la lecture des tableaux reste identique. Pages absentes (Staff, Réglages, Recherche) : aplat, image à créer
+## (liste dans la PR « fonds photo par page »). Écrans plein écran (direct, réunion, avant-match) hors coque : sans fond.
 const FOND_PHOTO := true
 const FOND_OPACITE := 0.16
-const FONDS := {"Bureau":"fond-bureau", "Effectif":"fond-effectif", "Composition":"fond-composition", "Préparation":"fond-tactique",
-	"Plan de jeu":"fond-tactique", "Recrutement":"fond-transferts", "Finances":"fond-finances", "Calendrier":"fond-calendrier",
-	"Classements":"fond-classements", "Rivalités":"fond-palmares", "Presse":"fond-presse", "Formation":"fond-jeunes", "Centre":"fond-jeunes",
-	"Suivi des jeunes":"fond-jeunes", "Travail du club":"fond-medical", "Carrière":"fond-palmares"}
+const FONDS := {"Bureau":"fond-bureau", "Réception":"mail-finances", "Effectif":"fond-effectif",
+	"Vestiaire":"vestiaire-avant-match-neutre", "Composition":"fond-composition", "Préparation":"fond-tactique",
+	"Plan de jeu":"mail-meteo-alerte", "Recrutement":"fond-transferts", "Club":"tribune-vide", "Stratégie":"mail-sponsor",
+	"Travail du club":"fond-medical", "Finances":"fond-finances", "Calendrier":"fond-calendrier",
+	"Classements":"fond-classements", "Rivalités":"mail-rivalite", "Formation":"fond-jeunes", "Centre":"mail-jeunes",
+	"Suivi des jeunes":"chargement-08", "Presse":"fond-presse", "Sélections":"voyage-aeroport",
+	"Carrière":"titre-nouvelle-carriere"}
+## Onglets qui changent de thème dans une même route : Entraînement (Préparation, onglet 2), Club › Infrastructures
+## et Club › Histoire.
+const FOND_ENTRAINEMENT := "chargement-02"
+const FONDS_CLUB := {"infrastructure":"club-stade-niveau-3", "history":"fond-palmares"}
 
-static func fond_ecran(route: String, phase: String = "") -> String:
+static func fond_ecran(route: String, phase: String = "", ui: Dictionary = {}) -> String:
 	var id := str(FONDS.get(route, ""))
 	if route == "Bureau" and phase in ["offseason", "ended", "intersaison"]: id = "fond-fin-de-saison"
+	var preparation: Variant = ui.get("preparation")
+	if route == "Préparation" and preparation is Dictionary and int(preparation.get("tab", 0)) == 2: id = FOND_ENTRAINEMENT
+	if route == "Club": id = str(FONDS_CLUB.get(str(ui.get("immersive08_club_tab", "")), id))
 	return id if not id.is_empty() and BanqueImages.texture(id) != null else ""

@@ -363,6 +363,7 @@ func _construire() -> void:
 	carte.add_child(pile)
 	tableau = Tableau.new()
 	tableau.name = "TableauEffectif"
+	tableau.accent = app.accent
 	tableau.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	tableau.message_vide = message_vide()
 	tableau.entete_groupe = _entete_ligne

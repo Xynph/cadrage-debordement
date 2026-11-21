@@ -5,6 +5,7 @@ extends SceneTree
 const Flow = preload("helpers/contextual_flow.gd")
 const Charte = preload("res://ui/charte.gd")
 const U = preload("res://ui/management_state.gd")
+const Listes = preload("res://ui/immersive08/listes_joueurs.gd")
 var app: Control
 var failures: Array[String] = []
 var checks := 0
@@ -67,6 +68,20 @@ func gold_free(node: Node) -> bool:
 		if not gold_free(child): return false
 	return true
 
+## Aucun aplat ni marqueur vert de sélection (décision de Léo : seul le survol fait ressortir une ligne).
+func selection_free(node: Node) -> bool:
+	if node is Control:
+		for style_name: String in ["panel", "normal", "pressed", "focus"]:
+			var style := (node as Control).get_theme_stylebox(style_name) if (node as Control).has_theme_stylebox_override(style_name) else null
+			if style is StyleBoxFlat and style.bg_color.a > 0.0 and style.bg_color.is_equal_approx(Charte.SELECTION): return false
+	if node is Polygon2D and (node as Polygon2D).visible and node.name == "RosterMarqueur": return false
+	for child in node.get_children():
+		if not selection_free(child): return false
+	return true
+
+func survols(rows: Array) -> Array:
+	return rows.map(func(r: Button): return r.get_node_or_null("SurvolLigne")).filter(func(n): return n != null)
+
 func run() -> void:
 	root.size = Vector2i(1920, 1080)
 	app = load("res://main.tscn").instantiate()
@@ -83,6 +98,28 @@ func run() -> void:
 	await settle(12)
 	check(page() != null, "Écran Effectif construit")
 	if page() == null: return finish()
+	# Survol de ligne (option A) : aucune ligne verte à l'arrivée, survol = bande claire + liseré club.
+	var arrivee := player_rows()
+	var fonds := survols(arrivee)
+	check(not arrivee.is_empty() and fonds.size() == arrivee.size(), "Chaque ligne porte le survol commun")
+	check(selection_free(page()), "Arrivée sur l'Effectif : aucune ligne verte ni marqueur de sélection")
+	check(fonds.all(func(f): return not f.survole), "Arrivée : aucune ligne survolée")
+	check(arrivee.all(func(r: Button): return r.mouse_default_cursor_shape == Control.CURSOR_POINTING_HAND), "Lignes : curseur main")
+	# Rayures : une ligne sur 2 (rang impair, dans l'ordre affiché), nettement moins visibles que le survol.
+	var rangs := fonds.map(func(f): return f.rang())
+	check(rangs == range(fonds.size()), "Rayures : rang des lignes dans l'ordre affiché (en-têtes de groupe exclus)")
+	check(fonds[0].RAYURE.a > 0.0 and fonds[0].RAYURE.a * 2.0 < fonds[0].BANDE.a, "Rayure plus discrète que la bande de survol")
+	var survolee := arrivee[2] as Button
+	survolee.mouse_entered.emit()
+	await settle()
+	var fond_survol = survolee.get_node("SurvolLigne")
+	check(fond_survol.survole and survols(arrivee).filter(func(f): return f.survole).size() == 1, "Survol : seule la ligne sous la souris se démarque")
+	check(fond_survol.get_index() == 0 and fond_survol.accent == app.accent, "Survol : bande derrière les textes, liseré à la couleur du club")
+	var club_lisible: Color = fond_survol.accent_lisible(app.accent)
+	check(club_lisible.v >= 0.85, "Liseré éclairci sur fond sombre")
+	survolee.mouse_exited.emit()
+	await settle()
+	check(not fond_survol.survole, "La bande disparaît à la sortie de la souris")
 	var squad: Array = app.model.squad
 	var unavailable := squad.filter(func(p: Dictionary): return not U.indisponibilite(p).is_empty()).size()
 	var season := int(app.model.meta.season)
@@ -138,7 +175,73 @@ func run() -> void:
 	check(page().state.sort == "Niveau", "En-tête de colonne : tri par niveau")
 	check(windows(app).is_empty(), "Onglets et tris : aucune fenêtre")
 
-	# Lignes : marqueur de sélection, clic = fiche complète, retour.
+	# Listes (choix de Léo du 21/11/2026) : en-tête trié souligné ▲/▼, pastilles de poste, tuiles des totaux, forme en cases.
+	await press("Sort_Âge")
+	var entete_age: Dictionary = page().sort_headers.get("Âge", {})
+	check(page().state.sort == "Âge", "Clic sur l'en-tête ÂGE : tri par âge")
+	check(not entete_age.is_empty() and ((entete_age.label as Label).text.ends_with(" ▲") or (entete_age.label as Label).text.ends_with(" ▼")), "En-tête trié : flèche ▲ ou ▼")
+	var souligne := (entete_age.button as Button).get_theme_stylebox("normal") as StyleBoxFlat
+	check(souligne != null and souligne.border_width_bottom > 0, "En-tête trié : souligné")
+	var fleche := (entete_age.label as Label).text.right(1)
+	await press("Sort_Âge")
+	check((page().sort_headers["Âge"].label as Label).text.right(1) != fleche, "Second clic : sens du tri inversé")
+	var deuxieme := squad.filter(func(p: Dictionary): return Listes.groupe_de(p) == "deuxieme").size()
+	check(app.find_child("PostePastille_tous", true, false) is Button, "Pastille Tous postes")
+	await press("PostePastille_deuxieme")
+	check(player_rows().size() == deuxieme, "Pastille 2e ligne : %d lignes" % deuxieme)
+	var total_joueurs := app.find_child("TotalTuile_Joueurs", true, false)
+	check(total_joueurs != null and (total_joueurs.find_child("TuileValeur", true, false) as Label).text == str(deuxieme), "Tuile Joueurs : suit le filtre de poste")
+	check(app.find_child("TotalTuile_Fins", true, false) == null, "Pas de tuile Fins de contrat (déjà en haut de l'écran)")
+	await press("PostePastille_tous")
+	check(player_rows().size() == squad.size(), "Pastille Tous postes : tout le groupe")
+	await press("TotalTuileOuvrir_Niveau")
+	check(page().state.sort == "Niveau", "Tuile Niveau moyen : trie par niveau")
+	await press("TotalTuileOuvrir_Masse")
+	check(app.route == "Finances", "Tuile Masse salariale : écran Finances")
+	app._navigate("Effectif")
+	await settle(12)
+	# Forme récente : cinq cases colorées (note dedans), clic = petite fenêtre du match avec le score.
+	var cible := str(squad[0].id)
+	var vie: Dictionary = app.model.get("clubLife", {})
+	if not vie.get("matchNotes") is Dictionary: vie["matchNotes"] = {"joueurs": {}}
+	if not vie.matchNotes.get("joueurs") is Dictionary: vie.matchNotes["joueurs"] = {}
+	var matchs := []
+	for k in 5: matchs.append({"note": 5.0 + k, "semaine": k, "adversaire": "Rivaux %d" % k, "adversaireId": 1, "scorePour": 20 + k, "scoreContre": 12})
+	vie.matchNotes.joueurs[cible] = {"forme": [5.0, 6.0, 7.0, 8.0, 9.0], "formeMatchs": matchs, "historique": []}
+	app.model["clubLife"] = vie
+	app._render(false)
+	await settle(12)
+	var ligne: Button = null
+	for r: Button in player_rows():
+		if str(r.get_meta("player_id")) == cible: ligne = r
+	check(ligne != null, "Ligne du joueur à forme connue")
+	if ligne != null:
+		var case_ := ligne.find_child("FormeMatch4", true, false) as Button
+		check(case_ != null, "Cinq cases de forme")
+		if case_ != null:
+			check((case_.get_theme_stylebox("normal") as StyleBoxFlat).bg_color.is_equal_approx(Charte.couleur_note(9.0)), "Case de forme : couleur du barème des notes")
+			check(case_.tooltip_text.contains("Rivaux 4") and case_.tooltip_text.contains("9,0"), "Survol d'une case : adversaire et note")
+			case_.pressed.emit()
+			await settle(8)
+			var fenetre := app.find_child("FormeMatchFenetre", true, false)
+			check(fenetre != null, "Clic sur une case : petite fenêtre du match")
+			var score := app.find_child("FormeMatchScore", true, false) as Label
+			check(score != null and score.text == "24 – 12", "Petite fenêtre : score du match")
+			check(app.route == "Effectif", "Petite fenêtre : on reste sur l'Effectif")
+			var echap := InputEventKey.new()
+			echap.keycode = KEY_ESCAPE
+			for down in [true, false]:
+				echap.pressed = down
+				Input.parse_input_event(echap)
+				await process_frame
+			await settle(8)
+			check(app.find_child("FormeMatchFenetre", true, false) == null and app.route == "Effectif", "Échap ferme la petite fenêtre du match")
+	# Le focus rendu à la case a pu faire glisser la liste de quelques pixels : on repart du haut pour la suite.
+	page().state.scroll = 0
+	(app.find_child("SquadScroll", true, false) as ScrollContainer).scroll_vertical = 0
+	await settle(2)
+
+	# Lignes : focus clavier, clic = fiche complète, retour.
 	var rows := player_rows()
 	check(rows.size() == squad.size() and rows.all(func(r: Button): return r.find_child("SquadOpenPlayer_*", true, false) != null), "Chaque ligne a son nom cliquable")
 	check(page().find_children("RosterNumero", "Label", true, false).size() == squad.size(), "Chaque ligne a son numéro ou son tiret")
@@ -147,7 +250,10 @@ func run() -> void:
 	var second := rows[1] as Button
 	second.grab_focus()
 	await settle()
-	check(app.selected_player == str(second.get_meta("player_id")) and second.find_child("RosterMarqueur", true, false).visible, "Le focus déplace le marqueur de sélection")
+	check(app.selected_player == str(second.get_meta("player_id")), "Le focus clavier change le joueur courant")
+	check(selection_free(page()), "Le focus clavier ne colore pas la ligne (contour discret seulement)")
+	var anneau := second.get_theme_stylebox("focus") as StyleBoxFlat
+	check(anneau != null and anneau.border_width_left >= 2 and anneau.bg_color.a == 0.0, "Focus clavier : contour crème sans fond")
 	check(gold_free(page()), "Aucun or dans l'écran Effectif")
 	second.pressed.emit()
 	await settle(10)
@@ -172,6 +278,7 @@ func run() -> void:
 	var list_scroll := app.find_child("SquadScroll", true, false) as ScrollContainer
 	var last_row := app.find_child("SquadPlayer" + last_id.replace(":", "_"), true, false) as Control
 	check(list_scroll != null and last_row != null and list_scroll.get_global_rect().intersects(last_row.get_global_rect()), "Le joueur choisi, même éloigné, est visible dans la liste")
+	check(selection_free(page()), "Retour sur l'Effectif : le joueur choisi est montré sans être coloré")
 	app.selected_player = str(squad[0].id)
 
 	# Comparateur : page pleine (jamais une fenêtre), ajout à la souris, emplacements vides, 36 attributs colorés, Échap.

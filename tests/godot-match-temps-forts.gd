@@ -24,8 +24,17 @@ var failures: Array[String] = []
 var checks := 0
 var proof := OS.get_environment("CD_MATCH_TEMPS_FORTS_ARTIFACTS")
 var mode := OS.get_environment("CD_MATCH_TEMPS_FORTS_MODE")
+## Vitesse de test du temps du moteur (CD_TEST_VITESSE) ; les étapes qui attrapent un temps fort en plein vol repassent en temps réel.
+var vitesse_a_fond := 1.0
 
-func _initialize() -> void: call_deferred("run")
+func _initialize() -> void:
+	# Version de test du jeu : le match défile à fond (consigne de Léo, 21/11/2026). Le temps du moteur (images, minuteries,
+	# temps forts, entractes) file CD_TEST_VITESSE fois plus vite ; les butées en millisecondes restent en temps réel.
+	var vitesse_test := OS.get_environment("CD_TEST_VITESSE")
+	if vitesse_test.is_valid_float() and float(vitesse_test) > 0.0: vitesse_a_fond = float(vitesse_test)
+	# « actif » et « defaut » attrapent d'abord le coup d'envoi en plein vol (plans, pause) : temps réel jusque-là.
+	Engine.time_scale = 1.0 if mode in ["actif", "defaut", "choregraphie"] else vitesse_a_fond
+	call_deferred("run")
 
 func check(value: bool, message: String) -> void:
 	checks += 1
@@ -42,9 +51,17 @@ func wait_command(limit_ms: int = 60000) -> void:
 	await settle(2)
 
 func command(id: String, payload: Dictionary = {}) -> void:
+	# À vitesse de test, la régie réclame une minute presque à chaque image : la commande part dans un creux, sans quoi
+	# elle serait mise en file derrière un tick (comportement du jeu, pas une panne).
+	var creux := Time.get_ticks_msec() + 30000
+	while app.waiting and Time.get_ticks_msec() < creux: await process_frame
 	app._command(id, payload)
-	await wait_command()
-	check(not app.waiting and app.bridge.last_response_ok, "Worker réel " + id + " : " + app.last_error)
+	var limite := Time.get_ticks_msec() + 60000
+	while app.waiting and Time.get_ticks_msec() < limite: await process_frame
+	# Réponse lue tout de suite : après une reprise, la régie relance aussitôt un tick (autre commande, légitime).
+	var repondu: bool = not app.waiting and app.bridge.last_response_ok
+	await settle(2)
+	check(repondu, "Worker réel " + id + " : " + app.last_error)
 
 func surface() -> Control:
 	return app.contextual_director.view if app.contextual_director.active() and app.contextual_director.kind == "live" else null
@@ -228,7 +245,7 @@ func _tient(view: Control, between: Control, label: String, screen: Rect2) -> vo
 	# Écran 13 (maquette 13-match-direct-1, 20/11/2026) : « Pause · Espace » en DM Sans 500 sur panneau 85 %, à plat.
 	var police_dm: bool = police_pause is FontVariation and (police_pause as FontVariation).base_font != null and (police_pause as FontVariation).base_font.resource_path.get_file().begins_with("DMSans")
 	check(police_dm and police_equipe != null, label + " : bouton Pause en DM Sans (commandes du HUD)")
-	check(pause.text in ["Pause", "Reprendre"] and pause.get_theme_stylebox("normal") is StyleBoxFlat and (pause.get_theme_stylebox("normal") as StyleBoxFlat).border_width_top == 0 and inside(screen, pause.get_global_rect()), label + " : bouton Pause à plat, dans l'écran")
+	check(pause.text in ["Pause", "Reprendre"] and pause.get_theme_stylebox("normal") is StyleBoxFlat and (pause.get_theme_stylebox("normal") as StyleBoxFlat).border_width_top <= 1 and inside(screen, pause.get_global_rect()), label + " : bouton Pause à plat (liseré fin de la charte), dans l'écran")
 
 ## Capture de l'écran (CD_MATCH_TEMPS_FORTS_CAPTURES : dossier ; rendu fenêtré seulement).
 func _capture(label: String, vue: String) -> void:
@@ -685,6 +702,7 @@ func active(view: Control) -> void:
 	# (ou la minute du fait que le terrain 2D rejoue encore, en retard sur le moteur).
 	check(view.clock.text.begins_with(str(app.model.live.direct.horloge).trim_suffix("′") + ":") or view.clock.text.begins_with(str(app.model.live.direct.get("horlogeMontree", "")).trim_suffix("′") + ":") or not between.horloge_differee().is_empty() and view.clock.text.begins_with(between.horloge_differee().trim_suffix("′") + ":"), "Horloge du moteur, secondes comprises, sur l'écran intermédiaire : " + view.clock.text)
 	check(str(view.stage.get("_action_key")) != first_key, "Les plans du temps fort se sont succédé")
+	Engine.time_scale = vitesse_a_fond
 	var minute: int = app.model.live.minute
 	await settle(40)
 	check(app.model.live.minute == minute and not app.waiting, "En pause, aucune minute n'est demandée")
@@ -911,6 +929,7 @@ func gestures(view: Control) -> void:
 	check_framing("Temps forts et gestes", played.size())
 	# Le match est laissé en pause au milieu d'un temps fort, niveau « étendus » choisi :
 	# le mode « reprise » repart de ce dossier de données.
+	Engine.time_scale = 1.0 # la pause doit attraper un temps fort en plein vol
 	var playing: bool = await until(func(): return not app.waiting and regie.etat == regie.JEU and regie.index >= 0, 120000)
 	print("Pause demandée pendant un temps fort : ", playing, " (minute ", int(app.model.live.minute), ")")
 	await until(func(): return not app.waiting, 30000)
@@ -982,6 +1001,7 @@ func choreography(view: Control) -> void:
 			fige_detail = "gel %s, écart %.3f s, phase %s, pause %s, au départ %s, état %d, index %d, suivi %s" % [str(regie.gel), view.stage.choregraphie_temps() - t0, regie.phase, str(app.model.live.paused), str(regie._pause_au_depart), regie.etat, regie.index, str(regie.suivi.slice(-4).map(func(e): return e.evenement))]
 			app._command("pause", {"paused": false})
 			await wait_command()
+			Engine.time_scale = vitesse_a_fond
 	check(vu, "L'essai en jeu courant est joué par les pistes du chorégraphe (minute %d)" % int(app.model.live.minute))
 	check(not annonce_avant, "Aucune légende avant son jalon (l'essai jamais avant l'aplati)")
 	check(not journal_avance, "Le journal ouvert n'annonce rien avant l'image (l'essai jamais avant l'aplati)")
@@ -1100,6 +1120,7 @@ func player_path() -> Array:
 	# la réponse du moteur à la pause n'arrive.
 	var allure: float = regie.vitesse
 	regie.vitesse = 1.0
+	Engine.time_scale = 1.0
 	# Bandeau compact pendant l'action 3D (film du 18/11/2026 : la grande barre cachait ~20 % de
 	# l'image) ; bouton PAUSE tant que le match joue.
 	var coque: Control = view.get("_coque_score")
@@ -1129,6 +1150,7 @@ func player_path() -> Array:
 	await wait_command()
 	check(not app.model.live.paused and not regie.gel, "La reprise relance le temps fort")
 	regie.vitesse = allure
+	Engine.time_scale = vitesse_a_fond
 	check(await until(func(): return regie.etat == regie.INTER and not app.waiting, 120000), "Le coup d'envoi se termine et rend la main à l'écran intermédiaire")
 	check(float(regie.suivi[0].get("duree_reelle", 0.0)) > 0.0, "Le temps fort interrompu par la pause va à son terme")
 	# Remplacement et consigne pendant l'écran intermédiaire.

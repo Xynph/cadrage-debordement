@@ -684,6 +684,19 @@ function soldeReleve(){
   if(h.length>70)h.splice(0,h.length-70);
  }catch(e){}
 }
+// Relevé hebdomadaire du groupe : moral du vestiaire et condition moyenne de l'effectif à chaque semaine jouée
+// (même cadence que la trésorerie), gardé 70 semaines ; la mini-courbe au survol de ces chiffres en est tirée.
+function groupeReleve(){
+ try{
+  const date=typeof CDWorldCareer!=='undefined'&&S.worldMode?CDWorldCareer.calendarToday(S):null;
+  const joueurs=club()?.players||[];
+  if(!date||!Number.isFinite(S.morale)||!joueurs.length)return;
+  const condition=Math.round(joueurs.reduce((n,p)=>n+(Number.isFinite(p.condition)?p.condition:0),0)/joueurs.length);
+  const h=S.groupHistory=Array.isArray(S.groupHistory)?S.groupHistory:[],dernier=h[h.length-1],releve={date,saison:S.season,morale:Math.round(S.morale),condition};
+  if(dernier&&dernier.date===date)Object.assign(dernier,releve);else h.push(releve);
+  if(h.length>70)h.splice(0,h.length-70);
+ }catch(e){}
+}
 // Fin de saison : la prime de classement, la sanction éventuelle et l'apport du
 // propriétaire remplacent le versement identique pour tous. Chaque club n'est clôturé qu'une fois.
 function budgetCloturer(seulementGeres){
