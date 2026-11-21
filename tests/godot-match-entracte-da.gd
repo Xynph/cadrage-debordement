@@ -378,7 +378,9 @@ func run() -> void:
 				if s.border_width_left > 0 and s.border_width_right > 0 and s.border_width_top > 0 and s.border_width_bottom > 0:
 					var anneau: bool = etat_style == "focus" and Color(s.border_color, 1.0).is_equal_approx(Charte.OR)
 					var secondaire: bool = Color(s.border_color, 1.0).is_equal_approx(Charte.FILET) and s.corner_radius_top_left >= Charte.RAYON_PILULE
-					if not anneau and not secondaire: cadres.append("%s:%s" % [noeud.name, etat_style])
+					# Grandes tuiles de l'écran 2D : fin liseré blanc (choix de Léo du 21/11/2026), rayon 18, 1 px.
+					var tuile: bool = s.border_color.is_equal_approx(Between.LISERE) and s.border_width_left == 1 and s.corner_radius_top_left == Charte.RAYON_PANNEAU
+					if not anneau and not secondaire and not tuile: cadres.append("%s:%s" % [noeud.name, etat_style])
 				# Tout aplat visible est arrondi (panneau 18, carte 12, case 6, pilule) ; seul le fondu du multiplex, de la
 				# couleur du panneau qu'il recouvre (invisible sur lui), garde ses angles.
 				if s.bg_color.a > 0.05 and s.corner_radius_top_left < Charte.RAYON_PETIT and str(noeud.name) != "MatchBetweenMultiplexFade": carres.append("%s:%s" % [noeud.name, etat_style])

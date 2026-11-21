@@ -122,7 +122,13 @@ class BandeauAngle extends HBoxContainer:
 		add_theme_constant_override("separation", 0)
 		sort_children.connect(queue_redraw)
 	func _draw() -> void:
-		draw_style_box(Charte.style_panneau(FOND, Charte.RAYON_PANNEAU, 0), Rect2(Vector2.ZERO, size))
+		var fond_bandeau: StyleBoxFlat = Charte.style_panneau(FOND, Charte.RAYON_PANNEAU, 0)
+		# Fin trait blanc des grandes tuiles du direct (choix de Léo du 21/11/2026), comme les blocs de l'écran 2D.
+		if fond_bandeau != null:
+			fond_bandeau = fond_bandeau.duplicate()
+			fond_bandeau.border_color = Color(1, 1, 1, 0.22)
+			fond_bandeau.set_border_width_all(1)
+		draw_style_box(fond_bandeau, Rect2(Vector2.ZERO, size))
 		var horloge: Control = get_node_or_null("MatchClockBlock")
 		if horloge != null and horloge.visible:
 			draw_rect(Rect2(horloge.position.x + horloge.size.x, size.y * 0.2, 1.0, size.y * 0.6), Charte.FILET)

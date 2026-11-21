@@ -859,10 +859,19 @@ func _touche(texte: String) -> PanelContainer:
 	cadre.add_child(etiquette)
 	return cadre
 
-## Panneau de la charte : opaque, rayon 18, sans bordure, ombre portée de la charte.
+## Fin trait blanc autour des grandes tuiles de l'écran 2D (choix de Léo du 21/11/2026, il prime ici sur la règle
+## « panneaux sans bordure ») : 1 px, blanc à 22 %, qui suit le rayon des coins ; jamais sur les cartes intérieures.
+const LISERE := Color(1, 1, 1, 0.22)
+
+static func liserer(style: StyleBoxFlat) -> StyleBoxFlat:
+	style.border_color = LISERE
+	style.set_border_width_all(1)
+	return style
+
+## Panneau de la charte : opaque, rayon 18, ombre portée de la charte, liseré fin de l'écran 2D.
 func _panneau(parent: Node, marge: int, fond: Color = PANNEAU) -> VBoxContainer:
 	var coque := PanelContainer.new()
-	var style := _case(Color(fond, 1.0), Charte.RAYON_PANNEAU)
+	var style := liserer(_case(Color(fond, 1.0), Charte.RAYON_PANNEAU))
 	coque.add_theme_stylebox_override("panel", style)
 	parent.add_child(coque)
 	var bord := S.G.margin(marge)
@@ -1679,14 +1688,14 @@ func _page_d3(page: Control) -> void:
 	# L'enjeu et le bonus : chacun sa tuile (panneau de la charte) sous celle des événements.
 	enjeu_pastille = PanelContainer.new()
 	enjeu_pastille.name = "MatchBetweenLiveStake"
-	var style_enjeu := _case(PANNEAU, Charte.RAYON_PANNEAU)
+	var style_enjeu := liserer(_case(PANNEAU, Charte.RAYON_PANNEAU))
 	style_enjeu.set_content_margin_all(px(16))
 	enjeu_pastille.add_theme_stylebox_override("panel", style_enjeu)
 	enjeu_pastille.visible = false
 	enjeu_pastille.mouse_filter = Control.MOUSE_FILTER_PASS
 	gauche.add_child(enjeu_pastille)
 	bonus_tuile.get_parent().remove_child(bonus_tuile)
-	var style_bonus_tuile := _case(PANNEAU, Charte.RAYON_PANNEAU)
+	var style_bonus_tuile := liserer(_case(PANNEAU, Charte.RAYON_PANNEAU))
 	style_bonus_tuile.set_content_margin_all(px(16))
 	bonus_tuile.add_theme_stylebox_override("panel", style_bonus_tuile)
 	gauche.add_child(bonus_tuile)
