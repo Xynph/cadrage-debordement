@@ -176,7 +176,7 @@ func _week(fixture: Dictionary) -> void:
 		str(fixture.get("label", "Aucune rencontre")), "", "",
 	]
 	var selected := clampi(int(state.get("slot", 0)), 0, SLOTS.size() - 1)
-	D.text(self, 6, 256, "PLAN DE SEMAINE  /  1 SÉANCE COLLECTIVE", 17, C.MUTED, 600, 800)
+	_programme()
 	for i in TOPICS.size():
 		var column := D.panel(self, Rect2(4 + i * 250, 270, 239, 545), "", "", "", "TrainingWeekColumn" + str(i))
 		var match_column := i == 5 and not fixture.is_empty()
@@ -210,6 +210,31 @@ func _week(fixture: Dictionary) -> void:
 	D.photo(art, photo_centre(app.model), Rect2(2, 2, 1016, 373))
 	_axes(D.panel(self, Rect2(1039, 840, 560, 341), "Axes individuels", "star", "", "TrainingAxes"))
 	_staff_cards(D.panel(self, Rect2(1614, 840, 634, 341), "Encadrement", "people", "", "TrainingStaff"))
+
+## Programme de la semaine jour par jour (moteur : clubLife.weekProgram) : sept cases du lundi au dimanche, couleur et
+## icône par jour (séance à sa charge, veille, match, récupération, repos), aujourd'hui cerclé, jour passé estompé.
+## Clic : la carte de la semaine correspondante (séance, jour de match, récupération).
+func _programme() -> void:
+	var Panneaux = load("res://ui/immersive08/panneaux_effectif.gd")
+	var jours: Array = Panneaux._jours_programme(app)
+	if jours.is_empty(): return
+	for i in jours.size():
+		var j: Dictionary = jours[i]
+		var kind := str(j.get("kind", "repos"))
+		var r := Rect2(6 + i * 104, 239, 96, 28)
+		var case_ := D.rect(self, r, Panneaux._couleur_jour(j), 14, C.IVORY if bool(j.get("today", false)) else Color.TRANSPARENT)
+		case_.name = "TrainingDay_%d" % i
+		if bool(j.get("past", false)): case_.modulate = Color(1, 1, 1, .55)
+		var encre: Color = C.Charte.NUIT if kind != "repos" else C.IVORY
+		D.text(case_, 14, 21, str(j.get("lettre", "")), 18, encre, 800, 20)
+		var icone: String = Panneaux.JOURS.get(kind, ["", ""])[0]
+		if bool(j.get("done", false)) or (kind == "match" and bool(j.get("played", false))): icone = "check"
+		if not icone.is_empty(): _icon(case_, icone, Rect2(56, 4, 20, 20), encre)
+		var aide := "%s · %s" % [str(j.get("date", "")), Panneaux.JOURS.get(kind, ["", kind])[1]]
+		if kind == "seance": aide += " · " + str(Panneaux.CHARGES.get(str(j.get("charge", "normal")), ""))
+		var cible: int = {"seance": 0, "match": 11, "veille": 11, "recuperation": 6}.get(kind, -1)
+		if cible >= 0: _zone(self, r, "TrainingDayOpen_%d" % i, aide, func(): _select(cible))
+		else: case_.tooltip_text = aide
 
 ## Bande visuelle du bas de chaque carte de la semaine (y 120-160 de la carte) : uniquement des données du moteur,
 ## en cases, portraits et blasons ; chaque pièce qui a une destination est cliquable (écran, onglet ou petite fenêtre).
