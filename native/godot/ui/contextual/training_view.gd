@@ -42,10 +42,12 @@ func _draw() -> void:
 	var support: Dictionary = model.get("clubLife", {}).get("clubSupport", {})
 	var plan_data: Dictionary = support.get("training", {})
 	var session: Dictionary = plan_data.get("session", {})
-	scroll.add_child(S.label("Le retour du préparateur", 21, S.GOLD))
+	# Avis du préparateur : une pastille d'état (moteur : adviceState), la phrase complète en infobulle ; clic -> Effectif & 23.
 	if trained:
 		scroll.add_child(S.wrap(str(session.get("reason")) if session.get("reason") != null else "Séance effectuée. Aucun compte rendu détaillé n’est enregistré pour cette séance.", 17, S.TEXT))
-	else: scroll.add_child(S.wrap(str(training.get("advice", "Aucun diagnostic disponible pour cette semaine.")), 17, S.TEXT))
+	else: scroll.add_child(TV.pastille_avis(training, func():
+		director.close_training()
+		app._navigate("Effectif")))
 	scroll.add_child(S.label("Le groupe", 19, S.GOLD))
 	TV.colonne_groupe(self, scroll, model.get("squad", []))
 	var air := Control.new()

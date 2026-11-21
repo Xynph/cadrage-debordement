@@ -253,6 +253,18 @@ static func _taille(valeur: String, taille: int, police: Font, largeur: float) -
 	while t > 11 and police.get_string_size(valeur, HORIZONTAL_ALIGNMENT_LEFT, -1, t).x > largeur - 2.0: t -= 1
 	return t
 
+## Avis du préparateur en pastille cliquable : état calculé par le moteur (decisions.training.adviceState), mot court,
+## icône et couleur ; la phrase du préparateur reste en infobulle.
+static func pastille_avis(training: Dictionary, action: Callable) -> Control:
+	var etat: Dictionary = training.get("adviceState", {})
+	var n := int(etat.get("count", 0))
+	var def: Array = {"charge": ["train", "%d titulaire%s chargé%s" % [n, "s" if n > 1 else "", "s" if n > 1 else ""], Charte.INTENSIF],
+		"fatigue": ["warning", "XV fatigué", Charte.PERTE]}.get(str(etat.get("kind", "")), ["check", "Prêt", Charte.CONDITION])
+	var p := pastille(def[0], "Préparateur · " + str(def[1]), def[2], 17)
+	var b := cliquable(p, action, "TrainingAdvice", str(training.get("advice", "")))
+	b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	return b
+
 # --- Colonne « État du groupe » --------------------------------------------------------------------
 
 ## Trois tuiles de comptage en tête de colonne (aptes, blessés, chargés), toutes cliquables : elles filtrent la liste.

@@ -101,6 +101,13 @@ func run() -> void:
 	await wait_engine()
 	check(not director.active() and app.route=="Effectif" and str(app.selected_player).validate_node_name()==id,"Ouvrir la fiche -> fiche du joueur (%s, %s)" % [app.route,str(app.selected_player)])
 	await open_room()
+	# Avis du préparateur : pastille d'état du moteur (pas de phrase), clic -> Effectif & 23.
+	var avis:=found("TrainingAdvice")
+	check(avis!=null and str(app.model.decisions.training.get("adviceState",{}).get("kind","")) in ["pret","charge","fatigue"],"Avis du préparateur en pastille d'état")
+	if avis!=null:
+		await press(avis.get_meta("bouton"),"avis du préparateur")
+		check(not director.active() and app.route=="Effectif","Avis du préparateur -> Effectif & 23 (%s)" % app.route)
+	await open_room()
 	# Plans du staff : pilules = répartition du moteur, clic = plan appliqué par le worker.
 	var plans: Array = app.model.clubLife.clubSupport.training.plans
 	check(plans.size()==3,"Trois plans du staff projetés")
