@@ -836,7 +836,7 @@ func _ligne_classement(parent: Node, club: Dictionary, index: int, stride: int) 
 		row.set_meta("zone_kind", str(zone_info.get("kind", "")))
 		row.set_meta("zone_label", str(zone_info.get("label", "")))
 	var normal := StyleBoxFlat.new()
-	normal.bg_color = Charte.PANNEAU_3 if mine else (Charte.PANNEAU_2 if index % 2 == 1 else Charte.PANNEAU)
+	normal.bg_color = Charte.PANNEAU_3 if mine else Charte.PANNEAU
 	normal.set_corner_radius_all(Charte.RAYON_PETIT)
 	# Survol : bande + liseré club ; à droite de la bande de zone (places 1 à 6) quand la ligne en a une.
 	var decal := (5.0 + 3.0) * C.density if zone.a > 0 else 0.0
