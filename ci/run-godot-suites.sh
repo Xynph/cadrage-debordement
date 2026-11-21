@@ -54,6 +54,8 @@ declare -A suite_limits=(
   # Carte joueur au survol dans le direct : même préparation (carrière Monde jusqu au jour du match) puis match en rendu logiciel, 2 tailles ; dépassait 300 s sur runner.
   [tests/godot-planche-carte-joueur.cjs]=1200
   [tests/godot-immersive08.cjs]=600
+  # Panneaux de l'Effectif : une carrière Monde préparée jusqu'au jour de match (~60 s en local) puis le vrai jeu (~25 s).
+  [tests/godot-panneaux-effectif.cjs]=600
   # Avant-match « Dernière rencontre » : carrière Monde jusqu'au 1er match, match délégué, match suivant, 3 tailles.
   [tests/godot-avant-match-bilan.cjs]=900
   # Notes de match : préparation Node de la carrière Monde (~68 jours jusqu'au premier match, 3 matchs), puis Godot.

@@ -9,6 +9,7 @@ const G = preload("res://ui/game_skin.gd")
 const Charte = preload("res://ui/charte.gd")
 const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
 const BanqueImages = preload("res://ui/banque_images.gd")
+const R = preload("res://ui/immersive08/reperes.gd")
 const KEY = "immersive08_locker_tab"
 const LOCKER_ART = "res://art/immersive08/lockerroom.png"
 const STATUSES = {"open":"À suivre", "honored":"Honoré", "broken":"Non tenu", "expired":"Clos sans pénalité"}
@@ -46,16 +47,33 @@ static func _hero(app: Control, canvas: Control, data: Dictionary) -> void:
 	for item: Dictionary in data.get("commitments",[]):
 		if item.get("status") == "open": open += 1
 	var leader := P.player(app.model,str(data.get("leaderId","")))
+	# Confiance des joueurs envers le manager (moteur, 21/11/2026) : celle du conseil reste dans Club › Direction.
+	var tensions: Dictionary = data.get("tensions",{}) if data.get("tensions") is Dictionary else {}
+	var niveau := int(tensions.get("level",0))
+	var Panneaux = load("res://ui/immersive08/panneaux_effectif.gd")
 	var metrics := [
-		["Moral du groupe","heart",_score(data.get("morale")),C.MINT],
-		["Confiance du conseil","shield",_score(data.get("trust")),C.GOLD],
+		["Moral du groupe","heart",_score(data.get("morale")),Charte.MORAL],
+		["Confiance des joueurs","shield",_score(data.get("playerTrust")),Charte.CONFIANCE],
+		["Tensions","warning","%s · %d" % [Panneaux.NIVEAUX[clampi(niveau,0,3)],tensions.get("players",[]).size()],Panneaux._couleur_niveau(niveau) if niveau > 0 else C.MUTED],
 		["Engagements en cours","calendar",G.n(open),C.MINT],
 		["Relais pressenti","star",leader.get("name","À déterminer"),C.IVORY]
 	]
+	var cartes: Array = []
 	for i in metrics.size():
 		var item: Array = metrics[i]
-		var card := D.panel(canvas,Rect2(i*566,243,550,121),item[0],item[1],"","LockerMetric"+str(i))
-		D.text(card,22,105,item[2],38 if i == 3 else 47,item[3],700,502)
+		var card := D.panel(canvas,Rect2(i*452,243,440,121),item[0],item[1],"","LockerMetric"+str(i))
+		D.text(card,22,105,item[2],34 if i in [2,4] else 47,item[3],700,400)
+		cartes.append(card)
+	# Survol : mini-courbes des relevés hebdomadaires du groupe (moral, confiance des joueurs).
+	var Courbe = preload("res://ui/mini_courbe_survol.gd")
+	Courbe.lier(app, cartes[0], "morale", "Moral du vestiaire")
+	Courbe.lier(app, cartes[1], "confiance", "Confiance des joueurs")
+	R.cliquable(cartes[2],func(): Panneaux.fenetre_tensions(canvas,app),"LockerTensionsOuvrir","Tensions")
+	if not leader.is_empty():
+		var rid := str(leader.get("id",""))
+		R.cliquable(cartes[4],func():
+			app.selected_player = rid
+			app.navigation_controller.open_entity({"kind":"player","id":rid,"section":""}),"LockerRelaisOuvrir",str(leader.get("name","")))
 
 static func _score(value: Variant) -> String:
 	return "%s / 100" % G.n(value) if value != null else "—"

@@ -14,6 +14,7 @@ const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const Notes = preload("res://ui/notes_match.gd")
 const R = preload("res://ui/immersive08/reperes.gd")
 const Sales = preload("res://ui/player_sales_view.gd")
+const Panneaux = preload("res://ui/immersive08/panneaux_effectif.gd")
 const Listes = preload("res://ui/immersive08/listes_joueurs.gd")
 const ROW_HEIGHT := 34
 const GROUP_HEIGHT := 30
@@ -44,6 +45,9 @@ var _marques_tuiles: Dictionary = {}
 var _colonnes_actives: Array = []
 ## Vrai pendant que le focus mémorisé est rendu : il ne doit pas déplacer la sélection choisie ailleurs (palette, retour de fiche).
 var _restaurant := false
+## Panneaux latéraux à gauche (panneaux_effectif.gd) : décalage et largeur du tableau.
+var _x0 := 0.0
+var _lt := LARGEUR
 ## Rangées au-dessus du tableau (choix de Léo du 21/11/2026) : tuiles des totaux de la liste filtrée, puis pastilles de poste.
 const Y_TOTAUX := Y_FILTRES + 52.0
 const Y_POSTES := Y_FILTRES + 122.0
@@ -78,8 +82,12 @@ func _build() -> void:
 		return
 	_dy = DY_RANGEES
 	_filtres()
+	# Panneaux latéraux à gauche : totaux, pastilles de poste et tableau prennent la largeur restante.
+	_x0 = Panneaux.reserve(app)
+	_lt = LARGEUR - _x0
 	_rangees_listes()
 	_tableau()
+	Panneaux.construire(self, app, Y_TOTAUX, HAUT_PAGE - 4)
 	_refresh(true)
 	_restaurer()
 
@@ -666,14 +674,15 @@ func _tableau() -> void:
 	table.name = "ImmersiveRosterTable"
 	table.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(table)
-	D.place(table, Rect2(0, Y_ENTETE + _dy, LARGEUR, HAUT_PAGE - Y_ENTETE - _dy))
+	D.place(table, Rect2(_x0, Y_ENTETE + _dy, _lt, HAUT_PAGE - Y_ENTETE - _dy))
 	_colonnes_actives = _colonnes(int(state.get("immersive_tab", 0)), _etroit(), state.family == U.WATCH_FILTER)
+	if _lt < LARGEUR: _colonnes_actives = _resserrer(_colonnes_actives)
 	var entete := Control.new()
 	entete.name = "RosterHeader"
 	entete.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	table.add_child(entete)
-	D.place(entete, Rect2(0, 0, LARGEUR, 36))
-	D.line(entete, Vector2(0, 35), Vector2(LARGEUR, 35), Charte.FILET)
+	D.place(entete, Rect2(0, 0, _lt, 36))
+	D.line(entete, Vector2(0, 35), Vector2(_lt, 35), Charte.FILET)
 	var noms := {"Salaire": "RosterColumnSalary", "Potentiel": "RosterColumnPotential", "Poste": "RosterColumn_POSTE", "Autres postes": "RosterColumnSecondaryPositions", "Moyenne": "RosterColumnNote", "Forme": "RosterColumnForm", "Fatigue": "RosterColumnFatigue"}
 	for colonne: Dictionary in _colonnes_actives:
 		var cle := str(colonne.s)
@@ -702,19 +711,31 @@ func _tableau() -> void:
 	defile.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	defile.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	table.add_child(defile)
-	D.place(defile, Rect2(0, Y_LIGNES - Y_ENTETE, LARGEUR, Y_PIED - Y_LIGNES - 8 - _dy))
+	D.place(defile, Rect2(0, Y_LIGNES - Y_ENTETE, _lt, Y_PIED - Y_LIGNES - 8 - _dy))
 	rows = C.v(2)
 	rows.add_theme_constant_override("separation", C.px(2))
 	rows.name = "ImmersiveRosterRows"
-	rows.custom_minimum_size.x = C.px(LARGEUR)
+	rows.custom_minimum_size.x = C.px(_lt)
 	C.fill(rows)
 	defile.add_child(rows)
 	count = D.text(table, 0, Y_PIED - Y_ENTETE - _dy + 26, "", 18, C.MUTED, 500, 1000, HORIZONTAL_ALIGNMENT_LEFT, true)
 	count.name = "RosterCount"
 	# Raccourcis clavier derrière un « ? » (21/11) : plus de ligne de mode d'emploi au pied du tableau.
 	var aide := "Raccourcis\n↑↓ : choisir un joueur\nEntrée : fiche complète\nMaj Espace : comparer\n/ : chercher dans le tableau\nCtrl Tab : onglet suivant\nÉchap : Menu\nSurvol d'un nom : aperçu · clic : fiche"
-	R.rond(table, LARGEUR - 30, Y_PIED - Y_ENTETE - _dy + 18, aide, "?", "RosterScrollHint", 28)
+	R.rond(table, _lt - 30, Y_PIED - Y_ENTETE - _dy + 18, aide, "?", "RosterScrollHint", 28)
 
+
+## Panneaux dépliés : colonnes après « Joueur » resserrées dans la largeur restante.
+func _resserrer(colonnes: Array) -> Array:
+	var k := (_lt - 560.0) / (LARGEUR - 560.0)
+	var sortie: Array = []
+	for c: Dictionary in colonnes:
+		var d := c.duplicate()
+		if float(d.x) >= 540.0:
+			d.x = 560.0 + (float(d.x) - 560.0) * k
+			d.w = float(d.w) * k
+		sortie.append(d)
+	return sortie
 
 static func _known_number(value: Variant) -> bool:
 	return (value is int or value is float) and is_finite(float(value))
@@ -928,7 +949,7 @@ func _build_rows(players: Array,from: int,to: int) -> void:
 func _bandeau_groupe(players: Array, group: String) -> void:
 	var banner:=Control.new()
 	banner.name = "RosterGroup" + ("Avants" if group == "AVANTS" else "Arrieres")
-	banner.custom_minimum_size=Vector2(C.px(LARGEUR),C.px(C.reach(GROUP_HEIGHT)))
+	banner.custom_minimum_size=Vector2(C.px(_lt),C.px(C.reach(GROUP_HEIGHT)))
 	rows.add_child(banner)
 	var source: Array = players if state.family==U.WATCH_FILTER else app.model.get("squad",[])
 	var membres: Array = source.filter(func(p:Dictionary):return (float(p.get("fam",0))<=3)==(group=="AVANTS"))
@@ -1035,7 +1056,7 @@ func _row(player:Dictionary,index:int) -> void:
 	row.name="SquadPlayer"+id.replace(":","_")
 	row.set_meta("player_id",id)
 	row.set_meta("index",index)
-	row.custom_minimum_size=Vector2(C.px(LARGEUR),C.px(h))
+	row.custom_minimum_size=Vector2(C.px(_lt),C.px(h))
 	row.clip_contents = true
 	row.focus_mode = Control.FOCUS_ALL
 	row.accessibility_name = "%s · %s · %s · ouvrir la fiche" % [str(player.name), primary_caption(player), str(statut.t)]
@@ -1126,7 +1147,8 @@ func _row(player:Dictionary,index:int) -> void:
 				else:
 					D.text(row,x + l / 2.0,base,"—",19,C.FAINT,500,52,HORIZONTAL_ALIGNMENT_CENTER,true).name = "RosterNoteAverage"
 			"forme":
-				Listes.dessiner_forme(self, row, Rect2(x, 1, l, h - 2), notes, str(player.name)).name = "RosterForm"
+				# Cases ramenées dans la colonne quand les panneaux latéraux la resserrent.
+				Listes.dessiner_forme(self, row, Rect2(x, 1, l, h - 2), notes, str(player.name), minf(44.0, (l - 24.0) / 5.0)).name = "RosterForm"
 			"motif":
 				D.text(row,x,base,reason,19,C.IVORY,600,l,HORIZONTAL_ALIGNMENT_LEFT,true).name="RosterWatchReason"
 			"statut":
@@ -1144,7 +1166,7 @@ func _row(player:Dictionary,index:int) -> void:
 	C.style_bouton_lien(comparer_ligne, 19)
 	comparer_ligne.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	row.add_child(comparer_ligne)
-	D.place(comparer_ligne, C.reach_rect(Rect2(LARGEUR - 78, 2, 70, h - 4)))
+	D.place(comparer_ligne, C.reach_rect(Rect2(_lt - 78, 2, 70, h - 4)))
 	comparer_ligne.pressed.connect(func(): _basculer_comparaison(id))
 	_etat_comparaison(comparer_ligne, id, false)
 	row.mouse_entered.connect(func(): _etat_comparaison(comparer_ligne, id, true))
@@ -1299,11 +1321,11 @@ func _choisir_groupe(id: String) -> void:
 
 func _rangees_listes() -> void:
 	var joueurs: Array = app.model.get("squad", [])
-	Listes.pastilles_postes(self, Vector2(0, Y_POSTES), Listes.compter_groupes(joueurs), joueurs.size(), str(state.get("poste_groupe", "")), _choisir_groupe)
+	Listes.pastilles_postes(self, Vector2(_x0, Y_POSTES), Listes.compter_groupes(joueurs), joueurs.size(), str(state.get("poste_groupe", "")), _choisir_groupe)
 	_bandeau_totaux = Control.new()
 	_bandeau_totaux.name = "RosterTuilesTotaux"
 	add_child(_bandeau_totaux)
-	D.place(_bandeau_totaux, Rect2(0, Y_TOTAUX, LARGEUR, 62))
+	D.place(_bandeau_totaux, Rect2(_x0, Y_TOTAUX, _lt, 62))
 
 ## Chiffres de la liste filtrée : {id, v, cap, c (couleur), act}. Pas de tuile « fins de contrat » : la tuile du haut
 ## de l'écran la donne déjà.

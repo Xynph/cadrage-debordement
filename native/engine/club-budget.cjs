@@ -693,6 +693,9 @@ function groupeReleve(){
   if(!date||!Number.isFinite(S.morale)||!joueurs.length)return;
   const condition=Math.round(joueurs.reduce((n,p)=>n+(Number.isFinite(p.condition)?p.condition:0),0)/joueurs.length);
   const h=S.groupHistory=Array.isArray(S.groupHistory)?S.groupHistory:[],dernier=h[h.length-1],releve={date,saison:S.season,morale:Math.round(S.morale),condition};
+  // Confiance des joueurs envers le manager (relationships.cjs, groupTrust), même relevé : sa courbe se lit ici aussi.
+  const rel=typeof nativeSystems!=='undefined'?nativeSystems.domain('relationships'):null,confiance=rel&&typeof rel.groupTrust==='function'?rel.groupTrust(S):null;
+  if(Number.isInteger(confiance))releve.confiance=confiance;
   if(dernier&&dernier.date===date)Object.assign(dernier,releve);else h.push(releve);
   if(h.length>70)h.splice(0,h.length-70);
  }catch(e){}

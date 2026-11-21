@@ -209,7 +209,7 @@ budget() {
     # lifecycle-native 210 s contre 141 s), d'où 180 s dépassées. Bonus de fin de match : 150 s sur main. Budget ≈ 3 fois, assertions inchangées.
     tests/club-mail.cjs|tests/bonus-fin-de-match.cjs) echo 420s ;;
     # Suites Monde de 100 à 106 s sur main (mesures CD_CPU_PROFILE), exposées au même ralentissement du runner ; budget ≈ 3 fois.
-    tests/avance-jour-differe.cjs|tests/arbitre-veille.cjs|tests/plan-adverse.cjs|tests/world-reprise-preparation.cjs|tests/club-mail-enseignements.cjs|tests/world-championnats-suivis.cjs) echo 300s ;;
+    tests/vie-groupe-programme.cjs|tests/avance-jour-differe.cjs|tests/arbitre-veille.cjs|tests/plan-adverse.cjs|tests/world-reprise-preparation.cjs|tests/club-mail-enseignements.cjs|tests/world-championnats-suivis.cjs) echo 300s ;;
     # Protocole commotion (carrière Monde, HIA en match puis repos jour par jour) : moteur JS seul, sans lien avec le lot du match 3D ;
     # 180 s dépassées sur la PR #943 (Suites 5/7, run 44436008167) avec le runner ~1,5 fois plus lent. Budget ≈ 3 fois, assertions inchangées.
     tests/commotion-hia.cjs) echo 420s ;;
