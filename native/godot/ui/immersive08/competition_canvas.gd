@@ -19,6 +19,7 @@ const EquipeType = preload("res://ui/equipe_type_view.gd")
 const Zones = preload("res://ui/immersive08/standings_zones.gd")
 const Charte = preload("res://ui/charte.gd")
 const TenueClub = preload("res://ui/tenue_club.gd")
+const Bandeau = preload("res://ui/bandeau_filtres.gd")
 const WIDTH := 2248
 const LEFT := 1500
 const GAP := 24
@@ -652,6 +653,8 @@ func _classement() -> void:
 	var panel_h := rows_y + shown * ROW + 18 + footer + 18
 	var panel := _panel(self, Rect2(0, TOP, LEFT, panel_h), "CLASSEMENT", "", "StandingsTableFrame")
 	left_bottom = TOP + panel_h
+	# Bandeau des filtres (demande de Léo du 21/11/2026) : titre, division, poules et en-têtes dans un bandeau détouré.
+	Bandeau.poser(panel, Rect2(8, 4, LEFT - 16, rows_y - 6), 40.0)
 	_division_menu(panel, 250, 12, 540)
 	_result_legend(panel, LEFT - 24 - 450, 20)
 	if not pools.is_empty(): _pool_widget(panel, pools, selected_pool, 24, 76)
@@ -1284,6 +1287,8 @@ func _calendar() -> void:
 	var panel := _panel(self, Rect2(0, TOP, LEFT, 760), "TOUTE LA SAISON · CALENDRIER DU CLUB", "", "CalendarScroll")
 	left_bottom = TOP + 760
 	var selected := str(state.get("calendar_filter", "all"))
+	# Bandeau des filtres (demande de Léo du 21/11/2026) : pastilles de filtre et en-têtes dans un bandeau détouré.
+	Bandeau.poser(panel, Rect2(8, 54, LEFT - 16, 90), 36.0)
 	var x := 24
 	for spec: Array in [[170, "Tous les matchs", "all"], [120, "À jouer", "upcoming"], [120, "Résultats", "played"]]:
 		_filtre(panel, Rect2(x, 62, spec[0], 40), spec[1], selected == spec[2], func():

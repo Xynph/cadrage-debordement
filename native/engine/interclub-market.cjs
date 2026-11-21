@@ -63,8 +63,13 @@ function factory(){
   if(signe&&signe.etat==='signe'&&signe.sens==='arrivee'&&signe.clubId===S.club)reason='Pré-contrat signé : il rejoindra ton club le '+nativeVenteJoueurs.dateFr(signe.arrivee)+'.';
   // Pré-contrat (joueur en fin de contrat) : seulement pour les contrats qui s'achèvent cette saison.
   const pre=contractEnd===S.season&&typeof calPreContratDevis==='function'?calPreContratDevis(c,p,budget):null;
+  // Forme récente (5 dernières notes, adversaire et score : match-notes.cjs), cases colorées de l'écran « Entre clubs ».
+  // Forme compacte (des milliers de profils) : [note × 10, semaine, id de l'adversaire, points pour, points contre] par
+  // match, le plus ancien d'abord ; l'interface retrouve le nom de l'adversaire. Rien sans match noté.
+  const forme=typeof CDMatchNotes!=='undefined'&&CDMatchNotes&&typeof CDMatchNotes.formeJoueur==='function'?CDMatchNotes.formeJoueur(p.id):null;
+  const fm=forme?forme.matchs.map(o=>o.adversaireId==null?[Math.round(o.note*10)]:[Math.round(o.note*10),o.semaine,o.adversaireId,o.scorePour,o.scoreContre]):null;
   return {id:p.id,name:p.name,clubId:c.id,club:c.name,pos:p.pos,family:p.fam,age:p.age,contractEnd,sourceSalary,fee,salary,available:!reason,reason,releaseReason,
-   ...(pending?{pending:{date:pending.date,dateLabel:nativeVenteJoueurs.dateFr(pending.date),fee:pending.fee}}:{}),...(pre?{preContract:pre}:{})};
+   ...(pending?{pending:{date:pending.date,dateLabel:nativeVenteJoueurs.dateFr(pending.date),fee:pending.fee}}:{}),...(pre?{preContract:pre}:{}),...(fm?{forme:fm}:{})};
  }
  // Période des mutations (vente-joueurs.json, fenetres) : hors période, un accord est conclu et exécuté à l'ouverture.
  const mutations=()=>typeof calInterclub==='function'?calInterclub():{ouverte:true,reouverture:null,raison:'',note:''};

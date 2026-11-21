@@ -1509,9 +1509,10 @@ func run() -> void:
 		var roster: Control = app.find_child("ImmersiveRosterTable", true, false)
 		if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office": check(roster != null, "Table Effectif dense de la référence 1440p")
 		if roster != null:
-			# Fiche fixe de droite retirée (19/11/2026) : le tableau prend toute la largeur du gabarit.
+			# Fiche fixe de droite retirée (19/11/2026) : le tableau prend toute la largeur du gabarit ; recherche à 16 de
+			# la gauche, marge intérieure du bandeau des filtres (21/11/2026).
 			reference_rects({"ImmersiveRosterTable":Rect2(280,472,2248,872),
-				"RosterTab0":Rect2(280,230,185,44), "RosterSearch":Rect2(280,296,440,42), "RosterSearchGlyph":Rect2(294,306,21,21)})
+				"RosterTab0":Rect2(280,230,185,44), "RosterSearch":Rect2(296,296,440,42), "RosterSearchGlyph":Rect2(310,306,21,21)})
 			check(app.find_child("PlayerDossier",true,false) == null and app.find_child("SelectedPlayerCard",true,false) == null, "Plus de dossier fixe à droite de l'effectif")
 			var list: VBoxContainer = app.find_child("ImmersiveRosterRows", true, false)
 			var row_buttons: Array = list.get_children().filter(func(node:Node):return node is Button)

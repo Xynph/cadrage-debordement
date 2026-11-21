@@ -7,6 +7,7 @@ const U = preload("res://ui/management_state.gd")
 const G = preload("res://ui/game_skin.gd")
 const Sales = preload("res://ui/player_sales_view.gd")
 const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
+const Bandeau = preload("res://ui/bandeau_filtres.gd")
 const STATUS_OPTIONS := ["Tous","Prolongation accessible","Discussion en cours","Échanges clos","Sans contrat renseigné"]
 var app: Control
 var state: Dictionary
@@ -531,7 +532,12 @@ func _build() -> void:
 		top.add_child(stat)
 	var filters := HBoxContainer.new()
 	filters.add_theme_constant_override("separation", 8)
-	add_child(filters)
+	# Bandeau des filtres (demande de Léo du 21/11/2026) : panneau teinté détouré, distinct des lignes de contrats.
+	var bandeau := PanelContainer.new()
+	bandeau.name = "BandeauFiltres"
+	bandeau.add_theme_stylebox_override("panel", Bandeau.style(10))
+	add_child(bandeau)
+	bandeau.add_child(filters)
 	var search := LineEdit.new()
 	search.name = "ContractReviewSearch"
 	search.placeholder_text = "Nom ou poste…"
@@ -608,7 +614,16 @@ func _build() -> void:
 	var outset := Control.new()
 	outset.custom_minimum_size.x = 8
 	header.add_child(outset)
-	main.add_child(header)
+	# En-têtes de colonnes : bande de la même famille que le bandeau des filtres.
+	var bande := PanelContainer.new()
+	bande.name = "BandeauEntete"
+	var style_bande := Bandeau.style_entete(Charte.RAYON_PETIT)
+	style_bande.corner_radius_bottom_left = style_bande.corner_radius_top_left
+	style_bande.corner_radius_bottom_right = style_bande.corner_radius_top_right
+	style_bande.set_content_margin_all(0)
+	bande.add_theme_stylebox_override("panel", style_bande)
+	main.add_child(bande)
+	bande.add_child(header)
 	_scroll = ScrollContainer.new()
 	_scroll.name = "ContractReviewScroll"
 	_scroll.follow_focus = true

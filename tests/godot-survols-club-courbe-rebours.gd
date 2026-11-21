@@ -193,6 +193,11 @@ func courbes() -> void:
 	await settle()
 	await courbe("Entraînement", "condition", "")
 	await courbe("Entraînement", "morale", "entrainement-courbe-moral")
+	# Effectif (21/11/2026) : tuiles des totaux « condition moy. » et « moral » au-dessus de la liste.
+	app.management_ui.roster.immersive_tab = 0
+	await aller("Effectif")
+	await courbe("Effectif", "condition", "effectif-courbe-condition")
+	await courbe("Effectif", "morale", "effectif-courbe-moral")
 
 func rebours() -> void:
 	await aller("Club")

@@ -392,6 +392,24 @@ func listes() -> void:
 	check(str(app.management_ui.market.get("sort", "")) == "Niveau", "Clic sur l'en-tête NIV. : tri par niveau")
 	check(tri != null and (tri.text.ends_with(" ▲") or tri.text.ends_with(" ▼")), "En-tête trié : flèche ▲ ou ▼")
 	check(tri != null and (tri.get_theme_stylebox("normal") as StyleBoxFlat).border_width_bottom > 0, "En-tête trié : souligné")
+	# Bandeau des filtres (21/11/2026) : derrière la recherche, les menus et les pastilles de poste, à la largeur du
+	# tableau ; la bande des en-têtes du tableau est de la même famille.
+	var marche := node("CarnetMarket") as Control
+	var bandeau := marche.find_child("BandeauFiltres", false, false) as Panel if marche != null else null
+	var tableau := node("ImmersiveMarketTable") as Control
+	check(bandeau != null and bandeau.get_index() == 0, "Bandeau des filtres derrière les commandes")
+	if bandeau != null and tableau != null:
+		check(absf(bandeau.position.x - tableau.position.x) < 1.0 and absf(bandeau.size.x - tableau.size.x) < 1.0, "Bandeau à la largeur du tableau")
+		check(bandeau.get_rect().end.y < tableau.position.y, "Bandeau au-dessus du tableau, séparé de la 1re ligne")
+		for nom in ["MarketSearch", "MarketPosition", "PostePastille_tous"]:
+			var c := node(nom) as Control
+			check(c != null and bandeau.get_global_rect().encloses(c.get_global_rect()), "%s dans le bandeau" % nom)
+		var entete := node("MarketHeader") as Panel
+		check(entete != null and (entete.get_theme_stylebox("panel") as StyleBoxFlat).bg_color == Charte.BANDEAU_ENTETE, "En-têtes : bande de la famille du bandeau")
+	# « Entre clubs » : forme compacte du moteur ([note × 10, semaine, adversaire, pour, contre]) → cases de forme.
+	var forme: Dictionary = load("res://ui/interclub_market_view.gd").forme_recente({"forme": [[65], [72, 3, 7, 24, 10]]}, {7: "Rivaux"})
+	check(forme.get("matchs", []).size() == 2 and is_equal_approx(float(forme.matchs[0].note), 6.5) and str(forme.matchs[1].adversaire) == "Rivaux" and int(forme.matchs[1].scorePour) == 24, "Entre clubs : forme compacte lue")
+	check(load("res://ui/interclub_market_view.gd").forme_recente({}, {}).is_empty(), "Entre clubs : pas de forme sans match noté")
 	check(node("PostePastille_tous") is Button, "Pastille Tous postes")
 	await press("PostePastille_deuxieme")
 	var lignes: Array = app.root_content.find_children("MarketPlayer_*", "Button", true, false)

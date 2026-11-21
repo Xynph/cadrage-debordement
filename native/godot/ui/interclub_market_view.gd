@@ -6,6 +6,8 @@ const Budget = preload("res://ui/transfer_budget.gd")
 const EnPlace = preload("res://ui/confirmation_en_place.gd")
 ## Textes à 13 px au moins en 1280×720 (même règle que les ventes : le style immersif repose un plancher de 12 px).
 const Sales = preload("res://ui/player_sales_view.gd")
+const Listes = preload("res://ui/immersive08/listes_joueurs.gd")
+const C = preload("res://ui/immersive08/components.gd")
 var app: Control
 var rows: VBoxContainer
 var query := ""
@@ -29,6 +31,7 @@ var pre_premium: Label
 var pre_button: Button
 var page := 0
 const PAGE_SIZE := 12
+var _noms: Dictionary = {}
 
 static func entry(owner_app: Control, parent: Container) -> Button:
 	var button := G.button("NÉGOCIER ENTRE CLUBS →",func(): open(owner_app))
@@ -133,6 +136,7 @@ func _redraw() -> void:
 		var person: Dictionary = filtered[i]
 		var card := G.card(rows)
 		_profile_heading(card, person)
+		_forme(card, person)
 		card.add_child(G.wrap("Indemnité %s · salaire proposé %s · échéance %s conservée" % [G.euros(person.fee),G.salary(person.salary),G.season_label(person.contractEnd)],13))
 		if not str(person.reason).is_empty(): card.add_child(G.wrap(Copy.notice("interclub", person.reason),13,G.ALERT))
 		var offer := G.button("PROPOSER L’ACCORD",func(): _offer(person))
@@ -142,6 +146,50 @@ func _redraw() -> void:
 		card.add_child(offer)
 		_precontract_line(card, person)
 	Sales.lisible(rows)
+
+## Forme récente du joueur (mêmes cases que l'Effectif et le Recrutement, choix de Léo du 21/11/2026) : note dans la
+## case, survol = adversaire + score, clic = petite fenêtre du match, posée sur la page Recrutement.
+func _forme(card: Container, person: Dictionary) -> void:
+	var notes := forme_recente(person, _noms_clubs())
+	if notes.is_empty(): return
+	var zone := Control.new()
+	zone.name = "InterclubForme"
+	zone.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	zone.custom_minimum_size = Vector2(5 * 44 + 4 * 6, 40) * C.density
+	card.add_child(zone)
+	var page_fenetre := app.find_child("CarnetMarket", true, false) as Control
+	var groupe := Listes.dessiner_forme(page_fenetre if page_fenetre != null else zone, zone, Rect2(0, 0, 5 * 44 + 4 * 6, 40), notes, str(person.get("name", "")), 44.0)
+	# Habillage déjà à la charte : ni la page adoptée ni le style des anciennes fenêtres ne le repeignent.
+	for n: Node in [zone, groupe] + groupe.find_children("*", "Control", true, false):
+		n.set_meta("style_charte", true)
+		n.set_meta("immersive_style_applied", true)
+
+## Forme compacte du moteur (`forme` : [note × 10, semaine, id adversaire, points pour, points contre] par match) →
+## {matchs: [{note, semaine, adversaire, adversaireId, scorePour, scoreContre}]} ; {} sans match noté.
+static func forme_recente(person: Dictionary, noms: Dictionary) -> Dictionary:
+	var source: Variant = person.get("forme")
+	if not source is Array or (source as Array).is_empty(): return {}
+	var matchs: Array = []
+	for m: Variant in source:
+		if not m is Array or (m as Array).is_empty(): continue
+		var o := {"note": float(m[0]) / 10.0}
+		if (m as Array).size() >= 5 and m[2] != null:
+			o.semaine = m[1]
+			o.adversaireId = int(m[2])
+			o.adversaire = str(noms.get(int(m[2]), ""))
+			o.scorePour = m[3]
+			o.scoreContre = m[4]
+		matchs.append(o)
+	return {"matchs": matchs} if not matchs.is_empty() else {}
+
+## Noms des clubs par identifiant : clubs des profils du marché, plus le nôtre.
+func _noms_clubs() -> Dictionary:
+	if not _noms.is_empty(): return _noms
+	for person: Variant in _data().get("candidates", []):
+		if person is Dictionary and person.get("clubId") != null: _noms[int(person.clubId)] = str(person.get("club", ""))
+	var nous: Variant = app.model.get("club")
+	if nous is Dictionary and nous.get("id") != null: _noms[int(nous.id)] = str(nous.get("name", ""))
+	return _noms
 
 ## Pré-contrat (calendrier-mutations.cjs, `candidates[].preContract`) : signé (arrivée au 1er juillet), possible
 ## (bouton) ou pas encore (raison écrite).

@@ -845,7 +845,8 @@ static func pastille(result: String, size: float) -> Button:
 	bouton.add_theme_font_override("font", C.BODY)
 	bouton.add_theme_font_size_override("font_size", maxi(12, M(size * .5)))
 	bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	var couleur := Charte.V if result == "V" else Charte.D if result == "D" else Charte.N
+	# D : rouge de perte, comme au Classement (choix de Léo du 21/11/2026), toujours avec la lettre D et l'anneau.
+	var couleur := Charte.V if result == "V" else Charte.PERTE if result == "D" else Charte.N
 	for look in ["normal", "hover", "pressed", "focus", "disabled"]:
 		var style := StyleBoxFlat.new()
 		var anneau := result == "D"
@@ -859,7 +860,7 @@ static func pastille(result: String, size: float) -> Button:
 		style.content_margin_top = 0
 		style.content_margin_bottom = 0
 		bouton.add_theme_stylebox_override(look, style)
-	# D : anneau doré, lettre crème (le seul doré plein de l'écran reste le Coup d'envoi).
+	# D : anneau rouge, lettre crème.
 	var encre := Charte.IVOIRE if result == "D" else Charte.NUIT
 	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_disabled_color"]: bouton.add_theme_color_override(key, encre)
 	return bouton
