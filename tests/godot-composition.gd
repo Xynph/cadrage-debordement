@@ -3,8 +3,10 @@ extends SceneTree
 # « Première ligne formée » de la variante 3), carrière Monde réelle, vrai moteur :
 #  - tout ce qui a l'air cliquable change d'écran, de poste, de tri ou envoie une commande ; aucune Window ouverte ;
 #  - aucune couleur or dans l'écran (l'or est réservé à Continuer, dans la coque) ;
-#  - terrain aux proportions réelles, candidats dessous, encart première ligne sur les n° 1-3 / 16-18 ;
-#  - clavier : Espace prend puis pose (échange réel), Échap annule ; clic sur un nom = fiche, survol = carte joueur ;
+#  - terrain vertical vert (option A de Léo, 22/11/2026) : attaque vers le haut, avants en haut, arrière en bas ;
+#    candidats sous le banc, encart première ligne sur les n° 1-3 / 16-18 ;
+#  - clavier : Espace prend puis pose (échange réel), Échap annule, Suppr libère (confirmation), I carte joueur ;
+#  - vraie souris : glisser-déposer (échange réel), clic sur une carte, survol d'un nom = carte joueur ; clic = fiche ;
 #  - sous-page « Tireurs et lanceur » avec retour, Échap et historique.
 const Flow = preload("helpers/contextual_flow.gd")
 const Charte = preload("res://ui/charte.gd")
@@ -66,6 +68,29 @@ func key(code: Key, shift := false, ctrl := false) -> void:
 		await process_frame
 	await settle()
 
+var _souris_avant := Vector2.ZERO
+
+## Mouvement de souris réel (le glisser cumule le déplacement relatif depuis l'appui).
+func souris(position: Vector2, masque: int = 0) -> void:
+	var mouvement := InputEventMouseMotion.new()
+	mouvement.position = position
+	mouvement.global_position = position
+	mouvement.relative = position - _souris_avant
+	_souris_avant = position
+	mouvement.button_mask = masque
+	root.push_input(mouvement)
+	await process_frame
+
+func clic(position: Vector2, appui: bool) -> void:
+	var bouton := InputEventMouseButton.new()
+	bouton.button_index = MOUSE_BUTTON_LEFT
+	bouton.pressed = appui
+	bouton.button_mask = MOUSE_BUTTON_MASK_LEFT if appui else 0
+	bouton.position = position
+	bouton.global_position = position
+	root.push_input(bouton)
+	await process_frame
+
 func composition() -> void:
 	app._navigate("Composition")
 	await settle(10)
@@ -115,9 +140,14 @@ func run() -> void:
 	check(pitch != null and bench != null and impact != null and under != null, "Terrain, banc, impact et candidats")
 	if pitch != null and bench != null and impact != null and under != null:
 		var rp := pitch.get_global_rect()
-		check(absf(rp.size.x / rp.size.y - 100.0 / 70.0) < .02, "Terrain aux proportions réelles (100 × 70, charte §6)")
+		check(rp.size.y > rp.size.x * 1.25 and rp.size.y < rp.size.x * 1.7, "Terrain vertical, en-buts en haut et en bas (%s)" % str(rp.size))
 		check(rp.end.x <= bench.get_global_rect().position.x + 1 and bench.get_global_rect().end.x <= impact.get_global_rect().position.x + 1, "Terrain, banc, impact de gauche à droite")
-		check(under.get_global_rect().position.y >= rp.end.y - 1, "Candidats sous le terrain")
+		check(under.get_global_rect().position.y >= bench.get_global_rect().end.y - 1 and under.get_global_rect().position.x >= rp.end.x - 1, "Candidats sous le banc, à droite du terrain")
+		# Attaque vers le haut : avants devant (en haut), arrière au fond (en bas), pastille « ▲ ATTAQUE » en haut.
+		var centre := func(n: int) -> float: return named("LineupSlot%02d" % n).get_global_rect().get_center().y if named("LineupSlot%02d" % n) != null else -1.0
+		check(centre.call(2) < centre.call(8) and centre.call(8) < centre.call(9) and centre.call(9) < centre.call(12) and centre.call(12) < centre.call(15), "Avants en haut, charnière, centres, arrière en bas")
+		var attaque := named("TacticsAttackDirection")
+		check(attaque != null and attaque.get_global_rect().get_center().y < centre.call(1), "Pastille « ▲ ATTAQUE » en haut du terrain")
 		for i in 15:
 			var carte := named("LineupSlot%02d" % (i + 1))
 			check(carte != null and rp.encloses(carte.get_global_rect()), "Carte du n° %d dans le terrain" % (i + 1))
@@ -245,6 +275,59 @@ func run() -> void:
 	await key(KEY_SPACE)
 	await wait_idle()
 	check(str(Selection.slot(app.model, 13).get("playerId")) == onze and str(Selection.slot(app.model, 10).get("playerId")) == quatorze, "Espace / Espace : échange réel des n° 11 et 14")
+
+	# 5 bis. Vraie souris : glisser le n° 12 sur le n° 13 (appui, déplacement, relâche) → échange réel par le moteur.
+	await composition()
+	var douze := str(Selection.slot(app.model, 11).get("playerId"))
+	var treize := str(Selection.slot(app.model, 12).get("playerId"))
+	var depart := named("LineupSlot12").get_global_rect().get_center()
+	var arrivee := named("LineupSlot13").get_global_rect().get_center()
+	await souris(depart, MOUSE_BUTTON_MASK_LEFT)
+	await clic(depart, true)
+	for etape in range(1, 13): await souris(depart.lerp(arrivee, etape / 12.0), MOUSE_BUTTON_MASK_LEFT)
+	await clic(arrivee, false)
+	await wait_idle()
+	await settle()
+	check(str(Selection.slot(app.model, 11).get("playerId")) == treize and str(Selection.slot(app.model, 12).get("playerId")) == douze, "Glisser-déposer à la souris : échange réel des n° 12 et 13")
+	# Vrai clic sur une carte du terrain : ses candidats dessous.
+	await composition()
+	var point_7 := named("LineupSlot07").get_global_rect().get_center()
+	await souris(point_7)
+	await clic(point_7, true)
+	await clic(point_7, false)
+	await settle()
+	check(app.selected_slot == 6, "Clic souris sur le n° 7 : ses candidats")
+	# Vrai survol d'un nom : la carte joueur apparaît après le délai, sans fenêtre.
+	await souris(Vector2(4, 4))
+	await settle(4)
+	var nom_survol := named("TacticsName10") as Control
+	if nom_survol != null:
+		await souris(nom_survol.get_global_rect().get_center())
+		var limite := Time.get_ticks_msec() + 3000
+		while Carte.actuelle(app) == null and Time.get_ticks_msec() < limite: await process_frame
+		check(Carte.actuelle(app) != null and windows(app).is_empty(), "Survol souris du nom du n° 10 : carte joueur")
+		await souris(Vector2(4, 4))
+		await settle(10)
+		check(Carte.actuelle(app) == null, "Souris partie : la carte se ferme")
+	# Touche I sur une carte du XV : montre puis cache la carte joueur.
+	await composition()
+	named("LineupSlot06").grab_focus()
+	await settle()
+	await key(KEY_I)
+	check(Carte.actuelle(app) != null, "Touche I : carte joueur du n° 6")
+	named("LineupSlot06").grab_focus()
+	await key(KEY_I)
+	check(Carte.actuelle(app) == null, "Touche I de nouveau : la carte se ferme")
+	# Suppr sur une carte du XV : « Libérer » demande confirmation, Annuler garde le joueur.
+	var sixieme := str(Selection.slot(app.model, 5).get("playerId"))
+	named("LineupSlot06").grab_focus()
+	await settle()
+	await key(KEY_DELETE)
+	var confirme := app.get_node_or_null("LineupReleaseConfirm") as ConfirmationDialog
+	check(confirme != null and confirme.visible, "Suppr : confirmation avant de libérer le n° 6")
+	if confirme != null: confirme.get_cancel_button().pressed.emit()
+	await settle()
+	check(str(Selection.slot(app.model, 5).get("playerId")) == sixieme, "Suppr puis Annuler : le n° 6 reste")
 
 	# 6. Noms : survol = carte joueur (Control, aucune fenêtre), clic = fiche complète.
 	await composition()

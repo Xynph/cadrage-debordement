@@ -1,12 +1,11 @@
 extends RefCounted
 ## Composition, terrain vertical vert (Léo, 21/11/2026 : « ce terrain est juste immonde », écran « pas assez coloré ») :
-## deux options à départager sur captures, CD_VARIANTE_VISUELLE=TERRAIN_A | TERRAIN_B (sans variante : écran actuel).
-## - A : terrain plein cadre vu du dessus, gazon du direct 2D, cartes flottantes (portrait rond + pastille au poste) ;
-## - B : terrain sur une plaque en légère perspective (le haut fuit), cartes pleines plus grandes.
-## Commun : notre en-but en bas, attaque vers le haut ; banc en tuiles portraits, doublures en cases colorées, impact en
-## barres colorées (▲ vert / ▼ rouge, jamais la couleur seule), candidats dessous. Mêmes noms de nœuds, mêmes clics,
-## même glisser-déposer et mêmes touches que l'écran actuel (tactics_terrain.gd, tactics_banc.gd).
-## Exemple : `Vertical.build(app, page, choisir, clavier, avis, bleus, premiere)` quand `Vertical.variante() != ""`.
+## option A retenue (22/11/2026) : terrain plein cadre vu du dessus, gazon du direct 2D, cartes flottantes (portrait rond,
+## numéro, nom entier, pastille au poste). L'attaque va vers le haut, les avants devant (en haut), l'arrière au fond
+## (en bas, devant notre en-but). Banc en tuiles portraits (triable), doublures en cases colorées, impact en barres
+## colorées (▲ vert / ▼ rouge, jamais la couleur seule), candidats dessous à droite. Clics, glisser-déposer et touches
+## (Espace prendre / poser, Suppr libérer, I carte joueur, Maj+Entrée fiche) : tactics_canvas.gd.
+## Exemple : `Vertical.build(app, page, choisir, clavier, avis, bleus, premiere)`.
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Charte = preload("res://ui/charte.gd")
@@ -17,6 +16,8 @@ const Impact = preload("res://ui/immersive08/tactics_impact.gd")
 const Candidats = preload("res://ui/immersive08/tactics_candidats.gd")
 const Visuels = preload("res://ui/contextual/training_visuels.gd")
 const Terrain2D = preload("res://ui/contextual/match_terrain_2d.gd")
+const TableOrder = preload("res://ui/player_table_order.gd")
+const FocusLater := preload("res://ui/focus_later.gd")
 
 ## Bandeau du terrain (titre, légende) au-dessus de la pelouse.
 const BANDEAU := Rect2(0, 190, 770, 40)
@@ -32,32 +33,25 @@ const EN_BUT := 5.0
 const LONGUEUR := 110.0
 const LARGEUR := 70.0
 
-## Place de chaque numéro : x en fraction de la largeur, y en fraction de la hauteur (0 = en haut, adversaire).
-## Schéma de jeu : avants groupés en bas (1-2-3, 4-5, 6-8-7), charnière, centres et ailiers, arrière en haut.
-const PLACES := {1: Vector2(.27, .81), 2: Vector2(.5, .81), 3: Vector2(.73, .81), 4: Vector2(.38, .69), 5: Vector2(.62, .69),
-	6: Vector2(.2, .57), 8: Vector2(.5, .57), 7: Vector2(.8, .57), 9: Vector2(.38, .455), 10: Vector2(.63, .35),
-	11: Vector2(.11, .22), 12: Vector2(.37, .22), 13: Vector2(.63, .22), 14: Vector2(.89, .22), 15: Vector2(.5, .085)}
-
-static func variante() -> String:
-	var v := OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper()
-	return "A" if v == "TERRAIN_A" else ("B" if v == "TERRAIN_B" else "")
+## Place de chaque numéro : x en fraction de la largeur, y en fraction de la hauteur (0 = en haut, en-but adverse).
+## Schéma de jeu, attaque vers le haut : avants devant (1-2-3, 4-5, 6-8-7), charnière, centres et ailiers, arrière au fond.
+const PLACES := {1: Vector2(.27, .19), 2: Vector2(.5, .19), 3: Vector2(.73, .19), 4: Vector2(.38, .31), 5: Vector2(.62, .31),
+	6: Vector2(.2, .43), 8: Vector2(.5, .43), 7: Vector2(.8, .43), 9: Vector2(.38, .545), 10: Vector2(.63, .65),
+	11: Vector2(.11, .78), 12: Vector2(.37, .78), 13: Vector2(.63, .78), 14: Vector2(.89, .78), 15: Vector2(.5, .905)}
+## Taille d'une carte du XV (unités du gabarit).
+const CARTE := Vector2(156, 132)
 
 # --- Terrain ---------------------------------------------------------------------------------------------------------
 
-## Pelouse vue du dessus (A) ou en légère perspective (B) : bandes de tonte de 10 m, lignes blanches du XV (essai, 22 m,
+## Pelouse vue du dessus, plein cadre (la largeur s'étire un peu au-delà de l'échelle pour remplir la colonne) : bandes de tonte de 10 m, lignes blanches du XV (essai, 22 m,
 ## 10 m en tirets, médiane, 5 m et 15 m en tirets, poteaux), en-buts plus sombres.
 class Pelouse extends Control:
-	var fuite := 0.0
 	## Rectangle du terrain dans le contrôle (pixels), en-buts compris.
 	var cadre := Rect2()
 
 	func point(x_m: float, y_m: float) -> Vector2:
 		# y_m : 0 = fond de l'en-but adverse (haut), LONGUEUR = fond de notre en-but (bas).
-		var t := y_m / LONGUEUR
-		var echelle := lerpf(1.0 - fuite, 1.0, t)
-		var cx := cadre.position.x + cadre.size.x / 2.0
-		var y := cadre.position.y + cadre.size.y * (t if fuite <= 0.0 else (t * (1.0 - fuite * .35) + fuite * .35 * t * t))
-		return Vector2(cx + (x_m / LARGEUR - .5) * cadre.size.x * echelle, y)
+		return cadre.position + Vector2(x_m / LARGEUR * cadre.size.x, y_m / LONGUEUR * cadre.size.y)
 
 	func _quad(y0: float, y1: float, couleur: Color) -> void:
 		draw_colored_polygon(PackedVector2Array([point(0, y0), point(LARGEUR, y0), point(LARGEUR, y1), point(0, y1)]), couleur)
@@ -94,28 +88,18 @@ class Pelouse extends Control:
 			draw_line(a, b, Charte.IVOIRE, fine * 2.2, true)
 			for p: Vector2 in [a, b]: draw_circle(p, fine * 2.4, Charte.IVOIRE)
 
-static func _pelouse(page: Control, v: String) -> Pelouse:
+static func _pelouse(page: Control) -> Pelouse:
 	var pelouse := Pelouse.new()
 	pelouse.name = "TacticsPitch"
 	pelouse.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if v == "B":
-		# Plaque : panneau sombre arrondi, ombre, pelouse en légère perspective.
-		var plaque := D.rect(page, TERRAIN, Charte.PANNEAU, Charte.RAYON_PANNEAU)
-		plaque.name = "TacticsPitchPlate"
-		plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	page.add_child(pelouse)
 	D.place(pelouse, TERRAIN)
-	# A : plein cadre (la largeur s'étire un peu au-delà de l'échelle pour remplir la colonne) ; B : plaque, marge.
-	var marge := 22.0 if v == "B" else 0.0
-	var h := TERRAIN.size.y - 2.0 * marge
-	var w := TERRAIN.size.x - 2.0 * marge
-	pelouse.fuite = 0.18 if v == "B" else 0.0
-	pelouse.cadre = Rect2(marge * C.density, marge * C.density, w * C.density, h * C.density)
+	pelouse.cadre = Rect2(Vector2.ZERO, TERRAIN.size * C.density)
 	return pelouse
 
 ## Repères sans phrase : « XV DE DÉPART » et légende des pastilles au-dessus du terrain, flèche d'attaque sur l'en-but
 ## adverse (en haut), à côté des poteaux.
-static func _reperes(page: Control, pelouse: Pelouse, v: String) -> void:
+static func _reperes(page: Control, pelouse: Pelouse) -> void:
 	var t := Kit.titre(page, 0, BANDEAU.position.y + 32, "XV DE DÉPART", 28, 300)
 	t.add_theme_font_override("font", Charte.TITRE_FICHE)
 	t.name = "TacticsPitchTitle"
@@ -144,25 +128,19 @@ static func _reperes(page: Control, pelouse: Pelouse, v: String) -> void:
 	fleche.tooltip_text = "Sens de l’attaque"
 	D.text(fleche, 64, 23, "▲ ATTAQUE", 17, Charte.CONDITION, 700, 124, HORIZONTAL_ALIGNMENT_CENTER, true)
 
-## Centre d'un numéro (unités du gabarit, dans la page) et échelle de sa carte.
-static func _place(pelouse: Pelouse, numero: int) -> Array:
+## Centre d'un numéro (unités du gabarit, dans la page).
+static func _place(pelouse: Pelouse, numero: int) -> Vector2:
 	var f: Vector2 = PLACES[numero]
-	var p := pelouse.point(f.x * LARGEUR, f.y * LONGUEUR)
-	var echelle := lerpf(1.0 - pelouse.fuite * .8, 1.0, f.y) if pelouse.fuite > 0.0 else 1.0
-	return [p / C.density + TERRAIN.position, echelle]
+	return pelouse.point(f.x * LARGEUR, f.y * LONGUEUR) / C.density + TERRAIN.position
 
 # --- Cartes du XV ----------------------------------------------------------------------------------------------------
 
 static func build(app: Control, page: Control, choisir: Callable, clavier: Callable, avis: Dictionary, bleus: Dictionary, premiere: Dictionary) -> void:
-	var v := variante()
-	var pelouse := _pelouse(page, v)
+	var pelouse := _pelouse(page)
 	var pris: Dictionary = Selection.state(app).get("pris", {}) if Selection.state(app).get("pris") is Dictionary else {}
-	var taille := Vector2(156, 132) if v == "A" else Vector2(160, 128)
 	for numero: int in range(1, 16):
-		var lieu := _place(pelouse, numero)
-		var t: Vector2 = taille * float(lieu[1])
-		carte(app, page, Rect2(lieu[0] - t / 2.0, t), numero - 1, choisir, clavier, avis, bleus, pris, v)
-	_reperes(page, pelouse, v)
+		carte(app, page, Rect2(_place(pelouse, numero) - CARTE / 2.0, CARTE), numero - 1, choisir, clavier, avis, bleus, pris)
+	_reperes(page, pelouse)
 	banc(app, page, choisir, clavier, avis, bleus, premiere, pris)
 	doublures(app, page, choisir)
 	Impact.colore = true
@@ -173,6 +151,16 @@ static func _adversaire(app: Control) -> String:
 	var Canvas: Script = load("res://ui/immersive08/tactics_canvas.gd")
 	return Canvas._adversaire(app)
 
+## Portrait rond à anneau de condition, transparent à la souris (l'anneau dessiné arrêtait les clics et le glisser).
+static func _portrait(person: Dictionary, cote: float) -> Control:
+	var portrait := Visuels.portrait_anneau(person, cote * C.density, maxf(3.0, 4.0 * C.density))
+	_transparent(portrait)
+	return portrait
+
+static func _transparent(noeud: Node) -> void:
+	if noeud is Control: (noeud as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for enfant in noeud.get_children(): _transparent(enfant)
+
 ## Nom court en entier : la taille descend jusqu'à 13 plutôt que de couper.
 static func _taille_nom(texte: String, largeur: float, taille: int) -> int:
 	var t := taille
@@ -181,7 +169,7 @@ static func _taille_nom(texte: String, largeur: float, taille: int) -> int:
 
 ## Carte d'une place du XV : portrait rond (anneau = condition), ovale du numéro aux couleurs du club, nom entier
 ## (clic = fiche, survol = carte joueur), pastille de note au poste (+ « 2e poste » / « Dépanne »).
-static func carte(app: Control, page: Control, zone: Rect2, slot: int, choisir: Callable, clavier: Callable, avis: Dictionary, bleus: Dictionary, pris: Dictionary, v: String) -> Button:
+static func carte(app: Control, page: Control, zone: Rect2, slot: int, choisir: Callable, clavier: Callable, avis: Dictionary, bleus: Dictionary, pris: Dictionary) -> Button:
 	var person := Selection.occupant(app.model, slot)
 	var id := str(person.get("id", ""))
 	var choisi: bool = app.selected_slot == slot
@@ -189,11 +177,10 @@ static func carte(app: Control, page: Control, zone: Rect2, slot: int, choisir: 
 	bouton.name = "LineupSlot%02d" % (slot + 1)
 	var w := zone.size.x
 	var h := zone.size.y
-	# A : carte transparente (seule la pilule du nom est pleine) ; B : carte pleine arrondie.
-	var fond := Color(Charte.PANNEAU, .9) if v == "B" else Color.TRANSPARENT
-	var normal := C.box(fond, Charte.IVOIRE if choisi else Color.TRANSPARENT, Charte.RAYON_CARTE, 0)
+	# Carte transparente : seule la plaque du nom est pleine (le gazon reste visible autour du portrait).
+	var normal := C.box(Color.TRANSPARENT, Charte.IVOIRE if choisi else Color.TRANSPARENT, Charte.RAYON_CARTE, 0)
 	normal.set_border_width_all(3 if choisi else 0)
-	var survol := C.box(Color(Charte.PANNEAU_3, .9) if v == "B" else Color(1, 1, 1, .1), Charte.IVOIRE if choisi else Color.TRANSPARENT, Charte.RAYON_CARTE, 0)
+	var survol := C.box(Color(1, 1, 1, .1), Charte.IVOIRE if choisi else Color.TRANSPARENT, Charte.RAYON_CARTE, 0)
 	survol.set_border_width_all(3 if choisi else 0)
 	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, Charte.RAYON_CARTE, 0)
 	focus.set_border_width_all(2)
@@ -206,7 +193,7 @@ static func carte(app: Control, page: Control, zone: Rect2, slot: int, choisir: 
 	page.add_child(bouton)
 	D.place(bouton, zone)
 	Selection.wire(bouton, app, id, slot, slot, str(person.get("name", "Poste vacant")))
-	# Plaque du nom en bas (nom + pastille), portrait au-dessus : rien ne sort de la carte, même rétrécie (B).
+	# Plaque du nom en bas (nom + pastille), portrait au-dessus : rien ne sort de la carte.
 	var bas_y := h - 56.0
 	var cote := minf(bas_y - 6.0, 74.0)
 	var accessible := "Poste n° %d · " % (slot + 1)
@@ -219,7 +206,7 @@ static func carte(app: Control, page: Control, zone: Rect2, slot: int, choisir: 
 		D.text(pilule_v, (w - 8) / 2.0, 21, "Poste vide", 16, Charte.PERTE, 700, w - 12, HORIZONTAL_ALIGNMENT_CENTER, true)
 		accessible += "vide"
 	else:
-		var portrait := Visuels.portrait_anneau(person, cote * C.density, maxf(3.0, 4.0 * C.density))
+		var portrait := _portrait(person, cote)
 		portrait.name = "TacticsFace%02d" % (slot + 1)
 		bouton.add_child(portrait)
 		portrait.position = Vector2((w - cote) / 2.0, 4) * C.density
@@ -230,7 +217,7 @@ static func carte(app: Control, page: Control, zone: Rect2, slot: int, choisir: 
 		var pilule := D.rect(bouton, Rect2(2, bas_y, w - 4, h - bas_y - 2), Color(Charte.PANNEAU, .9), Charte.RAYON_CARTE)
 		pilule.name = "TacticsCardPlate%02d" % (slot + 1)
 		pilule.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var taille := _taille_nom(court, w - 16, 18 if v == "B" else 17)
+		var taille := _taille_nom(court, w - 16, 17)
 		var largeur_nom := minf(w - 12, Kit.largeur(court, taille) + 6)
 		Kit.nom(app, bouton, Rect2((w - largeur_nom) / 2.0, bas_y + 1, largeur_nom, 26), court, id, "TacticsName%02d" % (slot + 1), Charte.IVOIRE, taille)
 		var note: Variant = Selection.rating(app.model, person, slot)
@@ -286,6 +273,7 @@ static func banc(app: Control, page: Control, choisir: Callable, clavier: Callab
 	var ok_pl := formes >= int(premiere.cible)
 	var chip_pl := _chip(bloc, Rect2(w - 22 - 170, 14, 170, 32), "1re ligne %d/%d" % [formes, int(premiere.cible)], Charte.CONFIANCE if ok_pl else Charte.PERTE, "BenchFrontRowCount")
 	chip_pl.tooltip_text = "Première ligne formée (loi 3)"
+	_tris(app, bloc)
 	var colonnes := 4
 	var ecart := 12.0
 	var tw := (w - 44 - ecart * (colonnes - 1)) / colonnes
@@ -295,10 +283,53 @@ static func banc(app: Control, page: Control, choisir: Callable, clavier: Callab
 	lignes.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bloc.add_child(lignes)
 	D.place(lignes, Rect2(22, 64, w - 44, th * 2 + ecart))
-	for i in 8:
-		var slot := 15 + i
-		_tuile_banc(app, lignes, Rect2((i % colonnes) * (tw + ecart), int(i / colonnes) * (th + ecart), tw, th), slot, choisir, clavier, avis, bleus, pris)
+	var lecture: Dictionary = app.management_ui.bench_reading
+	var entrees: Array = []
+	for slot in range(15, 23):
+		var person := Selection.occupant(app.model, slot)
+		entrees.append({"id":str(person.get("id", "vacant")) + "/" + str(slot), "slot":slot, "person":person})
+	entrees = TableOrder.ordered(entrees, lecture.key, lecture.descending, func(entree: Dictionary, cle: String):
+		if cle == "slot": return entree.slot
+		if cle == "pos": return Selection.positions(entree.person) if not entree.person.is_empty() else null
+		return entree.person.get(cle))
+	for i in entrees.size():
+		_tuile_banc(app, lignes, Rect2((i % colonnes) * (tw + ecart), int(i / colonnes) * (th + ecart), tw, th), int(entrees[i].slot), choisir, clavier, avis, bleus, pris)
 	return bloc
+
+## Tri du banc en pastilles (n°, nom, postes, condition) : un second appui inverse l'ordre ; ▲ / ▼ sur la pastille active.
+static func _tris(app: Control, bloc: Control) -> void:
+	var lecture: Dictionary = app.management_ui.get("bench_reading", {"key":"slot", "descending":false})
+	app.management_ui.bench_reading = lecture
+	var x := 214.0
+	for colonne: Array in [["N°", "slot"], ["Nom", "name"], ["Postes", "pos"], ["Cond.", "condition"]]:
+		var cle: String = colonne[1]
+		var actif: bool = lecture.key == cle
+		var texte: String = str(colonne[0]).to_upper() + ((" ▼" if lecture.descending else " ▲") if actif else "")
+		var l := Kit.largeur(texte, 15) + 26
+		var tri := Button.new()
+		tri.name = "BenchSort_" + cle
+		tri.text = texte
+		tri.add_theme_font_override("font", Kit.texte_gras())
+		tri.add_theme_font_size_override("font_size", maxi(12, C.px(15)))
+		for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
+			tri.add_theme_color_override(etat, Charte.ENCRE if actif else Charte.IVOIRE_2)
+		var fond := C.box(Charte.IVOIRE if actif else Charte.PANNEAU_2, Color.TRANSPARENT, Charte.RAYON_PILULE, 0)
+		for etat in ["normal", "pressed", "hover_pressed"]: tri.add_theme_stylebox_override(etat, fond)
+		tri.add_theme_stylebox_override("hover", fond if actif else C.box(Charte.PANNEAU_3, Color.TRANSPARENT, Charte.RAYON_PILULE, 0))
+		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, Charte.RAYON_PILULE, 0)
+		focus.set_border_width_all(2)
+		tri.add_theme_stylebox_override("focus", focus)
+		tri.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		tri.tooltip_text = "Trier par " + str(colonne[0]).to_lower()
+		tri.pressed.connect(func():
+			lecture.descending = not lecture.descending if lecture.key == cle else false
+			lecture.key = cle
+			app._render()
+			var cible: Control = app.root_content.find_child("BenchSort_" + cle, true, false)
+			if cible != null: FocusLater.grab(cible))
+		bloc.add_child(tri)
+		D.place(tri, Rect2(x, 16, l, 28))
+		x += l + 6
 
 static func _chip(parent: Control, zone: Rect2, texte: String, couleur: Color, id: String) -> Panel:
 	var p := D.rect(parent, zone, Color(couleur, .2), Charte.RAYON_PILULE)
@@ -336,7 +367,7 @@ static func _tuile_banc(app: Control, parent: Control, zone: Rect2, slot: int, c
 		D.text(bouton, w / 2.0, cote + 40, "Place vide", 17, Charte.PERTE, 700, w - 12, HORIZONTAL_ALIGNMENT_CENTER, true)
 		accessible += "place vide"
 	else:
-		var portrait := Visuels.portrait_anneau(person, cote * C.density, maxf(3.0, 4.0 * C.density))
+		var portrait := _portrait(person, cote)
 		portrait.name = "BenchFace%02d" % (slot + 1)
 		bouton.add_child(portrait)
 		portrait.position = Vector2((w - cote) / 2.0, 8) * C.density

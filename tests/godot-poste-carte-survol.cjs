@@ -28,8 +28,7 @@ for (const variante of ['A']) {
   const env = {...process.env, CD_GODOT_SELF_TEST: '0', CD_NODE_EXECUTABLE: process.env.CD_NODE_EXECUTABLE || process.execPath,
     CD_GODOT_DATA_DIR: path.join(process.env.CD_ETOILES_FICHE_PROFIL || directory, 'jeu-' + variante, 'PrototypeGodot'), CD_ETOILES_FICHE_CAPTURES: sortie, CD_GODOT_SEED: '3',
     CD_POSTE_SEUL: process.env.CD_POSTE_SEUL || '0'};
-  // Options du terrain vertical de la Tactique (TERRAIN_A | TERRAIN_B) gardées ; toute autre variante retirée.
-  if (!/^TERRAIN_[AB]$/.test(env.CD_VARIANTE_VISUELLE || '')) delete env.CD_VARIANTE_VISUELLE;
+  delete env.CD_VARIANTE_VISUELLE;
   const result = spawnSync(godot, ['--audio-driver', 'Dummy', '--max-fps', '60', '--path', path.resolve(__dirname, '../native/godot'), '--script', path.resolve(__dirname, 'godot-poste-carte-survol.gd')],
     {env, stdio: ['ignore', fs.openSync(journal, 'w'), fs.openSync(erreurs, 'w')], windowsHide: true, timeout: 900000});
   const output = fs.readFileSync(journal, 'utf8') + fs.readFileSync(erreurs, 'utf8');

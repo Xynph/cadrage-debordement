@@ -2,8 +2,8 @@ extends RefCounted
 ## Écran Composition (route « Composition », chapitre Tactique) — choix de Léo du 19/11/2026 : variante 1 « Terrain au
 ## centre, candidats dessous » (design/ux/10-composition.md, direction-artistique/interface/revue-20261119) et l'encart
 ## « Première ligne formée » de la variante 3. En-tête (titre, affiche, Proposition du staff, Tireurs et lanceur,
-## Valider la feuille), ligne de validité, onglets, puis terrain (tactics_terrain.gd), banc (tactics_banc.gd), impact
-## (tactics_impact.gd) et candidats (tactics_candidats.gd). Jamais de petite fenêtre : les choix annexes sont des
+## Valider la feuille), ligne de validité, onglets, puis terrain vertical, banc et doublures (tactics_vertical.gd, option
+## A de Léo du 22/11/2026), impact (tactics_impact.gd) et candidats (tactics_candidats.gd). Jamais de petite fenêtre : les choix annexes sont des
 ## sous-pages (tactics_sous_pages.gd). L'interface n'écrit jamais l'état du jeu : commandes du moteur seulement.
 ## Exemple : page dédiée de la coque, `TacticsCanvas.build(app, canvas)`.
 const FocusLater := preload("res://ui/focus_later.gd")
@@ -15,8 +15,6 @@ const Charte = preload("res://ui/charte.gd")
 const Kit = preload("res://ui/immersive08/tactics_kit.gd")
 const Poste = preload("res://ui/immersive08/tactics_poste.gd")
 const Selection = preload("res://ui/immersive08/tactics_selection.gd")
-const Terrain = preload("res://ui/immersive08/tactics_terrain.gd")
-const Banc = preload("res://ui/immersive08/tactics_banc.gd")
 const Impact = preload("res://ui/immersive08/tactics_impact.gd")
 const Candidats = preload("res://ui/immersive08/tactics_candidats.gd")
 const SousPages = preload("res://ui/immersive08/tactics_sous_pages.gd")
@@ -25,13 +23,9 @@ const Roles = preload("res://ui/immersive08/tactics_roles.gd")
 const Cover = preload("res://ui/lineup_cover.gd")
 const Espoir = preload("res://ui/espoir_appel.gd")
 const PersonName = preload("res://ui/person_name.gd")
-const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
+const CarteSurvol = preload("res://ui/carte_joueur_survol.gd")
 ## Hauteur du gabarit (unités) ; largeur 2248 comme toutes les pages de la coque.
 const HAUTEUR := 1305.0
-const TERRAIN := Rect2(0, 246, 990, 693)
-const BANC := Rect2(1012, 200, 624, 739)
-const IMPACT := Rect2(1658, 200, 590, 739)
-const CANDIDATS_Y := 955.0
 
 ## Page : Ctrl+Entrée valide la feuille depuis n'importe quel poste.
 class PageComposition extends Control:
@@ -77,22 +71,10 @@ static func _construire(app: Control, page: Control) -> Control:
 	var avis := Impact.avis(app)
 	var bleus := _bleus_marques(app)
 	var premiere := Selection.premiere_ligne(app.model)
-	# Options du terrain vertical vert (CD_VARIANTE_VISUELLE=TERRAIN_A | TERRAIN_B), à départager par Léo.
-	if Vertical.variante() != "":
-		Vertical.build(app, page, choisir_cb, clavier_cb, avis, bleus, premiere)
-		var alertes_v := _alertes(app)
-		var bloc_v := Candidats.build(app, page, Vertical.CANDIDATS, premiere, choisir_cb, alertes_v.size() * 56.0, 560.0)
-		for i in alertes_v.size(): (alertes_v[i] as Callable).call(bloc_v, 52.0 + i * 56.0)
-		_restore_focus.call_deferred(app)
-		return page
-	Kit.titre(page, 0, 226, "XV de départ", 24, 500)
-	Kit.etiquette(page, TERRAIN.size.x, 224, "Note au poste /100 · Espace prendre / poser", 700, true)
-	D.line(page, Vector2(0, 238), Vector2(TERRAIN.size.x, 238), Charte.FILET)
-	Terrain.build(app, page, TERRAIN, choisir_cb, clavier_cb, avis, bleus)
-	Banc.build(app, page, BANC, choisir_cb, clavier_cb, avis, bleus, premiere)
-	Impact.build(app, page, IMPACT, _adversaire(app), choisir_cb)
+	# Terrain vertical vert, banc en tuiles, doublures, impact (option A de Léo, 22/11/2026), candidats dessous à droite.
+	Vertical.build(app, page, choisir_cb, clavier_cb, avis, bleus, premiere)
 	var alertes := _alertes(app)
-	var bloc := Candidats.build(app, page, Rect2(0, CANDIDATS_Y, 2248, HAUTEUR - CANDIDATS_Y), premiere, choisir_cb, alertes.size() * 56.0)
+	var bloc := Candidats.build(app, page, Vertical.CANDIDATS, premiere, choisir_cb, alertes.size() * 56.0, 560.0)
 	for i in alertes.size(): (alertes[i] as Callable).call(bloc, 52.0 + i * 56.0)
 	_restore_focus.call_deferred(app)
 	return page
@@ -433,8 +415,9 @@ static func clavier(app: Control, event: InputEvent, slot: int, carte: Control) 
 		KEY_I:
 			if person.is_empty() or touche.shift_pressed: return
 			carte.accept_event()
-			if MiniFiche.visible_pour(app, carte): MiniFiche.cacher(app, carte)
-			else: MiniFiche.montrer(app, id, "squad", carte)
+			var ouverte: Control = CarteSurvol.actuelle(app)
+			if ouverte != null and ouverte.get_meta("player_id", "") == id: CarteSurvol.cacher(app)
+			else: CarteSurvol.montrer(app, id, "squad", carte)
 
 ## Message lisible sous les candidats ; `rendre` redessine l'écran (marques « pris » / destinations) et garde le focus.
 static func _annoncer(app: Control, texte: String, carte: Control, rendre: bool = false) -> void:
