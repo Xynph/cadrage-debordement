@@ -6,6 +6,7 @@ extends Node
 # Jamais actif : champ de saisie ayant le focus, fenêtre ou dialogue ouvert, réunion ou match en cours, intro.
 # Les autres raccourcis (Ctrl+S, Ctrl+J, Ctrl+K, F1, Alt+←/→) restent dans navigation_controller.gd.
 const NOM := "RaccourcisClavier"
+const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 const Reception = preload("res://ui/immersive08/reception_canvas.gd")
 ## Ancienne indication « prochain message » gardée pour la retirer des infobulles déjà écrites.
 const INDICES := [" · Espace : continuer", " · Espace : prochain message"]
@@ -138,6 +139,8 @@ func _menu(rang: int) -> bool:
 
 ## Échap referme d'abord la fiche ouverte. Sans fiche, on laisse le menu de la carrière (main.gd), qui ne quitte jamais seul.
 func _retour() -> bool:
+	# Une petite fenêtre ouverte se ferme avant tout retour de sous-page.
+	if PetiteFenetre.fermer_derniere(get_tree()): return true
 	if not actif(): return false
 	# Sous-page « Charge individuelle » de la fiche : Échap revient à la fiche (avant le retour à la liste).
 	var charge: Button = app.root_content.find_child("FicheChargeRetour", true, false) as Button
