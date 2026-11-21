@@ -921,7 +921,8 @@ func _poser_plaques(teams: Array) -> void:
 	_coque_score.queue_redraw()
 
 ## PROVISOIRE (choix de Léo) : variante B du bandeau, l'écusson du club (pack, sinon écusson officiel, sinon écusson
-## recoloré) à côté du sigle, ~30 px de haut en 1080p. Actif avec CD_VARIANTE_VISUELLE=B seulement.
+## recoloré aux couleurs et initiales du club, comme sur le stade) à côté du sigle, 44 px en 1080p : sous 43 px
+## l'écusson recoloré masque ses initiales (illisibles sous 11 px). Actif avec CD_VARIANTE_VISUELLE=B seulement.
 func _poser_ecusson(cote: int, teams: Array) -> void:
 	if OS.get_environment("CD_VARIANTE_VISUELLE") != "B": return
 	var rangee: HBoxContainer = plaques[cote].get_child(0)
@@ -930,12 +931,26 @@ func _poser_ecusson(cote: int, teams: Array) -> void:
 		rangee.remove_child(ancien)
 		ancien.queue_free()
 	if teams.size() <= cote or not (teams[cote] is Dictionary): return
-	var ecusson: Control = S.G.crest(teams[cote], roundi(30 * echelle))
+	var ecusson: Control = S.G.crest(_club_complet(teams[cote]), roundi(44 * echelle))
 	ecusson.name = "MatchClubCrest%d" % cote
 	ecusson.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	ecusson.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rangee.add_child(ecusson)
 	rangee.move_child(ecusson, 0 if cote == 0 else rangee.get_child_count() - 1)
+
+## Club du direct complété par sa fiche du classement ou du catalogue (identité : couleurs, slug, blason).
+func _club_complet(equipe: Dictionary) -> Dictionary:
+	if S.G.identity(equipe).has("color") and S.G.identity(equipe).has("slug"): return equipe
+	var modele: Dictionary = app.model if app.model is Dictionary else {}
+	for liste: Variant in [modele.get("league", []), modele.get("meta", {}).get("catalogue", []) if modele.get("meta") is Dictionary else []]:
+		if not liste is Array: continue
+		for club: Variant in liste:
+			if club is Dictionary and str(club.get("id", "")) == str(equipe.get("id", "?")):
+				var complet: Dictionary = club.duplicate()
+				complet.merge(equipe, true)
+				if club.get("presentation") is Dictionary and not equipe.get("presentation") is Dictionary: complet.presentation = club.presentation
+				return complet
+	return equipe
 
 ## Fond de l'écusson d'une plaque : la vraie couleur du club, assombrie (même teinte) jusqu'à ce que l'ivoire y soit lu à
 ## 5:1 au moins, contraste mesuré comme la charte (Charte.contraste) ; un club jaune ou or passe au bordeaux
