@@ -282,7 +282,7 @@ static func _pack_warning(app: Control, parent: Container, layout: Control) -> v
 		return
 	var banner := PanelContainer.new()
 	banner.name = "ImmersivePackWarning"
-	banner.add_theme_stylebox_override("panel",C.box(C.RAISED,C.ALERT,5,8))
+	banner.add_theme_stylebox_override("panel",C.box(C.Charte.VOILE_DORE,Color.TRANSPARENT,16,8))
 	parent.add_child(banner)
 	banner.add_child(row)
 	Legacy.apply(row,app.accent)
@@ -1246,7 +1246,7 @@ static func sync_continue(app: Control) -> void:
 ## Chiffre clé de l'en-tête Effectif : gros chiffre et légende sur le fond sombre des blocs (comme
 ## « 65 aujourd’hui » de la fiche joueur), à la place des pastilles en petit texte vert sur vert.
 static func _key_figure(row: Control, area: Rect2, index: int, item: Array) -> Panel:
-	var frame := D.rect(row,area,Color("16201f"),7,Color("415451"))
+	var frame := D.rect(row,area,C.PANEL,16)
 	frame.name = "EffectifChiffre%d" % index
 	frame.mouse_filter = Control.MOUSE_FILTER_PASS
 	var value := str(item[0])
@@ -1309,7 +1309,7 @@ static func _heading(parent: Node, app: Control) -> void:
 				_key_figure(row,Rect2(1242+i*253,13,241,64),i,item)
 				continue
 			var x := 1512+i*250
-			D.rect(row,Rect2(x,15,236,58),Color("16201f"),7,Color("415451"))
+			D.rect(row,Rect2(x,15,236,58),C.PANEL,16)
 			var symbol := C.icon(item[1],25,item[2])
 			row.add_child(symbol)
 			D.place(symbol,Rect2(x+16,32,25,25))

@@ -3,8 +3,8 @@ extends RefCounted
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
+## Ancien accent des tableaux de bord, encore passé par les appelants ; il n'habille plus ni bouton ni onglet.
 const GREEN = Color("176e49")
-static var tab_surfaces: Dictionary = {}
 
 static func icon(parent: Node, id: String, at: Vector2, color: Color = C.IVORY, side: int = 27) -> void:
 	var picture := C.icon(id, side, color)
@@ -12,23 +12,20 @@ static func icon(parent: Node, id: String, at: Vector2, color: Color = C.IVORY, 
 	D.place(picture, Rect2(at, Vector2(side, side)))
 
 static func tab(parent: Node, rectangle: Rect2, caption: String, selected: bool, callback: Callable, id: String) -> Button:
-	var control := D.button(parent, rectangle, caption, callback, selected, "", false, GREEN, id)
+	# Charte §7.1 : onglet en pilule ; actif = aplat crème, texte PANNEAU ; les autres = contour FILET, texte gris-vert.
+	var control := D.button(parent, rectangle, caption, callback, false, "", false, GREEN, id)
 	control.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	control.add_theme_font_size_override("font_size", maxi(14, C.px(27)))
-	var dimensions := Vector2i(C.px(rectangle.size.x), C.px(rectangle.size.y))
-	var key := str([dimensions, selected])
-	if not tab_surfaces.has(key):
-		var width := dimensions.x
-		var height := dimensions.y
-		var slope := C.px(13)
-		var colors := ["40a769", "0a542f", "7de299"] if selected else ["283435", "111a1c", "657571"]
-		var svg := '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d"><defs><linearGradient id="tab" x2="0" y2="1"><stop stop-color="#%s"/><stop offset="1" stop-color="#%s"/></linearGradient></defs><path d="M%d 1 H%d Q%d 1 %d 5 L%d %d Q%d %d %d %d H5 Q1 %d 2 %d L%d 5 Q%d 1 %d 1Z" fill="url(#tab)" stroke="#%s"/></svg>' % [width,height,colors[0],colors[1],slope+3,width-5,width-1,width-2,width-slope,height-5,width-slope-1,height-1,width-slope-5,height-1,height-1,height-5,slope, slope+1,slope+3,colors[2]]
-		var bitmap := Image.new()
-		if bitmap.load_svg_from_string(svg) == OK:
-			var style := StyleBoxTexture.new()
-			style.texture = ImageTexture.create_from_image(bitmap)
-			tab_surfaces[key] = style
-	if tab_surfaces.has(key): control.add_theme_stylebox_override("normal", tab_surfaces[key])
+	var looks := {"normal": [C.IVORY, Color.TRANSPARENT], "hover": [C.IVORY, Color.TRANSPARENT], "pressed": [C.IVORY, Color.TRANSPARENT]} if selected \
+		else {"normal": [Color.TRANSPARENT, C.LINE], "hover": [C.RAISED, C.FAINT], "pressed": [C.SELECTED, C.IVORY]}
+	for state: String in looks:
+		var style := C.box(looks[state][0], looks[state][1], C.Charte.RAYON_PILULE, 18)
+		style.content_margin_top = C.px(7)
+		style.content_margin_bottom = C.px(7)
+		control.add_theme_stylebox_override(state, style)
+	for key in ["font_color", "font_focus_color", "font_hover_color", "font_pressed_color"]:
+		control.add_theme_color_override(key, C.Charte.PANNEAU if selected else (C.IVORY if key in ["font_hover_color", "font_pressed_color"] else C.MUTED))
+	control.set_meta("tab_selected", selected)
 	return control
 
 static func select(app: Control, key: String, value: String, button_id: String) -> void:

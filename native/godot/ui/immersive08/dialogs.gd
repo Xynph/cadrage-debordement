@@ -3,7 +3,6 @@ extends RefCounted
 const C = preload("res://ui/immersive08/components.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const G = preload("res://ui/game_skin.gd")
-const P = preload("res://ui/immersive08/projection.gd")
 
 static func prepare(dialog: AcceptDialog, width: int, accent: Color) -> void:
 	dialog.theme = Legacy.theme(accent)
@@ -40,12 +39,12 @@ static func _dress(dialog: AcceptDialog, accent: Color) -> void:
 	if not dialog.visible: return
 	for child in dialog.get_children():
 		if child is Control and not child.get_meta("immersive_style_applied",false): Legacy.apply(child,accent)
+	# Charte : l'action de la fenêtre est sa seule action principale (pilule dorée, texte PANNEAU) ; Annuler et les
+	# autres boutons gardent la pilule à contour du thème (legacy_style).
 	var action := dialog.get_ok_button()
-	action.add_theme_font_override("font",C.BOLD)
-	action.add_theme_color_override("font_color",C.IVORY)
-	action.add_theme_stylebox_override("normal",C.box(accent.darkened(.37),P.safe_accent(accent),5,12))
-	action.add_theme_stylebox_override("hover",C.box(accent.darkened(.14),C.IVORY,5,12))
-	action.add_theme_stylebox_override("pressed",C.box(accent.darkened(.54),C.MINT,5,12))
+	C.style_bouton_ivoire_plein(action,20)
+	var cancel: Button = (dialog as ConfirmationDialog).get_cancel_button() if dialog is ConfirmationDialog else null
+	if cancel != null: C.style_bouton_contour(cancel,20)
 	var message := dialog.get_label()
 	message.add_theme_color_override("font_color",C.IVORY)
 	message.add_theme_font_override("font",C.BODY)
@@ -57,8 +56,8 @@ static func _dress(dialog: AcceptDialog, accent: Color) -> void:
 static func dress_title(dialog: Window) -> void:
 	for state in ["embedded_border","embedded_unfocused_border"]:
 		var original := dialog.get_theme_stylebox(state,"Window")
-		var style := C.box(Color("0f1719"),C.GOLD,6,0)
-		style.set_border_width_all(2)
+		# Charte : panneau PANNEAU rayon 18 (24 au gabarit 2560), sans bordure, ombre des jetons.
+		var style := C.box(C.PANEL,Color.TRANSPARENT,24,0)
 		style.set_content_margin(SIDE_LEFT,original.get_margin(SIDE_LEFT))
 		style.set_content_margin(SIDE_RIGHT,original.get_margin(SIDE_RIGHT))
 		style.set_content_margin(SIDE_TOP,original.get_margin(SIDE_TOP))
