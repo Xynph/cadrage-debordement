@@ -1,8 +1,8 @@
 extends RefCounted
 ## Finances (direction artistique, variante 1 « Verdict en tête, quatre blocs », revue du 19/11/2026).
 ## Synthèse : verdict en mots, trésorerie, budget de transferts (alloué / engagé / restant), marge, puis vigilances,
-## échéances, répartition et courbe. Les autres onglets gardent une colonne de verdict fixe à gauche.
-## Tout montant, ligne ou nom ouvre l'écran qui l'explique ; aucune fenêtre ; aucun or (réservé à Continuer).
+## échéances, répartition et « Solde sur 12 mois » (trésorerie semaine par semaine). Les autres onglets gardent une colonne de verdict fixe à gauche.
+## Tout montant, ligne ou nom ouvre l'écran qui l'explique ; une semaine du solde ouvre une petite fenêtre visuelle ; aucun or (réservé à Continuer).
 const FocusLater := preload("res://ui/focus_later.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
@@ -15,6 +15,8 @@ const Budget = preload("res://ui/transfer_budget.gd")
 const Charte = preload("res://ui/charte.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
+const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
+const MOIS := ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
 const KEY = "immersive08_finance_tab"
 const PAGE_KEY_PREFIX = "immersive08_finance_page_"
 const LEDGER_SELECTION_KEY := "immersive08_finance_ledger_selection"
@@ -105,6 +107,95 @@ class LedgerPlot extends Control:
 			draw_circle(point, C.px(7), Charte.FOND)
 			draw_circle(point, C.px(5), trait_club)
 
+## Solde sur 12 mois : trésorerie relevée chaque semaine (finance.cashHistory), les semaines disponibles étirées sur
+## toute la largeur (52 au plus), la plus récente à droite.
+## Haut : courbe du solde ; bas : barre de variation de la semaine (gain vert vers le haut, perte rouge vers le bas).
+class SoldePlot extends Control:
+	var semaines: Array = []
+	var minimum := 0.0
+	var maximum := 1.0
+	var pas := 1.0
+	var variation_max := 1.0
+	const CASES := 52
+	## Plafond de largeur d'une barre (unités du gabarit) : pas de barre énorme avec deux ou trois semaines.
+	const BARRE_MAX := 34.0
+	const PART_COURBE := .66
+
+	func set_semaines(liste: Array) -> void:
+		semaines = liste.duplicate()
+		var bas := INF
+		var haut := -INF
+		variation_max = 1.0
+		for semaine: Dictionary in semaines:
+			bas = minf(bas, float(semaine.cash))
+			haut = maxf(haut, float(semaine.cash))
+			if semaine.get("variation") != null: variation_max = maxf(variation_max, absf(float(semaine.variation)))
+		if semaines.is_empty():
+			bas = 0.0
+			haut = 1.0
+		if bas < 0.0: haut = maxf(haut, 0.0)
+		if haut - bas < 1.0:
+			bas -= maxf(1000.0, absf(bas) * .1)
+			haut += maxf(1000.0, absf(haut) * .1)
+		var brut := (haut - bas) / 4.0
+		var ordre := pow(10.0, floorf(log(brut) / log(10.0)))
+		var rapport := brut / ordre
+		pas = (1.0 if rapport <= 1.0 else 2.0 if rapport <= 2.0 else 5.0 if rapport <= 5.0 else 10.0) * ordre
+		maximum = ceilf(haut / pas - 1e-9) * pas
+		minimum = floorf(bas / pas + 1e-9) * pas
+		if is_equal_approx(maximum, minimum): maximum += pas
+		queue_redraw()
+
+	func graduations() -> Array:
+		var valeurs := []
+		for i in roundi((maximum - minimum) / pas) + 1: valeurs.append(maximum - i * pas)
+		return valeurs
+
+	func largeur_case() -> float:
+		return size.x / maxi(1, semaines.size())
+
+	## Abscisse de la semaine i (0 = la plus ancienne).
+	func x_de(i: int) -> float:
+		return size.x - largeur_case() * (semaines.size() - i - .5)
+
+	func y_de(valeur: float) -> float:
+		return size.y * PART_COURBE * (maximum - valeur) / (maximum - minimum)
+
+	func milieu_barres() -> float:
+		return size.y * (PART_COURBE + (1.0 - PART_COURBE) * .55)
+
+	func _draw() -> void:
+		for valeur in graduations():
+			draw_line(Vector2(0, y_de(valeur)), Vector2(size.x, y_de(valeur)), Color(Charte.FILET, .7))
+		draw_line(Vector2.ZERO, Vector2(0, size.y), Charte.IVOIRE_3)
+		if minimum < 0.0 and maximum > 0.0:
+			draw_dashed_line(Vector2(0, y_de(0)), Vector2(size.x, y_de(0)), Charte.IVOIRE_2, maxf(1, C.px(2)), maxf(4, C.px(8)))
+		var milieu := milieu_barres()
+		var demi := size.y * (1.0 - PART_COURBE) * .42
+		draw_line(Vector2(0, milieu), Vector2(size.x, milieu), Color(Charte.IVOIRE_3, .8), 1.0)
+		if semaines.is_empty(): return
+		var largeur := largeur_case()
+		var points := PackedVector2Array()
+		for i in semaines.size():
+			var x := x_de(i)
+			var variation: Variant = semaines[i].get("variation")
+			if variation != null and absf(float(variation)) >= 1.0:
+				var h := maxf(2.0, demi * absf(float(variation)) / variation_max)
+				var epaisseur := minf(largeur * .6, C.px(BARRE_MAX))
+				var barre := Rect2(x - epaisseur * .5, milieu - h if float(variation) > 0.0 else milieu, epaisseur, h)
+				draw_rect(barre, Pieces.VERT if float(variation) > 0.0 else Pieces.ROUGE)
+			points.append(Vector2(x, y_de(float(semaines[i].cash))))
+		var courant: Dictionary = semaines.back()
+		if courant.get("courant", false):
+			var xc := points[points.size() - 1].x
+			draw_dashed_line(Vector2(xc, 0), Vector2(xc, size.y), Charte.IVOIRE_2, 1.0, maxf(4, C.px(6)))
+		if points.size() > 1: draw_polyline(points, Charte.IVOIRE, maxf(2, C.px(3)), true)
+		for k in points.size():
+			var negatif := float(semaines[k].cash) < 0.0
+			var rayon := C.px(9) if k == points.size() - 1 else C.px(5)
+			draw_circle(points[k], rayon + C.px(2), Charte.PANNEAU)
+			draw_circle(points[k], rayon, Pieces.ROUGE if negatif else Charte.IVOIRE)
+
 ## Pictogramme dessiné d'un état (coche, point d'exclamation, croix) : toujours accompagné d'un mot.
 class Symbole extends Control:
 	var forme := "coche"
@@ -155,7 +246,17 @@ static func verdict(app: Control, accounts: Dictionary, finance: Dictionary) -> 
 		0: phrase = "Les recettes régulières couvrent les charges : %s par semaine en ce moment%s." % [U.amount(margin), ", trésorerie prévue à %s en fin de saison" % U.amount(forecast) if forecast != null else ""]
 		1: phrase = "Tu perds %s par semaine en ce moment, mais la trésorerie reste positive jusqu'en fin de saison%s." % [U.amount(absf(float(margin))), " : %s prévus" % U.amount(forecast) if forecast != null else ""]
 		2: phrase = "La trésorerie est prévue à %s en fin de saison. Ajuste les engagements avant de t'engager sur de nouvelles dépenses." % U.amount(forecast if forecast != null and float(forecast) < 0.0 else cash)
-	return {"palier": palier, "mot": PALIERS[palier][0] if palier >= 0 else "Indisponible", "phrase": phrase, "margin": margin, "cash": cash, "forecast": forecast}
+	# Autonomie : semaines que la trésorerie tient à la marge courante, plafonnées aux semaines restantes de la saison.
+	var detail: Variant = finance.get("projection")
+	var restantes: Variant = int(detail.remainingWeeks) if detail is Dictionary and detail.get("remainingWeeks") != null else null
+	var autonomie: Variant = null
+	if cash != null and margin != null:
+		if float(cash) <= 0.0: autonomie = 0
+		elif margin >= 0.0: autonomie = restantes
+		else:
+			autonomie = floori(float(cash) / -float(margin))
+			if restantes != null: autonomie = mini(autonomie, int(restantes))
+	return {"palier": palier, "mot": PALIERS[palier][0] if palier >= 0 else "Indisponible", "phrase": phrase, "margin": margin, "cash": cash, "forecast": forecast, "autonomie": autonomie}
 
 # ---------------------------------------------------------------------------------------------------------------
 # Pièces graphiques
@@ -455,7 +556,7 @@ static func _verdict_panneau(app: Control, canvas: Control, rectangle: Rect2, v:
 	var largeur_colonne := (largeur - 40.0 - 16.0) / 3.0
 	# Les trois paliers : barre, symbole et mot ; le barème de chacun passe derrière un petit « i ».
 	# Sans phrase dessous, le bloc est centré dans le panneau.
-	var bas_bloc := 170.0
+	var bas_bloc := 170.0 + (46.0 if v.margin != null else 0.0)
 	var decalage := maxf(0.0, (rectangle.size.y - bas_bloc - 60.0) * .5)
 	for composant: Node in panel.get_children():
 		if composant.name in ["FinanceVerdictLink", "CardTitle"]: continue
@@ -468,6 +569,14 @@ static func _verdict_panneau(app: Control, canvas: Control, rectangle: Rect2, v:
 		_symbole(panel, Rect2(x, 142 + decalage, 20, 20), _forme_palier(i), teinte if actif else Charte.IVOIRE_2)
 		D.text(panel, x + 28, 159 + decalage, str(PALIERS[i][0]), 20, Charte.IVOIRE if actif else Charte.IVOIRE_2, 700, largeur_colonne - 64).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		Pieces.info(panel, x + largeur_colonne - 28, 139 + decalage, "%s : %s" % [PALIERS[i][0], PALIERS[i][1]], "Palier%d" % i)
+	# Deux pastilles sous les paliers : marge de la semaine (→ Budget) et autonomie de trésorerie (→ Trésorerie).
+	if v.margin != null:
+		var marge := float(v.margin)
+		var texte_marge := ("▲ +" if marge > 0.0 else "▼ " if marge < 0.0 else "") + U.amount(marge) + " / sem."
+		var largeur_marge := Pieces.pastille(panel, 20, 180 + decalage, texte_marge, "", "FinanceVerdictMargin", "", Pieces.ROUGE if marge < 0.0 else Pieces.VERT, Charte.PANNEAU_3, func(): _vers(app, "budget"))
+		var texte_autonomie := "tient la saison" if v.autonomie == null else "tient " + P.plural(int(v.autonomie), "semaine", "semaines")
+		var teinte_autonomie: Color = [Pieces.VERT, Pieces.ORANGE, Pieces.ROUGE][palier] if palier >= 0 else Charte.IVOIRE
+		Pieces.pastille(panel, 20 + largeur_marge + 10, 180 + decalage, texte_autonomie, "clock", "FinanceVerdictAutonomy", "", teinte_autonomie, Charte.PANNEAU_3, func(): _vers(app, "cash"))
 	panel.accessibility_name = "%s, trésorerie %s" % [v.mot, U.amount(v.cash)]
 
 # ---- Chiffres du haut -----------------------------------------------------------------------------------------
@@ -595,7 +704,145 @@ static func _synthese(app: Control, canvas: Control, accounts: Dictionary, finan
 	_watch(_panneau(canvas, Rect2(0, 466, 690, 380), "Vigilances", "FinanceWatch"), app, finance, 690)
 	_due(_panneau(canvas, Rect2(706, 466, 840, 380), "Prochaines échéances", "FinanceDue"), app, finance, 840)
 	_allocation(_panneau(canvas, Rect2(1562, 466, 686, 380), "Où va l'argent", "FinanceAllocation", "par semaine"), app, finance, 686)
-	_chart(app, _panneau(canvas, Rect2(0, 862, 2248, 368), "Les 12 derniers mouvements", "FinanceChart"), ledger, 2248)
+	_solde(app, canvas, _panneau(canvas, Rect2(0, 862, 2248, 368), "Solde sur 12 mois", "FinanceSolde"), accounts, 2248)
+
+## Semaines des 12 derniers mois (relevés du moteur) ; la trésorerie du jour s'ajoute si elle a bougé depuis le dernier relevé.
+static func solde_semaines(app: Control, accounts: Dictionary) -> Array:
+	var lignes: Array = []
+	for releve: Variant in accounts.get("cashHistory", []):
+		if releve is Dictionary and releve.get("date") is String and releve.get("cash") != null:
+			lignes.append({"date": str(releve.date), "cash": float(releve.cash)})
+	var aujourdhui := str(app.model.get("meta", {}).get("calendarToday", ""))
+	var cash: Variant = accounts.get("cash", app.model.get("club", {}).get("cash"))
+	if cash != null and aujourdhui.length() == 10:
+		if lignes.is_empty() or (aujourdhui > str(lignes.back().date) and absf(float(cash) - float(lignes.back().cash)) >= 1.0):
+			lignes.append({"date": aujourdhui, "cash": float(cash)})
+	if not lignes.is_empty():
+		var limite := Time.get_date_string_from_unix_time(Time.get_unix_time_from_datetime_string(str(lignes.back().date)) - 364 * 86400)
+		lignes = lignes.filter(func(ligne: Dictionary): return str(ligne.date) > limite)
+		if lignes.size() > SoldePlot.CASES: lignes = lignes.slice(lignes.size() - SoldePlot.CASES)
+		lignes.back().courant = true
+	for i in lignes.size():
+		lignes[i].variation = null
+		if i > 0: lignes[i].variation = float(lignes[i].cash) - float(lignes[i - 1].cash)
+	return lignes
+
+static func _mois(date: String) -> String:
+	return MOIS[clampi(date.substr(5, 2).to_int() - 1, 0, 11)]
+
+static func _date_courte(date: String) -> String:
+	return "%d %s %s" % [date.substr(8, 2).to_int(), _mois(date), date.substr(0, 4)]
+
+static func _solde(app: Control, canvas: Control, card: Panel, accounts: Dictionary, largeur: float) -> void:
+	var semaines := solde_semaines(app, accounts)
+	var graph := SoldePlot.new()
+	graph.name = "FinanceSoldePlot"
+	graph.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	graph.set_semaines(semaines)
+	card.add_child(graph)
+	var haut := 70.0
+	var hauteur := card.size.y / maxf(C.density, .01) - 120.0
+	var gauche := 150.0
+	var large := largeur - 190.0
+	D.place(graph, Rect2(gauche, haut, large, hauteur))
+	for valeur: float in graph.graduations():
+		var y := haut + hauteur * SoldePlot.PART_COURBE * (graph.maximum - valeur) / (graph.maximum - graph.minimum)
+		_texte(card, 134, y + 6, "0 €" if is_zero_approx(valeur) else U.amount(valeur), 16, Charte.IVOIRE_2, 110, HORIZONTAL_ALIGNMENT_RIGHT)
+	var case_largeur := large / maxi(1, semaines.size())
+	var mois_precedent := ""
+	var x_mois := -INF
+	for i in semaines.size():
+		var semaine: Dictionary = semaines[i]
+		var x := gauche + large - case_largeur * (semaines.size() - i - .5)
+		var mois := _mois(str(semaine.date))
+		# Un repère par nouveau mois ; son nom seulement s'il ne touche pas le précédent.
+		if mois != mois_precedent:
+			if x - case_largeur * .5 - x_mois >= 64.0:
+				_texte(card, x - case_largeur * .5 + 4, haut + hauteur + 26, mois, 16, Charte.IVOIRE_2, 80).mouse_filter = Control.MOUSE_FILTER_IGNORE
+				x_mois = x - case_largeur * .5
+			D.line(card, Vector2(x - case_largeur * .5, haut + hauteur), Vector2(x - case_largeur * .5, haut + hauteur + 8), Charte.IVOIRE_3)
+			mois_precedent = mois
+		var rang := semaines.size() - 1 - i
+		var zone := Button.new()
+		zone.name = "FinanceSoldeSemaine_%d" % rang
+		zone.flat = true
+		zone.focus_mode = Control.FOCUS_ALL
+		zone.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		zone.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+		zone.add_theme_stylebox_override("hover", _style(Color(Charte.IVOIRE, .08)))
+		zone.add_theme_stylebox_override("pressed", _style(Color(Charte.IVOIRE, .12)))
+		zone.add_theme_stylebox_override("focus", _style(Color.TRANSPARENT, Charte.IVOIRE, 2))
+		var variation: Variant = semaine.get("variation")
+		zone.tooltip_text = "%s · %s%s" % [_date_courte(str(semaine.date)), U.amount(semaine.cash), "" if variation == null else " · %s%s" % ["+" if float(variation) > 0.0 else "", U.amount(variation)]]
+		zone.accessibility_name = zone.tooltip_text
+		zone.pressed.connect(func(): _fenetre_semaine(app, canvas, semaine, x))
+		card.add_child(zone)
+		D.place(zone, Rect2(x - case_largeur * .5, haut, case_largeur, hauteur))
+	if not semaines.is_empty() and semaines.back().get("courant", false):
+		var x_courant := gauche + large - case_largeur * .5
+		_texte(card, x_courant - 150, haut - 8, "cette semaine", 15, Charte.IVOIRE_2, 140, HORIZONTAL_ALIGNMENT_RIGHT).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Légende : forme et mot (trait du solde, barres ▲ gain et ▼ perte).
+	_bloc(card, Rect2(380, 28, 30, 5), Charte.IVOIRE).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_texte(card, 420, 38, "Solde", 16, Charte.IVOIRE, 120)
+	_bloc(card, Rect2(520, 22, 12, 18), Pieces.VERT).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_texte(card, 540, 38, "▲ Gain", 16, Pieces.VERT, 120)
+	_bloc(card, Rect2(640, 22, 12, 18), Pieces.ROUGE).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_texte(card, 660, 38, "▼ Perte", 16, Pieces.ROUGE, 120)
+	Pieces.info(card, largeur - 46, 18, "Trésorerie relevée chaque semaine · barres : variation de la semaine", "FinanceSoldeInfo")
+
+## Petite fenêtre d'une semaine : date, solde et variation en tuiles, pastille vers la Trésorerie. Échap, ✕ ou clic à côté la ferment.
+static func _fenetre_semaine(app: Control, canvas: Control, semaine: Dictionary, x: float) -> void:
+	var ancienne := canvas.find_child("FinanceSoldeFenetre", false, false)
+	if ancienne != null:
+		ancienne.name = "FinanceSoldeFenetreFermee"
+		ancienne.remove_from_group(PetiteFenetre.GROUPE)
+		ancienne.queue_free()
+	var calque := Control.new()
+	calque.name = "FinanceSoldeFenetre"
+	canvas.add_child(calque)
+	D.place(calque, Rect2(0, 0, 2248, BAS))
+	var fermer := func():
+		if is_instance_valid(calque): calque.queue_free()
+	PetiteFenetre.enregistrer(calque, fermer)
+	var refermer := func(): PetiteFenetre.fermer_derniere(calque.get_tree())
+	var voile := Button.new()
+	voile.name = "FinanceSoldeFenetreVoile"
+	voile.flat = true
+	voile.focus_mode = Control.FOCUS_NONE
+	voile.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+	voile.add_theme_stylebox_override("hover", StyleBoxEmpty.new())
+	voile.add_theme_stylebox_override("pressed", StyleBoxEmpty.new())
+	voile.pressed.connect(refermer)
+	calque.add_child(voile)
+	D.place(voile, Rect2(0, 0, 2248, BAS))
+	var largeur := 460.0
+	var cadre := Rect2(clampf(x - largeur * .5, 0.0, 2248.0 - largeur), 610, largeur, 232)
+	var fond := D.rect(calque, cadre, Charte.PANNEAU, Charte.RAYON_PANNEAU, Charte.IVOIRE_3)
+	fond.name = "FinanceSoldeFenetrePanneau"
+	fond.mouse_filter = Control.MOUSE_FILTER_STOP
+	_titre(fond, 22, 46, _date_courte(str(semaine.date)).to_upper(), 26, Charte.IVOIRE, largeur - 90).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var croix := Button.new()
+	croix.name = "FinanceSoldeFenetreFermer"
+	croix.text = "✕"
+	croix.flat = true
+	croix.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	croix.add_theme_font_size_override("font_size", maxi(12, C.px(22)))
+	croix.add_theme_color_override("font_color", Charte.IVOIRE_2)
+	croix.accessibility_name = "Fermer"
+	croix.pressed.connect(refermer)
+	fond.add_child(croix)
+	D.place(croix, Rect2(largeur - 56, 14, 40, 40))
+	var cash := float(semaine.cash)
+	var variation: Variant = semaine.get("variation")
+	var tuile_largeur := (largeur - 44.0 - 10.0) / 2.0
+	Pieces.tuile(fond, Rect2(22, 70, tuile_largeur, 76), U.amount(cash), "solde", Pieces.ROUGE if cash < 0.0 else Charte.IVOIRE, "FinanceSoldeFenetreSolde", 30)
+	var texte_variation := "—" if variation == null else ("▲ +" if float(variation) > 0.0 else "▼ " if float(variation) < 0.0 else "") + U.amount(variation)
+	var couleur_variation: Color = Charte.IVOIRE_2 if variation == null else Pieces.ROUGE if float(variation) < 0.0 else Pieces.VERT
+	Pieces.tuile(fond, Rect2(32 + tuile_largeur, 70, tuile_largeur, 76), texte_variation, "semaine", couleur_variation, "FinanceSoldeFenetreVariation", 30)
+	var aller := func():
+		PetiteFenetre.fermer_derniere(calque.get_tree())
+		_ouvrir_onglet(app, "cash")
+	Pieces.pastille(fond, 22, 176, "Trésorerie", "money", "FinanceSoldeFenetreTresorerie", "", Charte.IVOIRE, Charte.PANNEAU_3, aller)
 
 static func _chart(app: Control, card: Panel, ledger: Array, largeur: float) -> void:
 	var recent := ledger.slice(0,12)
