@@ -175,6 +175,22 @@ func executer() -> void:
 	app.set_meta("immersive08_full_player", false)
 	app.selected_player = str(attendu.propose)
 	app._navigate("Effectif"); await poser(20)
+	# Liste de l'Effectif : pastille « En vente » (icône + mot) sur le joueur proposé, cliquable vers l'onglet Contrat de la fiche.
+	var liste := noeud(app, "SquadPlayer" + str(attendu.propose).replace(":", "_")) as Control
+	var pastille := noeud(liste, "RosterEnVente") as Label
+	verifier(pastille != null and pastille.is_visible_in_tree() and pastille.text == "En vente", "pastille « En vente » dans la liste de l’Effectif")
+	if pastille != null:
+		verifier(taille(pastille) >= TAILLE_MIN, "pastille « En vente » lisible (%d px)" % taille(pastille))
+		verifier(pastille.get_theme_color("font_color").is_equal_approx(Color("5b9bd5")), "pastille « En vente » : bleu de la charte")
+	var lien_vente := noeud(liste, "RosterEnVenteLien_" + str(attendu.propose).validate_node_name()) as Button
+	verifier(lien_vente != null, "pastille « En vente » cliquable")
+	await capturer("vente-effectif.png")
+	if lien_vente != null:
+		lien_vente.pressed.emit(); await poser(20)
+		verifier(app.selected_player == str(attendu.propose) and int(app.management_ui.get("immersive_player_tab", 0)) == 3, "clic sur « En vente » : fiche du joueur, onglet Contrat")
+		verifier(noeud(app, "PlayerSalePanel") != null, "clic sur « En vente » : partie vente / offres de la fiche")
+		app.set_meta("immersive08_full_player", false)
+		app._navigate("Effectif"); await poser(20)
 	var ligne := noeud(app, "SquadPlayer" + str(attendu.propose).replace(":", "_")) as Button
 	verifier(ligne != null and ligne.is_visible_in_tree() and not ligne.disabled, "Effectif : ligne du joueur proposé, cliquable")
 	if ligne != null:
@@ -188,7 +204,6 @@ func executer() -> void:
 			var offres := noeud(etat, "PlayerSaleOffers") as Button
 			verifier(offres != null and offres.is_visible_in_tree() and not offres.disabled, "Effectif → fiche : accès aux offres")
 			textes_lisibles(etat, "Effectif → fiche · marché")
-	await capturer("vente-effectif.png")
 
 	# 6. Courrier « offre_transfert » : « Ouvrir · Offres reçues » mène à Recrutement et ouvre la boîte.
 	var courrier: Dictionary = {}

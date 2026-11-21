@@ -13,6 +13,7 @@ const Identity = preload("res://ui/player_identity.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const Notes = preload("res://ui/notes_match.gd")
 const R = preload("res://ui/immersive08/reperes.gd")
+const Sales = preload("res://ui/player_sales_view.gd")
 const ROW_HEIGHT := 34
 const GROUP_HEIGHT := 30
 const FIRST_ROWS := 26
@@ -1190,9 +1191,12 @@ func _cellule_joueur(row: Control, player: Dictionary, index: int, h: float, bas
 		image.tooltip_text = str(faits.get("nationality", ""))
 		row.add_child(image)
 		D.place(image, Rect2(138, h / 2.0 - 9, 28, 18))
-	var nom := D.text(row, 176, base, player.name, 20, C.IVORY, 600, 340, HORIZONTAL_ALIGNMENT_LEFT, true)
+	var sale: Variant = player.get("sale")
+	var en_vente: bool = sale is Dictionary and bool(sale.get("listed", false)) and not sale.get("pending") is Dictionary
+	var largeur_max := 190.0 if en_vente else 340.0
+	var nom := D.text(row, 176, base, player.name, 20, C.IVORY, 600, largeur_max, HORIZONTAL_ALIGNMENT_LEFT, true)
 	nom.name = "RosterNom"
-	var largeur_nom := minf(340.0, _largeur(str(player.name), 20))
+	var largeur_nom := minf(largeur_max, _largeur(str(player.name), 20))
 	var soulignement := ColorRect.new()
 	soulignement.name = "RosterNomSouligne"
 	soulignement.color = Charte.IVOIRE
@@ -1205,6 +1209,17 @@ func _cellule_joueur(row: Control, player: Dictionary, index: int, h: float, bas
 	lien.mouse_exited.connect(func(): soulignement.visible = false)
 	var taille_i := maxf(20.0, ceilf(16.0 / C.density))
 	MiniFiche.icone(app, row, Rect2(176 + largeur_nom + 12, (h - taille_i) / 2.0, taille_i, taille_i), id, "squad")
+	if en_vente: _pastille_en_vente(row, player, 176 + largeur_nom + 12 + taille_i + 10, base, h)
+
+## Pastille « En vente » (bleu de la charte + pièces + mot) : le clic ouvre la fiche sur l'onglet Contrat (offres, retrait du marché).
+func _pastille_en_vente(row: Control, player: Dictionary, x: float, base: float, h: float) -> void:
+	var id := str(player.id)
+	var fond := R.pastille(row, x, base, "En vente", R.BLEU, "money", "RosterEnVente", 19)
+	var zone := Rect2(x, base - 19.0 * .78 - 6.5, R.largeur("En vente", 19) + 2.0 + 12.0 + 21.0 + 7.0 + 12.0, 32.0)
+	var lien := _lien_lecture(row, zone, player, "contract", "RosterEnVenteLien_")
+	lien.tooltip_text = "En vente · " + Sales.status(player)
+	lien.accessibility_name = "En vente · ouvrir les offres · " + str(player.name)
+	fond.tooltip_text = ""
 
 func _lien_lecture(parent: Control, zone: Rect2, player: Dictionary, section: String, prefixe: String) -> Button:
 	var id := str(player.id)
