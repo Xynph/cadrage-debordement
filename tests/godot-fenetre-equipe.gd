@@ -335,14 +335,17 @@ func controler_fiches() -> void:
 			clic.pressed = true
 			source.gui_input.emit(clic)
 		await poser(6)
-		var page: Control = vue.get("page")
-		verifier(page != null and page.visible and str(vue.get("_page_sorte")) == "joueur" and str(vue.get("_page_joueur")) == attendu, str(paire[0]) + " : fiche complète ouverte dans le direct")
-		verifier(fenetre.visible and page != null and page.get_index() > fenetre.get_index(), str(paire[0]) + " : page Équipe ouverte dessous")
-		verifier(page != null and page.find_child("MatchPageBack", true, false) != null, str(paire[0]) + " : « ← Retour au direct » sur la fiche")
-		if page != null and page.find_child("MatchPageBack", true, false) != null: (page.find_child("MatchPageBack", true, false) as Button).pressed.emit()
-		else: vue.fermer_page()
+		# Plein écran obligatoire : la fiche du joueur est une petite fenêtre par-dessus le direct (jamais une page).
+		var hote: Control = vue.get("fenetre_hote") if vue.fenetre_ouverte() else null
+		var panneau: Control = hote.find_child("MatchFenetreJoueurPanneau", true, false) if hote != null else null
+		verifier(panneau != null and str(panneau.get_meta("player_id", "")) == attendu, str(paire[0]) + " : petite fenêtre du joueur par-dessus le direct")
+		verifier(fenetre.visible and hote != null and hote.get_index() > fenetre.get_index(), str(paire[0]) + " : page Équipe ouverte dessous")
+		var croix: Button = hote.find_child("MatchFenetreJoueurFermer", true, false) if hote != null else null
+		verifier(croix != null, str(paire[0]) + " : ✕ sur la fenêtre")
+		if croix != null: croix.pressed.emit()
+		else: vue.fermer_fenetre()
 		await poser(10)
-		verifier(page != null and not page.visible and fenetre.visible and fenetre.medaillons.size() == 15, str(paire[0]) + " : retour, la page Équipe est retrouvée")
+		verifier(not vue.fenetre_ouverte() and fenetre.visible and fenetre.medaillons.size() == 15, str(paire[0]) + " : fenêtre fermée, la page Équipe est retrouvée")
 		verifier(bool(live().get("paused", false)) and not bool(vue.get("_reprendre_apres")), str(paire[0]) + " : le match reste arrêté après la fiche")
 		fenetre.update_frame(modele_enrichi())
 		await poser(4)
