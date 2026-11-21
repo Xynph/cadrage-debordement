@@ -25,7 +25,9 @@ static func lecture(app: Control) -> Dictionary:
 		app.management_ui.candidates_reading = {"key":"note", "descending":true, "hors_feuille":false, "recherche":""}
 	return app.management_ui.candidates_reading
 
-static func build(app: Control, page: Control, zone: Rect2, premiere: Dictionary, choisir: Callable, avis_haut: float = 0.0, encart_l: float = ENCART) -> Panel:
+## `titre_pose` (facultatif) : pose le titre à la place du titre par défaut (Composition : onglets Candidats / Hors groupe) ;
+## il doit nommer « TacticsCandidatesTitle » le libellé qui porte le numéro du poste.
+static func build(app: Control, page: Control, zone: Rect2, premiere: Dictionary, choisir: Callable, avis_haut: float = 0.0, encart_l: float = ENCART, titre_pose: Callable = Callable()) -> Panel:
 	var bloc := D.rect(page, zone, Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	bloc.name = "TacticsCandidates"
 	bloc.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -33,7 +35,8 @@ static func build(app: Control, page: Control, zone: Rect2, premiere: Dictionary
 	var poste := Selection.slot(app.model, slot)
 	var numero := slot + 1
 	var titre := "Candidats pour le poste n° %d · %s" % [numero, str(poste.get("label", ""))] if slot < 15 else "Candidats pour le n° %d · %s remplaçant" % [numero, str(poste.get("label", "")).to_lower()]
-	Kit.titre(bloc, 22, 34, titre, 24, 1000).name = "TacticsCandidatesTitle"
+	if titre_pose.is_valid(): titre_pose.call(bloc)
+	else: Kit.titre(bloc, 22, 34, titre, 24, 1000).name = "TacticsCandidatesTitle"
 	var etat := lecture(app)
 	var w := zone.size.x
 	# Filtre et recherche, à droite du titre.

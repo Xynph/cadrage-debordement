@@ -73,8 +73,13 @@ static func _construire(app: Control, page: Control) -> Control:
 	var premiere := Selection.premiere_ligne(app.model)
 	# Terrain vertical vert, banc en tuiles, doublures, impact (option A de Léo, 22/11/2026), candidats dessous à droite.
 	Vertical.build(app, page, choisir_cb, clavier_cb, avis, bleus, premiere)
+	# Bas à droite : candidats du poste choisi, ou tout le reste de l'effectif (« Hors groupe »), au choix en pilules.
 	var alertes := _alertes(app)
-	var bloc := Candidats.build(app, page, Vertical.CANDIDATS, premiere, choisir_cb, alertes.size() * 56.0, 560.0)
+	var bloc: Control
+	if str(Selection.state(app).get("bas", "candidats")) == "hors_groupe":
+		bloc = Vertical.hors_groupe(app, page, Vertical.CANDIDATS, alertes.size() * 56.0)
+	else:
+		bloc = Candidats.build(app, page, Vertical.CANDIDATS, premiere, choisir_cb, alertes.size() * 56.0, 560.0, func(b: Control): Vertical.onglets_bas(app, b))
 	for i in alertes.size(): (alertes[i] as Callable).call(bloc, 52.0 + i * 56.0)
 	_restore_focus.call_deferred(app)
 	return page
@@ -351,6 +356,7 @@ static func choisir(app: Control, index: int) -> void:
 		_focus_candidat(app)
 		return
 	app.selected_slot = index
+	etat.bas = "candidats"
 	etat.message = ""
 	etat.scroll = 0
 	etat.focus = "LineupSlot%02d" % (index + 1)

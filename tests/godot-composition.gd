@@ -12,6 +12,8 @@ const Flow = preload("helpers/contextual_flow.gd")
 const Charte = preload("res://ui/charte.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
+var Vertical = load("res://ui/immersive08/tactics_vertical.gd")
+const Commune = preload("res://ui/immersive08/fiche_commune.gd")
 const Carte = preload("res://ui/carte_joueur_survol.gd")
 var Selection = load("res://ui/immersive08/tactics_selection.gd")
 var app: Control
@@ -90,6 +92,19 @@ func clic(position: Vector2, appui: bool) -> void:
 	bouton.global_position = position
 	root.push_input(bouton)
 	await process_frame
+
+## Vrai glisser-déposer : appui, déplacement par petits pas (le jeu cumule le déplacement relatif), `pendant` appelé
+## une fois la souris sur la cible (bouton toujours enfoncé), relâche ; attend la réponse du moteur.
+func glisser_souris(depart: Vector2, arrivee: Vector2, pendant: Callable = Callable()) -> void:
+	await souris(depart)
+	await clic(depart, true)
+	for etape in range(1, 16): await souris(depart.lerp(arrivee, etape / 15.0), MOUSE_BUTTON_MASK_LEFT)
+	await souris(arrivee + Vector2(1, 1), MOUSE_BUTTON_MASK_LEFT)
+	await settle(2)
+	if pendant.is_valid(): await pendant.call()
+	await clic(arrivee, false)
+	await wait_idle()
+	await settle()
 
 func composition() -> void:
 	app._navigate("Composition")
@@ -328,6 +343,93 @@ func run() -> void:
 	if confirme != null: confirme.get_cancel_button().pressed.emit()
 	await settle()
 	check(str(Selection.slot(app.model, 5).get("playerId")) == sixieme, "Suppr puis Annuler : le n° 6 reste")
+
+	# 5 ter. Hors groupe : tout le reste de l'effectif en tuiles, filtres par ligne, glisser-déposer à la vraie souris.
+	await composition()
+	(named("TacticsBottomOutside") as Button).pressed.emit()
+	await settle()
+	var hors_hg: Array = Vertical.hors_groupe_joueurs(app)
+	check(named("TacticsHorsGroupe") != null and named("TacticsOutsideTiles") != null and named("TacticsOutsideTiles").get_child_count() == hors_hg.size(), "Hors groupe : une tuile par joueur hors feuille (%d)" % hors_hg.size())
+	var coupes_hg: Array[String] = []
+	for tuile_hg in named("TacticsOutsideTiles").get_children():
+		for n in (tuile_hg as Node).find_children("TacticsOutsideName_*", "Button", true, false):
+			var b := n as Button
+			if b.get_theme_font("font").get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, b.get_theme_font_size("font_size")).x > b.size.x + 2: coupes_hg.append(b.text)
+		if not (tuile_hg as Control).get_global_rect().grow(1).encloses(((tuile_hg as Node).find_child("TacticsOutsideName_*", true, false) as Control).get_global_rect()): coupes_hg.append(str(tuile_hg.name))
+	check(coupes_hg.is_empty(), "Hors groupe : noms entiers dans leur tuile " + str(coupes_hg.slice(0, 4)))
+	for p: Dictionary in hors_hg:
+		var etat_d_hg: Dictionary = Commune.disponibilite(app, p, "squad")
+		if etat_d_hg.etat in ["blesse", "suspendu"]:
+			var t := named("TacticsOutside_" + str(p.get("id", "")).validate_node_name())
+			check(t != null and t.find_child("TacticsOutsideState", true, false) != null, "Hors groupe : %s visible, grisé, pastille d'état" % str(p.get("name", "")))
+	(named("TacticsOutsideLine_1re") as Button).pressed.emit()
+	await settle()
+	var premiere_ok_hg := true
+	for tuile_hg in named("TacticsOutsideTiles").get_children():
+		var pp_hg: Variant = Selection.player(app.model, str(tuile_hg.get_meta("player_id", ""))).get("primaryPosition")
+		if not (pp_hg is int or pp_hg is float) or int(pp_hg) > 3: premiere_ok_hg = false
+	check(premiere_ok_hg, "Filtre « 1re ligne » : seulement des piliers et talonneurs")
+	(named("TacticsOutsideLine_tous") as Button).pressed.emit()
+	await settle()
+	# Hors groupe → poste : un joueur apte et éligible glissé sur une place du terrain ou du banc.
+	var choix_hg := {}
+	for p: Dictionary in hors_hg:
+		if Commune.disponibilite(app, p, "squad").etat in ["blesse", "suspendu"]: continue
+		for place in 23:
+			if str(p.get("id", "")) in Selection.slot(app.model, place).get("eligibleIds", []) and named("TacticsOutside_" + str(p.get("id", "")).validate_node_name()) != null:
+				choix_hg = {"id": str(p.get("id", "")), "place": place}
+				break
+		if not choix_hg.is_empty(): break
+	check(not choix_hg.is_empty(), "Un joueur hors groupe apte et éligible à une place")
+	if not choix_hg.is_empty():
+		var tuile_d := named("TacticsOutside_" + str(choix_hg.id).validate_node_name())
+		(named("TacticsOutsideScroll") as ScrollContainer).ensure_control_visible(tuile_d)
+		await settle()
+		var cible_p := named("LineupSlot%02d" % (int(choix_hg.place) + 1))
+		var pendant_hg := func():
+			check(root.gui_is_dragging(), "Glisser depuis le hors groupe : la tuile suit la souris")
+			check(int(cible_p.get_meta("depot", 0)) == 2 and cible_p.find_child("TacticsDropPreview", true, false) != null, "Place survolée en surbrillance avec la pastille au poste du joueur traîné")
+			await capture("composition-glisser")
+		await glisser_souris(tuile_d.get_global_rect().get_center(), cible_p.get_global_rect().get_center(), pendant_hg)
+		check(str(Selection.slot(app.model, int(choix_hg.place)).get("playerId")) == str(choix_hg.id), "Hors groupe → n° %d : affectation réelle" % (int(choix_hg.place) + 1))
+	# Refus du jeu : un trois-quarts glissé sur le n° 1 (pilier) → rouge, rien ne change.
+	await composition()
+	var refuse_hg := {}
+	for p: Dictionary in Vertical.hors_groupe_joueurs(app):
+		if str(p.get("id", "")) not in Selection.slot(app.model, 0).get("eligibleIds", []) and named("TacticsOutside_" + str(p.get("id", "")).validate_node_name()) != null:
+			refuse_hg = p
+			break
+	if not refuse_hg.is_empty():
+		var avant_1 := str(Selection.slot(app.model, 0).get("playerId"))
+		var tuile_r := named("TacticsOutside_" + str(refuse_hg.get("id", "")).validate_node_name())
+		(named("TacticsOutsideScroll") as ScrollContainer).ensure_control_visible(tuile_r)
+		await settle()
+		var pilier_d := named("LineupSlot01")
+		var pendant_r := func(): check(int(pilier_d.get_meta("depot", 0)) == -1, "Place refusée par le jeu : contour rouge ✕")
+		await glisser_souris(tuile_r.get_global_rect().get_center(), pilier_d.get_global_rect().get_center(), pendant_r)
+		check(str(Selection.slot(app.model, 0).get("playerId")) == avant_1, "Refus : le n° 1 ne change pas")
+	# Banc → terrain : un remplaçant glissé sur une place du XV qu'il peut tenir (échange).
+	await composition()
+	var paire_hg := []
+	for b in range(15, 23):
+		var id_b_hg := str(Selection.slot(app.model, b).get("playerId"))
+		for t in 15:
+			if id_b_hg in Selection.slot(app.model, t).get("eligibleIds", []):
+				paire_hg = [b, t, id_b_hg, str(Selection.slot(app.model, t).get("playerId"))]
+				break
+		if not paire_hg.is_empty(): break
+	check(not paire_hg.is_empty(), "Un remplaçant éligible à une place du XV")
+	if not paire_hg.is_empty():
+		await glisser_souris(named("LineupSlot%02d" % (paire_hg[0] + 1)).get_global_rect().get_center(), named("LineupSlot%02d" % (paire_hg[1] + 1)).get_global_rect().get_center())
+		check(str(Selection.slot(app.model, paire_hg[1]).get("playerId")) == paire_hg[2], "Banc n° %d → terrain n° %d : affectation réelle" % [paire_hg[0] + 1, paire_hg[1] + 1])
+	# Retour au hors_hg groupe : le n° 20 glissé sur le panneau Hors groupe quitte la feuille.
+	await composition()
+	var vingt_hg := str(Selection.slot(app.model, 19).get("playerId"))
+	await glisser_souris(named("LineupSlot20").get_global_rect().get_center(), named("TacticsHorsGroupe").get_global_rect().get_center() + Vector2(0, 40))
+	check(Selection.slot(app.model, 19).get("playerId") == null and Selection.source(app.model, vingt_hg) < 0, "Place du banc glissée sur le hors groupe : le joueur quitte la feuille")
+	app._command("auto_lineup")
+	await wait_idle()
+	Selection.state(app).bas = "candidats"
 
 	# 6. Noms : survol = carte joueur (Control, aucune fenêtre), clic = fiche complète.
 	await composition()

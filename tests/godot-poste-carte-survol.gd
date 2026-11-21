@@ -211,6 +211,24 @@ func tactique(suffixe: String) -> void:
 	souris(Vector2(2, 2))
 	await settle(10)
 	await capture("tactique-poste" + suffixe)
+	# Hors groupe : le reste de l'effectif en tuiles, noms entiers à chaque taille.
+	var onglet := named("TacticsBottomOutside") as Button
+	check(onglet != null, "Composition : onglet Hors groupe")
+	if onglet != null:
+		onglet.pressed.emit()
+		await settle(10)
+		var coupes: Array[String] = []
+		for n in app.root_content.find_children("TacticsOutsideName_*", "Button", true, false):
+			var b := n as Button
+			if b.get_theme_font("font").get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, b.get_theme_font_size("font_size")).x > b.size.x + 2: coupes.append(b.text)
+		check(coupes.is_empty(), taille_txt + "Hors groupe : aucun nom coupé " + str(coupes.slice(0, 4)))
+		souris(Vector2(2, 2))
+		await settle(6)
+		await capture("tactique-hors-groupe" + suffixe)
+		var Sel: Script = load("res://ui/immersive08/tactics_selection.gd")
+		Sel.state(app).bas = "candidats"
+		app._render()
+		await settle(10)
 	await survoler("Composition", named("TacticsName10"), "tactique-survol" + suffixe)
 
 ## Préparation : chaque joueur à surveiller porte sa note au poste en chiffre dans une pastille colorée (jamais d'étoiles).

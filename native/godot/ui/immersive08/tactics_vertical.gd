@@ -193,6 +193,7 @@ static func carte(app: Control, page: Control, zone: Rect2, slot: int, choisir: 
 	page.add_child(bouton)
 	D.place(bouton, zone)
 	Selection.wire(bouton, app, id, slot, slot, str(person.get("name", "Poste vacant")))
+	glisser(app, bouton, person, true)
 	# Plaque du nom en bas (nom + pastille), portrait au-dessus : rien ne sort de la carte.
 	var bas_y := h - 56.0
 	var cote := minf(bas_y - 6.0, 74.0)
@@ -358,6 +359,7 @@ static func _tuile_banc(app: Control, parent: Control, zone: Rect2, slot: int, c
 	parent.add_child(bouton)
 	D.place(bouton, zone)
 	Selection.wire(bouton, app, id, slot, slot, str(person.get("name", "Poste vacant")))
+	glisser(app, bouton, person, true)
 	var w := zone.size.x
 	var cote := minf(zone.size.y - 92, 84.0)
 	Kit.ovale(bouton, Rect2(8, 8, 40, 26), str(slot + 1), app.accent)
@@ -480,3 +482,270 @@ static func _postes(person: Dictionary) -> Array[int]:
 	for autre: Variant in person.get("secondaryPositions", []):
 		if (autre is int or autre is float) and int(autre) not in result: result.append(int(autre))
 	return result
+
+# --- Glisser : aperçu qui suit la souris, pastille au poste sur la place survolée -------------------------------------
+
+## Tuile qui suit la souris pendant un glisser : portrait rond et nom.
+static func apercu_glisser(person: Dictionary) -> Control:
+	var boite := Control.new()
+	boite.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var court := Kit.casse(str(person.get("name", "")), true)
+	var l := Kit.largeur(court, 17) + 90
+	var fond := D.rect(boite, Rect2(-30, -30, l, 60), Color(Charte.PANNEAU_3, .95), Charte.RAYON_PILULE, Charte.CONDITION)
+	fond.name = "TacticsDragTile"
+	fond.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var portrait := _portrait(person, 52)
+	fond.add_child(portrait)
+	portrait.position = Vector2(4, 4) * C.density
+	portrait.size = Vector2(52, 52) * C.density
+	D.text(fond, 64, 37, court, 17, Charte.IVOIRE, 700, l - 70, HORIZONTAL_ALIGNMENT_LEFT, true)
+	boite.modulate = Color(1, 1, 1, .92)
+	return boite
+
+## Sur la place survolée : la pastille au poste du joueur traîné (note à ce poste + 2e poste / dépanne).
+static func apercu_depot(app: Control, bouton: Control, data: Variant) -> void:
+	if not data is Dictionary: return
+	var slot := int(bouton.get("target_slot"))
+	var person := Selection.player(app.model, str(data.get("player_id", "")))
+	if person.is_empty(): return
+	var w := bouton.size.x / C.density
+	var h := bouton.size.y / C.density
+	var note: Variant = Selection.rating(app.model, person, slot) if slot < 15 else _note_principale(person)
+	var familiarite := Selection.familiarite(app.model, person, slot) if slot < 15 else 3
+	var l := minf(w - 8, Poste.largeur(note, familiarite, 22, true) + 16)
+	var cadre := D.rect(bouton, Rect2((w - l) / 2.0, h / 2.0 - 18, l, 36), Color(Charte.PANNEAU, .94), Charte.RAYON_PILULE, Charte.CONDITION)
+	cadre.name = "TacticsDropPreview"
+	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	Poste.poser(cadre, Rect2(8, 7, l - 16, 22), note, familiarite, "TacticsDropRating", false, true)
+
+static func _note_principale(person: Dictionary) -> Variant:
+	var principal: Variant = person.get("primaryPosition")
+	var notes: Variant = person.get("positionRatings")
+	if not (principal is int or principal is float) or not notes is Dictionary: return null
+	var v: Variant = notes.get(str(int(principal)))
+	return v if (v is int or v is float) and is_finite(float(v)) else null
+
+## Branche l'aperçu du glisser et la pastille de dépôt sur une place (terrain, banc) ou une tuile.
+static func glisser(app: Control, bouton: Control, person: Dictionary, place: bool) -> void:
+	if not person.is_empty(): bouton.set("make_preview", func(): return apercu_glisser(person))
+	if place: bouton.set("apercu_depot", func(b: Control, data: Variant): apercu_depot(app, b, data))
+
+# --- Bas de l'écran : Candidats du poste ou Hors groupe ---------------------------------------------------------------
+
+const LIGNES := [["tous", "Tous", []], ["1re", "1re ligne", [1, 2, 3]], ["2e", "2e ligne", [4, 5]], ["3e", "3e ligne", [6, 7, 8]],
+	["demis", "Demis", [9, 10]], ["arrieres", "Trois-quarts", [11, 12, 13, 14, 15]]]
+
+static func _principal(person: Dictionary) -> int:
+	var p: Variant = person.get("primaryPosition")
+	return int(p) if (p is int or p is float) else 99
+
+static func hors_groupe_joueurs(app: Control) -> Array:
+	var liste: Array = []
+	for person: Variant in app.model.get("squad", []):
+		if person is Dictionary and Selection.source(app.model, str(person.get("id", ""))) < 0: liste.append(person)
+	liste.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var pa := _principal(a)
+		var pb := _principal(b)
+		return pa < pb if pa != pb else str(a.get("name", "")) < str(b.get("name", "")))
+	return liste
+
+## Onglets du bas en pilules : « Candidats · n° X » (liste du poste choisi) / « Hors groupe · n » (tuiles du reste de
+## l'effectif). Le libellé du premier porte le numéro du poste (TacticsCandidatesTitle).
+static func onglets_bas(app: Control, bloc: Control) -> float:
+	var etat := Selection.state(app)
+	var mode := str(etat.get("bas", "candidats"))
+	var slot: int = clampi(int(app.selected_slot), 0, 22)
+	var poste := Selection.slot(app.model, slot)
+	var x := 22.0
+	var entrees := [["candidats", "CANDIDATS · N° %d · %s" % [slot + 1, str(poste.get("label", "")).to_upper()], "TacticsBottomCandidates"],
+		["hors_groupe", "HORS GROUPE · %d" % hors_groupe_joueurs(app).size(), "TacticsBottomOutside"]]
+	for entree: Array in entrees:
+		var actif: bool = mode == entree[0]
+		var l := Kit.largeur(str(entree[1]), 18) + 36
+		var bouton := Button.new()
+		bouton.name = str(entree[2])
+		_styler_pilule(bouton, actif)
+		bloc.add_child(bouton)
+		D.place(bouton, Rect2(x, 10, l, 36))
+		var libelle := D.text(bouton, l / 2.0, 25, str(entree[1]), 18, Charte.ENCRE if actif else Charte.IVOIRE, 700, l - 8, HORIZONTAL_ALIGNMENT_CENTER, true)
+		libelle.add_theme_font_override("font", Kit.texte_gras())
+		if entree[0] == "candidats": libelle.name = "TacticsCandidatesTitle"
+		var cle: String = entree[0]
+		bouton.pressed.connect(func():
+			etat.bas = cle
+			app._render())
+		x += l + 8
+	return x
+
+static func _styler_pilule(bouton: Button, actif: bool, couleur: Color = Charte.IVOIRE) -> void:
+	var fond := C.box(couleur if actif else Charte.PANNEAU_2, Color.TRANSPARENT, Charte.RAYON_PILULE, 0)
+	for etat in ["normal", "pressed", "hover_pressed"]: bouton.add_theme_stylebox_override(etat, fond)
+	bouton.add_theme_stylebox_override("hover", fond if actif else C.box(Charte.PANNEAU_3, Color.TRANSPARENT, Charte.RAYON_PILULE, 0))
+	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, Charte.RAYON_PILULE, 0)
+	focus.set_border_width_all(2)
+	bouton.add_theme_stylebox_override("focus", focus)
+	bouton.focus_mode = Control.FOCUS_ALL
+	bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
+## Panneau « Hors groupe » : reçoit un joueur de la feuille glissé dessus (il quitte la feuille, sa place reste vide).
+class DepotHorsGroupe extends Panel:
+	var app: Control
+	var survol := false
+	func _can_drop_data(_at: Vector2, data: Variant) -> bool:
+		var Sel: Script = load("res://ui/immersive08/tactics_selection.gd")
+		var ok: bool = data is Dictionary and data.get("kind") == "tactics_player" and int(data.get("source_slot", -1)) >= 0 and Sel.editable(app)
+		if ok != survol:
+			survol = ok
+			queue_redraw()
+		return ok
+	func _drop_data(_at: Vector2, data: Variant) -> void:
+		var ok := _can_drop_data(_at, data)
+		survol = false
+		queue_redraw()
+		if not ok: return
+		var slot := int(data.source_slot)
+		var lecture: Variant = app.management_ui.get("tactics_reading")
+		if lecture is Dictionary: lecture["message"] = "Poste n° %d libéré." % (slot + 1)
+		app._command("set_lineup", {"playerId": null, "slot": slot})
+	func _notification(what: int) -> void:
+		if (what == NOTIFICATION_DRAG_END or what == NOTIFICATION_MOUSE_EXIT) and survol:
+			survol = false
+			queue_redraw()
+	func _draw() -> void:
+		if not survol: return
+		var bord := StyleBoxFlat.new()
+		bord.bg_color = Color(Charte.CONDITION, .08)
+		bord.border_color = Charte.CONDITION
+		bord.set_border_width_all(3)
+		bord.set_corner_radius_all(int(Charte.RAYON_PANNEAU * C.density))
+		draw_style_box(bord, Rect2(Vector2.ZERO, size))
+
+## Hors groupe : tout le reste de l'effectif en tuiles (portrait, nom entier, postes, pastille au poste principal,
+## condition), filtrable par ligne ; blessés et suspendus grisés avec leur pastille d'état. Clic = le choisir pour le
+## poste sélectionné ; glisser vers une place du terrain ou du banc ; une place de la feuille glissée ici la libère.
+static func hors_groupe(app: Control, page: Control, zone: Rect2, haut_alertes: float) -> Panel:
+	var bloc := DepotHorsGroupe.new()
+	bloc.app = app
+	bloc.name = "TacticsHorsGroupe"
+	bloc.mouse_filter = Control.MOUSE_FILTER_PASS
+	bloc.add_theme_stylebox_override("panel", C.box(Charte.PANNEAU, Color.TRANSPARENT, Charte.RAYON_PANNEAU, 0))
+	page.add_child(bloc)
+	D.place(bloc, zone)
+	var x := onglets_bas(app, bloc)
+	var etat := Selection.state(app)
+	var ligne := str(etat.get("ligne", "tous"))
+	var joueurs := hors_groupe_joueurs(app)
+	# Filtres par ligne de poste (pilules avec le nombre de joueurs).
+	var fx := x + 16
+	for entree: Array in LIGNES:
+		var postes: Array = entree[2]
+		var n := 0
+		for p: Dictionary in joueurs:
+			if postes.is_empty() or _principal(p) in postes: n += 1
+		var texte := "%s %d" % [str(entree[1]).to_upper(), n]
+		var l := Kit.largeur(texte, 15) + 24
+		var filtre := Button.new()
+		filtre.name = "TacticsOutsideLine_" + str(entree[0])
+		_styler_pilule(filtre, ligne == entree[0], Charte.MORAL)
+		bloc.add_child(filtre)
+		D.place(filtre, Rect2(fx, 14, l, 28))
+		var lib := D.text(filtre, l / 2.0, 20, texte, 15, Charte.ENCRE if ligne == entree[0] else Charte.IVOIRE_2, 700, l - 4, HORIZONTAL_ALIGNMENT_CENTER, true)
+		lib.add_theme_font_override("font", Kit.texte_gras())
+		var cle: String = entree[0]
+		filtre.pressed.connect(func():
+			etat.ligne = cle
+			etat.scroll_hors = 0
+			app._render())
+		fx += l + 6
+	var postes_filtre: Array = []
+	for entree: Array in LIGNES:
+		if entree[0] == ligne: postes_filtre = entree[2]
+	var visibles: Array = []
+	for p: Dictionary in joueurs:
+		if postes_filtre.is_empty() or _principal(p) in postes_filtre: visibles.append(p)
+	var haut := 56.0 + haut_alertes
+	var defilement := ScrollContainer.new()
+	defilement.name = "TacticsOutsideScroll"
+	defilement.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	defilement.mouse_filter = Control.MOUSE_FILTER_PASS
+	bloc.add_child(defilement)
+	D.place(defilement, Rect2(22, haut, zone.size.x - 44, zone.size.y - haut - 14))
+	var largeur := zone.size.x - 44 - 18
+	var ecart := 8.0
+	var colonnes := maxi(1, int((largeur + ecart) / (180.0 + ecart)))
+	var tw := (largeur - ecart * (colonnes - 1)) / colonnes
+	var th := 96.0
+	var grille := Control.new()
+	grille.name = "TacticsOutsideTiles"
+	grille.mouse_filter = Control.MOUSE_FILTER_PASS
+	grille.custom_minimum_size = Vector2(largeur, ceilf(visibles.size() / float(colonnes)) * (th + ecart)) * C.density
+	defilement.add_child(grille)
+	for i in visibles.size():
+		_tuile_hors_groupe(app, grille, Rect2((i % colonnes) * (tw + ecart), int(i / colonnes) * (th + ecart), tw, th), visibles[i])
+	defilement.set_deferred("scroll_vertical", int(etat.get("scroll_hors", 0)))
+	defilement.get_v_scroll_bar().value_changed.connect(func(valeur: float): etat.scroll_hors = int(valeur))
+	return bloc
+
+static func _tuile_hors_groupe(app: Control, parent: Control, zone: Rect2, person: Dictionary) -> void:
+	var id := str(person.get("id", ""))
+	var bouton := Selection.PlayerButton.new()
+	bouton.name = "TacticsOutside_" + id.validate_node_name()
+	bouton.set_meta("player_id", id)
+	Kit.styler_ligne(bouton, Charte.PANNEAU_2)
+	for etat in ["normal", "pressed", "disabled", "hover", "hover_pressed", "focus"]:
+		var s := bouton.get_theme_stylebox(etat) as StyleBoxFlat
+		if s != null:
+			s = s.duplicate() as StyleBoxFlat
+			s.set_corner_radius_all(int(Charte.RAYON_CARTE * C.density))
+			bouton.add_theme_stylebox_override(etat, s)
+	parent.add_child(bouton)
+	D.place(bouton, zone)
+	Selection.wire(bouton, app, id, -1, -1, str(person.get("name", "")))
+	glisser(app, bouton, person, false)
+	# Laisse remonter le dépôt au panneau : une place de la feuille lâchée sur une tuile rejoint aussi le hors groupe.
+	bouton.mouse_filter = Control.MOUSE_FILTER_PASS
+	var Commune: Script = load("res://ui/immersive08/fiche_commune.gd")
+	var dispo: Dictionary = Commune.disponibilite(app, person, "squad")
+	var indispo: bool = dispo.etat in ["blesse", "suspendu"]
+	var w := zone.size.x
+	var contenu := Control.new()
+	contenu.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bouton.add_child(contenu)
+	D.place(contenu, Rect2(0, 0, w, zone.size.y))
+	if indispo: contenu.modulate = Color(1, 1, 1, .5)
+	var portrait := _portrait(person, 62)
+	contenu.add_child(portrait)
+	portrait.position = Vector2(8, 8) * C.density
+	portrait.size = Vector2(62, 62) * C.density
+	var court := Kit.casse(str(person.get("name", "")), true)
+	var dispo_nom := w - 82
+	var taille := _taille_nom(court, dispo_nom, 17)
+	Kit.nom(app, bouton, Rect2(76, 4, minf(dispo_nom, Kit.largeur(court, taille) + 6), 26), court, id, "TacticsOutsideName_" + id.validate_node_name(), Charte.IVOIRE_2 if indispo else Charte.IVOIRE, taille)
+	# Postes en petites cases (principal d'abord, bleuté).
+	var x := 76.0
+	var postes := Selection.positions(person).split(" · ")
+	for i in mini(postes.size(), 4):
+		var lc := Kit.largeur(postes[i], 14) + 12
+		if x + lc > w - 6: break
+		var case_ := D.rect(contenu, Rect2(x, 34, lc, 22), Charte.PANNEAU_3 if i > 0 else Color(Charte.MORAL, .3), Charte.RAYON_PETIT)
+		case_.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		D.text(case_, lc / 2.0, 16, postes[i], 14, Charte.IVOIRE, 700, lc, HORIZONTAL_ALIGNMENT_CENTER, true)
+		x += lc + 4
+	var accessible := "%s · postes %s" % [str(person.get("name", "")), Selection.positions(person)]
+	if indispo:
+		var mot := ("✚ Blessé" if dispo.etat == "blesse" else "! Suspendu")
+		var couleur := Charte.PERTE if dispo.etat == "blesse" else Charte.INTENSIF
+		var lp := Kit.largeur(mot, 14) + 18
+		var p := D.rect(bouton, Rect2(76, 64, lp, 24), Color(couleur, .25), Charte.RAYON_PILULE)
+		p.name = "TacticsOutsideState"
+		p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		D.text(p, lp / 2.0, 17, mot, 14, couleur, 700, lp, HORIZONTAL_ALIGNMENT_CENTER, true)
+		bouton.tooltip_text = str(dispo.texte)
+		accessible += " · " + str(dispo.texte)
+	else:
+		Poste.poser(contenu, Rect2(76, 64, 60, 22), _note_principale(person), 3, "TacticsOutsideRating")
+		var forme: Variant = person.get("condition")
+		if forme is int or forme is float:
+			D.text(contenu, w - 8, 82, "%d %%" % roundi(float(forme)), 15, Visuels.couleur_condition(float(forme)), 700, 60, HORIZONTAL_ALIGNMENT_RIGHT, true).name = "TacticsOutsideCondition"
+	bouton.accessibility_name = accessible
+	bouton.pressed.connect(func(): Candidats.activer(app, id, clampi(int(app.selected_slot), 0, 22)))
