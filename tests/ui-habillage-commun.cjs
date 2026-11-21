@@ -18,9 +18,14 @@ const constant = (source, name) => {
   const match = source.match(new RegExp('^const ' + name + '\\s*:?=\\s*(.+)$', 'm'));
   return match ? match[1].trim() : null;
 };
-assert.equal(constant(skins.base, 'INK'), 'Color("f5f4ec")', 'encre commune f5f4ec');
-assert.equal(constant(skins.base, 'GOLD'), 'Color("ddbd80")', 'or commun ddbd80 sur fond sombre');
-assert.equal(constant(skins.base, 'PAPER_GOLD'), 'Color("82592e")', 'or du papier 82592e');
+// Charte finale (ui/charte.gd) : game_skin.gd ne redéfinit plus de couleur, il pointe sur les jetons.
+assert.equal(constant(skins.base, 'INK'), 'Charte.IVOIRE', 'encre commune = Charte.IVOIRE');
+assert.equal(constant(skins.base, 'GOLD'), 'Charte.OR', 'or commun = Charte.OR sur fond sombre');
+assert.equal(constant(skins.base, 'PAPER_GOLD'), 'Charte.OR_ENCRE', 'or du papier = Charte.OR_ENCRE');
+for (const name of ['BG', 'PANEL', 'LINE', 'MUTED', 'GOOD']) {
+  assert.match(constant(skins.base, name) || '', /^Charte\.\w+$/, `${name} pointe sur un jeton de la charte`);
+}
+assert.ok(!/Color\("[0-9a-f]{6}"\)/i.test(skins.carnet), 'carnet : aucune couleur en dur (jetons de la charte)');
 assert.equal(constant(skins.contextual, 'TEXT'), 'Base.INK', 'salles du club : encre commune');
 assert.equal(constant(skins.contextual, 'GOLD'), 'Base.GOLD', 'salles du club : or commun');
 assert.equal(constant(skins.contextual, 'MUTED'), 'Base.MUTED', 'salles du club : texte secondaire commun');
@@ -38,8 +43,8 @@ for (const file of [path.join('contextual', 'director.gd'), path.join('contextua
 const radii = skins.base.match(/^const RADII\s*:?=\s*\{([^}]*)\}/m);
 assert.ok(radii, 'table RADII présente');
 const values = {};
-for (const [, key, value] of radii[1].matchAll(/"(\w+)":\s*(RADIUS_\w+)/g)) values[key] = Number(constant(skins.base, value));
-assert.deepEqual(values, {chip: 4, control: 8, panel: 12}, 'rayons ∈ {4, 8, 12}');
+for (const [, key, value] of radii[1].matchAll(/"(\w+)":\s*(RADIUS_\w+)/g)) values[key] = constant(skins.base, value);
+assert.deepEqual(values, {chip: 'Charte.RAYON_PETIT', control: 'Charte.RAYON_CARTE', panel: 'Charte.RAYON_PANNEAU'}, 'rayons de la charte (6, 12, 18)');
 for (const [name, source] of Object.entries(skins)) {
   const direct = source.split('\n').filter(line => /\bT\.box\(/.test(line) && !/return T\.box\(color, radius\(kind\), border\)/.test(line));
   assert.deepEqual(direct, [], `${name} : rayon codé en dur via T.box`);

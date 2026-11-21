@@ -4,15 +4,17 @@ const Base = preload("res://ui/game_skin.gd")
 const POTENTIAL_COLOR = Base.POTENTIAL_COLOR
 const T = preload("res://theme.gd")
 const W = preload("res://visual_widgets.gd")
+const Charte = preload("res://ui/charte.gd")
 const BG = Base.BG
-const PANEL = Color("f0f1ec")
+## Feuille claire du carnet : la surface « papier » de la charte, encre et traits de papier (ui/charte.gd).
+const PANEL = Charte.PAPIER
 const PAPER = PANEL
-const LINE = Color("ccd2d0")
-const INK = Color("20282c")
-const MUTED = Color("5f6a6e")
+const LINE = Charte.FILET_PAPIER
+const INK = Charte.ENCRE
+const MUTED = Charte.ENCRE_2
 const GOLD = Base.PAPER_GOLD
-const GOOD = Color("38664b")
-const ALERT = Color("963f32")
+const GOOD = Charte.V_PAPIER
+const ALERT = Charte.D_PAPIER
 const WHITE = Base.INK
 
 static func accent_ink(color: Color) -> Color:
@@ -27,7 +29,7 @@ static func label(text: Variant, size: int = 15, color: Color = INK, title: bool
 	if size<=11 and str(text).length()>3 and str(text)==str(text).to_upper() and str(text).to_lower()!=str(text).to_upper():
 		result.add_theme_font_override("font",T.DISPLAY)
 		result.add_theme_font_size_override("font_size",12)
-		if color==MUTED:result.add_theme_color_override("font_color",Color("3e4b50"))
+		if color==MUTED:result.add_theme_color_override("font_color",Charte.ENCRE_2.darkened(.2))
 	return result
 static func wrap(text: Variant, size: int = 15, color: Color = MUTED) -> Label:
 	return Base.wrap(text, size, color)
@@ -48,19 +50,20 @@ static func spacer() -> Control: return Base.spacer()
 static func scroll(parent: Node) -> VBoxContainer: return Base.scroll(parent)
 
 static func button(text: String, callback: Callable, primary: bool = false) -> Button:
+	# Charte : pilule. Principal = aplat doré, texte encre ; secondaire = pilule claire à contour de papier.
 	var b := Button.new()
 	b.text = text
-	b.custom_minimum_size.y = 28
-	b.add_theme_font_size_override("font_size", 12)
-	var background := INK if primary else Color("fcfcf8")
-	b.add_theme_stylebox_override("normal", Base.box(background, "control", INK if primary else Color("b6bfbd")))
-	b.add_theme_stylebox_override("hover", Base.box(Color("344349") if primary else Color("e3ebe8"), "control", Color("788b86")))
-	b.add_theme_stylebox_override("pressed", Base.box(Color("44575b") if primary else Color("d1dfd9"), "control", Color("506a60")))
-	b.add_theme_stylebox_override("disabled", Base.box(Color("e5e8e3"), "control", LINE))
-	var focus := Base.box(Color.TRANSPARENT, "control", WHITE if primary else Color("345c57"))
+	b.custom_minimum_size.y = 30
+	b.add_theme_font_size_override("font_size", 13)
+	b.add_theme_stylebox_override("normal", T.pilule(Charte.OR if primary else Charte.PAPIER_CLAIR, Color.TRANSPARENT if primary else LINE))
+	b.add_theme_stylebox_override("hover", T.pilule(Charte.OR_VIF if primary else Charte.PAPIER_SURVOL, Color.TRANSPARENT if primary else MUTED))
+	b.add_theme_stylebox_override("pressed", T.pilule(Charte.OR.darkened(.15) if primary else Charte.PAPIER_PRESSE, Color.TRANSPARENT if primary else INK))
+	b.add_theme_stylebox_override("disabled", T.pilule(PAPER, LINE))
+	var focus := T.pilule(Color.TRANSPARENT, INK if primary else MUTED)
 	focus.set_border_width_all(2)
+	focus.set_expand_margin_all(2)
 	b.add_theme_stylebox_override("focus", focus)
-	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: b.add_theme_color_override(key, WHITE if primary else INK)
+	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: b.add_theme_color_override(key, INK)
 	b.add_theme_color_override("font_disabled_color", MUTED)
 	b.pressed.connect(callback)
 	return b
@@ -71,8 +74,9 @@ static func selected(b: Button, accent: Color) -> void:
 	# Colour alone cannot identify the current player, club or tactic.
 	for state in ["normal", "hover", "pressed"]:
 		var strength := .12 if state == "normal" else .18 if state == "hover" else .23
-		var style := Base.box(PAPER.lerp(Color(accent,1), strength), "control", accent_ink(accent))
-		style.border_width_left = 4
+		# Choix courant : pilule pleine d'encre légère, repère par la forme (contour d'encre) et non par la seule couleur.
+		var style := T.pilule(PAPER.lerp(Charte.PAPIER_PRESSE, strength / .23), INK)
+		style.set_border_width_all(2)
 		b.add_theme_stylebox_override(state, style)
 
 static func clear_selection(b: Button) -> void:
@@ -111,11 +115,8 @@ static func panel(parent: Node, ratio: float = 1.0, color: Color = PANEL) -> VBo
 	var p := PanelContainer.new()
 	fill(p, false, ratio)
 	p.theme = T.paper()
-	var style := Base.box(color,"panel",LINE)
-	style.shadow_color=Color(0,0,0,.10)
-	style.shadow_size=2
-	style.shadow_offset=Vector2(0,1)
-	p.add_theme_stylebox_override("panel", style)
+	# Feuille de la charte : sans bordure, rayon 18, ombre des jetons.
+	p.add_theme_stylebox_override("panel", Charte.ombrer(Base.box(color,"panel"), Charte.RAYON_PANNEAU))
 	parent.add_child(p)
 	var c := v(9)
 	p.add_child(c)
@@ -123,7 +124,7 @@ static func panel(parent: Node, ratio: float = 1.0, color: Color = PANEL) -> VBo
 
 static func section(title: String, subtitle: String = "") -> VBoxContainer:
 	var c := v(4)
-	var heading := Base.wrap(title, 27, Color("303f44"))
+	var heading := Base.wrap(title, 27, INK)
 	heading.add_theme_font_override("font", T.DISPLAY)
 	c.add_child(heading)
 	if not subtitle.is_empty(): c.add_child(Base.wrap(subtitle, 13, MUTED))
@@ -174,13 +175,9 @@ static func metric(number: Variant, caption: String, color: Color = INK) -> VBox
 # Editorial primitives: all quantities are supplied by the career projection.
 static func card(parent: Node, accent: Color = LINE) -> VBoxContainer:
 	var frame := PanelContainer.new()
-	var style := Base.box(Color("fcfcf8"), "control", LINE)
-	style.border_width_left = 3
-	style.border_color = accent
-	style.shadow_color=Color(0,0,0,.045)
-	style.shadow_size=1
-	style.shadow_offset=Vector2(0,1)
-	frame.add_theme_stylebox_override("panel", style)
+	# Carte de la charte posée sur la feuille : claire, sans bordure, rayon 12, ombre des jetons. `accent` ne colore
+	# plus de liseré (le titre de la carte porte le sens).
+	frame.add_theme_stylebox_override("panel", Charte.ombrer(Base.box(Charte.PAPIER_CLAIR, "control"), Charte.RAYON_CARTE))
 	parent.add_child(frame)
 	var content := v(10)
 	frame.add_child(content)

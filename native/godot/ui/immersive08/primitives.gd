@@ -161,14 +161,16 @@ static func button(parent: Node, rectangle: Rect2, caption: String, callback: Ca
 	control.clip_text = true
 	control.custom_minimum_size = Vector2.ZERO
 	control.add_theme_font_size_override("font_size",maxi(12,C.px(21 if small else 25)))
-	var top := C.readable_primary_fill(accent) if primary else C.PANEL
-	var bottom := top
-	var style := surface(rectangle.size.x,rectangle.size.y,top,bottom,C.Charte.club_trait(accent) if primary else C.FAINT,6,false)
-	style.content_margin_left = C.px(18)
-	style.content_margin_right = C.px(18)
-	control.add_theme_stylebox_override("normal",style)
+	# Charte finale : pilule. Secondaire = contour FILET, texte crème ; principal (demandé par l'appelant) = aplat doré,
+	# texte PANNEAU. Les styles viennent de `C.button` ; `accent` (couleur du club, ancien vert) n'habille plus le bouton
+	# et reste dans la signature pour les appelants.
+	for state in ["normal","hover","pressed","disabled","focus"]:
+		var style := control.get_theme_stylebox(state) as StyleBoxFlat
+		if style == null: continue
+		style.content_margin_left = C.px(18)
+		style.content_margin_right = C.px(18)
 	if not icon_id.is_empty():
-		control.icon = C.icon_texture(icon_id,C.IVORY if primary else C.MUTED)
+		control.icon = C.icon_texture(icon_id,C.Charte.PANNEAU if primary else C.MUTED)
 		control.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		control.expand_icon = true
 		control.add_theme_constant_override("icon_max_width",C.px(22))
@@ -177,14 +179,14 @@ static func button(parent: Node, rectangle: Rect2, caption: String, callback: Ca
 	return control
 
 static func chip(parent: Node, rectangle: Rect2, caption: String, color: Color = C.MINT) -> Panel:
-	var shade := C.RAISED
-	var frame := rect(parent,rectangle,shade,5,Color(color,.7))
+	# Pastille de la charte : voile de la couleur, texte de la couleur, coins à 6 px, sans contour.
+	var frame := rect(parent,rectangle,Color(color,.15),8)
 	text(frame,rectangle.size.x/2,rectangle.size.y/2+7,caption,19,color,600,rectangle.size.x-(4 if rectangle.size.x<=60 else 12),HORIZONTAL_ALIGNMENT_CENTER)
 	return frame
 
 ## Pastille « DERBY » posée dans un rectangle de la page (Bureau, Préparation, Composition).
 static func derby_chip(parent: Node, rectangle: Rect2) -> Panel:
-	var frame := rect(parent,rectangle,C.RAISED,5,C.GOLD)
+	var frame := rect(parent,rectangle,C.Charte.VOILE_DORE,8)
 	frame.name = "DerbyTag"
 	text(frame,rectangle.size.x/2,rectangle.size.y/2+7,"DERBY",19,C.AMBER,700,rectangle.size.x-12,HORIZONTAL_ALIGNMENT_CENTER)
 	frame.tooltip_text = "Derby : une rivalité ancienne, plus de tension sur le terrain et dans les tribunes."
@@ -207,10 +209,11 @@ static func tab_state(control: Button, dimensions: Vector2, selected: bool, icon
 	if focus != null: focus.set_expand_margin_all(2)
 
 static func bar(parent: Node, rectangle: Rect2, value: float, color: Color = C.MINT) -> void:
-	rect(parent,rectangle,C.SELECTED,3)
+	# Jauge de la charte : rail et remplissage en pilule.
+	rect(parent,rectangle,C.SELECTED,C.Charte.RAYON_PILULE)
 	var fill := rectangle
 	fill.size.x *= clampf(value/100.0,0,1)
-	if fill.size.x > 0: rect(parent,fill,color,3)
+	if fill.size.x > 0: rect(parent,fill,color,C.Charte.RAYON_PILULE)
 
 static func words(value: String, characters: int = 45, count: int = 2) -> Array[String]:
 	var result: Array[String] = []
