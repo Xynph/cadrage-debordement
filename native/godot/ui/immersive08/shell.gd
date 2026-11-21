@@ -48,6 +48,8 @@ const ClubUI = preload("res://ui/immersive08/club_ui.gd")
 ## le direct est l'écran contextuel.
 ## Titre de page = nom de l'écran en capitales : plus de slogan de héros (revue « phrases à retirer » du 21/11/2026).
 const RICH_MIN_SIZE := Vector2i(1280,720)
+## Largeur physique à partir de laquelle le Bureau est dessiné (OfficeCanvas, avec la colonne de Gabi en pied).
+const OFFICE_CANVAS_MIN_WIDTH := 1600
 const RICH_FROM_720P := ["Rivalités","Classements","Finances","Recrutement","Club","Staff","Travail du club","Stratégie",
 	"Carrière","Presse","Vestiaire","Formation","Préparation","Plan de jeu","Centre"]
 
@@ -194,7 +196,7 @@ static func render(app: Control) -> bool:
 		canvas_script.build(app,canvas)
 		if app.route == "Calendrier":
 			D.button(canvas,Rect2(1830,147,395,40),"Vue mensuelle",_calendar_table.bind(app,false),false,"calendar",true,app.accent,"CalendarShowMonth")
-	elif app.route == "Bureau": app.body.add_child(OfficeCanvas.build(app) if physical.x >= 1600 else Office.build(app))
+	elif app.route == "Bureau": app.body.add_child(OfficeCanvas.build(app) if physical.x >= OFFICE_CANVAS_MIN_WIDTH else Office.build(app))
 	else: _existing_page(app,immersive_match)
 	if not hors_coque: _footer(content, app, layout)
 	app._update_live_bar()
@@ -991,7 +993,9 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	help.pressed.connect(func(): app._open_coach())
 	_key(help, (f1_width - _key_width("F1")) / 2.0, (medallion_height - 27) / 2.0, "F1", C.RAISED)
 	right -= f1_width + 4.0
-	var gabi_en_pied: bool = app.route == "Bureau" and not national and is_instance_valid(app.get("coach")) and app.coach.has_method("bureau_disponible") and app.coach.bureau_disponible()
+	# Gabi en pied n'existe que dans le Bureau dessiné (OfficeCanvas, dès 1600 px de large) ; en dessous, le Bureau classique
+	# n'a pas sa colonne : le médaillon du bandeau reste affiché, sinon Gabi disparaît de l'écran.
+	var gabi_en_pied: bool = app.route == "Bureau" and app.get_window().size.x >= OFFICE_CANVAS_MIN_WIDTH and not national and is_instance_valid(app.get("coach")) and app.coach.has_method("bureau_disponible") and app.coach.bureau_disponible()
 	var gabi := Control.new()
 	gabi.name = "GabiBandeau"
 	gabi.mouse_filter = Control.MOUSE_FILTER_IGNORE

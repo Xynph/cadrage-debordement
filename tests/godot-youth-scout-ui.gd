@@ -202,8 +202,46 @@ func run() -> void:
 		var contract:=dialog("ContractOffer")
 		check(contract!=null,"Réemploi vrai dialogue contrat")
 		if contract!=null:
-			var years:=app.find_child("OfferYears",true,false) as SpinBox;years.value=years.min_value
+			# Demande du joueur, durée proposée par défaut : une saison seule relève son salaire de réserve (+8 %),
+			# d'où une contre-offre légitime selon le joueur tiré.
+			var years:=app.find_child("OfferYears",true,false) as SpinBox
+			check(years!=null and years.value>=years.min_value,"Durée du contrat proposée")
 			contract.get_ok_button().pressed.emit();await response("recruit")
+			if str(app.model.meta.get("negotiation",{}).get("status",""))=="counter":
+				# Contre-offre légitime (salaire de réserve propre à chaque joueur) : le manager rouvre l'offre, saisit le
+				# salaire et la durée demandés dans les champs visibles, puis envoie.
+				var asked: Dictionary=app.model.meta.negotiation.duplicate()
+				scout=await open_scout()
+				var again:=player_button("RegenScoutOffer",signed_id)
+				if again==null:
+					var followed:=scout.find_child("RegenScoutWatched",true,false) as CheckBox
+					if followed!=null and not followed.button_pressed:await press(followed)
+					again=player_button("RegenScoutOffer",signed_id)
+				check(again!=null,"Piste rouverte après la contre-offre")
+				if again!=null:
+					await press(again)
+					var salary_field: SpinBox=null
+					var years_field: SpinBox=null
+					for item: SpinBox in app.find_children("OfferSalary","SpinBox",true,false):
+						if item.is_visible_in_tree():salary_field=item
+					for item: SpinBox in app.find_children("OfferYears","SpinBox",true,false):
+						if item.is_visible_in_tree():years_field=item
+					check(salary_field!=null and salary_field.editable and years_field!=null and years_field.editable,"Champs salaire et durée visibles et modifiables")
+					if salary_field!=null and years_field!=null:
+						load("res://ui/salary_display.gd").set_input_weekly(salary_field,float(asked.salary))
+						years_field.value=float(asked.years)
+						await settle()
+					# Offre en fenêtre (détection ouverte) ou en page « Offre au joueur » (envoi en deux temps).
+					var send:=button("RecrutementPageValider")
+					if send!=null:
+						send.pressed.emit();await settle()
+						var ok:=button("ContractSignatureConfirmationOk")
+						check(ok!=null,"Confirmation en place de l'offre")
+						if ok!=null:ok.pressed.emit();await response("recruit contre-offre")
+					else:
+						var shown: Array=app.find_children("ContractOffer*","ConfirmationDialog",true,false).filter(func(d):return d.visible)
+						check(shown.size()==1,"Offre rouverte en fenêtre")
+						if shown.size()==1:shown[0].get_ok_button().pressed.emit();await response("recruit contre-offre")
 			check(app.model.squad.any(func(p):return p.id==signed_id),"Recrutement réel dans effectif")
 			scout=await open_scout()
 			var archive: Array=app.model.clubLife.regenScouting.shortlist.filter(func(p):return p.id==signed_id)
@@ -242,6 +280,9 @@ func run() -> void:
 	if annual.is_empty():
 		annual = xp.duplicate(true); annual.id="qa-legacy-annual"; annual.model="annual-v11"
 		annual.availablePlans=["general","integration"]; annual.focusOptions=[]; annual.focus=null; annual.defaultFocus=null; annual.plan="general"
+		# Copie : depuis #770, le pont applique ses patchs sur son propre modèle, partagé par référence avec app.model ;
+		# la projection d'affichage ne doit jamais l'altérer (sinon le snapshot suivant repart de cette liste factice).
+		app.model=annual_model.duplicate(true)
 		app.model.clubLife.youthDevelopment.players=[annual]
 	young=await open_youth(); await search(young,"YouthDevelopmentSearch",annual.name)
 	var annual_plan:=young.find_child("YouthPlan",true,false) as OptionButton

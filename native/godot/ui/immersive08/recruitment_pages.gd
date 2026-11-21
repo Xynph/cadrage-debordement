@@ -138,10 +138,16 @@ static func build(app: Control, page: Control, kind: String) -> void:
 		var suivi := Timer.new()
 		suivi.wait_time = .25
 		suivi.autostart = true
+		# Références faibles : la fenêtre d'origine est libérée dès l'envoi, avant la fermeture (différée) de la page ;
+		# un lambda qui capture un objet libéré provoque une erreur moteur à chaque tic.
+		var ok_faible: WeakRef = weakref(ok)
+		var valider_faible: WeakRef = weakref(valider)
 		suivi.timeout.connect(func():
-			if is_instance_valid(ok) and is_instance_valid(valider):
-				valider.disabled = ok.disabled
-				if not deux_temps: valider.text = str(ok.text).to_upper())
+			var source := ok_faible.get_ref() as Button
+			var bouton := valider_faible.get_ref() as Button
+			if source != null and bouton != null:
+				bouton.disabled = source.disabled
+				if not deux_temps: bouton.text = str(source.text).to_upper())
 		valider.add_child(suivi)
 		var lien := Kit.lien(cadre, Rect2(pied.position.x + 600, pied.position.y + 4, 0, 38), str(annuler.text).capitalize(), func():
 				if is_instance_valid(annuler):
