@@ -20,6 +20,10 @@ const NOM := "SurvolLigne"
 ## Bande de survol : crème translucide (plus claire que le fond, quelle que soit la couleur de la ligne).
 const BANDE := Color(0.96, 0.93, 0.86, 0.17)
 const LISERE := 4.0
+## Rayure d'une ligne sur deux (rang 1, 3, 5… dans l'ordre affiché) : crème très translucide, lisible sur la photo de
+## fond assombrie comme sur un panneau. Nettement plus discrète que la bande de survol (0,17) : une rayure ne se
+## confond jamais avec la ligne survolée. Choix de Léo du 21/11 (référence : liste de joueurs d'un autre jeu).
+const RAYURE := Color(0.96, 0.93, 0.86, 0.065)
 ## Captures seulement : rang de ligne à montrer survolé dans les tableaux dessinés (-1 : jamais).
 static var simulation_rang := -1
 
@@ -48,6 +52,12 @@ static func _boite(fond: Color, r: float) -> StyleBoxFlat:
 	style.set_corner_radius_all(int(r))
 	style.anti_aliasing = true
 	return style
+
+## Rayure de fond d'une ligne de rang impair (le rang compte les lignes affichées, après tri et filtre ; les en-têtes
+## de groupe ne comptent pas). Les lignes de rang pair gardent leur fond de base.
+static func rayer(toile: CanvasItem, rect: Rect2, rang: int, k: float = 1.0, r: float = Charte.RAYON_PETIT) -> void:
+	if rang % 2 != 1: return
+	toile.draw_style_box(_boite(RAYURE, r * k), rect)
 
 ## Fond d'une ligne survolée. `rect` : la ligne dans le repère de `toile` ; `k` : échelle (1 en 1920×1080) ;
 ## `decal` : décalage du liseré en pixels. Rien n'est dessiné hors survol (pas de couleur de sélection).
@@ -117,7 +127,18 @@ func _marquer(valeur: bool) -> void:
 func _ready() -> void:
 	set_process(false)
 
+## Rang de la ligne parmi les lignes visibles de sa liste (frères portant ce composant : les en-têtes de groupe et
+## autres nœuds n'en font pas partie).
+func rang() -> int:
+	if ligne == null or ligne.get_parent() == null: return 0
+	var n := 0
+	for frere in ligne.get_parent().get_children():
+		if frere == ligne: return n
+		if frere is Control and frere.visible and frere.has_node(NOM): n += 1
+	return n
+
 func _draw() -> void:
+	rayer(self, Rect2(Vector2.ZERO, size), rang(), echelle(self), rayon)
 	dessiner(self, Rect2(Vector2.ZERO, size), survole, accent, echelle(self), rayon, decalage)
 
 ## Captures et suites : simule le survol d'une ligne visible (la 3e) dans chaque liste. Renvoie le nombre de listes

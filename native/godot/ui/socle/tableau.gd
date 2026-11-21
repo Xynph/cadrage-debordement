@@ -336,6 +336,7 @@ func _dessiner_lignes(zone: Control) -> void:
 		# Filet entre les lignes ; survol : composant commun ui/survol_ligne.gd (bande + liseré club). La ligne choisie
 		# n'est jamais colorée (décision de Léo : pas de vert de sélection dans les listes).
 		zone.draw_rect(Rect2(0, haut + element.h - 1, zone.size.x, 1), J.TRAIT)
+		SurvolLigne.rayer(zone, Rect2(0, haut, zone.size.x, element.h - 1), int(element.rang), J.echelle, J.RAYON_PETIT)
 		SurvolLigne.dessiner(zone, Rect2(0, haut, zone.size.x, element.h - 1), element.rang == _survol, accent, J.echelle, J.RAYON_PETIT)
 		if _clavier and has_focus() and str(ligne.get(cle, "")) == choisie:
 			zone.draw_style_box(SurvolLigne.style_focus(J.RAYON_PETIT), Rect2(0, haut, zone.size.x, element.h - 1))
