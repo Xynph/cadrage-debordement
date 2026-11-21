@@ -92,7 +92,7 @@ static func _journal(app: Control, data: Dictionary) -> Control:
 			var identity := str(injury.get("playerName", injury.playerId))
 			for player: Dictionary in app.model.get("squad", []):
 				if player.id == injury.playerId: identity = player.name
-			list.add_child(G.wrap("%s · %s · %d semaine(s)" % [identity, _club(app, injury.clubId), injury.weeks], 12))
+			list.add_child(G.wrap("%s · %s · %d sem." % [identity, _club(app, injury.clubId), injury.weeks], 12))
 	chooser.item_selected.connect(redraw)
 	var initial := 0
 	for index in divisions.size():
@@ -161,7 +161,7 @@ static func _conference(app: Control, data: Dictionary) -> Control:
 		provenance.name = "PressIdentity_" + str(question.id)
 		identity.add_child(provenance)
 		interview.add_child(G.wrap("Style d’entretien : %s · %s" % [question.journalist.styleLabel, question.journalist.personality], 12))
-		var relation := G.wrap("%s · relation %+.0f / 100 · %d échange(s) avec toi" % [question.relation.label, question.relation.score, question.relation.encounters], 12, G.GOLD)
+		var relation := G.wrap("%s · relation %+.0f / 100 · %d %s" % [question.relation.label, question.relation.score, question.relation.encounters, "échange" if int(question.relation.encounters) <= 1 else "échanges"], 12, G.GOLD)
 		relation.name = "PressRelation_" + str(question.id)
 		interview.add_child(relation)
 		if question.get("followUp") is Dictionary:
