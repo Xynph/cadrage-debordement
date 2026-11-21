@@ -218,7 +218,10 @@ func run() -> void:
 		check(host.sent.back()[0] == "train" and host.sent.back()[1].mode == mode, "Maintaining preserves actual training mode " + mode)
 	host.model.meta.trained = true
 	director.sync(); await settle()
-	var train_buttons := director.view.find_children("*", "Button", true, false)
+	# Les cases et filtres du groupe (petite fenêtre, filtre local) ne décident rien : seules les actions comptent.
+	var train_buttons := director.view.find_children("*", "Button", true, false).filter(func(b: Node) -> bool:
+		var parent := str(b.get_parent().name)
+		return not parent.begins_with("TrainingPlayerCell_") and not parent.begins_with("TrainingRoomFilter_"))
 	check(train_buttons.size() == 1, "completed training is read only with only return action")
 	var command_count := host.sent.size()
 	director.view._perform_training()
