@@ -4,6 +4,7 @@ extends RefCounted
 const C = preload("res://ui/immersive08/components.gd")
 const Editorial = preload("res://ui/entry_editorial.gd")
 const Kit = preload("res://ui/creation_options/kit.gd")
+const PastillesClub = preload("res://ui/immersive08/pastilles_club.gd")
 const SHOWN := 3
 
 static func build(app: Control, parent: Node, selected: Dictionary, data: Dictionary, state: String) -> void:
@@ -34,8 +35,7 @@ static func build(app: Control, parent: Node, selected: Dictionary, data: Dictio
 			side.add_child(Kit.ghost(0, 7, true))
 		return
 	if rivals.is_empty():
-		var calm := C.wrap("Les rivalités du club se vivent dans l’espace Rivalités, dès ton arrivée : chaque derby y garde sa tension.", 19, C.MUTED)
-		calm.name = "CreationRivalsEmpty"
+		var calm := PastillesClub.pastille("Rivalités dès l’arrivée", PastillesClub.BLEU, "flag", "Les rivalités du club se vivent dans l’espace Rivalités, dès ton arrivée : chaque derby y garde sa tension.", 20, "CreationRivalsEmpty")
 		list.add_child(calm)
 		return
 	for rival: Variant in rivals.slice(0, SHOWN):

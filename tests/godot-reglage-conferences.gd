@@ -134,8 +134,8 @@ func run() -> void:
 	var send := dialog.find_child("PreferencesPressPolicy_adjoint", true, false) as Button
 	check(stay != null and stay.is_visible_in_tree() and stay.text == "Y aller", "Paramètres : option « Y aller » visible")
 	check(send != null and send.is_visible_in_tree() and send.text == "Envoyer l’adjoint", "Paramètres : option « Envoyer l’adjoint » visible")
-	var notice := dialog.find_child("PreferencesPressNotice", true, false) as Label
-	check(notice != null and notice.text.contains("grands rendez-vous"), "Paramètres : explication des grands rendez-vous")
+	var notice := dialog.find_child("PreferencesPressNotice", true, false) as Button
+	check(notice != null and notice.tooltip_text.contains("grands rendez-vous"), "Paramètres : explication des grands rendez-vous (infobulle du « i »)")
 	check(stay != null and stay.tooltip_text == "Réglage actuel.", "Paramètres : « Y aller » est l'option cochée")
 	var scroller := dialog.find_child("PreferencesPressSection", true, false)
 	if scroller != null:
@@ -160,8 +160,8 @@ func run() -> void:
 	check(press().get("policy", {}).get("ordinary") == "adjoint", "Modèle : réglage « envoyer l'adjoint » enregistré")
 	var send_after := dialog.find_child("PreferencesPressPolicy_adjoint", true, false) as Button
 	check(send_after != null and send_after.tooltip_text == "Réglage actuel.", "Paramètres : l'adjoint est maintenant l'option cochée")
-	var notice_after := dialog.find_child("PreferencesPressNotice", true, false) as Label
-	check(notice_after != null and notice_after.text.contains("Gabi répond à la presse lors des conférences ordinaires"), "Paramètres : explication de l'adjoint")
+	var notice_after := dialog.find_child("PreferencesPressNotice", true, false) as Button
+	check(notice_after != null and notice_after.tooltip_text.contains("Gabi répond à la presse lors des conférences ordinaires"), "Paramètres : explication de l'adjoint (infobulle du « i »)")
 	await capture("reglage-conferences")
 	dialog.queue_free()
 	await settle(4)

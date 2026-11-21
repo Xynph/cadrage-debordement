@@ -75,7 +75,7 @@ static func home(app: Control) -> Control:
 	page.add_child(veil)
 	page.move_child(veil, page.get_child_count() - 2)
 	var over: VBoxContainer = page.get_meta("content")
-	over.add_child(G.label("RUGBY LEGACY 27  /  BUILD YOUR CLUB. LEAVE YOUR MARK.", 14, G.WHITE))
+	over.add_child(G.label("RUGBY LEGACY 27", 14, G.WHITE))
 	over.add_child(G.spacer())
 	var row := G.h(28)
 	over.add_child(row)
@@ -97,7 +97,7 @@ static func home(app: Control) -> Control:
 	var choices := G.panel(row)
 	choices.get_parent().custom_minimum_size.x=380
 	choices.get_parent().size_flags_horizontal=Control.SIZE_SHRINK_END
-	choices.add_child(G.section("Ouvrir le carnet","Ton prochain chapitre commence ici."))
+	choices.add_child(G.section("Ouvrir le carnet"))
 	choices.add_child(G.separator())
 	if not club.is_empty():
 		var national: bool = app.Immersive.Selections.nation_only(app.model)
@@ -242,7 +242,6 @@ static func _competition_summary(app: Control, parent: VBoxContainer, division: 
 		parent.add_child(C.rule())
 		parent.add_child(C.label("FORMAT ET ENJEUX", 21, Editorial.BRASS))
 		for detail: String in format: parent.add_child(C.wrap(detail, 23, C.IVORY))
-	parent.add_child(C.wrap("Choisis un club pour découvrir son stade et son effectif.", 21))
 
 static func _rating(roster: Dictionary) -> String:
 	return String.num(float(roster.get("average", 0)), 1).replace(".", ",")
@@ -1052,7 +1051,6 @@ static func _nation_creation(app: Control, page: Control, mode: String, preferre
 	var nation_name := str(nation.get("name", "Ta sélection"))
 	details.add_child(C.label("MANDAT INTERNATIONAL", 24, C.GOLD, true, 700))
 	details.add_child(C.label(nation_name, 48, C.IVORY, true, 700))
-	panel.add_child(C.wrap("Tu diriges cette sélection. Retrouve tes convocations, ton calendrier et tes résultats dans la Réception et l’espace Sélections.", 26, C.IVORY))
 	var installed: Array = app.pack_manager.installed("creation")
 	var missing := preferred != "base" and not installed.any(func(pack: Dictionary): return str(pack.id) == preferred)
 	_career_variation_controls(app,panel,modern)
@@ -1075,10 +1073,9 @@ static func _career_variation_controls(app: Control, parent: Node, modern: bool)
 	option.text = "Faire légèrement varier le niveau actuel"
 	option.button_pressed = bool(app.management_ui.get("creation_vary_current",true))
 	option.add_theme_font_size_override("font_size",C.px(20) if modern else 16)
-	option.tooltip_text = "Les qualités de départ varient légèrement, jusqu’à ±3. Le potentiel varie toujours, jusqu’à ±5."
 	option.toggled.connect(func(value: bool): app.management_ui.creation_vary_current = value)
 	group.add_child(option)
-	group.add_child(C.wrap("Le potentiel varie à chaque nouvelle carrière (jusqu’à ±5), même lorsque cette case est décochée.",17,C.MUTED))
+	option.tooltip_text = "Les qualités de départ varient légèrement, jusqu’à ±3. Le potentiel varie toujours, jusqu’à ±5, à chaque nouvelle carrière, même lorsque cette case est décochée."
 
 const CAREER_STARTS := ["premiers-clubs", "club", "veille"]
 

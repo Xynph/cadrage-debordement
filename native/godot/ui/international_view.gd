@@ -8,6 +8,7 @@ const P = preload("res://ui/immersive08/projection.gd")
 const Sheet = preload("res://ui/national_sheet.gd")
 const Availability = preload("res://ui/international_availability.gd")
 const Visuel = preload("res://ui/selections_visuel.gd")
+const PastillesClub = preload("res://ui/immersive08/pastilles_club.gd")
 const FIXTURES_PER_PAGE := 10
 
 const MONTHS_FR := ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"]
@@ -329,7 +330,7 @@ static func _hero(names: Dictionary, role: String, nation: String) -> Control:
 	var nation_name := str(names.get(nation, nation))
 	var overline := "CLUB ET SÉLECTION · " + nation_name.to_upper() if role == "dual" else "SÉLECTION · " + nation_name.to_upper() if role == "nation" else "TA CARRIÈRE EN CLUB"
 	words.add_child(C.label(overline, 19, C.GOLD, true, 700))
-	var title := C.label("Tes internationaux et les sélections" if role != "nation" else "Le groupe de " + nation_name, 44, C.IVORY, true, 800)
+	var title := C.label("Tes internationaux" if role != "nation" else "Le groupe de " + nation_name, 44, C.IVORY, true, 800)
 	title.name = "InternationalHeroTitle"
 	words.add_child(title)
 	return card
@@ -374,7 +375,7 @@ static func _upcoming(app: Control, parent: Control, international: Dictionary, 
 			coming.append({"fixture":fixture, "competition":_edition_title(edition, _edition_year(edition))})
 	coming.sort_custom(func(a: Dictionary, b: Dictionary): return str(a.fixture.get("date", "")) < str(b.fixture.get("date", "")))
 	if coming.is_empty():
-		parent.add_child(C.wrap("Aucune rencontre internationale annoncée : les sélections sont au repos, ton groupe aussi.", 19, C.MUTED))
+		parent.add_child(PastillesClub.pastille("Aucune rencontre annoncée", PastillesClub.BLEU, "calendar", "", 20, "InternationalUpcomingNone"))
 	for index in mini(4, coming.size()):
 		var entry: Dictionary = coming[index]
 		var line := C.v(1)
@@ -425,7 +426,9 @@ static func _callups(app: Control, international: Dictionary, names: Dictionary)
 			reading.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			G.fill(reading)
 			row.add_child(reading)
-	if view.get_child_count() == 0: view.add_child(G.wrap("Aucun joueur du club convoqué : le groupe reste au complet pour la semaine."))
+	if view.get_child_count() == 0:
+		# Aucune phrase : une pastille d'état (coche + deux mots), cliquable vers les disponibilités.
+		view.add_child(PastillesClub.pastille("Groupe au complet", PastillesClub.VERT, "check", "Aucun joueur du club convoqué cette semaine", 22, "InternationalCallupsNone", Availability.open.bind(app)))
 	return view
 
 static func _edition_year(edition: Dictionary) -> int:

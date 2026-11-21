@@ -46,6 +46,7 @@ const ClubUI = preload("res://ui/immersive08/club_ui.gd")
 ## (XV en colonnes, repères et vigilance sur des lignes plus hautes). Seul le Calendrier en tableau hors
 ## Nationale/Champ garde sa page simple. Le Match (avant le coup d'envoi) suit le même seuil RICH_MIN_SIZE ;
 ## le direct est l'écran contextuel.
+## Titre de page = nom de l'écran en capitales : plus de slogan de héros (revue « phrases à retirer » du 21/11/2026).
 const RICH_MIN_SIZE := Vector2i(1280,720)
 const RICH_FROM_720P := ["Rivalités","Classements","Finances","Recrutement","Club","Staff","Travail du club","Stratégie",
 	"Carrière","Presse","Vestiaire","Formation","Préparation","Plan de jeu","Centre"]
@@ -63,7 +64,6 @@ const GROUPS = [
 	["Formation", "Formation", ["Formation", "Centre", "Suivi des jeunes"]],
 	["Carrière", "Carrière", ["Carrière"]]
 ]
-const TITLES = {"Bureau":"Ta semaine commence ici.", "Effectif":"Les hommes du projet.", "Composition":"Le XV de départ.", "Préparation":"La semaine se gagne ici.", "Plan de jeu":"Ton identité de jeu.", "Vestiaire":"Un groupe, une ambition.", "Recrutement":"Le prochain renfort.", "Club":"Un club. Un territoire.", "Finances":"Garder une longueur d’avance.", "Classements":"Chaque point compte.", "Calendrier":"Le fil de ta saison.", "Formation":"Le futur porte nos couleurs.", "Centre":"Les chemins de la progression.", "Suivi des jeunes":"Ils grandissent sous nos couleurs.", "Staff":"Le collectif derrière le collectif.", "Travail du club":"Des décisions qui engagent.", "Stratégie":"Construire dans la durée.", "Presse":"La voix du club.", "Rivalités":"Ta place dans le rugby.", "Carrière":"Une carrière à écrire.", "Match":"Le jour de match.", "Recherche":"Un joueur, un club, un écran.", "Réglages":"Ton confort de jeu."}
 ## Rapport largeur/hauteur maximal de la zone de travail (16:9) ; au-delà, elle est centrée.
 const LARGEUR_MAX_RATIO := 16.0/9.0
 const COMPACT_ART = {
@@ -1282,8 +1282,7 @@ static func _heading(parent: Node, app: Control) -> void:
 		app.minibar.visible=false
 		parent.add_child(app.minibar)
 		return
-	if app.route!="Bureau": D.text(row,1,19,{"Bureau":"LE BUREAU","Effectif":"LE GROUPE PROFESSIONNEL","Composition":"LE PLAN DE JEU"}.get(app.route,app.route.to_upper()),19,app.accent.lightened(.48),600,1040)
-	app.heading = D.text(row,-1,56 if app.route=="Bureau" else 76,"LE BUREAU" if app.route=="Bureau" else TITLES.get(app.route,app.route),53,C.IVORY,800 if app.route=="Bureau" else 700,1190)
+	app.heading = D.text(row,-1,56 if app.route=="Bureau" else 76,"LE BUREAU" if app.route=="Bureau" else app.route.to_upper(),53,C.IVORY,800 if app.route=="Bureau" else 700,1190)
 	if app.route=="Bureau": _entete_bureau(row,app)
 	if COMPACT_ART.has(app.route):
 		var image := D.panel(row,Rect2(1438,6,810,89),"","","","CompactRouteArt")
