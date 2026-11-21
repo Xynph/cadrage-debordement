@@ -436,7 +436,8 @@ static func _priorities(card: Panel, app: Control, w: int = 900) -> void:
 		var y := 100.0 + i * 90.0
 		var item: Dictionary = tasks[i]
 		# Couleur franche selon le niveau (rouge urgent, orange important, bleu le reste), jamais seule : pastille écrite.
-		var tint: Color = R.ROUGE if item.level == "urgent" else R.ORANGE if item.level == "important" else R.BLEU
+		# Rouge si urgent, orange si c'est pour aujourd'hui, bleu sinon (le seul doré de l'écran reste Continuer).
+		var tint: Color = R.ROUGE if item.level == "urgent" else R.ORANGE if str(item.deadline) in ["Aujourd’hui", "Maintenant", "Résultat en attente"] else R.BLEU
 		D.line(card, Vector2(20, y), Vector2(w - 20, y), Color(Charte.FILET, .7))
 		D.rect(card, Rect2(20, y + 10, 4, 66), tint).name = "OfficePriority" + str(i + 1)
 		_ex(D.text(card, 44, y + 60, str(i + 1), 46, Charte.IVOIRE, 800, 44))
@@ -767,7 +768,12 @@ static func _journal(card: Panel, app: Control, w: int = 1132) -> void:
 		if blessure != null:
 			var nom := blessure.get_string(1)
 			D.text(card, x_titre, y + 29, nom, 21, Charte.IVOIRE, 600, w - x_titre - 200, HORIZONTAL_ALIGNMENT_LEFT, true).name = "OfficeJournalTitre" + str(i + 1)
-			R.pastille(card, x_titre + minf(_largeur(nom, 21, C.BODY), w - x_titre - 200) + 16, y + 29, "✚ %s sem." % blessure.get_string(2), R.ROUGE, "", "OfficeJournalBlessure" + str(i + 1))
+			var marque := R.pastille(card, x_titre + minf(_largeur(nom, 21, C.BODY), w - x_titre - 200) + 16, y + 29, "✚ %s sem." % blessure.get_string(2), R.ROUGE, "", "OfficeJournalBlessure" + str(i + 1))
+			var blesses := names_in(app.model, nom)
+			if not blesses.is_empty() and blesses[0] is Dictionary and blesses[0].has("id"):
+				var cible := {"kind": "player", "id": str(blesses[0].id)}
+				if app.navigation_controller.entity_available(cible):
+					R.cliquable(marque, func(): app.navigation_controller.open_entity(cible), "OfficeJournalBlessureOuvrir" + str(i + 1), "Fiche de " + nom)
 			noms_cliquables(app, card, Rect2(x_titre, y + 8, w - x_titre - 200, 30), nom, 21, C.BODY)
 			continue
 		D.text(card, x_titre, y + 29, titre, 21, Charte.IVOIRE, 600, w - x_titre - 60, HORIZONTAL_ALIGNMENT_LEFT, true).name = "OfficeJournalTitre" + str(i + 1)

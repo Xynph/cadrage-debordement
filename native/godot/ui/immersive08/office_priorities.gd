@@ -88,7 +88,7 @@ static func select(model: Dictionary) -> Array[Dictionary]:
 	if not injured.is_empty() and not ended:
 		var medical := _item("OfficeMedicalPriorityAction","Adapter le groupe aux blessures",
 			"%d joueur%s blessé%s. Vérifie les solutions disponibles dans l’effectif." % [injured.size(),"s" if injured.size() > 1 else "","s" if injured.size() > 1 else ""],
-			"Avant la composition","heart","squad","important")
+			"Avant la composition","heart","injured","important")
 		# Tuile du Bureau (chiffre + légende courte) à la place de la phrase.
 		medical.count = injured.size()
 		medical.unit = "blessé" + ("s" if injured.size() > 1 else "")
@@ -115,6 +115,9 @@ static func select(model: Dictionary) -> Array[Dictionary]:
 		contrats.count = contracts.size()
 		contrats.unit = "contrat%s · %s" % ["s" if plural else "", "fin de saison" if not due.is_empty() else "l’an prochain"]
 		contrats.tile_only = true
+		# La tuile mène à l'Effectif, onglet Contrats, filtré sur les fins de saison (le nom reste dans l'infobulle).
+		contrats.action = "contracts"
+		contrats.end_of_season = not due.is_empty()
 		result.append(contrats)
 	if not ended and live.is_empty():
 		var review := _youth_review(model)

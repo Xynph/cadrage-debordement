@@ -680,7 +680,7 @@ func _rapport(section: Control, rectangle: Rect2) -> void:
 			outil.name = "PreparationSectorIcon_" + str(domaine.get("key", i))
 			panneau.add_child(outil)
 			D.place(outil, Rect2(590 + R.largeur(libelle, 20) / 2.0 + 14, centre - 10, 20, 20))
-		if _nombre(adverse): _barre(panneau, Rect2(750, centre - 7, echelle * clampf(float(adverse) / 100.0, 0, 1), 14), Charte.DORE).name = "PreparationBarreAdverse" + str(i)
+		if _nombre(adverse): _barre(panneau, Rect2(750, centre - 7, echelle * clampf(float(adverse) / 100.0, 0, 1), 14), R.ORANGE).name = "PreparationBarreAdverse" + str(i)
 		_titre(panneau, 1090, centre + 11, G.n(adverse) if _nombre(adverse) else "—", 32, Charte.IVOIRE, 70)
 		if _nombre(propre) and _nombre(adverse):
 			var delta := int(propre) - int(adverse)
@@ -807,7 +807,8 @@ func _face_a_face(panneau: Panel, y: float) -> void:
 	var adversaire := _opponent()
 	var ouvrable := adversaire.get("id") != null and Link.available(app, "club", str(int(adversaire.get("id"))))
 	if issues.is_empty():
-		R.tuile(panneau, Rect2(150, y - 2, 250, 36), "0", "confrontation", Charte.IVOIRE, "PreparationHeadToHeadNone", 26)
+		var aucune := R.tuile(panneau, Rect2(150, y - 2, 250, 36), "0", "confrontation", Charte.IVOIRE, "PreparationHeadToHeadNone", 26)
+		if ouvrable: R.cliquable(aucune, _ouvrir_club.bind(adversaire), "PreparationHeadToHeadNoneOuvrir", "Fiche de " + G.club_name(adversaire))
 		return
 	if ouvrable:
 		_zone(panneau, C.reach_rect(Rect2(0, y - 4, 900, 40)), _ouvrir_club.bind(adversaire), "PreparationHeadToHeadRow", "Confrontations avec %s : ouvrir sa fiche" % G.club_name(adversaire))
