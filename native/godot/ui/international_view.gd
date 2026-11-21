@@ -7,6 +7,7 @@ const C = preload("res://ui/immersive08/components.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const Sheet = preload("res://ui/national_sheet.gd")
 const Availability = preload("res://ui/international_availability.gd")
+const Visuel = preload("res://ui/selections_visuel.gd")
 const FIXTURES_PER_PAGE := 10
 
 const MONTHS_FR := ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"]
@@ -288,14 +289,7 @@ static func build(app: Control) -> Control:
 	C.fill(side, true)
 	body.add_child(side)
 	_upcoming(app, C.content(side), international, names)
-	var directory := HFlowContainer.new()
-	directory.name = "InternationalNationLinks"
-	directory.add_theme_constant_override("h_separation", 8)
-	directory.add_theme_constant_override("v_separation", 8)
-	C.content(side).add_child(C.label("LES SÉLECTIONS", 18, C.GOLD, true, 700))
-	C.content(side).add_child(directory)
-	for team: Dictionary in international.get("teams", []):
-		directory.add_child(_nation_link(app, str(team.id), str(team.name)))
+	Visuel.annuaire(app, C.content(side), international)
 	var tabs := TabContainer.new()
 	tabs.name = "InternationalTabs"
 	G.fill(tabs, true)
@@ -304,10 +298,10 @@ static func build(app: Control) -> Control:
 	tabs.add_theme_font_size_override("font_size", maxi(14, C.px(20)))
 	tabs.add_child(_callups(app, international, names))
 	tabs.add_child(_editions(app, international, names))
-	tabs.add_child(_offers(app, international, role))
+	tabs.add_child(Visuel.offres(app, international, role))
 	var sections := ["callups", "editions", "offers"]
 	sections.append("availability")
-	tabs.add_child(Availability.build(app))
+	tabs.add_child(Visuel.disponibilites(app))
 	var fixture := _editable_fixture(app.model)
 	var available := Sheet.slots(international)
 	if not fixture.is_empty() and not available.is_empty():
@@ -338,7 +332,6 @@ static func _hero(names: Dictionary, role: String, nation: String) -> Control:
 	var title := C.label("Tes internationaux et les sélections" if role != "nation" else "Le groupe de " + nation_name, 44, C.IVORY, true, 800)
 	title.name = "InternationalHeroTitle"
 	words.add_child(title)
-	words.add_child(C.wrap("Suis les convocations de tes joueurs, leurs retours au club, les compétitions internationales et les postes de sélectionneur ouverts.", 19, C.MUTED))
 	return card
 
 ## Chiffres clés tirés de la projection internationale (aucun calcul sportif côté interface).
@@ -615,39 +608,6 @@ static func _edition_fixtures(app: Control, list: Control, fixtures: Array, name
 	next.name = "InternationalFixtureNext"
 	next.disabled = page + 1 == pages
 	controls.add_child(next)
-
-static func _offers(app: Control, international: Dictionary, role: String) -> Control:
-	var view := G.v()
-	view.name = "Offres"
-	var jobs: Array = international.get("jobs", []).duplicate()
-	var requested: String = app.management_ui.get("international_nation", "")
-	for index in jobs.size():
-		if jobs[index].nation == requested:
-			jobs.push_front(jobs.pop_at(index))
-			break
-	for job: Dictionary in jobs:
-		var card := G.panel(view)
-		var nation: String = job.nation
-		var name: String = job.get("name", nation)
-		card.add_child(G.section(name))
-		if role != "nation":
-			var dual := G.button("Conserver le club et prendre la sélection", _take.bind(app, nation, name, "dual"))
-			dual.name = "NationalJobDual_" + nation
-			card.add_child(dual)
-		var only := G.button("Prendre la sélection seule", _take.bind(app, nation, name, "nation"))
-		only.name = "NationalJobOnly_" + nation
-		card.add_child(only)
-	if view.get_child_count() == 0: view.add_child(G.wrap("Aucun poste de sélectionneur disponible."))
-	if role == "dual":
-		var current := managed_team(app.model)
-		if not current.is_empty():
-			var full_time := G.button("Se consacrer à cette sélection", _take.bind(app, current.id, current.name, "nation"))
-			full_time.name = "NationalJobCurrentOnly"
-			view.add_child(full_time)
-		view.add_child(G.button("Quitter la sélection", func():
-			app.confirm("Quitter la sélection", "Ta carrière en club continue.",
-				func(): app._command("national_leave_job", {"confirmed":true}))))
-	return view
 
 static func _take(app: Control, nation: String, name: String, role: String) -> void:
 	var detail := "Tu continueras à diriger ton club et prendras en charge cette sélection." if role == "dual" else "Ta carrière se poursuivra à la tête de cette sélection."
