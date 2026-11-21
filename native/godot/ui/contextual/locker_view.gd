@@ -26,7 +26,7 @@ const STARTER_POSITIONS = ["Pilier gauche", "Talonneur", "Pilier droit", "Deuxi�
 const POSTES_COURTS := {"Pilier gauche": "Pilier G.", "Pilier droit": "Pilier D.", "Deuxième ligne": "2e ligne",
 	"Troisième ligne aile": "3e ligne aile", "Troisième ligne centre": "3e ligne centre", "Troisième ligne": "3e ligne",
 	"Demi de mêlée": "Demi de mêlée", "Demi d’ouverture": "Ouvreur", "Demi d'ouverture": "Ouvreur"}
-## Masque des portraits : carré à coins arrondis (variante A) ou rond (variante B), y compris sur une planche (atlas).
+## Masque des portraits : carré à coins arrondis ou rond, y compris sur une planche (atlas).
 const MASQUE_PORTRAIT := "shader_type canvas_item;
 uniform vec4 region = vec4(0.0, 0.0, 1.0, 1.0);
 uniform float rayon = 0.18;
@@ -49,20 +49,17 @@ var selected_ids: Array = []
 var options_grid: GridContainer
 var ui: Control
 var _fingerprint := ""
-## Variante visuelle provisoire (choix de Léo en cours) : A = cartes joueur et tuiles de ton avec la phrase,
-## B = feuille de match compacte et six tuiles carrées avec une seule zone d'aperçu de la phrase.
-var variante := "A"
 ## Échelle des tuiles : 1 en 1280 × 720, jusqu'à 1,5 en 1920 × 1080 (taille logique de la fenêtre).
 var _k := 1.0
 var _vp := Vector2.ZERO
-var _apercu_mot: Label
-var _apercu_phrase: Label
-var _apercu_icone: TextureRect
+## Petite fenêtre d'un joueur (portrait, numéro, tuiles d'état) et page de sa fiche complète, posées sur la salle.
+var _fenetre: Control
+var _page_fiche: Control
+var _fenetre_id := ""
 
 func _ready() -> void:
 	name = "ContextualLocker"
 	app = director.app
-	variante = "B" if OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper() == "B" else "A"
 	S.room(self, "locker", app.model.get("club", {}))
 	get_viewport().size_changed.connect(_on_viewport_resized)
 
@@ -99,7 +96,7 @@ func _draw() -> void:
 	var teams: Array = live.get("teams", [])
 	if teams.size() == 2: subtitle = "%s  —  %s" % [S.G.club_name(teams[0]), S.G.club_name(teams[1])]
 	var scores: Array = context.get("score", [])
-	if phase != "pre" and scores.size() == 2: subtitle += "   ·   %s — %s" % [str(scores[0]), str(scores[1])]
+	if phase != "pre" and scores.size() == 2: subtitle += "   ·   %s — %s" % [score_text(scores[0]), score_text(scores[1])]
 	var head := S.G.h(px(14))
 	column.add_child(head)
 	head.add_child(S.G.crest(model.get("club", {}), px(42)))
@@ -108,17 +105,18 @@ func _draw() -> void:
 	head.add_child(head_words)
 	head_words.add_child(_text(title, px(23), S.TEXT, Charte.TITRE_FICHE))
 	head_words.add_child(_text(subtitle, px(13), S.MUTED))
-	if variante == "B": _layout_b(column, live, phase)
-	else: _layout_a(column, live, phase)
+	_layout(column, live, phase)
+	# Redessin (fenêtre redimensionnée, nouvelle image du moteur) : la petite fenêtre ouverte le reste.
+	if not _fenetre_id.is_empty(): open_player_window(_fenetre_id)
 	director._refresh_controls()
 
-# --- Variante A : deux colonnes de cartes joueur, la causerie au centre, le banc en bas. ---
+# --- Deux colonnes de cartes joueur, la causerie au centre, le banc en bas. ---
 
-func _layout_a(column: VBoxContainer, live: Dictionary, phase: String) -> void:
+func _layout(column: VBoxContainer, live: Dictionary, phase: String) -> void:
 	var body := S.G.h(px(14))
 	S.G.fill(body, true)
 	column.add_child(body)
-	_roster_a(body, "AVANTS", "forwards")
+	_roster(body, "AVANTS", "forwards")
 	var middle := S.G.v(px(8))
 	S.G.fill(middle, true)
 	body.add_child(middle)
@@ -126,7 +124,7 @@ func _layout_a(column: VBoxContainer, live: Dictionary, phase: String) -> void:
 	if phase in ["pre", "half"] and not live.is_empty(): _meteo(middle, live, phase)
 	_talk(middle)
 	middle.add_child(_air())
-	_roster_a(body, "ARRIÈRES", "backs")
+	_roster(body, "ARRIÈRES", "backs")
 	var bench_head := S.G.h(px(12))
 	column.add_child(bench_head)
 	bench_head.add_child(_text("REMPLAÇANTS", px(14), S.MUTED, Charte.TITRE_GRAS))
@@ -138,7 +136,7 @@ func _layout_a(column: VBoxContainer, live: Dictionary, phase: String) -> void:
 	for participant: Dictionary in scene.get("participants", []):
 		if int(participant.get("number", 0)) > 15: bench.add_child(_player_card(participant, true))
 
-func _roster_a(parent: Node, title: String, group: String) -> void:
+func _roster(parent: Node, title: String, group: String) -> void:
 	var list := S.G.v(px(5))
 	list.custom_minimum_size.x = px(292)
 	parent.add_child(list)
@@ -146,54 +144,6 @@ func _roster_a(parent: Node, title: String, group: String) -> void:
 	for participant: Dictionary in scene.get("participants", []):
 		if int(participant.get("number", 0)) <= 15 and participant.get("group") == group:
 			list.add_child(_player_card(participant))
-
-# --- Variante B : la feuille de match à gauche (titulaires sur deux colonnes, banc dessous), la causerie à droite. ---
-
-func _layout_b(column: VBoxContainer, live: Dictionary, phase: String) -> void:
-	var body := S.G.h(px(14))
-	S.G.fill(body, true)
-	column.add_child(body)
-	var sheet_shell := PanelContainer.new()
-	sheet_shell.name = "TalkSheet"
-	sheet_shell.add_theme_stylebox_override("panel", Charte.style_panneau(S.PANEL, px(Charte.RAYON_PANNEAU), px(12)))
-	sheet_shell.custom_minimum_size.x = px(548)
-	body.add_child(sheet_shell)
-	var sheet := S.G.v(px(5))
-	sheet_shell.add_child(sheet)
-	var starters := S.G.h(px(8))
-	sheet.add_child(starters)
-	for side in [["AVANTS", "forwards"], ["ARRIÈRES", "backs"]]:
-		var list := S.G.v(px(5))
-		S.G.fill(list)
-		starters.add_child(list)
-		list.add_child(_text(side[0], px(14), S.MUTED, Charte.TITRE_GRAS))
-		for participant: Dictionary in scene.get("participants", []):
-			if int(participant.get("number", 0)) <= 15 and participant.get("group") == side[1]:
-				list.add_child(_player_card(participant))
-	var gap := Control.new()
-	gap.custom_minimum_size.y = px(4)
-	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	sheet.add_child(gap)
-	sheet.add_child(_text("REMPLAÇANTS", px(14), S.MUTED, Charte.TITRE_GRAS))
-	var bench := GridContainer.new()
-	bench.name = "TalkBench"
-	bench.columns = 2
-	bench.add_theme_constant_override("h_separation", px(8))
-	bench.add_theme_constant_override("v_separation", px(5))
-	sheet.add_child(bench)
-	for participant: Dictionary in scene.get("participants", []):
-		if int(participant.get("number", 0)) > 15: bench.add_child(_player_card(participant, true))
-	var right := S.G.v(px(8))
-	S.G.fill(right, true)
-	body.add_child(right)
-	right.add_child(_air())
-	if phase in ["pre", "half"] and not live.is_empty(): _meteo(right, live, phase)
-	_talk(right)
-	right.add_child(_air())
-	var crumbs := S.G.h(0)
-	right.add_child(crumbs)
-	crumbs.add_child(_hspace())
-	crumbs.add_child(_text("AVANT-MATCH  /  MATCH  /  MI-TEMPS  /  DÉBRIEF", px(12), S.MUTED))
 
 # --- La causerie (commune) : destinataires, six tons, sans prendre la parole ; après la parole, le bilan. ---
 
@@ -242,14 +192,13 @@ func _talk(parent: Control) -> void:
 		declarations.add_child(prompt_label)
 	options_grid = GridContainer.new()
 	options_grid.name = "TalkDeclarations"
-	options_grid.columns = 6 if variante == "B" else 2
+	options_grid.columns = 2
 	options_grid.add_theme_constant_override("h_separation", px(10))
 	options_grid.add_theme_constant_override("v_separation", px(10))
 	declarations.add_child(options_grid)
 	var ready_to_speak: bool = not waiting_players and scene.get("options", []).size() == 6
 	for option: Dictionary in scene.get("options", []):
-		options_grid.add_child(_tone_tile_b(option, ready_to_speak) if variante == "B" else _choice_card(option, ready_to_speak))
-	if variante == "B": _apercu(declarations)
+		options_grid.add_child(_choice_card(option, ready_to_speak))
 	var skip_row := S.G.h(px(8))
 	declarations.add_child(skip_row)
 	skip_row.add_child(_hspace())
@@ -305,7 +254,7 @@ static func _fit(label: Label, maximum: int, minimum: int) -> void:
 			label.clip_text = not too_long
 	label.resized.connect(refit)
 
-## Style d'une tuile : carte de rayon 12 avec l'ombre de la charte ; `liseré` : bord gauche à la couleur du club.
+## Style d'une tuile : carte de rayon 12 avec l'ombre de la charte ; `liseré` : bord gauche coloré.
 func _tile_style(fond: Color, contour: Color = Color.TRANSPARENT, lisere: Color = Color.TRANSPARENT) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = fond
@@ -414,8 +363,7 @@ func _condition_gauge(player: Dictionary, width: int) -> Control:
 	gauge.tooltip_text = "Condition %d %%" % int(gauge.value)
 	return gauge
 
-## Tuile d'un joueur. A : carte (portrait arrondi, numéro en Anton, nom de famille, poste abrégé, condition) ;
-## B : ligne de feuille de match (numéro en pastille, portrait rond, nom, liseré du club).
+## Tuile d'un joueur : carte (portrait arrondi, numéro en Anton, nom de famille, poste abrégé, condition ou réaction).
 func _player_card(participant: Dictionary, compact: bool = false) -> Button:
 	var id: Variant = participant.get("id")
 	var player := S.person(model, id)
@@ -425,7 +373,8 @@ func _player_card(participant: Dictionary, compact: bool = false) -> Button:
 	var reaction := reaction_of(decision, id)
 	var reaction_label := str(reaction.get("label", ""))
 	var number := int(participant.get("number", 0))
-	var card := S.button("", func(): _toggle_player(id), decision.is_empty())
+	# Toute tuile agit : onglet Joueurs = viser ; sinon (et après la parole) = la petite fenêtre du joueur.
+	var card := S.button("", func(): _on_player_pressed(id))
 	card.set_meta("participant_id", id)
 	card.set_meta("player_name", full_name)
 	card.name = "Participant_%d" % number
@@ -436,15 +385,13 @@ func _player_card(participant: Dictionary, compact: bool = false) -> Button:
 		var addressed: bool = id in decision.get("playerIds", [])
 		in_audience = addressed
 		targeted = addressed and str(decision.get("audience", "")) == "players"
-	var lisere := Color.TRANSPARENT
-	if variante == "B": lisere = Charte.club_trait(Color(str(S.G.identity(model.get("club", {})).get("color", "#71322f"))))
-	var base := Charte.PANNEAU_2 if variante == "B" else S.PANEL
+	var base := S.PANEL
 	# États en couleur, toujours avec un mot ou une coche : visé (vert, coche), réaction après la causerie (sa teinte).
 	var teinte := Charte.VERT_CLAIR if targeted else Color.TRANSPARENT
 	if not reaction_label.is_empty(): teinte = reaction_color(reaction)
 	var fond := base.lerp(teinte, .16) if teinte.a > 0 else base
-	_skin_tile(card, fond, fond.lerp(Charte.CREME, .06), lisere)
-	# Règle de Léo : toute tuile agit. Clic = viser le joueur ; survol (ou touche I) = sa mini-fiche, posée devant la salle.
+	_skin_tile(card, fond, fond.lerp(Charte.CREME, .06))
+	# Survol (ou touche I) = la mini-fiche du joueur, posée devant la salle.
 	if not player.is_empty():
 		MiniFiche.lier(app, card, str(id), "squad")
 		card.mouse_entered.connect(_mini_fiche_devant)
@@ -471,36 +418,6 @@ func _player_card(participant: Dictionary, compact: bool = false) -> Button:
 		var reaction_text := _text(reaction_label, px(12), reaction_color(reaction), Charte.TITRE_GRAS)
 		reaction_text.name = "ParticipantReaction"
 		status = reaction_text
-	if variante == "B":
-		for side in ["left", "right", "top", "bottom"]: margin.add_theme_constant_override("margin_" + side, px({"left": 10, "right": 8, "top": 4, "bottom": 4}[side]))
-		card.custom_minimum_size.y = px(40)
-		S.G.fill(card)
-		var pastille := PanelContainer.new()
-		pastille.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		pastille.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		pastille.custom_minimum_size = Vector2.ONE * px(27)
-		pastille.add_theme_stylebox_override("panel", Charte.style_pilule(Charte.PANNEAU_3 if not targeted else Charte.NOIR_PANNEAU, Color.TRANSPARENT, 0, 0))
-		var digits := _text(str(number), px(15), S.TEXT, Charte.TITRE_GRAS)
-		digits.name = "ParticipantNumber"
-		digits.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		digits.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		pastille.add_child(digits)
-		row.add_child(pastille)
-		row.add_child(_portrait(player, px(32), true))
-		var words := S.G.v(0)
-		words.alignment = BoxContainer.ALIGNMENT_CENTER
-		words.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		S.G.fill(words)
-		row.add_child(words)
-		name_label.add_theme_font_size_override("font_size", px(16))
-		_fit(name_label, px(16), px(12))
-		words.add_child(name_label)
-		position_label.add_theme_font_size_override("font_size", px(11))
-		words.add_child(position_label)
-		if status != null: row.add_child(status); status.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		if targeted: row.add_child(_badge_vise(px(20)))
-		return card
-	# Variante A.
 	for side in ["left", "right", "top", "bottom"]: margin.add_theme_constant_override("margin_" + side, px(5) if side != "right" else px(9))
 	card.custom_minimum_size.y = px(60) if compact else px(56)
 	if compact: S.G.fill(card)
@@ -560,7 +477,7 @@ func _mini_fiche_devant() -> void:
 	var fiche: Control = MiniFiche.actuelle(app)
 	if fiche != null: fiche.z_index = 200
 
-## Tuile d'un ton (variante A) : pictogramme et mot, la phrase complète dessous en plus petit.
+## Tuile d'un ton : pictogramme et mot, la phrase complète dessous en plus petit.
 ## Un clic prononce la phrase aussitôt (aucune confirmation).
 func _choice_card(option: Dictionary, enabled: bool = true) -> Button:
 	var card := _tone_button(option, enabled)
@@ -606,67 +523,6 @@ func _tone_button(option: Dictionary, enabled: bool) -> Button:
 	if chosen: card.add_theme_stylebox_override("normal", _tile_style(Charte.PANNEAU_2.lerp(teinte, .30), teinte))
 	if not enabled: card.modulate = Color(1, 1, 1, .5)
 	return card
-
-## Tuile carrée d'un ton (variante B) : pictogramme et mot ; la phrase s'affiche dans l'aperçu au survol ou au focus.
-func _tone_tile_b(option: Dictionary, enabled: bool = true) -> Button:
-	var card := _tone_button(option, enabled)
-	card.custom_minimum_size = Vector2(px(92), px(92))
-	var box := S.G.v(px(6))
-	box.alignment = BoxContainer.ALIGNMENT_CENTER
-	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	S.full(box)
-	card.add_child(box)
-	var icon := _icon_rect(tone_icon(str(option.get("tone", "")), tone_color(str(option.get("tone", "")))), px(34))
-	icon.name = "TalkChoiceIcon"
-	icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	box.add_child(icon)
-	var tone := _text(tone_label(option).to_upper(), px(16), S.TEXT, Charte.TITRE_GRAS)
-	tone.name = "TalkChoiceTone"
-	tone.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	box.add_child(tone)
-	card.mouse_entered.connect(func(): _show_apercu(option))
-	card.focus_entered.connect(func(): _show_apercu(option))
-	return card
-
-## Zone d'aperçu unique (variante B) : le ton survolé et sa phrase entière.
-func _apercu(parent: Control) -> void:
-	var shell := PanelContainer.new()
-	shell.name = "TalkPreview"
-	var style := Charte.style_panneau(Charte.PANNEAU_2, px(Charte.RAYON_CARTE), px(12))
-	style.content_margin_left = px(16)
-	style.content_margin_right = px(16)
-	shell.add_theme_stylebox_override("panel", style)
-	shell.custom_minimum_size.y = px(84)
-	parent.add_child(shell)
-	var row := S.G.h(px(12))
-	shell.add_child(row)
-	_apercu_icone = _icon_rect(null, px(30))
-	_apercu_icone.visible = false
-	row.add_child(_apercu_icone)
-	var words := S.G.v(px(2))
-	words.alignment = BoxContainer.ALIGNMENT_CENTER
-	S.G.fill(words)
-	row.add_child(words)
-	_apercu_mot = _text("", px(15), S.MUTED, Charte.TITRE_GRAS)
-	_apercu_mot.name = "TalkPreviewTone"
-	words.add_child(_apercu_mot)
-	_apercu_phrase = _text("« … »", px(17), Charte.IVOIRE_3)
-	_apercu_phrase.name = "TalkPreviewText"
-	_apercu_phrase.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_apercu_phrase.max_lines_visible = 2
-	words.add_child(_apercu_phrase)
-	for option: Dictionary in scene.get("options", []):
-		if str(option.get("id", "")) == selected_choice: _show_apercu(option)
-
-func _show_apercu(option: Dictionary) -> void:
-	if not is_instance_valid(_apercu_phrase): return
-	var teinte := tone_color(str(option.get("tone", "")))
-	_apercu_icone.texture = tone_icon(str(option.get("tone", "")), teinte)
-	_apercu_icone.visible = true
-	_apercu_mot.add_theme_color_override("font_color", teinte)
-	_apercu_mot.text = tone_label(option).to_upper()
-	_apercu_phrase.text = "« %s »" % str(option.get("text", ""))
-	_apercu_phrase.add_theme_color_override("font_color", S.TEXT)
 
 ## Couleur franche d'un ton (gris-vert pour un ton inconnu).
 static func tone_color(tone: String) -> Color:
@@ -767,6 +623,201 @@ func _toggle_player(id: Variant) -> void:
 	if id in selected_ids: selected_ids.erase(id)
 	else: selected_ids.append(id)
 	_draw()
+
+## Score d'un camp sans décimales (le direct peut transmettre 21.0).
+static func score_text(value: Variant) -> String:
+	return str(roundi(float(value))) if value is int or value is float else str(value)
+
+## Clic sur un joueur : dans l'onglet Joueurs (avant la parole), il est visé ou ne l'est plus ; ailleurs, sa petite fenêtre.
+func _on_player_pressed(id: Variant) -> void:
+	if app.waiting: return
+	if audience == "players" and not scene.get("decision") is Dictionary: _toggle_player(id)
+	else: open_player_window(id)
+
+## Petite fenêtre visuelle d'un joueur (règle de Léo : permise si elle reste visuelle) : portrait, numéro, nom, poste,
+## tuiles d'état (condition, fatigue, moral, réaction après la parole) et l'accès à la fiche complète.
+func open_player_window(id: Variant) -> void:
+	close_player_window()
+	var participant: Dictionary = {}
+	for row: Dictionary in scene.get("participants", []):
+		if str(row.get("id", "")) == str(id): participant = row
+	var player := S.person(model, id)
+	if participant.is_empty() or player.is_empty() or not is_instance_valid(ui): return
+	MiniFiche.cacher(app)
+	_fenetre_id = str(id)
+	var layer := Control.new()
+	layer.name = "TalkPlayerWindowLayer"
+	S.full(layer)
+	ui.add_child(layer)
+	_fenetre = layer
+	var voile := ColorRect.new()
+	voile.color = Color(Charte.NUIT, .55)
+	S.full(voile)
+	voile.gui_input.connect(_on_voile_input)
+	layer.add_child(voile)
+	var center := CenterContainer.new()
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	S.full(center)
+	layer.add_child(center)
+	var shell := PanelContainer.new()
+	shell.name = "TalkPlayerPopup"
+	shell.set_meta("player_id", str(id))
+	shell.add_theme_stylebox_override("panel", Charte.style_panneau(S.PANEL, px(Charte.RAYON_PANNEAU), px(20)))
+	shell.custom_minimum_size.x = px(500)
+	center.add_child(shell)
+	var column := S.G.v(px(14))
+	shell.add_child(column)
+	var head := S.G.h(px(14))
+	column.add_child(head)
+	head.add_child(_portrait(player, px(104), false))
+	var number := _text(str(int(participant.get("number", 0))), px(52), S.TEXT, Charte.TITRE_FICHE)
+	number.name = "TalkPlayerPopupNumber"
+	number.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	number.custom_minimum_size.x = px(48)
+	number.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	head.add_child(number)
+	var words := S.G.v(px(2))
+	words.alignment = BoxContainer.ALIGNMENT_CENTER
+	S.G.fill(words)
+	head.add_child(words)
+	var full_name := str(player.get("name", ""))
+	var surname := Nom.surname(full_name)
+	var name_label := _text(surname.to_upper(), px(28), S.TEXT, Charte.TITRE_GRAS)
+	name_label.name = "TalkPlayerPopupName"
+	_fit(name_label, px(28), px(16))
+	words.add_child(name_label)
+	var first := full_name.substr(0, full_name.length() - surname.length()).strip_edges()
+	if not first.is_empty(): words.add_child(_text(first, px(14), S.MUTED))
+	words.add_child(_text(_position_label(participant, player), px(14), S.MUTED))
+	var close := S.button("✕", close_player_window)
+	close.name = "TalkPlayerPopupClose"
+	close.tooltip_text = "Fermer"
+	close.custom_minimum_size = Vector2(px(38), px(38))
+	close.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	_focus_lisible(close)
+	head.add_child(close)
+	var tiles := S.G.h(px(10))
+	tiles.name = "TalkPlayerPopupTiles"
+	column.add_child(tiles)
+	var condition: Variant = player.get("condition")
+	if condition is int or condition is float:
+		_state_tile(tiles, "CONDITION", "%d %%" % roundi(float(condition)), Charte.couleur_attribut(float(condition)), float(condition))
+	var fatigue: Variant = player.get("physicalLoad")
+	if fatigue is Dictionary: fatigue = fatigue.get("fatigue")
+	if fatigue is int or fatigue is float:
+		_state_tile(tiles, "FATIGUE", "%d" % roundi(float(fatigue)), Charte.couleur_attribut(100.0 - float(fatigue)), float(fatigue))
+	var morale: Variant = _player_morale(player)
+	if morale != null: _state_tile(tiles, "MORAL", "%d" % roundi(float(morale)), Charte.couleur_attribut(float(morale)), float(morale))
+	var decision: Dictionary = scene.get("decision", {}) if scene.get("decision") is Dictionary else {}
+	var reaction := reaction_of(decision, id)
+	if not str(reaction.get("label", "")).is_empty():
+		_state_tile(tiles, "RÉACTION", str(reaction.label), reaction_color(reaction), -1.0)
+	var actions := S.G.h(px(8))
+	column.add_child(actions)
+	actions.add_child(_hspace())
+	var sheet := S.button("FICHE COMPLÈTE   →", func(): open_full_sheet(id))
+	sheet.name = "TalkPlayerFullSheet"
+	sheet.custom_minimum_size = Vector2(px(220), px(40))
+	sheet.add_theme_font_override("font", Charte.TITRE_GRAS)
+	sheet.add_theme_font_size_override("font_size", px(15))
+	_focus_lisible(sheet)
+	actions.add_child(sheet)
+	sheet.call_deferred("grab_focus")
+
+## Bouton secondaire qui reçoit le focus à l'ouverture : texte crème et contour crème (lisible, jamais encre sur noir).
+func _focus_lisible(button: Button) -> void:
+	button.add_theme_color_override("font_focus_color", S.TEXT)
+	var focus := Charte.style_pilule(Color.TRANSPARENT, Charte.CREME, 16, 6)
+	focus.draw_center = false
+	button.add_theme_stylebox_override("focus", focus)
+
+func _on_voile_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed: close_player_window()
+
+## Une tuile d'état de la petite fenêtre : intitulé, valeur en couleur (jamais seule : le chiffre ou le mot est écrit),
+## jauge quand la valeur est sur 100.
+func _state_tile(parent: Control, title: String, value: String, color: Color, gauge: float) -> void:
+	var tile := PanelContainer.new()
+	tile.name = "TalkPlayerState_" + title.validate_node_name()
+	tile.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tile.add_theme_stylebox_override("panel", Charte.style_panneau(Charte.PANNEAU_2.lerp(color, .10), px(Charte.RAYON_CARTE), px(12)))
+	S.G.fill(tile)
+	parent.add_child(tile)
+	var column := S.G.v(px(4))
+	tile.add_child(column)
+	column.add_child(_text(title, px(13), S.MUTED, Charte.TITRE_GRAS))
+	var short := value.length() <= 6
+	var shown := _text(value, px(30) if short else px(22), color, Charte.TITRE_FICHE if short else Charte.TITRE_GRAS)
+	shown.name = "TalkPlayerStateValue"
+	column.add_child(shown)
+	if gauge >= 0.0:
+		var bar := ProgressBar.new()
+		bar.show_percentage = false
+		bar.max_value = 100
+		bar.value = clampf(gauge, 0.0, 100.0)
+		bar.custom_minimum_size = Vector2(0, maxi(4, px(5)))
+		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bar.add_theme_stylebox_override("background", Charte.style_pilule(Charte.PANNEAU_3, Color.TRANSPARENT, 0, 0))
+		bar.add_theme_stylebox_override("fill", Charte.style_pilule(color, Color.TRANSPARENT, 0, 0))
+		column.add_child(bar)
+
+## Moral d'un joueur : sa note de relation avec le staff (clubLife.relationships.players, comme sur la fiche).
+func _player_morale(player: Dictionary) -> Variant:
+	var life: Variant = model.get("clubLife", {})
+	if not life is Dictionary: return null
+	var relations: Variant = life.get("relationships", {})
+	if not relations is Dictionary: return null
+	var members: Variant = relations.get("players", [])
+	if not members is Array: return null
+	for member: Variant in members:
+		if member is Dictionary and str(member.get("id", "")) == str(player.get("id", "")):
+			var score: Variant = member.get("score")
+			return score if score is int or score is float else null
+	return null
+
+func close_player_window() -> void:
+	_fenetre_id = ""
+	if is_instance_valid(_fenetre): _fenetre.queue_free()
+	_fenetre = null
+
+## Fiche complète du joueur, en page posée sur le vestiaire ; « Retour au vestiaire » la referme.
+func open_full_sheet(id: Variant) -> void:
+	close_player_window()
+	var trouve: Dictionary = load("res://ui/immersive08/fiche_commune.gd").trouver(app, str(id), "squad")
+	if trouve.is_empty() or not is_instance_valid(ui): return
+	var page := Control.new()
+	page.name = "TalkPlayerSheet"
+	S.full(page)
+	ui.add_child(page)
+	_page_fiche = page
+	var fond := ColorRect.new()
+	fond.color = Charte.FOND
+	S.full(fond)
+	page.add_child(fond)
+	var column := S.frame(page, px(16))
+	var top := S.G.h(px(8))
+	column.add_child(top)
+	var back := S.button("←   RETOUR AU VESTIAIRE", close_full_sheet)
+	back.name = "TalkPlayerSheetBack"
+	back.custom_minimum_size.y = px(40)
+	back.add_theme_font_override("font", Charte.TITRE_GRAS)
+	back.add_theme_font_size_override("font_size", px(15))
+	_focus_lisible(back)
+	top.add_child(back)
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	S.G.fill(scroll, true)
+	column.add_child(scroll)
+	var fiche: Control = load("res://ui/immersive08/player_canvas.gd").build(app, trouve.joueur, "squad")
+	fiche.name = "TalkPlayerSheetCanvas"
+	scroll.add_child(fiche)
+	# Comme dans le direct : les actions de gestion de la fiche attendent la fin du match.
+	load("res://ui/contextual/live_view.gd").neutraliser(fiche)
+	back.call_deferred("grab_focus")
+
+func close_full_sheet() -> void:
+	if is_instance_valid(_page_fiche): _page_fiche.queue_free()
+	_page_fiche = null
 
 func _pronounce() -> void:
 	if selected_choice.is_empty() or (audience == "players" and selected_ids.is_empty()): return

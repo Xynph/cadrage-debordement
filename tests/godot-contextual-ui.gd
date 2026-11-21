@@ -114,6 +114,33 @@ func run() -> void:
 		await settle()
 		for role: Label in director.view.find_children("ParticipantPosition", "Label", true, false):
 			check(Rect2(Vector2.ZERO, host.size).encloses(role.get_global_rect()), "position label stays visible at " + str(resolution))
+	# Toute tuile agit. Onglet Groupe : un clic sur chaque joueur ouvre sa petite fenêtre (numéro, tuiles d'état, fiche).
+	var windows := 0
+	for number in range(1, 24):
+		var tile: Button = director.view.find_child("Participant_%d" % number, true, false)
+		if tile == null: continue
+		tile.pressed.emit()
+		await process_frame
+		var popup: Node = director.view.find_child("TalkPlayerPopup", true, false)
+		if popup != null and str(popup.get_meta("player_id")) == str(tile.get_meta("participant_id")) \
+			and popup.find_child("TalkPlayerPopupNumber", true, false).text == str(number) \
+			and popup.find_child("TalkPlayerPopupTiles", true, false).get_child_count() >= 2 \
+			and popup.find_child("TalkPlayerFullSheet", true, false) != null: windows += 1
+		director.view.close_player_window()
+		await process_frame
+	check(windows == 23, "each player tile opens his own window (%d/23)" % windows)
+	check(host.sent.is_empty(), "a player window sends no command")
+	# Onglet Joueurs : un clic vise, un second clic retire.
+	director.view._set_audience("players")
+	for number in range(1, 24):
+		var tile: Button = director.view.find_child("Participant_%d" % number, true, false)
+		if tile != null: tile.pressed.emit()
+	check(director.view.selected_ids.size() == 23 and director.view.find_children("ParticipantTargeted", "", true, false).size() == 23, "each player tile is targeted with a check in the Joueurs tab")
+	for number in range(1, 24):
+		var tile: Button = director.view.find_child("Participant_%d" % number, true, false)
+		if tile != null: tile.pressed.emit()
+	check(director.view.selected_ids.is_empty() and director.view.find_child("TalkPlayerPopup", true, false) == null, "a second click removes the target without opening a window")
+	director.view._set_audience("group")
 	var original := JSON.stringify(host.model)
 	director.view._set_audience("players")
 	var locked := true
@@ -128,6 +155,12 @@ func run() -> void:
 	check(host.sent.size() == 1 and host.sent[0][0] == "match_talk_decide", "clicking a declaration pronounces it without confirmation")
 	check(director.view.find_child("TalkPronounce", true, false) == null, "no separate Prononcer confirmation button")
 	check(host.sent[0][1].playerIds == [participants[0].id] and not host.sent[0][1].has("tone"), "real selected id and no caller-supplied tone")
+	# Chaque tuile de ton prononce sa propre phrase.
+	for i in 6:
+		var tone_tile: Button = director.view.find_child("TalkChoice_" + str(options[i].tone), true, false)
+		if tone_tile != null: tone_tile.pressed.emit()
+	var spoken: Array = host.sent.slice(1).map(func(row: Array) -> String: return str(row[1].get("choiceId", "")))
+	check(spoken == options.map(func(o: Dictionary) -> String: return str(o.id)), "each tone tile pronounces its own declaration " + str(spoken))
 	for resolution in [Vector2i(1280,720),Vector2i(1920,1080),Vector2i(2560,1440)]:
 		root.size = resolution
 		await settle()

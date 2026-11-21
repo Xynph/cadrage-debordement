@@ -248,6 +248,26 @@ func run() -> void:
 		check(root.size == resolution, "Actual locker client area matches requested " + str(resolution))
 		locker_check("pre")
 		await capture("pre-" + str(resolution.x))
+	# Toute tuile agit : un joueur cliqué (onglet Groupe) ouvre sa petite fenêtre, puis sa fiche complète, puis le retour.
+	var first_card: Button = director.view.find_child("Participant_1", true, false)
+	check(first_card != null, "Player tile 1 exists")
+	if first_card != null:
+		first_card.pressed.emit()
+		await settle()
+		var popup: Node = director.view.find_child("TalkPlayerPopup", true, false)
+		check(popup != null and popup.is_visible_in_tree(), "Clicking a player tile opens his window")
+		await capture("pre-window")
+		var full_sheet: Button = director.view.find_child("TalkPlayerFullSheet", true, false)
+		check(full_sheet != null, "Player window offers the full sheet")
+		if full_sheet != null:
+			full_sheet.pressed.emit()
+			await settle()
+			check(director.view.find_child("TalkPlayerSheetCanvas", true, false) != null, "Full sheet opens over the locker")
+			await capture("pre-sheet")
+			var back: Button = director.view.find_child("TalkPlayerSheetBack", true, false)
+			if back != null: back.pressed.emit()
+			await settle()
+			check(director.view.find_child("TalkPlayerSheet", true, false) == null, "Back closes the full sheet")
 	root.size = initial_resolution
 	await settle()
 	# A rejected public command remains visible inside the immersive surface.
