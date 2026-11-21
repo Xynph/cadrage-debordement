@@ -920,9 +920,9 @@ func _poser_plaques(teams: Array) -> void:
 		plaques[cote].tooltip_text = ("%s : fiche du club (le match se met en pause)." % complet) if not complet.is_empty() else "Fiche du club (le match se met en pause)."
 	_coque_score.queue_redraw()
 
-## PROVISOIRE (choix de Léo) : variante B du bandeau, l'écusson du club (pack, sinon écusson officiel, sinon écusson
-## recoloré aux couleurs et initiales du club, comme sur le stade) à côté du sigle, 44 px en 1080p : sous 43 px
-## l'écusson recoloré masque ses initiales (illisibles sous 11 px). Actif avec CD_VARIANTE_VISUELLE=B seulement.
+## PROVISOIRE (choix de Léo) : variante B du bandeau, le vrai logo du club quand un pack d'identité installé en fournit
+## un (logoPath de la présentation du club), 44 px en 1080p à côté du sigle ; sans logo de pack, le sigle seul (jeu
+## de base). Jamais l'écusson dessiné ni le blason officiel ici. Actif avec CD_VARIANTE_VISUELLE=B seulement.
 func _poser_ecusson(cote: int, teams: Array) -> void:
 	if OS.get_environment("CD_VARIANTE_VISUELLE") != "B": return
 	var rangee: HBoxContainer = plaques[cote].get_child(0)
@@ -931,16 +931,23 @@ func _poser_ecusson(cote: int, teams: Array) -> void:
 		rangee.remove_child(ancien)
 		ancien.queue_free()
 	if teams.size() <= cote or not (teams[cote] is Dictionary): return
-	var ecusson: Control = S.G.crest(_club_complet(teams[cote]), roundi(44 * echelle))
+	var club := _club_complet(teams[cote])
+	var logo: Texture2D = S.G.Base._pack_texture(str(S.G.identity(club).get("logoPath", club.get("logoPath", ""))))
+	if logo == null: return
+	var ecusson := TextureRect.new()
+	ecusson.texture = logo
+	ecusson.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	ecusson.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	ecusson.custom_minimum_size = Vector2.ONE * roundi(44 * echelle)
 	ecusson.name = "MatchClubCrest%d" % cote
 	ecusson.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	ecusson.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rangee.add_child(ecusson)
 	rangee.move_child(ecusson, 0 if cote == 0 else rangee.get_child_count() - 1)
 
-## Club du direct complété par sa fiche du classement ou du catalogue (identité : couleurs, slug, blason).
+## Club du direct complété par sa fiche du classement ou du catalogue (identité, dont le logo du pack).
 func _club_complet(equipe: Dictionary) -> Dictionary:
-	if S.G.identity(equipe).has("color") and S.G.identity(equipe).has("slug"): return equipe
+	if S.G.identity(equipe).has("logoPath") or equipe.has("logoPath"): return equipe
 	var modele: Dictionary = app.model if app.model is Dictionary else {}
 	for liste: Variant in [modele.get("league", []), modele.get("meta", {}).get("catalogue", []) if modele.get("meta") is Dictionary else []]:
 		if not liste is Array: continue
