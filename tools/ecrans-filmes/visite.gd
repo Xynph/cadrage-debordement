@@ -60,6 +60,10 @@ const EXTRAS := [
 	{"id": "finances-budget", "libelle": "Finances · onglet Budget", "type": "finances_onglet", "onglet": "budget"},
 	{"id": "finances-classement", "libelle": "Finances · onglet Classement", "type": "finances_onglet", "onglet": "clubs"},
 	{"id": "finances-transferts", "libelle": "Finances · onglet Transferts", "type": "finances_onglet", "onglet": "transfers"},
+	{"id": "strategie-finances", "libelle": "Club › Direction · onglet Finances", "type": "strategie_onglet", "onglet": 0},
+	{"id": "strategie-projet", "libelle": "Club › Direction · onglet Projet sportif", "type": "strategie_onglet", "onglet": 1},
+	{"id": "strategie-supporters", "libelle": "Club › Direction · onglet Supporters", "type": "strategie_onglet", "onglet": 2},
+	{"id": "strategie-public", "libelle": "Club › Direction · petite fenêtre Le public", "type": "strategie_onglet", "onglet": 2, "zone": "DirectionLien_Sentiment"},
 	{"id": "club-infrastructures", "libelle": "Club · onglet Infrastructures", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "infrastructure", "repos": "overview"},
 	{"id": "club-histoire", "libelle": "Club · onglet Histoire", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "history", "repos": "overview"},
 	{"id": "vestiaire-entretiens", "libelle": "Vestiaire · onglet Entretiens et duos", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week"},
@@ -477,6 +481,21 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			app.set_meta("press_mail_origin", conference.invitationId)
 			canvas._select(1)
 			await stabiliser()
+		"strategie_onglet":
+			app.management_ui.immersive08_strategy_tab = int(ecran.onglet)
+			app._navigate("Stratégie")
+			await stabiliser()
+			if app.route != "Stratégie": return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
+			var onglets := app.find_child("StrategyTabs", true, false) as TabContainer
+			if onglets == null or onglets.current_tab != int(ecran.onglet): return {"statut": "echec", "note": "onglet de Direction non affiché"}
+			if ecran.has("zone"):
+				var zone := app.find_child(str(ecran.zone), true, false) as Control
+				if zone == null: return {"statut": "echec", "note": "zone %s absente" % ecran.zone}
+				var clic := InputEventMouseButton.new()
+				clic.button_index = MOUSE_BUTTON_LEFT
+				clic.pressed = true
+				zone.gui_input.emit(clic)
+				await stabiliser()
 		"presse_onglet":
 			preparer_presse()
 			app.management_ui.press_tab = int(ecran.onglet)
