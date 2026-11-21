@@ -946,12 +946,24 @@ func _poser_ecusson(cote: int, teams: Array) -> void:
 		image.set_meta("logo_pack", true)
 		ecusson = image
 	else:
-		ecusson = load("res://ui/tenue_club.gd").ecusson(club, largeur)
-		if ecusson == null: ecusson = S.G.crest(club, largeur)
+		# L'image de l'écusson dessiné a une marge transparente (forme ≈ 65 % du cadre) : dessinée à 150 % dans une case
+		# de 44 px, la forme fait ≈ 44 px (taille choisie sur la planche) sans grandir le bandeau ni serrer les noms.
+		var dessin_taille := roundi(largeur * 1.5)
+		var dessin: Control = load("res://ui/tenue_club.gd").ecusson(club, dessin_taille)
+		if dessin == null: dessin = S.G.crest(club, dessin_taille)
+		dessin.custom_minimum_size = Vector2.ONE * dessin_taille
+		dessin.size = Vector2.ONE * dessin_taille
+		dessin.position = Vector2.ONE * float(largeur - dessin_taille) / 2.0
+		ecusson = Control.new()
 		ecusson.custom_minimum_size = Vector2.ONE * largeur
-		# Initiales jamais masquées dans le bandeau (l'écusson les cache sous 11 px) : 11 px au moins.
-		for initiales in ecusson.find_children("*", "Label", true, false):
-			(initiales as Label).add_theme_font_size_override("font_size", maxi(11, roundi(largeur * 0.27)))
+		ecusson.add_child(dessin)
+		# Initiales jamais masquées (l'écusson les cache sous 11 px) et toujours lues : ivoire, contour sombre.
+		for initiales in dessin.find_children("*", "Label", true, false):
+			var etiquette := initiales as Label
+			etiquette.add_theme_font_size_override("font_size", maxi(11, roundi(dessin_taille * 0.22)))
+			etiquette.add_theme_color_override("font_color", Charte.IVOIRE)
+			etiquette.add_theme_color_override("font_outline_color", Color(0.05, 0.06, 0.07, 0.95))
+			etiquette.add_theme_constant_override("outline_size", maxi(3, roundi(dessin_taille * 0.07)))
 	ecusson.name = "MatchClubCrest%d" % cote
 	ecusson.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	ecusson.mouse_filter = Control.MOUSE_FILTER_IGNORE
