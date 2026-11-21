@@ -427,6 +427,10 @@ func preparer_presse() -> void:
 ## Ouvre un écran hors direct. Renvoie {"statut": ok|redirige|indisponible|echec, "route", "note"}.
 func ouvrir(ecran: Dictionary) -> Dictionary:
 	fermer_fenetres()
+	# La salle d'entraînement couvre tout l'écran : refermée avant l'écran suivant.
+	if bool(app.contextual_director.get("training_open")) and str(ecran.type) != "salle_entrainement":
+		app.contextual_director.close_training()
+		await stabiliser()
 	match str(ecran.type):
 		"route":
 			var route := str(ecran.route)
