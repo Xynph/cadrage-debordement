@@ -1,11 +1,14 @@
 extends Control
 const S = preload("res://ui/contextual/skin.gd")
+const TV = preload("res://ui/contextual/training_visuels.gd")
 var director: Node
 var app: Control
 var model: Dictionary = {}
 var ui: Control
 var _fingerprint := ""
 var maintained := false
+## Charge choisie dans la salle (vide : celle de la semaine, meta.training).
+var mode_choisi := ""
 
 func _ready() -> void:
 	name = "ContextualTraining"
@@ -32,28 +35,23 @@ func _draw() -> void:
 	column.add_child(content)
 	var facts := S.panel(content, 16)
 	S.G.fill(facts.get_parent(), true)
+	# Colonne de largeur fixe : sans elle, le panneau se réduisait à sa largeur minimale et le texte s'écrivait lettre par lettre.
+	facts.get_parent().custom_minimum_size.x = TV.LARGEUR_COLONNE
+	facts.get_parent().size_flags_horizontal = Control.SIZE_FILL
 	var scroll := S.G.scroll(facts)
 	S.G.fill(scroll.get_parent(), true)
 	var training: Dictionary = model.get("decisions", {}).get("training", {})
 	var support: Dictionary = model.get("clubLife", {}).get("clubSupport", {})
 	var plan_data: Dictionary = support.get("training", {})
 	var session: Dictionary = plan_data.get("session", {})
-	scroll.add_child(S.label("Le retour du préparateur", 21, S.GOLD))
+	# Avis du préparateur : une pastille d'état (moteur : adviceState), la phrase complète en infobulle ; clic -> Effectif & 23.
 	if trained:
 		scroll.add_child(S.wrap(str(session.get("reason")) if session.get("reason") != null else "Séance effectuée. Aucun compte rendu détaillé n’est enregistré pour cette séance.", 17, S.TEXT))
-	else: scroll.add_child(S.wrap(str(training.get("advice", "Aucun diagnostic disponible pour cette semaine.")), 17, S.TEXT))
-	scroll.add_child(S.label("État actuel du groupe", 16, S.GOLD))
-	for player: Dictionary in model.get("squad", []):
-		var row := S.G.h(9)
-		scroll.add_child(row)
-		row.add_child(S.G.portrait(int(player.get("portraitIndex", 0)), 34, player))
-		var fatigue: Variant = player.get("physicalLoad", {})
-		if fatigue is Dictionary: fatigue = fatigue.get("fatigue", "—")
-		var injury := int(player.get("injury", 0))
-		var detail := S.wrap("%s · condition %s · charge %s%s" % [str(player.get("name", "")), _entier(player.get("condition", "—")), _entier(fatigue), " · indisponible (%d sem.)" % injury if injury > 0 else ""], 13, S.TEXT)
-		# Le texte prend la largeur restante à côté du portrait (sans cela il se replie lettre par lettre).
-		detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_child(detail)
+	else: scroll.add_child(TV.pastille_avis(training, func():
+		director.close_training()
+		app._navigate("Effectif")))
+	scroll.add_child(S.label("Le groupe", 19, S.GOLD))
+	TV.colonne_groupe(self, scroll, model.get("squad", []))
 	var air := Control.new()
 	air.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	S.G.fill(air, true)
@@ -68,21 +66,22 @@ func _draw() -> void:
 		list.add_child(S.wrap("Les décisions de cette séance sont en lecture seule.", 16))
 	else:
 		list.add_child(S.label("Préparer la séance", 21, S.GOLD))
-		list.add_child(S.wrap("Configurer les charges et la priorité ne lance pas la séance.", 14))
-		var current_mode: String = {"repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}.get(str(model.get("meta", {}).get("training", "normal")), str(model.get("meta", {}).get("training", "normal")))
-		list.add_child(S.label("Séance prévue : " + current_mode, 14, S.GOLD))
-		list.add_child(S.button("MAINTENIR LES RÉGLAGES", func(): maintained = true; _draw()))
-		if maintained: list.add_child(S.label("Réglages conservés. La séance reste à effectuer.", 12, S.GOLD))
+		# Charge de la séance : choix local, envoyé avec « Effectuer la séance » (sinon le mode de la semaine).
+		var mode := mode_choisi if not mode_choisi.is_empty() else str(model.get("meta", {}).get("training", "normal"))
+		list.add_child(TV.choix_charge(mode, func(cle: String): mode_choisi = cle; _draw(), plan_data.get("available", false)))
+		if maintained: list.add_child(TV.pastille("check", "Réglages gardés", TV.Charte.CONDITION, 15))
+		else: list.add_child(TV.bouton_secondaire("Maintenir les réglages", "lock", func(): maintained = true; _draw(), "TrainingMaintain"))
+		list.add_child(S.label("Plans du staff", 16, S.GOLD))
 		for plan: Dictionary in plan_data.get("plans", []):
-			list.add_child(S.wrap(str(plan.get("detail", "")), 13))
-			list.add_child(S.button(str(plan.get("label", "")), func(): director.command("training_plan", {"context":support.get("context"), "plan":plan.get("key")}), plan_data.get("available", false)))
+			var appliquer := func(): director.command("training_plan", {"context":support.get("context"), "plan":plan.get("key")})
+			list.add_child(TV.tuile_plan(plan, appliquer, plan_data.get("available", false)))
 		var collective: Dictionary = training.get("collective", {})
-		list.add_child(S.label("Changer la priorité", 16, S.GOLD))
-		for option: Dictionary in collective.get("options", []):
-			var focus := S.button(str(option.get("label", "")), func(): director.command("set_collective_focus", {"focus":option.get("id")}), collective.get("available", false))
-			if collective.get("selected") == option.get("id"): S.selected(focus, S.GOLD)
-			list.add_child(focus)
-		list.add_child(S.button("EFFECTUER LA SÉANCE", _perform_training, plan_data.get("available", false), true))
+		list.add_child(S.label("Priorité de la semaine", 16, S.GOLD))
+		list.add_child(TV.tuiles_priorites(collective.get("options", []), collective.get("selected"), func(id: String): director.command("set_collective_focus", {"focus":id}), collective.get("available", false)))
+		var espace := Control.new()
+		espace.custom_minimum_size.y = 6
+		list.add_child(espace)
+		list.add_child(TV.bouton_seance(_perform_training, plan_data.get("available", false)))
 	column.add_child(S.button("FERMER L’OBSERVATION", director.close_training))
 	director._refresh_controls()
 
@@ -90,7 +89,7 @@ func _perform_training() -> void:
 	if model.get("meta", {}).get("trained", false): return
 	# Maintaining the plan must preserve the actual collective mode, including
 	# recovery/intensive. A training_plan response may explicitly change it.
-	director.command("train", {"mode":str(model.get("meta", {}).get("training", "normal"))})
+	director.command("train", {"mode":mode_choisi if not mode_choisi.is_empty() else str(model.get("meta", {}).get("training", "normal"))})
 
 ## Condition et charge s'affichent en entiers (le moteur renvoie des décimales longues).
 static func _entier(valeur: Variant) -> String:

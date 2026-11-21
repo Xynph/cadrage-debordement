@@ -29,6 +29,8 @@ const HORS_CARRIERE := ["Accueil", "Création", "Packs"]
 const EXTRAS := [
 	{"id": "calendrier-semaine", "libelle": "Calendrier (semaine)", "type": "calendrier_semaine"},
 	{"id": "entrainement-groupes", "libelle": "Entraînement · onglet Groupes", "type": "entrainement_onglet", "onglet": 1},
+	{"id": "salle-entrainement", "libelle": "Observer la préparation (salle d'entraînement)", "type": "salle_entrainement"},
+	{"id": "salle-entrainement-joueur", "libelle": "Observer la préparation · petite fenêtre d'un joueur", "type": "salle_entrainement", "joueur": true},
 	{"id": "fiche-joueur", "libelle": "Fiche joueur", "type": "joueur"},
 	{"id": "mini-fiche", "libelle": "Mini-fiche au survol (Effectif)", "type": "mini_fiche"},
 	{"id": "equilibre-postes", "libelle": "Équilibre par poste (infobulle Aptes)", "type": "equilibre_postes"},
@@ -39,6 +41,7 @@ const EXTRAS := [
 	{"id": "presse-portraits", "libelle": "Presse : Portraits", "type": "presse_onglet", "onglet": 3},
 	{"id": "v2-recrutement-offre", "libelle": "Recrutement : écran Offre au joueur", "type": "recrutement_etape", "etape": "offre"},
 	{"id": "v2-recrutement-confirmation", "libelle": "Recrutement : confirmation en place de l'offre", "type": "recrutement_etape", "etape": "offre_confirmation"},
+	{"id": "v2-recrutement-offre-fenetre", "libelle": "Recrutement : petite fenêtre du salaire sur l'offre", "type": "recrutement_etape", "etape": "offre_fenetre"},
 	{"id": "v2-recrutement-observation", "libelle": "Recrutement : confirmation en place de l'observation", "type": "recrutement_etape", "etape": "observation"},
 	{"id": "fiche-club", "libelle": "Fiche d'un club adverse", "type": "club"},
 	{"id": "classements-rencontre", "libelle": "Classements · sous-page d'une rencontre", "type": "classements_page", "page": "rencontre"},
@@ -49,6 +52,7 @@ const EXTRAS := [
 	{"id": "options", "libelle": "Options", "type": "options"},
 	{"id": "avant-match-delegation", "libelle": "Avant-match · sous-page Déléguer le match", "type": "avant_delegation"},
 	{"id": "preparation-bas", "libelle": "Préparation · leur XV probable (bas de page)", "type": "preparation_bas"},
+	{"id": "preparation-consignes", "libelle": "Préparation · onglet Consignes", "type": "preparation_onglet", "onglet": 1},
 	{"id": "preparation-conseils", "libelle": "Préparation · conseils détaillés (sous-page)", "type": "preparation_sous", "sous": "conseils"},
 	{"id": "preparation-reperes", "libelle": "Préparation · tous les repères (sous-page)", "type": "preparation_sous", "sous": "reperes"},
 	{"id": "effectif-contrats", "libelle": "Effectif · onglet Contrats", "type": "effectif_onglet", "onglet": 2},
@@ -69,6 +73,8 @@ const EXTRAS := [
 	{"id": "vestiaire-entretiens", "libelle": "Vestiaire · onglet Entretiens et duos", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week"},
 	{"id": "selections-offres", "libelle": "Sélections · onglet Offres", "type": "onglet_cle", "route": "Sélections", "cle": "international_section", "onglet": "offers", "repos": "callups"},
 	{"id": "selections-disponibilites", "libelle": "Sélections · onglet Disponibilités", "type": "onglet_cle", "route": "Sélections", "cle": "international_section", "onglet": "availability", "repos": "callups"},
+	{"id": "vestiaire-entretiens-duos", "libelle": "Vestiaire · Entretiens et duos, bas de la colonne (duos)", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week", "defiler": "RelationshipPeopleScroll"},
+	{"id": "vestiaire-groupe", "libelle": "Vestiaire · petite fenêtre du groupe (portraits)", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week", "presser": "RelationshipAllPortraits"},
 	{"id": "vestiaire-historique", "libelle": "Vestiaire · onglet Engagements et historique", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "history", "repos": "week"},
 ]
 ## Écrans du match en direct : le coup d'envoi est donné une fois, après tous les autres écrans.
@@ -432,6 +438,10 @@ func preparer_presse() -> void:
 ## Ouvre un écran hors direct. Renvoie {"statut": ok|redirige|indisponible|echec, "route", "note"}.
 func ouvrir(ecran: Dictionary) -> Dictionary:
 	fermer_fenetres()
+	# La salle d'entraînement couvre tout l'écran : refermée avant l'écran suivant.
+	if bool(app.contextual_director.get("training_open")) and str(ecran.type) != "salle_entrainement":
+		app.contextual_director.close_training()
+		await stabiliser()
 	match str(ecran.type):
 		"route":
 			var route := str(ecran.route)
@@ -459,6 +469,18 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			if entrainement == null: return {"statut": "echec", "note": "entraînement non ouvert"}
 			entrainement._open_tab(int(ecran.onglet))
 			await stabiliser()
+		"salle_entrainement":
+			app._navigate("Préparation")
+			await stabiliser()
+			app.contextual_director.open_training()
+			await stabiliser()
+			var salle: Control = app.find_child("ContextualTraining", true, false)
+			if salle == null: return {"statut": "echec", "note": "salle d'entraînement non ouverte"}
+			if bool(ecran.get("joueur", false)):
+				var visuels = load("res://ui/contextual/training_visuels.gd")
+				var blesses: Array = app.model.get("squad", []).filter(func(j: Dictionary) -> bool: return int(j.get("injury", 0)) > 0)
+				visuels.ouvrir_joueur(salle, blesses[0] if not blesses.is_empty() else app.model.squad[0])
+				await stabiliser()
 		"presse_ouverte":
 			# Même recette que tests/godot-presse-da.gd : carrière neuve, avance jusqu'à la conférence d'arrivée,
 			# puis page Presse avec l'origine du courrier (questions ouvertes sous les yeux).
@@ -517,6 +539,12 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			if cible == null or cible.disabled: return {"statut": "indisponible", "note": "action absente ou grisée pour la piste choisie"}
 			cible.pressed.emit()
 			await stabiliser()
+			if etape == "offre_fenetre":
+				var salaire := app.find_child("OffreRegleEcartZoneLien", true, false) as Button
+				if salaire == null: return {"statut": "echec", "note": "chiffre du salaire absent de l'offre"}
+				salaire.pressed.emit()
+				await stabiliser()
+				if app.find_child("OffreFenetreSalaire", true, false) == null: return {"statut": "echec", "note": "petite fenêtre du salaire non ouverte"}
 			if etape == "offre_confirmation":
 				var valider := app.find_child("RecrutementPageValider", true, false) as Button
 				if valider == null or valider.disabled: return {"statut": "indisponible", "note": "offre non envoyable pour cette piste"}
@@ -628,6 +656,13 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			app.management_ui.preparation.sub = str(ecran.sous)
 			app._render()
 			await stabiliser()
+		"preparation_onglet":
+			app._navigate("Préparation")
+			await stabiliser()
+			app.management_ui.preparation.tab = int(ecran.onglet)
+			app.management_ui.preparation.sub = ""
+			app._render()
+			await stabiliser()
 		"effectif_onglet":
 			app.management_ui.roster.immersive_tab = int(ecran.onglet)
 			app._navigate("Effectif")
@@ -641,6 +676,16 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			app.management_ui[str(ecran.cle)] = str(ecran.onglet)
 			app._navigate(str(ecran.route))
 			await stabiliser()
+			if ecran.has("defiler"):
+				var colonne := app.find_child(str(ecran.defiler), true, false) as ScrollContainer
+				if colonne == null: return {"statut": "echec", "note": "colonne %s absente" % ecran.defiler}
+				colonne.scroll_vertical = int(colonne.get_v_scroll_bar().max_value)
+				await stabiliser()
+			if ecran.has("presser"):
+				var bouton := app.find_child(str(ecran.presser), true, false) as Button
+				if bouton == null: return {"statut": "echec", "note": "bouton %s absent" % ecran.presser}
+				bouton.pressed.emit()
+				await stabiliser()
 		"finances_onglet":
 			app.management_ui["immersive08_finance_tab"] = str(ecran.onglet)
 			app._navigate("Finances")
@@ -666,9 +711,12 @@ func refermer(ecran: Dictionary) -> void:
 		var avant: Control = app.match_screen.find_child("MatchOpening", true, false) if app.match_screen != null else null
 		if avant != null: avant.fermer_page()
 	if str(ecran.type) in ["preparation_bas", "preparation_sous"] and app.management_ui.get("preparation") is Dictionary: app.management_ui.preparation.sub = ""
+	if str(ecran.type) == "preparation_onglet" and app.management_ui.get("preparation") is Dictionary: app.management_ui.preparation.tab = 0
 	if str(ecran.type) == "effectif_onglet": app.management_ui.roster.immersive_tab = 0
 	if str(ecran.type) == "finances_onglet": app.management_ui["immersive08_finance_tab"] = "summary"
-	if str(ecran.type) == "onglet_cle": app.management_ui[str(ecran.cle)] = str(ecran.repos)
+	if str(ecran.type) == "onglet_cle":
+		if ecran.has("presser"): load("res://ui/petite_fenetre.gd").fermer_derniere(app.get_tree())
+		app.management_ui[str(ecran.cle)] = str(ecran.repos)
 	if str(ecran.type) == "classements_onglet" and app.management_ui.get("competition") is Dictionary: app.management_ui.competition.tab = "league"
 	if str(ecran.type) == "formation_suivi": load("res://ui/immersive08/formation_pages.gd").oublier(app)
 	if str(ecran.type) == "equilibre_postes": app.find_child("EffectifTuileAptes", true, false).mouse_exited.emit()

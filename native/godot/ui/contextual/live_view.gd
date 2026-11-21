@@ -424,7 +424,7 @@ static func _texte(texte: String, police: Font, couleur: Color) -> Label:
 	etiquette.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	return etiquette
 
-## Plaque d'un club : sigle encadré du liseré du club, nom en capitales ; survol ou focus : le nom se souligne.
+## Plaque d'un club : logo du club (_poser_ecusson, à la place de la pastille du sigle), nom en capitales ; survol ou focus : le nom se souligne.
 ## Clic ou Entrée : fiche du club dans une page du direct (le match se met en pause).
 func _plaque(cote: int) -> PanelContainer:
 	var plaque := _segment("MatchClubPlaque%d" % cote, Charte.CLUB)
@@ -907,6 +907,7 @@ func _poser_plaques(teams: Array) -> void:
 		style.content_margin_top = roundf(2 * echelle)
 		style.content_margin_bottom = roundf(2 * echelle)
 		puce.add_theme_stylebox_override("panel", style)
+		_poser_ecusson(cote, teams)
 		# Noms très longs : 300 px au plus (1920 × 1080) par plaque, environ 150 px en 1280 × 720 (les commandes
 		# tiennent sur la même rangée) ; au-delà, le nom court (sans ses derniers mots), sinon le sigle. Jamais « … ».
 		var nom: Label = home if cote == 0 else away
@@ -918,6 +919,61 @@ func _poser_plaques(teams: Array) -> void:
 		nom.custom_minimum_size.x = police.get_string_size(nom.text, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x + 2.0
 		plaques[cote].tooltip_text = ("%s : fiche du club (le match se met en pause)." % complet) if not complet.is_empty() else "Fiche du club (le match se met en pause)."
 	_coque_score.queue_redraw()
+
+## Choix de Léo (21/11/2026) : le logo du club À LA PLACE de la pastille du sigle (même emplacement, 44 px en 1080p),
+## jamais les deux : le vrai logo quand un pack d'identité en fournit un (logoPath de la présentation), sinon l'écusson
+## dessiné aux couleurs et initiales du club (celui du stade). La pastille reste cachée, stylée (couleur de l'écusson).
+## Le logo laisse passer la souris : un clic dessus ouvre la fiche du club comme la plaque.
+func _poser_ecusson(cote: int, teams: Array) -> void:
+	var puce: Control = plaques[cote].find_child("MatchClubChip%d" % cote, true, false)
+	var rangee: Container = puce.get_parent()
+	var ancien := rangee.get_node_or_null("MatchClubCrest%d" % cote)
+	if ancien != null:
+		rangee.remove_child(ancien)
+		ancien.queue_free()
+	puce.visible = true
+	if teams.size() <= cote or not (teams[cote] is Dictionary): return
+	var club := _club_complet(teams[cote])
+	var largeur := roundi(44 * echelle)
+	var ecusson: Control
+	var logo: Texture2D = S.G.Base._pack_texture(str(S.G.identity(club).get("logoPath", club.get("logoPath", ""))))
+	if logo != null:
+		var image := TextureRect.new()
+		image.texture = logo
+		image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		image.custom_minimum_size = Vector2.ONE * largeur
+		image.set_meta("logo_pack", true)
+		ecusson = image
+	else:
+		ecusson = load("res://ui/tenue_club.gd").ecusson(club, largeur)
+		if ecusson == null: ecusson = S.G.crest(club, largeur)
+		ecusson.custom_minimum_size = Vector2.ONE * largeur
+		# Initiales jamais masquées dans le bandeau (l'écusson les cache sous 11 px) : 11 px au moins.
+		for initiales in ecusson.find_children("*", "Label", true, false):
+			(initiales as Label).add_theme_font_size_override("font_size", maxi(11, roundi(largeur * 0.27)))
+	ecusson.name = "MatchClubCrest%d" % cote
+	ecusson.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	ecusson.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ecusson.tooltip_text = ""
+	for enfant in ecusson.find_children("*", "Control", true, false): (enfant as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rangee.add_child(ecusson)
+	rangee.move_child(ecusson, puce.get_index())
+	puce.visible = false
+
+## Club du direct complété par sa fiche du classement ou du catalogue (identité, dont le logo du pack).
+func _club_complet(equipe: Dictionary) -> Dictionary:
+	if S.G.identity(equipe).has("logoPath") or equipe.has("logoPath"): return equipe
+	var modele: Dictionary = app.model if app.model is Dictionary else {}
+	for liste: Variant in [modele.get("league", []), modele.get("meta", {}).get("catalogue", []) if modele.get("meta") is Dictionary else []]:
+		if not liste is Array: continue
+		for club: Variant in liste:
+			if club is Dictionary and str(club.get("id", "")) == str(equipe.get("id", "?")):
+				var complet: Dictionary = club.duplicate()
+				complet.merge(equipe, true)
+				if club.get("presentation") is Dictionary and not equipe.get("presentation") is Dictionary: complet.presentation = club.presentation
+				return complet
+	return equipe
 
 ## Fond de l'écusson d'une plaque : la vraie couleur du club, assombrie (même teinte) jusqu'à ce que l'ivoire y soit lu à
 ## 5:1 au moins, contraste mesuré comme la charte (Charte.contraste) ; un club jaune ou or passe au bordeaux

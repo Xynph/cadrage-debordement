@@ -63,7 +63,7 @@ try{
  bad('extend_contract',{...renewalTerms,salary:100000});
  assert.deepEqual(fs.readFileSync(file),locked,'Un quatrième essai refusé conserve le profil.');
  m=good('set_delegation',{key:'lineup',enabled:true});assert.equal(m.decisions.delegation.lineup,true);good('set_delegation',{key:'lineup',enabled:false});bad('set_delegation',{key:'contracts',enabled:'oui'});bad('set_delegation',{key:'finances',enabled:true});good('set_delegation',{key:'contracts',enabled:false});good('set_delegation',{key:'contracts',enabled:true});bad('set_delegation',{key:'training',enabled:'yes'});
- m=good('set_collective_focus',{focus:'conquete'});assert.equal(m.decisions.training.collective.selected,'conquete');bad('set_collective_focus',{focus:'magic'});
+ m=good('set_collective_focus',{focus:'conquete'});assert.equal(m.decisions.training.collective.selected,'conquete');assert.ok(['pret','charge','fatigue'].includes(m.decisions.training.adviceState.kind)&&Number.isInteger(m.decisions.training.adviceState.count),'Avis du préparateur en état structuré');bad('set_collective_focus',{focus:'magic'});
  m=good('set_opponent_level',{level:'expert'});assert.equal(m.decisions.difficulty.selected,'expert');bad('set_opponent_level',{level:'cheat'});
  const prospect=m.decisions.development.academy[0];bad('promote_academy',{playerId:prospect.id});
  m=good('set_development_focus',{playerId:prospect.id,focus:prospect.development.options[1].id});assert.equal(m.decisions.development.academy.find(p=>p.id===prospect.id).development.focus,prospect.development.options[1].id);
