@@ -8,7 +8,9 @@ const G = preload("res://ui/game_skin.gd")
 const ClubUI = preload("res://ui/immersive08/club_ui.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const Fatigue = preload("res://ui/immersive08/fatigue_overview.gd")
-const Variantes = preload("res://ui/immersive08/training_groups_variants.gd")
+const Plans = preload("res://ui/immersive08/training_group_plans.gd")
+const Anneau = preload("res://ui/anneau_repartition.gd")
+const Groupe = preload("res://ui/immersive08/training_group_panel.gd")
 const Watch = preload("res://ui/management_state.gd")
 const TABS = ["Semaine", "Groupes", "Individuel", "Staff", "Fatigue"]
 const MODES = {"repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
@@ -132,6 +134,11 @@ func _staff_members() -> Array:
 			return role.contains("prépar") or role.contains("entraîn") or role.contains("coach"))
 	return []
 
+## Tuiles du haut : le moral mène au Vestiaire, les autres à l'onglet Fatigue.
+func _open_metric(index: int) -> void:
+	if index == 1: app._navigate("Vestiaire")
+	else: _open_tab(4)
+
 func _metrics(meta: Dictionary) -> void:
 	var group := P.group(app.model)
 	var total_load := 0.0
@@ -151,6 +158,8 @@ func _metrics(meta: Dictionary) -> void:
 		_icon(metrics, value[0], Rect2(x + 20, 36, 48, 48), value[3])
 		D.text(metrics, x + 81, 40, value[1], 24, C.IVORY, 500, 144)
 		D.text(metrics, x + 81, 85, value[2], 38 if i < 3 else 31, value[3], 700, 144)
+		var destination: String = ["Condition de l'effectif : ouvrir la fatigue", "Moral : ouvrir le vestiaire", "Charge moyenne : ouvrir la fatigue", "Joueurs à surveiller : ouvrir la fatigue"][i]
+		_zone(metrics, Rect2(x + 4, 4, 224, 98), "TrainingMetric" + str(i), destination, func(): _open_metric(i))
 
 func _week(fixture: Dictionary) -> void:
 	var focus: Dictionary = training.get("collective", {})
@@ -245,36 +254,55 @@ func _selection(index: int) -> void:
 
 func _chart() -> void:
 	var tile := D.panel(self, Rect2(1760, 11, 488, 296), "Charge & récupération", "heart", "", "TrainingLoadChart")
-	var top := 79.0
+	var top := 90.0
 	var bottom := 228.0
 	var left := 73.0
 	var right := 468.0
-	D.rect(tile, Rect2(left, bottom - (bottom - top) * .55, right - left, (bottom - top) * .55), Color("163827"))
 	for i in 6:
 		var y := bottom - (bottom - top) * i / 5.0
 		D.line(tile, Vector2(left, y), Vector2(right, y), Color(C.LINE, .64))
-		D.text(tile, 60, y + 5, str(i * 20), 16, C.IVORY, 500, 39, HORIZONTAL_ALIGNMENT_RIGHT)
+		D.text(tile, 60, y + 5, str(i * 20), 16, C.MUTED, 500, 39, HORIZONTAL_ALIGNMENT_RIGHT)
 	for i in FAMILIES.size():
 		var family: Array = FAMILIES[i]
 		var players := squad.filter(func(p: Dictionary): return p.get("fam", -1) in family[1])
-		var total := 0.0
-		for player: Dictionary in players: total += float(player.get("physicalLoad", 0))
-		var value := total / maxi(1, players.size())
-		var x := left + 20 + 56 * i
-		var h := maxf(2, (bottom - top) * value / 100.0)
-		var color := PALE_GOLD if value >= 55.0 else GREEN
-		var bar := D.rect(tile, Rect2(x, bottom - h, 29, h), color.darkened(.22), 2, color)
-		bar.mouse_filter = Control.MOUSE_FILTER_PASS
-		bar.tooltip_text = "%s · charge moyenne %.0f / 100 · %d joueur(s)" % [family[0], value, players.size()] if not players.is_empty() else "%s · aucun joueur" % family[0]
-		D.text(tile, x + 15, 253, family[0], 16, C.IVORY, 600, 56, HORIZONTAL_ALIGNMENT_CENTER)
-	D.rect(tile, Rect2(21, 270, 16, 16), GREEN, 2)
-	D.text(tile, 44, 284, "Charge moyenne par poste", 17, C.MUTED, 500, 233)
-	D.rect(tile, Rect2(296, 270, 16, 16), PALE_GOLD, 2)
-	D.text(tile, 322, 284, "Vigilance dès 55", 17, C.MUTED, 500, 149)
+		var load_total := 0.0
+		var condition_total := 0.0
+		for player: Dictionary in players:
+			load_total += float(player.get("physicalLoad", 0))
+			condition_total += float(player.get("condition", 0))
+		var count := maxi(1, players.size())
+		var load_value := load_total / count
+		var condition_value := condition_total / count
+		var x := left + 12 + 56 * i
+		D.text(tile, x + 24, 253, family[0], 16, C.IVORY, 600, 56, HORIZONTAL_ALIGNMENT_CENTER)
+		if players.is_empty(): continue
+		var tip := "%s · charge moyenne %.0f / 100 · condition moyenne %.0f %% · %d joueur(s)" % [family[0], load_value, condition_value, players.size()]
+		var series := [[load_value, Anneau.INTENSIF if load_value >= 55.0 else Anneau.NORMAL, x], [condition_value, Anneau.REPOS, x + 25]]
+		for serie: Array in series:
+			var h := maxf(2.0, (bottom - top) * float(serie[0]) / 100.0)
+			var bar := D.rect(tile, Rect2(float(serie[2]), bottom - h, 22, h), serie[1], 3)
+			bar.mouse_filter = Control.MOUSE_FILTER_PASS
+			bar.tooltip_text = tip
+			D.text(tile, float(serie[2]) + 11, bottom - h - 4, "%.0f" % float(serie[0]), 15, C.IVORY, 700, 30, HORIZONTAL_ALIGNMENT_CENTER)
+	for i in FAMILIES.size():
+		var famille: Array = FAMILIES[i]
+		var membres := squad.filter(func(p: Dictionary): return p.get("fam", -1) in famille[1])
+		if membres.is_empty(): continue
+		membres.sort_custom(func(a: Dictionary, b: Dictionary): return float(a.get("physicalLoad", 0)) > float(b.get("physicalLoad", 0)))
+		_zone(tile, Rect2(left + 6 + 56 * i, top - 14, 54, bottom - top + 52), "TrainingChartFamily" + str(i), "%s · voir les %d joueur(s)" % [famille[0], membres.size()], func(): Groupe.ouvrir(self, "Poste · " + str(famille[0]), Anneau.NORMAL, membres))
+	# Seuil de vigilance : trait horizontal à 55.
+	var seuil := bottom - (bottom - top) * 0.55
+	D.line(tile, Vector2(left, seuil), Vector2(right, seuil), Anneau.INTENSIF, 2)
+	D.rect(tile, Rect2(21, 270, 16, 16), Anneau.NORMAL, 3)
+	D.text(tile, 43, 284, "Charge", 17, C.MUTED, 500, 80)
+	D.rect(tile, Rect2(130, 270, 16, 16), Anneau.REPOS, 3)
+	D.text(tile, 152, 284, "Condition", 17, C.MUTED, 500, 95)
+	D.rect(tile, Rect2(268, 277, 22, 3), Anneau.INTENSIF, 1)
+	D.text(tile, 298, 284, "Vigilance dès 55", 17, C.MUTED, 500, 160)
 
 func _vigilance() -> void:
 	var tile := D.panel(self, Rect2(1760, 318, 488, 178), "", "", "", "TrainingRisk")
-	_icon(tile, "warning", Rect2(18, 13, 25, 25), PALE_GOLD)
+	_icon(tile, "warning", Rect2(18, 13, 25, 25), Anneau.INTENSIF)
 	D.text(tile, 54, 35, "VIGILANCE PHYSIQUE  (%d)" % watched.size(), 25, C.IVORY, 700, 410)
 	D.line(tile, Vector2(17, 47), Vector2(469, 47))
 	if watched.is_empty():
@@ -295,13 +323,17 @@ func _vigilance() -> void:
 		button.accessibility_name = description
 		button.tooltip_text = description
 		button.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0))
-		_icon(button, "people", Rect2(13, 9.0 + (row_height - 38.0) / 2.0, 23, 23), C.IVORY)
+		_icon(button, "people", Rect2(19, 9.0 + (row_height - 38.0) / 2.0, 23, 23), C.IVORY)
+		# Jauge verticale de condition (barème des attributs) ; le chiffre reste écrit à droite.
+		var condition := clampf(float(p.get("condition", 0)), 0.0, 100.0)
+		D.rect(button, Rect2(6, 6, 7, row_height - 12), C.Charte.PANNEAU_3, 3)
+		D.rect(button, Rect2(6, 6 + (row_height - 12) * (1.0 - condition / 100.0), 7, (row_height - 12) * condition / 100.0), C.Charte.couleur_attribut(condition), 3)
 		var top := 17.0 + (5.0 if dense else 0.0)
 		D.text(button, 53, top, str(p.name), 22, C.IVORY, 700, 205)
 		D.text(button, 53, top + gap, str(p.pos), 16, C.MUTED, 500, 205)
 		for line in reasons.size():
 			var baseline := row_height / 2.0 + 7.0 if reasons.size() == 1 else top + line * gap
-			var reason := D.text(button, 452, baseline, reasons[line], 19, PALE_GOLD, 700, 183, HORIZONTAL_ALIGNMENT_RIGHT)
+			var reason := D.text(button, 452, baseline, reasons[line], 19, C.IVORY, 700, 183, HORIZONTAL_ALIGNMENT_RIGHT)
 			reason.name = "TrainingRiskReason%d" % line
 		_person_link(button,Rect2(47,0,214,row_height),"player",p,"TrainingRiskPlayer_"+str(p.get("id","")).validate_node_name())
 
@@ -357,29 +389,20 @@ func _staff_cards(tile: Panel) -> void:
 func _groups() -> void:
 	var section := D.panel(self, Rect2(4, 260, 1740, 950), "Plans de travail", "people", "", "TrainingGroupPlans")
 	var data: Dictionary = support.get("training", {})
-	var variante_visuelle := Variantes.variante() in ["A", "B"]
-	if not variante_visuelle: D.text(section, 25, 97, "Appliquer un plan répartit les charges individuelles. Tu lances ensuite la séance collective.", 27, C.IVORY, 500, 1630)
-	if data.get("plans", []).is_empty(): D.text(section, 25, 154, "Aucun plan proposé pour cette carrière.", 23, C.MUTED, 500, 1620)
 	var plans: Array = data.get("plans", [])
-	# PROVISOIRE : options visuelles A/B (CD_VARIANTE_VISUELLE), à retirer après le choix de Léo.
-	var variante := Variantes.variante()
-	if variante in ["A", "B"] and not plans.is_empty():
-		section.size.y = C.px(84 + (610 if variante == "A" else 690) + 24)
-		Variantes.build(self, section, plans, data.get("available", false), variante)
-		_chart()
-		_vigilance()
-		return
-	for i in plans.size():
-		var plan: Dictionary = plans[i]
-		var tile := D.panel(section, Rect2(23, 129 + i * 204, 1692, 183), str(plan.label), "train")
-		D.text(tile, 25, 96, plan.get("detail", ""), 26, C.IVORY, 500, 1598)
-		var counts: Dictionary = plan.get("counts", {})
-		D.text(tile, 25, 141, "%s récupération  ·  %s normal ou collectif  ·  %s intensif" % [G.n(counts.get("repos", 0)), G.n(int(counts.get("normal", 0)) + int(counts.get("collective", 0))), G.n(counts.get("intense", 0))], 24, GREEN, 600, 1090)
-		var apply := _action(tile, Rect2(1230, 110, 438, 50), "Appliquer le plan", func(): app._command("training_plan", {"context":support.context, "plan":plan.key}), false, "arrow", "SupportTraining_" + str(plan.key))
-		apply.disabled = not data.get("available", false)
-	D.photo(section, photo_centre(app.model), Rect2(24, 747, 1689, 178))
+	if plans.is_empty():
+		D.text(section, 25, 97, "Aucun plan proposé pour cette carrière.", 23, C.MUTED, 500, 1620)
+	else:
+		section.size.y = C.px(Plans.hauteur_section())
+		Plans.build(self, section, plans, data.get("available", false), _plans_reason())
 	_chart()
 	_vigilance()
+
+## Pourquoi « Appliquer le plan » est grisé (mêmes conditions que le moteur : ni match en cours, ni séance déjà faite).
+func _plans_reason() -> String:
+	if trained: return "Séance déjà effectuée cette semaine."
+	if not app._live().is_empty(): return "Match en cours."
+	return "Les plans ne sont disponibles qu'en période de championnat."
 
 func _individuals() -> void:
 	var tile := D.panel(self, Rect2(4, 260, 1740, 950), "Le travail individuel", "train", "", "TrainingIndividuals")
@@ -596,6 +619,16 @@ func _portrait(parent: Node, p: Dictionary, rectangle: Rect2, fallback: String =
 		var from_squad := P.player(app.model, id)
 		var index := int(from_squad.get("portraitIndex", p.get("portraitIndex", id.hash())))
 		D.photo(parent, "player-%02d" % posmod(index, 16), rectangle)
+
+## Zone cliquable transparente (survol voilé, focus visible) posée sur un élément visuel qui a une destination.
+func _zone(parent: Node, rectangle: Rect2, id: String, tip: String, callback: Callable) -> Button:
+	var zone := D.button(parent, rectangle, "", callback, false, "", false, Color.WHITE, id)
+	zone.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 10, 0))
+	for etat in ["hover", "pressed", "hover_pressed"]: zone.add_theme_stylebox_override(etat, C.box(Color(1, 1, 1, .07), Color.TRANSPARENT, 10, 0))
+	zone.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT, C.IVORY, 10, 0))
+	zone.tooltip_text = tip
+	zone.accessibility_name = tip
+	return zone
 
 func _action(parent: Node, rectangle: Rect2, caption: String, callback: Callable, primary: bool, icon: String, id: String) -> Button:
 	return D.button(parent, rectangle, caption, callback, primary, icon, false, Color("09673e"), id)
