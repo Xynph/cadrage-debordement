@@ -46,7 +46,7 @@ func sample() -> Dictionary:
 			"personality": {"trait": "Loyal", "leadership": 50 + i}})
 	return {"squad": squad, "clubLife": {"relationships": {"active": true, "context": {"season": 1, "week": 1}, "morale": 70, "trust": 80, "players": players, "leaderId": "p3",
 		"conversations": [{"id": "ecouter", "label": "Écouter", "detail": "Satisfaction +2."}, {"id": "rassurer", "label": "Rassurer", "detail": "Satisfaction +1 ; premier entretien : moral +1."}],
-		"promiseOptions": [{"id": "rotation", "minutes": 80}, {"id": "titulaire", "minutes": 160}],
+		"promiseLastJourney": 24, "promiseOptions": [{"id": "rotation", "minutes": 80}, {"id": "titulaire", "minutes": 160}],
 		"duoActions": [{"id": "mediation", "label": "Désamorcer une rivalité", "detail": "Dialogue encadré : lien +25, confiance de direction −1."}], "duoAvailable": true,
 		"pairs": [{"a": "p1", "b": "p2", "score": 18}], "commitments": [{"playerId": "p1", "status": "open", "target": 60, "dueWeek": 3}],
 		"conversationHistory": [{"playerId": "p0", "season": 1, "round": 2, "choice": "rassurer", "before": 40, "after": 41}],
@@ -121,5 +121,17 @@ func run() -> void:
 	await settle()
 	check(host.management_ui.relationships.playerId == "p11" and host.find_child("RelationshipPortraitsWindow", true, false) == null, "Portrait de la petite fenêtre choisit et ferme")
 	check(PetiteFenetre.ouverte(self) == null, "Aucune petite fenêtre restée inscrite")
+	# Temps de jeu promis : la pastille d'échéance lit la journée du moteur (promiseLastJourney), « — » si le moteur ne la donne pas ; un clic ouvre le Calendrier.
+	var echeance := bouton(host, "RelationshipPromiseDeadline")
+	var texte_echeance := (echeance.find_children("*", "Label", true, false)[0] as Label).text if echeance != null else ""
+	check(echeance != null and texte_echeance == "J24", "Pastille d'échéance des promesses : J24 d'après le moteur (« %s »)" % texte_echeance)
+	host.routes.clear()
+	if echeance != null: echeance.pressed.emit()
+	check(host.routes == ["Calendrier"], "La pastille d'échéance ouvre le Calendrier")
+	host.model.clubLife.relationships.erase("promiseLastJourney")
+	host._render(); await settle()
+	echeance = bouton(host, "RelationshipPromiseDeadline")
+	texte_echeance = (echeance.find_children("*", "Label", true, false)[0] as Label).text if echeance != null else ""
+	check(texte_echeance == "—", "Sans donnée du moteur : « — » (jamais un « J24 » écrit en dur)")
 	print("VESTIAIRE_CLICS checks=%d failures=%d" % [checks, failures.size()])
 	quit(0 if failures.is_empty() else 1)

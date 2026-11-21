@@ -1287,21 +1287,47 @@ static func _levers(card: Panel, levers: Dictionary, largeur: float, y: float) -
 	if state.is_empty(): return y + 40.0
 	return y + 40.0
 
-# Budget de saison : propriétaire, règles de la ligue et prévision, en lignes de texte sous les décisions.
-static func _season_budget(card: Panel, budget: Dictionary, largeur: float, y: float) -> void:
+# Budget de saison : quatre tuiles chiffre + légende courte (mécène, masse salariale, résultat prévu, prime ou amende),
+# puis les repères de la ligue en pastilles. Le détail (« comble jusqu'à… », plafond, marges) est dans l'infobulle de chaque pièce.
+# Gain en vert, perte en rouge : le signe (+ / −) ou le mot porte aussi l'information, jamais la couleur seule.
+static func _season_budget(card: Panel, budget: Dictionary, largeur: float, y: float, app: Control) -> void:
 	var owner: Dictionary = budget.get("proprietaire", {})
 	var envelope := float(owner.get("enveloppe",0))
-	var lines := ["Propriétaire : %s · %s" % [str(owner.get("libelle","—")), "comble jusqu’à %s de pertes cette saison" % U.amount(envelope) if envelope > 0.0 else "aucune perte comblée, chaque euro dépensé doit être gagné"]]
-	var rules := "Masse salariale : %s par an" % U.amount(budget.get("masseSalariale"))
-	if budget.get("plafondSalarial") != null: rules += " · plafond de la ligue %s, marge %s" % [U.amount(budget.plafondSalarial),U.amount(budget.get("margePlafond"))]
-	if budget.get("limiteRecettes") != null: rules += " · limite de 52 %% des recettes %s, marge %s" % [U.amount(budget.limiteRecettes),U.amount(budget.get("margeRecettes"))]
-	lines.append(rules)
-	lines.append("Saison prévue : recettes %s · charges %s · résultat %s" % [U.amount(budget.get("recettesPrevues")),U.amount(budget.get("chargesPrevues")),U.amount(budget.get("resultatPrevu"))])
+	var libelle := str(owner.get("libelle","—"))
+	var comble := "%s : comble jusqu’à %s de pertes cette saison" % [libelle, U.amount(envelope)] if envelope > 0.0 else "%s : aucune perte comblée, chaque euro dépensé doit être gagné" % libelle
+	var salaires := "Masse salariale : %s par an" % U.amount(budget.get("masseSalariale"))
+	var resultat: Variant = budget.get("resultatPrevu")
+	var prevu := "Saison prévue : recettes %s · charges %s · résultat %s" % [U.amount(budget.get("recettesPrevues")),U.amount(budget.get("chargesPrevues")),U.amount(resultat)]
 	var fine := float(budget.get("amendePrevue",0))
-	lines.append("Amende de la ligue encourue : %s" % U.amount(fine) if fine > 0.0 else "Aucune amende de la ligue encourue · prime de classement attendue %s" % U.amount(budget.get("primeClassementPrevue")))
-	for i in lines.size():
-		var line := _texte(card, 25, y + i * 30, lines[i], 18, Charte.IVOIRE if i == 0 else Charte.IVOIRE_2, largeur - 50)
-		line.name = "FinanceSeasonBudget%d" % i
+	var prime: Variant = budget.get("primeClassementPrevue")
+	var tuiles: Array = [
+		[U.amount(envelope), libelle, Charte.IVOIRE, "FinanceSeasonBudgetOwner", comble, func(): _vers(app, "cash")],
+		[U.amount(budget.get("masseSalariale")), "Masse / an", Charte.IVOIRE, "FinanceSeasonBudgetPayroll", salaires, func(): _open_wages(app, false)],
+		[("+" if resultat != null and float(resultat) > 0.0 else "") + U.amount(resultat), "Résultat prévu", Pieces.VERT if resultat != null and float(resultat) >= 0.0 else (Pieces.ROUGE if resultat != null else Charte.IVOIRE), "FinanceSeasonBudgetResult", prevu, func(): _vers(app, "cash")],
+	]
+	if fine > 0.0:
+		tuiles.append(["−" + U.amount(fine), "Amende ligue", Pieces.ROUGE, "FinanceSeasonBudgetFine", "Amende de la ligue encourue : %s" % U.amount(fine), func(): _open_wages(app, false)])
+	else:
+		tuiles.append(["+" + U.amount(prime), "Prime classement", Pieces.VERT, "FinanceSeasonBudgetBonus", "Aucune amende de la ligue encourue · prime de classement attendue %s" % U.amount(prime), func(): app._navigate("Classements")])
+	var ecart := 12.0
+	var tuile_w := (largeur - 50.0 - ecart * 3.0) / 4.0
+	for i in tuiles.size():
+		var item: Array = tuiles[i]
+		var tuile := Pieces.tuile(card, Rect2(25 + i * (tuile_w + ecart), y, tuile_w, 84), item[0], item[1], item[2], item[3], 30, item[4], "info", item[2] != Charte.IVOIRE, item[5])
+		tuile.tooltip_text = item[4]
+	# Repères de la ligue : plafond salarial, limite de 52 % des recettes, recettes et charges prévues.
+	var x := 25.0
+	var ligne := y + 96.0
+	var reperes: Array = []
+	if budget.get("plafondSalarial") != null:
+		reperes.append(["Plafond %s · marge %s" % [U.amount(budget.plafondSalarial), U.amount(budget.get("margePlafond"))], "shield", "FinanceSeasonBudgetCap", "Plafond salarial de la ligue %s, marge %s" % [U.amount(budget.plafondSalarial), U.amount(budget.get("margePlafond"))], Pieces.VERT if float(budget.get("margePlafond", 0)) >= 0.0 else Pieces.ROUGE])
+	if budget.get("limiteRecettes") != null:
+		reperes.append(["52 %% recettes %s · marge %s" % [U.amount(budget.limiteRecettes), U.amount(budget.get("margeRecettes"))], "shield", "FinanceSeasonBudgetRevenueLimit", "Limite de 52 %% des recettes %s, marge %s" % [U.amount(budget.limiteRecettes), U.amount(budget.get("margeRecettes"))], Pieces.VERT if float(budget.get("margeRecettes", 0)) >= 0.0 else Pieces.ROUGE])
+	reperes.append(["Recettes %s" % U.amount(budget.get("recettesPrevues")), "arrow", "FinanceSeasonBudgetIncome", "Recettes prévues sur la saison", Pieces.VERT])
+	reperes.append(["Charges %s" % U.amount(budget.get("chargesPrevues")), "arrow", "FinanceSeasonBudgetCosts", "Charges prévues sur la saison", Pieces.ROUGE])
+	for repere: Array in reperes:
+		if x + Pieces.largeur_pastille(repere[0], repere[1]) > largeur - 25.0: break
+		x += Pieces.pastille(card, x, ligne, repere[0], repere[1], repere[2], repere[3], repere[4], Charte.PANNEAU_3, func(): _vers(app, "cash")) + 10.0
 
 static func _budget(app: Control, canvas: Control, zone: Rect2, finance: Dictionary) -> void:
 	var x := zone.position.x
@@ -1335,7 +1361,7 @@ static func _budget(app: Control, canvas: Control, zone: Rect2, finance: Diction
 	else:
 		suite += 4.0
 	_bouton(decisions, Rect2(25, suite + 10, 440, 46), "OUVRIR LES DÉCISIONS FINANCIÈRES", func(): _strategy(app), "ivoire", "arrow", "FinanceBudgetDecisions")
-	if finance.get("budget") is Dictionary: _season_budget(decisions, finance.budget, largeur, suite + 100.0)
+	if finance.get("budget") is Dictionary: _season_budget(decisions, finance.budget, largeur, suite + 100.0, app)
 	var bas := y0 + 616.0
 	_allocation(_panneau(canvas, Rect2(x, bas, 800, BAS - bas), "Répartition des charges connues", "FinanceAllocation", "par semaine"), app, finance, 800)
 	_due(_panneau(canvas, Rect2(x + 816, bas, largeur - 816, BAS - bas), "Prochaines échéances", "FinanceDue"), app, finance, largeur - 816)

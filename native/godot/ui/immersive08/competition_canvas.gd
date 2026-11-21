@@ -9,6 +9,7 @@ const P = preload("res://ui/immersive08/projection.gd")
 const S = preload("res://ui/data_semantics.gd")
 const Club = preload("res://ui/club_views.gd")
 const Office = preload("res://ui/immersive08/office.gd")
+const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
 const Decisions = preload("res://ui/decision_views.gd")
 const U = preload("res://ui/immersive08/club_ui.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
@@ -646,7 +647,7 @@ func _classement() -> void:
 	var zones: Array = league.get("zones", []) if international and league.get("zones") is Array else []
 	var zone_note := str(league.get("zoneNote", "")) if international and league.get("zoneNote") is String else ""
 	var has_champion: bool = league.get("champion") is Dictionary
-	var footer := zones.size() * 30 + int(not zone_note.is_empty()) * 30 + int(has_champion) * 30 + (44 if paged else 0)
+	var footer := int(not zones.is_empty() or not zone_note.is_empty()) * 44 + int(has_champion) * 30 + (44 if paged else 0)
 	var panel_h := rows_y + shown * ROW + 18 + footer + 18
 	var panel := _panel(self, Rect2(0, TOP, LEFT, panel_h), "CLASSEMENT", "", "StandingsTableFrame")
 	left_bottom = TOP + panel_h
@@ -667,13 +668,9 @@ func _classement() -> void:
 		_ligne_classement(body, rows[i], i - bounds.x, ROW)
 	if rows.is_empty(): D.text(body, 24, 40, "Aucun classement", 22, C.MUTED, 500, LEFT - 50, HORIZONTAL_ALIGNMENT_LEFT, true)
 	var y := rows_y + shown * ROW + 18 + (44 if paged else 0)
-	if not zones.is_empty():
-		_zone_legend(panel, zones, 24, y)
-		y += zones.size() * 30
-	if not zone_note.is_empty():
-		var note := D.text(panel, 24, y + 20, zone_note, 18, C.MUTED, 500, LEFT - 48, HORIZONTAL_ALIGNMENT_LEFT, true)
-		note.name = "StandingsZoneNote"
-		y += 30
+	if not zones.is_empty() or not zone_note.is_empty():
+		_zone_legend(panel, zones, 24, y, body, zone_note)
+		y += 44
 	if has_champion:
 		var name_text := "Champion : " + G.club_name(league.champion)
 		if league.get("finalist") is Dictionary: name_text += "   ·   Finaliste : " + G.club_name(league.finalist)
@@ -901,36 +898,72 @@ func _standing_text(club: Dictionary, key: String) -> String:
 	if key == "points": return S.number_text(club.get(key))
 	return S.count_text(club.get(key))
 
-## Légende des zones : une ligne par zone (liseré, symbole dessiné, rang et mot), toujours visible sous le tableau.
-## Le texte lu porte le symbole Unicode du moteur (« ★ 1–2 Demi-finale directe »).
-func _zone_legend(parent: Node, zones: Array, x: float, top: float) -> Control:
+## Légende des zones : une rangée de pastilles courtes sous le tableau (« 1–2 Demi » : liseré, symbole dessiné, rangs et mot).
+## Un clic sur une pastille met le focus sur la première ligne de la zone. La note du règlement est derrière un « i » en bout de rangée.
+## Le nom lu porte le symbole Unicode du moteur et le libellé complet (« ★ 1–2 Demi-finale directe »).
+func _zone_legend(parent: Node, zones: Array, x: float, top: float, body: Control, note: String) -> Control:
 	var group := Control.new()
 	group.name = "StandingsZoneLegend"
 	group.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(group)
-	D.place(group, Rect2(x, top, LEFT - 2 * x, zones.size() * 30))
+	D.place(group, Rect2(x, top, LEFT - 2 * x, 34))
 	var spoken: Array[String] = []
+	var cursor := 0.0
+	var side := Zones.mark_side()
 	for i in zones.size():
 		var zone: Dictionary = zones[i]
 		var kind := str(zone.get("kind", ""))
-		var from := int(zone.get("from", 0))
-		var to := int(zone.get("to", 0))
-		var span := str(from) if from == to else "%d–%d" % [from, to]
-		var spoken_span := _ordinal(from) if from == to else "%s à %s" % [_ordinal(from), _ordinal(to)]
-		spoken.append(str(zone.get("symbol", "")) + " " + span + " " + str(zone.get("label", "")))
-		var line := i * 30
-		var edge := D.rect(group, Rect2(0, line + 3, 4, 24), Zones.tint(kind))
+		var word := Zones.span_text(zone) + " " + Zones.short_label(zone)
+		var full := str(zone.get("symbol", "")) + " " + Zones.span_text(zone) + " " + str(zone.get("label", ""))
+		spoken.append(full)
+		var text_width: float = C.font(600).get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(19))).x / C.density
+		var width := 16.0 + side + 8.0 + text_width + 16.0
+		var pill := Button.new()
+		pill.name = "StandingsZonePill_%d" % i
+		pill.flat = true
+		pill.focus_mode = Control.FOCUS_ALL
+		pill.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		pill.set_meta("zone_kind", kind)
+		var look := StyleBoxFlat.new()
+		look.bg_color = Charte.PANNEAU_3
+		look.set_corner_radius_all(Charte.RAYON_PILULE)
+		var hover := look.duplicate()
+		hover.bg_color = Charte.PANNEAU_3.lerp(Charte.IVOIRE, .12)
+		var focus := StyleBoxFlat.new()
+		focus.bg_color = Color(0, 0, 0, 0)
+		focus.border_color = Charte.IVOIRE
+		focus.set_border_width_all(maxi(2, C.px(2)))
+		focus.set_corner_radius_all(Charte.RAYON_PILULE)
+		pill.add_theme_stylebox_override("normal", look)
+		pill.add_theme_stylebox_override("hover", hover)
+		pill.add_theme_stylebox_override("pressed", hover)
+		pill.add_theme_stylebox_override("focus", focus)
+		pill.tooltip_text = "%s %s" % [Zones.span_text(zone), zone.get("label", "")]
+		pill.accessibility_name = full
+		pill.pressed.connect(_focus_zone.bind(body, int(zone.get("from", 1))))
+		group.add_child(pill)
+		D.place(pill, Rect2(cursor, 0, width, 34))
+		var edge := D.rect(pill, Rect2(10, 8, 4, 18), Zones.tint(kind), 2)
 		edge.name = "StandingsZoneLegendEdge_%d" % i
-		var side := Zones.mark_side()
-		var mark := Zones.mark(group, kind, Rect2(16, line + 15 - side / 2.0, side, side), Zones.tint(kind))
+		var mark := Zones.mark(pill, kind, Rect2(20, 17 - side / 2.0, side, side), Zones.tint(kind))
 		mark.name = "StandingsZoneLegendMark_" + kind
-		var label := D.text(group, 44, line + 21, spoken_span + "  ·  " + str(zone.get("label", "")), 19, C.IVORY, 600)
+		var label := D.text(pill, 20.0 + side + 8.0, 24, word, 19, C.IVORY, 600)
 		label.name = "StandingsZoneLegendItem_%d" % i
 		label.set_meta("zone_kind", kind)
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		cursor += width + 8.0
+	if not note.is_empty():
+		var info := Pieces.info(group, cursor + 4.0, 4.0, note, "ZoneNote")
+		info.name = "StandingsZoneNote"
 	group.set_meta("legend_text", " · ".join(spoken))
 	group.accessibility_name = "Zones du classement : " + " · ".join(spoken)
 	group.tooltip_text = group.accessibility_name
 	return group
+
+## Pastille de zone : la ligne du classement au premier rang de la zone prend le focus (le défilement la suit).
+func _focus_zone(body: Control, first_rank: int) -> void:
+	var rows := body.get_children().filter(func(row: Node) -> bool: return row is Button)
+	if first_rank >= 1 and first_rank <= rows.size(): (rows[first_rank - 1] as Button).grab_focus()
 
 ## Plaque inclinée aux couleurs d'un club (10°, rayon 0) : écusson, nom ; un clic ouvre la fiche du club.
 class Plaque extends Button:

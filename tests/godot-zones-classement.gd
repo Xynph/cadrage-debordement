@@ -11,6 +11,7 @@ const Competition = preload("res://ui/immersive08/competition_canvas.gd")
 const OfficeCanvas = preload("res://ui/immersive08/office_canvas.gd")
 const OfficeCompact = preload("res://ui/immersive08/office.gd")
 const P = preload("res://ui/immersive08/projection.gd")
+const Zones = preload("res://ui/immersive08/standings_zones.gd")
 class ReadingApp extends Control:
 	var model: Dictionary = {}
 	var accent := Color("cc4d57")
@@ -116,13 +117,29 @@ func screen(league: Dictionary, leagues: Array, height: int) -> void:
 		for item: Label in items: right = maxf(right, item.get_global_rect().position.x + item.get_theme_font("font").get_string_size(item.text, HORIZONTAL_ALIGNMENT_LEFT, -1, item.get_theme_font_size("font_size")).x)
 		check(items.size() == league.zones.size() and right <= frame.get_global_rect().end.x, "Légende dans le cadre (%d / %d px)%s" % [roundi(right), roundi(frame.get_global_rect().end.x), where])
 		check(not items.is_empty() and items.all(func(item: Label): return item.get_theme_font("font").get_string_size(item.text, HORIZONTAL_ALIGNMENT_LEFT, -1, item.get_theme_font_size("font_size")).x <= item.size.x + 1), "Libellés de légende entiers" + where)
-		var note: Label = canvas.find_child("StandingsZoneNote", true, false)
+		var note: Control = canvas.find_child("StandingsZoneNote", true, false)
 		var champion: Label = canvas.find_child("StandingsChampion", true, false)
-		if league.zoneNote is String: check(note != null and note.text == league.zoneNote, "Note du règlement" + where)
+		# La note du règlement est derrière un « i » (infobulle), jamais écrite sous le tableau.
+		if league.zoneNote is String:
+			check(note is Panel and note.tooltip_text == league.zoneNote and note.accessibility_name == league.zoneNote, "Note du règlement derrière un « i »" + where)
+			check(canvas.find_children("*", "Label", true, false).all(func(l: Label): return not l.text.contains(str(league.zoneNote))), "Note du règlement non écrite à l'écran" + where)
+			var last_pill: Control = legend.find_child("StandingsZonePill_%d" % (league.zones.size() - 1), true, false)
+			check(note.get_global_rect().position.x >= last_pill.get_global_rect().end.x and note.get_global_rect().end.x <= frame.get_global_rect().end.x, "« i » à la suite des pastilles, dans le cadre" + where)
 		else: check(note == null, "Pas de note sans donnée" + where)
+		# Pastilles courtes « 1–2 Demi » : une par zone, liseré et symbole dessinés, clic = première ligne de la zone.
+		for i in league.zones.size():
+			var z: Dictionary = league.zones[i]
+			var pill: Button = legend.find_child("StandingsZonePill_%d" % i, true, false)
+			check(pill != null and pill.find_child("StandingsZoneLegendEdge_%d" % i, true, false) != null and pill.find_child("StandingsZoneLegendMark_" + str(z.kind), true, false) != null, "Pastille %d : liseré et symbole%s" % [i, where])
+			if pill == null: continue
+			var item: Label = pill.find_child("StandingsZoneLegendItem_%d" % i, true, false)
+			check(item != null and item.text == Zones.span_text(z) + " " + Zones.short_label(z) and item.text.length() <= 16, "Pastille %d courte : « %s »%s" % [i, item.text if item != null else "", where])
+			check(pill.tooltip_text.contains(str(z.label)) and not item.text.contains("finale directe"), "Libellé complet dans l'infobulle%s" % where)
+			pill.pressed.emit()
+			var focused := root.gui_get_focus_owner()
+			check(focused != null and focused.get_meta("zone_kind", "") == z.kind and focused.get_meta("zone_label", "") == z.label, "Clic sur la pastille %d : focus sur la première ligne de la zone%s" % [i, where])
 		check((champion != null) == league.has("champion"), "Ligne Champion avec le titre" + where)
 		var stack: Array = [items[0]] if not items.is_empty() else []
-		if note != null: stack.append(note)
 		if champion != null: stack.append(champion)
 		for k in range(1, stack.size()):
 			# Texte visible : de la hauteur des capitales à la ligne de base + jambage (la boîte du Label déborde l'interligne).
