@@ -9,6 +9,7 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const Academy = preload("res://ui/academy_pathways_view.gd")
+const Juniors = preload("res://ui/immersive08/centre_juniors.gd")
 const GREEN = Color("64e896")
 const GOLD = Color("f8cd73")
 const ACCENT = Color("09673e")
@@ -106,6 +107,8 @@ func _preview(surface: Panel) -> void:
 		var card := D.panel(surface, Rect2(25 + i * 490, 84, 483, 590), "", "", "", "CentreOffer" + str(offer[0]))
 		card.clip_contents = true
 		D.photo(card, offer[2], Rect2(13, 13, 457, 440), .4)
+		# Chaque carte mène quelque part (décision de Léo du 21/11/2026) ; le « i » reste au-dessus du bouton.
+		Pieces.rendre_cliquable(card, Vector2(483, 590), _destination(str(offer[0])), "CentreOffer%sLien" % offer[0], str(offer[1]), "", 12)
 		if not open: _chip_fitted(card, Vector2(27, 27), "AU CALENDRIER DES ESPOIRS", GOLD, 423)
 		D.line(card, Vector2(15, 476), Vector2(468, 476))
 		var icon := C.icon(offer[3], 32, GOLD)
@@ -130,6 +133,15 @@ func _preview(surface: Panel) -> void:
 	action.add_theme_font_override("font", C.BOLD)
 	action.add_theme_font_size_override("font_size", C.font_px(31))
 	D.place(action, Rect2(918, 130, 513, 66))
+
+## Destination de chaque carte : Détection → Recrutement › Relève (jeunes des centres et petits clubs),
+## Mentorat → Staff › Mentorat (un membre du staff accompagne un jeune), Compétition junior → petite fenêtre des
+## matchs Crabos et Espoirs.
+func _destination(offre: String) -> Callable:
+	match offre:
+		"Detection": return func(): load("res://ui/immersive08/recruitment_pages.gd").ouvrir(app, "releve")
+		"Mentoring": return func(): load("res://ui/immersive08/club_pages.gd").ouvrir(app, "mentorat")
+	return func(): Juniors.ouvrir(app, self)
 
 ## Pastille dont la largeur suit son texte à la densité réelle (plancher de police 12 px en 1280 × 720) :
 ## jamais de points de suspension, au plus `limit` unités du gabarit.
@@ -196,6 +208,7 @@ func _summary() -> void:
 		D.place(icon, Rect2(15, 27, 32, 32))
 		D.text(tile, 61, 35, entry[0], 21, C.MUTED, 700, rect.size.x - 69)
 		D.text(tile, 61, 75, entry[1], 35, entry[3], 700, rect.size.x - 72)
+		if entry[0] == "ESPOIRS SUIVIS": Pieces.rendre_cliquable(tile, rect.size, func(): app._navigate("Formation"), "CentreTuileEspoirs", "%s %s" % [entry[1], entry[0]], "", 12)
 	D.line(panel, Vector2(17, 293 + dy), Vector2(699, 293 + dy))
 	D.text(panel, 22, 339 + dy, "SAISON JUNIOR", 24, GOLD, 700, 660)
 	var round := _pathway_status()
@@ -205,8 +218,14 @@ func _summary() -> void:
 	D.button(panel, Rect2(21, 439 + dy, 676, 55), "Consulter les Espoirs", func(): app._navigate("Formation"), false, "arrow", false, ACCENT, "CentreOpenAcademy")
 	var dl := dy - 83
 	var lower := D.panel(self, Rect2(1531, 749 + dy, 717, 474 - dy), "De l’académie à l’équipe première", "trophy", "", "CentreDevelopment")
-	D.photo(lower, "academy-training", Rect2(14, 70, 689, 211 - dl))
+	D.photo(lower, "mail-jeunes", Rect2(14, 70, 689, 211 - dl), .62)
 	var places := G.n(data.get("places", "—"))
 	D.text(lower, 22, 328 - dl, "Places professionnelles disponibles", 26, C.IVORY, 700, 480)
 	D.text(lower, 689, 340 - dl, places, 43, GREEN, 800, 183, HORIZONTAL_ALIGNMENT_RIGHT)
+	var zone_places := Control.new()
+	zone_places.name = "CentrePlaces"
+	zone_places.mouse_filter = Control.MOUSE_FILTER_PASS
+	lower.add_child(zone_places)
+	D.place(zone_places, Rect2(12, 292 - dl, 693, 64))
+	Pieces.rendre_cliquable(zone_places, Vector2(693, 64), func(): app._navigate("Effectif"), "CentrePlacesLien", "%s places professionnelles" % places, "", 12)
 	Pieces.info(lower, 372, 308 - dl, "La capacité tient compte des places réservées aux retours de prêt", "CentreAidePlaces")
