@@ -3,14 +3,13 @@ extends RefCounted
 const G = preload("res://ui/carnet_skin.gd")
 const RoomFactory = preload("res://ui/contextual/rooms/room_factory.gd")
 const Base = preload("res://ui/game_skin.gd")
-# Encre, texte secondaire et or : jetons communs du bureau (game_skin.gd).
-const TEXT = Base.INK
-const MUTED = Base.MUTED
-const GOLD = Base.GOLD
-## Fond des boutons principaux : l'or commun assombri de 15 % (GOLD.darkened(.15)),
-## pour garder l'encre foncée lisible.
-const PRIMARY_FILL = Color("bca16d")
-const PANEL = Color(0.055, 0.115, 0.10, 0.94)
+const Charte = preload("res://ui/charte.gd")
+# Jetons de la charte (design/art/art-bible.md) : crème, gris-vert et doré sur panneaux noirs.
+const TEXT = Charte.CREME
+const MUTED = Charte.GRIS_VERT
+const GOLD = Charte.DORE
+const PRIMARY_FILL = Charte.DORE
+const PANEL = Charte.PANNEAU
 
 static func label(text: Variant, size: int = 16, color: Color = TEXT) -> Label:
 	return G.label(text, size, color)
@@ -18,30 +17,34 @@ static func label(text: Variant, size: int = 16, color: Color = TEXT) -> Label:
 static func wrap(text: Variant, size: int = 15, color: Color = MUTED) -> Label:
 	return G.wrap(text, size, color)
 
+## Bouton pilule : à contour (secondaire) ou doré (l'unique bouton principal).
 static func button(text: String, callback: Callable, enabled: bool = true, primary: bool = false) -> Button:
 	var result := G.button(text, callback, primary)
 	result.custom_minimum_size.y = 38
 	result.set_meta("contextual_enabled", enabled)
 	result.disabled = not enabled
-	for state in ["normal", "hover", "pressed"]:
-		result.add_theme_stylebox_override(state, Base.box(PRIMARY_FILL if primary else PANEL, "control", Color("66745e")))
-		result.add_theme_color_override("font_color", Color("152a22") if primary else TEXT)
-		result.add_theme_color_override("font_hover_color", Color("152a22") if primary else GOLD)
-		result.add_theme_color_override("font_pressed_color", Color("152a22") if primary else GOLD)
-	result.add_theme_stylebox_override("disabled", Base.box(Color("172a23"), "control", Color("53604e")))
-	result.add_theme_color_override("font_disabled_color", MUTED)
+	var fonds := {"normal": PRIMARY_FILL if primary else Color.TRANSPARENT, "hover": Charte.OR_VIF if primary else Charte.PANNEAU_2,
+		"pressed": Charte.OR_VIF if primary else Charte.PANNEAU_3}
+	var cles := {"normal": "font_color", "hover": "font_hover_color", "pressed": "font_pressed_color"}
+	for state in fonds:
+		result.add_theme_stylebox_override(state, Charte.style_pilule(fonds[state], PRIMARY_FILL if primary else Charte.FILET, 16, 6))
+		result.add_theme_color_override(cles[state], Charte.ENCRE if primary else (TEXT if state == "normal" else GOLD))
+	result.add_theme_stylebox_override("disabled", Charte.style_pilule(Color.TRANSPARENT, Charte.FILET, 16, 6))
+	result.add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)
+	result.add_theme_font_override("font", Charte.TEXTE)
 	return result
 
-static func selected(control: Button, accent: Color = GOLD) -> void:
+## Choix retenu : pilule à voile doré, contour et texte dorés (le contour dit l'état, pas seulement la couleur).
+static func selected(control: Button, _accent: Color = GOLD) -> void:
 	for state in ["normal", "hover", "pressed"]:
-		var style := Base.box(Color("283e2d"), "control", accent)
-		style.border_width_left = 4
+		var style := Charte.style_pilule(Charte.VOILE_DORE, GOLD, 16, 6)
+		style.set_border_width_all(2)
 		control.add_theme_stylebox_override(state, style)
 	control.add_theme_color_override("font_color", GOLD)
 
 static func panel(parent: Node, padding: int = 14) -> VBoxContainer:
 	var shell := PanelContainer.new()
-	shell.add_theme_stylebox_override("panel", Base.box(PANEL, "panel", Color("53624d")))
+	shell.add_theme_stylebox_override("panel", Charte.style_panneau(PANEL, Charte.RAYON_PANNEAU, 0))
 	parent.add_child(shell)
 	var margin := G.margin(padding)
 	shell.add_child(margin)
@@ -76,7 +79,7 @@ static func room(parent: Control, kind: String, club: Dictionary) -> Node3D:
 	var world := RoomFactory.build(kind, club)
 	if world != null: viewport.add_child(world)
 	var shade := ColorRect.new()
-	shade.color = Color(0.01, 0.035, 0.025, 0.21)
+	shade.color = Color(Charte.NUIT, 0.21)
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	full(shade)
 	parent.add_child(shade)

@@ -1,5 +1,6 @@
 extends Control
 const S = preload("res://ui/contextual/skin.gd")
+const Charte = preload("res://ui/charte.gd")
 const SeasonLabel = preload("res://ui/season_label.gd")
 const PRIORITIES = {"performance":"Résultats","stabilite":"Stabilité","finances":"Finances","effectif":"Effectif"}
 const TYPES = {"wins":"Victoires","points":"Points","rank":"Place au classement","cash":"Trésorerie"}
@@ -87,7 +88,7 @@ func _draw() -> void:
 	_metric(facts_scroll,"Organisation du club",board.get("organizationScore"),"BoardRoomOrganization")
 	var club_goal: String=str(model.get("club",{}).get("goal",""))
 	if not club_goal.is_empty():facts_scroll.add_child(S.wrap("Cap du club : "+club_goal,14))
-	var error := S.wrap(str(app.last_error),14,Color("ffc0a3"));error.name="BoardRoomServerError";error.visible=not error.text.is_empty();facts_scroll.add_child(error)
+	var error := S.wrap(str(app.last_error),14,Charte.DORE);error.name="BoardRoomServerError";error.visible=not error.text.is_empty();facts_scroll.add_child(error)
 	if not _local_notice.is_empty():facts_scroll.add_child(S.wrap(_local_notice,14,S.GOLD))
 	facts_scroll.add_child(S.label("Les jalons suivis",18,S.GOLD))
 	var goals: Array=board.get("objectives",[])

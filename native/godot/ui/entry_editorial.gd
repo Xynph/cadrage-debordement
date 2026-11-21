@@ -1,11 +1,12 @@
 extends RefCounted
 
 const C = preload("res://ui/immersive08/components.gd")
-const INK = Color("121c1e")
-const PANEL = Color("172223")
-const LINE = Color("75817c")
-const BRASS = Color("c5a76e")
-const RAIL_GOLD = Color("e2b971")
+const Charte = preload("res://ui/charte.gd")
+const INK = Charte.ENCRE
+const PANEL = Charte.PANNEAU
+const LINE = Charte.FILET
+const BRASS = Charte.DORE
+const RAIL_GOLD = Charte.DORE
 static var _sans_heading: FontVariation
 
 static func sans_bold() -> Font:
@@ -22,28 +23,25 @@ static func sans_heading(text: String, size: int) -> Label:
 
 static func surface(node: PanelContainer, fill: Color = PANEL, border: Color = LINE, padding: int = 16) -> void:
 	node.set_meta("immersive_style_applied", true)
-	var style := C.box(fill, border, 0, padding)
-	style.set_corner_radius_all(0)
+	var style := Charte.style_panneau(fill, Charte.RAYON_PANNEAU, padding)
 	node.add_theme_stylebox_override("panel", style)
 
 static func action(button: Button, primary: bool = false, selected: bool = false, height: int = 42, tile: bool = false) -> void:
 	button.set_meta("immersive_style_applied", true)
 	button.custom_minimum_size.y = height
-	button.add_theme_font_override("font", C.BOLD if primary else C.DISPLAY)
+	button.add_theme_font_override("font", C.BOLD if primary else Charte.TEXTE)
 	button.add_theme_font_size_override("font_size", maxi(14, C.px(24 if primary else 21)))
-	var normal := BRASS if primary else (Color("414334") if selected else PANEL)
+	var normal := BRASS if primary else (Charte.VOILE_DORE if selected else Color.TRANSPARENT)
 	var outline := BRASS if primary or selected else LINE
 	for state in ["normal", "hover", "pressed", "disabled"]:
 		var background := normal
-		if state == "hover": background = normal.lightened(.09)
-		if state == "pressed": background = normal.darkened(.13)
-		if state == "disabled": background = INK
-		var style := C.box(background, outline if state != "disabled" else LINE, 0, 10)
-		style.set_corner_radius_all(0)
-		if selected and tile: style.border_width_left = 4
-		if selected and not tile: style.border_width_bottom = 2
+		if state == "hover": background = Charte.OR_VIF if primary else Charte.PANNEAU_2
+		if state == "pressed": background = Charte.OR_VIF if primary else Charte.PANNEAU_3
+		if state == "disabled": background = Color.TRANSPARENT
+		var style := Charte.style_pilule(background, outline if state != "disabled" else LINE, 10, 6)
+		if tile: style.set_corner_radius_all(Charte.RAYON_CARTE)
 		button.add_theme_stylebox_override(state, style)
-	var focus := C.box(Color.TRANSPARENT, C.IVORY, 3, 0)
+	var focus := Charte.style_pilule(Color.TRANSPARENT, C.IVORY, 0, 0)
 	focus.set_border_width_all(2)
 	button.add_theme_stylebox_override("focus", focus)
 	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
@@ -71,9 +69,9 @@ static func route_tab(button: Button, selected: bool, country: bool) -> void:
 	for state in ["normal", "hover", "pressed", "disabled"]:
 		var style := button.get_theme_stylebox(state) as StyleBoxFlat
 		style.set_border_width_all(0)
-		var fill := Color("80683f") if selected and not country else Color.TRANSPARENT
-		if state == "hover": fill = fill.lerp(Color("4b4935"), .65)
-		if state == "pressed": fill = Color("524a33")
+		var fill := Charte.VOILE_DORE if selected and not country else Color.TRANSPARENT
+		if state == "hover": fill = Charte.PANNEAU_2
+		if state == "pressed": fill = Charte.PANNEAU_3
 		style.bg_color = fill
 	if country:
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT

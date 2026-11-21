@@ -1,4 +1,5 @@
 extends RefCounted
+const Charte = preload("res://ui/charte.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const Editorial = preload("res://ui/entry_editorial.gd")
@@ -18,7 +19,7 @@ static func missing_warning(app: Control, parent: Container, scope: String, pape
 	if scope != "career" and _creation_missing(app):
 		messages.append("Pack de création absent · Présentation de base anonymisée. Réimporte le pack ou choisis Base pour créer une carrière.")
 	if messages.is_empty(): return
-	parent.add_child(G.wrap("\n".join(messages), 13, G.ALERT if paper else Color("f1b6a9")))
+	parent.add_child(G.wrap("\n".join(messages), 13, G.ALERT if paper else Charte.DORE))
 	parent.add_child(G.button("GÉRER LES PACKS", func(): app.pack_manager.open("career" if career_missing else "creation")))
 
 static func _creation_missing(app: Control) -> bool:

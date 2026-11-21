@@ -8,14 +8,16 @@ extends RefCounted
 const T = preload("res://theme.gd")
 const CHIFFRES = preload("res://ui/immersive08/fonts/BarlowCondensed-ExtraBold.ttf")
 
-const FOND := Color("0b1012")
-const PANNEAU := Color("121a1c")
-const TRAIT := Color("232f2e")
-const IVOIRE := Color("f2ecdc")
-const FAIBLE := Color("7b8a84")
-const OR := Color("e0b35a")
-const VERT := Color("65b081")
-const ALERTE := Color("e2876f")
+const Charte = preload("res://ui/charte.gd")
+
+const FOND := Charte.NOIR_PANNEAU
+const PANNEAU := Charte.PANNEAU_2
+const TRAIT := Charte.FILET
+const IVOIRE := Charte.CREME
+const FAIBLE := Charte.IVOIRE_3
+const OR := Charte.DORE
+const VERT := Charte.VERT_CLAIR
+const ALERTE := Charte.ATTRIBUT_0
 const FATIGUE := 55.0
 const SURVEILLE := 70.0
 
@@ -60,7 +62,7 @@ class Note extends Control:
 
 	func _draw() -> void:
 		var teinte: Color = Teintes.note(valeur)
-		draw_style_box(T.box(Color(teinte, 0.22), maxi(3, roundi(8.0 * densite))), Rect2(Vector2.ZERO, size))
+		draw_style_box(Charte.style_pilule(Charte.PANNEAU_3, Color(teinte, 0.7), 0, 0), Rect2(Vector2.ZERO, size))
 		var corps := roundi(maxf(12.0, 26.0 * densite))
 		var texte := ("%.1f" % valeur).replace(".", ",")
 		var largeur: float = CHIFFRES.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, corps).x

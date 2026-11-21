@@ -8,15 +8,16 @@ extends Control
 ## annoncer un (vraisemblance et réactions affichées avant de publier), refuser de promettre, ou ne pas répondre.
 ## Les promesses en cours restent rappelées en tête de la salle de presse.
 const S = preload("res://ui/contextual/skin.gd")
+const Charte = preload("res://ui/charte.gd")
 const SeasonLabel = preload("res://ui/season_label.gd")
 const Press = preload("res://ui/press_view.gd")
 const People = preload("res://ui/press_people_view.gd")
 const Microphone = preload("res://ui/contextual/press_microphone.gd")
 const CoachPortrait = preload("res://guide/coach_portrait.gd")
 ## Couleur de chaque ton (même ordre que la banque : affirmé, honnête, agressif, prudent, humour).
-const TONE_COLORS := {"confident":Color("d39b3f"), "honest":Color("5fae7c"), "aggressive":Color("c9584b"), "cautious":Color("7f9bb3"), "humour":Color("a982c6")}
-const POSITIVE := Color("86c98f")
-const NEGATIVE := Color("e08a7c")
+const TONE_COLORS := {"confident":Charte.DORE, "honest":Charte.VERT_CLAIR, "aggressive":Charte.CREME, "cautious":Charte.GRIS_VERT, "humour":Charte.OR_VIF}
+const POSITIVE := Charte.VERT_CLAIR
+const NEGATIVE := Charte.DORE
 var director: Node
 var app: Control
 var model: Dictionary = {}
@@ -35,7 +36,7 @@ var _fingerprint := ""
 var _request_in_flight := false
 var _was_waiting := false
 var promise_choice := ""
-const REALISM_COLORS := {"modeste":Color("7f9bb3"), "realiste":Color("5fae7c"), "ambitieux":Color("d39b3f"), "irrealiste":Color("c9584b")}
+const REALISM_COLORS := {"modeste":Charte.GRIS_VERT, "realiste":Charte.VERT_CLAIR, "ambitieux":Charte.DORE, "irrealiste":Charte.CREME}
 
 func _ready() -> void:
 	name = "ContextualPress"
@@ -133,8 +134,8 @@ func _render_moment(parent: Control) -> void:
 	var major := moment is Dictionary
 	var chip := PanelContainer.new()
 	chip.name = "PressMoment"
-	var accent := Color("c9584b") if major else Color("5fae7c")
-	chip.add_theme_stylebox_override("panel", S.G.T.box(Color(accent, 0.22), 4, accent))
+	var accent := Charte.DORE if major else Charte.VERT_CLAIR
+	chip.add_theme_stylebox_override("panel", Charte.style_pilule(Charte.VOILE_DORE if major else Charte.VOILE_VERT, accent, 12, 4))
 	var margin := S.G.margin(8)
 	chip.add_child(margin)
 	var words := S.G.v(0)
@@ -216,7 +217,7 @@ func _render_conference(column: VBoxContainer) -> void:
 		dot.custom_minimum_size = Vector2(26, 6)
 		dot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		var answered := choices.has(str(questions[index].get("id", "")))
-		dot.color = S.GOLD if index == question_index else (Color("5fae7c") if answered else Color("3b4a40"))
+		dot.color = S.GOLD if index == question_index else (Charte.VERT_CLAIR if answered else Charte.PANNEAU_3)
 		progress.add_child(dot)
 	var spacer := Control.new()
 	S.G.fill(spacer)
@@ -272,7 +273,8 @@ func _answer_button(question: Dictionary, answer: Dictionary, group: ButtonGroup
 		style.content_margin_left = 14
 		style.content_margin_top = 30
 		style.content_margin_bottom = 28
-		style.border_width_left = 4
+		style.set_border_width_all(2)
+		style.set_corner_radius_all(Charte.RAYON_CARTE)
 		style.border_color = Color(accent, 0.9 if state != "normal" else 0.55)
 		button.add_theme_stylebox_override(state, style)
 		base_styles[state] = style
@@ -280,8 +282,8 @@ func _answer_button(question: Dictionary, answer: Dictionary, group: ButtonGroup
 	var chip := PanelContainer.new()
 	chip.name = "PressTone"
 	chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	chip.add_theme_stylebox_override("panel", S.G.T.box(Color(accent, 0.30), 3, accent))
-	var chip_text := S.label(str(answer.get("toneLabel", "")).to_upper(), 11, S.TEXT)
+	chip.add_theme_stylebox_override("panel", Charte.style_pilule(Charte.PANNEAU_3, accent, 10, 2))
+	var chip_text := S.label(str(answer.get("toneLabel", "")).to_upper(), 12, S.TEXT)
 	chip_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	chip.add_child(chip_text)
 	button.add_child(chip)
@@ -333,7 +335,7 @@ func _render_delegation(surface: VBoxContainer) -> void:
 	var send := S.button("ENVOYER MON ADJOINT (GABI)", _delegate, allowed)
 	send.name = "PressDelegate"
 	words.add_child(send)
-	var reason := S.wrap(str(delegation.get("reason", "")), 11, S.MUTED if allowed else S.GOLD)
+	var reason := S.wrap(str(delegation.get("reason", "")), 12, S.MUTED if allowed else S.GOLD)
 	reason.name = "PressDelegateReason"
 	words.add_child(reason)
 	var policy: Dictionary = data.get("policy", {})
@@ -382,7 +384,7 @@ func _render_outcome(column: VBoxContainer, outcome: Dictionary) -> void:
 		var value := int(round(float(delta[entry[0]])))
 		var card := PanelContainer.new()
 		var tint := POSITIVE if value > 0 else NEGATIVE if value < 0 else S.MUTED
-		card.add_theme_stylebox_override("panel", S.G.T.box(Color(tint, 0.14), 5, Color(tint, 0.7)))
+		card.add_theme_stylebox_override("panel", Charte.ombrer(Charte.style_panneau(Charte.PANNEAU_2, Charte.RAYON_CARTE, 0), Charte.RAYON_CARTE))
 		S.G.fill(card)
 		headline.add_child(card)
 		var margin := S.G.margin(10)
@@ -446,7 +448,7 @@ func _render_promise_banner(column: VBoxContainer) -> void:
 		var track: Variant = progress.get("onTrack")
 		var tint: Color = S.MUTED if track == null else (POSITIVE if track else NEGATIVE)
 		var chip := PanelContainer.new()
-		chip.add_theme_stylebox_override("panel", S.G.T.box(Color(tint, 0.16), 4, Color(tint, 0.7)))
+		chip.add_theme_stylebox_override("panel", Charte.style_pilule(Charte.VOILE_VERT if tint == POSITIVE else Charte.VOILE_DORE if tint == NEGATIVE else Charte.PANNEAU_3, tint, 12, 4))
 		chip.add_child(S.label("%s · %s" % [str(promise.get("label", "")), str(progress.get("label", ""))], 12, S.TEXT))
 		chip.tooltip_text = "Annoncée saison %s, semaine %d · %s" % [str(promise.get("seasonLabel", "")), int(promise.get("week", 0)) + 1, str(promise.get("realismLabel", ""))]
 		row.add_child(chip)
@@ -481,7 +483,8 @@ func _render_promise_offer(parent: Control) -> void:
 		if id == promise_choice: S.selected(button, accent)
 		else:
 			var style: StyleBoxFlat = (button.get_theme_stylebox("normal") as StyleBoxFlat).duplicate()
-			style.border_width_left = 4
+			style.set_border_width_all(2)
+			style.set_corner_radius_all(Charte.RAYON_CARTE)
 			style.border_color = Color(accent, 0.8)
 			button.add_theme_stylebox_override("normal", style)
 		flow.add_child(button)
@@ -537,9 +540,9 @@ func _refresh_selection() -> void:
 		if selected:
 			for state in ["normal", "hover", "pressed"]:
 				var style: StyleBoxFlat = (button.get_meta("base_styles")[state] as StyleBoxFlat).duplicate()
-				style.bg_color = Color("283e2d")
+				style.bg_color = Charte.VOILE_DORE
 				style.border_color = S.GOLD
-				style.border_width_left = 6
+				style.set_border_width_all(2)
 				button.add_theme_stylebox_override(state, style)
 			button.add_theme_color_override("font_color", S.GOLD)
 		else:

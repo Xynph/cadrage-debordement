@@ -1,5 +1,6 @@
 extends Control
 const S = preload("res://ui/contextual/skin.gd")
+const Charte = preload("res://ui/charte.gd")
 const Meteo = preload("res://ui/contextual/meteo_texte.gd")
 const Pilotage = preload("res://ui/contextual/match_consignes.gd")
 ## Six tons de causerie (match-pilotage.js, TONS_LABELS) : libellé de repli quand le moteur n'en donne pas.
@@ -68,8 +69,7 @@ func _draw() -> void:
 		go_on.add_theme_font_size_override("font_size", 26)
 		go_on.tooltip_text = "Reprendre le match (Entrée ou Espace)"
 		for state in ["normal", "hover", "pressed"]:
-			var style := S.Base.box(S.GOLD if state == "hover" else Color("c9ae6a"), "control", Color("f1e2b0"))
-			style.set_border_width_all(2)
+			var style := Charte.style_pilule(Charte.OR_VIF if state == "hover" else Charte.DORE, Color.TRANSPARENT, 24, 8)
 			go_on.add_theme_stylebox_override(state, style)
 		declarations.add_child(go_on)
 		call_deferred("_focus_continue", go_on)

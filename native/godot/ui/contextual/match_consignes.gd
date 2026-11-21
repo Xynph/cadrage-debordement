@@ -8,6 +8,7 @@ extends RefCounted
 ## Aussi : arbitre (rappel d'une ligne), bilans des consignes, journal du staff, état des joueurs après les
 ## causeries (libellé et sens : favorable, neutre, défavorable). L'écran n'invente rien : tout vient du moteur.
 const W = preload("res://ui/contextual/match_tableau_widgets.gd")
+const Charte = preload("res://ui/charte.gd")
 
 const COMMANDE := "set_consignes"
 ## États favorables et défavorables (match-pilotage.js, PILOTAGE_ETATS) ; « indifferent » est neutre.
@@ -75,7 +76,7 @@ static func _ligne(parent: Control, p: Dictionary, axe: Dictionary, envoyer: Cal
 	libelle.tooltip_text = libelle.text
 	libelle.mouse_filter = Control.MOUSE_FILTER_PASS
 	libelle.add_theme_font_size_override("font_size", int(style.get("taille_libelle", style.get("taille", 14))))
-	libelle.add_theme_color_override("font_color", style.get("doux", Color("aeb9b3")) as Color)
+	libelle.add_theme_color_override("font_color", style.get("doux", Charte.GRIS_VERT) as Color)
 	var police: Variant = style.get("police")
 	if police is Font: libelle.add_theme_font_override("font", police as Font)
 	if largeur > 0:
@@ -129,11 +130,11 @@ static func _cran(texte: String, choisi: bool, groupe: ButtonGroup, style: Dicti
 	bouton.add_theme_font_size_override("font_size", int(style.get("taille", 14)))
 	var police: Variant = style.get("police")
 	if police is Font: bouton.add_theme_font_override("font", police as Font)
-	var rayon := int(style.get("rayon", 4))
+	var rayon := int(style.get("rayon", Charte.RAYON_PILULE))
 	var marge := int(style.get("marge", 6))
 	var or_: Color = style.get("or", W.OR)
-	var fond: Color = style.get("fond", Color("18231f"))
-	var survol: Color = style.get("survol", Color("1f2e2b"))
+	var fond: Color = style.get("fond", Charte.PANNEAU_2)
+	var survol: Color = style.get("survol", Charte.PANNEAU_3)
 	var reglages := {"normal": [fond, Color.TRANSPARENT], "hover": [survol, Color.TRANSPARENT], "pressed": [Color(or_, 0.18), or_],
 		"hover_pressed": [Color(or_, 0.24), or_], "disabled": [fond.darkened(0.2), Color.TRANSPARENT], "focus": [Color.TRANSPARENT, or_]}
 	for etat: String in reglages:
@@ -150,7 +151,7 @@ static func _cran(texte: String, choisi: bool, groupe: ButtonGroup, style: Dicti
 		boite.border_color = bord
 		bouton.add_theme_stylebox_override(etat, boite)
 	var texte_couleur: Color = style.get("texte", W.IVOIRE)
-	bouton.add_theme_color_override("font_color", style.get("doux", Color("aeb9b3")) as Color)
+	bouton.add_theme_color_override("font_color", style.get("doux", Charte.GRIS_VERT) as Color)
 	bouton.add_theme_color_override("font_hover_color", texte_couleur)
 	bouton.add_theme_color_override("font_focus_color", texte_couleur)
 	for cle: String in ["font_pressed_color", "font_hover_pressed_color"]: bouton.add_theme_color_override(cle, or_)

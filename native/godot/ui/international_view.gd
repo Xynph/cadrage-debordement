@@ -1,6 +1,7 @@
 extends RefCounted
 const FocusLater := preload("res://ui/focus_later.gd")
 
+const Charte = preload("res://ui/charte.gd")
 const G = preload("res://ui/game_skin.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const P = preload("res://ui/immersive08/projection.gd")
@@ -289,8 +290,8 @@ static func build(app: Control) -> Control:
 	_upcoming(app, C.content(side), international, names)
 	var directory := HFlowContainer.new()
 	directory.name = "InternationalNationLinks"
-	directory.add_theme_constant_override("h_separation", 6)
-	directory.add_theme_constant_override("v_separation", 6)
+	directory.add_theme_constant_override("h_separation", 8)
+	directory.add_theme_constant_override("v_separation", 8)
 	C.content(side).add_child(C.label("LES SÉLECTIONS", 18, C.GOLD, true, 700))
 	C.content(side).add_child(directory)
 	for team: Dictionary in international.get("teams", []):
@@ -386,8 +387,15 @@ static func _upcoming(app: Control, parent: Control, international: Dictionary, 
 		var line := C.v(1)
 		line.name = "InternationalUpcoming_%d" % index
 		parent.add_child(line)
-		line.add_child(C.wrap(_fixture_row(entry.fixture, names), 19, C.IVORY, true, 600))
-		line.add_child(C.wrap(str(entry.competition), 16, C.MUTED))
+		var rencontre := C.wrap(_fixture_row(entry.fixture, names), 19, C.IVORY, true, 600)
+		var gras := FontVariation.new()
+		gras.base_font = Charte.TEXTE
+		gras.variation_embolden = .44
+		rencontre.add_theme_font_override("font", gras)
+		line.add_child(rencontre)
+		var competition := C.wrap(str(entry.competition), 16, C.MUTED)
+		competition.add_theme_font_override("font", Charte.TEXTE)
+		line.add_child(competition)
 	parent.add_child(C.rule())
 
 static func _callups(app: Control, international: Dictionary, names: Dictionary) -> Control:
