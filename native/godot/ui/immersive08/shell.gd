@@ -1217,7 +1217,7 @@ static func sync_continue(app: Control) -> void:
 	var rule := button.get_node_or_null("ContinueRule") as ColorRect
 	if label == null or hint == null or rule == null: return
 	var state := str(button.text).strip_edges()
-	var own_head: bool = state in ["Relancer", "Retour au direct", "Valider le résultat", "Après-match"]
+	var own_head: bool = state in ["Relancer", "Retour au direct", "Valider le résultat", "Après-match", "Direction"]
 	label.text = state if own_head else "Continuer"
 	# « Espace » au repos ; « ! » + raison courte seulement quand quelque chose arrête Continuer (main.continue_block),
 	# jamais d'après l'état désactivé ni d'après la prochaine étape ordinaire (« Préparer »).

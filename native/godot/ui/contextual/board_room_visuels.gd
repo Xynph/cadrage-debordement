@@ -191,18 +191,26 @@ static func carte_jalon(goal: Dictionary, metrics: Dictionary, id: String, actio
 
 ## Frise de la saison : semaines 0..fin, semaine en cours, matchs du club (ballons : plein = joué, creux = à venir),
 ## drapeau de fin de saison, jalons posés à leur échéance (pictogramme dans un disque de la couleur du statut).
-## Chaque jalon est un bouton (petite fenêtre). Hauteur ajustée aux jalons empilés : pas de vide sans jalon.
+## Chaque jalon est un bouton (petite fenêtre) ; chaque ballon et le drapeau ouvrent le Calendrier sur la date du match
+## (survol : main + halo). Un jalon proche de la fin monte au-dessus du drapeau, qui reste visible et cliquable.
+## Hauteur ajustée aux jalons empilés : pas de vide sans jalon.
 class Frise extends Control:
 	var semaine := 0
 	var fin := 1
 	var jalons: Array = []  ## [{goal, action, id}]
-	var matchs: Array = []  ## [{semaine, joue}]
+	var matchs: Array = []  ## [{semaine, joue, date}]
 	var boutons: Array = []
+	var ballons: Array = []  ## boutons des matchs, même ordre que matchs
+	var drapeau: Button
 	const MARGE := 30.0
 	const BOUTON := 44.0
+	## Le drapeau occupe 30 px au-dessus de la ligne : un jalon à moins de 2 semaines de la fin se pose plus haut.
+	const HAUSSE_FIN := 18.0
 	func _ready() -> void:
 		resized.connect(_placer)
 		_placer()
+	func pres_du_drapeau(s: int) -> bool:
+		return s >= fin - 2
 	func etages() -> int:
 		var piles := {}
 		var haut := 0
@@ -211,10 +219,16 @@ class Frise extends Control:
 			piles[s] = int(piles.get(s, 0)) + 1
 			haut = maxi(haut, piles[s])
 		return haut
+	func hausse() -> float:
+		for entree: Dictionary in jalons:
+			if pres_du_drapeau(int(entree.goal.get("deadline", 0))): return HAUSSE_FIN
+		return 0.0
 	func x_de(s: float) -> float:
 		return MARGE + (size.x - 2.0 * MARGE) * clampf(s / maxf(1.0, float(fin)), 0.0, 1.0)
 	func ligne_y() -> float:
 		return size.y - 38.0
+	func pied_jalon(s: int) -> float:
+		return ligne_y() - 20.0 - (HAUSSE_FIN if pres_du_drapeau(s) else 0.0)
 	func _placer() -> void:
 		var piles := {}
 		for i in boutons.size():
@@ -224,7 +238,16 @@ class Frise extends Control:
 			piles[s] = rang + 1
 			var b: Button = boutons[i]
 			b.size = Vector2(BOUTON, BOUTON)
-			b.position = Vector2(x_de(s) - BOUTON * .5, ligne_y() - 20.0 - BOUTON - rang * (BOUTON + 4.0))
+			b.position = Vector2(x_de(s) - BOUTON * .5, pied_jalon(s) - BOUTON - rang * (BOUTON + 4.0))
+		var pas := (size.x - 2.0 * MARGE) / maxf(1.0, float(fin))
+		var largeur := clampf(pas, 24.0, 32.0)
+		for i in ballons.size():
+			var b: Button = ballons[i]
+			b.size = Vector2(largeur, 24.0)
+			b.position = Vector2(x_de(int(matchs[i].get("semaine", 0))) - largeur * .5, ligne_y() - 12.0)
+		if drapeau != null:
+			drapeau.size = Vector2(28.0, 24.0)
+			drapeau.position = Vector2(x_de(fin) - 20.0, ligne_y() - 36.0)
 		queue_redraw()
 	func _ballon(centre: Vector2, plein: bool) -> void:
 		# Ballon ovale, resserré quand les semaines sont serrées (1280) pour ne jamais se chevaucher.
@@ -249,9 +272,7 @@ class Frise extends Control:
 				var l := police.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
 				draw_string(police, Vector2(clampf(x - l * .5, 0.0, size.x - l), y + 30), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Charte.IVOIRE_3)
 		for m: Dictionary in matchs:
-			var sm := int(m.get("semaine", -1))
-			if sm < 0 or sm > fin: continue
-			_ballon(Vector2(x_de(sm), y), bool(m.get("joue", false)))
+			_ballon(Vector2(x_de(int(m.get("semaine", 0))), y), bool(m.get("joue", false)))
 		# Fin de saison : drapeau au bout de la ligne.
 		var xf := x_de(fin)
 		draw_line(Vector2(xf, y - 4), Vector2(xf, y - 30), Charte.IVOIRE, 2.0)
@@ -262,25 +283,61 @@ class Frise extends Control:
 			var t := "S%d" % semaine
 			var l := C.EXTRA_BOLD.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
 			draw_string(C.EXTRA_BOLD, Vector2(clampf(xs - l * .5, 0.0, size.x - l), y - 22), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Charte.IVOIRE)
-		# Tige de chaque jalon jusqu'à la ligne.
+		# Tige de chaque jalon jusqu'à la ligne (au bout, elle rejoint le mât du drapeau).
 		var piles := {}
 		for i in jalons.size():
 			var goal: Dictionary = jalons[i].goal
 			var s := int(goal.get("deadline", 0))
 			if piles.has(s): continue
 			piles[s] = true
-			draw_line(Vector2(x_de(s), y - 20), Vector2(x_de(s), y), Charte.IVOIRE_2, 2.0)
+			draw_line(Vector2(x_de(s), pied_jalon(s)), Vector2(x_de(s), y), Charte.IVOIRE_2, 2.0)
 
-static func frise(semaine: int, fin: int, jalons: Array, matchs: Array = []) -> Frise:
+## Bouton transparent posé sur un dessin de la frise (ballon, drapeau) : main au survol, léger halo ivoire, focus clavier.
+static func zone_frise(id: String, libelle: String, action: Callable) -> Button:
+	var b := Button.new()
+	b.name = id
+	b.flat = false
+	b.focus_mode = Control.FOCUS_ALL
+	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	b.tooltip_text = libelle
+	b.accessibility_name = libelle
+	b.set_meta("immersive_style_applied", true)
+	var vide := StyleBoxFlat.new()
+	vide.bg_color = Color.TRANSPARENT
+	vide.set_corner_radius_all(12)
+	var halo := vide.duplicate() as StyleBoxFlat
+	halo.bg_color = Color(Charte.IVOIRE, .2)
+	var focus := vide.duplicate() as StyleBoxFlat
+	focus.set_border_width_all(2)
+	focus.border_color = Charte.IVOIRE
+	b.add_theme_stylebox_override("normal", vide)
+	b.add_theme_stylebox_override("hover", halo)
+	b.add_theme_stylebox_override("pressed", halo)
+	b.add_theme_stylebox_override("focus", focus)
+	b.pressed.connect(action)
+	return b
+
+## `ouvrir_match` reçoit l'entrée du match ({semaine, joue, date}) ; le drapeau ouvre le dernier match de la saison.
+static func frise(semaine: int, fin: int, jalons: Array, matchs: Array = [], ouvrir_match: Callable = Callable()) -> Frise:
 	var f := Frise.new()
 	f.name = "BoardSeasonFrise"
 	f.semaine = semaine
 	f.fin = maxi(1, fin)
 	f.jalons = jalons
-	f.matchs = matchs
-	f.custom_minimum_size = Vector2(300, 72.0 + f.etages() * (Frise.BOUTON + 4.0))
+	for m: Dictionary in matchs:
+		if int(m.get("semaine", -1)) >= 0 and int(m.get("semaine", -1)) <= f.fin: f.matchs.append(m)
+	f.custom_minimum_size = Vector2(300, 72.0 + f.etages() * (Frise.BOUTON + 4.0) + f.hausse())
 	f.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	f.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if ouvrir_match.is_valid():
+		var dernier: Dictionary = {}
+		for m: Dictionary in f.matchs:
+			var b := zone_frise("BoardFriseMatch_S%d" % int(m.semaine), "S%d · %s" % [int(m.semaine), "Joué" if bool(m.get("joue", false)) else "À venir"], ouvrir_match.bind(m))
+			f.add_child(b)
+			f.ballons.append(b)
+			if dernier.is_empty() or int(m.semaine) > int(dernier.semaine): dernier = m
+		f.drapeau = zone_frise("BoardFriseFin", "Fin de saison · S%d" % f.fin, ouvrir_match.bind(dernier))
+		f.add_child(f.drapeau)
 	for entree: Dictionary in jalons:
 		var goal: Dictionary = entree.goal
 		var etat := statut(goal)
