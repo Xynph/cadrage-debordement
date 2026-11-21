@@ -81,9 +81,7 @@ func _build() -> void:
 		state.stored_mode = training_mode
 		state.erase("mode")
 	active_tab = clampi(int(state.get("tab", 0)), 0, TABS.size() - 1)
-	D.text(self, 29, 34, "PRÉPARATION DU GROUPE", 28, PALE_GOLD, 700, 320)
-	D.line(self, Vector2(335, 24), Vector2(486, 24), app.accent.lightened(.36), 2)
-	app.heading = D.text(self, 27, 103, "Plan d’entraînement", 72, C.IVORY, 800, 780)
+	app.heading = D.text(self, 27, 103, "PLAN D’ENTRAÎNEMENT", 72, C.IVORY, 800, 780)
 	app.heading.add_theme_font_override("font", C.Charte.TITRE_FICHE)
 	var opponent: Dictionary = P.next_fixture(app.model)
 	var fixture := "Aucune rencontre annoncée"

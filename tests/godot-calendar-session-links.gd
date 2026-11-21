@@ -350,6 +350,9 @@ func run() -> void:
 		root.size = Vector2i(1280,720)
 		if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
 		await settle()
+		# A resize keeps the scene built at the previous density (shell.render): rebuild the screen at the
+		# 1280 × 720 density, as a player opening the Calendar on this window gets it, before measuring overflow.
+		app._render(); await settle()
 		await press("CalendarView_week")
 		check(links(app.find_child("CalendarWeekGrid",true,false),id).size() == 1, "Grille : lien séance lié à l’ID brut projeté")
 		await press("MonthFilter_matches")
