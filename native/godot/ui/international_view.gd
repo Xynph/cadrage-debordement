@@ -7,6 +7,7 @@ const C = preload("res://ui/immersive08/components.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const Sheet = preload("res://ui/national_sheet.gd")
 const Availability = preload("res://ui/international_availability.gd")
+const Visuel = preload("res://ui/selections_visuel.gd")
 const FIXTURES_PER_PAGE := 10
 
 const MONTHS_FR := ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"]
@@ -288,14 +289,17 @@ static func build(app: Control) -> Control:
 	C.fill(side, true)
 	body.add_child(side)
 	_upcoming(app, C.content(side), international, names)
-	var directory := HFlowContainer.new()
-	directory.name = "InternationalNationLinks"
-	directory.add_theme_constant_override("h_separation", 8)
-	directory.add_theme_constant_override("v_separation", 8)
-	C.content(side).add_child(C.label("LES SÉLECTIONS", 18, C.GOLD, true, 700))
-	C.content(side).add_child(directory)
-	for team: Dictionary in international.get("teams", []):
-		directory.add_child(_nation_link(app, str(team.id), str(team.name)))
+	var variante := Visuel.variante()
+	if not variante.is_empty(): Visuel.annuaire(app, C.content(side), international)
+	else:
+		var directory := HFlowContainer.new()
+		directory.name = "InternationalNationLinks"
+		directory.add_theme_constant_override("h_separation", 8)
+		directory.add_theme_constant_override("v_separation", 8)
+		C.content(side).add_child(C.label("LES SÉLECTIONS", 18, C.GOLD, true, 700))
+		C.content(side).add_child(directory)
+		for team: Dictionary in international.get("teams", []):
+			directory.add_child(_nation_link(app, str(team.id), str(team.name)))
 	var tabs := TabContainer.new()
 	tabs.name = "InternationalTabs"
 	G.fill(tabs, true)
@@ -304,10 +308,16 @@ static func build(app: Control) -> Control:
 	tabs.add_theme_font_size_override("font_size", maxi(14, C.px(20)))
 	tabs.add_child(_callups(app, international, names))
 	tabs.add_child(_editions(app, international, names))
-	tabs.add_child(_offers(app, international, role))
+	match variante:
+		"A": tabs.add_child(Visuel.offres_a(app, international, role))
+		"B": tabs.add_child(Visuel.offres_b(app, international, role))
+		_: tabs.add_child(_offers(app, international, role))
 	var sections := ["callups", "editions", "offers"]
 	sections.append("availability")
-	tabs.add_child(Availability.build(app))
+	match variante:
+		"A": tabs.add_child(Visuel.disponibilites_a(app))
+		"B": tabs.add_child(Visuel.disponibilites_b(app))
+		_: tabs.add_child(Availability.build(app))
 	var fixture := _editable_fixture(app.model)
 	var available := Sheet.slots(international)
 	if not fixture.is_empty() and not available.is_empty():
@@ -338,6 +348,7 @@ static func _hero(names: Dictionary, role: String, nation: String) -> Control:
 	var title := C.label("Tes internationaux et les sélections" if role != "nation" else "Le groupe de " + nation_name, 44, C.IVORY, true, 800)
 	title.name = "InternationalHeroTitle"
 	words.add_child(title)
+	if not Visuel.variante().is_empty(): return card
 	words.add_child(C.wrap("Suis les convocations de tes joueurs, leurs retours au club, les compétitions internationales et les postes de sélectionneur ouverts.", 19, C.MUTED))
 	return card
 
