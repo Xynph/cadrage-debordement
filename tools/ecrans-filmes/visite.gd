@@ -55,6 +55,9 @@ const EXTRAS := [
 	{"id": "finances-budget", "libelle": "Finances · onglet Budget", "type": "finances_onglet", "onglet": "budget"},
 	{"id": "finances-classement", "libelle": "Finances · onglet Classement", "type": "finances_onglet", "onglet": "clubs"},
 	{"id": "finances-transferts", "libelle": "Finances · onglet Transferts", "type": "finances_onglet", "onglet": "transfers"},
+	{"id": "strategie-finances", "libelle": "Club › Direction · onglet Finances", "type": "strategie_onglet", "onglet": 0},
+	{"id": "strategie-projet", "libelle": "Club › Direction · onglet Projet sportif", "type": "strategie_onglet", "onglet": 1},
+	{"id": "strategie-supporters", "libelle": "Club › Direction · onglet Supporters", "type": "strategie_onglet", "onglet": 2},
 ]
 ## Écrans du match en direct : le coup d'envoi est donné une fois, après tous les autres écrans.
 const EN_DIRECT := [
@@ -457,6 +460,13 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			app.set_meta("press_mail_origin", conference.invitationId)
 			canvas._select(1)
 			await stabiliser()
+		"strategie_onglet":
+			app.management_ui.immersive08_strategy_tab = int(ecran.onglet)
+			app._navigate("Stratégie")
+			await stabiliser()
+			if app.route != "Stratégie": return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
+			var onglets := app.find_child("StrategyTabs", true, false) as TabContainer
+			if onglets == null or onglets.current_tab != int(ecran.onglet): return {"statut": "echec", "note": "onglet de Direction non affiché"}
 		"presse_onglet":
 			preparer_presse()
 			app.management_ui.press_tab = int(ecran.onglet)
