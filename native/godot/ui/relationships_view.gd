@@ -6,6 +6,7 @@ const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
 const Charte = preload("res://ui/charte.gd")
 const Components = preload("res://ui/immersive08/components.gd")
 const GameSkin = preload("res://ui/game_skin.gd")
+const V = preload("res://ui/relationships_visuals.gd")
 const LIBELLES_EFFET := {"satisfaction": "satisf.", "moral collectif": "moral", "moral": "moral", "confiance de direction": "conf.", "confiance": "conf.", "respect": "satisf."}
 const CONTEXTES := {
 	"tension": ["Satisfaction basse", "warning"], "fatigue": ["Fatigue", "heart"], "revelation": ["Minutes à suivre", "clock"],
@@ -129,15 +130,36 @@ static func build(app: Control) -> Control:
 		activate.name = "ActivateRelationships"
 		activate.disabled = not data.get("available", false)
 		follow.add_child(activate)
-	for item in [["Moral du groupe", data.get("morale")], ["Confiance de la direction", data.get("trust")]]:
-		if item[1] != null: G.gauge(follow, item[0], float(item[1]))
+	if V.variante() == "B":
+		var anneaux := G.h(24)
+		anneaux.alignment = BoxContainer.ALIGNMENT_CENTER
+		anneaux.name = "RelationshipRings"
+		if data.get("morale") != null: anneaux.add_child(V.anneau(float(data.morale), "Moral", "heart", Charte.MORAL, 120, "RelationshipRingMorale", func(): app._navigate("Effectif")))
+		if data.get("trust") != null: anneaux.add_child(V.anneau(float(data.trust), "Conseil", "shield", Charte.CONFIANCE, 120, "RelationshipRingTrust", func(): app._navigate("Club")))
+		follow.add_child(anneaux)
+	else:
+		for item in [["Moral du groupe", data.get("morale")], ["Confiance de la direction", data.get("trust")]]:
+			if item[1] != null: G.gauge(follow, item[0], float(item[1]))
 	var event: Variant = data.get("event")
 	if event is Dictionary:
 		follow.add_child(G.section(str(event.title)))
-		_person_link(app,follow,event.playerId,"RelationshipEventPlayerLink")
-		follow.add_child(contexte(app, event))
-		follow.add_child(G.wrap("Personnalité : %s · leadership %s / 100" % [event.trait, int(event.leadership)], 13))
-		for choice: Dictionary in event.get("choices", []):
+		if V.active():
+			_identity(app, follow, _identite(app, event.playerId), str(event.playerId), "")
+			var etats := V.personnalite(str(event.get("trait", "")), event.get("leadership"), _ouvrir(app, event.playerId))
+			etats.add_child(contexte(app, event))
+			etats.move_child(etats.get_child(etats.get_child_count() - 1), 0)
+			follow.add_child(etats)
+			var cartes: Array = []
+			for choice: Dictionary in event.get("choices", []):
+				var agir := func(): app._command("locker_room_decision", {"context":context, "eventKey":event.key, "choice":choice.id})
+				if V.variante() == "A": cartes.append(V.tuile_action(str(choice.id), str(choice.label), str(choice.detail), agir, "LockerDecision_" + str(choice.id), event.get("available", false), 150))
+				else: follow.add_child(V.ligne_action(str(choice.id), str(choice.label), str(choice.detail), agir, "LockerDecision_" + str(choice.id), event.get("available", false)))
+			if not cartes.is_empty(): follow.add_child(V.rangee(cartes))
+		else:
+			_person_link(app,follow,event.playerId,"RelationshipEventPlayerLink")
+			follow.add_child(contexte(app, event))
+			follow.add_child(G.wrap("Personnalité : %s · leadership %s / 100" % [event.trait, int(event.leadership)], 13))
+		for choice: Dictionary in ([] if V.active() else event.get("choices", [])):
 			var button := G.button(choice.label, func(): app._command("locker_room_decision", {"context":context, "eventKey":event.key, "choice":choice.id}))
 			button.name = "LockerDecision_" + str(choice.id)
 			button.disabled = not event.get("available", false)
@@ -164,16 +186,27 @@ static func build(app: Control) -> Control:
 	if players.is_empty():
 		list.add_child(G.wrap("Aucun joueur suivi dans cette carrière.", 16))
 		return page
-	list.add_child(G.label("Relais pressenti : " + _name(app, data.get("leaderId")), 17))
-	if not _player_target(app,data.get("leaderId")).is_empty(): _person_link(app,list,data.leaderId,"RelationshipLeaderPlayerLink")
+	var selected := 0
+	for i in players.size():
+		if players[i].id == selection.get("playerId"): selected = i
+	if V.variante() == "B":
+		var details_b := G.v(10)
+		list.add_child(_portraits(app, players, data, selection, players[selected], details_b, context))
+		list.add_child(details_b)
+		_player(app, details_b, data, players[selected], context)
+		_duos(app, list, data, players, context)
+		return page
+	if V.variante() == "A":
+		list.add_child(Pastilles.pastille("Relais · " + _name(app, data.get("leaderId")), Pastilles.VIOLET, "star", "Relais pressenti", 18, "RelationshipLeaderPill", _ouvrir(app, data.get("leaderId"))))
+	else:
+		list.add_child(G.label("Relais pressenti : " + _name(app, data.get("leaderId")), 17))
+		if not _player_target(app,data.get("leaderId")).is_empty(): _person_link(app,list,data.leaderId,"RelationshipLeaderPlayerLink")
 	var chooser := OptionButton.new()
 	chooser.name = "RelationshipPlayer"
 	chooser.custom_minimum_size.y = 44
 	chooser.fit_to_longest_item = false
-	var selected := 0
 	for p: Dictionary in players:
 		chooser.add_item(_name(app, p.id) + " · " + str(p.pos))
-		if p.id == selection.get("playerId"): selected = chooser.item_count - 1
 	chooser.select(selected)
 	list.add_child(chooser)
 	var details := G.v(10)
@@ -184,6 +217,10 @@ static func build(app: Control) -> Control:
 		_player(app, details, data, players[index], context)
 	chooser.item_selected.connect(draw)
 	draw.call(selected)
+	_duos(app, list, data, players, context)
+	return page
+
+static func _duos(app: Control, list: VBoxContainer, data: Dictionary, players: Array, context: Dictionary) -> void:
 	list.add_child(G.separator())
 	var titre_duo := G.h(8)
 	titre_duo.add_child(G.section("Travailler un duo"))
@@ -202,11 +239,18 @@ static func build(app: Control) -> Control:
 	a.fit_to_longest_item = false; b.fit_to_longest_item = false
 	if players.size() > 1: b.select(1 if a.selected == 0 else 0)
 	list.add_child(a); list.add_child(b)
+	var cartes_duo: Array = []
 	for action: Dictionary in data.get("duoActions", []):
+		if V.active():
+			var agir := func(): app._command("relationship_duo", {"context":context, "mode":action.id, "a":players[a.selected].id, "b":players[b.selected].id})
+			if V.variante() == "A": cartes_duo.append(V.tuile_action(str(action.id), str(action.label), str(action.detail), agir, "DuoAction_" + str(action.id), data.get("duoAvailable", false), 120))
+			else: list.add_child(V.ligne_action(str(action.id), str(action.label), str(action.detail), agir, "DuoAction_" + str(action.id), data.get("duoAvailable", false)))
+			continue
 		var button := G.button(action.label, func(): app._command("relationship_duo", {"context":context, "mode":action.id, "a":players[a.selected].id, "b":players[b.selected].id}))
 		button.name = "DuoAction_" + str(action.id)
 		button.disabled = not data.get("duoAvailable", false)
 		list.add_child(button); list.add_child(G.wrap(action.detail, 13))
+	if not cartes_duo.is_empty(): list.add_child(V.rangee(cartes_duo))
 	for pair: Dictionary in data.get("pairs", []):
 		list.add_child(G.wrap("%s / %s · lien %s" % [_name(app, pair.a), _name(app, pair.b), int(pair.score)], 14))
 		var people := G.h(6)
@@ -214,20 +258,49 @@ static func build(app: Control) -> Control:
 		_person_link(app,people,pair.a,"RelationshipDuoPlayerALink")
 		_person_link(app,people,pair.b,"RelationshipDuoPlayerBLink")
 	list.add_child(G.wrap(Copy.notice("relationships", data.get("notice", "")), 12))
-	return page
 
 static func _player(app: Control, parent: VBoxContainer, data: Dictionary, p: Dictionary, context: Dictionary) -> void:
 	var identity: Dictionary = p
 	for candidate: Dictionary in app.model.get("squad", []):
 		if candidate.id == p.id: identity = candidate; break
-	_identity(app, parent, identity, str(p.id), "Entretien individuel · " + str(p.get("pos", "")))
+	var fiche := _ouvrir(app, p.get("id"))
+	if V.variante() == "B":
+		var scene := G.h(18)
+		scene.name = "RelationshipScene"
+		scene.add_child(V.anneau(float(p.score) if p.get("score") != null else 0.0, "Satisf.", "heart", V.teinte(p.get("score")), 132, "RelationshipRingSatisfaction", fiche))
+		var cote := G.v(8)
+		G.fill(cote)
+		scene.add_child(cote)
+		var nom := _person_link(app, cote, p.id, "RelationshipPlayerLink")
+		nom.add_theme_font_size_override("font_size", G.Base.reading_size(25))
+		nom.add_theme_font_override("font", G.T.DISPLAY)
+		var pers_b: Variant = p.get("personality")
+		var etats_b := V.personnalite(str(pers_b.get("trait", "")) if pers_b is Dictionary else "", pers_b.get("leadership") if pers_b is Dictionary else null, fiche)
+		etats_b.add_child(Pastilles.pastille(str(p.get("pos", "")), Charte.IVOIRE_2, "people", "Poste", 16, "RelationshipPos", fiche))
+		if int(p.injury) > 0:
+			etats_b.add_child(Pastilles.pastille("%d sem." % int(p.injury), Pastilles.ROUGE, "warning", "Blessure : %s semaine(s)." % p.injury, 16, "RelationshipInjuryWeeks", fiche))
+		cote.add_child(etats_b)
+		var tuiles_b := Components.h(8)
+		tuiles_b.add_child(Pastilles.tuile("%d %%" % int(p.condition), "condition", Pastilles.VERT if int(p.condition) >= 80 else (Pastilles.ORANGE if int(p.condition) >= 50 else Pastilles.ROUGE), Charte.PANNEAU_2, 28, "RelationshipTileCondition", false, fiche))
+		tuiles_b.add_child(Pastilles.tuile(_number(p.get("minutes")), "min", Pastilles.TURQUOISE, Charte.PANNEAU_2, 28, "RelationshipTileMinutes", false, fiche))
+		cote.add_child(tuiles_b)
+		parent.add_child(scene)
+		for c: Dictionary in data.get("conversations", []):
+			parent.add_child(V.ligne_action(str(c.id), str(c.label), str(c.detail), func(): app._command("relationship_conversation", {"context":context, "playerId":p.id, "choice":c.id}), "Conversation_" + str(c.id), p.get("conversationAvailable", false)))
+		_promesses(app, parent, data, p, context)
+		return
+	_identity(app, parent, identity, str(p.id), "" if V.active() else "Entretien individuel · " + str(p.get("pos", "")))
 	var personality: Variant = p.get("personality")
-	if personality is Dictionary and not str(personality.get("trait", "")).is_empty():
+	if V.active():
+		var pers: Variant = p.get("personality")
+		var etats := V.personnalite(str(pers.get("trait", "")) if pers is Dictionary else "", pers.get("leadership") if pers is Dictionary else null, fiche)
+		etats.add_child(Pastilles.pastille(str(p.get("pos", "")), Charte.IVOIRE_2, "people", "Poste", 16, "RelationshipPos", fiche))
+		parent.add_child(etats)
+	elif personality is Dictionary and not str(personality.get("trait", "")).is_empty():
 		var character := G.wrap("Personnalité : %s · leadership %s / 100" % [personality.trait, _number(personality.get("leadership"))], 13)
 		character.name = "RelationshipPersonality"
 		parent.add_child(character)
 	if p.get("score") != null: G.gauge(parent, "Satisfaction", float(p.score))
-	var fiche := _ouvrir(app, p.get("id"))
 	var chiffres := Components.h(8)
 	chiffres.name = "RelationshipFigures"
 	chiffres.add_child(Pastilles.tuile(_number(p.get("score")), "satisf.", Pastilles.BLEU, Charte.PANNEAU_2, 30, "RelationshipTileSatisfaction", false, fiche))
@@ -240,6 +313,13 @@ static func _player(app: Control, parent: VBoxContainer, data: Dictionary, p: Di
 		blessure.add_child(Pastilles.pastille("%d sem." % int(p.injury), Pastilles.ROUGE, "warning", "Blessure : %s semaine(s)." % p.injury, 18, "RelationshipInjuryWeeks", fiche))
 		blessure.add_child(Pastilles.pastille("Promesse", Pastilles.ORANGE, "clock", "Promesse suspendue si aucune minute jouée.", 18, "RelationshipInjuryPromise", fiche))
 		parent.add_child(blessure)
+	if V.variante() == "A":
+		var cartes: Array = []
+		for c: Dictionary in data.get("conversations", []):
+			cartes.append(V.tuile_action(str(c.id), str(c.label), str(c.detail), func(): app._command("relationship_conversation", {"context":context, "playerId":p.id, "choice":c.id}), "Conversation_" + str(c.id), p.get("conversationAvailable", false), 110))
+		parent.add_child(V.rangee(cartes))
+		_promesses(app, parent, data, p, context)
+		return
 	for c: Dictionary in data.get("conversations", []):
 		var button := G.button(c.label + " · " + c.detail, func(): app._command("relationship_conversation", {"context":context, "playerId":p.id, "choice":c.id}))
 		button.disabled = not p.get("conversationAvailable", false)
@@ -280,3 +360,63 @@ static func _player(app: Control, parent: VBoxContainer, data: Dictionary, p: Di
 			parent.add_child(button)
 	for h: Dictionary in p.get("promiseHistory", []).slice(-3):
 		parent.add_child(G.wrap("%s J%s · %s · %s min" % [G.season_label(h.season), int(h.round) + 1, {"promise":"Engagement pris", "kept":"Promesse tenue", "broken":"Promesse rompue"}.get(h.status, h.status), int(h.minutes)], 13))
+
+## ---- PROVISOIRE (revue visuelle du 21/11/2026, n° 4) : aides des options A / B ----
+
+static func _identite(app: Control, id: Variant) -> Dictionary:
+	for candidate: Dictionary in app.model.get("squad", []):
+		if candidate.get("id") == id: return candidate
+	return {"id": id}
+
+## Promesse de temps de jeu en tuiles chrono ; promesse en cours en pastilles.
+static func _promesses(app: Control, parent: VBoxContainer, data: Dictionary, p: Dictionary, context: Dictionary) -> void:
+	var promise: Variant = p.get("promise")
+	var titre := Components.h(8)
+	titre.add_child(Components.label("Temps de jeu promis", 20, Charte.IVOIRE, true, 600))
+	titre.add_child(Pastilles.pastille("J24", Pastilles.BLEU, "calendar", "Dernière ouverture : journée 24.", 16))
+	parent.add_child(titre)
+	if promise is Dictionary:
+		var suivi := Components.h(8)
+		suivi.add_child(Pastilles.tuile("%s" % str(promise.target), "objectif", Pastilles.TURQUOISE, Charte.PANNEAU_2, 28))
+		suivi.add_child(Pastilles.tuile("%d" % int(promise.minutes), "min jouées", Pastilles.BLEU, Charte.PANNEAU_2, 28))
+		suivi.add_child(Pastilles.tuile("%d / 3" % int(promise.completed), "rencontres", Pastilles.VIOLET, Charte.PANNEAU_2, 28))
+		parent.add_child(suivi)
+		return
+	var cartes: Array = []
+	for option: Dictionary in data.get("promiseOptions", []):
+		cartes.append(V.tuile_promesse(int(option.minutes), func(): app._command("relationship_promise", {"context":context, "playerId":p.id, "target":option.id}), "Promise_" + str(option.id), p.get("promiseAvailable", false)))
+	if not cartes.is_empty(): parent.add_child(V.rangee(cartes))
+
+## Option B : rangée de portraits (relais, joueur choisi, puis les moins satisfaits) et « Tous » en petite fenêtre.
+static func _portraits(app: Control, players: Array, data: Dictionary, selection: Dictionary, courant: Dictionary, details: VBoxContainer, context: Dictionary) -> Control:
+	var identites := {}
+	for p: Dictionary in players: identites[str(p.id)] = _identite(app, p.id)
+	var relais := str(data.get("leaderId", ""))
+	var rangs := players.duplicate()
+	rangs.sort_custom(func(x, y): return float(x.get("score", 100) if x.get("score") != null else 100) < float(y.get("score", 100) if y.get("score") != null else 100))
+	var montres: Array = []
+	for p: Dictionary in players:
+		if str(p.id) == relais: montres.append(p)
+	if not courant in montres: montres.append(courant)
+	for p: Dictionary in rangs:
+		if montres.size() >= 7: break
+		if not p in montres: montres.append(p)
+	var rangee := Components.h(8)
+	rangee.name = "RelationshipPortraits"
+	var choisir := func(id: String):
+		selection["playerId"] = id
+		app._render()
+	for p: Dictionary in montres:
+		var id := str(p.id)
+		rangee.add_child(V.vignette(app, p, identites[id], id == str(courant.id), id == relais, choisir.bind(id)))
+	var tous := Components.v(4)
+	var plus := Components.label("+%d" % maxi(0, players.size() - montres.size()), 30, Charte.IVOIRE, true, 800)
+	plus.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tous.add_child(plus)
+	tous.add_child(Components.icon("people", 26, Charte.IVOIRE_2))
+	var carte_tous := V.carte(tous, func(): V.fenetre_portraits(app, players, identites, str(courant.id), relais, choisir), "RelationshipAllPortraits", "Tout le groupe", Charte.FILET)
+	carte_tous.custom_minimum_size = Vector2(C_px(90), 0)
+	rangee.add_child(carte_tous)
+	return rangee
+
+static func C_px(v: float) -> int: return Components.px(v)
