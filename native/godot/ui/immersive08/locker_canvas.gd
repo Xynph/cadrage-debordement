@@ -7,6 +7,7 @@ const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const Relations = preload("res://ui/relationships_view.gd")
 const G = preload("res://ui/game_skin.gd")
 const Charte = preload("res://ui/charte.gd")
+const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
 const BanqueImages = preload("res://ui/banque_images.gd")
 const KEY = "immersive08_locker_tab"
 const LOCKER_ART = "res://art/immersive08/lockerroom.png"
@@ -38,10 +39,9 @@ static func _hero(app: Control, canvas: Control, data: Dictionary) -> void:
 	U.art_fade(hero,Rect2(986,1,1261,225))
 	D.text(hero,26,43,"LE VESTIAIRE",30,C.GOLD,700,375).add_theme_font_override("font",Charte.TITRE_FICHE)
 	D.line(hero,Vector2(237,28),Vector2(661,28),Color(C.GOLD,.65))
-	D.text(hero,23,124,"Un groupe, une ambition.",82,C.IVORY,800,1195)
-	D.text(hero,26,175,G.club_name(app.model.club)+"  ·  "+str(app.model.meta.get("roundLabel","La semaine du groupe")),26,C.MUTED,500,1225,HORIZONTAL_ALIGNMENT_LEFT,true)
+	D.text(hero,26,112,G.club_name(app.model.club)+"  ·  "+str(app.model.meta.get("roundLabel","La semaine du groupe")),40,C.IVORY,700,1225)
 	var stage := "DÉCISIONS OUVERTES" if data.get("available",false) else "DÉCISIONS INDISPONIBLES"
-	D.chip(hero,Rect2(26,187,263,29),stage,C.MINT if data.get("available",false) else C.AMBER)
+	D.chip(hero,Rect2(26,136,263,29),stage,C.MINT if data.get("available",false) else C.AMBER)
 
 	var open := 0
 	for item: Dictionary in data.get("commitments",[]):
@@ -112,8 +112,7 @@ static func _event(card: Panel, app: Control, data: Dictionary) -> void:
 		D.text(card,166,110,event.get("title","Point de vestiaire"),36,C.IVORY,700,1134)
 		D.text(card,166,146,_name(app.model,event.get("playerId")),26,C.GOLD,600,1120)
 		D.text(card,166,177,"%s  ·  Leadership %s / 100" % [event.get("trait","Personnalité"),G.n(event.get("leadership","—"))],23,C.MUTED,500,1120,HORIZONTAL_ALIGNMENT_LEFT,true)
-		var lines := D.words(str(event.get("context","")),102,2)
-		for i in lines.size(): D.text(card,23,219+i*26,lines[i],24,C.IVORY,500,1278,HORIZONTAL_ALIGNMENT_LEFT,true)
+		Pastilles.poser(card, Relations.contexte(app, event), 23, 196)
 		var choices: Array = event.get("choices",[])
 		for i in mini(3,choices.size()):
 			var choice: Dictionary = choices[i]
@@ -121,13 +120,13 @@ static func _event(card: Panel, app: Control, data: Dictionary) -> void:
 			var key := str(choice.id)
 			var action := _action(card,Rect2(23,y,442,62),CHOICES.get(key,choice.label),func(): app._command("locker_room_decision",{"context":context,"eventKey":event.key,"choice":key}),"LockerDecision_"+key)
 			action.disabled = app.waiting or not event.get("available",false)
-			var notes := D.words(str(choice.get("detail","")),65,2)
-			for j in notes.size(): D.text(card,489,y+26+j*24,notes[j],22,C.MUTED,500,812,HORIZONTAL_ALIGNMENT_LEFT,true)
-		if not event.get("available",false): D.text(card,23,512,data.get("reason","Les choix sont indisponibles dans cette phase."),22,C.AMBER,600,1278)
+			var effets := Relations.effets(str(choice.get("detail","")))
+			effets.name = "LockerEffects_" + key
+			Pastilles.poser(card, effets, 489, y + 14)
+		if not event.get("available",false): Pastilles.poser(card, Pastilles.pastille("Choix indisponibles", Pastilles.ORANGE, "warning", str(data.get("reason","Les choix sont indisponibles dans cette phase.")), 22, "LockerUnavailable"), 23, 486)
 	else:
 		D.photo(card,_art(app.model),Rect2(22,74,1283,222))
 		D.text(card,23,358,"Aucun entretien hebdomadaire à traiter",38,C.IVORY,700,1278)
-		D.text(card,23,404,"Les entretiens individuels et les duos restent dans les dossiers du groupe.",24,C.MUTED,500,1278,HORIZONTAL_ALIGNMENT_LEFT,true)
 		_action(card,Rect2(23,433,484,57),"Consulter les dossiers du groupe",func(): U.select(app,KEY,"people","LockerTab_people"),"LockerOpenPeople")
 
 static func _group(card: Panel, app: Control, data: Dictionary) -> void:
@@ -152,7 +151,7 @@ static func _group(card: Panel, app: Control, data: Dictionary) -> void:
 static func _commitments(card: Panel, app: Control, data: Dictionary, limit: int, overview: bool) -> void:
 	var commitments: Array = data.get("commitments",[]).duplicate()
 	commitments.reverse()
-	if commitments.is_empty(): D.text(card,23,116,"Aucun engagement de vestiaire enregistré.",28,C.MUTED,600,1280,HORIZONTAL_ALIGNMENT_LEFT,true)
+	if commitments.is_empty(): D.text(card,23,116,"Aucun engagement",28,C.MUTED,600,1280,HORIZONTAL_ALIGNMENT_LEFT,true)
 	for i in mini(limit,commitments.size()):
 		var entry: Dictionary = commitments[i]
 		var status := str(entry.get("status","open"))
@@ -168,7 +167,7 @@ static func _commitments(card: Panel, app: Control, data: Dictionary, limit: int
 static func _recent(card: Panel, app: Control, data: Dictionary) -> void:
 	var events: Array = data.get("history",[])
 	if events.is_empty():
-		D.text(card,23,117,"Aucune décision archivée.",28,C.MUTED,600,850,HORIZONTAL_ALIGNMENT_LEFT,true)
+		D.text(card,23,117,"Aucune décision",28,C.MUTED,600,850,HORIZONTAL_ALIGNMENT_LEFT,true)
 		return
 	var entry: Dictionary = events[0]
 	D.text(card,23,100,"SAISON %s  ·  SEMAINE %s" % [G.season_label(entry.get("season","—")),G.n(int(entry.get("week",0))+1)],22,C.GOLD,700,846)
@@ -180,7 +179,7 @@ static func _history(app: Control, canvas: Control, data: Dictionary) -> void:
 	_commitments(D.panel(canvas,Rect2(0,441,1328,803),"Engagements de vestiaire","calendar","","LockerCommitmentHistory"),app,data,11,false)
 	var events: Array = data.get("history",[])
 	var card := D.panel(canvas,Rect2(1344,441,904,803),"Journal du vestiaire","clock","","LockerDecisionHistory")
-	if events.is_empty(): D.text(card,23,112,"Aucune décision archivée.",28,C.MUTED,600,850,HORIZONTAL_ALIGNMENT_LEFT,true)
+	if events.is_empty(): D.text(card,23,112,"Aucune décision",28,C.MUTED,600,850,HORIZONTAL_ALIGNMENT_LEFT,true)
 	for i in mini(8,events.size()):
 		var entry: Dictionary = events[i]
 		var y := 68+i*88

@@ -95,6 +95,7 @@ func run() -> void:
 	await settle(10)
 	await layout()
 	await bas_du_tableau()
+	await tuiles_cliquables()
 	await names_open_sheets()
 	await colors()
 	await needs_and_sort()
@@ -164,6 +165,67 @@ func layout() -> void:
 		var nom := node("RecruitmentCostName") as Label
 		check(nom != null and nom.text.to_lower().contains(nom_attendu), "Le bloc de coût suit la piste choisie")
 	check(windows().is_empty(), "Aucune fenêtre ouverte sur la liste")
+
+## Chaque tuile et pastille de l'écran mène à l'écran pertinent (jamais de fenêtre) : on clique, on vérifie l'arrivée.
+## Élément → destination : budget (alloué, engagé, restant) → Finances › Transferts ; « N pistes » du bandeau → liste filtrée
+## sur le poste ; « N suivie » → onglet Joueurs suivis ; « N fin » → Effectif trié par échéance ; pastille du marché →
+## onglet Recherche ; salaire et durée → offre au joueur ; masse salariale → Finances › Salaires ; observation → confirmation.
+func tuiles_cliquables() -> void:
+	app._navigate("Recrutement", false)
+	await settle(10)
+	for budget in ["RecruitmentTransferBudget", "RecruitmentBudgetAllocated", "RecruitmentBudgetSpent"]:
+		var tuile := node(budget) as Button
+		if tuile == null: continue
+		tuile.pressed.emit()
+		await settle(10)
+		check(app.route == "Finances" and str(app.management_ui.get("immersive08_finance_tab", "")) == "transfers", "Tuile budget « %s » → Finances › Transferts (%s)" % [budget, app.route])
+		app._navigate("Recrutement", false)
+		await settle(10)
+	var pastille := node("RecruitmentWindowLien") as Button
+	if pastille != null:
+		app.management_ui.market.immersive_tab = 0
+		pastille.pressed.emit()
+		await settle(8)
+		check(int(app.management_ui.market.get("immersive_tab", -1)) == 1, "Pastille du marché → onglet Recherche")
+		app.management_ui.market.immersive_tab = 0
+		app._navigate("Recrutement", false)
+		await settle(8)
+	for nom in ["MarketNeedFollowed_0", "MarketNeedFollowed_1", "MarketNeedFollowed_2"]:
+		var suivie := node(nom + "Lien") as Button
+		if suivie == null: continue
+		suivie.pressed.emit()
+		await settle(8)
+		check(int(app.management_ui.market.get("immersive_tab", -1)) == 2, "Pastille « suivie » (%s) → Joueurs suivis" % nom)
+		app.management_ui.market.immersive_tab = 0
+		app.management_ui.market.followed = false
+		app._navigate("Recrutement", false)
+		await settle(8)
+		break
+	for nom in ["MarketPriorityStock", "MarketNeedStock_1", "MarketNeedStock_2"]:
+		var pistes := node(nom + "Lien") as Button
+		if pistes == null: continue
+		pistes.pressed.emit()
+		await settle(8)
+		check(windows().is_empty() and node("CarnetMarket") != null, "Pastille « pistes » (%s) → liste du poste, sans fenêtre" % nom)
+		app._navigate("Recrutement", false)
+		await settle(8)
+		break
+	# Bloc de coût : salaire et durée → offre ; masse salariale → Finances › Salaires.
+	var salaire := node("RecruitmentCostSalaryLien") as Button
+	if salaire != null:
+		salaire.pressed.emit()
+		await settle(10)
+		check(node("RecrutementSubpage_negociation") != null or app.find_child("RecrutementSubpage_negociation", true, false) != null, "Tuile salaire → offre au joueur (sous-page)")
+		app._navigate("Recrutement", false)
+		await settle(10)
+	var masse := node("RecruitmentCostPayrollLien") as Button
+	if masse != null:
+		masse.pressed.emit()
+		await settle(10)
+		check(app.route == "Finances" and str(app.management_ui.get("immersive08_finance_tab", "")) == "wages", "Tuile masse salariale → Finances › Salaires (%s)" % app.route)
+		app._navigate("Recrutement", false)
+		await settle(10)
+	check(windows().is_empty(), "Aucune fenêtre ouverte par les tuiles et pastilles")
 
 ## Clic sur le nom = fiche complète ; survol = mini-fiche ; jamais de fenêtre.
 func names_open_sheets() -> void:

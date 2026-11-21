@@ -194,7 +194,7 @@ func layout() -> void:
 	var decider := node("ClubDecide")
 	check(conseil != null and decider != null and conseil.global_position.x < decider.global_position.x, "Le conseil est à gauche, « À décider » à droite")
 	check(node("ClubTrustValue") != null, "Confiance en chiffre")
-	check(node("ClubTrustWord") != null or node("ClubTrustNone") != null, "Confiance dite en mot (ou premier bilan à venir)")
+	check(node("ClubTrustWord") != null or node("ClubLastReview") != null, "Confiance dite en mot (ou premier bilan à venir)")
 	check(node("ClubObjectives") != null and node("ClubGoal") != null, "Objectif de la saison")
 	check(node("ClubTrustTable") != null, "Tableau « ce qui a fait bouger la confiance »")
 	check(node("ClubFacilityDetails") != null and node("ClubFacilityTraining") != null, "Installations en tableau")
