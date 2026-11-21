@@ -155,6 +155,30 @@ static func _valider(app: Control, cadre: Control, zone: Control, ok: Button, de
 	if not deux_temps:
 		ok.pressed.emit()
 		return
+	var envoi := func():
+		if is_instance_valid(ok): ok.pressed.emit()
+	# Option visuelle (planche du 21/11/2026) : le récapitulatif figé en pièces visuelles, sans phrase.
+	var toile := zone.find_child("OffreVisuelle", true, false) as Control
+	if toile != null and toile.has_meta("recap"):
+		var bloc_visuel := EnPlace.ouvrir(app, cadre, "ContractSignatureConfirmation", "Confirmer l’offre", [], "Confirmer : autoriser la signature si accord", envoi)
+		var recap: Control = (toile.get_meta("recap") as Callable).call()
+		var colonne := bloc_visuel.get_child(0)
+		colonne.add_child(recap)
+		colonne.move_child(recap, 1)
+		var haut_bloc := 18 + float(toile.get_meta("y_confirmation", 320.0))
+		D.place(bloc_visuel, Rect2(24, haut_bloc, LARGEUR - 48, 10))
+		# Le bloc recouvre toute la partie réglable de l'écran (jusqu'au pied) : l'offre se relit figée.
+		bloc_visuel.custom_minimum_size.y = (18 + toile.size.y / C.density - haut_bloc + 20) * C.density
+		var pied_page: Array[Control] = []
+		for nom_pied in ["RecrutementPageValider", "RecrutementPageAnnuler"]:
+			var bouton := cadre.get_node_or_null(nom_pied) as Control
+			if bouton != null:
+				bouton.visible = false
+				pied_page.append(bouton)
+		bloc_visuel.tree_exited.connect(func():
+			for bouton: Control in pied_page:
+				if is_instance_valid(bouton): bouton.visible = true)
+		return
 	var lignes: Array = []
 	var resume := zone.find_child("OfferSummary", true, false) as Label
 	if resume != null: lignes.append({"id":"ContractSignatureSummary", "text":resume.text})

@@ -179,6 +179,13 @@ static func open(app: Control, player: Dictionary, recruiting: bool, answer: Str
 		share.mouse_filter = Control.MOUSE_FILTER_STOP
 		share.tooltip_text = "La prime à la signature est prélevée sur ce budget ; le salaire n’y entre pas."
 		body.add_child(share)
+	# Planche de choix du 21/11/2026 : option visuelle A ou B (CD_VARIANTE_VISUELLE), sinon l'écran ci-dessus.
+	var Offre: Variant = load("res://ui/offre_visuelle.gd")
+	if not Offre.variante().is_empty():
+		for ancien: Variant in [identity, status, progress, columns, summary_panel, action, body.get_node_or_null("ContractTransferBudget")]:
+			if ancien != null: (ancien as Control).visible = false
+		Offre.construire(body, {"app":app, "player":player, "quote":quote, "salary":salary, "years":years, "first_season":first_season,
+			"negotiation":negotiation, "phase":phase, "reuse":reuse})
 	dialog.get_ok_button().text = "AUTORISER LA SIGNATURE SI ACCORD"
 	dialog.get_ok_button().tooltip_text = "Envoie ces conditions. Si le joueur accepte, le contrat est signé et la prime est débitée ; sinon, seule la discussion est enregistrée. Annuler ne transmet aucune proposition."
 	dialog.get_ok_button().disabled = blocked
