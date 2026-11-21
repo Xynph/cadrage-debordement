@@ -999,15 +999,25 @@ func _pied(page: Control) -> void:
 	pied = S.G.h(px(10))
 	pied.name = "MatchBetweenKeys"
 	page.add_child(pied)
-	for paire: Array in [["Espace", "Reprendre ou mettre en pause"], ["Échap", "Pause et menu"], ["T", "Équipe"], ["↑ ↓", "Choisir un joueur · Entrée : remplacer"]]:
-		pied.add_child(_touche(str(paire[0])))
-		var aide := _texte(str(paire[1]), 18, DOUX)
-		aide.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		pied.add_child(aide)
-		var ecart := Control.new()
-		ecart.custom_minimum_size.x = px(18)
-		ecart.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		pied.add_child(ecart)
+	# Raccourcis derrière un « ? » (règle du 21/11/2026 : plus de mode d'emploi à l'écran).
+	var aide := PanelContainer.new()
+	aide.name = "MatchBetweenKeysHelp"
+	aide.tooltip_text = "Espace : reprendre ou mettre en pause · Échap : pause et menu · T : équipe · ↑ ↓ : choisir un joueur · Entrée : remplacer"
+	aide.accessibility_name = aide.tooltip_text
+	aide.mouse_filter = Control.MOUSE_FILTER_STOP
+	aide.mouse_default_cursor_shape = Control.CURSOR_HELP
+	aide.custom_minimum_size = Vector2(px(28), px(28))
+	aide.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var fond := StyleBoxFlat.new()
+	fond.bg_color = Charte.PANNEAU_3
+	fond.set_corner_radius_all(Charte.RAYON_PILULE)
+	aide.add_theme_stylebox_override("panel", fond)
+	var signe := _texte("?", maxi(12, px(15)), DOUX)
+	signe.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	signe.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	signe.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	aide.add_child(signe)
+	pied.add_child(aide)
 	pied_reglages = _texte("", 18, DOUX)
 	pied_reglages.name = "MatchBetweenKeysSettings"
 	pied_reglages.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -1683,14 +1693,14 @@ func _poser_phase(live: Dictionary) -> void:
 	if not is_instance_valid(phase): return
 	var vitesse: String = HORLOGES_COURTS[maxi(0, HORLOGES_IDS.find(horloge))]
 	var titre := "Match terminé" if live.get("finished", false) else ("Mi-temps" if live.get("atBreak", false) else ("Arrêt de jeu" if not _arret.is_empty() else ("En pause" if live.get("paused", false) else "%s′" % str(live.get("minute", "")))))
-	var suite := "ta décision avant la reprise" if not _arret.is_empty() else ("le match défile en 2D, vitesse %s" % vitesse if not live.get("paused", false) else "le match reprend avec Espace, vitesse %s" % vitesse)
+	var suite := "décision attendue" if not _arret.is_empty() else vitesse
 	phase.text = "%s · %s" % [titre, suite]
 	_poser_pied()
 
 ## Pied : la vitesse de l'horloge (dans Réglages) et où trouver les autres matchs (menu Plus).
 func _poser_pied() -> void:
 	if not is_instance_valid(pied_reglages): return
-	pied_reglages.text = "Vitesse : %s (Réglages) · Autres matchs et classement en direct : Plus ▾" % HORLOGES_COURTS[maxi(0, HORLOGES_IDS.find(horloge))]
+	pied_reglages.text = "Vitesse · %s" % HORLOGES_COURTS[maxi(0, HORLOGES_IDS.find(horloge))]
 
 ## Légende des chiffres clés : notre club (carré plein) à gauche, l'adversaire (carré vide) à droite.
 var _legende_cle := ""
@@ -1926,7 +1936,7 @@ func _remplir_chiffres(direct: Dictionary, _live: Dictionary) -> void:
 	echantillon_court = est_court(direct)
 	chiffres.modulate = Color(1, 1, 1, ATTENUE) if echantillon_court else Color.WHITE
 	if is_instance_valid(precision_chiffres):
-		precision_chiffres.text = ("Trop tôt pour conclure : lecture fiable dès la %de minute." % seuil_echantillon(direct)) if echantillon_court else ""
+		precision_chiffres.text = ("Fiable dès la %de min" % seuil_echantillon(direct)) if echantillon_court else ""
 		precision_chiffres.visible = echantillon_court
 	var camp := int(direct.get("camp", -1))
 	var nous := camp if camp in [0, 1] else 0

@@ -394,6 +394,11 @@ func run() -> void:
 	check(app.find_child("ImmersivePauseMenu", true, false) == null and fenetres().is_empty(), "Échap n'ouvre jamais le menu de carrière ni une fenêtre")
 	var noms := ["MatchMenuReprendre", "MatchMenuReglages", "MatchMenuVitesse", "MatchMenuQuitter"]
 	check(noms.all(func(n: String) -> bool: return menu.find_child(n, true, false) != null), "Options du menu : Reprendre, Réglages, Vitesse, Quitter")
+	# Lot 10 : plus de phrase d'explication ; la minute est une pastille, les raccourcis sont derrière un « ? ».
+	check(menu.find_child("MatchMenuMinute", true, false) != null and menu.find_child("MatchMenuAide", true, false) != null, "Menu du match : pastille de la minute et « ? » des raccourcis")
+	for etiquette in menu.find_children("*", "Label", true, false):
+		var ligne := (etiquette as Label).text
+		check(not ligne.contains("carrière reste fermé") and not ligne.contains("s’applique dès") and not ligne.contains("son, image"), "Menu du match : phrase retirée absente (« %s »)" % ligne)
 	var panneau: Control = view.get("_menu_panneau")
 	check(absf(panneau.size.x - 480.0) <= 2.0, "Panneau de 480 px : " + str(panneau.size))
 	var voile: Control = view.get("_menu_voile")

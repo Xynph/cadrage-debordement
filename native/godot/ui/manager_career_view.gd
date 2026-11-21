@@ -1,6 +1,25 @@
 extends RefCounted
 const G = preload("res://ui/carnet_skin.gd")
 const World = preload("res://ui/world_view.gd")
+const C = preload("res://ui/immersive08/components.gd")
+const D = preload("res://ui/immersive08/primitives.gd")
+const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
+const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
+const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
+const Link = preload("res://ui/entity_link.gd")
+const Charte = preload("res://ui/charte.gd")
+const FENETRE_OFFRE := "CareerOfferFenetre"
+## État d'une candidature : un mot, une icône, une couleur (jamais la couleur seule) ; la phrase d'origine reste en infobulle.
+const ETATS := {
+	"offer": ["Offre reçue", "check", "vert", "La direction accepte ta candidature."],
+	"stable": ["Technicien conservé", "shield", "bleu", "Le club conserve son technicien."],
+	"finances": ["Finances", "warning", "rouge", "La situation financière bloque ce changement."],
+	"reputation": ["Parcours insuffisant", "warning", "orange", "Parcours insuffisant pour les attentes du club."],
+	"declined": ["Refusée", "lock", "gris", "Offre refusée."],
+	"cancelled": ["Annulée", "lock", "gris", "Prise de poste annulée."],
+	"expired": ["Expirée", "hourglass", "gris", "Offre expirée."],
+	"completed": ["Effectuée", "check", "vert", "Prise de poste effectuée."],
+}
 
 static func _club(app: Control, id: Variant) -> String:
 	return World._club(app, id)
@@ -12,16 +31,71 @@ static func _player(app: Control, id: String) -> String:
 		if p.id == id: return str(p.name)
 	return "Profil suivi " + id
 
+static func _identite(app: Control, id: Variant) -> Dictionary:
+	if app.model.get("club", {}).get("id") == id: return app.model.get("club", {})
+	for league: Dictionary in app.model.get("leagues", []):
+		for club: Dictionary in league.get("rows", []):
+			if club.get("id") == id: return club
+	for club: Dictionary in app.model.get("meta", {}).get("catalogue", []):
+		if club.get("id") == id: return club
+	return {}
+
+static func _couleur(nom: String) -> Color:
+	return {"vert": Pastilles.VERT, "bleu": Pastilles.BLEU, "rouge": Pastilles.ROUGE, "orange": Pastilles.ORANGE}.get(nom, Charte.IVOIRE_2)
+
+## Nom cliquable (fiche du club ou du joueur) ; sans destination, simple texte.
+static func _lien(app: Control, kind: String, id: Variant, texte: String, taille: int = 20, nom: String = "") -> Control:
+	if not Link.available(app, kind, id):
+		return C.label(texte, taille, Charte.IVOIRE, true, 700)
+	var bouton := Button.new()
+	if not nom.is_empty(): bouton.name = nom
+	bouton.text = texte
+	bouton.set_meta("immersive_style_applied", true)
+	C.style_bouton_lien(bouton, taille, true)
+	Link.bind(bouton, app, Link.target(kind, id), texte)
+	return bouton
+
+static func _rangee(parent: Node, gap: int = 8) -> HFlowContainer:
+	var rangee := HFlowContainer.new()
+	rangee.add_theme_constant_override("h_separation", gap)
+	rangee.add_theme_constant_override("v_separation", gap)
+	parent.add_child(rangee)
+	return rangee
+
+static func _saison_pastille(saison: Variant) -> Control:
+	return Pastilles.pastille(G.season_label(saison), Pastilles.BLEU, "calendar", "", 17)
+
+## Prise de poste : petite fenêtre visuelle (deux écussons, saison, trois pastilles), Échap / ✕ / clic à côté la ferment.
 static func _confirm(app: Control, context: Dictionary, offer: Dictionary) -> void:
-	var dialog := ConfirmationDialog.new()
-	dialog.title = "Confirmer la prise de poste"
-	dialog.dialog_text = "Rejoindre %s en saison %s ?\nLes comptes, joueurs et centres restent dans leur club.\nLes dossiers de recrutement actifs seront clos au changement de bureau.\nAucun salaire personnel ni indemnité de manager." % [_club(app, offer.clubId), G.season_label(int(context.season) + 1)]
-	dialog.ok_button_text = "Confirmer la saison suivante"
-	dialog.cancel_button_text = "Rester sur le carnet"
-	dialog.confirmed.connect(func(): app._command("manager_career_accept", {"context":context,"offerId":offer.id,"confirmed":true}); dialog.queue_free())
-	dialog.canceled.connect(dialog.queue_free)
-	app.add_child(dialog)
-	dialog.popup_centered(Vector2i(660, 270))
+	var page := app.find_child("ImmersiveManagerCareer", true, false) as Control
+	var saison := G.season_label(int(context.season) + 1)
+	var accepter := func(): app._command("manager_career_accept", {"context":context,"offerId":offer.id,"confirmed":true})
+	if page == null:
+		accepter.call()
+		return
+	var fond := Fenetre.ouvrir(page, FENETRE_OFFRE, "PRISE DE POSTE", "flag", 1000, 540)
+	var mien: Dictionary = app.model.get("club", {})
+	var autre := _identite(app, offer.clubId)
+	for i in 2:
+		var club: Dictionary = mien if i == 0 else autre
+		var x := 120.0 if i == 0 else 700.0
+		if not club.is_empty():
+			var ecusson := G.crest(club, C.px(150))
+			fond.add_child(ecusson)
+			D.place(ecusson, Rect2(x + 25, 96, 150, 160))
+		var nom := D.text(fond, x + 100, 296, G.club_name(club) if not club.is_empty() else _club(app, offer.clubId), 28, Charte.IVOIRE, 700, 300, HORIZONTAL_ALIGNMENT_CENTER)
+		nom.name = "CareerOfferClub" + str(i)
+	var fleche := C.icon("arrow", 44, Charte.IVOIRE_2)
+	fond.add_child(fleche)
+	D.place(fleche, Rect2(478, 150, 44, 44))
+	Pieces.tuile(fond, Rect2(400, 206, 200, 84), saison, "saison", Charte.IVOIRE, "CareerOfferSaison", 34)
+	var x := 28.0
+	for pastille: Array in [["Effectif inchangé", "people", "Les comptes, joueurs et centres restent dans leur club.", "Effectif"], ["Suivis clos", "search", "Les dossiers de recrutement actifs seront clos au changement de bureau.", "Suivis"], ["Sans salaire", "money", "Aucun salaire personnel ni indemnité de manager.", "Salaire"]]:
+		x += Pieces.pastille(fond, x, 340, pastille[0], pastille[1], "CareerOffer" + str(pastille[3]), pastille[2], Charte.IVOIRE, Charte.PANNEAU_3) + 10.0
+	D.button(fond, Rect2(28, 430, 450, 62), "Rester sur le carnet", func(): Fenetre.fermer(page, FENETRE_OFFRE), false, "", false, Color("176e49"), "CareerOfferAnnuler")
+	D.button(fond, Rect2(522, 430, 450, 62), "Confirmer la saison suivante", func():
+		Fenetre.fermer(page, FENETRE_OFFRE)
+		accepter.call(), false, "arrow", false, Color("176e49"), "CareerOfferConfirmer")
 
 static func build(app: Control) -> Control:
 	var page := G.h(18)
@@ -30,26 +104,31 @@ static func build(app: Control) -> Control:
 	var data: Dictionary = app.model.get("clubLife", {}).get("managerCareer", {})
 	var context: Dictionary = data.get("context", {})
 	var left := G.panel(page, 1.0)
-	G.chapter(left, "19", "Ta carrière", "Un poste unique, un parcours conservé.", app.accent)
+	G.chapter(left, "19", "Ta carrière", "", app.accent, str(data.get("notice", "")))
 	var career := G.scroll(left)
 	G.photo_note(career, app.model.club, "Ton mandat", G.club_name(app.model.club), "city", 150)
-	career.add_child(G.wrap(data.get("notice", "La mobilité reste disponible après la fin de toutes les compétitions."), 14))
 	if not data.get("active", false):
 		var activate := G.button("ACTIVER LES CANDIDATURES", func(): app._command("manager_career_activate", {"context":context}))
 		activate.name = "ManagerCareerActivate"
 		activate.disabled = not data.get("available", false)
 		career.add_child(activate)
 	else:
-		career.add_child(G.wrap("Mandat à %s depuis la saison %s" % [_club(app, data.clubId), G.season_label(data.currentFrom)], 20, G.INK))
+		var mandat := _rangee(career)
+		mandat.add_child(_lien(app, "club", data.clubId, _club(app, data.clubId), 24, "ManagerCareerClubLien"))
+		mandat.add_child(Pastilles.pastille("Depuis " + G.season_label(data.currentFrom), Pastilles.BLEU, "calendar", "Mandat depuis la saison " + G.season_label(data.currentFrom), 18, "ManagerCareerDepuis"))
 		var pending: Variant = data.get("pending")
 		if pending is Dictionary:
-			career.add_child(G.section("La prochaine saison", _club(app, pending.toClub)))
+			var suite := _rangee(career)
+			suite.add_child(Pastilles.pastille("Prochaine saison", Pastilles.VERT, "flag", "", 18, "ManagerCareerProchaine"))
+			suite.add_child(_lien(app, "club", pending.toClub, _club(app, pending.toClub), 22, "ManagerCareerProchainClub"))
 			var cancel := G.button("ANNULER LA PRISE DE POSTE", func(): app._command("manager_career_cancel", {"context":context}))
 			cancel.name = "ManagerCareerCancel"
 			cancel.disabled = not data.get("window", false)
 			career.add_child(cancel)
+		career.add_child(G.section("Candidater"))
+		var etat := _rangee(career)
 		if data.get("window", false):
-			career.add_child(G.section("Candidater", "Les deux divisions sont ouvertes. Une candidature peut être refusée."))
+			etat.add_child(Pastilles.pastille("Ouvertes", Pastilles.VERT, "mail", "Les deux divisions sont ouvertes. Une candidature peut être refusée.", 18, "ManagerCareerOuvertes"))
 			var opportunities: Array = data.get("opportunities", []).filter(func(o): return not o.applied)
 			var select := OptionButton.new()
 			select.name = "ManagerCareerClub"
@@ -64,12 +143,15 @@ static func build(app: Control) -> Control:
 			apply.disabled = pending != null or opportunities.is_empty()
 			career.add_child(apply)
 		else:
-			career.add_child(G.wrap("Les candidatures ouvriront après la dernière compétition, avant de lancer la saison suivante.", 16))
+			etat.add_child(Pastilles.pastille("Fermées", Pastilles.ORANGE, "lock", "Les candidatures ouvriront après la dernière compétition, avant de lancer la saison suivante.", 18, "ManagerCareerFermees"))
 		career.add_child(G.section("Offres et candidatures"))
-		if data.get("applications", []).is_empty(): career.add_child(G.wrap("Aucune candidature enregistrée.", 14))
+		if data.get("applications", []).is_empty(): career.add_child(Pastilles.pastille("Aucune candidature", Charte.IVOIRE_2, "mail", "", 18, "ManagerCareerAucune"))
 		for a: Dictionary in data.get("applications", []):
-			career.add_child(G.wrap("%s · %s" % [G.season_label(a.season), _club(app, a.clubId)], 18, G.INK))
-			career.add_child(G.wrap({"offer":"La direction accepte ta candidature.","stable":"Le club conserve son technicien.","finances":"La situation financière bloque ce changement.","reputation":"Parcours insuffisant pour les attentes du club.","declined":"Offre refusée.","cancelled":"Prise de poste annulée.","expired":"Offre expirée.","completed":"Prise de poste effectuée."}.get(a.reason, str(a.status)), 14))
+			var ligne := _rangee(career)
+			ligne.add_child(_saison_pastille(a.season))
+			ligne.add_child(_lien(app, "club", a.clubId, _club(app, a.clubId), 21))
+			var motif: Array = ETATS.get(a.reason, [str(a.status), "info", "gris", ""])
+			ligne.add_child(Pastilles.pastille(motif[0], _couleur(motif[2]), motif[1], motif[3], 18, "ManagerCareerEtat_" + str(a.clubId)))
 			if a.status == "offered" and data.get("window", false) and pending == null:
 				var accept := G.button("EXAMINER ET CONFIRMER L’OFFRE", func(): _confirm(app, context, a), true)
 				accept.name = "ManagerCareerAccept_" + str(a.clubId)
@@ -78,29 +160,43 @@ static func build(app: Control) -> Control:
 			career.add_child(G.separator())
 	career.add_child(G.section("Le parcours"))
 	for h: Dictionary in data.get("history", []):
-		career.add_child(G.wrap("%s · %s → %s" % [G.season_label(h.arrivalSeason), _club(app, h.fromClub), _club(app, h.toClub)], 15))
+		var etape := _rangee(career)
+		etape.add_child(_saison_pastille(h.arrivalSeason))
+		etape.add_child(_lien(app, "club", h.fromClub, _club(app, h.fromClub), 20))
+		etape.add_child(C.icon("arrow", 20, Charte.IVOIRE_2))
+		etape.add_child(_lien(app, "club", h.toClub, _club(app, h.toClub), 20))
 	career.add_child(G.section("Les archives des clubs"))
 	for archive: Dictionary in data.get("archives", []):
-		career.add_child(G.wrap("%s · %s · %s écritures conservées · %s bilans du conseil" % [_club(app, archive.clubId), G.season_label(archive.season), archive.ledger.size(), archive.boardHistory.size()], 14))
+		var ligne := _rangee(career)
+		ligne.add_child(_lien(app, "club", archive.clubId, _club(app, archive.clubId), 20))
+		ligne.add_child(_saison_pastille(archive.season))
+		ligne.add_child(Pastilles.tuile(str(archive.ledger.size()), "écritures", Charte.IVOIRE, Charte.PANNEAU_2, 22, "ManagerCareerEcritures_" + str(archive.clubId), true))
+		ligne.add_child(Pastilles.tuile(str(archive.boardHistory.size()), "bilans", Charte.IVOIRE, Charte.PANNEAU_2, 22, "ManagerCareerBilans_" + str(archive.clubId), true))
 	var seasons: Array = app.model.get("archives",{}).get("seasons",[])
 	if seasons.any(func(year: Dictionary): return year.get("japan") is Dictionary and not year.japan.get("pairs",[]).is_empty()):
 		var archives := G.button("Archives des saisons · barrages du Japon",func(): app.ClubViews.season_archives(app))
 		archives.name = "CareerJapanSeasonArchives"
 		career.add_child(archives)
 	var right := G.panel(page, 1.2)
-	G.chapter(right, "20", "Construire la suite", "Suivis persistants et engagements connus.", app.accent)
+	G.chapter(right, "20", "Construire la suite", "", app.accent, str(data.get("planNotice", "")))
 	var recruitment := G.scroll(right)
 	recruitment.add_child(G.section("Le plan sur trois saisons"))
 	for year: Dictionary in data.get("plan", []):
 		var season := G.card(recruitment, G.accent_ink(app.accent))
-		season.add_child(G.section("Saison %s" % G.season_label(year.year), "%s poste(s) fragiles" % int(year.thin)))
-		G.gauge(season, "Postes couverts", float(year.covered), 15)
-		season.add_child(G.wrap("Masse salariale connue : %s · %s semaines payées" % [G.euros(year.payroll), int(year.payments)], 14))
-	recruitment.add_child(G.wrap(data.get("planNotice", ""), 13))
+		var tete := _rangee(season)
+		tete.add_child(C.label("Saison " + G.season_label(year.year), 24, Charte.IVOIRE, true, 700))
+		var fragiles := int(year.thin)
+		var texte_fragiles := "%d %s < 2 candidats" % [fragiles, "poste" if fragiles <= 1 else "postes"] if fragiles > 0 else "Tous couverts"
+		tete.add_child(Pastilles.pastille(texte_fragiles, Pastilles.ORANGE if fragiles > 0 else Pastilles.VERT, "warning" if fragiles > 0 else "check", "Postes avec moins de deux candidats : %d." % fragiles, 17, "ManagerCareerFragiles" + G.n(year.year), func(): app._navigate("Recrutement")))
+		G.gauge(season, "Postes couverts", float(year.covered), 15, Pastilles.VERT if int(year.covered) == 15 else Pastilles.ORANGE)
+		var chiffres := _rangee(season)
+		chiffres.add_child(Pastilles.tuile(Pastilles.euros_courts(year.payroll), "masse salariale", Charte.IVOIRE, Charte.PANNEAU_2, 24, "ManagerCareerMasse" + G.n(year.year), true, func(): app._navigate("Finances")))
+		chiffres.add_child(Pastilles.tuile(str(int(year.payments)), "semaines payées", Charte.IVOIRE, Charte.PANNEAU_2, 24, "ManagerCareerSemaines" + G.n(year.year), true, func(): app._navigate("Finances")))
 	recruitment.add_child(G.separator())
 	recruitment.add_child(G.section("Le carnet du recrutement"))
 	var candidates: Array = data.get("recruitment", [])
-	if not candidates.is_empty():
+	if candidates.is_empty(): recruitment.add_child(Pastilles.pastille("Aucun profil", Charte.IVOIRE_2, "search", "", 18, "ManagerCarnetVide"))
+	else:
 		var choose := OptionButton.new()
 		choose.name = "ManagerRecruitmentPlayer"
 		choose.custom_minimum_size.y = 44
@@ -112,18 +208,28 @@ static func build(app: Control) -> Control:
 		var draw := func(index: int):
 			for child in detail.get_children(): detail.remove_child(child); child.queue_free()
 			var p: Dictionary = candidates[index]
-			detail.add_child(G.wrap(_player(app, p.playerId), 23, G.INK))
+			var entete := _rangee(detail)
+			entete.add_child(_lien(app, "player", p.playerId, _player(app, p.playerId), 26, "ManagerRecruitmentLien"))
+			entete.add_child(Pastilles.pastille(str(p.pos), Pastilles.BLEU, "", "", 18, "ManagerRecruitmentPoste"))
+			entete.add_child(Pastilles.info("Salaire demandé à cette date. La négociation peut aboutir à d’autres conditions ; aucune signature depuis ce devis.", "i", "ManagerRecruitmentInfo"))
 			var follow := G.button("RETIRER DU SUIVI" if p.watched else "SUIVRE CE PROFIL", func(): app._command("manager_recruitment_watch", {"context":context,"playerId":p.playerId}))
 			follow.name = "ManagerRecruitmentWatch"
 			follow.disabled = not data.get("recruitmentAvailable", false)
 			detail.add_child(follow)
 			for term: Dictionary in p.get("terms", []):
-				detail.add_child(G.wrap("%s saison(s) · %s semaines · salaire demandé %s\nPrime %s · engagement indicatif %s" % [int(term.years), int(term.payments), G.salary(term.salary), G.euros(term.fee), G.euros(term.knownCommitment)], 14))
-			detail.add_child(G.wrap("Salaire demandé à cette date. La négociation peut aboutir à d’autres conditions ; aucune signature depuis ce devis.", 12))
+				var devis := _rangee(detail)
+				devis.add_child(Pastilles.tuile("%d %s" % [int(term.years), "an" if int(term.years) <= 1 else "ans"], "durée", Charte.IVOIRE, Charte.PANNEAU_2, 24, "ManagerTermDuree", true))
+				devis.add_child(Pastilles.tuile(str(int(term.payments)), "semaines", Charte.IVOIRE, Charte.PANNEAU_2, 24, "ManagerTermSemaines", true))
+				devis.add_child(Pastilles.tuile(G.salary(term.salary), "salaire demandé", Pastilles.VERT, Charte.PANNEAU_2, 24, "ManagerTermSalaire", true))
+				devis.add_child(Pastilles.tuile(Pastilles.euros_courts(term.fee), "prime", Charte.IVOIRE, Charte.PANNEAU_2, 24, "ManagerTermPrime", true))
+				devis.add_child(Pastilles.tuile(Pastilles.euros_courts(term.knownCommitment), "engagement", Charte.IVOIRE, Charte.PANNEAU_2, 24, "ManagerTermEngagement", true))
 		choose.item_selected.connect(draw)
 		draw.call(0)
 	recruitment.add_child(G.section("Rapports datés"))
 	for report: Dictionary in data.get("reports", []).slice(-8):
-		recruitment.add_child(G.wrap("%s · %s semaine %s · rapport %s" % [_player(app, report.playerId), G.season_label(report.season), int(report.week), str(report.get("grade")) if report.get("grade") != null else "—"], 14))
+		var ligne := _rangee(recruitment)
+		ligne.add_child(_lien(app, "player", report.playerId, _player(app, report.playerId), 20))
+		ligne.add_child(Pastilles.pastille("%s · S%d" % [G.season_label(report.season), int(report.week)], Pastilles.BLEU, "calendar", "", 17))
+		var note := str(report.get("grade")) if report.get("grade") != null else "—"
+		ligne.add_child(Pastilles.tuile(note, "note", Charte.IVOIRE, Charte.PANNEAU_2, 22, "ManagerRapportNote", true))
 	return page
-

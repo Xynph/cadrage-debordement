@@ -31,6 +31,21 @@ class Field extends Control:
 		for x: float in [.085, .915]:
 			draw_dashed_line(Vector2(size.x * x, 0), Vector2(size.x * x, size.y), Color(chalk, .46), width, C.px(15))
 
+## Bande du terrain d'une carte de zone : de ton en-but (gauche) à l'en-but adverse (droite), la zone de la carte en clair.
+class Bande extends Control:
+	var indice := 0
+	var actuelle := false
+
+	func _draw() -> void:
+		var largeur := size.x / 4.0
+		for i in 4:
+			var zone := Rect2(i * largeur + 1.0, 0, largeur - 2.0, size.y)
+			var choisie := i == indice
+			var fond := Charte.PANNEAU_3
+			if choisie: fond = Charte.VERT_CLAIR if actuelle else Charte.IVOIRE_2
+			draw_rect(zone, fond)
+			draw_string(C.BOLD, Vector2(zone.position.x, size.y * .72), str(i + 1), HORIZONTAL_ALIGNMENT_CENTER, zone.size.x, maxi(12, int(size.y * .55)), Charte.PANNEAU if choisie else Charte.IVOIRE_3)
+
 var app: Control
 var data: Dictionary
 var available := false
@@ -120,6 +135,13 @@ func _zones() -> void:
 		var active: bool = data.get("currentZone") == zone.id
 		var tile := D.panel(zone_page, Rect2(x, y, 747, 405), "%02d  /  %s" % [i + 1, zone.label], "flag", "", "PlaybookZone_" + str(zone.id))
 		D.text(tile, 23, 91, "ZONE ACTUELLE" if active else "PRIORITÉ LOCALE", 21, GREEN if active else C.MUTED, 700, 700)
+		var bande := Bande.new()
+		bande.name = "PlaybookZoneBande_" + str(zone.id)
+		bande.indice = i
+		bande.actuelle = active
+		bande.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		tile.add_child(bande)
+		D.place(bande, Rect2(747 - 22 - 240, 14, 240, 30))
 		for j in 2:
 			var key: String = ["attack", "defence"][j]
 			var options: Array = data.get(["attackOptions", "defenceOptions"][j], [])
@@ -128,12 +150,13 @@ func _zones() -> void:
 			var top := 109 + j * 140
 			_metric(tile, Rect2(22, top, 702, 29), "Attaque" if j == 0 else "Défense", _option_title(options, effective), GREEN if j == 0 else GOLD)
 			_selector(tile, C.reach_rect(Rect2(22, top + 38, 703, 50)), key, options, chosen, str(zone.id))
-			# « Suivre le choix général » est dit par « Plan principal » : seule une consigne locale se décrit.
-			var label := "" if chosen == "inherit" else _description(options, chosen)
-			# Petite fenêtre : au plancher de 12 px, deux lignes espacées de 23 unités se touchent ; une seule ligne,
-			# terminée par des points de suspension si la description dépasse.
-			var lines: Array = [] if label.is_empty() else ([label] if C.dense() else Array(D.words(label, 82, 2)))
-			for k in lines.size(): D.text(tile, 24, top + 112 + k * 23, lines[k], 20, C.MUTED, 500, 700)
+			# État de la ligne : « Plan principal » (suit le choix général) ou « Consigne locale » (un clic revient au plan principal).
+			var locale := chosen != "inherit"
+			var retour := func(): Rules._choose(app, key, "inherit", str(zone.id))
+			Pastilles.poser(tile, Pastilles.pastille("Consigne locale" if locale else "Plan principal", GREEN if locale else Charte.IVOIRE_2, "flag" if locale else "renew", "Revenir au plan principal" if locale else "Cette zone suit le plan principal", 18, "PlaybookEtat_%s_%s" % [zone.id, key], retour if locale and available else Callable()), 22, top + 98)
+			# La description d'une consigne locale passe en infobulle du sélecteur (plus de phrase sous la ligne).
+			var selecteur := tile.find_child("Playbook_%s_%s" % [zone.id, key], false, false)
+			if selecteur != null and locale: selecteur.tooltip_text = _description(options, chosen)
 	_field(zones)
 	_notice(zone_page, 872)
 

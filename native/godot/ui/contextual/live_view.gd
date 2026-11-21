@@ -1338,24 +1338,20 @@ func _actualiser_menu() -> void:
 	titre.name = "MatchMenuTitle"
 	titre.add_theme_font_size_override("font_size", roundi(24 * e))
 	pile.add_child(titre)
-	var chapo := "L’adjoint prend en charge la fin de cette rencontre ; tu retrouves le résultat à la fin du match." if _menu_mode == "deleguer" \
-		else "Le match est en pause à la %de. Le menu de carrière reste fermé jusqu’à la fin du match." % maxi(1, minute)
-	var texte := _texte(chapo, Charte.TEXTE, Charte.IVOIRE_2)
-	texte.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	texte.add_theme_font_size_override("font_size", roundi(13 * e))
-	pile.add_child(texte)
+	# Plus de phrase : la minute d'arrêt est une pastille, le titre dit déjà ce que fait le menu.
+	var arret := _pastille_hud("Pause · %d’" % maxi(1, minute), "MatchMenuMinute")
+	pile.add_child(arret)
 	colonne.add_child(_filet())
 	if _menu_mode == "deleguer":
-		colonne.add_child(_option("MatchMenuConfirmer", "Confirmer : l’adjoint finit le match", "le match se joue sans toi jusqu’au coup de sifflet", ["Entrée"], func():
+		colonne.add_child(_option("MatchMenuConfirmer", "Confirmer : l’adjoint finit le match", "", ["Entrée"], func():
 			fermer_menu(false)
 			director.command("delegate")))
 		colonne.add_child(_option("MatchMenuAnnuler", "Annuler et reprendre le match", "", ["Échap"], func(): fermer_menu(true)))
 	else:
 		colonne.add_child(_option("MatchMenuReprendre", "Reprendre le match", "", ["Échap", "Espace"], func(): fermer_menu(true)))
-		colonne.add_child(_option("MatchMenuReglages", "Réglages", "son, image, commandes", "›", func(): ouvrir_reglages()))
-		colonne.add_child(_option("MatchMenuVitesse", "Vitesse du match", "s’applique dès la reprise", {"vitesse": _vitesse_libelle()}, func(): _changer_vitesse(1)))
-		var quitter_sous := "Appuie encore : le jeu se ferme, le match sera rejoué depuis le coup d’envoi." if _menu_quitter_arme \
-			else "Tu reprendras avant le match : il sera rejoué depuis le coup d’envoi."
+		colonne.add_child(_option("MatchMenuReglages", "Réglages", "", "›", func(): ouvrir_reglages()))
+		colonne.add_child(_option("MatchMenuVitesse", "Vitesse du match", "", {"vitesse": _vitesse_libelle()}, func(): _changer_vitesse(1)))
+		var quitter_sous := "Appuie encore pour fermer" if _menu_quitter_arme else "Rejoué depuis le coup d’envoi"
 		# Seule option qui ferme le jeu : dit à droite, en mots, ce qu'elle fait (pas la couleur seule).
 		colonne.add_child(_option("MatchMenuQuitter", "Quitter le match", quitter_sous, "Ferme le jeu", _quitter))
 	var pied := HBoxContainer.new()
@@ -1366,22 +1362,44 @@ func _actualiser_menu() -> void:
 	for bord in ["top", "bottom"]: marge_pied.add_theme_constant_override("margin_" + bord, roundi(12 * e))
 	marge_pied.add_child(pied)
 	colonne.add_child(marge_pied)
-	for paire: Array in [["↑ ↓", "Choisir"], ["Entrée", "Valider"], ["Échap", "Reprendre" if _menu_mode == "menu" else "Annuler"]]:
-		var groupe := HBoxContainer.new()
-		groupe.add_theme_constant_override("separation", roundi(6 * e))
-		var puce := _touche(str(paire[0]))
-		(puce.get_child(0) as Label).add_theme_font_size_override("font_size", roundi(12 * e))
-		groupe.add_child(puce)
-		var legende := _texte(str(paire[1]), Charte.TEXTE, Charte.IVOIRE_2)
-		legende.add_theme_font_size_override("font_size", roundi(12 * e))
-		groupe.add_child(legende)
-		pied.add_child(groupe)
+	# Raccourcis clavier : derrière un « ? » (les puces de touche des options restent à droite des lignes).
+	pied.add_child(_aide_touches("↑ ↓  choisir   ·   Entrée  valider   ·   Échap  " + ("reprendre" if _menu_mode == "menu" else "annuler"), "MatchMenuAide"))
 	_menu_panneau.custom_minimum_size.x = roundf(480 * e)
 	_menu_panneau.reset_size()
 	_placer_menu()
 	if not focus_avant.is_empty():
 		var retrouve: Control = colonne.find_child(focus_avant, true, false)
 		if retrouve != null: retrouve.call_deferred("grab_focus")
+
+## Pastille d'état du menu (texte court, case ronde, jamais une phrase).
+func _pastille_hud(texte: String, nom: String) -> PanelContainer:
+	var pastille := PanelContainer.new()
+	pastille.name = nom
+	pastille.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pastille.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	pastille.add_theme_stylebox_override("panel", _fond_hud(Vector4(10, 2, 10, 2), Charte.PANNEAU_3, Charte.RAYON_PILULE))
+	var mot := _texte(texte, Charte.texte_moyen(), Charte.IVOIRE)
+	mot.name = "Mot"
+	mot.add_theme_font_size_override("font_size", roundi(13 * echelle))
+	pastille.add_child(mot)
+	return pastille
+
+## Petit « ? » : les raccourcis clavier s'affichent au survol ou au focus, jamais en ligne.
+func _aide_touches(bulle: String, nom: String) -> PanelContainer:
+	var cadre := PanelContainer.new()
+	cadre.name = nom
+	cadre.tooltip_text = bulle
+	cadre.accessibility_name = bulle
+	cadre.mouse_filter = Control.MOUSE_FILTER_STOP
+	cadre.mouse_default_cursor_shape = Control.CURSOR_HELP
+	cadre.custom_minimum_size = Vector2(roundf(28 * echelle), roundf(28 * echelle))
+	cadre.add_theme_stylebox_override("panel", _fond_hud(Vector4.ZERO, Charte.PANNEAU_3, Charte.RAYON_PILULE))
+	var signe := _texte("?", Charte.texte_moyen(), Charte.IVOIRE_2)
+	signe.add_theme_font_size_override("font_size", maxi(12, roundi(14 * echelle)))
+	signe.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	signe.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cadre.add_child(signe)
+	return cadre
 
 func _filet() -> ColorRect:
 	var filet := ColorRect.new()
@@ -1706,11 +1724,11 @@ func _actualiser_page() -> void:
 		var titre := _texte("RÉGLAGES" if _page_sorte == "reglages" else "RELIRE LES ACTIONS", Charte.TITRE_GRAS, Charte.IVOIRE)
 		titre.add_theme_font_size_override("font_size", roundi(22 * echelle))
 		tete.add_child(titre)
-	var rappel := _texte("Le match est en pause à la %de. Grisé : disponible après le match." % maxi(1, int(_live().get("minute", 0))), Charte.TEXTE, Charte.IVOIRE_2)
-	rappel.name = "MatchPageNote"
-	rappel.add_theme_font_size_override("font_size", roundi(13 * echelle))
-	C.fill(rappel)
-	rappel.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	var espace := Control.new()
+	espace.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	C.fill(espace)
+	tete.add_child(espace)
+	var rappel := _pastille_hud("Pause · %d’" % maxi(1, int(_live().get("minute", 0))), "MatchPageNote")
 	tete.add_child(rappel)
 	colonne.add_child(_filet())
 	var defile := ScrollContainer.new()
@@ -1905,7 +1923,7 @@ func _update_drawer() -> void:
 		# Détail par équipe sous le compte (pénalités par phase, lancers pas droits) : une ligne courte chacune.
 		if stat.get("detail") is Array:
 			for ligne: Variant in stat.detail: drawer_body.add_child(S.wrap(str(ligne), 12, Charte.IVOIRE_2))
-	if _stats(live).is_empty(): drawer_body.add_child(S.wrap("Aucune statistique disponible pour cette rencontre.", 14, Charte.IVOIRE_2))
+	if _stats(live).is_empty(): drawer_body.add_child(S.wrap("Aucune statistique", 14, Charte.IVOIRE_2))
 	director._refresh_controls()
 
 ## Chiffres du tiroir : entre deux temps forts, ceux d'avant la borne du moteur (rien d'un temps fort à venir).
