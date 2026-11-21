@@ -155,6 +155,16 @@ module.exports=function worldModel(base,publishedVenue,clubHistory){
   m.leagues.forEach(withZones);
   const venue=f=>publishedVenue(f,S.season)??(f.venuePolicy==='centralised-super-round'?'Super Round · terrain commun':f.venueRegion==='Europe'?'Terrain désigné en Europe':f.venueDesignationPending||f.neutral?'Terrain désigné':S.clubs[f.homeId].stadium);
   m.calendar=S.worldMode.fixtures.filter(f=>f.homeId===S.club||f.awayId===S.club).map(f=>{const r=confirmedResult?.worldContext.id===f.id?confirmedResult:S.history.find(r=>r.fixtureId===f.id);return{id:f.id,label:(R.leagues.find(l=>l.id===f.competitionId)?.name||names[f.competitionId]||f.competitionId)+' · '+(f.phase==='league'||f.phase==='pool'?'J'+(f.round+1):f.phase==='promotion'?'Manche '+f.leg:phaseLabels[f.phase]||(f.competitionId==='champ'?champPhases[f.phase]:null)||f.phase),week:f.week,date:f.date,home:clubSummary(f.homeId),away:clubSummary(f.awayId),score:r?.score||null,played:!!r,phase:f.phase,leagueId:f.competitionId,competitionId:f.competitionId,neutral:f.neutral,competitionRound:f.round,venue:venue(f),winner:r?.winner??null,...dateProof(f)};}).sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id));
+  // Prochain match de chaque club des tableaux publiés (mini-carte club au survol d'un écusson) : la première rencontre non
+  // jouée du calendrier mondial, toutes compétitions confondues ; {opponent, home, neutral, date, week} par id de club.
+  {const joues=new Set(S.history.map(r=>r.fixtureId));if(confirmedResult?.worldContext)joues.add(confirmedResult.worldContext.id);
+   const suivis=new Set(m.leagues.flatMap(l=>(l.rows||[]).map(r=>r.id)));suivis.add(S.club);
+   const resume=id=>{try{return clubSummary(id);}catch(e){const c=S.clubs[id];return c?{id,name:c.name,abbr:c.abbr,color:c.color}:{id};}};
+   const prochains={};
+   for(const f of S.worldMode.fixtures.filter(f=>!joues.has(f.id)&&typeof f.date==='string').sort((a,b)=>a.date.localeCompare(b.date)||String(a.id).localeCompare(String(b.id))))
+    for(const [id,autre,dom] of [[f.homeId,f.awayId,true],[f.awayId,f.homeId,false]])
+     if(suivis.has(id)&&!(id in prochains))prochains[id]={opponent:resume(autre),home:dom&&!f.neutral,neutral:!!f.neutral,date:f.date,week:f.week};
+   m.clubNext=prochains;}
   // Derby : rivalité (tension >= seuil du moteur) entre les deux clubs de la rencontre ; champ absent sinon (jamais pour un match ordinaire).
   const derbyOf=f=>{if(typeof derbyTension!=='function'||typeof DERBYS==='undefined')return {};const t=derbyTension(S,f.homeId,f.awayId);return t>=DERBYS.seuil?{derby:{tension:t}}:{};};
   const f=confirmedResult?null:W.userFixture(S);m.next=f?{pair:[f.homeId,f.awayId],home:clubSummary(f.homeId),away:clubSummary(f.awayId),label:W.label(S),round:f.round,week:S.round,date:f.date,neutral:f.neutral,phase:f.phase,leagueId:f.competitionId,competitionId:f.competitionId,venue:venue(f),...derbyOf(f),...dateProof(f),...(m.next?.meteo&&m.next.meteo.date===f.date?{meteo:m.next.meteo}:{}),...(()=>{const c=!f.neutral&&typeof CDWorldStadiumCapacities!=='undefined'?CDWorldStadiumCapacities[S.clubs[f.homeId]?.id??f.homeId]:undefined;return Number.isInteger(c)?{capacity:c}:{};})()}:null;

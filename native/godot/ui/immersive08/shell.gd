@@ -1025,9 +1025,22 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	round_label.name = "ImmersiveRound"
 	app._update_header_date()
 	right -= date_width + 27.0
-	# Recherche : 400 (300 px à 1920), réduite jusqu'à 293 (220 px) si le fil manque de place.
 	var crumbs := _crumbs(app)
 	var crumbs_width := _crumbs_width(crumbs)
+	# Compte à rebours du prochain match (choix de Léo, 21/11/2026) → avant-match ; il cède la place au fil d'Ariane
+	# et à la recherche réduite (forme courte sans le mot DOM./EXT., ou rien).
+	var Rebours = preload("res://ui/rebours_match.gd")
+	var fil_entier := func(prise: float) -> bool:
+		var reste := right - prise
+		var recherche := clampf(reste - crumbs_left - minf(crumbs_width, 520.0) - 27.0, 293.0, 400.0)
+		return reste - recherche - 27.0 - crumbs_left >= crumbs_width
+	var place_rebours := 0.0
+	for prise: float in [Rebours.PLEINE + Rebours.ECART, Rebours.COURTE + Rebours.ECART]:
+		if fil_entier.call(prise):
+			place_rebours = prise
+			break
+	right -= Rebours.poser(panel, app, right + 12.0, ch, cy, _shell_button, place_rebours)
+	# Recherche : 400 (300 px à 1920), réduite jusqu'à 293 (220 px) si le fil manque de place.
 	var search_width := clampf(right - crumbs_left - minf(crumbs_width, 520.0) - 27.0, 293.0, 400.0)
 	var search := _search_field(panel, app, Rect2(right - search_width, cy, search_width, ch))
 	right -= search_width + 27.0

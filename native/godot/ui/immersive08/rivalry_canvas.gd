@@ -2,6 +2,7 @@ extends Control
 ## Le registre des confrontations reste indexé par les identifiants du monde.
 const FocusLater := preload("res://ui/focus_later.gd")
 const C = preload("res://ui/immersive08/components.gd")
+const CarteClub = preload("res://ui/carte_club_survol.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
 const P = preload("res://ui/immersive08/projection.gd")
@@ -372,6 +373,7 @@ func _crest(parent: Node, id: Variant, area: Rect2) -> void:
 	var crest := G.crest(team, C.px(area.size.x))
 	parent.add_child(crest)
 	D.place(crest, area)
+	CarteClub.lier(crest, team if team.has("id") else team.merged({"id": id}))
 
 static func _pair_key(pair: Dictionary) -> String:
 	return "%s:%s" % [G.n(pair.get("a")), G.n(pair.get("b"))]
