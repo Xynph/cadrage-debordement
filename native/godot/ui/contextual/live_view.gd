@@ -4,8 +4,9 @@ extends Control
 ## (horloge et période, plaques des deux clubs, score ivoire 40 px), commandes en haut à droite, journal
 ## de deux lignes en bas à gauche, bannière d'essai dans le tiers inférieur (match_temps_forts.gd) et menu
 ## du match ouvert par Échap (seule petite fenêtre, exception de Léo). Jetons et polices : ui/charte.gd,
-## aucun or. Les plaques ouvrent la fiche du club et le menu ses réglages dans une page du direct : le
-## match se met en pause et « Retour au direct » le rend tel quel.
+## aucun or. Plein écran obligatoire : on ne quitte jamais le direct avant la fin. Les plaques des clubs et les noms
+## de nos joueurs ouvrent une petite fenêtre visuelle par-dessus le match (match en pause, repris à la fermeture) ;
+## le menu ouvre ses réglages dans une page du direct.
 const S = preload("res://ui/contextual/skin.gd")
 const Charte = preload("res://ui/charte.gd")
 const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
@@ -105,8 +106,8 @@ var _menu_cle := ""
 var page: Control
 var _page_sorte := ""
 var _page_cle := ""
-## Joueur de la fiche ouverte depuis le journal (page « joueur »).
-var _page_joueur := ""
+## Petite fenêtre du direct (club ou joueur) : calque plein écran (voile + toile au gabarit), ou null.
+var fenetre_hote: Control
 var _relecture: Array = []  ## [faits filtrés, équipes, fait de départ] de la page « Relire les actions »
 ## Le match jouait quand le menu ou la page s'est ouvert : « Reprendre » / « Retour au direct » le relance.
 var _reprendre_apres := false
@@ -425,13 +426,12 @@ static func _texte(texte: String, police: Font, couleur: Color) -> Label:
 	return etiquette
 
 ## Plaque d'un club : logo du club (_poser_ecusson, à la place de la pastille du sigle), nom en capitales ; survol ou focus : le nom se souligne.
-## Clic ou Entrée : fiche du club dans une page du direct (le match se met en pause).
+## Clic ou Entrée : petite fenêtre du club par-dessus le match (le match se met en pause).
 func _plaque(cote: int) -> PanelContainer:
 	var plaque := _segment("MatchClubPlaque%d" % cote, Charte.CLUB)
 	plaque.mouse_filter = Control.MOUSE_FILTER_STOP
 	plaque.focus_mode = Control.FOCUS_ALL
 	plaque.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	plaque.tooltip_text = "Fiche du club (le match se met en pause)."
 	var rangee := HBoxContainer.new()
 	rangee.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rangee.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -761,11 +761,6 @@ func _process(_delta: float) -> void:
 	if is_instance_valid(menu) and menu.visible and is_instance_valid(equipe) and equipe.visible: _cacher_menu()
 	# Panneau du menu : ses lignes à retour automatique ne connaissent leur hauteur qu'après une mise en page.
 	if is_instance_valid(menu) and menu.visible: _placer_menu()
-	# Fiche du club ouverte pendant une réponse du moteur : la demande part dès qu'il est libre.
-	if is_instance_valid(page) and page.visible and _page_sorte == "club" and not app.waiting:
-		var Fiche = load("res://ui/immersive08/club_sheet_canvas.gd")
-		var fiche: Variant = app.management_ui.get("club_sheet")
-		if fiche is Dictionary and Fiche.cached(app, int(fiche.get("id", -1))).is_empty(): Fiche.request(app, int(fiche.get("id", -1)))
 	if _pause_voulue != 0 and not app.waiting:
 		var voulue := _pause_voulue > 0
 		_pause_voulue = 0
@@ -917,7 +912,7 @@ func _poser_plaques(teams: Array) -> void:
 		var plafond := clampf((get_viewport_rect().size.x / echelle - 1000.0) * 0.55, 140.0, 300.0) * echelle
 		nom.text = nom_court(complet, _sigles[cote].text, police, taille, plafond)
 		nom.custom_minimum_size.x = police.get_string_size(nom.text, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x + 2.0
-		plaques[cote].tooltip_text = ("%s : fiche du club (le match se met en pause)." % complet) if not complet.is_empty() else "Fiche du club (le match se met en pause)."
+		plaques[cote].tooltip_text = complet
 	_coque_score.queue_redraw()
 
 ## Choix de Léo (21/11/2026) : le logo du club À LA PLACE de la pastille du sigle (même emplacement, 44 px en 1080p),
@@ -933,8 +928,19 @@ func _poser_ecusson(cote: int, teams: Array) -> void:
 		ancien.queue_free()
 	puce.visible = true
 	if teams.size() <= cote or not (teams[cote] is Dictionary): return
-	var club := _club_complet(teams[cote])
-	var largeur := roundi(44 * echelle)
+	var ecusson := ecusson_club(_club_complet(teams[cote]), roundi(44 * echelle))
+	ecusson.name = "MatchClubCrest%d" % cote
+	ecusson.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	ecusson.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ecusson.tooltip_text = ""
+	for enfant in ecusson.find_children("*", "Control", true, false): (enfant as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rangee.add_child(ecusson)
+	rangee.move_child(ecusson, puce.get_index())
+	puce.visible = false
+
+## Logo du club (`logoPath` d'un pack d'identité), sinon l'écusson dessiné aux couleurs et initiales du club, dans une
+## case de `largeur` px : plaques du bandeau et petite fenêtre du club.
+func ecusson_club(club: Dictionary, largeur: int) -> Control:
 	var ecusson: Control
 	var logo: Texture2D = S.G.Base._pack_texture(str(S.G.identity(club).get("logoPath", club.get("logoPath", ""))))
 	if logo != null:
@@ -964,14 +970,7 @@ func _poser_ecusson(cote: int, teams: Array) -> void:
 			etiquette.add_theme_color_override("font_color", Charte.IVOIRE)
 			etiquette.add_theme_color_override("font_outline_color", Color(0.05, 0.06, 0.07, 0.95))
 			etiquette.add_theme_constant_override("outline_size", maxi(3, roundi(dessin_taille * 0.07)))
-	ecusson.name = "MatchClubCrest%d" % cote
-	ecusson.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	ecusson.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	ecusson.tooltip_text = ""
-	for enfant in ecusson.find_children("*", "Control", true, false): (enfant as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
-	rangee.add_child(ecusson)
-	rangee.move_child(ecusson, puce.get_index())
-	puce.visible = false
+	return ecusson
 
 ## Club du direct complété par sa fiche du classement ou du catalogue (identité, dont le logo du pack).
 func _club_complet(equipe: Dictionary) -> Dictionary:
@@ -1109,16 +1108,10 @@ func _survol_joueur(id: String, ancre: Control) -> void:
 	# La mini-fiche se pose sur l'application : au-dessus de la scène du match (z 100).
 	if fiche != null: fiche.z_index = 200
 
-## Nom d'un de nos joueurs cliqué dans le journal : sa fiche complète dans une page du direct (le match se met
-## en pause) ; « Retour au direct » le rend tel quel.
+## Nom d'un de nos joueurs cliqué (journal, bannière d'essai, fenêtre Équipe, entracte) : sa petite fenêtre par-dessus
+## le match (`ouvrir_fenetre_joueur`).
 func ouvrir_joueur(id: String) -> void:
-	_mini_fiche().cacher(app)
-	if (load("res://ui/immersive08/fiche_commune.gd").trouver(app, id, "squad") as Dictionary).is_empty(): return
-	# Depuis la page Équipe (restée ouverte dessous) : c'est elle qui tient la pause et la reprise ; fermer la fiche
-	# ne doit pas relancer le match.
-	if not (is_instance_valid(equipe) and equipe.visible): _suspendre()
-	_page_joueur = id
-	_ouvrir_page("joueur")
+	ouvrir_fenetre_joueur(id)
 
 ## Id de l'un de `joueurs` dont le nom est `nom` (« Eddie WHITWORTH » : casse ignorée), sinon d'après le seul nom de
 ## famille s'il n'appartient qu'à un joueur ; "" si personne (adversaire : pas de fiche complète).
@@ -1189,7 +1182,8 @@ func _input(event: InputEvent) -> void:
 	if touche.ctrl_pressed or touche.alt_pressed or touche.meta_pressed: return
 	var code: int = touche.keycode if touche.keycode != 0 else touche.physical_keycode
 	var menu_ouvert := is_instance_valid(menu) and menu.visible
-	var page_ouverte := is_instance_valid(page) and page.visible
+	# Petite fenêtre ouverte : comme une page, elle garde Espace et T.
+	var page_ouverte := (is_instance_valid(page) and page.visible) or fenetre_ouverte()
 	if code == KEY_ESCAPE:
 		get_viewport().set_input_as_handled()
 		# Une petite fenêtre ouverte passe avant le menu du match.
@@ -1555,24 +1549,270 @@ func _quitter() -> void:
 func confier_fin() -> void:
 	ouvrir_menu("deleguer")
 
-# --- Pages du direct : fiche du club, fiche joueur, réglages -----------------------------------
+# --- Petites fenêtres du direct : club, joueur ------------------------------------------------------
 
-## Fiche du club `cote` (0 : recevant, 1 : visiteur) dans une page du direct : match en pause, « Retour au
-## direct » le rend tel quel (et le relance s'il jouait). Fiche commune (club_sheet_canvas.gd), y compris
-## pour notre club.
+## Plein écran obligatoire (règle de Léo du 21/11/2026) : on ne quitte jamais le direct avant la fin. La plaque d'un club
+## et le nom d'un de nos joueurs ouvrent une petite fenêtre visuelle par-dessus le match (cadre commun
+## fenetre_visuelle.gd : voile, panneau rayon 18, titre, ✕) ; Échap, ✕ et clic à côté la ferment. Comme les anciennes
+## pages du direct, le match se met en pause à l'ouverture et repart à la fermeture s'il jouait.
+const FenetreVisuelle = preload("res://ui/immersive08/fenetre_visuelle.gd")
+const D = preload("res://ui/immersive08/primitives.gd")
+const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
+const Tableau = preload("res://ui/contextual/match_tableau_widgets.gd")
+const FENETRE_CLUB := "MatchFenetreClub"
+const FENETRE_JOUEUR := "MatchFenetreJoueur"
+## Résultats récents : couleur et lettre (la couleur ne porte jamais seule le résultat).
+const FORME_TEINTES := {"V": Charte.GAIN, "N": Charte.IVOIRE_2, "D": Charte.PERTE}
+
+## Une petite fenêtre du direct est-elle ouverte ?
+func fenetre_ouverte() -> bool:
+	return is_instance_valid(fenetre_hote) and not fenetre_hote.is_queued_for_deletion()
+
+## Plaque du club `cote` (0 : recevant, 1 : visiteur) : sa petite fenêtre.
 func ouvrir_fiche_club(cote: int) -> void:
 	var teams: Array = _live().get("teams", [])
 	if cote < 0 or cote >= teams.size() or not teams[cote] is Dictionary or teams[cote].get("id") == null: return
 	ouvrir_fiche_club_id(int(float(teams[cote].id)))
 
-## Fiche d'un club par son identifiant (autres matchs et classement en direct de l'entracte), même page du direct.
+## Petite fenêtre d'un club par son identifiant (plaques, autres matchs et classement en direct de l'entracte) :
+## écusson ou logo, rang et points, forme récente en pastilles ; s'il joue ce match, score et chiffres du match en tuiles.
 func ouvrir_fiche_club_id(id: int) -> void:
 	if id < 0: return
-	_suspendre()
-	var avant: Variant = app.management_ui.get("club_sheet")
-	var meme: bool = avant is Dictionary and int(avant.get("id", -1)) == id
-	app.management_ui.club_sheet = {"id": id, "tab": int(avant.get("tab", 0)) if meme else 0, "sort": str(avant.get("sort", "fam")) if meme else "fam", "descending": bool(avant.get("descending", false)) if meme else false}
-	_ouvrir_page("club")
+	var teams: Array = _live().get("teams", [])
+	var cote := -1
+	for i in teams.size():
+		if teams[i] is Dictionary and teams[i].get("id") != null and int(float(teams[i].id)) == id: cote = i
+	var ligne := _ligne_classement(id)
+	var club: Dictionary = _club_complet(teams[cote] if cote >= 0 else ligne if not ligne.is_empty() else {"id": id})
+	if cote < 0 and ligne.is_empty() and not club.has("name"): return
+	var fond := _ouvrir_fenetre(FENETRE_CLUB, S.G.club_name(club).to_upper(), 960, 490 if cote >= 0 else 300)
+	fond.set_meta("club_id", id)
+	var ecusson := ecusson_club(club, C.px(150))
+	ecusson.name = "MatchFenetreClubEcusson"
+	ecusson.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fond.add_child(ecusson)
+	D.place(ecusson, Rect2(36, 84, 150, 150))
+	var rang := int(ligne.get("rank", club.get("rank", 0)))
+	var nous: bool = app.model.get("club") is Dictionary and str(app.model.club.get("id", "")) == str(id)
+	Pieces.tuile(fond, Rect2(216, 84, 176, 108), ("1er" if rang == 1 else "%de" % rang) if rang > 0 else "—", "classement", Charte.IVOIRE, "MatchFenetreClubRang", 46, "", "trophy")
+	Pieces.tuile(fond, Rect2(406, 84, 176, 108), str(int(ligne.get("points", club.get("points", 0)))), "points", Charte.IVOIRE, "MatchFenetreClubPoints", 46)
+	# Forme : les cinq derniers résultats de championnat, le plus récent à droite.
+	var forme: Array = ligne.get("form", []) if ligne.get("form") is Array else []
+	forme = forme.slice(maxi(0, forme.size() - 5))
+	var bloc := D.rect(fond, Rect2(596, 84, 328, 108), Charte.PANNEAU_2, Charte.RAYON_CARTE)
+	bloc.name = "MatchFenetreClubForme"
+	bloc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	D.text(bloc, 14, 98, "FORME", 14, Charte.IVOIRE_2, 600, 200)
+	for i in forme.size():
+		var code := str(forme[i])
+		var teinte: Color = FORME_TEINTES.get(code, Charte.IVOIRE_2)
+		var case := D.rect(bloc, Rect2(14 + i * 62, 14, 52, 52), Color(teinte, .2), Charte.RAYON_PETIT, teinte)
+		case.name = "MatchFenetreClubForme%d" % i
+		case.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		D.text(case, 26, 38, code, 26, teinte, 800, 52, HORIZONTAL_ALIGNMENT_CENTER)
+	if forme.is_empty(): D.text(bloc, 14, 52, "—", 30, Charte.IVOIRE_3, 700, 100)
+	# Où il joue ce match, et notre club.
+	var x := 216.0
+	if cote >= 0:
+		var lieu := "Domicile" if cote == 0 else "Extérieur"
+		x += Pieces.pastille(fond, x, 208, lieu, "home" if cote == 0 else "bus", "MatchFenetreClubLieu") + 10.0
+	if nous: Pieces.pastille(fond, x, 208, "Nous", "star", "MatchFenetreClubNous", "", Charte.GAIN)
+	if cote < 0: return
+	# Le match en cours, jamais en avance sur l'image (le moteur a une minute d'avance en temps forts) : le score du
+	# bandeau, la minute de l'horloge, les essais et chiffres du direct borné (tiroir Statistiques).
+	var live := _live()
+	var marque := score_affiche()
+	var pour := marque[cote]
+	var contre := marque[1 - cote]
+	var minute := clock.text.strip_edges()
+	D.text(fond, 36, 300, "MATCH · %s" % (minute if not minute.is_empty() else "%d’" % maxi(1, int(live.get("minute", 0)))), 16, Charte.IVOIRE_2, 700, 400)
+	var tuiles: Array = [["%d – %d" % [pour, contre], "score", Charte.GAIN if pour > contre else Charte.PERTE if pour < contre else Charte.IVOIRE, "Score"]]
+	tuiles.append([str(_essais_montres(cote)), "essais", Charte.IVOIRE, "Essais"])
+	for libelle: Array in [["Possession", "possession"], ["Territoire", "territoire"], ["Pénalités concédées", "pénalités"]]:
+		tuiles.append([_chiffre_match(str(libelle[0]), cote), str(libelle[1]), Charte.IVOIRE, str(libelle[0]).get_slice(" ", 0)])
+	var largeur := (960.0 - 72.0 - 4 * 12.0) / 5.0
+	for i in tuiles.size():
+		var t: Array = tuiles[i]
+		Pieces.tuile(fond, Rect2(36 + i * (largeur + 12.0), 318, largeur, 128), str(t[0]), str(t[1]), t[2], "MatchFenetreClub" + str(t[3]), 50 if i > 0 else 46)
+
+## Score montré par le bandeau (pas celui du moteur, en avance pendant les temps forts) : [recevant, visiteur].
+func score_affiche() -> Array[int]:
+	var morceaux := score.text.replace("–", "—").split("—")
+	if morceaux.size() == 2 and morceaux[0].strip_edges().is_valid_int() and morceaux[1].strip_edges().is_valid_int():
+		return [int(morceaux[0].strip_edges()), int(morceaux[1].strip_edges())]
+	var marque: Variant = _live().get("score", [0, 0])
+	return [int(marque[0]), int(marque[1])] if marque is Array and marque.size() >= 2 else [0, 0]
+
+## Essais du club `cote` déjà montrés : repères du direct dont le score d'après ne dépasse pas celui du bandeau (le
+## temps fort en cours n'est pas annoncé), sinon le compte du moteur.
+func _essais_montres(cote: int) -> int:
+	var live := _live()
+	var direct: Variant = live.get("direct")
+	if direct is Dictionary and direct.get("reperes") is Array:
+		var montre := score_affiche()
+		return (direct.reperes as Array).filter(func(r: Variant) -> bool:
+			if not (r is Dictionary and str(r.get("kind", "")) == "try" and int(r.get("equipe", -1)) == cote): return false
+			var apres: Variant = r.get("score")
+			return not (apres is Array and apres.size() > cote and int(apres[cote]) > montre[cote])).size()
+	var essais: Variant = live.get("tries")
+	return int(essais[cote]) if essais is Array and essais.size() > cote else 0
+
+## Chiffre d'une ligne des statistiques du match (« Possession ») pour le club `cote` ; « — » sans donnée.
+func _chiffre_match(libelle: String, cote: int) -> String:
+	# Mêmes chiffres que le tiroir Statistiques du direct.
+	for ligne: Variant in _stats(_live()):
+		if ligne is Dictionary and str(ligne.get("label", "")) == libelle:
+			var valeur: Variant = ligne.get("home" if cote == 0 else "away", "—")
+			# Compte du moteur (JSON : nombre à virgule) écrit en entier.
+			return str(roundi(float(valeur))) if valeur is float or valeur is int else str(valeur)
+	return "—"
+
+## Ligne du classement d'un club (rang, points, forme) ; vide s'il n'y figure pas.
+func _ligne_classement(id: int) -> Dictionary:
+	var classement: Variant = app.model.get("league", [])
+	if not classement is Array: return {}
+	for ligne: Variant in classement:
+		if ligne is Dictionary and ligne.get("id") != null and int(float(ligne.id)) == id: return ligne
+	return {}
+
+## Petite fenêtre d'un de nos joueurs : portrait, poste et numéro, note du match, énergie (jauge), niveau, puis ses
+## essais, plaquages et mètres du match en tuiles. Rien pour un adversaire (pas de fiche).
+func ouvrir_fenetre_joueur(id: String) -> void:
+	_mini_fiche().cacher(app)
+	var trouve: Dictionary = load("res://ui/immersive08/fiche_commune.gd").trouver(app, id, "squad")
+	if trouve.is_empty(): return
+	var joueur: Dictionary = (trouve.joueur as Dictionary).duplicate()
+	var live := _live()
+	var numero := -1
+	var titulaire := false
+	for liste: String in ["lineup", "reserves"]:
+		var rangs: Array = live.get(liste, []) if live.get(liste) is Array else []
+		for n in rangs.size():
+			if rangs[n] is Dictionary and str(rangs[n].get("id", "")) == id:
+				joueur.merge(rangs[n], true)
+				titulaire = liste == "lineup"
+				numero = n + 1 if titulaire else n + 16
+	var direct: Dictionary = live.get("direct", {}) if live.get("direct") is Dictionary else {}
+	var notes: Dictionary = direct.get("notes", {}) if direct.get("notes") is Dictionary else {}
+	var cartons := {}
+	var liste_cartons: Array = direct.get("cartons", []) if direct.get("cartons") is Array else []
+	for carton: Variant in liste_cartons:
+		if carton is Dictionary: cartons[str(carton.get("id", ""))] = carton
+	var feuille: Dictionary = direct.get("feuille", {}) if direct.get("feuille") is Dictionary else {}
+	var d := Tableau.donnees_joueur(joueur, notes, cartons, feuille)
+	var fond := _ouvrir_fenetre(FENETRE_JOUEUR, str(joueur.get("name", "")).to_upper(), 900, 420)
+	fond.set_meta("player_id", id)
+	# Portrait (carte rayon 12, image recadrée).
+	var cadre := D.rect(fond, Rect2(36, 84, 190, 236), Charte.PANNEAU_2, Charte.RAYON_CARTE)
+	cadre.name = "MatchFenetreJoueurPortrait"
+	cadre.clip_children = CanvasItem.CLIP_CHILDREN_ONLY
+	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var image: TextureRect = S.G.portrait_lazy(int(joueur.get("portraitIndex", 0)), C.px(236), joueur)
+	image.tooltip_text = ""
+	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	image.custom_minimum_size = Vector2.ZERO
+	cadre.add_child(image)
+	D.place(image, Rect2(-23, 0, 236, 264))
+	# Poste, numéro, état : pastilles.
+	var x := 254.0
+	var poste := str(joueur.get("pos", ""))
+	if not poste.is_empty(): x += Pieces.pastille(fond, x, 84, poste, "people", "MatchFenetreJoueurPoste") + 10.0
+	if numero > 0: x += Pieces.pastille(fond, x, 84, "N° %d" % numero, "", "MatchFenetreJoueurNumero") + 10.0
+	if bool(d.get("blesse", false)): Pieces.pastille(fond, x, 84, "Blessé", "warning", "MatchFenetreJoueurEtat", "", Charte.PERTE)
+	elif bool(d.get("carton", false)): Pieces.pastille(fond, x, 84, "Carton jaune", "warning", "MatchFenetreJoueurEtat", "", Charte.INTENSIF)
+	elif numero > 0: Pieces.pastille(fond, x, 84, "Sur le terrain" if titulaire else "Banc", "check" if titulaire else "", "MatchFenetreJoueurEtat", "", Charte.GAIN if titulaire else Charte.IVOIRE_2)
+	# Note du match (barème de l'entracte), énergie, niveau.
+	var largeur := (900.0 - 254.0 - 36.0 - 2 * 12.0) / 3.0
+	var note_connue := notes.has(id)
+	var note := float(d.get("note", 6.5))
+	var teinte_note: Color = load("res://ui/contextual/match_between.gd")._teinte_note(note) if note_connue else Charte.IVOIRE_3
+	Pieces.tuile(fond, Rect2(254, 136, largeur, 116), ("%.1f" % note).replace(".", ",") if note_connue else "—", "note du match", teinte_note, "MatchFenetreJoueurNote", 50, "", "rating")
+	var energie := clampf(float(d.get("energie", 100.0)), 0.0, 100.0)
+	var teinte_energie := Charte.CONDITION if energie >= 75.0 else Charte.INTENSIF if energie >= 55.0 else Charte.PERTE
+	var tuile_energie := Pieces.tuile(fond, Rect2(254 + largeur + 12.0, 136, largeur, 116), "%d %%" % roundi(energie), "énergie", teinte_energie, "MatchFenetreJoueurEnergie", 50, "", "heart")
+	D.bar(tuile_energie, Rect2(12, 12, largeur - 52, 8), energie, teinte_energie)
+	var niveau: Variant = joueur.get("rating")
+	var niveau_connu := niveau is float or niveau is int
+	Pieces.tuile(fond, Rect2(254 + 2 * (largeur + 12.0), 136, largeur, 116), str(roundi(float(niveau))) if niveau_connu else "—", "niveau", Charte.couleur_attribut(niveau) if niveau_connu else Charte.IVOIRE, "MatchFenetreJoueurNiveau", 50)
+	# Ses chiffres du match.
+	for i in 3:
+		var cle: String = ["essais", "plaquages", "metres"][i]
+		var valeur := str(int(d.get(cle, 0))) if note_connue or not feuille.is_empty() else "—"
+		Pieces.tuile(fond, Rect2(254 + i * (largeur + 12.0), 264, largeur, 100), valeur, ["essais", "plaquages", "mètres"][i], Charte.IVOIRE, "MatchFenetreJoueur" + cle.capitalize(), 42)
+
+## Ouvre le calque d'une petite fenêtre du direct et rend son panneau (unités du gabarit 2248 × 1230, centré).
+## Une fenêtre déjà ouverte est remplacée. Le match se met en pause (sauf sous la fenêtre Équipe, qui tient la pause).
+func _ouvrir_fenetre(nom: String, titre: String, largeur: float, hauteur: float) -> Panel:
+	_mini_fiche().cacher(app)
+	if drawer.visible: _fermer_tiroir()
+	_retirer_fenetre()
+	if not (is_instance_valid(equipe) and equipe.visible): _suspendre()
+	var hote := Control.new()
+	hote.name = "MatchFenetre"
+	hote.mouse_filter = Control.MOUSE_FILTER_STOP
+	hote.z_index = 5
+	S.full(hote)
+	add_child(hote)
+	fenetre_hote = hote
+	# Voile sur tout l'écran (le cadre commun ne couvre que la toile au gabarit) : clic à côté = fermer.
+	var voile := Button.new()
+	voile.name = "MatchFenetreACote"
+	voile.focus_mode = Control.FOCUS_NONE
+	for etat: String in ["normal", "hover", "pressed", "focus"]:
+		var fond_voile := StyleBoxFlat.new()
+		fond_voile.bg_color = Color(Charte.NUIT, .45)
+		voile.add_theme_stylebox_override(etat, fond_voile)
+	voile.pressed.connect(func(): PetiteFenetre.fermer_derniere(get_tree()))
+	S.full(voile)
+	hote.add_child(voile)
+	var toile := Control.new()
+	toile.name = "MatchFenetreToile"
+	toile.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var taille := Vector2(2248, 1230) * C.density
+	toile.set_anchors_preset(Control.PRESET_CENTER)
+	toile.offset_left = -taille.x / 2.0
+	toile.offset_right = taille.x / 2.0
+	toile.offset_top = -taille.y / 2.0
+	toile.offset_bottom = taille.y / 2.0
+	hote.add_child(toile)
+	var fond := FenetreVisuelle.ouvrir(toile, nom, titre, "", largeur, hauteur, func(): _apres_fenetre(hote))
+	# Le voile du cadre commun reste cliquable (fermer) mais transparent : celui de l'écran le remplace.
+	var voile_cadre := toile.find_child(nom + "Voile", true, false) as Button
+	if voile_cadre != null:
+		for etat: String in ["normal", "hover", "pressed", "focus"]: voile_cadre.add_theme_stylebox_override(etat, StyleBoxEmpty.new())
+	director._refresh_controls()
+	return fond
+
+## Fenêtre refermée (Échap, ✕, clic à côté) : le match repart s'il jouait.
+func _apres_fenetre(hote: Control) -> void:
+	if is_instance_valid(hote): hote.queue_free()
+	if hote != fenetre_hote: return
+	fenetre_hote = null
+	if _reprendre_apres and not (is_instance_valid(equipe) and equipe.visible): _relancer()
+	director._refresh_controls()
+
+## Retire la fenêtre ouverte sans relancer le match (une autre la remplace).
+func _retirer_fenetre() -> void:
+	if not is_instance_valid(fenetre_hote): return
+	for noeud: Node in fenetre_hote.find_children("*", "", true, false):
+		if noeud.is_in_group(PetiteFenetre.GROUPE): noeud.remove_from_group(PetiteFenetre.GROUPE)
+	remove_child(fenetre_hote)
+	fenetre_hote.queue_free()
+	fenetre_hote = null
+
+## Ferme la petite fenêtre ouverte comme Échap (tests, fin de match).
+func fermer_fenetre() -> void:
+	if not fenetre_ouverte(): return
+	for noeud: Node in fenetre_hote.find_children("*", "", true, false):
+		if noeud.is_in_group(PetiteFenetre.GROUPE):
+			noeud.remove_from_group(PetiteFenetre.GROUPE)
+			var fermer: Variant = noeud.get_meta(PetiteFenetre.FERMER, Callable())
+			if fermer is Callable and (fermer as Callable).is_valid(): (fermer as Callable).call()
+			return
+
+# --- Pages du direct : relecture, réglages -----------------------------------------------------
 
 ## « Relire » (et « → » d'un fait) dans le tiroir Journal : la relecture des faits filtrés dans une page du direct,
 ## match en pause, « ← Retour au direct » (jamais une fenêtre pendant le match).
@@ -1588,25 +1828,11 @@ func ouvrir_reglages() -> void:
 	_cacher_menu()
 	_ouvrir_page("reglages")
 
-## Ce que la fiche du club sait du match en cours (club_sheet_canvas.gd, « MATCH EN COURS ») : les deux clubs,
-## le score et la minute du direct.
-func _poser_match_pour_fiches() -> void:
-	var equipes: Array = _live().get("teams", [])
-	if equipes.size() < 2 or not equipes[0] is Dictionary or not equipes[1] is Dictionary or equipes[0].get("id") == null or equipes[1].get("id") == null:
-		app.remove_meta("fiche_club_en_match")
-		return
-	var marque: Array = _live().get("score", [0, 0])
-	app.set_meta("fiche_club_en_match", {"ids": [int(float(equipes[0].id)), int(float(equipes[1].id))], "score": [int(marque[0]), int(marque[1])], "minute": int(_live().get("minute", 0))})
-
 func _ouvrir_page(sorte: String) -> void:
 	_mini_fiche().cacher(app)
 	if drawer.visible: _fermer_tiroir()
 	_page_sorte = sorte
 	_page_cle = ""
-	if sorte == "joueur":
-		# Fiche ouverte depuis le direct : l'onglet Vue d'ensemble, sans charge individuelle en cours d'édition.
-		app.management_ui.erase("charge_joueur")
-		app.management_ui.immersive_player_tab = 0
 	if not is_instance_valid(page):
 		page = Control.new()
 		page.name = "MatchPage"
@@ -1618,8 +1844,8 @@ func _ouvrir_page(sorte: String) -> void:
 	_actualiser_page()
 	director._refresh_controls()
 
-## Actions qui restent sur place dans une page du direct (onglets, tri, suivi du club) ; tout le reste mène à un
-## autre écran ou ouvre une fenêtre : grisé, « Disponible après le match ».
+## Actions qui restent sur place dans une fiche ouverte pendant un match (onglets, tri, suivi du club) ; tout le reste
+## mène à un autre écran ou ouvre une fenêtre : grisé, « Disponible après le match » (vestiaire, locker_view.gd).
 const ACTIONS_SUR_PLACE := ["ClubSheetTab", "ClubSheetFollow", "ClubSheetSort_", "ClubSheetRetry", "FullPlayerTab"]
 
 static func neutraliser(racine: Node) -> Array[String]:
@@ -1644,55 +1870,12 @@ static func neutraliser(racine: Node) -> Array[String]:
 		grises.append(nom)
 	return grises
 
-## Fiche du club ouverte dans le direct : les noms de NOS joueurs (Effectif, XV type, joueurs clés…) gardent leur
-## clic, qui ouvre leur fiche complète dans le direct (`ouvrir_joueur`), et leur mini-fiche au survol. Les autres
-## noms (adversaires : pas de fiche complète) restent grisés par `neutraliser`. Rend les ids liés.
-func _lier_nos_joueurs(racine: Node) -> Array[String]:
-	var lies: Array[String] = []
-	var Commune = load("res://ui/immersive08/fiche_commune.gd")
-	for noeud: Node in racine.find_children("*", "BaseButton", true, false):
-		var bouton := noeud as BaseButton
-		if str(bouton.get_meta("entity_kind", "")) != "player": continue
-		var id := str(bouton.get_meta("entity_id", ""))
-		if id.is_empty() or (Commune.trouver(app, id, "squad") as Dictionary).is_empty(): continue
-		for liaison: Dictionary in bouton.pressed.get_connections(): bouton.pressed.disconnect(liaison.callable)
-		bouton.pressed.connect(ouvrir_joueur.bind(id))
-		bouton.mouse_entered.connect(_survol_joueur.bind(id, bouton))
-		bouton.mouse_exited.connect(func(): _mini_fiche().cacher(app, bouton))
-		bouton.set_meta("fiche_en_match", true)
-		bouton.tooltip_text = "Voir sa fiche (le match reste en pause)"
-		if bouton is Button:
-			var taille: int = bouton.get_theme_font_size("font_size")
-			C.style_bouton_lien(bouton, 12)
-			bouton.add_theme_font_size_override("font_size", taille)
-		lies.append(id)
-	return lies
-
-## Onglets et suivi de la fiche du club au style lien commun (charte §7 : pas de boîte encadrée) ; l'onglet
-## ouvert reste souligné.
-static func liens_fiche_club(racine: Node) -> void:
-	for noeud: Node in racine.find_children("*", "Button", true, false):
-		var bouton := noeud as Button
-		var nom := str(bouton.name)
-		if not (nom.begins_with("ClubSheetTab") or nom == "ClubSheetFollow"): continue
-		var actif := bouton.toggle_mode and bouton.button_pressed
-		bouton.icon = null
-		C.style_bouton_lien(bouton, 22, actif)
-		if not actif and nom.begins_with("ClubSheetTab"):
-			for cle in ["font_color", "font_focus_color"]: bouton.add_theme_color_override(cle, Charte.IVOIRE_2)
-
 ## Page reconstruite quand son contenu change (onglet de la fiche, réponse du moteur, échelle).
 func _actualiser_page() -> void:
 	if not is_instance_valid(page) or not page.visible: return
-	var fiche: Variant = app.management_ui.get("club_sheet")
-	var donnees := false
-	if _page_sorte == "club" and fiche is Dictionary:
-		donnees = not load("res://ui/immersive08/club_sheet_canvas.gd").cached(app, int(fiche.get("id", -1))).is_empty()
 	var etat_page: Variant = null
-	if _page_sorte == "club": etat_page = fiche
-	elif _page_sorte == "joueur": etat_page = [_page_joueur, app.management_ui.get("immersive_player_tab", 0)]
-	elif _page_sorte == "relecture": etat_page = [_relecture[2], _relecture[0].size()] if _relecture.size() == 3 else null
-	var cle := JSON.stringify([_page_sorte, etat_page, donnees, size, C.density])
+	if _page_sorte == "relecture": etat_page = [_relecture[2], _relecture[0].size()] if _relecture.size() == 3 else null
+	var cle := JSON.stringify([_page_sorte, etat_page, size, C.density])
 	if cle == _page_cle: return
 	_page_cle = cle
 	S.clear(page)
@@ -1719,7 +1902,6 @@ func _actualiser_page() -> void:
 	C.style_bouton_lien(retour, 19, true)
 	retour.add_theme_font_size_override("font_size", roundi(16 * echelle))
 	tete.add_child(retour)
-	# Un seul titre : celui de la fiche (club, joueur) ; « RÉGLAGES » pour l'écran des réglages qui n'en a pas.
 	if _page_sorte in ["reglages", "relecture"]:
 		var titre := _texte("RÉGLAGES" if _page_sorte == "reglages" else "RELIRE LES ACTIONS", Charte.TITRE_GRAS, Charte.IVOIRE)
 		titre.add_theme_font_size_override("font_size", roundi(22 * echelle))
@@ -1749,24 +1931,6 @@ func _actualiser_page() -> void:
 		var contenu: Control = load("res://ui/preferences_dialog.gd").page(app, app.get("user_preferences"))
 		C.fill(contenu, true)
 		defile.add_child(contenu)
-	elif _page_sorte == "joueur":
-		var trouve: Dictionary = load("res://ui/immersive08/fiche_commune.gd").trouver(app, _page_joueur, "squad")
-		if not trouve.is_empty():
-			var fiche_joueur: Control = load("res://ui/immersive08/player_canvas.gd").build(app, trouve.joueur, "squad")
-			fiche_joueur.name = "MatchPlayerSheet"
-			defile.add_child(fiche_joueur)
-			neutraliser(fiche_joueur)
-	else:
-		_poser_match_pour_fiches()
-		var Fiche = load("res://ui/immersive08/club_sheet_canvas.gd")
-		var toile := Control.new()
-		toile.name = "MatchClubSheetCanvas"
-		toile.custom_minimum_size = Vector2(Fiche.WIDTH, Fiche.HEIGHT) * C.density
-		defile.add_child(toile)
-		Fiche.build(app, toile)
-		liens_fiche_club(toile)
-		_lier_nos_joueurs(toile)
-		neutraliser(toile)
 	retour.call_deferred("grab_focus")
 
 ## Retour : au menu du match depuis les réglages, au direct depuis une fiche (le match repart s'il jouait).
@@ -1778,7 +1942,6 @@ func fermer_page() -> void:
 	S.clear(page)
 	_page_sorte = ""
 	_page_cle = ""
-	app.remove_meta("fiche_club_en_match")
 	if sorte == "reglages":
 		apply_preferences()
 		var reprendre := _reprendre_apres

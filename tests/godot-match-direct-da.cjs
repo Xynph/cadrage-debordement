@@ -24,9 +24,16 @@ const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-match-direct-da-'));
 const env = {...process.env, CD_GODOT_SELF_TEST: '0', CD_NODE_EXECUTABLE: process.env.CD_NODE_EXECUTABLE || process.execPath, CD_GODOT_DATA_DIR: path.join(directory, 'jeu', 'PrototypeGodot'),
   CD_MATCH_DIRECT_DA_ARTIFACTS: directory, CD_MATCH_TEMPS_FORTS: '1', CD_MATCH_TEMPS_FORTS_HORLOGE: 'eclair', CD_MATCH_TEMPS_FORTS_VITESSE: '4', CD_MATCH_TEMPS_FORTS_NIVEAU: 'cles', CD_GODOT_SEED: '3'};
 for (const name of ['CD_MATCH_GESTES', 'CD_MATCH_CHOREGRAPHE', 'CD_MATCH_TEMPS_FORTS_ENTRACTE', 'CD_MATCH_SORTIE']) delete env[name];
-const result = spawnSync(godot, ['--headless', '--audio-driver', 'Dummy', '--max-fps', '60', '--path', path.resolve(__dirname, '../native/godot'), '--script', path.resolve(__dirname, 'godot-match-direct-da.gd')],
+// CD_MATCH_DIRECT_DA_CAPTURES=<dossier> : jeu rendu (pas --headless ; à lancer sur le bureau caché de godot-slot.ps1),
+// captures du direct (1920 et 1280) et de chaque petite fenêtre copiées dans ce dossier.
+const captures = process.env.CD_MATCH_DIRECT_DA_CAPTURES || '';
+const result = spawnSync(godot, [...(captures ? [] : ['--headless']), '--audio-driver', 'Dummy', '--max-fps', '60', '--path', path.resolve(__dirname, '../native/godot'), '--script', path.resolve(__dirname, 'godot-match-direct-da.gd')],
   {env, encoding: 'utf8', windowsHide: true, timeout: 900000});
 const output = (result.stdout || '') + (result.stderr || ''); console.log(output);
+if (captures) {
+  fs.mkdirSync(captures, {recursive: true});
+  for (const name of fs.readdirSync(directory).filter(n => n.endsWith('.png'))) fs.copyFileSync(path.join(directory, name), path.join(captures, name));
+}
 fs.rmSync(directory, {recursive: true, force: true});
 if (result.error) throw result.error;
 assert.equal(result.status, 0, output);

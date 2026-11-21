@@ -1058,7 +1058,10 @@ func _cout() -> void:
 		clic.focus_mode = Control.FOCUS_ALL
 		clic.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		clic.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
-		clic.add_theme_stylebox_override("hover", C.box(Color(Charte.IVOIRE, .08), Color.TRANSPARENT, Charte.RAYON_CARTE, 0))
+		# Voile de survol posé sur la tuile (déjà ombrée) : pas d'ombre propre, comme les autres liens de tuile.
+		var voile := C.box(Color(Charte.IVOIRE, .08), Color.TRANSPARENT, Charte.RAYON_CARTE, 0)
+		voile.shadow_size = 0
+		clic.add_theme_stylebox_override("hover", voile)
 		var focus_clic := C.box(Color.TRANSPARENT, Charte.IVOIRE, Charte.RAYON_CARTE, 0)
 		focus_clic.set_border_width_all(2)
 		clic.add_theme_stylebox_override("focus", focus_clic)

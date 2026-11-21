@@ -60,12 +60,19 @@ func chevauchements(page: Control, onglet: String) -> void:
 		var police: Font = c.get_theme_font("font")
 		var corps: int = c.get_theme_font_size("font_size")
 		var largeur := minf(police.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, corps).x, c.size.x)
-		var hauteur := minf(police.get_height(corps), c.size.y) if not (c is Label and (c as Label).autowrap_mode != TextServer.AUTOWRAP_OFF) else c.size.y
+		var replie := c is Label and (c as Label).autowrap_mode != TextServer.AUTOWRAP_OFF
+		var hauteur := minf(police.get_height(corps), c.size.y) if not replie else c.size.y
 		var gauche := 0.0
 		var align: int = (c as Label).horizontal_alignment if c is Label else (c as Button).alignment
 		if align == HORIZONTAL_ALIGNMENT_RIGHT: gauche = c.size.x - largeur
 		elif align == HORIZONTAL_ALIGNMENT_CENTER: gauche = (c.size.x - largeur) / 2.0
 		var haut := (c.size.y - hauteur) / 2.0
+		if not replie:
+			# Bande du texte : le cadratin (taille du corps) posé sur la ligne de base, sans la réserve haute de la police
+			# (Anton garde ~0,3 em au-dessus des capitales) : un grand titre et la ligne posée juste dessous ne se touchent pas.
+			var base := haut + police.get_ascent(corps)
+			haut = maxf(0.0, base - 0.8 * corps)
+			hauteur = minf(float(corps), c.size.y - haut)
 		var t := c.get_global_transform_with_canvas()
 		var zone := Rect2(t * Vector2(gauche, haut), (t.basis_xform(Vector2(largeur, hauteur))))
 		# Lignes d'un tableau dans un défilement : seules les lignes visibles comptent.
