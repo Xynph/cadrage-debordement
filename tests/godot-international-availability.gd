@@ -45,6 +45,91 @@ func capture(name: String) -> void:
 	check(image.get_size() == viewport_size, "Définition native de la capture " + name)
 	check(image.save_png(file) == OK, "Capture " + name)
 
+func fenetre() -> Control:
+	var calque := app.get_node_or_null("SelectionsPetiteFenetre") as Control
+	return calque if calque != null and not calque.is_queued_for_deletion() else null
+
+## Ferme la petite fenêtre ouverte d'une des trois façons (✕, Échap, clic à côté) et vérifie qu'elle a disparu.
+func fermer(facon: String, contexte: String) -> void:
+	var calque := fenetre()
+	check(calque != null, contexte + " · petite fenêtre ouverte")
+	if calque == null: return
+	match facon:
+		"croix":
+			var croix := calque.find_child("SelectionsPetiteFenetreFermer", true, false) as Button
+			check(croix != null, contexte + " · ✕ présent")
+			if croix != null: croix.pressed.emit()
+		"echap":
+			for down: bool in [true, false]:
+				var event := InputEventKey.new()
+				event.keycode = KEY_ESCAPE
+				event.pressed = down
+				Input.parse_input_event(event)
+				await process_frame
+		"a_cote":
+			var voile := calque.find_child("SelectionsPetiteFenetreACote", true, false) as Control
+			var clic := InputEventMouseButton.new()
+			clic.button_index = MOUSE_BUTTON_LEFT
+			clic.pressed = true
+			clic.position = Vector2(4, 4)
+			if voile != null: voile.gui_input.emit(clic)
+	await settle()
+	check(fenetre() == null, contexte + " · fermée par " + facon)
+	check(app.route == "Sélections", contexte + " · reste sur Sélections après " + facon)
+
+## Tout est cliquable (règle du 21/11/2026) : bandes et titres de la frise, drapeaux, offres par compétition.
+func verifier_clics() -> void:
+	app.management_ui.international_section = "availability"
+	app._navigate("Sélections")
+	await settle()
+	var frise := app.find_child("DispoFrise", true, false) as Control
+	check(frise != null and frise.is_visible_in_tree(), "Frise des 90 jours visible")
+	var bandes := app.find_children("DispoBande_*Lien", "Button", true, false)
+	var titres := app.find_children("DispoFriseTitre_*Lien", "Button", true, false)
+	check(not bandes.is_empty() and bandes.size() == titres.size(), "Une bande et un titre cliquables par fenêtre")
+	var facons := ["croix", "echap", "a_cote"]
+	for index in bandes.size():
+		(bandes[index] as Button).pressed.emit()
+		await settle()
+		if index == 0: await capture("international-fenetre-frise-" + str(root.size.x))
+		var puces: Array = fenetre().find_children("OpenNation_*", "Button", true, false) if fenetre() != null else []
+		check(not puces.is_empty(), "Fenêtre de la frise · drapeaux des nations")
+		await fermer(facons[index % 3], "Bande %d" % index)
+	if not titres.is_empty():
+		(titres[0] as Button).pressed.emit()
+		await settle()
+		await fermer("a_cote", "Titre de fenêtre")
+	var drapeaux := app.find_children("DispoDrapeau_*", "Button", true, false)
+	check(not drapeaux.is_empty(), "Drapeaux de la frise cliquables")
+	for tuile: String in ["DispoTuileConvoques", "DispoTuileRetour", "DispoTuilePostes"]:
+		check(app.find_child(tuile, true, false) is Button, "Chiffre cliquable " + tuile)
+	# Offres : une puce drapeau par poste, rangées par compétition ; la petite fenêtre porte les deux choix.
+	app.management_ui.international_section = "offers"
+	app._navigate("Sélections")
+	await settle()
+	var pays := app.find_children("OffrePays_*", "Button", true, false)
+	check(pays.size() == app.model.international.get("jobs", []).size(), "Offres · une puce par poste ouvert (%d)" % pays.size())
+	check(not app.find_children("OffresGroupe_*", "PanelContainer", true, false).is_empty(), "Offres rangées par compétition")
+	for index in mini(3, pays.size()):
+		(pays[index] as Button).pressed.emit()
+		await settle()
+		if index == 0: await capture("international-fenetre-offre-" + str(root.size.x))
+		var calque := fenetre()
+		check(calque != null and not calque.find_children("NationalJobOnly_*", "Button", true, false).is_empty(), "Offre %d · choix « Sélection seule »" % index)
+		check(calque != null and not calque.find_children("NationalJobDual_*", "Button", true, false).is_empty(), "Offre %d · choix « Club + sélection »" % index)
+		check(calque != null and calque.find_child("OffreFenetreFicheLien", true, false) is Button, "Offre %d · tuile fiche cliquable" % index)
+		await fermer(facons[index % 3], "Offre %d" % index)
+	if not pays.is_empty():
+		(pays[0] as Button).pressed.emit()
+		await settle()
+		var fiche: Button = fenetre().find_child("OffreFenetreFicheLien", true, false) as Button if fenetre() != null else null
+		if fiche != null: fiche.pressed.emit()
+		await settle()
+		check(fenetre() == null, "La tuile fiche ferme la petite fenêtre")
+		check(not str(app.management_ui.get("international", {}).get("navigation_id", "")).is_empty(), "La tuile fiche ouvre la sélection")
+		app.management_ui.international.navigation_id = ""
+	app.management_ui.international_section = "availability"
+
 func run() -> void:
 	var dimension := OS.get_environment("QA_RESOLUTION").split("x")
 	viewport_size = Vector2i(int(dimension[0]), int(dimension[1])) if dimension.size() == 2 else Vector2i(1920, 1080)
@@ -122,6 +207,10 @@ func run() -> void:
 	var player_button := app.find_child("InternationalAbsencePlayer_" + str(first.id).replace(":", "_"), true, false) as Button
 	check(player_button != null, "Action vers la fiche du joueur convoqué")
 	await capture("international-absences-controlees-" + str(root.size.x))
+	await verifier_clics()
+	app._navigate("Sélections")
+	await settle()
+	player_button = app.find_child("InternationalAbsencePlayer_" + str(first.id).replace(":", "_"), true, false) as Button
 	if player_button != null:
 		player_button.grab_focus()
 		check(player_button.has_focus(), "Lien de fiche accessible au clavier")
