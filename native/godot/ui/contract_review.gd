@@ -6,6 +6,7 @@ const Pages = preload("res://ui/immersive08/recruitment_pages.gd")
 const U = preload("res://ui/management_state.gd")
 const G = preload("res://ui/game_skin.gd")
 const Sales = preload("res://ui/player_sales_view.gd")
+const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 const STATUS_OPTIONS := ["Tous","Prolongation accessible","Discussion en cours","Échanges clos","Sans contrat renseigné"]
 var app: Control
 var state: Dictionary
@@ -31,6 +32,7 @@ const ROUGE := Color("d9534a")
 ## Largeur de la page en dessous de laquelle le panneau « Échéances » passe sous le tableau.
 const LARGEUR_DEUX_COLONNES := 1500.0
 var _columns: BoxContainer
+var _fenetre: Control
 const SORT_KEYS := ["name","pos","rating","potential","age","contractEnd","salary","minutes","status","renewal"]
 
 static func build(owner_app: Control) -> Control:
@@ -292,6 +294,118 @@ func _chip_button(id: String, glyph: String, tint: Color, text: String, tip: Str
 	chip.set_meta("label", label)
 	return chip
 
+## Petite fenêtre visuelle : les joueurs concernés en tuiles (portrait, prénom, NOM, poste, salaire). Échap, ✕ et clic à côté la ferment.
+func _ouvrir_fenetre(titre: String, filtres: Dictionary, teinte: Color, focus: String) -> void:
+	_fermer_fenetre()
+	var joueurs: Array = filtered(app.model.get("squad", []), filtres)
+	state.focus = focus
+	var calque := Control.new()
+	calque.name = "ContractWindowLayer"
+	calque.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	calque.z_index = 50
+	app.add_child(calque)
+	_fenetre = calque
+	PetiteFenetre.enregistrer(calque, _fermer_fenetre)
+	var voile := ColorRect.new()
+	voile.name = "ContractWindowVeil"
+	voile.color = Color(Charte.NUIT, 0.6)
+	voile.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	voile.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT: _fermer_fenetre())
+	calque.add_child(voile)
+	var centre := CenterContainer.new()
+	centre.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	centre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	calque.add_child(centre)
+	var panneau := PanelContainer.new()
+	panneau.name = "ContractWindow"
+	panneau.add_theme_stylebox_override("panel", C.box(Charte.PANNEAU, teinte, Charte.RAYON_CARTE, 18))
+	centre.add_child(panneau)
+	var boite := VBoxContainer.new()
+	boite.add_theme_constant_override("separation", 14)
+	panneau.add_child(boite)
+	var tete := HBoxContainer.new()
+	tete.add_theme_constant_override("separation", 14)
+	boite.add_child(tete)
+	var titre_label := _label(titre, 30, teinte)
+	titre_label.name = "ContractWindowTitle"
+	titre_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	tete.add_child(titre_label)
+	var compte := _label(str(joueurs.size()), 30, C.IVORY)
+	compte.autowrap_mode = TextServer.AUTOWRAP_OFF
+	tete.add_child(compte)
+	var espace := Control.new()
+	espace.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tete.add_child(espace)
+	var fermer := Button.new()
+	fermer.name = "ContractWindowClose"
+	fermer.text = "✕"
+	fermer.focus_mode = Control.FOCUS_ALL
+	fermer.custom_minimum_size = Vector2(44, 44)
+	fermer.accessibility_name = "Fermer"
+	fermer.pressed.connect(_fermer_fenetre)
+	tete.add_child(fermer)
+	var defilement := ScrollContainer.new()
+	defilement.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	defilement.custom_minimum_size = Vector2(4 * 236 + 3 * 12, minf(560.0, 88.0 * ceilf(maxf(1.0, joueurs.size()) / 4.0)))
+	boite.add_child(defilement)
+	var grille := GridContainer.new()
+	grille.columns = 4
+	grille.add_theme_constant_override("h_separation", 12)
+	grille.add_theme_constant_override("v_separation", 12)
+	defilement.add_child(grille)
+	for joueur: Dictionary in joueurs: grille.add_child(_tuile_joueur(joueur, teinte))
+	var premier := grille.get_child(0) if grille.get_child_count() > 0 else fermer
+	(premier as Control).call_deferred("grab_focus")
+
+func _tuile_joueur(joueur: Dictionary, teinte: Color) -> Button:
+	var ligne := HBoxContainer.new()
+	ligne.add_theme_constant_override("separation", 10)
+	var portrait: Control = G.portrait(int(joueur.get("portraitIndex", 0)), 60, joueur)
+	portrait.custom_minimum_size = Vector2(60, 60)
+	ligne.add_child(portrait)
+	var colonne := VBoxContainer.new()
+	colonne.add_theme_constant_override("separation", 0)
+	colonne.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	colonne.alignment = BoxContainer.ALIGNMENT_CENTER
+	ligne.add_child(colonne)
+	var mots := str(joueur.get("name", "Joueur")).split(" ", false)
+	var nom_famille: Array = []
+	var prenom: Array = []
+	for mot: String in mots:
+		if mot == mot.to_upper() and mot.length() > 1: nom_famille.append(mot)
+		else: prenom.append(mot)
+	if nom_famille.is_empty() and not prenom.is_empty(): nom_famille.append(prenom.pop_back())
+	var petit := _label(" ".join(prenom), 14, C.MUTED)
+	petit.autowrap_mode = TextServer.AUTOWRAP_OFF
+	colonne.add_child(petit)
+	var gras := _label(" ".join(nom_famille), 20, C.IVORY)
+	gras.autowrap_mode = TextServer.AUTOWRAP_OFF
+	colonne.add_child(gras)
+	var pastilles := HBoxContainer.new()
+	pastilles.add_theme_constant_override("separation", 6)
+	colonne.add_child(pastilles)
+	var poste := _label(position_text(joueur), 14, teinte)
+	poste.autowrap_mode = TextServer.AUTOWRAP_OFF
+	pastilles.add_child(poste)
+	var salaire := _label(G.salary_amount(joueur.get("salary")), 14, BLEU)
+	salaire.autowrap_mode = TextServer.AUTOWRAP_OFF
+	pastilles.add_child(salaire)
+	var identifiant := str(joueur.get("id", ""))
+	var tuile := _link_button(action_id("ContractWindowPlayer", identifiant), ligne, Charte.PANNEAU_3.lerp(teinte, 0.14), str(joueur.get("name", "Joueur")), func():
+		_fermer_fenetre()
+		_open_profile(identifiant, "", action_id("ContractWindowPlayer", identifiant)), Charte.RAYON_PETIT, 8)
+	tuile.custom_minimum_size = Vector2(236, 76)
+	tuile.size_flags_horizontal = Control.SIZE_FILL
+	return tuile
+
+func _fermer_fenetre() -> void:
+	if _fenetre != null and is_instance_valid(_fenetre):
+		_fenetre.remove_from_group(PetiteFenetre.GROUPE)
+		_fenetre.queue_free()
+	_fenetre = null
+	call_deferred("_restore_focus")
+
 ## Filtre posé depuis une tuile ou une barre : les menus et le tableau suivent.
 func _apply_filter(values: Dictionary, focus: String) -> void:
 	state.merge(values, true)
@@ -394,7 +508,7 @@ func _build() -> void:
 		else: unknown_wage += 1
 	var wage_note := " · %d non fourni(s)" % unknown_wage if unknown_wage > 0 else ""
 	# Vraies tuiles chiffre (comme le haut de l'Effectif) : icône teintée, gros chiffre coloré, légende courte, léger fond teinté.
-	for metric in [["%d / %d" % [ending, squad.size()], "fin ≤ %s" % G.contract_year(current), "Échéances en %s ou avant : %d joueurs sur %d · filtrer le tableau" % [G.contract_year(current), ending, squad.size()], "", ORANGE, "hourglass", "ContractReviewStatEnding", func(): _apply_filter({"season": current, "status": "Tous", "precision": "Toutes"}, "ContractReviewStatEnding")], ["%d" % renewals, "prolongeables", "Prolongations accessibles : %d joueurs · filtrer le tableau" % renewals, "", VERT, "renew", "ContractReviewStatRenewable", func(): _apply_filter({"season": 0, "status": "Prolongation accessible", "precision": "Toutes"}, "ContractReviewStatRenewable")], [G.salary_amount(known_wage), "salaires " + G.salary_period(true) + wage_note, "Salaires actuels projetés · " + G.salary_period() + " : ouvrir Finances, salaires", "ContractReviewWage", BLEU, "money", "ContractReviewStatWages", func(): _open_wages()]]:
+	for metric in [["%d / %d" % [ending, squad.size()], "fin ≤ %s" % G.contract_year(current), "Échéances en %s ou avant : %d joueurs sur %d" % [G.contract_year(current), ending, squad.size()], "", ORANGE, "hourglass", "ContractReviewStatEnding", func(): _ouvrir_fenetre("Fin ≤ %s" % G.contract_year(current), {"season": current, "status": "Tous", "precision": "Toutes"}, ORANGE, "ContractReviewStatEnding")], ["%d" % renewals, "prolongeables", "Prolongations accessibles : %d joueurs" % renewals, "", VERT, "renew", "ContractReviewStatRenewable", func(): _ouvrir_fenetre("Prolongeables", {"season": 0, "status": "Prolongation accessible", "precision": "Toutes"}, VERT, "ContractReviewStatRenewable")], [G.salary_amount(known_wage), "salaires " + G.salary_period(true) + wage_note, "Salaires actuels projetés · " + G.salary_period() + " : ouvrir Finances, salaires", "ContractReviewWage", BLEU, "money", "ContractReviewStatWages", func(): _open_wages()]]:
 		var line := HBoxContainer.new()
 		line.add_theme_constant_override("separation", 14)
 		var glyph := C.icon(str(metric[5]), 34, metric[4])
@@ -603,7 +717,7 @@ func _refresh() -> void:
 	var seasons: Array = horizons.keys()
 	seasons.sort()
 	for end in seasons:
-		_bar(_coverage, "Non renseignée" if int(end) < 0 else "Fin " + G.contract_year(end), int(horizons[end]), app.model.get("squad", []).size(), C.MUTED if int(end) < 0 else ORANGE if int(end) <= year else CITRON if int(end) == year + 1 else VERT, "ContractReviewBar_" + str(end), func(): _apply_filter({"season": 0, "precision": "Non renseignée"} if int(end) < 0 else {"season": int(end), "precision": "Toutes"}, "ContractReviewBar_" + str(end)))
+		_bar(_coverage, "Non renseignée" if int(end) < 0 else "Fin " + G.contract_year(end), int(horizons[end]), app.model.get("squad", []).size(), C.MUTED if int(end) < 0 else ORANGE if int(end) <= year else CITRON if int(end) == year + 1 else VERT, "ContractReviewBar_" + str(end), func(): _ouvrir_fenetre("Non renseignée" if int(end) < 0 else "Fin " + G.contract_year(end), {"season": 0, "precision": "Non renseignée"} if int(end) < 0 else {"season": int(end), "precision": "Toutes"}, C.MUTED if int(end) < 0 else ORANGE if int(end) <= year else CITRON if int(end) == year + 1 else VERT, "ContractReviewBar_" + str(end)))
 	_coverage.add_child(_label("Couverture · horizon " + G.contract_year(year), 19, C.IVORY))
 	for group: Dictionary in coverage(app.model.get("squad", []), year):
 		var button := _button("%s · %d / %d" % [group.position, group.ending, group.total], "ContractReviewCoverage_" + str(group.position).sha256_text().substr(0,16), func():
@@ -669,7 +783,7 @@ func _bar(parent: Node, caption: String, value: int, total: int, color: Color, i
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 	if action.is_valid():
-		var link := _link_button(id, row, Color.TRANSPARENT, "%s : %d joueur(s) · filtrer le tableau" % [caption, value], action, Charte.RAYON_PETIT, 4)
+		var link := _link_button(id, row, Color.TRANSPARENT, "%s : %d joueur(s)" % [caption, value], action, Charte.RAYON_PETIT, 4)
 		link.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		link.custom_minimum_size.y = 34
 		parent.add_child(link)

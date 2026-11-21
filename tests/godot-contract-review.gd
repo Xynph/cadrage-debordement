@@ -1,6 +1,7 @@
 extends SceneTree
 const Rooms = preload("res://qa_runner.gd")
 const Review = preload("res://ui/contract_review.gd")
+const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -123,17 +124,42 @@ func clics_et_destinations() -> void:
 	var saison := int(app.model.meta.season)
 	app.find_child("ContractReviewReset", true, false).pressed.emit()
 	await settle()
-	if await cliquer("ContractReviewStatEnding"):
-		check(int(etat.season) == saison and str(app.find_child("ContractReviewCount", true, false).text).begins_with(str(Review.filtered(app.model.squad, {"season": saison}).size()) + " /"), "Tuile échéances : filtre « fin ≤ saison »")
-	if await cliquer("ContractReviewStatRenewable"):
-		check(str(etat.status) == "Prolongation accessible" and int(etat.season) == 0, "Tuile prolongeables : filtre prolongations accessibles")
-	var barre := app.find_children("ContractReviewBar_*", "Button", true, false)
-	check(not barre.is_empty(), "Barres Échéances par année cliquables")
-	if not barre.is_empty():
-		var annee := int(str(barre[0].name).trim_prefix("ContractReviewBar_"))
-		barre[0].pressed.emit()
+	# Tuiles et barres : une petite fenêtre de portraits, fermée par ✕, Échap, clic à côté ; un portrait ouvre la fiche.
+	var cibles: Array = ["ContractReviewStatEnding", "ContractReviewStatRenewable"]
+	for barre: Node in app.find_children("ContractReviewBar_*", "Button", true, false): cibles.append(str(barre.name))
+	check(cibles.size() > 2, "Barres Échéances par année cliquables")
+	for cible: String in cibles:
+		if not await cliquer(cible): continue
+		var fenetre := app.find_child("ContractWindow", true, false)
+		check(fenetre != null and PetiteFenetre.ouverte(app.get_tree()) != null, "Petite fenêtre ouverte : " + cible)
+		check(app.find_child("ContractWindowTitle", true, false) != null, "Fenêtre : titre court " + cible)
+		var tuiles := app.find_children("ContractWindowPlayer_*", "Button", true, false)
+		if cible == "ContractReviewStatEnding": check(tuiles.size() == Review.filtered(app.model.squad, {"season": saison}).size(), "Fenêtre échéances : un portrait par joueur concerné")
+		if fenetre != null:
+			for etiquette: Node in fenetre.find_children("*", "Label", true, false): check(not (etiquette as Label).text.ends_with("…"), "Fenêtre : aucun nom tronqué")
+		check(PetiteFenetre.fermer_derniere(app.get_tree()), "Échap ferme la petite fenêtre : " + cible)
 		await settle()
-		check(int(etat.season) == annee or annee < 0, "Barre d'une année : filtre de l'année")
+		check(app.find_child("ContractWindow", true, false) == null, "Petite fenêtre refermée par Échap : " + cible)
+		if not await cliquer(cible): continue
+		app.find_child("ContractWindowClose", true, false).pressed.emit()
+		await settle()
+		check(app.find_child("ContractWindow", true, false) == null, "Petite fenêtre refermée par ✕ : " + cible)
+		if not await cliquer(cible): continue
+		var voile := app.find_child("ContractWindowVeil", true, false) as Control
+		var clic := InputEventMouseButton.new()
+		clic.button_index = MOUSE_BUTTON_LEFT
+		clic.pressed = true
+		voile.gui_input.emit(clic)
+		await settle()
+		check(app.find_child("ContractWindow", true, false) == null, "Petite fenêtre refermée par clic à côté : " + cible)
+	if await cliquer("ContractReviewStatEnding"):
+		await capture("contrats-fenetre-echeance")
+		var portraits := app.find_children("ContractWindowPlayer_*", "Button", true, false)
+		if not portraits.is_empty():
+			portraits[0].pressed.emit()
+			await settle()
+			check(review() == null and app.find_child("ContractWindow", true, false) == null, "Portrait de la fenêtre : fiche du joueur")
+			await rouvrir_contrats()
 	app.find_child("ContractReviewReset", true, false).pressed.emit()
 	await settle()
 	var passages := [["ContractReviewStatWages", "Finances", "Tuile salaires : Finances"], ["ContractDelegationChip", "Staff", "Pastille Staff : écran Staff"], ["ContractReviewDepartures", "Recrutement", "Pastille départs : Recrutement"], ["ContractReviewOpenSales", "Recrutement", "Tuile Offres : Recrutement"], ["ContractReviewSalesListed", "Recrutement", "Tuile Proposés : Recrutement"], ["ContractReviewSalesPending", "Recrutement", "Tuile Ventes : Recrutement"]]
