@@ -90,6 +90,13 @@ func _restaurer() -> void:
 
 ## Fond plat de la charte (rayon en référence 2560) : 6 par défaut (case, ligne), 16 pour une tuile (12 px), pilule pour
 ## onglet, puce et champ.
+## Champ de la charte : pilule, contour fin, jamais d'ombre.
+static func _champ(fond: Color, bord: Color) -> StyleBoxFlat:
+	var style := _plat(fond, bord, 1, Charte.RAYON_PILULE)
+	style.content_margin_left = C.px(18)
+	style.content_margin_right = C.px(18)
+	return style
+
 static func _plat(fond: Color, bord: Color = Color.TRANSPARENT, epaisseur: int = 0, rayon: int = Charte.RAYON_PETIT) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = fond
@@ -527,10 +534,10 @@ func _filtres() -> void:
 	poste.add_theme_font_size_override("font_size", maxi(12, C.px(19)))
 	for nom: String in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
 		poste.add_theme_color_override(nom, Charte.IVOIRE)
-	poste.add_theme_stylebox_override("normal", _plat(Charte.PANNEAU_2, Charte.FILET, 1))
-	poste.add_theme_stylebox_override("hover", _plat(Charte.PANNEAU_3, Charte.IVOIRE_3, 1))
-	poste.add_theme_stylebox_override("pressed", _plat(Charte.PANNEAU_3, Charte.IVOIRE_3, 1))
-	poste.add_theme_stylebox_override("focus", _plat(Charte.PANNEAU_2, Charte.IVOIRE, 1))
+	poste.add_theme_stylebox_override("normal", _champ(Charte.PANNEAU_2, Charte.FILET))
+	poste.add_theme_stylebox_override("hover", _champ(Charte.PANNEAU_3, Charte.IVOIRE_3))
+	poste.add_theme_stylebox_override("pressed", _champ(Charte.PANNEAU_3, Charte.IVOIRE_3))
+	poste.add_theme_stylebox_override("focus", _champ(Charte.PANNEAU_2, Charte.IVOIRE))
 	var valeurs: Array = app.SquadViews._positions(app.model.get("squad", []))
 	for valeur in valeurs: poste.add_item("Poste : " + str(valeur))
 	poste.select(maxi(0, valeurs.find(str(state.position))))

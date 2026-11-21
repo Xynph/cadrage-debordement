@@ -178,9 +178,12 @@ func _button(text: String, id: String, action: Callable) -> Button:
 	button.add_theme_font_override("font", C.BOLD)
 	button.add_theme_font_size_override("font_size", 18)
 	button.add_theme_color_override("font_color", C.IVORY)
-	button.add_theme_stylebox_override("normal", C.box(C.PANEL, C.LINE, 4, 5))
-	button.add_theme_stylebox_override("hover", C.box(C.RAISED, C.MINT, 4, 5))
-	button.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT, C.GOLD, 4, 5))
+	# Charte : pilule à contour FILET, focus en anneau doré (jamais de rectangle à angles vifs).
+	var anneau := C.box(Color.TRANSPARENT, C.GOLD, 999, 14)
+	anneau.set_border_width_all(2)
+	button.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, C.LINE, 999, 14))
+	button.add_theme_stylebox_override("hover", C.box(C.RAISED, C.FAINT, 999, 14))
+	button.add_theme_stylebox_override("focus", anneau)
 	button.pressed.connect(action)
 	return button
 

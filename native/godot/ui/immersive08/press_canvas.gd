@@ -601,7 +601,7 @@ func _build_division_chooser() -> OptionButton:
 	for etat in ["normal", "hover", "pressed", "focus"]:
 		var style := StyleBoxFlat.new()
 		style.bg_color = C.SELECTED if etat != "hover" else C.RAISED
-		style.set_corner_radius_all(0)
+		style.set_corner_radius_all(Charte.RAYON_PILULE)
 		style.content_margin_left = C.px(14)
 		style.content_margin_right = C.px(14)
 		if etat == "focus":

@@ -234,6 +234,14 @@ func _bouton(parent: Node, rectangle: Rect2, libelle: String, action: Callable, 
 		inactif = _pilule(Color.TRANSPARENT, Charte.FILET if mode == "ivoire" else Color.TRANSPARENT)
 		for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
 			bouton.add_theme_color_override(etat, Charte.PANNEAU if plein else (Charte.IVOIRE_2 if mode == "onglet" and etat == "font_color" else Charte.IVOIRE))
+	# Choix d'une consigne : pilule aussi (choisie = contour crème, sinon contour FILET), jamais un rectangle à angles vifs.
+	if mode == "choix":
+		normal = _pilule(Charte.PANNEAU_3 if choisi else Charte.PANNEAU_2, Charte.IVOIRE if choisi else Charte.FILET)
+		survol = _pilule(Charte.PANNEAU_3, Charte.IVOIRE if choisi else Charte.IVOIRE_3)
+		enfonce = _pilule(Charte.PANNEAU_3, Charte.IVOIRE)
+		inactif = _pilule(Color.TRANSPARENT, Charte.FILET)
+		focus = _pilule(Color.TRANSPARENT, Charte.IVOIRE)
+		focus.set_border_width_all(2)
 	for style: StyleBoxFlat in [normal, survol, enfonce, inactif]:
 		style.content_margin_left = C.px(12)
 		style.content_margin_right = C.px(12)
