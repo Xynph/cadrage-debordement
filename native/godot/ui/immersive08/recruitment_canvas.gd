@@ -26,6 +26,7 @@ const Observation = preload("res://ui/player_observation.gd")
 const Identity = preload("res://ui/player_identity.gd")
 const EnPlace = preload("res://ui/confirmation_en_place.gd")
 const Attributs = preload("res://ui/player_attributes.gd")
+const LV = preload("res://ui/immersive08/listes_variantes.gd")
 const ROW_HEIGHT := 32
 # Construction progressive de la liste : les premières lignes tout de suite, le reste sur les images suivantes.
 const FIRST_ROWS := 26
@@ -61,6 +62,8 @@ var _selected: Dictionary = {}
 var _signature_entetes := ""
 var _liens_filtre: Array = []
 var _ids_affiches: Array = []
+## Planche TRI_A (CD_VARIANTE_VISUELLE) : le tableau descend sous la rangée des pastilles de poste.
+var _dy := 0.0
 
 static func _target_report(owner_app: Control, id: Variant) -> Dictionary:
 	if str(id).is_empty(): return {}
@@ -141,6 +144,7 @@ func _build() -> void:
 	_needs()
 	_tabs()
 	_filters(positions)
+	_variantes_postes()
 	_table()
 	tiles = Control.new()
 	tiles.name = "RecruitmentBudgetTiles"
@@ -546,20 +550,20 @@ func _club(player: Dictionary) -> String:
 	return ""
 
 func _table() -> void:
-	var panel := D.rect(self, Rect2(0, TABLE_TOP, WIDTH, HEADER_H + ROWS_H + 4), Charte.PANNEAU, Charte.RAYON_PANNEAU)
+	var panel := D.rect(self, Rect2(0, TABLE_TOP + _dy, WIDTH, HEADER_H + ROWS_H - _dy + 4), Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	panel.name = "ImmersiveMarketTable"
 	panel.mouse_filter = Control.MOUSE_FILTER_PASS
 	var entete := D.rect(panel, Rect2(0, 0, WIDTH, HEADER_H), Color.TRANSPARENT, 0)
 	entete.name = "MarketHeader"
 	D.line(panel, Vector2(0, HEADER_H - 1), Vector2(WIDTH, HEADER_H - 1), Charte.FILET)
-	entete.set_meta("rows_origin", Vector2(0, TABLE_TOP))
+	entete.set_meta("rows_origin", Vector2(0, TABLE_TOP + _dy))
 	table_scroll = ScrollContainer.new()
 	table_scroll.name = "MarketScroll"
 	table_scroll.follow_focus = true
 	table_scroll.mouse_force_pass_scroll_events = false
 	table_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	panel.add_child(table_scroll)
-	D.place(table_scroll, Rect2(0, HEADER_H, WIDTH, ROWS_H))
+	D.place(table_scroll, Rect2(0, HEADER_H, WIDTH, ROWS_H - _dy))
 	table_scroll.get_v_scroll_bar().value_changed.connect(func(value: float): state.scroll = int(value))
 	table_rows = Control.new()
 	table_rows.name = "ImmersiveMarketRows"
@@ -608,6 +612,11 @@ func _entetes() -> void:
 			_filter_changed())
 		entete.add_child(tri)
 		D.place(tri, Rect2(col.x - 8, 0, col.w + 16, HEADER_H))
+		if not LV.tri().is_empty():
+			# Planche TRI : l'en-tête épouse son texte (soulignement ou pilule), comme sur l'Effectif.
+			var lt := Kit.largeur(str(col.titre) + " ▼", 16) + 30.0
+			tri.alignment = HORIZONTAL_ALIGNMENT_CENTER
+			D.place(tri, Rect2((col.x + col.w - lt + 12.0) if col.align == 2 else col.x - 12.0, 1, lt, HEADER_H - 2))
 
 func _pied() -> void:
 	D.line(self, Vector2(0, HAUTEUR - 52), Vector2(WIDTH, HAUTEUR - 52), Charte.FILET)
@@ -670,6 +679,7 @@ func _filtered() -> Array:
 		var age_known: bool = (raw_age is int or raw_age is float) and is_finite(float(raw_age))
 		var raw_fee: Variant = p.get("fee")
 		var fee_known: bool = (raw_fee is int or raw_fee is float) and is_finite(float(raw_fee))
+		if not LV.tri().is_empty() and not str(state.get("poste_groupe", "")).is_empty() and LV.groupe_de(p) != str(state.poste_groupe): return false
 		var searchable := U.fold(str(p.get("name", "")) + " " + str(p.get("pos", "")))
 		for term in terms:
 			if not searchable.contains(term): return false
@@ -705,6 +715,7 @@ func _sort_arrows() -> void:
 		button.add_theme_color_override("font_color", Charte.IVOIRE if active else Charte.IVOIRE_2)
 		button.tooltip_text = "Trier par %s · %s · valeurs inconnues en dernier" % ["observation" if column == "Avis" else "indemnité" if column == "Prime" else column.to_lower(), "croissant au prochain clic" if active and _sort_descending() else "décroissant au prochain clic" if active else "activer le tri"]
 		button.accessibility_name = button.text + " · " + button.tooltip_text
+		if not LV.tri().is_empty(): LV.styler_entete(button, null, active, _sort_descending(), str(button.get_meta("sort_caption")), LV.tri())
 
 func _refresh() -> void:
 	var scroll := table_scroll.scroll_vertical
@@ -1158,3 +1169,25 @@ static func _portrait(parent: Node, area: Rect2, player: Dictionary, player_id: 
 	parent.add_child(photo)
 	D.place(photo, area)
 
+
+
+# --- Planches A/B (CD_VARIANTE_VISUELLE, listes_variantes.gd) ------------------------------------------------------
+
+func _choisir_groupe(id: String) -> void:
+	state.poste_groupe = id
+	if not id.is_empty():
+		state.position = "Tous"
+		state.position_libre = true
+	state.scroll = 0
+	state.focus = ("PostePastille_" + (id if not id.is_empty() else "tous")) if LV.tri() == "TRI_A" else ("PosteZone_" + id)
+	app._render(false)
+
+func _variantes_postes() -> void:
+	if LV.tri().is_empty() or tab == 3: return
+	var marche: Array = app.model.get("market", [])
+	var actif := str(state.get("poste_groupe", ""))
+	if LV.tri() == "TRI_A":
+		_dy = 50.0
+		LV.pastilles_postes(self, Vector2(0, TABLE_TOP + 4), LV.compter_groupes(marche), marche.size(), actif, _choisir_groupe)
+	else:
+		LV.mini_terrain(self, Rect2(470, 0, 600, 118), LV.compter_groupes(marche), actif, _choisir_groupe)

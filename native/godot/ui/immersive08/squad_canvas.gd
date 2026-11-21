@@ -14,6 +14,7 @@ const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const Notes = preload("res://ui/notes_match.gd")
 const R = preload("res://ui/immersive08/reperes.gd")
 const Sales = preload("res://ui/player_sales_view.gd")
+const LV = preload("res://ui/immersive08/listes_variantes.gd")
 const ROW_HEIGHT := 34
 const GROUP_HEIGHT := 30
 const FIRST_ROWS := 26
@@ -43,6 +44,10 @@ var _marques_tuiles: Dictionary = {}
 var _colonnes_actives: Array = []
 ## Vrai pendant que le focus mémorisé est rendu : il ne doit pas déplacer la sélection choisie ailleurs (palette, retour de fiche).
 var _restaurant := false
+## Planches A/B (CD_VARIANTE_VISUELLE, listes_variantes.gd) : décalage du tableau sous une rangée ajoutée.
+var _dy := 0.0
+var _bandeau_totaux: Control
+var _pied_totaux: Control
 
 static func build(owner_app: Control) -> Control:
 	var page: Control = load("res://ui/immersive08/squad_canvas.gd").new()
@@ -69,7 +74,9 @@ func _build() -> void:
 		add_child(review)
 		D.place(review, Rect2(0, Y_FILTRES, LARGEUR, HAUT_PAGE - Y_FILTRES - 40))
 		return
+	_dy = 52.0 if LV.tri() == "TRI_A" else (80.0 if LV.totaux() == "TOTAUX_B" else 0.0)
 	_filtres()
+	_variantes_filtres()
 	_tableau()
 	_refresh(true)
 	_restaurer()
@@ -631,6 +638,9 @@ func _colonnes(vue: int, etroit: bool, surveillance: bool) -> Array:
 		_:
 			if etroit:
 				colonnes = [num, joueur, {"k": "poste", "t": "POSTE", "s": "Poste", "x": 640.0, "w": 330.0, "a": gauche}, {"k": "niveau", "t": "NIV.", "s": "Niveau", "x": 1000.0, "w": 100.0, "a": centre}, {"k": "cond", "t": "CONDITION", "s": "Condition", "x": 1150.0, "w": 300.0, "a": gauche}, {"k": "contrat", "t": "FIN DE CONTRAT", "s": "Échéance", "x": 1500.0, "w": 320.0, "a": gauche}, {"k": "statut", "t": "STATUT", "s": "Statut", "x": 1840.0, "w": 390.0, "a": gauche}]
+			elif not LV.forme().is_empty():
+				# Planche FORME : la forme récente rejoint la vue d'ensemble.
+				colonnes = [num, joueur, {"k": "poste", "t": "POSTE", "s": "Poste", "x": 560.0, "w": 230.0, "a": gauche}, {"k": "niveau", "t": "NIV.", "s": "Niveau", "x": 810.0, "w": 80.0, "a": centre}, {"k": "pot", "t": "POT.", "s": "Potentiel", "x": 910.0, "w": 120.0, "a": centre}, {"k": "cond", "t": "CONDITION", "s": "Condition", "x": 1060.0, "w": 250.0, "a": gauche}, {"k": "forme", "t": "FORME", "s": "Forme", "x": 1340.0, "w": 250.0, "a": gauche}, {"k": "age", "t": "ÂGE", "s": "Âge", "x": 1590.0, "w": 60.0, "a": droite}, {"k": "contrat", "t": "FIN DE CONTRAT", "s": "Échéance", "x": 1680.0, "w": 200.0, "a": gauche}, {"k": "statut", "t": "STATUT", "s": "Statut", "x": 1890.0, "w": 280.0, "a": gauche}]
 			else:
 				colonnes = [num, joueur, {"k": "poste", "t": "POSTE", "s": "Poste", "x": 560.0, "w": 250.0, "a": gauche}, {"k": "niveau", "t": "NIV.", "s": "Niveau", "x": 960.0, "w": 80.0, "a": centre}, {"k": "pot", "t": "POT.", "s": "Potentiel", "x": 1060.0, "w": 140.0, "a": centre}, {"k": "cond", "t": "CONDITION", "s": "Condition", "x": 1240.0, "w": 280.0, "a": gauche}, {"k": "age", "t": "ÂGE", "s": "Âge", "x": 1540.0, "w": 70.0, "a": droite}, {"k": "contrat", "t": "FIN DE CONTRAT", "s": "Échéance", "x": 1640.0, "w": 230.0, "a": gauche}, {"k": "statut", "t": "STATUT", "s": "Statut", "x": 1890.0, "w": 280.0, "a": gauche}]
 	if surveillance:
@@ -654,7 +664,7 @@ func _tableau() -> void:
 	table.name = "ImmersiveRosterTable"
 	table.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(table)
-	D.place(table, Rect2(0, Y_ENTETE, LARGEUR, HAUT_PAGE - Y_ENTETE))
+	D.place(table, Rect2(0, Y_ENTETE + _dy, LARGEUR, HAUT_PAGE - Y_ENTETE - _dy))
 	_colonnes_actives = _colonnes(int(state.get("immersive_tab", 0)), _etroit(), state.family == U.WATCH_FILTER)
 	var entete := Control.new()
 	entete.name = "RosterHeader"
@@ -678,6 +688,12 @@ func _tableau() -> void:
 		tri.add_theme_stylebox_override("focus", _plat(Color.TRANSPARENT, Charte.IVOIRE, 1))
 		entete.add_child(tri)
 		D.place(tri, C.reach_rect(Rect2(x - 6, 0, largeur + 12, 36)))
+		if not LV.tri().is_empty():
+			# Planche TRI : l'en-tête épouse son texte (soulignement ou pilule) et passe derrière la légende.
+			var lt := _largeur(str(colonne.t) + " ▼", 17, true, 700) + 26.0
+			var x0: float = x - 13.0 if colonne.a == HORIZONTAL_ALIGNMENT_LEFT else (x + largeur - lt + 13.0 if colonne.a == HORIZONTAL_ALIGNMENT_RIGHT else x + largeur / 2.0 - lt / 2.0)
+			D.place(tri, Rect2(x0, 2, lt, 32))
+			entete.move_child(tri, legende.get_index())
 		sort_headers[cle] = {"label": legende, "caption": str(colonne.t), "button": tri}
 		tri.pressed.connect(_toggle_sort.bind(cle))
 	var defile := ScrollContainer.new()
@@ -686,18 +702,24 @@ func _tableau() -> void:
 	defile.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	defile.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	table.add_child(defile)
-	D.place(defile, Rect2(0, Y_LIGNES - Y_ENTETE, LARGEUR, Y_PIED - Y_LIGNES - 8))
+	var pied_h := 46.0 if LV.totaux() == "TOTAUX_A" else 0.0
+	D.place(defile, Rect2(0, Y_LIGNES - Y_ENTETE, LARGEUR, Y_PIED - Y_LIGNES - 8 - _dy - pied_h))
+	if pied_h > 0:
+		_pied_totaux = Control.new()
+		_pied_totaux.name = "RosterPiedTotaux"
+		table.add_child(_pied_totaux)
+		D.place(_pied_totaux, Rect2(0, Y_PIED - Y_ENTETE - 8 - _dy - pied_h + 2, LARGEUR, pied_h - 2))
 	rows = C.v(2)
 	rows.add_theme_constant_override("separation", C.px(2))
 	rows.name = "ImmersiveRosterRows"
 	rows.custom_minimum_size.x = C.px(LARGEUR)
 	C.fill(rows)
 	defile.add_child(rows)
-	count = D.text(table, 0, Y_PIED - Y_ENTETE + 26, "", 18, C.MUTED, 500, 1000, HORIZONTAL_ALIGNMENT_LEFT, true)
+	count = D.text(table, 0, Y_PIED - Y_ENTETE - _dy + 26, "", 18, C.MUTED, 500, 1000, HORIZONTAL_ALIGNMENT_LEFT, true)
 	count.name = "RosterCount"
 	# Raccourcis clavier derrière un « ? » (21/11) : plus de ligne de mode d'emploi au pied du tableau.
 	var aide := "Raccourcis\n↑↓ : choisir un joueur\nEntrée : fiche complète\nMaj Espace : comparer\n/ : chercher dans le tableau\nCtrl Tab : onglet suivant\nÉchap : Menu\nSurvol d'un nom : aperçu · clic : fiche"
-	R.rond(table, LARGEUR - 30, Y_PIED - Y_ENTETE + 18, aide, "?", "RosterScrollHint", 28)
+	R.rond(table, LARGEUR - 30, Y_PIED - Y_ENTETE - _dy + 18, aide, "?", "RosterScrollHint", 28)
 
 
 static func _known_number(value: Variant) -> bool:
@@ -836,6 +858,7 @@ func _players() -> Array:
 			var copie: Dictionary = player.duplicate()
 			copie.matchNotes = Notes.joueur(app.model,str(player.get("id","")))
 			source.append(copie)
+	if not LV.tri().is_empty(): source = LV.filtrer_groupe(source, str(state.get("poste_groupe", "")))
 	return ordered_players(source,state,int(app.model.meta.get("season",1)))
 
 
@@ -864,6 +887,7 @@ func _sort_header_state() -> void:
 		if key == "Moyenne": header.button.tooltip_text += "\nMoyenne de la saison en cours (notes de match de 1 à 10)."
 		if key == "Forme": header.button.tooltip_text += "\nCinq dernières notes de match, la plus récente à droite."
 		header.button.accessibility_name = str(header.caption)+" · "+("tri "+direction if active else "trier")
+		if not LV.tri().is_empty(): LV.styler_entete(header.button, header.label, active, state.descending, header.caption, LV.tri())
 
 func _refresh(reveal: bool) -> void:
 	_sort_header_state()
@@ -872,6 +896,7 @@ func _refresh(reveal: bool) -> void:
 	if app.selected_player.is_empty() and not players.is_empty():app.selected_player=str(players[0].id)
 	state.visible_player=app.selected_player
 	count.text="%d / %d joueurs" % [players.size(),app.model.get("squad",[]).size()]
+	_totaux(players)
 	if compare != null: compare.text="Comparer %d/3 →" % app.management_ui.compare.size()
 	# Construction progressive : les lignes visibles sont créées tout de suite, le reste sur les
 	# images suivantes (60 lignes d'un coup coûtaient plus de 100 ms avant la première image).
@@ -1114,6 +1139,9 @@ func _row(player:Dictionary,index:int) -> void:
 				else:
 					D.text(row,x + l / 2.0,base,"—",19,C.FAINT,500,52,HORIZONTAL_ALIGNMENT_CENTER,true).name = "RosterNoteAverage"
 			"forme":
+				if not LV.forme().is_empty():
+					LV.dessiner_forme(self, row, Rect2(x, 1, l, h - 2), notes, str(player.name), LV.forme()).name = "RosterForm"
+					continue
 				Notes.pastilles(row,Vector2(x,5),Notes.forme(notes),Vector2(25,h-10),3.5,0.5).name = "RosterForm"
 			"motif":
 				D.text(row,x,base,reason,19,C.IVORY,600,l,HORIZONTAL_ALIGNMENT_LEFT,true).name="RosterWatchReason"
@@ -1278,3 +1306,93 @@ func _row_key(event: InputEvent, current: Button) -> void:
 	items[target].grab_focus()
 	scroll.ensure_control_visible(items[target])
 	state.scroll = scroll.scroll_vertical
+
+
+# ---------------------------------------------------------------- planches A/B (CD_VARIANTE_VISUELLE)
+
+func _choisir_groupe(id: String) -> void:
+	state.poste_groupe = id
+	state.scroll = 0
+	state.focus = ("PostePastille_" + (id if not id.is_empty() else "tous")) if LV.tri() == "TRI_A" else ("PosteZone_" + id)
+	app._render(false)
+
+func _variantes_filtres() -> void:
+	var joueurs: Array = app.model.get("squad", [])
+	var actif := str(state.get("poste_groupe", ""))
+	match LV.tri():
+		"TRI_A": LV.pastilles_postes(self, Vector2(0, Y_FILTRES + 52), LV.compter_groupes(joueurs), joueurs.size(), actif, _choisir_groupe)
+		"TRI_B": LV.mini_terrain(self, Rect2(430, 0, 520, 118), LV.compter_groupes(joueurs), actif, _choisir_groupe)
+	if LV.totaux() == "TOTAUX_B":
+		_bandeau_totaux = Control.new()
+		_bandeau_totaux.name = "RosterTuilesTotaux"
+		add_child(_bandeau_totaux)
+		D.place(_bandeau_totaux, Rect2(0, Y_FILTRES + 54, LARGEUR, 66))
+
+## Chiffres de la liste filtrée : {id, k (colonne), v, cap, c (couleur), act}.
+func _definitions_totaux(players: Array) -> Array:
+	var t := LV.calculer(players, int(app.model.get("meta", {}).get("season", 1)))
+	var masse := G.salary_amount(t.masse) + " " + G.salary_period(true)
+	return [
+		{"id": "Joueurs", "k": "joueur", "v": str(t.n), "cap": "joueurs", "c": Charte.IVOIRE, "act": func(): _tous_les_joueurs()},
+		{"id": "Lignes", "k": "poste", "v": "%d · %d" % [t.avants, t.arrieres], "cap": "av. · arr.", "c": Charte.IVOIRE, "act": func(): _toggle_sort("Poste")},
+		{"id": "Niveau", "k": "niveau", "v": "—" if t.niveau == null else str(roundi(float(t.niveau))), "cap": "niveau moyen", "c": Charte.couleur_attribut(t.niveau) if t.niveau != null else Charte.IVOIRE, "act": func(): _toggle_sort("Niveau")},
+		{"id": "Condition", "k": "cond", "v": "—" if t.condition == null else "%d %%" % roundi(float(t.condition)), "cap": "condition moy.", "c": Charte.CONDITION, "act": func(): _toggle_sort("Condition")},
+		{"id": "Age", "k": "age", "v": LV.decimal(t.age), "cap": "âge moyen", "c": Charte.IVOIRE, "act": func(): _toggle_sort("Âge")},
+		{"id": "Fins", "k": "contrat", "v": str(t.fins), "cap": "fins de contrat", "c": R.ORANGE, "act": func(): _appliquer_puce("fin")},
+		{"id": "Masse", "k": "statut", "v": masse, "cap": "masse salariale", "c": R.BLEU, "act": func(): app._navigate("Finances")},
+	]
+
+func _totaux(players: Array) -> void:
+	if LV.totaux().is_empty(): return
+	var cible: Control = _bandeau_totaux if LV.totaux() == "TOTAUX_B" else _pied_totaux
+	if cible == null: return
+	for enfant in cible.get_children():
+		cible.remove_child(enfant)
+		enfant.queue_free()
+	var definitions := _definitions_totaux(players)
+	if LV.totaux() == "TOTAUX_B":
+		var x := 0.0
+		for d: Dictionary in definitions:
+			var l := maxf(R.largeur(str(d.v), 34, 800) + R.largeur(str(d.cap).to_upper(), 17) + 52.0, 180.0)
+			var tuile := R.tuile(cible, Rect2(x, 0, l, 64), str(d.v), str(d.cap), d.c, "TotalTuile_" + str(d.id), 34)
+			R.cliquable(tuile, d.act, "TotalTuileOuvrir_" + str(d.id), str(d.cap))
+			x += l + 12.0
+		return
+	# TOTAUX_A : ligne de pied collée sous la liste, chaque chiffre sous sa colonne.
+	var fond := D.rect(cible, Rect2(0, 0, LARGEUR, 44), Charte.PANNEAU_3, Charte.RAYON_PETIT)
+	fond.name = "RosterPiedFond"
+	fond.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	D.line(cible, Vector2(0, 0), Vector2(LARGEUR, 0), Charte.IVOIRE_3, 2)
+	var par_cle := {}
+	for d: Dictionary in definitions: par_cle[str(d.k)] = d
+	var sigma := D.text(cible, 22, 31, "Σ", 22, Charte.IVOIRE_2, 800, 60)
+	sigma.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for colonne: Dictionary in _colonnes_actives:
+		var k := str(colonne.k)
+		if not par_cle.has(k): continue
+		var d: Dictionary = par_cle[k]
+		var x: float = colonne.x
+		var largeur: float = colonne.w
+		var seul: bool = k in ["age", "niveau"]
+		var lv := R.largeur(str(d.v), 22, 800)
+		var lc := R.largeur(str(d.cap), 16, 600)
+		var total := lv if seul else lv + 8.0 + lc
+		var x0: float = x if colonne.a == HORIZONTAL_ALIGNMENT_LEFT else (x + largeur - total if colonne.a == HORIZONTAL_ALIGNMENT_RIGHT else x + largeur / 2.0 - total / 2.0)
+		var valeur := D.text(cible, x0, 31, str(d.v), 22, d.c, 800, lv + 4)
+		valeur.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
+		valeur.name = "TotalPied_" + str(d.id)
+		valeur.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if not seul:
+			var cap := D.text(cible, x0 + lv + 8.0, 30, str(d.cap), 16, Charte.IVOIRE_2, 600, lc + 4)
+			cap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var zone := Button.new()
+		zone.name = "TotalPiedOuvrir_" + str(d.id)
+		zone.flat = true
+		zone.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		zone.tooltip_text = str(d.cap)
+		zone.accessibility_name = "%s %s" % [d.v, d.cap]
+		zone.add_theme_stylebox_override("hover", _plat(Color(Charte.IVOIRE, .08)))
+		zone.add_theme_stylebox_override("focus", _plat(Color.TRANSPARENT, Charte.IVOIRE, 1))
+		cible.add_child(zone)
+		D.place(zone, Rect2(x0 - 8, 3, maxf(total, 40.0) + 16, 38))
+		zone.pressed.connect(d.act)
