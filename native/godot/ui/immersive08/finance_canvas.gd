@@ -107,7 +107,8 @@ class LedgerPlot extends Control:
 			draw_circle(point, C.px(7), Charte.FOND)
 			draw_circle(point, C.px(5), trait_club)
 
-## Solde sur 12 mois : trésorerie relevée chaque semaine (finance.cashHistory), la plus récente à droite.
+## Solde sur 12 mois : trésorerie relevée chaque semaine (finance.cashHistory), les semaines disponibles étirées sur
+## toute la largeur (52 au plus), la plus récente à droite.
 ## Haut : courbe du solde ; bas : barre de variation de la semaine (gain vert vers le haut, perte rouge vers le bas).
 class SoldePlot extends Control:
 	var semaines: Array = []
@@ -116,6 +117,8 @@ class SoldePlot extends Control:
 	var pas := 1.0
 	var variation_max := 1.0
 	const CASES := 52
+	## Plafond de largeur d'une barre (unités du gabarit) : pas de barre énorme avec deux ou trois semaines.
+	const BARRE_MAX := 34.0
 	const PART_COURBE := .66
 
 	func set_semaines(liste: Array) -> void:
@@ -149,7 +152,7 @@ class SoldePlot extends Control:
 		return valeurs
 
 	func largeur_case() -> float:
-		return size.x / maxi(CASES, semaines.size())
+		return size.x / maxi(1, semaines.size())
 
 	## Abscisse de la semaine i (0 = la plus ancienne).
 	func x_de(i: int) -> float:
@@ -178,7 +181,8 @@ class SoldePlot extends Control:
 			var variation: Variant = semaines[i].get("variation")
 			if variation != null and absf(float(variation)) >= 1.0:
 				var h := maxf(2.0, demi * absf(float(variation)) / variation_max)
-				var barre := Rect2(x - largeur * .3, milieu - h if float(variation) > 0.0 else milieu, largeur * .6, h)
+				var epaisseur := minf(largeur * .6, C.px(BARRE_MAX))
+				var barre := Rect2(x - epaisseur * .5, milieu - h if float(variation) > 0.0 else milieu, epaisseur, h)
 				draw_rect(barre, Pieces.VERT if float(variation) > 0.0 else Pieces.ROUGE)
 			points.append(Vector2(x, y_de(float(semaines[i].cash))))
 		var courant: Dictionary = semaines.back()
@@ -716,6 +720,7 @@ static func solde_semaines(app: Control, accounts: Dictionary) -> Array:
 	if not lignes.is_empty():
 		var limite := Time.get_date_string_from_unix_time(Time.get_unix_time_from_datetime_string(str(lignes.back().date)) - 364 * 86400)
 		lignes = lignes.filter(func(ligne: Dictionary): return str(ligne.date) > limite)
+		if lignes.size() > SoldePlot.CASES: lignes = lignes.slice(lignes.size() - SoldePlot.CASES)
 		lignes.back().courant = true
 	for i in lignes.size():
 		lignes[i].variation = null
@@ -743,15 +748,19 @@ static func _solde(app: Control, canvas: Control, card: Panel, accounts: Diction
 	for valeur: float in graph.graduations():
 		var y := haut + hauteur * SoldePlot.PART_COURBE * (graph.maximum - valeur) / (graph.maximum - graph.minimum)
 		_texte(card, 134, y + 6, "0 €" if is_zero_approx(valeur) else U.amount(valeur), 16, Charte.IVOIRE_2, 110, HORIZONTAL_ALIGNMENT_RIGHT)
-	var case_largeur := large / maxi(SoldePlot.CASES, semaines.size())
+	var case_largeur := large / maxi(1, semaines.size())
 	var mois_precedent := ""
+	var x_mois := -INF
 	for i in semaines.size():
 		var semaine: Dictionary = semaines[i]
 		var x := gauche + large - case_largeur * (semaines.size() - i - .5)
 		var mois := _mois(str(semaine.date))
+		# Un repère par nouveau mois ; son nom seulement s'il ne touche pas le précédent.
 		if mois != mois_precedent:
+			if x - case_largeur * .5 - x_mois >= 64.0:
+				_texte(card, x - case_largeur * .5 + 4, haut + hauteur + 26, mois, 16, Charte.IVOIRE_2, 80).mouse_filter = Control.MOUSE_FILTER_IGNORE
+				x_mois = x - case_largeur * .5
 			D.line(card, Vector2(x - case_largeur * .5, haut + hauteur), Vector2(x - case_largeur * .5, haut + hauteur + 8), Charte.IVOIRE_3)
-			_texte(card, x - case_largeur * .5 + 4, haut + hauteur + 26, mois, 16, Charte.IVOIRE_2, 80).mouse_filter = Control.MOUSE_FILTER_IGNORE
 			mois_precedent = mois
 		var rang := semaines.size() - 1 - i
 		var zone := Button.new()

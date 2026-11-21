@@ -145,7 +145,7 @@ func run() -> void:
 	var solde := named("FinanceSoldePlot")
 	check(solde != null and named("FinanceLedgerPlot") == null, "Synthèse : « Solde sur 12 mois » remplace les 12 derniers mouvements")
 	var semaines := Finance.solde_semaines(app, app.model.get("finance", {}))
-	check(not semaines.is_empty() and semaines.size() <= 53, "Solde : semaines relevées (%d)" % semaines.size())
+	check(not semaines.is_empty() and semaines.size() <= 52, "Solde : semaines relevées (%d)" % semaines.size())
 	# Avant-saison (aucune semaine de championnat close) : seul le solde du jour, rien d'inventé.
 	if int(app.model.meta.get("week", 0)) == 0: check(semaines.size() == 1 and semaines[0].variation == null, "Solde : avant la première semaine, le seul point est la trésorerie du jour")
 	else: check((app.model.get("finance", {}).get("cashHistory", []) as Array).size() > 0, "Moteur : historique de trésorerie hebdomadaire rempli")
