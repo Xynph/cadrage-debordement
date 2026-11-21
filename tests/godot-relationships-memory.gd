@@ -14,6 +14,11 @@ func _initialize() -> void: call_deferred("run")
 func check(ok: bool, message: String) -> void:
 	checks += 1
 	if not ok: failures.append(message); printerr("FAIL: ", message)
+## Texte visible d'un nœud et de ses enfants (pastilles, souvenirs).
+func labels(node: Node) -> String:
+	var result := str(node.text) + "\n" if node is Label else ""
+	for child in node.get_children(): result += labels(child)
+	return result
 func settle() -> void:
 	for frame in 4: await process_frame
 func run() -> void:
@@ -30,16 +35,18 @@ func run() -> void:
 		host.add_child(page)
 		page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		await settle()
-		var personality: Label = page.find_child("RelationshipPersonality", true, false)
-		check(personality != null and personality.text.contains(fixture.trait), "Trait de la personne sélectionnée " + str(resolution))
-		var memories := page.find_children("RelationshipConversationMemory", "Label", true, false)
-		check(memories.size() == 1 and memories[0].text.contains("Rassurer"), "Choix individuel réellement pris, sans confusion avec un autre joueur")
-		var events := page.find_children("RelationshipEventMemory", "Label", true, false)
-		check(events.size() == 1 and events[0].text.contains(fixture.event_title) and events[0].text.contains("Confier un rôle"), "Mémoire exacte de l’événement et du choix")
-		check(not events[0].text.contains("Satisfaction"), "Aucun effet historique inventé pour l’événement sans mesure archivée")
-		var chooser := page.find_child("RelationshipPlayer", true, false) as OptionButton
-		chooser.grab_focus(); await settle()
-		check(chooser.has_focus(), "Sélecteur accessible au clavier")
+		var personality := page.find_child("RelationshipPersonalityTrait", true, false)
+		check(personality != null and labels(personality).contains(fixture.trait), "Trait de la personne sélectionnée " + str(resolution))
+		var memories := page.find_children("RelationshipConversationMemory", "", true, false)
+		check(memories.size() == 1 and labels(memories[0]).contains("Rassurer"), "Choix individuel réellement pris, sans confusion avec un autre joueur")
+		var events := page.find_children("RelationshipEventMemory", "", true, false)
+		check(events.size() == 1 and labels(events[0]).contains(fixture.event_title) and labels(events[0]).contains("Confier un rôle"), "Mémoire exacte de l’événement et du choix")
+		check(events.size() == 1 and not labels(events[0]).contains("satisf."), "Aucun effet historique inventé pour l’événement sans mesure archivée")
+		var portrait := page.find_child("RelationshipPortrait_" + str(fixture.player_id), true, false) as Button
+		check(portrait != null, "Portrait de la personne sélectionnée dans la rangée")
+		if portrait != null:
+			portrait.grab_focus(); await settle()
+			check(portrait.has_focus(), "Portrait accessible au clavier")
 		check(host.commands == 0 and JSON.stringify(host.model) == original, "Consultation sans commande ni mutation du modèle")
 		if OS.get_environment("CD_RELATIONSHIP_MEMORY_GRAPHICS") == "1" and resolution == Vector2i(2560,1440):
 			await RenderingServer.frame_post_draw
@@ -53,7 +60,7 @@ func run() -> void:
 	host.model.clubLife.relationships.conversationHistory = []
 	host.model.clubLife.relationships.history = []
 	var legacy := View.build(host); host.add_child(legacy); await settle()
-	check(legacy.find_child("RelationshipPersonality", true, false) == null, "Personnalité absente laissée inconnue")
+	check(legacy.find_child("RelationshipPersonalityTrait", true, false) == null, "Personnalité absente laissée inconnue")
 	check(legacy.find_child("RelationshipEventMemory", true, false) == null, "Aucune histoire fabriquée pour l’ancienne projection")
 	check(host.commands == 0, "Aucune consultation transformée en décision")
 	var report := {"checks":checks,"failures":failures}
