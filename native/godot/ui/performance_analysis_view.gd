@@ -1,4 +1,6 @@
 extends RefCounted
+const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
+const Charte = preload("res://ui/charte.gd")
 # Les calculs appartiennent à la projection native ; cette vue ne reconstitue pas de statistiques.
 const Copy = preload("res://ui/management_copy.gd")
 const G = preload("res://ui/carnet_skin.gd")
@@ -63,6 +65,18 @@ static func _club_link(app: Control, parent: Node, club_id: Variant, caption: St
 	if label.is_empty(): label = G.club_name(Competition._target_club(app,str(club_id)))
 	return _link(app,parent,label,target,id)
 
+## Titre de section avec sa règle derrière un petit « i » (infobulle).
+static func _titre(titre: String, bulle: String) -> Control:
+	var ligne := G.h(8)
+	var bloc := G.section(titre)
+	bloc.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	G.fill(bloc)
+	ligne.add_child(bloc)
+	var info := Pastilles.info(bulle.strip_edges(), "i", "PerformanceInfo")
+	info.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	ligne.add_child(info)
+	return ligne
+
 static func _decimal(value: float) -> String:
 	return ("%.1f" % value).replace(".", ",")
 
@@ -73,17 +87,16 @@ static func build(app: Control) -> Control:
 	var panel := G.v(9)
 	panel.name = "PerformanceAnalysis"
 	G.fill(panel)
-	panel.add_child(G.section("Comprendre nos cinq derniers matchs", "Résultats et statistiques collectives du club."))
+	panel.add_child(_titre("Comprendre nos cinq derniers matchs", "Résultats et statistiques collectives du club."))
 	var data: Dictionary = app.model.get("clubLife", {}).get("performanceAnalysis", {})
 	if not bool(data.get("available", false)):
 		panel.add_child(G.wrap("Analyses indisponibles pour cette carrière.", 14))
 		return panel
 	var summary: Dictionary = data.get("summary", {})
 	var count: int = int(summary.get("played", 0))
-	panel.add_child(G.wrap(Copy.notice("performance", data.get("notice", "")), 12))
 	_individual(app, panel)
 	if count == 0:
-		panel.add_child(G.wrap("Pas encore de match joué cette saison. Le bilan apparaîtra après les premiers matchs.", 16, G.INK))
+		panel.add_child(Pastilles.pastille("Aucun match joué", Charte.IVOIRE_2, "clock", "Le bilan apparaîtra après les premiers matchs de la saison.", 18, "PerformanceNoMatch"))
 		return panel
 	panel.add_child(G.wrap("%s · %d V / %d N / %d D · %d points marqués / %d encaissés" % [_matches(count), int(summary.get("won",0)), int(summary.get("drawn",0)), int(summary.get("lost",0)), int(summary.get("pointsFor",0)), int(summary.get("pointsAgainst",0))], 17, G.INK))
 	for metric: Array in [["lineouts", "Touche"], ["scrums", "Mêlée"]]:
@@ -96,9 +109,8 @@ static func build(app: Control) -> Control:
 	if data.get("comparison") is Dictionary:
 		var c: Dictionary = data.comparison
 		panel.add_child(G.wrap("Trois derniers matchs / deux précédents · points marqués : %s / %s par match · encaissés : %s / %s" % [_decimal(float(c.recent.pointsFor)), _decimal(float(c.previous.pointsFor)), _decimal(float(c.recent.pointsAgainst)), _decimal(float(c.previous.pointsAgainst))], 14, G.INK))
-		panel.add_child(G.wrap(str(c.notice), 12))
 	else:
-		panel.add_child(G.wrap("La comparaison apparaîtra après cinq matchs joués.", 12))
+		panel.add_child(Pastilles.pastille("Comparaison après 5 matchs", Charte.IVOIRE_2, "clock", "La comparaison apparaîtra après cinq matchs joués.", 18, "PerformanceNoComparison"))
 	for advice: Dictionary in data.get("advice", []):
 		var card := G.card(panel, G.GOLD)
 		card.add_child(G.wrap(str(advice.title), 16, G.INK))
@@ -143,8 +155,7 @@ static func _individual(app: Control, panel: Container) -> void:
 	var data: Dictionary = app.model.get("clubLife", {}).get("playerMatchHistory", {})
 	if not data.get("available", false): return
 	panel.add_child(G.separator())
-	panel.add_child(G.section("Performances individuelles", "Les cinq derniers matchs de chaque joueur, sur les 40 derniers matchs du club."))
-	panel.add_child(G.wrap(Copy.notice("performance", data.get("notice", "")), 12))
+	panel.add_child(_titre("Performances individuelles", "Les cinq derniers matchs de chaque joueur, sur les 40 derniers matchs du club. %s" % Copy.notice("performance", data.get("notice", ""))))
 	if not data.get("enabled", false):
 		var enable := G.button("ACTIVER LE SUIVI INDIVIDUEL", func():
 			app.confirm("Suivre les performances individuelles", "Seuls les prochains matchs seront suivis, dans cette carrière.", func(): app._command("player_match_history_enable", {"context":data.context.duplicate(true),"confirmed":true})))
@@ -152,7 +163,7 @@ static func _individual(app: Control, panel: Container) -> void:
 		enable.disabled = not data.get("canEnable", false)
 		panel.add_child(enable)
 		return
-	panel.add_child(G.wrap("%s suivis sur 40 au maximum. Le suivi continue d’une saison à l’autre." % _matches(int(data.get("recordedMatches",0))), 13))
+	panel.add_child(Pastilles.pastille("%d / 40 matchs" % int(data.get("recordedMatches",0)), Charte.IVOIRE_2, "check", "%s suivis sur 40 au maximum. Le suivi continue d’une saison à l’autre." % _matches(int(data.get("recordedMatches",0))), 18, "PerformanceRecorded"))
 	var players: Array = data.get("players", [])
 	if players.is_empty():
 		panel.add_child(G.wrap("Aucun joueur dans l’effectif actuel.", 14))
@@ -182,7 +193,7 @@ static func _individual(app: Control, panel: Container) -> void:
 		if _link(app,details,str(player.name),{"kind":"player","id":str(player.get("id",""))},"PerformancePlayerLink",17)==null:
 			details.add_child(G.wrap(str(player.name), 17, G.INK))
 		if matches.is_empty():
-			details.add_child(G.wrap("Pas encore de match suivi pour ce joueur.", 14))
+			details.add_child(Pastilles.pastille("Aucun match suivi", Charte.IVOIRE_2, "clock", "Pas encore de match suivi pour ce joueur.", 18, "PerformanceNoTracked"))
 			return
 		details.add_child(G.wrap("%s minutes jouées · %s%s" % [_value(player.get("minutes")), _matches(matches.size()), _partial(int(player.get("measuredMatches",0)), matches.size())], 14))
 		for metric: Array in [["tries","Essais"],["penaltyGoals","Pénalités réussies"],["penaltyMisses","Tirs de pénalité manqués"]]:

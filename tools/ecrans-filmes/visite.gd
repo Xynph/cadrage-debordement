@@ -28,6 +28,7 @@ const ROUTES_GEOMETRIE := ["Réception","Bureau","Effectif","Composition","Prép
 const HORS_CARRIERE := ["Accueil", "Création", "Packs"]
 const EXTRAS := [
 	{"id": "calendrier-semaine", "libelle": "Calendrier (semaine)", "type": "calendrier_semaine"},
+	{"id": "entrainement-groupes", "libelle": "Entraînement · onglet Groupes", "type": "entrainement_onglet", "onglet": 1},
 	{"id": "fiche-joueur", "libelle": "Fiche joueur", "type": "joueur"},
 	{"id": "mini-fiche", "libelle": "Mini-fiche au survol (Effectif)", "type": "mini_fiche"},
 	{"id": "equilibre-postes", "libelle": "Équilibre par poste (infobulle Aptes)", "type": "equilibre_postes"},
@@ -59,6 +60,10 @@ const EXTRAS := [
 	{"id": "finances-budget", "libelle": "Finances · onglet Budget", "type": "finances_onglet", "onglet": "budget"},
 	{"id": "finances-classement", "libelle": "Finances · onglet Classement", "type": "finances_onglet", "onglet": "clubs"},
 	{"id": "finances-transferts", "libelle": "Finances · onglet Transferts", "type": "finances_onglet", "onglet": "transfers"},
+	{"id": "club-infrastructures", "libelle": "Club · onglet Infrastructures", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "infrastructure", "repos": "overview"},
+	{"id": "club-histoire", "libelle": "Club · onglet Histoire", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "history", "repos": "overview"},
+	{"id": "vestiaire-entretiens", "libelle": "Vestiaire · onglet Entretiens et duos", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week"},
+	{"id": "vestiaire-historique", "libelle": "Vestiaire · onglet Engagements et historique", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "history", "repos": "week"},
 ]
 ## Écrans du match en direct : le coup d'envoi est donné une fois, après tous les autres écrans.
 const EN_DIRECT := [
@@ -437,6 +442,17 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				app._navigate("Réception", false)
 				await stabiliser()
 			if app.route != route: return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
+		"entrainement_onglet":
+			app._navigate("Composition")
+			await stabiliser()
+			var onglet_entrainement := app.find_child("TacticsTab4", true, false) as Button
+			if onglet_entrainement == null: return {"statut": "echec", "note": "onglet Entraînement absent"}
+			onglet_entrainement.pressed.emit()
+			await stabiliser()
+			var entrainement := app.find_child("ImmersiveTraining", true, false)
+			if entrainement == null: return {"statut": "echec", "note": "entraînement non ouvert"}
+			entrainement._open_tab(int(ecran.onglet))
+			await stabiliser()
 		"presse_ouverte":
 			# Même recette que tests/godot-presse-da.gd : carrière neuve, avance jusqu'à la conférence d'arrivée,
 			# puis page Presse avec l'origine du courrier (questions ouvertes sous les yeux).
@@ -600,6 +616,10 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				if cible == null: return {"statut": "echec", "note": "élément introuvable : " + str(ecran.ouvrir)}
 				cible.pressed.emit()
 				await stabiliser()
+		"onglet_cle":
+			app.management_ui[str(ecran.cle)] = str(ecran.onglet)
+			app._navigate(str(ecran.route))
+			await stabiliser()
 		"finances_onglet":
 			app.management_ui["immersive08_finance_tab"] = str(ecran.onglet)
 			app._navigate("Finances")
@@ -627,6 +647,7 @@ func refermer(ecran: Dictionary) -> void:
 	if str(ecran.type) in ["preparation_bas", "preparation_sous"] and app.management_ui.get("preparation") is Dictionary: app.management_ui.preparation.sub = ""
 	if str(ecran.type) == "effectif_onglet": app.management_ui.roster.immersive_tab = 0
 	if str(ecran.type) == "finances_onglet": app.management_ui["immersive08_finance_tab"] = "summary"
+	if str(ecran.type) == "onglet_cle": app.management_ui[str(ecran.cle)] = str(ecran.repos)
 	if str(ecran.type) == "classements_onglet" and app.management_ui.get("competition") is Dictionary: app.management_ui.competition.tab = "league"
 	if str(ecran.type) == "formation_suivi": load("res://ui/immersive08/formation_pages.gd").oublier(app)
 	if str(ecran.type) == "equilibre_postes": app.find_child("EffectifTuileAptes", true, false).mouse_exited.emit()
