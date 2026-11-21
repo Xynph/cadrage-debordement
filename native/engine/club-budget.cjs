@@ -673,6 +673,17 @@ worldWeeklyEconomy=function(results){
  }
  return true;
 };
+// Historique de trésorerie : un relevé du solde du club à chaque semaine jouée (date du calendrier), gardé 70 semaines.
+// L'écran Finances en tire le solde de fin de mois ; rien n'est reconstitué avant le premier relevé.
+function soldeReleve(){
+ try{
+  const date=typeof CDWorldCareer!=='undefined'&&S.worldMode?CDWorldCareer.calendarToday(S):null;
+  if(!date||!Number.isFinite(club().cash))return;
+  const h=S.cashHistory=Array.isArray(S.cashHistory)?S.cashHistory:[],cash=Math.round(club().cash),dernier=h[h.length-1];
+  if(dernier&&dernier.date===date)dernier.cash=cash;else h.push({date,saison:S.season,cash});
+  if(h.length>70)h.splice(0,h.length-70);
+ }catch(e){}
+}
 // Fin de saison : la prime de classement, la sanction éventuelle et l'apport du
 // propriétaire remplacent le versement identique pour tous. Chaque club n'est clôturé qu'une fois.
 function budgetCloturer(seulementGeres){
