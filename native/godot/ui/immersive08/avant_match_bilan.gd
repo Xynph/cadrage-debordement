@@ -1,10 +1,10 @@
 extends RefCounted
-## « Dernière rencontre · tes choix, les faits » sur l'avant-match en grande fenêtre (planche du 21/11/2026, à choisir
-## par Léo) : variante A, une tuile dans la rangée des vérifications ; variante B, une pastille dans le bandeau haut.
-## Les deux ouvrent la même petite fenêtre visuelle du bilan complet (cadre fenetre_visuelle.gd) : score et écussons,
-## tes choix (pastilles icône + mot), les phases par plan et les faits (tuiles chiffres). Aucune phrase : les notes
-## du staff deviennent des pastilles. Données : `decisions.report` du modèle natif (native/engine/decisions.cjs).
-## Variante choisie par `CD_VARIANTE_VISUELLE=A|B` ; sans variante, rien ne change à l'écran.
+## « Dernière rencontre » sur l'avant-match (option B choisie par Léo le 21/11/2026) : une pastille « résultat ·
+## écusson adverse · score » dans le bandeau haut ouvre la petite fenêtre visuelle du bilan complet (cadre
+## fenetre_visuelle.gd) : score et écussons, tes choix (pastilles icône + mot → Plan de jeu), les phases par plan et
+## les faits (tuiles chiffres), zone du club adverse → sa fiche. Aucune phrase : les notes du staff deviennent des
+## pastilles. Données : `decisions.report` du modèle natif (native/engine/decisions.cjs), remis à zéro à chaque
+## nouvelle saison : sans match joué, pas de pastille.
 
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
@@ -16,10 +16,6 @@ const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
 const FENETRE := "MatchBilanFenetre"
 const LARGEUR := 1560.0
 const HAUTEUR := 820.0
-
-static func variante() -> String:
-	var v := OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper()
-	return v if v in ["A", "B"] else ""
 
 ## Le bilan de la dernière rencontre du club (vide sans match joué ou si le compte rendu est incomplet).
 static func rapport(model: Dictionary) -> Dictionary:
@@ -87,37 +83,8 @@ static func faits_marquants(report: Dictionary) -> Array:
 	else: faits.append(["%d pénalité%s" % [penalites, "s" if penalites > 1 else ""], R.VERT if penalites <= 2 else R.ORANGE, "shield"])
 	return faits
 
-# ---- Pastille de conteneur (avant-match, mise en page par conteneurs) -------------------------------------------
-
 static func _M(value: float) -> int:
 	return roundi(value * C.density / 0.75)
-
-static func pastille_boite(texte: String, couleur: Color, icone: String, taille: float = 14.0) -> PanelContainer:
-	var cadre := PanelContainer.new()
-	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(couleur, .15)
-	style.set_corner_radius_all(_M(Charte.RAYON_PETIT))
-	style.content_margin_left = _M(9)
-	style.content_margin_right = _M(10)
-	style.content_margin_top = _M(3)
-	style.content_margin_bottom = _M(3)
-	cadre.add_theme_stylebox_override("panel", style)
-	var ligne := HBoxContainer.new()
-	ligne.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	ligne.add_theme_constant_override("separation", _M(6))
-	cadre.add_child(ligne)
-	if not icone.is_empty():
-		var image := C.icon(icone, roundi((taille + 2) / 0.75), couleur)
-		image.custom_minimum_size = Vector2(_M(taille + 2), _M(taille + 2))
-		image.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		image.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		ligne.add_child(image)
-	var mot := C.label(texte, roundi(taille / 0.75), couleur, true, 700)
-	mot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	mot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	ligne.add_child(mot)
-	return cadre
 
 static func _ecusson(model: Dictionary, team: Dictionary, cote: int) -> Control:
 	var e := G.crest(_club(model, team), cote)
@@ -129,62 +96,13 @@ static func _ecusson(model: Dictionary, team: Dictionary, cote: int) -> Control:
 static func _score_texte(report: Dictionary) -> String:
 	return "%d – %d" % [_n(report.score[0]), _n(report.score[1])]
 
-## Ligne « écusson 24 – 17 écusson » (domicile à gauche, comme le score).
-static func ligne_score(model: Dictionary, report: Dictionary, cote: int, taille: float) -> HBoxContainer:
-	var ligne := HBoxContainer.new()
-	ligne.name = "BilanScore"
-	ligne.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	ligne.add_theme_constant_override("separation", _M(10))
-	ligne.add_child(_ecusson(model, report.teams[0], cote))
-	var score := C.label(_score_texte(report), roundi(taille / 0.75), Charte.IVOIRE, true, 800)
-	score.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
-	score.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	score.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	ligne.add_child(score)
-	ligne.add_child(_ecusson(model, report.teams[1], cote))
-	return ligne
-
-# ---- Variante A : tuile « Dernière rencontre » dans la rangée des vérifications -----------------------------------
-
-static func tuile(avant: Control, model: Dictionary) -> Control:
-	var report := rapport(model)
-	if report.is_empty(): return null
-	var adverse: Dictionary = _club(model, report.teams[1 - _cote(report)])
-	var column: VBoxContainer = avant._tuile("TuileDerniereRencontre", "Dernière rencontre", G.club_abbr(adverse))
-	var tile: PanelContainer = column.get_parent()
-	tile.size_flags_stretch_ratio = .8
-	var haut := HBoxContainer.new()
-	haut.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	haut.add_theme_constant_override("separation", _M(10))
-	column.add_child(haut)
-	var res := resultat(report)
-	haut.add_child(_pastille_resultat(avant, res, 30))
-	haut.add_child(ligne_score(model, report, _M(44), 30))
-	var faits := VBoxContainer.new()
-	faits.name = "BilanFaits"
-	faits.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	faits.add_theme_constant_override("separation", _M(6))
-	column.add_child(faits)
-	var prep: Variant = report.get("preparation")
-	if prep is Dictionary:
-		var choix := pastille_boite(_plan(model, "attacks", prep.get("attack")) + " · " + _plan(model, "defenses", prep.get("defence")), R.BLEU, "ball", 14)
-		choix.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-		faits.add_child(choix)
-	for fait: Array in faits_marquants(report).slice(0, 3):
-		var p := pastille_boite(str(fait[0]), fait[1], str(fait[2]), 14)
-		p.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-		faits.add_child(p)
-	var bouton := R.cliquable(tile, func(): ouvrir(avant, model), "MatchLastMatchOpen", "Dernière rencontre : tes choix, les faits")
-	bouton.set_meta("immersive_style_applied", true)
-	return tile
-
 static func _pastille_resultat(avant: Control, res: String, taille: float) -> Control:
 	var p: Button = avant.pastille(res, taille)
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.focus_mode = Control.FOCUS_NONE
 	return p
 
-# ---- Variante B : pastille du dernier match dans le bandeau haut ---------------------------------------------------
+# ---- Pastille du dernier match dans le bandeau haut ---------------------------------------------------
 
 static func pastille_bandeau(avant: Control, model: Dictionary) -> Control:
 	var report := rapport(model)

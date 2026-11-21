@@ -764,11 +764,11 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			await stabiliser()
 			if app.route != "Réglages" or app.root_content.find_child("PreferencesPage", true, false) == null: return {"statut": "echec", "note": "écran Réglages non ouvert"}
 		"avant_bilan":
-			# Bilan de la dernière rencontre (planche du 21/11, CD_VARIANTE_VISUELLE=A|B) : tuile ou pastille → petite fenêtre.
+			# Bilan de la dernière rencontre : pastille du bandeau → petite fenêtre.
 			app._navigate("Match")
 			await stabiliser()
 			var ouvre := app.find_child("MatchLastMatchOpen", true, false) as Button
-			if ouvre == null: return {"statut": "indisponible", "note": "ni tuile ni pastille du dernier match (variante absente ou aucun match joué)"}
+			if ouvre == null: return {"statut": "indisponible", "note": "pas de pastille du dernier match (aucun match joué)"}
 			ouvre.pressed.emit()
 			await stabiliser()
 			if app.find_child("MatchBilanFenetre", true, false) == null: return {"statut": "echec", "note": "petite fenêtre du bilan non ouverte"}
