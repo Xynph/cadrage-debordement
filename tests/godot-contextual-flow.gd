@@ -111,12 +111,11 @@ func locker_check(phase: String) -> void:
 			if number in [6, 7] and expected_position == "Troisième ligne": expected_position = "Troisième ligne aile"
 		if expected_position in ["Numéro 8", "N° 8", "N°8"]: expected_position = "Troisième ligne centre"
 		var position_label: Label = card.find_child("ParticipantPosition", true, false)
-		check(position_label != null and position_label.text == expected_position and not expected_position.is_empty(), "Jersey role for starter or actual primary position for substitute " + id)
+		check(position_label != null and str(position_label.get_meta("position", "")) == expected_position and not expected_position.is_empty(), "Jersey role for starter or actual primary position for substitute " + id)
 		if position_label != null:
 			check(position_label.is_visible_in_tree() and card.get_global_rect().encloses(position_label.get_global_rect()), "Position is visibly contained in the actual player card")
-			var name_label: Label
-			for label in card.find_children("*", "Label", true, false):
-				if not str(player.get("name", "")).is_empty() and str(label.text).contains(str(player.name)): name_label = label
+			var name_label: Label = card.find_child("ParticipantName", true, false)
+			check(str(card.get_meta("player_name", "")) == str(player.get("name", "")) and name_label != null and not name_label.text.is_empty(), "Card names the actual player")
 			check(name_label != null and position_label.get_global_rect().position.y > name_label.get_global_rect().position.y, "Actual position is displayed below the player name")
 		var portrait: TextureRect = card.find_child("ParticipantPortrait", true, false)
 		check(portrait != null and portrait.texture != null, "Actual participant has a visible portrait")
