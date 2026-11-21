@@ -333,7 +333,9 @@ func bureau() -> void:
 		check(rect.grow(1).encloses(carnet.get_global_rect()) and rect.grow(1).encloses(figure.get_global_rect()), "Carnet et figure dans la zone")
 		check((figure as TextureRect).texture != null, "Buste de Gabi rendu")
 		check(figure.get_global_rect().size.y >= app.size.y * .14 and figure.get_global_rect().size.y <= app.size.y * .22, "Buste de Gabi de 160 à 200 px (%d px de haut)" % figure.get_global_rect().size.y)
-	for key in ["match", "groupe", "alerte", "conseil"]:
+	# Carnet allégé (21/11) : la phrase du match et le conseil ; le groupe et l'alerte sont dans l'État du groupe.
+	for key in ["groupe", "alerte"]: check(zone.find_child("GabiLigne_" + key, true, false) == null, "Carnet sans doublon de l'État du groupe : " + key)
+	for key in ["match", "conseil"]:
 		var line: Label = zone.find_child("GabiLigne_" + key, true, false)
 		check(line != null and not line.text.strip_edges().is_empty(), "Synthèse de la semaine : " + key)
 		if line != null and carnet != null: check(carnet.get_global_rect().grow(1).encloses(line.get_global_rect()), "Ligne dans le carnet : " + key)
