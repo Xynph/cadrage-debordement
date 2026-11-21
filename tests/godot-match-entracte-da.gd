@@ -253,7 +253,8 @@ func run() -> void:
 		# Légende des notes retirée (demande de Léo du 21/11/2026) : la note est écrite dans sa pastille de couleur.
 		var pastille_note: Node = ligne1.find_child("MatchBetweenPlayerNote", true, false) if ligne1 != null else null
 		check(ecran.find_child("MatchBetweenNotesLegend", true, false) == null and pastille_note != null and pastille_note.find_children("*", "Label", true, false).any(func(l: Label): return l.text == "6,0"), cadre + " : plus de légende des notes, la note écrite dans sa pastille")
-		check(not Charte.ATTRIBUT_85.is_equal_approx(Charte.ATTRIBUT_65) and not Between._teinte_note(7.8).is_equal_approx(Charte.V) and not Between._teinte_note(7.2).is_equal_approx(Charte.V), cadre + " : deux verts distincts, jamais le vert de la victoire")
+		# Barème unique des notes (charte, 21/11/2026) : rouge, orange, citron, vert clair, vert foncé.
+		check(Between._teinte_note(5.8) == Charte.PERTE and Between._teinte_note(6.2) == Charte.INTENSIF and Between._teinte_note(6.7) == Charte.ATTRIBUT_55 and Between._teinte_note(7.2) == Charte.CONDITION and Between._teinte_note(7.8) == Charte.NOTE_EXCELLENTE and Charte.encre_note(7.8) == Color.WHITE and Charte.encre_note(6.7) == Charte.ENCRE, cadre + " : barème des notes de la charte (cinq paliers, chiffre lisible)")
 		var terrain: Control = ecran.terrain
 		check(terrain.champ().size.x >= terrain.size.x * 0.8, cadre + " : le terrain remplit sa tuile (%d sur %d px)" % [int(terrain.champ().size.x), int(terrain.size.x)])
 		check(terrain.plancher_pastilles == 0.0 and terrain.rayon() >= 4.0 and terrain.rayon() <= terrain.echelle() * 3.0, cadre + " : pastilles à l'échelle du terrain, jamais une masse (rayon %.1f px)" % terrain.rayon())

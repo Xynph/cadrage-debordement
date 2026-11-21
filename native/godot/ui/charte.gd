@@ -68,6 +68,22 @@ const NORMAL := Color("7fbf7a")       ## séance normale
 const INTENSIF := Color("e0a04a")     ## séance intensive
 const GAIN := Color("7fbf7a")         ## écart favorable ▲
 const PERTE := Color("d9634f")        ## écart défavorable ▼
+## Note de match excellente (7,5 et plus, barème des notes de Léo du 21/11/2026).
+const NOTE_EXCELLENTE := Color("3f9a5a")
+
+## Barème unique des notes de match (sur 10, validé par Léo le 21/11/2026), du pire au meilleur : sous 6 rouge,
+## 6 à 6,4 orange, 6,5 à 6,9 citron, 7 à 7,4 vert clair, 7,5 et plus vert foncé. Couleur de la pastille de la note
+## (le chiffre est toujours écrit dedans, encre `encre_note`).
+static func couleur_note(note: float) -> Color:
+	if note >= 7.5: return NOTE_EXCELLENTE
+	if note >= 7.0: return CONDITION
+	if note >= 6.5: return ATTRIBUT_55
+	if note >= 6.0: return INTENSIF
+	return PERTE
+
+## Encre du chiffre d'une note dans sa pastille : blanc sur le vert foncé, sombre sinon.
+static func encre_note(note: float) -> Color:
+	return Color.WHITE if note >= 7.5 else ENCRE
 ## Terrain (page Équipe du match) : pelouse en bandes à plat, deux verts sourds alternés, et son liseré.
 const PELOUSE := Color("1d4631")
 const PELOUSE_2 := Color("214e37")

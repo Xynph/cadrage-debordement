@@ -2637,7 +2637,7 @@ func _pastille_note(note: float) -> PanelContainer:
 	cadre.add_theme_stylebox_override("panel", style)
 	cadre.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var texte := _texte(("%.1f" % note).replace(".", ","), 19, encre_sur(teinte), false, true)
+	var texte := _texte(("%.1f" % note).replace(".", ","), 19, Charte.encre_note(note), false, true)
 	texte.add_theme_font_override("font", TITRES_EXTRA)
 	texte.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	texte.custom_minimum_size.x = px(34)
@@ -4382,15 +4382,9 @@ func _alertes_seules(joueurs: Array, direct: Dictionary) -> void:
 const NOTE_DEPART := 6.5
 ## Couleur de la note du match : vert au-dessus de 7, ivoire autour de 6,5, jaune sous 6,5,
 ## alerte sous 6 (6,5 au coup d'envoi).
-## Barème des notes du match (écrit sous Mon XV) : [seuil, libellé, couleur]. Deux verts bien distincts, pris au barème
-## des attributs de la charte (jamais le vert « v » de la victoire), ivoire autour de la note de départ, jaune, rouge.
-const PALIERS_NOTE := [[7.5, "7,5 et +", Charte.ATTRIBUT_85], [7.0, "7 à 7,4", Charte.ATTRIBUT_65], [6.5, "6,5 à 6,9", Charte.IVOIRE],
-	[6.0, "6 à 6,4", Charte.ATTRIBUT_55], [0.0, "moins de 6", Charte.D]]
-
+## Couleur d'une note de match : le barème unique de la charte (`Charte.couleur_note`).
 static func _teinte_note(note: float) -> Color:
-	for palier: Array in PALIERS_NOTE:
-		if note >= float(palier[0]): return palier[2]
-	return ALERTE
+	return Charte.couleur_note(note)
 
 ## Nom de famille lisible : sans le prénom, tronqué proprement au-delà de 9 lettres.
 static func _nom_court(nom: String) -> String:

@@ -27,8 +27,9 @@ class Teintes:
 	static func energie(v: float) -> Color:
 		return VERT if v >= SURVEILLE else (OR if v >= FATIGUE else ALERTE)
 
+	## Barème unique des notes de match (charte, 21/11/2026).
 	static func note(n: float) -> Color:
-		return VERT if n >= 7.0 else (OR if n >= 6.0 else ALERTE)
+		return Charte.couleur_note(n)
 
 ## Jauge d'énergie horizontale (0 à 100) avec la valeur à droite.
 class Jauge extends Control:
@@ -62,11 +63,12 @@ class Note extends Control:
 
 	func _draw() -> void:
 		var teinte: Color = Teintes.note(valeur)
-		draw_style_box(Charte.style_pilule(Charte.PANNEAU_3, Color(teinte, 0.7), 0, 0), Rect2(Vector2.ZERO, size))
+		# Pastille à la couleur de la note, chiffre écrit dedans (blanc sur le vert foncé, sombre sinon).
+		draw_style_box(Charte.style_pilule(teinte, Color(0, 0, 0, 0), 0, 0), Rect2(Vector2.ZERO, size))
 		var corps := roundi(maxf(12.0, 26.0 * densite))
 		var texte := ("%.1f" % valeur).replace(".", ",")
 		var largeur: float = CHIFFRES.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, corps).x
-		draw_string(CHIFFRES, Vector2((size.x - largeur) * 0.5, size.y * 0.5 + corps * 0.36), texte, HORIZONTAL_ALIGNMENT_LEFT, -1, corps, teinte)
+		draw_string(CHIFFRES, Vector2((size.x - largeur) * 0.5, size.y * 0.5 + corps * 0.36), texte, HORIZONTAL_ALIGNMENT_LEFT, -1, corps, Charte.encre_note(valeur))
 
 ## Données d'un joueur pour une ligne de Mon XV, bornées à l'entracte : énergie (condition),
 ## note et faits du moteur, carton et blessure montrés. Plaquages, mètres, essais, courses et passes
