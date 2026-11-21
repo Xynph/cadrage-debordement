@@ -16,8 +16,7 @@ const Charte = preload("res://ui/charte.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const ClubSheet = preload("res://ui/immersive08/club_sheet_canvas.gd")
 const R = preload("res://ui/immersive08/reperes.gd")
-## PROVISOIRE (revue visuelle du 21/11/2026, n° 5) : options A / B via CD_VARIANTE_VISUELLE.
-const Variantes = preload("res://ui/immersive08/preparation_variantes.gd")
+const Consignes = preload("res://ui/immersive08/preparation_consignes.gd")
 const TABS = ["Dossier", "Consignes", "Entrainement"]
 const CHAMP_DOSSIER_PENDING = "Le dossier adverse sera disponible la semaine du match."
 
@@ -1141,99 +1140,15 @@ func _sous_reperes(section: Control) -> float:
 		_marque(panneau, 2204, y + pas / 2.0, 14, "droite", Charte.IVOIRE_2)
 	return 66.0 + hauteur
 
+## Le plan proposé par le staff : barres du rapport de force, pastilles d'effet (preparation_consignes.gd).
 func _sous_conseils(section: Control) -> float:
-	if not Variantes.variante().is_empty(): return Variantes.conseils(self, section)  # PROVISOIRE (revue visuelle du 21/11/2026, n° 5)
-	_retour(section)
-	var conseil: Dictionary = reports.get("advice", {})
-	var tactiques: Dictionary = app.model.get("tactics", {})
-	var gauche := _panneau(section, Rect2(0, 66, 1100, 760), "Le plan proposé par le staff", "PreparationAdvice")
-	var y := 86.0
-	for paire: Array in [["Avec le ballon", _tactic_label(tactiques.get("attacks", []), conseil.get("attack")), str(conseil.get("attackReason", ""))], ["Sans le ballon", _tactic_label(tactiques.get("defenses", []), conseil.get("defence")), str(conseil.get("defenceReason", ""))]]:
-		_etiquette(gauche, 24, y + 22, str(paire[0]))
-		_titre(gauche, 24, y + 62, str(paire[1]), 34)
-		var lignes := D.words(str(paire[2]), 78, 5)
-		for i in lignes.size(): _texte(gauche, 24, y + 100 + i * 28, lignes[i], 19, Charte.IVOIRE, 1050)
-		y += 100 + maxi(1, lignes.size()) * 28 + 30
-	var adopte := _plan_adopte(conseil)
-	var adopter := _bouton(gauche, Rect2(24, y, 440, 54), "Plan adopté" if adopte else "Adopter ce plan", func():
-		# Retour au dossier : le plan adopté s'y lit tout de suite.
-		state.sub = ""
-		app._command("set_tactics", {"attack":conseil.attack, "defense":conseil.defence}), "lien", "check" if adopte else "arrow", "AdoptDossierPlan")
-	adopter.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	adopter.disabled = adopte or conseil.is_empty() or not app._live().is_empty()
-	_texte(gauche, 24, y + 90, "Les consignes par zone gardent la priorité. Aucun changement automatique des 23.", 16, Charte.IVOIRE_2, 1050)
-	if not str(reports.get("notice", "")).is_empty():
-		var note := D.words(str(reports.get("notice", "")), 90, 3)
-		for i in note.size(): _texte(gauche, 24, y + 122 + i * 22, note[i], 15, Charte.IVOIRE_2, 1050)
-	var droite := _panneau(section, Rect2(1116, 66, 1132, 760), "Observations sur l’adversaire", "PreparationObservations")
-	var signaux: Array = reports.get("signals", [])
-	var ligne := 90.0
-	if signaux.is_empty():
-		_texte(droite, 24, ligne + 22, "Pas encore de signal net : il faut au moins trois matchs et dix phases de conquête observés.", 18, Charte.IVOIRE_2, 1080)
-		ligne += 56.0
-	for signal_row: Dictionary in signaux:
-		_titre(droite, 24, ligne + 24, str(signal_row.get("title", "")), 24)
-		_texte(droite, 24, ligne + 52, str(signal_row.get("evidence", "")), 17, Charte.IVOIRE_2, 1080)
-		_texte(droite, 24, ligne + 78, str(signal_row.get("advice", "")), 17, Charte.IVOIRE, 1080)
-		ligne += 104.0
-	var club_id := int(_opponent().get("id", -1))
-	_etiquette(droite, 24, ligne + 30, "Joueurs pressentis à surveiller")
-	var menaces: Array = reports.get("threats", [])
-	for i in menaces.size():
-		var menace: Dictionary = menaces[i]
-		_lien_joueur(droite, Rect2(20, ligne + 44 + i * 40, 420, 36), menace, 20, "PreparationAdviceThreat%d" % i, club_id)
-		_texte(droite, 460, ligne + 70 + i * 40, "%s  ·  %s" % [str(menace.get("pos", "")), str(menace.get("role", ""))], 17, Charte.IVOIRE_2, 640)
-	return 66.0 + 760.0
+	return Consignes.conseils(self, section)
 
 ## ---- Onglet « Consignes » ----------------------------------------------------------------------------
 
+## Une tuile à schéma de terrain par intention (preparation_consignes.gd).
 func _consignes() -> void:
-	if not Variantes.variante().is_empty():  # PROVISOIRE (revue visuelle du 21/11/2026, n° 5)
-		Variantes.consignes(self)
-		return
-	var section := _section("PreparationConsignes")
-	match_context.consignes = section
-	var tactics: Dictionary = app.model.get("tactics", {})
-	for i in 2:
-		var pair: Array = [["attack", "attacks", "Avec le ballon", "Attack", "ball"], ["defense", "defenses", "Sans le ballon", "Defense", "shield"]][i]
-		var card := D.panel(section, Rect2(i * 1132, 0, 1116, 853), pair[2], pair[4], "", "Preparation" + str(pair[3]))
-		D.text(card, 22, 94, "Ton intention de jeu pour la rencontre", 26, C.IVORY, 500, 1065)
-		if i == 0:
-			match_context.status = D.text(card, 22, 131, "", 23, C.IVORY, 500, 745)
-			match_context.status.name = "PreparationMatchState"
-			match_context.pause_button = _bouton(card, Rect2(771, 100, 323, 45), "Mettre en pause", match_context.pause_match, "ivoire", "", "PreparationPauseMatch")
-		else:
-			D.text(card, 22, 131, MatchContext.PRE_MATCH_HINT, 23, C.MUTED, 500, 1065)
-		var scroll := ScrollContainer.new()
-		scroll.name = "Preparation" + str(pair[3]) + "Scroll"
-		scroll.follow_focus = true
-		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-		card.add_child(scroll)
-		D.place(scroll, Rect2(17, 152, 1081, 679))
-		var options := C.v(13)
-		C.fill(options)
-		scroll.add_child(options)
-		scroll.get_v_scroll_bar().value_changed.connect(func(value: float):
-			if focus_ready: state[pair[0]] = int(value))
-		for option: Dictionary in tactics.get(pair[1], []):
-			var tile := D.panel(options, Rect2(0, 0, 1063, 150))
-			tile.custom_minimum_size.y = C.px(150)
-			var selected: bool = option.id == tactics.get(pair[0])
-			var select := _bouton(tile, Rect2(10, 10, 1040, 53), str(option.label).to_upper(), func():
-				if not match_context.can_edit_tactics(): return
-				var current: Dictionary = app.model.get("tactics", {})
-				var payload := {"attack":current.get("attack", "equilibre"), "defense":current.get("defense", "equilibre")}
-				payload[pair[0]] = option.id
-				app._command("set_tactics", payload), "choix", "check" if selected else "", "Preparation" + str(pair[3]) + "_" + str(option.id), selected)
-			select.set_meta("tactic_id", str(option.id))
-			match_context.tactics.append(select)
-			var lines := D.words(str(option.get("description", "")), 106, 2)
-			for line in lines.size(): D.text(tile, 23, 97 + line * 27, lines[line], 23, C.IVORY, 500, 1015)
-		if tactics.get(pair[1], []).is_empty(): options.add_child(C.wrap("Aucune consigne disponible.", 24, C.MUTED, true))
-	var foot := D.panel(section, Rect2(0, 871, 2248, 95), "", "", "", "PreparationPlaybookNote")
-	D.text(foot, 23, 40, "Adapter le plan aux zones du terrain", 30, C.IVORY, 700, 1220)
-	D.text(foot, 23, 72, "Les consignes locales et les phases arrêtées se règlent dans le carnet de jeu.", 23, C.MUTED, 500, 1578)
-	_bouton(foot, Rect2(1702, 20, 523, 55), "Consignes par zone et phases arrêtées", func(): app._navigate("Plan de jeu"), "lien", "arrow", "PreparationOpenZones")
+	Consignes.consignes(self)
 
 func _section(id: String) -> Control:
 	var section := Control.new()
