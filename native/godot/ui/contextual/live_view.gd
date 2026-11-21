@@ -1223,10 +1223,19 @@ func echap() -> void:
 		ouvrir_menu()
 
 ## Met le match en pause s'il joue (une seule fois) ; retient qu'il faudra le relancer.
+## Instant de la dernière reprise demandée par la fermeture d'une fenêtre (ms).
+var _reprise_ms := -100000
+
 func _suspendre() -> void:
 	var live := _live()
 	if live.is_empty() or live.get("finished", false): return
 	var etat := _etat_bandeau()
+	# Une petite fenêtre rouverte juste après en avoir fermé une : la reprise demandée à la fermeture est encore en
+	# route (bandeau toujours sur « Reprendre ») ; la pause est redemandée dès la réponse du jeu.
+	if str(etat.pause) != "PAUSE" and app.waiting and Time.get_ticks_msec() - _reprise_ms < 5000:
+		_reprendre_apres = true
+		_pause_voulue = 1
+		return
 	if str(etat.pause) != "PAUSE" or not bool(etat.pause_possible): return
 	_reprendre_apres = true
 	if app.waiting: _pause_voulue = 1
@@ -1237,6 +1246,7 @@ func _relancer() -> void:
 	_reprendre_apres = false
 	var live := _live()
 	if live.is_empty() or live.get("finished", false) or not director._talk().is_empty(): return
+	_reprise_ms = Time.get_ticks_msec()
 	if app.waiting: _pause_voulue = -1
 	elif live.get("paused", false): director.command("pause", {"paused": false})
 
