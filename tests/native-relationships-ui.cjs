@@ -85,11 +85,19 @@ func run() -> void:
  await press("LockerDecision_ecouter")
  check(app.model.clubLife.relationships.event == null, "Événement soldé dans le vrai état")
  check(int(app.model.clubLife.relationships.players.filter(func(p): return p.id == id)[0].score) == mini(95, before + 4), "Satisfaction réellement modifiée")
- var chooser: OptionButton = named(app, "RelationshipPlayer")
- chooser.select(1)
- chooser.item_selected.emit(1)
+ # Choisir un joueur : « +N » ouvre la petite fenêtre du groupe, un portrait choisit et la referme.
+ var second: String = str(app.model.clubLife.relationships.players[1].id)
+ var tous: Button = named(app, "RelationshipAllPortraits")
+ if tous != null: tous.pressed.emit()
+ for i in 3: await process_frame
+ var fenetre: Node = named(app, "RelationshipPortraitsWindow")
+ var portrait: Button = named(fenetre if fenetre != null else app, "RelationshipPortrait_" + second)
+ check(portrait != null, "Portrait du joueur dans la rangée ou la petite fenêtre")
+ if portrait != null: portrait.pressed.emit()
+ for i in 5: await process_frame
+ check(str(app.management_ui.relationships.playerId) == second, "Portrait choisi")
  await press("Conversation_rassurer")
- check(named(app, "RelationshipPlayer").selected == 1, "Joueur sélectionné conservé après décision")
+ check(str(app.management_ui.relationships.playerId) == second, "Joueur sélectionné conservé après décision")
  check(named(app, "Conversation_rassurer").disabled, "Entretien bloqué après décision")
  await press("Promise_rotation")
  check(app.model.clubLife.relationships.players[1].promise.target == "rotation", "Promesse réelle du joueur sélectionné")

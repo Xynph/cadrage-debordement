@@ -1,7 +1,6 @@
 extends RefCounted
-## PROVISOIRE (revue visuelle du 21/11/2026, n° 4) : deux options de Vestiaire › Entretiens et duos à départager.
-## CD_VARIANTE_VISUELLE=A (tuiles d'action) ou B (portraits et anneaux) ; sans variable, l'écran actuel est inchangé.
-## Règles communes : aucune phrase d'explication (le texte du moteur reste en infobulle), effets en pastilles ▲ / ▼
+## Pièces visuelles de Vestiaire › Entretiens et duos (revue du 21/11/2026, n° 4, option B « portraits et anneaux »
+## choisie par Léo). Règles : aucune phrase d'explication (le texte du moteur reste en infobulle), effets en pastilles ▲ / ▼
 ## colorées, couleur jamais seule (flèche, icône ou mot), toute carte et tout portrait cliquables.
 const C = preload("res://ui/immersive08/components.gd")
 const Charte = preload("res://ui/charte.gd")
@@ -16,12 +15,6 @@ const REPONSES := {
 	"ecouter": ["heart", Pastilles.BLEU], "rassurer": ["shield", Pastilles.VERT], "clarifier": ["info", Pastilles.TURQUOISE],
 	"cadrer": ["flag", Pastilles.ORANGE], "responsabiliser": ["star", Pastilles.VIOLET],
 	"mediation": ["people", Pastilles.TURQUOISE], "mentorat": ["star", Pastilles.VIOLET]}
-
-static func variante() -> String:
-	return OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper()
-
-static func active() -> bool:
-	return variante() in ["A", "B"]
 
 ## Effets d'un texte du moteur (« Satisfaction +1 ; premier entretien : moral +1. », « Dialogue encadré : lien +25,
 ## confiance de direction −1. ») en pastilles ▲ / ▼ qui passent à la ligne si la place manque.
@@ -52,14 +45,14 @@ static func effets(detail: String, taille: int = 16) -> HFlowContainer:
 ## Carte cliquable : contenu libre, survol et focus de la charte, toute la surface déclenche l'action.
 static func carte(contenu: Control, action: Callable, id: String, bulle: String, couleur: Color, actif: bool = true, choisi: bool = false) -> PanelContainer:
 	var cadre := PanelContainer.new()
-	cadre.name = id
+	cadre.name = id + "Carte"
 	var fond := C.box(Charte.PANNEAU_2.lerp(couleur, .10), couleur if choisi else Color.TRANSPARENT, Charte.RAYON_CARTE, 12)
 	if choisi: fond.set_border_width_all(2)
 	cadre.add_theme_stylebox_override("panel", fond)
 	cadre.add_child(contenu)
 	Pastilles._ignorer(contenu)
 	var bouton := Button.new()
-	bouton.name = "Zone"
+	bouton.name = id
 	bouton.flat = true
 	bouton.focus_mode = Control.FOCUS_ALL
 	bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -84,28 +77,6 @@ static func carte(contenu: Control, action: Callable, id: String, bulle: String,
 	Pastilles._marquer(cadre)
 	return cadre
 
-## Tuile d'action (option A) : grosse icône, mot, pastilles d'effet.
-static func tuile_action(id_reponse: String, libelle: String, detail: String, action: Callable, id: String, actif: bool, hauteur: int = 150) -> PanelContainer:
-	var style: Array = REPONSES.get(id_reponse, ["check", Pastilles.BLEU])
-	var colonne := C.v(8)
-	var tete := C.h(10)
-	var rond := PanelContainer.new()
-	rond.add_theme_stylebox_override("panel", C.box(Color(style[1], .18), Color.TRANSPARENT, Charte.RAYON_PILULE, 8))
-	var icone := C.icon(style[0], 30, style[1])
-	rond.add_child(icone)
-	tete.add_child(rond)
-	var mot := C.label(libelle, 21, Charte.IVOIRE, true, 700)
-	mot.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	mot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	mot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	tete.add_child(mot)
-	colonne.add_child(tete)
-	colonne.add_child(effets(detail, 15))
-	var tuile := carte(colonne, action, id, "%s · %s" % [libelle, detail], style[1], actif)
-	tuile.custom_minimum_size.y = C.px(hauteur)
-	tuile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	return tuile
-
 ## Rangée de tuiles de même largeur.
 static func rangee(tuiles: Array, ecart: int = 10) -> HBoxContainer:
 	var ligne := C.h(ecart)
@@ -115,7 +86,7 @@ static func rangee(tuiles: Array, ecart: int = 10) -> HBoxContainer:
 		ligne.add_child(tuile)
 	return ligne
 
-## Ligne d'action (option B) : liseré coloré, icône, mot à gauche, pastilles à droite.
+## Ligne d'action : liseré coloré, icône, mot à gauche, pastilles à droite.
 static func ligne_action(id_reponse: String, libelle: String, detail: String, action: Callable, id: String, actif: bool) -> PanelContainer:
 	var style: Array = REPONSES.get(id_reponse, ["check", Pastilles.BLEU])
 	var ligne := C.h(12)
@@ -157,15 +128,16 @@ static func tuile_promesse(minutes: int, action: Callable, id: String, actif: bo
 	return tuile
 
 ## Pastilles de personnalité (trait + leadership) à la place de la phrase « Personnalité : … ».
-static func personnalite(trait_nom: String, leadership: Variant, action: Callable = Callable()) -> HFlowContainer:
+static func personnalite(trait_nom: String, leadership: Variant, action: Callable = Callable(), id: String = "RelationshipPersonality") -> HFlowContainer:
 	var flux := HFlowContainer.new()
+	flux.name = id
 	flux.add_theme_constant_override("h_separation", C.px(6))
 	flux.add_theme_constant_override("v_separation", C.px(6))
-	if not trait_nom.is_empty(): flux.add_child(Pastilles.pastille(trait_nom, Pastilles.VIOLET, "people", "Personnalité : " + trait_nom, 16, "RelationshipTrait", action))
-	if leadership is int or leadership is float: flux.add_child(Pastilles.pastille("Leadership %d" % int(leadership), Pastilles.BLEU, "star", "Leadership %d / 100" % int(leadership), 16, "RelationshipLeadership", action))
+	if not trait_nom.is_empty(): flux.add_child(Pastilles.pastille(trait_nom, Pastilles.VIOLET, "people", "Personnalité : " + trait_nom, 16, id + "Trait", action))
+	if leadership is int or leadership is float: flux.add_child(Pastilles.pastille("Leadership %d" % int(leadership), Pastilles.BLEU, "star", "Leadership %d / 100" % int(leadership), 16, id + "Leadership", action))
 	return flux
 
-## ---- Anneau de jauge (option B) -------------------------------------------------------------------------
+## ---- Anneau de jauge -------------------------------------------------------------------------
 
 class Anneau extends Control:
 	var valeur := 0.0
@@ -217,8 +189,8 @@ static func teinte(valeur: Variant) -> Color:
 	if not (valeur is int or valeur is float): return Charte.IVOIRE_2
 	return Pastilles.VERT if valeur >= 70 else (Pastilles.ORANGE if valeur >= 45 else Pastilles.ROUGE)
 
-## Portrait cliquable (option B) : visage, nom court, barre de satisfaction colorée, étoile du relais.
-static func vignette(app: Control, joueur: Dictionary, identite: Dictionary, choisi: bool, relais: bool, action: Callable) -> PanelContainer:
+## Portrait cliquable : visage, nom court, barre de satisfaction colorée, étoile du relais.
+static func vignette(joueur: Dictionary, identite: Dictionary, choisi: bool, relais: bool, action: Callable) -> PanelContainer:
 	var colonne := C.v(4)
 	var visage := G.portrait(int(identite.get("portraitIndex", posmod(str(joueur.get("id", "")).hash(), 32))), C.px(84), identite)
 	visage.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -287,6 +259,54 @@ static func fenetre_portraits(app: Control, joueurs: Array, identites: Dictionar
 	colonne.add_child(grille)
 	for joueur: Dictionary in joueurs:
 		var id := str(joueur.get("id", ""))
-		grille.add_child(vignette(app, joueur, identites.get(id, joueur), id == choisi, id == relais, func():
+		grille.add_child(vignette(joueur, identites.get(id, joueur), id == choisi, id == relais, func():
 			fermer.call()
 			choisir.call(id)))
+
+## Ligne d'une personne et de ses pastilles (engagements, historique, duos) ; passe à la ligne si la place manque.
+static func ligne_lien() -> HFlowContainer:
+	var flux := HFlowContainer.new()
+	flux.add_theme_constant_override("h_separation", C.px(8))
+	flux.add_theme_constant_override("v_separation", C.px(6))
+	return flux
+
+## Réponse donnée, en pastille de sa couleur et de son icône (le titre de l'événement en infobulle).
+static func pastille_choix(id_reponse: String, libelle: String, bulle: String = "") -> Control:
+	var style: Array = REPONSES.get(id_reponse, ["check", Pastilles.BLEU])
+	return Pastilles.pastille(libelle, style[1], style[0], bulle if not bulle.is_empty() else libelle, 15)
+
+## Souvenir d'un échange : liseré, réponse en pastille, date, titre court de l'événement, satisfaction avant → après.
+static func souvenir(id_reponse: String, libelle: String, titre: String, date: String, avant: Variant, apres: Variant) -> PanelContainer:
+	var style: Array = REPONSES.get(id_reponse, ["check", Pastilles.BLEU])
+	var cadre := PanelContainer.new()
+	cadre.add_theme_stylebox_override("panel", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, Charte.RAYON_CARTE, 8))
+	var ligne := C.h(10)
+	cadre.add_child(ligne)
+	var lisere := ColorRect.new()
+	lisere.color = style[1]
+	lisere.custom_minimum_size = Vector2(C.px(4), C.px(30))
+	ligne.add_child(lisere)
+	var choix := pastille_choix(id_reponse, libelle, titre)
+	choix.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	ligne.add_child(choix)
+	var quand := Pastilles.pastille(date, Charte.IVOIRE_2, "calendar", date, 15)
+	quand.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	ligne.add_child(quand)
+	if not titre.is_empty():
+		var mot := C.label(titre, 16, Charte.IVOIRE_2, false, 600)
+		mot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		mot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		mot.clip_text = true
+		mot.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		mot.tooltip_text = titre
+		mot.mouse_filter = Control.MOUSE_FILTER_PASS
+		ligne.add_child(mot)
+	if (avant is int or avant is float) and (apres is int or apres is float):
+		var ecart := int(apres) - int(avant)
+		var couleur: Color = Pastilles.VERT if ecart > 0 else (Pastilles.ROUGE if ecart < 0 else Charte.IVOIRE_2)
+		var signe := "▲ +" if ecart > 0 else ("▼ −" if ecart < 0 else "= ")
+		var effet := Pastilles.pastille("%s%d satisf. · %d → %d" % [signe, absi(ecart), int(avant), int(apres)], couleur, "", "Satisfaction %d → %d" % [int(avant), int(apres)], 15)
+		effet.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		ligne.add_child(effet)
+	cadre.tooltip_text = "%s · %s%s" % [libelle, date, (" · " + titre) if not titre.is_empty() else ""]
+	return cadre

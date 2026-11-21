@@ -62,6 +62,8 @@ const EXTRAS := [
 	{"id": "club-infrastructures", "libelle": "Club · onglet Infrastructures", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "infrastructure", "repos": "overview"},
 	{"id": "club-histoire", "libelle": "Club · onglet Histoire", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "history", "repos": "overview"},
 	{"id": "vestiaire-entretiens", "libelle": "Vestiaire · onglet Entretiens et duos", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week"},
+	{"id": "vestiaire-entretiens-duos", "libelle": "Vestiaire · Entretiens et duos, bas de la colonne (duos)", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week", "defiler": "RelationshipPeopleScroll"},
+	{"id": "vestiaire-groupe", "libelle": "Vestiaire · petite fenêtre du groupe (portraits)", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week", "presser": "RelationshipAllPortraits"},
 	{"id": "vestiaire-historique", "libelle": "Vestiaire · onglet Engagements et historique", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "history", "repos": "week"},
 ]
 ## Écrans du match en direct : le coup d'envoi est donné une fois, après tous les autres écrans.
@@ -614,6 +616,16 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			app.management_ui[str(ecran.cle)] = str(ecran.onglet)
 			app._navigate(str(ecran.route))
 			await stabiliser()
+			if ecran.has("defiler"):
+				var colonne := app.find_child(str(ecran.defiler), true, false) as ScrollContainer
+				if colonne == null: return {"statut": "echec", "note": "colonne %s absente" % ecran.defiler}
+				colonne.scroll_vertical = int(colonne.get_v_scroll_bar().max_value)
+				await stabiliser()
+			if ecran.has("presser"):
+				var bouton := app.find_child(str(ecran.presser), true, false) as Button
+				if bouton == null: return {"statut": "echec", "note": "bouton %s absent" % ecran.presser}
+				bouton.pressed.emit()
+				await stabiliser()
 		"finances_onglet":
 			app.management_ui["immersive08_finance_tab"] = str(ecran.onglet)
 			app._navigate("Finances")
@@ -641,7 +653,9 @@ func refermer(ecran: Dictionary) -> void:
 	if str(ecran.type) in ["preparation_bas", "preparation_sous"] and app.management_ui.get("preparation") is Dictionary: app.management_ui.preparation.sub = ""
 	if str(ecran.type) == "effectif_onglet": app.management_ui.roster.immersive_tab = 0
 	if str(ecran.type) == "finances_onglet": app.management_ui["immersive08_finance_tab"] = "summary"
-	if str(ecran.type) == "onglet_cle": app.management_ui[str(ecran.cle)] = str(ecran.repos)
+	if str(ecran.type) == "onglet_cle":
+		if ecran.has("presser"): load("res://ui/petite_fenetre.gd").fermer_derniere(app.get_tree())
+		app.management_ui[str(ecran.cle)] = str(ecran.repos)
 	if str(ecran.type) == "classements_onglet" and app.management_ui.get("competition") is Dictionary: app.management_ui.competition.tab = "league"
 	if str(ecran.type) == "formation_suivi": load("res://ui/immersive08/formation_pages.gd").oublier(app)
 	if str(ecran.type) == "equilibre_postes": app.find_child("EffectifTuileAptes", true, false).mouse_exited.emit()
