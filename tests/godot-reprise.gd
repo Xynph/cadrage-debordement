@@ -127,12 +127,12 @@ func run() -> void:
 	var choice := app.find_child("CreationStartChoice",true,false) as OptionButton
 	check(choice!=null and choice.item_count==3,"Trois départs proposés")
 	check(choice.selected==0 and choice.get_item_text(0).contains("13 juillet"),"Départ par défaut : reprise des premiers clubs")
-	var sentence := app.find_child("CreationStartSentence",true,false) as Label
-	check(sentence!=null and sentence.text.contains("13 juillet 2026"),"Phrase claire des conséquences")
+	check(app.find_child("CreationStartSentence",true,false)==null,"Plus de phrase sous le choix du départ")
+	check(choice.tooltip_text.contains("13 juillet 2026"),"Conséquences du départ claires, en infobulle")
 	var arrival := app.find_child("CreationSeasonArrival",true,false) as Control
 	check(arrival!=null and app.find_child("CreationSeasonStep_first",true,false).is_ancestor_of(arrival),"Frise : arrivée avec les premiers clubs")
 	choice.select(1); choice.item_selected.emit(1); await settle()
-	check(sentence.text.contains("reprise de ton club"),"La phrase suit le choix")
+	check(choice.tooltip_text.contains("reprise de ton club"),"L’infobulle suit le choix")
 	arrival = app.find_child("CreationSeasonArrival",true,false) as Control
 	check(arrival!=null and app.find_child("CreationSeasonStep_club",true,false).is_ancestor_of(arrival),"La frise suit le départ : arrivée à la reprise du club")
 	var gabi := app.find_child("CreationGabiSpeech",true,false) as Label

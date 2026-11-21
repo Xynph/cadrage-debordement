@@ -79,7 +79,6 @@ static func _row(list: VBoxContainer, key: String, iso: String, fallback: String
 	text.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_child(C.fill(text))
 	text.add_child(Kit.ellipsis(C.label(title, 22, C.IVORY, true, 700)))
-	var line := Kit.ellipsis(C.label(detail, 17, C.MUTED, false))
-	line.tooltip_text = detail
-	line.mouse_filter = Control.MOUSE_FILTER_PASS
-	text.add_child(line)
+	# Plus de phrase sous le titre du rendez-vous : le détail est en infobulle sur toute la ligne.
+	row.tooltip_text = detail
+	row.mouse_filter = Control.MOUSE_FILTER_PASS

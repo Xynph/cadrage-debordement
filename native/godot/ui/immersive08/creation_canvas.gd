@@ -15,6 +15,7 @@ const Packs = preload("res://ui/pack_views.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const Defis = preload("res://ui/creation_options/defis.gd")
 const Kit = preload("res://ui/creation_options/kit.gd")
+const PastillesClub = preload("res://ui/immersive08/pastilles_club.gd")
 const President = preload("res://ui/creation_options/president_word.gd")
 const PORTRAIT = preload("res://guide/coach_portrait.gd")
 const TRI := "creation_tri"
@@ -490,8 +491,6 @@ static func _resume_championnat(app: Control, content: VBoxContainer, ctx: Dicti
 	if not season.is_empty(): _chiffre(facts, "Saison", season, "de départ")
 	content.add_child(C.rule())
 	_format(app, content, str(ctx.division), false)
-	var hint := C.wrap("Choisis un club dans la grille pour découvrir son stade, ses moyens et ce que le conseil attend de toi.", 17, C.MUTED)
-	content.add_child(hint)
 
 static func _format(app: Control, parent: Container, division: String, heading: bool) -> void:
 	var format: Array = Entry.creation_format(app, division)
@@ -574,7 +573,7 @@ static func _bouton_suivant(app: Control, content: VBoxContainer, ctx: Dictionar
 	var can_start: bool = not selected.is_empty() and (ctx.role == "club" or not (ctx.nation as Dictionary).is_empty())
 	var reason := ""
 	if ctx.unavailable: reason = "Pack indisponible : choisis-le dans Identités et packs"
-	elif selected.is_empty(): reason = "Choisis un club dans la grille"
+	elif selected.is_empty(): reason = "Choisis un club"
 	var caption := "Continuer avec " + G.club_name(selected) if reason.is_empty() else reason
 	var start := Button.new()
 	start.name = "CreationNext"
@@ -1108,10 +1107,8 @@ static func _pied(app: Control) -> Control:
 	left.name = "CreationWorldInfo"
 	left.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(C.fill(left))
-	var right := C.label("Double-clic ou Entrée : étape suivante · Rien n’est enregistré avant « Prendre les rênes »", 16, C.MUTED, false)
-	right.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	right.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	right.clip_text = true
-	right.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	row.add_child(C.fill(right, false, 2.0))
+	# Raccourcis et règle de sauvegarde derrière un « ? » (plus de phrase d'aide dans le pied de page).
+	var aide := PastillesClub.info("Double-clic ou Entrée : étape suivante · Rien n’est enregistré avant « Prendre les rênes »", "?", "CreationShortcutsHelp")
+	aide.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(aide)
 	return foot

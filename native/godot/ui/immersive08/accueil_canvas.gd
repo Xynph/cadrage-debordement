@@ -11,6 +11,7 @@ const Club = preload("res://ui/club_views.gd")
 const Entry = preload("res://ui/entry_screens.gd")
 const G = preload("res://ui/game_skin.gd")
 const Pages = preload("res://ui/immersive08/accueil_pages.gd")
+const PastillesClub = preload("res://ui/immersive08/pastilles_club.gd")
 const Shell = preload("res://ui/immersive08/shell.gd")
 const MARQUE = preload("res://branding/rugby-legacy-27-logo.png")
 const JOURS := ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."]
@@ -100,7 +101,10 @@ static func home(app: Control, nom_jeu: String = "RUGBY LEGACY 27") -> Control:
 		var ligne := C.label(lieu, 18, Charte.IVOIRE, false, 500)
 		ligne.name = "EntryPlace"
 		pied.add_child(ligne)
-	pied.add_child(C.label("↑↓ choisir · Entrée valider", 18, Charte.IVOIRE_2, false, 500))
+	# Raccourcis clavier : un « ? » en infobulle (plus de phrase d'aide à l'écran).
+	var aide := PastillesClub.info("↑ ↓ choisir · Entrée valider", "?", "EntryShortcutsHelp")
+	aide.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	pied.add_child(aide)
 	return page
 
 ## Voile de lisibilité sur la photo : noir du logo à gauche, photo qui apparaît vers la droite.
@@ -169,8 +173,6 @@ static func _affiche(_app: Control, _club: Dictionary, _meta: Dictionary, nom_je
 	accroche.name = "EntryTagline"
 	accroche.add_theme_constant_override("line_spacing", -C.px(10))
 	colonne.add_child(accroche)
-	var suite := C.wrap("Prends les rênes. Prépare le XV, fais grandir le club et vis la saison.", 21, Charte.IVOIRE_2, false, 500)
-	colonne.add_child(suite)
 	return colonne
 
 ## `rayon` en référence 2560 (24 → 18 px à 1920, 16 → 12 px) ; Charte.RAYON_PILULE reste une pilule.
@@ -205,7 +207,6 @@ static func _carnet(app: Control, club: Dictionary, meta: Dictionary) -> Control
 		trace.name = "EntrySaveLine"
 		pile.add_child(trace)
 	else:
-		pile.add_child(C.wrap("Choisis un club, prends les rênes et lance la première journée.", 21, Charte.IVOIRE_2, false, 500))
 		var monde := _ligne_monde(app)
 		if monde != null: pile.add_child(monde)
 	var principal: Button

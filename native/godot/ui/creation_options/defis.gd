@@ -95,9 +95,7 @@ static func build(app: Control, parent: Node, catalogue: Array, en_ligne: bool =
 	var tete := C.h(12)
 	cadre.add_child(tete)
 	tete.add_child(Kit.caps("Défis de départ", 21))
-	var aide := C.label("Une histoire toute prête : choisis-en une, ou prends le club de ton choix.", 20, C.MUTED, false)
-	aide.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	tete.add_child(C.fill(aide))
+	tete.add_child(C.fill(Control.new()))
 	var rangee := C.h(10)
 	rangee.name = "CreationDefisCartes"
 	cadre.add_child(rangee)

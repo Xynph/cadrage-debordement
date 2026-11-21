@@ -4,6 +4,7 @@ const G = preload("res://ui/carnet_skin.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const Raccourcis = preload("res://ui/raccourcis_clavier.gd")
+const PastillesClub = preload("res://ui/immersive08/pastilles_club.gd")
 
 static func open(app: Control, profile: RefCounted) -> AcceptDialog:
 	for child in app.get_children():
@@ -82,7 +83,6 @@ static func _fill(app: Control, profile: RefCounted, content: VBoxContainer, qui
 	masthead.add_child(description)
 	description.add_child(C.label("TON POSTE DE MANAGER",18,C.GOLD,true,700))
 	description.add_child(C.label("Confort de jeu",32,C.IVORY,true,700))
-	description.add_child(C.wrap("Les préférences locales suivent ton profil.",18,C.MUTED))
 	masthead.add_child(C.photo("club-forest",Vector2(190,78)))
 	var tabs := TabContainer.new()
 	tabs.name = "PreferencesTabs"
@@ -104,7 +104,10 @@ static func _fill(app: Control, profile: RefCounted, content: VBoxContainer, qui
 	motion.name = "PreferencesMotion"; motion.custom_minimum_size.y = 36
 	motion.accessibility_name = "Mouvement réduit · mode calme"
 	motion_row.add_child(motion)
-	comfort.add_child(C.wrap("Le mode calme garde une caméra tactique fixe. Les joueurs, les sons et les bulles restent disponibles.",17,C.MUTED))
+	# Plus de phrase d'aide : le mode calme s'explique en infobulle (ligne et case).
+	var calme := "Le mode calme garde une caméra tactique fixe. Les joueurs, les sons et les bulles restent disponibles."
+	motion_label.tooltip_text = calme
+	motion.tooltip_text = calme
 	var camera := _choice(comfort,"Caméra préférée",["TV","Vue de dessus","Action"],"PreferencesCamera")
 	var quality := _choice(comfort,"Qualité de la scène",["Économie","Équilibrée","Détaillée"],"PreferencesQuality")
 	# Carrière Monde : championnats en détail complet ou en consultation, modifiables en cours
@@ -116,7 +119,9 @@ static func _fill(app: Control, profile: RefCounted, content: VBoxContainer, qui
 		var detailed: Array = []
 		for league: Dictionary in leagues.get("leagues", []):
 			if bool(league.get("next", league.get("detailed", true))): detailed.append(str(league.get("id", "")))
-		comfort.add_child(C.wrap("%d championnat%s en détail complet, les autres en consultation." % [detailed.size(), "s" if detailed.size() > 1 else ""],17,C.MUTED))
+		var detail_count := C.label("%d championnat%s en détail" % [detailed.size(), "s" if detailed.size() > 1 else ""],17,C.MUTED)
+		detail_count.tooltip_text = "Les autres championnats sont suivis en consultation."
+		comfort.add_child(detail_count)
 		detail_view.request_benchmark(app)
 		var gauge_box := G.v(4)
 		gauge_box.name = "PreferencesLeagueSpeed"
@@ -133,12 +138,10 @@ static func _fill(app: Control, profile: RefCounted, content: VBoxContainer, qui
 	# Carrière : le réglage « Conférences ordinaires » (commande press_policy) n'existait que dans la salle de presse.
 	var press_policy := _press_policy(app, comfort)
 	var sound_profile: RefCounted = app.soundscape.preferences if is_instance_valid(app.soundscape) else null
-	sound.add_child(C.label("MIXAGE DE L’INTERFACE ET DU STADE",20,C.GOLD,true,700))
-	sound.add_child(C.wrap("Les sons d’interface et l’ambiance du stade ont chacun leur volume.",18,C.IVORY))
+	_titre_info(sound,"MIXAGE DE L’INTERFACE ET DU STADE","Les sons d’interface et l’ambiance du stade ont chacun leur volume. 0 coupe le canal. L’ambiance accompagne le direct visible. Le volume global garde son réglage.")
 	var interface_volume := _volume(sound,"Sons d’interface","PreferencesInterfaceVolume")
 	var stadium_volume := _volume(sound,"Ambiance du stade","PreferencesStadiumVolume")
 	var match_sounds := _flag(sound,"Sons de match (public, sifflets, ambiance du stade)","PreferencesMatchSounds")
-	sound.add_child(C.wrap("0 coupe le canal. L’ambiance accompagne le direct visible. Le volume global garde son réglage.",17,C.MUTED))
 	display.add_child(C.label("AFFICHAGE ET UNITÉS",20,C.GOLD,true,700))
 	var screen_count := 0 if DisplayServer.get_name() == "headless" else DisplayServer.get_screen_count()
 	var screen_labels := ["Automatique"]
@@ -152,7 +155,7 @@ static func _fill(app: Control, profile: RefCounted, content: VBoxContainer, qui
 	screen.disabled = screen_count == 0
 	screen.tooltip_text = "Automatique conserve l’écran choisi au lancement. Un écran sélectionné est mémorisé."
 	var salary_period := _choice(display,"Affichage des salaires",["Hebdomadaire","Mensuel","Annuel"],"PreferencesSalaryPeriod")
-	display.add_child(C.wrap(preload("res://ui/salary_display.gd").CONVENTION,17,C.MUTED))
+	salary_period.tooltip_text = preload("res://ui/salary_display.gd").CONVENTION
 	var stadium := _choice(display,"Éclairage du stade",["Jour","Soirée"],"PreferencesStadiumLighting")
 	# « Continuer » s'arrête toujours sur un match, un rendez-vous ou une décision obligatoire ; en plus :
 	# Les deux arrêts de « Continuer » partagent une ligne : l'onglet tient sans défilement dans le dialogue
@@ -231,11 +234,10 @@ static func _fill(app: Control, profile: RefCounted, content: VBoxContainer, qui
 	match_sounds.toggled.connect(func(value: bool):
 		if sound_profile != null: sound_profile.set_value("match_sounds",value)
 		refresh.call())
-	display.add_child(C.wrap("Le mode de fenêtre s’applique à cette session.",18,C.IVORY))
 	var display_row := G.h(8); display.add_child(display_row)
 	var fullscreen := G.button("Plein écran",app._set_display_mode.bind(Window.MODE_FULLSCREEN),true)
 	fullscreen.name = "PreferencesFullscreen"
-	fullscreen.tooltip_text = "Mode par défaut à chaque lancement du jeu."
+	fullscreen.tooltip_text = "Mode par défaut à chaque lancement du jeu. Le mode de fenêtre s’applique à cette session."
 	display_row.add_child(fullscreen)
 	var windowed := G.button("Fenêtré maximisé",app._set_display_mode.bind(Window.MODE_MAXIMIZED))
 	windowed.name = "PreferencesWindowed"
@@ -274,6 +276,15 @@ static func _page(tabs: TabContainer, title: String) -> VBoxContainer:
 	C.fill(column)
 	scroll.add_child(column)
 	return column
+
+## Titre de rubrique suivi d'un petit « i » : la règle est en infobulle, plus en phrase.
+static func _titre_info(parent: Node, titre: String, aide: String) -> void:
+	var ligne := G.h(8)
+	parent.add_child(ligne)
+	ligne.add_child(C.label(titre,20,C.GOLD,true,700))
+	var info := PastillesClub.info(aide,"i","PreferencesSoundInfo")
+	info.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	ligne.add_child(info)
 
 static func _volume(parent: Node, caption: String, id: String) -> SpinBox:
 	var row := G.h(12); parent.add_child(row)
@@ -319,15 +330,16 @@ static func _press_policy(app: Control, parent: Node) -> Callable:
 	var choices := G.h(8)
 	choices.name = "PreferencesPressPolicy"
 	row.add_child(choices)
-	var explanation := C.wrap("",17,C.MUTED)
-	explanation.name = "PreferencesPressNotice"
-	section.add_child(explanation)
+	# L'explication du réglage passe derrière un « i » (infobulle) à droite des deux choix.
+	var explanation := PastillesClub.info("","i","PreferencesPressNotice")
+	explanation.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(explanation)
 	var refresh := _press_refresh.bind(app, choices, explanation)
 	refresh.call()
 	return refresh
 
 ## Les boutons sont reconstruits à chaque lecture du modèle ; aucune fermeture ne se référence elle-même.
-static func _press_refresh(app: Control, choices: HBoxContainer, explanation: Label) -> void:
+static func _press_refresh(app: Control, choices: HBoxContainer, explanation: Button) -> void:
 	var now := _press_current(app)
 	for child in choices.get_children():
 		choices.remove_child(child)
@@ -339,12 +351,13 @@ static func _press_refresh(app: Control, choices: HBoxContainer, explanation: La
 		button.custom_minimum_size = Vector2(190,36)
 		button.tooltip_text = "Réglage actuel." if key == now else "Choisir ce réglage."
 		choices.add_child(button)
-	explanation.text = "Gabi répond à la presse lors des conférences ordinaires ; tu restes convoqué aux grands rendez-vous (arrivée, phase finale, bilan de saison, derby, crise). Gabi s’exprime sur un ton prudent : ni moral ni confiance gagnés, un léger coût auprès des médias." if now == "adjoint" else "Tu réponds toi-même à chaque conférence : « Continuer » s’arrête sur la conférence de la semaine. Choisis l’adjoint pour que Gabi tienne les conférences ordinaires ; tu restes convoqué aux grands rendez-vous."
+	explanation.tooltip_text = "Gabi répond à la presse lors des conférences ordinaires ; tu restes convoqué aux grands rendez-vous (arrivée, phase finale, bilan de saison, derby, crise). Gabi s’exprime sur un ton prudent : ni moral ni confiance gagnés, un léger coût auprès des médias." if now == "adjoint" else "Tu réponds toi-même à chaque conférence : « Continuer » s’arrête sur la conférence de la semaine. Choisis l’adjoint pour que Gabi tienne les conférences ordinaires ; tu restes convoqué aux grands rendez-vous."
+	explanation.accessibility_name = "Légende · " + explanation.tooltip_text
 
 static func _press_current(app: Control) -> String:
 	return "adjoint" if str(app.model.get("clubLife", {}).get("press", {}).get("policy", {}).get("ordinary", "moi")) == "adjoint" else "moi"
 
-static func _press_choose(app: Control, key: String, choices: HBoxContainer, explanation: Label) -> void:
+static func _press_choose(app: Control, key: String, choices: HBoxContainer, explanation: Button) -> void:
 	if _press_current(app) == key: return
 	app._command("press_policy", {"ordinary":key})
 	_press_refresh(app, choices, explanation)

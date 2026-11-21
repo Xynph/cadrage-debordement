@@ -58,7 +58,9 @@ static func _card(row: HBoxContainer, role: Array, face: Variant) -> void:
 	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	card.add_child(head)
 	if not face is Dictionary:
-		var none := C.wrap("Personne ne se détache encore.", 17, C.MUTED)
+		var none := C.label("—", 30, C.MUTED, true, 800)
+		none.tooltip_text = "Personne ne se détache encore."
+		none.mouse_filter = Control.MOUSE_FILTER_PASS
 		none.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		card.add_child(none)
 		return
@@ -123,7 +125,11 @@ static func _aggregate(row: HBoxContainer, selected: Dictionary) -> void:
 	figures.alignment = BoxContainer.ALIGNMENT_CENTER
 	card.add_child(figures)
 	if roster.is_empty():
-		card.add_child(C.wrap("Ton effectif t’attend dans le vestiaire dès ton arrivée.", 19, C.MUTED))
+		var vide := C.label("—", 30, C.MUTED, true, 800)
+		vide.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		vide.tooltip_text = "Ton effectif t’attend dans le vestiaire dès ton arrivée."
+		vide.mouse_filter = Control.MOUSE_FILTER_PASS
+		card.add_child(vide)
 		return
 	Kit.figure(figures, String.num(float(roster.get("average", 0)), 1).replace(".", ","), "note moyenne", Editorial.RAIL_GOLD, 38)
 	Kit.divider(figures)
@@ -133,6 +139,4 @@ static func _aggregate(row: HBoxContainer, selected: Dictionary) -> void:
 	if not str(roster.get("strengths", "")).is_empty():
 		Kit.divider(figures)
 		Kit.figure(figures, str(roster.strengths), "atout du groupe", C.MINT, 30)
-	var hint := C.wrap("Les visages du vestiaire se découvrent dans l’effectif, dès ton arrivée.", 17, C.MUTED)
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	card.add_child(hint)
+	card.tooltip_text = "Les visages du vestiaire se découvrent dans l’effectif, dès ton arrivée."
