@@ -1,7 +1,7 @@
 extends SceneTree
-## Entracte du match, direction artistique du 19/11/2026 (variante 1 « Terrain au centre », panneau d'arrêt de la
-## variante 3, colonne Plaquages de la variante 2 ; design/ux/14-match-entracte.md), sans moteur : une projection
-## `live.direct` complète posée sur l'écran (match_between.gd) en 1920×1080 et 1280×720. Vérifie : les blocs de la
+## Entracte du match, mise en page « Bord de terrain » (choix de Léo du 21/11/2026 ; avant : direction artistique du
+## 19/11/2026), sans moteur : une projection `live.direct` complète posée sur l'écran (match_between.gd) en 2560×1440
+## (référence de Léo) et 1920×1080 (1280×720 ne compte pas pour cet écran, décision de Léo du 21/11/2026). Vérifie : les blocs de la
 ## maquette à l'écran et dans l'écran ; tout ce qui a l'air cliquable fait quelque chose (signal, panneau, vue,
 ## commande) ; aucun clic n'ouvre de fenêtre (seul le menu « Plus ▾ » est un menu déroulant, exception de Léo) ;
 ## un seul aplat doré (bouton principal) ; aucun texte sous 12 px ; les noms mènent à la fiche (survol :
@@ -109,7 +109,7 @@ func ors(noeud: Control) -> Array:
 	return trouves
 
 func run() -> void:
-	for taille: Vector2i in [Vector2i(1920, 1080), Vector2i(1280, 720)]:
+	for taille: Vector2i in [Vector2i(2560, 1440), Vector2i(1920, 1080)]:
 		root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
 		root.size = taille
 		var cadre := "%dx%d" % [taille.x, taille.y]
@@ -123,9 +123,11 @@ func run() -> void:
 		vue.add_child(ecran)
 		for i in 4: await process_frame
 		signaux.clear()
-		for nom in ["tiroir_demande", "joueur_choisi", "reprise_demandee", "pause_demandee", "horloge_choisie", "niveau_choisi", "delegation_demandee", "camera_demandee", "consigne_bonus", "fiche_ouverte", "journal_demande", "stats_demandees", "club_demande", "confier_fin_demande"]:
+		for nom in ["tiroir_demande", "joueur_choisi", "reprise_demandee", "pause_demandee", "horloge_choisie", "niveau_choisi", "delegation_demandee", "camera_demandee", "consigne_bonus", "fiche_ouverte", "journal_demande", "stats_demandees", "club_demande", "confier_fin_demande", "stat_demandee", "match_demande"]:
 			var signal_nom: String = nom
 			ecran.connect(signal_nom, func(a = null, _b = null): signaux.append([signal_nom, a]))
+		# Plein écran obligatoire : un joueur cliqué ouvre sa petite fenêtre (branchée par la régie ; ici, un signal noté).
+		ecran.fiche_vers = func(id: String): signaux.append(["fiche", id])
 		var d := donnees()
 		ecran.update_frame({}, d[1], d[2], func(_c): pass)
 		for i in 6: await process_frame
@@ -134,11 +136,12 @@ func run() -> void:
 		for nom in ["MatchBetweenMain", "MatchBetweenPitchTile", "MatchBetweenDuel", "MatchBetweenMomentumTile", "MatchBetweenAdviceCard", "MatchBetweenKeys"]:
 			var bloc := ecran.find_child(nom, true, false) as Control
 			check(bloc != null and bloc.is_visible_in_tree() and dans(bloc.get_global_rect(), ecran_rect), cadre + " : bloc %s visible dans l'écran (%s)" % [nom, str(bloc.get_global_rect()) if bloc != null else "absent"])
-		var gauche := (ecran.find_child("MatchBetweenMain", true, false) as Control).get_global_rect()
+		var bas := (ecran.find_child("MatchBetweenMain", true, false) as Control).get_global_rect()
 		var centre := (ecran.find_child("MatchBetweenPitchTile", true, false) as Control).get_global_rect()
-		var droite := (ecran.find_child("MatchBetweenDuel", true, false) as Control).get_global_rect()
-		check(gauche.end.x <= centre.position.x and centre.end.x <= droite.position.x, cadre + " : Mon XV à gauche, terrain au centre, chiffres clés à droite")
-		check(centre.size.x > gauche.size.x and centre.size.x > droite.size.x, cadre + " : le terrain est le plus grand bloc")
+		var gauche := (ecran.find_child("MatchBetweenDuel", true, false) as Control).get_global_rect()
+		var miroirs: Array = [ecran.find_child("MatchBetweenMirror0", true, false), ecran.find_child("MatchBetweenMirror1", true, false)]
+		check(gauche.end.x <= centre.position.x and bas.position.y >= centre.end.y and miroirs.all(func(m: Variant): return m is Control and (m as Control).is_visible_in_tree()) and (miroirs[0] as Control).get_global_rect().end.x <= centre.position.x + 1.0 and (miroirs[1] as Control).get_global_rect().position.x >= centre.end.x - 1.0, cadre + " : événements à gauche, terrain au centre entre les chiffres en miroir, Mon XV en barre basse")
+		check(centre.get_area() > gauche.get_area() and centre.size.x > (miroirs[0] as Control).size.x, cadre + " : le terrain est le plus grand bloc")
 		var lignes: Array = ecran.xv.get_children().filter(func(n: Node): return n is Button and str(n.name).begins_with("MatchBetweenPlayer"))
 		check(lignes.size() == 15, cadre + " : quinze lignes dans Mon XV (%d)" % lignes.size())
 		var entete := ecran.find_child("MatchBetweenSquadHeader", true, false)
@@ -202,13 +205,19 @@ func run() -> void:
 			var normal := (ligne as Control).get_theme_stylebox("normal") as StyleBoxFlat
 			if normal == null: continue
 			lignes_vues += 1
+			# Mon XV en cartes (rayon 12 de la charte), sur le relief ou le voile doré d'une alerte.
+			if n.begins_with("MatchBetweenPlayer"):
+				if normal.corner_radius_top_left != Charte.RAYON_CARTE or not normal.bg_color.is_equal_approx(Charte.VOILE_DORE if ligne.has_meta("signale") else Charte.PANNEAU_2): bandes.append(n + " carte")
+				continue
 			if ligne.has_meta("signale"):
 				if not normal.bg_color.is_equal_approx(Charte.VOILE_DORE): bandes.append(n + " signalée")
 			elif normal.bg_color.a > 0.05 or normal.border_width_bottom < 1: bandes.append(n)
-		check(lignes_vues >= 23 and bandes.is_empty(), cadre + " : %d lignes sans bandes alternées, filet entre elles %s" % [lignes_vues, str(bandes.slice(0, 6))])
-		# Comparaisons : nous vert clair, l'adversaire doré, jamais la couleur d'un club.
+		check(lignes_vues >= 23 and bandes.is_empty(), cadre + " : %d joueurs : cartes de Mon XV rayon 12, banc sans bandes alternées %s" % [lignes_vues, str(bandes.slice(0, 6))])
+		# Comparaisons aux couleurs des deux clubs (choix de Léo du 21/11/2026), chiffres en miroir autour du terrain.
 		var barres: Array = ecran.chiffres.find_children("*", "Control", true, false).filter(func(n: Node): return n.get("valeurs") != null and n.get("couleurs") != null)
-		check(not barres.is_empty() and barres.all(func(b: Control): return (b.get("couleurs") as Array)[0] == Charte.V and (b.get("couleurs") as Array)[1] == Charte.D), cadre + " : barres des chiffres clés en vert clair (nous) et doré (eux)")
+		check(not barres.is_empty() and barres.all(func(b: Control): return (b.get("couleurs") as Array) == ecran._teintes_duel()), cadre + " : barres des chiffres aux couleurs des deux clubs")
+		var ligne_miroir := ecran.find_child("MatchBetweenMirror_possession_0", true, false) as Button
+		check(ligne_miroir != null and ligne_miroir.is_visible_in_tree() and ecran.find_child("MatchBetweenMirror_possession_1", true, false) != null, cadre + " : chiffres des deux clubs en miroir autour du terrain")
 		check(dores.is_empty(), cadre + " : aucun aplat doré hors bouton principal " + str(dores.slice(0, 6)))
 		# Banc : zone fixe, entière dans l'écran ; barème des notes écrit ; terrain qui remplit sa tuile.
 		var zone_banc := ecran.find_child("MatchBetweenBenchZone", true, false) as Control
@@ -220,8 +229,8 @@ func run() -> void:
 		var dernier := ecran.find_child("MatchBetweenPlayer15", true, false) as Control
 		var total_equipe := ecran.find_child("MatchBetweenTeamTotal", true, false) as Control
 		check(dernier != null and defile_xv != null and defile_xv.get_global_rect().grow(1.0).encloses(dernier.get_global_rect()), cadre + " : la dernière ligne de Mon XV (15) est entière dans la zone de défilement (%s dans %s)" % [str(dernier.get_global_rect()) if dernier != null else "absente", str(defile_xv.get_global_rect()) if defile_xv != null else "absent"])
-		check(total_equipe != null and total_equipe.is_visible_in_tree() and dans(total_equipe.get_global_rect(), ecran_rect) and not defile_xv.is_ancestor_of(total_equipe) and total_equipe.get_global_rect().position.y >= dernier.get_global_rect().end.y - 1.0, cadre + " : la ligne « Équipe » est un pied fixe, entier, sous la ligne 15 (%s)" % (str(total_equipe.get_global_rect()) if total_equipe != null else "absente"))
-		check(zone_banc.get_global_rect().position.y >= total_equipe.get_global_rect().end.y - 1.0, cadre + " : le pied ne passe pas sous le banc")
+		check(total_equipe != null and total_equipe.is_visible_in_tree() and dans(total_equipe.get_global_rect(), ecran_rect) and not defile_xv.is_ancestor_of(total_equipe) and total_equipe.get_global_rect().end.y <= dernier.get_global_rect().position.y + 1.0, cadre + " : le total « Équipe » est fixe, entier, dans l'en-tête de Mon XV (%s)" % (str(total_equipe.get_global_rect()) if total_equipe != null else "absente"))
+		check(not (ecran.tuile_principale as Control).is_ancestor_of(zone_banc) and ecran.banc_cadre.is_ancestor_of(zone_banc), cadre + " : le banc a son cadre, sous les événements")
 		for i in 3: await process_frame
 		var total_coupe: Array = []
 		for etiquette: Label in total_equipe.find_children("*", "Label", true, false):
@@ -241,12 +250,14 @@ func run() -> void:
 		check(bouton_downes != null and not bouton_downes.text.contains("…") and bouton_downes.text.ends_with("DOWNES") and (bouton_downes.text == "Darren DOWNES" or bouton_downes.text == "D. DOWNES"), cadre + " : avec une alerte longue, le nom de famille n'est jamais coupé (%s)" % (bouton_downes.text if bouton_downes != null else "absent"))
 		var bouton_boothroyd := ecran.find_child("MatchBetweenPlayerName_r21", true, false) as Button
 		check(bouton_boothroyd != null and bouton_boothroyd.text == "Matthew BOOTHROYD", cadre + " : « Matthew BOOTHROYD » se lit en entier sur le banc (%s)" % (bouton_boothroyd.text if bouton_boothroyd != null else "absent"))
-		var legende := ecran.find_child("MatchBetweenNotesLegend", true, false) as Control
-		check(legende != null and legende.is_visible_in_tree() and legende.get_child_count() == 6, cadre + " : barème des notes écrit sous Mon XV")
-		check(not Charte.ATTRIBUT_85.is_equal_approx(Charte.ATTRIBUT_65) and not Between._teinte_note(7.8).is_equal_approx(Charte.V) and not Between._teinte_note(7.2).is_equal_approx(Charte.V), cadre + " : deux verts distincts, jamais le vert de la victoire")
+		# Légende des notes retirée (demande de Léo du 21/11/2026) : la note est écrite dans sa pastille de couleur.
+		var pastille_note: Node = ligne1.find_child("MatchBetweenPlayerNote", true, false) if ligne1 != null else null
+		check(ecran.find_child("MatchBetweenNotesLegend", true, false) == null and pastille_note != null and pastille_note.find_children("*", "Label", true, false).any(func(l: Label): return l.text == "6,0"), cadre + " : plus de légende des notes, la note écrite dans sa pastille")
+		# Barème unique des notes (charte, 21/11/2026) : rouge, orange, citron, vert clair, vert foncé.
+		check(Between._teinte_note(5.8) == Charte.PERTE and Between._teinte_note(6.2) == Charte.INTENSIF and Between._teinte_note(6.7) == Charte.ATTRIBUT_55 and Between._teinte_note(7.2) == Charte.CONDITION and Between._teinte_note(7.8) == Charte.NOTE_EXCELLENTE and Charte.encre_note(7.8) == Color.WHITE and Charte.encre_note(6.7) == Charte.ENCRE, cadre + " : barème des notes de la charte (cinq paliers, chiffre lisible)")
 		var terrain: Control = ecran.terrain
 		check(terrain.champ().size.x >= terrain.size.x * 0.8, cadre + " : le terrain remplit sa tuile (%d sur %d px)" % [int(terrain.champ().size.x), int(terrain.size.x)])
-		check(terrain.rayon() >= 9.0, cadre + " : pastilles lisibles (rayon %.1f px)" % terrain.rayon())
+		check(terrain.plancher_pastilles == 0.0 and terrain.rayon() >= 4.0 and terrain.rayon() <= terrain.echelle() * 3.0, cadre + " : pastilles à l'échelle du terrain, jamais une masse (rayon %.1f px)" % terrain.rayon())
 		# Un seul aplat doré à l'écran : le bouton principal.
 		var pleins := ecran.find_children("*", "BaseButton", true, false).filter(func(b: Control): return b.is_visible_in_tree() and aplat_or(b))
 		check(pleins.size() == 1, cadre + " : un seul aplat doré (%s)" % str(pleins.map(func(b: Control): return str(b.name))))
@@ -276,7 +287,7 @@ func run() -> void:
 		check(cams.size() == 3 and cams.all(func(k: int): return menu_plus.is_item_disabled(k) and menu_plus.get_item_text(k).ends_with("en 3D seulement") and menu_plus.is_item_radio_checkable(k)), cadre + " : caméras grisées en 2D, cochables")		# Noms : lien vers la fiche, mini-fiche au survol.
 		var noms: Array = ecran.find_children("MatchBetweenPlayerName_*", "Button", true, false)
 		var nom1 := ecran.find_child("MatchBetweenPlayerName_p1", true, false) as Button
-		check(nom1 != null and nom1.text == "Joueur Numéro1" and nom1.size.x >= nom1.get_theme_font("font").get_string_size(nom1.text, HORIZONTAL_ALIGNMENT_LEFT, -1, nom1.get_theme_font_size("font_size")).x, cadre + " : le nom se lit en entier (%s)" % (str(nom1.size) if nom1 != null else "absent"))
+		check(nom1 != null and nom1.text in ["Joueur Numéro1", "J. Numéro1"] and nom1.size.x >= nom1.get_theme_font("font").get_string_size(nom1.text, HORIZONTAL_ALIGNMENT_LEFT, -1, nom1.get_theme_font_size("font_size")).x, cadre + " : le nom se lit en entier (%s)" % (str(nom1.size) if nom1 != null else "absent"))
 		check(noms.size() == 23 and noms.all(func(b: Button): return b.has_meta("player_id") and b.has_meta("mini_fiche_joueur") and b.pressed.get_connections().size() > 0), cadre + " : 23 noms, chacun lien vers sa fiche et mini-fiche au survol (%d)" % noms.size())
 		# Tout ce qui a l'air cliquable fait quelque chose, sans ouvrir de fenêtre (le menu Plus est l'exception).
 		var fenetres_avant := root.get_children().filter(func(n: Node): return n is Window and (n as Window).visible).size()
@@ -321,9 +332,8 @@ func run() -> void:
 		var ligne_nous := ecran.classement_lignes.find_child("MatchBetweenLiveRow2", false, false) as Control
 		if ligne_nous != null: ligne_nous.gui_input.emit(clic_club)
 		var carte := ecran.multiplex_cartes.get_child(0) as Control if ecran.multiplex_cartes.get_child_count() > 0 else null
-		var domicile := carte.find_child("Domicile", true, false) as Control if carte != null else null
-		if domicile != null: domicile.gui_input.emit(clic_club)
-		check(signaux == [["club_demande", 102], ["club_demande", 3]] and ligne_nous.mouse_default_cursor_shape == Control.CURSOR_POINTING_HAND, cadre + " : clic sur un club du classement et du multiplex = sa fiche " + str(signaux))
+		if carte != null: carte.gui_input.emit(clic_club)
+		check(signaux.size() == 2 and signaux[0] == ["club_demande", 102] and signaux[1][0] == "match_demande" and str(signaux[1][1].get("id", "")) == "m1" and ligne_nous.mouse_default_cursor_shape == Control.CURSOR_POINTING_HAND, cadre + " : clic sur un club du classement = sa fiche, sur un match du multiplex = sa fenêtre " + str(signaux))
 		var muettes: Array = ecran.classement_lignes.get_children().filter(func(n: Node): return str(n.name).begins_with("MatchBetweenLiveRow") and not n.has_meta("club_id"))
 		check(muettes.is_empty(), cadre + " : toutes les lignes du classement sont cliquables " + str(muettes))
 		ecran.montrer_droite("chiffres")
@@ -343,7 +353,7 @@ func run() -> void:
 			"choix": {"type": "entrant", "options": [{"id": "r23", "nom": "Lucas Fetuao", "poste": "centre", "energie": 100, "actuel": true}, {"id": "r22", "nom": "Declan Moss", "poste": "ouverture", "energie": 100}]}})
 		for i in 3: await process_frame
 		var arret := ecran.find_child("MatchBetweenStop", true, false) as Control
-		check(arret.is_visible_in_tree() and not (ecran.find_child("MatchBetweenDuel", true, false) as Control).is_visible_in_tree() and dans(arret.get_global_rect(), ecran_rect) and arret.get_global_rect().position.x >= centre.end.x - 1.0, cadre + " : panneau d'arrêt dans la colonne de droite")
+		check(arret.is_visible_in_tree() and not (ecran.find_child("MatchBetweenDuel", true, false) as Control).is_visible_in_tree() and dans(arret.get_global_rect(), ecran_rect) and arret.get_global_rect().end.x <= centre.position.x + 1.0, cadre + " : panneau d'arrêt à la place des événements, à gauche")
 		check(ecran.equipe.disabled and ecran.parametres.disabled and ecran.arret_reprendre.text == "VALIDER LE CHOIX", cadre + " : Équipe et Réglages attendent le choix, « Valider le choix »")
 		var ligne_bloquee := ecran.xv.find_child("MatchBetweenPlayer1", false, false) as Button
 		check(ligne_bloquee != null and ligne_bloquee.disabled and ligne_bloquee.modulate.a < 0.9 and ecran.arret_aide.visible and ecran.arret_aide.text.contains("Mon XV"), cadre + " : lignes de Mon XV bloquées et atténuées, raison écrite")
@@ -369,7 +379,9 @@ func run() -> void:
 				if s.border_width_left > 0 and s.border_width_right > 0 and s.border_width_top > 0 and s.border_width_bottom > 0:
 					var anneau: bool = etat_style == "focus" and Color(s.border_color, 1.0).is_equal_approx(Charte.OR)
 					var secondaire: bool = Color(s.border_color, 1.0).is_equal_approx(Charte.FILET) and s.corner_radius_top_left >= Charte.RAYON_PILULE
-					if not anneau and not secondaire: cadres.append("%s:%s" % [noeud.name, etat_style])
+					# Grandes tuiles de l'écran 2D : fin liseré blanc (choix de Léo du 21/11/2026), rayon 18, 1 px.
+					var tuile: bool = s.border_color.is_equal_approx(Between.LISERE) and s.border_width_left == 1 and s.corner_radius_top_left == Charte.RAYON_PANNEAU
+					if not anneau and not secondaire and not tuile: cadres.append("%s:%s" % [noeud.name, etat_style])
 				# Tout aplat visible est arrondi (panneau 18, carte 12, case 6, pilule) ; seul le fondu du multiplex, de la
 				# couleur du panneau qu'il recouvre (invisible sur lui), garde ses angles.
 				if s.bg_color.a > 0.05 and s.corner_radius_top_left < Charte.RAYON_PETIT and str(noeud.name) != "MatchBetweenMultiplexFade": carres.append("%s:%s" % [noeud.name, etat_style])
@@ -395,12 +407,15 @@ func run() -> void:
 		ecran._ouvrir_parametres()
 		await process_frame
 		var menu_reglages: PopupMenu = ecran.menu_reglages
-		check(menu_reglages.visible and menu_reglages.item_count == 4 + 6 + 2 and ecran.vue_droite == "chiffres", cadre + " : en 3D, Réglages ouvre un menu déroulant (%d choix)" % menu_reglages.item_count)
-		check(menu_reglages.is_item_checked(menu_reglages.get_item_index(Between.HORLOGES_IDS.find(ecran.horloge))),cadre + " : l'horloge courante est cochée")
-		menu_reglages.id_pressed.emit(2)
+		# La vitesse de l'horloge ne se règle que dans « Plus » (retouche de Léo du 21/11/2026) : Réglages = temps forts.
+		check(menu_reglages.visible and menu_reglages.item_count == 6 + 1 and ecran.vue_droite == "chiffres", cadre + " : en 3D, Réglages ouvre un menu déroulant des temps forts (%d choix)" % menu_reglages.item_count)
 		menu_reglages.id_pressed.emit(101)
-		check(ecran.horloge == "rapide" and signaux == [["horloge_choisie", "rapide"], ["niveau_choisi", "resume"]], cadre + " : le menu change l'horloge et les temps forts " + str(signaux))
 		menu_reglages.hide()
+		menu_plus.about_to_popup.emit()
+		var id_vitesse: int = Between.ID_VITESSE + Between.HORLOGES_IDS.find(ecran.horloge)
+		check(menu_plus.get_item_index(id_vitesse) >= 0 and menu_plus.is_item_checked(menu_plus.get_item_index(id_vitesse)), cadre + " : l'horloge courante est cochée dans « Plus »")
+		menu_plus.id_pressed.emit(Between.ID_VITESSE + 2)
+		check(ecran.horloge == "rapide" and signaux == [["niveau_choisi", "resume"], ["horloge_choisie", "rapide"]] and not ecran.phase.text.contains("Rapide"), cadre + " : Réglages change les temps forts, « Plus » l'horloge (jamais écrite dans la pastille) " + str(signaux))
 		menu_plus.about_to_popup.emit()
 		check(menu_plus.is_item_disabled(3) and menu_plus.get_item_text(3).ends_with("à l’entracte"), cadre + " : en 3D, autres matchs grisés et dits (%s)" % menu_plus.get_item_text(3))
 		signaux.clear()

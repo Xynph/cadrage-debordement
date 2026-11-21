@@ -281,8 +281,12 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	# Nom d'un joueur de l'entracte : sa petite fenêtre par-dessus le match (jamais une page qui remplace la vue).
 	if view.has_method("ouvrir_joueur"): between.fiche_vers = view.ouvrir_joueur
 	# Repère de la domination, dernier fait, chiffre clé : le journal ou les statistiques ouverts à la bonne ligne.
-	between.journal_demande.connect(ouvrir_journal_a)
+	# Plein écran obligatoire (Léo, 21/11/2026) : un fait, un chiffre ou un match du multiplex cliqué ouvre sa petite
+	# fenêtre par-dessus le match ; le journal et les statistiques s'ouvrent depuis elle (tiroirs du direct).
+	between.journal_demande.connect(func(i: int): if view.has_method("ouvrir_fenetre_fait"): view.ouvrir_fenetre_fait(i) else: ouvrir_journal_a(i))
 	between.stats_demandees.connect(ouvrir_stats_a)
+	between.stat_demandee.connect(func(rang: Dictionary): if view.has_method("ouvrir_fenetre_stat"): view.ouvrir_fenetre_stat(rang))
+	between.match_demande.connect(func(rencontre: Dictionary): if view.has_method("ouvrir_fenetre_match"): view.ouvrir_fenetre_match(rencontre))
 	between.camera_demandee.connect(func(mode: String): view.choisir_camera(mode))
 	# Club du multiplex ou du classement en direct : sa petite fenêtre par-dessus le match.
 	between.club_demande.connect(func(id: int): if view.has_method("ouvrir_fiche_club_id"): view.ouvrir_fiche_club_id(id))

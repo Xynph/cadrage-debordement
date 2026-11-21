@@ -71,6 +71,10 @@ var bande_temps_forts: HBoxContainer
 const BANDEAU_TAILLES := {"horloge": 32, "phase": 16, "equipe": 22, "score": 40, "sigle": 15, "pause": 16, "legende": 16, "meteo": 13}
 ## Hauteur du bandeau du score et largeur du journal (maquette 1080p : 56 et 744 px), marge d'écran 24 px.
 const BANDEAU_HAUTEUR := 56
+## Barre du haut (bandeau du score, ligne du vent, commandes) agrandie d'environ 28 % (retouche de Léo du 21/11/2026).
+const BARRE_HAUT := 1.28
+## Liseré fin des grandes tuiles du direct (choix de Léo du 21/11/2026) : 1 px, blanc à 22 %.
+const LISERE := Color(1, 1, 1, 0.22)
 const LEGENDE_LARGEUR := 744
 const MARGE := 24
 var echelle := 1.0
@@ -122,7 +126,14 @@ class BandeauAngle extends HBoxContainer:
 		add_theme_constant_override("separation", 0)
 		sort_children.connect(queue_redraw)
 	func _draw() -> void:
-		draw_style_box(Charte.style_panneau(FOND, Charte.RAYON_PANNEAU, 0), Rect2(Vector2.ZERO, size))
+		var fond_bandeau: StyleBoxFlat = Charte.style_panneau(FOND, Charte.RAYON_PANNEAU, 0)
+		# Fin trait blanc des grandes tuiles du direct (choix de Léo du 21/11/2026), comme les blocs de l'écran 2D.
+		if fond_bandeau != null:
+			fond_bandeau = fond_bandeau.duplicate()
+			fond_bandeau.border_color = Color(1, 1, 1, 0.22)
+			fond_bandeau.set_border_width_all(1)
+			fond_bandeau.anti_aliasing = true
+		draw_style_box(fond_bandeau, Rect2(Vector2.ZERO, size))
 		var horloge: Control = get_node_or_null("MatchClockBlock")
 		if horloge != null and horloge.visible:
 			draw_rect(Rect2(horloge.position.x + horloge.size.x, size.y * 0.2, 1.0, size.y * 0.6), Charte.FILET)
@@ -304,7 +315,8 @@ func _placer_puce(bouton: Button) -> void:
 ## Styles et tailles d'une commande du HUD à l'échelle courante.
 func _habiller_bouton_hud(bouton: Button) -> void:
 	var puce: PanelContainer = bouton.get_node_or_null("Touche")
-	var taille := roundi(BANDEAU_TAILLES.pause * echelle)
+	var eh := echelle * BARRE_HAUT
+	var taille := roundi(BANDEAU_TAILLES.pause * eh)
 	bouton.add_theme_font_size_override("font_size", taille)
 	if puce != null: (puce.get_child(0) as Label).add_theme_font_size_override("font_size", taille)
 	var largeur_puce := puce.get_combined_minimum_size().x if puce != null else 0.0
@@ -313,15 +325,18 @@ func _habiller_bouton_hud(bouton: Button) -> void:
 		var couleur := Color(Charte.PANNEAU, 0.9)
 		if etat in ["hover", "pressed"]: couleur = Charte.PANNEAU_2
 		if etat == "focus": couleur = Color(0, 0, 0, 0)
-		var cote := roundf(16 * echelle)
-		var style := _fond_hud(Vector4(cote + (largeur_puce + 10 * echelle if a_gauche else 0.0), 0, cote + (0.0 if a_gauche else largeur_puce + 10 * echelle), 0), couleur, Charte.RAYON_PILULE)
+		var cote := roundf(16 * eh)
+		var style := _fond_hud(Vector4(cote + (largeur_puce + 10 * eh if a_gauche else 0.0), 0, cote + (0.0 if a_gauche else largeur_puce + 10 * eh), 0), couleur, Charte.RAYON_PILULE)
+		if etat in ["normal", "hover", "pressed", "disabled"]:
+			style.border_color = LISERE
+			style.set_border_width_all(1)
 		if etat == "focus":
 			# Anneau de focus de la charte : doré, 2 px, décalé de 2 px.
 			style.border_color = Charte.OR
 			style.set_border_width_all(2)
 			style.set_expand_margin_all(2)
 		bouton.add_theme_stylebox_override(etat, style)
-	bouton.custom_minimum_size = Vector2(0, roundf(40 * echelle))
+	bouton.custom_minimum_size = Vector2(0, roundf(40 * eh))
 	_placer_puce(bouton)
 
 ## Fond de la bande des commandes (phrase d'état, Équipe, Réglages, Plus), dans la continuité du bandeau du score :
@@ -333,7 +348,9 @@ func _fond_bande() -> void:
 	var hauteur := maxf(_coque_score.size.y, bande.size.y)
 	var haut := roundf((bande.size.y - hauteur) * 0.5)
 	var marge := roundf(14 * echelle)
-	var style := Charte.style_panneau(BandeauAngle.FOND, Charte.RAYON_PANNEAU, 0)
+	var style := Charte.style_panneau(BandeauAngle.FOND, Charte.RAYON_PANNEAU, 0).duplicate() as StyleBoxFlat
+	style.border_color = LISERE
+	style.set_border_width_all(1)
 	var groupe := Rect2()
 	for enfant in bande.get_children():
 		var c := enfant as Control
@@ -650,7 +667,12 @@ static func echelle_pour(hauteur: float) -> float:
 func _mettre_a_l_echelle() -> void:
 	if not is_instance_valid(clock): return
 	echelle = echelle_pour(get_viewport().get_visible_rect().size.y)
-	var t := func(cle: String) -> int: return roundi(float(BANDEAU_TAILLES[cle]) * echelle)
+	var eh := echelle * BARRE_HAUT
+	var t := func(cle: String) -> int: return roundi(float(BANDEAU_TAILLES[cle]) * (echelle if cle == "legende" else eh))
+	# Les tuiles du haut (score, commandes, Reprendre) séparées par le vide des grandes tuiles (24 px en 2560) : la
+	# gouttière couvre aussi le débord du fond dessiné derrière les commandes.
+	var rangee_haut: HBoxContainer = clock.find_parent("MatchTopRow") as HBoxContainer
+	if rangee_haut != null: rangee_haut.add_theme_constant_override("separation", roundi((18 + 14) * echelle))
 	var marge: MarginContainer = clock.find_parent("MatchHud").get_parent() if clock.find_parent("MatchHud") != null else null
 	if marge != null:
 		for bord in ["left", "top", "right", "bottom"]: marge.add_theme_constant_override("margin_" + bord, roundi(MARGE * echelle))
@@ -659,24 +681,24 @@ func _mettre_a_l_echelle() -> void:
 	score.add_theme_font_size_override("font_size", t.call("score"))
 	for nom: Label in [home, away]: nom.add_theme_font_size_override("font_size", t.call("equipe"))
 	for sigle: Label in _sigles: sigle.add_theme_font_size_override("font_size", t.call("sigle"))
-	var hauteur := roundf(BANDEAU_HAUTEUR * echelle)
+	var hauteur := roundf(BANDEAU_HAUTEUR * eh)
 	for segment: Control in _coque_score.get_children():
 		segment.custom_minimum_size.y = hauteur
 		var marges := StyleBoxEmpty.new()
-		marges.content_margin_left = roundf(12 * echelle)
-		marges.content_margin_right = roundf(16 * echelle)
-		if segment.name == "MatchClubPlaque1": marges.content_margin_right = roundf(18 * echelle)
-		if segment.name == "MatchClockBlock": marges.content_margin_left = roundf(14 * echelle)
+		marges.content_margin_left = roundf(12 * eh)
+		marges.content_margin_right = roundf(16 * eh)
+		if segment.name == "MatchClubPlaque1": marges.content_margin_right = roundf(18 * eh)
+		if segment.name == "MatchClockBlock": marges.content_margin_left = roundf(14 * eh)
 		if segment.name == "MatchScoreBlock":
-			marges.content_margin_left = roundf(16 * echelle)
+			marges.content_margin_left = roundf(16 * eh)
 		segment.add_theme_stylebox_override("panel", marges)
-	(_coque_score.get_node("MatchClockBlock") as Control).custom_minimum_size.x = roundf(96 * echelle)
-	score.custom_minimum_size.x = roundf(104 * echelle)
+	(_coque_score.get_node("MatchClockBlock") as Control).custom_minimum_size.x = roundf(96 * eh)
+	score.custom_minimum_size.x = roundf(104 * eh)
 	for plaque: PanelContainer in plaques:
 		var rangee: HBoxContainer = plaque.get_child(0)
-		rangee.add_theme_constant_override("separation", roundi(10 * echelle))
+		rangee.add_theme_constant_override("separation", roundi(10 * eh))
 		var souligne: ColorRect = plaque.find_child("Souligne", true, false)
-		souligne.custom_minimum_size.y = maxf(1.0, roundf(2 * echelle))
+		souligne.custom_minimum_size.y = maxf(1.0, roundf(2 * eh))
 	for etiquette: Label in [meteo_ligne]: etiquette.add_theme_font_size_override("font_size", t.call("meteo"))
 	for bouton: Button in [play, indice_menu]: _habiller_bouton_hud(bouton)
 	_possession_texte.add_theme_font_size_override("font_size", t.call("legende"))
@@ -755,7 +777,8 @@ func _process(_delta: float) -> void:
 	var rappel: bool = not compact and not entracte and not _live().get("finished", false)
 	if indice_menu.visible != rappel: indice_menu.visible = rappel
 	_suivre_possession(entracte)
-	var meteo_vue: bool = not compact and meteo_ligne.visible
+	# Écran 2D : la météo est posée sur le terrain en icônes (retouche de Léo du 21/11/2026), plus de phrase ici.
+	var meteo_vue: bool = not compact and meteo_ligne.visible and not entracte
 	if _meteo_boite.visible != meteo_vue: _meteo_boite.visible = meteo_vue
 	# La fenêtre Équipe ouverte depuis la bande ferme le menu (le match reste en pause).
 	if is_instance_valid(menu) and menu.visible and is_instance_valid(equipe) and equipe.visible: _cacher_menu()
@@ -928,7 +951,7 @@ func _poser_ecusson(cote: int, teams: Array) -> void:
 		ancien.queue_free()
 	puce.visible = true
 	if teams.size() <= cote or not (teams[cote] is Dictionary): return
-	var ecusson := ecusson_club(_club_complet(teams[cote]), roundi(44 * echelle))
+	var ecusson := ecusson_club(_club_complet(teams[cote]), roundi(44 * echelle * BARRE_HAUT))
 	ecusson.name = "MatchClubCrest%d" % cote
 	ecusson.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	ecusson.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1223,10 +1246,19 @@ func echap() -> void:
 		ouvrir_menu()
 
 ## Met le match en pause s'il joue (une seule fois) ; retient qu'il faudra le relancer.
+## Instant de la dernière reprise demandée par la fermeture d'une fenêtre (ms).
+var _reprise_ms := -100000
+
 func _suspendre() -> void:
 	var live := _live()
 	if live.is_empty() or live.get("finished", false): return
 	var etat := _etat_bandeau()
+	# Une petite fenêtre rouverte juste après en avoir fermé une : la reprise demandée à la fermeture est encore en
+	# route (bandeau toujours sur « Reprendre ») ; la pause est redemandée dès la réponse du jeu.
+	if str(etat.pause) != "PAUSE" and app.waiting and Time.get_ticks_msec() - _reprise_ms < 5000:
+		_reprendre_apres = true
+		_pause_voulue = 1
+		return
 	if str(etat.pause) != "PAUSE" or not bool(etat.pause_possible): return
 	_reprendre_apres = true
 	if app.waiting: _pause_voulue = 1
@@ -1237,6 +1269,7 @@ func _relancer() -> void:
 	_reprendre_apres = false
 	var live := _live()
 	if live.is_empty() or live.get("finished", false) or not director._talk().is_empty(): return
+	_reprise_ms = Time.get_ticks_msec()
 	if app.waiting: _pause_voulue = -1
 	elif live.get("paused", false): director.command("pause", {"paused": false})
 
@@ -1811,6 +1844,150 @@ func fermer_fenetre() -> void:
 			var fermer: Variant = noeud.get_meta(PetiteFenetre.FERMER, Callable())
 			if fermer is Callable and (fermer as Callable).is_valid(): (fermer as Callable).call()
 			return
+
+# --- Petites fenêtres de l'écran 2D : fait, chiffre, match du multiplex -----------------------------------------
+
+const FENETRE_FAIT := "MatchFenetreFait"
+const FENETRE_STAT := "MatchFenetreStat"
+const FENETRE_MATCH := "MatchFenetreMatch"
+const TYPES_FAITS := {"try": "Essai", "goal": "Tir au but réussi", "miss": "Tir au but manqué", "penalty": "Pénalité", "drop": "Drop",
+	"transformation": "Transformation", "card": "Carton", "scrum": "Mêlée", "lineout": "Touche", "turnover": "Ballon récupéré",
+	"hand-fault": "En-avant", "kick": "Jeu au pied", "carry": "Temps de jeu"}
+
+## Petite fenêtre d'un fait du match (essai, pénalité, carton, repère de la frise, dernier fait) : écusson du club,
+## type, minute, auteur (sa fenêtre s'il est des nôtres) et score d'après ; « Journal » ouvre le tiroir à ce fait.
+func ouvrir_fenetre_fait(i: int) -> void:
+	var live := _live()
+	var evenements: Array = live.get("events", []) if live.get("events") is Array else []
+	var direct: Dictionary = live.get("direct", {}) if live.get("direct") is Dictionary else {}
+	var repere: Dictionary = {}
+	for r: Variant in direct.get("reperes", []) if direct.get("reperes") is Array else []:
+		if r is Dictionary and int(r.get("i", -1)) == i: repere = r
+	var evenement: Dictionary = evenements[i] if i >= 0 and i < evenements.size() and evenements[i] is Dictionary else {}
+	if repere.is_empty() and evenement.is_empty(): return
+	var kind := str(repere.get("kind", evenement.get("kind", "")))
+	var rouge := bool(repere.get("rouge", false)) or str(evenement.get("text", "")).to_lower().contains("rouge")
+	var type := ("Carton rouge" if rouge else "Carton jaune") if kind == "card" else str(TYPES_FAITS.get(kind, "Fait de jeu"))
+	var teams: Array = live.get("teams", [])
+	var cote := int(repere.get("equipe", evenement.get("team", evenement.get("equipe", -1))))
+	var club: Dictionary = _club_complet(teams[cote]) if cote >= 0 and cote < teams.size() and teams[cote] is Dictionary else {}
+	var texte := str(evenement.get("text", ""))
+	var fond := _ouvrir_fenetre(FENETRE_FAIT, type.to_upper(), 960, 420 if not texte.is_empty() else 360)
+	fond.set_meta("fait", i)
+	if not club.is_empty():
+		var ecusson := ecusson_club(club, C.px(140))
+		ecusson.name = "MatchFenetreFaitEcusson"
+		ecusson.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fond.add_child(ecusson)
+		D.place(ecusson, Rect2(36, 84, 140, 140))
+	var minute := str(repere.get("horloge", evenement.get("clock", "")))
+	if minute.is_empty() and evenement.get("minute") != null: minute = "%d′" % int(evenement.minute)
+	var largeur := (960.0 - 206.0 - 36.0 - 2 * 12.0) / 3.0
+	Pieces.tuile(fond, Rect2(206, 84, largeur, 116), minute if not minute.is_empty() else "—", "minute", Charte.IVOIRE, "MatchFenetreFaitMinute", 50, "", "clock")
+	var marque: Variant = repere.get("score") if repere.get("score") is Array else evenement.get("score")
+	var score := "%d – %d" % [int(marque[0]), int(marque[1])] if marque is Array and (marque as Array).size() == 2 else "—"
+	Pieces.tuile(fond, Rect2(206 + largeur + 12.0, 84, largeur, 116), score, "score après", Charte.IVOIRE, "MatchFenetreFaitScore", 46)
+	var couleur_type: Color = Charte.PERTE if rouge else (Charte.INTENSIF if kind == "card" else (Charte.GAIN if kind in ["try", "goal", "transformation", "drop"] else Charte.IVOIRE))
+	Pieces.tuile(fond, Rect2(206 + 2 * (largeur + 12.0), 84, largeur, 116), type, "type", couleur_type, "MatchFenetreFaitType", 34)
+	# Club et auteur en pastilles ; l'auteur, s'il est des nôtres, ouvre sa petite fenêtre.
+	var x := 206.0
+	if not club.is_empty(): x += Pieces.pastille(fond, x, 216, S.G.club_name(club), "shield", "MatchFenetreFaitClub", "", Charte.IVOIRE, Charte.PANNEAU_3, func(): ouvrir_fiche_club(cote)) + 10.0
+	var qui := str(repere.get("nom", "")).strip_edges()
+	var scene: Dictionary = evenement.get("scene", {}) if evenement.get("scene") is Dictionary else {}
+	var acteur := str(scene.get("actor", "")) if scene.get("actor") != null else ""
+	if qui.is_empty() and not acteur.is_empty():
+		for liste: String in ["lineup", "reserves"]:
+			for j: Variant in live.get(liste, []) if live.get(liste) is Array else []:
+				if j is Dictionary and str(j.get("id", "")) == acteur: qui = str(j.get("name", ""))
+	var des_notres: bool = not acteur.is_empty() and not load("res://ui/immersive08/fiche_commune.gd").trouver(app, acteur, "squad").is_empty()
+	if not qui.is_empty(): x += Pieces.pastille(fond, x, 216, qui, "people", "MatchFenetreFaitAuteur", "", Charte.IVOIRE, Charte.PANNEAU_3, (func(): ouvrir_fenetre_joueur(acteur)) if des_notres else Callable()) + 10.0
+	Pieces.pastille(fond, x, 216, "Journal", "search", "MatchFenetreFaitJournal", "", Charte.IVOIRE, Charte.PANNEAU_3, func():
+		fermer_fenetre()
+		if regie != null and regie.has_method("ouvrir_journal_a"): regie.ouvrir_journal_a(i))
+	if not texte.is_empty():
+		var ligne := D.text(fond, 206, 300, texte, 20, Charte.IVOIRE_2, 500, 960 - 206 - 36, HORIZONTAL_ALIGNMENT_LEFT, true)
+		ligne.name = "MatchFenetreFaitTexte"
+		ligne.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		ligne.size.y = 90
+		ligne.custom_minimum_size.y = 0
+
+## Petite fenêtre d'un chiffre du match (ligne des chiffres en miroir) : les deux clubs, écusson, nom et valeur en
+## grandes tuiles à leurs couleurs, la barre des parts ; « Statistiques » ouvre le tiroir à cette ligne.
+func ouvrir_fenetre_stat(rang: Dictionary) -> void:
+	var live := _live()
+	var teams: Array = live.get("teams", [])
+	if teams.size() < 2: return
+	var direct: Dictionary = live.get("direct", {}) if live.get("direct") is Dictionary else {}
+	var camp := int(direct.get("camp", 0))
+	var nous := camp if camp in [0, 1] else 0
+	var titre := str(rang.get("label", "")).get_slice(" (", 0)
+	var fond := _ouvrir_fenetre(FENETRE_STAT, titre.to_upper(), 960, 400)
+	fond.set_meta("stat", str(rang.get("cle", "")))
+	var valeurs: Array = rang.get("valeurs", [0, 0]) if rang.get("valeurs") is Array else [0, 0]
+	var vide := bool(rang.get("vide", false))
+	var inverse := bool(rang.get("inverse", false)) or str(rang.get("cle", "")) == "penalites"
+	var largeur := (960.0 - 72.0 - 24.0) / 2.0
+	for k in 2:
+		var cote := nous if k == 0 else 1 - nous
+		var club: Dictionary = _club_complet(teams[cote]) if teams[cote] is Dictionary else {}
+		var x := 36.0 + k * (largeur + 24.0)
+		var ecusson := ecusson_club(club, C.px(70))
+		ecusson.name = "MatchFenetreStatEcusson%d" % k
+		ecusson.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fond.add_child(ecusson)
+		D.place(ecusson, Rect2(x, 84, 70, 70))
+		var nom := D.text(fond, x + 86, 128, S.G.club_name(club).to_upper(), 24, Charte.IVOIRE, 800, largeur - 86)
+		nom.name = "MatchFenetreStatNom%d" % k
+		nom.add_theme_font_override("font", Charte.TITRE_FICHE)
+		var a := float(valeurs[cote])
+		var b := float(valeurs[1 - cote])
+		var mieux: bool = not vide and (a < b if inverse else a > b)
+		var valeur := "—" if vide else (("%d / %d" % [int(a), int((rang.sur as Array)[cote])]) if rang.get("sur") is Array else ("%d %%" % int(a) if str(rang.get("unite", "")) == "%" else str(int(a))))
+		var teinte := Charte.club_trait(_couleur_club(club, k))
+		Pieces.tuile(fond, Rect2(x, 170, largeur, 130), valeur, "en tête" if mieux else ("à égalité" if a == b and not vide else "derrière"), teinte if mieux else Charte.IVOIRE, "MatchFenetreStatValeur%d" % k, 64, "", "star" if mieux else "", mieux)
+	if not vide and float(valeurs[0]) + float(valeurs[1]) > 0.0:
+		var part := float(valeurs[nous]) / (float(valeurs[0]) + float(valeurs[1]))
+		var rail := D.rect(fond, Rect2(36, 318, 960 - 72, 14), Charte.PANNEAU_3, Charte.RAYON_PILULE)
+		rail.name = "MatchFenetreStatBarre"
+		var plein := D.rect(rail, Rect2(0, 0, maxf(14.0, (960 - 72) * part), 14), Charte.club_trait(_couleur_club(_club_complet(teams[nous]), 0)), Charte.RAYON_PILULE)
+		plein.name = "MatchFenetreStatPart"
+	Pieces.pastille(fond, 36, 346, "Statistiques", "rating", "MatchFenetreStatTiroir", "", Charte.IVOIRE, Charte.PANNEAU_3, func():
+		fermer_fenetre()
+		if regie != null and regie.has_method("ouvrir_stats_a"): regie.ouvrir_stats_a(str(rang.get("stats", rang.get("label", "")))))
+
+## Couleur d'un club (identité), sinon vert pour nous / ivoire pour l'adversaire.
+func _couleur_club(club: Dictionary, k: int) -> Color:
+	var c := str(S.G.identity(club).get("color", club.get("color", "")))
+	return Color(c) if c.begins_with("#") else (Charte.GAIN if k == 0 else Charte.IVOIRE_2)
+
+## Petite fenêtre d'un autre match de la journée (carte du multiplex) : les deux clubs (écusson et nom, leur fenêtre au
+## clic), le score en grandes tuiles, les essais, la minute ou « Terminé ».
+func ouvrir_fenetre_match(rencontre: Dictionary) -> void:
+	var cotes: Array = [rencontre.get("home", {}), rencontre.get("away", {})]
+	if not cotes[0] is Dictionary or not cotes[1] is Dictionary: return
+	var fini := bool(rencontre.get("fini", false))
+	var fond := _ouvrir_fenetre(FENETRE_MATCH, "%s – %s" % [str(cotes[0].get("abbr", "")), str(cotes[1].get("abbr", ""))], 960, 420)
+	fond.set_meta("match_id", str(rencontre.get("id", "")))
+	var largeur := (960.0 - 72.0 - 24.0) / 2.0
+	for k in 2:
+		var c: Dictionary = cotes[k]
+		var club: Dictionary = _club_complet({"id": c.get("id"), "name": c.get("nom", ""), "abbr": c.get("abbr", "")}) if c.get("id") != null else c
+		var x := 36.0 + k * (largeur + 24.0)
+		var ecusson := ecusson_club(club, C.px(80))
+		ecusson.name = "MatchFenetreMatchEcusson%d" % k
+		ecusson.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fond.add_child(ecusson)
+		D.place(ecusson, Rect2(x, 84, 80, 80))
+		var nom_club := str(c.get("nom", S.G.club_name(club)))
+		var nom := D.text(fond, x + 96, 134, nom_club.to_upper(), 26, Charte.IVOIRE, 800, largeur - 96)
+		nom.name = "MatchFenetreMatchNom%d" % k
+		nom.add_theme_font_override("font", Charte.TITRE_FICHE)
+		var pour := int(c.get("score", 0))
+		var contre := int(cotes[1 - k].get("score", 0))
+		var id_club := int(float(c.get("id"))) if c.get("id") != null else -1
+		Pieces.tuile(fond, Rect2(x, 180, largeur * 0.6 - 6, 130), str(pour), "points", Charte.GAIN if pour > contre else (Charte.PERTE if pour < contre else Charte.IVOIRE), "MatchFenetreMatchScore%d" % k, 70, "", "", false, (func(): ouvrir_fiche_club_id(id_club)) if id_club >= 0 else Callable())
+		Pieces.tuile(fond, Rect2(x + largeur * 0.6 + 6, 180, largeur * 0.4 - 6, 130), str(int(c.get("essais", 0))), "essais", Charte.IVOIRE, "MatchFenetreMatchEssais%d" % k, 54)
+	Pieces.pastille(fond, 36, 330, "Terminé" if fini else "%d′" % int(rencontre.get("minute", 0)), "check" if fini else "clock", "MatchFenetreMatchMinute", "", Charte.IVOIRE_2 if fini else Charte.GAIN)
 
 # --- Pages du direct : relecture, réglages -----------------------------------------------------
 
