@@ -38,7 +38,7 @@ func run() -> void:
 	var empty := Host.new()
 	empty.model = {"clubLife":{"performanceAnalysis":{"available":true,"summary":{"played":0}}}}
 	var empty_panel: Control = view.build(empty)
-	check(text(empty_panel).contains("Pas encore de match joué"), "État vide explicite")
+	check(text(empty_panel).contains("Aucun match joué"), "État vide explicite")
 	empty_panel.free()
 	empty.model = {}
 	var unavailable: Control = view.build(empty)

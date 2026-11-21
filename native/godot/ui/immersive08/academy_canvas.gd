@@ -15,6 +15,7 @@ const Order = preload("res://ui/player_table_order.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const EnPlace = preload("res://ui/confirmation_en_place.gd")
 const Pages = preload("res://ui/immersive08/formation_pages.gd")
+const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
 const Identity = preload("res://ui/player_identity.gd")
 const Words = preload("res://ui/management_state.gd")
 const TABS = ["Effectif", "Progression", "Passerelles", "Encadrement"]
@@ -714,7 +715,7 @@ func _strip() -> void:
 	var fond := D.rect(strip, Rect2(0, 0, WIDTH, 100), Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	fond.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if selected.is_empty():
-		D.text(strip, 22, 58, "Choisis un jeune dans la liste pour décider de son avenir.", 20, Charte.IVOIRE_2, 600, 1400)
+		Pastilles.poser(strip, Pastilles.pastille("Aucun jeune choisi", Charte.IVOIRE_2, "clock", "Choisis un jeune dans la liste pour décider de son avenir.", 20, "AcademyNoSelection"), 22, 34)
 		return
 	var p := selected
 	var pro := _professional(p)
@@ -760,11 +761,20 @@ func _strip() -> void:
 	var restriction := str(apercu.get("restriction", ""))
 	var capacite := str(apercu.get("capacity", ""))
 	var texte_contrat := termes if disponible else (restriction + " " + capacite).strip_edges()
-	if not texte_contrat.is_empty():
-		var contrat_note := Kit.texte(strip, x, 36, texte_contrat, Charte.IVOIRE if disponible else Charte.IVOIRE_2, 760, 17)
-		contrat_note.name = "AcademyContractNote"
+	if disponible:
+		var salaire: Variant = p.get("salary")
+		var fin_contrat := _saison_courte(season + 1)
+		var x_tuile := x
+		if salaire is int or salaire is float:
+			x_tuile += Pastilles.poser(strip, Pastilles.tuile(Pastilles.euros_courts(salaire), "par semaine", Pastilles.BLEU, Charte.PANNEAU_2, 26, "AcademyContractSalary", false, _ouvrir_fiche.bind(p)), x_tuile, 12) + 8.0
+		x_tuile += Pastilles.poser(strip, Pastilles.tuile(fin_contrat, "fin du contrat", Pastilles.TURQUOISE, Charte.PANNEAU_2, 26, "AcademyContractEnd", false, _ouvrir_fiche.bind(p)), x_tuile, 12) + 8.0
+		for enfant in strip.get_children():
+			if enfant.name in ["AcademyContractSalary", "AcademyContractEnd"]: (enfant as Control).tooltip_text = texte_contrat
+	elif not texte_contrat.is_empty():
+		var contrat_note := Pastilles.pastille(restriction.trim_suffix(".").replace("Signature indisponible", "Signature impossible") if not restriction.is_empty() else "Places limitées", Pastilles.ORANGE, "warning", texte_contrat, 18, "AcademyContractNote", func(): app._navigate("Effectif"))
+		Pastilles.poser(strip, contrat_note, x, 16)
 	if not disponible:
-		var effectif := Kit.lien(strip, Rect2(x, 52, 0, 34), "Voir l’effectif et les places →", func(): app._navigate("Effectif"), "AcademyOpenSquad", 18)
+		var effectif := Kit.lien(strip, Rect2(x, 56, 0, 34), "Voir l’effectif et les places →", func(): app._navigate("Effectif"), "AcademyOpenSquad", 18)
 		effectif.tooltip_text = ""
 	elif pathway.get("active", false) and not _path(p).is_empty():
 		var salaires: Array = _path(p).get("promotionSalary", [])
@@ -808,10 +818,8 @@ func _cartes() -> void:
 		if _a_decider(p) or _pepite(p) or float(p.get("injury", 0)) > 0: file.append(p)
 	var titre := Kit.titre(cards, 0, 28, "À décider avant la fin de saison", 26, 800)
 	titre.name = "AcademyDecisionsTitle"
-	var resume := "%s · %s" % [P.plural(_compter(roster, "decide"), "contrat d’espoir", "contrats d’espoir"), P.plural(int((app.model.get("decisions", {}).get("recruitment", {}) as Dictionary).get("places", 0)), "place pro libre", "places pro libres")]
-	Kit.texte(cards, WIDTH, 26, resume + " · clic sur une carte : la décision se place sur ce jeune", Charte.IVOIRE_2, 1300, 17, HORIZONTAL_ALIGNMENT_RIGHT)
 	if file.is_empty():
-		Kit.texte(cards, 0, 90, "Aucun jeune ne demande de décision pour le moment.", Charte.IVOIRE_2, 1000, 19).name = "AcademyNoDecision"
+		Pastilles.poser(cards, Pastilles.pastille("Aucune décision", Charte.IVOIRE_2, "check", "Aucun jeune ne demande de décision pour le moment.", 20, "AcademyNoDecision"), 0, 56)
 		return
 	var nombre := mini(4, file.size())
 	var largeur := (WIDTH - (nombre - 1) * 14.0) / maxf(1.0, float(nombre)) if nombre > 0 else 0.0
@@ -837,12 +845,45 @@ func _cartes() -> void:
 		Kit.marqueur(carte, Rect2(14, 18, 8, 96), Charte.IVOIRE if p.id == selected.get("id") else Charte.IVOIRE_2)
 		var entete := D.text(carte, 40, 38, "%s, %s, %s ans" % [str(p.name), str(p.pos).to_lower(), G.n(p.age)], 22, Charte.IVOIRE, 700, largeur - 60)
 		entete.add_theme_font_override("font", Charte.TITRE_GRAS)
-		var raison := C.wrap(_raison(p), 17, Charte.IVOIRE_2)
+		var raison := _pastilles_raison(p)
+		raison.name = "AcademyDecisionReasons"
 		carte.add_child(raison)
-		D.place(raison, Rect2(40, 54, largeur - 60, 84))
-		raison.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		for enfant in carte.get_children():
-			if enfant is Control: (enfant as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		D.place(raison, Rect2(40, 62, largeur - 60, 76))
+		_ignorer_souris(carte)
+
+## Raison d'une carte « À décider » en pastilles : à trancher, pépite (★ potentiel · niveau), blessure, stagnation ; la phrase
+## complète reste en infobulle et dans le nom accessible de la carte.
+func _pastilles_raison(p: Dictionary) -> HFlowContainer:
+	var flux := HFlowContainer.new()
+	flux.add_theme_constant_override("h_separation", C.px(8))
+	flux.add_theme_constant_override("v_separation", C.px(6))
+	var niveau := G.rating_text(p, true)
+	var potentiel := G.potential_text(p)
+	if _a_decider(p):
+		var bulle := "Contrat d’espoir à trancher cette saison : %s avant qu’un autre club ne s’y intéresse." % ("le promouvoir" if development.get("promotionAvailable", false) else "décide de son avenir")
+		flux.add_child(Pastilles.pastille("À trancher", Pastilles.ORANGE, "clock", bulle, 18))
+	if _pepite(p): flux.add_child(Pastilles.pastille("%s · niv. %s" % [potentiel, niveau], Pastilles.TURQUOISE, "star", "Pépite : potentiel estimé %s, niveau %s." % [potentiel, niveau], 18))
+	var blessure := float(p.get("injury", 0))
+	if blessure > 0: flux.add_child(Pastilles.pastille("%d sem." % ceili(blessure), Pastilles.ROUGE, "warning", "Blessé %s ; il manque les prochains matchs." % P.plural(ceili(blessure), "semaine", "semaines"), 18))
+	var gain: Variant = _delta(p)
+	if gain != null and int(gain) == 0 and int(p.get("age", 0)) >= 20: flux.add_child(Pastilles.pastille("0 progrès", Pastilles.ORANGE, "clock", "Aucune progression cette saison à %d ans." % int(p.age), 18))
+	if flux.get_child_count() == 0: flux.add_child(Pastilles.pastille("Niv. %s · pot. %s" % [niveau, potentiel], Pastilles.BLEU, "", "Niveau %s, potentiel %s." % [niveau, potentiel], 18))
+	return flux
+
+func _ouvrir_fiche(p: Dictionary) -> void:
+	app.navigation_controller.open_entity({"kind": "player" if _professional(p) else "academy", "id": str(p.id)})
+
+static func _ignorer_souris(noeud: Node) -> void:
+	for enfant in noeud.get_children():
+		if enfant is Control: (enfant as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_ignorer_souris(enfant)
+
+## « 2027-2028 » → « 2027-28 ».
+static func _saison_courte(valeur: Variant) -> String:
+	var libelle := G.season_label(valeur)
+	var morceaux := libelle.split("-")
+	if morceaux.size() == 2 and morceaux[1].length() == 4: return "%s-%s" % [morceaux[0], morceaux[1].substr(2)]
+	return libelle
 
 func _choisir_depuis_carte(p: Dictionary) -> void:
 	# La ligne doit exister dans le tableau : le filtre qui la cacherait est levé.
@@ -869,16 +910,14 @@ func _pied(group: String) -> void:
 	var total := (professionals if group == "professional" else roster).size()
 	var libelle: String = str(GROUPES.get(group, ""))
 	var tri := str(TRIS.get(str(state.get("table_sort", "decide")), "colonne choisie"))
-	var texte := "%d sur %d jeunes · %s · ★ pépite : potentiel estimé ≥ 85 · tri : %s" % [shown.size(), total, libelle, tri.to_lower()]
-	var compte := Kit.texte(self, 0, HAUTEUR - 18, texte, Charte.IVOIRE_2, 1300, 17)
-	compte.name = "AcademyCount"
-	var droite := float(WIDTH)
-	for touche: Array in [["Échap", "menu"], ["I", "aperçu"]]:
-		var mot: String = touche[1]
-		droite -= Kit.largeur(mot, 17) + 6
-		Kit.texte(self, droite, HAUTEUR - 18, mot, Charte.IVOIRE_2, 0, 17)
-		var large := Kit.touche(self, droite - 8, HAUTEUR - 17, str(touche[0]), true)
-		droite -= large + 22
+	var compte := Pastilles.tuile("%d / %d" % [shown.size(), total], libelle, Charte.IVOIRE, Charte.PANNEAU, 26, "AcademyCount", true)
+	compte.tooltip_text = "%d sur %d jeunes · %s · tri : %s" % [shown.size(), total, libelle, tri.to_lower()]
+	var x_pied := Pastilles.poser(self, compte, 0, HAUTEUR - 46) + 12.0
+	var pepite := Pastilles.pastille("pépite", Charte.IVOIRE_2, "star", "", 18, "AcademyStarLegend")
+	x_pied += Pastilles.poser(self, pepite, x_pied, HAUTEUR - 40) + 6.0
+	Pastilles.poser(self, Pastilles.info("★ pépite : potentiel estimé ≥ 85. Tri : %s." % tri.to_lower(), "i", "AcademyLegendInfo"), x_pied, HAUTEUR - 41)
+	var aide := Pastilles.info("I : aperçu du jeune · Échap : menu", "?", "AcademyShortcuts", 30)
+	Pastilles.poser_a_droite(self, aide, WIDTH, HAUTEUR - 43)
 
 # --- Passerelles -------------------------------------------------------------------------------------------------------
 

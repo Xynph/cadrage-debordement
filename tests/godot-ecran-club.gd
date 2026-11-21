@@ -55,7 +55,10 @@ func run() -> void:
 			check(all.has("Pas encore de classement"), "Club : « Pas encore de classement »")
 			check(not all.has("Classement actuel"), "Club : pas de classement actuel")
 			var digits := str(int(fans.subscribers))
-			check(all.any(func(t): var s := str(t); return s.contains("abonnés") and RegEx.create_from_string("[^0-9]").sub(s.get_slice(" · ", s.count(" · ")).replace(" abonnés", ""), "", true) == digits), "Club : abonnés affichés (" + digits + ")")
+			var tuile_abonnes: Node = app.root_content.find_child("ClubStadium_subscribers", true, false)
+			var valeur_abonnes: Label = null
+			if tuile_abonnes != null: valeur_abonnes = tuile_abonnes.find_child("Valeur", true, false) as Label
+			check(valeur_abonnes != null and RegEx.create_from_string("[^0-9]").sub(valeur_abonnes.text, "", true) == digits, "Club : abonnés affichés en tuile (" + digits + ")")
 			var suivi: Dictionary = app.model.clubLife.academyFollowUp
 			check(not all.has("Non ouverte") and not all.any(func(t): return str(t).contains("à venir en carrière Monde")), "Club : jamais « Non ouverte » : le centre existe en Monde")
 			var attendu := "%d Crabos · %d Espoirs" % [int(suivi.crabos.count), int(suivi.espoirs.count)]
