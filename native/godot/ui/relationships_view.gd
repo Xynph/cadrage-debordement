@@ -7,6 +7,7 @@ const Charte = preload("res://ui/charte.gd")
 const Components = preload("res://ui/immersive08/components.gd")
 const GameSkin = preload("res://ui/game_skin.gd")
 const V = preload("res://ui/relationships_visuals.gd")
+const CarteSurvol = preload("res://ui/carte_joueur_survol.gd")
 const CHOIX_GROUPE := {"ecouter":"Écouter", "cadrer":"Rappeler les exigences", "responsabiliser":"Confier un rôle"}
 const CHOIX_ENTRETIEN := {"ecouter":"Écouter", "rassurer":"Rassurer", "clarifier":"Clarifier"}
 const LIBELLES_EFFET := {"satisfaction": "satisf.", "moral collectif": "moral", "moral": "moral", "confiance de direction": "conf.", "confiance": "conf.", "respect": "satisf."}
@@ -86,6 +87,7 @@ static func _person_link(app: Control, parent: Node, id: Variant, name: String) 
 	button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	G.fill(button)
 	EntityLink.bind(button, app, target, _name(app, id))
+	CarteSurvol.lier(app, button, str(id), "squad")
 	parent.add_child(button)
 	return button
 
@@ -100,6 +102,7 @@ static func _identity(app: Control, parent: Node, identity: Dictionary, id: Stri
 	picture.name = "RelationshipPortraitLink"
 	picture.custom_minimum_size = Vector2(66,66)
 	EntityLink.bind(picture, app, target, _name(app, id))
+	CarteSurvol.lier(app, picture, id, "squad")
 	row.add_child(picture)
 	var portrait := G.portrait(int(identity.get("portraitIndex", posmod(id.hash(),32))),58,identity)
 	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -343,7 +346,9 @@ static func _portraits(app: Control, players: Array, data: Dictionary, selection
 		if app.has_method("_render"): app._render()
 	for p: Dictionary in montres:
 		var id := str(p.id)
-		rangee.add_child(V.vignette(p, identites[id], id == str(courant.id), id == relais, choisir.bind(id)))
+		var vignette := V.vignette(p, identites[id], id == str(courant.id), id == relais, choisir.bind(id))
+		rangee.add_child(vignette)
+		CarteSurvol.lier(app, vignette, id, "squad")
 	var reste := players.size() - montres.size()
 	if reste > 0:
 		var tous := Components.v(4)

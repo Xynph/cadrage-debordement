@@ -1,6 +1,6 @@
 extends RefCounted
 ## Candidats pour le poste choisi (maquette 10-composition-1, sous le terrain) : tout l'effectif dans un tableau dense
-## trié par note au poste (barème coloré de la charte, chiffre toujours écrit, « — » si inconnue), condition (repère
+## trié par note au poste (affichée en étoiles de capacité au poste, « — » si inconnue), condition (repère
 ## 80 %), statut en mots et action (Choisir, Échanger, Libérer). Les joueurs non qualifiés ou indisponibles restent
 ## visibles en bas, grisés, avec leur raison. Filtre « Hors feuille seulement », recherche par nom, tri par en-tête.
 ## Emprunt de la variante 3 : sur les n° 1-3 et 16-18, l'encart « Première ligne formée » (loi 3) se place à droite.
@@ -15,6 +15,7 @@ const Selection = preload("res://ui/immersive08/tactics_selection.gd")
 const Commune = preload("res://ui/immersive08/fiche_commune.gd")
 const PersonName = preload("res://ui/person_name.gd")
 const P = preload("res://ui/immersive08/projection.gd")
+const Carte = preload("res://ui/carte_joueur_survol.gd")
 const LIGNE := 33.0
 const ENCART := 720.0
 
@@ -108,7 +109,7 @@ static func _colonnes(largeur: float) -> Dictionary:
 static func _entete(app: Control, entete: Control, colonnes: Dictionary, remplir: Callable) -> void:
 	var etat := lecture(app)
 	var large := float(colonnes.note[1]) >= 180
-	for colonne: Array in [["name", "Joueur"], ["positions", "Postes maîtrisés" if large else "Postes"], ["note", "Note au poste" if large else "Note"], ["condition", "Condition"], ["status", "Statut"]]:
+	for colonne: Array in [["name", "Joueur"], ["positions", "Postes maîtrisés" if large else "Postes"], ["note", "Au poste"], ["condition", "Condition"], ["status", "Statut"]]:
 		var cle: String = colonne[0]
 		var place: Array = colonnes[cle]
 		var droite := cle == "note"
@@ -208,13 +209,18 @@ static func _ligne(app: Control, parent: Control, rang: int, person: Dictionary,
 	if gris: portrait.modulate = Color(1, 1, 1, .55)
 	bouton.add_child(portrait)
 	D.place(portrait, Rect2(colonnes.name[0], 3, 27, 27))
+	Carte.lier(app, portrait, id, "squad")
 	Kit.nom(app, bouton, Rect2(colonnes.name[0] + 36, 3, colonnes.name[1] - 40, 27), str(person.get("name", "")), id, "TacticsCandidateName_" + id.validate_node_name(), encre)
 	Kit.texte(bouton, colonnes.positions[0], 23, Selection.positions(person), Charte.IVOIRE_3 if gris else Charte.IVOIRE_2, colonnes.positions[1], 16)
-	var note: Variant = Selection.rating(app.model, person, slot)
 	var non_qualifie := str(s.texte) == "Non qualifié au poste"
-	var chiffre := D.text(bouton, colonnes.note[0] + colonnes.note[1], 23, "—" if non_qualifie else Selection.rating_text(app.model, person, slot), 18, Charte.IVOIRE_3 if gris else Charte.couleur_attribut(note), 700, colonnes.note[1], HORIZONTAL_ALIGNMENT_RIGHT, true)
-	chiffre.add_theme_font_override("font", Kit.texte_gras())
-	chiffre.name = "TacticsCandidateRating"
+	# Capacité au poste en étoiles (choix de Léo du 21/11/2026, à la place de la note au poste ; le tri reste sur la note).
+	var etoiles := -1.0 if non_qualifie else Selection.etoiles(app.model, person, slot)
+	var large_etoiles := minf(110.0, float(colonnes.note[1]))
+	var marque := Carte.poser_etoiles(bouton, Rect2(colonnes.note[0] + colonnes.note[1] - large_etoiles, 7, large_etoiles, 20), etoiles, "TacticsCandidateStars")
+	if marque == null:
+		var tiret := D.text(bouton, colonnes.note[0] + colonnes.note[1], 23, "—", 18, Charte.IVOIRE_3, 700, colonnes.note[1], HORIZONTAL_ALIGNMENT_RIGHT, true)
+		tiret.name = "TacticsCandidateStars"
+	elif gris: marque.modulate = Color(1, 1, 1, .45)
 	if gris:
 		var v: Variant = person.get("condition")
 		Kit.texte(bouton, colonnes.condition[0] + 140, 23, ("%d %%" % roundi(float(v))) if v is int or v is float else "—", Charte.IVOIRE_3, 74, 18, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -230,7 +236,7 @@ static func _ligne(app: Control, parent: Control, rang: int, person: Dictionary,
 		lien.alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		lien.focus_mode = Control.FOCUS_NONE
 		lien.mouse_filter = Control.MOUSE_FILTER_PASS
-	bouton.accessibility_name = "%s · %s · note au poste %s · %s" % [str(person.get("name", "")), Selection.positions(person), Selection.rating_text(app.model, person, slot), str(s.texte)]
+	bouton.accessibility_name = "%s · %s · %s au poste · %s" % [str(person.get("name", "")), Selection.positions(person), ("%s étoiles" % str(etoiles)).replace(".", ",") if etoiles >= 0.0 else "—", str(s.texte)]
 	bouton.pressed.connect(func(): activer(app, id, slot))
 
 ## Clic ou Entrée sur un candidat : affecte (ou échange) par la commande du moteur ; « Libérer » pour le joueur en place ;

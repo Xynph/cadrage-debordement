@@ -96,6 +96,11 @@ static func rating(model: Dictionary,person: Dictionary,index: int) -> Variant:
 	if not (value is int or value is float) or not is_finite(float(value)) or value<0 or value>100:return null
 	return value
 
+## Étoiles de capacité au poste (0 à 5, -1 si inconnues) du joueur à la place `index` : barème commun de la carte joueur.
+static func etoiles(model: Dictionary,person: Dictionary,index: int) -> float:
+	var position:=number(model,index)
+	return -1.0 if position==0 else load("res://ui/carte_joueur_survol.gd").etoiles_poste(person,position)
+
 static func rating_text(model: Dictionary,person: Dictionary,index: int) -> String:
 	var value: Variant=rating(model,person,index)
 	return "—" if value==null else str(roundi(value))

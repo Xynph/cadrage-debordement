@@ -2,7 +2,7 @@ extends RefCounted
 ## XV de départ sur un terrain tracé (charte §6, maquette 10-composition-1) : jamais de pelouse verte ; panneau, lignes
 ## ivoire de 1 px, pointillés ivoire-3 pour les lignes des 5 m et des 15 m, proportions de la charte (100 × 70 en-buts
 ## compris, comme la maquette validée). Quinze cartes de poste : ovale aux couleurs du club, nom (clic = fiche, survol =
-## mini-fiche), note au poste et condition sous 80 %. L'équipe attaque vers la droite.
+## carte joueur), capacité au poste en étoiles et condition sous 80 %. L'équipe attaque vers la droite.
 ## Exemple : `Terrain.build(app, page, Rect2(0, 246, 990, 693), choisir, clavier, avis, bleus)`.
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
@@ -10,6 +10,7 @@ const Charte = preload("res://ui/charte.gd")
 const Kit = preload("res://ui/immersive08/tactics_kit.gd")
 const Selection = preload("res://ui/immersive08/tactics_selection.gd")
 const PersonName = preload("res://ui/person_name.gd")
+const Carte = preload("res://ui/carte_joueur_survol.gd")
 const CARTE := Vector2(200, 50)
 ## Centre de chaque carte en fraction du terrain (maquette validée), du n° 1 au n° 15.
 ## Cartes de 200 : les n° 4, 5 et 8 descendent d'un rien pour ne jamais chevaucher leurs voisines.
@@ -81,18 +82,23 @@ static func carte(app: Control, parent: Control, zone: Rect2, slot: int, choisir
 	else:
 		var court := Kit.casse(str(person.get("name", "")), true)
 		Kit.nom(app, bouton, Rect2(gauche, 1, zone.size.x - gauche - 2, 25), court, id, "TacticsName%02d" % (slot + 1), Charte.IVOIRE, 17)
+		# Capacité au poste en étoiles (choix de Léo du 21/11/2026, à la place de la note au poste ; jamais le niveau).
 		var note := Selection.rating_text(app.model, person, slot)
-		var chiffre := D.text(bouton, gauche + 4, 43, note, 18, Charte.IVOIRE, 700, 40, HORIZONTAL_ALIGNMENT_LEFT, true)
-		chiffre.add_theme_font_override("font", Kit.texte_gras())
-		chiffre.name = "TacticsPositionRating%02d" % (slot + 1)
-		var x := gauche + 4 + Kit.largeur(note, 18) + 6
+		var etoiles := Selection.etoiles(app.model, person, slot)
+		var large_etoiles := 60.0 if dense else 74.0
+		var x := gauche + 4
+		if etoiles >= 0.0:
+			Carte.poser_etoiles(bouton, Rect2(x, 30, large_etoiles, 16), etoiles, "TacticsPositionStars%02d" % (slot + 1))
+			x += large_etoiles + 6
+		else:
+			var chiffre := D.text(bouton, x, 43, "—", 18, Charte.IVOIRE_2, 700, 40, HORIZONTAL_ALIGNMENT_LEFT, true)
+			chiffre.name = "TacticsPositionStars%02d" % (slot + 1)
+			x += Kit.largeur("—", 18) + 6
 		var forme: Variant = person.get("condition")
 		var bas := (forme is int or forme is float) and float(forme) < 80
-		# Sous 80 % : « 65 · ! 76 % » (la condition remplace « au poste » pour tenir dans la carte).
-		if not bas and not dense: D.text(bouton, x, 43, "au poste", 16, Charte.IVOIRE_2, 500, 80, HORIZONTAL_ALIGNMENT_LEFT, true)
-		accessible += "%s · %s au poste" % [str(person.get("name", "")), note]
+		accessible += "%s · %s au poste" % [str(person.get("name", "")), ("%s étoiles" % str(etoiles)).replace(".", ",") if etoiles >= 0.0 else note]
 		if bas:
-			var alerte := D.text(bouton, x, 43, ("!%d%%" if dense else "· ! %d %%") % roundi(float(forme)), 16, Charte.D, 700, 70, HORIZONTAL_ALIGNMENT_LEFT, true)
+			var alerte := D.text(bouton, x, 43, ("!%d%%" if dense else "! %d %%") % roundi(float(forme)), 16, Charte.D, 700, 56, HORIZONTAL_ALIGNMENT_LEFT, true)
 			alerte.name = "TacticsCondition%02d" % (slot + 1)
 			accessible += " · condition %d %%" % roundi(float(forme))
 	if avis.has(slot):

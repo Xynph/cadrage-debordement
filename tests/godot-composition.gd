@@ -4,12 +4,13 @@ extends SceneTree
 #  - tout ce qui a l'air cliquable change d'écran, de poste, de tri ou envoie une commande ; aucune Window ouverte ;
 #  - aucune couleur or dans l'écran (l'or est réservé à Continuer, dans la coque) ;
 #  - terrain aux proportions réelles, candidats dessous, encart première ligne sur les n° 1-3 / 16-18 ;
-#  - clavier : Espace prend puis pose (échange réel), Échap annule ; clic sur un nom = fiche, survol = mini-fiche ;
+#  - clavier : Espace prend puis pose (échange réel), Échap annule ; clic sur un nom = fiche, survol = carte joueur ;
 #  - sous-page « Tireurs et lanceur » avec retour, Échap et historique.
 const Flow = preload("helpers/contextual_flow.gd")
 const Charte = preload("res://ui/charte.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
+const Carte = preload("res://ui/carte_joueur_survol.gd")
 var Selection = load("res://ui/immersive08/tactics_selection.gd")
 var app: Control
 var failures: Array[String] = []
@@ -245,15 +246,16 @@ func run() -> void:
 	await wait_idle()
 	check(str(Selection.slot(app.model, 13).get("playerId")) == onze and str(Selection.slot(app.model, 10).get("playerId")) == quatorze, "Espace / Espace : échange réel des n° 11 et 14")
 
-	# 6. Noms : survol = mini-fiche (Control, aucune fenêtre), clic = fiche complète.
+	# 6. Noms : survol = carte joueur (Control, aucune fenêtre), clic = fiche complète.
 	await composition()
 	var nom := named("TacticsName02") as Button
 	check(nom != null, "Nom du n° 2 cliquable")
 	if nom != null:
-		nom.mouse_entered.emit()
+		check(nom.has_meta("carte_joueur"), "Nom du n° 2 : carte joueur au survol")
+		var carte := Carte.montrer(app, str(nom.get_meta("carte_joueur")), "squad", nom)
 		await settle()
-		var mini := MiniFiche.actuelle(app)
-		check(mini != null and windows(app).is_empty(), "Survol du nom : mini-fiche sans fenêtre")
+		check(carte != null and Carte.actuelle(app) != null and windows(app).is_empty(), "Survol du nom : carte joueur sans fenêtre")
+		Carte.cacher(app)
 		nom.mouse_exited.emit()
 		await settle()
 		var id := str(Selection.slot(app.model, 1).get("playerId"))
@@ -309,9 +311,9 @@ func run() -> void:
 	if sous_80 > 0:
 		var noms_vigilance := named("TacticsVigilance").find_children("*Nom*", "Button", true, false)
 		check(not noms_vigilance.is_empty(), "Vigilance : noms cliquables")
-		for bouton in noms_vigilance: check(bouton.has_meta("mini_fiche_joueur") and not str((bouton as Button).text).ends_with("…"), "Vigilance : mini-fiche et nom entier · " + (bouton as Button).text)
+		for bouton in noms_vigilance: check(bouton.has_meta("carte_joueur") and not str((bouton as Button).text).ends_with("…"), "Vigilance : carte joueur et nom entier · " + (bouton as Button).text)
 		check(named("TacticsWarnings") is MenuButton and (named("TacticsWarnings") as MenuButton).get_popup().item_count == sous_80, "Avertissements : menu déroulant de %d joueurs" % sous_80)
-		check(named("TacticsWarningName") != null and named("TacticsWarningName").has_meta("mini_fiche_joueur"), "Ligne de validité : nom du premier avertissement → fiche + mini-fiche")
+		check(named("TacticsWarningName") != null and named("TacticsWarningName").has_meta("carte_joueur"), "Ligne de validité : nom du premier avertissement → fiche + carte joueur")
 	var conseil := named("TacticsStaffAdvice0")
 	if conseil != null: check(not conseil.find_children("*Nom*", "Button", true, false).is_empty(), "Bulle de Gabi : noms cliquables")
 	var duel := named("TacticsDuel_scrum") as Button
@@ -320,7 +322,7 @@ func run() -> void:
 		await settle()
 		check(app.route == "Préparation", "Duel « Mêlée » : ouvre le dossier adverse")
 		await composition()
-	check(named("TacticsFrontRowName01") == null or named("TacticsFrontRowName01").has_meta("mini_fiche_joueur"), "Encart : noms → fiche + mini-fiche")
+	check(named("TacticsFrontRowName01") == null or named("TacticsFrontRowName01").has_meta("carte_joueur"), "Encart : noms → fiche + carte joueur")
 	(named("LineupSlot03") as Button).pressed.emit()
 	await settle()
 	var titulaire := str(Selection.slot(app.model, 2).get("playerId"))

@@ -14,6 +14,7 @@ const PersonName = preload("res://ui/person_name.gd")
 const Link = preload("res://ui/entity_link.gd")
 const Charte = preload("res://ui/charte.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
+const CarteSurvol = preload("res://ui/carte_joueur_survol.gd")
 const ClubSheet = preload("res://ui/immersive08/club_sheet_canvas.gd")
 const R = preload("res://ui/immersive08/reperes.gd")
 const Consignes = preload("res://ui/immersive08/preparation_consignes.gd")
@@ -915,7 +916,12 @@ func _surveiller(section: Control, rectangle: Rect2) -> void:
 		var age := "  ·  %d ans" % int(menace.get("age", 0)) if _nombre(menace.get("age")) else ""
 		_texte(carte, 126, 60, "%s%s" % [str(menace.get("pos", "")), age], 16, Charte.IVOIRE_2, 285)
 		var note: Variant = menace.get("note")
-		if _nombre(note): _titre(carte, 126, 92, "%d au poste" % int(note), 26, Charte.couleur_attribut(note), 285)
+		# Capacité au poste en étoiles (choix de Léo du 21/11/2026, à la place de « 72 au poste » ; jamais le niveau).
+		var meilleure: Variant = menace.get("bestPositionNote")
+		var a_sa_place: Variant = menace.get("positionNote")
+		if _nombre(meilleure) and float(meilleure) > 0.0 and _nombre(a_sa_place):
+			CarteSurvol.poser_etoiles(carte, Rect2(126, 70, 130, 24), CarteSurvol.etoiles_part(float(a_sa_place) / float(meilleure)), "PreparationThreatStars%d" % i)
+		elif _nombre(note): _titre(carte, 126, 92, "%d au poste" % int(note), 26, Charte.couleur_attribut(note), 285)
 		elif note != null and str(note) != "": _texte(carte, 126, 88, str(note), 17, Charte.IVOIRE, 285)
 		_texte(carte, 126, 112, str(menace.get("role", "")), 16, Charte.IVOIRE, 285)
 		if _nombre(menace.get("fitness")) and not C.dense(): _texte(carte, 126, 130, "Condition %d %%" % int(menace.fitness), 15, Charte.IVOIRE_2, 285)

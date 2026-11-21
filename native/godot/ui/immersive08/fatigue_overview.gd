@@ -112,6 +112,8 @@ static func entity_profile_link(app: Control, parent: Control, rectangle: Rect2,
 	link.add_theme_stylebox_override("hover", C.box(Color(1, 1, 1, .04), C.GOLD, 2, 0))
 	link.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT, C.GOLD, 2, 0))
 	Link.bind(link, app, target, caption)
+	# Nom ou portrait d'un joueur : survol = carte joueur (clic inchangé).
+	if str(target.get("kind", "")) == "player": load("res://ui/carte_joueur_survol.gd").lier(app, link, str(target.get("id", "")), "squad")
 	return link
 
 static func profile_link(app: Control, parent: Control, rectangle: Rect2, player: Dictionary, id: String) -> Button:

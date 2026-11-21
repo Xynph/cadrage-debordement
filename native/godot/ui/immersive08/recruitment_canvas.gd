@@ -20,7 +20,7 @@ const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const Link = preload("res://ui/entity_link.gd")
 const Sort = preload("res://ui/recruitment_sort.gd")
 const Budget = preload("res://ui/transfer_budget.gd")
-const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
+const CarteSurvol = preload("res://ui/carte_joueur_survol.gd")
 const SalesView = preload("res://ui/player_sales_view.gd")
 const Observation = preload("res://ui/player_observation.gd")
 const Identity = preload("res://ui/player_identity.gd")
@@ -913,17 +913,17 @@ func _row(item: Dictionary, index: int, selected: bool) -> void:
 				if bloc != null: bloc.grab_focus.call_deferred())
 		row.add_child(action)
 		D.place(action, Rect2(col.x + 14, 3, col.w - 44, ROW_HEIGHT - 6))
-	# Nom : survol (ou focus + I) = mini-fiche, clic = fiche complète ; « i » juste après le nom.
+	# Nom et portrait : survol (ou focus + I) = carte joueur, clic = fiche complète ; « i » juste après le nom.
 	var entity_target := {"kind":"report", "id":str(item.id)} if tab == 3 else {"kind":"market", "id":player_id}
 	if tab != 3 and not player.is_empty():
 		var portrait_lien := _reading_area(row, Rect2(52, 0, 72, ROW_HEIGHT), entity_target, "MarketPortrait_" + str(item.id).validate_node_name(), str(item.get("name", "Dossier")))
-		if portrait_lien != null: MiniFiche.lier(app, portrait_lien, player_id, "market")
+		if portrait_lien != null: CarteSurvol.lier(app, portrait_lien, player_id, "market")
 	var nom_lien := _reading_area(row, Rect2(x_nom - 4, 0, 330, ROW_HEIGHT), entity_target, "MarketEntity_" + str(item.id).validate_node_name(), str(item.get("name", "Dossier")))
 	if tab != 3 and nom_lien != null and not player.is_empty():
-		MiniFiche.lier(app, nom_lien, player_id, "market")
+		CarteSurvol.lier(app, nom_lien, player_id, "market")
 		var police: Font = C.font(700)
 		var largeur := minf(300.0, police.get_string_size(str(item.get("name", "—")), HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(20))).x / C.density)
-		MiniFiche.icone(app, row, Rect2(x_nom + largeur + 8, 7, 18, 18), player_id, "market")
+		CarteSurvol.icone(app, row, Rect2(x_nom + largeur + 8, 7, 18, 18), player_id, "market")
 	if tab != 3 and not report.is_empty():
 		var col := _col("obs")
 		if not col.is_empty(): _reading_area(row, Rect2(col.x - 4, 0, mini(col.w, 360), ROW_HEIGHT), {"kind":"report", "id":str(report.get("id", ""))}, "MarketReportLink_" + str(report.get("id", "")).validate_node_name(), "Rapport d’observation · " + str(item.get("name", "")))
@@ -954,7 +954,7 @@ func _cout() -> void:
 	nom.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 	nom.name = "RecruitmentCostName"
 	var bouton_nom := _reading_area(cost, Rect2(20, 44, 430, 50), {"kind":"market", "id":player_id}, "RecruitmentNameLink", str(player.get("name", "Dossier")))
-	if bouton_nom != null: MiniFiche.lier(app, bouton_nom, player_id, "market")
+	if bouton_nom != null: CarteSurvol.lier(app, bouton_nom, player_id, "market")
 	var statut: String = {"counter":"contre-offre reçue", "withdrawn":"discussion rompue", "signed":"contrat signé"}.get(str(player.get("negotiation", {}).get("status", "")) if player.get("negotiation") is Dictionary else "", "avant négociation")
 	var detail := "%s · %s ans · %s" % [str(player.get("pos", "—")), G.n(player.get("age", "—")), statut]
 	Kit.texte(cost, 24, 116, detail, Charte.IVOIRE_2, 440, 18)

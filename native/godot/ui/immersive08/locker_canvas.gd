@@ -9,6 +9,8 @@ const G = preload("res://ui/game_skin.gd")
 const Charte = preload("res://ui/charte.gd")
 const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
 const BanqueImages = preload("res://ui/banque_images.gd")
+const Link = preload("res://ui/entity_link.gd")
+const CarteSurvol = preload("res://ui/carte_joueur_survol.gd")
 const KEY = "immersive08_locker_tab"
 const LOCKER_ART = "res://art/immersive08/lockerroom.png"
 const STATUSES = {"open":"À suivre", "honored":"Honoré", "broken":"Non tenu", "expired":"Clos sans pénalité"}
@@ -56,6 +58,7 @@ static func _hero(app: Control, canvas: Control, data: Dictionary) -> void:
 		var item: Array = metrics[i]
 		var card := D.panel(canvas,Rect2(i*566,243,550,121),item[0],item[1],"","LockerMetric"+str(i))
 		D.text(card,22,105,item[2],38 if i == 3 else 47,item[3],700,502)
+		if i == 3: _lien_joueur(app,card,Rect2(14,64,520,52),str(data.get("leaderId","")),"LockerLeaderLink")
 
 static func _score(value: Variant) -> String:
 	return "%s / 100" % G.n(value) if value != null else "—"
@@ -81,6 +84,13 @@ static func dernier_resultat(model: Dictionary) -> String:
 		if x == "L" or (x == "D" and not anglais): return "defaite"
 		return "nul"
 	return ""
+
+## Zone transparente sur le portrait ou le nom d'un joueur de l'effectif : clic = fiche, survol = carte joueur.
+static func _lien_joueur(app: Control, parent: Control, zone: Rect2, id: String, nom_noeud: String) -> void:
+	if id.is_empty() or P.player(app.model,id).is_empty() or not Link.available(app,"player",id): return
+	var bouton := Link.styled_button(parent,zone,"",18,C.IVORY,nom_noeud)
+	Link.bind(bouton,app,{"kind":"player","id":id},_name(app.model,id))
+	CarteSurvol.lier(app,bouton,id,"squad")
 
 static func _name(model: Dictionary, id: Variant) -> String:
 	if id == null: return "Aucun relais disponible"
@@ -108,8 +118,10 @@ static func _event(card: Panel, app: Control, data: Dictionary) -> void:
 			var portrait := G.portrait(int(member.get("portraitIndex",0)),C.px(125),member)
 			card.add_child(portrait)
 			D.place(portrait,Rect2(22,73,125,118))
+			_lien_joueur(app,card,Rect2(22,73,125,118),str(event.get("playerId","")),"LockerEventPortraitLink")
 		D.text(card,166,110,event.get("title","Point de vestiaire"),36,C.IVORY,700,1134)
 		D.text(card,166,146,_name(app.model,event.get("playerId")),26,C.GOLD,600,1120)
+		_lien_joueur(app,card,Rect2(160,120,420,36),str(event.get("playerId","")),"LockerEventNameLink")
 		D.text(card,166,177,"%s  ·  Leadership %s / 100" % [event.get("trait","Personnalité"),G.n(event.get("leadership","—"))],23,C.MUTED,500,1120,HORIZONTAL_ALIGNMENT_LEFT,true)
 		Pastilles.poser(card, Relations.contexte(app, event), 23, 196)
 		var choices: Array = event.get("choices",[])
@@ -135,6 +147,7 @@ static func _group(card: Panel, app: Control, data: Dictionary) -> void:
 	var leader := _name(app.model,data.get("leaderId"))
 	D.text(card,23,113,"RELAIS PRESSENTI",24,C.GOLD,700,843)
 	D.text(card,23,166,leader,49,C.IVORY,700,843)
+	_lien_joueur(app,card,Rect2(16,124,700,56),str(data.get("leaderId","")),"LockerGroupLeaderLink")
 	D.line(card,Vector2(23,188),Vector2(881,188))
 	var rows := [["Entretiens possibles",ready],["Liens suivis",pairs.size()],["Joueurs du groupe",players.size()]]
 	for i in rows.size():

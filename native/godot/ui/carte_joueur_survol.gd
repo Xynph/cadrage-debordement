@@ -85,6 +85,33 @@ static func lier(app: Control, controle: Control, player_id: String, source: Str
 	if direct.is_valid(): controle.set_meta("carte_direct", direct)
 	if controle.mouse_filter == Control.MOUSE_FILTER_IGNORE: controle.mouse_filter = Control.MOUSE_FILTER_PASS
 	guetteur(app).retenir(controle)
+	# Clavier : focus sur le nom puis touche I (montre / cache), comme l'ancienne mini-fiche.
+	if controle.focus_mode == Control.FOCUS_NONE: return
+	controle.focus_exited.connect(func(): if is_instance_valid(app) and actuelle(app) != null and actuelle(app).get_meta("ancre", null) == controle: cacher(app))
+	controle.gui_input.connect(func(event: InputEvent):
+		var touche := event as InputEventKey
+		if touche == null or not touche.pressed or touche.echo or touche.ctrl_pressed or touche.alt_pressed or touche.meta_pressed or touche.keycode != KEY_I: return
+		var ouverte := actuelle(app)
+		if ouverte != null and ouverte.get_meta("ancre", null) == controle: cacher(app)
+		else: montrer(app, player_id, source, controle, (direct.call() if direct.is_valid() else {}) as Dictionary)
+		controle.accept_event())
+
+## Petit « i » placé juste après le nom (unités du gabarit) : survol = carte joueur.
+static func icone(app: Control, parent: Control, zone: Rect2, player_id: String, source: String = "squad") -> Control:
+	var info := C.icon("info", int(zone.size.x), Charte.IVOIRE_2)
+	info.name = "CarteJoueurInfo_" + player_id.validate_node_name()
+	info.mouse_filter = Control.MOUSE_FILTER_STOP
+	info.mouse_default_cursor_shape = Control.CURSOR_HELP
+	parent.add_child(info)
+	D.place(info, zone)
+	lier(app, info, player_id, source)
+	return info
+
+## Cinq étoiles de capacité au poste posées dans `parent` (unités du gabarit) : Tactique, Préparation… `valeur` < 0
+## (notes au poste inconnues) : rien n'est posé.
+static func poser_etoiles(parent: Node, zone: Rect2, valeur: float, nom: String = "") -> Control:
+	if valeur < 0.0: return null
+	return _etoiles(parent, zone, valeur, nom)
 
 ## Le guetteur vit à la racine de l'arbre (dernier enfant quand la carte s'ouvre) : il reçoit Échap avant l'écran
 ## en cours (menu du match).
@@ -301,6 +328,8 @@ static func _etoiles(parent: Node, zone: Rect2, valeur: float, nom: String = "")
 	var e := Etoiles.new()
 	e.valeur = valeur
 	e.couleur = couleur_etoiles(valeur)
+	e.set_meta("etoiles", valeur)
+	e.accessibility_name = ("%s étoiles au poste" % str(valeur)).replace(".", ",")
 	if not nom.is_empty(): e.name = nom
 	parent.add_child(e)
 	D.place(e, zone)
@@ -454,7 +483,6 @@ static func _corps(carte: Panel, app: Control, player: Dictionary, source: Strin
 	var grille := _panneau(carte, Rect2(24, y, largeur - 48, 384), Charte.PANNEAU)
 	grille.name = "CarteJoueurAttributs"
 	commune.grille_attributs(grille, Vector2(20, 14), Vector2(largeur - 88, 350), valeurs, "CarteJoueurAttribut_", {"titre": 22, "libelle": 19, "valeur": 26, "pas": 36, "ecart": 30, "corps": false, "mot_moyenne": false})
-	if valeurs.is_empty(): D.text(grille, 20, 200, "À observer", 22, Charte.IVOIRE_3, 600, 300)
 	y += 384.0 + 18.0
 	var h := 236.0
 	var w1 := 330.0

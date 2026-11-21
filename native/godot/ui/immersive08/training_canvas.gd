@@ -14,6 +14,7 @@ const Groupe = preload("res://ui/immersive08/training_group_panel.gd")
 const Watch = preload("res://ui/management_state.gd")
 const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
 const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
+const Carte = preload("res://ui/carte_joueur_survol.gd")
 const TABS = ["Semaine", "Groupes", "Individuel", "Staff", "Fatigue"]
 const MODES = {"repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
 const INDIVIDUAL = {"collective":"Suivre le collectif", "repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
@@ -398,7 +399,9 @@ func _portraits(hit: Control, people: Array, y: float, id: String, title: String
 		_portrait(hit, p, Rect2(13 + k * 46, y - 2, 40, 42))
 		var condition := clampf(float(p.get("condition", 0)), 0.0, 100.0)
 		D.rect(hit, Rect2(13 + k * 46, y + 42, 40 * condition / 100.0, 4), C.Charte.couleur_attribut(condition), 2)
-		if not C.dense(): _zone(hit, C.reach_rect(Rect2(11 + k * 46, y - 4, 44, 50)), id + str(k), "%s · %s · condition %d %%" % [p.get("name", ""), p.get("pos", ""), roundi(condition)], func(): _player_dialog(p))
+		if not C.dense():
+			var visage := _zone(hit, C.reach_rect(Rect2(11 + k * 46, y - 4, 44, 50)), id + str(k), "%s · %s · condition %d %%" % [p.get("name", ""), p.get("pos", ""), roundi(condition)], func(): _player_dialog(p))
+			if not str(p.get("id", "")).is_empty(): Carte.lier(app, visage, str(p.id), "squad")
 	# Petite fenêtre : portraits trop étroits pour un clic chacun, la rangée ouvre tout le groupe.
 	if C.dense() and not people.is_empty(): _zone(hit, C.reach_rect(Rect2(9, y - 4, 145 if people.size() > 3 else 199, 52)), id + "Row", "%s · %s" % [title, P.plural(people.size(), "joueur", "joueurs")], func(): Groupe.ouvrir(self, title, colour, people))
 	if people.size() > 3:
