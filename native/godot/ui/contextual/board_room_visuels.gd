@@ -10,6 +10,8 @@ const TV = preload("res://ui/contextual/training_visuels.gd")
 const JaugeAnneau = preload("res://ui/jauge_anneau.gd")
 const BarreEmpilee = preload("res://ui/barre_empilee.gd")
 const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
+const G = preload("res://ui/carnet_skin.gd")
+const ClubViews = preload("res://ui/club_views.gd")
 
 const ICONES_JALON := {"wins": "trophy", "points": "star", "rank": "flag", "cash": "money"}
 const COURTS_JALON := {"wins": "Victoires", "points": "Points", "rank": "Classement", "cash": "Trésorerie"}
@@ -191,18 +193,26 @@ static func carte_jalon(goal: Dictionary, metrics: Dictionary, id: String, actio
 
 ## Frise de la saison : semaines 0..fin, semaine en cours, matchs du club (ballons : plein = joué, creux = à venir),
 ## drapeau de fin de saison, jalons posés à leur échéance (pictogramme dans un disque de la couleur du statut).
-## Chaque jalon est un bouton (petite fenêtre). Hauteur ajustée aux jalons empilés : pas de vide sans jalon.
+## Chaque jalon est un bouton (petite fenêtre) ; chaque ballon et le drapeau (dernier match) ouvrent la petite fenêtre
+## du match (survol : main + halo). Un jalon proche de la fin monte au-dessus du drapeau, qui reste visible et cliquable.
+## Hauteur ajustée aux jalons empilés : pas de vide sans jalon.
 class Frise extends Control:
 	var semaine := 0
 	var fin := 1
 	var jalons: Array = []  ## [{goal, action, id}]
-	var matchs: Array = []  ## [{semaine, joue}]
+	var matchs: Array = []  ## [{semaine, joue, date, fixture}]
 	var boutons: Array = []
+	var ballons: Array = []  ## boutons des matchs, même ordre que matchs
+	var drapeau: Button
 	const MARGE := 30.0
 	const BOUTON := 44.0
+	## Le drapeau occupe 30 px au-dessus de la ligne : un jalon à moins de 2 semaines de la fin se pose plus haut.
+	const HAUSSE_FIN := 18.0
 	func _ready() -> void:
 		resized.connect(_placer)
 		_placer()
+	func pres_du_drapeau(s: int) -> bool:
+		return s >= fin - 2
 	func etages() -> int:
 		var piles := {}
 		var haut := 0
@@ -211,10 +221,16 @@ class Frise extends Control:
 			piles[s] = int(piles.get(s, 0)) + 1
 			haut = maxi(haut, piles[s])
 		return haut
+	func hausse() -> float:
+		for entree: Dictionary in jalons:
+			if pres_du_drapeau(int(entree.goal.get("deadline", 0))): return HAUSSE_FIN
+		return 0.0
 	func x_de(s: float) -> float:
 		return MARGE + (size.x - 2.0 * MARGE) * clampf(s / maxf(1.0, float(fin)), 0.0, 1.0)
 	func ligne_y() -> float:
 		return size.y - 38.0
+	func pied_jalon(s: int) -> float:
+		return ligne_y() - 20.0 - (HAUSSE_FIN if pres_du_drapeau(s) else 0.0)
 	func _placer() -> void:
 		var piles := {}
 		for i in boutons.size():
@@ -224,7 +240,16 @@ class Frise extends Control:
 			piles[s] = rang + 1
 			var b: Button = boutons[i]
 			b.size = Vector2(BOUTON, BOUTON)
-			b.position = Vector2(x_de(s) - BOUTON * .5, ligne_y() - 20.0 - BOUTON - rang * (BOUTON + 4.0))
+			b.position = Vector2(x_de(s) - BOUTON * .5, pied_jalon(s) - BOUTON - rang * (BOUTON + 4.0))
+		var pas := (size.x - 2.0 * MARGE) / maxf(1.0, float(fin))
+		var largeur := clampf(pas, 24.0, 32.0)
+		for i in ballons.size():
+			var b: Button = ballons[i]
+			b.size = Vector2(largeur, 24.0)
+			b.position = Vector2(x_de(int(matchs[i].get("semaine", 0))) - largeur * .5, ligne_y() - 12.0)
+		if drapeau != null:
+			drapeau.size = Vector2(28.0, 24.0)
+			drapeau.position = Vector2(x_de(fin) - 20.0, ligne_y() - 36.0)
 		queue_redraw()
 	func _ballon(centre: Vector2, plein: bool) -> void:
 		# Ballon ovale, resserré quand les semaines sont serrées (1280) pour ne jamais se chevaucher.
@@ -249,9 +274,7 @@ class Frise extends Control:
 				var l := police.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
 				draw_string(police, Vector2(clampf(x - l * .5, 0.0, size.x - l), y + 30), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Charte.IVOIRE_3)
 		for m: Dictionary in matchs:
-			var sm := int(m.get("semaine", -1))
-			if sm < 0 or sm > fin: continue
-			_ballon(Vector2(x_de(sm), y), bool(m.get("joue", false)))
+			_ballon(Vector2(x_de(int(m.get("semaine", 0))), y), bool(m.get("joue", false)))
 		# Fin de saison : drapeau au bout de la ligne.
 		var xf := x_de(fin)
 		draw_line(Vector2(xf, y - 4), Vector2(xf, y - 30), Charte.IVOIRE, 2.0)
@@ -262,25 +285,61 @@ class Frise extends Control:
 			var t := "S%d" % semaine
 			var l := C.EXTRA_BOLD.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
 			draw_string(C.EXTRA_BOLD, Vector2(clampf(xs - l * .5, 0.0, size.x - l), y - 22), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Charte.IVOIRE)
-		# Tige de chaque jalon jusqu'à la ligne.
+		# Tige de chaque jalon jusqu'à la ligne (au bout, elle rejoint le mât du drapeau).
 		var piles := {}
 		for i in jalons.size():
 			var goal: Dictionary = jalons[i].goal
 			var s := int(goal.get("deadline", 0))
 			if piles.has(s): continue
 			piles[s] = true
-			draw_line(Vector2(x_de(s), y - 20), Vector2(x_de(s), y), Charte.IVOIRE_2, 2.0)
+			draw_line(Vector2(x_de(s), pied_jalon(s)), Vector2(x_de(s), y), Charte.IVOIRE_2, 2.0)
 
-static func frise(semaine: int, fin: int, jalons: Array, matchs: Array = []) -> Frise:
+## Bouton transparent posé sur un dessin de la frise (ballon, drapeau) : main au survol, léger halo ivoire, focus clavier.
+static func zone_frise(id: String, libelle: String, action: Callable) -> Button:
+	var b := Button.new()
+	b.name = id
+	b.flat = false
+	b.focus_mode = Control.FOCUS_ALL
+	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	b.tooltip_text = libelle
+	b.accessibility_name = libelle
+	b.set_meta("immersive_style_applied", true)
+	var vide := StyleBoxFlat.new()
+	vide.bg_color = Color.TRANSPARENT
+	vide.set_corner_radius_all(12)
+	var halo := vide.duplicate() as StyleBoxFlat
+	halo.bg_color = Color(Charte.IVOIRE, .2)
+	var focus := vide.duplicate() as StyleBoxFlat
+	focus.set_border_width_all(2)
+	focus.border_color = Charte.IVOIRE
+	b.add_theme_stylebox_override("normal", vide)
+	b.add_theme_stylebox_override("hover", halo)
+	b.add_theme_stylebox_override("pressed", halo)
+	b.add_theme_stylebox_override("focus", focus)
+	b.pressed.connect(action)
+	return b
+
+## `ouvrir_match` reçoit l'entrée du match ({semaine, joue, date, fixture}) ; le drapeau ouvre le dernier match de la saison.
+static func frise(semaine: int, fin: int, jalons: Array, matchs: Array = [], ouvrir_match: Callable = Callable()) -> Frise:
 	var f := Frise.new()
 	f.name = "BoardSeasonFrise"
 	f.semaine = semaine
 	f.fin = maxi(1, fin)
 	f.jalons = jalons
-	f.matchs = matchs
-	f.custom_minimum_size = Vector2(300, 72.0 + f.etages() * (Frise.BOUTON + 4.0))
+	for m: Dictionary in matchs:
+		if int(m.get("semaine", -1)) >= 0 and int(m.get("semaine", -1)) <= f.fin: f.matchs.append(m)
+	f.custom_minimum_size = Vector2(300, 72.0 + f.etages() * (Frise.BOUTON + 4.0) + f.hausse())
 	f.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	f.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if ouvrir_match.is_valid():
+		var dernier: Dictionary = {}
+		for m: Dictionary in f.matchs:
+			var b := zone_frise("BoardFriseMatch_S%d" % int(m.semaine), "S%d · %s" % [int(m.semaine), "Joué" if bool(m.get("joue", false)) else "À venir"], ouvrir_match.bind(m))
+			f.add_child(b)
+			f.ballons.append(b)
+			if dernier.is_empty() or int(m.semaine) > int(dernier.semaine): dernier = m
+		f.drapeau = zone_frise("BoardFriseFin", "Fin de saison · S%d" % f.fin, ouvrir_match.bind(dernier))
+		f.add_child(f.drapeau)
 	for entree: Dictionary in jalons:
 		var goal: Dictionary = entree.goal
 		var etat := statut(goal)
@@ -534,4 +593,129 @@ static func contenu_jalon(goal: Dictionary, metrics: Dictionary, semaine: int) -
 	var ligne := rangee(8)
 	ligne.add_child(TV.pastille(etat[1], etat[0], etat[2], 16))
 	c.add_child(ligne)
+	return c
+
+## Contenu : un match de la frise. Écussons des deux clubs, score (vert gagné, rouge perdu) ou « VS », date + semaine,
+## lieu (pastille icône + mot), compétition, enjeu court (classements ou phase) et forme récente de l'adversaire.
+## Tout vient de la projection (calendrier, classements) ; rien d'inventé : sans donnée, la tuile ou la ligne disparaît.
+const LIEUX := {"home": "Domicile", "away": "Extérieur", "neutral": "Terrain neutre"}
+const PHASES := {"barrage": "Barrage", "semi": "Demi-finale", "final": "Finale", "access": "Barrage d’accession", "quarter": "Quart de finale"}
+
+static func rang(valeur: Variant) -> String:
+	if not nombre(valeur) or roundi(float(valeur)) <= 0: return "—"
+	return "1er" if roundi(float(valeur)) == 1 else "%de" % roundi(float(valeur))
+
+static func ligne_classement(model: Dictionary, id: Variant) -> Dictionary:
+	if id == null: return {}
+	for division: Variant in model.get("leagues", []):
+		if not division is Dictionary: continue
+		for row: Variant in division.get("rows", []):
+			if row is Dictionary and str(row.get("id")) == str(id): return row
+	return {}
+
+## Ovale V / N / D de la forme : couleur franche et lettre (la couleur n'est jamais seule).
+static func ovale_forme(code: String) -> PanelContainer:
+	var couleur: Color = {"V": Charte.GAIN, "D": Charte.PERTE}.get(code, Charte.GRIS_VERT)
+	var p := PanelContainer.new()
+	var style := Charte.style_pilule(couleur, Color.TRANSPARENT, 0, 0)
+	style.set_corner_radius_all(14)
+	p.add_theme_stylebox_override("panel", style)
+	p.custom_minimum_size = Vector2(34, 28)
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var l := TV.texte(code, 16, Charte.ENCRE, C.EXTRA_BOLD)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	p.add_child(l)
+	return p
+
+static func club_colonne(club: Dictionary, id: String) -> VBoxContainer:
+	var c := colonne(6)
+	c.name = id
+	c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	c.alignment = BoxContainer.ALIGNMENT_CENTER
+	var ecusson: Control = G.crest(club, 72)
+	ecusson.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	c.add_child(ecusson)
+	var nom := TV.texte(G.club_name(club), 18, Charte.IVOIRE, C.BOLD)
+	nom.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	nom.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	nom.custom_minimum_size.x = 200
+	c.add_child(nom)
+	return c
+
+static func contenu_match(fixture: Dictionary, semaine: int, model: Dictionary) -> Control:
+	var own: Variant = model.get("club", {}).get("id")
+	var home: Dictionary = fixture.get("home", {}) if fixture.get("home") is Dictionary else {}
+	var away: Dictionary = fixture.get("away", {}) if fixture.get("away") is Dictionary else {}
+	var chez_nous := home.has("id") and str(home.get("id")) == str(own)
+	var adversaire := away if chez_nous else home
+	var c := colonne(16)
+	c.name = "BoardMatchWindow"
+	# Les deux clubs, score ou VS au milieu.
+	var face := rangee(12)
+	face.add_child(club_colonne(home, "BoardMatchHome"))
+	var milieu := colonne(6)
+	milieu.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var score: Variant = fixture.get("score")
+	if score is Array and score.size() == 2 and nombre(score[0]) and nombre(score[1]):
+		var nous := float(score[0] if chez_nous else score[1])
+		var eux := float(score[1] if chez_nous else score[0])
+		var issue: Array = ["Victoire", "check", Charte.GAIN] if nous > eux else (["Défaite", "warning", Charte.PERTE] if nous < eux else ["Nul", "info", Charte.GRIS_VERT])
+		var chiffres := TV.texte("%s – %s" % [entier(score[0]), entier(score[1])], 44, issue[2], Charte.TITRE_EXTRA)
+		chiffres.name = "BoardMatchScore"
+		chiffres.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		milieu.add_child(chiffres)
+		var p := TV.pastille(issue[1], issue[0], issue[2], 16)
+		p.name = "BoardMatchOutcome"
+		p.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		milieu.add_child(p)
+	else:
+		var vs := TV.texte("VS", 40, Charte.IVOIRE_2, Charte.TITRE_EXTRA)
+		vs.name = "BoardMatchVs"
+		vs.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		milieu.add_child(vs)
+		if bool(fixture.get("played", false)):
+			var joue := TV.pastille("check", "Joué", Charte.IVOIRE_2, 15)
+			joue.name = "BoardMatchPlayed"
+			joue.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			milieu.add_child(joue)
+	face.add_child(milieu)
+	face.add_child(club_colonne(away, "BoardMatchAway"))
+	c.add_child(face)
+	# Date + semaine, lieu, compétition.
+	var infos := rangee(10)
+	var date := str(fixture.get("date", "")).left(10)
+	var jour := date.right(2) + "/" + date.substr(5, 2) if date.length() == 10 else "—"
+	infos.add_child(tuile(jour, "S%d" % semaine, Charte.REPOS, "calendar", "BoardMatchDate", Callable(), 26))
+	var lieu := "home" if chez_nous else "away"
+	if fixture.get("neutral", false): lieu = "neutral"
+	var couleur_lieu: Color = {"home": Charte.GAIN, "away": Charte.INTENSIF}.get(lieu, Charte.MORAL)
+	infos.add_child(tuile(LIEUX[lieu], "Lieu", couleur_lieu, C.fixture_location_icon(lieu, true), "BoardMatchVenue", Callable(), 22))
+	var competition := str(fixture.get("competitionId", ""))
+	if not competition.is_empty() or fixture.has("phase"):
+		infos.add_child(tuile(ClubViews.competition_name(competition, model), "Compétition", Charte.CONFIANCE, "trophy", "BoardMatchCompetition", Callable(), 20))
+	c.add_child(infos)
+	# Enjeu court : phase finale, sinon les deux places au classement.
+	var bas := rangee(10)
+	var phase := str(fixture.get("phase", ""))
+	var mine := ligne_classement(model, own)
+	var theirs := ligne_classement(model, adversaire.get("id"))
+	if PHASES.has(phase):
+		bas.add_child(tuile(PHASES[phase], "Enjeu", Charte.INTENSIF, "flag", "BoardMatchStake", Callable(), 22))
+	elif not mine.is_empty() and not theirs.is_empty():
+		bas.add_child(tuile(rang(mine.get("rank")), "Nous", Charte.MORAL, "flag", "BoardMatchRankOwn", Callable(), 26))
+		bas.add_child(tuile(rang(theirs.get("rank")), "Eux", Charte.IVOIRE, "flag", "BoardMatchRankThem", Callable(), 26))
+	var forme: Variant = theirs.get("form")
+	if forme is Array and not forme.is_empty():
+		var carte := TV.carte(Charte.PANNEAU_2, Charte.RAYON_CARTE, 12)
+		carte.name = "BoardMatchForm"
+		carte.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var col := colonne(6)
+		carte.add_child(col)
+		var ovales := rangee(4)
+		for code: Variant in forme.slice(maxi(0, forme.size() - 5)): ovales.add_child(ovale_forme(str(code)))
+		col.add_child(ovales)
+		col.add_child(TV.texte("FORME · EUX", 14, Charte.IVOIRE_2, C.BOLD))
+		bas.add_child(carte)
+	if bas.get_child_count() > 0: c.add_child(bas)
 	return c

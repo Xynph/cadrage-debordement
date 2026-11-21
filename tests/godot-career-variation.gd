@@ -1,5 +1,6 @@
 extends SceneTree
 const Entry = preload("res://ui/entry_screens.gd")
+const Flow = preload("helpers/contextual_flow.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -76,6 +77,10 @@ func run() -> void:
 	await key(start); await response()
 	check(app.model.meta.careerVariation.version==1 and app.model.meta.careerVariation.varyCurrent==false,"Commande de création conserve réellement l’option et le manifeste")
 	check(app.bridge._next_id==serial+1,"Une seule commande explicite crée la carrière")
+	# La carrière créée s'ouvre sur les rencontres d'arrivée (réunions du club), qui bloquent la navigation : on les
+	# règle comme un joueur avant de rouvrir la création.
+	check(await Flow.settle_club_meetings(app,self,check),"Rencontres d'arrivée réglées")
+	check(not app.contextual_director.active_meeting(),"Aucune réunion en cours avant de rouvrir la création")
 	var profile := str(app.model.meta.dataDir).path_join("donnees.json")
 	var before := FileAccess.get_sha256(profile)
 	serial=app.bridge._next_id
