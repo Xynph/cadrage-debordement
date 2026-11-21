@@ -93,9 +93,13 @@ func screen(league: Dictionary, leagues: Array, height: int) -> void:
 		if zone is Dictionary:
 			check(edge != null and mark != null and str(mark.get_meta("zone_kind", "")) == zone.kind and str(row.get_meta("zone_kind", "")) == zone.kind, "Liseré et symbole au rang %d%s" % [i + 1, where])
 			check(row.accessibility_name.contains(str(zone.label)), "Libellé « %s » annoncé au rang %d%s" % [zone.label, i + 1, where])
+			var survol: Control = row.get_node_or_null("SurvolLigne")
+			check(survol != null and edge != null and survol.decalage >= edge.position.x + edge.size.x, "Survol : liseré club à droite de la bande de zone au rang %d%s" % [i + 1, where])
 			check(mark != null and mark.get_child_count() == 1 and (mark.get_child(0) is Polygon2D or mark.get_child(0) is Line2D), "Symbole dessiné (aucune fonte du jeu n'a ★●▲◆▼○)" + where)
 		else:
 			check(edge == null and mark == null and not row.has_meta("zone_kind"), "Aucune zone au rang %d%s" % [i + 1, where])
+			var survol: Control = row.get_node_or_null("SurvolLigne")
+			check(survol != null and survol.decalage == 0.0, "Survol : liseré club au bord gauche au rang %d%s" % [i + 1, where])
 	var kinds := {}
 	for i in mini(rows.size(), league.rows.size()):
 		var row: Button = rows[i]
