@@ -834,14 +834,9 @@ func _row(item: Dictionary, index: int, selected: bool) -> void:
 	row.name = "MarketReport_" + str(item.id) if tab == 3 else "MarketPlayer_" + player_id.replace(":", "_")
 	row.set_meta("player_id", player_id)
 	row.accessibility_name = "%s, %s" % [item.get("name", "Joueur inconnu"), item.get("pos", "Poste inconnu")]
-	row.add_theme_stylebox_override("normal", C.box(Charte.SELECTION if selected else Color.TRANSPARENT, Color.TRANSPARENT, 8, 0))
-	row.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 8, 0))
-	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 8, 0)
-	focus.set_border_width_all(2)
-	row.add_theme_stylebox_override("focus", focus)
+	load("res://ui/survol_ligne.gd").appliquer(row, selected, Color.TRANSPARENT, app.accent)
 	table_rows.add_child(row)
 	D.place(row, Rect2(0, index * ROW_HEIGHT, WIDTH, ROW_HEIGHT))
-	if selected: Kit.marqueur(row, Rect2(4, 3, 6, ROW_HEIGHT - 6))
 	D.line(row, Vector2(0, ROW_HEIGHT - 1), Vector2(WIDTH, ROW_HEIGHT - 1), Color(Charte.FILET, .5))
 	var assessment: Dictionary = report.get("assessment", {})
 	var suivi: bool = player_id in app.management_ui.shortlist
@@ -897,6 +892,8 @@ func _row(item: Dictionary, index: int, selected: bool) -> void:
 		for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_disabled_color"]: etoile.add_theme_color_override(etat, Charte.IVOIRE if suivi else Charte.IVOIRE_3)
 		etoile.add_theme_stylebox_override("normal", C.box(Color.TRANSPARENT, Color.TRANSPARENT, 8, 0))
 		etoile.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 8, 0))
+		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 8, 0)
+		focus.set_border_width_all(2)
 		etoile.add_theme_stylebox_override("focus", focus)
 		etoile.accessibility_name = ("Retirer du suivi : " if suivi else "Suivre cette piste : ") + str(item.get("name", ""))
 		etoile.tooltip_text = ""

@@ -68,6 +68,20 @@ func gold_free(node: Node) -> bool:
 		if not gold_free(child): return false
 	return true
 
+## Aucun aplat ni marqueur vert de sélection (décision de Léo : seul le survol fait ressortir une ligne).
+func selection_free(node: Node) -> bool:
+	if node is Control:
+		for style_name: String in ["panel", "normal", "pressed", "focus"]:
+			var style := (node as Control).get_theme_stylebox(style_name) if (node as Control).has_theme_stylebox_override(style_name) else null
+			if style is StyleBoxFlat and style.bg_color.a > 0.0 and style.bg_color.is_equal_approx(Charte.SELECTION): return false
+	if node is Polygon2D and (node as Polygon2D).visible and node.name == "RosterMarqueur": return false
+	for child in node.get_children():
+		if not selection_free(child): return false
+	return true
+
+func survols(rows: Array) -> Array:
+	return rows.map(func(r: Button): return r.get_node_or_null("SurvolLigne")).filter(func(n): return n != null)
+
 func run() -> void:
 	root.size = Vector2i(1920, 1080)
 	app = load("res://main.tscn").instantiate()
@@ -84,6 +98,24 @@ func run() -> void:
 	await settle(12)
 	check(page() != null, "Écran Effectif construit")
 	if page() == null: return finish()
+	# Survol de ligne (option A) : aucune ligne verte à l'arrivée, survol = bande claire + liseré club.
+	var arrivee := player_rows()
+	var fonds := survols(arrivee)
+	check(not arrivee.is_empty() and fonds.size() == arrivee.size(), "Chaque ligne porte le survol commun")
+	check(selection_free(page()), "Arrivée sur l'Effectif : aucune ligne verte ni marqueur de sélection")
+	check(fonds.all(func(f): return not f.survole), "Arrivée : aucune ligne survolée")
+	check(arrivee.all(func(r: Button): return r.mouse_default_cursor_shape == Control.CURSOR_POINTING_HAND), "Lignes : curseur main")
+	var survolee := arrivee[2] as Button
+	survolee.mouse_entered.emit()
+	await settle()
+	var fond_survol = survolee.get_node("SurvolLigne")
+	check(fond_survol.survole and survols(arrivee).filter(func(f): return f.survole).size() == 1, "Survol : seule la ligne sous la souris se démarque")
+	check(fond_survol.get_index() == 0 and fond_survol.accent == app.accent, "Survol : bande derrière les textes, liseré à la couleur du club")
+	var club_lisible: Color = fond_survol.accent_lisible(app.accent)
+	check(club_lisible.v >= 0.85, "Liseré éclairci sur fond sombre")
+	survolee.mouse_exited.emit()
+	await settle()
+	check(not fond_survol.survole, "La bande disparaît à la sortie de la souris")
 	var squad: Array = app.model.squad
 	var unavailable := squad.filter(func(p: Dictionary): return not U.indisponibilite(p).is_empty()).size()
 	var season := int(app.model.meta.season)
@@ -205,7 +237,7 @@ func run() -> void:
 	(app.find_child("SquadScroll", true, false) as ScrollContainer).scroll_vertical = 0
 	await settle(2)
 
-	# Lignes : marqueur de sélection, clic = fiche complète, retour.
+	# Lignes : focus clavier, clic = fiche complète, retour.
 	var rows := player_rows()
 	check(rows.size() == squad.size() and rows.all(func(r: Button): return r.find_child("SquadOpenPlayer_*", true, false) != null), "Chaque ligne a son nom cliquable")
 	check(page().find_children("RosterNumero", "Label", true, false).size() == squad.size(), "Chaque ligne a son numéro ou son tiret")
@@ -214,7 +246,10 @@ func run() -> void:
 	var second := rows[1] as Button
 	second.grab_focus()
 	await settle()
-	check(app.selected_player == str(second.get_meta("player_id")) and second.find_child("RosterMarqueur", true, false).visible, "Le focus déplace le marqueur de sélection")
+	check(app.selected_player == str(second.get_meta("player_id")), "Le focus clavier change le joueur courant")
+	check(selection_free(page()), "Le focus clavier ne colore pas la ligne (contour discret seulement)")
+	var anneau := second.get_theme_stylebox("focus") as StyleBoxFlat
+	check(anneau != null and anneau.border_width_left >= 2 and anneau.bg_color.a == 0.0, "Focus clavier : contour crème sans fond")
 	check(gold_free(page()), "Aucun or dans l'écran Effectif")
 	second.pressed.emit()
 	await settle(10)
@@ -239,6 +274,7 @@ func run() -> void:
 	var list_scroll := app.find_child("SquadScroll", true, false) as ScrollContainer
 	var last_row := app.find_child("SquadPlayer" + last_id.replace(":", "_"), true, false) as Control
 	check(list_scroll != null and last_row != null and list_scroll.get_global_rect().intersects(last_row.get_global_rect()), "Le joueur choisi, même éloigné, est visible dans la liste")
+	check(selection_free(page()), "Retour sur l'Effectif : le joueur choisi est montré sans être coloré")
 	app.selected_player = str(squad[0].id)
 
 	# Comparateur : page pleine (jamais une fenêtre), ajout à la souris, emplacements vides, 36 attributs colorés, Échap.
