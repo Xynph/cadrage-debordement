@@ -2,6 +2,50 @@ extends RefCounted
 const Copy = preload("res://ui/management_copy.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const EntityLink = preload("res://ui/entity_link.gd")
+const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
+const Charte = preload("res://ui/charte.gd")
+const Components = preload("res://ui/immersive08/components.gd")
+const GameSkin = preload("res://ui/game_skin.gd")
+const LIBELLES_EFFET := {"satisfaction": "satisf.", "moral collectif": "moral", "moral": "moral", "confiance de direction": "conf.", "confiance": "conf.", "respect": "satisf."}
+const CONTEXTES := {
+	"tension": ["Satisfaction basse", "warning"], "fatigue": ["Fatigue", "heart"], "revelation": ["Minutes à suivre", "clock"],
+	"contrat": ["Fin de contrat", "calendar"], "leadership": ["Leader", "star"], "ambition": ["Projet à aligner", "flag"]}
+
+## Effets d'une réponse (« Satisfaction −3 ; confiance de direction +2 ; moral −1 ») en mini-pastilles ▲ / ▼ ;
+## un effet sans chiffre (« engagement de temps de jeu à suivre ») devient une pastille horloge. Le texte complet reste en infobulle.
+static func effets(detail: String) -> HBoxContainer:
+	var rangee := Components.h(6)
+	var expression := RegEx.create_from_string("^(.*?)\\s*([+\\-−])(\\d+)\\s*$")
+	for morceau: String in detail.strip_edges().rstrip(".").split(";", false):
+		var partie := morceau.strip_edges()
+		var complet := partie.substr(0, 1).to_upper() + partie.substr(1)
+		var apres := partie.get_slice(":", 1).strip_edges() if ":" in partie else partie
+		var trouve := expression.search(apres)
+		if trouve == null:
+			rangee.add_child(Pastilles.pastille("", Pastilles.ORANGE, "clock", complet, 18))
+			continue
+		var positif := trouve.get_string(2) == "+"
+		var libelle := trouve.get_string(1).strip_edges().to_lower()
+		var court: String = LIBELLES_EFFET.get(libelle, libelle)
+		var signe := "+" if positif else "−"
+		rangee.add_child(Pastilles.pastille("%s %s%s %s" % ["▲" if positif else "▼", signe, trouve.get_string(3), court], Pastilles.VERT if positif else Pastilles.ROUGE, "", complet, 18))
+	return rangee
+
+## Cause de la décision de la semaine, en une pastille (la phrase du moteur reste en infobulle).
+static func contexte(app: Control, event: Dictionary) -> Control:
+	var entree: Array = CONTEXTES.get(str(event.get("kind", "")), ["À traiter", "warning"])
+	var texte: String = entree[0]
+	if str(event.get("kind", "")) == "contrat":
+		for p: Dictionary in app.model.get("squad", []):
+			if p.get("id") == event.get("playerId") and (p.get("contractEnd") is int or p.get("contractEnd") is float):
+				texte = "Fin %s" % GameSkin.contract_year(p.contractEnd)
+	return Pastilles.pastille(texte, Pastilles.ORANGE, str(entree[1]), str(event.get("context", "")), 18, "RelationshipEventContext", _ouvrir(app, event.get("playerId")))
+
+## Action « ouvrir la fiche du joueur » (écran, jamais fenêtre) ; sans fiche disponible : pas d'action, la tuile reste neutre.
+static func _ouvrir(app: Control, id: Variant) -> Callable:
+	var cible := _player_target(app, id)
+	if cible.is_empty(): return Callable()
+	return func(): app.navigation_controller.open_entity(cible)
 
 static func _number(value: Variant) -> String:
 	return str(int(value)) if value is float or value is int else "—"
@@ -76,12 +120,12 @@ static func build(app: Control) -> Control:
 	if not app.management_ui.has("relationships"): app.management_ui["relationships"] = {}
 	var selection: Dictionary = app.management_ui.relationships
 	var left := G.panel(page, 1.0)
-	G.chapter(left, "11", "Le vestiaire", "Des décisions et leurs suites, semaine après semaine.", app.accent)
+	G.chapter(left, "11", "Le vestiaire", "", app.accent)
 	var follow := G.scroll(left)
 	follow.get_parent().name = "RelationshipFollowScroll"
 	if not data.get("active", false):
-		follow.add_child(G.wrap("Ancienne carrière : activer volontairement les entretiens et le suivi des promesses.", 15))
 		var activate := G.button("ACTIVER LE SUIVI DU VESTIAIRE", func(): app._command("relationship_activate", {"context":context}))
+		activate.tooltip_text = "Ancienne carrière : activer volontairement les entretiens et le suivi des promesses."
 		activate.name = "ActivateRelationships"
 		activate.disabled = not data.get("available", false)
 		follow.add_child(activate)
@@ -91,20 +135,20 @@ static func build(app: Control) -> Control:
 	if event is Dictionary:
 		follow.add_child(G.section(str(event.title)))
 		_person_link(app,follow,event.playerId,"RelationshipEventPlayerLink")
-		follow.add_child(G.wrap(event.context, 15))
+		follow.add_child(contexte(app, event))
 		follow.add_child(G.wrap("Personnalité : %s · leadership %s / 100" % [event.trait, int(event.leadership)], 13))
 		for choice: Dictionary in event.get("choices", []):
 			var button := G.button(choice.label, func(): app._command("locker_room_decision", {"context":context, "eventKey":event.key, "choice":choice.id}))
 			button.name = "LockerDecision_" + str(choice.id)
 			button.disabled = not event.get("available", false)
 			follow.add_child(button)
-			follow.add_child(G.wrap(choice.detail, 13))
+			follow.add_child(effets(str(choice.detail)))
 	else:
-		follow.add_child(G.wrap("La décision hebdomadaire est traitée, ou aucun entretien n’est disponible dans cette phase.", 15))
+		follow.add_child(Pastilles.pastille("Aucune décision en attente", Charte.IVOIRE_2, "check", "La décision hebdomadaire est traitée, ou aucun entretien n’est disponible dans cette phase.", 18, "RelationshipNoEvent"))
 	follow.add_child(G.separator())
 	follow.add_child(G.section("Les engagements"))
 	var commitments: Array = data.get("commitments", [])
-	if commitments.is_empty(): follow.add_child(G.wrap("Aucun engagement de vestiaire en cours.", 14))
+	if commitments.is_empty(): follow.add_child(Components.label("Aucun engagement", 22, Charte.IVOIRE_2, true, 600))
 	for c: Dictionary in commitments.slice(-8):
 		var status: String = str({"open":"À suivre", "honored":"Honoré", "broken":"Non tenu", "expired":"Clos sans pénalité"}.get(c.status, c.status))
 		_person_link(app,follow,c.playerId,"RelationshipCommitmentPlayerLink")
@@ -113,7 +157,7 @@ static func build(app: Control) -> Control:
 		_person_link(app,follow,e.playerId,"RelationshipHistoryPlayerLink")
 		follow.add_child(G.wrap("%s · semaine %s — %s\n%s · %s" % [G.season_label(e.season), int(e.week) + 1, _name(app, e.playerId), e.title, {"ecouter":"Écouter", "cadrer":"Rappeler les exigences", "responsabiliser":"Confier un rôle"}.get(e.choice, e.choice)], 13))
 	var right := G.panel(page, 1.3)
-	G.chapter(right, "12", "Les personnes et les liens", "Un entretien par personne ; une intervention de groupe par semaine.", app.accent)
+	G.chapter(right, "12", "Les personnes et les liens", "", app.accent, "Un entretien par personne ; une intervention de groupe par semaine.")
 	var list := G.scroll(right)
 	list.get_parent().name = "RelationshipPeopleScroll"
 	var players: Array = data.get("players", [])
@@ -141,8 +185,12 @@ static func build(app: Control) -> Control:
 	chooser.item_selected.connect(draw)
 	draw.call(selected)
 	list.add_child(G.separator())
-	list.add_child(G.section("Travailler un duo"))
-	list.add_child(G.wrap("Deux partenaires disponibles. Le mentorat exige le relais pressenti en joueur A ; la médiation cible un lien inférieur à 8.", 13))
+	var titre_duo := G.h(8)
+	titre_duo.add_child(G.section("Travailler un duo"))
+	var info_duo := Pastilles.info("Deux partenaires disponibles. Le mentorat exige le relais pressenti en joueur A ; la médiation cible un lien inférieur à 8.", "i", "DuoInfo")
+	info_duo.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	titre_duo.add_child(info_duo)
+	list.add_child(titre_duo)
 	var a := OptionButton.new()
 	a.name = "DuoPlayerA"
 	var b := OptionButton.new()
@@ -179,8 +227,19 @@ static func _player(app: Control, parent: VBoxContainer, data: Dictionary, p: Di
 		character.name = "RelationshipPersonality"
 		parent.add_child(character)
 	if p.get("score") != null: G.gauge(parent, "Satisfaction", float(p.score))
-	parent.add_child(G.wrap("Satisfaction %s / 100 · condition %s %% · %s minute(s)" % [_number(p.get("score")), int(p.condition), _number(p.get("minutes"))], 15))
-	if int(p.injury) > 0: parent.add_child(G.wrap("Blessure : %s semaine(s). Promesse suspendue si aucune minute jouée." % p.injury, 14, G.ALERT))
+	var fiche := _ouvrir(app, p.get("id"))
+	var chiffres := Components.h(8)
+	chiffres.name = "RelationshipFigures"
+	chiffres.add_child(Pastilles.tuile(_number(p.get("score")), "satisf.", Pastilles.BLEU, Charte.PANNEAU_2, 30, "RelationshipTileSatisfaction", false, fiche))
+	chiffres.add_child(Pastilles.tuile("%d %%" % int(p.condition), "condition", Pastilles.VERT if int(p.condition) >= 80 else (Pastilles.ORANGE if int(p.condition) >= 50 else Pastilles.ROUGE), Charte.PANNEAU_2, 30, "RelationshipTileCondition", false, fiche))
+	chiffres.add_child(Pastilles.tuile(_number(p.get("minutes")), "min", Pastilles.TURQUOISE, Charte.PANNEAU_2, 30, "RelationshipTileMinutes", false, fiche))
+	parent.add_child(chiffres)
+	if int(p.injury) > 0:
+		var blessure := Components.h(8)
+		blessure.name = "RelationshipInjury"
+		blessure.add_child(Pastilles.pastille("%d sem." % int(p.injury), Pastilles.ROUGE, "warning", "Blessure : %s semaine(s)." % p.injury, 18, "RelationshipInjuryWeeks", fiche))
+		blessure.add_child(Pastilles.pastille("Promesse", Pastilles.ORANGE, "clock", "Promesse suspendue si aucune minute jouée.", 18, "RelationshipInjuryPromise", fiche))
+		parent.add_child(blessure)
 	for c: Dictionary in data.get("conversations", []):
 		var button := G.button(c.label + " · " + c.detail, func(): app._command("relationship_conversation", {"context":context, "playerId":p.id, "choice":c.id}))
 		button.disabled = not p.get("conversationAvailable", false)
@@ -202,7 +261,18 @@ static func _player(app: Control, parent: VBoxContainer, data: Dictionary, p: Di
 	if promise is Dictionary:
 		parent.add_child(G.wrap("Promesse %s · %s minute(s) / %s rencontres sur 3" % [promise.target, int(promise.minutes), int(promise.completed)], 15))
 	else:
-		parent.add_child(G.wrap("Promettre du temps de jeu sur trois rencontres : respect +8 satisfaction ; non-respect −10. Dernière ouverture : journée 24.", 13))
+		var regle := Components.h(8)
+		regle.name = "RelationshipPromiseRule"
+		var titre_promesse := Components.label("Promettre du temps de jeu", 20, Charte.IVOIRE, true, 600)
+		titre_promesse.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		regle.add_child(titre_promesse)
+		regle.add_child(Pastilles.pastille("▲ +8", Pastilles.VERT, "", "Respect : +8 satisfaction.", 18))
+		regle.add_child(Pastilles.pastille("▼ −10", Pastilles.ROUGE, "", "Non-respect : −10 satisfaction.", 18))
+		regle.add_child(Pastilles.pastille("J24", Pastilles.BLEU, "calendar", "Dernière ouverture : journée 24.", 18))
+		var info_promesse := Pastilles.info("Promettre du temps de jeu sur trois rencontres : respect +8 satisfaction ; non-respect −10. Dernière ouverture : journée 24.", "i", "PromiseInfo")
+		info_promesse.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		regle.add_child(info_promesse)
+		parent.add_child(regle)
 		for option: Dictionary in data.get("promiseOptions", []):
 			var button := G.button("PROMETTRE %s MINUTES" % int(option.minutes), func(): app._command("relationship_promise", {"context":context, "playerId":p.id, "target":option.id}))
 			button.disabled = not p.get("promiseAvailable", false)

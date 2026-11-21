@@ -130,7 +130,7 @@ static func section(title: String, subtitle: String = "") -> VBoxContainer:
 	if not subtitle.is_empty(): c.add_child(Base.wrap(subtitle, 13, MUTED))
 	return c
 
-static func chapter(parent: Node, number: String, title: String, subtitle: String, accent: Color) -> void:
+static func chapter(parent: Node, number: String, title: String, subtitle: String, accent: Color, bulle: String = "") -> void:
 	var band:=PanelContainer.new()
 	var band_style:=Base.box(PAPER.lerp(Color(accent,1),.055),"chip",accent_ink(accent))
 	band_style.set_border_width_all(0);band_style.border_width_left=3
@@ -154,6 +154,11 @@ static func chapter(parent: Node, number: String, title: String, subtitle: Strin
 	var titles := section(title, subtitle)
 	fill(titles)
 	row.add_child(titles)
+	# Règle d'usage : un petit « i » à droite du titre plutôt qu'une phrase sous le titre.
+	if not bulle.is_empty():
+		var info := preload("res://ui/immersive08/pastilles_club.gd").info(bulle, "i", "ChapterInfo")
+		info.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(info)
 
 static func separator() -> HSeparator:
 	var s := HSeparator.new()
