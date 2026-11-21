@@ -12,11 +12,11 @@ func check(condition: bool, message: String) -> void:
 		printerr("FAIL: ", message)
 
 func run() -> void:
-	var path := "/tmp/oval-match-club-crest.png"
+	var path := OS.get_user_data_dir().path_join("oval-match-club-crest.png")
 	var image := Image.create(30, 40, false, Image.FORMAT_RGBA8)
 	image.fill(Color("c52d57"))
 	check(image.save_png(path) == OK, "temporary active pack crest")
-	var club := {"logoPath":"/tmp/missing-root-crest.png", "presentation":{
+	var club := {"logoPath":OS.get_user_data_dir().path_join("missing-root-crest.png"), "presentation":{
 		"name":"Club actif", "logoPath":path, "color":"#116699"}}
 	var before := club.duplicate(true)
 	var view := View.new()

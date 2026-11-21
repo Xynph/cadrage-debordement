@@ -16,11 +16,21 @@ var selected_ids: Array = []
 var options_grid: GridContainer
 var ui: Control
 var _fingerprint := ""
+## Fenêtre basse (1280×720) : tuiles des joueurs resserrées pour que les 15 titulaires et les 8 remplaçants
+## tiennent à l'écran (les tuiles de 74 px débordaient : 8e avant coupé, banc entier sous le bas de l'écran).
+const HAUTEUR_DENSE := 860.0
+var _dense := false
 
 func _ready() -> void:
 	name = "ContextualLocker"
 	app = director.app
 	S.room(self, "locker", app.model.get("club", {}))
+	get_viewport().size_changed.connect(_on_viewport_resized)
+
+func _on_viewport_resized() -> void:
+	if (get_viewport_rect().size.y < HAUTEUR_DENSE) != _dense and not scene.is_empty():
+		_fingerprint = ""
+		_draw()
 
 func update_frame(value: Dictionary, data: Dictionary) -> void:
 	model = value
@@ -32,6 +42,7 @@ func update_frame(value: Dictionary, data: Dictionary) -> void:
 
 func _draw() -> void:
 	if is_instance_valid(ui): remove_child(ui); ui.queue_free()
+	_dense = get_viewport_rect().size.y < HAUTEUR_DENSE
 	ui = Control.new()
 	S.full(ui)
 	add_child(ui)
@@ -149,8 +160,9 @@ func _player_card(participant: Dictionary, compact: bool = false) -> Button:
 	var card := S.button("", func(): _toggle_player(id), decision.is_empty())
 	card.set_meta("participant_id", id)
 	card.tooltip_text = text + " · " + position_text + (" · " + reaction_label if not reaction_label.is_empty() else "")
-	# Tuiles lisibles : 74 px (titulaires) / 70 px (banc), portrait 58 / 50, textes 17-14 / 15-13.
-	card.custom_minimum_size.y = 70 if compact else 74
+	# Tuiles lisibles : 74 px (titulaires) / 70 px (banc), portrait 58 / 50, textes 17-14 / 15-13 ;
+	# en fenêtre basse : 56 / 52 px, portrait 46 / 42, textes 15-13 / 14-12.
+	card.custom_minimum_size.y = (52 if compact else 56) if _dense else (70 if compact else 74)
 	if compact: S.G.fill(card)
 	var margin := S.G.margin(4)
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -159,7 +171,7 @@ func _player_card(participant: Dictionary, compact: bool = false) -> Button:
 	var row := S.G.h(8)
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	margin.add_child(row)
-	var portrait_size := 50 if compact else 58
+	var portrait_size := (42 if compact else 46) if _dense else (50 if compact else 58)
 	var portrait: TextureRect
 	if player.is_empty():
 		portrait = TextureRect.new()
@@ -174,22 +186,33 @@ func _player_card(participant: Dictionary, compact: bool = false) -> Button:
 	words.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	S.G.fill(words)
 	row.add_child(words)
-	var name_label := S.label("%s · %s" % [str(int(participant.get("number", 0))), text], 15 if compact else 17)
+	var name_label := S.label("%s · %s" % [str(int(participant.get("number", 0))), text], (14 if compact else 15) if _dense else (15 if compact else 17))
 	name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	words.add_child(name_label)
-	var position_label := S.label(position_text, 13 if compact else 14, S.MUTED)
+	var position_label := S.label(position_text, (12 if compact else 13) if _dense else (13 if compact else 14), S.MUTED)
 	position_label.name = "ParticipantPosition"
 	position_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	position_label.tooltip_text = position_label.text
 	position_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	words.add_child(position_label)
+	# Fenêtre basse : la réaction (ou « Visé ») se range sur la ligne du poste, la tuile garde deux lignes.
+	var status_parent: Node = words
+	if _dense:
+		var status_row := S.G.h(6)
+		status_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		words.add_child(status_row)
+		position_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		position_label.clip_text = true
+		status_row.add_child(position_label)
+		status_parent = status_row
+	else: words.add_child(position_label)
+	var status_size := (12 if compact else 13) if _dense else (13 if compact else 14)
 	if not reaction_label.is_empty():
-		var reaction_text := S.label(reaction_label, 13 if compact else 14, reaction_color(reaction))
+		var reaction_text := S.label(reaction_label, status_size, reaction_color(reaction))
 		reaction_text.name = "ParticipantReaction"
 		reaction_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		words.add_child(reaction_text)
-	elif audience == "players" and id in selected_ids: words.add_child(S.label("✓ Visé", 13 if compact else 14, S.GOLD))
+		status_parent.add_child(reaction_text)
+	elif audience == "players" and id in selected_ids: status_parent.add_child(S.label("✓ Visé", status_size, S.GOLD))
 	var addressed: bool = audience == "group" or (audience in ["forwards", "backs"] and participant.get("group") == audience) or (audience == "players" and id in selected_ids)
 	if not decision.is_empty(): addressed = id in decision.get("playerIds", [])
 	if addressed: S.selected(card, S.GOLD)

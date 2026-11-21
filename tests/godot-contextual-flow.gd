@@ -3,6 +3,8 @@ const ContextualFlow = preload("helpers/contextual_flow.gd")
 # Run against the staged native project and an empty CD_GODOT_DATA_DIR. Every
 # career/match transition below goes through main._command and the real worker.
 const G = preload("res://ui/game_skin.gd")
+## Contour du bouton « Voir l'entraînement » (director.gd, _add_training_entry).
+const OBSERVE_BORDER = preload("res://ui/immersive08/components.gd").GOLD
 var app: Control
 var director: Node
 var failures: Array[String] = []
@@ -223,7 +225,10 @@ func run() -> void:
 		check(observe != null and observe.is_visible_in_tree(), "Actual training route exposes Observe at " + str(resolution))
 		if observe != null:
 			var fond := observe.get_theme_stylebox("normal") as StyleBoxFlat
-			check(fond != null and fond.bg_color.get_luminance() < .3 and observe.size_flags_horizontal != Control.SIZE_EXPAND_FILL and observe.has_theme_stylebox_override("normal"), "Observe : style de bouton du jeu, plus le bouton blanc pleine largeur")
+			# Charte : pilule à contour (fond transparent) ou fond sombre, jamais l'aplat blanc pleine largeur du thème Godot.
+			var fond_sombre := fond != null and (fond.bg_color.a < .05 or fond.bg_color.get_luminance() < .3)
+			var contour := fond != null and fond.border_width_top > 0 and fond.border_color.is_equal_approx(OBSERVE_BORDER)
+			check(fond_sombre and contour and observe.size_flags_horizontal != Control.SIZE_EXPAND_FILL and observe.has_theme_stylebox_override("normal"), "Observe : style de bouton du jeu, plus le bouton blanc pleine largeur")
 			observe.pressed.emit()
 		else: director.open_training()
 		await settle()
@@ -276,17 +281,16 @@ func run() -> void:
 	var stage: Node3D = director.view.stage
 	check(stage != null and stage.get_script().resource_path == "res://match_view.gd", "Live match uses the production moving NativeMatchView")
 	if stage != null:
-		var club_crest := G.crest(app.model.club)
-		var expected_texture: Texture2D = club_crest.texture if club_crest is TextureRect else null
+		var expected_texture: Texture2D = G.crest_texture(app.model.club)
 		check(stage._club_crest == expected_texture, "Production stadium resolves the actual active club crest")
 		var branding: MultiMeshInstance3D = stage.get_node_or_null("ManagedClubCrests")
 		check(branding != null and branding.visible == (expected_texture != null), "Missing active crest leaves neutral stadium fascia")
 		if branding != null: check(branding.material_override.albedo_texture == expected_texture, "Stadium fascia uses the active club identity")
-		var advertisements := stage.find_children("*", "Label3D", true, false)
+		# Panneaux du pourtour : enfants directs du stade (les numéros des marqueurs tactiques des joueurs sont aussi des Label3D).
+		var advertisements := stage.find_children("*", "Label3D", false, false)
 		check(advertisements.size() == 16, "All sixteen Rugby Legacy advertising boards remain present")
 		for label in advertisements:
 			check(str(label.text) == "RUGBY LEGACY 27", "Advertising boards retain Rugby Legacy 27")
-		club_crest.free()
 	var original_scene := JSON.stringify(app.model.live.scene)
 	var original_positions: Array[Vector3] = actor_positions(stage) if stage != null else []
 	await ask("tick", {"steps":6})

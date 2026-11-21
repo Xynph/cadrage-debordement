@@ -22,7 +22,7 @@ func descendants(node: Node) -> Array[Node]:
 func run() -> void:
 	var image := Image.create(16, 20, false, Image.FORMAT_RGBA8)
 	image.fill(Color("ef3c6b"))
-	var crest_path := "/tmp/oval-contextual-room-test-crest.png"
+	var crest_path := OS.get_user_data_dir().path_join("oval-contextual-room-test-crest.png")
 	check(image.save_png(crest_path) == OK, "create temporary pack crest")
 	# Root identity conflicts deliberately: enriched presentation must win.
 	var club := {"name":"Root identity", "color":"#ff0000", "presentation":{

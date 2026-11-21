@@ -187,13 +187,8 @@ static func club_abbr(club: Dictionary) -> String:
 
 static func crest(club: Dictionary, width: int = 56) -> Control:
 	var c := identity(club)
-	var path := str(c.get("logoPath", club.get("logoPath", "")))
-	var texture := _pack_texture(path)
-	var provided := texture != null
-	if not provided:
-		var slug := str(c.get("slug", ""))
-		var badge := "res://art/pacific/badges/%s.svg" % slug if slug.begins_with("srp-") else "res://art/japan/badges/%s.svg" % slug if slug.begins_with("jlo-") else "res://art/nationale/badges/%s.svg" % slug if slug.begins_with("nat-") else "res://art/champ/badges/%s.svg" % slug if slug.begins_with("champ-") else ""
-		if not badge.is_empty() and ResourceLoader.exists(badge): texture = load(badge) as Texture2D
+	var provided := _pack_texture(str(c.get("logoPath", club.get("logoPath", "")))) != null
+	var texture := crest_texture(club)
 	if texture != null:
 		var image := TextureRect.new()
 		image.texture = texture
@@ -215,6 +210,17 @@ static func crest(club: Dictionary, width: int = 56) -> Control:
 	w.custom_minimum_size = Vector2(width, width)
 	w.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return w
+
+## Blason réel du club pour les surfaces 3D (stade, salles) : celui du pack actif, sinon l'écusson officiel du
+## championnat. Null sans blason : l'écusson recoloré à initiales de crest() reste propre à l'interface.
+static func crest_texture(club: Dictionary) -> Texture2D:
+	var c := identity(club)
+	var texture := _pack_texture(str(c.get("logoPath", club.get("logoPath", ""))))
+	if texture != null: return texture
+	var slug := str(c.get("slug", ""))
+	var badge := "res://art/pacific/badges/%s.svg" % slug if slug.begins_with("srp-") else "res://art/japan/badges/%s.svg" % slug if slug.begins_with("jlo-") else "res://art/nationale/badges/%s.svg" % slug if slug.begins_with("nat-") else "res://art/champ/badges/%s.svg" % slug if slug.begins_with("champ-") else ""
+	if not badge.is_empty() and ResourceLoader.exists(badge): return load(badge) as Texture2D
+	return null
 
 static func _pack_texture(path: String) -> Texture2D:
 	if path.is_empty() or not path.is_absolute_path() or not FileAccess.file_exists(path): return null

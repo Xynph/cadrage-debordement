@@ -255,11 +255,9 @@ func set_club_identity(club: Dictionary) -> void:
 	if key == _club_identity_key:
 		return
 	_club_identity_key = key
-	# Exactly the same active pack priority as the UI. Its initials fallback is
-	# deliberately left off the physical surfaces when no texture is available.
-	var crest_control: Control = ClubPresentation.crest(club, 256)
-	_club_crest = crest_control.texture if crest_control is TextureRect else null
-	crest_control.free()
+	# Exactly the same active pack priority as the UI. Its recoloured initials fallback
+	# is deliberately left off the physical surfaces when no real crest is available.
+	_club_crest = ClubPresentation.crest_texture(club)
 	if is_instance_valid(_club_branding):
 		_update_club_branding()
 

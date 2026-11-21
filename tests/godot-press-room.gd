@@ -105,10 +105,8 @@ func run() -> void:
 	check(view.room != null and view.room.find_child("PressRoomCamera", true, false) != null, "actual 3D press set and camera")
 	check(view.room.get_meta("identity").get("name") == G.club_name(career.club), "3D room uses actual active club identity")
 	check(view.room.get_meta("primary_color") == Color(G.identity(career.club).get("color", "#596368")), "3D room uses actual club palette")
-	var crest := G.crest(career.club, 256)
-	var expected_texture: Texture2D = crest.texture if crest is TextureRect else null
+	var expected_texture: Texture2D = G.crest_texture(career.club)
 	check(view.room.crest_texture == expected_texture, "physical crest uses production resolver or stays blank")
-	crest.free()
 	var world_id: int = view.room.get_instance_id()
 	for resolution in [Vector2i(1280,720), Vector2i(1600,900)]:
 		root.size = resolution

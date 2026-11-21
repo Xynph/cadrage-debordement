@@ -24,11 +24,9 @@ static func build(kind: String, club: Dictionary) -> Node3D:
 		identity["color"] = club["color"]
 	if not identity.has("name") and club.has("name"):
 		identity["name"] = club["name"]
-	# Reuse the exact game resolver, including active pack priority. Its initials
-	# fallback is intentionally not converted into a 3D crest.
-	var crest_control: Control = G.crest(club, 256)
-	var texture: Texture2D = crest_control.texture if crest_control is TextureRect else null
-	crest_control.free()
+	# Reuse the exact game resolver, including active pack priority. Its recoloured
+	# initials fallback is intentionally not converted into a 3D crest.
+	var texture: Texture2D = G.crest_texture(club)
 	room.name = "Contextual" + kind.capitalize()
 	room.configure(identity, texture)
 	return room
