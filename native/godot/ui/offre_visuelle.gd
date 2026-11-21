@@ -58,8 +58,17 @@ static func valeurs(ctx: Dictionary) -> Dictionary:
 		"min": int(quote.get("minYears", 1)), "max": maxi(int(quote.get("maxYears", 3)), annees),
 		"premiere": premiere, "fin": G.contract_year(premiere + annees - 1),
 		"fee": int(fee) if fee is int or fee is float else -1,
-		"budget": Budget.data(ctx.app.model), "cash": ctx.app.model.get("finance", {}).get("cash"),
+		"budget": {} if ctx.get("prolongation", false) else Budget.data(ctx.app.model), "cash": ctx.app.model.get("finance", {}).get("cash"),
+		"prolongation": bool(ctx.get("prolongation", false)),
+		"actuel": int(ctx.player.get("salary", 0)), "fin_actuelle": ctx.player.get("contractEnd"),
 	}
+
+## Écart de salaire au format des salaires affichés (arrondi et période du jeu).
+static func hausse(val: Dictionary) -> int:
+	return roundi(float(val.propose) / 100.0) * 100 - roundi(float(val.actuel) / 100.0) * 100
+
+static func signe_salaire(valeur: int) -> String:
+	return ("+" if valeur >= 0 else "−") + G.salary_amount(absi(valeur))
 
 static func _signe(valeur: int) -> String:
 	return ("+" if valeur >= 0 else "−") + G.euros(absi(valeur))
@@ -121,12 +130,14 @@ static func _identite(toile: Control, parent: Control, ctx: Dictionary, val: Dic
 	nom.name = "OffreNom"
 	var id := str(joueur.get("id", ""))
 	var app: Control = ctx.app
-	Pieces.rendre_cliquable(fond_portrait, Vector2(150, 150), func(): app.navigation_controller.open_entity({"kind":"market", "id":id}), "OffrePortraitLien", "Fiche · " + str(joueur.get("name", "")), "", Charte.RAYON_CARTE)
+	# Prolongation : joueur de l'effectif, sa fiche (et non celle d'une piste du marché).
+	var fiche := {"kind":"player", "id":id} if ctx.get("prolongation", false) else {"kind":"market", "id":id}
+	Pieces.rendre_cliquable(fond_portrait, Vector2(150, 150), func(): app.navigation_controller.open_entity(fiche), "OffrePortraitLien", "Fiche · " + str(joueur.get("name", "")), "", Charte.RAYON_CARTE)
 	var zone_nom := Control.new()
 	zone_nom.name = "OffreNomZone"
 	parent.add_child(zone_nom)
 	D.place(zone_nom, Rect2(170, 10, 620, 60))
-	Pieces.rendre_cliquable(zone_nom, Vector2(620, 60), func(): app.navigation_controller.open_entity({"kind":"market", "id":id}), "OffreNomLien", "Fiche · " + str(joueur.get("name", "")), "", Charte.RAYON_PETIT)
+	Pieces.rendre_cliquable(zone_nom, Vector2(620, 60), func(): app.navigation_controller.open_entity(fiche), "OffreNomLien", "Fiche · " + str(joueur.get("name", "")), "", Charte.RAYON_PETIT)
 	var detail := "%s · %s ans" % [str(joueur.get("pos", "—")), G.n(joueur.get("age", "—"))]
 	D.text(parent, 178, 94, detail, 21, Charte.IVOIRE_2, 600, 700, HORIZONTAL_ALIGNMENT_LEFT, true).name = "OffreDetail"
 	# Pastilles : étape de la discussion, demande du joueur, écart (A), contre-offre.
@@ -137,6 +148,12 @@ static func _identite(toile: Control, parent: Control, ctx: Dictionary, val: Dic
 		Charte.PANNEAU_3, func(): _fenetre_discussion(toile, ctx, val)) + 10
 	x += Pieces.pastille(parent, x, 112, "Demande %s" % G.salary(val.demande), "money", "OffreDemande", "", Pieces.VERT,
 		Charte.PANNEAU_3, func(): _fenetre_salaire(toile, val)) + 10
+	if val.prolongation and not ctx.get("avant_apres", false):
+		# Contrat en cours : salaire et échéance actuels.
+		x += Pieces.pastille(parent, x, 112, "Actuel %s" % G.salary(val.actuel), "lock", "OffreActuel", "", Charte.IVOIRE,
+			Charte.PANNEAU_3, func(): _fenetre_salaire(toile, val)) + 10
+		x += Pieces.pastille(parent, x, 112, "Fin %s" % ("—" if val.fin_actuelle == null else G.contract_year(val.fin_actuelle)), "calendar", "OffreFinActuelle", "", Charte.IVOIRE,
+			Charte.PANNEAU_3, func(): _fenetre_duree(toile, val)) + 10
 	var negociation: Dictionary = ctx.negotiation
 	if str(negociation.get("status", "")) == "counter":
 		var reprendre: Button = ctx.reuse
@@ -257,7 +274,7 @@ static func _jeton(toile: Control, parent: Control, val: Dictionary, zone: Rect2
 	var montant := D.text(cadre, 40 + d, zone.size.y / 2 + 6, G.euros(fee) if fee >= 0 else "—", 44, COULEUR_PRIME, 800, 360)
 	montant.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 	montant.name = "OffreJetonMontant"
-	D.text(cadre, 42 + d, zone.size.y / 2 + 34, "PRIME À LA SIGNATURE", 15, Charte.IVOIRE_2, 700, 360)
+	D.text(cadre, 42 + d, zone.size.y / 2 + 34, "PRIME DE PROLONGATION" if val.get("prolongation", false) else "PRIME À LA SIGNATURE", 15, Charte.IVOIRE_2, 700, 360)
 	Pieces.rendre_cliquable(rond, Vector2(d, d), func(): _fenetre_budget(toile, val), "OffreJetonLien", "Prime à la signature", "", Charte.RAYON_PILULE)
 	var budget: Dictionary = val.budget
 	var x := 40.0 + d + 300.0
@@ -342,15 +359,21 @@ static func _fenetre(toile: Control, id: String, titre: String, tuiles: Array, c
 	return calque
 
 static func _fenetre_salaire(toile: Control, val: Dictionary) -> void:
-	_fenetre(toile, "OffreFenetreSalaire", "Salaire " + G.salary_period(true), [
+	var tuiles: Array = []
+	if val.get("prolongation", false): tuiles.append([G.salary(val.actuel), "Actuel", Charte.IVOIRE, "lock"])
+	tuiles.append_array([
 		[G.salary(val.demande), "Demande", Pieces.VERT, "money"],
 		[G.salary(val.propose), "Ta proposition", COULEUR_SALAIRE, "people"],
 		[_signe(int(val.ecart)), "Écart", _couleur_ecart(val), "check" if int(val.ecart) >= 0 else "warning"],
-	], COULEUR_SALAIRE)
+	])
+	if val.get("prolongation", false): tuiles.append([signe_salaire(hausse(val)), "vs actuel", Pieces.VERT if hausse(val) <= 0 else Pieces.ORANGE, "renew"])
+	_fenetre(toile, "OffreFenetreSalaire", "Salaire " + G.salary_period(true), tuiles, COULEUR_SALAIRE)
 
 static func _fenetre_duree(toile: Control, val: Dictionary) -> void:
-	_fenetre(toile, "OffreFenetreDuree", "Durée du contrat", [
-		[G.contract_year(int(val.premiere) - 1), "Signature", Charte.IVOIRE, "check"],
+	var tuiles: Array = []
+	if val.get("prolongation", false): tuiles.append(["—" if val.fin_actuelle == null else G.contract_year(val.fin_actuelle), "Fin actuelle", Charte.IVOIRE, "lock"])
+	else: tuiles.append([G.contract_year(int(val.premiere) - 1), "Signature", Charte.IVOIRE, "check"])
+	_fenetre(toile, "OffreFenetreDuree", "Durée du contrat", tuiles + [
 		["%d an(s)" % int(val.annees), "Ta proposition", COULEUR_DUREE, "calendar"],
 		[str(val.fin), "Fin de contrat", COULEUR_DUREE, "flag"],
 		["%d à %d ans" % [int(val.min), int(val.max)] if int(val.min) != int(val.max) else "%d an" % int(val.min), "Accepté par le joueur", Pieces.VERT, "people"],
@@ -381,4 +404,6 @@ static func _fenetre_budget(toile: Control, val: Dictionary) -> void:
 	else:
 		tuiles = [[G.euros(fee), "Cette prime", COULEUR_PRIME, "money"]]
 	if val.cash is int or val.cash is float: tuiles.append([G.euros(val.cash), "Trésorerie", Charte.IVOIRE, "money"])
-	_fenetre(toile, "OffreFenetreBudget", "Budget de transferts", tuiles, COULEUR_PRIME)
+	if val.get("prolongation", false) and (val.cash is int or val.cash is float):
+		tuiles.append([G.euros(int(val.cash) - fee), "Après la prime", Pieces.VERT if int(val.cash) >= fee else Pieces.ROUGE, "check" if int(val.cash) >= fee else "warning"])
+	_fenetre(toile, "OffreFenetreBudget", "Prime de prolongation" if val.get("prolongation", false) else "Budget de transferts", tuiles, COULEUR_PRIME)

@@ -58,7 +58,11 @@ static func open(app: Control, player: Dictionary, recruiting: bool, answer: Str
 	app._clear_dialogs()
 	var dialog := ConfirmationDialog.new()
 	dialog.name = "ContractOffer"
-	app._prepare_dialog(dialog,1540)
+	var variante := OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper()
+	var prolongation_visuelle := not recruiting and variante in ["A", "B"]
+	var taille := Vector2i(1540,860)
+	if prolongation_visuelle: taille = Vector2i(roundi(1500 * C.density) + 70, roundi(680 * C.density) + 110)
+	app._prepare_dialog(dialog,taille.x)
 	dialog.title = "Offre à " + str(player.name)
 	dialog.dialog_text = ""
 	var content := C.v(10)
@@ -181,11 +185,14 @@ static func open(app: Control, player: Dictionary, recruiting: bool, answer: Str
 		body.add_child(share)
 	# Offre au joueur (choix de Léo du 21/11/2026) : règle demande / proposition, frise des saisons, jeton de prime.
 	# Les blocs ci-dessus restent construits (mêmes nœuds, mêmes champs) mais masqués ; la prolongation garde l'écran en lignes.
-	if recruiting:
+	# Prolongation : planche A / B (21/11/2026) sous CD_VARIANTE_VISUELLE, en attendant le choix de Léo.
+	if recruiting or prolongation_visuelle:
 		for ancien: Variant in [identity, status, progress, columns, summary_panel, action, body.get_node_or_null("ContractTransferBudget")]:
 			if ancien != null: (ancien as Control).visible = false
-		preload("res://ui/offre_visuelle.gd").construire(body, {"app":app, "player":player, "quote":quote, "salary":salary, "years":years, "first_season":first_season,
-			"negotiation":negotiation, "phase":phase, "reuse":reuse})
+		var ctx := {"app":app, "player":player, "quote":quote, "salary":salary, "years":years, "first_season":first_season,
+			"negotiation":negotiation, "phase":phase, "reuse":reuse, "prolongation":not recruiting}
+		if recruiting or variante == "A": preload("res://ui/offre_visuelle.gd").construire(body, ctx)
+		else: load("res://ui/prolongation_visuelle.gd").construire(body, ctx)
 	dialog.get_ok_button().text = "AUTORISER LA SIGNATURE SI ACCORD"
 	dialog.get_ok_button().tooltip_text = "Envoie ces conditions. Si le joueur accepte, le contrat est signé et la prime est débitée ; sinon, seule la discussion est enregistrée. Annuler ne transmet aucune proposition."
 	dialog.get_ok_button().disabled = blocked
@@ -196,7 +203,7 @@ static func open(app: Control, player: Dictionary, recruiting: bool, answer: Str
 		dialog.queue_free())
 	dialog.canceled.connect(dialog.queue_free)
 	app.add_child(dialog)
-	Dialogs.show_centered(dialog,Vector2i(1540,860))
+	Dialogs.show_centered(dialog,taille)
 	dialog.add_theme_font_size_override("title_font_size",C.px(20))
 	for button in [dialog.get_ok_button(),dialog.get_cancel_button()]:
 		button.add_theme_font_size_override("font_size",C.px(18))
