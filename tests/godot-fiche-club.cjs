@@ -41,10 +41,13 @@ function preparer(profil, journees = 3) {
 function lancer(profil, sortie, largeur, hauteur, captures) {
   // Rendu fenêtré (sous xvfb-run sans affichage) : la mise en page dépend de la vraie taille de fenêtre.
   const graphique = process.env.CD_FICHE_HEADLESS !== '1';
-  const args = [...(graphique ? ['--display-driver', 'x11', '--rendering-method', 'gl_compatibility', '--windowed', '--resolution', largeur + 'x' + hauteur] : ['--headless']), '--audio-driver', 'Dummy', '--path', 'native/godot', '--script', path.resolve(__dirname, 'godot-fiche-club.gd')];
-  const commande = graphique && !process.env.DISPLAY ? 'xvfb-run' : godot;
+  // Sous Windows : pilote d'affichage natif, sans xvfb-run (le lanceur local cache déjà la fenêtre).
+  const linux = process.platform === 'linux';
+  const affichage = linux ? 'x11' : process.platform === 'darwin' ? 'macos' : 'windows';
+  const args = [...(graphique ? ['--display-driver', affichage, '--rendering-method', 'gl_compatibility', '--windowed', '--resolution', largeur + 'x' + hauteur] : ['--headless']), '--audio-driver', 'Dummy', '--path', 'native/godot', '--script', path.resolve(__dirname, 'godot-fiche-club.gd')];
+  const commande = graphique && linux && !process.env.DISPLAY ? 'xvfb-run' : godot;
   const complet = commande === 'xvfb-run' ? ['-a', '-s', '-screen 0 ' + largeur + 'x' + hauteur + 'x24', godot, ...args] : args;
-  const r = spawnSync(commande, complet, { cwd: racine, encoding: 'utf8', timeout: 840000, env: { ...process.env, CD_GODOT_SELF_TEST: '0', CD_GODOT_GUIDE_MODULE_TEST: '1', CD_NODE_EXECUTABLE: process.execPath, CD_GODOT_DATA_DIR: profil, CD_FICHE_OUTPUT: sortie, CD_FICHE_SIZE: largeur + 'x' + hauteur, CD_FICHE_CAPTURE: captures ? '1' : '0' } });
+  const r = spawnSync(commande, complet, { cwd: racine, encoding: 'utf8', timeout: 840000, windowsHide: true, env: { ...process.env, CD_GODOT_SELF_TEST: '0', CD_GODOT_GUIDE_MODULE_TEST: '1', CD_NODE_EXECUTABLE: process.execPath, CD_GODOT_DATA_DIR: profil, CD_FICHE_OUTPUT: sortie, CD_FICHE_SIZE: largeur + 'x' + hauteur, CD_FICHE_CAPTURE: captures ? '1' : '0' } });
   const journal = (r.stdout || '') + (r.stderr || '');
   if (r.error) throw new Error(r.error.message + '\n' + journal.slice(-4000));
   assert.doesNotMatch(journal, /SCRIPT ERROR|Parse Error/, journal.slice(-4000));
