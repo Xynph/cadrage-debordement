@@ -179,6 +179,9 @@ func run() -> void:
 	await command("finish_round"); await ContextualFlow.finish_match_week(app, self, check, previous_week)
 	await ContextualFlow.settle_club_meetings(app, self, check)
 	check(app.model.decisions.report is Dictionary and not app.model.decisions.report.notes.is_empty(), "Rapport réel conservé après validation")
+	# Le bilan « tes choix, les faits » vit dans le carnet latéral de l'écran Match compact. Depuis l'avant-match en tableau de bord
+	# (fenêtre ≥ 1280×720, #880), ce carnet est masqué : on lit donc le bilan à la taille compacte.
+	root.size = Vector2i(1100, 700); await settle()
 	app._navigate("Match"); await settle()
 	check(contains_text(app.match_screen.side, "Dernière rencontre"), "Bilan du dernier match accessible après validation")
 	for note in app.model.decisions.report.notes:
