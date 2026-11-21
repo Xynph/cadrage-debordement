@@ -6,6 +6,7 @@ const G = preload("res://ui/game_skin.gd")
 const U = preload("res://ui/management_state.gd")
 const ClubUI = preload("res://ui/immersive08/club_ui.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
+const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
 const Link = preload("res://ui/entity_link.gd")
 const FILTERS := ["À ménager", "Blessés", "Suspendus", "En sélection", "Tout l’effectif"]
 const PLANS := {"collective":"Suivre le collectif", "repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
@@ -172,13 +173,16 @@ static func build(app: Control, parent: Control, state: Dictionary) -> void:
 	D.button(parent, Rect2(1575, 334, 669, filter_height), "Ouvrir la composition →", func(): app._navigate("Composition"), false, "people", false, app.accent, "FatigueOpenLineup").add_theme_font_size_override("font_size", C.font_px(20))
 	var panel := D.panel(parent, Rect2(4, 391 + drop, 2240, 814 - drop), "Rotation et charge individuelle", "heart", "", "FatigueTable")
 	var display_rows: Array = data.rows
-	var note := "Blessure, suspension et sélection restent distinctes. Repères de simulation, pas un diagnostic médical."
+	# Les règles de lecture et d'usage passent derrière un « i » ; seule l'information de filtre reste écrite.
+	var regle := "Blessure, suspension et sélection restent distinctes. Repères de simulation, pas un diagnostic médical.\nRégler prépare le plan ; seule la séance applique ses effets. Chaque modification est confirmée."
+	var note := ""
 	if selected_bin >= 0 and selected_bin < LOAD_LABELS.size():
-		note = "Charge %s / 100 · %d joueur%s · Tout l’effectif pour retirer ce filtre." % [LOAD_LABELS[selected_bin], display_rows.size(), "s" if display_rows.size() > 1 else ""]
+		note = "Charge %s / 100 · %d joueur%s" % [LOAD_LABELS[selected_bin], display_rows.size(), "s" if display_rows.size() > 1 else ""]
 	elif display_rows.is_empty():
 		display_rows = overview(app.model, FILTERS[4], key, descending).rows
-		note = "Aucun profil « %s » : effectif complet ci-dessous pour comparer les plans et préparer la rotation." % selected
-	D.text(panel, 18, 87, note, 17, C.MUTED, 500, 2180).name = "FatigueEmpty" if data.rows.is_empty() else "FatigueReadingGuide"
+		note = "Aucun profil « %s »" % selected
+	if not note.is_empty(): D.text(panel, 18, 87, note, 17, C.MUTED, 500, 2100).name = "FatigueEmpty" if data.rows.is_empty() else "FatigueReadingGuide"
+	Pastilles.poser_a_droite(panel, Pastilles.info(regle, "i", "FatigueRuleInfo"), 2215, 14)
 	var header_height := C.reach(30)
 	var header_top := 95.0 if header_height <= 30 else 93.0
 	for column in [["JOUEUR", 32, 325, "name"], ["POSTE", 365, 210, "pos"], ["CONDITION", 587, 150, "condition"], ["CHARGE", 748, 155, "physicalLoad"], ["MIN.", 910, 105, "minutes"], ["BLESSURE", 1028, 175, "injury"], ["SÉLECTION", 1208, 210, "selection"], ["SUSPENSION", 1428, 175, "suspension"], ["PLAN", 1613, 275, "loadPlan"]]:
@@ -194,10 +198,9 @@ static func build(app: Control, parent: Control, state: Dictionary) -> void:
 	C.fill(list)
 	scroll.add_child(list)
 	for row: Dictionary in display_rows: _row(app, list, row)
-	if display_rows.is_empty(): list.add_child(C.wrap("Aucun joueur dans cette tranche de charge." if selected_bin >= 0 else "Aucun joueur projeté dans cette carrière.", 18, C.MUTED))
+	if display_rows.is_empty(): list.add_child(C.wrap("Aucun joueur", 18, C.MUTED))
 	var blocker := load_blocker(app)
-	var footer := blocker if not blocker.is_empty() else "Régler prépare le plan ; seule la séance applique ses effets. Chaque modification est confirmée."
-	D.text(panel, 18, 796, footer, 17, C.GOLD if not blocker.is_empty() else C.MUTED, 500, 2178).name = "FatigueLoadPolicy"
+	if not blocker.is_empty(): D.text(panel, 18, 796, blocker, 17, C.GOLD, 500, 2178).name = "FatigueLoadPolicy"
 
 static func _distribution(app: Control, parent: Control, state: Dictionary) -> void:
 	var chart := D.panel(parent, Rect2(1027, 252, 670, 68), "", "", "", "FatigueDistribution")
@@ -255,12 +258,12 @@ static func _row(app: Control, list: VBoxContainer, row: Dictionary) -> void:
 	if player.has("physicalLoad"): D.bar(item, Rect2(816, 12 + lift, 76, 5), float(player.physicalLoad), C.GOLD)
 	D.text(item, 910, 22 + lift, _number(player, "minutes", ""), 18, C.IVORY, 500, 100)
 	if row.injured: _status_icon(item, "heart", 1028, C.ALERT, lift)
-	D.text(item, 1050, 22 + lift, "%s sem." % G.n(player.get("injury", 0)) if row.injured else "Aucune projetée" if row.injury_known else "Non renseignée", 18, C.ALERT if row.injured else C.MUTED, 500, 148)
+	D.text(item, 1050, 22 + lift, "%s sem." % G.n(player.get("injury", 0)) if row.injured else "—" if row.injury_known else "Non renseignée", 18, C.ALERT if row.injured else C.MUTED, 500, 148)
 	var release: String = "En sélection" if row.called else "Non renseigné" if not row.selection_known else "Au club"
 	if row.called: _status_icon(item, "flag", 1208, C.BLUE, lift)
 	D.text(item, 1230, 22 + lift, release, 18, C.BLUE if row.called else C.MUTED, 500, 178)
 	if row.suspended: _status_icon(item, "warning", 1428, C.ALERT, lift)
-	D.text(item, 1450, 22 + lift, G.n(player.suspension) if row.suspended else "Aucune projetée" if row.suspension_known else "Non renseignée", 18, C.ALERT if row.suspended else C.MUTED, 500, 148)
+	D.text(item, 1450, 22 + lift, G.n(player.suspension) if row.suspended else "—" if row.suspension_known else "Non renseignée", 18, C.ALERT if row.suspended else C.MUTED, 500, 148)
 	D.text(item, 1613, 22 + lift, PLANS.get(player.get("loadPlan", ""), "Non renseigné"), 18, C.IVORY, 500, 265)
 	var button := D.button(item, Rect2(1910, 0, 260, height), "Régler", func(): open_adjustment(app, player), false, "", false, app.accent, "FatigueAdjust_" + identifier(str(player.id)))
 	button.set_meta("player_id", player.id)

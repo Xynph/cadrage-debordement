@@ -14,6 +14,8 @@ const Link = preload("res://ui/entity_link.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const Commune = preload("res://ui/immersive08/fiche_commune.gd")
 const Press = preload("res://ui/press_view.gd")
+const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
+const P = preload("res://ui/immersive08/projection.gd")
 const WIDTH := 2248
 const HEIGHT := 1240
 const LEFT_W := 496
@@ -95,6 +97,33 @@ func _petit(texte: String, taille: int = 16, couleur: Color = C.MUTED) -> Label:
 
 func _texte(texte: String, taille: int = 18, couleur: Color = C.IVORY) -> Label:
 	return C.wrap(texte, taille, couleur, false, 500)
+
+## Petit « i » posé dans un conteneur : l'explication reste en infobulle.
+func _info(bulle: String, id: String, glyphe: String = "i") -> Control:
+	var cadre := Control.new()
+	cadre.custom_minimum_size = Vector2(C.px(26), C.px(26))
+	cadre.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	Pieces.info(cadre, 0, 0, bulle, id, glyphe)
+	return cadre
+
+## Compteur cliquable : gros chiffre, légende courte dessous, mène à l'écran concerné.
+func _compteur(nombre: int, legende: String, rappel: Callable, id: String) -> Control:
+	var cadre := Control.new()
+	cadre.custom_minimum_size = Vector2(C.px(150), C.px(84))
+	var bloc := C.v(0)
+	bloc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var chiffre := C.label(str(nombre), 44, C.IVORY, true, 700)
+	chiffre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var texte := C.label(legende, 17, C.MUTED, false, 500)
+	texte.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bloc.add_child(chiffre)
+	bloc.add_child(texte)
+	cadre.add_child(bloc)
+	Pieces.rendre_cliquable(cadre, Vector2(150, 84), rappel, id, "%d %s" % [nombre, legende], "", Charte.RAYON_CARTE)
+	return cadre
+
+func _pluriel(nombre: int, un: String, plusieurs: String) -> String:
+	return P.plural(nombre, un, plusieurs)
 
 func _surface(parent: Node, rect: Rect2, id: String, couleur: Color = C.PANEL) -> PanelContainer:
 	var panneau := PanelContainer.new()
@@ -367,6 +396,7 @@ func _pression(parent: Node, brut: Variant) -> void:
 	var mot := _titre(["CALME", "SOUS TENSION", "TEMPÊTE"][palier], 30, couleur)
 	mot.name = "PressPressureVerdict"
 	verdict.add_child(mot)
+	verdict.add_child(_info("Sous tension à partir de 50, tempête à partir de 70.", "Pression"))
 	cadre.add_child(verdict)
 	cadre.add_child(_barre(valeur, couleur, 8, [[0, 50, Charte.V], [50, 70, Charte.ATTRIBUT_40], [70, 100, Charte.D]]))
 	var legende := C.h(0)
@@ -376,7 +406,6 @@ func _pression(parent: Node, brut: Variant) -> void:
 		borne.size_flags_stretch_ratio = float(entree[1])
 		legende.add_child(borne)
 	cadre.add_child(legende)
-	cadre.add_child(_texte("Sous tension à partir de 50, tempête à partir de 70.", 16, C.MUTED))
 	parent.add_child(cadre)
 
 func _room_card(rect: Rect2) -> void:
@@ -413,7 +442,6 @@ func _room_card(rect: Rect2) -> void:
 	var contexte := ""
 	if available:
 		contexte = str(moment.get("label", "")) if moment is Dictionary else ""
-		if not invited: contexte = (contexte + " · " if not contexte.is_empty() else "") + "Ouvre son invitation dans la Réception."
 	else:
 		contexte = str(conference.get("reason", "Le journal et les archives restent consultables."))
 	var detail := _texte(contexte, 18, C.MUTED)
@@ -442,15 +470,17 @@ func _memory_block(colonne: VBoxContainer) -> void:
 	colonne.add_child(_petit("Mémoire des échanges", 18, C.IVORY))
 	var history: Array = data.get("history", [])
 	var people: Array = data.get("people", [])
-	colonne.add_child(_texte("%d déclaration(s) conservée(s) · %d journaliste(s)" % [history.size(), people.size()], 18, C.IVORY))
 	var liens := C.h(14)
-	liens.add_child(_lien("Historique", func(): _select(2), 19, false, "OpenPressHistory", true))
-	liens.add_child(_lien("Portraits", func(): _select(3), 19, false, "OpenPressPeople", true))
+	liens.add_child(_compteur(history.size(), "déclarations" if history.size() > 1 else "déclaration", func(): _select(2), "OpenPressHistory"))
+	liens.add_child(_compteur(people.size(), "journalistes" if people.size() > 1 else "journaliste", func(): _select(3), "OpenPressPeople"))
 	colonne.add_child(liens)
 	var policy: Dictionary = data.get("policy", {})
 	if policy.is_empty(): return
 	colonne.add_child(C.rule())
-	colonne.add_child(_petit("Conférences ordinaires", 16, C.MUTED))
+	var entete := C.h(8)
+	entete.add_child(_petit("Conférences ordinaires", 16, C.MUTED))
+	if not str(policy.get("notice", "")).is_empty(): entete.add_child(_info(str(policy.get("notice", "")), "Conferences"))
+	colonne.add_child(entete)
 	var actuel := str(policy.get("ordinary", "moi"))
 	var choix := C.h(10)
 	for option: Array in [["moi", "Y aller"], ["adjoint", "Envoyer l’adjoint"]]:
@@ -459,7 +489,6 @@ func _memory_block(colonne: VBoxContainer) -> void:
 		if cle == actuel: bouton.text = "✓ " + bouton.text
 		choix.add_child(bouton)
 	colonne.add_child(choix)
-	if not str(policy.get("notice", "")).is_empty(): colonne.add_child(_texte(str(policy.get("notice", "")), 16, C.MUTED))
 
 func _set_policy(key: String) -> void:
 	if app.waiting or str(data.get("policy", {}).get("ordinary", "moi")) == key: return
@@ -571,7 +600,7 @@ func _mount(index: int) -> void:
 func _update_draft() -> void:
 	if draft_status == null or not is_instance_valid(draft_status): return
 	var draft: Dictionary = app.get_meta("press_draft_choices", {}) if data.conference.get("available", false) else {}
-	draft_status.text = "%d réponse(s) en brouillon" % draft.size() if not draft.is_empty() else ""
+	draft_status.text = "%d en brouillon" % draft.size() if not draft.is_empty() else ""
 	if draft_count != null and is_instance_valid(draft_count): draft_count.text = str(draft.size())
 
 func _defile(nom: String) -> VBoxContainer:
@@ -742,7 +771,7 @@ func _papier(resultat: Dictionary, division: Dictionary) -> Control:
 	gros.name = "PressHeadline"
 	colonne.add_child(gros)
 	var ecart := absi(points_d - points_e)
-	var chapeau := "%s recevait %s : %d-%d, %s." % [nom_d, nom_e, points_d, points_e, "un match nul" if ecart == 0 else ("un écart de %d point(s)" % ecart)]
+	var chapeau := "%s recevait %s : %d-%d, %s." % [nom_d, nom_e, points_d, points_e, "un match nul" if ecart == 0 else ("un écart de %s" % _pluriel(ecart, "point", "points"))]
 	colonne.add_child(C.wrap(chapeau, 21, Charte.FOND, false, 500))
 	var place := _position_texte(division.get("standings", []), propre)
 	if not place.is_empty(): colonne.add_child(C.wrap(place, 19, Charte.PANNEAU_3, false, 500))
@@ -761,7 +790,7 @@ func _papier(resultat: Dictionary, division: Dictionary) -> Control:
 func _position_texte(standings: Array, club: int) -> String:
 	for ligne: Dictionary in standings:
 		if int(ligne.get("clubId", -1)) == club:
-			return "%s est %s au classement avec %d points en %d match(s)." % [_club_name(club), "1er" if int(ligne.rank) == 1 else "%de" % int(ligne.rank), int(ligne.points), int(ligne.played)]
+			return "%s est %s au classement avec %s en %s." % [_club_name(club), "1er" if int(ligne.rank) == 1 else "%de" % int(ligne.rank), _pluriel(int(ligne.points), "point", "points"), _pluriel(int(ligne.played), "match", "matchs")]
 	return ""
 
 func _outlet() -> String:
@@ -777,7 +806,7 @@ func _resultats(parent: Node, resultats: Array, article: Dictionary) -> void:
 	var classement := _lien("Voir le classement", func(): app._navigate("Classements"), 19, false, "PressRankingLink", true)
 	_titre_section(parent, "Les résultats conservés", classement)
 	if resultats.is_empty():
-		parent.add_child(_texte("Aucun résultat enregistré dans cette division. Le premier coup d’envoi ouvrira le journal.", 19, C.MUTED))
+		parent.add_child(_texte("Aucun résultat", 19, C.MUTED))
 		return
 	_entete(parent, [["Domicile", 0], ["Score", 110, 2], ["Extérieur", 0]])
 	var rang := 0
@@ -832,15 +861,17 @@ func _conference_page() -> Control:
 	if outcome is Dictionary and not ouverte: _outcome_block(colonne, outcome)
 	if not ouverte:
 		if conference.available:
-			colonne.add_child(_texte("Ouvre l’invitation dans la Réception pour répondre aux questions.", 20, C.IVORY))
 			colonne.add_child(_lien("Ouvrir l’invitation", func(): app._navigate("Réception"), 21, false, "PressOpenInvitation", true))
 		else:
 			colonne.add_child(_texte(str(conference.reason), 20, C.IVORY))
 		return _racine(colonne)
-	colonne.add_child(_texte("Cinq tons. Tabulation pour parcourir les choix, Espace pour sélectionner. Publier valide toutes tes réponses.", 18, C.MUTED))
-	var memoire := _texte("Les relances reprennent tes échanges précédents avec ce journaliste, dans ce club et cette saison.", 18, C.MUTED)
+	var aides := C.h(8)
+	aides.name = "PressAides"
+	aides.add_child(_info("Cinq tons par question. Tabulation pour parcourir les choix, Espace pour sélectionner. Publier valide toutes tes réponses.", "Tons", "?"))
+	var memoire := _info("Les relances reprennent tes échanges précédents avec ce journaliste, dans ce club et cette saison.", "Relances")
 	memoire.name = "PressMemoryNotice"
-	colonne.add_child(memoire)
+	aides.add_child(memoire)
+	colonne.add_child(aides)
 	var choices: Dictionary = Press._conference_draft(app, data)
 	var publier := Button.new()
 	publier.name = "PressSubmit"
@@ -853,7 +884,7 @@ func _conference_page() -> Control:
 	manque.name = "PressSubmitMissing"
 	var majuscule := func() -> void:
 		var reste: int = conference.questions.size() - choices.size()
-		manque.text = "" if reste <= 0 else "Il reste %d question(s) sans réponse." % reste
+		manque.text = "" if reste <= 0 else "%s sans réponse" % _pluriel(reste, "question", "questions")
 		publier.disabled = reste > 0
 	publier.set_meta("rafraichir", majuscule)
 	var inactif := StyleBoxFlat.new()
@@ -901,7 +932,7 @@ func _conference_page() -> Control:
 		bloc.add_child(rang)
 		colonne.add_child(bloc)
 	elif not str(delegation.get("reason", "")).is_empty():
-		colonne.add_child(_texte("Gabi ne peut pas répondre à ta place : " + str(delegation.get("reason", "")), 17, C.MUTED))
+		colonne.add_child(_texte(str(delegation.get("reason", "")), 17, C.MUTED))
 	if outcome is Dictionary:
 		colonne.add_child(C.rule())
 		_outcome_block(colonne, outcome)
@@ -956,7 +987,7 @@ func _question_block(question: Dictionary, choices: Dictionary, publier: Button,
 	tete.add_child(provenance)
 	carte.add_child(tete)
 	carte.add_child(_texte("Style d’entretien : %s · %s" % [journaliste.styleLabel, journaliste.personality], 17, C.MUTED))
-	var relation := _texte("%s · relation %+d / 100 · %d échange(s) avec toi" % [question.relation.label, roundi(float(question.relation.score)), int(question.relation.encounters)], 17, C.IVORY)
+	var relation := _texte("%s · relation %+d / 100 · %s" % [question.relation.label, roundi(float(question.relation.score)), _pluriel(int(question.relation.encounters), "échange", "échanges")], 17, C.IVORY)
 	relation.name = "PressRelation_" + str(question.id)
 	carte.add_child(relation)
 	if question.get("followUp") is Dictionary:
@@ -1081,10 +1112,10 @@ func _history_page() -> Control:
 		qui.add_child(C.label(str(choisi.journalist.outlet), 19, C.MUTED, false, 500))
 		detail.add_child(qui)
 	else:
-		detail.add_child(_texte("Identité du journaliste non conservée dans cette ancienne conférence.", 18, C.MUTED))
+		detail.add_child(_texte("Journaliste inconnu", 18, C.MUTED))
 	if bool(choisi.get("delegated", false)): detail.add_child(_texte("Réponse donnée par Gabi.", 18, C.MUTED))
 	detail.add_child(_petit("Question", 16, C.MUTED))
-	detail.add_child(_texte(str(choisi.question) if choisi.question != null else "Question d’origine non conservée dans cette ancienne conférence.", 21, C.IVORY))
+	detail.add_child(_texte(str(choisi.question) if choisi.question != null else "Question non conservée", 21, C.IVORY))
 	detail.add_child(_petit("Ta réponse", 16, C.MUTED))
 	detail.add_child(_texte(str(choisi.answer) if choisi.answer != null else "Texte de la réponse non conservé · choix enregistré : " + str(choisi.get("answerId", "")), 20, C.IVORY))
 	return _racine(colonne)
@@ -1191,12 +1222,14 @@ func _people_page() -> Control:
 	if not specialites.is_empty(): detail.add_child(_texte("Spécialités : " + ", ".join(specialites), 18, C.MUTED))
 	detail.add_child(C.rule())
 	var score := float(choisi.score)
-	var mot_relation := C.label("%s · relation %+d / 100 · %d échange(s)" % [choisi.relationLabel, roundi(score), int(choisi.encounters)], 20, C.IVORY, false, 700)
-	detail.add_child(mot_relation)
+	var mot_relation := C.label("%s · relation %+d / 100 · %s" % [choisi.relationLabel, roundi(score), _pluriel(int(choisi.encounters), "échange", "échanges")], 20, C.IVORY, false, 700)
+	var rang_relation := C.h(8)
+	rang_relation.add_child(mot_relation)
+	rang_relation.add_child(_info("De −100 à +100. L’accueil dépend du style du journaliste, du ton et du sujet.", "Relation"))
+	detail.add_child(rang_relation)
 	detail.add_child(_barre((score + 100.0) / 2.0, Charte.V if score > 5 else (Charte.D if score < -5 else Charte.N), 8, [], 50.0))
-	detail.add_child(_texte("De −100 à +100. L’accueil dépend du style du journaliste, du ton et du sujet.", 16, C.MUTED))
 	if choisi.memory.is_empty():
-		detail.add_child(_texte("Aucun échange individuel conservé. Les anciennes conférences sans identité ne créent pas de souvenir.", 18, C.MUTED))
+		detail.add_child(_texte("Aucun échange", 18, C.MUTED))
 	else:
 		detail.add_child(_petit("Les trois derniers échanges", 18, C.IVORY))
 		var memoire: Array = choisi.memory.duplicate()

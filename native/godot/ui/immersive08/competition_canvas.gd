@@ -402,9 +402,7 @@ func _page_archives() -> void:
 	seasons.reverse()
 	var world: GDScript = World
 	if seasons.is_empty():
-		content.add_child(C.wrap("Aucune saison archivée. Les championnats et les coupes alimentent ce carnet au passage à la saison suivante.", 22, C.MUTED))
-	else:
-		content.add_child(C.wrap("Les quinze dernières saisons terminées · rang de phase régulière, titres, montées et descentes.", 20, C.MUTED))
+		content.add_child(C.wrap("Aucune saison archivée", 22, C.MUTED))
 	var lines := 1
 	for year: Dictionary in seasons:
 		var heading := C.label("SAISON " + G.season_label(year.season), 30, C.IVORY, true, 800)
@@ -418,7 +416,7 @@ func _page_archives() -> void:
 			var ranks: Array = standings.get(league_id, [])
 			var position := ranks.find(own.get("id"))
 			if position >= 0: _ligne_archive(content, "Ton club · %s · %s sur %d en phase régulière" % [Club.competition_name(str(league_id), app.model), _ordinal(position + 1), ranks.size()], null, 20, C.IVORY)
-		for pair: Array in [["promoted", "Montée(s)"], ["relegated", "Descente(s)"]]:
+		for pair: Array in [["promoted", "Montées" if year.get("movement", {}).get("promoted", []).size() > 1 else "Montée"], ["relegated", "Descentes" if year.get("movement", {}).get("relegated", []).size() > 1 else "Descente"]]:
 			var moved: Array = year.get("movement", {}).get(pair[0], [])
 			if moved.is_empty(): continue
 			var names := PackedStringArray()
@@ -667,7 +665,7 @@ func _classement() -> void:
 	var bounds := _pager(panel, "StandingsPagination", page_key, rows.size(), capacity, rows_y + shown * ROW + 8, 24)
 	for i in range(bounds.x, bounds.y):
 		_ligne_classement(body, rows[i], i - bounds.x, ROW)
-	if rows.is_empty(): D.text(body, 24, 40, "Aucun classement renseigné pour cette division.", 22, C.MUTED, 500, LEFT - 50, HORIZONTAL_ALIGNMENT_LEFT, true)
+	if rows.is_empty(): D.text(body, 24, 40, "Aucun classement", 22, C.MUTED, 500, LEFT - 50, HORIZONTAL_ALIGNMENT_LEFT, true)
 	var y := rows_y + shown * ROW + 18 + (44 if paged else 0)
 	if not zones.is_empty():
 		_zone_legend(panel, zones, 24, y)
@@ -1057,7 +1055,7 @@ func _rendez_vous_sans_match() -> Dictionary:
 	var scheduled := P.next_fixture(app.model)
 	if not scheduled.is_empty():
 		return {"chip": "PROCHAINE RENCONTRE", "title": Office.scheduled_opponent(app, scheduled), "when": Office.scheduled_when(app, scheduled), "venue": Office.scheduled_venue(app, scheduled), "button": app.primary_text().trim_suffix("  →"), "action": app.primary_action, "id": "CompetitionScheduledAdvance", "title_name": "UpcomingOpponent"}
-	return {"chip": "", "title": "Aucune rencontre programmée", "when": str(app.model.meta.get("roundLabel", "Consulte le calendrier du club.")), "venue": "", "button": "Voir le calendrier du club", "action": func(): _switch("calendar"), "id": "CompetitionCalendarLink", "title_name": ""}
+	return {"chip": "", "title": "Aucune rencontre programmée", "when": str(app.model.meta.get("roundLabel", "")), "venue": "", "button": "Voir le calendrier du club", "action": func(): _switch("calendar"), "id": "CompetitionCalendarLink", "title_name": ""}
 
 func _prochain(y: float) -> float:
 	var card := _carte(self, Rect2(LEFT + GAP, y, RIGHT, 330 if next_fixture.is_empty() else 430), "PROCHAIN RENDEZ-VOUS", "CompetitionNextFixture")
@@ -1169,7 +1167,6 @@ func _bas_gauche() -> void:
 	var results: Array = season_results.filter(func(result: Dictionary): return _competition_id(result, league.id) == league.id and result.get("pair") is Array and result.get("score") is Array).slice(0, 5)
 	var height := 70 + maxi(1, results.size()) * 34 + 12
 	var recent := _panel(self, Rect2(0, y, LEFT, height), "DERNIERS RÉSULTATS", "", "CompetitionRecentResults")
-	D.text(recent, LEFT - 24, 42, "du plus récent au plus ancien", 17, C.MUTED, 500, 400, HORIZONTAL_ALIGNMENT_RIGHT)
 	for i in results.size():
 		var result: Dictionary = results[i]
 		var clubs := _matchup(result)
@@ -1221,9 +1218,9 @@ func _opening_strip(y: float) -> void:
 	var rounds := 0
 	for fixture: Dictionary in fixtures:
 		if _competition_id(fixture, league.id) == league.id and own.get("id") in [fixture.get("home", {}).get("id"), fixture.get("away", {}).get("id")]: rounds += 1
-	var facts: Array = [["COUP D’ENVOI", "" if first.is_empty() else _date(first[0]), "Le championnat s’ouvre après la préparation d’avant-saison."],
-		["LE CHAMPIONNAT", "%s clubs" % G.n(league.get("rows", []).size()), "%s journées à jouer" % G.n(rounds) if rounds > 0 else "Chaque point comptera."],
-		["À SUIVRE", "Attaque · défense", "Meilleure attaque, meilleure défense et derniers résultats s’affichent dès la 1re journée."]]
+	var facts: Array = [["COUP D’ENVOI", "" if first.is_empty() else _date(first[0]), ""],
+		["LE CHAMPIONNAT", "%s clubs" % G.n(league.get("rows", []).size()), "%s journées à jouer" % G.n(rounds) if rounds > 0 else ""],
+		["À SUIVRE", "Attaque · défense", ""]]
 	var tile_w := (LEFT - 48 - 2 * 14) / 3.0
 	for i in facts.size():
 		var tile := D.rect(panel, Rect2(24 + i * (tile_w + 14), 62, tile_w, 134), Charte.PANNEAU_2, Charte.RAYON_CARTE)
@@ -1271,7 +1268,7 @@ func _calendar() -> void:
 			app._render(false), "CalendarFilter_" + str(spec[2]))
 		x += int(spec[0]) + 12
 	var visible := fixtures.filter(func(fixture: Dictionary): return selected == "all" or bool(fixture.get("played", false)) == (selected == "played"))
-	D.text(panel, LEFT - 24, 88, "%d rencontre(s)" % visible.size(), 20, C.MUTED, 500, 240, HORIZONTAL_ALIGNMENT_RIGHT)
+	D.text(panel, LEFT - 24, 88, P.plural(visible.size(), "rencontre", "rencontres"), 20, C.MUTED, 500, 240, HORIZONTAL_ALIGNMENT_RIGHT)
 	var period := "DATE / PHASE" if international else "JOURNÉE / PHASE"
 	for spec: Array in [[19, period, 230], [296, "ADVERSAIRE", 430], [720, "LIEU", 228], [954, "COMPÉTITION", 185], [LEFT - 157, "RÉSULTAT", 140]]:
 		D.text(panel, spec[0], 134, spec[1], 15, C.MUTED, 700, spec[2])
@@ -1282,7 +1279,7 @@ func _calendar() -> void:
 	left_bottom = TOP + panel_h
 	for i in visible.size():
 		_calendar_row(panel, visible[i], 148 + 48 * i, LEFT, false)
-	if visible.is_empty(): D.text(panel, 23, 219, "Aucune rencontre dans cette vue du calendrier.", 24, C.MUTED, 500, LEFT - 47, HORIZONTAL_ALIGNMENT_LEFT, true)
+	if visible.is_empty(): D.text(panel, 23, 219, "Aucune rencontre", 24, C.MUTED, 500, LEFT - 47, HORIZONTAL_ALIGNMENT_LEFT, true)
 	_result_legend(panel, 24, panel_h - 48)
 
 ## Date courte « 21/11 » d'une rencontre (vide sans date ISO).
@@ -1480,13 +1477,12 @@ func _stats() -> void:
 	_crest(summary, own, Rect2(18, 67, 93, 93))
 	var club_label := D.text(summary, 132, 104, G.club_name(own), 37, C.IVORY, 800, 1100)
 	club_label.name = "StandingsContextClubName"
-	D.text(summary, 135, 142, ("Rang " + S.count_text(own_row.get("rank")) if P.standings_open(own_row) else "Pas encore de classement") + "  ·  " + S.number_text(own_row.get("points")) + " point(s)  ·  " + S.count_text(own_row.get("played")) + " match(s)", 26, C.MUTED, 500, 1080)
+	D.text(summary, 135, 142, ("Rang " + S.count_text(own_row.get("rank")) if P.standings_open(own_row) else "Pas encore de classement") + "  ·  " + S.number_text(own_row.get("points")) + " pts  ·  " + S.count_text(own_row.get("played")) + " matchs", 26, C.MUTED, 500, 1080)
 	for i in 3:
 		var code: String = ["V", "N", "D"][i]
 		var quantity := S.count_text(own_row.get(["won", "drawn", "lost"][i]))
 		_result_badge(summary, Rect2(135 + 166 * i, 161, 148, 43), code, quantity + " " + str(S.RESULTS[code].plural).to_lower(), quantity != "—")
 	_recent_form(summary, own_row.get("form"), 132, 219)
-	D.text(summary, 357, 241, "Forme · du plus ancien au plus récent", 22, C.MUTED, 500, 718, HORIZONTAL_ALIGNMENT_LEFT, true)
 	var rows_played := rows.filter(func(row: Dictionary): return float(row.get("played", 0)) > 0)
 	var aggregate := _section(panel, Rect2(16, 411, LEFT - 32, 294), "CHIFFRES DE LA PHASE DE POULES" if league.has("pools") else "CHIFFRES DE LA PHASE RÉGULIÈRE", "trophy", "CompetitionLeagueStats")
 	var games := 0
@@ -1503,9 +1499,6 @@ func _stats() -> void:
 		_tuile(aggregate, Rect2(x, 70, 288, 127))
 		D.text(aggregate, x + 22, 112, ["Matchs joués", "Points marqués", "Matchs nuls", "Points / match"][i], 26, C.MUTED, 500, 254)
 		D.text(aggregate, x + 22, 170, values[i], 61, C.IVORY, 800, 253)
-	var caption := "Résultats de toutes les poules conservés par la carrière." if league.has("pools") else "Résultats et compteurs de championnat conservés par la carrière."
-	if _followed_from_afar(): caption = "Championnat en consultation : scores, essais et classement, sans notes individuelles."
-	D.text(aggregate, 28, 248, caption, 26, C.MUTED, 500, 1210, HORIZONTAL_ALIGNMENT_LEFT, true)
 
 
 func _page_state(key: String) -> Dictionary:

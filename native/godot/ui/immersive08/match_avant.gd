@@ -1572,15 +1572,17 @@ func _gabi(data: Dictionary) -> Control:
 
 ## Le médaillon de Gabi attend que sa zone ait une taille : le portrait ne se place qu'à la mise en page suivante (comme dans la coque).
 func _relayer_gabi() -> void:
+	# L'arbre est gardé : l'écran peut quitter la scène (fermeture, changement d'écran) pendant l'attente.
 	if not is_inside_tree(): return
-	await get_tree().process_frame
-	await get_tree().process_frame
+	var arbre := get_tree()
+	await arbre.process_frame
+	await arbre.process_frame
 	# Écran encore caché ou zone sans taille (ouverture en fondu) : quelques images de plus avant de remettre Gabi en place.
 	var essais := 0
 	while is_inside_tree() and essais < 40 and (not is_instance_valid(app) or not _medaillon_pret()):
 		essais += 1
-		await get_tree().process_frame
-	if not is_instance_valid(app): return
+		await arbre.process_frame
+	if not is_inside_tree() or not is_instance_valid(app): return
 	var coach: Variant = app.get("coach")
 	if is_instance_valid(coach) and coach.has_method("_layout"): coach._layout()
 
