@@ -1,4 +1,5 @@
 extends SceneTree
+const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 const ContextualFlow = preload("helpers/contextual_flow.gd")
 # Run against the staged native project and an empty CD_GODOT_DATA_DIR. Every
 # career/match transition below goes through main._command and the real worker.
@@ -128,6 +129,29 @@ func locker_check(phase: String) -> void:
 	for control in director.view.find_children("*", "OptionButton", true, false):
 		check(false, "No independent tone selector in the talk: " + str(control.name))
 
+## Échap réel (pression puis relâchement) envoyé à la fenêtre, comme au clavier.
+func press_escape() -> void:
+	for pressed in [true, false]:
+		var key := InputEventKey.new()
+		key.keycode = KEY_ESCAPE
+		key.physical_keycode = KEY_ESCAPE
+		key.pressed = pressed
+		root.push_input(key)
+	await settle()
+	while app.waiting: await process_frame
+	await settle()
+
+func pause_menu_open() -> bool:
+	var menu: Node = root.find_child("ImmersivePauseMenu", true, false)
+	return menu != null and menu is Window and (menu as Window).visible
+
+func close_pause_menu() -> void:
+	var menu: Node = root.find_child("ImmersivePauseMenu", true, false)
+	if menu != null:
+		menu.hide()
+		menu.queue_free()
+	await settle()
+
 func capture(name: String) -> void:
 	if directory.is_empty() or DisplayServer.get_name() == "headless": return
 	await RenderingServer.frame_post_draw
@@ -191,6 +215,19 @@ func run() -> void:
 	if director == null:
 		await finish()
 		return
+	# Échap et petites fenêtres (mécanisme commun ui/petite_fenetre.gd) : la fenêtre d'abord, le menu de la carrière ensuite.
+	if not director.active():
+		var shell_window := Control.new()
+		shell_window.name = "TestPetiteFenetreCoque"
+		app.add_child(shell_window)
+		PetiteFenetre.enregistrer(shell_window)
+		await press_escape()
+		check(not is_instance_valid(shell_window) or shell_window.is_queued_for_deletion(), "Escape closes an open small window first (shell)")
+		check(not pause_menu_open(), "Escape that closed a small window does not open the career menu")
+		await press_escape()
+		check(pause_menu_open(), "Escape without a small window opens the career menu")
+		await close_pause_menu()
+	else: check(false, "Shell reachable for the Escape check")
 	# The office is entered from an actual invitation, and a read cannot create it.
 	var entries: Array = app.model.clubLife.sceneInvitations.invitations
 	check(not entries.is_empty(), "New career has a contextual invitation")
@@ -268,6 +305,18 @@ func run() -> void:
 			if back != null: back.pressed.emit()
 			await settle()
 			check(director.view.find_child("TalkPlayerSheet", true, false) == null, "Back closes the full sheet")
+		# Échap : la fenêtre du joueur se ferme, le vestiaire reste (ni menu, ni sortie) ; la fiche complète aussi.
+		first_card = director.view.find_child("Participant_1", true, false)
+		first_card.pressed.emit()
+		await settle()
+		check(director.view.find_child("TalkPlayerPopup", true, false) != null, "Player window reopens")
+		await press_escape()
+		check(director.view.find_child("TalkPlayerPopup", true, false) == null, "Escape closes the player window")
+		check(director.active() and director.kind == "locker" and talk().get("phase") == "pre" and not pause_menu_open(), "Escape on the player window leaves the locker and opens no menu")
+		director.view.open_full_sheet(talk().participants[0].id)
+		await settle()
+		await press_escape()
+		check(director.view.find_child("TalkPlayerSheet", true, false) == null and director.active(), "Escape closes the full sheet back to the locker")
 	root.size = initial_resolution
 	await settle()
 	# A rejected public command remains visible inside the immersive surface.
@@ -318,6 +367,21 @@ func run() -> void:
 	app.timer.stop()
 	if stage != null: check(actor_positions(stage) != original_positions, "Production athlete positions move after actual worker events")
 	await capture("match-live")
+	# En match : une petite fenêtre se ferme avant le menu du match ; puis Échap ouvre le menu, et le referme.
+	var live_window := Control.new()
+	live_window.name = "TestPetiteFenetreMatch"
+	app.add_child(live_window)
+	PetiteFenetre.enregistrer(live_window)
+	await press_escape()
+	var match_menu: Variant = director.view.get("menu")
+	check(not is_instance_valid(live_window) or live_window.is_queued_for_deletion(), "Escape closes an open small window first (match)")
+	check(not (match_menu is Control and is_instance_valid(match_menu) and match_menu.visible), "Escape that closed a small window does not open the match menu")
+	await press_escape()
+	match_menu = director.view.get("menu")
+	check(match_menu is Control and is_instance_valid(match_menu) and match_menu.visible, "Escape without a small window opens the match menu")
+	await press_escape()
+	check(not (match_menu is Control and is_instance_valid(match_menu) and match_menu.visible), "Escape closes the match menu again")
+	app.timer.stop()
 	await reach("half")
 	locker_check("half")
 	check(app.model.live.atBreak, "Talk opens on real atBreak boundary")

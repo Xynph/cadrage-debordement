@@ -129,12 +129,15 @@ func executer() -> void:
 
 	# 1. Recrutement : période des joueurs sans club écrite au-dessus des accès au marché.
 	app._navigate("Recrutement"); await poser(20)
-	var fenetre := noeud(app, "RecruitmentWindow") as Label
-	verifier(fenetre != null and fenetre.is_visible_in_tree(), "période des joueurs sans club visible dans Recrutement")
+	var pastille := noeud(app, "RecruitmentWindow") as Control
+	var fenetre := noeud(app, "RecruitmentWindowTexte") as Label
+	verifier(pastille != null and pastille.is_visible_in_tree() and fenetre != null, "période des joueurs sans club visible dans Recrutement (pastille)")
 	if fenetre != null:
-		verifier(fenetre.text == str(attendu.summary), "libellé : « %s »" % fenetre.text)
+		var resume := str(attendu.summary)
+		var court := load("res://ui/immersive08/recruitment_canvas.gd").fenetre_courte(resume) as String
+		verifier(fenetre.text == court and court != resume and court.length() <= 22, "pastille courte : « %s » (depuis « %s »)" % [fenetre.text, resume])
 		verifier(taille(fenetre) >= TAILLE_MIN, "période lisible (%d px)" % taille(fenetre))
-		verifier(fenetre.tooltip_text.contains("1er mai"), "infobulle : période des mutations (" + fenetre.tooltip_text + ")")
+		verifier(pastille.tooltip_text.contains("1er mai"), "infobulle : période des mutations (" + pastille.tooltip_text + ")")
 	var page := noeud(app, "CarnetMarket") as Control
 	if page != null: sans_chevauchement(page, ["RecruitmentWindow", "OpenPlayerSales", "OpenRegenScouting", "OpenInterclubMarket", "MarketTab0", "RecruitmentTransferBudget"], "Recrutement")
 	var acces := noeud(app, "OpenInterclubMarket") as Button

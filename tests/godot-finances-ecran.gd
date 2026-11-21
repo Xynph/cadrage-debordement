@@ -8,7 +8,7 @@ const Finance = preload("res://ui/immersive08/finance_canvas.gd")
 const U = preload("res://ui/immersive08/club_ui.gd")
 const TABS := ["summary", "cash", "wages", "transfers", "budget", "clubs"]
 ## Zones cliquables dont le clic doit mener ailleurs (écran ou onglet différent) ; les tris et pages restent sur place.
-const PREFIXES := ["FinanceMetricLink", "FinanceVerdictLink", "FinanceWatch", "FinanceDueRow", "FinanceAllocationRow", "FinanceLedgerRow_", "FinanceCommitmentLink", "FinanceAdjustBudget", "FinanceRecruitment", "FinanceTransferContracts", "FinanceBudgetDecisions", "FinanceTotalLink"]
+const PREFIXES := ["FinanceMetricLink", "FinanceVerdictLink", "FinanceWatch", "FinanceDueRow", "FinanceAllocationRow", "FinanceLedgerRow_", "FinanceCommitmentLink", "FinanceAdjustBudget", "FinanceRecruitment", "FinanceTransferContracts", "FinanceBudgetDecisions", "FinanceTotalLink", "FinanceProjection", "FinanceMargin", "FinancePlayersPayroll", "FinanceForecastWeeks", "FinanceNothingCommitted", "FinanceWagesScope", "FinanceWagesSeasonEnd", "FinanceWagesCount"]
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -85,7 +85,7 @@ func run() -> void:
 		check(vue != null and vue.is_visible_in_tree(), "Finances affichées · onglet " + tab)
 		var mot := named("FinanceVerdictWord") as Label
 		check(mot != null and mot.text in ["SAINE", "SOUS TENSION", "EN DANGER", "INDISPONIBLE"], "Verdict écrit en mots sur l'onglet %s : « %s »" % [tab, mot.text if mot != null else ""])
-		check(named("FinanceVerdictSentence") != null and named("FinanceMetric0") != null and named("FinanceMetric1") != null and named("FinanceMetric2") != null, "Verdict, trésorerie, budget de transferts et marge visibles · " + tab)
+		check(named("Info_Palier0") != null and named("Info_Palier2") != null and named("FinanceMetric0") != null and named("FinanceMetric1") != null and named("FinanceMetric2") != null, "Verdict, trésorerie, budget de transferts et marge visibles · " + tab)
 		check(gold_used(vue) == 0, "Aucun aplat doré dans l'onglet " + tab+" (Continuer le porte seul)")
 		check(open_windows() == fenetres_avant, "Aucune fenêtre ouverte par l'onglet " + tab)
 		var verdict := Finance.verdict(app, app.model.get("finance", {}), U.strategy(app.model).get("finance", {}))
@@ -98,6 +98,8 @@ func run() -> void:
 	for tab in TABS:
 		await ouvrir(tab)
 		var noms := cliquables(tab)
+		if tab == "summary":
+			for tuile in ["FinanceProjectionEndLien", "FinanceMarginIncomeLien", "FinanceMarginCostsLien", "FinanceWatchContractsCountLien", "FinanceWatchContractsSeasonLien", "FinancePlayersPayrollLien", "FinanceForecastWeeksLien"]: check(tuile in noms or (named(tuile) == null and tuile not in ["FinanceProjectionEndLien", "FinanceMarginIncomeLien", "FinanceMarginCostsLien", "FinanceForecastWeeksLien"]), "Synthèse : la tuile « %s » est cliquable" % tuile)
 		if tab == "summary": check(noms.size() >= 8, "La Synthèse offre au moins huit zones cliquables (%d)" % noms.size())
 		for nom in noms:
 			await ouvrir(tab)
@@ -133,21 +135,21 @@ func run() -> void:
 	var courbe := named("FinanceLedgerPlot")
 	if courbe != null and not (courbe.get("operations") as Array).is_empty():
 		check(courbe.call("graduations").any(func(v: float): return is_zero_approx(v)), "Courbe : le zéro est une graduation (%s)" % str(courbe.call("graduations")))
-	# 1280 × 720 : la phrase du verdict ne chevauche aucun autre texte du bloc (Synthèse et colonne fixe).
+	# 1280 × 720 : aucun texte du bloc verdict (mot, palier, trois paliers) n'en chevauche un autre (Synthèse et colonne fixe).
 	root.size = Vector2i(1280, 720)
 	DisplayServer.window_set_size(root.size)
 	for tab in ["summary", "cash"]:
 		await ouvrir(tab)
-		var phrase := named("FinanceVerdictSentence") as Label
 		var bloc := named("FinanceVerdict")
-		check(phrase != null and bloc != null, "Verdict présent à 1280 · " + tab)
-		if phrase == null or bloc == null: continue
-		var zone_phrase := Rect2(phrase.global_position, Vector2(phrase.size.x, phrase.get_line_count() * phrase.get_line_height()))
+		check(bloc != null, "Verdict présent à 1280 · " + tab)
+		if bloc == null: continue
+		var zones: Array = []
 		for texte: Node in bloc.find_children("*", "Label", true, false):
-			if texte == phrase or not (texte as Label).is_visible_in_tree() or (texte as Label).text.strip_edges().is_empty(): continue
-			var lignes := maxi(1, (texte as Label).get_line_count()) if (texte as Label).autowrap_mode != TextServer.AUTOWRAP_OFF else 1
-			var zone_texte := Rect2((texte as Label).global_position, Vector2((texte as Label).size.x, lignes * (texte as Label).get_line_height()))
-			check(not zone_phrase.grow(-1).intersects(zone_texte.grow(-1)), "1280 · %s : la phrase du verdict chevauche « %s »" % [tab, (texte as Label).text])
+			if not (texte as Label).is_visible_in_tree() or (texte as Label).text.strip_edges().is_empty(): continue
+			zones.append([(texte as Label).text, Rect2((texte as Label).global_position, Vector2((texte as Label).size.x, (texte as Label).get_line_height()))])
+		for a in zones.size():
+			for b in range(a + 1, zones.size()):
+				check(not (zones[a][1] as Rect2).grow(-1).intersects((zones[b][1] as Rect2).grow(-1)), "1280 · %s : « %s » chevauche « %s » %s %s" % [tab, zones[a][0], zones[b][0], str(zones[a][1]), str(zones[b][1])])
 	if failures.is_empty(): print("OK finances-ecran : %d vérifications" % checks)
 	else: printerr("ÉCHECS : %d / %d" % [failures.size(), checks])
 	quit(0 if failures.is_empty() else 1)
