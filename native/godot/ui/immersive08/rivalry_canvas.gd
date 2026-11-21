@@ -7,7 +7,7 @@ const G = preload("res://ui/game_skin.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const S = preload("res://ui/data_semantics.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
-const Decisions = preload("res://ui/decision_views.gd")
+const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
 const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
@@ -275,17 +275,33 @@ func _echoes() -> void:
 		D.text(context, 24, 584, "Vainqueur après départage", 28, C.GOLD, 600, RIGHT - 48)
 		D.text(context, 24, 619, _club(visible[0].winner), 31, C.IVORY, 700, RIGHT - 48)
 
+## Écho d'un match : petite fenêtre visuelle (écussons, score, réaction du banc, pression et tension en tuiles).
 func _echo_detail(event: Dictionary) -> void:
-	var view := Decisions.dialog(app, "Les échos des clubs", "RivalryEchoDetail", 940)
-	var list: VBoxContainer = view[1]
-	list.add_child(C.wrap("%s  %s – %s  %s" % [_club(event.get("a")), S.count_text(event.get("home")), S.count_text(event.get("away")), _club(event.get("b"))], 35, C.IVORY, true, 700))
+	var fond := Fenetre.ouvrir(self, "RivalryEchoDetail", "ÉCHO DU MATCH", "mail", 1000, 600)
+	_crest(fond, event.get("a"), Rect2(110, 86, 120, 130))
+	_crest(fond, event.get("b"), Rect2(770, 86, 120, 130))
+	var score := D.text(fond, 500, 176, "%s – %s" % [S.count_text(event.get("home")), S.count_text(event.get("away"))], 70, C.IVORY, 800, 360, HORIZONTAL_ALIGNMENT_CENTER)
+	score.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
+	score.name = "RivalryEchoScore"
+	_nom_club(fond, event.get("a"), Rect2(5, 226, 330, 40), "RivalryEchoClubA")
+	_nom_club(fond, event.get("b"), Rect2(665, 226, 330, 40), "RivalryEchoClubB")
 	if event.get("winner") != null and event.get("home") == event.get("away"):
-		list.add_child(C.wrap("Vainqueur après départage : " + _club(event.winner), 25, C.GOLD, true))
-	list.add_child(C.rule())
-	list.add_child(C.label("RÉACTION DU BANC · " + _club(event.get("clubId")).to_upper(), 25, C.GOLD, true, 700))
-	list.add_child(C.wrap("« " + str(event.get("reaction", "")) + " »", 23, C.IVORY))
-	list.add_child(C.wrap("Pression %s / 100 · Tension du duel %s / 100" % [S.count_text(event.get("pressure")), S.count_text(event.get("tension"))], 22, C.MUTED, true))
-	view[0].popup_centered(Vector2i(940, 520))
+		var texte := "Départage · " + _club(event.winner)
+		var largeur := Pieces.largeur_pastille(texte, "trophy")
+		Pieces.pastille(fond, 500 - largeur / 2.0, 200, texte, "trophy", "RivalryEchoDepartage", "", Pieces.ORANGE, Charte.PANNEAU_3)
+	var carte := D.rect(fond, Rect2(28, 290, 944, 130), Charte.PANNEAU_2, Charte.RAYON_CARTE)
+	carte.name = "RivalryEchoReaction"
+	var icone := C.icon("people", 22, Charte.DORE)
+	carte.add_child(icone)
+	D.place(icone, Rect2(22, 18, 22, 22))
+	D.text(carte, 54, 36, _club(event.get("clubId")).to_upper(), 22, Charte.DORE, 700, 860)
+	var lignes := D.words("« " + str(event.get("reaction", "")) + " »", 70, 2)
+	for i in lignes.size(): D.text(carte, 24, 78 + i * 30, lignes[i], 25, Charte.IVOIRE, 500, 900, HORIZONTAL_ALIGNMENT_LEFT, true)
+	for i in 2:
+		var cle: String = ["pressure", "tension"][i]
+		var valeur := int(event.get(cle, 0)) if S.count_text(event.get(cle)) != "—" else -1
+		var tuile := Pieces.tuile(fond, Rect2(28 + i * 480, 440, 464, 110), "—" if valeur < 0 else "%d" % valeur, ["pression", "tension du duel"][i], Pieces.ORANGE if i == 0 else Pieces.ROUGE, "RivalryEcho" + ["Pression", "Tension"][i], 46, "", ["heart", "tactic"][i], true)
+		if valeur >= 0: D.bar(tuile, Rect2(12, 12, 440, 8), float(valeur), Pieces.ORANGE if i == 0 else Pieces.ROUGE)
 
 func _archives() -> void:
 	var panel := D.panel(workspace, Rect2(0, 0, LEFT, 828), "Le palmarès", "trophy", "", "RivalryArchives")

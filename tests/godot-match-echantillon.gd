@@ -53,7 +53,7 @@ func run() -> void:
 	for i in 2: await process_frame
 	check(between.echantillon_court, "2e minute : échantillon court")
 	check(is_equal_approx(between.chiffres.modulate.a, Between.ATTENUE), "2e minute : chiffres atténués")
-	check(between.precision_chiffres.visible and between.precision_chiffres.text.contains("Trop tôt") and between.precision_chiffres.text.contains("10e"), "2e minute : la précision dit quand conclure (" + between.precision_chiffres.text + ")")
+	check(between.precision_chiffres.visible and between.precision_chiffres.text.contains("Fiable") and between.precision_chiffres.text.contains("10e"), "2e minute : la précision dit quand conclure (" + between.precision_chiffres.text + ")")
 	# Possession et occupation : en tête des chiffres clés face à face (maquette DA du 19/11/2026), « — » tant que court.
 	check(textes_chiffre(between, "possession") == ["POSSESSION", "—", "—"] and textes_chiffre(between, "occupation") == ["OCCUPATION", "—", "—"], "2e minute : possession et occupation masquées " + str(textes_chiffre(between, "possession")))
 	check(between.chiffres.get_children().map(func(n: Node): return str(n.name)) == ["MatchBetweenFigure_possession", "MatchBetweenFigure_occupation"], "Chiffres clés : possession et occupation (les mètres sont dans les statistiques complètes)")

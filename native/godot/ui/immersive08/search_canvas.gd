@@ -21,12 +21,13 @@ static func build(app: Control) -> Control:
 	var query := str(app.management_ui.get("search_query", "")).strip_edges()
 	var found: Dictionary = app.navigation_controller.search_results(query, LIMITE) if is_instance_valid(app.navigation_controller) else {"matches":[], "total":0}
 	var total := int(found.total)
+	# Plus de phrase : un compte court (« 12 résultats · « kyle » »), rien sans requête.
 	var summary := ""
-	if query.is_empty(): summary = "Un joueur, un club, un écran… Tape un nom dans « Rechercher » (Ctrl K), puis Entrée."
-	elif total == 0: summary = "Aucun résultat pour « %s »." % query
-	else: summary = "%d résultat%s pour « %s »%s" % [total, "s" if total > 1 else "", query, " · les %d premiers, précise ta recherche" % LIMITE if total > LIMITE else ""]
-	var caption := C.wrap(summary, 20, C.MUTED)
+	if total == 0 and not query.is_empty(): summary = "Aucun résultat · « %s »" % query
+	elif total > 0: summary = "%d résultat%s · « %s »%s" % [total, "s" if total > 1 else "", query, " · %d premiers" % LIMITE if total > LIMITE else ""]
+	var caption := C.label(summary, 20, C.MUTED)
 	caption.name = "SearchSummary"
+	caption.visible = not summary.is_empty()
 	page.add_child(caption)
 	if total == 0:
 		var back := _row(app, "Revenir au Bureau", func(): app._navigate("Bureau"))
