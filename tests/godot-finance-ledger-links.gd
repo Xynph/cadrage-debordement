@@ -90,7 +90,7 @@ func run() -> void:
 	var save_path:=str(app.model.meta.dataDir).path_join("donnees.json")
 	var saved:=FileAccess.get_file_as_bytes(save_path)
 	var nav: Node=app.navigation_controller
-	check(nav.open_entity({"kind":"finance","id":"summary"}),"Synthèse financière ouverte en lecture")
+	check(nav.open_entity({"kind":"finance","id":"cash"}),"Trésorerie ouverte en lecture")
 	await settle()
 	var button:=found("FinanceChartOperation_9") as Button
 	check(button!=null and button.get_meta("ledger_index",-1)==9,"Dixième point/barre possède sa destination exacte")
@@ -99,7 +99,7 @@ func run() -> void:
 	target_matches(9,entries)
 	await capture("finance-operation-page2-1440")
 	nav._travel(-1); await settle()
-	check(app.management_ui[Finance.KEY]=="summary" and found("FinanceChartOperation_9").has_focus(),"Retour restaure onglet et focus du point source")
+	check(app.management_ui[Finance.KEY]=="cash" and found("FinanceChartOperation_9").has_focus(),"Retour restaure onglet et focus du point source")
 	var graph: Variant=found("FinanceLedgerPlot")
 	var stride: float=graph.size.x/12.0
 	var zero: float=graph._height(0)
