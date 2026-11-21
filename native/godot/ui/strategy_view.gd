@@ -1,5 +1,7 @@
 extends RefCounted
 const Copy = preload("res://ui/management_copy.gd")
+const Champs = preload("res://ui/immersive08/champs_charte.gd")
+const Charte = preload("res://ui/charte.gd")
 const G = preload("res://ui/carnet_skin.gd")
 
 static func _send(app: Control, command: String, payload: Dictionary, confirmation: String = "") -> void:
@@ -16,7 +18,7 @@ static func _amount(parent: Container, label: String, value: String, color: Colo
 	G.fill(column)
 	parent.add_child(column)
 	column.add_child(G.label(value, 29, color, true))
-	column.add_child(G.label(label, 11, G.MUTED))
+	column.add_child(G.label(label, 12, G.MUTED))
 
 static func _action_row(app: Control, parent: Container, label: String, detail: String, command: String, payload: Dictionary, blocked: bool, confirmation: String = "") -> void:
 	var tile := G.card(parent)
@@ -138,12 +140,14 @@ static func _board(app: Control, page: Container, data: Dictionary, locked: bool
 	objectives.add_child(goal_row)
 	var kind := OptionButton.new()
 	for label in ["Victoires", "Points", "Place au classement", "Trésorerie"]: kind.add_item(label)
+	Champs.liste(kind)
 	goal_row.add_child(kind)
 	var target := SpinBox.new()
 	target.min_value = 0
 	target.max_value = 1000000000
 	target.value = 10
 	target.custom_minimum_size.x = 140
+	Champs.champ(target.get_line_edit())
 	goal_row.add_child(target)
 	var deadline := SpinBox.new()
 	deadline.min_value = minf(float(data.context.week + 1), float(data.finance.weeksPerSeason))
@@ -151,6 +155,7 @@ static func _board(app: Control, page: Container, data: Dictionary, locked: bool
 	deadline.value = data.finance.weeksPerSeason
 	deadline.prefix = "Sem. "
 	deadline.custom_minimum_size.x = 125
+	Champs.champ(deadline.get_line_edit())
 	goal_row.add_child(deadline)
 	var add := G.button("FIXER LE JALON", func(): _send(app, "club_board_objective", {"type":["wins","points","rank","cash"][kind.selected],"target":target.value,"deadline":int(deadline.value)}))
 	add.name = "BoardObjectiveAdd"

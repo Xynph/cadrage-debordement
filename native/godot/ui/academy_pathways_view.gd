@@ -1,5 +1,6 @@
 extends RefCounted
 const Copy = preload("res://ui/management_copy.gd")
+const Charte = preload("res://ui/charte.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const C = preload("res://ui/immersive08/components.gd")
 
@@ -66,10 +67,10 @@ static func build(app: Control, initial_tab: String = "") -> Control:
 	var tabs := TabContainer.new()
 	tabs.name = "AcademyTabs"
 	tabs.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
-	tabs.add_theme_stylebox_override("tab_selected", G.T.box(G.PAPER, 2, G.LINE))
-	tabs.add_theme_stylebox_override("tab_unselected", G.T.box(Color("e5dccb"), 2, G.LINE))
-	tabs.add_theme_color_override("font_selected_color", G.INK)
-	tabs.add_theme_color_override("font_unselected_color", G.MUTED)
+	tabs.add_theme_stylebox_override("tab_selected", Charte.style_pilule(Charte.CREME, Color.TRANSPARENT, 18, 8))
+	tabs.add_theme_stylebox_override("tab_unselected", Charte.style_pilule(Charte.PANNEAU_3, Charte.FILET, 18, 8))
+	tabs.add_theme_color_override("font_selected_color", Charte.ENCRE)
+	tabs.add_theme_color_override("font_unselected_color", Charte.CREME)
 	G.fill(tabs, true)
 	paper.add_child(tabs)
 	var builders := {
@@ -128,7 +129,7 @@ static func _preview(paper: VBoxContainer, app: Control, data: Dictionary, open:
 		picture.tooltip_text = str(offer[1])
 		G.fill(picture, true)
 		card.add_child(picture)
-		if not open: card.add_child(G.label("AU CALENDRIER DES ESPOIRS", 11, G.GOLD))
+		if not open: card.add_child(G.label("AU CALENDRIER DES ESPOIRS", 12, G.GOLD))
 		card.add_child(G.label(offer[1], 20, G.INK, true))
 		card.add_child(G.wrap(offer[3], 13))
 	var follow := G.card(paper, G.accent_ink(app.accent))

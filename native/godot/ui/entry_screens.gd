@@ -1,4 +1,5 @@
 extends RefCounted
+const Charte = preload("res://ui/charte.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const GameSkin = preload("res://ui/game_skin.gd")
 const Packs = preload("res://ui/pack_views.gd")
@@ -19,7 +20,7 @@ class RatingRail extends Control:
 	var tint: Color
 
 	func _draw() -> void:
-		draw_rect(Rect2(Vector2.ZERO, size), Color("384440"))
+		draw_rect(Rect2(Vector2.ZERO, size), Charte.PANNEAU_3)
 		draw_rect(Rect2(0, 0, size.x * clampf(value / 100.0, 0.0, 1.0), size.y), tint)
 
 class PositionRank extends Control:
@@ -33,7 +34,7 @@ class PositionRank extends Control:
 		for index in clubs:
 			var active := index + 1 == rank
 			var height := size.y if active else size.y * .42
-			draw_rect(Rect2(index * step, (size.y - height) / 2, step - gap, height), tint if active else Color("3c4944"))
+			draw_rect(Rect2(index * step, (size.y - height) / 2, step - gap, height), tint if active else Charte.FILET)
 
 static func _cover(club: Dictionary) -> Control:
 	var identity := G.identity(club)
@@ -107,7 +108,7 @@ static func home(app: Control) -> Control:
 		var current := G.v(1)
 		G.fill(current)
 		identity.add_child(current)
-		current.add_child(G.label("CARNET EN COURS", 11, G.GOLD))
+		current.add_child(G.label("CARNET EN COURS", 12, G.GOLD))
 		current.add_child(G.wrap("Sélection nationale" if national else str(G.identity(club).get("city", "Ton territoire")), 18, G.INK))
 		choices.add_child(G.label("TA CARRIÈRE", 12, G.GOLD))
 		choices.add_child(G.wrap(str(team.get("name", "Sélection")) if national else G.club_name(club), 26, G.INK))
@@ -391,7 +392,7 @@ static func _dossier_honours(app: Control, parent: VBoxContainer, results: Array
 		var competition := str(result.competition)
 		var count := int(result.get("titles", 0))
 		var frame := PanelContainer.new()
-		frame.add_theme_stylebox_override("panel", C.box(Color("182322"), C.LINE, 3, 1 if dense else 3))
+		frame.add_theme_stylebox_override("panel", Charte.style_panneau(Charte.PANNEAU, Charte.RAYON_CARTE, 1 if dense else 3))
 		honours.add_child(C.fill(frame))
 		var row := C.h(5)
 		frame.add_child(row)
@@ -446,7 +447,7 @@ static func _dossier_position(parent: Container, position: String, detail: Dicti
 	var mid_table := ceili(clubs / 2.0)
 	var complete := starter_gap == 0 and reserve_gap == 0
 	var heading := "Atout actuel" if strength else ("Marge de progression" if complete and maxi(starter_rank, reserve_rank) <= mid_table else "Point à renforcer")
-	var tint := Color("a5c78f") if strength else Color("d79a7a")
+	var tint := Charte.VERT_CLAIR if strength else Charte.DORE
 	var column := C.v(2)
 	parent.add_child(C.fill(column))
 	if compact:
@@ -740,7 +741,7 @@ static func creation(app: Control) -> Control:
 		dossier = G.panel(row, dossier_width)
 		dossier.name = "CreationDossier"
 		dossier.add_theme_constant_override("separation", C.px(7))
-		Editorial.surface(dossier.get_parent(), Color("142020"), Editorial.LINE, 14)
+		Editorial.surface(dossier.get_parent(), Charte.PANNEAU, Editorial.LINE, 14)
 		var preview := C.v(3 if screen.y < 850 else 5)
 		dossier.add_child(C.fill(preview, true))
 		var photo_height := clampf(screen.y * .181, 124, 262)
@@ -838,7 +839,7 @@ static func creation(app: Control) -> Control:
 	divisions.add_theme_constant_override("v_separation", C.px(6))
 	if modern:
 		var scope := PanelContainer.new()
-		Editorial.surface(scope, Color("152020"), Editorial.BRASS, 9)
+		Editorial.surface(scope, Charte.PANNEAU, Editorial.BRASS, 9)
 		var scope_style := scope.get_theme_stylebox("panel") as StyleBoxFlat
 		scope_style.content_margin_left = C.px(44)
 		scope_style.border_color = Editorial.RAIL_GOLD
@@ -953,7 +954,7 @@ static func creation(app: Control) -> Control:
 					var style := b.get_theme_stylebox(state) as StyleBoxFlat
 					style.border_color = Editorial.RAIL_GOLD
 					style.set_border_width_all(maxi(2, C.px(3)))
-					style.bg_color = Color("302d22") if state == "normal" else Color("403724")
+					style.bg_color = Charte.VOILE_DORE if state == "normal" else Charte.PANNEAU_2
 		elif club.get("id") == selected.get("id"): G.selected(b,Color(club.color))
 		var inset := G.margin(C.px(8) if modern else 8)
 		inset.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1059,7 +1060,7 @@ static func _nation_creation(app: Control, page: Control, mode: String, preferre
 	start.name = "CreationStart"
 	start.disabled = app.waiting or missing or nation.is_empty()
 	if modern:
-		Editorial.surface(panel.get_parent(), Color("142020"), Editorial.LINE, 14)
+		Editorial.surface(panel.get_parent(), Charte.PANNEAU, Editorial.LINE, 14)
 		Editorial.action(start, true, false, maxi(40, C.px(72)))
 		start.add_theme_font_size_override("font_size", maxi(20, C.px(41)))
 	panel.add_child(start)

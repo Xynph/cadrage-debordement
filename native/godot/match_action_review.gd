@@ -1,5 +1,6 @@
 extends AcceptDialog
 ## Frozen local facts; browsing never issues a worker command or rewinds play.
+const Charte0 = preload("res://ui/charte.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const Journal = preload("res://ui/match_journal.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
@@ -32,8 +33,8 @@ var charte := false
 class ActionPitch extends Control:
 	var from: Variant
 	var to: Variant
-	var depart := Color("f7f0d0")
-	var arrivee := Color("edbc61")
+	var depart := Charte0.CREME
+	var arrivee := Charte0.DORE
 	static func valid(point: Variant) -> bool:
 		if not point is Dictionary: return false
 		for key in ["x", "y"]:
@@ -42,11 +43,11 @@ class ActionPitch extends Control:
 		return float(point.x) >= 0 and float(point.x) <= 100 and float(point.y) >= 0 and float(point.y) <= 70
 	func _draw() -> void:
 		var rect := Rect2(Vector2(10,10),size-Vector2(20,20))
-		draw_rect(rect,Color("284e3d"))
-		draw_rect(rect,Color("d4e5ce"),false,2)
+		draw_rect(rect,Charte0.PELOUSE)
+		draw_rect(rect,Charte0.PELOUSE_BORD,false,2)
 		for x in [22,50,78]:
 			var position := rect.position.x + rect.size.x * float(x)/100.0
-			draw_line(Vector2(position,rect.position.y),Vector2(position,rect.end.y),Color("97b99b"),1)
+			draw_line(Vector2(position,rect.position.y),Vector2(position,rect.end.y),Charte0.PELOUSE_2,1)
 		if valid(from) and valid(to):
 			var a := rect.position+rect.size*Vector2(float(from.x)/100.0,float(from.y)/70.0)
 			var b := rect.position+rect.size*Vector2(float(to.x)/100.0,float(to.y)/70.0)
