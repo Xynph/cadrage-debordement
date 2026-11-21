@@ -2215,7 +2215,9 @@ func _build_club_branding() -> void:
 	var batch := MultiMesh.new()
 	batch.transform_format = MultiMesh.TRANSFORM_3D
 	batch.mesh = quad
-	batch.instance_count = 1 # The stadium fascia carries the managed club crest.
+	# Écusson du club : sur le fronton de la tribune et peint sur la pelouse, face à la caméra de match (le fronton
+	# sort du cadre de la vue par défaut ; la pelouse au centre y est toujours).
+	batch.instance_count = 2
 	var material := StandardMaterial3D.new()
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
 	material.alpha_scissor_threshold = 0.1
@@ -2231,6 +2233,8 @@ func _build_club_branding() -> void:
 	_update_club_branding()
 
 
+const PITCH_CREST_STRETCH := 2.4
+
 func _update_club_branding() -> void:
 	_club_branding.visible = _club_crest != null
 	var material := _club_branding.material_override as StandardMaterial3D
@@ -2238,9 +2242,15 @@ func _update_club_branding() -> void:
 	if _club_crest == null:
 		return
 	var aspect := float(_club_crest.get_width()) / maxf(1.0, _club_crest.get_height())
-	var height := minf(2.9, 12.0 / maxf(aspect, 0.01))
+	var height := minf(3.5, 16.0 / maxf(aspect, 0.01))
 	_club_branding.multimesh.set_instance_transform(0,
 		Transform3D(Basis.from_scale(Vector3(height * aspect, height, 1.0)), Vector3(0, 10.6, -54.6)))
+	# Pelouse : couché à plat, haut de l'écusson vers la tribune d'en face, étiré en profondeur (comme les logos
+	# peints au sol pour la caméra TV) pour se lire droit depuis la vue de match.
+	var width := minf(13.0, 13.0 * aspect)
+	var depth := width / maxf(aspect, 0.01) * PITCH_CREST_STRETCH
+	_club_branding.multimesh.set_instance_transform(1,
+		Transform3D(Basis.from_euler(Vector3(-PI * 0.5, 0, 0)) * Basis.from_scale(Vector3(width, depth, 1.0)), Vector3(0, 0.05, -15.0)))
 
 
 func _stadium_advert(position_: Vector3, yaw: float) -> void:
