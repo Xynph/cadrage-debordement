@@ -44,7 +44,7 @@ func texts(node: Node) -> String:
 		if not (child is Control) or not child.is_visible_in_tree(): continue
 		if child is Label and str(child.text).strip_edges() != "": parts.append(str(child.text))
 		elif child is Button and str(child.text).strip_edges() != "": parts.append(str(child.text))
-		if str(child.tooltip_text).strip_edges() != "" and child is Button: parts.append(str(child.tooltip_text))
+		if str(child.tooltip_text).strip_edges() != "" and (child is Button or str(child.name).begins_with("Info_") or str(child.name).begins_with("Finance")): parts.append(str(child.tooltip_text))
 	return "\n".join(parts)
 
 ## Texte à retour automatique réduit à une colonne étroite : largeur inférieure à quelques caractères, ou presque
@@ -200,7 +200,9 @@ func run() -> void:
 	check(money.to_lower().contains("marge courante") and money.contains("hors guichet"), "Finances : la marge hebdomadaire est qualifiée")
 	var projection: Dictionary = finance.projection
 	check(money.contains("marge courante " + U.amount(projection.marginTotal)) and money.contains("guichet, primes et soutien +" + U.amount(projection.otherInflows)), "Finances : la projection relie marge courante et trésorerie prévue")
-	check(money.contains("%d contrats à anticiper" % int(counts.by_horizon)) and money.contains("%d en fin de saison" % int(counts.end_of_season)), "Finances : échéances à l'horizon et en fin de saison")
+	var tuile_echeances_horizon := app.find_child("FinanceWatchContractsCountValeur", true, false) as Label
+	var tuile_saison := app.find_child("FinanceWatchContractsSeasonValeur", true, false) as Label
+	check(tuile_echeances_horizon != null and tuile_echeances_horizon.text == str(int(counts.by_horizon)) and tuile_saison != null and tuile_saison.text == str(int(counts.end_of_season)), "Finances : échéances à l'horizon et en fin de saison (deux tuiles)")
 	forbidden_none(money, "Finances")
 	await capture("finances")
 	# Réception et Recrutement : pluriels accordés
