@@ -1,6 +1,6 @@
 extends SceneTree
-## Planche « carte joueur au survol » (choix visuel ouvert, demande de Léo du 21/11/2026) : dans le direct (écran 2D D3),
-## la souris passe sur un joueur de Mon XV ; la carte (option A ou B, CD_VARIANTE_VISUELLE=D3-A / D3-B) apparaît après
+## Carte joueur au survol (fiche complète, choix de Léo du 21/11/2026) : dans le direct (écran 2D), la souris passe sur
+## un joueur de Mon XV ; la carte apparaît après
 ## un court délai sans mettre le match en pause, entière dans l'écran ; Échap la ferme ; la souris part, elle disparaît.
 ## Captures 2560 × 1440 (référence de Léo) puis 1920 × 1080. godot-planche-carte-joueur.cjs prépare la carrière Monde.
 const Carte = preload("res://ui/carte_joueur_survol.gd")
@@ -173,12 +173,27 @@ func run() -> void:
 		check(d.is_empty(), "%s : rien de coupé : %s" % [str(taille), str(d.slice(0, 6))])
 		check(carte.find_child("CarteJoueurMatch", true, false) != null, "%s : état du match en tête" % str(taille))
 		check(carte.find_child("CarteJoueurEtoilesPoste_*", true, false) != null, "%s : étoiles d'adaptabilité" % str(taille))
-		print("PLANCHE_CARTE_JOUEUR %s %s : carte %s" % [Carte.variante(), str(taille), str(carte.get_global_rect())])
+		check(carte.find_child("CarteJoueurTuileNiveau", true, false) != null and carte.find_child("CarteJoueurEtoilesNiveau", true, false) == null, "%s : niveau en tuile, sans étoiles" % str(taille))
+		print("PLANCHE_CARTE_JOUEUR %s : carte %s" % [str(taille), str(carte.get_global_rect())])
 		await capture("carte-%dx%d" % [taille.x, taille.y])
+	# Clic sur le joueur : la carte se range, sa petite fenêtre s'ouvre (comportement inchangé).
+	if cible != null and Carte.actuelle(app) != null:
+		for appui in [true, false]:
+			var bouton := InputEventMouseButton.new()
+			bouton.button_index = MOUSE_BUTTON_LEFT
+			bouton.pressed = appui
+			bouton.position = cible.get_global_rect().get_center()
+			bouton.global_position = bouton.position
+			root.push_input(bouton)
+			await process_frame
+		await wait_command()
+		await settle(20)
+		check(Carte.actuelle(app) == null, "Clic : la carte se range")
+		check(view.fenetre_ouverte(), "Clic : la petite fenêtre du joueur s'ouvre")
 	finir()
 
 func finir() -> void:
-	print("PLANCHE_CARTE_JOUEUR %s %d controles, %d echec" % [OS.get_environment("CD_VARIANTE_VISUELLE"), checks, failures.size()])
+	print("PLANCHE_CARTE_JOUEUR %d controles, %d echec" % [checks, failures.size()])
 	for f in failures: print("  - ", f)
 	if is_instance_valid(app):
 		app.closing = true
