@@ -949,55 +949,19 @@ static func _world_history(app: Control, canvas: Control, data: Dictionary) -> v
 	C.fill(list)
 	scroll.add_child(list)
 	var years: Array = data.seasons
-	# Planche de choix (revue du 21/11/2026, n° 8) : CD_VARIANTE_VISUELLE=A|B remplace bilan, palmarès et résultats.
-	if not HistoireVisuels.variante().is_empty():
-		list.add_child(HistoireVisuels.build(app, years))
-		list.add_child(C.rule())
-		var individuel := C.v(9)
-		preload("res://ui/performance_analysis_view.gd")._individual(app, individuel)
-		Legacy.apply(individuel, app.accent)
-		list.add_child(individuel)
-		list.add_child(C.rule())
-		_world_coach(list, data)
-		return
-	var analysis: Control = preload("res://ui/performance_analysis_view.gd").build(app)
-	Legacy.apply(analysis,app.accent)
-	list.add_child(analysis)
-	list.add_child(C.rule())
-	var palmares: Dictionary = app.model.get("club",{}).get("palmares",{})
-	var titre_palmares := HBoxContainer.new()
-	titre_palmares.add_theme_constant_override("separation", C.px(10))
-	titre_palmares.add_child(C.label("LE PALMARÈS",27,C.GOLD,true,700))
-	var info_rangs := Pastilles.info("Les saisons passées et les derniers résultats du club. Les rangs concernent la phase régulière.", "i", "ClubHistoryInfo")
-	info_rangs.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	titre_palmares.add_child(info_rangs)
-	list.add_child(titre_palmares)
-	if palmares.is_empty() or bool(palmares.get("vide",false)):
-		var empty := Pastilles.pastille("Aucun titre", Pastilles.BLEU, "trophy", str(palmares.get("emptyText","")) if not palmares.is_empty() else "La première page de l’histoire du club s’écrit avec toi.", 22, "ClubPalmaresVide", func(): app._navigate("Classements"))
-		list.add_child(empty)
-	else:
-		var head := C.wrap(str(palmares.headline),30,C.MINT,true,800)
-		head.name = "ClubPalmaresTitre"
-		list.add_child(head)
-		var titles_line := Palmares.titles_text(app.model,palmares,4)
-		if not titles_line.is_empty(): list.add_child(C.wrap(titles_line,24,C.IVORY,true,600))
-		for line: String in Palmares.recent_lines(app.model,palmares,8): list.add_child(C.wrap(line,22,C.MUTED,true))
-	list.add_child(C.rule())
-	if years.size() >= 2: _world_comparison(app,list,years)
-	if years.is_empty(): list.add_child(Pastilles.pastille("Aucune saison terminée", Charte.IVOIRE_2, "clock", "Ta première saison au club s’inscrira ici dès son terme.", 20, "ClubHistoryNoSeason"))
-	for year: Dictionary in years: list.add_child(_world_year(app,year))
-	list.add_child(C.rule())
-	list.add_child(C.label("LES DERNIERS RÉSULTATS",27,C.GOLD,true,700))
-	if data.events.is_empty(): list.add_child(Pastilles.pastille("Aucun match joué", Charte.IVOIRE_2, "clock", "Pas encore de match joué par ce club.", 20, "ClubHistoryNoMatch"))
-	for event: Dictionary in data.events:
-		var result := C.card("Saison %s · %s" % [G.season_label(event.get("season","—")),World.name_for(app.model,str(event.get("leagueId","")))])
-		list.add_child(result)
-		var notes := C.content(result)
-		notes.add_child(C.wrap("%s  %s – %s  %s" % [event.home_name,G.n(event.get("home","—")),G.n(event.get("away","—")),event.away_name],27,C.IVORY,true,700))
-		if event.get("winner") != null and event.get("home") == event.get("away"):
-			notes.add_child(C.wrap("Vainqueur après départage : "+str(event.get("winner_name","—")),22,C.GOLD,true))
-		if not str(event.get("reaction","")).is_empty():
-			notes.add_child(C.wrap("Réaction du banc · %s  « %s »" % [event.get("reaction_club_name","Banc"),event.reaction],21,C.MUTED,true))
+	# Revue du 21/11/2026, n° 8 (option B choisie par Léo) : frise des saisons et statistiques en barres.
+	var analyse := C.v(15)
+	analyse.name = "PerformanceAnalysis"
+	C.fill(analyse)
+	list.add_child(analyse)
+	analyse.add_child(HistoireVisuels.build(app, years))
+	if years.size() >= 2:
+		analyse.add_child(C.rule())
+		_world_comparison(app, analyse, years)
+	var individuel := C.v(9)
+	preload("res://ui/performance_analysis_view.gd")._individual(app, individuel)
+	Legacy.apply(individuel, app.accent)
+	analyse.add_child(individuel)
 	list.add_child(C.rule())
 	_world_coach(list, data)
 
