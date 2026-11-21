@@ -12,6 +12,7 @@ extends PanelContainer
 ## Tailles données en pixels d'un écran 1080p (`M`), à l'échelle de la fenêtre comme le reste de l'interface.
 
 const C = preload("res://ui/immersive08/components.gd")
+const CarteClub = preload("res://ui/carte_club_survol.gd")
 const Charte = preload("res://ui/charte.gd")
 const G = preload("res://ui/game_skin.gd")
 const Present = preload("res://ui/immersive08/projection.gd")
@@ -662,6 +663,8 @@ func _plaque(club: Dictionary, droite: bool, anneau: bool, ma_couleur: Color) ->
 	var crest := G.crest(club, M(70))
 	crest.custom_minimum_size = Vector2(M(70), M(78))
 	crest.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Mini-carte verticale à grand écusson au survol (choix de Léo, 21/11/2026) ; le clic garde la fiche du club.
+	CarteClub.lier(crest, club, true)
 	crest.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var nom := texte(G.club_name(club).to_upper(), 64, encre, true, 800)
 	italique(nom, true)

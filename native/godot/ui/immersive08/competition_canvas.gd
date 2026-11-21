@@ -28,7 +28,8 @@ const ROW := 32
 const WARM := Charte.IVOIRE
 const WIN := Charte.V
 const DRAW := Charte.N
-const LOSS := Charte.D
+# Défaite en rouge (charte : perte), toujours avec sa lettre D (choix de Léo, 21/11/2026).
+const LOSS := Charte.PERTE
 const PRIMARY := Charte.PANNEAU_3
 const LABELS := {"league": "Championnat", "pool":"Poules", "barrage": "Barrage", "elimination": "Match de barrage", "r16":"Huitième de finale", "quarter":"Quart de finale", "semi": "Demi-finale", "final": "Finale", "third-place": "Petite finale", "access": "Barrage d’accession", "cup": "Coupe", "ended":"Compétition terminée"}
 const JAPAN_COMPETITIONS := ["jlo-d1", "jlo-d2", "jlo-d1-d2"]
@@ -1677,6 +1678,8 @@ static func _crest(parent: Node, club: Dictionary, area: Rect2) -> void:
 	var shield := G.crest(club, C.px(minf(area.size.x, area.size.y)))
 	parent.add_child(shield)
 	D.place(shield, area)
+	# Mini-carte club au survol de l’écusson (choix de Léo, 21/11/2026).
+	preload("res://ui/carte_club_survol.gd").lier(shield, club)
 
 static func _icon(parent: Node, icon_id: String, area: Rect2, color: Color) -> void:
 	var icon := C.icon(icon_id, int(area.size.x), color)

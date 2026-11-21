@@ -136,9 +136,9 @@ static func _scheduled_reading(app: Control, parent: Node, fixture: Dictionary, 
 	_label_reading(app, parent, opponent, Office.club_reading_target(app, club), "OfficeScheduledOpponent", opponent.text)
 	_label_reading(app, parent, timing, Office.date_reading_target(app, fixture), "OfficeScheduledDate", timing.text)
 
-## Pastille ovale V / N / D : la lettre dit le sens, la couleur le confirme.
+## Pastille ovale V / N / D : la lettre dit le sens, la couleur le confirme (défaite en rouge, comme au classement).
 static func _pastille(parent: Control, x: float, y: float, lettre: String, largeur: float = 30, hauteur: float = 24) -> void:
-	var couleur: Color = Charte.D if lettre == "D" else Charte.N if lettre == "N" else Charte.V
+	var couleur: Color = Charte.PERTE if lettre == "D" else Charte.N if lettre == "N" else Charte.V
 	var ovale := D.rect(parent, Rect2(x, y, largeur, hauteur), Color(couleur, .16), 0)
 	var style := _box(Color(couleur, .16), couleur, 1)
 	style.set_corner_radius_all(C.px(hauteur / 2.0))
@@ -517,6 +517,12 @@ static func _group(card: Panel, app: Control, w: int = 580) -> void:
 		D.text(card, right, y + 4, str(jauge[2]), 21, Charte.IVOIRE, 600, 110, HORIZONTAL_ALIGNMENT_RIGHT)
 		D.bar(card, Rect2(24, y + 12, right - 24 - 130, 8), float(jauge[1]), jauge[3])
 		if float(jauge[4]) >= 0.0: D.rect(card, Rect2(24 + (right - 24 - 130) * float(jauge[4]) / 100.0, y + 8, 2, 16), Charte.IVOIRE)
+		# Condition → groupe, moral → vestiaire ; mini-courbe au survol (relevé hebdomadaire du moteur).
+		if i < 2:
+			var vers: Callable = app.navigation_controller.open_roster_group if i == 0 else func(): app._navigate("Vestiaire")
+			var zone := _zone(card, Rect2(16, y - 14, right - 8, 36), "", vers, ["OfficeGroupCondition", "OfficeGroupMorale"][i], 16)
+			zone.accessibility_name = "%s · %s" % [str(jauge[0]).capitalize(), str(jauge[2])]
+			preload("res://ui/mini_courbe_survol.gd").lier(app, zone, ["condition", "morale"][i], ["Condition du groupe", "Moral du vestiaire"][i])
 	# Alertes en pastilles cliquables (21/11) : « ⚠ 8 < 70 % » (titulaires fatigués → composition) et « ⚑ 15 »
 	# (joueurs sous surveillance → effectif filtré) ; la phrase reste dans l'infobulle.
 	var y_alerte := 296.0

@@ -628,7 +628,9 @@ static func _footer(card: Panel, app: Control, finance: Dictionary, _board: Dict
 	var texte_cash := "Trésorerie · " + U.amount(cash) + " →"
 	var etiquette := Kit.texte(card, 30, 372, texte_cash, Charte.D if cash != null and float(cash) < 0.0 else Charte.IVOIRE, 500, 19)
 	etiquette.add_theme_font_override("font", Kit.texte_gras())
-	_reading_area(app, card, Rect2(24, 346, 520, 40), {"kind": "finance", "id": "cash"}, "ClubCashLink", "Trésorerie")
+	var lien_cash := _reading_area(app, card, Rect2(24, 346, 520, 40), {"kind": "finance", "id": "cash"}, "ClubCashLink", "Trésorerie")
+	# Mini-courbe de la trésorerie au survol (choix de Léo, 21/11/2026).
+	if lien_cash != null: preload("res://ui/mini_courbe_survol.gd").lier(app, lien_cash, "cash", "Trésorerie")
 	var salaires := "Salaires et cotisations · %s par semaine →" % G.euros(P.payroll(app.model).charge_weekly)
 	var etiquette_salaires := Kit.texte(card, 30, 410, salaires, Charte.IVOIRE, 760, 19)
 	etiquette_salaires.add_theme_font_override("font", Kit.texte_gras())
@@ -681,6 +683,8 @@ static func _vestiaire(panneau: Panel, app: Control) -> void:
 		bouton.accessibility_name = "%s · %s %s · vestiaire" % [tuile.etiquette, tuile.valeur, tuile.sur]
 		bouton.pressed.connect(func(): app._navigate("Vestiaire"))
 		panneau.add_child(bouton)
+		# Mini-courbe du moral au survol (relevé hebdomadaire du moteur).
+		if str(tuile.id) == "ClubMorale": preload("res://ui/mini_courbe_survol.gd").lier(app, bouton, "morale", "Moral du vestiaire")
 		D.place(bouton, Rect2(24 + i * (cote + 12), 66, cote, 150))
 		Kit.etiquette(bouton, 14, 30, str(tuile.etiquette), cote - 28)
 		var chiffre := D.text(bouton, 14, 88, str(tuile.valeur), 46, Charte.IVOIRE, 800, 120)
