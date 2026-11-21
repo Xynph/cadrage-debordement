@@ -188,11 +188,7 @@ func _phases() -> void:
 		D.text(tile, 23, 228, "LES CHOIX DE JEU", 22, GOLD, 700, 667)
 		var y := 247
 		for option: Dictionary in options:
-			var selected: bool = option.id == choice
-			D.rect(tile, Rect2(20, y, 684, 94), Charte.SELECTION if selected else Charte.PANNEAU_2, Charte.RAYON_PETIT, Color(GREEN, .67) if selected else Color(C.LINE, .5))
-			D.text(tile, 37, y + 29, option.label, 26, GREEN if selected else C.IVORY, 700, 643)
-			var lines := D.words(str(option.get("description", "")), 72, 2)
-			for j in lines.size(): D.text(tile, 37, y + 57 + j * 25, lines[j], 22, C.MUTED, 500, 643)
+			_choix(tile, y, str(phase.key), option, option.id == choice)
 			y += 103
 	var intentions := D.panel(phase_page, Rect2(16, 698, 1022, 153), "Repères retenus", "flag")
 	for i in mini(3, phases.size()):
@@ -202,6 +198,91 @@ func _phases() -> void:
 		D.text(intentions, 388, y, _option_title(phase.get("options", []), str(phase.get("selected", ""))), 25, C.IVORY, 700, 610)
 	D.photo(phase_page, "lineout-analysis", Rect2(1056, 698, 1173, 153))
 	_notice(phase_page, 872)
+
+## Effets d'un choix de phase arrêtée : [icône, mot, signe] ; « + » gain (vert), « − » perte (rouge), « = » habituel.
+## La phrase du moteur reste en infobulle de la ligne. Renvois : portée en mètres depuis la ligne médiane.
+const EFFETS := {
+	"scrum": {
+		"equilibre": [["renew", "Compromis habituel", "="]],
+		"securiser": [["shield", "Conservation", "+"], ["arrow", "Mètres", "−"], ["target", "Essai direct", "−"]],
+		"pousser": [["arrow", "Mètres si gagnée", "+"], ["shield", "Conservation", "−"]],
+	},
+	"lineout": {
+		"equilibre": [["renew", "Compromis habituel", "="]],
+		"courte": [["shield", "Conservation", "+"], ["arrow", "Terrain", "−"]],
+		"fond": [["arrow", "Mètres", "+"], ["people", "Jeu derrière", "+"], ["target", "Lancer sûr", "−"]],
+		"maul": [["people", "Puissance des avants", "+"], ["shield", "Conservation", "−"]],
+	},
+	"kickoff": {
+		"normal": [["flag", "Distance", "="], ["ball", "Contest", "="]],
+		"court": [["ball", "Récupération", "+"], ["flag", "Territoire", "−"]],
+		"long": [["flag", "Territoire", "+"], ["ball", "Récupération", "−"]],
+	},
+}
+const PORTEES := {"court": Vector2(10, 14), "long": Vector2(25, 35)}
+
+## Demi-terrain du renvoi : ligne médiane à gauche, ligne des 10 m, zone de chute du choix en clair.
+class Portee extends Control:
+	var zone := Vector2.ZERO
+	var choisie := false
+
+	func _draw() -> void:
+		var metre := size.x / 50.0
+		draw_rect(Rect2(Vector2.ZERO, size), Color("18573d"))
+		var craie := Color("dce7cb", .8)
+		var epais := maxf(1.0, C.density * 2.0)
+		draw_line(Vector2(0, 0), Vector2(0, size.y), craie, epais * 1.5)
+		draw_dashed_line(Vector2(10 * metre, 0), Vector2(10 * metre, size.y), Color(craie, .55), epais, C.px(6))
+		draw_line(Vector2(28 * metre, 0), Vector2(28 * metre, size.y), Color(craie, .4), epais)
+		if zone != Vector2.ZERO:
+			draw_rect(Rect2(zone.x * metre, 2, (zone.y - zone.x) * metre, size.y - 4), Color(Charte.VERT_CLAIR if choisie else Charte.IVOIRE_2, .85))
+		var police := C.BOLD
+		var taille := maxi(11, int(size.y * .42))
+		var texte := "%d–%d m" % [int(zone.x), int(zone.y)] if zone != Vector2.ZERO else "≥ 10 m"
+		draw_string(police, Vector2(0, size.y * .7), texte, HORIZONTAL_ALIGNMENT_RIGHT, size.x - C.px(6), taille, Charte.IVOIRE)
+
+## Une ligne de choix : nom + pastilles d'effet (+ portée pour les renvois) ; toute la ligne choisit l'option.
+func _choix(tile: Control, y: int, cle: String, option: Dictionary, selected: bool) -> void:
+	var id := str(option.id)
+	D.rect(tile, Rect2(20, y, 684, 94), Charte.SELECTION if selected else Charte.PANNEAU_2, Charte.RAYON_PETIT, Color(GREEN, .67) if selected else Color(C.LINE, .5))
+	var ligne := Button.new()
+	ligne.name = "PlaybookChoix_%s_%s" % [cle, id]
+	ligne.flat = true
+	ligne.focus_mode = Control.FOCUS_ALL
+	ligne.set_meta("immersive_style_applied", true)
+	ligne.tooltip_text = "%s · %s" % [option.label, option.get("description", "")]
+	ligne.accessibility_name = ligne.tooltip_text
+	var vide := StyleBoxEmpty.new()
+	var survol := C.box(Color(Charte.IVOIRE, .06), Color.TRANSPARENT, Charte.RAYON_PETIT, 0)
+	Charte.sans_ombre(survol)
+	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, Charte.RAYON_PETIT, 0)
+	Charte.sans_ombre(focus)
+	focus.set_border_width_all(2)
+	for etat in ["normal", "disabled", "pressed"]: ligne.add_theme_stylebox_override(etat, vide)
+	ligne.add_theme_stylebox_override("hover", survol)
+	ligne.add_theme_stylebox_override("focus", focus)
+	ligne.disabled = not available or selected
+	ligne.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if not ligne.disabled else Control.CURSOR_ARROW
+	ligne.pressed.connect(func(): Rules._choose(app, cle, id))
+	tile.add_child(ligne)
+	D.place(ligne, Rect2(20, y, 684, 94))
+	D.text(tile, 37, y + 33, option.label, 26, GREEN if selected else C.IVORY, 700, 420 if PORTEES.has(id) or cle == "kickoff" else 643)
+	if cle == "kickoff":
+		var portee := Portee.new()
+		portee.name = "PlaybookPortee_" + id
+		portee.zone = PORTEES.get(id, Vector2.ZERO)
+		portee.choisie = selected
+		portee.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		tile.add_child(portee)
+		D.place(portee, Rect2(470, y + 12, 216, 28))
+	var x := 37.0
+	for effet: Array in EFFETS.get(cle, {}).get(id, []):
+		var signe: String = effet[2]
+		var couleur: Color = Pastilles.VERT if signe == "+" else Pastilles.ROUGE if signe == "−" else Charte.IVOIRE_2
+		var texte: String = effet[1] if signe == "=" else "%s %s" % [signe, effet[1]]
+		var pastille := Pastilles.pastille(texte, couleur, effet[0], "", 17, "PlaybookEffet_%s_%s_%d" % [cle, id, int(x)])
+		pastille.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		x += Pastilles.poser(tile, pastille, x, y + 50) + 8.0
 
 func _advice() -> void:
 	var analysis := D.panel(advice_page, Rect2(16, 16, 1444, 826), "Ce que voit l’adjoint", "people", "", "PlaybookAdviceAnalysis")
@@ -224,8 +305,11 @@ func _advice() -> void:
 	var context := "AVANT LE MATCH"
 	if data.get("inMatch", false): context = "MATCH EN COURS"
 	D.chip(scene, Rect2(21, 433, 321, 43), context, GREEN)
-	var lines := D.words(str(data.get("reason", "")), 79, 4)
-	for i in lines.size(): D.text(scene, 22, 531 + i * 31, lines[i], 24, C.MUTED, 500, 701)
+	# Décision fermée : une pastille (cadenas + mot), la phrase du moteur en infobulle.
+	var raison := str(data.get("reason", ""))
+	if not raison.is_empty():
+		var mot := "Match à mettre en pause" if data.get("inMatch", false) or raison.contains("pause") else "Saison terminée"
+		Pastilles.poser(scene, Pastilles.pastille(mot, Pastilles.ORANGE, "lock", raison, 20, "PlaybookAdviceVerrou"), 21, 500)
 	D.button(scene, Rect2(21, 729, 709, 62), "Ouvrir le match", func(): app._navigate("Match"), false, "arrow", false, Color("09673e"), "PlaybookGoMatch")
 	_notice(advice_page, 872)
 
