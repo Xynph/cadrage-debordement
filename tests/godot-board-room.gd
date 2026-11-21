@@ -31,7 +31,7 @@ func _initialize() -> void: call_deferred("run")
 func settle() -> void:
 	for i in 5: await process_frame
 func fixture() -> Dictionary:
-	return {"club":{"id":7,"name":"Club direction","color":"#1d6389","goal":"Projet du club"},"live":null,"meta":{"phase":"league","trust":72},"clubLife":{"clubStrategy":{"context":{"season":2,"week":8,"club":7},"available":true,"finance":{"cash":45000,"weeklyWages":12000,"weeklyIncome":160000,"weeklyCosts":13000,"baseForecast":70000,"remainingWeeks":21,"weeksPerSeason":29,"notice":"Montants de jeu fictifs. Projection hors primes futures.","boardHistory":[]},"board":{"priority":"stabilite","organizationScore":55,"readiness":{"warnings":["Signal enregistré"],"available":25,"coverage":80},"objectives":[{"id":"goal:points","type":"points","target":40,"deadline":20,"status":"pending"}],"metrics":{"points":22,"wins":4,"rank":9,"cash":45000},"projectOptions":[{"id":"video","label":"Analyse vidéo","cost":12000,"used":false},{"id":"medical","label":"Organisation médicale","cost":18000,"used":true}],"history":[{"season":1,"score":48}],"notice":"Organisation distincte de la confiance. Aucun bonus de match."}}}}
+	return {"club":{"id":7,"name":"Club direction","color":"#1d6389","goal":"Projet du club"},"live":null,"meta":{"phase":"league","trust":72},"clubLife":{"clubStrategy":{"context":{"season":2,"week":8,"club":7},"available":true,"finance":{"cash":45000,"weeklyWages":12000,"weeklyIncome":160000,"weeklyCosts":13000,"baseForecast":70000,"remainingWeeks":21,"weeksPerSeason":29,"notice":"Montants de jeu fictifs. Projection hors primes futures.","boardHistory":[]},"board":{"priority":"stabilite","organizationScore":55,"readiness":{"warnings":["Signal enregistré"],"available":25,"coverage":80},"objectives":[{"id":"goal:points","type":"points","target":40,"deadline":20,"status":"pending"},{"id":"goal:rank","type":"rank","target":6,"deadline":29,"status":"pending"}],"metrics":{"points":22,"wins":4,"rank":9,"cash":45000},"projectOptions":[{"id":"video","label":"Analyse vidéo","cost":12000,"used":false},{"id":"medical","label":"Organisation médicale","cost":18000,"used":true}],"history":[{"season":1,"score":48}],"notice":"Organisation distincte de la confiance. Aucun bonus de match."}}}}
 
 func window_has(view: Control, inside: String) -> bool:
 	var window := view.find_child("BoardRoomWindow",true,false)
@@ -40,7 +40,7 @@ func window_has(view: Control, inside: String) -> bool:
 ## Chaque anneau, tuile, bilan, jalon (frise et carte) ouvre sa petite fenêtre ; Échap, ✕ et clic à côté la ferment.
 func clicks(view: Control, director: TestDirector, host: Host) -> void:
 	var targets := {"BoardRoomTrust":"BoardWindowTrust","BoardRoomOrganization":"BoardWindowOrganization","BoardHistory_0":"BoardWindowOrganization",
-		"BoardFriseGoal_goal_points":"BoardWindowGoalNow","BoardObjective_goal_points":"BoardWindowGoalNow"}
+		"BoardFriseGoal_goal_points":"BoardWindowGoalNow","BoardFriseGoal_goal_rank":"BoardWindowGoalNow","BoardObjective_goal_points":"BoardWindowGoalNow"}
 	for key in ["cash","weeklyWages","weeklyIncome","weeklyCosts","baseForecast"]:targets["BoardFinance_"+key]="BoardWindowCash"
 	var closers := ["escape","cross","veil"]
 	var i := 0
@@ -80,10 +80,53 @@ func clicks(view: Control, director: TestDirector, host: Host) -> void:
 	check(director.sent.size()==1 and director.sent[0][0]=="club_board_objective" and director.sent[0][1].type=="wins","save chip sends the new milestone")
 	director.sent.clear()
 
+## Chaque ballon de match et le drapeau de fin ouvrent la petite fenêtre du match (main, halo au survol) ; Échap la
+## ferme et la réunion reste ouverte (aucune navigation, aucune commande).
+func frise_matches(view: Control, director: TestDirector, host: Host) -> void:
+	var cases := {"BoardFriseMatch_S3":["S3","2026-09-12"],"BoardFriseMatch_S12":["S12","2026-11-14"],"BoardFriseFin":["S12","2026-11-14"]}
+	for target: String in cases:
+		var button: Button = view.find_child(target,true,false)
+		check(button!=null and button.is_visible_in_tree() and button.mouse_default_cursor_shape==Control.CURSOR_POINTING_HAND,"clickable "+target)
+		if button==null:continue
+		var halo: StyleBoxFlat = button.get_theme_stylebox("hover")
+		check(halo!=null and halo.bg_color.a>0.0 and (button.get_theme_stylebox("normal") as StyleBoxFlat).bg_color.a==0.0,target+" shows a light halo on hover only")
+		button.pressed.emit();await settle()
+		check(window_has(view,"BoardMatchWindow") and PetiteFenetre.ouverte(self)!=null,target+" opens the match window")
+		var date: Control = view.find_child("BoardMatchDate",true,false)
+		var jour: Label = date.find_child("Valeur",true,false) if date!=null else null
+		var semaine: Label = date.find_child("Legende",true,false) if date!=null else null
+		check(jour!=null and semaine!=null and jour.text==cases[target][1].right(2)+"/"+cases[target][1].substr(5,2) and semaine.text==cases[target][0],target+" window shows date and week "+str(cases[target]))
+		check(window_has(view,"BoardMatchHome") and window_has(view,"BoardMatchAway") and window_has(view,"BoardMatchVenue"),target+" window shows both clubs and the venue")
+		check(PetiteFenetre.fermer_derniere(self),"Escape closes the match window of "+target)
+		await settle()
+		check(view.find_child("BoardRoomWindow",true,false)==null and view.is_visible_in_tree() and not director.closed,"meeting stays open after "+target)
+	(view.find_child("BoardFriseMatch_S3",true,false) as BaseButton).pressed.emit();await settle()
+	var score: Label = view.find_child("BoardMatchScore",true,false)
+	check(score!=null and score.text=="20 – 10" and score.get_theme_color("font_color")==Charte.GAIN,"played match shows its score in win green")
+	check(window_has(view,"BoardMatchForm") and window_has(view,"BoardMatchRankThem"),"opponent form and ranks are shown when known")
+	PetiteFenetre.fermer_derniere(self);await settle()
+	(view.find_child("BoardFriseMatch_S12",true,false) as BaseButton).pressed.emit();await settle()
+	check(window_has(view,"BoardMatchVs") and view.find_child("BoardMatchScore",true,false)==null,"upcoming match shows VS, no invented score")
+	(view.find_child("BoardRoomWindowVeil",true,false) as BaseButton).pressed.emit();await settle()
+	check(view.find_child("BoardRoomWindow",true,false)==null,"click beside closes the match window")
+	check(director.sent.is_empty() and host.confirmations.is_empty(),"match windows send nothing")
+
+## Le jalon dû en fin de saison ne recouvre pas le drapeau de fin : les deux restent visibles et cliquables.
+func flag_free(view: Control, size: Vector2i) -> void:
+	var flag: Button = view.find_child("BoardFriseFin",true,false)
+	var goal: Button = view.find_child("BoardFriseGoal_goal_rank",true,false)
+	var frise: Control = view.find_child("BoardSeasonFrise",true,false)
+	if flag==null or goal==null or frise==null:
+		check(false,"flag and season-end milestone exist at "+str(size));return
+	var mast := Rect2(frise.global_position+Vector2(frise.x_de(frise.fin)-17.0,frise.ligne_y()-31.0),Vector2(18.0,28.0))
+	check(not goal.get_global_rect().intersects(mast) and not goal.get_global_rect().intersects(flag.get_global_rect()),"season-end milestone leaves the end flag uncovered at "+str(size))
+	check(goal.get_global_rect().intersects(Rect2(frise.global_position+Vector2(frise.x_de(frise.fin)-1.0,0),Vector2(2.0,frise.size.y))),"season-end milestone stays above its deadline at "+str(size))
+
 func run() -> void:
 	var host := Host.new()
 	host.model = fixture()
-	host.model.calendar=[{"id":"f1","season":2,"week":3,"home":{"id":7},"away":{"id":3},"score":[20,10]},{"id":"f2","season":2,"week":12,"home":{"id":4},"away":{"id":7}},{"id":"f3","season":2,"week":5,"home":{"id":4},"away":{"id":9}},{"id":"f0","season":1,"week":9,"home":{"id":7},"away":{"id":9}}]
+	host.model.calendar=[{"id":"f1","season":2,"week":3,"date":"2026-09-12","home":{"id":7},"away":{"id":3},"score":[20,10]},{"id":"f2","season":2,"week":12,"date":"2026-11-14","home":{"id":4},"away":{"id":7}},{"id":"f3","season":2,"week":5,"home":{"id":4},"away":{"id":9}},{"id":"f0","season":1,"week":9,"home":{"id":7},"away":{"id":9}}]
+	host.model.leagues=[{"id":"champ","rows":[{"id":7,"rank":2,"form":["V","V","D"]},{"id":3,"rank":9,"form":["D","N","V","D"]},{"id":4,"rank":5,"form":["V"]}]}]
 	host.model.clubLife.clubMeetings={"scene":{"id":"board:test","kind":"board","completed":false,"ackAllowed":true}}
 	var meeting_data := {"meetingId":"board:test","completed":false,"ackAllowed":true}
 	host.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -102,7 +145,8 @@ func run() -> void:
 	check(title!=null and title.get_theme_font("font")==Charte.TITRE_FICHE and title.get_theme_color("font_color")==Charte.IVOIRE,"page title in Anton, ivory (gold kept for Continue)")
 	var frise: Control = view.find_child("BoardSeasonFrise",true,false)
 	check(frise!=null and frise.fin==29 and frise.semaine==8 and frise.matchs.map(func(m: Dictionary):return m.semaine)==[3,12],"season frieze: actual weeks and only the club's own fixtures of this season")
-	check(frise!=null and frise.get_global_rect().size.y<=130.0,"frieze height follows the stacked milestones, no empty band")
+	check(frise!=null and frise.get_global_rect().size.y<=140.0,"frieze height follows the stacked milestones, no empty band")
+	await frise_matches(view,director,host)
 	await clicks(view,director,host)
 	check(JSON.stringify(host.model)==before and director.sent.is_empty(),"visits and projections are pure")
 	view._acknowledge();check(director.sent.back()==["club_meeting_ack",{"meetingId":"board:test"}],"confirming existing priorities uses only the active server meeting ID")
@@ -142,6 +186,7 @@ func run() -> void:
 		var screen := Rect2(Vector2.ZERO,Vector2(size)).grow(.5)
 		var close: Button = view.find_child("BoardRoomClose",true,false)
 		check(screen.encloses(close.get_global_rect()),"close stays reachable at "+str(size))
+		flag_free(view,size)
 		var scroll: ScrollContainer = view.find_child("BoardRoomActionsScroll",true,false)
 		check(scroll.get_global_rect().size.y>250 and scroll.get_global_rect().end.x<=size.x,"actions scroll stays inside at "+str(size))
 		for button: BaseButton in view.find_children("*","BaseButton",true,false):
