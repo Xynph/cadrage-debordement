@@ -32,12 +32,10 @@ static func build(app: Control, page: Control, zone: Rect2, adversaire: String, 
 		if domaine is Dictionary: valeurs[str(domaine.get("key", ""))] = domaine
 	var y := 74.0
 	if valeurs.is_empty():
-		var attente := Kit.texte(bloc, 22, y, "Projection du staff livrée la semaine du match.", Charte.IVOIRE_2, w - 44)
+		var attente := Kit.texte(bloc, 22, y, "Projection livrée la semaine du match", Charte.IVOIRE_2, w - 44)
 		attente.name = "TacticsNoReport"
 		y += 30
 	else:
-		Kit.texte(bloc, 22, y, "Projection du staff" if C.dense() else "Projection du staff · se recalcule à chaque changement", Charte.IVOIRE_2, w - 44, 16)
-		y += 14
 		for i in DUELS.size():
 			_duel(app, bloc, i, y + i * 38, w, DUELS[i], valeurs.get(DUELS[i][0], {}))
 		y += DUELS.size() * 38 + 16

@@ -20,8 +20,8 @@ static func detail_texte(model: Dictionary, composition: bool) -> String:
 	var fatigue := Avis.fatigue_donnees(model)
 	var fatigues := int(fatigue.get("count", 0)) if not fatigue.is_empty() else 0
 	if composition:
-		return "Le staff refait la feuille avant le coup d'envoi : les joueurs fatigués se reposent, les mieux placés jouent. Tu peux décocher pour garder ta feuille."
-	return "Ta feuille est jouée telle quelle%s. Sans rotation, le groupe s'épuise de semaine en semaine." % (" : %d titulaire%s sous 70 %% de condition" % [fatigues, "s" if fatigues > 1 else ""] if fatigues > 0 else "")
+		return "Le staff refait la feuille"
+	return "Ta feuille telle quelle%s" % (" · %d titulaire%s sous 70 %%" % [fatigues, "s" if fatigues > 1 else ""] if fatigues > 0 else "")
 
 ## Le coup d'envoi puis la délégation du match : la seconde commande part dès la réponse de la première.
 static func valider(app: Control, payload: Dictionary) -> void:

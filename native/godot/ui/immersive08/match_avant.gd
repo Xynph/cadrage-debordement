@@ -19,6 +19,7 @@ const MeteoTexte = preload("res://ui/contextual/meteo_texte.gd")
 const BanqueImages = preload("res://ui/banque_images.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const Pages = preload("res://ui/immersive08/avant_match_pages.gd")
+const Reperes = preload("res://ui/immersive08/reperes.gd")
 const Espoir = preload("res://ui/espoir_appel.gd")
 const RI = preload("res://ui/contextual/rooms/room_identity.gd")
 const MOIS := ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
@@ -927,23 +928,16 @@ func _pied(en_page: bool) -> Control:
 	ligne.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ligne.add_theme_constant_override("separation", M(10))
 	marge.add_child(ligne)
-	var morceaux: Array = [["Entrée", "ou", "Espace", "sur le bouton"], ["Tab", "élément suivant"], ["Échap", "retour" if en_page else "menu"]] if not en_page else [["Tab", "élément suivant"], ["Échap", "retour à l'avant-match"]]
-	for groupe: Array in morceaux:
-		for partie: String in groupe:
-			var est_touche: bool = partie in ["Entrée", "Espace", "Tab", "Échap"]
-			if est_touche: ligne.add_child(_touche(partie))
-			else:
-				var mot := texte(partie, 13, Charte.IVOIRE_2, false, 500)
-				mot.add_theme_font_override("font", C.BODY)
-				ligne.add_child(mot)
-		var espace := Control.new()
-		espace.custom_minimum_size.x = M(16)
-		espace.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		ligne.add_child(espace)
-	ligne.add_child(_touche("F1"))
-	var aide := _bouton_lien("aide", func(): app._open_coach(), "MatchOpenHelp", 13)
-	aide.tooltip_text = "Aide de Gabi · F1"
-	ligne.add_child(aide)
+	# Raccourcis derrière un « ? » (règle du 21/11) : plus de ligne de mode d'emploi au pied de l'écran.
+	var emplacement := Control.new()
+	emplacement.custom_minimum_size = Vector2(M(30), M(30))
+	emplacement.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var aide := "Raccourcis\nEntrée ou Espace : le bouton en focus\nTab : élément suivant\nÉchap : " + ("retour à l'avant-match" if en_page else "menu") + "\nF1 : aide de Gabi"
+	var rond := Reperes.rond(emplacement, 0, 20.0, aide, "?", "MatchOpenHelp", 38.0)
+	rond.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	rond.gui_input.connect(func(evenement: InputEvent) -> void:
+		if evenement is InputEventMouseButton and evenement.pressed and evenement.button_index == MOUSE_BUTTON_LEFT: app._open_coach())
+	ligne.add_child(emplacement)
 	# Ligne d'état de la carrière (sauvegarde, action refusée) : le pied de la coque n'existe pas ici, elle vit dans ce pied.
 	var etat := texte(app._status_line_text() if app.has_method("_status_line_text") else "", 13, Charte.IVOIRE_2, false, 500)
 	etat.name = "ImmersiveSaveStatus"
@@ -1078,10 +1072,6 @@ func _feuille(model: Dictionary, etat: Dictionary) -> Control:
 		conditions[slot] = float(person.condition)
 		noms[slot] = str(person.get("name", ""))
 		ids[slot] = str(person.get("id", ""))
-	var intro := texte("Condition des titulaires, repère à %d %%" % CONDITION_MINI, 13, Charte.IVOIRE, false, 500)
-	intro.add_theme_font_override("font", C.BODY)
-	intro.name = "FeuilleConsigne"
-	column.add_child(intro)
 	# Petite fenêtre (1280 × 720) : deux rangées de repères (1 à 8, 9 à 15) pour garder des cibles d'au moins 20 px.
 	var deux_rangees := C.dense()
 	var barres := VBoxContainer.new()
@@ -1214,7 +1204,7 @@ func _meteo(model: Dictionary, next: Dictionary, nous: int, data: Dictionary) ->
 		var message := lignes(str(bloc.conseil), 15, Charte.IVOIRE, 2, false, 600)
 		message.name = "MeteoAnnonce"
 		column.add_child(message)
-		column.add_child(lignes("Le staff fixe la météo et le sens du vent la veille ; un courrier te les annonce.", 13, Charte.IVOIRE_2, 2))
+		column.add_child(lignes("Annoncées la veille", 13, Charte.IVOIRE_2, 2))
 	else:
 		var meteo: Dictionary = next.meteo
 		var ciel_ligne := HBoxContainer.new()
@@ -1343,14 +1333,12 @@ func _adversaire(model: Dictionary, next: Dictionary, data: Dictionary, nous: in
 	var column := _tuile("TuileJoueurs", "L’adversaire", legende)
 	if not plan.is_empty(): _plan_adverse(column, plan)
 	else:
-		column.add_child(lignes("Leur plan de jeu n'est pas encore connu : le staff le lit la veille du match.", 13, Charte.IVOIRE_2, 2))
+		column.add_child(lignes("Plan encore inconnu", 13, Charte.IVOIRE_2, 2))
 	var surveiller: Dictionary = data.get("aSurveiller", {})
 	var joueurs: Array = surveiller.get("joueurs", [])
 	if not plan.is_empty(): joueurs = joueurs.slice(0, 2)
-	if str(surveiller.get("source", "")) == "probable":
-		column.add_child(lignes("Pas encore de statistiques cette saison : leur XV probable.", 13, Charte.IVOIRE_2, 2))
 	if joueurs.is_empty() and plan.is_empty():
-		column.add_child(lignes("Leur effectif n'a pas encore de statistiques ni de XV connu.", 13, Charte.IVOIRE_2, 3))
+		column.add_child(lignes("Effectif encore inconnu", 13, Charte.IVOIRE_2, 3))
 	for joueur: Dictionary in joueurs:
 		var ligne := HBoxContainer.new()
 		ligne.name = "Surveille_" + str(joueur.get("categorie", ""))

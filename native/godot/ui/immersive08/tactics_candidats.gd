@@ -288,8 +288,8 @@ static func _encart(app: Control, bloc: Control, zone: Rect2, slot: int, premier
 	for poste: Dictionary in premiere.postes:
 		if int(poste.titulaire) == slot or int(poste.remplacant) == slot: poste_courant = poste
 	var role := str(poste_courant.get("libelle", "première ligne")).to_lower()
-	var phrase := "Loi 3 : une feuille à 23 compte %d premières lignes formées. Le n° %d doit rester un %s formé." % [cible, slot + 1, role]
-	if formes < cible: phrase = "Loi 3 : il faut %d premières lignes formées sur la feuille à 23 ; il n’y en a que %d. Le moteur bloque la feuille tant qu’elle n’est pas complète." % [cible, formes]
+	var phrase := "Loi 3 · %d formés requis · le n° %d reste %s formé" % [cible, slot + 1, role]
+	if formes < cible: phrase = "Loi 3 · %d formés sur %d requis · feuille bloquée" % [formes, cible]
 	var reduit := P.reduced_bench_number(app.model)
 	var texte := Kit.texte(regle, 18, 26, phrase, Charte.IVOIRE, zone.size.x - 30, 17)
 	texte.name = "TacticsFrontRowSentence"
