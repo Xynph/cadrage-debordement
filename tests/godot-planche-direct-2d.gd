@@ -1,7 +1,7 @@
 extends SceneTree
 ## Planche « écran 2D du direct » (choix visuel ouvert, demande de Léo du 21/11/2026) : la variante
-## CD_VARIANTE_VISUELLE (A : classement et multiplex sous les chiffres clés ; B : bande basse) capturée en jeu,
-## entre deux temps forts, en 2560 × 1440 (référence de Léo) puis 1920 × 1080 ; contrôle que rien ne déborde et
+## CD_VARIANTE_VISUELLE (D1 « Plateau net », D2 « Portraits et escalier », D3 « Bord de terrain ») capturée en jeu,
+## entre deux temps forts, aux tailles de CD_PLANCHE_TAILLES (2560 × 1440, référence de Léo, puis 1920 × 1080) ; contrôle que rien ne déborde et
 ## qu'un club du classement ouvre sa petite fenêtre. godot-planche-direct-2d.cjs prépare la carrière Monde.
 var app: Control
 var checks := 0
@@ -86,13 +86,16 @@ func run() -> void:
 	if app.model.live.get("finished", false) == false and not app.model.live.get("paused", false): await command("pause", {"paused": true})
 	await settle(30)
 	var between: Control = view.regie.between
-	for taille: Vector2i in [Vector2i(2560, 1440), Vector2i(1920, 1080)]:
+	var tailles: Array[Vector2i] = []
+	for t: String in (OS.get_environment("CD_PLANCHE_TAILLES") if not OS.get_environment("CD_PLANCHE_TAILLES").is_empty() else "2560x1440,1920x1080").split(","):
+		tailles.append(Vector2i(t.get_slice("x", 0).to_int(), t.get_slice("x", 1).to_int()))
+	for taille: Vector2i in tailles:
 		root.size = taille
 		root.content_scale_size = taille
 		await settle(40)
 		check(vue_2d(view), "%s : classement et multiplex à l'écran" % str(taille))
 		check(debordements(between).is_empty(), "%s : rien ne déborde : %s" % [str(taille), str(debordements(between).slice(0, 6))])
-		if between.variante in ["C", "D"]:
+		if true:
 			var lignes: int = between.classement_lignes.get_children().filter(func(n: Node): return str(n.name).begins_with("MatchBetweenLiveRow")).size()
 			var attendu: int = (between.journee_vue.get("classement", []) as Array).size() if between.journee_vue is Dictionary else -1
 			check(lignes == attendu and lignes >= 8, "%s : classement complet (%d lignes sur %d)" % [str(taille), lignes, attendu])
