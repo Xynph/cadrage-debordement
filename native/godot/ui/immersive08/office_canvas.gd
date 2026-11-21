@@ -19,6 +19,8 @@ const Charte = preload("res://ui/charte.gd")
 const Link = preload("res://ui/entity_link.gd")
 const R = preload("res://ui/immersive08/reperes.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
+const EquipeType = preload("res://ui/equipe_type_view.gd")
+const NotesMatch = preload("res://ui/notes_match.gd")
 
 const PAGE_WIDTH := 2248
 const GABI_WIDTH := 736
@@ -134,9 +136,9 @@ static func _scheduled_reading(app: Control, parent: Node, fixture: Dictionary, 
 	_label_reading(app, parent, opponent, Office.club_reading_target(app, club), "OfficeScheduledOpponent", opponent.text)
 	_label_reading(app, parent, timing, Office.date_reading_target(app, fixture), "OfficeScheduledDate", timing.text)
 
-## Pastille ovale V / N / D : la lettre dit le sens, la couleur le confirme.
+## Pastille ovale V / N / D : la lettre dit le sens, la couleur le confirme (défaite en rouge, comme au classement).
 static func _pastille(parent: Control, x: float, y: float, lettre: String, largeur: float = 30, hauteur: float = 24) -> void:
-	var couleur: Color = Charte.D if lettre == "D" else Charte.N if lettre == "N" else Charte.V
+	var couleur: Color = Charte.PERTE if lettre == "D" else Charte.N if lettre == "N" else Charte.V
 	var ovale := D.rect(parent, Rect2(x, y, largeur, hauteur), Color(couleur, .16), 0)
 	var style := _box(Color(couleur, .16), couleur, 1)
 	style.set_corner_radius_all(C.px(hauteur / 2.0))
@@ -515,6 +517,12 @@ static func _group(card: Panel, app: Control, w: int = 580) -> void:
 		D.text(card, right, y + 4, str(jauge[2]), 21, Charte.IVOIRE, 600, 110, HORIZONTAL_ALIGNMENT_RIGHT)
 		D.bar(card, Rect2(24, y + 12, right - 24 - 130, 8), float(jauge[1]), jauge[3])
 		if float(jauge[4]) >= 0.0: D.rect(card, Rect2(24 + (right - 24 - 130) * float(jauge[4]) / 100.0, y + 8, 2, 16), Charte.IVOIRE)
+		# Condition → groupe, moral → vestiaire ; mini-courbe au survol (relevé hebdomadaire du moteur).
+		if i < 2:
+			var vers: Callable = app.navigation_controller.open_roster_group if i == 0 else func(): app._navigate("Vestiaire")
+			var zone := _zone(card, Rect2(16, y - 14, right - 8, 36), "", vers, ["OfficeGroupCondition", "OfficeGroupMorale"][i], 16)
+			zone.accessibility_name = "%s · %s" % [str(jauge[0]).capitalize(), str(jauge[2])]
+			preload("res://ui/mini_courbe_survol.gd").lier(app, zone, ["condition", "morale"][i], ["Condition du groupe", "Moral du vestiaire"][i])
 	# Alertes en pastilles cliquables (21/11) : « ⚠ 8 < 70 % » (titulaires fatigués → composition) et « ⚑ 15 »
 	# (joueurs sous surveillance → effectif filtré) ; la phrase reste dans l'infobulle.
 	var y_alerte := 296.0
@@ -758,6 +766,10 @@ static func _journal(card: Panel, app: Control, w: int = 1132) -> void:
 		var ligne := _zone(card, Rect2(16, y, w - 32, 44), "", open_message.bind(app, ids[i]), "OfficeJournalMessage" + str(i + 1), 21)
 		ligne.tooltip_text = "Ouvrir la lettre · " + titre
 		ligne.accessibility_name = ligne.tooltip_text
+		# Les lettres « XV de la journée / de la saison » portent la vignette du XV : un clic ouvre l'écran XV type.
+		var vignette := _vignette_xv(app, str(messages[i]), Rect2(w - 92, y + 2, 52, 40))
+		var reserve := 60 if vignette == null else 108
+		if vignette != null: card.add_child(vignette)
 		if avec_categorie:
 			# Catégorie du courrier : celle que la Réception attribue à la lettre (même fonction, pas de mots-clés ici).
 			var categorie := str(reception._category(U.fold(message)))
@@ -775,8 +787,20 @@ static func _journal(card: Panel, app: Control, w: int = 1132) -> void:
 					R.cliquable(marque, func(): app.navigation_controller.open_entity(cible), "OfficeJournalBlessureOuvrir" + str(i + 1), "Fiche de " + nom)
 			noms_cliquables(app, card, Rect2(x_titre, y + 8, w - x_titre - 200, 30), nom, 21, C.BODY)
 			continue
-		D.text(card, x_titre, y + 29, titre, 21, Charte.IVOIRE, 600, w - x_titre - 60, HORIZONTAL_ALIGNMENT_LEFT, true).name = "OfficeJournalTitre" + str(i + 1)
-		noms_cliquables(app, card, Rect2(x_titre, y + 8, w - x_titre - 60, 30), titre, 21, C.BODY)
+		D.text(card, x_titre, y + 29, titre, 21, Charte.IVOIRE, 600, w - x_titre - reserve, HORIZONTAL_ALIGNMENT_LEFT, true).name = "OfficeJournalTitre" + str(i + 1)
+		noms_cliquables(app, card, Rect2(x_titre, y + 8, w - x_titre - reserve, 30), titre, 21, C.BODY)
+
+## Vignette cliquable du XV (équipe-type de la journée ou de la saison) d'une lettre du courrier ; null si la lettre n'en est pas une.
+static func _vignette_xv(app: Control, message: String, zone: Rect2) -> Button:
+	if not message.begins_with("XV de ") or not EquipeType.disponible(app.model): return null
+	var saison := message.begins_with("XV de la saison")
+	var ligues: Array = NotesMatch.bilan(app.model).get("equipeType", {}).get("ligues", [])
+	var cible: Dictionary = ligues[0] if not ligues.is_empty() else {}
+	var equipe: Variant = cible.get("saison" if saison else "journee")
+	if not equipe is Dictionary: return null
+	var vignette: Button = EquipeType.vignette(equipe, Rect2(0, 0, zone.size.x, zone.size.y), func(): EquipeType.ouvrir(app, str(cible.get("id", "")), "saison" if saison else "journee"))
+	D.place(vignette, zone)
+	return vignette
 
 # ---------------------------------------------------------------------------------------------------------
 # Noms de joueurs et classement court

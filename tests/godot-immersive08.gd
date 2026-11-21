@@ -1511,7 +1511,7 @@ func run() -> void:
 		if roster != null:
 			# Fiche fixe de droite retirée (19/11/2026) ; panneaux XV / SEMAINE / GROUPE à gauche (21/11/2026, dépliés par
 			# défaut, 470 + 24) : le tableau prend le reste de la largeur du gabarit, jusqu'au bord droit.
-			reference_rects({"ImmersiveRosterTable":Rect2(774,354,1754,990),
+			reference_rects({"ImmersiveRosterTable":Rect2(774,472,1754,872),
 				"RosterTab0":Rect2(280,230,185,44), "RosterSearch":Rect2(280,296,440,42), "RosterSearchGlyph":Rect2(294,306,21,21)})
 			check(app.find_child("PlayerDossier",true,false) == null and app.find_child("SelectedPlayerCard",true,false) == null, "Plus de dossier fixe à droite de l'effectif")
 			var list: VBoxContainer = app.find_child("ImmersiveRosterRows", true, false)

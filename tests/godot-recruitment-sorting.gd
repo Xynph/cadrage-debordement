@@ -112,7 +112,7 @@ func run() -> void:
 			var button := app.find_child("MarketSort_"+column,true,false) as Button
 			for attempt in 2:
 				await enter(button)
-				check(page._sort_column() == column and button.text.ends_with("↓" if page._sort_descending() else "↑"),"Flèche et champ actifs " + column)
+				check(page._sort_column() == column and button.text.ends_with("▼" if page._sort_descending() else "▲"),"Flèche et champ actifs " + column)
 				var expected: Array = page._filtered()
 				var actual: Array = page.table_rows.get_children().map(func(row: Control): return str(row.get_meta("player_id")))
 				check(actual == expected.map(func(item: Dictionary): return str(item.get("playerId",item.id))),"Ordre rendu correct " + column)

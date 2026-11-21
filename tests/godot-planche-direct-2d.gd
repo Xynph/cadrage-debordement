@@ -97,18 +97,17 @@ func run() -> void:
 		await settle(40)
 		check(vue_2d(view), "%s : classement et multiplex à l'écran" % str(taille))
 		check(debordements(between).is_empty(), "%s : rien ne déborde : %s" % [str(taille), str(debordements(between).slice(0, 6))])
-		if true:
-			var lignes: int = between.classement_lignes.get_children().filter(func(n: Node): return str(n.name).begins_with("MatchBetweenLiveRow")).size()
-			var attendu: int = (between.journee_vue.get("classement", []) as Array).size() if between.journee_vue is Dictionary else -1
-			check(lignes == attendu and lignes >= 8, "%s : classement complet (%d lignes sur %d)" % [str(taille), lignes, attendu])
-			var bas_tableau: float = between.classement_lignes.get_global_rect().end.y
-			var bas_panneau: float = between.panneaux_direct[0].get_global_rect().end.y
-			check(bas_tableau <= bas_panneau + 1.0, "%s : classement entier dans son panneau" % str(taille))
-			check(not between.defile_xv.get_v_scroll_bar().visible, "%s : Mon XV sans ascenseur" % str(taille))
-			check(not between.multiplex_deborde(), "%s : multiplex entier" % str(taille))
-			var defile_chiffres := between.find_child("MatchBetweenFiguresScroll", true, false) as ScrollContainer
-			check(defile_chiffres != null and not defile_chiffres.get_v_scroll_bar().visible, "%s : chiffres clés sans ascenseur" % str(taille))
-			print("PLANCHE_DIRECT_2D %s : classement %d lignes, multiplex %d matchs" % [str(taille), lignes, between.multiplex_cartes.get_child_count()])
+		var lignes: int = between.classement_lignes.get_children().filter(func(n: Node): return str(n.name).begins_with("MatchBetweenLiveRow")).size()
+		var attendu: int = (between.journee_vue.get("classement", []) as Array).size() if between.journee_vue is Dictionary else -1
+		check(lignes == attendu and lignes >= 8, "%s : classement complet (%d lignes sur %d)" % [str(taille), lignes, attendu])
+		var bas_tableau: float = between.classement_lignes.get_global_rect().end.y
+		var bas_panneau: float = between.panneaux_direct[0].get_global_rect().end.y
+		check(bas_tableau <= bas_panneau + 1.0, "%s : classement entier dans son panneau" % str(taille))
+		check(not between.defile_xv.get_v_scroll_bar().visible, "%s : Mon XV sans ascenseur" % str(taille))
+		check(not between.multiplex_deborde(), "%s : multiplex entier" % str(taille))
+		var defile_chiffres := between.find_child("MatchBetweenFiguresScroll", true, false) as ScrollContainer
+		check(defile_chiffres != null and not defile_chiffres.get_v_scroll_bar().visible, "%s : chiffres clés sans ascenseur" % str(taille))
+		print("PLANCHE_DIRECT_2D %s : classement %d lignes, multiplex %d matchs" % [str(taille), lignes, between.multiplex_cartes.get_child_count()])
 		await capture("direct-2d-%dx%d" % [taille.x, taille.y])
 	# Plein écran obligatoire : chaque type d'élément ouvre sa petite fenêtre par-dessus le match ; Échap la ferme et
 	# l'on reste dans le direct (2560 × 1440, référence de Léo).
