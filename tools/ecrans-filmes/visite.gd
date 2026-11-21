@@ -83,6 +83,7 @@ const EXTRAS := [
 	{"id": "selections-disponibilites", "libelle": "Sélections · onglet Disponibilités", "type": "onglet_cle", "route": "Sélections", "cle": "international_section", "onglet": "availability", "repos": "callups"},
 	{"id": "vestiaire-entretiens-duos", "libelle": "Vestiaire · Entretiens et duos, bas de la colonne (duos)", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week", "defiler": "RelationshipPeopleScroll"},
 	{"id": "vestiaire-groupe", "libelle": "Vestiaire · petite fenêtre du groupe (portraits)", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week", "presser": "RelationshipAllPortraits"},
+	{"id": "carriere-mobilite", "libelle": "Carrière · onglet Mobilité et recrutement", "type": "onglet_cle", "route": "Carrière", "cle": "immersive08_career_tab", "onglet": "details", "repos": "summary"},
 	{"id": "vestiaire-historique", "libelle": "Vestiaire · onglet Engagements et historique", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "history", "repos": "week"},
 ]
 ## Écrans du match en direct : le coup d'envoi est donné une fois, après tous les autres écrans.

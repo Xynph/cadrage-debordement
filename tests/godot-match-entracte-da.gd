@@ -253,7 +253,8 @@ func run() -> void:
 		# Légende des notes retirée (demande de Léo du 21/11/2026) : la note est écrite dans sa pastille de couleur.
 		var pastille_note: Node = ligne1.find_child("MatchBetweenPlayerNote", true, false) if ligne1 != null else null
 		check(ecran.find_child("MatchBetweenNotesLegend", true, false) == null and pastille_note != null and pastille_note.find_children("*", "Label", true, false).any(func(l: Label): return l.text == "6,0"), cadre + " : plus de légende des notes, la note écrite dans sa pastille")
-		check(not Charte.ATTRIBUT_85.is_equal_approx(Charte.ATTRIBUT_65) and not Between._teinte_note(7.8).is_equal_approx(Charte.V) and not Between._teinte_note(7.2).is_equal_approx(Charte.V), cadre + " : deux verts distincts, jamais le vert de la victoire")
+		# Barème unique des notes (charte, 21/11/2026) : rouge, orange, citron, vert clair, vert foncé.
+		check(Between._teinte_note(5.8) == Charte.PERTE and Between._teinte_note(6.2) == Charte.INTENSIF and Between._teinte_note(6.7) == Charte.ATTRIBUT_55 and Between._teinte_note(7.2) == Charte.CONDITION and Between._teinte_note(7.8) == Charte.NOTE_EXCELLENTE and Charte.encre_note(7.8) == Color.WHITE and Charte.encre_note(6.7) == Charte.ENCRE, cadre + " : barème des notes de la charte (cinq paliers, chiffre lisible)")
 		var terrain: Control = ecran.terrain
 		check(terrain.champ().size.x >= terrain.size.x * 0.8, cadre + " : le terrain remplit sa tuile (%d sur %d px)" % [int(terrain.champ().size.x), int(terrain.size.x)])
 		check(terrain.plancher_pastilles == 0.0 and terrain.rayon() >= 4.0 and terrain.rayon() <= terrain.echelle() * 3.0, cadre + " : pastilles à l'échelle du terrain, jamais une masse (rayon %.1f px)" % terrain.rayon())
@@ -378,7 +379,9 @@ func run() -> void:
 				if s.border_width_left > 0 and s.border_width_right > 0 and s.border_width_top > 0 and s.border_width_bottom > 0:
 					var anneau: bool = etat_style == "focus" and Color(s.border_color, 1.0).is_equal_approx(Charte.OR)
 					var secondaire: bool = Color(s.border_color, 1.0).is_equal_approx(Charte.FILET) and s.corner_radius_top_left >= Charte.RAYON_PILULE
-					if not anneau and not secondaire: cadres.append("%s:%s" % [noeud.name, etat_style])
+					# Grandes tuiles de l'écran 2D : fin liseré blanc (choix de Léo du 21/11/2026), rayon 18, 1 px.
+					var tuile: bool = s.border_color.is_equal_approx(Between.LISERE) and s.border_width_left == 1 and s.corner_radius_top_left == Charte.RAYON_PANNEAU
+					if not anneau and not secondaire and not tuile: cadres.append("%s:%s" % [noeud.name, etat_style])
 				# Tout aplat visible est arrondi (panneau 18, carte 12, case 6, pilule) ; seul le fondu du multiplex, de la
 				# couleur du panneau qu'il recouvre (invisible sur lui), garde ses angles.
 				if s.bg_color.a > 0.05 and s.corner_radius_top_left < Charte.RAYON_PETIT and str(noeud.name) != "MatchBetweenMultiplexFade": carres.append("%s:%s" % [noeud.name, etat_style])
@@ -404,12 +407,15 @@ func run() -> void:
 		ecran._ouvrir_parametres()
 		await process_frame
 		var menu_reglages: PopupMenu = ecran.menu_reglages
-		check(menu_reglages.visible and menu_reglages.item_count == 4 + 6 + 2 and ecran.vue_droite == "chiffres", cadre + " : en 3D, Réglages ouvre un menu déroulant (%d choix)" % menu_reglages.item_count)
-		check(menu_reglages.is_item_checked(menu_reglages.get_item_index(Between.HORLOGES_IDS.find(ecran.horloge))),cadre + " : l'horloge courante est cochée")
-		menu_reglages.id_pressed.emit(2)
+		# La vitesse de l'horloge ne se règle que dans « Plus » (retouche de Léo du 21/11/2026) : Réglages = temps forts.
+		check(menu_reglages.visible and menu_reglages.item_count == 6 + 1 and ecran.vue_droite == "chiffres", cadre + " : en 3D, Réglages ouvre un menu déroulant des temps forts (%d choix)" % menu_reglages.item_count)
 		menu_reglages.id_pressed.emit(101)
-		check(ecran.horloge == "rapide" and signaux == [["horloge_choisie", "rapide"], ["niveau_choisi", "resume"]], cadre + " : le menu change l'horloge et les temps forts " + str(signaux))
 		menu_reglages.hide()
+		menu_plus.about_to_popup.emit()
+		var id_vitesse: int = Between.ID_VITESSE + Between.HORLOGES_IDS.find(ecran.horloge)
+		check(menu_plus.get_item_index(id_vitesse) >= 0 and menu_plus.is_item_checked(menu_plus.get_item_index(id_vitesse)), cadre + " : l'horloge courante est cochée dans « Plus »")
+		menu_plus.id_pressed.emit(Between.ID_VITESSE + 2)
+		check(ecran.horloge == "rapide" and signaux == [["niveau_choisi", "resume"], ["horloge_choisie", "rapide"]] and not ecran.phase.text.contains("Rapide"), cadre + " : Réglages change les temps forts, « Plus » l'horloge (jamais écrite dans la pastille) " + str(signaux))
 		menu_plus.about_to_popup.emit()
 		check(menu_plus.is_item_disabled(3) and menu_plus.get_item_text(3).ends_with("à l’entracte"), cadre + " : en 3D, autres matchs grisés et dits (%s)" % menu_plus.get_item_text(3))
 		signaux.clear()

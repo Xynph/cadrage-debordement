@@ -313,14 +313,6 @@ static func _titre(parent: Node, x: float, y: float, texte: String, largeur: flo
 static func _nombre(v: Variant) -> bool:
 	return Knowledge.number(v)
 
-static func _teinte_note(note: float) -> Color:
-	if note >= 8.0: return Charte.ATTRIBUT_85
-	if note >= 7.0: return Charte.ATTRIBUT_75
-	if note >= 6.5: return Charte.ATTRIBUT_65
-	if note >= 6.0: return Charte.ATTRIBUT_55
-	if note >= 5.0: return Charte.ATTRIBUT_40
-	return Charte.ATTRIBUT_0
-
 static func construire(app: Control, player: Dictionary, source: String, direct: Dictionary = {}) -> Panel:
 	var largeur := 1260.0
 	var carte := Panel.new()
@@ -426,7 +418,7 @@ static func _bande_match(carte: Panel, direct: Dictionary, largeur: float, y: fl
 	bande.name = "CarteJoueurMatch"
 	var tuiles: Array = []
 	var note := float(direct.get("note", 6.5))
-	tuiles.append(["NOTE", ("%.1f" % note).replace(".", ","), _teinte_note(note), "note"])
+	tuiles.append(["NOTE", ("%.1f" % note).replace(".", ","), Charte.couleur_note(note), "note"])
 	var energie := float(direct.get("energie", 100))
 	tuiles.append(["ÉNERGIE", "%d %%" % roundi(energie), Charte.CONDITION if energie >= 70 else (Charte.INTENSIF if energie >= 50 else Charte.PERTE), "energie"])
 	var manques := int(direct.get("plaquages_manques", 0))
@@ -446,7 +438,7 @@ static func _bande_match(carte: Panel, direct: Dictionary, largeur: float, y: fl
 		if t[3] == "note":
 			var pastille := _panneau(bande, Rect2(tx + 18, 46, 72, 38), t[2], Charte.RAYON_PETIT)
 			pastille.name = "CarteJoueurMatchNote"
-			D.text(pastille, 36, 30, t[1], 26, Charte.ENCRE, 800, 72, HORIZONTAL_ALIGNMENT_CENTER)
+			D.text(pastille, 36, 30, t[1], 26, Charte.encre_note(float(str(t[1]).replace(",", "."))), 800, 72, HORIZONTAL_ALIGNMENT_CENTER)
 		elif t[3] == "energie":
 			var valeur := D.text(bande, tx + 18, 80, t[1], 26, t[2], 800, 80)
 			valeur.name = "CarteJoueurMatchEnergie"
@@ -535,8 +527,8 @@ static func _etat(carte: Panel, app: Control, player: Dictionary, _source: Strin
 		for i in dernieres.size():
 			var note := float(dernieres[i]) if _nombre(dernieres[i]) else 0.0
 			var px := w - 20 - (dernieres.size() - i) * 46.0
-			var p := _panneau(bloc, Rect2(px, 186, 40, 30), _teinte_note(note), Charte.RAYON_PETIT)
-			D.text(p, 20, 23, ("%.1f" % note).replace(".", ","), 18, Charte.ENCRE, 800, 40, HORIZONTAL_ALIGNMENT_CENTER)
+			var p := _panneau(bloc, Rect2(px, 186, 40, 30), Charte.couleur_note(note), Charte.RAYON_PETIT)
+			D.text(p, 20, 23, ("%.1f" % note).replace(".", ","), 18, Charte.encre_note(note), 800, 40, HORIZONTAL_ALIGNMENT_CENTER)
 
 ## Polyvalence : les meilleurs postes en étoiles (numéros et rôle) et le mini-terrain des 15 postes.
 static func _polyvalence(carte: Panel, player: Dictionary, zone: Rect2, combien: int) -> void:

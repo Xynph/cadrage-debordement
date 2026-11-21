@@ -566,15 +566,18 @@ func _legende(zone: Rect2) -> void:
 	cadre.name = "EquipeTypeLegende"
 	_texte(cadre, Rect2(16, 8, 372, 28), "LIRE LE XV", 21, Tableau.FAIBLE, HORIZONTAL_ALIGNMENT_LEFT, Tableau.CHIFFRES)
 	var y := 44.0
-	for exemple: Array in [[7.5, "7 et plus"], [6.5, "6 à 6,9"], [5.5, "sous 6"]]:
+	# Barème unique des notes de match (charte, 21/11/2026) : cinq paliers, sur deux rangées.
+	var exemples: Array = [[7.5, "7,5 et +"], [7.0, "7 à 7,4"], [6.5, "6,5 à 6,9"], [6.0, "6 à 6,4"], [5.5, "sous 6"]]
+	for k in exemples.size():
+		var exemple: Array = exemples[k]
 		var n := Tableau.Note.new()
 		n.valeur = exemple[0]
 		n.densite = 0.75
-		n.position = Vector2(16 + [0, 124, 248][[7.5, 6.5, 5.5].find(exemple[0])], y)
+		n.position = Vector2(16 + (k % 3) * 124, y + (k / 3) * 32)
 		n.size = Vector2(44, 26)
 		cadre.add_child(n)
-		_texte(cadre, Rect2(n.position.x + 50, y, 76, 26), exemple[1], 16, Color("a9b5ae"))
-	y += 40
+		_texte(cadre, Rect2(n.position.x + 50, n.position.y, 76, 26), exemple[1], 16, Color("a9b5ae"))
+	y += 72
 	_boite(cadre, Rect2(16, y + 3, 40, 26), Color.TRANSPARENT, 6, Tableau.OR, 3)
 	_texte(cadre, Rect2(68, y, 320, 32), "Joueur de la journée" if mode == "journee" else "Meilleure moyenne", 18, Tableau.IVOIRE)
 	y += 40

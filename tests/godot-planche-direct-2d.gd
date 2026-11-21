@@ -83,6 +83,8 @@ func run() -> void:
 	var minute_voulue := int(OS.get_environment("CD_PLANCHE_MINUTE")) if OS.get_environment("CD_PLANCHE_MINUTE").is_valid_int() else 12
 	await until(func(): return int(app.model.live.get("minute", 0)) >= minute_voulue, 600000)
 	check(await until(func(): return vue_2d(view), 240000), "Écran 2D du direct avec classement et multiplex")
+	# Au moins un fait de match affiché avant de figer (en ligne, rendu lent, la 12e minute peut n'en avoir aucun encore).
+	await until(func(): return view.regie.between.find_children("MatchBetweenEvent*", "PanelContainer", true, false).any(func(n: Node): return (n as Control).is_visible_in_tree() and str(n.name).substr(17).is_valid_int()) or view.regie.between.find_children("MatchBetweenHighlight*", "PanelContainer", true, false).any(func(n: Node): return (n as Control).is_visible_in_tree()), 400000)
 	if app.model.live.get("finished", false) == false and not app.model.live.get("paused", false): await command("pause", {"paused": true})
 	await settle(30)
 	var between: Control = view.regie.between
@@ -136,6 +138,12 @@ func run() -> void:
 	var fait: Control = premier.call(between, "MatchBetweenEvent*", "PanelContainer")
 	if fait == null: fait = premier.call(between, "MatchBetweenHighlight*", "PanelContainer")
 	await essayer("événement du match", "MatchFenetreFait", "direct-2d-fenetre-fait-2560", func(): fait.gui_input.emit(clic), fait != null, view)
+	# Le bandeau du score est commun au temps fort 3D : une capture en plein temps fort (match relancé).
+	if OS.get_environment("CD_PLANCHE_TEMPS_FORT") == "1":
+		if app.model.live.get("paused", false): await command("pause", {"paused": false})
+		if await until(func(): return view.regie.etat == view.regie.JEU, 120000):
+			await settle(20)
+			await capture("direct-3d-temps-fort-2560")
 	finir()
 
 ## Clic sur un élément : sa petite fenêtre `nom` s'ouvre par-dessus le match (capture), Échap la ferme, le direct reste.

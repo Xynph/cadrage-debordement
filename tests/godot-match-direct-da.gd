@@ -199,8 +199,8 @@ func run() -> void:
 	# l'écusson (puce du sigle, rayon 6) ; score crème 40 px.
 	var bandeau: Control = view.get("_coque_score")
 	var r := bandeau.get_global_rect()
-	check(r.position.x <= 48 and r.position.y <= 48 and r.size.y <= 1080 * 0.08 and r.size.x <= 1920 * 0.5, "Bandeau du score en haut à gauche, petit : " + str(r))
-	check(view.score.get_theme_font_size("font_size") == 40 and view.score.get_theme_color("font_color") == Charte.IVOIRE, "Score ivoire 40 px en 1080p")
+	check(r.position.x <= 48 and r.position.y <= 48 and r.size.y <= 1080 * 0.08 and r.size.x <= 1920 * 0.55, "Bandeau du score en haut à gauche, petit (agrandi de 28 %, retouche de Léo du 21/11/2026) : " + str(r))
+	check(view.score.get_theme_font_size("font_size") == roundi(40 * view.BARRE_HAUT) and view.score.get_theme_color("font_color") == Charte.IVOIRE, "Score ivoire 40 px en 1080p")
 	check(LiveView.BandeauAngle.FOND == Color(Charte.PANNEAU, 0.9), "Bandeau du score sur PANNEAU 90 %")
 	check(view.plaques.size() == 2 and view.plaques.all(func(p: Control) -> bool: return not p.has_meta("fond") and Charte.contraste(Charte.IVOIRE, p.get_meta("ecusson")) >= 4.5), "Plaques sans fond de club ; sigle crème lisible sur l'écusson")
 	var equipes: Array = app.model.live.teams
