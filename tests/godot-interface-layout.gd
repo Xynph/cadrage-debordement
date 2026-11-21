@@ -24,6 +24,18 @@ func command(id: String, payload: Dictionary = {}) -> void:
 	app._command(id,payload); await worker()
 	check(app.bridge.last_response_ok,"Worker réel " + id+" "+app.last_error)
 func named(id: String) -> Control: return app.find_child(id,true,false)
+## Place du guide : dock du pied de page (ancienne coque) ; coque de la charte : médaillon de Gabi dans le bandeau,
+## ou sa zone en pied au Bureau (le médaillon y est masqué).
+func guide_place() -> Control:
+	for id in ["CoachCompactDock", "GabiMedaillon", "GabiBureau"]:
+		var place := named(id)
+		if place != null and place.is_visible_in_tree(): return place
+	return named("GabiMedaillon")
+## Focus clavier sur une ligne de la liste des candidats (liste en place sous la composition).
+func candidate_focused() -> bool:
+	var focus := app.get_viewport().gui_get_focus_owner()
+	var rows := named("TacticsCandidateRows")
+	return focus is Button and rows != null and rows.is_ancestor_of(focus) and str(focus.name).begins_with("TacticsCandidate_")
 func resize_to(resolution: Vector2i) -> void:
 	root.size=resolution; DisplayServer.window_set_size(resolution)
 	await settle()
@@ -83,7 +95,8 @@ func density_contract() -> void:
 	sample.queue_free()
 	var action:Button=skin.button("Choisir",func():pass)
 	app.add_child(action)
-	check(action.get_combined_minimum_size().y<=28 and action.get_theme_font_size("font_size")==12,"Action dense lisible dans 28px")
+	# Socle commun à la charte (#1076) : pilule de 30 px, texte 13 px.
+	check(action.get_combined_minimum_size().y<=30 and action.get_theme_font_size("font_size")==13,"Action dense lisible dans 30px")
 	action.queue_free()
 	var metric:VBoxContainer=skin.metric("125 000 €","Trésorerie")
 	app.add_child(metric)
@@ -91,16 +104,19 @@ func density_contract() -> void:
 	metric.queue_free()
 	var viewport := Rect2(Vector2.ZERO, Vector2(root.size))
 	var density := minf(root.size.x / 2560.0, root.size.y / 1440.0)
-	var heading: Label = app.heading
-	check(heading != null and viewport.encloses(heading.get_global_rect()), "Titre natif entièrement contenu")
+	# Écrans dessinés (coque de la charte) : pas de titre de coque (app.heading nul), le titre est celui de la page.
+	var heading: Label = app.heading if app.heading != null else named("CompositionTitle") as Label
+	check(heading != null and heading.is_visible_in_tree() and viewport.encloses(heading.get_global_rect()), "Titre natif entièrement contenu")
 	if heading != null:
 		var font_size := heading.get_theme_font_size("font_size")
 		var font := heading.get_theme_font("font")
-		check(absf(font_size - 53.0 * density) <= 1.0 and font.get_string_size(heading.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x <= heading.size.x, "Titre natif lisible dans sa largeur au format choisi")
+		var expected_size := 53.0 * density if app.heading != null else maxf(12.0, 38.0 * density)
+		check(absf(font_size - expected_size) <= 1.0 and font.get_string_size(heading.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x <= heading.size.x, "Titre natif lisible dans sa largeur au format choisi")
 	var bureau := named("Nav_Bureau") as Button
 	check(bureau != null and bureau.focus_mode == Control.FOCUS_ALL and viewport.encloses(bureau.get_global_rect()), "Navigation latérale entière et accessible au clavier")
 	if bureau != null:
-		check(absf(bureau.get_global_rect().size.y - 49.0 * density) <= 1.0, "Hauteur de navigation native à la résolution physique")
+		var pill: float = load("res://ui/immersive08/shell.gd").RAIL_PILL * density
+		check(bureau.get_global_rect().size.y >= 24.0 and absf(bureau.get_global_rect().size.y - pill) <= 1.0, "Hauteur de navigation native à la résolution physique")
 func run() -> void:
 	var initial:=int(OS.get_environment("CD_LAYOUT_INITIAL"))
 	root.size=Vector2i(2560,1440) if initial==2560 else (Vector2i(1920,1080) if initial==1920 else (Vector2i(1600,900) if initial==1600 else Vector2i(1280,720)))
@@ -167,42 +183,37 @@ func run() -> void:
 			var opener := app.find_child("LineupCandidates",true,false) as AcceptDialog
 			check(app.selected_slot==9,"Le vrai clic sélectionne l’ouvreur")
 			await enter(lineup_slot(10))
-			opener = app.find_child("LineupCandidates",true,false) as AcceptDialog
-			check(opener != null and opener.visible,"La seconde activation ouvre les candidats de l’ouvreur")
-			if opener!=null:opener.hide();opener.queue_free();await settle()
+			check(app.selected_slot==9 and candidate_focused(),"La seconde activation ouvre les candidats de l’ouvreur")
 		bench=lineup_slot(23)
 		await enter(bench)
 		check(app.selected_slot==22,"Sélection réelle du banc23 par Entrée")
 		await enter(lineup_slot(23))
-		var candidates := app.find_child("LineupCandidates",true,false) as AcceptDialog
-		check(candidates != null and candidates.visible,"Entrée ouvre la liste de candidats du poste choisi")
+		var candidates := named("TacticsCandidates")
+		check(candidates != null and candidates.is_visible_in_tree() and candidate_focused(),"Entrée ouvre la liste de candidats du poste choisi")
 		if candidates != null:
 			var slot: Dictionary = app.model.selection.slots[22]
-			var focus: Button = candidates.get_ok_button()
-			var enabled_ids: Array = []
-			for option: Button in candidates.find_children("LineupPlayer*","Button",true,false):
-				if not option.disabled:
-					focus = option
-					enabled_ids.append(str(option.get_meta("player_id")))
-			var eligible: Array = app.model.squad.filter(func(player: Dictionary): return player.id in slot.eligibleIds and float(player.get("injury",0)) <= 0)
+			var focus := app.get_viewport().gui_get_focus_owner() as Button
+			# Les candidats autorisés sont listés en tête (le compte les annonce), les autres plus bas.
+			var rows: Array = named("TacticsCandidateRows").get_children().filter(func(row): return row is Button)
+			var count := int(str((named("TacticsCandidateCount") as Label).text).get_slice(" ", 0))
+			var enabled_ids: Array = rows.slice(0, count).map(func(row: Button): return str(row.get_meta("player_id")))
+			var eligible: Array = app.model.squad.filter(func(player: Dictionary): return player.id in slot.eligibleIds and float(player.get("injury",0)) <= 0 and player.get("suspension", 0) in [0, null])
 			var expected_ids := eligible.map(func(player: Dictionary): return str(player.id))
 			enabled_ids.sort()
 			expected_ids.sort()
 			check(enabled_ids==expected_ids,"Candidats autorisés issus des qualifications et disponibilités du vrai poste")
-			focus.grab_focus()
 			for resolution in [Vector2i(2560,1440),Vector2i(1920,1080),Vector2i(1280,720),Vector2i(1600,900),Vector2i(1280,720)]:
 				await resize_to(resolution)
-				check(is_instance_valid(candidates) and candidates.visible and app.selected_slot==22,"Même liste du banc23 après resize "+str(resolution))
-				check(is_instance_valid(focus) and focus.has_focus(),"Focus conservé dans la liste du banc23 "+str(resolution))
-				check(Rect2(Vector2.ZERO,Vector2(resolution)).grow(1).encloses(Rect2(Vector2(candidates.position),Vector2(candidates.size))),"Fenêtre des candidats entièrement accessible "+str(resolution))
+				candidates = named("TacticsCandidates")
+				check(candidates != null and candidates.is_visible_in_tree() and app.selected_slot==22,"Même liste du banc23 après resize "+str(resolution))
+				check(candidate_focused(),"Focus conservé dans la liste du banc23 "+str(resolution))
+				check(candidates != null and Rect2(Vector2.ZERO,Vector2(resolution)).grow(1).encloses(candidates.get_global_rect()),"Liste des candidats entièrement accessible "+str(resolution))
 			await capture("banc23-1280")
-			candidates.hide()
-			candidates.queue_free()
 			await settle()
 	check(app.navigation_controller.history==history,"Aucun historique parasite de resize")
 	check(app.coach.profile.data==guide_before,"Resize ne consomme aucun contexte Gabi")
-	var dock:=named("CoachCompactDock")
-	check(dock!=null,"Emplacement distinct du guide dans le footer")
+	var dock:=guide_place()
+	check(dock!=null and dock.is_visible_in_tree(),"Emplacement distinct du guide dans le footer")
 	if dock!=null:check(not dock.get_global_rect().intersects(named("DecisionFeedbackButton").get_global_rect()),"Dock distinct N10")
 	app._navigate("Effectif");await settle();app.coach.close()
 	var search:LineEdit=named("RosterSearch")
@@ -270,7 +281,7 @@ func run() -> void:
 			if not button.is_visible_in_tree(): continue
 			var bounds:=button.get_global_rect()
 			check(bounds.position.x>=lane.position.x and bounds.end.x<=lane.end.x,"Commande entraînement entière en largeur "+str(button.name)+" "+str(resolution))
-			check(minf(bounds.size.x,bounds.size.y)>=24.0,"Commande entraînement d’au moins 24 px "+str(button.name)+" "+str(resolution))
+			check(minf(bounds.size.x,bounds.size.y)>=24.0,"Commande entraînement d’au moins 24 px "+str(button.name)+" "+str(resolution)+" "+str(bounds.size))
 	await capture("preparation-1280")
 	if await press_from_mail():
 		var tabs:TabContainer=named("PressTabs")
@@ -292,10 +303,12 @@ func run() -> void:
 	for resolution in [Vector2i(1280,720),Vector2i(1600,900),Vector2i(1920,1080)]:
 		await resize_to(resolution)
 		var receipt_button := named("DecisionFeedbackButton")
-		var guide_dock := named("CoachCompactDock")
-		check(receipt_button!=null and guide_dock!=null,"Reçu et emplacement du guide présents "+str(resolution))
+		var guide_dock := guide_place()
+		check(receipt_button!=null and receipt_button.is_visible_in_tree() and guide_dock!=null and guide_dock.is_visible_in_tree(),"Reçu et emplacement du guide présents "+str(resolution))
 		if receipt_button==null or guide_dock==null:continue
-		check(guide_dock.get_global_rect().size.x>=100 and not guide_dock.get_global_rect().intersects(receipt_button.get_global_rect()),"Place physique du guide distincte du reçu "+str(resolution))
+		# Ancien pied de page : dock d'au moins 100 px ; coque de la charte : médaillon de Gabi dans le bandeau du haut.
+		var guide_size := guide_dock.get_global_rect().size
+		check((guide_size.x>=100 if str(guide_dock.name)=="CoachCompactDock" else minf(guide_size.x,guide_size.y)>=24.0) and not guide_dock.get_global_rect().intersects(receipt_button.get_global_rect()),"Place physique du guide distincte du reçu "+str(resolution))
 		for fraction in [.25,.5,.75]:
 			await click_at(receipt_button,fraction)
 			var receipt:Window=app.find_child("DecisionFeedbackDialog",true,false)

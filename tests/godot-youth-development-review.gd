@@ -40,7 +40,13 @@ func run() -> void:
 		check(navigate != null,"Lien de parcours disponible")
 		await press(navigate)
 		check(dialog("YouthDevelopment") == null,"Dialogue fermé avant navigation")
-		check(app.find_child("CarnetAcademyPathways",true,false) != null,"Parcours du centre effectivement ouvert")
+		await settle()
+		# Écran Centre : page canvas (CentreHero) en mode immersif, carnet des parcours (CarnetAcademyPathways) sinon.
+		var centre: Control = null
+		for id in ["CentreHero","CarnetAcademyPathways"]:
+			var found := app.find_child(id,true,false) as Control
+			if found != null and found.is_visible_in_tree(): centre = found; break
+		check(app.route == "Centre" and centre != null,"Parcours du centre effectivement ouvert")
 	view = await open_youth()
 	filter = view.find_child("YouthReviewFilter",true,false) as CheckButton
 	filter.button_pressed=true;filter.toggled.emit(true);await settle()

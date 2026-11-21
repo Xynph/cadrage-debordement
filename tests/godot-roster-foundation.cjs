@@ -34,7 +34,10 @@ try{
    for(const k of ['rating','skills','attributesV2'])assert.deepEqual(p[k],source[k],p.id+' '+k);
    assert.equal(p.dev.potential,Math.max(p.rating,Math.min(99,source.dev.potential+variation.deltas(s.careerVariation,p.id).potential)));
   }
-  assert.equal(p.salary,source.salary);assert.equal(p.contractEnd,profile.contract.endSeason);assert.equal(profile.wage.basis,'estimated');if(profile.status.basis!=='official')assert.equal(profile.status.basis,'estimated');if(p.fam<=1)assert.deepEqual(profile.position.qualifications,[p.pos]);if(profile.contract.basis==='official')verified++;
+  // Budget des clubs (salaires de départ au marché, à la semaine) : le salaire courant n'est plus celui de la base source ;
+  // la référence initiale reste dans rosterProfile.wage (estimée).
+  if(s.startingSalaries===undefined)assert.equal(p.salary,source.salary);else assert.ok(Number.isInteger(p.salary)&&p.salary>=10&&p.salary%10===0,p.id+' salaire hebdomadaire de départ');
+  assert.equal(p.contractEnd,profile.contract.endSeason);assert.equal(profile.wage.basis,'estimated');if(profile.status.basis!=='official')assert.equal(profile.status.basis,'estimated');if(p.fam<=1)assert.deepEqual(profile.position.qualifications,[p.pos]);if(profile.contract.basis==='official')verified++;
  }
  assert.equal(verified,86);assert.equal(players.find(p=>p.id==='lnr:12339').rosterProfile.status.basis,'official');assert.equal(players.find(p=>p.id==='lnr:12339').rosterProfile.status.professionalFromSeason,3);assert.equal(players.find(p=>p.id==='lnr:429').contractEnd,2);
  const initial=good('export').meta.exportText;good('import',{text:initial});assert.equal(good('export').meta.exportText,initial);

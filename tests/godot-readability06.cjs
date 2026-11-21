@@ -18,7 +18,7 @@ test('Lisibilité 0.6 : ' + scenario + ' / données, clavier et sauvegarde intac
     const file = path.join(source, name);
     if (fs.statSync(file).isFile()) fs.copyFileSync(file, path.join(project, name));
   }
-  for (const name of ['ui', 'guide', 'audio']) fs.cpSync(path.join(source, name), path.join(project, name), { recursive: true });
+  for (const name of ['ui', 'guide', 'audio', 'intro', 'steam', 'legal', 'addons']) fs.cpSync(path.join(source, name), path.join(project, name), { recursive: true });
   fs.copyFileSync(path.join(__dirname, 'godot-readability06.gd'), path.join(project, 'readability06-test.gd'));
   // The copied harness resolves its relative preload beside itself.
   fs.mkdirSync(path.join(project, 'helpers'), { recursive: true });
@@ -26,7 +26,7 @@ test('Lisibilité 0.6 : ' + scenario + ' / données, clavier et sauvegarde intac
   for (const name of ['art', 'assets', 'fonts', 'branding', 'shaders', '.godot']) fs.symlinkSync(path.join(source, name), path.join(project, name), 'junction');
   fs.symlinkSync(path.resolve(source, '../engine'), path.join(dir, 'engine'), 'junction');
   const manifest = {};
-  for (const base of ['', 'ui', 'guide', 'audio', 'helpers']) for (const name of fs.readdirSync(path.join(project, base))) {
+  for (const base of ['', 'ui', 'guide', 'audio', 'intro', 'steam', 'legal', 'helpers']) for (const name of fs.readdirSync(path.join(project, base))) {
     const file = path.join(project, base, name);
     if (fs.statSync(file).isFile() && /\.(gd|godot|tscn|json)$/.test(name)) {
       manifest[path.join(base, name)] = crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');

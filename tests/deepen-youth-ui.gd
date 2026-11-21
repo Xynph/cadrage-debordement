@@ -7,6 +7,24 @@ func response(id: String) -> void:
 	app.timer.stop()
 	await settle()
 
+## Choix du club d'accueil, visible dans la page de prêt.
+func loan_choice() -> OptionButton:
+	for item: OptionButton in app.find_children("YouthPathwayLoanClub","OptionButton",true,false):
+		if item.is_visible_in_tree(): return item
+	return null
+
+func pick(field: OptionButton, index: int) -> void:
+	check(field!=null and field.is_visible_in_tree() and not field.disabled,"Choix visible et actif")
+	if field==null: return
+	field.select(index);field.item_selected.emit(index);await settle()
+
+## Annulation de la confirmation : fenêtre d'origine, ou bloc EN PLACE dans la page (« …ConfirmationAnnuler »).
+func confirmation_cancel() -> Button:
+	var windows:=app.find_children("*","ConfirmationDialog",true,false).filter(func(d):return d.visible)
+	var en_place:=app.find_children("*ConfirmationAnnuler","Button",true,false).filter(func(b):return b.is_visible_in_tree())
+	if windows.size()+en_place.size()!=1: return null
+	return windows[0].get_cancel_button() if windows.size()==1 else en_place[0]
+
 func visible_dialog(view: AcceptDialog) -> void:
 	if view == null: return
 	var title := Vector2(0,view.get_theme_constant("title_height","Window"))
@@ -94,22 +112,24 @@ func run() -> void:
 		check(recent!=null and recent.text.contains("4 semaines"),"Fenêtre récente réelle rendue dans le suivi")
 		await command("export")
 		var before_loan: String = app.model.meta.exportText
+		# Le prêt s'ouvre en sous-page de la Formation (« Prêt d’un jeune professionnel »), plus en fenêtre sur le Centre.
 		await press(button("YouthReviewLoan"))
-		check(app.route=="Centre" and dialog("YouthLoanPathway")!=null,"Réorientation ouvre le parcours de prêt du joueur")
-		visible_dialog(dialog("YouthLoanPathway"))
-		var choice := dialog("YouthLoanPathway").find_child("YouthPathwayLoanClub",true,false) as OptionButton
-		check(choice!=null and choice.item_count>1 and str(choice.get_meta("player_id",""))==str(loan_player.id),"Clubs d’accueil et identité issus de la projection existante")
+		var loan_page := app.find_child("FormationSubpage_pret",true,false) as Control
+		var page_state: Variant = app.management_ui.get("formation_page")
+		check(app.route=="Formation" and page_state is Dictionary and page_state.get("kind")=="pret" and str(page_state.get("player_id",""))==str(loan_player.id) and loan_page!=null and loan_page.is_visible_in_tree(),"Réorientation ouvre la page de prêt du joueur")
+		var choice := loan_choice()
+		check(choice!=null and choice.item_count>1 and not choice.disabled and Rect2(Vector2.ZERO,root.get_visible_rect().size).encloses(choice.get_global_rect()) and str(choice.get_meta("player_id",""))==str(loan_player.id),"Clubs d’accueil et identité issus de la projection existante")
 		if choice!=null and choice.item_count>1:
-			await choose(dialog("YouthLoanPathway"),"YouthPathwayLoanClub",1)
-			confirmations = app.find_children("*","ConfirmationDialog",true,false).filter(func(d):return d.visible)
-			check(confirmations.size()==1,"Prêt soumis à confirmation distincte")
-			if confirmations.size()==1: await press(confirmations[0].get_cancel_button())
+			await pick(choice,1)
+			var cancel := confirmation_cancel()
+			check(cancel!=null,"Prêt soumis à confirmation distincte")
+			if cancel!=null: await press(cancel)
 			await command("export")
 			check(before_loan==app.model.meta.exportText,"Annuler le prêt conserve la carrière")
 			view = await open_youth()
 			await search(view,"YouthDevelopmentSearch",loan_player.name)
 			await press(button("YouthReviewLoan"))
-			await choose(dialog("YouthLoanPathway"),"YouthPathwayLoanClub",1)
+			await pick(loan_choice(),1)
 			await confirm_action()
 			check(not app.model.squad.any(func(p):return p.id==loan_player.id),"Prêt réel : départ de l’effectif courant")
 			check(not app.model.clubLife.youthDevelopment.players.any(func(p):return p.id==loan_player.id),"Prêt réel : suivi limité au club courant")
