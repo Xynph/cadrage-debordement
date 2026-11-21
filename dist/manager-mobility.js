@@ -17,6 +17,12 @@ function managerMobilityProfile(){
 function managerMobilityDecision(id){
  const international=typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S);
  if(!managerMobilityWindow()||!Number.isInteger(id)||id<0||id>=(international?56:S.clubs.length)||id===S.club)return null;
+ return managerMobilityOutlook(id);
+}
+// Lecture pure de la decision qu'un club rendrait aujourd'hui (aussi hors fenetre, pour l'ecran Mobilite).
+function managerMobilityOutlook(id){
+ const international=typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S);
+ if(!S||!Number.isInteger(id)||id<0||id>=S.clubs.length||id===S.club)return null;
  const c=S.clubs[id],w=worldClub(id),risk=CDCoachMarket.dismissalRisk({confidence:w.coachConfidence,consecutiveLosses:w.consecutiveLosses});
  const rank=(international?CDWorldCareer.ranked(S,CDWorldCareer.leagueId(S,id)):S.franceMode?CDFranceCompetition.ranked(S,CDFranceCompetition.leagueId(S,id)):ranked()).findIndex(x=>x.id===id)+1,reputation=managerMobilityProfile(),budget=Math.max(0,c.cash-w.debt);
  // Affinite V48 reutilisee, sans inventer de remuneration ni paiement.

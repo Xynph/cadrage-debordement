@@ -8,6 +8,7 @@ const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
 const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
 const Link = preload("res://ui/entity_link.gd")
 const Charte = preload("res://ui/charte.gd")
+const Views = preload("res://ui/club_views.gd")
 const FENETRE_OFFRE := "CareerOfferFenetre"
 ## État d'une candidature : un mot, une icône, une couleur (jamais la couleur seule) ; la phrase d'origine reste en infobulle.
 const ETATS := {
@@ -97,6 +98,105 @@ static func _confirm(app: Control, context: Dictionary, offer: Dictionary) -> vo
 		Fenetre.fermer(page, FENETRE_OFFRE)
 		accepter.call(), false, "arrow", false, Color("176e49"), "CareerOfferConfirmer")
 
+## Candidatures fermées : deux options visuelles à départager (CD_VARIANTE_VISUELLE=A|B, A par défaut).
+## A : tuiles de ce qui conditionne l'ouverture. B : vitrine des clubs, grisée tant que c'est fermé.
+static func _attente(app: Control, parent: Node, data: Dictionary) -> void:
+	var vue: Variant = data.get("outlook")
+	if not vue is Dictionary: return
+	if OS.get_environment("CD_VARIANTE_VISUELLE").to_upper() == "B": _vitrine(app, parent, vue, data)
+	else: _conditions(app, parent, vue, data)
+
+const ETATS_VITRINE := {
+	"offer": ["Intéressé", "check", "vert"],
+	"stable": ["Technicien en place", "shield", "bleu"],
+	"reputation": ["Exigeant", "warning", "orange"],
+	"finances": ["Finances", "warning", "rouge"],
+}
+
+static func _conditions(app: Control, parent: Node, vue: Dictionary, data: Dictionary) -> void:
+	parent.add_child(G.section("Avant l’ouverture"))
+	var clubs: Array = vue.get("clubs", [])
+	var ouverts: int = clubs.filter(func(c): return c is Dictionary and c.get("reason") == "offer").size()
+	var offres: int = data.get("applications", []).filter(func(a): return a.get("status") == "offered").size()
+	var rang := int(vue.get("rank", 0))
+	var tuiles := _rangee(parent, 10)
+	tuiles.add_child(Pastilles.tuile("%d / 100" % int(vue.get("reputation", 0)), "réputation", Pastilles.VIOLET, Charte.PANNEAU_2, 40, "MobiliteReputation", false, func(): app._navigate("Classements")))
+	tuiles.add_child(Pastilles.tuile("%d sem." % int(vue.get("weeksLeft", 0)), "avant la fenêtre", Pastilles.TURQUOISE, Charte.PANNEAU_2, 40, "MobiliteSemaines", false, func(): app._navigate("Calendrier")))
+	tuiles.add_child(Pastilles.tuile(("%de" % rang) if rang > 1 else "1er" if rang == 1 else "—", "classement", Charte.IVOIRE, Charte.PANNEAU_2, 40, "MobiliteRang", false, func(): app._navigate("Classements")))
+	tuiles.add_child(Pastilles.tuile("%d / %d" % [ouverts, clubs.size()], "clubs intéressés", Pastilles.VERT, Charte.PANNEAU_2, 40, "MobiliteClubs", false, func(): app._navigate("Classements")))
+	tuiles.add_child(Pastilles.tuile(str(offres), "offres reçues", Charte.IVOIRE, Charte.PANNEAU_2, 40, "MobiliteOffres"))
+	G.gauge(parent, "Réputation", float(vue.get("reputation", 0)), 100, Pastilles.VIOLET)
+	G.gauge(parent, "Saison écoulée", float(maxi(0, int(data.get("weeksPerSeason", 0)) - int(vue.get("weeksLeft", 0)))), float(data.get("weeksPerSeason", 1)), Pastilles.TURQUOISE)
+
+static func _vitrine(app: Control, parent: Node, vue: Dictionary, data: Dictionary) -> void:
+	parent.add_child(G.section("Clubs à l’écoute"))
+	var clubs: Array = (vue.get("clubs", []) as Array).filter(func(c): return c is Dictionary)
+	var interesses: Array = clubs.filter(func(c): return c.get("reason") == "offer")
+	var tete := _rangee(parent)
+	tete.add_child(Pastilles.pastille("%d clubs intéressés" % interesses.size(), Pastilles.VERT, "check", "", 18, "VitrineCompte"))
+	tete.add_child(Pastilles.pastille("Réputation %d" % int(vue.get("reputation", 0)), Pastilles.VIOLET, "star", "", 18, "VitrineReputation", func(): app._navigate("Classements")))
+	tete.add_child(Pastilles.pastille("%d sem." % int(vue.get("weeksLeft", 0)), Pastilles.TURQUOISE, "hourglass", "", 18, "VitrineSemaines", func(): app._navigate("Calendrier")))
+	# Les plus prestigieux d'abord : intéressés, puis les autres.
+	var tri := func(a, b): return int(a.get("clubReputation", 0)) > int(b.get("clubReputation", 0))
+	interesses.sort_custom(tri)
+	var autres: Array = clubs.filter(func(c): return c.get("reason") != "offer")
+	autres.sort_custom(tri)
+	var vitrine: Array = (interesses.slice(0, 6) + autres.slice(0, 2))
+	var grille := GridContainer.new()
+	grille.name = "VitrineClubs"
+	grille.columns = 4
+	grille.add_theme_constant_override("h_separation", C.px(10))
+	grille.add_theme_constant_override("v_separation", C.px(10))
+	parent.add_child(grille)
+	for c: Dictionary in vitrine:
+		grille.add_child(_carte_club(app, c))
+
+static func _carte_club(app: Control, c: Dictionary) -> Control:
+	var club := _identite(app, c.get("clubId"))
+	var cadre := PanelContainer.new()
+	cadre.name = "VitrineClub_" + str(c.get("clubId"))
+	cadre.add_theme_stylebox_override("panel", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, Charte.RAYON_CARTE, 10))
+	cadre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var colonne := C.v(6)
+	colonne.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cadre.add_child(colonne)
+	var haut := C.h(10)
+	colonne.add_child(haut)
+	if not club.is_empty():
+		var ecusson := G.crest(club, C.px(48))
+		haut.add_child(ecusson)
+	var noms := C.v(2)
+	noms.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	haut.add_child(noms)
+	var nom := C.label(G.club_name(club) if not club.is_empty() else _club(app, c.get("clubId")), 20, Charte.IVOIRE, true, 700)
+	nom.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	nom.clip_text = true
+	nom.custom_minimum_size.x = C.px(96)
+	noms.add_child(nom)
+	noms.add_child(C.label(Views.competition_name(str(c.get("leagueId", "")), app.model), 14, Charte.IVOIRE_2, true, 600))
+	var bas := C.h(6)
+	colonne.add_child(bas)
+	var etat: Array = ETATS_VITRINE.get(str(c.get("reason", "")), ["—", "info", "gris"])
+	bas.add_child(Pastilles.pastille(etat[0], _couleur(etat[2]), etat[1], "", 16))
+	bas.add_child(Pastilles.tuile(str(int(c.get("affinity", 0))), "affinité", Charte.IVOIRE, Charte.PANNEAU_3, 18, "", true))
+	# Grisé tant que les candidatures sont fermées ; la fiche du club reste ouverte au clic.
+	cadre.modulate = Color(1, 1, 1, .62)
+	if not Link.available(app, "club", c.get("clubId")): return cadre
+	var bouton := Button.new()
+	bouton.name = cadre.name
+	bouton.flat = true
+	bouton.set_meta("immersive_style_applied", true)
+	bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	bouton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cadre.name = "Contenu"
+	cadre.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bouton.add_child(cadre)
+	for noeud in cadre.find_children("*", "Control", true, false): (noeud as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bouton.custom_minimum_size = cadre.get_combined_minimum_size()
+	Link.bind(bouton, app, Link.target("club", c.get("clubId")), nom.text)
+	return bouton
+
 static func build(app: Control) -> Control:
 	var page := G.h(18)
 	page.name = "CarnetManagerCareer"
@@ -112,6 +212,7 @@ static func build(app: Control) -> Control:
 		activate.name = "ManagerCareerActivate"
 		activate.disabled = not data.get("available", false)
 		career.add_child(activate)
+		_attente(app, career, data)
 	else:
 		var mandat := _rangee(career)
 		mandat.add_child(_lien(app, "club", data.clubId, _club(app, data.clubId), 24, "ManagerCareerClubLien"))
@@ -144,6 +245,7 @@ static func build(app: Control) -> Control:
 			career.add_child(apply)
 		else:
 			etat.add_child(Pastilles.pastille("Fermées", Pastilles.ORANGE, "lock", "Les candidatures ouvriront après la dernière compétition, avant de lancer la saison suivante.", 18, "ManagerCareerFermees"))
+			_attente(app, career, data)
 		career.add_child(G.section("Offres et candidatures"))
 		if data.get("applications", []).is_empty(): career.add_child(Pastilles.pastille("Aucune candidature", Charte.IVOIRE_2, "mail", "", 18, "ManagerCareerAucune"))
 		for a: Dictionary in data.get("applications", []):
