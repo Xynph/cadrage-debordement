@@ -167,6 +167,7 @@ var enjeu_pastille: PanelContainer
 var panneau_delegation: Control
 var legende_chiffres: HBoxContainer
 var meteo_ligne: Label
+var meteo_pastille: Control
 var stats_lien: Button
 var journee_vide: Label
 var pied: HBoxContainer
@@ -494,6 +495,75 @@ class Domination extends Control:
 				var qui := str(noms[0]) if v >= 0.0 else str(noms[1])
 				return "%d′ : %s domine (%s%d)" % [n + 1, qui, "+" if v >= 0.0 else "−", absi(roundi(v))] if absf(v) >= 1.0 else "%d′ : équilibre" % (n + 1)
 		return tooltip_text
+
+## Météo du match posée dans un coin du terrain 2D (à la place de la phrase sous le score, retouche de Léo du
+## 21/11/2026) : vent (icône, flèche vers le camp où il souffle, force en barres), pluie (gouttes), chaleur (soleil).
+## Rien sans météo particulière ; l'infobulle donne la phrase complète (qui a le vent dans le dos, quelle période).
+class PastilleMeteo extends Control:
+	const Charte = preload("res://ui/charte.gd")
+	var vent := 0
+	var pluie := 0
+	var chaleur := 0
+	## +1 : le vent souffle vers la droite du terrain ; -1 : vers la gauche ; 0 : sans sens connu.
+	var sens := 0
+
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_STOP
+
+	## Largeur voulue pour une hauteur `h`.
+	func largeur(h: float) -> float:
+		var w := h * 0.35
+		if vent > 0: w += h * (1.0 + (0.95 if sens != 0 else 0.0) + 0.75) + h * 0.25
+		if pluie > 0: w += h * 0.45 * pluie + h * 0.25
+		if chaleur > 0: w += h * 0.8 + h * 0.25
+		return w
+
+	func _draw() -> void:
+		var h := size.y
+		var fond := StyleBoxFlat.new()
+		fond.bg_color = Color(Charte.FOND, 0.88)
+		fond.set_corner_radius_all(Charte.RAYON_PILULE)
+		fond.anti_aliasing = true
+		fond.border_color = Color(1, 1, 1, 0.22)
+		fond.set_border_width_all(1)
+		draw_style_box(fond, Rect2(Vector2.ZERO, size))
+		var x := h * 0.3
+		var c := h * 0.5
+		var epais := maxf(1.5, h * 0.07)
+		var ivoire := Charte.IVOIRE
+		if vent > 0:
+			# Icône de vent : trois traits dont deux finissent en volute.
+			for k in 3:
+				var y := c + (k - 1) * h * 0.2
+				var long := h * (0.75 if k != 1 else 0.6)
+				draw_line(Vector2(x, y), Vector2(x + long, y), ivoire, epais, true)
+				if k != 1: draw_arc(Vector2(x + long, y - h * 0.08 * (1 if k == 0 else -1)), h * 0.08, -PI / 2.0 if k == 0 else PI / 2.0, PI / 2.0 if k == 0 else PI * 1.5, 8, ivoire, epais, true)
+			x += h * 1.0
+			if sens != 0:
+				# Flèche : vers le camp où souffle le vent.
+				var a := Vector2(x + (0.0 if sens > 0 else h * 0.75), c)
+				var b := Vector2(x + (h * 0.75 if sens > 0 else 0.0), c)
+				draw_line(a, b - Vector2(sens * h * 0.15, 0), Charte.MORAL, epais * 1.4, true)
+				draw_colored_polygon(PackedVector2Array([b, b + Vector2(-sens * h * 0.25, -h * 0.18), b + Vector2(-sens * h * 0.25, h * 0.18)]), Charte.MORAL)
+				x += h * 0.95
+			# Force : trois barres montantes, pleines selon la force (vent 1 : deux, grand vent : trois).
+			var pleines := clampi(vent + 1, 1, 3)
+			for k in 3:
+				var hb := h * (0.25 + 0.15 * k)
+				draw_rect(Rect2(x + k * h * 0.25, c + h * 0.28 - hb, h * 0.16, hb), ivoire if k < pleines else Color(ivoire, 0.25))
+			x += h * 1.0
+		if pluie > 0:
+			for k in pluie:
+				var g := Vector2(x + h * 0.2 + k * h * 0.45, c + h * 0.05)
+				draw_circle(g, h * 0.14, Charte.MORAL)
+				draw_colored_polygon(PackedVector2Array([g + Vector2(-h * 0.13, -h * 0.05), g + Vector2(0, -h * 0.32), g + Vector2(h * 0.13, -h * 0.05)]), Charte.MORAL)
+			x += h * 0.45 * pluie + h * 0.25
+		if chaleur > 0:
+			var soleil := Vector2(x + h * 0.4, c)
+			draw_circle(soleil, h * 0.16, Charte.INTENSIF)
+			for k in 8:
+				var ang := k * TAU / 8.0
+				draw_line(soleil + Vector2.from_angle(ang) * h * 0.24, soleil + Vector2.from_angle(ang) * h * 0.34, Charte.INTENSIF, epais, true)
 
 ## Pictogramme d'un fait (fil du match) : essai, tir au but, carton, mêlée, touche, jeu au pied, ballon
 ## perdu. Pastille sombre cerclée à la couleur du camp (nous vert clair, eux doré), signe crème au centre.
@@ -844,7 +914,7 @@ func _lien(texte: String, action: Callable, nom: String = "") -> Button:
 	return bouton
 
 ## Touche de clavier dessinée (« Espace », « Échap », « T ») : petite pilule `PANNEAU_3`, texte gris-vert.
-func _touche(texte: String) -> PanelContainer:
+func _touche(texte: String, agrandi: float = 1.0) -> PanelContainer:
 	var cadre := PanelContainer.new()
 	var style := _case(SURVOL, Charte.RAYON_PILULE)
 	style.content_margin_left = px(8)
@@ -854,7 +924,7 @@ func _touche(texte: String) -> PanelContainer:
 	cadre.add_theme_stylebox_override("panel", style)
 	cadre.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var etiquette := _texte(texte, 17, DOUX, false, true)
+	var etiquette := _texte(texte, 17 * agrandi, DOUX, false, true)
 	etiquette.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	cadre.add_child(etiquette)
 	return cadre
@@ -968,8 +1038,13 @@ func _construire() -> void:
 ## Barre de commandes : où en est le match (mi-temps, défilement, pause), Équipe (action principale, ivoire
 ## plein), Réglages (vitesse de l'horloge, temps forts montrés : panneau dans la colonne de droite) et Plus
 ## (menu déroulant : statistiques, journal, autres matchs, délégation, caméras).
+## Barre du haut agrandie d'environ 28 % (retouche de Léo du 21/11/2026), comme le bandeau du score.
+const BARRE_HAUT := 1.28
+## Identifiants des vitesses de l'horloge dans le menu « Plus ».
+const ID_VITESSE := 200
+
 func _commandes() -> void:
-	phase = _texte("", 22, DOUX)
+	phase = _texte("", 22 * BARRE_HAUT, DOUX)
 	phase.name = "MatchBetweenPhase"
 	phase.clip_text = true
 	phase.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -989,7 +1064,8 @@ func _commandes() -> void:
 	equipe.tooltip_text = "Composition, banc, cris de la touche et consignes (le match se met en pause) · T"
 	equipe.set_meta("contextual_enabled", true)
 	equipe.add_theme_font_override("font", TITRES_EXTRA)
-	equipe.add_theme_font_size_override("font_size", fpx(24))
+	equipe.add_theme_font_size_override("font_size", fpx(24 * BARRE_HAUT))
+	equipe.custom_minimum_size.y = maxi(26, px(46 * BARRE_HAUT))
 	plus = MenuButton.new()
 	plus.name = "MatchBetweenMore"
 	plus.text = "Plus ▾"
@@ -998,7 +1074,7 @@ func _commandes() -> void:
 	plus.focus_mode = Control.FOCUS_ALL
 	plus.set_meta("contextual_enabled", true)
 	C.style_bouton_lien(plus)
-	plus.add_theme_font_size_override("font_size", fpx(22))
+	plus.add_theme_font_size_override("font_size", fpx(22 * BARRE_HAUT))
 	var menu := plus.get_popup()
 	menu.add_theme_font_size_override("font_size", fpx(22))
 	_habiller_menu(menu)
@@ -1008,6 +1084,9 @@ func _commandes() -> void:
 	for paire: Array in [["Vue TV", "tv"], ["Vue de dessus", "tactical"], ["Vue contact", "action"]]:
 		menu.add_item(str(paire[0]))
 		menu.set_item_metadata(menu.item_count - 1, paire[1])
+	# Vitesse de l'horloge entre deux temps forts : seulement ici (retouche de Léo du 21/11/2026), la courante cochée.
+	menu.add_separator("Vitesse de l’horloge")
+	for n in HORLOGES_IDS.size(): menu.add_radio_check_item(HORLOGES_COURTS[n], ID_VITESSE + n)
 	# Caméras : la caméra courante cochée ; pendant l'entracte 2D, elles n'ont pas d'effet visible : grisées et
 	# dites « en 3D seulement » (la raison est écrite, jamais un choix muet).
 	var cameras := {"tv": "Vue TV", "tactical": "Vue de dessus", "action": "Vue contact"}
@@ -1016,6 +1095,7 @@ func _commandes() -> void:
 		# Autres matchs : panneau de l'entracte ; pendant un temps fort 3D, grisé et dit (jamais un choix muet).
 		menu.set_item_disabled(3, journee_vue == null or not en_2d)
 		menu.set_item_text(3, "Autres matchs et classement en direct" + (" · aucun autre match" if journee_vue == null else ("" if en_2d else " · à l’entracte")))
+		for n in HORLOGES_IDS.size(): menu.set_item_checked(menu.get_item_index(ID_VITESSE + n), HORLOGES_IDS[n] == horloge)
 		var actuelle := camera_actuelle()
 		for k in menu.item_count:
 			var cle: Variant = menu.get_item_metadata(k)
@@ -1025,6 +1105,11 @@ func _commandes() -> void:
 			menu.set_item_disabled(k, en_2d)
 			menu.set_item_text(k, str(cameras[cle]) + (" · en 3D seulement" if en_2d else "")))
 	menu.id_pressed.connect(func(id: int):
+		if id >= ID_VITESSE and id < ID_VITESSE + HORLOGES_IDS.size():
+			horloge = HORLOGES_IDS[id - ID_VITESSE]
+			horloge_choisie.emit(horloge)
+			_poser_phase(_dernier[1] if _dernier.size() > 1 and _dernier[1] is Dictionary else {})
+			return
 		if id == 0: tiroir_demande.emit("Stats")
 		elif id == 1: tiroir_demande.emit("Journal")
 		elif id == 2:
@@ -1036,8 +1121,8 @@ func _commandes() -> void:
 			if index >= 0 and menu.get_item_metadata(index) is String: camera_demandee.emit(str(menu.get_item_metadata(index))))
 	# Réglages : vitesse de l'horloge et temps forts montrés, dans la colonne de droite (jamais une fenêtre).
 	parametres = _lien("Réglages", func(): _ouvrir_parametres(), "MatchBetweenSettings")
-	parametres.tooltip_text = "Vitesse de l’horloge entre deux temps forts et temps forts montrés."
-	parametres.add_theme_font_size_override("font_size", fpx(22))
+	parametres.tooltip_text = "Temps forts montrés."
+	parametres.add_theme_font_size_override("font_size", fpx(22 * BARRE_HAUT))
 	# Pendant un temps fort 3D (entracte caché), les mêmes réglages en menu déroulant sous le lien (exception de Léo).
 	menu_reglages = PopupMenu.new()
 	menu_reglages.name = "MatchBetweenSettingsMenu"
@@ -1068,10 +1153,7 @@ func _habiller_menu(menu: PopupMenu) -> void:
 ## le choix courant coché.
 func _remplir_menu_reglages() -> void:
 	menu_reglages.clear()
-	menu_reglages.add_separator("Vitesse de l’horloge entre deux temps forts")
-	for n in HORLOGES_IDS.size():
-		menu_reglages.add_radio_check_item(HORLOGES_COURTS[n], n)
-		menu_reglages.set_item_checked(menu_reglages.get_item_index(n), HORLOGES_IDS[n] == horloge)
+	# La vitesse de l'horloge se règle seulement dans « Plus » (retouche de Léo du 21/11/2026).
 	if _niveaux.is_empty(): return
 	menu_reglages.add_separator("Temps forts montrés")
 	var choisi := niveau_libelle()
@@ -1228,7 +1310,7 @@ func _page() -> void:
 		barre = S.G.h(px(12))
 		(barre as HBoxContainer).alignment = BoxContainer.ALIGNMENT_END
 		page.add_child(barre)
-	for noeud: Control in [phase, equipe, _touche("T"), parametres, plus]: barre.add_child(noeud)
+	for noeud: Control in [phase, equipe, _touche("T", BARRE_HAUT), parametres, plus]: barre.add_child(noeud)
 	_page_d3(page)
 
 ## Pied : les raccourcis de l'écran et où trouver ce qui n'y est pas (vitesse, autres matchs).
@@ -1412,6 +1494,10 @@ func _colonne_centre(grille: Control) -> void:
 	cadre_terrain.add_child(scene)
 	S.full(terrain)
 	scene.add_child(terrain)
+	meteo_pastille = PastilleMeteo.new()
+	meteo_pastille.name = "MatchBetweenWeather2D"
+	meteo_pastille.visible = false
+	scene.add_child(meteo_pastille)
 	# Terrain, puis le momentum et les temps forts en pastilles dessous.
 	scene.custom_minimum_size = Vector2(px(420), maxi(150, px(200)))
 	cadre_terrain.add_child(_bande_momentum())
@@ -1508,23 +1594,7 @@ func _colonne_droite(grille: Control) -> void:
 	S.G.fill(panneau_parametres, true)
 	cadre_reglages.add_theme_constant_override("separation", px(12))
 	cadre_reglages.add_child(_retour_droite("Réglages du match"))
-	cadre_reglages.add_child(_texte("Vitesse de l’horloge entre deux temps forts", 18, DOUX, true))
-	var rangee_horloge := GridContainer.new()
-	rangee_horloge.columns = 2
-	rangee_horloge.add_theme_constant_override("h_separation", px(8))
-	rangee_horloge.add_theme_constant_override("v_separation", px(8))
-	cadre_reglages.add_child(rangee_horloge)
 	groupe_horloge = ButtonGroup.new()
-	for n in HORLOGES_IDS.size():
-		var choix := _segment(HORLOGES_COURTS[n], groupe_horloge, HORLOGES_IDS[n] == horloge)
-		choix.name = "MatchBetweenSpeed%d" % n
-		choix.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var id: String = HORLOGES_IDS[n]
-		choix.pressed.connect(func():
-			horloge = id
-			horloge_choisie.emit(id)
-			_poser_pied())
-		rangee_horloge.add_child(choix)
 	cadre_reglages.add_child(_texte("Temps forts montrés (gardé pour les prochains matchs)", 18, DOUX, true))
 	grille_niveaux = GridContainer.new()
 	grille_niveaux.name = "MatchHighlightLevel"
@@ -2659,6 +2729,25 @@ func _retour_droite(titre: String) -> Control:
 	ligne.add_child(retour)
 	return ligne
 
+## Pastille météo du terrain 2D (données du moteur `live.meteo`) : vent, sens et force, pluie, chaleur ; infobulle complète.
+func _poser_meteo(live: Dictionary) -> void:
+	if not is_instance_valid(meteo_pastille): return
+	var m := Meteo.meteo(live)
+	var p := meteo_pastille as PastilleMeteo
+	p.vent = int(m.get("vent", 0)) if m.get("vent") != null else 0
+	p.pluie = int(m.get("pluie", 0)) if m.get("pluie") != null else 0
+	p.chaleur = int(m.get("chaleur", 0)) if m.get("chaleur") != null else 0
+	var periode := 2 if live.get("atBreak", false) else int(live.get("period", 1))
+	var dos := Meteo.camp_vent(live, periode)
+	# Le camp 0 attaque vers la droite du terrain : le vent dans son dos souffle vers la droite.
+	p.sens = (1 if dos == 0 else -1) if dos in [0, 1] else 0
+	p.visible = not live.get("finished", false) and (p.vent > 0 or p.pluie > 0 or p.chaleur > 0)
+	var h := float(maxi(22, px(36)))
+	p.size = Vector2(p.largeur(h), h)
+	p.position = Vector2(px(10), px(8))
+	p.tooltip_text = Meteo.bandeau(live) + ("\n" + Meteo.conseil(live) if not Meteo.conseil(live).is_empty() else "")
+	p.queue_redraw()
+
 ## Panneau de la colonne de droite : « chiffres », « reglages », « journee », « delegation ». Le panneau
 ## d'arrêt passe devant tant que le match attend la décision du manager.
 func montrer_droite(vue: String) -> void:
@@ -2684,7 +2773,8 @@ func _poser_principal(arret_montre: bool) -> void:
 	_equipe_pleine = not arret_montre
 	_habiller(equipe, _equipe_pleine)
 	equipe.add_theme_font_override("font", TITRES_EXTRA)
-	equipe.add_theme_font_size_override("font_size", fpx(24))
+	equipe.add_theme_font_size_override("font_size", fpx(24 * BARRE_HAUT))
+	equipe.custom_minimum_size.y = maxi(26, px(46 * BARRE_HAUT))
 
 ## Vues de la colonne Mon XV : « tableau » (Mon XV et le banc) ou « adverse » (le XV adverse).
 func choisir_vue_xv(vue: String) -> void:
@@ -2847,6 +2937,7 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	_poser_phase(live)
 	_poser_legende(equipes, int(direct.get("camp", -1)))
 	meteo_ligne.text = Meteo.bandeau(live)
+	_poser_meteo(live)
 	if is_instance_valid(stats_lien): stats_lien.tooltip_text = "Toutes les statistiques du match." + ("\n" + meteo_ligne.text if not meteo_ligne.text.is_empty() else "")
 	_remplir_banc(live)
 	_appliquer_blocage()
@@ -2994,14 +3085,17 @@ static func _nom_club(equipes: Array, cote: int) -> String:
 func _poser_phase(live: Dictionary) -> void:
 	if not is_instance_valid(phase): return
 	var vitesse: String = HORLOGES_COURTS[maxi(0, HORLOGES_IDS.find(horloge))]
-	var titre := "Match terminé" if live.get("finished", false) else ("Mi-temps" if live.get("atBreak", false) else ("Arrêt de jeu" if not _arret.is_empty() else ("En pause" if live.get("paused", false) else "%s′" % str(live.get("minute", "")))))
-	var suite := "décision attendue" if not _arret.is_empty() else vitesse
-	phase.text = "%s · %s" % [titre, suite]
+	var titre := "Match terminé" if live.get("finished", false) else ("Mi-temps" if live.get("atBreak", false) else ("Arrêt de jeu" if not _arret.is_empty() else ("En pause" if live.get("paused", false) else "%d′" % roundi(float(live.get("minute", 0)))))))
+	# Juste l'état du jeu : la vitesse se règle dans « Plus » et n'a pas sa place ici (retouche de Léo du 21/11/2026).
+	phase.text = ("%s · décision attendue" % titre) if not _arret.is_empty() else titre
+	phase.tooltip_text = "Vitesse de l’horloge : %s (menu Plus)" % vitesse
 	_poser_pied()
 
 ## Pied : la vitesse de l'horloge (dans Réglages) et où trouver les autres matchs (menu Plus).
 func _poser_pied() -> void:
 	if not is_instance_valid(pied_reglages): return
+	# Plus de « Vitesse · … » sur l'écran (réglée dans « Plus ») : le pied garde le « ? » des raccourcis.
+	pied_reglages.visible = false
 	pied_reglages.text = "Vitesse · %s" % HORLOGES_COURTS[maxi(0, HORLOGES_IDS.find(horloge))]
 
 ## Légende des chiffres clés : notre club (carré plein) à gauche, l'adversaire (carré vide) à droite.
@@ -4687,7 +4781,7 @@ func _poser_arret_commandes() -> void:
 		if not is_instance_valid(bouton): continue
 		bouton.set_meta("contextual_enabled", not bloque)
 		bouton.disabled = bloque
-		bouton.tooltip_text = "Après le choix du staff." if bloque else ("Composition, banc, cris de la touche et consignes (le match se met en pause) · T" if bouton == equipe else "Vitesse de l’horloge entre deux temps forts et temps forts montrés.")
+		bouton.tooltip_text = "Après le choix du staff." if bloque else ("Composition, banc, cris de la touche et consignes (le match se met en pause) · T" if bouton == equipe else "Temps forts montrés.")
 
 ## Ligne d'option du panneau d'arrêt : texte crème à gauche, case rayon 6 ; survol `PANNEAU_2`, l'option
 ## retenue sur `SELECTION` (avec sa coche), focus : anneau doré.

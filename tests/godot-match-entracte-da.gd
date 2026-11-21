@@ -406,12 +406,15 @@ func run() -> void:
 		ecran._ouvrir_parametres()
 		await process_frame
 		var menu_reglages: PopupMenu = ecran.menu_reglages
-		check(menu_reglages.visible and menu_reglages.item_count == 4 + 6 + 2 and ecran.vue_droite == "chiffres", cadre + " : en 3D, Réglages ouvre un menu déroulant (%d choix)" % menu_reglages.item_count)
-		check(menu_reglages.is_item_checked(menu_reglages.get_item_index(Between.HORLOGES_IDS.find(ecran.horloge))),cadre + " : l'horloge courante est cochée")
-		menu_reglages.id_pressed.emit(2)
+		# La vitesse de l'horloge ne se règle que dans « Plus » (retouche de Léo du 21/11/2026) : Réglages = temps forts.
+		check(menu_reglages.visible and menu_reglages.item_count == 6 + 1 and ecran.vue_droite == "chiffres", cadre + " : en 3D, Réglages ouvre un menu déroulant des temps forts (%d choix)" % menu_reglages.item_count)
 		menu_reglages.id_pressed.emit(101)
-		check(ecran.horloge == "rapide" and signaux == [["horloge_choisie", "rapide"], ["niveau_choisi", "resume"]], cadre + " : le menu change l'horloge et les temps forts " + str(signaux))
 		menu_reglages.hide()
+		menu_plus.about_to_popup.emit()
+		var id_vitesse: int = Between.ID_VITESSE + Between.HORLOGES_IDS.find(ecran.horloge)
+		check(menu_plus.get_item_index(id_vitesse) >= 0 and menu_plus.is_item_checked(menu_plus.get_item_index(id_vitesse)), cadre + " : l'horloge courante est cochée dans « Plus »")
+		menu_plus.id_pressed.emit(Between.ID_VITESSE + 2)
+		check(ecran.horloge == "rapide" and signaux == [["niveau_choisi", "resume"], ["horloge_choisie", "rapide"]] and not ecran.phase.text.contains("Rapide"), cadre + " : Réglages change les temps forts, « Plus » l'horloge (jamais écrite dans la pastille) " + str(signaux))
 		menu_plus.about_to_popup.emit()
 		check(menu_plus.is_item_disabled(3) and menu_plus.get_item_text(3).ends_with("à l’entracte"), cadre + " : en 3D, autres matchs grisés et dits (%s)" % menu_plus.get_item_text(3))
 		signaux.clear()

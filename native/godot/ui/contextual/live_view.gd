@@ -71,6 +71,10 @@ var bande_temps_forts: HBoxContainer
 const BANDEAU_TAILLES := {"horloge": 32, "phase": 16, "equipe": 22, "score": 40, "sigle": 15, "pause": 16, "legende": 16, "meteo": 13}
 ## Hauteur du bandeau du score et largeur du journal (maquette 1080p : 56 et 744 px), marge d'écran 24 px.
 const BANDEAU_HAUTEUR := 56
+## Barre du haut (bandeau du score, ligne du vent, commandes) agrandie d'environ 28 % (retouche de Léo du 21/11/2026).
+const BARRE_HAUT := 1.28
+## Liseré fin des grandes tuiles du direct (choix de Léo du 21/11/2026) : 1 px, blanc à 22 %.
+const LISERE := Color(1, 1, 1, 0.22)
 const LEGENDE_LARGEUR := 744
 const MARGE := 24
 var echelle := 1.0
@@ -128,6 +132,7 @@ class BandeauAngle extends HBoxContainer:
 			fond_bandeau = fond_bandeau.duplicate()
 			fond_bandeau.border_color = Color(1, 1, 1, 0.22)
 			fond_bandeau.set_border_width_all(1)
+			fond_bandeau.anti_aliasing = true
 		draw_style_box(fond_bandeau, Rect2(Vector2.ZERO, size))
 		var horloge: Control = get_node_or_null("MatchClockBlock")
 		if horloge != null and horloge.visible:
@@ -310,7 +315,8 @@ func _placer_puce(bouton: Button) -> void:
 ## Styles et tailles d'une commande du HUD à l'échelle courante.
 func _habiller_bouton_hud(bouton: Button) -> void:
 	var puce: PanelContainer = bouton.get_node_or_null("Touche")
-	var taille := roundi(BANDEAU_TAILLES.pause * echelle)
+	var eh := echelle * BARRE_HAUT
+	var taille := roundi(BANDEAU_TAILLES.pause * eh)
 	bouton.add_theme_font_size_override("font_size", taille)
 	if puce != null: (puce.get_child(0) as Label).add_theme_font_size_override("font_size", taille)
 	var largeur_puce := puce.get_combined_minimum_size().x if puce != null else 0.0
@@ -319,15 +325,18 @@ func _habiller_bouton_hud(bouton: Button) -> void:
 		var couleur := Color(Charte.PANNEAU, 0.9)
 		if etat in ["hover", "pressed"]: couleur = Charte.PANNEAU_2
 		if etat == "focus": couleur = Color(0, 0, 0, 0)
-		var cote := roundf(16 * echelle)
-		var style := _fond_hud(Vector4(cote + (largeur_puce + 10 * echelle if a_gauche else 0.0), 0, cote + (0.0 if a_gauche else largeur_puce + 10 * echelle), 0), couleur, Charte.RAYON_PILULE)
+		var cote := roundf(16 * eh)
+		var style := _fond_hud(Vector4(cote + (largeur_puce + 10 * eh if a_gauche else 0.0), 0, cote + (0.0 if a_gauche else largeur_puce + 10 * eh), 0), couleur, Charte.RAYON_PILULE)
+		if etat in ["normal", "hover", "pressed", "disabled"]:
+			style.border_color = LISERE
+			style.set_border_width_all(1)
 		if etat == "focus":
 			# Anneau de focus de la charte : doré, 2 px, décalé de 2 px.
 			style.border_color = Charte.OR
 			style.set_border_width_all(2)
 			style.set_expand_margin_all(2)
 		bouton.add_theme_stylebox_override(etat, style)
-	bouton.custom_minimum_size = Vector2(0, roundf(40 * echelle))
+	bouton.custom_minimum_size = Vector2(0, roundf(40 * eh))
 	_placer_puce(bouton)
 
 ## Fond de la bande des commandes (phrase d'état, Équipe, Réglages, Plus), dans la continuité du bandeau du score :
@@ -339,7 +348,9 @@ func _fond_bande() -> void:
 	var hauteur := maxf(_coque_score.size.y, bande.size.y)
 	var haut := roundf((bande.size.y - hauteur) * 0.5)
 	var marge := roundf(14 * echelle)
-	var style := Charte.style_panneau(BandeauAngle.FOND, Charte.RAYON_PANNEAU, 0)
+	var style := Charte.style_panneau(BandeauAngle.FOND, Charte.RAYON_PANNEAU, 0).duplicate() as StyleBoxFlat
+	style.border_color = LISERE
+	style.set_border_width_all(1)
 	var groupe := Rect2()
 	for enfant in bande.get_children():
 		var c := enfant as Control
@@ -656,7 +667,12 @@ static func echelle_pour(hauteur: float) -> float:
 func _mettre_a_l_echelle() -> void:
 	if not is_instance_valid(clock): return
 	echelle = echelle_pour(get_viewport().get_visible_rect().size.y)
-	var t := func(cle: String) -> int: return roundi(float(BANDEAU_TAILLES[cle]) * echelle)
+	var eh := echelle * BARRE_HAUT
+	var t := func(cle: String) -> int: return roundi(float(BANDEAU_TAILLES[cle]) * (echelle if cle == "legende" else eh))
+	# Les tuiles du haut (score, commandes, Reprendre) séparées par le vide des grandes tuiles (24 px en 2560) : la
+	# gouttière couvre aussi le débord du fond dessiné derrière les commandes.
+	var rangee_haut: HBoxContainer = clock.find_parent("MatchTopRow") as HBoxContainer
+	if rangee_haut != null: rangee_haut.add_theme_constant_override("separation", roundi((18 + 14) * echelle))
 	var marge: MarginContainer = clock.find_parent("MatchHud").get_parent() if clock.find_parent("MatchHud") != null else null
 	if marge != null:
 		for bord in ["left", "top", "right", "bottom"]: marge.add_theme_constant_override("margin_" + bord, roundi(MARGE * echelle))
@@ -665,24 +681,24 @@ func _mettre_a_l_echelle() -> void:
 	score.add_theme_font_size_override("font_size", t.call("score"))
 	for nom: Label in [home, away]: nom.add_theme_font_size_override("font_size", t.call("equipe"))
 	for sigle: Label in _sigles: sigle.add_theme_font_size_override("font_size", t.call("sigle"))
-	var hauteur := roundf(BANDEAU_HAUTEUR * echelle)
+	var hauteur := roundf(BANDEAU_HAUTEUR * eh)
 	for segment: Control in _coque_score.get_children():
 		segment.custom_minimum_size.y = hauteur
 		var marges := StyleBoxEmpty.new()
-		marges.content_margin_left = roundf(12 * echelle)
-		marges.content_margin_right = roundf(16 * echelle)
-		if segment.name == "MatchClubPlaque1": marges.content_margin_right = roundf(18 * echelle)
-		if segment.name == "MatchClockBlock": marges.content_margin_left = roundf(14 * echelle)
+		marges.content_margin_left = roundf(12 * eh)
+		marges.content_margin_right = roundf(16 * eh)
+		if segment.name == "MatchClubPlaque1": marges.content_margin_right = roundf(18 * eh)
+		if segment.name == "MatchClockBlock": marges.content_margin_left = roundf(14 * eh)
 		if segment.name == "MatchScoreBlock":
-			marges.content_margin_left = roundf(16 * echelle)
+			marges.content_margin_left = roundf(16 * eh)
 		segment.add_theme_stylebox_override("panel", marges)
-	(_coque_score.get_node("MatchClockBlock") as Control).custom_minimum_size.x = roundf(96 * echelle)
-	score.custom_minimum_size.x = roundf(104 * echelle)
+	(_coque_score.get_node("MatchClockBlock") as Control).custom_minimum_size.x = roundf(96 * eh)
+	score.custom_minimum_size.x = roundf(104 * eh)
 	for plaque: PanelContainer in plaques:
 		var rangee: HBoxContainer = plaque.get_child(0)
-		rangee.add_theme_constant_override("separation", roundi(10 * echelle))
+		rangee.add_theme_constant_override("separation", roundi(10 * eh))
 		var souligne: ColorRect = plaque.find_child("Souligne", true, false)
-		souligne.custom_minimum_size.y = maxf(1.0, roundf(2 * echelle))
+		souligne.custom_minimum_size.y = maxf(1.0, roundf(2 * eh))
 	for etiquette: Label in [meteo_ligne]: etiquette.add_theme_font_size_override("font_size", t.call("meteo"))
 	for bouton: Button in [play, indice_menu]: _habiller_bouton_hud(bouton)
 	_possession_texte.add_theme_font_size_override("font_size", t.call("legende"))
@@ -761,7 +777,8 @@ func _process(_delta: float) -> void:
 	var rappel: bool = not compact and not entracte and not _live().get("finished", false)
 	if indice_menu.visible != rappel: indice_menu.visible = rappel
 	_suivre_possession(entracte)
-	var meteo_vue: bool = not compact and meteo_ligne.visible
+	# Écran 2D : la météo est posée sur le terrain en icônes (retouche de Léo du 21/11/2026), plus de phrase ici.
+	var meteo_vue: bool = not compact and meteo_ligne.visible and not entracte
 	if _meteo_boite.visible != meteo_vue: _meteo_boite.visible = meteo_vue
 	# La fenêtre Équipe ouverte depuis la bande ferme le menu (le match reste en pause).
 	if is_instance_valid(menu) and menu.visible and is_instance_valid(equipe) and equipe.visible: _cacher_menu()
@@ -934,7 +951,7 @@ func _poser_ecusson(cote: int, teams: Array) -> void:
 		ancien.queue_free()
 	puce.visible = true
 	if teams.size() <= cote or not (teams[cote] is Dictionary): return
-	var ecusson := ecusson_club(_club_complet(teams[cote]), roundi(44 * echelle))
+	var ecusson := ecusson_club(_club_complet(teams[cote]), roundi(44 * echelle * BARRE_HAUT))
 	ecusson.name = "MatchClubCrest%d" % cote
 	ecusson.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	ecusson.mouse_filter = Control.MOUSE_FILTER_IGNORE

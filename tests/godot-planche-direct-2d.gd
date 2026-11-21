@@ -136,6 +136,12 @@ func run() -> void:
 	var fait: Control = premier.call(between, "MatchBetweenEvent*", "PanelContainer")
 	if fait == null: fait = premier.call(between, "MatchBetweenHighlight*", "PanelContainer")
 	await essayer("événement du match", "MatchFenetreFait", "direct-2d-fenetre-fait-2560", func(): fait.gui_input.emit(clic), fait != null, view)
+	# Le bandeau du score est commun au temps fort 3D : une capture en plein temps fort (match relancé).
+	if OS.get_environment("CD_PLANCHE_TEMPS_FORT") == "1":
+		if app.model.live.get("paused", false): await command("pause", {"paused": false})
+		if await until(func(): return view.regie.etat == view.regie.JEU, 120000):
+			await settle(20)
+			await capture("direct-3d-temps-fort-2560")
 	finir()
 
 ## Clic sur un élément : sa petite fenêtre `nom` s'ouvre par-dessus le match (capture), Échap la ferme, le direct reste.
