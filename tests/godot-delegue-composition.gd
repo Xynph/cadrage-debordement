@@ -95,9 +95,18 @@ func donnees() -> void:
 	check(Avis.fatigue(sans).is_empty() and Avis.fatigue_donnees({}).is_empty(), "Sans alerte du moteur (ancien modèle compris) : rien")
 	var semaine := Semaine.synthese(model)
 	var alerte := ""
+	var fatigue_au_carnet := false
 	for ligne: Dictionary in semaine.get("lignes", []):
 		if ligne.cle == "alerte": alerte = str(ligne.texte)
-	check(alerte.contains("70 %") and alerte.contains("titulaire"), "Carnet : l'alerte de la semaine : " + alerte)
+		if str(ligne.texte).contains("70 %") and str(ligne.texte).contains("titulaire"): fatigue_au_carnet = true
+	# L'alerte suit l'ordre d'importance de Gabi (argent, résultats, confiance, infirmerie, feuille, puis fatigue) :
+	# avec 3 blessés ou plus, l'infirmerie passe devant, et la fatigue des titulaires reste dite dans le carnet.
+	var blesses := int(Semaine.P.group(model).get("injured", 0))
+	if blesses >= 3:
+		check(alerte.begins_with("%d blessés" % blesses), "Carnet : l'infirmerie passe devant la fatigue : " + alerte)
+		check(fatigue_au_carnet, "Carnet : la fatigue des titulaires reste dite (ligne du groupe) : " + str(semaine.get("lignes", [])))
+	else:
+		check(alerte.contains("70 %") and alerte.contains("titulaire"), "Carnet : l'alerte de la semaine : " + alerte)
 	var conseil: Dictionary = semaine.get("conseil", {})
 	check(str(conseil.get("action", {}).get("type", "")) == "composition" and str(conseil.get("texte", "")).contains("souffler"), "Carnet : conseil de fatigue : " + str(conseil.get("texte", "")))
 	check(str(Semaine.synthese(sans).get("conseil", {}).get("texte", "")) != str(conseil.get("texte", "")), "Sans alerte, le conseil de la semaine change")

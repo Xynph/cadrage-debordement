@@ -51,11 +51,15 @@ func windows() -> Array:
 func close(a: Color, b: Color) -> bool:
 	return absf(a.r - b.r) < .01 and absf(a.g - b.g) < .01 and absf(a.b - b.b) < .01
 
-func gold_on(control: Control) -> bool:
+## avec_focus = false : l'anneau de focus doré des pilules de la charte (C.style_bouton_contour, C.button) est permis ;
+## seuls comptent alors les états affichés sans clavier (repos, survol, appui, grisé, panneau).
+func gold_on(control: Control, avec_focus := true) -> bool:
 	var tones: Array[Color] = []
 	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_disabled_color"]:
+		if key == "font_focus_color" and not avec_focus: continue
 		if control.has_theme_color_override(key): tones.append(control.get_theme_color(key))
 	for key in ["normal", "hover", "pressed", "focus", "disabled", "panel"]:
+		if key == "focus" and not avec_focus: continue
 		if control.has_theme_stylebox_override(key):
 			var box := control.get_theme_stylebox(key) as StyleBoxFlat
 			if box != null: tones.append_array([box.bg_color, box.border_color])
@@ -266,7 +270,7 @@ func names() -> void:
 	check(windows().is_empty(), "La fiche s'ouvre en écran")
 	await overview()
 
-## Chaque onglet s'affiche sans fenêtre ni or.
+## Chaque onglet s'affiche sans fenêtre ni or (hors anneau de focus des pilules de la charte).
 func tabs() -> void:
 	for cle in ["infrastructure", "history", "direction", "staff", "overview"]:
 		var onglet := node("ClubTab_" + cle) as Button
@@ -277,12 +281,16 @@ func tabs() -> void:
 		check(node("ClubTab_" + cle) != null and node("ClubTab_" + cle).button_pressed, "Onglet " + cle + " choisi")
 		check(windows().is_empty(), "Onglet " + cle + " : aucune fenêtre")
 		var dores := 0
+		var noms_dores: PackedStringArray = []
 		for control in node("ImmersiveClub").find_children("*", "Control", true, false):
 			# Staff (charte finale) : le doré est permis pour le focus et l'attention écrite (« ✕ Libérer », « ! ») ;
 			# seul un aplat doré est interdit (vérifié par staff_tab). Les autres onglets gardent l'ancienne règle.
 			if cle == "staff": continue
-			if gold_on(control as Control): dores += 1
-		check(dores == 0, "Onglet " + cle + " : aucune couleur or (%d)" % dores)
+			# Charte finale : l'anneau de focus doré des pilules est permis (comme au Staff) ; aucun or au repos.
+			if gold_on(control as Control, false):
+				dores += 1
+				if not noms_dores.has(str(control.name)): noms_dores.append(str(control.name))
+		check(dores == 0, "Onglet " + cle + " : aucune couleur or (%d) %s" % [dores, ", ".join(noms_dores.slice(0, 16))])
 	await overview()
 
 ## Une confirmation d'argent s'ouvre dans la page (bloc), jamais en fenêtre ; Annuler la ferme sans rien envoyer.
