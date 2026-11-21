@@ -3085,7 +3085,7 @@ static func _nom_club(equipes: Array, cote: int) -> String:
 func _poser_phase(live: Dictionary) -> void:
 	if not is_instance_valid(phase): return
 	var vitesse: String = HORLOGES_COURTS[maxi(0, HORLOGES_IDS.find(horloge))]
-	var titre := "Match terminé" if live.get("finished", false) else ("Mi-temps" if live.get("atBreak", false) else ("Arrêt de jeu" if not _arret.is_empty() else ("En pause" if live.get("paused", false) else "%d′" % roundi(float(live.get("minute", 0)))))))
+	var titre := "Match terminé" if live.get("finished", false) else ("Mi-temps" if live.get("atBreak", false) else ("Arrêt de jeu" if not _arret.is_empty() else ("En pause" if live.get("paused", false) else "%d′" % roundi(float(live.get("minute", 0))))))
 	# Juste l'état du jeu : la vitesse se règle dans « Plus » et n'a pas sa place ici (retouche de Léo du 21/11/2026).
 	phase.text = ("%s · décision attendue" % titre) if not _arret.is_empty() else titre
 	phase.tooltip_text = "Vitesse de l’horloge : %s (menu Plus)" % vitesse
