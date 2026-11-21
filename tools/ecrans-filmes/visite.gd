@@ -56,6 +56,7 @@ const EXTRAS := [
 	{"id": "options", "libelle": "Options", "type": "options"},
 	{"id": "creation-options", "libelle": "Création · étape 2 Carrière (options)", "type": "creation_options"},
 	{"id": "avant-match-delegation", "libelle": "Avant-match · sous-page Déléguer le match", "type": "avant_delegation"},
+	{"id": "avant-match-bilan", "libelle": "Avant-match · petite fenêtre de la dernière rencontre", "type": "avant_bilan"},
 	{"id": "preparation-bas", "libelle": "Préparation · leur XV probable (bas de page)", "type": "preparation_bas"},
 	{"id": "preparation-consignes", "libelle": "Préparation · onglet Consignes", "type": "preparation_onglet", "onglet": 1},
 	{"id": "preparation-conseils", "libelle": "Préparation · conseils détaillés (sous-page)", "type": "preparation_sous", "sous": "conseils"},
@@ -762,6 +763,15 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			app.settings()
 			await stabiliser()
 			if app.route != "Réglages" or app.root_content.find_child("PreferencesPage", true, false) == null: return {"statut": "echec", "note": "écran Réglages non ouvert"}
+		"avant_bilan":
+			# Bilan de la dernière rencontre : pastille du bandeau → petite fenêtre.
+			app._navigate("Match")
+			await stabiliser()
+			var ouvre := app.find_child("MatchLastMatchOpen", true, false) as Button
+			if ouvre == null: return {"statut": "indisponible", "note": "pas de pastille du dernier match (aucun match joué)"}
+			ouvre.pressed.emit()
+			await stabiliser()
+			if app.find_child("MatchBilanFenetre", true, false) == null: return {"statut": "echec", "note": "petite fenêtre du bilan non ouverte"}
 		_:
 			return {"statut": "echec", "note": "type d'écran inconnu : " + str(ecran.type)}
 	return {"statut": "ok"}
@@ -772,6 +782,7 @@ func refermer(ecran: Dictionary) -> void:
 		var mois: Node = app.find_child("CarnetCalendar", true, false)
 		if mois != null and mois.has_method("_view_as"): mois._view_as("month")
 	if str(ecran.type) == "mini_fiche": load("res://ui/immersive08/mini_fiche.gd").cacher(app)
+	if str(ecran.type) == "avant_bilan": load("res://ui/petite_fenetre.gd").fermer_derniere(app.get_tree())
 	if str(ecran.type) == "avant_delegation":
 		var avant: Control = app.match_screen.find_child("MatchOpening", true, false) if app.match_screen != null else null
 		if avant != null: avant.fermer_page()
