@@ -846,12 +846,8 @@ func _ligne_classement(parent: Node, club: Dictionary, index: int, stride: int) 
 	focus.border_color = Charte.IVOIRE
 	focus.set_border_width_all(maxi(2, C.px(2)))
 	focus.set_corner_radius_all(Charte.RAYON_PETIT)
-	row.add_theme_stylebox_override("normal", normal)
-	row.add_theme_stylebox_override("hover", hover)
-	row.add_theme_stylebox_override("pressed", hover)
-	row.add_theme_stylebox_override("focus", focus)
+	load("res://ui/survol_ligne.gd").appliquer(row, false, normal.bg_color, app.accent)
 	row.set_meta("immersive_style_applied", true)
-	row.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	Link.bind(row, app, {"kind":"club", "id":str(club.id)}, "Ouvrir le club · " + G.club_name(club))
 	# Après le lien (qui pose « Ouvrir · … ») : la place et la zone restent annoncées.
 	row.accessibility_name += standing
@@ -1369,10 +1365,8 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 	focus.border_color = Charte.IVOIRE
 	focus.set_border_width_all(maxi(2, C.px(2)))
 	focus.set_corner_radius_all(Charte.RAYON_PETIT)
-	row.add_theme_stylebox_override("normal", normal)
-	row.add_theme_stylebox_override("hover", hover)
-	row.add_theme_stylebox_override("pressed", hover)
-	row.add_theme_stylebox_override("focus", focus)
+	load("res://ui/survol_ligne.gd").appliquer(row, false, normal.bg_color, app.accent)
+	if current: row.add_theme_stylebox_override("normal", normal)
 	if target_available(app, "fixture", fixture.get("id", "")):
 		Link.bind(row, app, {"kind":"fixture", "id":str(fixture.get("id", ""))}, "Ouvrir la rencontre · " + row.accessibility_name)
 	else:

@@ -819,14 +819,11 @@ func _row(item: Dictionary, index: int, selected: bool) -> void:
 	row.name = "MarketReport_" + str(item.id) if tab == 3 else "MarketPlayer_" + player_id.replace(":", "_")
 	row.set_meta("player_id", player_id)
 	row.accessibility_name = "%s, %s" % [item.get("name", "Joueur inconnu"), item.get("pos", "Poste inconnu")]
-	row.add_theme_stylebox_override("normal", C.box(Charte.SELECTION if selected else Color.TRANSPARENT, Color.TRANSPARENT, 8, 0))
-	row.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 8, 0))
+	load("res://ui/survol_ligne.gd").appliquer(row, selected, Color.TRANSPARENT, app.accent)
 	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, 8, 0)
 	focus.set_border_width_all(2)
-	row.add_theme_stylebox_override("focus", focus)
 	table_rows.add_child(row)
 	D.place(row, Rect2(0, index * ROW_HEIGHT, WIDTH, ROW_HEIGHT))
-	if selected: Kit.marqueur(row, Rect2(4, 3, 6, ROW_HEIGHT - 6))
 	D.line(row, Vector2(0, ROW_HEIGHT - 1), Vector2(WIDTH, ROW_HEIGHT - 1), Color(Charte.FILET, .5))
 	var assessment: Dictionary = report.get("assessment", {})
 	var suivi: bool = player_id in app.management_ui.shortlist

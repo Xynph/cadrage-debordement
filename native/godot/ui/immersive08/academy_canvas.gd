@@ -549,10 +549,10 @@ func _draw_rows(columns: Array) -> void:
 		rows.add_child(hit)
 		D.place(hit, Rect2(0, i * ROW, WIDTH, ROW))
 		hit.pressed.connect(func(): _select(p))
-		Kit.styler_ligne(hit, Color.TRANSPARENT, p.id == selected.get("id"), Charte.SELECTION)
+		load("res://ui/survol_ligne.gd").appliquer(hit, p.id == selected.get("id"), Color.TRANSPARENT, app.accent)
 		var marque := Kit.marqueur(hit, Rect2(2, 3, 6, ROW - 6))
 		marque.name = "Marqueur"
-		marque.visible = p.id == selected.get("id")
+		marque.visible = false
 		_cellule(hit, _col(columns, "num"), G.n(_source_index(p) + 1), Charte.IVOIRE_2)
 		_portrait(hit, p, Rect2(64, 1, 28, 28))
 		_drapeau(hit, p, Rect2(98, 6, 26, 18))
@@ -642,9 +642,7 @@ func _select(p: Dictionary) -> void:
 		var child := rows.get_child(i)
 		if not child is Button or not child.has_meta("development_id"): continue
 		var actif: bool = child.get_meta("development_id", "") == p.id
-		Kit.styler_ligne(child, Color.TRANSPARENT, actif, Charte.SELECTION)
-		var marque := child.get_node_or_null("Marqueur") as Control
-		if marque != null: marque.visible = actif
+		load("res://ui/survol_ligne.gd").appliquer(child, actif, Color.TRANSPARENT, app.accent)
 	_strip()
 
 ## Nom d'un jeune : survol (ou focus + I) = mini-fiche, clic = fiche complète ; « i » après le nom.

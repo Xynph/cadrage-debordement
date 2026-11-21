@@ -23,6 +23,7 @@ signal tri_change(colonne: String, decroissant: bool)
 signal contenu_change(visibles: int, total: int)
 
 const J = preload("res://ui/socle/jetons.gd")
+const SurvolLigne = preload("res://ui/survol_ligne.gd")
 
 var colonnes: Array = []
 var cle := "id"
@@ -33,6 +34,8 @@ var entete_groupe := Callable()
 var ordre_groupes: Array = []
 var choisie := ""
 var message_vide := "Aucune ligne ne correspond."
+## Couleur du club : liseré (A) ou pilule (B) de la ligne survolée ou choisie (ui/survol_ligne.gd).
+var accent := J.TEXTE
 
 var _source: Array = []
 var _filtre := Callable()
@@ -65,6 +68,8 @@ func _init() -> void:
 	_zone.name = "Lignes"
 	_zone.clip_contents = true
 	_zone.mouse_filter = Control.MOUSE_FILTER_STOP
+	_zone.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	add_to_group("survol_tableau")
 	add_child(_zone)
 	_barre = VScrollBar.new()
 	_barre.name = "Defilement"
@@ -310,6 +315,7 @@ func _dessiner_lignes(zone: Control) -> void:
 	if _lignes.is_empty():
 		_ecrire(zone, J.CORPS, J.px(J.T_CORPS), message_vide, Rect2(0, J.px(J.E4), zone.size.x, J.px(J.LIGNE_H)), J.TEXTE_DOUX)
 		return
+	if SurvolLigne.simulation_rang >= 0 and _survol < 0: _survol = _rang_simule(SurvolLigne.simulation_rang)
 	var taille := J.px(J.T_CELLULE)
 	var gras := J.corps_gras()
 	for element: Dictionary in _elements:
@@ -326,11 +332,9 @@ func _dessiner_lignes(zone: Control) -> void:
 			continue
 		var ligne: Dictionary = element.ligne
 		var est_choisie := str(ligne.get(cle, "")) == choisie
-		# Charte §7.1 : filet entre les lignes, pas de bandes ; survol PANNEAU_2 ; ligne choisie SELECTION sur toute la
-		# ligne, rayon 6.
+		# Filet entre les lignes ; survol et ligne choisie : composant commun ui/survol_ligne.gd.
 		zone.draw_rect(Rect2(0, haut + element.h - 1, zone.size.x, 1), J.TRAIT)
-		if est_choisie or element.rang == _survol:
-			zone.draw_style_box(J.boite(J.SELECTION if est_choisie else J.SURVOL, J.RAYON_PETIT), Rect2(0, haut, zone.size.x, element.h - 1))
+		SurvolLigne.dessiner(zone, Rect2(0, haut, zone.size.x, element.h - 1), element.rang == _survol, est_choisie, accent, J.echelle, J.RAYON_PETIT)
 		for place: Dictionary in _places:
 			var colonne: Dictionary = place.colonne
 			var rect := Rect2(place.x, haut, place.l, element.h)
@@ -445,3 +449,17 @@ func _get_tooltip(at: Vector2) -> String:
 		if at.x >= place.x and at.x < place.x + place.l and at.y < J.px(J.ENTETE_H):
 			return str(place.colonne.get("aide", ""))
 	return ""
+
+## Captures (ui/survol_ligne.gd, simuler) : survole la n-ième ligne visible qui n'est pas la ligne choisie.
+func simuler_survol(n: int) -> void:
+	_survol = _rang_simule(n)
+	_zone.queue_redraw()
+
+func _rang_simule(n: int) -> int:
+	var vus := 0
+	for element: Dictionary in _elements:
+		if element.groupe or element.y < _defilement: continue
+		if str(element.ligne.get(cle, "")) == choisie: continue
+		if vus == n: return int(element.rang)
+		vus += 1
+	return -1
