@@ -105,6 +105,10 @@ func run() -> void:
 	check(selection_free(page()), "Arrivée sur l'Effectif : aucune ligne verte ni marqueur de sélection")
 	check(fonds.all(func(f): return not f.survole), "Arrivée : aucune ligne survolée")
 	check(arrivee.all(func(r: Button): return r.mouse_default_cursor_shape == Control.CURSOR_POINTING_HAND), "Lignes : curseur main")
+	# Rayures : une ligne sur 2 (rang impair, dans l'ordre affiché), nettement moins visibles que le survol.
+	var rangs := fonds.map(func(f): return f.rang())
+	check(rangs == range(fonds.size()), "Rayures : rang des lignes dans l'ordre affiché (en-têtes de groupe exclus)")
+	check(fonds[0].RAYURE.a > 0.0 and fonds[0].RAYURE.a * 2.0 < fonds[0].BANDE.a, "Rayure plus discrète que la bande de survol")
 	var survolee := arrivee[2] as Button
 	survolee.mouse_entered.emit()
 	await settle()
