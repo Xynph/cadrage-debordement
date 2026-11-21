@@ -22,6 +22,7 @@ const Pages = preload("res://ui/immersive08/avant_match_pages.gd")
 const Reperes = preload("res://ui/immersive08/reperes.gd")
 const Espoir = preload("res://ui/espoir_appel.gd")
 const RI = preload("res://ui/contextual/rooms/room_identity.gd")
+const Bilan = preload("res://ui/immersive08/avant_match_bilan.gd")
 const MOIS := ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
 const JOURS := ["DIM.", "LUN.", "MAR.", "MER.", "JEU.", "VEN.", "SAM."]
 ## Photo du tunnel selon la météo annoncée (forte pluie > pluie > vent > chaleur > sec ; sans annonce : neutre).
@@ -427,6 +428,9 @@ func _bandeau(next: Dictionary, play: Button, etat: Dictionary, en_page: bool) -
 		precedent.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		ligne.add_child(precedent)
 		if not next.is_empty(): ligne.add_child(_statut_feuille(etat))
+		# Planche du 21/11 (variante B) : pastille du dernier match, ouvre la petite fenêtre du bilan.
+		var dernier: Control = Bilan.pastille_bandeau(self, _model) if Bilan.variante() == "B" and not next.is_empty() else null
+		if dernier != null: ligne.add_child(dernier)
 	var espace := Control.new()
 	espace.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	C.fill(espace)
@@ -965,6 +969,9 @@ func _verifications(model: Dictionary, next: Dictionary, data: Dictionary, nous:
 	ligne.add_child(_meteo(model, next, nous, data))
 	ligne.add_child(_adversaire(model, next, data, nous))
 	ligne.add_child(_gabi(data))
+	# Planche du 21/11 (variante A) : tuile « Dernière rencontre », ouvre la petite fenêtre du bilan.
+	var dernier: Control = Bilan.tuile(self, model) if Bilan.variante() == "A" else null
+	if dernier != null: ligne.add_child(dernier)
 	return marge
 
 func _tuile(id: String, titre: String, legende: String = "") -> VBoxContainer:
