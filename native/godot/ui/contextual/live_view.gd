@@ -1618,15 +1618,16 @@ func ouvrir_fiche_club_id(id: int) -> void:
 		x += Pieces.pastille(fond, x, 208, lieu, "home" if cote == 0 else "bus", "MatchFenetreClubLieu") + 10.0
 	if nous: Pieces.pastille(fond, x, 208, "Nous", "star", "MatchFenetreClubNous", "", Charte.GAIN)
 	if cote < 0: return
-	# Le match en cours : score de son point de vue, essais, puis les chiffres du moteur (tiroir Statistiques).
+	# Le match en cours, jamais en avance sur l'image (le moteur a une minute d'avance en temps forts) : le score du
+	# bandeau, la minute de l'horloge, les essais et chiffres du direct borné (tiroir Statistiques).
 	var live := _live()
-	var marque: Array = live.get("score", [0, 0]) if live.get("score") is Array else [0, 0]
-	var pour := int(marque[cote]) if marque.size() > cote else 0
-	var contre := int(marque[1 - cote]) if marque.size() > 1 - cote else 0
-	D.text(fond, 36, 300, "MATCH · %d’" % maxi(1, int(live.get("minute", 0))), 16, Charte.IVOIRE_2, 700, 400)
-	var essais: Variant = live.get("tries")
+	var marque := score_affiche()
+	var pour := marque[cote]
+	var contre := marque[1 - cote]
+	var minute := clock.text.strip_edges()
+	D.text(fond, 36, 300, "MATCH · %s" % (minute if not minute.is_empty() else "%d’" % maxi(1, int(live.get("minute", 0)))), 16, Charte.IVOIRE_2, 700, 400)
 	var tuiles: Array = [["%d – %d" % [pour, contre], "score", Charte.GAIN if pour > contre else Charte.PERTE if pour < contre else Charte.IVOIRE, "Score"]]
-	tuiles.append([str(int(essais[cote])) if essais is Array and essais.size() > cote else "—", "essais", Charte.IVOIRE, "Essais"])
+	tuiles.append([str(_essais_montres(cote)), "essais", Charte.IVOIRE, "Essais"])
 	for libelle: Array in [["Possession", "possession"], ["Territoire", "territoire"], ["Pénalités concédées", "pénalités"]]:
 		tuiles.append([_chiffre_match(str(libelle[0]), cote), str(libelle[1]), Charte.IVOIRE, str(libelle[0]).get_slice(" ", 0)])
 	var largeur := (960.0 - 72.0 - 4 * 12.0) / 5.0
@@ -1634,8 +1635,31 @@ func ouvrir_fiche_club_id(id: int) -> void:
 		var t: Array = tuiles[i]
 		Pieces.tuile(fond, Rect2(36 + i * (largeur + 12.0), 318, largeur, 128), str(t[0]), str(t[1]), t[2], "MatchFenetreClub" + str(t[3]), 50 if i > 0 else 46)
 
+## Score montré par le bandeau (pas celui du moteur, en avance pendant les temps forts) : [recevant, visiteur].
+func score_affiche() -> Array[int]:
+	var morceaux := score.text.replace("–", "—").split("—")
+	if morceaux.size() == 2 and morceaux[0].strip_edges().is_valid_int() and morceaux[1].strip_edges().is_valid_int():
+		return [int(morceaux[0].strip_edges()), int(morceaux[1].strip_edges())]
+	var marque: Variant = _live().get("score", [0, 0])
+	return [int(marque[0]), int(marque[1])] if marque is Array and marque.size() >= 2 else [0, 0]
+
+## Essais du club `cote` déjà montrés : repères du direct dont le score d'après ne dépasse pas celui du bandeau (le
+## temps fort en cours n'est pas annoncé), sinon le compte du moteur.
+func _essais_montres(cote: int) -> int:
+	var live := _live()
+	var direct: Variant = live.get("direct")
+	if direct is Dictionary and direct.get("reperes") is Array:
+		var montre := score_affiche()
+		return (direct.reperes as Array).filter(func(r: Variant) -> bool:
+			if not (r is Dictionary and str(r.get("kind", "")) == "try" and int(r.get("equipe", -1)) == cote): return false
+			var apres: Variant = r.get("score")
+			return not (apres is Array and apres.size() > cote and int(apres[cote]) > montre[cote])).size()
+	var essais: Variant = live.get("tries")
+	return int(essais[cote]) if essais is Array and essais.size() > cote else 0
+
 ## Chiffre d'une ligne des statistiques du match (« Possession ») pour le club `cote` ; « — » sans donnée.
 func _chiffre_match(libelle: String, cote: int) -> String:
+	# Mêmes chiffres que le tiroir Statistiques du direct.
 	for ligne: Variant in _stats(_live()):
 		if ligne is Dictionary and str(ligne.get("label", "")) == libelle:
 			var valeur: Variant = ligne.get("home" if cote == 0 else "away", "—")

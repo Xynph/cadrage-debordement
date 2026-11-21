@@ -290,9 +290,12 @@ func run() -> void:
 		check(view.fenetre_ouverte() and panneau != null and panneau.is_visible_in_tree(), "Plaque %d : petite fenêtre du club par-dessus le match" % cote)
 		if panneau == null: continue
 		check(int(panneau.get_meta("club_id", -1)) == int(float(app.model.live.teams[cote].id)), "Plaque %d : la fenêtre est celle de ce club" % cote)
-		var marque: Array = app.model.live.score
+		# Le score du bandeau (ce qui a été montré), jamais celui du moteur en avance.
+		var marque: Array = view.score_affiche()
 		var score_tuile: Label = panneau.find_child("MatchFenetreClubScoreValeur", true, false)
 		check(score_tuile != null and score_tuile.text == "%d – %d" % [int(marque[cote]), int(marque[1 - cote])], "Plaque %d : score du match de son point de vue en tuile (%s)" % [cote, score_tuile.text if score_tuile != null else "?"])
+		var essais_tuile: Label = panneau.find_child("MatchFenetreClubEssaisValeur", true, false)
+		check(essais_tuile != null and essais_tuile.text.is_valid_int() and int(essais_tuile.text) * 5 <= int(marque[cote]), "Plaque %d : essais jamais en avance sur le score montré (%s)" % [cote, essais_tuile.text if essais_tuile != null else "?"])
 		check(["MatchFenetreClubEcusson", "MatchFenetreClubForme", "MatchFenetreClubRang", "MatchFenetreClubPoints", "MatchFenetreClubEssais", "MatchFenetreClubPossession", "MatchFenetreClubTerritoire", "MatchFenetreClubPénalités", "MatchFenetreClubLieu"].all(func(n: String) -> bool: return panneau.find_child(n, true, false) != null), "Plaque %d : écusson, forme, rang, points, chiffres du match, lieu" % cote)
 		check(Rect2(Vector2.ZERO, Vector2(root.size)).encloses(panneau.get_global_rect()), "Plaque %d : fenêtre entière à l'écran" % cote)
 		check(pas_de_phrase(panneau).is_empty(), "Plaque %d : aucun bloc de texte : %s" % [cote, str(pas_de_phrase(panneau))])
@@ -540,11 +543,21 @@ func run() -> void:
 		root.size = Vector2i(1280, 720)
 		root.content_scale_size = root.size
 		await settle(30)
+		# Le match en jeu (terrain 3D), pas l'entracte : on attend un temps fort joué.
+		await until(func(): return view.regie.etat == Regie.JEU and not view.regie.between.is_visible_in_tree(), 90000)
+		await settle(20)
+		check(view.regie.etat == Regie.JEU, "1280 × 720 : le match en jeu (terrain 3D) pour la capture")
 		await capture("match-1280")
 		view.ouvrir_fiche_club(0)
 		await wait_command()
-		await settle(8)
+		await settle(10)
 		await capture("fenetre-club-0-1280")
+		view.fermer_fenetre()
+		await wait_command()
+		view.ouvrir_joueur(str(notre.id))
+		await wait_command()
+		await settle(10)
+		await capture("fenetre-joueur-1280")
 		view.fermer_fenetre()
 		await wait_command()
 	finir()
