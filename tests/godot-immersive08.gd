@@ -1533,7 +1533,7 @@ func run() -> void:
 			roster_scroll = app.find_child("SquadScroll",true,false) as ScrollContainer
 			check(roster_scroll != null and roster_scroll.scroll_vertical == saved_scroll, "Retour respecte le défilement volontaire sans révéler à nouveau le dossier")
 			list=app.find_child("ImmersiveRosterRows",true,false)
-			for id in ["RosterColumn_FIN DE CONTRAT", "RosterColumn_CONDITION", "RosterColumnPotential", "OpenComparison", "SquadOpenPlayer_"+str(app.selected_player).validate_node_name(), "MiniFicheInfo_"+str(app.selected_player).validate_node_name()]:
+			for id in ["RosterColumn_FIN DE CONTRAT", "RosterColumn_CONDITION", "RosterColumnPotential", "OpenComparison", "SquadOpenPlayer_"+str(app.selected_player).validate_node_name(), "CarteJoueurInfo_"+str(app.selected_player).validate_node_name()]:
 				check(app.find_child(id, true, false) != null, "Fonction Effectif : " + id)
 			var selected_before: String = app.selected_player
 			var target: Dictionary = app.model.squad[1]
