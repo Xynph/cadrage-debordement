@@ -26,6 +26,7 @@ const Observation = preload("res://ui/player_observation.gd")
 const Identity = preload("res://ui/player_identity.gd")
 const EnPlace = preload("res://ui/confirmation_en_place.gd")
 const Attributs = preload("res://ui/player_attributes.gd")
+const Listes = preload("res://ui/immersive08/listes_joueurs.gd")
 const ROW_HEIGHT := 32
 # Construction progressive de la liste : les premières lignes tout de suite, le reste sur les images suivantes.
 const FIRST_ROWS := 26
@@ -61,6 +62,8 @@ var _selected: Dictionary = {}
 var _signature_entetes := ""
 var _liens_filtre: Array = []
 var _ids_affiches: Array = []
+## Le tableau descend sous la rangée des pastilles de poste (choix de Léo du 21/11/2026).
+var _dy := 0.0
 
 static func _target_report(owner_app: Control, id: Variant) -> Dictionary:
 	if str(id).is_empty(): return {}
@@ -141,6 +144,7 @@ func _build() -> void:
 	_needs()
 	_tabs()
 	_filters(positions)
+	_pastilles_postes()
 	_table()
 	tiles = Control.new()
 	tiles.name = "RecruitmentBudgetTiles"
@@ -152,6 +156,8 @@ func _build() -> void:
 	D.place(cost, Rect2(0, COST_TOP, WIDTH, 200))
 	_refresh()
 	_pied()
+	# Une case de forme porte le même nom sur chaque ligne : on ne lui rend pas le focus (il sauterait en tête de liste).
+	if str(state.get("focus", "")).begins_with("FormeMatch"): state.focus = ""
 	U.restore(app, self, "market")
 	# Courrier « offre_transfert » (Réception) : ouvre directement les offres reçues.
 	if app.has_meta("open_player_sales"):
@@ -522,11 +528,14 @@ func _columns_for(players: Array) -> Array:
 	var avec_club := players.any(func(p: Dictionary): return not _club(p).is_empty())
 	var avec_attributs := C.density >= .75 and players.any(func(p: Dictionary): return not Attributs.detail(p, false).is_empty())
 	var avec_fin := C.density >= .75 and players.any(func(p: Dictionary): return p.get("contractEnd") is int or p.get("contractEnd") is float)
+	# Forme récente (5 dernières notes de match) dès qu'une piste a joué un match noté.
+	var avec_forme := players.any(func(p: Dictionary): return p.get("formeRecente") is Dictionary)
 	var definitions: Array = [["nom", "JOUEUR", "Nom", 330, 0], ["poste", "POSTE", "Poste", 190, 0]]
 	if avec_club: definitions.append(["club", "CLUB", "", 280, 0])
 	definitions.append_array([["age", "ÂGE", "Âge", 60, 2], ["niveau", "NIV.", "Niveau", 80, 2], ["potentiel", "POT.", "Potentiel", 120, 2]])
+	if avec_forme: definitions.append(["forme", "FORME", "", 196, 0])
 	if avec_attributs:
-		for attribut: Array in [["touche", "TOUCHE"], ["melee", "MÊLÉE"], ["gratt", "GRATT."], ["plaq", "PLAQ."]]: definitions.append([attribut[0], attribut[1], "", 84, 2])
+		for attribut: Array in [["touche", "TOUCHE"], ["melee", "MÊLÉE"], ["gratt", "GRATT."], ["plaq", "PLAQ."]]: definitions.append([attribut[0], attribut[1], "", 66 if avec_forme else 84, 2])
 	if avec_fin: definitions.append(["fin", "FIN CTR", "", 100, 2])
 	definitions.append_array([["indemnite", "INDEMNITÉ", "Prime", 160, 2], ["salaire", "SALAIRE / SEM.", "Salaire", 170, 2]])
 	var colonnes: Array = [{"id":"suivi", "titre":"★", "tri":"Suivi", "x":8.0, "w":44.0, "align":0}]
@@ -546,20 +555,20 @@ func _club(player: Dictionary) -> String:
 	return ""
 
 func _table() -> void:
-	var panel := D.rect(self, Rect2(0, TABLE_TOP, WIDTH, HEADER_H + ROWS_H + 4), Charte.PANNEAU, Charte.RAYON_PANNEAU)
+	var panel := D.rect(self, Rect2(0, TABLE_TOP + _dy, WIDTH, HEADER_H + ROWS_H - _dy + 4), Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	panel.name = "ImmersiveMarketTable"
 	panel.mouse_filter = Control.MOUSE_FILTER_PASS
 	var entete := D.rect(panel, Rect2(0, 0, WIDTH, HEADER_H), Color.TRANSPARENT, 0)
 	entete.name = "MarketHeader"
 	D.line(panel, Vector2(0, HEADER_H - 1), Vector2(WIDTH, HEADER_H - 1), Charte.FILET)
-	entete.set_meta("rows_origin", Vector2(0, TABLE_TOP))
+	entete.set_meta("rows_origin", Vector2(0, TABLE_TOP + _dy))
 	table_scroll = ScrollContainer.new()
 	table_scroll.name = "MarketScroll"
 	table_scroll.follow_focus = true
 	table_scroll.mouse_force_pass_scroll_events = false
 	table_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	panel.add_child(table_scroll)
-	D.place(table_scroll, Rect2(0, HEADER_H, WIDTH, ROWS_H))
+	D.place(table_scroll, Rect2(0, HEADER_H, WIDTH, ROWS_H - _dy))
 	table_scroll.get_v_scroll_bar().value_changed.connect(func(value: float): state.scroll = int(value))
 	table_rows = Control.new()
 	table_rows.name = "ImmersiveMarketRows"
@@ -608,6 +617,10 @@ func _entetes() -> void:
 			_filter_changed())
 		entete.add_child(tri)
 		D.place(tri, Rect2(col.x - 8, 0, col.w + 16, HEADER_H))
+		# En-tête souligné à la largeur de son texte, comme sur l'Effectif (choix de Léo du 21/11/2026).
+		var lt := Kit.largeur(str(col.titre) + " ▼", 16) + 30.0
+		tri.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		D.place(tri, Rect2((col.x + col.w - lt + 12.0) if col.align == 2 else col.x - 12.0, 1, lt, HEADER_H - 2))
 
 func _pied() -> void:
 	D.line(self, Vector2(0, HAUTEUR - 52), Vector2(WIDTH, HAUTEUR - 52), Charte.FILET)
@@ -670,6 +683,7 @@ func _filtered() -> Array:
 		var age_known: bool = (raw_age is int or raw_age is float) and is_finite(float(raw_age))
 		var raw_fee: Variant = p.get("fee")
 		var fee_known: bool = (raw_fee is int or raw_fee is float) and is_finite(float(raw_fee))
+		if tab != 3 and not str(state.get("poste_groupe", "")).is_empty() and Listes.groupe_de(p) != str(state.poste_groupe): return false
 		var searchable := U.fold(str(p.get("name", "")) + " " + str(p.get("pos", "")))
 		for term in terms:
 			if not searchable.contains(term): return false
@@ -705,6 +719,7 @@ func _sort_arrows() -> void:
 		button.add_theme_color_override("font_color", Charte.IVOIRE if active else Charte.IVOIRE_2)
 		button.tooltip_text = "Trier par %s · %s · valeurs inconnues en dernier" % ["observation" if column == "Avis" else "indemnité" if column == "Prime" else column.to_lower(), "croissant au prochain clic" if active and _sort_descending() else "décroissant au prochain clic" if active else "activer le tri"]
 		button.accessibility_name = button.text + " · " + button.tooltip_text
+		Listes.styler_entete(button, null, active, _sort_descending(), str(button.get_meta("sort_caption")))
 
 func _refresh() -> void:
 	var scroll := table_scroll.scroll_vertical
@@ -857,6 +872,9 @@ func _row(item: Dictionary, index: int, selected: bool) -> void:
 		var niveau: Variant = G.knowledge_sort_value(item, "rating")
 		_cellule(row, "niveau", G.rating_text(item), Charte.couleur_attribut(niveau) if niveau != null else Charte.IVOIRE_3, true)
 		_cellule(row, "potentiel", G.potential_text(item if not item.is_empty() else report), Charte.IVOIRE_2, true)
+		var forme := _col("forme")
+		if not forme.is_empty() and item.get("formeRecente") is Dictionary:
+			Listes.dessiner_forme(self, row, Rect2(forme.x, 1, forme.w, ROW_HEIGHT - 2), item.formeRecente, str(item.get("name", "")), 34.0).name = "MarketForm"
 		var attributs := Attributs.detail(item, false)
 		if not attributs.is_empty():
 			for pair: Array in [["touche", "lineoutThrow"], ["melee", "scrumTechnique"], ["gratt", "jackal"], ["plaq", "tackling"]]:
@@ -1158,3 +1176,21 @@ static func _portrait(parent: Node, area: Rect2, player: Dictionary, player_id: 
 	parent.add_child(photo)
 	D.place(photo, area)
 
+
+
+# --- Pastilles de poste (choix de Léo du 21/11/2026) ------------------------------------------------------------
+
+func _choisir_groupe(id: String) -> void:
+	state.poste_groupe = id
+	if not id.is_empty():
+		state.position = "Tous"
+		state.position_libre = true
+	state.scroll = 0
+	state.focus = "PostePastille_" + (id if not id.is_empty() else "tous")
+	app._render(false)
+
+func _pastilles_postes() -> void:
+	if tab == 3: return
+	var marche: Array = app.model.get("market", [])
+	_dy = 50.0
+	Listes.pastilles_postes(self, Vector2(0, TABLE_TOP + 4), Listes.compter_groupes(marche), marche.size(), str(state.get("poste_groupe", "")), _choisir_groupe)

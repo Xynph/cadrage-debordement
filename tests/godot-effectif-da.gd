@@ -5,6 +5,7 @@ extends SceneTree
 const Flow = preload("helpers/contextual_flow.gd")
 const Charte = preload("res://ui/charte.gd")
 const U = preload("res://ui/management_state.gd")
+const Listes = preload("res://ui/immersive08/listes_joueurs.gd")
 var app: Control
 var failures: Array[String] = []
 var checks := 0
@@ -137,6 +138,72 @@ func run() -> void:
 	await press("Sort_Niveau")
 	check(page().state.sort == "Niveau", "En-tête de colonne : tri par niveau")
 	check(windows(app).is_empty(), "Onglets et tris : aucune fenêtre")
+
+	# Listes (choix de Léo du 21/11/2026) : en-tête trié souligné ▲/▼, pastilles de poste, tuiles des totaux, forme en cases.
+	await press("Sort_Âge")
+	var entete_age: Dictionary = page().sort_headers.get("Âge", {})
+	check(page().state.sort == "Âge", "Clic sur l'en-tête ÂGE : tri par âge")
+	check(not entete_age.is_empty() and ((entete_age.label as Label).text.ends_with(" ▲") or (entete_age.label as Label).text.ends_with(" ▼")), "En-tête trié : flèche ▲ ou ▼")
+	var souligne := (entete_age.button as Button).get_theme_stylebox("normal") as StyleBoxFlat
+	check(souligne != null and souligne.border_width_bottom > 0, "En-tête trié : souligné")
+	var fleche := (entete_age.label as Label).text.right(1)
+	await press("Sort_Âge")
+	check((page().sort_headers["Âge"].label as Label).text.right(1) != fleche, "Second clic : sens du tri inversé")
+	var deuxieme := squad.filter(func(p: Dictionary): return Listes.groupe_de(p) == "deuxieme").size()
+	check(app.find_child("PostePastille_tous", true, false) is Button, "Pastille Tous postes")
+	await press("PostePastille_deuxieme")
+	check(player_rows().size() == deuxieme, "Pastille 2e ligne : %d lignes" % deuxieme)
+	var total_joueurs := app.find_child("TotalTuile_Joueurs", true, false)
+	check(total_joueurs != null and (total_joueurs.find_child("TuileValeur", true, false) as Label).text == str(deuxieme), "Tuile Joueurs : suit le filtre de poste")
+	check(app.find_child("TotalTuile_Fins", true, false) == null, "Pas de tuile Fins de contrat (déjà en haut de l'écran)")
+	await press("PostePastille_tous")
+	check(player_rows().size() == squad.size(), "Pastille Tous postes : tout le groupe")
+	await press("TotalTuileOuvrir_Niveau")
+	check(page().state.sort == "Niveau", "Tuile Niveau moyen : trie par niveau")
+	await press("TotalTuileOuvrir_Masse")
+	check(app.route == "Finances", "Tuile Masse salariale : écran Finances")
+	app._navigate("Effectif")
+	await settle(12)
+	# Forme récente : cinq cases colorées (note dedans), clic = petite fenêtre du match avec le score.
+	var cible := str(squad[0].id)
+	var vie: Dictionary = app.model.get("clubLife", {})
+	if not vie.get("matchNotes") is Dictionary: vie["matchNotes"] = {"joueurs": {}}
+	if not vie.matchNotes.get("joueurs") is Dictionary: vie.matchNotes["joueurs"] = {}
+	var matchs := []
+	for k in 5: matchs.append({"note": 5.0 + k, "semaine": k, "adversaire": "Rivaux %d" % k, "adversaireId": 1, "scorePour": 20 + k, "scoreContre": 12})
+	vie.matchNotes.joueurs[cible] = {"forme": [5.0, 6.0, 7.0, 8.0, 9.0], "formeMatchs": matchs, "historique": []}
+	app.model["clubLife"] = vie
+	app._render(false)
+	await settle(12)
+	var ligne: Button = null
+	for r: Button in player_rows():
+		if str(r.get_meta("player_id")) == cible: ligne = r
+	check(ligne != null, "Ligne du joueur à forme connue")
+	if ligne != null:
+		var case_ := ligne.find_child("FormeMatch4", true, false) as Button
+		check(case_ != null, "Cinq cases de forme")
+		if case_ != null:
+			check((case_.get_theme_stylebox("normal") as StyleBoxFlat).bg_color.is_equal_approx(Charte.couleur_note(9.0)), "Case de forme : couleur du barème des notes")
+			check(case_.tooltip_text.contains("Rivaux 4") and case_.tooltip_text.contains("9,0"), "Survol d'une case : adversaire et note")
+			case_.pressed.emit()
+			await settle(8)
+			var fenetre := app.find_child("FormeMatchFenetre", true, false)
+			check(fenetre != null, "Clic sur une case : petite fenêtre du match")
+			var score := app.find_child("FormeMatchScore", true, false) as Label
+			check(score != null and score.text == "24 – 12", "Petite fenêtre : score du match")
+			check(app.route == "Effectif", "Petite fenêtre : on reste sur l'Effectif")
+			var echap := InputEventKey.new()
+			echap.keycode = KEY_ESCAPE
+			for down in [true, false]:
+				echap.pressed = down
+				Input.parse_input_event(echap)
+				await process_frame
+			await settle(8)
+			check(app.find_child("FormeMatchFenetre", true, false) == null and app.route == "Effectif", "Échap ferme la petite fenêtre du match")
+	# Le focus rendu à la case a pu faire glisser la liste de quelques pixels : on repart du haut pour la suite.
+	page().state.scroll = 0
+	(app.find_child("SquadScroll", true, false) as ScrollContainer).scroll_vertical = 0
+	await settle(2)
 
 	# Lignes : marqueur de sélection, clic = fiche complète, retour.
 	var rows := player_rows()

@@ -201,12 +201,14 @@ function moteur(){
 //  saison  : saison en cours ;
 //  joueurs : {id:{s:[matchs, somme des notes ×10, minutes, essais, plaquages, mètres, hommes du match,
 //            passes, franchissements, plaquages manqués, points, ballons récupérés (grattages), buts réussis, buts tentés],
-//            f:[5 dernières notes ×10]}} (7 totaux avant le 14/11/2026, 11 avant le 17/11/2026 ; buts = transformations
+//            f:[5 dernières notes ×10], m:[[semaine, adversaire, points pour, points contre], …] (match de chacune des
+//            5 dernières notes, alignés sur la fin de f ; absent ou plus court avant le 21/11/2026)}} (7 totaux avant le 14/11/2026, 11 avant le 17/11/2026 ; buts = transformations
 //            et pénalités, pour la réussite au but de l'écran d'avant-match, native/engine/avant-match.cjs)
 //            pour chaque joueur ayant joué (tous les clubs) ;
 //  detail  : {id:[[semaine, adversaire, compétition, minutes, note×10, essais, plaquages, mètres, homme du match (0/1),
 //            courses, passes, franchissements, plaquages manqués, défenseurs battus, offloads, ballons récupérés,
-//            ballons perdus, points, pénalités concédées], …]} (9 champs avant le 14/11/2026)
+//            ballons perdus, points, pénalités concédées, points pour, points contre], …]} (9 champs avant le 14/11/2026,
+//            19 avant le 21/11/2026 : score du match absent)
 //            détail de la saison en cours pour les joueurs du club du manager ;
 //  passees : {id:[[saison, club, matchs, moyenne×10, essais, hommes du match, plaquages, mètres], …]} 8 saisons au plus ;
 //  confiance : {id:effet cumulé de la saison sur la satisfaction (borné ±6)} ;
@@ -246,7 +248,9 @@ function factory(){
    j.s=Array(TOTAUX).fill(0);
   }
   for(const id of Object.keys(st.passees)){if(!clubDe.has(id))delete st.passees[id];else st.passees[id]=st.passees[id].slice(-MAX_PASSEES);}
-  for(const id of Object.keys(st.joueurs))if(!clubDe.has(id))delete st.joueurs[id];
+  // Agents libres : leur forme récente reste lisible au Recrutement (21/11/2026).
+  const libres=new Set((s.economy?.freeAgents||[]).map(p=>p.id));
+  for(const id of Object.keys(st.joueurs))if(!clubDe.has(id)&&!libres.has(id))delete st.joueurs[id];
   if(st.selection)for(const id of Object.keys(st.selection.lignes))if(!clubDe.has(id))delete st.selection.lignes[id];
   st.detail={};st.confiance={};st.semaine=null;st.reg={};st.regJ={};st.equipes={};st.saison=s.season;
  }
@@ -376,8 +380,11 @@ function factory(){
    j.s[0]++;j.s[1]+=note10;j.s[2]+=n.minutes;j.s[3]+=n.essais;j.s[4]+=n.plaquages;j.s[5]+=n.metres;j.s[6]+=hdm;
    j.s[7]+=n.passes|0;j.s[8]+=n.franchissements|0;j.s[9]+=n.manques|0;j.s[10]+=n.points|0;
    j.s[11]+=n.recuperations|0;j.s[12]+=(n.transformations|0)+(n.penalitesReussies|0);j.s[13]+=(n.transformationsTentees|0)+(n.penalitesTentees|0);
+   const pour=l.score[n.cote]|0,contre=l.score[1-n.cote]|0;
    j.f.push(note10);if(j.f.length>5)j.f.shift();
-   if(n.cote===user){const d=st.detail[id]||(st.detail[id]=[]);d.push([w,clubIdDe(l,1-n.cote),comp,n.minutes,note10,n.essais,n.plaquages,n.metres,hdm,...DETAIL_EN_PLUS.map(k=>n[k]|0)]);if(d.length>MAX_DETAIL)d.shift();}
+   // Match de chaque note de forme (adversaire, score) : forme récente des joueurs de tous les clubs (Recrutement).
+   if(!Array.isArray(j.m))j.m=[];j.m.push([w,clubIdDe(l,1-n.cote),pour,contre]);if(j.m.length>5)j.m.shift();
+   if(n.cote===user){const d=st.detail[id]||(st.detail[id]=[]);d.push([w,clubIdDe(l,1-n.cote),comp,n.minutes,note10,n.essais,n.plaquages,n.metres,hdm,...DETAIL_EN_PLUS.map(k=>n[k]|0),pour,contre]);if(d.length>MAX_DETAIL)d.shift();}
    if(reg){
     const g=groupeDe(matchPlayer(l,n.cote,id)?.pos),e=reg[id]||(reg[id]=[0,0,0,0,0,g<0?0:g,clubIdDe(l,n.cote)]);
     e[0]++;e[1]+=note10;e[2]+=n.minutes;e[3]+=n.essais;if(g>=0)e[5]=g;e[6]=clubIdDe(l,n.cote);
@@ -565,8 +572,8 @@ function factory(){
   const st=s.matchNotes;
   check(obj(st)&&(st.version===VERSION||st.version===1)&&int(st.saison,1,s.season)&&obj(st.joueurs)&&obj(st.detail)&&obj(st.passees)&&obj(st.confiance)&&Array.isArray(st.recompenses)&&st.recompenses.length<=MAX_RECOMPENSES,'schéma invalide');
   const nombres=(a,n)=>Array.isArray(a)&&a.length===n&&a.every(x=>int(x,0,1e7));
-  for(const j of Object.values(st.joueurs))check(obj(j)&&(nombres(j.s,7)||nombres(j.s,11)||nombres(j.s,TOTAUX))&&Array.isArray(j.f)&&j.f.length<=5&&j.f.every(x=>int(x,10,100))&&j.s[1]<=j.s[0]*100,'joueur invalide');
-  for(const d of Object.values(st.detail))check(Array.isArray(d)&&d.length<=MAX_DETAIL&&d.every(r=>Array.isArray(r)&&(r.length===9||r.length===9+DETAIL_EN_PLUS.length)&&int(r[0],0,100)&&int(r[1],-1,100000)&&typeof r[2]==='string'&&r[2].length<=40&&int(r[3],0,240)&&int(r[4],10,100)&&[5,6,7].every(k=>int(r[k],0,100000))&&(r[8]===0||r[8]===1)&&r.slice(9).every(x=>int(x,0,100000))),'détail invalide');
+  for(const j of Object.values(st.joueurs))check(obj(j)&&(nombres(j.s,7)||nombres(j.s,11)||nombres(j.s,TOTAUX))&&Array.isArray(j.f)&&j.f.length<=5&&j.f.every(x=>int(x,10,100))&&j.s[1]<=j.s[0]*100&&(j.m===undefined||Array.isArray(j.m)&&j.m.length<=5&&j.m.every(r=>Array.isArray(r)&&r.length===4&&int(r[0],0,100)&&int(r[1],-1,100000)&&int(r[2],0,500)&&int(r[3],0,500))),'joueur invalide');
+  for(const d of Object.values(st.detail))check(Array.isArray(d)&&d.length<=MAX_DETAIL&&d.every(r=>Array.isArray(r)&&(r.length===9||r.length===9+DETAIL_EN_PLUS.length||r.length===11+DETAIL_EN_PLUS.length)&&int(r[0],0,100)&&int(r[1],-1,100000)&&typeof r[2]==='string'&&r[2].length<=40&&int(r[3],0,240)&&int(r[4],10,100)&&[5,6,7].every(k=>int(r[k],0,100000))&&(r[8]===0||r[8]===1)&&r.slice(9).every(x=>int(x,0,100000))&&(r.length<11+DETAIL_EN_PLUS.length||r.slice(-2).every(x=>int(x,0,500)))),'détail invalide');
   for(const d of Object.values(st.passees))check(Array.isArray(d)&&d.length<=MAX_PASSEES&&d.every(r=>Array.isArray(r)&&(r.length===6||r.length===8)&&int(r[0],1,s.season)&&int(r[1],-1,100000)&&int(r[2],1,500)&&int(r[3],10,100)&&int(r[4],0,10000)&&int(r[5],0,500)&&r.slice(6).every(x=>int(x,0,1e7))),'saison passée invalide');
   for(const v of Object.values(st.confiance))check(int(v,-CONFIANCE_MAX,CONFIANCE_MAX),'confiance invalide');
   for(const r of st.recompenses)check(obj(r)&&['hdm','equipe','mois','saison','xvsaison'].includes(r.type)&&typeof r.id==='string'&&int(r.note,10,100),'distinction invalide');
@@ -650,7 +657,10 @@ function factory(){
     passes:total(7),franchissements:total(8),plaquagesManques:total(9),points:total(10),
     forme:(j?.f||[]).map(x=>x/10),
     historique:d.slice().reverse().map(r=>{const o={semaine:r[0],adversaire:s.clubs[r[1]]?.name||'',adversaireId:r[1],competition:libelle(s,r[2]),competitionId:String(r[2]),minutes:r[3],note:r[4]/10,essais:r[5],plaquages:r[6],metres:r[7],hommeDuMatch:r[8]===1};
-     DETAIL_PROJETE.forEach((k,i)=>{o[k]=r.length>9?r[9+i]:null;});return o;}),
+     DETAIL_PROJETE.forEach((k,i)=>{o[k]=r.length>9?r[9+i]:null;});
+     // Score du match (enregistré depuis le 21/11/2026 ; null : ancienne ligne).
+     const sc=9+DETAIL_PROJETE.length;o.scorePour=r.length>sc+1?r[sc]:null;o.scoreContre=r.length>sc+1?r[sc+1]:null;return o;}),
+    formeMatchs:formeJoueur(p.id)?.matchs||[],
     saisons:passe.map(r=>({saison:r[0],club:s.clubs[r[1]]?.name||'',matchs:r[2],moyenne:r[3]/10,essais:r[4],hommeDuMatch:r[5],plaquages:r.length>6?r[6]:null,metres:r.length>7?r[7]:null})),
     // Équipe-type de la saison en cours (sélections) et équipes de la saison (repères de carrière).
     selections:courant?Object.values(st.reg||{}).reduce((n,reg)=>n+(reg[p.id]?.[4]||0),0):0,
@@ -662,6 +672,14 @@ function factory(){
   base.recompenses=st.recompenses.slice(-12).reverse();
   base.dernier=st.dernier?JSON.parse(JSON.stringify(st.dernier)):null;
   return base;
+ }
+ // Forme récente d'un joueur de n'importe quel club (Effectif, Recrutement) : 5 dernières notes, la plus ancienne
+ // d'abord, avec l'adversaire et le score quand ils sont connus (ancienne sauvegarde : note seule).
+ function formeJoueur(id){
+  const s=state(),j=s?.matchNotes?.joueurs?.[id];if(!j||!Array.isArray(j.f)||!j.f.length)return null;
+  const m=(Array.isArray(j.m)?j.m:[]).slice(-j.f.length),decalage=j.f.length-m.length;
+  return {forme:j.f.map(x=>x/10),matchs:j.f.map((x,i)=>{const o={note:x/10},r=i>=decalage?m[i-decalage]:null;
+   if(r){o.semaine=r[0];o.adversaire=s.clubs[r[1]]?.name||'';o.adversaireId=r[1];o.scorePour=r[2];o.scoreContre=r[3];}return o;})};
  }
  function execute(){throw Error('Notes de match : aucune commande.');}
  function installHooks(){
@@ -715,6 +733,6 @@ function factory(){
    growPlayer(p,Math.min(.03,(n.note-7.3)*.02),false);
   }
  }
- return {project,validate,execute,installHooks,noterMatch,contexte,enregistrer,enregistrerSelection,forme,moyenne,effets,rollover,migrer,finSaison,finJournee,composer,groupeDe};
+ return {project,validate,execute,installHooks,noterMatch,contexte,enregistrer,enregistrerSelection,forme,formeJoueur,moyenne,effets,rollover,migrer,finSaison,finJournee,composer,groupeDe};
 }
 module.exports={files,commands,factory,moteur,...moteur()};

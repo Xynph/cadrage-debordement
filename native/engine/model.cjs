@@ -40,6 +40,8 @@ module.exports=function nativeModel(){
  // Statut JIFF / EQP de la piste pour le club du manager (null hors championnat à quota).
  const quotaBadge=p=>typeof CDJiff!=='undefined'&&CDJiff&&typeof CDJiff.marketBadge==='function'&&S.jiff?.version===1?CDJiff.marketBadge(S,p):null;
  const calendrierFerme=typeof calendrierRefusRecrue==='function'?calendrierRefusRecrue():'';
+ // Forme récente (5 dernières notes de match, adversaire et score : match-notes.cjs), null sans match noté.
+ const formeRecente=id=>typeof CDMatchNotes!=='undefined'&&CDMatchNotes&&typeof CDMatchNotes.formeJoueur==='function'?CDMatchNotes.formeJoueur(id):null;
  const market=S.market.map(source=>{
   const p=JSON.parse(JSON.stringify(source));
   const negotiation=currentNegotiation(p.id,'recruit'),maxYears=Math.min(3,careerContractYears(p));
@@ -49,7 +51,7 @@ module.exports=function nativeModel(){
   const reason=S.live?'Match en cours':calendrierFerme?calendrierFerme:places<=0?'Effectif complet':cash<p.price?'Trésorerie insuffisante':horsBudget?horsBudget:maxYears<1?'Retraite prévue':withdrawn?withdrawnReason:'';
   const available=!S.live&&!calendrierFerme&&places>0&&cash>=p.price&&!horsBudget&&maxYears>=1&&!withdrawn;
   return {...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),...(p.appearanceId===undefined?{}:{appearanceId:p.appearanceId}),id:p.id,name:p.name,pos:p.pos,age:p.age,rating:p.rating,...nativePlayerAttributes(p),
-   salary:askingWage(p,'recruit'),fee,minYears:1,maxYears,available,reason,...(negotiation?{negotiation}:{}),...(quotaBadge(p)?{quota:quotaBadge(p)}:{})};
+   salary:askingWage(p,'recruit'),fee,minYears:1,maxYears,available,reason,...(negotiation?{negotiation}:{}),...(quotaBadge(p)?{quota:quotaBadge(p)}:{}),...(formeRecente(p.id)?{formeRecente:formeRecente(p.id)}:{})};
  });
  const pair=nextMatch(),l=S.live;
  // Météo vue par le manager : libellé, conseil du staff (sans la phrase du vent, composée par l'écran avec
