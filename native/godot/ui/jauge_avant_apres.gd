@@ -1,7 +1,7 @@
 extends Control
 ## Jauge « maintenant → prévu » : la valeur actuelle en plein, l'écart prévu en clair (gain) ou hachuré (perte), un repère
-## au niveau prévu ; au-dessus, la légende et les chiffres écrits « 77 → 80 ▲ +3 ». La couleur ne porte jamais seule le
-## sens : flèche, signe et chiffres l'écrivent. Composant partagé (Travail du club, Entraînement › Groupes).
+## au niveau prévu ; au-dessus, la légende et les chiffres écrits « 77 → 80 ▲ +3 » (▲ en Charte.GAIN, ▼ en Charte.PERTE,
+## perte hachurée). La couleur ne porte jamais seule le sens : flèche, signe et chiffres l'écrivent. Composant partagé (Travail du club, Entraînement › Groupes).
 ## Exemple : `parent.add_child(JaugeAvantApres.new("Moral", 77, 80))`.
 const C = preload("res://ui/immersive08/components.gd")
 const Charte = preload("res://ui/charte.gd")
@@ -11,8 +11,6 @@ var actuel := 0.0
 var prevu := 0.0
 var maximum := 100.0
 var couleur := Charte.VERT_CLAIR
-## Sans prévision : jauge d'état seule, chiffre « 86 / 100 », ni écart ni repère.
-var simple := false
 
 func _init(p_legende: String = "", p_actuel: float = 0.0, p_prevu: float = 0.0, p_couleur: Color = Charte.VERT_CLAIR, p_maximum: float = 100.0) -> void:
 	legende = p_legende
@@ -41,20 +39,9 @@ func _draw() -> void:
 	var base := float(corps)
 	draw_string(C.BOLD, Vector2(0, base), legende.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, size.x * .45, corps, Charte.IVOIRE_2)
 	var gros := maxi(13, C.px(23))
-	if simple:
-		# Jauge d'état seule (pas de prévision) : « 86 / 100 ».
-		var seul := "%d / %d" % [roundi(actuel), roundi(maximum)]
-		var l_seul := C.EXTRA_BOLD.get_string_size(seul, HORIZONTAL_ALIGNMENT_LEFT, -1, gros).x
-		draw_string(C.EXTRA_BOLD, Vector2(size.x - l_seul, base), seul, HORIZONTAL_ALIGNMENT_LEFT, -1, gros, Charte.IVOIRE)
-		var hh := maxf(4.0, float(C.px(11)))
-		var yy := size.y - hh - 2.0
-		_pilule(Rect2(0, yy, size.x, hh), Charte.PANNEAU_3)
-		var aa := clampf(actuel / maximum, 0.0, 1.0) * size.x
-		if aa > 0.0: _pilule(Rect2(0, yy, aa, hh), couleur)
-		return
 	var ecart := ecart_texte()
 	var l_ecart := C.BOLD.get_string_size(ecart, HORIZONTAL_ALIGNMENT_LEFT, -1, gros).x
-	var couleur_ecart := couleur if prevu > actuel else Charte.IVOIRE
+	var couleur_ecart := Charte.GAIN if roundi(prevu) > roundi(actuel) else Charte.PERTE if roundi(prevu) < roundi(actuel) else Charte.IVOIRE_2
 	draw_string(C.BOLD, Vector2(size.x - l_ecart, base), ecart, HORIZONTAL_ALIGNMENT_LEFT, -1, gros, couleur_ecart)
 	var chiffres := "%d → %d" % [roundi(actuel), roundi(prevu)]
 	var l_chiffres := C.EXTRA_BOLD.get_string_size(chiffres, HORIZONTAL_ALIGNMENT_LEFT, -1, gros).x
@@ -72,14 +59,14 @@ func _draw() -> void:
 	if p > a:
 		draw_rect(Rect2(a, y, p - a, h), Color(couleur, .42))
 	elif a > p:
-		draw_rect(Rect2(p, y, a - p, h), Color(Charte.IVOIRE_3, .25))
+		draw_rect(Rect2(p, y, a - p, h), Color(Charte.PERTE, .30))
 		var pas := maxf(4.0, float(C.px(8)))
 		var x := p - h
 		while x < a:
 			var x0 := maxf(x, p)
 			var x1 := minf(x + h, a)
 			if x1 > x0:
-				draw_line(Vector2(x0, y + h - (x0 - x)), Vector2(x1, y + h - (x1 - x)), Charte.IVOIRE_2, 1.5, true)
+				draw_line(Vector2(x0, y + h - (x0 - x)), Vector2(x1, y + h - (x1 - x)), Charte.PERTE, 1.5, true)
 			x += pas
 	# Repère du niveau prévu.
 	draw_rect(Rect2(clampf(p - 1.0, 0.0, w - 2.0), y - 4.0, 2.0, h + 8.0), Charte.IVOIRE)

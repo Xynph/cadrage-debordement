@@ -56,6 +56,18 @@ const D := DORE
 const V_DALTONIEN := Color("5aa9e6")
 ## Rouge : hors nuancier, réservé aux cartons rouges et aux vraies erreurs (échec de sauvegarde, connexion).
 const ROUGE := Color("d9534a")
+
+## Palette des données du groupe (décision de Léo du 21/11/2026, écrans Staff et Entraînement : « plus en couleurs ») :
+## une couleur par donnée, toujours doublée d'un chiffre, d'un mot ou d'un motif (jamais la couleur seule). Jamais de doré.
+const CONDITION := Color("7fbf7a")    ## condition physique
+const MORAL := Color("5b9bd5")        ## moral du groupe
+const CONFIANCE := Color("a88bd6")    ## confiance du conseil
+const REPOS := Color("4fb3a9")        ## repos / récupération
+const RECUPERATION := REPOS
+const NORMAL := Color("7fbf7a")       ## séance normale
+const INTENSIF := Color("e0a04a")     ## séance intensive
+const GAIN := Color("7fbf7a")         ## écart favorable ▲
+const PERTE := Color("d9634f")        ## écart défavorable ▼
 ## Terrain (page Équipe du match) : pelouse en bandes à plat, deux verts sourds alternés, et son liseré.
 const PELOUSE := Color("1d4631")
 const PELOUSE_2 := Color("214e37")

@@ -13,11 +13,15 @@ var contenu: VBoxContainer
 var pied: HBoxContainer
 var titre: Label
 
-func _init(p_titre: String = "", icone: String = "", choisie: bool = false) -> void:
+## `teinte` : couleur de l'effet principal (icône teintée ; avec `fond_teinte`, léger voile de 12 % sur la carte).
+## `detail` : texte d'explication, derrière un repère « i » à droite du titre (jamais en phrase dans la tuile).
+func _init(p_titre: String = "", icone: String = "", choisie: bool = false, teinte: Color = Color.TRANSPARENT, fond_teinte: bool = false, detail: String = "") -> void:
 	set_meta("semantic_role", "tuile_choix")
 	set_meta("style_charte", true)
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var style := C.box(Charte.PANNEAU_2, Charte.IVOIRE if choisie else Color.TRANSPARENT, Charte.RAYON_CARTE, 20)
+	var fond := Charte.PANNEAU_2.lerp(teinte, .12) if fond_teinte and teinte.a > 0 else Charte.PANNEAU_2
+	fond.a = 1.0
+	var style := C.box(fond, Charte.IVOIRE if choisie else Color.TRANSPARENT, Charte.RAYON_CARTE, 20)
 	if choisie: style.set_border_width_all(2)
 	add_theme_stylebox_override("panel", Charte.ombrer(style, Charte.RAYON_CARTE))
 	var colonne := C.v(14)
@@ -26,13 +30,14 @@ func _init(p_titre: String = "", icone: String = "", choisie: bool = false) -> v
 		var tete := C.h(12)
 		colonne.add_child(tete)
 		if not icone.is_empty():
-			var image := C.icon(icone, 30, Charte.IVOIRE)
+			var image := C.icon(icone, 30, teinte if teinte.a > 0 else Charte.IVOIRE)
 			image.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			tete.add_child(image)
 		titre = C.label(p_titre.to_upper(), 27, Charte.IVOIRE, true, 700)
 		titre.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		C.fill(titre)
 		tete.add_child(titre)
+		if not detail.is_empty(): tete.add_child(info(detail))
 	contenu = C.v(12)
 	C.fill(contenu, true)
 	colonne.add_child(contenu)

@@ -191,8 +191,9 @@ static func _header(app: Control, canvas: Control, tab: String) -> void:
 		D.place(bouton, Rect2(x, 70, largeur, 46))
 		x += largeur + 6
 	D.line(canvas, Vector2(0, 117), Vector2(W, 117), Charte.FILET)
-	var largeur_touche := Kit.touche(canvas, W - 250, 104, "← →", false)
-	Kit.texte(canvas, W - 250 + largeur_touche + 10, 104, "changer d’onglet", Charte.IVOIRE_2, 220, 17)
+	# Raccourci ← → : en info-bulle des onglets, plus en mode d'emploi écrit (règle de Léo du 21/11/2026).
+	for onglet: Node in canvas.get_children():
+		if onglet is Button and str(onglet.name).begins_with("ClubTab_"): (onglet as Button).tooltip_text = "← → pour changer d’onglet"
 
 static func _tab(app: Control, key: String, id: String = "") -> void:
 	if key == "direction" or key == "staff":
