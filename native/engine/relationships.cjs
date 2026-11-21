@@ -29,7 +29,6 @@ module.exports={
      check(c.status==='open'?c.resolvedWeek===undefined:integer(c.resolvedWeek,c.originWeek,s.economy.week),'clôture engagement');ids.add(c.id);
     }
    }
-   if(s.groupTrustHistory!==undefined)check(Array.isArray(s.groupTrustHistory)&&s.groupTrustHistory.length<=70&&s.groupTrustHistory.every(h=>keys(h,['date','saison','confiance'])&&/^\d{4}-\d{2}-\d{2}$/.test(h.date)&&integer(h.saison,1,s.season)&&integer(h.confiance,0,100)),'relevé de confiance du groupe');
    for(const match of [s.live,s.lastReport])if(match?.v70Relations!==undefined){
     const r=match.v70Relations;check(keys(r,['version','side','duos'])&&r.version===1&&integer(r.side,0,1)&&r.side===match.userSide&&match.pair?.[r.side]===s.club&&Array.isArray(r.duos)&&r.duos.length>=1&&r.duos.length<=8,'photographie match');
     const players=new Set(match.sheets?.[r.side]?.initial||[]),seen=new Set();
@@ -83,23 +82,13 @@ module.exports={
    const score=joueurs.reduce((n,r)=>n+r.points,0);
    return {level:score===0?0:score<=3?1:score<=7?2:3,score,players:joueurs,duos:duos.slice(0,6)};
   }
-  // Relevé hebdomadaire de la confiance du groupe (même cadence et même date que finance.cashHistory), gardé 70 semaines.
-  function trustReleve(){
-   try{
-    const date=typeof CDWorldCareer!=='undefined'&&S?.worldMode?CDWorldCareer.calendarToday(S):null,v=groupTrust();
-    if(!date||!Number.isFinite(v))return;
-    const h=S.groupTrustHistory=Array.isArray(S.groupTrustHistory)?S.groupTrustHistory:[],dernier=h[h.length-1];
-    if(dernier&&dernier.date===date)dernier.confiance=v;else h.push({date,saison:S.season,confiance:v});
-    if(h.length>70)h.splice(0,h.length-70);
-   }catch(e){}
-  }
   const locked=()=>!!S.live||S.phase==='ended';
   const roster=()=>S.clubs[S.club].players;
   function project(){
    if(!S)return null;
    const ctx=context(),active=S.satisfactionVersion===1&&S.relationsVersion===1,blocked=locked()||Object.keys(S.economy?.talks||{}).length>0;
    const event=CDLivingLockerRoom.weeklyEvent(S),history=S.livingLockerRoom?.history||[];
-   return {context:ctx,active,available:!blocked,reason:blocked?'Match en cours, saison terminée ou négociation ouverte.':'',morale:S.morale,trust:S.trust,playerTrust:groupTrust(),playerTrustHistory:Array.isArray(S.groupTrustHistory)?copy(S.groupTrustHistory):[],tensions:tensions(),
+   return {context:ctx,active,available:!blocked,reason:blocked?'Match en cours, saison terminée ou négociation ouverte.':'',morale:S.morale,trust:S.trust,playerTrust:groupTrust(),playerTrustHistory:(Array.isArray(S.groupHistory)?S.groupHistory:[]).filter(h=>Number.isInteger(h?.confiance)).map(h=>({date:h.date,saison:h.saison,confiance:h.confiance})),tensions:tensions(),
     players:roster().map(p=>({id:p.id,pos:p.pos,score:p.satisfaction?.score??null,trust:playerTrust(p),condition:p.condition,injury:p.injury,minutes:p.dev?.minutes??null,personality:CDLivingLockerRoom.personality(p),promise:p.satisfaction?.promise?copy(p.satisfaction.promise):null,promiseHistory:copy(p.satisfaction?.history||[]),conversationAvailable:active&&!blocked&&!(p.satisfaction?.coachMeeting?.season===S.season&&p.satisfaction.coachMeeting.week===S.economy.week),promiseAvailable:active&&!blocked&&S.phase==='league'&&S.round<PROMISE_LAST_JOURNEY&&!p.injury&&!p.satisfaction?.promise})),
     conversations:[{id:'ecouter',label:'Écouter',detail:'Satisfaction +2.'},{id:'rassurer',label:'Rassurer',detail:'Satisfaction +1 ; premier entretien : moral +1.'},{id:'clarifier',label:'Clarifier',detail:'Premier entretien : confiance +1.'}],
     promiseLastJourney:PROMISE_LAST_JOURNEY,promiseOptions:Object.entries(PROMISE_MINUTES).map(([id,minutes])=>({id,minutes})),
@@ -141,7 +130,7 @@ module.exports={
    const oldRound=recordSatisfactionRound;recordSatisfactionRound=function(l){
     const can=S&&S.satisfactionVersion===1&&S.relationsVersion===1&&l?.finished&&l.pair[l.userSide]===S.club;
     const before=can?CDVestiaireV64.snapshot(roster()):null,out=oldRound(l);
-    if(out&&can)S.morale=clamp(S.morale+CDVestiaireV64.roundImpact(roster(),before).moodDelta,25,98);trustReleve();return out;
+    if(out&&can)S.morale=clamp(S.morale+CDVestiaireV64.roundImpact(roster(),before).moodDelta,25,98);return out;
    };
    const oldCreate=createRugbyMatch;createRugbyMatch=function(pair,legacy=null,automated=false,preparation=null){const m=oldCreate(pair,legacy,automated,preparation);if(!legacy&&!automated){const data=CDRelationsV70.matchSnapshot(S,m);if(data)m.v70Relations=data;}return m;};
    const oldEdge=teamEdge;teamEdge=function(m,side,kind){return oldEdge(m,side,kind)+CDRelationsV70.matchBonus(m,side,kind);};

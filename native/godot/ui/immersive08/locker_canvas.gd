@@ -64,6 +64,10 @@ static func _hero(app: Control, canvas: Control, data: Dictionary) -> void:
 		var card := D.panel(canvas,Rect2(i*452,243,440,121),item[0],item[1],"","LockerMetric"+str(i))
 		D.text(card,22,105,item[2],34 if i in [2,4] else 47,item[3],700,400)
 		cartes.append(card)
+	# Survol : mini-courbes des relevés hebdomadaires du groupe (moral, confiance des joueurs).
+	var Courbe = preload("res://ui/mini_courbe_survol.gd")
+	Courbe.lier(app, cartes[0], "morale", "Moral du vestiaire")
+	Courbe.lier(app, cartes[1], "confiance", "Confiance des joueurs")
 	R.cliquable(cartes[2],func(): Panneaux.fenetre_tensions(canvas,app),"LockerTensionsOuvrir","Tensions")
 	if not leader.is_empty():
 		var rid := str(leader.get("id",""))

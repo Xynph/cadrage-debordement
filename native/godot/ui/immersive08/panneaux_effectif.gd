@@ -280,7 +280,9 @@ static func _groupe(parent: Control, page: Control, app: Control, zone: Rect2) -
 			D.rect(parent, Rect2(rail.position, Vector2(maxf(10.0, rail.size.x * clampf(float(v) / 100.0, 0, 1)), rail.size.y)), m[2], 5)
 		var chiffre := D.text(parent, ligne.end.x, y + 36, _n(v), 28, m[2], 800, 60, HORIZONTAL_ALIGNMENT_RIGHT)
 		chiffre.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
-		_bouton(parent, ligne, func(): _ecran(app, "groupe"), "PanneauJauge_" + str(m[0]), "%s %s" % [m[1], _n(v)])
+		var jauge := _bouton(parent, ligne, func(): _ecran(app, "groupe"), "PanneauJauge_" + str(m[0]), "%s %s" % [m[1], _n(v)])
+		# Survol : mini-courbe des relevés hebdomadaires (groupHistory : moral, confiance).
+		preload("res://ui/mini_courbe_survol.gd").lier(app, jauge, "morale" if m[0] == "morale" else "confiance", "Moral du vestiaire" if m[0] == "morale" else "Confiance des joueurs")
 		y += 60.0
 	# Tensions : pastille (niveau, nombre de joueurs) + portraits cerclés ; clic = petite fenêtre visuelle.
 	var t := _tensions(app)

@@ -50,7 +50,7 @@ test('Séance effectuée : le jour de la séance passe à fait, la charge suit l
   assert.equal(w.charge, etat('S.training'));
 });
 
-test('Relevé hebdomadaire de la confiance du groupe, daté comme la trésorerie', () => {
+test('Relevé hebdomadaire de la confiance du groupe dans groupHistory, daté comme la trésorerie', () => {
   model = M.jouerLeMatch(jeu, model);
   model = M.jusquALaSemaineSuivante(jeu, model);
   const h = model.clubLife.relationships.playerTrustHistory, cash = model.finance.cashHistory;
@@ -58,10 +58,11 @@ test('Relevé hebdomadaire de la confiance du groupe, daté comme la trésorerie
   const dernier = h[h.length - 1];
   assert.ok(cash.some(c => c.date === dernier.date), 'même date que le relevé de trésorerie');
   assert.ok(Number.isInteger(dernier.confiance));
+  assert.equal(model.groupHistory.at(-1).confiance, dernier.confiance, 'même relevé que le moral et la condition (groupHistory)');
 });
 
 test('Ancienne sauvegarde : sans relevé, la confiance et les tensions sont calculées au chargement', () => {
-  run('delete S.groupTrustHistory;validateCareer(S)');
+  run('delete S.groupHistory;validateCareer(S)');
   const r = etat("nativeSystems.domain('relationships').project()");
   assert.deepEqual(r.playerTrustHistory, []);
   assert.ok(Number.isInteger(r.playerTrust));
