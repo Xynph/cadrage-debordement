@@ -27,7 +27,7 @@ const directory=fs.mkdtempSync(path.join(os.tmpdir(),'cd-match-temps-forts-'));
 }
 function run(mode,dossier=mode){
  const data=path.join(directory,dossier,'PrototypeGodot');
- const env={...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:data,CD_MATCH_TEMPS_FORTS_ARTIFACTS:directory,CD_MATCH_TEMPS_FORTS_MODE:mode,CD_GODOT_SEED:'11'}; // même graine, même match
+ const env={...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:data,CD_MATCH_TEMPS_FORTS_ARTIFACTS:directory,CD_MATCH_TEMPS_FORTS_MODE:mode,CD_GODOT_SEED:'11',CD_TEST_VITESSE:process.env.CD_TEST_VITESSE||'8'}; // même graine, même match
  delete env.CD_MATCH_TEMPS_FORTS;delete env.CD_MATCH_TEMPS_FORTS_NIVEAU;delete env.CD_MATCH_TEMPS_FORTS_HORLOGE;delete env.CD_MATCH_TEMPS_FORTS_VITESSE;delete env.CD_MATCH_GESTES;
  // Repli explicite : le direct d'origine.
  if(mode==='inactif')env.CD_MATCH_TEMPS_FORTS='0';
