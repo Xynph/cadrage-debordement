@@ -61,6 +61,125 @@ func gold_used(node: Node) -> int:
 			if style != null and (style.bg_color.is_equal_approx(Charte.OR) or style.bg_color.is_equal_approx(Charte.OR_VIF) or style.border_color.is_equal_approx(Charte.OR)): count += 1
 	return count
 
+func ouvrir_consignes() -> void:
+	await reset()
+	await press(named("PreparationTabConsignes") as Button)
+
+## Consignes (option A de la revue du 21/11) : chaque tuile a son schéma et ses pastilles, et la tuile entière choisit
+## l'intention (vraie commande set_tactics), sans toucher l'autre côté ; aucune phrase d'aide visible.
+func consignes_tuiles() -> void:
+	await ouvrir_consignes()
+	for cote: Array in [["attack", "attacks", "Attack", "defense"], ["defense", "defenses", "Defense", "attack"]]:
+		var options: Array = app.model.tactics.get(cote[1], [])
+		check(options.size() >= 2, "Intentions disponibles : " + str(cote[0]))
+		for option: Dictionary in options:
+			await ouvrir_consignes()
+			var id := "Preparation%s_%s" % [cote[2], str(option.id)]
+			var tuile := named(id) as Button
+			check(tuile != null and tuile.has_meta("tactic_id"), "Tuile cliquable " + id)
+			check(named("Schema_" + str(option.id)) != null, "Schéma de terrain dessiné pour " + id)
+			var parent := tuile.get_parent() if tuile != null else null
+			var effets := 0
+			if parent != null:
+				for enfant: Node in parent.get_children():
+					if str(enfant.name).begins_with("Effet_"): effets += 1
+			check(effets >= 2, "Au moins deux pastilles d'effet sur " + id)
+			if tuile == null or tuile.disabled: continue
+			var autre: String = app.model.tactics.get(cote[3])
+			tuile.pressed.emit()
+			await worker()
+			check(str(app.model.tactics.get(cote[0])) == str(option.id) and str(app.model.tactics.get(cote[3])) == autre, "Clic sur %s : intention choisie, l'autre côté conservé" % id)
+			check(named("Preparation%s_%s" % [cote[2], str(option.id)]) != null and named("PreparationChoix" + str(cote[2])) != null, "Pastille du choix affichée après " + id)
+	var phrases: Array[String] = []
+	for label: Node in named("PreparationConsignes").find_children("*", "Label", true, false):
+		if (label as Label).is_visible_in_tree() and (label as Label).text.split(" ").size() >= 7: phrases.append((label as Label).text)
+	check(phrases.is_empty(), "Aucune phrase d'aide à l'écran des consignes : " + str(phrases))
+	for id in ["PreparationIntentInfoAttack", "PreparationIntentInfoDefense", "PreparationZonesInfo"]:
+		check(named(id) != null and not (named(id) as Control).tooltip_text.is_empty(), "Explication rangée dans le « i » " + id)
+	var zones := named("PreparationOpenZones") as Button
+	if zones != null:
+		var resume := await press(zones)
+		check(app.route == "Plan de jeu", "Consignes par zone : ouvre le carnet de jeu (%s)" % resume)
+
+## Match en direct : la pastille d'état et « Mettre en pause » tiennent dans l'en-tête, sans chevaucher titre, choix ni « i ».
+func consignes_direct() -> void:
+	await ouvrir_consignes()
+	var page := app.find_child("ImmersivePreparation", true, false)
+	check(page != null, "Page de préparation présente")
+	if page == null: return
+	var contexte = page.match_context
+	var faux: Dictionary = app.model.duplicate()
+	for etat: Array in [[{"minute": 23, "teams": [], "score": [3, 0]}, "En direct", true], [{"minute": 41, "paused": true}, "En pause", false], [{"minute": 40, "atBreak": true}, "Mi-temps", false]]:
+		faux.live = etat[0]
+		contexte._on_model_changed(faux)
+		var rangee = named("PreparationMatchStateRow")
+		rangee.maj()
+		await settle()
+		var pastille := rangee.find_child("PreparationMatchStatePastille", true, false) as Control
+		check(pastille != null and pastille.is_visible_in_tree(), "Pastille d'état « %s » visible" % etat[1])
+		var mot: Array = pastille.find_children("*", "Label", true, false) if pastille != null else []
+		check(not mot.is_empty() and (mot[0] as Label).text == etat[1], "Mot de l'état : " + str(etat[1]))
+		check(pastille != null and not pastille.tooltip_text.is_empty(), "Phrase complète de l'état en infobulle")
+		var pause := named("PreparationPauseMatch") as Control
+		check(pause.visible == etat[2], "Bouton pause visible seulement en direct (%s)" % etat[1])
+		var zones: Array[Control] = [pastille, named("PreparationChoixAttack"), named("PreparationIntentInfoAttack"), named("PreparationAttackScroll")]
+		if pause.visible: zones.append(pause)
+		var titre := named("PreparationAttack").find_child("CardTitle", true, false) as Control
+		if titre != null: zones.append(titre)
+		for i in zones.size():
+			for j in range(i + 1, zones.size()):
+				if zones[i] == null or zones[j] == null: continue
+				# Le titre de carte occupe toute la largeur : seule sa partie écrite compte.
+				var a := zones[i].get_global_rect()
+				var b := zones[j].get_global_rect()
+				if zones[i] == titre or zones[j] == titre: continue
+				check(not a.grow(-1).intersects(b.grow(-1)), "En-tête en direct sans chevauchement : %s / %s" % [zones[i].name, zones[j].name])
+		var carte := named("PreparationAttack") as Control
+		check(carte.get_global_rect().grow(1).encloses(pastille.get_global_rect()) and carte.get_global_rect().grow(1).encloses(pause.get_global_rect()), "État et pause dans la carte (%s)" % etat[1])
+		if etat[1] == "En direct" and not DisplayServer.get_name() == "headless" and not proof.is_empty():
+			await RenderingServer.frame_post_draw
+			check(root.get_texture().get_image().save_png(proof.path_join("preparation-consignes-direct-1920.png")) == OK, "Capture des consignes en direct")
+	contexte._on_model_changed(app.model)
+	named("PreparationMatchStateRow").call("maj")
+	await settle()
+	check(not (named("PreparationMatchStateRow") as Control).visible and not named("PreparationPauseMatch").visible, "Avant le match : ni état ni pause")
+
+## Plan du staff : intention, lignes du rapport de force et pastilles d'effet mènent toutes quelque part.
+func plan_du_staff() -> void:
+	await reset()
+	await press(named("OpenOppositionDossier") as Button)
+	check(named("PreparationAdvice") != null, "Plan du staff ouvert")
+	var ids: Array[String] = []
+	for pattern in ["PreparationAdviceIntent_*", "PreparationAdviceSector_*", "PreparationAdviceCondition", "PreparationAdviceEffect_*Zone"]:
+		for button: Node in app.find_children(pattern, "Button", true, false): ids.append(str(button.name))
+	check(ids.filter(func(i: String): return i.begins_with("PreparationAdviceIntent_")).size() == 2, "Deux intentions conseillées cliquables")
+	check(ids.filter(func(i: String): return i.begins_with("PreparationAdviceEffect_")).size() >= 4, "Pastilles d'effet du plan cliquables")
+	check(ids.filter(func(i: String): return i.begins_with("PreparationAdviceSector_")).size() >= 1, "Barres du rapport de force cliquables")
+	for id in ids:
+		await reset()
+		await press(named("OpenOppositionDossier") as Button)
+		var button := named(id) as Button
+		if button == null:
+			check(false, "Commande retrouvée : " + id)
+			continue
+		var resume := await press(button)
+		check(resume != "Préparation|0|conseils", "« %s » mène ailleurs (%s)" % [id, resume])
+		if id.begins_with("PreparationAdviceIntent_") or id.begins_with("PreparationAdviceEffect_"):
+			check(resume == "Préparation|1|", "« %s » ouvre l'onglet Consignes (%s)" % [id, resume])
+	var phrases: Array[String] = []
+	await reset()
+	await press(named("OpenOppositionDossier") as Button)
+	for label: Node in named("PreparationAdvice").find_children("*", "Label", true, false):
+		if (label as Label).is_visible_in_tree() and (label as Label).text.split(" ").size() >= 7: phrases.append((label as Label).text)
+	check(phrases.is_empty(), "Aucune phrase dans le plan du staff : " + str(phrases))
+	var adopter := named("AdoptDossierPlan") as Button
+	check(adopter != null, "Adopter ce plan présent")
+	if adopter != null and not adopter.disabled:
+		var conseil: Dictionary = app.model.decisions.preparation.get("advice", {})
+		adopter.pressed.emit()
+		await worker()
+		check(app.model.tactics.attack == conseil.get("attack") and app.model.tactics.defense == conseil.get("defence"), "Adopter ce plan applique les deux intentions")
+
 func run() -> void:
 	root.size = Vector2i(1920, 1080)
 	DisplayServer.window_set_size(root.size)
@@ -178,6 +297,9 @@ func run() -> void:
 	await reset()
 	await press(named("PreparationTabConsignes") as Button)
 	check(gold_used(named("PreparationConsignes")) == 0 and gold_used(named("PreparationTabs")) == 0, "Aucun or dans les consignes")
+	await consignes_tuiles()
+	await consignes_direct()
+	await plan_du_staff()
 	if not DisplayServer.get_name() == "headless" and not proof.is_empty():
 		await reset()
 		await settle()

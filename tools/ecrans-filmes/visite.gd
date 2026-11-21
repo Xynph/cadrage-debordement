@@ -49,6 +49,7 @@ const EXTRAS := [
 	{"id": "options", "libelle": "Options", "type": "options"},
 	{"id": "avant-match-delegation", "libelle": "Avant-match · sous-page Déléguer le match", "type": "avant_delegation"},
 	{"id": "preparation-bas", "libelle": "Préparation · leur XV probable (bas de page)", "type": "preparation_bas"},
+	{"id": "preparation-consignes", "libelle": "Préparation · onglet Consignes", "type": "preparation_onglet", "onglet": 1},
 	{"id": "preparation-conseils", "libelle": "Préparation · conseils détaillés (sous-page)", "type": "preparation_sous", "sous": "conseils"},
 	{"id": "preparation-reperes", "libelle": "Préparation · tous les repères (sous-page)", "type": "preparation_sous", "sous": "reperes"},
 	{"id": "effectif-contrats", "libelle": "Effectif · onglet Contrats", "type": "effectif_onglet", "onglet": 2},
@@ -628,6 +629,13 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			app.management_ui.preparation.sub = str(ecran.sous)
 			app._render()
 			await stabiliser()
+		"preparation_onglet":
+			app._navigate("Préparation")
+			await stabiliser()
+			app.management_ui.preparation.tab = int(ecran.onglet)
+			app.management_ui.preparation.sub = ""
+			app._render()
+			await stabiliser()
 		"effectif_onglet":
 			app.management_ui.roster.immersive_tab = int(ecran.onglet)
 			app._navigate("Effectif")
@@ -676,6 +684,7 @@ func refermer(ecran: Dictionary) -> void:
 		var avant: Control = app.match_screen.find_child("MatchOpening", true, false) if app.match_screen != null else null
 		if avant != null: avant.fermer_page()
 	if str(ecran.type) in ["preparation_bas", "preparation_sous"] and app.management_ui.get("preparation") is Dictionary: app.management_ui.preparation.sub = ""
+	if str(ecran.type) == "preparation_onglet" and app.management_ui.get("preparation") is Dictionary: app.management_ui.preparation.tab = 0
 	if str(ecran.type) == "effectif_onglet": app.management_ui.roster.immersive_tab = 0
 	if str(ecran.type) == "finances_onglet": app.management_ui["immersive08_finance_tab"] = "summary"
 	if str(ecran.type) == "onglet_cle":
