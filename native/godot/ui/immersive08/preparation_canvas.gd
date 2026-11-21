@@ -374,6 +374,7 @@ func _heading() -> void:
 		match_context.live_context = surtitre
 	var titre := ("Préparer la saison · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "jlo-d1")))) if not preparation.is_empty() else "Préparation"
 	app.heading = _titre(hero, 4, 88, titre.to_upper(), 56, Charte.IVOIRE, 1355)
+	app.heading.add_theme_font_override("font", Charte.TITRE_FICHE)
 	if active_tab == 1:
 		app.heading.name = "PreparationContextHeading"
 		match_context.live_heading = app.heading

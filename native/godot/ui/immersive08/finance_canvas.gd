@@ -519,7 +519,7 @@ static func hospitality(parent: Node, rectangle: Rect2) -> void:
 	D.place(image, rectangle)
 
 static func _entete(app: Control, canvas: Control, tab: String) -> void:
-	_titre(canvas, 4, 52, "FINANCES", 62, Charte.IVOIRE, 520)
+	_titre(canvas, 4, 52, "FINANCES", 62, Charte.IVOIRE, 520).add_theme_font_override("font", Charte.TITRE_FICHE)
 	var semaine := int(app.model.meta.get("week",0)) + 1
 	var etat := "bilan de la saison" if app.model.meta.get("phase","") == "ended" else "chiffres arrêtés à la semaine %d" % semaine
 	_texte(canvas, 300, 50, "Saison %s · %s" % [G.season_label(app.model.meta.get("season",1)), etat], 21, Charte.IVOIRE_2, 1100)

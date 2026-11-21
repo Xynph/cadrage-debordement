@@ -64,7 +64,7 @@ static func _construire(app: Control, page: Control) -> void:
 	retour_lien.accessibility_name = _origine(app) + " · Échap"
 	C.style_bouton_lien(retour_lien, 20)
 	Kit.touche(page, retour_lien.size.x / C.density + 10, 32, "Échap")
-	var titre := Kit.titre(page, 0, 98, "Comparateur", 56, 900)
+	var titre := Kit.titre_page(page, 0, 98, "Comparateur", 56, 900)
 	titre.name = "ComparateurTitre"
 	Kit.texte(page, 0, 134, "Jusqu’à trois joueurs côte à côte. La meilleure valeur de chaque ligne est en gras avec ▲ ; l’âge et le coût ne comptent pas comme un avantage.", Charte.IVOIRE_2, 1800, 18)
 	var x0 := 330.0

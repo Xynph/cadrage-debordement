@@ -35,7 +35,7 @@ static func build(app: Control, page: Control, player: Dictionary) -> void:
 	var retour := Kit.lien(page, Rect2(0, 4, 0, 38), "← Retour à la fiche", func(): fermer(app), "FicheChargeRetour", 20)
 	retour.accessibility_name = "Retour à la fiche · Échap"
 	Kit.touche(page, retour.size.x / C.density + 10, 32, "Échap")
-	Kit.titre(page, 0, 98, "Charge individuelle · " + Kit.casse(str(player.get("name", ""))), 38, 1600).name = "IndividualInstructions"
+	Kit.titre_page(page, 0, 98, "Charge individuelle · " + Kit.casse(str(player.get("name", ""))), 38, 1600).name = "IndividualInstructions"
 	D.line(page, Vector2(0, 122), Vector2(2248, 122), Charte.FILET)
 	var bloc := D.rect(page, Rect2(0, 146, 1300, 520), Charte.PANNEAU, 24)
 	bloc.name = "FicheChargePage"

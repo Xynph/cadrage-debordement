@@ -156,7 +156,7 @@ static func _sous_titre(app: Control) -> String:
 	return " · ".join(parts)
 
 static func _header(app: Control, canvas: Control, tab: String) -> void:
-	var titre := Kit.titre(canvas, 0, 46, "Club", 40, 150)
+	var titre := Kit.titre_page(canvas, 0, 46, "Club", 40, 150)
 	titre.name = "ClubTitle"
 	var sous := Kit.texte(canvas, 150, 46, _sous_titre(app), Charte.IVOIRE_2, 1900, 19)
 	sous.name = "ClubSubtitle"

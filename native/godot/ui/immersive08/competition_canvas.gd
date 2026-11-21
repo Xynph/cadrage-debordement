@@ -295,7 +295,7 @@ func _onglet(area: Rect2, caption: String, selected: bool, callback: Callable, i
 
 func _header() -> void:
 	var title := D.text(self, 0, 50, "COMPÉTITIONS", 50, C.IVORY, 800, 440)
-	title.add_theme_font_override("font", Charte.TITRE_GRAS)
+	title.add_theme_font_override("font", Charte.TITRE_FICHE)
 	title.name = "CompetitionTitle"
 	var round_label := str(app.model.meta.get("roundLabel", "")) if league.id == state.club_league else "Phase régulière" if league.get("phase", "league") == "league" else _phase(league)
 	var short_round := round_label.trim_prefix(str(league.get("name","")) + " · ")
@@ -387,7 +387,7 @@ func _sous_page() -> bool:
 
 func _titre_page(texte: String) -> void:
 	var title := D.text(self, 0, 116, texte.to_upper(), 46, C.IVORY, 800, WIDTH)
-	title.add_theme_font_override("font", Charte.TITRE_GRAS)
+	title.add_theme_font_override("font", Charte.TITRE_FICHE)
 	title.name = "CompetitionPageTitle"
 
 func _page_archives() -> void:

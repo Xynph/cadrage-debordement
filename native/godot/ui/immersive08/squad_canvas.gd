@@ -162,7 +162,9 @@ func _lien(parent: Control, zone: Rect2, texte: String, action: Callable, id: St
 func _entete_page() -> void:
 	var saison := int(app.model.get("meta", {}).get("season", 1))
 	var joueurs: Array = app.model.get("squad", [])
-	_italique(D.text(self, 0, 64, "EFFECTIF", 58, C.IVORY, 800, 600)).name = "RosterTitre"
+	var titre_effectif := D.text(self, 0, 64, "EFFECTIF", 58, C.IVORY, 800, 600)
+	titre_effectif.add_theme_font_override("font", Charte.TITRE_FICHE)
+	titre_effectif.name = "RosterTitre"
 	# Sous le titre : deux pastilles neutres « 36 joueurs » et « 2026-27 » (plus de phrase, 21/11).
 	var nombre := R.pastille(self, 0, 104, "%d joueur%s" % [joueurs.size(), "s" if joueurs.size() > 1 else ""], Charte.IVOIRE_2, "people", "RosterSousTitre")
 	R.cliquable(nombre, _tous_les_joueurs, "RosterSousTitreOuvrir", "Tous les joueurs sous contrat")

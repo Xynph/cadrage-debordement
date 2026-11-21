@@ -44,7 +44,7 @@ func _hero() -> void:
 	var sol := BanqueImages.region(G.identity(app.model.get("club", {})))
 	D.photo(hero, sol if BanqueImages.existe(sol) else "club-forest", Rect2(1300, 1, 946, 198))
 	D.fade_photo_edges(D.photo(hero, "academy-training", Rect2(998, 1, 790, 198)))
-	D.text(hero, 26, 36, "LE CENTRE DE FORMATION", 28, GOLD, 700, 1120)
+	D.text(hero, 26, 36, "LE CENTRE DE FORMATION", 28, GOLD, 700, 1120).add_theme_font_override("font", C.Charte.TITRE_FICHE)
 	app.heading = D.text(hero, 25, 111, "Les chemins de la progression.", 68, C.IVORY, 800, 1140)
 	var context := "Détection, mentorat et compétition junior" if data.get("available", false) else "Suivi des Espoirs dans Formation"
 	D.text(hero, 28, 151, G.club_name(app.model.club) + "  ·  " + context, 25, C.IVORY, 500, 1100, HORIZONTAL_ALIGNMENT_LEFT, true)

@@ -277,7 +277,7 @@ func _heading(title: String, description: String, match_count: int, session_coun
 		var dates := Agenda.week(selected)
 		if not dates.is_empty(): heading = "Semaine du " + _display_date(dates[0]) + " " + dates[0].left(4) + " au " + _display_date(dates[-1]) + " " + dates[-1].left(4)
 	var title_label := C.label(heading.to_upper(), 36, C.IVORY, true, 800)
-	title_label.add_theme_font_override("font", Charte.TITRE_GRAS)
+	title_label.add_theme_font_override("font", Charte.TITRE_FICHE)
 	body.add_child(title_label)
 	var line := C.h(12)
 	body.add_child(line)
