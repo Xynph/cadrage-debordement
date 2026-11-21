@@ -28,6 +28,7 @@ const ROUTES_GEOMETRIE := ["Réception","Bureau","Effectif","Composition","Prép
 const HORS_CARRIERE := ["Accueil", "Création", "Packs"]
 const EXTRAS := [
 	{"id": "calendrier-semaine", "libelle": "Calendrier (semaine)", "type": "calendrier_semaine"},
+	{"id": "entrainement-groupes", "libelle": "Entraînement · onglet Groupes", "type": "entrainement_onglet", "onglet": 1},
 	{"id": "fiche-joueur", "libelle": "Fiche joueur", "type": "joueur"},
 	{"id": "mini-fiche", "libelle": "Mini-fiche au survol (Effectif)", "type": "mini_fiche"},
 	{"id": "equilibre-postes", "libelle": "Équilibre par poste (infobulle Aptes)", "type": "equilibre_postes"},
@@ -433,6 +434,17 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				app._navigate("Réception", false)
 				await stabiliser()
 			if app.route != route: return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
+		"entrainement_onglet":
+			app._navigate("Composition")
+			await stabiliser()
+			var onglet_entrainement := app.find_child("TacticsTab4", true, false) as Button
+			if onglet_entrainement == null: return {"statut": "echec", "note": "onglet Entraînement absent"}
+			onglet_entrainement.pressed.emit()
+			await stabiliser()
+			var entrainement := app.find_child("ImmersiveTraining", true, false)
+			if entrainement == null: return {"statut": "echec", "note": "entraînement non ouvert"}
+			entrainement._open_tab(int(ecran.onglet))
+			await stabiliser()
 		"presse_ouverte":
 			# Même recette que tests/godot-presse-da.gd : carrière neuve, avance jusqu'à la conférence d'arrivée,
 			# puis page Presse avec l'origine du courrier (questions ouvertes sous les yeux).

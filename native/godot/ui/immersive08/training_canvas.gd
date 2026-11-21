@@ -8,6 +8,7 @@ const G = preload("res://ui/game_skin.gd")
 const ClubUI = preload("res://ui/immersive08/club_ui.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const Fatigue = preload("res://ui/immersive08/fatigue_overview.gd")
+const Variantes = preload("res://ui/immersive08/training_groups_variants.gd")
 const Watch = preload("res://ui/management_state.gd")
 const TABS = ["Semaine", "Groupes", "Individuel", "Staff", "Fatigue"]
 const MODES = {"repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
@@ -356,9 +357,18 @@ func _staff_cards(tile: Panel) -> void:
 func _groups() -> void:
 	var section := D.panel(self, Rect2(4, 260, 1740, 950), "Plans de travail", "people", "", "TrainingGroupPlans")
 	var data: Dictionary = support.get("training", {})
-	D.text(section, 25, 97, "Appliquer un plan répartit les charges individuelles. Tu lances ensuite la séance collective.", 27, C.IVORY, 500, 1630)
+	var variante_visuelle := Variantes.variante() in ["A", "B"]
+	if not variante_visuelle: D.text(section, 25, 97, "Appliquer un plan répartit les charges individuelles. Tu lances ensuite la séance collective.", 27, C.IVORY, 500, 1630)
 	if data.get("plans", []).is_empty(): D.text(section, 25, 154, "Aucun plan proposé pour cette carrière.", 23, C.MUTED, 500, 1620)
 	var plans: Array = data.get("plans", [])
+	# PROVISOIRE : options visuelles A/B (CD_VARIANTE_VISUELLE), à retirer après le choix de Léo.
+	var variante := Variantes.variante()
+	if variante in ["A", "B"] and not plans.is_empty():
+		section.size.y = C.px(84 + (610 if variante == "A" else 690) + 24)
+		Variantes.build(self, section, plans, data.get("available", false), variante)
+		_chart()
+		_vigilance()
+		return
 	for i in plans.size():
 		var plan: Dictionary = plans[i]
 		var tile := D.panel(section, Rect2(23, 129 + i * 204, 1692, 183), str(plan.label), "train")
