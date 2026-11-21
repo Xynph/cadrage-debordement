@@ -7,6 +7,8 @@ const Tuile = preload("res://ui/tuile_choix.gd")
 const JaugeAnneau = preload("res://ui/jauge_anneau.gd")
 const JaugeAvantApres = preload("res://ui/jauge_avant_apres.gd")
 const BarreEmpilee = preload("res://ui/barre_empilee.gd")
+const LienZone = preload("res://ui/lien_zone.gd")
+const Etat = preload("res://ui/management_state.gd")
 
 static func build(app: Control) -> Control:
 	var page := G.v(12)
@@ -88,12 +90,13 @@ static func _staff(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 	list.add_child(tete_diag)
 	var diag := Cc.h(28)
 	list.add_child(diag)
-	diag.add_child(JaugeAnneau.new(float(d.mean), "Condition moyenne", Charte.CONDITION))
-	diag.add_child(JaugeAnneau.new(float(d.morale), "Moral du groupe", Charte.MORAL))
-	diag.add_child(JaugeAnneau.new(float(d.trust), "Confiance", Charte.CONFIANCE))
-	diag.add_child(_chiffre(int(d.fatigue), "sous 65", int(d.fatigue) > 0, "Joueurs disponibles sous 65 de condition"))
+	# Chaque lecture ouvre l'écran qui la détaille.
+	diag.add_child(LienZone.relier(JaugeAnneau.new(float(d.mean), "Condition moyenne", Charte.CONDITION), "SupportLien_Condition", "Effectif › Condition", _vers_condition.bind(app)))
+	diag.add_child(LienZone.relier(JaugeAnneau.new(float(d.morale), "Moral du groupe", Charte.MORAL), "SupportLien_Moral", "Vestiaire", _vers_vestiaire.bind(app)))
+	diag.add_child(LienZone.relier(JaugeAnneau.new(float(d.trust), "Confiance", Charte.CONFIANCE), "SupportLien_Confiance", "Club › Direction", _vers_direction.bind(app)))
+	diag.add_child(LienZone.relier(_chiffre(int(d.fatigue), "sous 65", int(d.fatigue) > 0, "Joueurs disponibles sous 65 de condition"), "SupportLien_Sous65", "Effectif › Condition", _vers_condition.bind(app)))
 	if d.has("tired"):
-		diag.add_child(_chiffre(int(d.tired), "sous 85", int(d.tired) > 0, "Joueurs sous 85 de condition"))
+		diag.add_child(LienZone.relier(_chiffre(int(d.tired), "sous 85", int(d.tired) > 0, "Joueurs sous 85 de condition"), "SupportLien_Sous85", "Effectif › Condition", _vers_condition.bind(app)))
 	# Les lectures se partagent la largeur du panneau.
 	for lecture: Control in diag.get_children(): Cc.fill(lecture)
 	Tuile.proteger(diag)
@@ -122,10 +125,11 @@ static func _staff(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 		rangee.add_child(tuile)
 		if meeting_data.available:
 			var condition := _condition_prevue(pv)
-			if not condition.is_empty(): tuile.contenu.add_child(JaugeAvantApres.new("Condition", condition.avant, condition.apres, Charte.CONDITION))
-			tuile.contenu.add_child(JaugeAvantApres.new("Moral", float(d.morale), float(pv.get("morale", d.morale)), Charte.MORAL))
-			tuile.contenu.add_child(JaugeAvantApres.new("Confiance", float(d.trust), float(pv.get("trust", d.trust)), Charte.CONFIANCE))
-			tuile.pied.add_child(Tuile.pastille("%d joueurs" % int(pv.get("affected", 0)), Charte.IVOIRE, "people", "Joueurs concernés par la réunion"))
+			var cle := str(option.key)
+			if not condition.is_empty(): tuile.contenu.add_child(LienZone.relier(JaugeAvantApres.new("Condition", condition.avant, condition.apres, Charte.CONDITION), "SupportLienCondition_" + cle, "Effectif › Condition", _vers_condition.bind(app)))
+			tuile.contenu.add_child(LienZone.relier(JaugeAvantApres.new("Moral", float(d.morale), float(pv.get("morale", d.morale)), Charte.MORAL), "SupportLienMoral_" + cle, "Vestiaire", _vers_vestiaire.bind(app)))
+			tuile.contenu.add_child(LienZone.relier(JaugeAvantApres.new("Confiance", float(d.trust), float(pv.get("trust", d.trust)), Charte.CONFIANCE), "SupportLienConfiance_" + cle, "Club › Direction", _vers_direction.bind(app)))
+			tuile.pied.add_child(LienZone.relier(Tuile.pastille("%d joueurs" % int(pv.get("affected", 0)), Charte.IVOIRE, "people", "Joueurs concernés par la réunion"), "SupportLienJoueurs_" + cle, "Effectif › Condition", _vers_condition.bind(app)))
 		elif applied:
 			tuile.pied.add_child(Tuile.pastille("Réunion tenue", Charte.GAIN, "check", etat))
 		else:
@@ -158,11 +162,11 @@ static func _staff(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 		var teinte: Color = {"proteger": Charte.REPOS, "relever": Charte.INTENSIF, "equilibrer": Charte.NORMAL}.get(str(plan.key), Charte.GRIS_VERT)
 		var tuile := Tuile.new(str(plan.label), icone, false, teinte, false, explication)
 		plans.add_child(tuile)
-		tuile.contenu.add_child(barre)
+		tuile.contenu.add_child(LienZone.relier(barre, "SupportLienPlan_" + str(plan.key), "Entraînement › Groupes", _vers_groupes.bind(app)))
 		var gain := float(plan.conditionGain)
 		var signe := "▲" if gain > 0 else "▼" if gain < 0 else "="
 		var couleur_gain := Charte.GAIN if gain > 0 else Charte.PERTE if gain < 0 else Charte.GRIS_VERT
-		tuile.pied.add_child(Tuile.pastille("%s %+.0f condition" % [signe, gain], couleur_gain, "", "Condition totale du groupe après la séance"))
+		tuile.pied.add_child(LienZone.relier(Tuile.pastille("%s %+.0f condition" % [signe, gain], couleur_gain, "", "Condition totale du groupe après la séance"), "SupportLienGain_" + str(plan.key), "Entraînement › Groupes", _vers_groupes.bind(app)))
 		if not data.training.available: tuile.pied.add_child(Tuile.pastille(_mot_verrou(verrou_charge), Charte.GRIS_VERT, "clock", verrou_charge))
 		var vide := Control.new()
 		Cc.fill(vide)
@@ -183,6 +187,24 @@ static func _briefing(list: VBoxContainer, app: Control, data: Dictionary) -> vo
 		list.add_child(G.wrap(plan.desc, 14))
 		var button := _action(list, str(plan.label), "SupportBriefing_" + str(plan.key), b.available, func(): app._command("strategic_briefing", {"context":data.context,"fixture":b.fixture,"plan":plan.key}))
 		if plan.key == b.selected: G.selected(button, app.accent)
+
+## Destinations des lectures (changement d'écran, jamais une fenêtre).
+static func _vers_condition(app: Control) -> void:
+	if not app.management_ui.get("roster") is Dictionary: app.management_ui.roster = Etat.defaults()
+	app.management_ui.roster.immersive_tab = 1
+	app._navigate("Effectif")
+
+static func _vers_vestiaire(app: Control) -> void:
+	app._navigate("Vestiaire")
+
+static func _vers_direction(app: Control) -> void:
+	app.management_ui.erase("club_page")
+	app._navigate("Stratégie")
+
+static func _vers_groupes(app: Control) -> void:
+	if not app.management_ui.get("immersive_training") is Dictionary: app.management_ui.immersive_training = {}
+	app.management_ui.immersive_training.tab = 1
+	app.Immersive.open_training(app)
 
 ## Condition moyenne des joueurs concernés avant / après la réunion, quand la prévision détaille les joueurs.
 static func _condition_prevue(pv: Dictionary) -> Dictionary:
