@@ -1516,7 +1516,8 @@ func terrain2d(view: Control) -> void:
 		var hote: Control = view.get("fenetre_hote") if view.fenetre_ouverte() else null
 		var panneau: Control = hote.find_child("MatchFenetreJoueurPanneau", true, false) if hote != null else null
 		check(between.get("fiche_match") == null and panneau != null and str(panneau.get_meta("player_id", "")) == str(lineup[2].id), "Nom du 3 : sa petite fenêtre s'ouvre par-dessus l'entracte")
-		check(app.model.live.paused, "Fenêtre ouverte : le match est en pause")
+		# La fenêtre de la carte (juste avant) a relancé le match en se fermant : la pause revient avec la commande du jeu.
+		check(await until(func(): return bool(app.model.live.get("paused", false)), 10000), "Fenêtre ouverte : le match est en pause")
 		var echap := InputEventKey.new()
 		echap.keycode = KEY_ESCAPE
 		echap.pressed = true
