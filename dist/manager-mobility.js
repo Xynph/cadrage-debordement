@@ -16,7 +16,7 @@ function managerMobilityProfile(){
 }
 function managerMobilityDecision(id){
  const international=typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S);
- if(!managerMobilityWindow()||!Number.isInteger(id)||id<0||id>=(international?56:S.clubs.length)||id===S.club)return null;
+ if(!managerMobilityWindow()||!Number.isInteger(id)||id<0||id>=S.clubs.length||id===S.club||international&&CDWorldCareer.leagueId(S,id)==='guest')return null;
  const c=S.clubs[id],w=worldClub(id),risk=CDCoachMarket.dismissalRisk({confidence:w.coachConfidence,consecutiveLosses:w.consecutiveLosses});
  const rank=(international?CDWorldCareer.ranked(S,CDWorldCareer.leagueId(S,id)):S.franceMode?CDFranceCompetition.ranked(S,CDFranceCompetition.leagueId(S,id)):ranked()).findIndex(x=>x.id===id)+1,reputation=managerMobilityProfile(),budget=Math.max(0,c.cash-w.debt);
  // Affinite V48 reutilisee, sans inventer de remuneration ni paiement.
@@ -90,8 +90,8 @@ function managerMobilityOnSeasonStart(){
 }
 function validateManagerMobility(s){
  if(s.managerMobilityVersion===undefined&&s.managerMobility===undefined)return;
- const international=typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(s),m=s.managerMobility,maxClub=international?55:s.franceMode?29:13;
- saveCheck(s.managerMobilityVersion===1&&s.worldVersion===1&&s.integratedManagementVersion===1&&[1,2].includes(s.aiRosterVersion)&&s.aiRoster?.version===s.aiRosterVersion&&saveObject(m)&&m.version===1&&saveInt(m.originClub,0,maxClub)&&saveInt(m.enabledSeason,1,s.season)&&saveInt(m.currentFrom,m.enabledSeason,s.season)&&saveArray(m.applications,international?165:s.franceMode?87:39)&&saveArray(m.history,30)&&saveArray(m.archives,maxClub+1));
+ const international=typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(s),m=s.managerMobility,sizing=international?worldSaveSizing(s):null,maxClub=(international?sizing.clubCount:s.franceMode?30:14)-1,maxRound=international?sizing.maxRound:s.franceMode?34:26;
+ saveCheck(s.managerMobilityVersion===1&&s.worldVersion===1&&s.integratedManagementVersion===1&&[1,2].includes(s.aiRosterVersion)&&s.aiRoster?.version===s.aiRosterVersion&&saveObject(m)&&m.version===1&&saveInt(m.originClub,0,maxClub)&&saveInt(m.enabledSeason,1,s.season)&&saveInt(m.currentFrom,m.enabledSeason,s.season)&&saveArray(m.applications,3*maxClub)&&saveArray(m.history,30)&&saveArray(m.archives,maxClub+1));
  const ids=new Set(),keys=new Set();
  for(const a of m.applications){
   saveCheck(saveObject(a)&&saveId(a.id)&&a.id==='job-'+a.season+'-'+a.clubId&&saveInt(a.season,Math.max(m.enabledSeason,s.season-2),s.season)&&saveInt(a.fromClub,0,maxClub)&&saveInt(a.clubId,0,maxClub)&&a.clubId!==a.fromClub&&!ids.has(a.id)&&['offered','rejected','declined','accepted','cancelled','expired','completed'].includes(a.status)&&Object.prototype.hasOwnProperty.call(MOBILITY_REASONS,a.reason)&&saveInt(a.reputation,0,100)&&saveInt(a.risk,0,100)&&saveInt(a.affinity,0,100)&&saveInt(a.coachChanges,0,10000));
@@ -108,7 +108,7 @@ function validateManagerMobility(s){
  for(const a of m.archives){
   saveCheck(saveObject(a)&&saveInt(a.clubId,0,maxClub)&&!keys.has(a.clubId)&&saveInt(a.season,m.enabledSeason,s.season)&&CAREER_ACADEMY_LEVELS.includes(a.academyInvestment)&&saveArray(a.ledger,100)&&saveArray(a.boardHistory,24));keys.add(a.clubId);
   for(const x of a.ledger)saveCheck(saveObject(x)&&typeof x.title==='string'&&saveNumber(x.amount));
-  for(const x of a.boardHistory)saveCheck(saveObject(x)&&saveInt(x.season,1,s.season)&&saveInt(x.round,0,international?46:s.franceMode?34:26)&&['previous','after','results','finances','youth','score'].every(k=>saveInt(x[k],0,100)));
+  for(const x of a.boardHistory)saveCheck(saveObject(x)&&saveInt(x.season,1,s.season)&&saveInt(x.round,0,maxRound)&&['previous','after','results','finances','youth','score'].every(k=>saveInt(x[k],0,100)));
  }
 }
 function managerMobilityPanel(){
