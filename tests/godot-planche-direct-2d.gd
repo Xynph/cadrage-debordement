@@ -84,7 +84,7 @@ func run() -> void:
 	await until(func(): return int(app.model.live.get("minute", 0)) >= minute_voulue, 600000)
 	check(await until(func(): return vue_2d(view), 240000), "Écran 2D du direct avec classement et multiplex")
 	# Au moins un fait de match affiché avant de figer (en ligne, rendu lent, la 12e minute peut n'en avoir aucun encore).
-	await until(func(): return view.regie.between.find_child("MatchBetweenEvent*", true, false) != null or view.regie.between.find_child("MatchBetweenHighlight*", true, false) != null, 300000)
+	await until(func(): return view.regie.between.find_children("MatchBetweenEvent*", "PanelContainer", true, false).any(func(n: Node): return (n as Control).is_visible_in_tree() and str(n.name).substr(17).is_valid_int()) or view.regie.between.find_children("MatchBetweenHighlight*", "PanelContainer", true, false).any(func(n: Node): return (n as Control).is_visible_in_tree()), 400000)
 	if app.model.live.get("finished", false) == false and not app.model.live.get("paused", false): await command("pause", {"paused": true})
 	await settle(30)
 	var between: Control = view.regie.between
