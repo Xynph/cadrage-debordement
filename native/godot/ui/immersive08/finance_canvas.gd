@@ -804,7 +804,7 @@ static func _watch(card: Panel, app: Control, finance: Dictionary, largeur: floa
 		if ligne.has("tuiles"):
 			# Compteurs du contrat à anticiper : deux tuiles (au total, et cette saison) au lieu d'une phrase.
 			var tuiles: Array = ligne.tuiles
-			for k in tuiles.size(): Pieces.tuile(card, Rect2(290 + k * 100, y + 4, 92, 62), tuiles[k][0], tuiles[k][1], tuiles[k][3], tuiles[k][2], 26, "", "", k == 1, func(): _vers_contrats(app))
+			for k in tuiles.size(): Pieces.tuile(card, Rect2(290 + k * 118, y + 4, 110, 62), tuiles[k][0], tuiles[k][1], tuiles[k][3], tuiles[k][2], 26, "", "", k == 1, func(): _vers_contrats(app))
 		else:
 			# Le détail passe sous le lien (aligné sur le titre) et prend toute la largeur : plus de troncature à 1280.
 			_texte(card, 62, y + 56, str(ligne.detail), 16, Charte.IVOIRE_2, largeur - 86).mouse_filter = Control.MOUSE_FILTER_IGNORE

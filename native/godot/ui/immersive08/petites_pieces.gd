@@ -69,8 +69,7 @@ static func rendre_cliquable(cadre: Control, taille: Vector2, action: Callable, 
 
 ## Largeur (unités) d'une pastille portant ce mot.
 static func largeur_pastille(texte: String, icone: String = "") -> float:
-	var police := C.font(600)
-	return police.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(18))).x / C.density + 26.0 + (26.0 if not icone.is_empty() else 0.0)
+	return C.BODY.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(18))).x / C.density + 32.0 + (26.0 if not icone.is_empty() else 0.0)
 
 ## Pastille d'état : pilule, icône (forme) puis un mot. Renvoie sa largeur.
 static func pastille(parent: Node, x: float, y: float, texte: String, icone: String = "", id: String = "", bulle: String = "", couleur: Color = Charte.IVOIRE, fond: Color = Charte.PANNEAU_3, action: Callable = Callable()) -> float:

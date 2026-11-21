@@ -1018,7 +1018,7 @@ func _cout() -> void:
 		var cycles := int(scouting.get("workCycles", 0))
 		frais_delai = "%d %s" % [cycles, "sem." if scouting.get("workUnit") == "week" else "cycles"]
 	if not frais_valeur.is_empty():
-		var tuile_observation := Pieces.tuile(cost, Rect2(1644, tuile_y, 112, 62), frais_valeur, "observer · " + frais_delai, Pieces.TURQUOISE, "RecruitmentCostObservation", 24, "", "search")
+		var tuile_observation := Pieces.tuile(cost, Rect2(1644, tuile_y, 112, 62), frais_valeur, frais_delai, Pieces.TURQUOISE, "RecruitmentCostObservation", 24, "", "search")
 		tuile_observation.tooltip_text = "Observer : %s · %s" % [G.euros(scouting.get("cost", 0)), frais_delai]
 	# Actions : principale (ivoire plein), puis liens.
 	# Actions : principale (ivoire plein, un seul par écran), puis liens à la suite.
