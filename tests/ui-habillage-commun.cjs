@@ -26,9 +26,9 @@ for (const name of ['BG', 'PANEL', 'LINE', 'MUTED', 'GOOD']) {
   assert.match(constant(skins.base, name) || '', /^Charte\.\w+$/, `${name} pointe sur un jeton de la charte`);
 }
 assert.ok(!/Color\("[0-9a-f]{6}"\)/i.test(skins.carnet), 'carnet : aucune couleur en dur (jetons de la charte)');
-assert.equal(constant(skins.contextual, 'TEXT'), 'Base.INK', 'salles du club : encre commune');
-assert.equal(constant(skins.contextual, 'GOLD'), 'Base.GOLD', 'salles du club : or commun');
-assert.equal(constant(skins.contextual, 'MUTED'), 'Base.MUTED', 'salles du club : texte secondaire commun');
+assert.equal(constant(skins.contextual, 'TEXT'), 'Charte.CREME', 'salles du club : encre crème de la charte');
+assert.equal(constant(skins.contextual, 'GOLD'), 'Charte.DORE', 'salles du club : doré de la charte');
+assert.equal(constant(skins.contextual, 'MUTED'), 'Charte.GRIS_VERT', 'salles du club : texte secondaire de la charte');
 assert.equal(constant(skins.carnet, 'GOLD'), 'Base.PAPER_GOLD', 'carnet : or du papier repris');
 assert.equal(constant(skins.carnet, 'WHITE'), 'Base.INK', 'carnet : encre claire reprise');
 const forbidden = ['f5f4ec', 'ddbd80', '82592e', 'f1f0df', 'd8c183', 'c0c9b5', 'bca36a'];
