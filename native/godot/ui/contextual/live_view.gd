@@ -920,30 +920,41 @@ func _poser_plaques(teams: Array) -> void:
 		plaques[cote].tooltip_text = ("%s : fiche du club (le match se met en pause)." % complet) if not complet.is_empty() else "Fiche du club (le match se met en pause)."
 	_coque_score.queue_redraw()
 
-## PROVISOIRE (choix de Léo) : variante B du bandeau, le vrai logo du club quand un pack d'identité installé en fournit
-## un (logoPath de la présentation du club), 44 px en 1080p à côté du sigle ; sans logo de pack, le sigle seul (jeu
-## de base). Jamais l'écusson dessiné ni le blason officiel ici. Actif avec CD_VARIANTE_VISUELLE=B seulement.
+## PROVISOIRE (choix de Léo) : variante B du bandeau, un logo À LA PLACE de la pastille du sigle (même emplacement,
+## 44 px en 1080p) : le vrai logo du club quand un pack d'identité en fournit un (logoPath de la présentation), sinon
+## l'écusson dessiné aux couleurs et initiales du club (celui du stade). Actif avec CD_VARIANTE_VISUELLE=B seulement.
 func _poser_ecusson(cote: int, teams: Array) -> void:
 	if OS.get_environment("CD_VARIANTE_VISUELLE") != "B": return
-	var rangee: HBoxContainer = plaques[cote].get_child(0)
+	var puce: Control = plaques[cote].find_child("MatchClubChip%d" % cote, true, false)
+	var rangee: Container = puce.get_parent()
 	var ancien := rangee.get_node_or_null("MatchClubCrest%d" % cote)
 	if ancien != null:
 		rangee.remove_child(ancien)
 		ancien.queue_free()
+	puce.visible = true
 	if teams.size() <= cote or not (teams[cote] is Dictionary): return
 	var club := _club_complet(teams[cote])
+	var largeur := roundi(44 * echelle)
+	var ecusson: Control
 	var logo: Texture2D = S.G.Base._pack_texture(str(S.G.identity(club).get("logoPath", club.get("logoPath", ""))))
-	if logo == null: return
-	var ecusson := TextureRect.new()
-	ecusson.texture = logo
-	ecusson.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	ecusson.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	ecusson.custom_minimum_size = Vector2.ONE * roundi(44 * echelle)
+	if logo != null:
+		var image := TextureRect.new()
+		image.texture = logo
+		image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		image.custom_minimum_size = Vector2.ONE * largeur
+		ecusson = image
+	else:
+		ecusson = load("res://ui/tenue_club.gd").ecusson(club, largeur)
+		if ecusson == null: ecusson = S.G.crest(club, largeur)
+		ecusson.custom_minimum_size = Vector2.ONE * largeur
 	ecusson.name = "MatchClubCrest%d" % cote
 	ecusson.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	ecusson.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ecusson.tooltip_text = ""
 	rangee.add_child(ecusson)
-	rangee.move_child(ecusson, 0 if cote == 0 else rangee.get_child_count() - 1)
+	rangee.move_child(ecusson, puce.get_index())
+	puce.visible = false
 
 ## Club du direct complété par sa fiche du classement ou du catalogue (identité, dont le logo du pack).
 func _club_complet(equipe: Dictionary) -> Dictionary:
