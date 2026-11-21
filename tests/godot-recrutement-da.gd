@@ -283,6 +283,7 @@ func offer_page() -> void:
 	bouton.pressed.emit()
 	await settle(12)
 	check(page_kind() == "negociation", "Approcher ouvre l'écran « Offre au joueur »")
+	await offer_pieces()
 	# Deux temps : « Envoyer l'offre » ouvre la confirmation EN PLACE ; rien n'est envoyé avant « Confirmer ».
 	var envoyer := node("RecrutementPageValider") as Button
 	if envoyer != null and not envoyer.disabled:
@@ -292,6 +293,7 @@ func offer_page() -> void:
 		await settle(6)
 		check(node("ContractSignatureConfirmation") != null and node("ContractSignatureConfirmationOk") != null, "Second temps : confirmation en place avec « Confirmer »")
 		check(int(app.bridge._next_id) == commandes, "Aucune commande envoyée avant la confirmation")
+		check(node("OffreRecap") != null and node("ContractSignaturePhrase") == null, "Confirmation : récapitulatif visuel figé, sans phrase")
 		check(windows().is_empty(), "La confirmation de l'offre n'ouvre aucune fenêtre")
 		var non := node("ContractSignatureConfirmationAnnuler") as Button
 		if non != null: non.pressed.emit()
@@ -305,6 +307,62 @@ func offer_page() -> void:
 		annuler.pressed.emit()
 		await settle(12)
 	check(page_kind().is_empty(), "Annuler ferme l'écran d'offre sans rien envoyer")
+
+## Offre au joueur (choix de Léo du 21/11/2026) : règle, frise, jeton ; chaque chiffre ou pastille ouvre une petite
+## fenêtre visuelle, fermée tour à tour par ✕, Échap (PetiteFenetre.fermer_derniere) et un clic à côté.
+func offer_pieces() -> void:
+	var PetiteFenetre: Variant = load("res://ui/petite_fenetre.gd")
+	for id in ["OffreRegle", "OffreFrise", "OffreJeton", "OffreRegleCurseur", "OffreRegleDemande"]:
+		check(node(id) != null, "Offre au joueur : pièce %s affichée" % id)
+	check(node("OfferSalary") != null and node("OfferSalary").is_visible_in_tree() and node("OfferYears") != null and node("OfferYears").is_visible_in_tree(), "Offre au joueur : champs salaire et durée visibles")
+	check(node("ContractTransferBudget") == null or not node("ContractTransferBudget").is_visible_in_tree(), "Offre au joueur : plus de phrase « Disponible pour les transferts »")
+	var liens := ["OffreEtapeLien", "OffreDemandeLien", "OffreRegleEcartZoneLien", "OffreFriseFinZoneLien", "OffreJetonLien", "OffreJetonResteLien", "OffreJetonEngageLien", "OffreJetonTresorerieLien"]
+	var manieres := ["croix", "echap", "a_cote"]
+	var vus := 0
+	for i in liens.size():
+		var lien := node(liens[i]) as Button
+		if lien == null:
+			# Budget de saison absent : pastilles « Reste » et « Engagé » non affichées.
+			check(liens[i] in ["OffreJetonResteLien", "OffreJetonEngageLien"], "Offre au joueur : %s cliquable" % liens[i])
+			continue
+		vus += 1
+		lien.pressed.emit()
+		await settle(3)
+		var calque := node("OffrePetiteFenetre")
+		check(calque != null and PetiteFenetre.ouverte(self) == calque, "%s ouvre une petite fenêtre" % liens[i])
+		check(windows().is_empty(), "%s : petite fenêtre visuelle, pas de fenêtre système" % liens[i])
+		if calque == null: continue
+		var maniere: String = manieres[i % manieres.size()]
+		match maniere:
+			"croix":
+				var croix: Button = null
+				for bouton: Node in calque.find_children("*Fermer", "Button", true, false): croix = bouton
+				check(croix != null, "%s : bouton ✕" % liens[i])
+				if croix != null: croix.pressed.emit()
+			"echap":
+				check(PetiteFenetre.fermer_derniere(self), "%s : Échap ferme la petite fenêtre" % liens[i])
+			"a_cote":
+				var a_cote := calque.find_child("OffrePetiteFenetreACote", true, false) as Button
+				check(a_cote != null, "%s : clic à côté possible" % liens[i])
+				if a_cote != null: a_cote.pressed.emit()
+		await settle(3)
+		check(node("OffrePetiteFenetre") == null and PetiteFenetre.ouverte(self) == null, "%s : petite fenêtre fermée (%s)" % [liens[i], maniere])
+	check(vus >= 6, "Offre au joueur : au moins six pièces cliquables (%d)" % vus)
+	# La frise règle la durée, la règle garde le salaire ; rien n'est envoyé.
+	var annees := node("OfferYears") as SpinBox
+	var commandes := int(app.bridge._next_id)
+	if annees != null and annees.editable:
+		var avant := annees.value
+		var cible := int(annees.min_value) if annees.value != annees.min_value else int(annees.max_value)
+		var segment := node("OffreFriseClic_%d" % cible) as Button
+		check(segment != null, "Frise : saison %d cliquable" % cible)
+		if segment != null:
+			segment.pressed.emit()
+			await settle(3)
+			check(int(annees.value) == cible and node("OffreFriseFin") != null, "Frise : un clic règle la durée à %d an(s)" % cible)
+			annees.value = avant
+			await settle(3)
+	check(int(app.bridge._next_id) == commandes, "Régler l'offre n'envoie aucune commande")
 
 ## Besoins du club : arrive filtré sur le poste du besoin n° 1 ; une carte sans piste propose une mission ; « ★ » trie.
 func needs_and_sort() -> void:
