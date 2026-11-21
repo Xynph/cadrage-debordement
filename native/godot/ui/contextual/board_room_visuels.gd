@@ -1,6 +1,6 @@
 extends RefCounted
-## Salle du conseil en visuels (planche A/B du 21/11/2026, `CD_VARIANTE_VISUELLE=A|B`) : anneaux pour la confiance et
-## l'organisation, tuiles chiffre pour les moyens, jalons en cartes ou sur la frise de la saison, décisions en cartes.
+## Salle du conseil en visuels (option B de la planche du 21/11/2026) : anneaux pour la confiance et l'organisation,
+## tuiles chiffre pour les moyens, jalons en cartes et sur la frise de la saison, décisions en cartes.
 ## Tout ce qui se clique ouvre une petite fenêtre visuelle (Échap, ✕ ou clic à côté la ferment) ou agit.
 ## Les données viennent toutes de la projection du moteur (clubStrategy) : rien n'est calculé ici hors mise en forme.
 const C = preload("res://ui/immersive08/components.gd")
@@ -189,21 +189,32 @@ static func carte_jalon(goal: Dictionary, metrics: Dictionary, id: String, actio
 	colonne.add_child(barre(avancement(type, metrics.get(type), goal.get("target")), couleur))
 	return cliquable(carte, id, action, "%s · %s · %s / %s · S%s" % [COURTS_JALON.get(type, type), etat[0], mesure(type, metrics.get(type)), mesure(type, goal.get("target")), entier(goal.get("deadline"))])
 
-## Frise de la saison : semaines 1..fin, semaine en cours, jalons posés à leur échéance (pictogramme dans un disque
-## de la couleur du statut). Chaque jalon est un bouton (petite fenêtre).
+## Frise de la saison : semaines 0..fin, semaine en cours, matchs du club (ballons : plein = joué, creux = à venir),
+## drapeau de fin de saison, jalons posés à leur échéance (pictogramme dans un disque de la couleur du statut).
+## Chaque jalon est un bouton (petite fenêtre). Hauteur ajustée aux jalons empilés : pas de vide sans jalon.
 class Frise extends Control:
 	var semaine := 0
 	var fin := 1
 	var jalons: Array = []  ## [{goal, action, id}]
+	var matchs: Array = []  ## [{semaine, joue}]
 	var boutons: Array = []
-	const MARGE := 34.0
+	const MARGE := 30.0
+	const BOUTON := 44.0
 	func _ready() -> void:
 		resized.connect(_placer)
 		_placer()
+	func etages() -> int:
+		var piles := {}
+		var haut := 0
+		for entree: Dictionary in jalons:
+			var s := int(entree.goal.get("deadline", 0))
+			piles[s] = int(piles.get(s, 0)) + 1
+			haut = maxi(haut, piles[s])
+		return haut
 	func x_de(s: float) -> float:
-		return MARGE + (size.x - 2.0 * MARGE) * clampf((s - 1.0) / maxf(1.0, float(fin) - 1.0), 0.0, 1.0)
+		return MARGE + (size.x - 2.0 * MARGE) * clampf(s / maxf(1.0, float(fin)), 0.0, 1.0)
 	func ligne_y() -> float:
-		return size.y * .62
+		return size.y - 38.0
 	func _placer() -> void:
 		var piles := {}
 		for i in boutons.size():
@@ -212,28 +223,45 @@ class Frise extends Control:
 			var rang: int = piles.get(s, 0)
 			piles[s] = rang + 1
 			var b: Button = boutons[i]
-			b.size = Vector2(44, 44)
-			b.position = Vector2(x_de(s) - 22.0, ligne_y() - 62.0 - rang * 48.0)
+			b.size = Vector2(BOUTON, BOUTON)
+			b.position = Vector2(x_de(s) - BOUTON * .5, ligne_y() - 20.0 - BOUTON - rang * (BOUTON + 4.0))
 		queue_redraw()
+	func _ballon(centre: Vector2, plein: bool) -> void:
+		# Ballon ovale, resserré quand les semaines sont serrées (1280) pour ne jamais se chevaucher.
+		var rx := clampf((size.x - 2.0 * MARGE) / maxf(1.0, float(fin)) * .42, 3.0, 8.0)
+		var points := PackedVector2Array()
+		for k in 21: points.append(centre + Vector2(cos(TAU * k / 20.0) * rx, sin(TAU * k / 20.0) * rx * .62))
+		if plein: draw_colored_polygon(points, Charte.IVOIRE_2)
+		else:
+			draw_colored_polygon(points, Charte.PANNEAU)
+			draw_polyline(points, Charte.IVOIRE_2, 2.0, true)
 	func _draw() -> void:
 		var y := ligne_y()
 		draw_line(Vector2(MARGE, y), Vector2(size.x - MARGE, y), Charte.PANNEAU_3, 8.0)
-		if semaine > 1: draw_line(Vector2(MARGE, y), Vector2(x_de(semaine), y), Charte.IVOIRE_2, 8.0)
+		if semaine > 0: draw_line(Vector2(MARGE, y), Vector2(x_de(semaine), y), Charte.IVOIRE_2, 8.0)
 		var police: Font = C.BOLD
-		for s in range(1, fin + 1):
+		for s in range(0, fin + 1):
 			var x := x_de(s)
-			var repere := s == 1 or s == fin or (s % 5 == 0 and fin - s >= 3)
+			var repere := s == 0 or s == fin or (s % 5 == 0 and fin - s >= 3)
 			draw_line(Vector2(x, y + 6), Vector2(x, y + (14 if repere else 9)), Charte.IVOIRE_3, 2.0)
 			if repere:
 				var t := "S%d" % s
 				var l := police.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
-				draw_string(police, Vector2(x - l * .5, y + 32), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Charte.IVOIRE_3)
+				draw_string(police, Vector2(clampf(x - l * .5, 0.0, size.x - l), y + 30), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Charte.IVOIRE_3)
+		for m: Dictionary in matchs:
+			var sm := int(m.get("semaine", -1))
+			if sm < 0 or sm > fin: continue
+			_ballon(Vector2(x_de(sm), y), bool(m.get("joue", false)))
+		# Fin de saison : drapeau au bout de la ligne.
+		var xf := x_de(fin)
+		draw_line(Vector2(xf, y - 4), Vector2(xf, y - 30), Charte.IVOIRE, 2.0)
+		draw_colored_polygon(PackedVector2Array([Vector2(xf, y - 30), Vector2(xf - 16, y - 25), Vector2(xf, y - 20)]), Charte.IVOIRE)
 		if semaine >= 0:
-			var xs := x_de(maxi(1, semaine))
+			var xs := x_de(clampi(semaine, 0, fin))
 			draw_colored_polygon(PackedVector2Array([Vector2(xs - 9, y - 18), Vector2(xs + 9, y - 18), Vector2(xs, y - 6)]), Charte.IVOIRE)
 			var t := "S%d" % semaine
 			var l := C.EXTRA_BOLD.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
-			draw_string(C.EXTRA_BOLD, Vector2(xs - l * .5, y - 24), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Charte.IVOIRE)
+			draw_string(C.EXTRA_BOLD, Vector2(clampf(xs - l * .5, 0.0, size.x - l), y - 22), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Charte.IVOIRE)
 		# Tige de chaque jalon jusqu'à la ligne.
 		var piles := {}
 		for i in jalons.size():
@@ -241,15 +269,16 @@ class Frise extends Control:
 			var s := int(goal.get("deadline", 0))
 			if piles.has(s): continue
 			piles[s] = true
-			draw_line(Vector2(x_de(s), y - 18), Vector2(x_de(s), y), Charte.IVOIRE_2, 2.0)
+			draw_line(Vector2(x_de(s), y - 20), Vector2(x_de(s), y), Charte.IVOIRE_2, 2.0)
 
-static func frise(semaine: int, fin: int, jalons: Array) -> Frise:
+static func frise(semaine: int, fin: int, jalons: Array, matchs: Array = []) -> Frise:
 	var f := Frise.new()
 	f.name = "BoardSeasonFrise"
 	f.semaine = semaine
 	f.fin = maxi(1, fin)
 	f.jalons = jalons
-	f.custom_minimum_size = Vector2(300, 130)
+	f.matchs = matchs
+	f.custom_minimum_size = Vector2(300, 72.0 + f.etages() * (Frise.BOUTON + 4.0))
 	f.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	f.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for entree: Dictionary in jalons:

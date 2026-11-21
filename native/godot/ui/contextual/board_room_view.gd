@@ -67,73 +67,13 @@ func _can_act() -> bool:return not _current_strategy().is_empty()
 
 func _number(value: Variant) -> bool:return (value is int or value is float) and is_finite(float(value))
 
-func _display(value: Variant, money: bool = false) -> String:
-	if not _number(value):return "Non renseigné"
-	return S.G.euros(value) if money else S.G.n(value)
-
-func _metric(parent: Node, title: String, value: Variant, node_name: String, money: bool = false) -> void:
-	var label := S.wrap(title+" : "+_display(value,money),16,S.TEXT);label.name=node_name;parent.add_child(label)
-
 func _draw() -> void:
-	if is_instance_valid(ui):remove_child(ui);ui.queue_free()
-	ui=Control.new();S.full(ui);add_child(ui)
-	var variante := OS.get_environment("CD_VARIANTE_VISUELLE")
-	if variante in ["A","B"]:
-		_draw_visuel(variante)
-		director._refresh_controls()
-		return
-	var frame := S.frame(ui,22)
-	S.heading(frame,model.get("club",{}),"Le point avec la direction","")
-	var body := S.G.h(18);S.G.fill(body,true);frame.add_child(body)
-	var facts := S.panel(body,16);facts.get_parent().custom_minimum_size.x=346;facts.get_parent().size_flags_horizontal=Control.SIZE_FILL
-	var facts_scroll := S.G.scroll(facts);S.G.fill(facts_scroll.get_parent(),true)
-	var strategy := _strategy();var board: Dictionary=strategy.get("board",{});var finance: Dictionary=strategy.get("finance",{})
-	facts_scroll.add_child(S.label("La situation enregistrée",21,S.GOLD))
-	_metric(facts_scroll,"Confiance de la direction",model.get("meta",{}).get("trust"),"BoardRoomTrust")
-	_metric(facts_scroll,"Organisation du club",board.get("organizationScore"),"BoardRoomOrganization")
-	var club_goal: String=str(model.get("club",{}).get("goal",""))
-	if not club_goal.is_empty():facts_scroll.add_child(S.wrap("Cap du club : "+club_goal,14))
-	var error := S.wrap(str(app.last_error),14,Charte.DORE);error.name="BoardRoomServerError";error.visible=not error.text.is_empty();facts_scroll.add_child(error)
-	if not _local_notice.is_empty():facts_scroll.add_child(S.wrap(_local_notice,14,S.GOLD))
-	facts_scroll.add_child(S.label("Les jalons suivis",18,S.GOLD))
-	var goals: Array=board.get("objectives",[])
-	if goals.is_empty():facts_scroll.add_child(S.wrap("Aucun jalon enregistré",14))
-	for goal: Dictionary in goals:
-		var type: String=str(goal.get("type",""));var metrics: Dictionary=board.get("metrics",{})
-		var status: String={"pending":"À suivre","met":"Atteint","missed":"Manqué","unverified":"Non vérifiable"}.get(str(goal.get("status","")),"Non renseigné")
-		var line := S.wrap("%s · %s\nMesure actuelle : %s · cible : %s\nÉchéance : semaine %s" % [TYPES.get(type,type),status,_display(metrics.get(type),type=="cash"),_display(goal.get("target"),type=="cash"),_display(goal.get("deadline"))],14,S.TEXT)
-		line.name="BoardObjective_"+str(goal.get("id","")).validate_node_name();facts_scroll.add_child(line)
-	facts_scroll.add_child(S.label("Les moyens connus",18,S.GOLD))
-	for item in [["Trésorerie","cash"],["Salaires / semaine","weeklyWages"],["Revenus connus / semaine","weeklyIncome"],["Coûts connus / semaine","weeklyCosts"],["Projection de fin de saison","baseForecast"]]:
-		_metric(facts_scroll,str(item[0]),finance.get(item[1]),"BoardFinance_"+str(item[1]),true)
-	var notice := S.wrap(str(finance.get("notice","Aucune projection financière disponible.")).replace("Montants de jeu fictifs.", "").strip_edges(),12);notice.name="BoardRoomFinanceNotice";facts_scroll.add_child(notice)
-	for warning: Variant in board.get("readiness",{}).get("warnings",[]):facts_scroll.add_child(S.wrap(str(warning),14,S.GOLD))
-	var history: Array=board.get("history",[])
-	if not history.is_empty():
-		facts_scroll.add_child(S.label("Bilans archivés",18,S.GOLD))
-		for report: Dictionary in history.slice(maxi(0,history.size()-3)):
-			facts_scroll.add_child(S.wrap("Saison %s · organisation %s / 100"%[SeasonLabel.label(report.get("season")),_display(report.get("score"))],14))
-	var air := Control.new();air.mouse_filter=Control.MOUSE_FILTER_IGNORE;S.G.fill(air,true);body.add_child(air)
-	var actions := S.panel(body,16);actions.get_parent().custom_minimum_size.x=390;actions.get_parent().size_flags_horizontal=Control.SIZE_FILL
-	var list := S.G.scroll(actions);list.get_parent().name="BoardRoomActionsScroll";S.G.fill(list.get_parent(),true)
-	list.add_child(S.label("Arbitrer le projet du club",21,S.GOLD))
-	if meeting_data.get("completed",false):
-		list.add_child(S.wrap("✓ Décision enregistrée",15,S.GOLD))
-	else:
-		var acknowledge := S.button("CONFIRMER LES PRIORITÉS ACTUELLES",_acknowledge,_ack_available(),true);acknowledge.name="BoardMeetingAck";list.add_child(acknowledge)
-	var priorities := GridContainer.new();priorities.columns=2;priorities.add_theme_constant_override("h_separation",8);priorities.add_theme_constant_override("v_separation",8);list.add_child(priorities)
-	for key: String in PRIORITIES:
-		var button := S.button(PRIORITIES[key],func():_set_priority(key),_can_act());button.name="BoardPriority_"+key
-		if board.get("priority")==key:S.selected(button)
-		priorities.add_child(button)
-	list.add_child(S.label("Structurer l’organisation",18,S.GOLD))
-	for project: Dictionary in board.get("projectOptions",[]):
-		var known_cost := _number(project.get("cost"));var cash_known := _number(finance.get("cash"))
-		var enabled: bool=_can_act() and not project.get("used",false) and known_cost and cash_known and float(finance.cash)>=float(project.cost)
-		var button := S.button(str(project.get("label","Projet"))+" · "+_display(project.get("cost"),true)+( " · engagé" if project.get("used",false) else ""),func():_request_project(str(project.get("id",""))),enabled)
-		button.name="BoardProject_"+str(project.get("id",""));list.add_child(button)
-	_build_objective_form(list,strategy)
-	var close := S.button("REVENIR À LA GESTION" if meeting_data.get("completed",false) else "CONFIRME TA DÉCISION POUR TERMINER",_close_meeting,bool(meeting_data.get("completed",false)) and not app.waiting);close.name="BoardRoomClose";frame.add_child(close)
+	if is_instance_valid(ui):
+		V.fermer(ui)
+		remove_child(ui);ui.queue_free()
+	ui=Control.new();ui.name="BoardRoomUi";S.full(ui);add_child(ui)
+	_compacte=_est_compacte()
+	_draw_visuel()
 	director._refresh_controls()
 
 func _close_meeting() -> void:
@@ -147,27 +87,6 @@ func _ack_available() -> bool:
 
 func _acknowledge() -> void:
 	if _ack_available():director.command("club_meeting_ack",{"meetingId":meeting_data.meetingId})
-
-func _build_objective_form(parent: Node, strategy: Dictionary) -> void:
-	parent.add_child(S.label("Définir un jalon",18,S.GOLD))
-	var goals: Array=strategy.get("board",{}).get("objectives",[])
-	var used_types: Array=goals.map(func(goal: Dictionary):return str(goal.get("type","")))
-	var open_types: Array=TYPES.keys().filter(func(type: String):return not used_types.has(type))
-	var week := int(strategy.get("context",{}).get("week",0));var end := int(strategy.get("finance",{}).get("weeksPerSeason",0))
-	var enabled: bool=_can_act() and goals.size()<8 and not open_types.is_empty() and end>week
-	if open_types.is_empty():parent.add_child(S.wrap("✓ Tous les jalons sont posés",13));return
-	if not open_types.has(draft_type):draft_type=str(open_types[0])
-	var kind := OptionButton.new();kind.name="BoardObjectiveType";kind.custom_minimum_size.y=38
-	for type: String in open_types:kind.add_item(TYPES[type])
-	kind.select(open_types.find(draft_type));kind.disabled=not enabled;kind.set_meta("contextual_enabled",enabled)
-	kind.item_selected.connect(func(index: int):draft_type=str(open_types[index]));parent.add_child(kind)
-	var fields := S.G.h(10);parent.add_child(fields)
-	var target := SpinBox.new();target.name="BoardObjectiveTarget";target.min_value=0;target.max_value=1000000000;target.value=draft_target;target.custom_minimum_size=Vector2(145,38);target.editable=enabled
-	target.value_changed.connect(func(value: float):draft_target=value);fields.add_child(target)
-	var deadline := SpinBox.new();deadline.name="BoardObjectiveDeadline";deadline.min_value=week+1;deadline.max_value=maxi(end,week+1);deadline.prefix="Sem. ";draft_deadline=clampi(draft_deadline,week+1,maxi(end,week+1));deadline.value=draft_deadline;deadline.custom_minimum_size=Vector2(145,38);deadline.editable=enabled
-	deadline.value_changed.connect(func(value: float):draft_deadline=int(value));fields.add_child(deadline)
-	target.tooltip_text="Cible";deadline.tooltip_text="Échéance"
-	var submit := S.button("ENREGISTRER LE JALON",_create_objective,enabled);submit.name="BoardObjectiveCreate";parent.add_child(submit)
 
 func _set_priority(key: String) -> void:
 	var current := _current_strategy()
@@ -204,9 +123,50 @@ func _create_objective() -> void:
 	if draft_deadline<=int(current.context.week) or draft_deadline>int(current.get("finance",{}).get("weeksPerSeason",0)):return
 	director.command("club_board_objective",{"context":current.context.duplicate(true),"type":draft_type,"target":draft_target,"deadline":draft_deadline})
 
-# --- Variantes visuelles (planche A/B du 21/11/2026, CD_VARIANTE_VISUELLE=A|B) --------------------------------
+# --- Écran en visuels (option B de la planche du 21/11/2026, choix de Léo) ----------------------------------
+# Bandeau d'état en haut (anneaux confiance / organisation, tuiles des moyens), frise de la saison en bas à gauche,
+# décisions en cartes à droite ; chaque anneau, tuile, jalon ou bilan ouvre une petite fenêtre visuelle.
 const V = preload("res://ui/contextual/board_room_visuels.gd")
 const P = preload("res://ui/immersive08/pastilles_club.gd")
+const Agenda = preload("res://ui/immersive08/calendar_agenda.gd")
+## Sous cette largeur (1280×720 et proches), bandeau et colonne de décisions se resserrent.
+const LARGEUR_COMPACTE := 1500.0
+var _compacte := false
+
+func _est_compacte() -> bool:
+	var largeur := size.x if size.x > 0.0 else get_viewport_rect().size.x
+	return largeur < LARGEUR_COMPACTE
+
+func _notification(what: int) -> void:
+	if what==NOTIFICATION_RESIZED and is_instance_valid(ui) and _est_compacte()!=_compacte:_draw()
+
+## Matchs du club cette saison (semaine du calendrier réel), pour poser des repères sur la frise ; rien d'inventé.
+func _semaines_matchs() -> Array:
+	var source: Array=[]
+	if app==null:return source
+	var own: Variant=model.get("club",{}).get("id")
+	var season: Variant=_strategy().get("context",{}).get("season")
+	var vues := {}
+	for liste: Variant in [app.model.get("calendar",[]),app.model.get("calendarPlanning",{}).get("fixtures",[])]:
+		if not liste is Array:continue
+		for fixture: Dictionary in Agenda.unique_fixtures(liste):
+			if own==null or not _number(fixture.get("week")):continue
+			if fixture.has("season") and season!=null and str(fixture.season)!=str(season):continue
+			var home: Variant=fixture.get("home",{});var away: Variant=fixture.get("away",{})
+			var ids: Array=[(home as Dictionary).get("id") if home is Dictionary else null,(away as Dictionary).get("id") if away is Dictionary else null]
+			if not ids.any(func(id: Variant):return id!=null and str(id)==str(own)):continue
+			var semaine := int(fixture.week)
+			if vues.has(semaine):continue
+			vues[semaine]=true
+			source.append({"semaine":semaine,"joue":fixture.has("score") or bool(fixture.get("played",false))})
+	return source
+
+## Grand titre de page : écusson + Anton (règle du 21/11/2026), ivoire ; le doré reste à Continuer.
+func _titre(frame: VBoxContainer) -> void:
+	var row := S.G.h(14);frame.add_child(row)
+	row.add_child(S.G.crest(model.get("club",{}),40))
+	var t := V.TV.texte("LE POINT AVEC LA DIRECTION",28 if _compacte else 32,Charte.IVOIRE,Charte.TITRE_FICHE)
+	t.name="BoardRoomTitle";t.size_flags_vertical=Control.SIZE_SHRINK_CENTER;row.add_child(t)
 
 func _board() -> Dictionary: return _strategy().get("board",{})
 func _finance() -> Dictionary: return _strategy().get("finance",{})
@@ -264,7 +224,7 @@ func _bilans() -> HFlowContainer:
 	var flow := HFlowContainer.new();flow.add_theme_constant_override("h_separation",8)
 	var history: Array=_board().get("history",[])
 	for report: Dictionary in history.slice(maxi(0,history.size()-3)):
-		flow.add_child(P.pastille("%s · %s"%[SeasonLabel.label(report.get("season")),V.entier(report.get("score"))],Charte.REPOS,"settings","Bilan d'organisation",15,"",_fenetre_organisation))
+		flow.add_child(P.pastille("%s · %s"%[SeasonLabel.label(report.get("season")),V.entier(report.get("score"))],Charte.REPOS,"settings","Bilan d'organisation",15,"BoardHistory_"+str(flow.get_child_count()),_fenetre_organisation))
 	return flow
 
 func _decisions(list: VBoxContainer, colonnes_projets: int) -> void:
@@ -324,48 +284,29 @@ func _panneau(parent: Node, largeur: float, padding: int = 18) -> VBoxContainer:
 	shell.custom_minimum_size.x=largeur;shell.add_theme_stylebox_override("panel",Charte.ombrer(Charte.style_panneau(Charte.PANNEAU,Charte.RAYON_PANNEAU,0),Charte.RAYON_PANNEAU))
 	return column
 
-func _draw_visuel(variante: String) -> void:
-	var frame := S.frame(ui,22)
-	S.heading(frame,model.get("club",{}),"Le point avec la direction","")
-	if variante=="A":
-		# A : deux panneaux, la salle au centre. État à gauche (anneaux, tuiles, jalons en cartes), décisions en cartes à droite.
-		var body := S.G.h(18);S.G.fill(body,true);frame.add_child(body)
-		var left := _panneau(body,560)
-		var facts := S.G.scroll(left);S.G.fill(facts.get_parent(),true);facts.add_theme_constant_override("separation",12)
-		facts.add_child(_anneaux(150.0))
-		facts.add_child(_signaux())
-		var moyens_titre := V.rangee(8);moyens_titre.add_child(V.titre("Moyens","money"));moyens_titre.add_child(_info_moyens());facts.add_child(moyens_titre)
-		facts.add_child(_tuiles_moyens(2))
-		facts.add_child(V.titre("Jalons","flag"))
-		_cartes_jalons(facts,false)
-		if not _board().get("history",[]).is_empty():
-			facts.add_child(V.titre("Bilans","settings"));facts.add_child(_bilans())
-		var air := Control.new();air.mouse_filter=Control.MOUSE_FILTER_IGNORE;S.G.fill(air,true);body.add_child(air)
-		var right := _panneau(body,560)
-		var list := S.G.scroll(right);list.get_parent().name="BoardRoomActionsScroll";S.G.fill(list.get_parent(),true)
-		_decisions(list,2)
-	else:
-		# B : bandeau d'état en haut (anneaux + tuiles en ligne), frise de la saison avec les jalons en bas à gauche,
-		# décisions en cartes à droite ; la salle reste visible au centre gauche.
-		var band := _panneau(frame,0,16)
-		var top := V.rangee(16);band.add_child(top)
-		top.add_child(_anneaux(118.0))
-		var right_band := V.colonne(10);right_band.size_flags_horizontal=Control.SIZE_EXPAND_FILL;right_band.size_flags_vertical=Control.SIZE_SHRINK_CENTER;top.add_child(right_band)
-		var tiles_row := V.rangee(8);tiles_row.add_child(_tuiles_moyens(5));tiles_row.add_child(_info_moyens());right_band.add_child(tiles_row)
-		var signals := _signaux();signals.add_child(_bilans());right_band.add_child(signals)
-		var body := S.G.h(18);S.G.fill(body,true);frame.add_child(body)
-		var left := V.colonne(14);S.G.fill(left,true);body.add_child(left)
-		var air := Control.new();air.mouse_filter=Control.MOUSE_FILTER_IGNORE;S.G.fill(air,true);left.add_child(air)
-		var season := _panneau(left,0,16)
-		season.add_child(V.titre("Saison · jalons","calendar"))
-		var jalons: Array=[]
-		for goal: Dictionary in _board().get("objectives",[]):
-			jalons.append({"goal":goal,"id":"BoardFriseGoal_"+str(goal.get("id","")).validate_node_name(),"action":func():_fenetre_jalon(goal)})
-		season.add_child(V.frise(_week(),int(_finance().get("weeksPerSeason",_week()+1)),jalons))
-		var cards := HFlowContainer.new();cards.add_theme_constant_override("h_separation",10);cards.add_theme_constant_override("v_separation",10);season.add_child(cards)
-		_cartes_jalons(cards,true)
-		for card in cards.get_children():card.custom_minimum_size.x=maxf(card.custom_minimum_size.x,320)
-		var right := _panneau(body,600)
-		var list := S.G.scroll(right);list.get_parent().name="BoardRoomActionsScroll";S.G.fill(list.get_parent(),true)
-		_decisions(list,3)
+func _draw_visuel() -> void:
+	var frame := S.frame(ui,16 if _compacte else 22)
+	frame.add_theme_constant_override("separation",8 if _compacte else 10)
+	_titre(frame)
+	var band := _panneau(frame,0,12 if _compacte else 16)
+	var top := V.rangee(12 if _compacte else 16);band.add_child(top)
+	top.add_child(_anneaux(100.0 if _compacte else 118.0))
+	var right_band := V.colonne(8 if _compacte else 10);right_band.size_flags_horizontal=Control.SIZE_EXPAND_FILL;right_band.size_flags_vertical=Control.SIZE_SHRINK_CENTER;top.add_child(right_band)
+	var tiles_row := V.rangee(8);tiles_row.add_child(_tuiles_moyens(5));tiles_row.add_child(_info_moyens());right_band.add_child(tiles_row)
+	var signals := _signaux();signals.add_child(_bilans());right_band.add_child(signals)
+	var body := S.G.h(14 if _compacte else 18);S.G.fill(body,true);frame.add_child(body)
+	var left := V.colonne(14);S.G.fill(left,true);body.add_child(left)
+	var air := Control.new();air.mouse_filter=Control.MOUSE_FILTER_IGNORE;S.G.fill(air,true);left.add_child(air)
+	var season := _panneau(left,0,12 if _compacte else 16)
+	season.add_child(V.titre("Saison · jalons","calendar"))
+	var jalons: Array=[]
+	for goal: Dictionary in _board().get("objectives",[]):
+		jalons.append({"goal":goal,"id":"BoardFriseGoal_"+str(goal.get("id","")).validate_node_name(),"action":func():_fenetre_jalon(goal)})
+	season.add_child(V.frise(_week(),int(_finance().get("weeksPerSeason",_week()+1)),jalons,_semaines_matchs()))
+	var cards := HFlowContainer.new();cards.add_theme_constant_override("h_separation",10);cards.add_theme_constant_override("v_separation",10);season.add_child(cards)
+	_cartes_jalons(cards,true)
+	for card in cards.get_children():card.custom_minimum_size.x=maxf(card.custom_minimum_size.x,280 if _compacte else 320)
+	var right := _panneau(body,500 if _compacte else 600,14 if _compacte else 18)
+	var list := S.G.scroll(right);list.get_parent().name="BoardRoomActionsScroll";S.G.fill(list.get_parent(),true)
+	_decisions(list,3)
 	_pied(frame)
