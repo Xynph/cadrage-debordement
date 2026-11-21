@@ -66,9 +66,8 @@ func _hero() -> void:
 	var ground := P.fixture_ground(app.model.meta,"stadium")
 	D.photo(hero, ground, Rect2(938, 0, 1310, 312),.48 if ground != "stadium" else 0.0)
 	C.veil(hero)
-	D.text(hero, 26, 44, "LES TERRITOIRES DU RUGBY", 44, C.IVORY, 800, 900).add_theme_font_override("font", Charte.TITRE_FICHE)
-	D.text(hero, 22, 130, G.club_name(own), 76, C.IVORY, 800, 1125)
-	D.text(hero, 28, 180, "Saison " + G.season_label(app.model.meta.get("season")), 31, C.IVORY, 600, 1046)
+	D.text(hero, 26, 112, "LES TERRITOIRES DU RUGBY", 68, C.IVORY, 800, 1125).add_theme_font_override("font", Charte.TITRE_FICHE)
+	D.text(hero, 28, 170, G.club_name(own) + "  ·  Saison " + G.season_label(app.model.meta.get("season")), 30, C.IVORY, 600, 1046)
 	var pairs: Array = data.get("pairs", [])
 	var club_pairs := pairs.filter(func(pair: Dictionary): return own.get("id") in [pair.get("a"), pair.get("b")])
 	for i in 3:

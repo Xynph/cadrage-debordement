@@ -182,8 +182,8 @@ func _hero() -> void:
 	crest.name = "ClubSheetCrest"
 	hero.add_child(crest)
 	D.place(crest, Rect2(60, 40, 220, 220))
-	D.text(hero, 330, 50, "FICHE DU CLUB", 40, C.IVORY, 800, 600).add_theme_font_override("font", C.Charte.TITRE_FICHE)
-	var title := D.text(hero, 330, 150, str(data.get("name", G.club_name(identity))), 78, C.IVORY, 800, 1030)
+	D.text(hero, 330, 112, "FICHE DU CLUB", 66, C.IVORY, 800, 900).add_theme_font_override("font", C.Charte.TITRE_FICHE)
+	var title := D.text(hero, 330, 162, str(data.get("name", G.club_name(identity))), 30, C.IVORY, 700, 1030)
 	title.name = "ClubSheetName"
 	var place := PackedStringArray()
 	var city := str(_catalogue(club_id).get("city", ""))
@@ -195,7 +195,7 @@ func _hero() -> void:
 	if league_name.is_empty() and not league_id.is_empty(): league_name = Club.competition_name(league_id, app.model)
 	D.text(hero, 332, 196, "  ·  ".join(place) if not place.is_empty() else "—", 30, C.MUTED, 600, 1030)
 	if not league_name.is_empty():
-		var competition := Link.name_link(app, hero, Rect2(556, 28, 560, 40), "competition", league_id, league_name.to_upper(), 26, C.MINT, "ClubSheetLeague")
+		var competition := Link.name_link(app, hero, Rect2(740, 58, 560, 40), "competition", league_id, league_name.to_upper(), 26, C.MINT, "ClubSheetLeague")
 		competition.tooltip_text = "Ouvrir le classement · " + league_name
 	var stadium := str(data.get("stadium", "")) if data.get("stadium") != null else ""
 	var capacity: Variant = data.get("capacity")

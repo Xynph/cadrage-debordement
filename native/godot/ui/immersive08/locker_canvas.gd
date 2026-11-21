@@ -37,10 +37,10 @@ static func _hero(app: Control, canvas: Control, data: Dictionary) -> void:
 	var RI = preload("res://ui/contextual/rooms/room_identity.gd")
 	BanqueImages.recolorer(photo, art, RI.primary(identite), RI.secondary(identite))
 	U.art_fade(hero,Rect2(986,1,1261,225))
-	D.text(hero,26,52,"LE VESTIAIRE",46,C.IVORY,700,700).add_theme_font_override("font",Charte.TITRE_FICHE)
-	D.text(hero,26,112,G.club_name(app.model.club)+"  ·  "+str(app.model.meta.get("roundLabel","La semaine du groupe")),40,C.IVORY,700,1225)
+	D.text(hero,26,80,"LE VESTIAIRE",64,C.IVORY,700,900).add_theme_font_override("font",Charte.TITRE_FICHE)
+	D.text(hero,26,130,G.club_name(app.model.club)+"  ·  "+str(app.model.meta.get("roundLabel","La semaine du groupe")),26,C.IVORY,600,1225)
 	var stage := "DÉCISIONS OUVERTES" if data.get("available",false) else "DÉCISIONS INDISPONIBLES"
-	D.chip(hero,Rect2(26,136,263,29),stage,C.MINT if data.get("available",false) else C.AMBER)
+	D.chip(hero,Rect2(26,146,263,29),stage,C.MINT if data.get("available",false) else C.AMBER)
 
 	var open := 0
 	for item: Dictionary in data.get("commitments",[]):

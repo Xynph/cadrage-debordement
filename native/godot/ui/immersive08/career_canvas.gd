@@ -36,9 +36,8 @@ static func _hero(app: Control, canvas: Control, data: Dictionary) -> void:
 	hero.add_child(crest)
 	D.place(crest,Rect2(26,46,124,135))
 	D.line(hero,Vector2(180,41),Vector2(180,184),C.GOLD,2)
-	D.text(hero,211,46,"LE PARCOURS DU MANAGER",44,C.IVORY,700,900).add_theme_font_override("font",Charte.TITRE_FICHE)
-	D.text(hero,206,140,G.club_name(app.model.club),72,C.IVORY,800,1248)
-	D.text(hero,211,178,P.league_name(app.model),26,C.IVORY,500,1248,HORIZONTAL_ALIGNMENT_LEFT,true)
+	D.text(hero,211,128,"LE PARCOURS DU MANAGER",70,C.IVORY,700,1248).add_theme_font_override("font",Charte.TITRE_FICHE)
+	D.text(hero,211,178,G.club_name(app.model.club)+"  ·  "+P.league_name(app.model),28,C.IVORY,600,1248,HORIZONTAL_ALIGNMENT_LEFT,true)
 	var since: Variant = data.get("currentFrom",app.model.meta.get("season",1))
 	D.chip(hero,Rect2(211,190,242,27),"MANDAT DEPUIS S"+G.n(since),C.GOLD)
 	# Immersion : pas d'étiquette de provenance (pack, archive) ; seul le crédit reste, au survol.
