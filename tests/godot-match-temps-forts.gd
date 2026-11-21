@@ -1505,6 +1505,8 @@ func terrain2d(view: Control) -> void:
 	view.fermer_fenetre()
 	await settle(4)
 	await settle(2)
+	# Mon XV a pu être reconstruit entre-temps (minute suivante) : ses cartes sont relues.
+	rangs_xv = between.xv.get_children().filter(func(n: Node): return n is Button)
 	# Le nom d'un joueur ouvre sa fiche sur l'entracte (match en pause), Échap revient à l'entracte sans casser le match.
 	var nom_lien := (rangs_xv[2] as Node).find_children("MatchBetweenPlayerName_*", "Button", true, false)
 	if not nom_lien.is_empty():

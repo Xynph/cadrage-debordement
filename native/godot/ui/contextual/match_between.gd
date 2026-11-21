@@ -288,11 +288,14 @@ class Domination extends Control:
 		return " ".join(morceaux)
 
 	## Échelle de la frise : la plus petite graduation (25, 50, 75, 100) qui contient la minute la plus nette.
+	## Échelle adaptée aux valeurs réelles : la graduation qui contient neuf minutes sur dix (une minute isolée plus
+	## forte dépasse et touche le bord), jamais moins de 10.
 	func echelle_frise() -> int:
-		var plus := 0.0
-		for v: Variant in minutes: plus = maxf(plus, absf(float(v)))
-		for palier in [20, 40, 60, 80, 100]:
-			if plus <= palier: return palier
+		var valeurs: Array = minutes.map(func(v: Variant) -> float: return absf(float(v)))
+		valeurs.sort()
+		var repere: float = float(valeurs[mini(valeurs.size() - 1, int(floor(valeurs.size() * 0.9)))]) if not valeurs.is_empty() else 0.0
+		for palier in [10, 20, 30, 40, 50, 60, 80, 100]:
+			if repere <= palier: return palier
 		return 100
 
 	## Score cumulé vu de nous ([[minute, nous, eux], …]) d'après les repères qui portent un score.
@@ -310,7 +313,7 @@ class Domination extends Control:
 	func _draw() -> void:
 		_etiquettes.clear()
 		var corps := maxi(13, roundi(22.0 * densite))
-		var petit := maxi(12, roundi(18.0 * densite))
+		var petit := maxi(13, roundi(20.0 * densite))
 		var ligne_texte := corps * 1.3
 		var gauche := maxf(150.0, 250.0 * densite)
 		var droite := maxf(28.0, 48.0 * densite)
@@ -929,7 +932,7 @@ func _construire() -> void:
 	# Pastilles à l'échelle du terrain (demande de Léo du 21/11/2026 : « ça fait pâté ») : petits ronds nets, numéros
 	# écrits quand ils tiennent (masqués en dessous, infobulle au survol), ballon cerclé d'un halo.
 	terrain.plancher_pastilles = 0.0
-	terrain.taille_pastilles = 1.9
+	terrain.taille_pastilles = 1.15
 	terrain.remplir = true
 	terrain.custom_minimum_size = Vector2(320, 180)
 	if not terrain.pastille_survolee.is_connected(_survol_pastille): terrain.pastille_survolee.connect(_survol_pastille)
@@ -1703,6 +1706,10 @@ func _page_d3(page: Control) -> void:
 	cadre_frise.add_child(titre_domination)
 	domination.custom_minimum_size.y = px(136)
 	cadre_frise.add_child(domination)
+	# La frise prend toute la hauteur que le terrain laisse dans la colonne : barres franches, jamais un trait plat.
+	S.G.fill(cadre_frise.get_parent().get_parent(), true, 0.5)
+	S.G.fill(cadre_frise, true)
+	S.G.fill(domination, true)
 	var droite := S.G.v(px(16))
 	droite.name = "MatchBetweenStandingsColumn"
 	droite.custom_minimum_size.x = px(560)
