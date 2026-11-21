@@ -744,14 +744,9 @@ static func _row(rows: Control, app: Control, state: Dictionary, message: Dictio
 	row.set_meta("message_count", count)
 	row.accessibility_name = "%s%s · %s · %s" % ["Non lu · " if is_unread else "", reading.label, message.get("subject",message.category), message.text]
 	rows.add_child(row)
-	var base := C.RAISED.lightened(.06) if selected else Color(C.PANEL,0)
-	var style := C.box(base, Color.TRANSPARENT, 0, 0)
-	style.border_color = Color(C.LINE,.35)
-	style.border_width_bottom = 1
-	row.add_theme_stylebox_override("normal", style)
-	var hover := C.box(C.RAISED, Color.TRANSPARENT, 0, 0)
-	row.add_theme_stylebox_override("hover", hover)
-	if selected: D.rect(row,Rect2(0,0,5,height),C.GOLD,0).name = "SelectedEdge"
+	load("res://ui/survol_ligne.gd").appliquer(row, selected, Color(C.PANEL,0), app.accent)
+	var filet := D.rect(row,Rect2(0,height-1,LIST_WIDTH-16,1),Color(C.LINE,.35),1)
+	filet.name = "RowRule"
 	var width := LIST_WIDTH - 16
 	# Sujet en mot ET en symbole (la couleur ne porte jamais seule le signal) ; pastille ovale des non lus à gauche.
 	var text_x := 42.0

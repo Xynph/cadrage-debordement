@@ -1017,14 +1017,10 @@ func _row(player:Dictionary,index:int) -> void:
 	row.set_meta("player_id",id)
 	row.set_meta("index",index)
 	row.custom_minimum_size=Vector2(C.px(LARGEUR),C.px(h))
-	row.clip_contents=true
+	row.clip_contents = true
 	row.focus_mode = Control.FOCUS_ALL
-	row.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	row.accessibility_name = "%s · %s · %s · ouvrir la fiche" % [str(player.name), primary_caption(player), str(statut.t)]
-	row.add_theme_stylebox_override("normal",_plat(Charte.SELECTION if selectionne else Color.TRANSPARENT))
-	row.add_theme_stylebox_override("hover",_plat(Charte.PANNEAU_2))
-	row.add_theme_stylebox_override("pressed",_plat(Charte.PANNEAU_3))
-	row.add_theme_stylebox_override("focus",_plat(Color.TRANSPARENT,Charte.IVOIRE,1))
+	load("res://ui/survol_ligne.gd").appliquer(row, selectionne, Color.TRANSPARENT, app.accent)
 	rows.add_child(row)
 	var filet := Panel.new()
 	filet.name = "RosterFilet"
@@ -1033,9 +1029,6 @@ func _row(player:Dictionary,index:int) -> void:
 	row.add_child(filet)
 	filet.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
 	filet.offset_top = -1.0
-	var marque := _marqueur(row, Rect2(0, 0, 5, h))
-	marque.name = "RosterMarqueur"
-	marque.visible = selectionne
 	row.pressed.connect(func(): _ouvrir(id, ""))
 	row.focus_entered.connect(func(): if not _restaurant: _selectionner(id))
 	row.gui_input.connect(_row_key.bind(row))
@@ -1247,7 +1240,7 @@ func _ouvrir(id: String, section: String) -> void:
 	app.selected_player = id
 	app.navigation_controller.open_entity({"kind":"player", "id":id, "section":section})
 
-## Le focus clavier (ou le retour de fiche) déplace le marqueur de sélection sans reconstruire la liste.
+## Le focus clavier (ou le retour de fiche) change le joueur courant sans reconstruire la liste ni colorer la ligne.
 func _selectionner(id: String) -> void:
 	if app.selected_player == id: return
 	app.selected_player = id
@@ -1255,10 +1248,7 @@ func _selectionner(id: String) -> void:
 	for ligne: Node in rows.get_children():
 		if ligne is Button and ligne.has_meta("player_id"):
 			var choisi: bool = ligne.get_meta("player_id") == id
-			var index: int = int(ligne.get_meta("index", 0))
-			ligne.add_theme_stylebox_override("normal", _plat(Charte.SELECTION if choisi else Color.TRANSPARENT))
-			var marque := ligne.get_node_or_null("RosterMarqueur")
-			if marque != null: marque.visible = choisi
+			load("res://ui/survol_ligne.gd").appliquer(ligne, choisi, Color.TRANSPARENT, app.accent)
 	app._observe_navigation()
 
 func _row_key(event: InputEvent, current: Button) -> void:

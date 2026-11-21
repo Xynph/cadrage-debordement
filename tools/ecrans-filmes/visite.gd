@@ -917,6 +917,10 @@ func capturer(entree: Dictionary, o: Dictionary, taille: Vector2i) -> void:
 	fermer_aide()
 	await stabiliser()
 	fermer_aide()
+	# CD_FILM_SURVOL_LIGNE=1 : une ligne survolée (et une choisie) dans chaque liste visible (ui/survol_ligne.gd).
+	if OS.get_environment("CD_FILM_SURVOL_LIGNE") == "1":
+		print("ECRANS_FILMES survol de ligne : ", load("res://ui/survol_ligne.gd").simuler(self), " liste(s)")
+		await stabiliser()
 	var prise: Dictionary = await image_stable()
 	var image: Image = prise.image
 	if image == null:
