@@ -6,6 +6,8 @@ const C = preload("res://ui/immersive08/components.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const Paper = preload("res://ui/carnet_skin.gd")
 const TEXT_CONTRAST = 4.6
+## Corps minimal du texte courant au gabarit 2560 (14 px à 1920).
+const BODY_MIN := 19.0
 
 static func apply(root: Control, accent: Color) -> void:
 	root.theme = theme(accent)
@@ -56,13 +58,32 @@ static func theme(accent: Color) -> Theme:
 	theme.set_stylebox("panel","TabContainer",_panel(24,10))
 	for kind in ["TabContainer","TabBar"]:
 		theme.set_font("font",kind,C.DISPLAY)
+		theme.set_font_size("font_size",kind,tab_font_size())
+		theme.set_constant("tab_separation",kind,C.px(TAB_GAP))
 		theme.set_color("font_selected_color",kind,Charte.PANNEAU)
 		theme.set_color("font_hovered_color",kind,C.IVORY)
 		theme.set_color("font_unselected_color",kind,C.MUTED)
-		theme.set_stylebox("tab_selected",kind,_pill(C.IVORY,Color.TRANSPARENT,9))
-		theme.set_stylebox("tab_unselected",kind,_pill(Color.TRANSPARENT,C.LINE,9))
-		theme.set_stylebox("tab_hovered",kind,_pill(C.RAISED,C.FAINT,9))
+		theme.set_stylebox("tab_selected",kind,_tab(C.IVORY,Color.TRANSPARENT))
+		theme.set_stylebox("tab_unselected",kind,_tab(Color.TRANSPARENT,C.LINE))
+		theme.set_stylebox("tab_hovered",kind,_tab(C.RAISED,C.FAINT))
 	return theme
+
+## Onglet de la graphiste (gabarit 2560 ; à 1920 : 40 px de haut, 18 px de marge intérieure, 8 px entre onglets),
+## texte au corps des onglets de la coque (Barlow Condensed SemiBold, `C.px(22)`).
+const TAB_HEIGHT := 53.0
+const TAB_PADDING := 24
+const TAB_GAP := 11
+const TAB_FONT := 22
+
+static func tab_font_size() -> int:
+	return maxi(12,C.px(TAB_FONT))
+
+static func _tab(fill: Color, border: Color) -> StyleBoxFlat:
+	var style := C.box(fill,border,Charte.RAYON_PILULE,TAB_PADDING)
+	var vertical := maxf(0.0,(C.px(TAB_HEIGHT)-C.DISPLAY.get_height(tab_font_size()))/2.0)
+	style.content_margin_top = vertical
+	style.content_margin_bottom = vertical
+	return style
 
 ## Pilule de la charte (bouton, onglet) : aplat `fill`, contour fin `border`, jamais d'ombre.
 static func _pill(fill: Color, border: Color, padding: int = 12) -> StyleBoxFlat:
@@ -91,10 +112,14 @@ static func _style(node: Node, accent: Color) -> void:
 		var font: Font = node.get_theme_font("font")
 		var height: int = node.get_theme_font_size("font_size")
 		if color.a > 0: node.add_theme_color_override("font_color",C.IVORY if color==Color("303f44") else _ink(color,accent))
+		# Titres et étiquettes (police d'affiche) restent en Barlow ; le texte courant passe en DM Sans, 14 px au moins à
+		# 1920 (`C.px(19)`).
 		if font==Paper.T.DISPLAY:
 			node.add_theme_font_override("font",C.font(700 if height>=17 else 600))
-		else: node.add_theme_font_override("font",C.BODY)
-		node.add_theme_font_size_override("font_size",maxi(12,C.px(float(height)*1.36)))
+			node.add_theme_font_size_override("font_size",maxi(12,C.px(float(height)*1.36)))
+		else:
+			node.add_theme_font_override("font",Charte.TEXTE)
+			node.add_theme_font_size_override("font_size",maxi(12,C.px(maxf(BODY_MIN,float(height)*1.36))))
 		node.end_bulk_theme_override()
 	elif node is Button and not node is CheckButton and not node is CheckBox:
 		_button(node,accent)
@@ -128,6 +153,8 @@ static func _style(node: Node, accent: Color) -> void:
 			node.remove_theme_stylebox_override(state)
 		for state in ["font_selected_color","font_unselected_color","font_hovered_color"]:
 			node.remove_theme_color_override(state)
+		# Corps et gabarit des onglets : ceux du thème (règle de la graphiste), pas un corps posé par la vue.
+		node.remove_theme_font_size_override("font_size")
 	elif node is ProgressBar:
 		node.add_theme_stylebox_override("background",C.box(C.SELECTED,Color.TRANSPARENT,Charte.RAYON_PILULE,0))
 		var fill: StyleBox = node.get_theme_stylebox("fill")
