@@ -564,6 +564,10 @@ static func open_priority(app: Control, item: Dictionary) -> void:
 			app.management_ui.international_section = "availability"
 			app._navigate("Sélections")
 		"squad": app.navigation_controller.open_roster_group()
+		"injured":
+			if app.navigation_controller.has_method("open_roster_injured"): app.navigation_controller.open_roster_injured()
+			else: app.navigation_controller.open_roster_group()
+		"contracts": open_roster_contracts(app, bool(item.get("end_of_season", true)))
 		"contract": _open_player(app,str(item.player))
 		"youth_review":
 			# Un écran, pas une fenêtre : la fiche de l'Espoir (Formation) ; à défaut, l'écran Formation.
@@ -571,6 +575,16 @@ static func open_priority(app: Control, item: Dictionary) -> void:
 		"preparation": app._navigate("Préparation")
 		"training": app.Immersive.open_training(app)
 		"recruitment": app._navigate("Recrutement")
+
+## Effectif, onglet Contrats, filtré sur les fins de saison (tuile « 8 contrats » du Bureau).
+static func open_roster_contracts(app: Control, end_of_season: bool = true) -> void:
+	var state := U.defaults()
+	state.immersive_tab = 2
+	if end_of_season: state.contract = "Fin de saison"
+	app.management_ui.roster = state
+	app.roster_filter = state.family
+	app.selected_player = ""
+	app._navigate("Effectif")
 
 static func priority_description(item: Dictionary) -> String:
 	return str(item.deadline) + " · " + str(item.detail)

@@ -105,7 +105,7 @@ func run() -> void:
 		if not row.has_meta("player_id"): continue
 		var source: Dictionary = original.squad.filter(func(player):return str(player.id)==str(row.get_meta("player_id")))[0]
 		var year_label := row.find_child("RosterContractEnd",true,false) as Label
-		if year_label == null or not year_label.text.begins_with(Squad.G.contract_year(source.get("contractEnd"))): years_ok=false
+		if year_label == null or not year_label.text.trim_prefix("⧗ ").begins_with(Squad.G.contract_year(source.get("contractEnd"))): years_ok=false
 	check(years_ok,"Chaque ligne affiche l’année de fin, sans S1/S2/S3")
 	await capture("effectif-annees-centaines-1440")
 	check(visible_ids().size()==original.squad.size() and original.squad.size()>24,"Tous les joueurs ont une ligne, au-delà de l’ancienne limite")

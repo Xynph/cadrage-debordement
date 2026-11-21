@@ -17,6 +17,11 @@ const HOTE := "FormationHote"
 const PAGES := ["suivi", "revue", "pret"]
 const TITRES := {"suivi":"Suivi des jeunes", "revue":"Nouvelle génération du centre", "pret":"Prêt d’un jeune professionnel"}
 const LARGEUR := 1700.0
+## Le suivi des jeunes (grille de trois tuiles, choix de Léo du 21/11/2026) prend toute la largeur de la page.
+const LARGEUR_SUIVI := 2248.0
+
+static func _largeur(kind: String) -> float:
+	return LARGEUR_SUIVI if kind == "suivi" else LARGEUR
 
 static func actuelle(app: Control) -> String:
 	var etat_page: Variant = app.management_ui.get("formation_page")
@@ -81,7 +86,7 @@ static func build(app: Control, page: Control, kind: String) -> void:
 	var titre := Kit.titre(page, 0, 98, str(TITRES.get(kind, "")).to_upper(), 38, 1400)
 	titre.name = "FormationSubpageTitle"
 	D.line(page, Vector2(0, 122), Vector2(2248, 122), Charte.FILET)
-	var cadre := D.rect(page, Rect2(0, 146, LARGEUR, 1000), Charte.PANNEAU, Charte.RAYON_PANNEAU)
+	var cadre := D.rect(page, Rect2(0, 146, _largeur(kind), 1000), Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	cadre.name = "FormationSubpage_" + kind
 	cadre.mouse_filter = Control.MOUSE_FILTER_PASS
 	cadre.clip_contents = true
@@ -96,7 +101,7 @@ static func build(app: Control, page: Control, kind: String) -> void:
 	var zone := Control.new()
 	zone.name = "FormationAdopte"
 	cadre.add_child(zone)
-	D.place(zone, Rect2(24, 18, LARGEUR - 48, 940))
+	D.place(zone, Rect2(24, 18, _largeur(kind) - 48, 940))
 	for enfant: Variant in hote.get_meta("contenu", []):
 		if not is_instance_valid(enfant): continue
 		if enfant.get_parent() != null: enfant.get_parent().remove_child(enfant)

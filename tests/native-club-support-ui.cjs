@@ -10,7 +10,7 @@
 //  - devis d'agent : l'engagement affiche les semaines payées du devis (29 en Monde), pas 34 en dur ;
 //  - un moteur local arrêté laissait toutes les commandes silencieusement ignorées puis un bouton absent et 120 s
 //    d'attente : la préparation tourne dans un processus à part (pas de cumul des moteurs) et le script s'arrête net,
-//    avec un message, si le moteur est arrêté ou si le script dépasse 100 s.
+//    avec un message, si le moteur est arrêté ou si le script dépasse 170 s.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{spawnSync}=require('node:child_process');
 const godot=process.env.CD_GODOT_EXE||process.env.CD_GODOT_EXECUTABLE;if(!godot){console.log('SKIP native-club-support-ui.cjs : SDK Godot absent (CD_GODOT_EXE ou CD_GODOT_EXECUTABLE) ; réception native non exécutée.');process.exit(0);}const root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'cd-support-ui-'));
 // Sauvegarde Monde (jour du premier match, un blessé, rendez-vous réglés) préparée dans un processus à part.
@@ -52,7 +52,7 @@ func open_tab(index: int) -> Node:
  return page
 func run() -> void:
  # Garde-fou : un contrôle manquant ne doit pas laisser Godot tourner jusqu'au délai du test.
- create_timer(100.0).timeout.connect(func() -> void:
+ create_timer(170.0).timeout.connect(func() -> void:
   printerr("Délai du script dépassé"); quit(3))
  root.size = Vector2i(1280,720)
  app = load("res://main.tscn").instantiate(); root.add_child(app)
@@ -79,6 +79,25 @@ func run() -> void:
    await capture("support-"+str(index)+"-"+str(dimensions.x))
  await command("snapshot")
  check(app.model.hash() == before and FileAccess.get_sha256(disk) == bytes, "Navigation et devis purs")
+ # Règle de Léo : chaque anneau, jauge, chiffre ou pastille ouvre l'écran qui le détaille (vrai clic, jamais de fenêtre).
+ root.size = Vector2i(1920,1080)
+ var liens := [["SupportLien_Condition","Effectif"],["SupportLien_Moral","Vestiaire"],["SupportLien_Confiance","Stratégie"],["SupportLien_Sous65","Effectif"],["SupportLien_Sous85","Effectif"],["SupportLienCondition_cohesion","Effectif"],["SupportLienMoral_cohesion","Vestiaire"],["SupportLienConfiance_cohesion","Stratégie"],["SupportLienJoueurs_cohesion","Effectif"],["SupportLienPlan_proteger","Préparation"],["SupportLienGain_proteger","Préparation"]]
+ for lien: Array in liens:
+  var depart: Node = await open_tab(0)
+  var zone := depart.find_child(str(lien[0]), true, false) as Control if depart != null else null
+  check(zone != null and zone.mouse_default_cursor_shape == Control.CURSOR_POINTING_HAND, "Lecture cliquable · " + str(lien[0]))
+  if zone == null: continue
+  var clic := InputEventMouseButton.new()
+  clic.button_index = MOUSE_BUTTON_LEFT
+  clic.pressed = true
+  zone.gui_input.emit(clic)
+  await settle()
+  var fenetres := app.find_children("*", "Window", true, false).filter(func(w): return w.visible)
+  check(app.route == str(lien[1]) and fenetres.is_empty(), "%s ouvre %s (écran : %s)" % [lien[0], lien[1], app.route])
+  if str(lien[1]) == "Effectif": check(int(app.management_ui.roster.get("immersive_tab", 0)) == 1, str(lien[0]) + " : onglet Condition de l'effectif")
+  if str(lien[1]) == "Préparation": check(int(app.management_ui.immersive_training.get("tab", 0)) == 1, str(lien[0]) + " : onglet Groupes de l'entraînement")
+ app.management_ui.roster.immersive_tab = 0
+ root.size = Vector2i(1280,720)
  var page: Node = await open_tab(0)
  var morale: int = app.model.clubLife.clubSupport.diagnostic.morale
  var meeting: Button = page.find_child("SupportMeeting_cohesion", true, false)
@@ -136,4 +155,4 @@ func run() -> void:
  print("SUPPORT UI ",checks," contrôles ; ",failures.size()," échec(s)")
  quit(0 if failures.is_empty() else 1)
 `);
-const r=spawnSync(godot,[...(process.env.CD_SUPPORT_GRAPHICS==='1'?[]:['--headless']),'--log-file',path.join(root,'godot-live.log'),'--max-fps','120','--path',path.resolve(__dirname,'../native/godot'),'--script',script],{encoding:'utf8',windowsHide:true,timeout:120000,env:{...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:path.join(root,'PrototypeGodot'),CD_SUPPORT_CAPTURES:root}});const log=(r.stdout||'')+(r.stderr||'');fs.writeFileSync(path.join(root,'godot.log'),log);fs.rmSync(path.join(root,'PrototypeGodot'),{recursive:true,force:true});console.log(log);console.log('Preuves support '+root);if(r.error){fs.rmSync(path.join(root,'PrototypeGodot'),{recursive:true,force:true});try{console.log(fs.readFileSync(path.join(root,'godot-live.log'),'utf8'));}catch{}throw r.error;}assert.equal(r.status,0,log);assert.match(log,/SUPPORT UI \d+ contrôles ; 0 échec\(s\)/);assert.doesNotMatch(log,/SCRIPT ERROR|Parse Error|ERROR:/);
+const r=spawnSync(godot,[...(process.env.CD_SUPPORT_GRAPHICS==='1'?[]:['--headless']),'--log-file',path.join(root,'godot-live.log'),'--max-fps','120','--path',path.resolve(__dirname,'../native/godot'),'--script',script],{encoding:'utf8',windowsHide:true,timeout:200000,env:{...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:path.join(root,'PrototypeGodot'),CD_SUPPORT_CAPTURES:root}});const log=(r.stdout||'')+(r.stderr||'');fs.writeFileSync(path.join(root,'godot.log'),log);fs.rmSync(path.join(root,'PrototypeGodot'),{recursive:true,force:true});console.log(log);console.log('Preuves support '+root);if(r.error){fs.rmSync(path.join(root,'PrototypeGodot'),{recursive:true,force:true});try{console.log(fs.readFileSync(path.join(root,'godot-live.log'),'utf8'));}catch{}throw r.error;}assert.equal(r.status,0,log);assert.match(log,/SUPPORT UI \d+ contrôles ; 0 échec\(s\)/);assert.doesNotMatch(log,/SCRIPT ERROR|Parse Error|ERROR:/);

@@ -91,7 +91,7 @@ function factory(){
    if(x.kind==='saignement'){resolveBlood(l,x,true);continue;}
    const p=matchPlayer(l,x.side,x.id);if(!p)continue;
    const before=Number(p.injury)||0;p.injury=Math.max(before,x.semaines);n++;
-   if(p.injury>before&&l.pair[x.side]===S.club&&typeof news==='function')news(`${p.name} s’est blessé pendant la rencontre : ${p.injury} semaine(s) d’indisponibilité.`);
+   if(p.injury>before&&l.pair[x.side]===S.club&&typeof news==='function')news(`${p.name} s’est blessé pendant la rencontre : ${p.injury} semaine${p.injury>1?"s":""} d’indisponibilité.`);
   }
   return n;
  }

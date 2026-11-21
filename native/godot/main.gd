@@ -1,6 +1,7 @@
 extends Control
 
 const G = preload("res://ui/game_skin.gd")
+const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 const SeasonLabel = preload("res://ui/season_label.gd")
 const CommandWaitOverlay = preload("res://ui/command_wait_overlay.gd")
 const CareerProgression = preload("res://ui/career_progression.gd")
@@ -1671,6 +1672,10 @@ func _input(event: InputEvent) -> void:
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if is_instance_valid(navigation_controller) and navigation_controller.handle_shortcut(event):
+		get_viewport().set_input_as_handled()
+		return
+	# Échap ferme d'abord une petite fenêtre ouverte (ui/petite_fenetre.gd), sans ouvrir le menu de la carrière.
+	if event.is_action_pressed("ui_cancel") and PetiteFenetre.fermer_derniere(get_tree()):
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("ui_cancel") and is_instance_valid(continue_progress) and continue_progress.running:
