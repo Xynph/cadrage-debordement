@@ -1025,6 +1025,8 @@ static func _topbar(parent: Node, app: Control, layout: Control) -> void:
 	round_label.name = "ImmersiveRound"
 	app._update_header_date()
 	right -= date_width + 27.0
+	# Planche du 21/11/2026 (CD_VARIANTE_VISUELLE=REBOURS_A|B) : compte à rebours du prochain match → avant-match.
+	right -= preload("res://ui/rebours_match.gd").poser(panel, app, right + 12.0, ch, cy, _shell_button)
 	# Recherche : 400 (300 px à 1920), réduite jusqu'à 293 (220 px) si le fil manque de place.
 	var crumbs := _crumbs(app)
 	var crumbs_width := _crumbs_width(crumbs)

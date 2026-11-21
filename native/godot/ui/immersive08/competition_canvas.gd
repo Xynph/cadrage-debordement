@@ -1697,6 +1697,8 @@ static func _crest(parent: Node, club: Dictionary, area: Rect2) -> void:
 	var shield := G.crest(club, C.px(minf(area.size.x, area.size.y)))
 	parent.add_child(shield)
 	D.place(shield, area)
+	# Planche du 21/11/2026 (CD_VARIANTE_VISUELLE=ECUSSON_A|B) : mini-carte club au survol de l'écusson.
+	preload("res://ui/carte_club_survol.gd").lier(shield, club)
 
 static func _icon(parent: Node, icon_id: String, area: Rect2, color: Color) -> void:
 	var icon := C.icon(icon_id, int(area.size.x), color)

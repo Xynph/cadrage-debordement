@@ -628,7 +628,9 @@ static func _footer(card: Panel, app: Control, finance: Dictionary, _board: Dict
 	var texte_cash := "Trésorerie · " + U.amount(cash) + " →"
 	var etiquette := Kit.texte(card, 30, 372, texte_cash, Charte.D if cash != null and float(cash) < 0.0 else Charte.IVOIRE, 500, 19)
 	etiquette.add_theme_font_override("font", Kit.texte_gras())
-	_reading_area(app, card, Rect2(24, 346, 520, 40), {"kind": "finance", "id": "cash"}, "ClubCashLink", "Trésorerie")
+	var lien_cash := _reading_area(app, card, Rect2(24, 346, 520, 40), {"kind": "finance", "id": "cash"}, "ClubCashLink", "Trésorerie")
+	# Planche du 21/11/2026 (CD_VARIANTE_VISUELLE=COURBE_A|B) : mini-courbe de la trésorerie au survol.
+	if lien_cash != null: preload("res://ui/mini_courbe_survol.gd").lier(app, lien_cash, "cash", "Trésorerie")
 	var salaires := "Salaires et cotisations · %s par semaine →" % G.euros(P.payroll(app.model).charge_weekly)
 	var etiquette_salaires := Kit.texte(card, 30, 410, salaires, Charte.IVOIRE, 760, 19)
 	etiquette_salaires.add_theme_font_override("font", Kit.texte_gras())
