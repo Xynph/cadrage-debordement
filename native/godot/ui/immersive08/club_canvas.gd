@@ -1046,7 +1046,6 @@ static func _territory(app: Control, canvas: Control) -> void:
 			credit.name = "VenuePhotoCredit_" + kind
 			_venue_credit(credit, photo)
 	var links := D.panel(page, Rect2(0,837,2248,193), "Un territoire, une identité", "shield")
-	D.text(links, 24, 116, "Découvre le territoire et écris la suite de l’histoire du club.", 31, C.IVORY, 600, 1360)
 	_lien(links, Rect2(1415,86,0,40), "Crédits et licences →", app._credits, "ClubAtlasCredits")
 	Kit.bouton_ivoire(links, Rect2(1804,80,420,52), "Revenir à la vue d’ensemble", func(): _tab(app, "overview", "ClubTab_overview"), "ClubAtlasBack")
 

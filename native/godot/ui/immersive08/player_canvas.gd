@@ -427,7 +427,7 @@ static func _postes(card: Panel, app: Control, player: Dictionary, source: Strin
 	var hauteur := card.size.y / C.density
 	if lignes.is_empty():
 		D.text(card,24,300,"NOTE MATCH PAR MATCH",17,Charte.IVOIRE_2,700,600)
-		D.text(card,24,344,"Aucun match noté cette saison. Chaque rencontre jouée est notée de 1 à 10.",20,Charte.IVOIRE_3,500,1300,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerNoteCurveEmpty"
+		D.text(card,24,344,"Aucun match noté cette saison",20,Charte.IVOIRE_3,500,1300,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerNoteCurveEmpty"
 		return
 	var choisies := lignes.slice(0,12)
 	choisies.reverse()
@@ -460,7 +460,7 @@ static func _disponibilite(card: Panel, app: Control, player: Dictionary, source
 		y += 34
 	var charge: Variant = player.get("physicalLoad")
 	if charge is int or charge is float:
-		_ligne(card,y,"Fatigue (plus bas = mieux)",G.n(charge)+" / 100",Charte.IVOIRE,"PlayerFatigueValue")
+		_ligne(card,y,"Fatigue",G.n(charge)+" / 100",Charte.IVOIRE,"PlayerFatigueValue")
 		D.bar(card,Rect2(430,y-12,200,6),float(charge),Charte.N)
 		y += 34
 	if source == "squad":
@@ -591,12 +591,6 @@ static func _pied(page: Control, app: Control, player: Dictionary, source: Strin
 	var rang := ids.find(str(player.get("id","")))
 	var gauche := str(player.get("name","")) + ((" · %d / %d · %s" % [rang+1,ids.size(),Commune.libelle_liste(app,source)]) if rang >= 0 else "")
 	D.text(page,0,HAUTEUR-14,gauche,18,Charte.IVOIRE_2,500,1100,HORIZONTAL_ALIGNMENT_LEFT,true).name = "FichePied"
-	var x := 1500.0
-	x += _touche(page,x,HAUTEUR-12,"Maj ← →") + 8
-	D.text(page,x,HAUTEUR-14,"joueur précédent / suivant",18,Charte.IVOIRE_2,500,300,HORIZONTAL_ALIGNMENT_LEFT,true)
-	x += 300
-	x += _touche(page,x,HAUTEUR-12,"Échap") + 8
-	D.text(page,x,HAUTEUR-14,"Retour",18,Charte.IVOIRE_2,500,120,HORIZONTAL_ALIGNMENT_LEFT,true)
 
 static func _health(card:Panel,app:Control,player:Dictionary) -> void:
 	var injury := float(player.get("injury", 0))
@@ -702,7 +696,7 @@ static func _history(card:Panel,app:Control,player:Dictionary) -> void:
 	D.line(card,Vector2(20,110),Vector2(1650,110))
 	var distinctions: Array = notes.get("distinctions",[]) if notes.get("distinctions") is Array else []
 	if lignes.is_empty() and saisons.is_empty() and distinctions.is_empty():
-		D.text(card,24,160,"Aucun match noté cette saison. Chaque rencontre jouée est notée de 1 à 10 (6,5 au coup d’envoi).",22,C.MUTED,400,1600,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerMatchHistoryEmpty"
+		D.text(card,24,160,"Aucun match noté cette saison",22,C.MUTED,400,1600,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerMatchHistoryEmpty"
 		return
 	var liste := _scroll(card,Rect2(20,118,1630,286))
 	liste.add_theme_constant_override("separation",C.px(2))
@@ -839,7 +833,7 @@ static func _development(card:Panel,app:Control,player:Dictionary,source:String=
 		return
 	var bilan: Array[String] = []
 	if record.get("minutes") is int or record.get("minutes") is float: bilan.append(G.n(record.minutes) + " minutes")
-	if record.get("appearances") is int or record.get("appearances") is float: bilan.append(G.n(record.appearances) + " apparition(s)")
+	if record.get("appearances") is int or record.get("appearances") is float: bilan.append(G.n(record.appearances) + (" apparition" if int(record.appearances) == 1 else " apparitions"))
 	var start: Variant = development.get("seasonStart")
 	if (start is int or start is float) and (player.get("rating") is int or player.get("rating") is float):
 		var gain := roundi(float(player.rating) - float(start))
@@ -858,9 +852,10 @@ static func _development(card:Panel,app:Control,player:Dictionary,source:String=
 	var control := Academy._option("Focus" + player_id.replace(":", "_"), "Spécialisation", choices, development.get("focus"), func(value):
 		app._command("set_development_focus", {"playerId":record.get("id", player_id), "focus":value}))
 	control.disabled = not development.get("available", false)
+	control.tooltip_text = "Changer d’axe remet à zéro l’expérience partielle non dépensée. Les qualités déjà acquises sont conservées."
 	card.add_child(control)
 	D.place(control,Rect2(24,436,760,48))
-	D.text(card,24,520,str(development.get("reason", "")) if control.disabled else "Changer d’axe remet à zéro l’expérience partielle non dépensée. Les qualités déjà acquises sont conservées.",19,C.MUTED,400,1600,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerDevelopmentFocusNote"
+	D.text(card,24,520,str(development.get("reason", "")) if control.disabled else "",19,C.MUTED,400,1600,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerDevelopmentFocusNote"
 
 static func _sources(card:Panel,_app:Control,player:Dictionary) -> void:
 	var profile:Dictionary=player.rosterProfile if player.get("rosterProfile") is Dictionary else {}

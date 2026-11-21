@@ -11,7 +11,7 @@ const Charte = preload("res://ui/charte.gd")
 const Identity = preload("res://ui/player_identity.gd")
 const NOM := "MiniFicheJoueur"
 const LARGEUR := 860.0
-const HAUTEUR := 668.0
+const HAUTEUR := 624.0
 const MARGE := 8.0
 
 ## Chargés à l'usage : fiche_commune et squad_canvas chargent eux-mêmes ce script.
@@ -174,12 +174,10 @@ static func construire(app: Control, player: Dictionary, source: String) -> Pane
 	var valeurs: Dictionary = commune.valeurs(player, source)
 	commune.grille_attributs(fiche, Vector2(26, 262), Vector2(808, 300), valeurs, "MiniFicheAttribut_", {"titre":15, "libelle":17, "valeur":19, "pas":28, "ecart":16, "corps":false, "mot_moyenne":false})
 	D.line(fiche, Vector2(20, 566), Vector2(LARGEUR - 20, 566), Charte.FILET)
-	var lecture := "36 attributs, note de 1 à 100" if not valeurs.is_empty() else "Fais-le observer pour connaître ses attributs"
-	D.text(fiche, 26, 596, lecture, 17, Charte.IVOIRE_2 if not valeurs.is_empty() else Charte.IVOIRE_3, 500, 380, HORIZONTAL_ALIGNMENT_LEFT, true).name = "MiniFicheLecture"
+	# Aucune phrase d'aide (règle du 21/11) : ni « 36 attributs, note de 1 à 100 », ni « Clic : … », ni « I : aperçu… ».
+	if valeurs.is_empty():
+		D.text(fiche, 26, 596, "À observer", 17, Charte.IVOIRE_3, 500, 380, HORIZONTAL_ALIGNMENT_LEFT, true).name = "MiniFicheLecture"
 	commune.legende(fiche, 834, 596, 16)
-	D.line(fiche, Vector2(20, 614), Vector2(LARGEUR - 20, 614), Charte.FILET)
-	D.text(fiche, 26, 648, "Clic : son club (XV)" if source == "adverse" else "Clic : fiche complète", 19, Charte.IVOIRE, 700, 400).name = "MiniFichePied"
-	D.text(fiche, 834, 648, "I : aperçu au clavier", 16, Charte.IVOIRE_2, 500, 320, HORIZONTAL_ALIGNMENT_RIGHT, true)
 	_ignorer_souris(fiche)
 	return fiche
 

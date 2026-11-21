@@ -77,11 +77,40 @@ static func _actions(ecran, corps: VBoxContainer, libelle: String, nom_confirmer
 	annuler.grab_focus.call_deferred()
 	return ok
 
+## Pastille d'état : icône et un mot de la couleur du jeton (jamais la couleur seule), explication en infobulle.
+static func _pastille(ecran, icone: String, mot: String, couleur: Color, aide: String) -> Control:
+	var pastille := PanelContainer.new()
+	pastille.name = "MatchPastille_" + icone
+	pastille.tooltip_text = aide
+	pastille.accessibility_name = aide
+	pastille.mouse_default_cursor_shape = Control.CURSOR_HELP
+	var style := Charte.style_pilule(Color(couleur, .15), Color.TRANSPARENT, ecran.M(12), ecran.M(5))
+	pastille.add_theme_stylebox_override("panel", style)
+	var ligne := HBoxContainer.new()
+	ligne.add_theme_constant_override("separation", ecran.M(6))
+	ligne.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var image := C.icon(icone, 22, couleur)
+	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	image.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	ligne.add_child(image)
+	var label: Label = ecran.texte(mot, 15, couleur, false, 700)
+	label.add_theme_font_override("font", C.BODY)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ligne.add_child(label)
+	pastille.add_child(ligne)
+	return pastille
+
 static func _delegation(ecran, app: Control, model: Dictionary, corps: VBoxContainer) -> void:
 	_titre(ecran, corps, "Déléguer le match")
 	var vacant := P.reduced_bench_number(model)
 	var incomplete := vacant != 0 or not Espoir.offer(model).is_empty()
-	corps.add_child(_paragraphe(ecran, "L'adjoint joue la rencontre à ta place, du coup d'envoi au coup de sifflet final. Tu retrouveras le résultat, le récit et les notes du match. Tu ne pourras pas le rejouer.", 16))
+	var pastilles := HBoxContainer.new()
+	pastilles.name = "MatchDelegationPastilles"
+	pastilles.add_theme_constant_override("separation", ecran.M(8))
+	pastilles.add_child(_pastille(ecran, "people", "L'adjoint joue", Charte.MORAL, "L'adjoint joue la rencontre à ta place, du coup d'envoi au coup de sifflet final"))
+	pastilles.add_child(_pastille(ecran, "rating", "Récit et notes", Charte.CONDITION, "Tu retrouveras le résultat, le récit et les notes du match"))
+	pastilles.add_child(_pastille(ecran, "lock", "Non rejouable", Charte.INTENSIF, "Tu ne pourras pas rejouer ce match"))
+	corps.add_child(pastilles)
 	var choix: Array = [Callable()]
 	var bouton_ok: Array = [null]
 	var maj := func():

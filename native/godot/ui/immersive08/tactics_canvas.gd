@@ -110,9 +110,9 @@ static func _adversaire(app: Control) -> String:
 	return G.club_name(autre)
 
 static func _entete(app: Control, page: Control) -> void:
-	var titre := Kit.titre(page, 0, 40, "Composition", 38, 500)
+	var titre := Kit.titre_page(page, 0, 40, "Composition", 38, 500)
 	titre.name = "CompositionTitle"
-	var largeur_titre := Charte.TITRE_GRAS_ITALIQUE.get_string_size("COMPOSITION", HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(38))).x / C.density
+	var largeur_titre := Charte.TITRE_FICHE.get_string_size("COMPOSITION", HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(38))).x / C.density
 	if P.is_derby(app.model): Kit.puce(page, Rect2(largeur_titre + 18, 14, 90, 26), "DERBY", Charte.PANNEAU_3, Charte.IVOIRE, "DerbyTag").tooltip_text = "Derby : une rivalité ancienne, plus de tension sur le terrain et dans les tribunes."
 	var affiche := _affiche(app)
 	var equipes := Kit.texte(page, 0, 72, affiche[0], Charte.IVOIRE, 0, 18)

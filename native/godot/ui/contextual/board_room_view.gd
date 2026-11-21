@@ -78,7 +78,7 @@ func _draw() -> void:
 	if is_instance_valid(ui):remove_child(ui);ui.queue_free()
 	ui=Control.new();S.full(ui);add_child(ui)
 	var frame := S.frame(ui,22)
-	S.heading(frame,model.get("club",{}),"Le point avec la direction","Objectifs, moyens et organisation du club")
+	S.heading(frame,model.get("club",{}),"Le point avec la direction","")
 	var body := S.G.h(18);S.G.fill(body,true);frame.add_child(body)
 	var facts := S.panel(body,16);facts.get_parent().custom_minimum_size.x=346;facts.get_parent().size_flags_horizontal=Control.SIZE_FILL
 	var facts_scroll := S.G.scroll(facts);S.G.fill(facts_scroll.get_parent(),true)
@@ -92,7 +92,7 @@ func _draw() -> void:
 	if not _local_notice.is_empty():facts_scroll.add_child(S.wrap(_local_notice,14,S.GOLD))
 	facts_scroll.add_child(S.label("Les jalons suivis",18,S.GOLD))
 	var goals: Array=board.get("objectives",[])
-	if goals.is_empty():facts_scroll.add_child(S.wrap("Aucun jalon enregistré. Tu peux en définir un pour suivre ton projet.",14))
+	if goals.is_empty():facts_scroll.add_child(S.wrap("Aucun jalon enregistré",14))
 	for goal: Dictionary in goals:
 		var type: String=str(goal.get("type",""));var metrics: Dictionary=board.get("metrics",{})
 		var status: String={"pending":"À suivre","met":"Atteint","missed":"Manqué","unverified":"Non vérifiable"}.get(str(goal.get("status","")),"Non renseigné")
@@ -113,11 +113,9 @@ func _draw() -> void:
 	var list := S.G.scroll(actions);list.get_parent().name="BoardRoomActionsScroll";S.G.fill(list.get_parent(),true)
 	list.add_child(S.label("Arbitrer le projet du club",21,S.GOLD))
 	if meeting_data.get("completed",false):
-		list.add_child(S.wrap("Ta décision est enregistrée. Tu peux terminer l’échange.",15,S.GOLD))
+		list.add_child(S.wrap("✓ Décision enregistrée",15,S.GOLD))
 	else:
-		list.add_child(S.wrap("Après avoir examiné ce bilan, tu peux confirmer les priorités actuelles ou choisir un arbitrage autorisé.",14))
 		var acknowledge := S.button("CONFIRMER LES PRIORITÉS ACTUELLES",_acknowledge,_ack_available(),true);acknowledge.name="BoardMeetingAck";list.add_child(acknowledge)
-	list.add_child(S.wrap("Ces projets améliorent l’organisation du club. La confiance de la direction se mesure dans les bilans.",13))
 	var priorities := GridContainer.new();priorities.columns=2;priorities.add_theme_constant_override("h_separation",8);priorities.add_theme_constant_override("v_separation",8);list.add_child(priorities)
 	for key: String in PRIORITIES:
 		var button := S.button(PRIORITIES[key],func():_set_priority(key),_can_act());button.name="BoardPriority_"+key
@@ -152,7 +150,7 @@ func _build_objective_form(parent: Node, strategy: Dictionary) -> void:
 	var open_types: Array=TYPES.keys().filter(func(type: String):return not used_types.has(type))
 	var week := int(strategy.get("context",{}).get("week",0));var end := int(strategy.get("finance",{}).get("weeksPerSeason",0))
 	var enabled: bool=_can_act() and goals.size()<8 and not open_types.is_empty() and end>week
-	if open_types.is_empty():parent.add_child(S.wrap("Les quatre types de jalons sont déjà enregistrés.",13));return
+	if open_types.is_empty():parent.add_child(S.wrap("✓ Tous les jalons sont posés",13));return
 	if not open_types.has(draft_type):draft_type=str(open_types[0])
 	var kind := OptionButton.new();kind.name="BoardObjectiveType";kind.custom_minimum_size.y=38
 	for type: String in open_types:kind.add_item(TYPES[type])
@@ -163,7 +161,7 @@ func _build_objective_form(parent: Node, strategy: Dictionary) -> void:
 	target.value_changed.connect(func(value: float):draft_target=value);fields.add_child(target)
 	var deadline := SpinBox.new();deadline.name="BoardObjectiveDeadline";deadline.min_value=week+1;deadline.max_value=maxi(end,week+1);deadline.prefix="Sem. ";draft_deadline=clampi(draft_deadline,week+1,maxi(end,week+1));deadline.value=draft_deadline;deadline.custom_minimum_size=Vector2(145,38);deadline.editable=enabled
 	deadline.value_changed.connect(func(value: float):draft_deadline=int(value));fields.add_child(deadline)
-	parent.add_child(S.wrap("Cible à gauche, échéance à droite. Le jalon n’est enregistré qu’à la validation.",12))
+	target.tooltip_text="Cible";deadline.tooltip_text="Échéance"
 	var submit := S.button("ENREGISTRER LE JALON",_create_objective,enabled);submit.name="BoardObjectiveCreate";parent.add_child(submit)
 
 func _set_priority(key: String) -> void:

@@ -60,10 +60,8 @@ static func build(app: Control, page: Control, zone: Rect2, choisir: Callable, c
 	var pris: Dictionary = Selection.state(app).get("pris", {}) if Selection.state(app).get("pris") is Dictionary else {}
 	for i in entrees.size():
 		_ligne(app, lignes, i, entrees[i].slot, entrees[i].person, zone.size.x, choisir, clavier, avis, bleus, pris)
-	var y := 86.0 + LIGNE * 8 + 30
-	Kit.texte(bloc, 22, y, "Les n° 16 à 18 sont généralement la première ligne ;", Charte.IVOIRE_2, zone.size.x - 44, 16).name = "BenchFrontRowNote"
-	Kit.texte(bloc, 22, y + 22, "la règle compte les formés sur la feuille." if C.dense() else "la règle compte les premières lignes formées sur toute la feuille.", Charte.IVOIRE_2, zone.size.x - 44, 16)
-	_doublures(app, bloc, y + 68, zone.size.x, choisir)
+	var y := 86.0 + LIGNE * 8 + 22
+	_doublures(app, bloc, y + 36, zone.size.x, choisir)
 	return bloc
 
 static func _ligne(app: Control, parent: Control, rang: int, slot: int, person: Dictionary, largeur: float, choisir: Callable, clavier: Callable, avis: Dictionary, bleus: Dictionary, pris: Dictionary) -> void:
@@ -133,7 +131,7 @@ static func _doublures(app: Control, bloc: Control, y: float, largeur: float, ch
 		if compte <= 1: seuls.append(poste)
 	var bas := y + 24 + 2 * 62 + 22
 	if seuls.is_empty():
-		Kit.texte(bloc, 22, bas, "Chaque poste a au moins une doublure de métier sur la feuille.", Charte.IVOIRE_2, largeur - 44, 16).name = "TacticsDepthSummary"
+		Kit.texte(bloc, 22, bas, "✓ Tous les postes sont doublés", Charte.IVOIRE_2, largeur - 44, 16).name = "TacticsDepthSummary"
 		return
 	var debut := "Sans doublure de métier : "
 	Kit.texte(bloc, 22, bas, debut, Charte.IVOIRE_2, Kit.largeur(debut, 16) + 4, 16).name = "TacticsDepthSummary"

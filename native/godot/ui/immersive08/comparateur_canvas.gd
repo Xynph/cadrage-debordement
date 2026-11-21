@@ -11,6 +11,7 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
 const Charte = preload("res://ui/charte.gd")
 const Kit = preload("res://ui/immersive08/tactics_kit.gd")
+const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
 const Commune = preload("res://ui/immersive08/fiche_commune.gd")
 const Identity = preload("res://ui/player_identity.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
@@ -66,7 +67,7 @@ static func _construire(app: Control, page: Control) -> void:
 	Kit.touche(page, retour_lien.size.x / C.density + 10, 32, "Échap")
 	var titre := Kit.titre_page(page, 0, 98, "Comparateur", 56, 900)
 	titre.name = "ComparateurTitre"
-	Kit.texte(page, 0, 134, "Jusqu’à trois joueurs côte à côte. La meilleure valeur de chaque ligne est en gras avec ▲ ; l’âge et le coût ne comptent pas comme un avantage.", Charte.IVOIRE_2, 1800, 18)
+	Pieces.info(page, Pieces.largeur_titre("COMPARATEUR", 56) + 24.0, 64.0, "Jusqu’à trois joueurs côte à côte\n▲ : meilleure valeur de la ligne\nL’âge et le coût ne comptent pas comme un avantage", "ComparateurAide")
 	var x0 := 330.0
 	var largeur := (LARGEUR - x0 - 28.0 * (colonnes - 1)) / colonnes
 	var joueurs: Array[Dictionary] = []
