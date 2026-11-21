@@ -164,8 +164,8 @@ func run() -> void:
 	# Zones du règlement (moteur) : légende et note dès l'avant-saison ; aucune ligne en zone tant que le classement n'est pas ouvert.
 	var zone_legend: Control = app.find_child("StandingsZoneLegend", true, false)
 	check(zone_legend != null and zone_legend.accessibility_name.contains("◆ 13 Barrage d’accession") and zone_legend.accessibility_name.contains("▼ 14 Relégation"), "Classement : légende des zones du Top 14 (moteur)")
-	var zone_note: Label = app.find_child("StandingsZoneNote", true, false)
-	check(zone_note != null and zone_note.text.contains("barrage d’accession"), "Classement : note du règlement sous la légende")
+	var zone_note: Control = app.find_child("StandingsZoneNote", true, false)
+	check(zone_note != null and zone_note.tooltip_text.contains("barrage d’accession"), "Classement : note du règlement derrière un « i » en bout de légende")
 	check(app.find_children("StandingsZoneMark", "Control", true, false).filter(func(mark: Control): return mark.get_parent().name.begins_with("StandingsRow_")).is_empty(), "Classement : aucune ligne en zone avant la 1re journée")
 	# Choix de la compétition : menu déroulant dans la page ; on l'ouvre pour mesurer chaque entrée.
 	var menu_button := app.find_child("StandingsDivisionMenu", true, false) as Button
@@ -216,8 +216,10 @@ func run() -> void:
 	var calendar := app.find_child("CarnetCalendar", true, false)
 	check(calendar != null, "Calendrier présent")
 	var detail := app.find_child("InternationalAvailabilityDetail", true, false)
-	check(detail != null, "Calendrier : convocations internationales annoncées (7 joueurs du club en sélection)")
-	if detail != null: check(detail.size.x >= 300.0 and detail.get_line_count() <= 3, "Calendrier : le texte des convocations a une largeur lisible")
+	check(detail != null, "Calendrier : convocations internationales annoncées (7 joueurs du club en sélection, pastille de retour)")
+	if detail != null: check(detail.size.x >= 100.0 and detail.size.y <= 80.0, "Calendrier : la pastille de retour a une largeur lisible, sur une ligne")
+	var tuile_selection := app.find_child("InternationalAvailabilityTile", true, false)
+	check(tuile_selection != null and tuile_selection.find_child("Valeur", true, false) != null and (tuile_selection.find_child("Valeur", true, false) as Label).text == str(int(app.model.get("international", {}).get("availability", {}).get("absentCount", 0))), "Calendrier : tuile « N en sélection » égale au nombre d'absents")
 	var narrow := narrow_texts(app)
 	check(narrow.is_empty(), "Calendrier : aucun texte à largeur nulle : " + str(narrow))
 	check(app.find_child("CalendarProgramScroll", true, false) != null and app.find_children("MonthDay_*", "Control", true, false).size() >= 28, "Calendrier : la grille du mois est affichée")

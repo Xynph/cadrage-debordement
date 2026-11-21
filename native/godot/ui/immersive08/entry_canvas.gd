@@ -169,7 +169,6 @@ static func _editorial_workspace(app: Control, page: Control, creation: bool, si
 		heading.add_child(underline)
 	else:
 		heading.add_child(C.label("Choisir sa réalité", 74, C.IVORY, true, 700))
-		heading.add_child(C.wrap("Sélectionne la réalité de jeu pour ta prochaine carrière.", 25, C.IVORY))
 	column.add_child(C.rule())
 	var body := C.margin(21 if creation else 27)
 	C.fill(body, true)

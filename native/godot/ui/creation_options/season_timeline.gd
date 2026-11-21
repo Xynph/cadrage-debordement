@@ -35,14 +35,12 @@ static func build(app: Control, parent: Node, selected: Dictionary, choosable: b
 		option.custom_minimum_size.y = maxi(26, C.px(38))
 		option.disabled = app.waiting
 		head.add_child(option)
-		var sentence := C.wrap(Kit.entry().call("_career_start_sentence", app, start, selected), 18, C.IVORY)
-		sentence.name = "CreationStartSentence"
-		sentence.modulate = Color(1, 1, 1, .86)
-		column.add_child(sentence)
+		# Plus de phrase sous le choix : les conséquences du départ sont dans l'infobulle (et dans la bulle de Gabi).
+		option.tooltip_text = Kit.entry().call("_career_start_sentence", app, start, selected)
 		option.item_selected.connect(func(index: int) -> void:
 			var chosen: String = STARTS[index]
 			app.management_ui.creation_start = chosen
-			sentence.text = Kit.entry().call("_career_start_sentence", app, chosen, selected)
+			option.tooltip_text = Kit.entry().call("_career_start_sentence", app, chosen, selected)
 			refresh.call(chosen)
 			if on_change.is_valid(): on_change.call(chosen))
 	column.add_child(rail)
@@ -136,8 +134,11 @@ static func _big_date(iso: String, size: int = 46) -> HBoxContainer:
 	row.mouse_filter = Control.MOUSE_FILTER_PASS
 	return row
 
-static func _detail(text: String) -> Label:
+static func _detail(text: String, bulle: String = "") -> Label:
 	var label := C.wrap(text, 17, C.MUTED)
+	if not bulle.is_empty():
+		label.tooltip_text = bulle
+		label.mouse_filter = Control.MOUSE_FILTER_PASS
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.max_lines_visible = 2
 	return label
@@ -166,7 +167,7 @@ static func _friendlies(parent: VBoxContainer, data: Dictionary, start: String, 
 		var plan := C.label("À bâtir", 34, C.IVORY, true, 800)
 		plan.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		parent.add_child(plan)
-		parent.add_child(_detail("Menés par le staff" if start == "veille" else "Programme à décider pendant la préparation"))
+		parent.add_child(_detail("Menés par le staff" if start == "veille" else "À décider", "" if start == "veille" else "Programme à décider pendant la préparation"))
 		return
 	var count := int(friendlies.get("count", 0))
 	var row := C.h(8)
@@ -217,7 +218,7 @@ static func _fixture(app: Control, parent: VBoxContainer, data: Dictionary, stat
 		var later := C.label("Au calendrier", 30, C.IVORY, true, 800)
 		later.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		parent.add_child(later)
-		parent.add_child(_detail("La date et l’adversaire t’attendent dans ton calendrier"))
+		parent.add_child(_detail("Au calendrier", "La date et l’adversaire t’attendent dans ton calendrier"))
 		return
 	var match_day: Dictionary = fixture
 	var iso := str(match_day.get("date", ""))
