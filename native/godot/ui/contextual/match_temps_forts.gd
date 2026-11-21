@@ -277,12 +277,14 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	between.pause_demandee.connect(func(): app._command("pause", {"paused": true}))
 	# Fiche joueur lue pendant l'entracte : le match se met en pause, comme pour la fenêtre Équipe.
 	between.fiche_ouverte.connect(func(ouverte: bool): tiroir_ouvert() if ouverte else tiroir_ferme())
-	between.couvert = func() -> bool: return is_instance_valid(view.get("equipe")) and view.equipe.visible
+	between.couvert = func() -> bool: return (is_instance_valid(view.get("equipe")) and view.equipe.visible) or (view.has_method("fenetre_ouverte") and view.fenetre_ouverte())
+	# Nom d'un joueur de l'entracte : sa petite fenêtre par-dessus le match (jamais une page qui remplace la vue).
+	if view.has_method("ouvrir_joueur"): between.fiche_vers = view.ouvrir_joueur
 	# Repère de la domination, dernier fait, chiffre clé : le journal ou les statistiques ouverts à la bonne ligne.
 	between.journal_demande.connect(ouvrir_journal_a)
 	between.stats_demandees.connect(ouvrir_stats_a)
 	between.camera_demandee.connect(func(mode: String): view.choisir_camera(mode))
-	# Club du multiplex ou du classement en direct : sa fiche dans une page du direct (« ← Retour au direct »).
+	# Club du multiplex ou du classement en direct : sa petite fenêtre par-dessus le match.
 	between.club_demande.connect(func(id: int): if view.has_method("ouvrir_fiche_club_id"): view.ouvrir_fiche_club_id(id))
 	# En 3D (entracte caché), « Confier la fin » du menu Plus se confirme dans le menu du match.
 	between.confier_fin_demande.connect(func(): if view.has_method("confier_fin"): view.confier_fin())

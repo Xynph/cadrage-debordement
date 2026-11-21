@@ -213,6 +213,9 @@ var _scores_cour: Dictionary = {}
 var _scores_prec: Dictionary = {}
 ## Fiche joueur ouverte pendant le match (sous-page posée sur l'entracte, retour par Échap), ou null.
 var fiche_match: Control
+## Dans le vrai direct (match_temps_forts.gd) : le nom d'un joueur ouvre sa petite fenêtre par-dessus le match
+## (live_view.gd, plein écran obligatoire) au lieu de la sous-page ; vide hors du direct (tests de l'entracte seul).
+var fiche_vers: Callable = Callable()
 var _fiche_id := ""
 ## Lignes du classement en direct : notre voisinage (± 3 places) et le haut du tableau.
 const CLASSEMENT_LIGNES := 9
@@ -2753,6 +2756,9 @@ func _remplir_xv_adverse(direct: Dictionary) -> void:
 ## Fiche complète d'un de nos joueurs, posée sur l'entracte (la navigation du jeu est fermée pendant un
 ## match) : « ← Retour au direct » (Échap) la referme, le match reste en pause le temps de la lire.
 func ouvrir_fiche(id: String) -> void:
+	if fiche_vers.is_valid() and not id.is_empty():
+		fiche_vers.call(id)
+		return
 	var app: Object = _app()
 	if not app is Control or id.is_empty(): return
 	var trouve: Dictionary = load("res://ui/immersive08/fiche_commune.gd").trouver(app, id, "squad")
