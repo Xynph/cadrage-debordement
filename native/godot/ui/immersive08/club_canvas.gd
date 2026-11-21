@@ -191,8 +191,9 @@ static func _header(app: Control, canvas: Control, tab: String) -> void:
 		D.place(bouton, Rect2(x, 70, largeur, 46))
 		x += largeur + 6
 	D.line(canvas, Vector2(0, 117), Vector2(W, 117), Charte.FILET)
-	var largeur_touche := Kit.touche(canvas, W - 250, 104, "← →", false)
-	Kit.texte(canvas, W - 250 + largeur_touche + 10, 104, "changer d’onglet", Charte.IVOIRE_2, 220, 17)
+	# Raccourci ← → : en info-bulle des onglets, plus en mode d'emploi écrit (règle de Léo du 21/11/2026).
+	for onglet: Node in canvas.get_children():
+		if onglet is Button and str(onglet.name).begins_with("ClubTab_"): (onglet as Button).tooltip_text = "← → pour changer d’onglet"
 
 static func _tab(app: Control, key: String, id: String = "") -> void:
 	if key == "direction" or key == "staff":
@@ -802,6 +803,10 @@ static func _staff_diagnostic(card: Control, app: Control) -> void:
 		var alerte: bool = (fatigue is int or fatigue is float) and float(fatigue) > 0
 		var ecrire := func(valeur: Variant) -> String: return G.n(valeur) if valeur is int or valeur is float else ("—" if valeur == null else str(valeur))
 		var rows := [["Condition moyenne", ecrire.call(diagnostic.get("mean")), false], ["Moral du groupe", ecrire.call(diagnostic.get("morale")), false], ["Joueurs sous 65 de condition", ("! " if alerte else "") + ecrire.call(fatigue), alerte]]
+		# Constat du staff : un compte « sous 85 » plutôt qu'une phrase (la phrase reste en info-bulle de la ligne).
+		var fatigues: Variant = diagnostic.get("tired")
+		if fatigues is int or fatigues is float:
+			rows.append(["Joueurs sous 85 de condition", ("! " if float(fatigues) > 0 else "") + ecrire.call(fatigues), float(fatigues) > 0])
 		for i in rows.size():
 			var y := 70.0 + i * 34.0
 			var ligne := Button.new()
@@ -809,13 +814,14 @@ static func _staff_diagnostic(card: Control, app: Control) -> void:
 			StaffTable.styler_rangee(ligne)
 			ligne.accessibility_name = "%s · %s · travail du club" % [rows[i][0], rows[i][1]]
 			ligne.pressed.connect(func(): app._navigate("Travail du club"))
+			if i == 3: ligne.tooltip_text = str(diagnostic.get("reason", ""))
 			card.add_child(ligne)
 			D.place(ligne, Rect2(12, y, largeur - 24, 34))
 			Kit.texte(ligne, 12, 23, str(rows[i][0]), Charte.IVOIRE, 360, 18)
-			var valeur := Kit.texte(ligne, largeur - 36, 23, str(rows[i][1]), Charte.D if rows[i][2] else Charte.IVOIRE, 120, 18, HORIZONTAL_ALIGNMENT_RIGHT)
+			var valeur := Kit.texte(ligne, largeur - 36, 23, str(rows[i][1]), Charte.PERTE if rows[i][2] else Charte.IVOIRE, 120, 18, HORIZONTAL_ALIGNMENT_RIGHT)
 			valeur.add_theme_font_override("font", Kit.texte_gras())
 		var raison := str(diagnostic.get("reason", ""))
-		if not raison.is_empty(): _texte_lignes(card, 24, 180, largeur - 48, raison, 16, Charte.TEXTE, Charte.IVOIRE_2, 2).name = "ClubStaffDiagnosticReason"
+		if rows.size() < 4 and not raison.is_empty(): _texte_lignes(card, 24, 180, largeur - 48, raison, 16, Charte.TEXTE, Charte.IVOIRE_2, 2).name = "ClubStaffDiagnosticReason"
 	_lien(card, Rect2(18, 258, 0, 34), "Travail du club →", func(): app._navigate("Travail du club"), "ClubStaffWork", 18)
 
 ## Contrats et engagements : chaque ligne ouvre la sous-page ou le tableau qui la détaille.
