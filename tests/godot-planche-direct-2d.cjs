@@ -28,8 +28,6 @@ let echecs = 0;
   fs.copyFileSync(path.join(directory, 'monde.json'), path.join(dossier, 'monde.json'));
   const env = {...process.env, CD_GODOT_SELF_TEST: '0', CD_NODE_EXECUTABLE: process.env.CD_NODE_EXECUTABLE || process.execPath, CD_GODOT_DATA_DIR: path.join(process.env.CD_PLANCHE_PROFIL || directory, 'jeu', 'PrototypeGodot'),
     CD_PLANCHE_DIRECT_2D: dossier, CD_MATCH_TEMPS_FORTS: '1', CD_MATCH_TEMPS_FORTS_HORLOGE: 'eclair', CD_MATCH_TEMPS_FORTS_VITESSE: '8', CD_MATCH_TEMPS_FORTS_NIVEAU: 'cles', CD_GODOT_SEED: '3'};
-  // En ligne (rendu logiciel, limite de 300 s par suite) : écran 2D dès la 3e minute et une seule taille ; les captures de Léo se font en local.
-  if (process.env.CI) { env.CD_PLANCHE_MINUTE = env.CD_PLANCHE_MINUTE || '3'; env.CD_PLANCHE_TAILLES = env.CD_PLANCHE_TAILLES || '2560x1440'; }
   for (const name of ['CD_VARIANTE_VISUELLE', 'CD_MATCH_GESTES', 'CD_MATCH_CHOREGRAPHE', 'CD_MATCH_TEMPS_FORTS_ENTRACTE', 'CD_MATCH_SORTIE']) delete env[name];
   const result = spawnSync(godot, ['--audio-driver', 'Dummy', '--max-fps', '60', '--path', path.resolve(__dirname, '../native/godot'), '--script', path.resolve(__dirname, 'godot-planche-direct-2d.gd')],
     {env, encoding: 'utf8', windowsHide: true, timeout: 900000});
