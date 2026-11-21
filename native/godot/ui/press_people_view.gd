@@ -31,7 +31,7 @@ static func build(app: Control, data: Dictionary = {}) -> Control:
 	chooser.custom_minimum_size.y = 44
 	chooser.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	for person: Dictionary in people:
-		chooser.add_item("%s · %s · %d échange(s)" % [person.name, person.outlet, person.encounters])
+		chooser.add_item("%s · %s · %d %s" % [person.name, person.outlet, person.encounters, "échange" if int(person.encounters) <= 1 else "échanges"])
 	page.add_child(chooser)
 	var detail := G.scroll(page)
 	detail.name = "PressPeopleMemory"
@@ -57,7 +57,7 @@ static func build(app: Control, data: Dictionary = {}) -> Control:
 			source.add_theme_color_override("font_focus_color", G.INK)
 			detail.add_child(source)
 		detail.add_child(G.separator())
-		detail.add_child(G.wrap("%s · relation %+.0f / 100 · %d échange(s)" % [person.relationLabel, person.score, person.encounters], 13, G.INK))
+		detail.add_child(G.wrap("%s · relation %+.0f / 100 · %d %s" % [person.relationLabel, person.score, person.encounters, "échange" if int(person.encounters) <= 1 else "échanges"], 13, G.INK))
 		detail.add_child(G.wrap("De −100 à +100. L’accueil dépend du style du journaliste, du ton et du sujet.", 12))
 		if person.memory.is_empty():
 			detail.add_child(G.wrap("Aucun échange individuel conservé. Les anciennes conférences sans identité ne créent pas de souvenir.", 13))

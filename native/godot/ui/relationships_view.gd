@@ -257,7 +257,7 @@ static func _player(app: Control, parent: VBoxContainer, data: Dictionary, p: Di
 	var etats := V.personnalite(str(personnalite.get("trait", "")) if personnalite is Dictionary else "", personnalite.get("leadership") if personnalite is Dictionary else null, fiche)
 	if not str(p.get("pos", "")).is_empty(): etats.add_child(Pastilles.pastille(str(p.get("pos", "")), Charte.IVOIRE_2, "people", "Poste", 16, "RelationshipPos", fiche))
 	if int(p.get("injury", 0)) > 0:
-		etats.add_child(Pastilles.pastille("%d sem." % int(p.injury), Pastilles.ROUGE, "warning", "Blessure : %s semaine(s)." % p.injury, 16, "RelationshipInjuryWeeks", fiche))
+		etats.add_child(Pastilles.pastille("%d sem." % int(p.injury), Pastilles.ROUGE, "warning", "Blessure : %s sem." % p.injury, 16, "RelationshipInjuryWeeks", fiche))
 		etats.add_child(Pastilles.pastille("Promesse", Pastilles.ORANGE, "clock", "Promesse suspendue si aucune minute jouée.", 16, "RelationshipInjuryPromise", fiche))
 	cote.add_child(etats)
 	var chiffres := Components.h(8)
