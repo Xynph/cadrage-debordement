@@ -16,9 +16,15 @@ function managerMobilityProfile(){
 }
 function managerMobilityDecision(id){
  const international=typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S);
- if(!managerMobilityWindow()||!Number.isInteger(id)||id<0||id>=S.clubs.length||id===S.club||international&&CDWorldCareer.leagueId(S,id)==='guest')return null;
+ if(!managerMobilityWindow())return null;
+ return managerMobilityOutlook(id);
+}
+// Lecture pure de la decision qu'un club rendrait aujourd'hui (aussi hors fenetre, pour l'ecran Mobilite).
+function managerMobilityOutlook(id){
+ const international=typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S);
+ if(!S||!Number.isInteger(id)||id<0||id>=S.clubs.length||id===S.club||international&&CDWorldCareer.leagueId(S,id)==='guest')return null;
  const c=S.clubs[id],w=worldClub(id),risk=CDCoachMarket.dismissalRisk({confidence:w.coachConfidence,consecutiveLosses:w.consecutiveLosses});
- const rank=(international?CDWorldCareer.ranked(S,CDWorldCareer.leagueId(S,id)):S.franceMode?CDFranceCompetition.ranked(S,CDFranceCompetition.leagueId(S,id)):ranked()).findIndex(x=>x.id===id)+1,reputation=managerMobilityProfile(),budget=Math.max(0,c.cash-w.debt);
+ const rank=(international?CDWorldCareer.ranked(S,CDWorldCareer.leagueId(S,id)):S.franceMode&&typeof CDFranceCompetition!=='undefined'?CDFranceCompetition.ranked(S,CDFranceCompetition.leagueId(S,id)):ranked()).findIndex(x=>x.id===id)+1,reputation=managerMobilityProfile(),budget=Math.max(0,c.cash-w.debt);
  // Affinite V48 reutilisee, sans inventer de remuneration ni paiement.
  const proposal=CDCoachMarket.jobOffers([{id:'club-'+id,vacant:true,budget,reputation:w.reputation}],{salary:0,reputation})[0];
  const reason=c.cash<0||w.debt>Math.max(c.cash,0)?'finances':risk.risk<35&&rank<8?'stable':reputation+15<w.reputation?'reputation':'offer';

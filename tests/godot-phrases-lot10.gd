@@ -112,6 +112,7 @@ func carriere() -> void:
 		check(route_signature() != avant or app.route != "Carrière", "%s : mène quelque part" % nom)
 		check(windows().is_empty(), "%s : aucune fenêtre système" % nom)
 		destinations.append("%s -> %s" % [nom, app.route])
+	await vitrine()
 	await ouvrir_mobilite()
 	# Prise de poste : petite fenêtre visuelle.
 	var Manager = load("res://ui/manager_career_view.gd")
@@ -130,6 +131,61 @@ func carriere() -> void:
 	check(app.find_child("CareerOfferFenetre", true, false) == null or app.find_child("CareerOfferFenetre", true, false).is_queued_for_deletion(), "Prise de poste : Échap ferme")
 	check(app.route == "Carrière", "Prise de poste : on reste sur Carrière")
 	destinations.append("Prise de poste -> petite fenêtre (Échap, ✕, clic à côté)")
+
+## Vitrine « Clubs à l’écoute » (candidatures fermées) : la colonne de gauche garde sa part de largeur,
+## aucun texte de carte coupé, en 1920 puis en 1280.
+func mise_en_page_vitrine(taille: Vector2i) -> void:
+	root.size = taille
+	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(taille)
+	await ouvrir_mobilite()
+	await settle(6)
+	var page := app.root_content.find_child("CarnetManagerCareer", true, false) as Control
+	var grille := app.root_content.find_child("VitrineClubs", true, false) as GridContainer
+	check(page != null and grille != null, "Vitrine %dx%d : grille présente" % [taille.x, taille.y])
+	if page == null or grille == null: return
+	var gauche := page.get_child(0) as Control
+	var droite := page.get_child(1) as Control
+	# Parts d'origine : 1.0 à gauche, 1.2 à droite.
+	var attendu := (gauche.size.x + droite.size.x) / 2.2
+	check(gauche.size.x <= attendu + 2.0, "Vitrine %dx%d : colonne de gauche non élargie (%.0f / %.0f)" % [taille.x, taille.y, gauche.size.x, attendu])
+	check(grille.size.x <= (grille.get_parent() as Control).size.x + .5, "Vitrine %dx%d : grille dans sa colonne" % [taille.x, taille.y])
+	check(grille.get_child_count() == 8, "Vitrine : huit cartes club (%d)" % grille.get_child_count())
+	for etiquette in grille.find_children("*", "Label", true, false):
+		var l := etiquette as Label
+		if not l.is_visible_in_tree(): continue
+		check(l.size.x + .5 >= l.get_minimum_size().x and (l.autowrap_mode == TextServer.AUTOWRAP_OFF or l.get_line_count() <= l.get_visible_line_count()), "Vitrine %dx%d : « %s » entier" % [taille.x, taille.y, l.text])
+		check(l.get_global_rect().end.x <= grille.get_global_rect().end.x + .5, "Vitrine %dx%d : « %s » dans la grille" % [taille.x, taille.y, l.text])
+	destinations.append("Vitrine %dx%d : %d colonnes" % [taille.x, taille.y, grille.columns])
+	await capture("carriere-mobilite-%d" % taille.x)
+
+func vitrine() -> void:
+	await mise_en_page_vitrine(Vector2i(1280, 720))
+	await mise_en_page_vitrine(Vector2i(1920, 1080))
+	var attendus := {"VitrineCompte": "Classements", "VitrineReputation": "Classements", "VitrineSemaines": "Calendrier"}
+	for nom: String in attendus:
+		await ouvrir_mobilite()
+		var pastille := app.root_content.find_child(nom, true, false) as Button
+		check(pastille != null, "Vitrine : pastille %s cliquable" % nom)
+		if pastille == null: continue
+		pastille.pressed.emit()
+		await settle(12)
+		check(app.route == attendus[nom], "%s -> %s (%s)" % [nom, attendus[nom], app.route])
+		destinations.append("%s -> %s" % [nom, app.route])
+	await ouvrir_mobilite()
+	var cartes: Array[String] = []
+	for b in app.root_content.find_children("VitrineClub_*", "Button", true, false): cartes.append(str(b.name))
+	check(cartes.size() == 8, "Vitrine : huit cartes cliquables (%d)" % cartes.size())
+	for nom in cartes:
+		await ouvrir_mobilite()
+		var carte := app.root_content.find_child(nom, true, false) as Button
+		if carte == null: check(false, "Vitrine : %s retrouvée" % nom); continue
+		var id := int(nom.trim_prefix("VitrineClub_"))
+		carte.pressed.emit()
+		await settle(12)
+		var fiche: Variant = app.management_ui.get("club_sheet")
+		check(app.route == app.Immersive.ClubSheet.ROUTE and fiche is Dictionary and int(fiche.get("id", -1)) == id, "%s -> fiche du club %d (%s)" % [nom, id, app.route])
+		check(windows().is_empty(), "%s : aucune fenêtre système" % nom)
+		destinations.append("%s -> %s" % [nom, app.route])
 
 func echos() -> void:
 	var events: Array = app.model.get("clubLife", {}).get("clubWorld", {}).get("events", [])

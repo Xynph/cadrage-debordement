@@ -8,6 +8,7 @@ const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
 const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
 const Link = preload("res://ui/entity_link.gd")
 const Charte = preload("res://ui/charte.gd")
+const Views = preload("res://ui/club_views.gd")
 const FENETRE_OFFRE := "CareerOfferFenetre"
 ## État d'une candidature : un mot, une icône, une couleur (jamais la couleur seule) ; la phrase d'origine reste en infobulle.
 const ETATS := {
@@ -97,6 +98,120 @@ static func _confirm(app: Control, context: Dictionary, offer: Dictionary) -> vo
 		Fenetre.fermer(page, FENETRE_OFFRE)
 		accepter.call(), false, "arrow", false, Color("176e49"), "CareerOfferConfirmer")
 
+## Candidatures fermées : vitrine « Clubs à l’écoute » (choix de Léo, 21/11), grisée tant que c'est fermé.
+## Trois pastilles en tête, puis huit cartes club ; chaque carte ouvre la fiche du club.
+const ETATS_VITRINE := {
+	"offer": ["Intéressé", "check", "vert"],
+	"stable": ["Technicien en place", "shield", "bleu"],
+	"reputation": ["Exigeant", "warning", "orange"],
+	"finances": ["Finances", "warning", "rouge"],
+}
+const VITRINE_COLONNES := 4
+
+static func _attente(app: Control, parent: Node, data: Dictionary) -> void:
+	var vue: Variant = data.get("outlook")
+	if not vue is Dictionary: return
+	parent.add_child(G.section("Clubs à l’écoute"))
+	var clubs: Array = (vue.get("clubs", []) as Array).filter(func(c): return c is Dictionary)
+	var interesses: Array = clubs.filter(func(c): return c.get("reason") == "offer")
+	var tete := _rangee(parent)
+	tete.add_child(Pastilles.pastille("%d clubs intéressés" % interesses.size(), Pastilles.VERT, "check", "", 18, "VitrineCompte", func(): app._navigate("Classements")))
+	tete.add_child(Pastilles.pastille("Réputation %d" % int(vue.get("reputation", 0)), Pastilles.VIOLET, "star", "", 18, "VitrineReputation", func(): app._navigate("Classements")))
+	tete.add_child(Pastilles.pastille("%d sem." % int(vue.get("weeksLeft", 0)), Pastilles.TURQUOISE, "hourglass", "", 18, "VitrineSemaines", func(): app._navigate("Calendrier")))
+	# Les plus prestigieux d'abord : intéressés, puis les autres.
+	var tri := func(a, b): return int(a.get("clubReputation", 0)) > int(b.get("clubReputation", 0))
+	interesses.sort_custom(tri)
+	var autres: Array = clubs.filter(func(c): return c.get("reason") != "offer")
+	autres.sort_custom(tri)
+	var vitrine: Array = (interesses.slice(0, 6) + autres.slice(0, 2))
+	var grille := GridContainer.new()
+	grille.name = "VitrineClubs"
+	# Une colonne au départ : la grille ne réclame jamais plus que la largeur de la colonne de gauche.
+	grille.columns = 1
+	grille.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grille.add_theme_constant_override("h_separation", C.px(10))
+	grille.add_theme_constant_override("v_separation", C.px(10))
+	parent.add_child(grille)
+	for c: Dictionary in vitrine:
+		grille.add_child(_carte_club(app, c))
+	grille.resized.connect(func(): _colonnes_vitrine(grille))
+
+## Autant de colonnes (4 au plus) que la largeur disponible en contient, sans jamais élargir la colonne.
+static func _colonnes_vitrine(grille: GridContainer) -> void:
+	var ecart := float(grille.get_theme_constant("h_separation"))
+	var carte := 1.0
+	for enfant in grille.get_children(): carte = maxf(carte, (enfant as Control).get_combined_minimum_size().x)
+	var colonnes := clampi(int(floor((grille.size.x + ecart) / (carte + ecart))), 1, VITRINE_COLONNES)
+	if colonnes != grille.columns: grille.columns = colonnes
+
+static func _carte_club(app: Control, c: Dictionary) -> Control:
+	var club := _identite(app, c.get("clubId"))
+	var cadre := PanelContainer.new()
+	cadre.name = "VitrineCarte_%d" % int(c.get("clubId", -1))
+	cadre.add_theme_stylebox_override("panel", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, Charte.RAYON_CARTE, 0))
+	cadre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var marge := MarginContainer.new()
+	marge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for cote in ["left", "right", "top", "bottom"]: marge.add_theme_constant_override("margin_" + cote, C.px(10))
+	cadre.add_child(marge)
+	var colonne := C.v(6)
+	colonne.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	marge.add_child(colonne)
+	var haut := C.h(10)
+	colonne.add_child(haut)
+	if not club.is_empty():
+		var ecusson := G.crest(club, C.px(48))
+		ecusson.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		haut.add_child(ecusson)
+	var noms := C.v(2)
+	noms.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	haut.add_child(noms)
+	# Noms longs : retour à la ligne plutôt que texte coupé.
+	var nom := C.label(G.club_name(club) if not club.is_empty() else _club(app, c.get("clubId")), 20, Charte.IVOIRE, true, 700)
+	nom.name = "Nom"
+	nom.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	nom.custom_minimum_size.x = C.px(90)
+	noms.add_child(nom)
+	var ligue := C.label(Views.competition_name(str(c.get("leagueId", "")), app.model), 14, Charte.IVOIRE_2, true, 600)
+	ligue.name = "Championnat"
+	ligue.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	ligue.custom_minimum_size.x = C.px(90)
+	noms.add_child(ligue)
+	var bas := HFlowContainer.new()
+	bas.add_theme_constant_override("h_separation", C.px(6))
+	bas.add_theme_constant_override("v_separation", C.px(6))
+	bas.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	colonne.add_child(bas)
+	var etat: Array = ETATS_VITRINE.get(str(c.get("reason", "")), ["—", "info", "gris"])
+	bas.add_child(Pastilles.pastille(etat[0], _couleur(etat[2]), etat[1], "", 16, "Etat"))
+	bas.add_child(Pastilles.tuile(str(int(c.get("affinity", 0))), "affinité", Charte.IVOIRE, Charte.PANNEAU_3, 18, "Affinite", true))
+	# Grisé tant que les candidatures sont fermées ; la fiche du club reste ouverte au clic.
+	cadre.modulate = Color(1, 1, 1, .62)
+	Pastilles._ignorer(cadre)
+	cadre.mouse_filter = Control.MOUSE_FILTER_PASS
+	if not Link.available(app, "club", c.get("clubId")): return cadre
+	# Bouton transparent posé sur toute la carte (le cadre le dimensionne) : survol, focus clavier, clic -> fiche du club.
+	var bouton := Button.new()
+	bouton.name = "VitrineClub_%d" % int(c.get("clubId", -1))
+	bouton.flat = true
+	bouton.set_meta("immersive_style_applied", true)
+	bouton.focus_mode = Control.FOCUS_ALL
+	bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	var vide := StyleBoxFlat.new()
+	vide.bg_color = Color.TRANSPARENT
+	vide.set_corner_radius_all(C.px(Charte.RAYON_CARTE))
+	var survol := vide.duplicate() as StyleBoxFlat
+	survol.bg_color = Color(Charte.IVOIRE, .1)
+	var focus := vide.duplicate() as StyleBoxFlat
+	focus.set_border_width_all(2)
+	focus.border_color = Charte.IVOIRE
+	for etat_bouton in ["normal", "disabled"]: bouton.add_theme_stylebox_override(etat_bouton, vide)
+	for etat_bouton in ["hover", "pressed"]: bouton.add_theme_stylebox_override(etat_bouton, survol)
+	bouton.add_theme_stylebox_override("focus", focus)
+	cadre.add_child(bouton)
+	Link.bind(bouton, app, Link.target("club", c.get("clubId")), nom.text)
+	return cadre
+
 static func build(app: Control) -> Control:
 	var page := G.h(18)
 	page.name = "CarnetManagerCareer"
@@ -112,6 +227,7 @@ static func build(app: Control) -> Control:
 		activate.name = "ManagerCareerActivate"
 		activate.disabled = not data.get("available", false)
 		career.add_child(activate)
+		_attente(app, career, data)
 	else:
 		var mandat := _rangee(career)
 		mandat.add_child(_lien(app, "club", data.clubId, _club(app, data.clubId), 24, "ManagerCareerClubLien"))
@@ -144,6 +260,7 @@ static func build(app: Control) -> Control:
 			career.add_child(apply)
 		else:
 			etat.add_child(Pastilles.pastille("Fermées", Pastilles.ORANGE, "lock", "Les candidatures ouvriront après la dernière compétition, avant de lancer la saison suivante.", 18, "ManagerCareerFermees"))
+			_attente(app, career, data)
 		career.add_child(G.section("Offres et candidatures"))
 		if data.get("applications", []).is_empty(): career.add_child(Pastilles.pastille("Aucune candidature", Charte.IVOIRE_2, "mail", "", 18, "ManagerCareerAucune"))
 		for a: Dictionary in data.get("applications", []):
