@@ -6,6 +6,8 @@ const U = preload("res://ui/management_state.gd")
 const G = preload("res://ui/game_skin.gd")
 const Salary = preload("res://ui/salary_display.gd")
 const Budget = preload("res://ui/transfer_budget.gd")
+const Prolongation = preload("res://ui/prolongation_visuelle.gd")
+const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 
 static func money(value: Variant) -> String:
 	return G.euros(value) if value is int or value is float else "Non communiqué"
@@ -58,7 +60,10 @@ static func open(app: Control, player: Dictionary, recruiting: bool, answer: Str
 	app._clear_dialogs()
 	var dialog := ConfirmationDialog.new()
 	dialog.name = "ContractOffer"
-	app._prepare_dialog(dialog,1540)
+	var taille := Vector2i(1540,860)
+	# Prolongation (choix B de Léo, 21/11/2026) : fenêtre à la hauteur de la toile, sans bande vide sous la prime.
+	if not recruiting: taille = Vector2i(roundi(1500 * C.density) + 70, roundi((Prolongation.HAUTEUR + 100) * C.density))
+	app._prepare_dialog(dialog,taille.x)
 	dialog.title = "Offre à " + str(player.name)
 	dialog.dialog_text = ""
 	var content := C.v(10)
@@ -66,7 +71,8 @@ static func open(app: Control, player: Dictionary, recruiting: bool, answer: Str
 	dialog.add_child(content)
 	var scroll := ScrollContainer.new()
 	scroll.follow_focus = true
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	# L'offre dessinée garde sa largeur : si la fenêtre du jeu rétrécit l'offre ouverte, elle défile au lieu de déborder.
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	C.fill(scroll,true)
 	content.add_child(scroll)
 	var body := C.v(12)
@@ -180,12 +186,14 @@ static func open(app: Control, player: Dictionary, recruiting: bool, answer: Str
 		share.tooltip_text = "La prime à la signature est prélevée sur ce budget ; le salaire n’y entre pas."
 		body.add_child(share)
 	# Offre au joueur (choix de Léo du 21/11/2026) : règle demande / proposition, frise des saisons, jeton de prime.
-	# Les blocs ci-dessus restent construits (mêmes nœuds, mêmes champs) mais masqués ; la prolongation garde l'écran en lignes.
-	if recruiting:
-		for ancien: Variant in [identity, status, progress, columns, summary_panel, action, body.get_node_or_null("ContractTransferBudget")]:
-			if ancien != null: (ancien as Control).visible = false
-		preload("res://ui/offre_visuelle.gd").construire(body, {"app":app, "player":player, "quote":quote, "salary":salary, "years":years, "first_season":first_season,
-			"negotiation":negotiation, "phase":phase, "reuse":reuse})
+	# Les blocs ci-dessus restent construits (mêmes nœuds, mêmes champs) mais masqués.
+	# Prolongation (choix B de Léo, 21/11/2026) : ancien contrat mis en regard du nouveau.
+	for ancien: Variant in [identity, status, progress, columns, summary_panel, action, body.get_node_or_null("ContractTransferBudget")]:
+		if ancien != null: (ancien as Control).visible = false
+	var ctx := {"app":app, "player":player, "quote":quote, "salary":salary, "years":years, "first_season":first_season,
+		"negotiation":negotiation, "phase":phase, "reuse":reuse, "prolongation":not recruiting}
+	if recruiting: preload("res://ui/offre_visuelle.gd").construire(body, ctx)
+	else: Prolongation.construire(body, ctx)
 	dialog.get_ok_button().text = "AUTORISER LA SIGNATURE SI ACCORD"
 	dialog.get_ok_button().tooltip_text = "Envoie ces conditions. Si le joueur accepte, le contrat est signé et la prime est débitée ; sinon, seule la discussion est enregistrée. Annuler ne transmet aucune proposition."
 	dialog.get_ok_button().disabled = blocked
@@ -195,12 +203,24 @@ static func open(app: Control, player: Dictionary, recruiting: bool, answer: Str
 		app._command("recruit" if recruiting else "extend_contract",{"playerId":player.id,"salary":Salary.input_weekly(salary),"years":int(years.value),"confirmed":true})
 		dialog.queue_free())
 	dialog.canceled.connect(dialog.queue_free)
+	# Échap ferme d'abord la petite fenêtre ouverte dans l'offre, puis seulement l'offre elle-même.
+	dialog.dialog_close_on_escape = false
+	dialog.window_input.connect(func(evenement: InputEvent):
+		if not evenement.is_action_pressed("ui_cancel", false, true): return
+		dialog.set_input_as_handled()
+		if not PetiteFenetre.fermer_derniere(dialog.get_tree()): dialog.get_cancel_button().pressed.emit())
 	app.add_child(dialog)
-	Dialogs.show_centered(dialog,Vector2i(1540,860))
+	Dialogs.show_centered(dialog,taille)
 	dialog.add_theme_font_size_override("title_font_size",C.px(20))
 	for button in [dialog.get_ok_button(),dialog.get_cancel_button()]:
 		button.add_theme_font_size_override("font_size",C.px(18))
 		button.custom_minimum_size.y = C.px(40)
+	# Doré réservé à la validation : le cadre de focus d'Annuler reste ivoire.
+	var focus_annuler := dialog.get_cancel_button().get_theme_stylebox("focus")
+	if focus_annuler is StyleBoxFlat:
+		var ivoire := (focus_annuler as StyleBoxFlat).duplicate() as StyleBoxFlat
+		ivoire.border_color = preload("res://ui/charte.gd").IVOIRE
+		dialog.get_cancel_button().add_theme_stylebox_override("focus", ivoire)
 	dialog.get_cancel_button().grab_focus()
 
 ## Rallonge demandée au conseil depuis le refus : confirmation (focus sur Annuler), puis devis rouvert avec la réponse.
