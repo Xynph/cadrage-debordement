@@ -51,6 +51,8 @@ const EXTRAS := [
 	{"id": "preparation-conseils", "libelle": "Préparation · conseils détaillés (sous-page)", "type": "preparation_sous", "sous": "conseils"},
 	{"id": "preparation-reperes", "libelle": "Préparation · tous les repères (sous-page)", "type": "preparation_sous", "sous": "reperes"},
 	{"id": "effectif-contrats", "libelle": "Effectif · onglet Contrats", "type": "effectif_onglet", "onglet": 2},
+	{"id": "effectif-condition", "libelle": "Effectif · onglet Condition", "type": "effectif_onglet", "onglet": 1},
+	{"id": "effectif-developpement", "libelle": "Effectif · onglet Développement", "type": "effectif_onglet", "onglet": 3},
 	{"id": "finances-tresorerie", "libelle": "Finances · onglet Trésorerie (colonne de verdict)", "type": "finances_onglet", "onglet": "cash"},
 	{"id": "finances-salaires", "libelle": "Finances · onglet Salaires", "type": "finances_onglet", "onglet": "wages"},
 	{"id": "finances-budget", "libelle": "Finances · onglet Budget", "type": "finances_onglet", "onglet": "budget"},

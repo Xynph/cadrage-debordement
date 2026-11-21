@@ -25,6 +25,8 @@ class Host extends Control:
 	func confirm(_title: String, _body: String, _callback: Callable) -> void: pass
 	func notice(_title: String, _body: String) -> void: pass
 var checks := 0
+## Noms réalistes, dont de longs patronymes : aucun ne doit être coupé sur les tuiles.
+const NOMS := ["Simon BRUNEAU", "Eliott CAZAUX", "Jaba BAKRADZE", "Léo HAMIDI", "Ropati SALANOA", "Thibaut VILLARD", "Gauthier SALAUN", "Loïc BERGER", "Taniela RAVOUVOU", "Melvin CABROL", "Tristan FREMONT", "Sébastien SCHNEIDER", "Geoffrey CHATELAIN", "Nathan LANDRY", "Simon ARNAUD", "Idrissa SANOGO-DIALLO", "Firmin BRASSEUR", "Ronan MURIEL", "Pierre-Alexandre LE GUELLEC", "Lucas OGOUNDELE", "Corentin GUILLEMOTEAU", "Emmanuel DESCHAMPS", "Mahé BOSC"]
 var failures := 0
 func check(value: bool, message: String) -> void:
 	checks += 1
@@ -42,6 +44,10 @@ func photographier(nom: String) -> void:
 	await RenderingServer.frame_post_draw
 	var image := root.get_texture().get_image()
 	check(image != null and image.save_png(sortie.path_join("vestiaire-" + nom + ".png")) == OK, "capture vestiaire-" + nom)
+## Tuile du joueur qui contient ce nœud (bouton porteur de participant_id), quelle que soit la profondeur de la mise en page.
+func card_of(node: Node) -> Control:
+	while node != null and not node.has_meta("participant_id"): node = node.get_parent()
+	return node as Control
 func _initialize() -> void: call_deferred("run")
 func run() -> void:
 	var host := Host.new()
@@ -57,7 +63,7 @@ func run() -> void:
 	for number in 23:
 		var id := "test:ui:%d" % number
 		participants.append({"id":id,"number":number + 1,"group":"forwards" if number < 8 or number in [15,16,17,18,19] else "backs"})
-		squad.append({"id":id,"name":"Participant %d" % (number + 1),"portraitIndex":number,"condition":85,"physicalLoad":{"fatigue":10}})
+		squad.append({"id":id,"name":NOMS[number],"portraitIndex":number,"condition":85,"physicalLoad":{"fatigue":10}})
 	# Deliberately mismatch primary positions and match jerseys. Bench numbers
 	# must never be interpreted as a fixed role (16 is an actual fullback here).
 	squad[0].pos = "Centre"
@@ -74,12 +80,12 @@ func run() -> void:
 	check(director.sync(), "talk opens")
 	await settle()
 	check(not host.root_content.visible and not host.coach.visible, "shell and coach hidden")
-	check(director.view.options_grid.columns == 2 and director.view.options_grid.get_child_count() == 6, "six declarations in two readable columns")
+	check(director.view.options_grid.columns in [2, 6] and director.view.options_grid.get_child_count() == 6, "six declarations in a readable grid")
 	# Le ton d'abord (en or, en capitales), la phrase dessous ; le ton furieux est un choix comme les autres.
 	var tone_texts: Array = director.view.options_grid.find_children("TalkChoiceTone", "Label", true, false).map(func(l: Label) -> String: return l.text)
 	check(tone_texts == ["CALME","EXIGEANT","ENCOURAGEANT","FURIEUX","RASSURANT","AFFIRMÉ"], "tone label first on each declaration " + str(tone_texts))
 	var furious: Button = director.view.options_grid.find_child("TalkChoice_furious", true, false)
-	check(furious != null and furious.get_meta("choice_id") == "test:choice:3" and furious.find_child("TalkChoiceText", true, false).text == "Une déclaration courte 3.", "furious declaration keeps its sentence under the tone")
+	check(furious != null and furious.get_meta("choice_id") == "test:choice:3" and str(furious.get_meta("text")) == "Une déclaration courte 3.", "furious declaration keeps its sentence under the tone")
 	check(director.view.tone_label({"tone":"furious"}) == "Furieux" and director.view.tone_label({"tone":"warm","toneLabel":"Encourageant"}) == "Encourageant", "tone label falls back on the six French tones")
 	# Captures : causerie avant la décision (six cartes de ton), en 1080p puis en 720p.
 	await taille(Vector2i(1920,1080)); await photographier("avant-1920x1080")
@@ -92,12 +98,12 @@ func run() -> void:
 	var roles: Array = director.view.find_children("ParticipantPosition", "Label", true, false)
 	check(roles.size() == 23, "each actual participant has a position under his name")
 	for role: Label in roles:
-		var card: Node = role.get_parent().get_parent().get_parent().get_parent()
+		var card: Node = card_of(role)
 		var id: String = str(card.get_meta("participant_id"))
-		if id == participants[0].id: check(role.text == "Pilier gauche", "starter jersey 1 overrides primary centre")
-		if id == participants[5].id: check(role.text == "Troisième ligne aile", "starter jersey 6 is flanker despite primary hooker")
-		if id == participants[15].id: check(role.text == "Arrière", "bench jersey 16 shows actual primary fullback")
-		if id == participants[22].id: check(role.text == "Pilier droit", "bench jersey 23 shows actual primary tighthead")
+		if id == participants[0].id: check(role.get_meta("position") == "Pilier gauche", "starter jersey 1 overrides primary centre")
+		if id == participants[5].id: check(role.get_meta("position") == "Troisième ligne aile", "starter jersey 6 is flanker despite primary hooker")
+		if id == participants[15].id: check(role.get_meta("position") == "Arrière", "bench jersey 16 shows actual primary fullback")
+		if id == participants[22].id: check(role.get_meta("position") == "Pilier droit", "bench jersey 23 shows actual primary tighthead")
 	check(director.view._position_label({"number":18}, {"rosterProfile":{"position":{"primary":"Centre"}}}) == "Centre", "missing bench pos uses authoritative profile primary")
 	check(director.view._position_label({"number":16}, {}) == "Poste non renseigné", "missing bench position remains explicitly unknown")
 	check(director.view._position_label({"number":20}, {"pos":"Numéro 8"}) == "Troisième ligne centre", "bench primary number eight uses third-row centre terminology")
@@ -108,6 +114,33 @@ func run() -> void:
 		await settle()
 		for role: Label in director.view.find_children("ParticipantPosition", "Label", true, false):
 			check(Rect2(Vector2.ZERO, host.size).encloses(role.get_global_rect()), "position label stays visible at " + str(resolution))
+	# Toute tuile agit. Onglet Groupe : un clic sur chaque joueur ouvre sa petite fenêtre (numéro, tuiles d'état, fiche).
+	var windows := 0
+	for number in range(1, 24):
+		var tile: Button = director.view.find_child("Participant_%d" % number, true, false)
+		if tile == null: continue
+		tile.pressed.emit()
+		await process_frame
+		var popup: Node = director.view.find_child("TalkPlayerPopup", true, false)
+		if popup != null and str(popup.get_meta("player_id")) == str(tile.get_meta("participant_id")) \
+			and popup.find_child("TalkPlayerPopupNumber", true, false).text == str(number) \
+			and popup.find_child("TalkPlayerPopupTiles", true, false).get_child_count() >= 2 \
+			and popup.find_child("TalkPlayerFullSheet", true, false) != null: windows += 1
+		director.view.close_player_window()
+		await process_frame
+	check(windows == 23, "each player tile opens his own window (%d/23)" % windows)
+	check(host.sent.is_empty(), "a player window sends no command")
+	# Onglet Joueurs : un clic vise, un second clic retire.
+	director.view._set_audience("players")
+	for number in range(1, 24):
+		var tile: Button = director.view.find_child("Participant_%d" % number, true, false)
+		if tile != null: tile.pressed.emit()
+	check(director.view.selected_ids.size() == 23 and director.view.find_children("ParticipantTargeted", "", true, false).size() == 23, "each player tile is targeted with a check in the Joueurs tab")
+	for number in range(1, 24):
+		var tile: Button = director.view.find_child("Participant_%d" % number, true, false)
+		if tile != null: tile.pressed.emit()
+	check(director.view.selected_ids.is_empty() and director.view.find_child("TalkPlayerPopup", true, false) == null, "a second click removes the target without opening a window")
+	director.view._set_audience("group")
 	var original := JSON.stringify(host.model)
 	director.view._set_audience("players")
 	var locked := true
@@ -122,6 +155,12 @@ func run() -> void:
 	check(host.sent.size() == 1 and host.sent[0][0] == "match_talk_decide", "clicking a declaration pronounces it without confirmation")
 	check(director.view.find_child("TalkPronounce", true, false) == null, "no separate Prononcer confirmation button")
 	check(host.sent[0][1].playerIds == [participants[0].id] and not host.sent[0][1].has("tone"), "real selected id and no caller-supplied tone")
+	# Chaque tuile de ton prononce sa propre phrase.
+	for i in 6:
+		var tone_tile: Button = director.view.find_child("TalkChoice_" + str(options[i].tone), true, false)
+		if tone_tile != null: tone_tile.pressed.emit()
+	var spoken: Array = host.sent.slice(1).map(func(row: Array) -> String: return str(row[1].get("choiceId", "")))
+	check(spoken == options.map(func(o: Dictionary) -> String: return str(o.id)), "each tone tile pronounces its own declaration " + str(spoken))
 	for resolution in [Vector2i(1280,720),Vector2i(1920,1080),Vector2i(2560,1440)]:
 		root.size = resolution
 		await settle()
@@ -162,7 +201,7 @@ func run() -> void:
 	var summary: Node = director.view.find_child("TalkDecisionReactions", true, false)
 	check(summary != null and summary.get_child_count() == 3, "decision sums up the visible reactions")
 	for role: Label in director.view.find_children("ParticipantPosition", "Label", true, false):
-		var card: Control = role.get_parent().get_parent().get_parent().get_parent()
+		var card: Control = card_of(role)
 		check(Rect2(Vector2.ZERO, host.size).encloses(card.get_global_rect()), "reaction player card stays on screen at 720p")
 		for detail: Label in role.get_parent().get_children():
 			check(card.get_global_rect().encloses(detail.get_global_rect()), "name, position and reaction fit the same player card at 720p")

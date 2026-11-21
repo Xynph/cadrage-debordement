@@ -86,9 +86,13 @@ static func select(model: Dictionary) -> Array[Dictionary]:
 			"calendar","international","important"))
 	var injured: Array = model.get("squad",[]).filter(func(player: Dictionary): return float(player.get("injury",0)) > 0)
 	if not injured.is_empty() and not ended:
-		result.append(_item("OfficeMedicalPriorityAction","Adapter le groupe aux blessures",
+		var medical := _item("OfficeMedicalPriorityAction","Adapter le groupe aux blessures",
 			"%d joueur%s blessé%s. Vérifie les solutions disponibles dans l’effectif." % [injured.size(),"s" if injured.size() > 1 else "","s" if injured.size() > 1 else ""],
-			"Avant la composition","heart","squad","important"))
+			"Avant la composition","heart","injured","important")
+		# Tuile du Bureau (chiffre + légende courte) à la place de la phrase.
+		medical.count = injured.size()
+		medical.unit = "blessé" + ("s" if injured.size() > 1 else "")
+		result.append(medical)
 	# Une seule définition : les échéances de la saison en cours (celles du courrier de fin de saison et de
 	# Recrutement). Sans échéance cette saison, les contrats de la saison suivante sont à anticiper.
 	var due: Array = model.get("squad",[]).filter(func(player: Dictionary):
@@ -104,9 +108,17 @@ static func select(model: Dictionary) -> Array[Dictionary]:
 		var plural := contracts.size() > 1
 		var title := "Préparer %d échéance%s de contrat en fin de saison" % [contracts.size(),"s" if plural else ""] if not due.is_empty() \
 			else "Anticiper %d échéance%s de contrat l’an prochain" % [contracts.size(),"s" if plural else ""]
-		result.append(_item("OfficeContractsAction",title,
+		var contrats := _item("OfficeContractsAction",title,
 			str(first.get("name","Joueur")) + " · Fin de contrat " + G.contract_year(expiry),deadline,
-			"people","contract","important" if expiry <= season else "normal",str(first.get("id",""))))
+			"people","contract","important" if expiry <= season else "normal",str(first.get("id","")))
+		# Tuile seule au Bureau : « 8 · contrats · fin de saison » (le titre reste dans l'infobulle).
+		contrats.count = contracts.size()
+		contrats.unit = "contrat%s · %s" % ["s" if plural else "", "fin de saison" if not due.is_empty() else "l’an prochain"]
+		contrats.tile_only = true
+		# La tuile mène à l'Effectif, onglet Contrats, filtré sur les fins de saison (le nom reste dans l'infobulle).
+		contrats.action = "contracts"
+		contrats.end_of_season = not due.is_empty()
+		result.append(contrats)
 	if not ended and live.is_empty():
 		var review := _youth_review(model)
 		if not review.is_empty(): result.append(review)

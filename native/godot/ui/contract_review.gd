@@ -1,6 +1,8 @@
 extends VBoxContainer
 ## Read-only horizons from the current squad projection. No invented deadlines.
 const C = preload("res://ui/immersive08/components.gd")
+const Charte = preload("res://ui/charte.gd")
+const Pages = preload("res://ui/immersive08/recruitment_pages.gd")
 const U = preload("res://ui/management_state.gd")
 const G = preload("res://ui/game_skin.gd")
 const Sales = preload("res://ui/player_sales_view.gd")
@@ -16,7 +18,7 @@ var _position: OptionButton
 var _headers: Dictionary = {}
 ## Colonnes du tableau : [clé, largeur minimale, poids]. Les poids reprennent les anciennes largeurs fixes (1920) ; le tableau
 ## se partage la largeur du panneau au lieu de la dépasser (1920, 1280, échelle d'interface 90-130 %).
-const COLS := [["name", 126, 264], ["pos", 76, 160], ["rating", 40, 72], ["potential", 62, 84], ["age", 34, 60], ["contractEnd", 56, 145], ["salary", 62, 145], ["minutes", 34, 95], ["status", 62, 110], ["renewal", 80, 190], ["actions", 150, 276]]
+const COLS := [["name", 126, 264], ["pos", 76, 160], ["rating", 40, 72], ["potential", 62, 84], ["age", 34, 60], ["contractEnd", 56, 145], ["salary", 62, 145], ["minutes", 34, 95], ["status", 62, 110], ["renewal", 44, 100], ["actions", 150, 276]]
 const COL_GAP := 4
 ## Largeur de la page en dessous de laquelle le panneau « Échéances » passe sous le tableau.
 const LARGEUR_DEUX_COLONNES := 1500.0
@@ -123,6 +125,17 @@ static func renewal_reason(player: Dictionary, live: bool) -> String:
 	if quote.get("negotiation", {}).get("status") == "withdrawn": return "Échanges clos pour cette journée"
 	return "Prolongation accessible" if bool(quote.get("available", false)) else "Prolongation indisponible actuellement"
 
+## Forme courte pour la colonne PROLONGATION (le motif complet reste en infobulle).
+static func renewal_short(player: Dictionary, live: bool) -> String:
+	var full := renewal_reason(player, live)
+	if live: return "Match en cours"
+	if full.begins_with("Prolongation accessible"): return "Accessible"
+	if full.begins_with("Prolongation indisponible"): return "Indisponible"
+	if full.begins_with("Échanges clos"): return "Échanges clos"
+	if full.begins_with("Prêt entrant"): return "Prêt entrant"
+	if full.begins_with("Pré-contrat"): return "Pré-contrat"
+	return full
+
 ## Délégation des prolongations au directeur sportif (mode Monde : la clé « contracts » n'existe qu'alors).
 func _delegation_staff(delegation: Dictionary) -> void:
 	var box := CheckBox.new()
@@ -133,17 +146,48 @@ func _delegation_staff(delegation: Dictionary) -> void:
 	box.custom_minimum_size.y = 36
 	box.add_theme_font_size_override("font_size", maxi(16, C.px(20)))
 	box.disabled = not app._live().is_empty()
-	add_child(box)
-	# Largeur bornée : le texte revient à la ligne dans la zone visible au lieu de déborder à droite.
-	var detail := _label(delegation_detail(app.model, box.button_pressed), 16, C.MUTED, C.px(1650))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	add_child(row)
+	row.add_child(box)
+	# Le paragraphe d'aide devient une pastille compacte (icône + « Staff · mars · consigne ») ; le texte complet
+	# reste en infobulle derrière le « i ». Le libellé complet est gardé dans ce nœud masqué (lecture et tests).
+	var detail := _label(delegation_detail(app.model, box.button_pressed), 16, C.MUTED)
 	detail.name = "ContractDelegationDetail"
-	add_child(detail)
+	detail.visible = false
+	row.add_child(detail)
+	var chip := PanelContainer.new()
+	chip.name = "ContractDelegationChip"
+	chip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	chip.add_theme_stylebox_override("panel", Charte.style_pilule(Charte.PANNEAU_3, Charte.FILET, 12, 4))
+	var chip_row := HBoxContainer.new()
+	chip_row.add_theme_constant_override("separation", 8)
+	chip.add_child(chip_row)
+	chip_row.add_child(C.icon("people", 18, C.MUTED))
+	var chip_text := _label(delegation_chip(app.model, box.button_pressed), 16, C.IVORY)
+	chip_text.autowrap_mode = TextServer.AUTOWRAP_OFF
+	chip_row.add_child(chip_text)
+	chip_row.add_child(C.icon("info", 16, C.MUTED))
+	chip.tooltip_text = detail.text
+	chip.mouse_filter = Control.MOUSE_FILTER_STOP
+	for part: Control in [chip_row]: part.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	chip_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(chip)
 	box.toggled.connect(func(value: bool):
 		# Même mécanisme que les autres réglages de délégation (staff_view.gd) : décision optimiste côté interface.
 		if app._command("set_delegation", {"key":"contracts", "enabled":value}):
 			detail.text = delegation_detail(app.model, value)
+			chip_text.text = delegation_chip(app.model, value)
+			chip.tooltip_text = detail.text
 		else:
 			box.set_pressed_no_signal(not value))
+
+## Texte court de la pastille à côté de la case (le texte complet est en infobulle).
+static func delegation_chip(model: Dictionary, enabled: bool) -> String:
+	if not enabled: return "Tu gères seul"
+	var delegation: Dictionary = model.get("decisions", {}).get("delegation", {}) if model.get("decisions") is Dictionary and model.decisions.get("delegation") is Dictionary else {}
+	var label := str(delegation.get("contractsPolicyLabel", ""))
+	return "Staff · mars" + (" · " + label if not label.is_empty() else "")
 
 ## Texte sous la case selon l'état coché (testable sans interface).
 static func delegation_detail(model: Dictionary, enabled: bool) -> String:
@@ -178,6 +222,37 @@ func _label(text: String, size: int = 18, color: Color = C.IVORY, width: float =
 	return label
 
 ## Une colonne du tableau : largeur minimale réduite, le reste partagé selon le poids (même règle en-tête et lignes).
+## Tuile de chiffre (libellé + nombre), cliquable : ouvre le marché des transferts.
+func _tile(caption: String, value: int, id: String, tip: String) -> Button:
+	var tile := Button.new()
+	tile.name = id
+	tile.custom_minimum_size = Vector2(0, 66)
+	tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tile.tooltip_text = tip
+	tile.accessibility_name = "%s : %d" % [caption, value]
+	tile.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU_3, Charte.FILET, Charte.RAYON_CARTE, 10))
+	tile.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_2, C.FAINT, Charte.RAYON_CARTE, 10))
+	tile.add_theme_stylebox_override("pressed", C.box(Charte.SELECTION, C.IVORY, Charte.RAYON_CARTE, 10))
+	tile.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT, C.GOLD, Charte.RAYON_CARTE, 10))
+	var content := VBoxContainer.new()
+	content.alignment = BoxContainer.ALIGNMENT_CENTER
+	content.add_theme_constant_override("separation", 0)
+	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tile.add_child(content)
+	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var number := _label(str(value), 26, C.IVORY)
+	number.autowrap_mode = TextServer.AUTOWRAP_OFF
+	number.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	number.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	content.add_child(number)
+	var name_label := _label(caption, 16, C.MUTED)
+	name_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	content.add_child(name_label)
+	tile.pressed.connect(func(): Pages.ouvrir(app, "offres"))
+	return tile
+
 func _fit(control: Control, key: String) -> Control:
 	for column: Array in COLS:
 		if column[0] == key:
@@ -240,7 +315,6 @@ func _build() -> void:
 	if not state.has("sort"): state.sort = "contractEnd"
 	if not state.has("descending"): state.descending = false
 	add_child(_label("Les échéances de ton effectif", 26))
-	add_child(_label("Échéances classées par année de fin, sans présumer une urgence. Anticipe les fins de contrat et prépare les prolongations.", 17, C.MUTED))
 	var delegation: Variant = app.model.get("decisions", {}).get("delegation") if app.model.get("decisions") is Dictionary else null
 	if delegation is Dictionary and delegation.has("contracts"):
 		_delegation_staff(delegation)
@@ -257,12 +331,21 @@ func _build() -> void:
 		var wage: Variant = player.get("salary")
 		if wage is int or wage is float: known_wage += float(wage)
 		else: unknown_wage += 1
-	for metric in [["Échéances en %s ou avant" % G.contract_year(current), "%d / %d joueurs" % [ending, squad.size()]], ["Prolongations accessibles", "%d joueurs" % renewals], ["Salaires actuels projetés · " + G.salary_period(), G.salary_amount(known_wage) + (" · %d non fourni(s)" % unknown_wage if unknown_wage > 0 else "")]]:
+	var wage_note := " · %d non fourni(s)" % unknown_wage if unknown_wage > 0 else ""
+	# Vraies tuiles chiffre (comme le haut de l'Effectif) : gros chiffre, légende courte dessous.
+	for metric in [["%d / %d" % [ending, squad.size()], "fin ≤ %s" % G.contract_year(current), "Échéances en %s ou avant : %d joueurs sur %d" % [G.contract_year(current), ending, squad.size()], ""], ["%d" % renewals, "prolongeables", "Prolongations accessibles : %d joueurs" % renewals, ""], [G.salary_amount(known_wage), "salaires " + G.salary_period(true) + wage_note, "Salaires actuels projetés · " + G.salary_period(), "ContractReviewWage"]]:
 		var card := _panel(top)
-		card.add_child(_label(metric[0], 16, C.MUTED))
-		var value := _label(metric[1], 22, C.IVORY)
-		if str(metric[0]).begins_with("Salaires"): value.name = "ContractReviewWage"
+		var value := _label(str(metric[0]), 30, C.IVORY)
+		value.autowrap_mode = TextServer.AUTOWRAP_OFF
+		if not str(metric[3]).is_empty(): value.name = str(metric[3])
 		card.add_child(value)
+		var legend := _label(str(metric[1]), 16, C.MUTED)
+		legend.autowrap_mode = TextServer.AUTOWRAP_OFF
+		legend.clip_text = true
+		legend.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		card.add_child(legend)
+		card.get_parent().tooltip_text = str(metric[2])
+		card.get_parent().mouse_filter = Control.MOUSE_FILTER_PASS
 	var filters := HBoxContainer.new()
 	filters.add_theme_constant_override("separation", 8)
 	add_child(filters)
@@ -366,13 +449,29 @@ func _build() -> void:
 	var sales := Sales.sales(app.model)
 	if not sales.is_empty():
 		sidebar.add_child(_label("Marché des transferts", 24))
-		var summary := _label("%d joueur(s) proposé(s) · %d offre(s) reçue(s) · %d vente(s) en attente" % [(sales.get("listed", []) as Array).size(), (sales.get("offers", []) as Array).size(), (sales.get("pending", []) as Array).size()], 16, C.MUTED)
-		summary.name = "ContractReviewSalesSummary"
-		sidebar.add_child(summary)
-		sidebar.add_child(_label("Pour proposer un joueur, ouvre sa fiche (onglet Contrat) ou son panneau dans la vue d’ensemble.", 16, C.MUTED))
-		sidebar.add_child(_button(Sales.caption(app.model) + "  →", "ContractReviewOpenSales", func(): Sales.open(app)))
+		var tiles := HBoxContainer.new()
+		tiles.name = "ContractReviewSalesSummary"
+		tiles.add_theme_constant_override("separation", 8)
+		sidebar.add_child(tiles)
+		# Les trois chiffres ouvrent la même fenêtre (offres, ventes en attente, joueurs proposés).
+		tiles.add_child(_tile("Proposés", (sales.get("listed", []) as Array).size(), "ContractReviewSalesListed", "Joueurs proposés aux autres clubs : ouvrir l'écran des offres"))
+		tiles.add_child(_tile("Offres", (sales.get("offers", []) as Array).size(), "ContractReviewOpenSales", "Offres reçues : ouvrir l'écran des offres"))
+		tiles.add_child(_tile("Ventes", (sales.get("pending", []) as Array).size(), "ContractReviewSalesPending", "Ventes en attente : ouvrir l'écran des offres"))
 	sidebar.add_child(_label("Échéances et postes à anticiper", 24))
-	sidebar.add_child(_label("Postes principaux · aucun départ annoncé. Clique un poste pour filtrer.", 16, C.MUTED))
+	var departures := (sales.get("pending", []) as Array).size()
+	var departures_chip := PanelContainer.new()
+	departures_chip.name = "ContractReviewDepartures"
+	departures_chip.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	departures_chip.add_theme_stylebox_override("panel", Charte.style_pilule(Charte.PANNEAU_3, Charte.FILET, 12, 4))
+	var departures_row := HBoxContainer.new()
+	departures_row.add_theme_constant_override("separation", 8)
+	departures_chip.add_child(departures_row)
+	departures_row.add_child(C.icon("check" if departures == 0 else "warning", 18, C.MUTED))
+	var departures_text := _label("Aucun départ annoncé" if departures == 0 else "%d départ%s annoncé%s" % [departures, "s" if departures > 1 else "", "s" if departures > 1 else ""], 16, C.IVORY)
+	departures_text.autowrap_mode = TextServer.AUTOWRAP_OFF
+	departures_row.add_child(departures_text)
+	departures_chip.tooltip_text = "Postes principaux : clique un poste pour filtrer le tableau."
+	sidebar.add_child(departures_chip)
 	var side_scroll := ScrollContainer.new()
 	side_scroll.follow_focus = true
 	_scroll.mouse_force_pass_scroll_events = false
@@ -425,7 +524,7 @@ func _refresh() -> void:
 	var filters := state.duplicate(true)
 	filters.live = not app._live().is_empty()
 	var players := filtered(app.model.get("squad", []), filters)
-	_count.text = "%d / %d joueurs · clique un titre pour trier · consultation sans signature" % [players.size(), app.model.get("squad", []).size()]
+	_count.text = "%d / %d" % [players.size(), app.model.get("squad", []).size()]
 	for key: String in _headers:
 		var sort: Button = _headers[key]
 		var selected := str(state.sort) == key
@@ -454,6 +553,7 @@ func _refresh() -> void:
 			_refresh()
 			call_deferred("_restore_focus"))
 		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		button.tooltip_text = "Filtrer le tableau sur ce poste"
 		_coverage.add_child(button)
 		var progress := ProgressBar.new()
 		progress.custom_minimum_size.y = 5
@@ -563,7 +663,22 @@ func _row(player: Dictionary) -> void:
 		status_cell.name = action_id("ContractSale", str(player.id))
 		status_cell.tooltip_text = Sales.status(player)
 	line.add_child(_fit(status_cell, "status"))
-	line.add_child(_fit(_cell(renewal_reason(player, not app._live().is_empty()), 0, C.MUTED, 16), "renewal"))
+	# Colonne PROLONGATION : icône seule (la forme porte le sens, pas la couleur) ; le motif exact est en infobulle.
+	var can_renew: bool = app._live().is_empty() and renewal_short(player, false) == "Accessible"
+	var renewal_icon := C.icon("renew" if can_renew else "lock", 24, Charte.VERT_CLAIR if can_renew else Charte.GRIS_VERT)
+	renewal_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	renewal_icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var renewal_cell := Control.new()
+	renewal_cell.name = action_id("ContractRenewal", str(player.id))
+	renewal_cell.mouse_filter = Control.MOUSE_FILTER_STOP
+	renewal_cell.tooltip_text = renewal_reason(player, not app._live().is_empty())
+	renewal_cell.set_meta("renewal_short", renewal_short(player, not app._live().is_empty()))
+	var centre := CenterContainer.new()
+	centre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	renewal_cell.add_child(centre)
+	centre.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	centre.add_child(renewal_icon)
+	line.add_child(_fit(renewal_cell, "renewal"))
 	var actions := HBoxContainer.new()
 	_fit(actions, "actions")
 	actions.add_theme_constant_override("separation", 6)

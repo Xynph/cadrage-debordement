@@ -2,6 +2,13 @@ extends RefCounted
 const Copy = preload("res://ui/management_copy.gd")
 const Charte = preload("res://ui/charte.gd")
 const G = preload("res://ui/carnet_skin.gd")
+const Cc = preload("res://ui/immersive08/components.gd")
+const Tuile = preload("res://ui/tuile_choix.gd")
+const JaugeAnneau = preload("res://ui/jauge_anneau.gd")
+const JaugeAvantApres = preload("res://ui/jauge_avant_apres.gd")
+const BarreEmpilee = preload("res://ui/barre_empilee.gd")
+const LienZone = preload("res://ui/lien_zone.gd")
+const Etat = preload("res://ui/management_state.gd")
 
 static func build(app: Control) -> Control:
 	var page := G.v(12)
@@ -14,8 +21,16 @@ static func build(app: Control) -> Control:
 	var paper := G.panel(page)
 	G.fill(paper.get_parent(), true)
 	G.fill(paper, true)
-	G.chapter(paper, "21", "Le travail de la semaine", "Staff · préparation · cellule médicale · mandats", app.accent)
-	paper.add_child(G.wrap(Copy.notice("support", data.notice), 12))
+	# Règle des commotions : derrière un « i », plus en phrase sous le titre.
+	var entete := G.h(12)
+	paper.add_child(entete)
+	G.chapter(entete, "21", "Le travail de la semaine", "Staff · préparation · cellule médicale · mandats", app.accent)
+	G.fill(entete.get_child(0))
+	var notice := Copy.notice("support", data.notice)
+	if not notice.is_empty():
+		var i := Tuile.info(notice)
+		Tuile.proteger(i)
+		entete.add_child(i)
 	var tabs := TabContainer.new()
 	tabs.name = "SupportTabs"
 	tabs.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
@@ -64,51 +79,107 @@ static func _meeting_lock(app: Control, completed: bool) -> String:
 	if app.model.meta.get("phase", "league") != "league": return "Les réunions sont réservées aux semaines de championnat."
 	return "Réunion indisponible cette semaine."
 
+## Onglet Staff (choix de Léo du 21/11/2026, option A « en couleurs ») : anneaux du diagnostic, tuiles de réunion à
+## jauges « maintenant → prévu », plans de charge en tuiles à barre empilée. Aucune phrase d'explication dans les tuiles :
+## les textes du jeu passent derrière un repère « i ». Mêmes données, commandes et noms de contrôles qu'avant.
 static func _staff(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 	var list := _tab(tabs, "Staff")
 	var d: Dictionary = data.diagnostic
-	list.add_child(G.section("Le diagnostic", str(d.reason)))
-	var health := G.h(18)
-	list.add_child(health)
-	G.gauge(health, "Condition moyenne", float(d.mean))
-	G.gauge(health, "Moral du groupe", float(d.morale))
-	G.gauge(health, "Confiance", float(d.trust), 100, G.GOLD)
-	list.add_child(G.wrap("Condition moyenne %d / 100 · %d joueurs sous 65 · moral %d · confiance %d" % [d.mean, d.fatigue, d.morale, d.trust], 16))
+	var tete_diag := Tuile.titre_bloc("Le diagnostic", str(d.get("reason", "")))
+	Tuile.proteger(tete_diag)
+	list.add_child(tete_diag)
+	var diag := Cc.h(28)
+	list.add_child(diag)
+	# Chaque lecture ouvre l'écran qui la détaille.
+	diag.add_child(LienZone.relier(JaugeAnneau.new(float(d.mean), "Condition moyenne", Charte.CONDITION), "SupportLien_Condition", "Effectif › Condition", _vers_condition.bind(app)))
+	diag.add_child(LienZone.relier(JaugeAnneau.new(float(d.morale), "Moral du groupe", Charte.MORAL), "SupportLien_Moral", "Vestiaire", _vers_vestiaire.bind(app)))
+	diag.add_child(LienZone.relier(JaugeAnneau.new(float(d.trust), "Confiance", Charte.CONFIANCE), "SupportLien_Confiance", "Club › Direction", _vers_direction.bind(app)))
+	diag.add_child(LienZone.relier(_chiffre(int(d.fatigue), "sous 65", int(d.fatigue) > 0, "Joueurs disponibles sous 65 de condition"), "SupportLien_Sous65", "Effectif › Condition", _vers_condition.bind(app)))
+	if d.has("tired"):
+		diag.add_child(LienZone.relier(_chiffre(int(d.tired), "sous 85", int(d.tired) > 0, "Joueurs sous 85 de condition"), "SupportLien_Sous85", "Effectif › Condition", _vers_condition.bind(app)))
+	# Les lectures se partagent la largeur du panneau.
+	for lecture: Control in diag.get_children(): Cc.fill(lecture)
+	Tuile.proteger(diag)
 	var meeting_data: Dictionary = data.meeting
 	var receipt: Variant = meeting_data.receipt
 	var last_decision: Variant = meeting_data.get("lastDecision")
 	var current_decision: bool = last_decision is Dictionary and last_decision.get("context") == data.context
 	var lock := _meeting_lock(app, receipt is Dictionary or current_decision)
+	var tete_reunion := Tuile.titre_bloc("Réunir le staff", "Une réunion par semaine.")
+	Tuile.proteger(tete_reunion)
+	list.add_child(tete_reunion)
+	var rangee := Cc.h(18)
+	list.add_child(rangee)
 	for option: Dictionary in meeting_data.options:
-		var meeting := G.card(list, G.accent_ink(app.accent))
 		# Un reçu importé de l’ancienne version peut précéder le contexte natif.
 		var matching_receipt: bool = receipt is Dictionary and receipt.get("title") == "Réunion de staff : " + str(option.label)
 		var applied: bool = last_decision.get("plan") == option.key if current_decision else matching_receipt
 		var detail := str(receipt.body) if applied and matching_receipt else str(option.detail)
-		meeting.add_child(G.section(option.label, detail))
+		var pv: Dictionary = option.get("preview", {})
+		var etat := "" if meeting_data.available else ("Réunion tenue cette semaine · Moral actuel %d/100 · Confiance actuelle %d/100" % [d.morale, d.trust] if applied else lock)
+		var bouton := Tuile.pilule("Réunion effectuée" if applied else "Réunir le staff", "SupportMeeting_" + str(option.key), meeting_data.available, etat, func(): app._command("staff_meeting", {"context":data.context,"plan":option.key}))
+		bouton.accessibility_name = "Réunir le staff · " + str(option.label)
+		var icone: String = {"recuperation": "heart", "cohesion": "people", "exigence": "target"}.get(str(option.key), "")
+		var teinte: Color = {"recuperation": Charte.RECUPERATION, "cohesion": Charte.MORAL, "exigence": Charte.CONFIANCE}.get(str(option.key), Charte.GRIS_VERT)
+		var tuile := Tuile.new(str(option.label), icone, applied, teinte, true, detail)
+		rangee.add_child(tuile)
 		if meeting_data.available:
-			meeting.add_child(G.wrap("Prévision : %d joueurs concernés · moral %d · confiance %d" % [option.preview.affected, option.preview.morale, option.preview.trust], 14))
+			var condition := _condition_prevue(pv)
+			var cle := str(option.key)
+			if not condition.is_empty(): tuile.contenu.add_child(LienZone.relier(JaugeAvantApres.new("Condition", condition.avant, condition.apres, Charte.CONDITION), "SupportLienCondition_" + cle, "Effectif › Condition", _vers_condition.bind(app)))
+			tuile.contenu.add_child(LienZone.relier(JaugeAvantApres.new("Moral", float(d.morale), float(pv.get("morale", d.morale)), Charte.MORAL), "SupportLienMoral_" + cle, "Vestiaire", _vers_vestiaire.bind(app)))
+			tuile.contenu.add_child(LienZone.relier(JaugeAvantApres.new("Confiance", float(d.trust), float(pv.get("trust", d.trust)), Charte.CONFIANCE), "SupportLienConfiance_" + cle, "Club › Direction", _vers_direction.bind(app)))
+			tuile.pied.add_child(LienZone.relier(Tuile.pastille("%d joueurs" % int(pv.get("affected", 0)), Charte.IVOIRE, "people", "Joueurs concernés par la réunion"), "SupportLienJoueurs_" + cle, "Effectif › Condition", _vers_condition.bind(app)))
 		elif applied:
-			meeting.add_child(G.wrap("Réunion tenue cette semaine · Moral actuel %d/100 · Confiance actuelle %d/100" % [d.morale, d.trust], 16, G.GOOD))
+			tuile.pied.add_child(Tuile.pastille("Réunion tenue", Charte.GAIN, "check", etat))
 		else:
-			meeting.add_child(G.wrap(lock, 14))
-		var action := "RÉUNION EFFECTUÉE" if applied else "RÉUNIR LE STAFF · " + str(option.label)
-		_action(meeting, action, "SupportMeeting_" + str(option.key), meeting_data.available, func(): app._command("staff_meeting", {"context":data.context,"plan":option.key}))
-	list.add_child(G.separator())
-	list.add_child(G.section("Répartir les charges", "Configurer un plan ne lance pas la séance. La prévision physique précède les effets collectifs et médicaux."))
+			tuile.pied.add_child(Tuile.pastille(_mot_verrou(lock), Charte.GRIS_VERT, "clock", lock))
+		if str(d.get("recommended", "")) == str(option.key):
+			tuile.pied.add_child(Tuile.pastille("Conseillé", Charte.IVOIRE, "star", str(d.get("reason", ""))))
+		var vide := Control.new()
+		Cc.fill(vide)
+		tuile.pied.add_child(vide)
+		tuile.pied.add_child(bouton)
+	Tuile.proteger(rangee)
+	var tete_charges := Tuile.titre_bloc("Répartir les charges", "Configurer un plan ne lance pas la séance. La prévision physique précède les effets collectifs et médicaux.")
 	var session: Dictionary = data.training.get("session", {})
 	if session.get("status", "pending") == "applied":
 		var reason: Variant = session.get("reason")
-		list.add_child(G.wrap("Séance effectuée. " + (str(reason) if reason != null else "Aucun compte rendu du préparateur pour cette séance."), 16, G.GOOD))
+		tete_charges.add_child(Tuile.pastille("Séance effectuée", Charte.GAIN, "check", str(reason) if reason != null else "Aucun compte rendu du préparateur pour cette séance."))
+	Tuile.proteger(tete_charges)
+	list.add_child(tete_charges)
+	var verrou_charge := _training_lock(app, session)
+	var plans := Cc.h(18)
+	list.add_child(plans)
 	for plan: Dictionary in data.training.plans:
-		list.add_child(G.wrap(str(plan.label) + " — " + str(plan.detail), 17, G.INK))
 		var modes: Dictionary = plan.get("effectiveCounts", plan.counts)
-		list.add_child(G.wrap("Prévision · %d repos · %d séance normale · %d intensif · condition totale %+.0f" % [modes.repos, int(modes.normal) + int(modes.get("collective", 0)), modes.intense, plan.conditionGain], 14))
-		if int(plan.counts.collective) > 0 and plan.has("collective"):
-			list.add_child(G.wrap(str(plan.collective.reason), 14))
-		_action(list, "CONFIGURER · " + str(plan.label), "SupportTraining_" + str(plan.key), data.training.available, func(): app._command("training_plan", {"context":data.context,"plan":plan.key}))
+		var barre := BarreEmpilee.new([{"valeur": int(modes.repos), "libelle": "repos"}, {"valeur": int(modes.normal) + int(modes.get("collective", 0)), "libelle": "normal"}, {"valeur": int(modes.intense), "libelle": "intensif"}])
+		var explication := str(plan.detail)
+		if int(plan.counts.collective) > 0 and plan.has("collective"): explication += "\n" + str(plan.collective.reason)
+		var configurer := Tuile.pilule("Configurer", "SupportTraining_" + str(plan.key), data.training.available, verrou_charge, func(): app._command("training_plan", {"context":data.context,"plan":plan.key}))
+		configurer.accessibility_name = "Configurer · " + str(plan.label)
+		var icone: String = {"proteger": "shield", "relever": "school", "equilibrer": "train"}.get(str(plan.key), "")
+		var teinte: Color = {"proteger": Charte.REPOS, "relever": Charte.INTENSIF, "equilibrer": Charte.NORMAL}.get(str(plan.key), Charte.GRIS_VERT)
+		var tuile := Tuile.new(str(plan.label), icone, false, teinte, false, explication)
+		plans.add_child(tuile)
+		tuile.contenu.add_child(LienZone.relier(barre, "SupportLienPlan_" + str(plan.key), "Entraînement › Groupes", _vers_groupes.bind(app)))
+		var gain := float(plan.conditionGain)
+		var signe := "▲" if gain > 0 else "▼" if gain < 0 else "="
+		var couleur_gain := Charte.GAIN if gain > 0 else Charte.PERTE if gain < 0 else Charte.GRIS_VERT
+		tuile.pied.add_child(LienZone.relier(Tuile.pastille("%s %+.0f condition" % [signe, gain], couleur_gain, "", "Condition totale du groupe après la séance"), "SupportLienGain_" + str(plan.key), "Entraînement › Groupes", _vers_groupes.bind(app)))
+		if not data.training.available: tuile.pied.add_child(Tuile.pastille(_mot_verrou(verrou_charge), Charte.GRIS_VERT, "clock", verrou_charge))
+		var vide := Control.new()
+		Cc.fill(vide)
+		tuile.pied.add_child(vide)
+		tuile.pied.add_child(configurer)
+	Tuile.proteger(plans)
+	_briefing(list, app, data)
+
+static func _briefing(list: VBoxContainer, app: Control, data: Dictionary) -> void:
 	list.add_child(G.separator())
-	list.add_child(G.section("Le briefing ciblé", "Consignes préparées pour le coup d’envoi ; aucun résultat garanti."))
+	var tete := Tuile.titre_bloc("Le briefing ciblé", "Consignes préparées pour le coup d’envoi ; aucun résultat garanti.")
+	Tuile.proteger(tete)
+	list.add_child(tete)
 	var b: Dictionary = data.briefing
 	if b.evidence is Dictionary:
 		list.add_child(G.wrap("Écart avants %+.0f · passe/vitesse %+.0f · danger adverse %+.0f" % [b.evidence.pack, b.evidence.backs, b.evidence.danger], 16))
@@ -116,6 +187,67 @@ static func _staff(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 		list.add_child(G.wrap(plan.desc, 14))
 		var button := _action(list, str(plan.label), "SupportBriefing_" + str(plan.key), b.available, func(): app._command("strategic_briefing", {"context":data.context,"fixture":b.fixture,"plan":plan.key}))
 		if plan.key == b.selected: G.selected(button, app.accent)
+
+## Destinations des lectures (changement d'écran, jamais une fenêtre).
+static func _vers_condition(app: Control) -> void:
+	if not app.management_ui.get("roster") is Dictionary: app.management_ui.roster = Etat.defaults()
+	app.management_ui.roster.immersive_tab = 1
+	app._navigate("Effectif")
+
+static func _vers_vestiaire(app: Control) -> void:
+	app._navigate("Vestiaire")
+
+static func _vers_direction(app: Control) -> void:
+	app.management_ui.erase("club_page")
+	app._navigate("Stratégie")
+
+static func _vers_groupes(app: Control) -> void:
+	if not app.management_ui.get("immersive_training") is Dictionary: app.management_ui.immersive_training = {}
+	app.management_ui.immersive_training.tab = 1
+	app.Immersive.open_training(app)
+
+## Condition moyenne des joueurs concernés avant / après la réunion, quand la prévision détaille les joueurs.
+static func _condition_prevue(pv: Dictionary) -> Dictionary:
+	var joueurs: Array = pv.get("players", [])
+	if joueurs.is_empty(): return {}
+	var avant := 0.0
+	var apres := 0.0
+	for j: Variant in joueurs:
+		if not j is Dictionary or not j.has("before") or not j.has("after"): return {}
+		avant += float(j.before)
+		apres += float(j.after)
+	return {"avant": avant / joueurs.size(), "apres": apres / joueurs.size()}
+
+## Tuile chiffre : grand chiffre et un mot (« 15 · sous 85 »), icône d'alerte quand le compte n'est pas nul.
+static func _chiffre(valeur: int, legende: String, alerte: bool, detail: String) -> Control:
+	var bloc := Cc.v(2)
+	bloc.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	bloc.tooltip_text = detail
+	bloc.mouse_filter = Control.MOUSE_FILTER_STOP
+	var ligne := Cc.h(8)
+	if alerte:
+		var icone := Cc.icon("warning", 34, Charte.PERTE)
+		icone.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		ligne.add_child(icone)
+	ligne.add_child(Cc.label(str(valeur), 56, Charte.PERTE if alerte else Charte.IVOIRE, true, 800))
+	bloc.add_child(ligne)
+	bloc.add_child(Cc.label(legende.to_upper(), 20, Charte.IVOIRE_2, true, 700))
+	return bloc
+
+## Verrou en un mot pour la pastille (la phrase complète reste en info-bulle).
+static func _mot_verrou(raison: String) -> String:
+	if raison.begins_with("Une réunion"): return "Déjà tenue"
+	if raison.begins_with("Rencontre"): return "Match en cours"
+	if raison.begins_with("Entraînement") or raison.begins_with("Séance"): return "Séance faite"
+	if raison.begins_with("Les réunions"): return "Hors championnat"
+	return "Indisponible"
+
+## Raison écrite à côté d'un « Configurer » grisé (mêmes verrous que les réunions, côté séance).
+static func _training_lock(app: Control, session: Dictionary) -> String:
+	if session.get("status", "pending") == "applied": return "Séance déjà effectuée cette semaine."
+	if not app._live().is_empty(): return "Rencontre en cours ou à valider."
+	if app.model.meta.get("trained", false): return "Entraînement déjà effectué cette semaine."
+	return "Configuration indisponible cette semaine."
 
 static func _medical(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 	var list := _tab(tabs, "Médical")
