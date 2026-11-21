@@ -14,6 +14,13 @@ var _scroll: ScrollContainer
 var _season: OptionButton
 var _position: OptionButton
 var _headers: Dictionary = {}
+## Colonnes du tableau : [clé, largeur minimale, poids]. Les poids reprennent les anciennes largeurs fixes (1920) ; le tableau
+## se partage la largeur du panneau au lieu de la dépasser (1920, 1280, échelle d'interface 90-130 %).
+const COLS := [["name", 126, 264], ["pos", 76, 160], ["rating", 40, 72], ["potential", 62, 84], ["age", 34, 60], ["contractEnd", 56, 145], ["salary", 62, 145], ["minutes", 34, 95], ["status", 62, 110], ["renewal", 80, 190], ["actions", 150, 276]]
+const COL_GAP := 4
+## Largeur de la page en dessous de laquelle le panneau « Échéances » passe sous le tableau.
+const LARGEUR_DEUX_COLONNES := 1500.0
+var _columns: BoxContainer
 const SORT_KEYS := ["name","pos","rating","potential","age","contractEnd","salary","minutes","status","renewal"]
 
 static func build(owner_app: Control) -> Control:
@@ -170,6 +177,33 @@ func _label(text: String, size: int = 18, color: Color = C.IVORY, width: float =
 		label.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	return label
 
+## Une colonne du tableau : largeur minimale réduite, le reste partagé selon le poids (même règle en-tête et lignes).
+func _fit(control: Control, key: String) -> Control:
+	for column: Array in COLS:
+		if column[0] == key:
+			control.custom_minimum_size.x = column[1]
+			control.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			control.size_flags_stretch_ratio = column[2]
+	return control
+
+func _adapt() -> void:
+	if _columns == null or _columns.get_child_count() < 2: return
+	var host := get_parent_control()
+	var width := host.size.x if host != null and host.size.x > 0 else size.x
+	var wide := width >= LARGEUR_DEUX_COLONNES
+	_columns.vertical = not wide
+	var main_box := _columns.get_child(0) as Control
+	var sidebar_box := _columns.get_child(1) as Control
+	sidebar_box.custom_minimum_size = Vector2(440, 0) if wide else Vector2(0, 360)
+	main_box.size_flags_stretch_ratio = 3.6 if wide else 1.0
+	main_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	sidebar_box.size_flags_stretch_ratio = 1.0
+	# Page étroite : le panneau passe sous le tableau ; la page s'allonge (et défile) pour qu'il reste lisible.
+	if host != null:
+		if not host.has_meta("hauteur_page"): host.set_meta("hauteur_page", host.custom_minimum_size.y)
+		var base := float(host.get_meta("hauteur_page"))
+		host.custom_minimum_size.y = base if wide else maxf(base, position.y + get_combined_minimum_size().y + 40.0)
+
 func _button(text: String, id: String, action: Callable) -> Button:
 	var button := Button.new()
 	button.name = id
@@ -236,7 +270,9 @@ func _build() -> void:
 	search.name = "ContractReviewSearch"
 	search.placeholder_text = "Nom ou poste…"
 	search.text = str(state.search)
-	search.custom_minimum_size = Vector2(340, 36)
+	search.custom_minimum_size = Vector2(130, 36)
+	search.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	search.size_flags_stretch_ratio = 1.5
 	search.add_theme_font_size_override("font_size", 18)
 	filters.add_child(search)
 	search.text_changed.connect(func(value): state.search = value; state.scroll = 0; _refresh())
@@ -272,32 +308,38 @@ func _build() -> void:
 	_count = _label("", 16, C.MUTED)
 	_count.name = "ContractReviewCount"
 	add_child(_count)
-	var columns := HBoxContainer.new()
+	var columns := BoxContainer.new()
+	_columns = columns
 	columns.add_theme_constant_override("separation", 8)
 	columns.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	add_child(columns)
 	var main := _panel(columns)
 	main.get_parent().size_flags_stretch_ratio = 3.6
 	var header := HBoxContainer.new()
-	header.add_theme_constant_override("separation", 8)
+	header.add_theme_constant_override("separation", COL_GAP)
 	var inset := Control.new()
 	inset.custom_minimum_size.x = 8
 	header.add_child(inset)
-	for column in [["JOUEUR",300,"name"],["POSTE",160,"pos"],["NIVEAU",72,"rating"],["POTENTIEL",84,"potential"],["ÂGE",60,"age"],["FIN DE CONTRAT",145,"contractEnd"],["SALAIRE " + G.salary_period(true).to_upper(),145,"salary"],["MIN.",95,"minutes"],["STATUT",110,"status"],["PROLONGATION",190,"renewal"],["CONSULTER",276,""]]:
+	for column in [["JOUEUR",0,"name"],["POSTE",0,"pos"],["NIV.",0,"rating"],["POT.",0,"potential"],["ÂGE",0,"age"],["FIN",0,"contractEnd"],["SALAIRE " + G.salary_period(true).to_upper(),0,"salary"],["MIN.",0,"minutes"],["STATUT",0,"status"],["PROLONG.",0,"renewal"],["CONSULTER",0,""]]:
 		if str(column[2]).is_empty():
-			header.add_child(_cell(column[0], column[1], C.MUTED, 16))
+			header.add_child(_fit(_cell(column[0], 0, C.MUTED, 16), "actions"))
 			continue
 		var key := str(column[2])
 		var sort := _button(str(column[0]), "ContractSort_" + key, func(): _sort(key))
-		sort.custom_minimum_size = Vector2(column[1], 30)
+		sort.custom_minimum_size.y = 30
+		_fit(sort, key)
 		sort.add_theme_font_size_override("font_size", 16)
 		sort.clip_text = true
 		sort.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		for mode in ["normal","hover","pressed"]:
 			sort.add_theme_stylebox_override(mode, C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0))
 		sort.set_meta("caption", str(column[0]))
+		sort.set_meta("tip", {"rating": "NIVEAU", "potential": "POTENTIEL", "contractEnd": "FIN DE CONTRAT", "renewal": "PROLONGATION"}.get(key, str(column[0])))
 		header.add_child(sort)
 		_headers[key] = sort
+	var outset := Control.new()
+	outset.custom_minimum_size.x = 8
+	header.add_child(outset)
 	main.add_child(header)
 	_scroll = ScrollContainer.new()
 	_scroll.name = "ContractReviewScroll"
@@ -316,6 +358,10 @@ func _build() -> void:
 	var sidebar := _panel(columns)
 	sidebar.get_parent().size_flags_stretch_ratio = 1.0
 	sidebar.get_parent().custom_minimum_size.x = 440
+	resized.connect(_adapt)
+	var host := get_parent_control()
+	if host != null: host.resized.connect(_adapt)
+	_adapt()
 	# Marché des transferts (vente-joueurs.cjs) : joueurs proposés, offres reçues, ventes en attente.
 	var sales := Sales.sales(app.model)
 	if not sales.is_empty():
@@ -343,7 +389,10 @@ func _build() -> void:
 func _choice(parent: Node, id: String, first: String, changed: Callable) -> OptionButton:
 	var choice := OptionButton.new()
 	choice.name = id
-	choice.custom_minimum_size = Vector2(230, 36)
+	# Filtres : largeur minimale réduite, le reste partagé (la rangée tient en 1280 comme en 1920) ; texte coupé, valeur complète au survol.
+	choice.custom_minimum_size = Vector2(110, 36)
+	choice.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	choice.clip_text = true
 	choice.add_theme_font_override("font", C.BODY)
 	choice.add_theme_font_size_override("font_size", 18)
 	choice.fit_to_longest_item = false
@@ -381,7 +430,7 @@ func _refresh() -> void:
 		var sort: Button = _headers[key]
 		var selected := str(state.sort) == key
 		sort.text = str(sort.get_meta("caption")) + (" ▼" if state.descending else " ▲") if selected else str(sort.get_meta("caption")) + " ↕"
-		sort.tooltip_text = "Trier par " + str(sort.get_meta("caption")) + (" · ordre décroissant" if selected and state.descending else " · ordre croissant" if selected else "")
+		sort.tooltip_text = "Trier par " + str(sort.get_meta("tip")) + (" · ordre décroissant" if selected and state.descending else " · ordre croissant" if selected else "")
 		sort.accessibility_name = sort.tooltip_text
 	if players.is_empty(): _rows.add_child(_label("Aucun joueur ne correspond. Modifie les filtres ou réinitialise la recherche.", 18, C.MUTED))
 	for player: Dictionary in players: _row(player)
@@ -473,65 +522,75 @@ func _row(player: Dictionary) -> void:
 	panel.add_theme_stylebox_override("panel", style)
 	_rows.add_child(panel)
 	var line := HBoxContainer.new()
-	line.add_theme_constant_override("separation", 8)
+	line.add_theme_constant_override("separation", COL_GAP)
 	panel.add_child(line)
 	var identity := HBoxContainer.new()
 	identity.add_theme_constant_override("separation", 6)
-	identity.custom_minimum_size.x = 300
+	_fit(identity, "name")
 	line.add_child(identity)
 	var portrait: Control = G.portrait(int(player.get("portraitIndex", 0)), 30, player)
 	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	identity.add_child(_reading_cell(portrait, player, "ContractPortraitLink"))
-	identity.add_child(_reading_cell(_cell(str(player.get("name", "Joueur")), 264, C.IVORY, 18), player, "ContractNameLink"))
+	identity.add_child(_fit(_reading_cell(_cell(str(player.get("name", "Joueur")), 0, C.IVORY, 18), player, "ContractNameLink"), "name"))
+	identity.get_child(1).custom_minimum_size.x = 60
 	var ending := horizon(player)
 	var year := int(app.model.get("meta", {}).get("season", 1))
-	var position := _cell(position_text(player), 160, C.MUTED)
+	var position := _fit(_cell(position_text(player), 0, C.MUTED, 16), "pos")
 	position.name = action_id("ContractPosition", str(player.id))
 	position.tooltip_text = "Poste principal · " + position_caption(player)
 	line.add_child(position)
-	var level := _cell(G.rating_text(player,true), 72, C.MINT, 18)
+	var level := _fit(_cell(G.rating_text(player,true), 0, C.MINT, 16), "rating")
 	level.name = action_id("ContractLevel", str(player.id))
 	level.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	level.tooltip_text = "Niveau global projeté / 100, identique à la fiche du joueur."
 	line.add_child(level)
-	var potential := _cell(G.potential_text(player), 84, Color("ffb454"), 18)
+	var potential := _fit(_cell(G.potential_text(player), 0, Color("ffb454"), 16), "potential")
 	potential.name = action_id("ContractPotential", str(player.id))
 	potential.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	potential.tooltip_text = "Potentiel / 100. Ce plafond n’est pas garanti."
 	line.add_child(potential)
-	line.add_child(_cell(G.n(player.age) if player.get("age") != null else "—", 60, C.MUTED))
-	line.add_child(_reading_cell(_cell(G.contract_year(ending) if ending >= 0 else "Non renseignée", 145, C.GOLD if ending >= 0 and ending <= year else C.MINT if ending > year else C.MUTED), player, "ContractEndLink", "contract"))
+	line.add_child(_fit(_cell(G.n(player.age) if player.get("age") != null else "—", 0, C.MUTED, 16), "age"))
+	line.add_child(_fit(_reading_cell(_cell(G.contract_year(ending) if ending >= 0 else "Non renseignée", 0, C.GOLD if ending >= 0 and ending <= year else C.MINT if ending > year else C.MUTED, 16), player, "ContractEndLink", "contract"), "contractEnd"))
 	var salary: Variant = player.get("salary")
-	var salary_cell := _cell(G.salary_amount(salary) if salary is int or salary is float else "Non fourni", 145)
+	var salary_cell := _cell(G.salary_amount(salary) if salary is int or salary is float else "Non fourni", 0, C.IVORY, 16)
 	salary_cell.name = action_id("ContractSalary",str(player.id))
-	line.add_child(_reading_cell(salary_cell, player, "ContractSalaryLink", "contract"))
-	line.add_child(_cell(G.n(player.minutes) if player.get("minutes") != null else "—", 95, C.MUTED))
+	line.add_child(_fit(_reading_cell(salary_cell, player, "ContractSalaryLink", "contract"), "salary"))
+	line.add_child(_fit(_cell(G.n(player.minutes) if player.get("minutes") != null else "—", 0, C.MUTED, 16), "minutes"))
 	# Vente (vente-joueurs.cjs) : « En vente », « Offre reçue » ou « Départ prévu » remplace le statut ; détail en infobulle.
 	var sale_short := sale_caption(player)
-	var status_cell := _cell(sale_short if not sale_short.is_empty() else str(player.get("status", "—")), 110, C.GOLD if not sale_short.is_empty() else C.MUTED, 16)
+	var status_cell := _cell(sale_short if not sale_short.is_empty() else str(player.get("status", "—")), 0, C.GOLD if not sale_short.is_empty() else C.MUTED, 16)
 	if not sale_short.is_empty():
 		status_cell.name = action_id("ContractSale", str(player.id))
 		status_cell.tooltip_text = Sales.status(player)
-	line.add_child(status_cell)
-	line.add_child(_cell(renewal_reason(player, not app._live().is_empty()), 190, C.MUTED, 16))
+	line.add_child(_fit(status_cell, "status"))
+	line.add_child(_fit(_cell(renewal_reason(player, not app._live().is_empty()), 0, C.MUTED, 16), "renewal"))
 	var actions := HBoxContainer.new()
-	actions.custom_minimum_size.x = 276
-	actions.add_theme_constant_override("separation", 8)
+	_fit(actions, "actions")
+	actions.add_theme_constant_override("separation", 6)
 	line.add_child(actions)
 	var id := str(player.id)
 	var profile := _button("Fiche", action_id("ContractProfile", id), func(): _open_profile(id))
 	profile.set_meta("player_id", id)
 	profile.set_meta("entity_kind", "player")
 	profile.set_meta("entity_id", id)
-	profile.custom_minimum_size.x = 100
+	_compact(profile, 1.0)
 	actions.add_child(profile)
 	var discussion: Dictionary = player.get("renewal", {}).get("negotiation", {})
 	var quote := _button("Discussion" if not discussion.is_empty() else "Prolonger", action_id("ContractRenew", id), func(): _open_quote(id))
 	quote.set_meta("player_id", id)
-	quote.custom_minimum_size.x = 160
+	_compact(quote, 1.6)
 	quote.disabled = not app._live().is_empty() or (not bool(player.get("renewal", {}).get("available", false)) and discussion.is_empty())
 	quote.tooltip_text = renewal_reason(player, not app._live().is_empty())
 	actions.add_child(quote)
+
+## Bouton d'action de ligne : largeur partagée, texte coupé plutôt que débordant, police de table.
+func _compact(button: Button, ratio: float) -> void:
+	button.custom_minimum_size.x = 40
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.size_flags_stretch_ratio = ratio
+	button.clip_text = true
+	button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	button.add_theme_font_size_override("font_size", 16)
 
 func _find(id: String) -> Dictionary:
 	for player: Dictionary in app.model.get("squad", []):
