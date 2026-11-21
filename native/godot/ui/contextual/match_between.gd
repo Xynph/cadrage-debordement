@@ -152,6 +152,16 @@ var colonne_droite: VBoxContainer
 var vue_droite := "chiffres"
 var panneau_chiffres: Control
 var panneau_journee: Control
+## Planche de Léo (21/11/2026, choix visuel ouvert) : classement en direct et multiplex toujours à l'écran, terrain
+## réduit. « A » : sous le terrain, dans la colonne centrale ; « B » : bande basse, à côté de la domination, avec
+## l'énergie du XV.
+## Vide : la mise en page validée (les deux dans « Autres matchs », menu Plus).
+var variante := OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper()
+## Panneaux de la journée en direct posés par la variante (classement et enjeu, multiplex).
+var panneaux_direct: Array[Control] = []
+## Variantes : l'enjeu « si ça finit ainsi » (notre rang officiel → rang en direct) en grand, et (B) l'énergie du XV.
+var enjeu_tuile: PanelContainer
+var energie_tuile: PanelContainer
 var panneau_delegation: Control
 var legende_chiffres: HBoxContainer
 var meteo_ligne: Label
@@ -981,14 +991,36 @@ func _page() -> void:
 	S.G.fill(grille, true)
 	page.add_child(grille)
 	_colonne_xv(grille)
-	_colonne_centre(grille)
+	var centre: Control = grille
+	if variante == "A":
+		# A : le terrain, réduit, au-dessus du classement en direct et du multiplex.
+		centre = S.G.v(px(16))
+		centre.name = "MatchBetweenCentre"
+		S.G.fill(centre, true, 1.0)
+		grille.add_child(centre)
+	_colonne_centre(centre)
 	_colonne_droite(grille)
-	# Domination minute par minute, en largeur.
-	var cadre_frise := _panneau(page, px(16))
+	if variante == "A":
+		var rangee_journee := S.G.h(px(16))
+		rangee_journee.name = "MatchBetweenLiveRow"
+		centre.add_child(rangee_journee)
+		_poser_journee_direct(rangee_journee, false, 2)
+	# Domination minute par minute, en largeur (variante B : à côté du classement en direct et du multiplex).
+	var rangee_frise: Control = page
+	if variante == "B":
+		rangee_frise = S.G.h(px(20))
+		rangee_frise.name = "MatchBetweenLiveBand"
+		page.add_child(rangee_frise)
+	var cadre_frise := _panneau(rangee_frise, px(16))
 	cadre_frise.get_parent().get_parent().name = "MatchBetweenMomentumTile"
+	if variante == "B": S.G.fill(cadre_frise.get_parent().get_parent(), false, 1.0)
 	titre_domination = _titre("Domination minute par minute", "")
 	cadre_frise.add_child(titre_domination)
 	cadre_frise.add_child(domination)
+	if variante == "B":
+		_poser_journee_direct(rangee_frise, true, 3)
+		S.G.fill(cadre_frise, true)
+		S.G.fill(domination, true)
 	# Gabi en largeur.
 	var bas := S.G.h(px(20))
 	bas.name = "MatchBetweenBottom"
@@ -1374,6 +1406,132 @@ func _colonne_droite(grille: Control) -> void:
 	confirmer.set_meta("contextual_enabled", true)
 	cadre_delegation.add_child(confirmer)
 
+## Variantes A et B : le classement en direct (avec l'enjeu « si ça finit ainsi ») et le multiplex quittent « Autres
+## matchs » pour deux panneaux toujours visibles, côte à côte ; `energie` (B) ajoute l'énergie du XV sous le multiplex,
+## `colonnes` cartes du multiplex par rangée. Ils se cachent sans journée en direct.
+var _colonnes_multiplex := 0
+func _poser_journee_direct(parent: Control, energie: bool, colonnes: int) -> void:
+	panneaux_direct.clear()
+	_colonnes_multiplex = colonnes
+	var cadres: Array = []
+	for n in 2:
+		var cadre := _panneau(parent, px(16))
+		cadres.append(cadre)
+		panneaux_direct.append(cadre.get_parent().get_parent())
+		panneaux_direct[n].name = "MatchBetweenLiveDay%d" % n
+	panneaux_direct[0].custom_minimum_size.x = px(480)
+	S.G.fill(panneaux_direct[1], false, 1.4)
+	# B : enjeu et énergie du XV empilés dans un troisième panneau étroit (la bande reste basse) ; A : enjeu sur le classement.
+	var cadre_enjeu: Control = cadres[0]
+	if energie:
+		cadre_enjeu = _panneau(parent, px(16))
+		var panneau_enjeu: Control = cadre_enjeu.get_parent().get_parent()
+		panneau_enjeu.name = "MatchBetweenLiveDay2"
+		panneau_enjeu.custom_minimum_size.x = px(320)
+		panneaux_direct.append(panneau_enjeu)
+	enjeu_tuile = _tuile_chiffre("MatchBetweenLiveStake", "Si ça finit ainsi")
+	cadre_enjeu.add_child(enjeu_tuile)
+	if energie:
+		energie_tuile = _tuile_chiffre("MatchBetweenLiveEnergy", "Énergie du XV")
+		cadre_enjeu.add_child(energie_tuile)
+	classement_tuile.get_parent().remove_child(classement_tuile)
+	(cadres[0] as Control).add_child(classement_tuile)
+	multiplex.get_parent().remove_child(multiplex)
+	(cadres[1] as Control).add_child(multiplex)
+	for panneau: Control in panneaux_direct: panneau.visible = false
+
+## Tuile de chiffre des variantes : légende en capitales, gros chiffre (titre extra), précision colorée à droite.
+func _tuile_chiffre(nom: String, legende: String) -> PanelContainer:
+	var tuile := PanelContainer.new()
+	tuile.name = nom
+	var style := _case(RELIEF, Charte.RAYON_CARTE)
+	style.set_content_margin_all(px(12))
+	tuile.add_theme_stylebox_override("panel", style)
+	tuile.mouse_filter = Control.MOUSE_FILTER_PASS
+	var colonne := S.G.v(px(2))
+	tuile.add_child(colonne)
+	var tete := _titre_bloc(legende.to_upper(), 18)
+	tete.name = "Legende"
+	tete.add_theme_color_override("font_color", DOUX)
+	colonne.add_child(tete)
+	var rangee := S.G.h(px(12))
+	colonne.add_child(rangee)
+	var chiffre := _texte("—", 40, IVOIRE, false, true)
+	chiffre.name = "Valeur"
+	chiffre.add_theme_font_override("font", TITRES_EXTRA)
+	chiffre.add_theme_font_size_override("font_size", fpx(40))
+	rangee.add_child(chiffre)
+	var precision := _texte("", 20, DOUX, false, true)
+	precision.name = "Precision"
+	precision.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	rangee.add_child(precision)
+	var jauge := Jauge.new()
+	jauge.name = "Jauge"
+	jauge.densite = _densite
+	jauge.custom_minimum_size = Vector2(0, px(14))
+	jauge.visible = false
+	colonne.add_child(jauge)
+	return tuile
+
+## Enjeu au classement : notre rang officiel → notre rang si le score en restait là (classement en direct du moteur).
+func _poser_enjeu(classement: Array) -> void:
+	if not is_instance_valid(enjeu_tuile): return
+	var nous: Dictionary = {}
+	for r: Variant in classement:
+		if r is Dictionary and bool(r.get("nous", false)): nous = r
+	enjeu_tuile.visible = not nous.is_empty()
+	if nous.is_empty(): return
+	var rang := int(nous.get("rang", 0))
+	var officiel: int = int(nous.rangOfficiel) if nous.get("rangOfficiel") != null else rang
+	var valeur := enjeu_tuile.find_child("Valeur", true, false) as Label
+	var precision := enjeu_tuile.find_child("Precision", true, false) as Label
+	valeur.text = "%s → %s" % [_rang_texte(officiel), _rang_texte(rang)] if officiel != rang else _rang_texte(rang)
+	var teinte: Color = Charte.GAIN if rang < officiel else Charte.PERTE if rang > officiel else IVOIRE
+	valeur.add_theme_color_override("font_color", teinte)
+	var ecart := officiel - rang
+	precision.text = (("▲ %d" % ecart if ecart > 0 else "▼ %d" % -ecart) if ecart != 0 else "=") + " · %d pts" % int(nous.get("points", 0))
+	precision.add_theme_color_override("font_color", teinte if ecart != 0 else DOUX)
+	enjeu_tuile.tooltip_text = "%d pts si ça finit ainsi" % int(nous.get("points", 0))
+
+static func _rang_texte(rang: int) -> String:
+	return "1er" if rang == 1 else "%de" % rang
+
+## Énergie du XV (B) : moyenne de la condition des quinze titulaires du moteur, jauge, nombre de joueurs fatigués.
+func _poser_energie() -> void:
+	if not is_instance_valid(energie_tuile) or _xv_donnees.is_empty(): return
+	var joueurs: Array = _xv_donnees[0] if _xv_donnees[0] is Array else []
+	var total := 0.0
+	var compte := 0
+	var fatigues := 0
+	for j: Variant in joueurs:
+		if not j is Dictionary: continue
+		var c := float(j.get("condition", 100))
+		total += c
+		compte += 1
+		if c < FATIGUE: fatigues += 1
+	energie_tuile.visible = compte > 0
+	if compte == 0: return
+	var moyenne := total / compte
+	var teinte: Color = Charte.CONDITION if moyenne >= 75.0 else Charte.INTENSIF if moyenne >= FATIGUE else Charte.PERTE
+	var valeur := energie_tuile.find_child("Valeur", true, false) as Label
+	valeur.text = "%d %%" % roundi(moyenne)
+	valeur.add_theme_color_override("font_color", teinte)
+	var precision := energie_tuile.find_child("Precision", true, false) as Label
+	precision.text = ("▼ %d fatigué%s" % [fatigues, "s" if fatigues > 1 else ""]) if fatigues > 0 else "✓"
+	precision.add_theme_color_override("font_color", Charte.PERTE if fatigues > 0 else Charte.CONDITION)
+	var jauge := energie_tuile.find_child("Jauge", true, false) as Jauge
+	jauge.valeur = moyenne
+	jauge.visible = true
+	jauge.queue_redraw()
+
+## Variantes : panneaux de la journée en direct montrés quand ils ont du contenu (A : avec les chiffres clés).
+func _montrer_journee_direct() -> void:
+	if panneaux_direct.is_empty(): return
+	panneaux_direct[0].visible = classement_tuile.visible
+	panneaux_direct[1].visible = multiplex.visible
+	if panneaux_direct.size() > 2: panneaux_direct[2].visible = classement_tuile.visible
+	if multiplex.visible: _largeur_multiplex.call_deferred()
+
 ## En-tête d'un panneau de la colonne de droite : titre et « ← Retour aux chiffres » (Échap).
 func _retour_droite(titre: String) -> Control:
 	var ligne := S.G.h(px(10))
@@ -1389,6 +1547,8 @@ func _retour_droite(titre: String) -> Control:
 ## d'arrêt passe devant tant que le match attend la décision du manager.
 func montrer_droite(vue: String) -> void:
 	vue_droite = vue if vue in ["chiffres", "reglages", "journee", "delegation"] else "chiffres"
+	# Variantes : la journée en direct est déjà à l'écran, « Autres matchs » revient aux chiffres clés.
+	if not panneaux_direct.is_empty() and vue_droite == "journee": vue_droite = "chiffres"
 	if not is_instance_valid(panneau_chiffres): return
 	var arret_montre := is_instance_valid(arret) and not _arret.is_empty()
 	panneau_chiffres.visible = not arret_montre and vue_droite == "chiffres"
@@ -1397,6 +1557,7 @@ func montrer_droite(vue: String) -> void:
 	panneau_delegation.visible = not arret_montre and vue_droite == "delegation"
 	if is_instance_valid(arret): arret.visible = arret_montre
 	if vue_droite == "journee": _largeur_multiplex.call_deferred()
+	_montrer_journee_direct()
 	_poser_principal(arret_montre)
 
 ## Un seul ivoire plein à l'écran : ÉQUIPE d'ordinaire ; pendant un arrêt-décision, le bouton du panneau d'arrêt,
@@ -2034,11 +2195,14 @@ func _remplir_journee(model: Dictionary, direct: Dictionary, equipes: Array) -> 
 		_scores_cour = {}
 		_scores_prec = {}
 		if vue_droite == "journee": montrer_droite("chiffres")
+		_montrer_journee_direct()
 		return
 	var teintes := _teintes_clubs(model, equipes)
 	_remplir_classement(journee.get("classement", []) if journee.get("classement") is Array else [], teintes)
+	_poser_enjeu(journee.get("classement", []) if journee.get("classement") is Array else [])
 	_remplir_multiplex(journee, teintes)
 	journee_vide.visible = not classement_tuile.visible and not multiplex.visible
+	_montrer_journee_direct()
 
 func _journee_montree() -> bool:
 	return is_instance_valid(classement_tuile) and classement_tuile.visible
@@ -2121,7 +2285,7 @@ func _remplir_classement(classement: Array, teintes: Dictionary) -> void:
 	classement_tuile.visible = not classement.is_empty()
 	if classement.is_empty(): return
 	# Notre voisinage (± 3 places) ; en 1280×720, ± 2 places : la colonne de droite tient dans l'écran.
-	for k: int in lignes_classement(classement, CLASSEMENT_LIGNES if _densite >= 0.6 else CLASSEMENT_ECRAN):
+	for k: int in lignes_classement(classement, CLASSEMENT_ECRAN_720 if not panneaux_direct.is_empty() else CLASSEMENT_LIGNES if _densite >= 0.6 else CLASSEMENT_ECRAN):
 		if k < 0:
 			var ellipse := _texte("…", 22, FAIBLE)
 			ellipse.name = "MatchBetweenLiveTableGap"
@@ -2220,7 +2384,8 @@ func _remplir_multiplex(journee: Dictionary, teintes: Dictionary) -> void:
 	if matchs.is_empty(): return
 	multiplex_precision.text = "%d′" % minute if not matchs.all(func(m: Variant): return m is Dictionary and bool(m.get("fini", false))) else "terminé"
 	# Une seule rangée, quel que soit le nombre de matchs : ce qui dépasse la largeur défile.
-	multiplex_cartes.columns = maxi(1, matchs.size())
+	# Variantes : trois cartes par rangée, tout le multiplex à l'écran sans défiler.
+	multiplex_cartes.columns = maxi(1, mini(_colonnes_multiplex, matchs.size()) if not panneaux_direct.is_empty() else matchs.size())
 	for m: Variant in matchs:
 		if not m is Dictionary: continue
 		var id := str(m.get("id", ""))
@@ -2338,6 +2503,8 @@ static func seuil_echantillon(direct: Dictionary) -> int:
 ## fenêtre Équipe sur ce joueur ; le nom ouvre sa fiche (survol : mini-fiche). Alertes écrites (« épuisé »).
 func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 	_xv_donnees = [joueurs, direct]
+	_poser_energie()
+	_montrer_journee_direct()
 	S.clear(xv)
 	if is_instance_valid(pied_xv): S.clear(pied_xv)
 	var infos := _infos_xv(joueurs, direct)
