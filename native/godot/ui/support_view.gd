@@ -2,6 +2,12 @@ extends RefCounted
 const Copy = preload("res://ui/management_copy.gd")
 const Charte = preload("res://ui/charte.gd")
 const G = preload("res://ui/carnet_skin.gd")
+const Cc = preload("res://ui/immersive08/components.gd")
+const Tuile = preload("res://ui/tuile_choix.gd")
+const JaugeAnneau = preload("res://ui/jauge_anneau.gd")
+const JaugeAvantApres = preload("res://ui/jauge_avant_apres.gd")
+const BarreEffet = preload("res://ui/barre_effet.gd")
+const BarreEmpilee = preload("res://ui/barre_empilee.gd")
 
 static func build(app: Control) -> Control:
 	var page := G.v(12)
@@ -14,8 +20,21 @@ static func build(app: Control) -> Control:
 	var paper := G.panel(page)
 	G.fill(paper.get_parent(), true)
 	G.fill(paper, true)
-	G.chapter(paper, "21", "Le travail de la semaine", "Staff · préparation · cellule médicale · mandats", app.accent)
-	paper.add_child(G.wrap(Copy.notice("support", data.notice), 12))
+	var variante := _variante()
+	if variante == "A" or variante == "B":
+		# Règle des commotions : derrière un « i », plus en phrase sous le titre.
+		var entete := G.h(12)
+		paper.add_child(entete)
+		G.chapter(entete, "21", "Le travail de la semaine", "Staff · préparation · cellule médicale · mandats", app.accent)
+		G.fill(entete.get_child(0))
+		var notice := Copy.notice("support", data.notice)
+		if not notice.is_empty():
+			var i := Tuile.info(notice)
+			Tuile.proteger(i)
+			entete.add_child(i)
+	else:
+		G.chapter(paper, "21", "Le travail de la semaine", "Staff · préparation · cellule médicale · mandats", app.accent)
+		paper.add_child(G.wrap(Copy.notice("support", data.notice), 12))
 	var tabs := TabContainer.new()
 	tabs.name = "SupportTabs"
 	tabs.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
@@ -64,7 +83,18 @@ static func _meeting_lock(app: Control, completed: bool) -> String:
 	if app.model.meta.get("phase", "league") != "league": return "Les réunions sont réservées aux semaines de championnat."
 	return "Réunion indisponible cette semaine."
 
+## PROVISOIRE (planche de choix du 21/11/2026, revue visuelle n° 1) : deux habillages de l'onglet Staff, A (tuiles et
+## anneaux) et B (barres d'effet et barre empilée), choisis par la variable d'environnement CD_VARIANTE_VISUELLE (A par
+## défaut ; toute autre valeur rend l'ancien affichage). À retirer dès que Léo a choisi : on ne garde qu'une variante.
+static func _variante() -> String:
+	var v := OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper()
+	return "A" if v.is_empty() else v
+
 static func _staff(tabs: TabContainer, app: Control, data: Dictionary) -> void:
+	var variante := _variante()
+	if variante == "A" or variante == "B":
+		_staff_visuel(tabs, app, data, variante)
+		return
 	var list := _tab(tabs, "Staff")
 	var d: Dictionary = data.diagnostic
 	list.add_child(G.section("Le diagnostic", str(d.reason)))
@@ -107,8 +137,16 @@ static func _staff(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 		if int(plan.counts.collective) > 0 and plan.has("collective"):
 			list.add_child(G.wrap(str(plan.collective.reason), 14))
 		_action(list, "CONFIGURER · " + str(plan.label), "SupportTraining_" + str(plan.key), data.training.available, func(): app._command("training_plan", {"context":data.context,"plan":plan.key}))
+	_briefing(list, app, data)
+
+static func _briefing(list: VBoxContainer, app: Control, data: Dictionary, visuel: bool = false) -> void:
 	list.add_child(G.separator())
-	list.add_child(G.section("Le briefing ciblé", "Consignes préparées pour le coup d’envoi ; aucun résultat garanti."))
+	if visuel:
+		var tete := Tuile.titre_bloc("Le briefing ciblé", "Consignes préparées pour le coup d’envoi ; aucun résultat garanti.")
+		Tuile.proteger(tete)
+		list.add_child(tete)
+	else:
+		list.add_child(G.section("Le briefing ciblé", "Consignes préparées pour le coup d’envoi ; aucun résultat garanti."))
 	var b: Dictionary = data.briefing
 	if b.evidence is Dictionary:
 		list.add_child(G.wrap("Écart avants %+.0f · passe/vitesse %+.0f · danger adverse %+.0f" % [b.evidence.pack, b.evidence.backs, b.evidence.danger], 16))
@@ -116,6 +154,200 @@ static func _staff(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 		list.add_child(G.wrap(plan.desc, 14))
 		var button := _action(list, str(plan.label), "SupportBriefing_" + str(plan.key), b.available, func(): app._command("strategic_briefing", {"context":data.context,"fixture":b.fixture,"plan":plan.key}))
 		if plan.key == b.selected: G.selected(button, app.accent)
+
+## Onglet Staff habillé (variantes A et B) : mêmes données, mêmes commandes et mêmes noms de contrôles que l'ancien
+## affichage ; seules la mise en forme et la lecture changent.
+static func _staff_visuel(tabs: TabContainer, app: Control, data: Dictionary, variante: String) -> void:
+	var list := _tab(tabs, "Staff")
+	var d: Dictionary = data.diagnostic
+	var tete_diag := Tuile.titre_bloc("Le diagnostic")
+	tete_diag.add_child(Tuile.pastille(str(d.reason), Charte.GRIS_VERT, "info"))
+	Tuile.proteger(tete_diag)
+	list.add_child(tete_diag)
+	var diag := Cc.h(28)
+	list.add_child(diag)
+	if variante == "A":
+		diag.add_child(JaugeAnneau.new(float(d.mean), "Condition moyenne"))
+		diag.add_child(JaugeAnneau.new(float(d.morale), "Moral du groupe"))
+		diag.add_child(JaugeAnneau.new(float(d.trust), "Confiance", Charte.IVOIRE))
+	else:
+		for jauge: Array in [["Condition moyenne", d.mean, Charte.VERT_CLAIR], ["Moral du groupe", d.morale, Charte.VERT_CLAIR], ["Confiance", d.trust, Charte.IVOIRE]]:
+			var j := JaugeAvantApres.new(str(jauge[0]), float(jauge[1]), float(jauge[1]), jauge[2])
+			j.simple = true
+			diag.add_child(j)
+	diag.add_child(_chiffre(int(d.fatigue), "joueur%s sous 65 de condition" % ("s" if int(d.fatigue) > 1 else "")))
+	# Les quatre lectures se partagent la largeur du panneau.
+	for lecture: Control in diag.get_children(): Cc.fill(lecture)
+	Tuile.proteger(diag)
+	var meeting_data: Dictionary = data.meeting
+	var receipt: Variant = meeting_data.receipt
+	var last_decision: Variant = meeting_data.get("lastDecision")
+	var current_decision: bool = last_decision is Dictionary and last_decision.get("context") == data.context
+	var lock := _meeting_lock(app, receipt is Dictionary or current_decision)
+	var tete_reunion := Tuile.titre_bloc("Réunir le staff", "Une réunion par semaine.")
+	Tuile.proteger(tete_reunion)
+	list.add_child(tete_reunion)
+	var ecarts := 3.0
+	for option: Dictionary in meeting_data.options:
+		var pv: Dictionary = option.get("preview", {})
+		ecarts = maxf(ecarts, absf(float(pv.get("morale", d.morale)) - float(d.morale)))
+		ecarts = maxf(ecarts, absf(float(pv.get("trust", d.trust)) - float(d.trust)))
+	var bloc: Control
+	var rangee: Container
+	if variante == "A":
+		rangee = Cc.h(18)
+		bloc = rangee
+	else:
+		var carte := Tuile.new("Effet prévu", "rating")
+		bloc = carte
+		rangee = carte.contenu
+		rangee.add_child(_ligne_effet(Control.new(), BarreEffet.new(0, "", 1, true), Control.new()))
+	list.add_child(bloc)
+	for option: Dictionary in meeting_data.options:
+		var matching_receipt: bool = receipt is Dictionary and receipt.get("title") == "Réunion de staff : " + str(option.label)
+		var applied: bool = last_decision.get("plan") == option.key if current_decision else matching_receipt
+		var detail := str(receipt.body) if applied and matching_receipt else str(option.detail)
+		var pv: Dictionary = option.get("preview", {})
+		var etat := "" if meeting_data.available else ("Réunion tenue cette semaine · Moral actuel %d/100 · Confiance actuelle %d/100" % [d.morale, d.trust] if applied else lock)
+		var pastille_etat: Control = null
+		if not meeting_data.available:
+			pastille_etat = Tuile.pastille("Réunion tenue", Charte.VERT_CLAIR, "check", etat) if applied else Tuile.pastille(_mot_verrou(lock), Charte.GRIS_VERT, "clock", lock)
+		var bouton := Tuile.pilule("Réunion effectuée" if applied else "Réunir le staff", "SupportMeeting_" + str(option.key), meeting_data.available, etat, func(): app._command("staff_meeting", {"context":data.context,"plan":option.key}))
+		bouton.accessibility_name = "Réunir le staff · " + str(option.label)
+		var concernes: Control = Tuile.pastille("%d joueurs concernés" % int(pv.get("affected", 0))) if meeting_data.available else null
+		var icone: String = {"recuperation": "heart", "cohesion": "people", "exigence": "target"}.get(str(option.key), "")
+		if variante == "A":
+			var tuile := Tuile.new(str(option.label), icone, applied)
+			rangee.add_child(tuile)
+			tuile.contenu.add_child(Cc.wrap(detail, 19, Charte.IVOIRE_2))
+			if meeting_data.available:
+				tuile.contenu.add_child(JaugeAvantApres.new("Moral", float(d.morale), float(pv.get("morale", d.morale))))
+				tuile.contenu.add_child(JaugeAvantApres.new("Confiance", float(d.trust), float(pv.get("trust", d.trust)), Charte.IVOIRE))
+			if concernes != null: tuile.pied.add_child(concernes)
+			if pastille_etat != null: tuile.pied.add_child(pastille_etat)
+			var vide := Control.new()
+			Cc.fill(vide)
+			tuile.pied.add_child(vide)
+			tuile.pied.add_child(bouton)
+		else:
+			rangee.add_child(Cc.rule())
+			var gauche := Cc.v(4)
+			var tete := Cc.h(10)
+			if not icone.is_empty(): tete.add_child(Cc.icon(icone, 26, Charte.IVOIRE))
+			tete.add_child(Cc.label(str(option.label).to_upper(), 25, Charte.IVOIRE, true, 700))
+			gauche.add_child(tete)
+			gauche.add_child(Cc.wrap(detail, 18, Charte.IVOIRE_2))
+			var milieu := Cc.v(4)
+			if meeting_data.available:
+				milieu.add_child(BarreEffet.new(float(pv.get("morale", d.morale)) - float(d.morale), "moral", ecarts))
+				milieu.add_child(BarreEffet.new(float(pv.get("trust", d.trust)) - float(d.trust), "confiance", ecarts))
+			else:
+				pastille_etat.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+				milieu.add_child(pastille_etat)
+			var droite := Cc.v(8)
+			droite.alignment = BoxContainer.ALIGNMENT_CENTER
+			if concernes != null:
+				concernes.size_flags_horizontal = Control.SIZE_SHRINK_END
+				droite.add_child(concernes)
+			bouton.size_flags_horizontal = Control.SIZE_SHRINK_END
+			droite.add_child(bouton)
+			rangee.add_child(_ligne_effet(gauche, milieu, droite))
+	Tuile.proteger(bloc)
+	var tete_charges := Tuile.titre_bloc("Répartir les charges", "Configurer un plan ne lance pas la séance. La prévision physique précède les effets collectifs et médicaux.")
+	var session: Dictionary = data.training.get("session", {})
+	if session.get("status", "pending") == "applied":
+		var reason: Variant = session.get("reason")
+		tete_charges.add_child(Tuile.pastille("Séance effectuée", Charte.VERT_CLAIR, "check", str(reason) if reason != null else ""))
+	Tuile.proteger(tete_charges)
+	list.add_child(tete_charges)
+	if session.get("status", "pending") == "applied" and session.get("reason") != null:
+		var compte_rendu := Cc.wrap(str(session.reason), 19, Charte.IVOIRE_2)
+		Tuile.proteger(compte_rendu)
+		list.add_child(compte_rendu)
+	var verrou_charge := _training_lock(app, session)
+	var plans: BoxContainer = Cc.h(18) if variante == "A" else Cc.v(14)
+	list.add_child(plans)
+	for plan: Dictionary in data.training.plans:
+		var modes: Dictionary = plan.get("effectiveCounts", plan.counts)
+		var barre := BarreEmpilee.new([{"valeur": int(modes.repos), "libelle": "repos"}, {"valeur": int(modes.normal) + int(modes.get("collective", 0)), "libelle": "séance normale"}, {"valeur": int(modes.intense), "libelle": "intensif"}])
+		var gain := Cc.label("Condition totale %+.0f" % float(plan.conditionGain), 21, Charte.IVOIRE, true, 700)
+		var collectif: Control = Cc.wrap(str(plan.collective.reason), 18, Charte.IVOIRE_2) if int(plan.counts.collective) > 0 and plan.has("collective") else null
+		var configurer := Tuile.pilule("Configurer", "SupportTraining_" + str(plan.key), data.training.available, verrou_charge, func(): app._command("training_plan", {"context":data.context,"plan":plan.key}))
+		configurer.accessibility_name = "Configurer · " + str(plan.label)
+		var icone: String = {"proteger": "shield", "relever": "school", "equilibrer": "train"}.get(str(plan.key), "")
+		if variante == "A":
+			var tuile := Tuile.new(str(plan.label), icone)
+			plans.add_child(tuile)
+			tuile.contenu.add_child(Cc.wrap(str(plan.detail), 18, Charte.IVOIRE_2))
+			tuile.contenu.add_child(barre)
+			tuile.contenu.add_child(gain)
+			if collectif != null: tuile.contenu.add_child(collectif)
+			if not data.training.available: tuile.pied.add_child(Tuile.pastille(_mot_verrou(verrou_charge), Charte.GRIS_VERT, "clock", verrou_charge))
+			var vide := Control.new()
+			Cc.fill(vide)
+			tuile.pied.add_child(vide)
+			tuile.pied.add_child(configurer)
+		else:
+			var ligne := Tuile.new()
+			plans.add_child(ligne)
+			var gauche := Cc.v(4)
+			var tete := Cc.h(10)
+			if not icone.is_empty(): tete.add_child(Cc.icon(icone, 26, Charte.IVOIRE))
+			tete.add_child(Cc.label(str(plan.label).to_upper(), 25, Charte.IVOIRE, true, 700))
+			gauche.add_child(tete)
+			gauche.add_child(Cc.wrap(str(plan.detail), 18, Charte.IVOIRE_2))
+			if collectif != null: gauche.add_child(collectif)
+			var milieu := Cc.v(6)
+			milieu.add_child(barre)
+			milieu.add_child(gain)
+			var droite := Cc.v(6)
+			droite.alignment = BoxContainer.ALIGNMENT_CENTER
+			configurer.size_flags_horizontal = Control.SIZE_SHRINK_END
+			droite.add_child(configurer)
+			if not data.training.available:
+				var p := Tuile.pastille(_mot_verrou(verrou_charge), Charte.GRIS_VERT, "clock", verrou_charge)
+				p.size_flags_horizontal = Control.SIZE_SHRINK_END
+				droite.add_child(p)
+			ligne.contenu.add_child(_ligne_effet(gauche, milieu, droite))
+	Tuile.proteger(plans)
+	_briefing(list, app, data, true)
+
+## Rangée à trois colonnes (titre et texte · graphique · chiffres et action), mêmes largeurs d'une rangée à l'autre.
+static func _ligne_effet(gauche: Control, milieu: Control, droite: Control) -> HBoxContainer:
+	var ligne := Cc.h(24)
+	Cc.fill(gauche, false, 1.15)
+	Cc.fill(milieu, false, 1.0)
+	droite.custom_minimum_size.x = Cc.px(250)
+	ligne.add_child(gauche)
+	ligne.add_child(milieu)
+	ligne.add_child(droite)
+	return ligne
+
+## Grand chiffre et sa légende (même lecture que l'anneau, sans part d'un total).
+static func _chiffre(valeur: int, legende: String) -> Control:
+	var bloc := Cc.v(2)
+	bloc.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var nombre := Cc.label(str(valeur), 56, Charte.IVOIRE, true, 800)
+	bloc.add_child(nombre)
+	var texte := Cc.wrap(legende.to_upper(), 19, Charte.IVOIRE_2, true, 700)
+	texte.custom_minimum_size.x = Cc.px(150)
+	bloc.add_child(texte)
+	return bloc
+
+## Verrou en un mot pour la pastille (la phrase complète reste en info-bulle).
+static func _mot_verrou(raison: String) -> String:
+	if raison.begins_with("Une réunion"): return "Déjà tenue"
+	if raison.begins_with("Rencontre"): return "Match en cours"
+	if raison.begins_with("Entraînement") or raison.begins_with("Séance"): return "Séance faite"
+	if raison.begins_with("Les réunions"): return "Hors championnat"
+	return "Indisponible"
+
+## Raison écrite à côté d'un « Configurer » grisé (mêmes verrous que les réunions, côté séance).
+static func _training_lock(app: Control, session: Dictionary) -> String:
+	if session.get("status", "pending") == "applied": return "Séance déjà effectuée cette semaine."
+	if not app._live().is_empty(): return "Rencontre en cours ou à valider."
+	if app.model.meta.get("trained", false): return "Entraînement déjà effectué cette semaine."
+	return "Configuration indisponible cette semaine."
 
 static func _medical(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 	var list := _tab(tabs, "Médical")
