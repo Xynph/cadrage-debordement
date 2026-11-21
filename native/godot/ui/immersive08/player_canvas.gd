@@ -354,15 +354,13 @@ static func _onglet(page: Control, app: Control, zone: Rect2, texte: String, ind
 	tab.add_theme_font_override("font",Charte.texte_moyen() if choisi else C.BODY)
 	tab.add_theme_font_size_override("font_size",maxi(12,C.px(21)))
 	for etat in ["font_color","font_hover_color","font_pressed_color","font_focus_color","font_hover_pressed_color"]:
-		tab.add_theme_color_override(etat,Charte.IVOIRE if choisi else Charte.IVOIRE_2)
-	var fond := C.box(Charte.PANNEAU_3 if choisi else Color.TRANSPARENT,Color.TRANSPARENT,3,0)
-	if choisi:
-		fond.border_color = Charte.IVOIRE
-		fond.border_width_bottom = maxi(2,C.px(3))
-	var survol := C.box(Charte.PANNEAU_2,Color.TRANSPARENT,3,0)
+		tab.add_theme_color_override(etat,Charte.PANNEAU if choisi else Charte.IVOIRE_2)
+	# Charte finale : onglet en pilule, actif = aplat crème (texte panneau).
+	var fond := C.box(Charte.IVOIRE if choisi else Color.TRANSPARENT,Color.TRANSPARENT,Charte.RAYON_PILULE,12)
+	var survol := C.box(Charte.PANNEAU_2,Color.TRANSPARENT,Charte.RAYON_PILULE,12)
 	for etat in ["normal","pressed","hover_pressed"]: tab.add_theme_stylebox_override(etat,fond)
 	tab.add_theme_stylebox_override("hover",survol if not choisi else fond)
-	var focus := C.box(Color.TRANSPARENT,Charte.IVOIRE,3,0)
+	var focus := C.box(Color.TRANSPARENT,Charte.OR,Charte.RAYON_PILULE,0)
 	focus.set_border_width_all(2)
 	tab.add_theme_stylebox_override("focus",focus)
 	tab.pressed.connect(func():
@@ -564,7 +562,7 @@ static func _recrutement(card: Panel, app: Control, player: Dictionary) -> void:
 		var observer := D.button(card,Rect2(410,y+20,374,46),"",func(): pass,false,"search",true,app.accent,"ObserveRecruitment")
 		Observation.configure(observer,app,player)
 	var consultation_only: bool = player.get("negotiation",{}).get("status","") == "withdrawn"
-	var offer := D.button(card,Rect2(24,y+82,760,50),"Consulter la discussion" if consultation_only else "Approcher le joueur",func(): app.SquadViews.contract(app, player, true),true,"arrow",false,app.accent,"OfferRecruitment")
+	var offer := D.button(card,Rect2(24,y+82,760,50),"Consulter la discussion" if consultation_only else "Approcher le joueur",func(): app.SquadViews.contract(app, player, true),false,"arrow",false,app.accent,"OfferRecruitment")
 	offer.set_meta("player_id",player_id)
 	offer.disabled = app.waiting or (not player.get("available", false) and not consultation_only) or not app._live().is_empty()
 	if not warning.is_empty(): offer.tooltip_text = warning

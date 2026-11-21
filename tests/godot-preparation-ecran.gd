@@ -53,9 +53,9 @@ func press(button: Button) -> String:
 func gold_used(node: Node) -> int:
 	var count := 0
 	for control: Node in node.find_children("*", "Control", true, false):
-		if control is Label:
-			var color: Color = control.get_theme_color("font_color")
-			if color.is_equal_approx(Charte.OR) or color.is_equal_approx(Charte.OR_VIF): count += 1
+		# Charte finale : le doré de l'adversaire dans une comparaison (barres du rapport de force) n'est pas une action.
+		if str(control.name).begins_with("PreparationBarreAdverse"): continue
+		# Charte finale : un texte doré (attention, toujours avec un mot) est permis ; seul l'aplat doré est réservé à Continuer.
 		for style_name: String in ["panel", "normal", "hover", "pressed", "focus"]:
 			var style := (control as Control).get_theme_stylebox(style_name) as StyleBoxFlat
 			if style != null and (style.bg_color.is_equal_approx(Charte.OR) or style.bg_color.is_equal_approx(Charte.OR_VIF) or style.border_color.is_equal_approx(Charte.OR)): count += 1

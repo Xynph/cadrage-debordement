@@ -14,8 +14,8 @@ const MODES = {"repos":"Récupération", "normal":"Charge normale", "intense":"I
 const INDIVIDUAL = {"collective":"Suivre le collectif", "repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
 const TOPICS = ["COLLECTIF", "GROUPES", "INDIVIDUEL", "VIGILANCE", "CONSIGNES", "MATCH", "ENCADREMENT"]
 const FAMILIES = [["PIL.", [0]], ["TAL.", [1]], ["2e L.", [2]], ["3e L.", [3]], ["CHAR.", [4, 5]], ["CEN.", [7]], ["3/4", [6, 8]]]
-const GREEN = Color("59eb89")
-const PALE_GOLD = Color("f7ce72")
+const GREEN = Color("b6d6b6")
+const PALE_GOLD = Color("d7aa5a")
 const SLOTS = [
 	["train", "Séance collective", "Choisir la charge", "Une séance collective agit sur la récupération et le développement.", "Modifier la séance"],
 	["flag", "Travail spécifique", "Préparation ciblée", "Choisis le travail spécifique avant d’effectuer la séance.", "Modifier le travail"],
@@ -104,7 +104,7 @@ func _build() -> void:
 		if app.management_ui.get("preparation") is Dictionary: app.management_ui.preparation.tab = 0
 		app._navigate("Préparation"), false, "", "TrainingBackToPreparation")
 	dossier.tooltip_text = "Revenir au dossier de préparation et aux consignes de jeu"
-	var validate := _action(self, Rect2(1316, 166, 424, 58), "Séance effectuée" if trained else "Effectuer la séance", _validate, true, "arrow", "TrainingValidateWeek")
+	var validate := _action(self, Rect2(1316, 166, 424, 58), "Séance effectuée" if trained else "Effectuer la séance", _validate, false, "arrow", "TrainingValidateWeek")
 	validate.tooltip_text = "Séance déjà effectuée cette semaine." if trained else "Séance indisponible pendant le match ou après la saison." if locked else "Une séance collective par semaine. Tu pourras choisir sa charge."
 	validate.disabled = trained or locked
 	validate.add_theme_font_size_override("font_size", C.font_px(33))
@@ -365,7 +365,7 @@ func _groups() -> void:
 		D.text(tile, 25, 96, plan.get("detail", ""), 26, C.IVORY, 500, 1598)
 		var counts: Dictionary = plan.get("counts", {})
 		D.text(tile, 25, 141, "%s récupération  ·  %s normal ou collectif  ·  %s intensif" % [G.n(counts.get("repos", 0)), G.n(int(counts.get("normal", 0)) + int(counts.get("collective", 0))), G.n(counts.get("intense", 0))], 24, GREEN, 600, 1090)
-		var apply := _action(tile, Rect2(1230, 110, 438, 50), "Appliquer le plan", func(): app._command("training_plan", {"context":support.context, "plan":plan.key}), true, "arrow", "SupportTraining_" + str(plan.key))
+		var apply := _action(tile, Rect2(1230, 110, 438, 50), "Appliquer le plan", func(): app._command("training_plan", {"context":support.context, "plan":plan.key}), false, "arrow", "SupportTraining_" + str(plan.key))
 		apply.disabled = not data.get("available", false)
 	D.photo(section, photo_centre(app.model), Rect2(24, 747, 1689, 178))
 	_chart()

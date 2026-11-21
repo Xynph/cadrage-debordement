@@ -71,7 +71,7 @@ static func compact(app: Control) -> Control:
 	summary.add_child(C.wrap(("PRÉPARATION · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "jlo-d1")))).to_upper(),30,C.GOLD,true,700))
 	if not preparation.is_empty():
 		summary.add_child(C.wrap(World.preparation_note(preparation),29,C.IVORY))
-		var advance := C.button(app.primary_text(),app.primary_action,true,app.accent)
+		var advance := C.button(app.primary_text(),app.primary_action,false,app.accent)
 		advance.name = "JapanPreparationDossierAdvance"
 		advance.disabled = app.waiting
 		row.add_child(advance)
@@ -135,6 +135,12 @@ static func _style(fond: Color, bord: Color = Color.TRANSPARENT, epaisseur: int 
 		else: style.set_border_width_all(epaisseur)
 	return style
 
+static func _pilule(fond: Color, contour: Color = Color.TRANSPARENT) -> StyleBoxFlat:
+	var style := C.box(fond, contour, Charte.RAYON_PILULE, 12)
+	style.content_margin_top = 0
+	style.content_margin_bottom = 0
+	return style
+
 static func _nombre(valeur: Variant) -> bool:
 	return valeur is int or valeur is float
 
@@ -154,7 +160,7 @@ func _etiquette(parent: Node, x: float, baseline: float, valeur: String, largeur
 func _panneau(parent: Node, rectangle: Rect2, titre: String, id: String, legende: String = "") -> Panel:
 	var panel := Panel.new()
 	panel.name = id
-	panel.add_theme_stylebox_override("panel", _style(Charte.PANNEAU))
+	panel.add_theme_stylebox_override("panel", Charte.ombrer_droit(_style(Charte.PANNEAU)))
 	parent.add_child(panel)
 	D.place(panel, rectangle)
 	if not titre.is_empty():
@@ -174,12 +180,13 @@ func _marque(parent: Node, x: float, centre_y: float, taille: float, forme: Stri
 	D.place(marque, Rect2(x, centre_y - taille / 2.0, taille, taille))
 	return marque
 
-func _barre(parent: Node, rectangle: Rect2, fond: Color, bord: Color = Color.TRANSPARENT) -> void:
+func _barre(parent: Node, rectangle: Rect2, fond: Color, bord: Color = Color.TRANSPARENT) -> Panel:
 	var panel := Panel.new()
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_theme_stylebox_override("panel", _style(fond, bord, 2 if bord.a > 0.0 else 0))
 	parent.add_child(panel)
 	D.place(panel, rectangle)
+	return panel
 
 ## Pastille de forme ovale : la lettre V / N / D est toujours écrite.
 func _pastille(parent: Control, rectangle: Rect2, lettre: String, nom: String) -> Panel:
@@ -209,17 +216,24 @@ func _bouton(parent: Node, rectangle: Rect2, libelle: String, action: Callable, 
 	var titre := mode in ["ivoire", "onglet"]
 	bouton.add_theme_font_override("font", Charte.TITRE_GRAS if titre else C.font(600))
 	bouton.add_theme_font_size_override("font_size", C.font_px(21 if titre else 18))
-	var texte: Color = Charte.FOND if mode == "ivoire" else Charte.IVOIRE_2 if mode == "onglet" and not choisi else Charte.IVOIRE
+	var texte: Color = Charte.IVOIRE_2 if mode == "onglet" and not choisi else Charte.IVOIRE
 	for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
 		bouton.add_theme_color_override(etat, texte)
 	bouton.add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)
-	if mode == "onglet" and choisi:
-		for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]: bouton.add_theme_color_override(etat, Charte.IVOIRE)
 	var normal := _style(Charte.PANNEAU_3 if (mode == "onglet" and choisi) or (mode == "choix" and choisi) else Charte.PANNEAU_2 if mode == "choix" else Charte.IVOIRE if mode == "ivoire" else Color.TRANSPARENT, Charte.IVOIRE if choisi else Color.TRANSPARENT, 3 if mode == "onglet" else 2, mode == "onglet")
 	var survol := _style(Charte.IVOIRE_2 if mode == "ivoire" else Charte.PANNEAU_3 if (mode == "onglet" and choisi) else Charte.PANNEAU_2, Charte.IVOIRE if choisi else Color.TRANSPARENT, 3 if mode == "onglet" else 2, mode == "onglet")
 	var enfonce := _style(Charte.IVOIRE_2 if mode == "ivoire" else Charte.PANNEAU_3, Charte.IVOIRE if choisi else Color.TRANSPARENT, 3 if mode == "onglet" else 2, mode == "onglet")
 	var focus := _style(Color.TRANSPARENT, Charte.IVOIRE, 2)
 	var inactif := _style(Charte.PANNEAU_3 if mode == "ivoire" else Color.TRANSPARENT)
+	if mode in ["onglet", "ivoire"]:
+		# Charte finale : pilule. Onglet actif = aplat crème ; bouton « ivoire » = pilule à contour (un seul aplat doré : Continuer).
+		var plein := mode == "onglet" and choisi
+		normal = _pilule(Charte.IVOIRE if plein else Color.TRANSPARENT, Charte.FILET if mode == "ivoire" else Color.TRANSPARENT)
+		survol = _pilule(Charte.IVOIRE if plein else Charte.PANNEAU_2, Charte.IVOIRE_3 if mode == "ivoire" else Color.TRANSPARENT)
+		enfonce = _pilule(Charte.IVOIRE if plein else Charte.PANNEAU_3, Charte.IVOIRE if mode == "ivoire" else Color.TRANSPARENT)
+		inactif = _pilule(Color.TRANSPARENT, Charte.FILET if mode == "ivoire" else Color.TRANSPARENT)
+		for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
+			bouton.add_theme_color_override(etat, Charte.PANNEAU if plein else (Charte.IVOIRE_2 if mode == "onglet" and etat == "font_color" else Charte.IVOIRE))
 	for style: StyleBoxFlat in [normal, survol, enfonce, inactif]:
 		style.content_margin_left = C.px(12)
 		style.content_margin_right = C.px(12)
@@ -232,7 +246,7 @@ func _bouton(parent: Node, rectangle: Rect2, libelle: String, action: Callable, 
 	bouton.add_theme_stylebox_override("disabled", inactif)
 	bouton.add_theme_stylebox_override("focus", focus)
 	if not icone.is_empty():
-		bouton.icon = C.icon_texture(icone, Charte.FOND if mode == "ivoire" else Charte.IVOIRE)
+		bouton.icon = C.icon_texture(icone, Charte.PANNEAU if mode == "onglet" and choisi else Charte.IVOIRE)
 		bouton.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		bouton.expand_icon = true
 		bouton.add_theme_constant_override("icon_max_width", C.px(20))
@@ -562,7 +576,7 @@ func _dossier() -> float:
 func _danger(section: Control, rectangle: Rect2) -> void:
 	var bande := Panel.new()
 	bande.name = "PreparationDanger"
-	bande.add_theme_stylebox_override("panel", _style(Charte.PANNEAU))
+	bande.add_theme_stylebox_override("panel", Charte.ombrer_droit(_style(Charte.PANNEAU)))
 	section.add_child(bande)
 	D.place(bande, rectangle)
 	_barre(bande, Rect2(0, 0, 6, rectangle.size.y), Charte.club_trait(app.accent))
@@ -647,10 +661,10 @@ func _rapport(section: Control, rectangle: Rect2) -> void:
 		var propre: Variant = domaine.get("own")
 		var adverse: Variant = domaine.get("opponent")
 		_titre(panneau, 24, centre + 11, G.n(propre) if _nombre(propre) else "—", 32, Charte.IVOIRE, 70)
-		if _nombre(propre): _barre(panneau, Rect2(430.0 - echelle * clampf(float(propre) / 100.0, 0, 1), centre - 7, echelle * clampf(float(propre) / 100.0, 0, 1), 14), Charte.club_trait(app.accent))
+		if _nombre(propre): _barre(panneau, Rect2(430.0 - echelle * clampf(float(propre) / 100.0, 0, 1), centre - 7, echelle * clampf(float(propre) / 100.0, 0, 1), 14), Charte.VERT_CLAIR)
 		_texte(panneau, 590, centre + (0 if code.is_empty() else -8 if C.dense() else -3), libelle, 20, Charte.IVOIRE, 300, HORIZONTAL_ALIGNMENT_CENTER).add_theme_font_override("font", Charte.TITRE_GRAS)
 		if not code.is_empty(): _texte(panneau, 590, centre + (18 if C.dense() else 14), "agir : " + str(DESTINATIONS[code]).to_lower(), 14, Charte.IVOIRE_2, 300, HORIZONTAL_ALIGNMENT_CENTER)
-		if _nombre(adverse): _barre(panneau, Rect2(750, centre - 7, echelle * clampf(float(adverse) / 100.0, 0, 1), 14), Color(Charte.IVOIRE_2, .2), Charte.IVOIRE_2)
+		if _nombre(adverse): _barre(panneau, Rect2(750, centre - 7, echelle * clampf(float(adverse) / 100.0, 0, 1), 14), Charte.DORE).name = "PreparationBarreAdverse" + str(i)
 		_titre(panneau, 1090, centre + 11, G.n(adverse) if _nombre(adverse) else "—", 32, Charte.IVOIRE, 70)
 		if _nombre(propre) and _nombre(adverse):
 			var delta := int(propre) - int(adverse)
@@ -855,7 +869,7 @@ func _surveiller(section: Control, rectangle: Rect2) -> void:
 		var carte := Panel.new()
 		carte.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		carte.name = "PreparationThreat%d" % i
-		carte.add_theme_stylebox_override("panel", _style(Charte.PANNEAU_2))
+		carte.add_theme_stylebox_override("panel", Charte.ombrer_droit(_style(Charte.PANNEAU_2)))
 		panneau.add_child(carte)
 		D.place(carte, Rect2(x, 58, 420, haut_carte))
 		if _joueur_ouvrable(menace, club_id): _zone_joueur(carte, Rect2(0, 0, 420, haut_carte), menace, club_id, "PreparationThreatCard%d" % i)
@@ -917,7 +931,7 @@ func _xv_bande(section: Control, rectangle: Rect2, adversaire: Dictionary) -> fl
 		var cellule := Panel.new()
 		cellule.name = "PreparationTheirXICell%d" % (index + 1)
 		cellule.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		cellule.add_theme_stylebox_override("panel", _style(Charte.PANNEAU_2))
+		cellule.add_theme_stylebox_override("panel", Charte.ombrer_droit(_style(Charte.PANNEAU_2)))
 		panneau.add_child(cellule)
 		D.place(cellule, Rect2(x, 56, largeur, hauteur_case))
 		if not joueur.is_empty() and _joueur_ouvrable(joueur, club_id): _zone_joueur(cellule, Rect2(0, 0, largeur, hauteur_case), joueur, club_id, "PreparationTheirXICellZone%d" % (index + 1))

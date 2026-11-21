@@ -510,13 +510,15 @@ class PlaqueOr extends Control:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 		resized.connect(queue_redraw)
 	func _draw() -> void:
-		var d := Charte.decalage(size.y)
-		var points := PackedVector2Array([Vector2(0, 0), Vector2(size.x, 0), Vector2(size.x - d, size.y), Vector2(0, size.y)])
-		draw_colored_polygon(points, couleur)
+		# Charte finale : pilule dorée.
+		var forme := StyleBoxFlat.new()
+		forme.bg_color = couleur
+		forme.set_corner_radius_all(Charte.RAYON_PILULE)
+		forme.anti_aliasing = true
 		if anneau.a > 0.0:
-			var contour := points.duplicate()
-			contour.append(points[0])
-			draw_polyline(contour, anneau, 2.0, true)
+			forme.border_color = anneau
+			forme.set_border_width_all(2)
+		draw_style_box(forme, Rect2(Vector2.ZERO, size))
 
 func _bouton_coup_d_envoi(play: Button) -> Control:
 	var on_kickoff: Callable = _on_kickoff
@@ -533,7 +535,7 @@ func _bouton_coup_d_envoi(play: Button) -> Control:
 	focus.bg_color = Color.TRANSPARENT
 	focus.border_color = Charte.IVOIRE
 	focus.set_border_width_all(2)
-	focus.set_corner_radius_all(Charte.RAYON_PETIT)
+	focus.set_corner_radius_all(Charte.RAYON_PILULE)
 	focus.set_expand_margin_all(M(3))
 	kickoff.add_theme_stylebox_override("focus", focus)
 	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_disabled_color", "font_hover_pressed_color"]: kickoff.add_theme_color_override(key, Color.TRANSPARENT)

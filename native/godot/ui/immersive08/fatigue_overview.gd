@@ -169,7 +169,7 @@ static func build(app: Control, parent: Control, state: Dictionary) -> void:
 	for i in FILTERS.size():
 		var button := ClubUI.tab(parent, Rect2(4 + i * 307, 334, 294, filter_height), FILTERS[i], selected == FILTERS[i], func(): _filter(app, state, FILTERS[i]), "FatigueFilter" + str(i))
 		button.add_theme_font_size_override("font_size", C.font_px(20))
-	D.button(parent, Rect2(1575, 334, 669, filter_height), "Ouvrir la composition →", func(): app._navigate("Composition"), true, "people", false, app.accent, "FatigueOpenLineup").add_theme_font_size_override("font_size", C.font_px(20))
+	D.button(parent, Rect2(1575, 334, 669, filter_height), "Ouvrir la composition →", func(): app._navigate("Composition"), false, "people", false, app.accent, "FatigueOpenLineup").add_theme_font_size_override("font_size", C.font_px(20))
 	var panel := D.panel(parent, Rect2(4, 391 + drop, 2240, 814 - drop), "Rotation et charge individuelle", "heart", "", "FatigueTable")
 	var display_rows: Array = data.rows
 	var note := "Blessure, suspension et sélection restent distinctes. Repères de simulation, pas un diagnostic médical."

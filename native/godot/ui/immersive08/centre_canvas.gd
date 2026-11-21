@@ -47,9 +47,9 @@ func _hero() -> void:
 	D.text(hero, 26, 36, "LE CENTRE DE FORMATION", 28, GOLD, 700, 1120)
 	app.heading = D.text(hero, 25, 111, "Les chemins de la progression.", 68, C.IVORY, 800, 1140)
 	var context := "Détection, mentorat et compétition junior" if data.get("available", false) else "Suivi des Espoirs dans Formation"
-	D.text(hero, 28, 151, G.club_name(app.model.club) + "  ·  " + context, 25, C.IVORY, 500, 1100)
+	D.text(hero, 28, 151, G.club_name(app.model.club) + "  ·  " + context, 25, C.IVORY, 500, 1100, HORIZONTAL_ALIGNMENT_LEFT, true)
 	D.chip(hero, Rect2(29, 163, 288, 30), _pathway_status().to_upper(), GREEN if data.get("active", false) else GOLD)
-	D.button(hero, Rect2(1840, 126, 388, 56), "Revenir à la formation", func(): app._navigate("Formation"), true, "arrow", false, ACCENT, "CentreBackFormation")
+	D.button(hero, Rect2(1840, 126, 388, 56), "Revenir à la formation", func(): app._navigate("Formation"), false, "arrow", false, ACCENT, "CentreBackFormation")
 
 func _workbench() -> void:
 	var surface := D.panel(self, Rect2(0, 218, 1513, 1005), "", "", "", "CentreWorkbench")
@@ -119,7 +119,7 @@ func _preview(surface: Panel) -> void:
 		var follow := D.panel(surface, Rect2(25, 713, 1463, 267), "En attendant", "school", "", "CentreFollow")
 		D.text(follow, 24, 117, "Tes %s Espoirs restent au centre." % G.n(data.get("players", []).size()), 40, C.IVORY, 700, 900)
 		_note(follow, Rect2(25, 143, 840, 85), "Leur progression, leurs promotions et leurs spécialisations se suivent dans Formation.", 25)
-		var go := D.button(follow, Rect2(918, 130, 513, 66), "Consulter les Espoirs", func(): app._navigate("Formation"), true, "arrow", false, ACCENT, "CentreUnavailableFormation")
+		var go := D.button(follow, Rect2(918, 130, 513, 66), "Consulter les Espoirs", func(): app._navigate("Formation"), false, "arrow", false, ACCENT, "CentreUnavailableFormation")
 		go.add_theme_font_override("font", C.BOLD)
 		go.add_theme_font_size_override("font_size", C.font_px(31))
 		return
@@ -130,7 +130,7 @@ func _preview(surface: Panel) -> void:
 	_note(activation, Rect2(25, 143, 840, 85), note, 25)
 	var action := Academy._action(activation, app, data, "ACTIVER LES PARCOURS", "academy_activate", {}, 0)
 	action.set_meta("carnet_selected", true)
-	Legacy.apply(action, ACCENT)
+	C.style_bouton_contour(action, 31)
 	action.add_theme_font_override("font", C.BOLD)
 	action.add_theme_font_size_override("font_size", C.font_px(31))
 	D.place(action, Rect2(918, 130, 513, 66))
@@ -210,11 +210,11 @@ func _summary() -> void:
 	if not active:
 		note = "L’activation ouvre le calendrier et les résultats juniors." if data.get("available", false) else "Détection, mentorat et compétition junior ouvriront avec le calendrier des Espoirs."
 	var lines := D.words(note, 69, 3)
-	for i in lines.size(): D.text(panel, 23, 439 + dy + i * 27, lines[i], 23, C.MUTED, 500, 675)
+	for i in lines.size(): D.text(panel, 23, 439 + dy + i * 27, lines[i], 23, C.MUTED, 500, 675, HORIZONTAL_ALIGNMENT_LEFT, true)
 	D.button(panel, Rect2(21, 522 + dy, 676, 55), "Consulter les Espoirs", func(): app._navigate("Formation"), false, "arrow", false, ACCENT, "CentreOpenAcademy")
 	var lower := D.panel(self, Rect2(1531, 832 + dy, 717, 391 - dy), "De l’académie à l’équipe première", "trophy", "", "CentreDevelopment")
 	D.photo(lower, "academy-training", Rect2(14, 70, 689, 211 - dy))
 	var places := G.n(data.get("places", "—"))
 	D.text(lower, 22, 328 - dy, "Places professionnelles disponibles", 26, C.IVORY, 700, 480)
 	D.text(lower, 689, 340 - dy, places, 43, GREEN, 800, 183, HORIZONTAL_ALIGNMENT_RIGHT)
-	D.text(lower, 23, 365 - dy, "La capacité tient compte des places réservées aux retours de prêt.", 20, C.MUTED, 500, 673)
+	D.text(lower, 23, 365 - dy, "La capacité tient compte des places réservées aux retours de prêt.", 20, C.MUTED, 500, 673, HORIZONTAL_ALIGNMENT_LEFT, true)

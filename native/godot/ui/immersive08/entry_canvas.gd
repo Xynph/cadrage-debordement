@@ -9,7 +9,7 @@ const G = preload("res://ui/game_skin.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const Editorial = preload("res://ui/entry_editorial.gd")
 const CreationCanvas = preload("res://ui/immersive08/creation_canvas.gd")
-const GREEN = Color("176e49")
+const GREEN = C.Charte.VERT_FRANC
 
 static func _configure(app: Control) -> void:
 	var window := app.get_window()
@@ -69,7 +69,7 @@ static func workspace(app: Control, page: Control, creation: bool) -> Control:
 			actions.front().name = "CreationBackHome"
 			actions.back().name = "CreationManagePacks"
 		if app.pack_manager.creation_mode != "auto": _illustrate_preview(page)
-	Legacy.apply(page,GREEN if not app.model.get("club") is Dictionary else app.accent)
+	Legacy.apply(page,GREEN)
 	if creation:
 		if app.pack_manager.creation_mode != "auto":
 			_fit_pagination(page)
