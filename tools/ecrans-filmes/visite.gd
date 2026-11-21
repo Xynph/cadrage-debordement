@@ -50,6 +50,7 @@ const EXTRAS := [
 	{"id": "preparation-bas", "libelle": "Préparation · leur XV probable (bas de page)", "type": "preparation_bas"},
 	{"id": "preparation-conseils", "libelle": "Préparation · conseils détaillés (sous-page)", "type": "preparation_sous", "sous": "conseils"},
 	{"id": "preparation-reperes", "libelle": "Préparation · tous les repères (sous-page)", "type": "preparation_sous", "sous": "reperes"},
+	{"id": "effectif-contrats", "libelle": "Effectif · onglet Contrats", "type": "effectif_onglet", "onglet": 2},
 	{"id": "finances-tresorerie", "libelle": "Finances · onglet Trésorerie (colonne de verdict)", "type": "finances_onglet", "onglet": "cash"},
 	{"id": "finances-salaires", "libelle": "Finances · onglet Salaires", "type": "finances_onglet", "onglet": "wages"},
 	{"id": "finances-budget", "libelle": "Finances · onglet Budget", "type": "finances_onglet", "onglet": "budget"},
@@ -587,6 +588,10 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			app.management_ui.preparation.sub = str(ecran.sous)
 			app._render()
 			await stabiliser()
+		"effectif_onglet":
+			app.management_ui.roster.immersive_tab = int(ecran.onglet)
+			app._navigate("Effectif")
+			await stabiliser()
 		"finances_onglet":
 			app.management_ui["immersive08_finance_tab"] = str(ecran.onglet)
 			app._navigate("Finances")
@@ -612,6 +617,7 @@ func refermer(ecran: Dictionary) -> void:
 		var avant: Control = app.match_screen.find_child("MatchOpening", true, false) if app.match_screen != null else null
 		if avant != null: avant.fermer_page()
 	if str(ecran.type) in ["preparation_bas", "preparation_sous"] and app.management_ui.get("preparation") is Dictionary: app.management_ui.preparation.sub = ""
+	if str(ecran.type) == "effectif_onglet": app.management_ui.roster.immersive_tab = 0
 	if str(ecran.type) == "finances_onglet": app.management_ui["immersive08_finance_tab"] = "summary"
 	if str(ecran.type) == "classements_onglet" and app.management_ui.get("competition") is Dictionary: app.management_ui.competition.tab = "league"
 	if str(ecran.type) == "formation_suivi": load("res://ui/immersive08/formation_pages.gd").oublier(app)
