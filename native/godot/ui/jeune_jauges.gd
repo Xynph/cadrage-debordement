@@ -126,10 +126,11 @@ static func mini_jauge(nom: String, libelle: String, valeur: String, part: float
 	return bloc
 
 ## Pastille de la charte (coins 6, voile de la couleur, texte de la couleur), avec icône facultative.
-static func pastille(texte: String, couleur: Color = Charte.IVOIRE_2, icone: String = "", taille: int = 17) -> PanelContainer:
+## `fond` faux : même icône et même texte, sans voile (apparence neutre d'un état qui n'ouvre rien).
+static func pastille(texte: String, couleur: Color = Charte.IVOIRE_2, icone: String = "", taille: int = 17, fond: bool = true) -> PanelContainer:
 	var cadre := PanelContainer.new()
 	# Voile opaque (couleur à 14 % sur la carte), comme VOILE_DORE / VOILE_VERT de la charte.
-	var style := Charte.sans_ombre(C.box(Charte.PANNEAU_2.lerp(couleur, .14), Color.TRANSPARENT, Charte.RAYON_PETIT, 0))
+	var style := Charte.sans_ombre(C.box(Charte.PANNEAU_2.lerp(couleur, .14) if fond else Color(Charte.PANNEAU_2, 0.0), Color.TRANSPARENT, Charte.RAYON_PETIT, 0))
 	style.content_margin_left = C.px(10); style.content_margin_right = C.px(10)
 	style.content_margin_top = C.px(3); style.content_margin_bottom = C.px(3)
 	cadre.add_theme_stylebox_override("panel", style)

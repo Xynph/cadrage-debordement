@@ -27,6 +27,9 @@ var en_page := false
 ## Sous-page : tuiles chiffres et pastilles d'état de l'en-tête, mises à jour à chaque redessin.
 var tuiles := {}
 var etat_suivi: HFlowContainer
+var champ_recherche: LineEdit
+var filtre_etape: OptionButton
+var filtre_revue: CheckButton
 
 const TEXTE_REGLES := "Les entraînements et les matchs font progresser les attributs et le niveau pendant la saison. Les plans orientent le travail à venir, sans gain immédiat ; le mentorat partage le même apprentissage. Pour les profils à progression annuelle, ces plans servent uniquement d’objectifs de suivi. Âge, personnalité, blessures, fatigue et temps de jeu influencent les progrès. Le potentiel peut évoluer au bilan de saison et ne garantit jamais le niveau atteint."
 const TEXTE_TRAVAIL := "Progression par le travail : le plan répartit les efforts à venir, sans gain supplémentaire."
@@ -169,6 +172,7 @@ func _build() -> void:
 	stage.item_selected.connect(func(index: int): focused_player_id = ""; state.stage = index; state.page = 0; _redraw())
 	var review_filter := CheckButton.new(); review_filter.name = "YouthReviewFilter"; review_filter.text = "PARCOURS À REVOIR"; review_filter.button_pressed = bool(state.get("review",false)); filters.add_child(review_filter)
 	review_filter.toggled.connect(func(value: bool): focused_player_id = ""; state.review = value; state.page = 0; _redraw())
+	champ_recherche = search; filtre_etape = stage; filtre_revue = review_filter
 	for controle: Control in [search, stage, review_filter]: _habiller(controle)
 	if not _court():
 		counter = _t("",13); counter.name = "YouthDevelopmentCount"; body.add_child(counter)
@@ -355,6 +359,7 @@ func _review(parent: Container,person: Dictionary,boutons: Container = null,tete
 		var statut := str(review.get("status",""))
 		var etat := Jauges.pastille(str(review.get("label","Bilan intermédiaire")),Jauges.couleur_etat(statut),str(Jauges.ICONES_ETAT.get(statut,"info")),17)
 		etat.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		etat.name = "YouthReviewState"
 		etat.tooltip_text = str(review.get("basis","")); etat.mouse_filter = Control.MOUSE_FILTER_STOP
 		(etat.get_child(0).get_child(1) as Label).name = "YouthReviewLabel"
 		tete.add_child(etat)
@@ -402,7 +407,7 @@ func _review(parent: Container,person: Dictionary,boutons: Container = null,tete
 
 	var advice: Dictionary = review.get("recommendation",{})
 	if _court():
-		var conseil := Jauges.pastille(str(advice.get("label","")),Charte.IVOIRE,"target",16)
+		var conseil := Jauges.pastille(str(advice.get("label","")),Charte.IVOIRE,"target",16,advice.get("destination") != null)
 		conseil.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		conseil.tooltip_text = str(advice.get("detail","")); conseil.mouse_filter = Control.MOUSE_FILTER_STOP
 		(conseil.get_child(0).get_child(1) as Label).name = "YouthReviewAdvice"
@@ -413,6 +418,9 @@ func _review(parent: Container,person: Dictionary,boutons: Container = null,tete
 	if destination != null:
 		var navigate := _b("EXAMINER LE PARCOURS →" if str(destination)=="Centre" else "EXAMINER L’EFFECTIF →",func(): app._clear_dialogs(); app.selected_player = str(person.id); app._navigate(str(destination)))
 		navigate.name = "YouthReviewNavigate"; boutons.add_child(navigate)
+		if _court():
+			var conseil := parent.find_child("YouthReviewAdvice", true, false)
+			if conseil != null: _cliquable(conseil.get_parent().get_parent() as Control, func(): navigate.pressed.emit())
 	if str(advice.get("key","")) == "promotion":
 		var promote := _b("EXAMINER LE PREMIER CONTRAT DE CE JOUEUR →",func():
 			app._clear_dialogs()
@@ -434,6 +442,44 @@ func _review(parent: Container,person: Dictionary,boutons: Container = null,tete
 ## compteurs en tuiles, états en pastilles, explications derrière un « i ». La fenêtre d'origine garde son texte.
 func _court() -> bool:
 	return en_page
+
+## Tout ce qui ressemble à une tuile, une jauge, une pastille ou un chiffre ouvre quelque chose (règle de Léo,
+## 21/11/2026) : clic gauche (ou Entrée sur le focus) = `action`, curseur main ; `survol` éclaircit un panneau au survol.
+func _cliquable(controle: Control, action: Callable, survol: bool = false) -> void:
+	if controle == null: return
+	controle.mouse_filter = Control.MOUSE_FILTER_STOP
+	controle.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	controle.set_meta("youth_clic", true)
+	controle.gui_input.connect(func(event: InputEvent):
+		var souris := event as InputEventMouseButton
+		if souris != null and souris.button_index == MOUSE_BUTTON_LEFT and not souris.pressed:
+			controle.accept_event(); action.call()
+		elif event.is_action_pressed("ui_accept") and controle.has_focus():
+			controle.accept_event(); action.call())
+	if survol and controle is PanelContainer:
+		var repos := controle.get_theme_stylebox("panel") as StyleBoxFlat
+		if repos == null: return
+		var clair := repos.duplicate() as StyleBoxFlat
+		clair.bg_color = Charte.PANNEAU_3
+		controle.mouse_entered.connect(func(): controle.add_theme_stylebox_override("panel", clair))
+		controle.mouse_exited.connect(func(): controle.add_theme_stylebox_override("panel", repos))
+
+## Fiche complète du jeune, sur l'onglet voulu (0 vue d'ensemble / disponibilité, 2 performances, 4 développement).
+func _ouvrir_fiche(person: Dictionary, onglet: int = 0) -> void:
+	var professionnel := str(person.get("stage", "")) == "professional"
+	var cible := {"kind": "player" if professionnel else "academy", "id": str(person.get("id", ""))}
+	if not app.navigation_controller.entity_available(cible): return
+	app.management_ui.immersive_player_tab = onglet if professionnel or onglet in [0, 4] else 0
+	app.navigation_controller.open_entity(cible)
+
+## Compteurs du haut = filtres de la liste (« Jeunes affichés » remet tout à zéro).
+func _filtrer(etape: int, revue: bool) -> void:
+	focused_player_id = ""
+	state.query = ""; state.stage = etape; state.review = revue; state.page = 0
+	if champ_recherche != null: champ_recherche.text = ""
+	if filtre_etape != null: filtre_etape.select(etape)
+	if filtre_revue != null: filtre_revue.set_pressed_no_signal(revue)
+	_redraw()
 
 ## « i » : explication en infobulle, au survol.
 func _info(texte: String) -> Control:
@@ -467,9 +513,13 @@ func _entete(data: Dictionary) -> void:
 	(colonne.get_child(1) as Label).autowrap_mode = TextServer.AUTOWRAP_OFF
 	var bandeau := C.h(14); body.add_child(bandeau)
 	counter = _tuile("YouthTileCount","Jeunes affichés"); counter.name = "YouthDevelopmentCount"
+	var filtres := {"YouthTileCount": [0, false], "YouthTileAcademy": [1, false], "YouthTilePro": [2, false], "YouthTileReview": [0, true]}
 	bandeau.add_child(counter.get_parent().get_parent())
 	for cle in [["YouthTileAcademy","Académie"],["YouthTilePro","Jeunes pros"],["YouthTileReview","Parcours à revoir"]]:
 		bandeau.add_child(_tuile(cle[0],cle[1]).get_parent().get_parent())
+	for nom: String in filtres:
+		var reglage: Array = filtres[nom]
+		_cliquable(bandeau.find_child(nom, false, false) as Control, func(): _filtrer(int(reglage[0]), bool(reglage[1])), true)
 	etat_suivi = _flux(); etat_suivi.size_flags_horizontal = Control.SIZE_EXPAND_FILL; etat_suivi.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	bandeau.add_child(etat_suivi)
 
@@ -483,13 +533,17 @@ func _maj_entete(people: Array) -> void:
 	(tuiles.YouthTileReview as Label).add_theme_color_override("font_color",Jauges.ORANGE if a_revoir > 0 else Charte.IVOIRE)
 	for enfant in etat_suivi.get_children(): etat_suivi.remove_child(enfant); enfant.queue_free()
 	var actif: bool = _data().get("enabled",false)
-	etat_suivi.add_child(Jauges.pastille("Suivi actif" if actif else "Suivi à démarrer",Jauges.VERT if actif else Jauges.BLEU,"check" if actif else "clock",17))
+	var demarrable: bool = not actif and _data().get("canEnable",false) and not app.waiting
+	var suivi := Jauges.pastille("Suivi actif" if actif else "Suivi à démarrer",Jauges.VERT if actif else Jauges.BLEU,"check" if actif else "clock",17,demarrable)
+	suivi.name = "YouthTrackingState"
+	etat_suivi.add_child(suivi)
+	if demarrable: _cliquable(suivi, _enable)
 	if _data().get("locked",false):
-		var verrou := Jauges.pastille("Objectifs verrouillés",Jauges.ORANGE,"warning",17)
+		var verrou := Jauges.pastille("Objectifs verrouillés",Jauges.ORANGE,"warning",17,false)
 		verrou.tooltip_text = "Révise-les avant la séance, hors match et pendant la saison régulière."; verrou.mouse_filter = Control.MOUSE_FILTER_STOP
 		etat_suivi.add_child(verrou)
 	if not str(state.get("draft_notice","")).is_empty():
-		var remis := Jauges.pastille("Choix réinitialisés",Jauges.ORANGE,"info",17)
+		var remis := Jauges.pastille("Choix réinitialisés",Jauges.ORANGE,"info",17,false)
 		remis.tooltip_text = str(state.draft_notice); remis.mouse_filter = Control.MOUSE_FILTER_STOP
 		etat_suivi.add_child(remis)
 
@@ -500,7 +554,7 @@ func _faits(parent: Container, person: Dictionary) -> void:
 	var baseline: Variant = person.get("baseline")
 	var deltas: Variant = person.get("deltas")
 	if not baseline is Dictionary or not deltas is Dictionary:
-		var sans := Jauges.pastille("Sans référence",Charte.IVOIRE_2,"info",16)
+		var sans := Jauges.pastille("Sans référence",Charte.IVOIRE_2,"info",16,false)
 		sans.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		sans.tooltip_text = "Pas encore de référence suivie : aucun gain passé n’est attribué à cet objectif."; sans.mouse_filter = Control.MOUSE_FILTER_STOP
 		parent.add_child(sans)
@@ -554,6 +608,9 @@ func _tuile_jeune(person: Dictionary) -> void:
 	card.add_theme_constant_override("separation",C.px(10))
 	var cadre := card.get_parent() as Control
 	cadre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cadre.name = "YouthTile_" + str(person.id).validate_node_name()
+	_cliquable(cadre, func(): _ouvrir_fiche(person, 0), true)
+	MiniFiche.lier(app, cadre, str(person.id), "squad" if str(person.get("stage","")) == "professional" else "academy")
 	var annual: bool = str(person.get("model",""))=="annual-v11"
 	var current: Dictionary = person.get("current",{})
 	var tete := C.h(16); card.add_child(tete)
@@ -564,19 +621,27 @@ func _tuile_jeune(person: Dictionary) -> void:
 	var chiffres := C.v(0); tete.add_child(chiffres)
 	var niveau: Variant = G.knowledge_sort_value(person,"rating",true)
 	var gros := Jauges.chiffre(G.rating_text(person,true),64,Charte.couleur_attribut(niveau) if niveau != null else Charte.IVOIRE_3)
-	gros.name = "YouthLevel"; gros.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; gros.tooltip_text = "Niveau général"; gros.mouse_filter = Control.MOUSE_FILTER_STOP
+	gros.name = "YouthLevel"; gros.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; gros.tooltip_text = "Niveau général"
 	chiffres.add_child(gros)
 	var potentiel: Variant = G.knowledge_sort_value(person,"potential")
 	var ligne_pot := C.h(6); ligne_pot.alignment = BoxContainer.ALIGNMENT_END; chiffres.add_child(ligne_pot)
 	ligne_pot.add_child(Jauges.legende("Potentiel",15))
 	var pot := Jauges.chiffre(G.potential_text(person),26,Charte.couleur_attribut(potentiel) if potentiel != null else Charte.IVOIRE_3)
-	pot.tooltip_text = G.potential_tooltip(person); pot.mouse_filter = Control.MOUSE_FILTER_STOP
+	pot.tooltip_text = G.potential_tooltip(person)
 	ligne_pot.add_child(pot)
-	card.add_child(Jauges.barre_niveau_potentiel(G.knowledge_bounds(person,"rating",true),G.knowledge_bounds(person,"potential"),G.rating_text(person,true),G.potential_text(person)))
+	chiffres.name = "YouthLevelBlock"
+	chiffres.tooltip_text = G.potential_tooltip(person)
+	_cliquable(chiffres, func(): _ouvrir_fiche(person, 4))
+	var barre_niveau := Jauges.barre_niveau_potentiel(G.knowledge_bounds(person,"rating",true),G.knowledge_bounds(person,"potential"),G.rating_text(person,true),G.potential_text(person))
+	card.add_child(barre_niveau)
+	_cliquable(barre_niveau, func(): _ouvrir_fiche(person, 4))
 	if annual:
 		var modele := _modele(person); modele.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN; card.add_child(modele)
+		_cliquable(modele, func(): _ouvrir_fiche(person, 4))
 	else:
 		var progression := C.v(3); card.add_child(progression)
+		progression.name = "YouthProgressBlock"
+		_cliquable(progression, func(): _ouvrir_fiche(person, 4))
 		var libelle := C.h(8); progression.add_child(libelle)
 		var leg := Jauges.legende("Progression générale"); leg.size_flags_horizontal = Control.SIZE_EXPAND_FILL; libelle.add_child(leg)
 		libelle.add_child(Jauges.legende("%s · ciblée %s" % [_pourcent(current.get("generalXP",0)),_pourcent(current.get("focusedXP",0))],16,Charte.IVOIRE_2))
@@ -593,8 +658,12 @@ func _tuile_jeune(person: Dictionary) -> void:
 		jauge.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		jauges.add_child(jauge)
 	jauges.add_child(Jauges.mini_jauge("YouthInjury","Blessure",_blessure(person),-1.0,Jauges.ORANGE,Jauges.ORANGE if blesse else Charte.IVOIRE,100))
+	for jauge: Control in jauges.get_children(): _cliquable(jauge, func(): _ouvrir_fiche(person, 0))
 	var faits := _flux(); card.add_child(faits)
-	faits.add_child(Jauges.pastille("%s min en carrière" % G.n(person.get("careerMinutes",current.get("careerMinutes",0))),Charte.IVOIRE_2,"clock",16))
+	var minutes := Jauges.pastille("%s min en carrière" % G.n(person.get("careerMinutes",current.get("careerMinutes",0))),Charte.IVOIRE_2,"clock",16)
+	minutes.name = "YouthMinutes"
+	faits.add_child(minutes)
+	_cliquable(minutes, func(): _ouvrir_fiche(person, 2))
 	var detail := C.v(5); detail.name = "YouthTileDetail"
 	var actions := _flux(10)
 	_faits(detail,person)
@@ -607,6 +676,7 @@ func _tuile_jeune(person: Dictionary) -> void:
 	var libeller := func(): deplier.text = "Masquer le détail du suivi ▴" if detail.visible else "Détail du suivi ▾"
 	libeller.call()
 	deplier.pressed.connect(func(): detail.visible = not detail.visible; libeller.call())
+	_cliquable(etat.find_child("YouthReviewState", false, false) as Control, func(): deplier.pressed.emit())
 	card.add_child(deplier)
 	card.add_child(detail)
 	if actions.get_child_count() > 0: card.add_child(actions)
