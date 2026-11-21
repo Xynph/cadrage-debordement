@@ -146,7 +146,7 @@ func _metrics(meta: Dictionary) -> void:
 		var value: Array = values[i]
 		var x := i * 232
 		if i > 0: D.line(metrics, Vector2(x, 8), Vector2(x, 98), Color(C.LINE, .8))
-		if i == 3 and not watched.is_empty(): D.rect(metrics, Rect2(x+1, 1, 230, 104), Color("2d1b19"), 8)
+		if i == 3 and not watched.is_empty(): D.rect(metrics, Rect2(x+1, 1, 230, 104), C.SELECTED, 8)
 		_icon(metrics, value[0], Rect2(x + 20, 36, 48, 48), value[3])
 		D.text(metrics, x + 81, 40, value[1], 24, C.IVORY, 500, 144)
 		D.text(metrics, x + 81, 85, value[2], 38 if i < 3 else 31, value[3], 700, 144)
@@ -169,13 +169,13 @@ func _week(fixture: Dictionary) -> void:
 		var column := D.panel(self, Rect2(4 + i * 250, 270, 239, 545), "", "", "", "TrainingWeekColumn" + str(i))
 		var match_column := i == 5 and not fixture.is_empty()
 		var tone := PALE_GOLD if match_column else C.MINT if i == 0 else C.MUTED
-		D.rect(column, Rect2(1, 1, 237, 82), Color("30291d") if match_column else Color("1d362d") if i == 0 else Color("182222"), 8)
+		D.rect(column, Rect2(1, 1, 237, 82), C.SELECTED if match_column or i == 0 else C.RAISED, 8)
 		D.text(column, 119, 51, TOPICS[i], 29, tone, 700, 224, HORIZONTAL_ALIGNMENT_CENTER)
 		for band in 2:
 			var index := i * 2 + band
 			var slot: Array = SLOTS[index]
 			var y := 99 + band * 220
-			D.rect(column, Rect2(11, y, 217, 31), Color("202a2b"), 5)
+			D.rect(column, Rect2(11, y, 217, 31), C.SELECTED, 5)
 			D.text(column, 23, y + 23, "PRÉPARER" if band == 0 else "SUIVRE", 23, C.IVORY, 700, 200)
 			var hit := _action(column, Rect2(11, y + 39, 217, 168), "", func(): _select(index), false, "", "TrainingStep" + str(index))
 			hit.tooltip_text = slot[3]

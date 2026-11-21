@@ -50,7 +50,10 @@ func _draw() -> void:
 		var fatigue: Variant = player.get("physicalLoad", {})
 		if fatigue is Dictionary: fatigue = fatigue.get("fatigue", "—")
 		var injury := int(player.get("injury", 0))
-		row.add_child(S.wrap("%s · condition %s · charge %s%s" % [str(player.get("name", "")), str(player.get("condition", "—")), str(fatigue), " · indisponible (%d sem.)" % injury if injury > 0 else ""], 13, S.TEXT))
+		var detail := S.wrap("%s · condition %s · charge %s%s" % [str(player.get("name", "")), _entier(player.get("condition", "—")), _entier(fatigue), " · indisponible (%d sem.)" % injury if injury > 0 else ""], 13, S.TEXT)
+		# Le texte prend la largeur restante à côté du portrait (sans cela il se replie lettre par lettre).
+		detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(detail)
 	var air := Control.new()
 	air.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	S.G.fill(air, true)
@@ -88,3 +91,7 @@ func _perform_training() -> void:
 	# Maintaining the plan must preserve the actual collective mode, including
 	# recovery/intensive. A training_plan response may explicitly change it.
 	director.command("train", {"mode":str(model.get("meta", {}).get("training", "normal"))})
+
+## Condition et charge s'affichent en entiers (le moteur renvoie des décimales longues).
+static func _entier(valeur: Variant) -> String:
+	return str(roundi(float(valeur))) if valeur is int or valeur is float else str(valeur)

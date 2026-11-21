@@ -266,6 +266,11 @@ static func _row(app: Control, list: VBoxContainer, row: Dictionary) -> void:
 	button.set_meta("player_id", player.id)
 	button.accessibility_name = "Ajuster la charge de " + str(player.name)
 	compact_button(button, 18)
+	# Ligne de 21 px : le contour d'une pilule mordrait sur les lignes voisines. « Régler » prend la forme du lien de la
+	# charte (sans fond ni contour, gris-vert, crème au survol), avec l'anneau doré du focus clavier.
+	for etat in ["normal", "hover", "pressed", "disabled"]: button.add_theme_stylebox_override(etat, StyleBoxEmpty.new())
+	for cle in ["font_color", "font_pressed_color", "font_disabled_color"]: button.add_theme_color_override(cle, C.MUTED)
+	for cle in ["font_hover_color", "font_focus_color"]: button.add_theme_color_override(cle, C.IVORY)
 	button.tooltip_text = load_blocker(app) if not load_blocker(app).is_empty() else item.tooltip_text + " · Choisir puis confirmer le plan"
 
 static func _status_icon(parent: Control, kind: String, left: float, tone: Color, lift: float = 0.0) -> void:

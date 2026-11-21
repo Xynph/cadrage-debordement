@@ -67,6 +67,8 @@ func scrolling_case(scroll_name: String, row_pattern: String, row_type: String, 
 	check(scroll.scroll_vertical > 0 and rows[0].global_position.y < first_y, "La molette fait défiler les lignes : " + scroll_name)
 	check(header.global_position.y == header_y and scroll.get_parent().global_position.y == panel_y, "En-tête et panneau fixes pendant le défilement : " + scroll_name)
 	for direction in ["up", "down"]: await wheel_edge(scroll, header, direction, scroll_name)
+	var cale := app.find_child("SondeDebordement", true, false)
+	if cale != null: cale.queue_free()
 	scroll.scroll_vertical = 0
 	await settle()
 
@@ -85,6 +87,14 @@ func wheel_edge(scroll: ScrollContainer, header: Button, direction: String, labe
 	var page := app.find_child("ContextualPageWorkspace",true,false) as ScrollContainer
 	check(page != null,"La vraie page défilante entoure la liste : "+label)
 	if page == null: return
+	# Depuis la charte, le bouton « Voir l'entraînement » est une pilule de 40 px : à 1440p la page tient à 17 px près et ne déborde
+	# plus. La sonde veut deux portées réelles (cas des fenêtres plus basses) : on ajoute une cale invisible au bas de la page.
+	if int(page.get_v_scroll_bar().max_value-page.get_v_scroll_bar().page) <= 0:
+		var cale := Control.new()
+		cale.name = "SondeDebordement"
+		cale.custom_minimum_size.y = 160
+		page.get_child(0).add_child(cale)
+		await settle()
 	var outer_limit := int(page.get_v_scroll_bar().max_value-page.get_v_scroll_bar().page)
 	var inner_limit := int(scroll.get_v_scroll_bar().max_value-scroll.get_v_scroll_bar().page)
 	check(outer_limit>0 and inner_limit>0,"La sonde exerce deux portées réelles de défilement : "+label)
