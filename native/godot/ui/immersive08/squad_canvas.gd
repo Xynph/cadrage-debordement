@@ -165,8 +165,9 @@ func _entete_page() -> void:
 	_italique(D.text(self, 0, 64, "EFFECTIF", 58, C.IVORY, 800, 600)).name = "RosterTitre"
 	# Sous le titre : deux pastilles neutres « 36 joueurs » et « 2026-27 » (plus de phrase, 21/11).
 	var nombre := R.pastille(self, 0, 104, "%d joueur%s" % [joueurs.size(), "s" if joueurs.size() > 1 else ""], Charte.IVOIRE_2, "people", "RosterSousTitre")
-	nombre.tooltip_text = "%d joueur%s sous contrat" % [joueurs.size(), "s" if joueurs.size() > 1 else ""]
-	R.pastille(self, nombre.size.x / C.density + 10, 104, _saison_courte(G.season_label(saison)), Charte.IVOIRE_2, "calendar", "RosterSaison").tooltip_text = "Saison " + G.season_label(saison)
+	R.cliquable(nombre, _tous_les_joueurs, "RosterSousTitreOuvrir", "Tous les joueurs sous contrat")
+	var saison_p := R.pastille(self, nombre.size.x / C.density + 10, 104, _saison_courte(G.season_label(saison)), Charte.IVOIRE_2, "calendar", "RosterSaison")
+	R.cliquable(saison_p, func(): app._navigate("Calendrier"), "RosterSaisonOuvrir", "Calendrier de la saison " + G.season_label(saison))
 	_tuiles(joueurs, saison)
 
 ## Moyenne de niveau du XV (numéros 1 à 15) et son évolution depuis le début de saison, si elle est connue pour tout le XV.
@@ -192,6 +193,15 @@ func _xv() -> Dictionary:
 	var resultat := {"moyenne": total / nombre}
 	if connus: resultat.evolution = (total - debut) / nombre
 	return resultat
+
+## Pastille « 36 joueurs » : retire filtres et recherche (tous onglets, y compris Contrats).
+func _tous_les_joueurs() -> void:
+	state.family = "Tous"
+	state.contract = "Tous"
+	state.search = ""
+	state.scroll = 0
+	app.roster_filter = "Tous"
+	app._render(false)
 
 ## « 2026-2027 » devient « 2026-27 » comme dans la maquette.
 static func _saison_courte(libelle: String) -> String:
@@ -906,6 +916,18 @@ func _bandeau_groupe(players: Array, group: String) -> void:
 			if int(p.shirtNumber) <= 15: titulaires.append(int(p.shirtNumber))
 	# Bandeau de groupe : « AVANTS 19 » (chiffre de tuile) et un « i » pour les numéros de la feuille (21/11).
 	var h := C.reach(GROUP_HEIGHT)
+	var filtre := "avants" if group == "AVANTS" else "arrieres"
+	var ouvrir := Button.new()
+	ouvrir.name = "RosterGroupFiltre" + ("Avants" if group == "AVANTS" else "Arrieres")
+	ouvrir.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	ouvrir.focus_mode = Control.FOCUS_NONE
+	ouvrir.tooltip_text = "Ne garder que les " + group.to_lower()
+	ouvrir.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+	ouvrir.add_theme_stylebox_override("hover", _plat(Color(Charte.IVOIRE, .06)))
+	ouvrir.add_theme_stylebox_override("pressed", _plat(Color(Charte.IVOIRE, .10)))
+	banner.add_child(ouvrir)
+	ouvrir.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	ouvrir.pressed.connect(func(): _appliquer_puce(filtre))
 	var titre := _italique(D.text(banner, 14, h / 2.0 + 8, group, 22, C.IVORY, 700, 200), false)
 	var l := _largeur(group, 22, false, 700)
 	var chiffre := _italique(D.text(banner, 14 + l + 14, h / 2.0 + 9, str(membres.size()), 26, C.IVORY, 800, 80), false)
@@ -1075,7 +1097,7 @@ func _row(player:Dictionary,index:int) -> void:
 				if echeance.contains("⧗"):
 					# Fin de saison : pastille sablier + année (21/11) ; la précision dans l'infobulle.
 					var annee := echeance.get_slice(" ⧗", 0)
-					R.pastille(row, x, base, "⧗ " + annee, R.ORANGE, "", "RosterContractEnd", 19).tooltip_text = annee + " · fin de contrat en fin de saison"
+					R.pastille(row, x, base, "⧗ " + annee, R.ORANGE, "", "RosterContractEnd", 21).tooltip_text = annee + " · fin de contrat en fin de saison"
 				else:
 					D.text(row,x,base,echeance,19,C.MUTED,500,l,HORIZONTAL_ALIGNMENT_LEFT,true).name = "RosterContractEnd"
 				_lien_lecture(row, Rect2(x - 6, 2, l + 8, h - 4), player, "contract", "SquadOpenContract_")
@@ -1095,7 +1117,7 @@ func _row(player:Dictionary,index:int) -> void:
 			"statut":
 				if statut.has("pastille"):
 					# Blessé : pastille croix + date de retour ; le motif complet dans l'infobulle.
-					var pastille_statut := R.pastille(row, x, base, str(statut.pastille), R.ROUGE, "", "RosterStatut", 19)
+					var pastille_statut := R.pastille(row, x, base, str(statut.pastille), R.ROUGE, "", "RosterStatut", 21)
 					pastille_statut.tooltip_text = str(statut.t)
 				else:
 					var texte := D.text(row,x,base,str(statut.t),19,statut.c,600 if statut.c != C.MUTED else 500,l,HORIZONTAL_ALIGNMENT_LEFT,true)

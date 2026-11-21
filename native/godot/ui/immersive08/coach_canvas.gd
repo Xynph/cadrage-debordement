@@ -1118,7 +1118,8 @@ func _ligne_carnet(parent: Control, pad: float, y: float, text_w: float, libelle
 func _conseil_changements(parent: Control, pad: float, y: float, text_w: float, conseil: Dictionary, changements: Array) -> float:
 	var action: Dictionary = conseil.action
 	var zone := Link.styled_button(parent, Rect2(pad - 8, y - 2, text_w + 16, 66), "", 19, Charte.IVOIRE, "GabiLigne_conseil_ouvrir")
-	zone.pressed.connect(func(): suivre_conseil(action))
+	# La ligne ouvre la composition, où les changements proposés se voient (« Suivre le conseil » les applique).
+	zone.pressed.connect(func(): if not app.waiting and app._live().is_empty(): app._navigate("Composition"))
 	zone.tooltip_text = str(conseil.get("texte", ""))
 	zone.accessibility_name = "Mon conseil · " + zone.tooltip_text
 	D.text(parent, pad, y + 17, "MON CONSEIL", 16, Charte.IVOIRE_2, 700, text_w).name = "GabiLigne_conseil_libelle"

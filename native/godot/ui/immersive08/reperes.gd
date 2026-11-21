@@ -26,8 +26,8 @@ static func pastille(parent: Control, x: float, baseline: float, texte: String, 
 	var w := 12.0 + (icone_w + 7.0 if icone_w > 0 else 0.0) + texte_w + 12.0
 	var fond := D.rect(parent, Rect2(x, baseline - float(taille) * .78 - 6.5, w, h), Color(couleur, .15), 8)
 	fond.name = (id + "Fond") if not id.is_empty() else "Pastille"
-	fond.mouse_filter = Control.MOUSE_FILTER_PASS
-	fond.tooltip_text = texte
+	# Transparente au clic : la ligne qui la porte (ou `cliquable`) décide où elle mène ; sinon, apparence neutre.
+	fond.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if icone_w > 0:
 		var image := C.icon(icone, int(icone_w), couleur)
 		fond.add_child(image)
@@ -43,8 +43,7 @@ static func pastille(parent: Control, x: float, baseline: float, texte: String, 
 static func tuile(parent: Control, zone: Rect2, valeur: String, legende: String, couleur: Color = Charte.IVOIRE, id: String = "", taille: int = 40, alerte: bool = false) -> Panel:
 	var fond := D.rect(parent, zone, Charte.PANNEAU_3.lerp(couleur, .16) if alerte else Charte.PANNEAU_3, 16)
 	fond.name = id if not id.is_empty() else "Tuile"
-	fond.mouse_filter = Control.MOUSE_FILTER_PASS
-	fond.tooltip_text = valeur + " " + legende
+	fond.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var base := zone.size.y / 2.0 + float(taille) * .36
 	var chiffre := D.text(fond, 14, base, valeur, taille, couleur, 800, largeur(valeur, taille, 800) + 4)
 	chiffre.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
@@ -68,3 +67,27 @@ static func rond(parent: Control, x: float, centre_y: float, aide: String, symbo
 	lettre.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if symbole == "i": lettre.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 	return fond
+
+## Rend une pastille ou une tuile cliquable (règle de Léo : tout ce qui y ressemble ouvre quelque chose) : bouton plat
+## qui la couvre, voile clair au survol, main, focus visible. `id` : nom du bouton (lisible par les tests).
+static func cliquable(cible: Control, action: Callable, id: String, aide: String = "") -> Button:
+	var bouton := Button.new()
+	bouton.name = id
+	bouton.focus_mode = Control.FOCUS_ALL
+	bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	bouton.tooltip_text = aide
+	bouton.accessibility_name = aide
+	var rayon := maxi(3, C.px(8))
+	for etat: String in ["normal", "hover", "pressed", "focus"]:
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(Charte.IVOIRE, {"normal": 0.0, "hover": .10, "pressed": .16, "focus": 0.0}[etat])
+		style.set_corner_radius_all(rayon)
+		if etat == "focus":
+			style.border_color = Charte.IVOIRE
+			style.set_border_width_all(1)
+		bouton.add_theme_stylebox_override(etat, style)
+	cible.mouse_filter = Control.MOUSE_FILTER_PASS
+	cible.add_child(bouton)
+	bouton.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bouton.pressed.connect(action)
+	return bouton
