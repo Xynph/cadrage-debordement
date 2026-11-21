@@ -16,6 +16,8 @@ const Charte = preload("res://ui/charte.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const ClubSheet = preload("res://ui/immersive08/club_sheet_canvas.gd")
 const R = preload("res://ui/immersive08/reperes.gd")
+## PROVISOIRE (revue visuelle du 21/11/2026, n° 5) : options A / B via CD_VARIANTE_VISUELLE.
+const Variantes = preload("res://ui/immersive08/preparation_variantes.gd")
 const TABS = ["Dossier", "Consignes", "Entrainement"]
 const CHAMP_DOSSIER_PENDING = "Le dossier adverse sera disponible la semaine du match."
 
@@ -1140,6 +1142,7 @@ func _sous_reperes(section: Control) -> float:
 	return 66.0 + hauteur
 
 func _sous_conseils(section: Control) -> float:
+	if not Variantes.variante().is_empty(): return Variantes.conseils(self, section)  # PROVISOIRE (revue visuelle du 21/11/2026, n° 5)
 	_retour(section)
 	var conseil: Dictionary = reports.get("advice", {})
 	var tactiques: Dictionary = app.model.get("tactics", {})
@@ -1185,6 +1188,9 @@ func _sous_conseils(section: Control) -> float:
 ## ---- Onglet « Consignes » ----------------------------------------------------------------------------
 
 func _consignes() -> void:
+	if not Variantes.variante().is_empty():  # PROVISOIRE (revue visuelle du 21/11/2026, n° 5)
+		Variantes.consignes(self)
+		return
 	var section := _section("PreparationConsignes")
 	match_context.consignes = section
 	var tactics: Dictionary = app.model.get("tactics", {})
