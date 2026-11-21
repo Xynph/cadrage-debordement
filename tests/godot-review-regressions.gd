@@ -156,8 +156,16 @@ func _decisions() -> void:
 	_import_text(exported)
 	_check(app.route == "Match", "Accepted import waits for its own response before navigation")
 	await _wait()
-	_check(app.route == "Match" and app.contextual_director.match_immersed() and not app.root_content.is_visible_in_tree(), "Successful live-match import restores its authoritative immersive route")
+	# Reprise avant le match (décision de Léo, 16/11/2026) : an export taken during a match describes the career
+	# before kickoff. Importing it reopens management on match day, the match still to play, never a frozen live match.
+	_check(app.bridge.last_response_ok and app.model.get("live") == null and app.model.get("next") is Dictionary and not app.contextual_director.match_immersed() and app.root_content.is_visible_in_tree() and app.pending_route.is_empty(), "Successful live-match import resumes before kickoff back in management")
+	_dismiss_errors()
 	app._navigate("Match")
+	await _command("begin_match")
+	await ContextualFlow.skip_talk(app, self, "pre", _check)
+	if not app.model.live is Dictionary:
+		_check(false, "The imported match day can kick off again")
+		return
 	await _command("pause", {"paused":false})
 	app.bridge.stop()
 	app.pause_menu()
@@ -188,13 +196,27 @@ func _preparation_axis(axis: String, option: Dictionary) -> Button:
 	var button := app.body.find_child("Preparation" + axis + "_" + str(option.id), true, false) as Button
 	return button if button != null else _named_button(app.body, str(option.label).to_upper())
 
+func _settled(name: String) -> Control:
+	# Opening a screen may trigger a read (e.g. the opponent's club sheet) whose answer redraws it: act on the final drawing.
+	var deadline := Time.get_ticks_msec() + 5000
+	var node := app.body.find_child(name, true, false) as Control
+	var stable := 0
+	while stable < 40 and Time.get_ticks_msec() < deadline:
+		await process_frame
+		var current := app.body.find_child(name, true, false) as Control
+		if current == node and not app.waiting: stable += 1
+		else: node = current; stable = 0
+	return node
+
 func _tactics() -> void:
+	if app.waiting: await _wait()
 	app._navigate("Préparation")
-	var tab := app.body.find_child("PreparationTabConsignes", true, false) as Button
+	var tab := await _settled("PreparationTabConsignes") as Button
 	if tab != null:
 		await _activate_focus(tab, "Preparation instructions tab")
 		_check(int(app.management_ui.preparation.tab) == 1, "Preparation opens its actual instructions view")
 	var tactics: Dictionary = app.model.tactics
+	var old_defense := str(tactics.defense)
 	var attack: Dictionary = {}
 	var defense: Dictionary = {}
 	for option in tactics.attacks:
@@ -209,11 +231,14 @@ func _tactics() -> void:
 	attack_button.pressed.emit()
 	defense_button.pressed.emit()
 	_check(app.waiting and app.queued_action.is_empty() and app.last_error.is_empty(), "Preparation absorbs a second tactic while the first is pending")
-	# Bypass the view guard to exercise the separate command-level refusal.
-	app._command("set_tactics", {"attack": tactics.attack, "defense": defense.id})
-	_check(app.waiting and app.queued_action.is_empty() and not app.last_error.is_empty(), "Rapid second tactical axis is explicitly refused until the first acknowledgement")
+	# Bypass the view guard: since #770 a second decision on the same setting waits its turn instead of being
+	# refused, its payload being read on the already-updated model (as the view does). It must not revert the first axis.
+	var current: Dictionary = app.model.tactics
+	_check(current.attack == attack.id and str(current.defense) == old_defense, "First tactical axis is shown before its acknowledgement")
+	app._command("set_tactics", {"attack": current.attack, "defense": defense.id})
+	_check(app.waiting and app.last_command == "set_tactics" and app.queued_action.get("command") == "set_tactics" and app.last_error.is_empty(), "Rapid second tactical axis waits behind the first acknowledgement")
 	await _wait()
-	_check(app.model.tactics.attack == attack.id and app.model.tactics.defense == tactics.defense, "Refused old tactical payload cannot overwrite either axis")
+	_check(app.queued_action.is_empty() and app.model.tactics.attack == attack.id and app.model.tactics.defense == defense.id, "Queued second axis keeps the acknowledged first axis")
 	_dismiss_errors()
 	defense_button = _preparation_axis("Defense", defense)
 	_check(defense_button != null and defense_button.is_visible_in_tree() and not defense_button.disabled, "Fresh defense choice is visible after the attack acknowledgement")
@@ -368,14 +393,16 @@ func _scroll_focus(scroll: ScrollContainer, context: String) -> Button:
 	# identity text must fit the viewport even when the whole button cannot.
 	var identity: Control = target
 	var text := target.text
-	var player_id := str(target.get_meta("player_id", ""))
+	# The focused action may be a cell link inside a player row (name, contract): the row carries the identity.
+	var row := _player_row(target, scroll)
+	var player_id := str(row.get_meta("player_id", "")) if row != null else ""
 	if not player_id.is_empty():
 		var matches: Array = app.model.squad.filter(func(player: Dictionary): return str(player.id) == player_id)
 		_check(matches.size() == 1, context + " focused row identifies one actual squad player")
 		identity = null
 		if matches.size() == 1:
 			text = str(matches[0].name)
-			for label: Label in target.find_children("*", "Label", true, false):
+			for label: Label in row.find_children("*", "Label", true, false):
 				if label.text == text: identity = label; break
 	_check(not text.strip_edges().is_empty() and identity != null and identity.is_visible_in_tree() and viewport.grow(1).encloses(identity.get_global_rect()), context + " exposes its exact player identity or action text inside the viewport")
 	print("FOCUS_GEOMETRY ", JSON.stringify({"context":context,"scroll":viewport,"target":rectangle,"before":before_rect,"vertical":scroll.scroll_vertical,"horizontal":scroll.scroll_horizontal,"targetName":target.name,"targetText":text,"playerId":player_id,"identity":identity.get_global_rect() if identity != null else null,"requiredScroll":required_scroll}))
@@ -386,42 +413,50 @@ func _scroll_focus(scroll: ScrollContainer, context: String) -> Button:
 		_check(previous.has_focus() and previous.is_visible_in_tree(), context + " real Shift+Tab changes focus to its visible predecessor")
 	return target
 
+func _player_row(node: Node, stop: Node) -> Control:
+	while node != null and node != stop:
+		if node is Control and node.has_meta("player_id"): return node
+		node = node.get_parent()
+	return null
+
 func _focus() -> void:
 	app._navigate("Effectif")
 	for i in 5: await process_frame
 	var list := app.body.find_child("SquadScroll", true, false) as ScrollContainer
 	var profile := app.body.find_child("ProfileScroll", true, false) as ScrollContainer
-	var card := app.body.find_child("SelectedPlayerCard", true, false) as Control
-	var open_full := app.body.find_child("OpenPlayerFull", true, false) as Button
-	print("FOCUS_SURFACE ", JSON.stringify({"list":list != null,"profile":profile != null,"selectedCard":card != null,"fullAction":open_full != null}))
+	print("FOCUS_SURFACE ", JSON.stringify({"list":list != null,"profile":profile != null}))
 	_check(list != null and list.is_visible_in_tree(), "The actual squad list has its own visible scroll viewport")
-	var row: Button
-	if list != null: row = await _scroll_focus(list, "Squad")
+	var focused: Button
+	if list != null: focused = await _scroll_focus(list, "Squad")
 	if profile != null:
 		_check(profile != list and profile.is_visible_in_tree(), "The historical player profile has its own visible scroll viewport")
 		await _scroll_focus(profile, "Profile")
 	else:
-		_check(card != null and card.is_visible_in_tree() and open_full != null, "The current squad exposes its selected-player card and full-profile action")
-		if row == null or card == null or open_full == null: return
+		# Since the full player sheet (#1013), a squad row opens the full profile directly (no selected-player card).
+		var row := _player_row(focused, list) as Button if focused != null else null
+		_check(row != null, "The current squad exposes focusable player rows that open the full profile")
+		if row == null: return
 		var player_id := str(row.get_meta("player_id", ""))
-		await _activate_focus(row, "Actual squad row")
 		var matches: Array = app.model.squad.filter(func(player: Dictionary): return str(player.id) == player_id)
-		_check(app.selected_player == player_id and matches.size() == 1, "Keyboard activation selects the focused player's exact identity")
+		_check(matches.size() == 1, "The focused squad row identifies one actual player")
 		if matches.size() != 1: return
 		var player_name := str(matches[0].name)
-		open_full = app.body.find_child("OpenPlayerFull", true, false) as Button
-		await _activate_focus(open_full, "Open selected player's full profile")
+		var row_name := str(row.name)
+		row = app.body.find_child(row_name, true, false) as Button
+		await _activate_focus(row, "Actual squad row")
+		_check(app.selected_player == player_id, "Keyboard activation selects the focused player's exact identity")
 		var full := app.body.find_child("ImmersivePlayerFull", true, false) as Control
 		var heading := app.body.find_child("ProfilePlayerName", true, false) as Label
 		_check(full != null and full.is_visible_in_tree() and heading != null and heading.text == player_name.to_upper() and heading.is_visible_in_tree(), "The visible full profile retains the selected player's exact name")
-		var attributes := app.body.find_child("FullPlayerTab1", true, false) as Button
-		await _activate_focus(attributes, "Full-profile attributes tab")
-		_check(int(app.management_ui.immersive_player_tab) == 1 and app.selected_player == player_id, "Keyboard navigation reaches the real attributes view without changing player")
+		# The attributes are now on the overview page; Performances (index 2) is the next real tab.
+		var performances := app.body.find_child("FullPlayerTab2", true, false) as Button
+		await _activate_focus(performances, "Full-profile performances tab")
+		_check(int(app.management_ui.get("immersive_player_tab", 0)) == 2 and app.selected_player == player_id, "Keyboard navigation reaches another real profile view without changing player")
 		var back := app.body.find_child("PlayerBackToSquad", true, false) as Button
 		await _activate_focus(back, "Return from the full profile")
-		card = app.body.find_child("SelectedPlayerCard", true, false) as Control
 		list = app.body.find_child("SquadScroll", true, false) as ScrollContainer
-		_check(card != null and card.is_visible_in_tree() and app.selected_player == player_id and app.body.find_child("ImmersivePlayerFull", true, false) == null, "Returning restores the squad card for the same player")
+		var restored := app.body.find_child(row_name, true, false) as Control if list != null else null
+		_check(restored != null and restored.is_visible_in_tree() and app.selected_player == player_id and app.body.find_child("ImmersivePlayerFull", true, false) == null, "Returning restores the squad row for the same player")
 		_check(list != null and list.is_visible_in_tree() and list.scroll_vertical > 0, "Returning from the full profile restores the inspected squad scroll position")
 	app._navigate("Match")
 	await _command("begin_match")

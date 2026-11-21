@@ -12,6 +12,7 @@ const Plans = preload("res://ui/immersive08/training_group_plans.gd")
 const Anneau = preload("res://ui/anneau_repartition.gd")
 const Groupe = preload("res://ui/immersive08/training_group_panel.gd")
 const Watch = preload("res://ui/management_state.gd")
+const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
 const TABS = ["Semaine", "Groupes", "Individuel", "Staff", "Fatigue"]
 const MODES = {"repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
 const INDIVIDUAL = {"collective":"Suivre le collectif", "repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
@@ -148,7 +149,7 @@ func _metrics(meta: Dictionary) -> void:
 		["heart", "Condition", G.n(group.condition) + " %", GREEN],
 		["people", "Moral", G.n(meta.get("morale", "—")), C.IVORY],
 		["train", "Charge moyenne", "%d / 100" % roundi(total_load / maxi(1, squad.size())), C.IVORY],
-		["warning", "À surveiller", "%d joueur(s)" % watched.size(), C.ALERT if not watched.is_empty() else C.MUTED],
+		["warning", "À surveiller", str(watched.size()), C.ALERT if not watched.is_empty() else C.MUTED],
 	]
 	for i in values.size():
 		var value: Array = values[i]
@@ -157,7 +158,7 @@ func _metrics(meta: Dictionary) -> void:
 		if i == 3 and not watched.is_empty(): D.rect(metrics, Rect2(x+1, 1, 230, 104), C.SELECTED, 8)
 		_icon(metrics, value[0], Rect2(x + 20, 36, 48, 48), value[3])
 		D.text(metrics, x + 81, 40, value[1], 24, C.IVORY, 500, 144)
-		D.text(metrics, x + 81, 85, value[2], 38 if i < 3 else 31, value[3], 700, 144)
+		D.text(metrics, x + 81, 85, value[2], 38, value[3], 700, 144)
 		var destination: String = ["Condition de l'effectif : ouvrir la fatigue", "Moral : ouvrir le vestiaire", "Charge moyenne : ouvrir la fatigue", "Joueurs à surveiller : ouvrir la fatigue"][i]
 		_zone(metrics, Rect2(x + 4, 4, 224, 98), "TrainingMetric" + str(i), destination, func(): _open_metric(i))
 
@@ -166,12 +167,12 @@ func _week(fixture: Dictionary) -> void:
 	var focus_label := _label(focus, "Sans préparation spécifique")
 	var state_caption := "Séance effectuée" if trained else _mode()
 	var captions := [
-		state_caption, focus_label, "Plans du staff", "%d professionnels" % squad.size(),
-		"Spécialisations", "Ajuster les charges", "%d joueur(s) à suivre" % watched.size(),
-		"%d joueur(s) suivis" % support.get("medical", {}).get("players", []).size(), "Intentions de jeu",
+		state_caption, focus_label, "", "%d joueurs" % squad.size(),
+		"", "", "%d à suivre" % watched.size(),
+		"%d suivis" % support.get("medical", {}).get("players", []).size(), "",
 		_label(app.model.get("decisions", {}).get("difficulty", {}), "Niveau adverse"),
 		"Feuille valide" if app.model.get("selection", {}).get("valid", false) else "Feuille à compléter",
-		str(fixture.get("label", "Aucune rencontre")), "Diagnostic actuel", "Répartir les décisions",
+		str(fixture.get("label", "Aucune rencontre")), "", "",
 	]
 	var selected := clampi(int(state.get("slot", 0)), 0, SLOTS.size() - 1)
 	D.text(self, 6, 256, "PLAN DE SEMAINE  /  1 SÉANCE COLLECTIVE", 17, C.MUTED, 600, 800)
@@ -197,9 +198,7 @@ func _week(fixture: Dictionary) -> void:
 			for j in lines.size(): D.text(hit, 60, 33 + j * 24, lines[j], 24, C.IVORY, 700, 146)
 			var details := D.words(captions[index], 18, 2)
 			for j in details.size(): D.text(hit, 13, 88 + j * 24, details[j], 24, C.IVORY, 500, 192)
-			var caption: String = slot[2]
-			if index == 0 and (trained or locked): caption = "Charge appliquée" if trained else "Séance indisponible"
-			D.text(hit, 13, 149, caption, 20, C.MUTED, 500, 191)
+			if index == 0 and (trained or locked): D.text(hit, 13, 149, "Charge appliquée" if trained else "Séance indisponible", 20, C.MUTED, 500, 191)
 		if i == 0: D.line(column, Vector2(13, 310), Vector2(226, 310))
 	_chart()
 	_vigilance()
@@ -210,7 +209,6 @@ func _week(fixture: Dictionary) -> void:
 	D.photo(art, photo_centre(app.model), Rect2(2, 2, 1016, 373))
 	_axes(D.panel(self, Rect2(1039, 840, 560, 341), "Axes individuels", "star", "", "TrainingAxes"))
 	_staff_cards(D.panel(self, Rect2(1614, 840, 634, 341), "Encadrement", "people", "", "TrainingStaff"))
-	D.text(self, 2244, 1217, "Charges et condition issues de ta carrière", 17, C.MUTED, 500, 622, HORIZONTAL_ALIGNMENT_RIGHT)
 
 func _slot_style(hit: Button, selected: bool, match_slot: bool) -> void:
 	var fill := Color("20382d") if selected else Color("32291d") if match_slot else Color("10191a")
@@ -239,13 +237,18 @@ func _selection(index: int) -> void:
 	D.photo(holder, "training-coach", Rect2(14, 7, 117, 118))
 	_icon(holder, slot[0], Rect2(150, 16, 30, 30), GREEN)
 	D.text(holder, 192, 38, slot[1], 29, C.IVORY, 700, 285)
-	var detail := str(slot[3])
-	if index == 0: detail = ("Séance effectuée · " if trained else "Charge retenue · ") + _mode() + ". " + detail
-	if index == 12 and not str(training.get("advice", "")).is_empty(): detail = str(training.advice)
-	var lines := D.words(detail, 38, 4)
-	for i in lines.size(): D.text(holder, 150, 72 + i * 24, lines[i], 21, C.IVORY, 500, 322)
-	D.text(holder, 14, 154, "Préparation du groupe", 20, C.MUTED, 500, 445)
+	var regle := Pastilles.info(str(slot[3]), "i", "TrainingSelectedInfo")
+	Pastilles.poser_a_droite(holder, regle, 474, 16)
+	if index == 0:
+		var mode := str(state.get("mode", state.get("stored_mode", "normal")))
+		var teinte: Color = C.Charte.REPOS if mode == "repos" else C.Charte.INTENSIF if mode == "intense" else C.Charte.NORMAL
+		var icone := "heart" if mode == "repos" else "train"
+		Pastilles.poser(holder, Pastilles.pastille(("Effectuée · " if trained else "") + _mode(), teinte, icone, "Charge retenue : " + _mode(), 22, "TrainingSelectedMode"), 150, 70)
+	elif index == 12 and not str(training.get("advice", "")).is_empty():
+		var lines := D.words(str(training.advice), 38, 4)
+		for i in lines.size(): D.text(holder, 150, 72 + i * 24, lines[i], 21, C.IVORY, 500, 322)
 	D.line(holder, Vector2(14, 166), Vector2(471, 166))
+	D.text(holder, 14, 154, "Préparation du groupe", 20, C.MUTED, 500, 445)
 	var unavailable := index == 0 and (trained or locked)
 	var action_label: String = slot[4]
 	if unavailable: action_label = "Séance effectuée" if trained else "Séance indisponible"
@@ -276,7 +279,7 @@ func _chart() -> void:
 		var x := left + 12 + 56 * i
 		D.text(tile, x + 24, 253, family[0], 16, C.IVORY, 600, 56, HORIZONTAL_ALIGNMENT_CENTER)
 		if players.is_empty(): continue
-		var tip := "%s · charge moyenne %.0f / 100 · condition moyenne %.0f %% · %d joueur(s)" % [family[0], load_value, condition_value, players.size()]
+		var tip := "%s · charge moyenne %.0f / 100 · condition moyenne %.0f %% · %s" % [family[0], load_value, condition_value, P.plural(players.size(), "joueur", "joueurs")]
 		var series := [[load_value, C.Charte.INTENSIF if load_value >= 55.0 else C.Charte.NORMAL, x], [condition_value, C.Charte.REPOS, x + 25]]
 		for serie: Array in series:
 			var h := maxf(2.0, (bottom - top) * float(serie[0]) / 100.0)
@@ -289,7 +292,7 @@ func _chart() -> void:
 		var membres := squad.filter(func(p: Dictionary): return int(p.get("fam", -1)) in famille[1])
 		if membres.is_empty(): continue
 		membres.sort_custom(func(a: Dictionary, b: Dictionary): return float(a.get("physicalLoad", 0)) > float(b.get("physicalLoad", 0)))
-		_zone(tile, Rect2(left + 6 + 56 * i, top - 14, 54, bottom - top + 52), "TrainingChartFamily" + str(i), "%s · voir les %d joueur(s)" % [famille[0], membres.size()], func(): Groupe.ouvrir(self, "Poste · " + str(famille[0]), C.Charte.NORMAL, membres))
+		_zone(tile, Rect2(left + 6 + 56 * i, top - 14, 54, bottom - top + 52), "TrainingChartFamily" + str(i), "%s · voir %s" % [famille[0], P.plural(membres.size(), "joueur", "joueurs")], func(): Groupe.ouvrir(self, "Poste · " + str(famille[0]), C.Charte.NORMAL, membres))
 	# Seuil de vigilance : trait horizontal à 55.
 	var seuil := bottom - (bottom - top) * 0.55
 	D.line(tile, Vector2(left, seuil), Vector2(right, seuil), C.Charte.INTENSIF, 2)

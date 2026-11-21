@@ -10,6 +10,9 @@ const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const Decisions = preload("res://ui/decision_views.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
 const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
+const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
+const Link = preload("res://ui/entity_link.gd")
+const Charte = preload("res://ui/charte.gd")
 const WIDTH := 2248
 const LEFT := 1410
 const RIGHT := 822
@@ -65,9 +68,8 @@ func _hero() -> void:
 	C.veil(hero)
 	D.text(hero, 26, 49, "LES TERRITOIRES DU RUGBY", 32, C.GOLD, 800, 364)
 	D.line(hero, Vector2(404, 37), Vector2(547, 37), C.GOLD, 2)
-	D.text(hero, 22, 127, "La mémoire des duels.", 86, C.IVORY, 800, 1125)
-	D.text(hero, 28, 168, G.club_name(own) + "  ·  Saison " + G.season_label(app.model.meta.get("season")), 31, C.IVORY, 600, 1046)
-	D.text(hero, 28, 205, "Les confrontations et les réactions enregistrées au fil de ta carrière.", 26, C.MUTED, 500, 1088)
+	D.text(hero, 22, 130, G.club_name(own), 76, C.IVORY, 800, 1125)
+	D.text(hero, 28, 180, "Saison " + G.season_label(app.model.meta.get("season")), 31, C.IVORY, 600, 1046)
 	var pairs: Array = data.get("pairs", [])
 	var club_pairs := pairs.filter(func(pair: Dictionary): return own.get("id") in [pair.get("a"), pair.get("b")])
 	for i in 3:
@@ -77,17 +79,25 @@ func _hero() -> void:
 		D.text(tile, 64, 29, ["Duels suivis", "Duels du club", "Saisons archivées"][i], 24, C.MUTED, 600, 169)
 		var number: int = [pairs.size(), club_pairs.size(), data.get("archives", []).size()][i]
 		D.text(tile, 290, 53, str(number) if not data.is_empty() else "—", 44, C.IVORY, 800, 76, HORIZONTAL_ALIGNMENT_RIGHT)
+		var cible := i
+		Pieces.rendre_cliquable(tile, Vector2(321, 73), func(): _ouvrir_depuis_tuile(cible), "RivalryHeroTileLien" + str(i), "%s %d" % [["Duels suivis", "Duels du club", "Saisons archivées"][i], number], "", 7)
 	var preparation := SeasonPreparation.data(app.model.meta)
 	if not preparation.is_empty():
 		var title := "Préparation · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "srp")))
 		var section := "ChampPreparation" if champ else "JapanPreparation" if japan else "PacificPreparation"
 		var card := D.panel(hero,Rect2(1484,28,735,256),title,"calendar","",section)
 		D.text(card,24,110,World.preparation_note(preparation),33,C.IVORY,700,685)
-		var daily: bool = app.model.meta.has("calendarCadence")
-		var description := "Le calendrier avance jour par jour jusqu’à la rencontre." if daily else "La préparation avance jusqu’à la prochaine rencontre."
-		D.text(card,24,155,description,22,C.MUTED,400,686,HORIZONTAL_ALIGNMENT_LEFT,true)
 		var advance := D.button(card,Rect2(24,182,687,53),app.primary_text().trim_suffix("  →"),app.primary_action,false,"arrow",false,app.accent,section+"Advance")
 		advance.disabled = app.waiting
+
+## Tuile du bandeau : mène à l'onglet qui détaille le chiffre (duels du club : filtre « Notre club »).
+func _ouvrir_depuis_tuile(index: int) -> void:
+	active = 2 if index == 2 else 0
+	state.tab = active
+	if index < 2:
+		state.only_club = index == 1
+		state.page = 0
+	_display()
 
 func _navigation() -> void:
 	for i in TABS.size():
@@ -140,7 +150,7 @@ func _pairs() -> void:
 		if _pair_key(pair) == selected: pair_selected = pair
 		_pair_row(panel, pair, i, _pair_key(pair) == selected)
 	if visible.is_empty(): _first_fixtures(panel)
-	if not pairs.is_empty(): D.text(panel, 23, 804, "%d duel(s) · Intensité et réactions des bancs" % pairs.size(), 22, C.MUTED, 500, 690)
+	if not pairs.is_empty(): Pieces.pastille(panel, 23, 778, P.plural(pairs.size(), "duel", "duels"), "tactic", "RivalryDuelCount")
 	_pager(panel, "page", pages, 957, 778)
 	_duel(pair_selected)
 
@@ -157,7 +167,7 @@ func _upcoming() -> Array:
 	return result
 
 func _first_fixtures(panel: Panel) -> void:
-	D.text(panel, 26, 150, "Les duels s’écrivent à chaque rencontre. Tes premières affiches :", 28, C.IVORY, 600, LEFT - 49)
+	D.text(panel, 26, 150, "Tes premières affiches", 28, C.IVORY, 600, LEFT - 49)
 	var upcoming := _upcoming()
 	for i in upcoming.size():
 		var fixture: Dictionary = upcoming[i]
@@ -208,7 +218,6 @@ func _duel(pair: Dictionary) -> void:
 			var opponent: Dictionary = fixture.get("away", {}) if home.get("id") == own.get("id") else home
 			D.text(panel, 23, 445, G.club_name(opponent), 44, C.GOLD, 800, RIGHT - 46)
 			D.text(panel, 23, 495, P.fixture_date(fixture), 30, C.IVORY, 600, RIGHT - 46)
-		_notice(panel, Rect2(23, 331, RIGHT - 46, 50) if not first.is_empty() else Rect2(23, 331, RIGHT - 46, 140), "La mémoire des confrontations s’étoffe à chaque journée de compétition.")
 		_notice(panel, Rect2(23, 674, RIGHT - 46, 132), str(data.get("notice", "")))
 		return
 	var a: Variant = pair.get("a")
@@ -216,8 +225,8 @@ func _duel(pair: Dictionary) -> void:
 	_crest(panel, a, Rect2(117, 249, 91, 91))
 	_crest(panel, b, Rect2(614, 249, 91, 91))
 	D.text(panel, 411, 312, "VS", 54, C.GOLD, 800, 151, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(panel, 163, 367, _club(a), 28, C.IVORY, 700, 299, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(panel, 659, 367, _club(b), 28, C.IVORY, 700, 299, HORIZONTAL_ALIGNMENT_CENTER)
+	_nom_club(panel, a, Rect2(13, 337, 299, 40), "RivalryDuelClubA")
+	_nom_club(panel, b, Rect2(509, 337, 299, 40), "RivalryDuelClubB")
 	D.line(panel, Vector2(22, 390), Vector2(RIGHT - 22, 390))
 	var entries := [["Victoires", "winsA", C.MINT], ["Nuls", "draws", C.MUTED], ["Victoires", "winsB", C.MINT]]
 	for i in entries.size():
@@ -225,7 +234,8 @@ func _duel(pair: Dictionary) -> void:
 		var tile := D.rect(panel, Rect2(x, 410, 251, 110), Color("152522"), 7, C.LINE)
 		D.text(tile, 125, 41, entries[i][0], 26, C.MUTED, 600, 223, HORIZONTAL_ALIGNMENT_CENTER)
 		D.text(tile, 125, 87, S.count_text(pair.get(entries[i][1])), 47, entries[i][2], 800, 225, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(panel, 23, 564, "%s rencontre(s) · Dernière saison %s" % [S.count_text(pair.get("games")), G.season_label(pair.get("lastSeason"))], 28, C.IVORY, 600, RIGHT - 45)
+	var matchs := int(pair.get("games", 0))
+	Pieces.pastille(panel, 23, 536, "%s · %s" % [P.plural(matchs, "match", "matchs"), G.season_label(pair.get("lastSeason"))], "calendar", "RivalryPairLast", "Dernière rencontre en saison %s" % G.season_label(pair.get("lastSeason")), Pieces.BLEU, Charte.PANNEAU_3, func(): _ouvrir_depuis_tuile(2))
 	if pair.get("lastWinner") != null:
 		D.text(panel, 23, 604, "Dernier vainqueur · " + _club(pair.lastWinner), 28, C.MINT, 700, RIGHT - 45)
 	D.text(panel, 23, 648, "Intensité du duel · " + S.count_text(pair.get("tension")) + " / 100", 27, C.GOLD, 700, RIGHT - 45)
@@ -237,7 +247,7 @@ func _echoes() -> void:
 	var pages := maxi(1, ceili(float(events.size()) / 4.0))
 	state.echo_page = clampi(int(state.get("echo_page", 0)), 0, pages - 1)
 	var visible := events.slice(int(state.echo_page) * 4, (int(state.echo_page) + 1) * 4)
-	if visible.is_empty(): D.text(panel, 25, 112, "Aucun résultat suivi pour le moment.", 31, C.MUTED, 500, LEFT - 47)
+	if visible.is_empty(): D.text(panel, 25, 112, "Aucun résultat", 31, C.MUTED, 500, LEFT - 47)
 	for i in visible.size():
 		var event: Dictionary = visible[i]
 		var card := D.button(panel, Rect2(16, 65 + i * 171, LEFT - 32, 157), "", func(): _echo_detail(event), false, "", false, PRIMARY, "RivalryEcho_" + str(i))
@@ -259,7 +269,7 @@ func _echoes() -> void:
 	_pager(panel, "echo_page", pages, 957, 778)
 	var context := D.panel(workspace, Rect2(LEFT + 16, 0, RIGHT, 828), "La mémoire du terrain", "ball", "", "RivalryEchoContext")
 	D.photo(context, "stadium", Rect2(17, 68, RIGHT - 34, 251))
-	D.text(context, 24, 369, "%d résultat(s) suivi(s)" % events.size(), 38, C.IVORY, 800, RIGHT - 49)
+	Pieces.tuile(context, Rect2(24, 345, 230, 92), str(events.size()), "résultats suivis", C.IVORY, "RivalryResultCount", 46)
 	_notice(context, Rect2(24, 397, RIGHT - 49, 148), str(data.get("notice", "")))
 	if not visible.is_empty() and visible[0].get("winner") != null and visible[0].get("home") == visible[0].get("away"):
 		D.text(context, 24, 584, "Vainqueur après départage", 28, C.GOLD, 600, RIGHT - 48)
@@ -290,7 +300,7 @@ func _archives() -> void:
 	scroll.add_child(list)
 	var archives: Array = data.get("archives", [])
 	var years: Array = data.get("years", [])
-	if archives.is_empty() and years.is_empty(): list.add_child(C.wrap("Aucun palmarès enregistré dans cette carrière.", 29, C.MUTED, true))
+	if archives.is_empty() and years.is_empty(): list.add_child(C.wrap("Aucun palmarès", 29, C.MUTED, true))
 	for archive: Dictionary in archives:
 		var card := C.card("Saison " + G.season_label(archive.get("season")))
 		list.add_child(card)
@@ -303,10 +313,10 @@ func _archives() -> void:
 		elif archive.get("champion") != null:
 			body.add_child(C.wrap(_club(archive.champion), 29, C.IVORY, true, 700))
 	for year: Dictionary in years:
-		list.add_child(C.wrap("Saison %s · %s rencontre(s) suivie(s) · %s rivalité(s) intense(s)" % [G.season_label(year.get("season")), S.count_text(year.get("matches")), S.count_text(year.get("rivalries"))], 26, C.MUTED, true))
+		list.add_child(C.wrap("Saison %s · %s · %s" % [G.season_label(year.get("season")), P.plural(int(year.get("matches", 0)), "match", "matchs"), P.plural(int(year.get("rivalries", 0)), "rivalité intense", "rivalités intenses")], 26, C.MUTED, true))
 	var context := D.panel(workspace, Rect2(LEFT + 16, 0, RIGHT, 828), "Les saisons de la carrière", "calendar", "", "RivalryArchiveContext")
 	D.photo(context, "trophy", Rect2(17, 69, RIGHT - 34, 302))
-	D.text(context, 24, 425, "%d saison(s) suivie(s)" % years.size(), 37, C.IVORY, 800, RIGHT - 49)
+	Pieces.tuile(context, Rect2(24, 400, 230, 92), str(years.size()), "saisons suivies", C.IVORY, "RivalrySeasonCount", 46)
 	_notice(context, Rect2(24, 453, RIGHT - 49, 132), str(data.get("notice", "")))
 	D.button(context, Rect2(22, 744, RIGHT - 44, 60), "Ouvrir les archives des championnats", func(): app.ClubViews.season_archives(app), false, "arrow", false, PRIMARY, "RivalryOpenSeasonArchives")
 
@@ -352,10 +362,15 @@ func _crest(parent: Node, id: Variant, area: Rect2) -> void:
 static func _pair_key(pair: Dictionary) -> String:
 	return "%s:%s" % [G.n(pair.get("a")), G.n(pair.get("b"))]
 
-static func _notice(parent: Node, area: Rect2, value: String) -> void:
-	var text := C.wrap(value, 21, C.MUTED)
-	parent.add_child(text)
-	D.place(text, area)
+## L'explication du registre passe derrière un petit « i » en haut à droite du panneau (plus de bloc de texte).
+static func _notice(parent: Node, _area: Rect2, value: String) -> void:
+	if value.is_empty(): return
+	Pieces.info(parent, RIGHT - 54, 18, value, "Registre")
+
+func _nom_club(parent: Node, id: Variant, zone: Rect2, id_noeud: String) -> void:
+	var lien := Link.name_link(app, parent, zone, "club", id, _club(id), 28, C.IVORY, id_noeud)
+	if lien is Button: (lien as Button).alignment = HORIZONTAL_ALIGNMENT_CENTER
+	elif lien is Label: (lien as Label).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 static func _icon(parent: Node, key: String, area: Rect2, tint: Color) -> void:
 	var icon := C.icon(key, int(area.size.x), tint)

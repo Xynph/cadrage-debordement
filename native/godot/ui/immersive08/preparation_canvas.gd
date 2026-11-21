@@ -369,11 +369,11 @@ func _heading() -> void:
 	var japan := SeasonPreparation.is_japan(app.model.meta)
 	var preparation := SeasonPreparation.data(app.model.meta) if japan else {}
 	if active_tab == 1:
-		var surtitre := D.text(hero, 4, 34, ("PRÉPARATION · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "jlo-d1")))).to_upper() if japan else "PRÉPARATION DE MATCH", 20, Charte.IVOIRE_2, 600, 1065)
+		var surtitre := D.text(hero, 4, 34, ("PRÉPARATION · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "jlo-d1")))).to_upper() if japan else "", 20, Charte.IVOIRE_2, 600, 1065)
 		surtitre.name = "PreparationLiveContext"
 		match_context.live_context = surtitre
-	var titre := ("Préparer la saison · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "jlo-d1")))) if not preparation.is_empty() else "Préparation" if active_tab == 0 else "Préparer la prochaine rencontre."
-	app.heading = _titre(hero, 4, 88, titre.to_upper() if active_tab == 0 else titre, 56, Charte.IVOIRE, 1355)
+	var titre := ("Préparer la saison · " + World.name_for(app.model, str(app.model.meta.get("leagueId", "jlo-d1")))) if not preparation.is_empty() else "Préparation"
+	app.heading = _titre(hero, 4, 88, titre.to_upper(), 56, Charte.IVOIRE, 1355)
 	if active_tab == 1:
 		app.heading.name = "PreparationContextHeading"
 		match_context.live_heading = app.heading
@@ -1128,14 +1128,9 @@ func _sous_reperes(section: Control) -> float:
 		zone.accessibility_name = check.title + " · " + check.detail
 		var grave: bool = check.level in ["urgent", "important"]
 		var teinte: Color = Charte.D if check.level == "urgent" else Charte.N if check.level == "important" else Charte.V
-		if grave: _titre(panneau, 22, y + pas / 2.0 + 14, "!", 34, teinte, 26, HORIZONTAL_ALIGNMENT_CENTER)
-		else:
-			var coche := C.icon("check", 22, teinte)
-			panneau.add_child(coche)
-			D.place(coche, Rect2(22, y + pas / 2.0 - 11, 22, 22))
 		_etiquette(panneau, 70, y + pas / 2.0 + 6, str(REPERES.get(str(check.id), "REPÈRE")), 170)
-		_texte(panneau, 250, y + 38, str(check.title), 22, Charte.IVOIRE, 1300).add_theme_font_override("font", C.font(700))
-		_texte(panneau, 250, y + 68, str(check.detail), 18, Charte.IVOIRE_2, 1500)
+		# Plus de phrase d'aide (21/11) : pastille ✓ / ! + deux mots, le titre et le détail restent dans l'infobulle.
+		R.pastille(panneau, 250, y + pas / 2.0 + 7, _repere_court(check), teinte, "warning" if grave else "check", "PreparationAllChecksTitle_" + str(check.id), 20).tooltip_text = str(check.title) + " · " + str(check.detail)
 		_texte(panneau, 2188, y + pas / 2.0 + 7, str(check.caption), 19, Charte.IVOIRE, 420, HORIZONTAL_ALIGNMENT_RIGHT)
 		_marque(panneau, 2204, y + pas / 2.0, 14, "droite", Charte.IVOIRE_2)
 	return 66.0 + hauteur
