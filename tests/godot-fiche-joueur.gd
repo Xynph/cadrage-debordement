@@ -86,7 +86,9 @@ func run() -> void:
 	await settle(10)
 	check(app.find_child("PlayerDossier", true, false) == null and app.find_child("SelectedPlayerCard", true, false) == null, "Effectif : plus de fiche fixe à droite")
 	var table := app.find_child("ImmersiveRosterTable", true, false) as Control
-	check(table != null and table.size.x >= 2200 * preload("res://ui/immersive08/components.gd").density, "Effectif : le tableau prend la largeur")
+	# Panneaux XV / SEMAINE / GROUPE à gauche (21/11/2026) : le tableau prend toute la largeur restante.
+	var reserve: float = preload("res://ui/immersive08/panneaux_effectif.gd").reserve(app)
+	check(table != null and table.size.x >= (2200 - reserve) * preload("res://ui/immersive08/components.gd").density, "Effectif : le tableau prend la largeur restante")
 
 	# Joueur de l'effectif dont le drapeau existe.
 	var target: Dictionary = {}
