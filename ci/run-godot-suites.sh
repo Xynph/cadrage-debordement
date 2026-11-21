@@ -51,6 +51,8 @@ declare -A suite_limits=(
   [tests/godot-match-temps-forts.cjs]=900
   # Écran 2D du direct : carrière Monde côté Node jusqu au jour du match, puis le match en rendu logiciel (minute 12, 2 tailles, 7 fenêtres).
   [tests/godot-planche-direct-2d.cjs]=1200
+  # Carte joueur au survol dans le direct : même préparation (carrière Monde jusqu au jour du match) puis match en rendu logiciel, 2 tailles ; dépassait 300 s sur runner.
+  [tests/godot-planche-carte-joueur.cjs]=1200
   [tests/godot-immersive08.cjs]=600
   # Avant-match « Dernière rencontre » : carrière Monde jusqu'au 1er match, match délégué, match suivant, 3 tailles.
   [tests/godot-avant-match-bilan.cjs]=900
