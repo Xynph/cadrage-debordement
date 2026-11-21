@@ -10,6 +10,7 @@ const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Charte = preload("res://ui/charte.gd")
 const Kit = preload("res://ui/immersive08/tactics_kit.gd")
+const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
 const Pages = preload("res://ui/immersive08/recruitment_pages.gd")
 const G = preload("res://ui/game_skin.gd")
 const P = preload("res://ui/immersive08/projection.gd")
@@ -48,7 +49,7 @@ var tab := 0
 var report_by_player := {}
 var _generation := 0
 var table_rows: Control
-var count: Label
+var count: Control
 var table_scroll: ScrollContainer
 var direction: Button
 var position_filter: OptionButton
@@ -159,24 +160,40 @@ func _build() -> void:
 
 # --- En-tête, budget, besoins -----------------------------------------------------------------------------------
 
+## Même geste que les onglets : passe à « Recherche » (1), « Joueurs suivis » (2)…
+func _ouvrir_onglet(index: int) -> void:
+	state.immersive_tab = index
+	state.navigation_id = ""
+	state.followed = index == 2
+	state.page = 0
+	state.focus = "MarketSearch" if index == 1 else "MarketFollowed" if index == 2 else "MarketTab" + str(index)
+	app._render(false)
+
+func _vers_finances(onglet: String) -> void:
+	app.navigation_controller.open_entity({"kind":"finance", "id":onglet})
+
 func _header() -> void:
 	var titre := Kit.titre(self, 0, 44, "Recrutement", 38, 700)
 	titre.name = "RecruitmentTitle"
-	var curseur := 0.0
-	Kit.texte(self, 0, 78, "Le prochain renfort", Charte.IVOIRE_2, 0, 18)
-	curseur = Kit.largeur("Le prochain renfort", 18)
-	# Calendrier du recrutement (calendrier-mutations.cjs, model.mutations) : période des joueurs sans club, raison et date de
-	# réouverture en clair ; la période des mutations reste dans l'infobulle.
+	# Calendrier du recrutement (calendrier-mutations.cjs, model.mutations) : période des joueurs sans club en pastille
+	# (icône + « Ouvert · 31 déc. ») ; la raison et la période des mutations restent dans l'infobulle.
 	var calendrier: Dictionary = app.model.get("mutations", {}) if app.model.get("mutations") is Dictionary else {}
 	if calendrier.get("available", false):
 		var libres: Dictionary = calendrier.get("freeAgents", {}) if calendrier.get("freeAgents") is Dictionary else {}
-		var resume := str(calendrier.get("summary", ""))
-		Kit.texte(self, curseur + 6, 78, "·", Charte.IVOIRE_3, 20, 18)
-		var fenetre := Kit.texte(self, curseur + 26, 78, resume, Charte.IVOIRE if libres.get("open", true) else Charte.D, 0, 18)
-		fenetre.name = "RecruitmentWindow"
-		fenetre.tooltip_text = str(calendrier.get("detail", ""))
-		fenetre.mouse_filter = Control.MOUSE_FILTER_PASS
-		curseur += 26 + Kit.largeur(resume, 18)
+		var ouvert: bool = libres.get("open", true)
+		Pieces.pastille(self, 0, 58, fenetre_courte(str(calendrier.get("summary", ""))), "check" if ouvert else "clock", "RecruitmentWindow", str(calendrier.get("detail", "")), Pieces.VERT if ouvert else Pieces.ROUGE, Charte.PANNEAU_3, func(): _ouvrir_onglet(1))
+
+const MOIS_COURTS := {"janvier": "janv.", "février": "févr.", "mars": "mars", "avril": "avr.", "mai": "mai", "juin": "juin", "juillet": "juil.", "août": "août", "septembre": "sept.", "octobre": "oct.", "novembre": "nov.", "décembre": "déc."}
+
+## « Joueurs libres : ouvert jusqu’au 31 décembre » → « Ouvert · 31 déc. » ; « Joueurs supplémentaires : 2 sur 3 » → « Supplémentaires · 2/3 ».
+static func fenetre_courte(resume: String) -> String:
+	var lecture := RegEx.create_from_string("^Joueurs libres : (ouvert|fermé) jusqu[’'](?:au|à) (\\S+) (\\S+)$").search(resume)
+	if lecture != null:
+		var mois := lecture.get_string(3)
+		return "%s · %s %s" % [lecture.get_string(1).capitalize(), lecture.get_string(2), MOIS_COURTS.get(mois, mois)]
+	var supp := RegEx.create_from_string("^Joueurs supplémentaires : (\\d+) sur (\\d+)$").search(resume)
+	if supp != null: return "Supplémentaires · %s/%s" % [supp.get_string(1), supp.get_string(2)]
+	return resume
 
 
 ## Tuiles du budget de transferts (finance.transferBudget) : alloué, engagé, restant (« après l'offre » si une piste est
@@ -194,9 +211,14 @@ func _tuiles() -> void:
 		var total := Budget.season_total(budget)
 		var depense := int(budget.get("depense", 0))
 		var part := roundi(100.0 * depense / total) if total > 0 else 0
-		var alloue := _tuile(1130, 292, "Budget alloué", G.euros(total), "par le conseil", "RecruitmentBudgetAllocated", false, "")
+		var alloue := _tuile(1130, 292, "Budget alloué", G.euros(total), "", "RecruitmentBudgetAllocated", false, "")
 		alloue.tooltip_text = Budget.allocated(budget)
-		_tuile(1430, 262, "Engagé", G.euros(depense), "%d %% du budget" % part, "RecruitmentBudgetSpent", false, "")
+		# Part engagée : une barre sous le montant (le pourcentage est dit au survol).
+		var engage := _tuile(1430, 262, "Engagé", G.euros(depense), "", "RecruitmentBudgetSpent", false, "")
+		var barre := D.rect(engage, Rect2(16, 98, 262 - 32, 8), Charte.PANNEAU_3, Charte.RAYON_PILULE)
+		barre.name = "RecruitmentBudgetShare"
+		if part > 0: D.rect(barre, Rect2(0, 0, maxf(8.0, (262 - 32) * clampf(float(part) / 100.0, 0, 1)), 8), Charte.IVOIRE_2, Charte.RAYON_PILULE)
+		engage.tooltip_text = "%d %% du budget" % part
 		var apres := Budget.LABEL
 		if fee is int or fee is float: apres = "%s après l’offre" % G.euros(int(budget.get("disponible", 0)) - int(fee))
 		var restant := _tuile(1700, 380, "Restant", Budget.remaining(budget), apres, "RecruitmentTransferBudget", true, Budget.LABEL)
@@ -230,7 +252,7 @@ func _tuile(x: float, largeur: float, etiquette: String, montant: String, suite:
 	if not suite.is_empty(): D.text(tuile, gauche, 108, suite, 16, Charte.IVOIRE_2, 600, largeur - 30)
 	for enfant in tuile.get_children():
 		if enfant is Control: (enfant as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
-	Link.bind(tuile, app, {"kind":"finance", "id":"summary"}, libelle if not libelle.is_empty() else etiquette)
+	Link.bind(tuile, app, {"kind":"finance", "id":"transfers"}, libelle if not libelle.is_empty() else etiquette)
 	tuile.tooltip_text = ""
 	return tuile
 
@@ -252,6 +274,12 @@ func _raison_au_poste(raison: String, role: String) -> String:
 		var fin: Variant = joueur.get("contractEnd")
 		if str(joueur.get("pos", "")) == role and (fin is int or fin is float) and int(fin) <= saison: fins += 1
 	return P.plural(fins, "fin de contrat", "fins de contrat") + " à ce poste cette saison" if fins > 0 else ""
+
+## « 1 fin de contrat à ce poste cette saison » → « 1 fin » ; les autres raisons (relève insuffisante…) restent en mots courts.
+static func _raison_courte(raison: String) -> String:
+	var lecture := RegEx.create_from_string("^(\\d+) fins? de contrat à ce poste cette saison$").search(raison)
+	if lecture != null: return "%s fin%s" % [lecture.get_string(1), "s" if int(lecture.get_string(1)) > 1 else ""]
+	return raison
 
 func _needs() -> void:
 	var needs: Array = []
@@ -303,10 +331,18 @@ func _needs() -> void:
 		nom.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 		var raisons: Array = need.get("reasons", [])
 		var raison := _raison_au_poste(str(raisons[0]), role) if not raisons.is_empty() else "Couverture du poste à examiner"
-		if not raison.is_empty(): Kit.texte(carte, largeur - 20, 34, raison, Charte.IVOIRE, 420, 17, HORIZONTAL_ALIGNMENT_RIGHT)
+		# Pastilles (de droite à gauche) : fins de contrat au poste, pistes, pistes suivies.
+		var pastilles: Array = []
+		if not raison.is_empty(): pastilles.append([_raison_courte(raison), "MarketNeedReason_" + str(i), raison, Pieces.ORANGE, func(): _fins_de_contrat() if raison.contains("contrat") else Decisions.open_market_position(app, role)])
 		if stock > 0:
-			var piste := "%s · %s" % [P.plural(stock, "piste", "pistes"), P.plural(suivies, "suivie", "suivies")]
-			Kit.texte(carte, largeur - 20, 70, piste, Charte.IVOIRE_2, 420, 17, HORIZONTAL_ALIGNMENT_RIGHT).name = "MarketPriorityStock" if i == 0 else "MarketNeedStock_" + str(i)
+			pastilles.append([P.plural(stock, "piste", "pistes"), "MarketPriorityStock" if i == 0 else "MarketNeedStock_" + str(i), "", Pieces.BLEU, func(): Decisions.open_market_position(app, role)])
+			pastilles.append([P.plural(suivies, "suivie", "suivies"), "MarketNeedFollowed_" + str(i), "", Pieces.TURQUOISE, func(): _ouvrir_onglet(2)])
+		var droite_pastille := largeur - 20.0
+		for k in range(pastilles.size() - 1, -1, -1):
+			var largeur_pastille := minf(Pieces.largeur_pastille(str(pastilles[k][0])), 300.0)
+			droite_pastille -= largeur_pastille
+			Pieces.pastille(carte, droite_pastille, 28, str(pastilles[k][0]), "", str(pastilles[k][1]), str(pastilles[k][2]), pastilles[k][3], Charte.FILET if choisi else Charte.PANNEAU_3, pastilles[k][4])
+			droite_pastille -= 8.0
 		for enfant in carte.get_children():
 			if enfant is Control: (enfant as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		if stock == 0:
@@ -575,31 +611,38 @@ func _entetes() -> void:
 
 func _pied() -> void:
 	D.line(self, Vector2(0, HAUTEUR - 52), Vector2(WIDTH, HAUTEUR - 52), Charte.FILET)
-	count = Kit.texte(self, 0, HAUTEUR - 18, "", Charte.IVOIRE_2, 1000, 17)
+	# Compteurs en pastilles (« 9 / 90 pistes », « 0 suivie ») ; le tri se lit sur l'en-tête et sur le lien de sens.
+	count = Control.new()
 	count.name = "MarketCount"
+	add_child(count)
+	D.place(count, Rect2(0, HAUTEUR - 46, 900, 36))
 	direction = Kit.lien(self, Rect2(1010, HAUTEUR - 46, 0, 34), "↓ Décroissant", func():
 		state["report_descending" if tab == 3 else "descending"] = not _sort_descending()
 		_filter_changed(), "MarketDirection", 17)
 	direction.tooltip_text = ""
 	_refresh_count()
-	# Raccourcis lisibles (la ligne dit ce que fait chaque touche ; elle n'est jamais cliquable).
-	var droite := float(WIDTH)
-	for touche: Array in [["Échap", "menu"], ["I", "aperçu"], ["A", "approcher"], ["↑ ↓", "choisir"]]:
-		var mot: String = touche[1]
-		droite -= Kit.largeur(mot, 17) + 6
-		Kit.texte(self, droite, HAUTEUR - 18, mot, Charte.IVOIRE_2, 0, 17)
-		var large := Kit.touche(self, droite - 8, HAUTEUR - 17, str(touche[0]), true)
-		droite -= large + 22
+	# Raccourcis clavier : un « ? » en bas à droite, la liste des touches au survol.
+	Pieces.info(self, WIDTH - 30, HAUTEUR - 42, "Raccourcis : ↑ ↓ choisir une piste · A approcher · I aperçu · Échap menu", "Raccourcis", "?")
 
 
 func _refresh_count() -> void:
 	if count == null: return
-	var colonne := _sort_column().to_lower()
-	var sens := "décroissant" if _sort_descending() else "croissant"
+	for ancien in count.get_children():
+		count.remove_child(ancien)
+		ancien.queue_free()
 	var total: int = app.model.get("market", []).size()
-	count.text = "%d rapports conservés · tri : %s %s" % [data.get("reports", []).size(), colonne, sens] if tab == 3 else "%d / %d pistes · %d suivies" % [_results_count, total, app.management_ui.shortlist.size()]
+	var suivies: int = app.management_ui.shortlist.size()
+	var x := 0.0
+	if tab == 3:
+		x += Pieces.pastille(count, x, 1, P.plural(data.get("reports", []).size(), "rapport", "rapports"), "", "MarketCountReports") + 8.0
+	else:
+		# Comptes cliquables vers l'onglet qui les détaille (neutres quand on y est déjà).
+		var vers_recherche := Callable(self, "_ouvrir_onglet").bind(1) if tab != 1 else Callable()
+		var vers_suivis := Callable(self, "_ouvrir_onglet").bind(2) if tab != 2 else Callable()
+		x += Pieces.pastille(count, x, 1, "%d / %d pistes" % [_results_count, total], "", "MarketCountTracks", "", Pieces.BLEU if tab != 1 else Charte.IVOIRE, Charte.PANNEAU_3, vers_recherche) + 8.0
+		x += Pieces.pastille(count, x, 1, P.plural(suivies, "suivie", "suivies"), "", "MarketCountFollowed", "", Pieces.TURQUOISE if tab != 2 else Charte.IVOIRE, Charte.PANNEAU_3, vers_suivis) + 8.0
 	direction.text = "↓ Décroissant" if _sort_descending() else "↑ Croissant"
-	direction.position.x = C.px(Kit.largeur(count.text, 17) + 24)
+	direction.position.x = C.px(x + 16)
 
 var _results_count := 0
 
@@ -691,8 +734,8 @@ func _refresh() -> void:
 	_build_rows(results, current, 0, built)
 	if built < results.size(): _build_remaining(results, current, built, _generation)
 	if results.is_empty():
-		var caption := "Aucun rapport conservé. Confie une mission pour observer des pistes." if tab == 3 else "Aucune piste ne correspond aux filtres actuels."
-		if tab == 0 and str(state.get("position", "Tous")) != "Tous": caption = "Aucune piste pour ce poste sur le marché : lance une mission, ou élargis la recherche."
+		var caption := "Aucun rapport conservé" if tab == 3 else "Aucune piste"
+		if tab == 0 and str(state.get("position", "Tous")) != "Tous": caption = "Aucune piste pour ce poste"
 		Kit.texte(table_rows, 24, 40, caption, Charte.IVOIRE_2, WIDTH - 50, 20)
 		if tab == 0 and str(state.get("position", "Tous")) != "Tous":
 			var tout := Kit.lien(table_rows, Rect2(20, 56, 0, 34), "Voir tout le marché →", func():
@@ -902,7 +945,7 @@ func _cout() -> void:
 	var report: Dictionary = _selected if tab == 3 else report_by_player.get(str(_selected.get("id", "")), {})
 	Kit.etiquette(cost, 24, 34, "Ce que coûte l’offre", 330)
 	if player.is_empty():
-		Kit.texte(cost, 24, 84, "Aucune piste sélectionnée : choisis une ligne pour voir ce que coûterait son arrivée.", Charte.IVOIRE_2, 1100, 19).name = "RecruitmentCostEmpty"
+		Kit.texte(cost, 24, 84, "Aucune piste sélectionnée", Charte.IVOIRE_2, 1100, 19).name = "RecruitmentCostEmpty"
 		var besoins := Kit.lien(cost, Rect2(24, 108, 0, 36), "Besoins, missions et rapports →", func(): _staff(0), "OpenEmptyRecruitmentNeeds", 19)
 		besoins.tooltip_text = ""
 		return
@@ -932,9 +975,6 @@ func _cout() -> void:
 			if largeur_offre > 0: D.rect(cost, Rect2(500 + largeur_depense, 52, largeur_offre, 20), Charte.IVOIRE, Charte.RAYON_PILULE)
 			D.rect(cost, Rect2(500 + largeur_depense + largeur_offre, 52, maxf(0, 700 - largeur_depense - largeur_offre), 20), Color.TRANSPARENT, Charte.RAYON_PILULE, Charte.IVOIRE_3)
 		var reste := int(budget.get("disponible", 0)) - (int(fee) if fee_known else 0)
-		var apres := Kit.texte(cost, 500, 140, "après l’offre : %s restants" % G.euros(reste) if fee_known else "disponible : %s" % Budget.remaining(budget), Charte.IVOIRE if reste >= 0 else Charte.D, 700, 19)
-		apres.add_theme_font_override("font", Charte.texte_moyen())
-		apres.name = "RecruitmentCostAfter"
 		var legende := [["Déjà engagé", G.euros(depense), Charte.IVOIRE_3, true]]
 		if fee_known: legende.append(["Cette indemnité", G.euros(fee), Charte.IVOIRE, true])
 		legende.append(["Reste", G.euros(reste), Charte.IVOIRE_3, false])
@@ -945,7 +985,7 @@ func _cout() -> void:
 			Kit.texte(cost, lx + 22, 104, texte, Charte.IVOIRE_2, 300, 17)
 			lx += Kit.largeur(texte, 17) + 50
 		if fee_known and reste < 0:
-			Kit.texte(cost, 500, 164, "Hors budget : le conseil peut accorder une rallonge si la caisse le permet.", Charte.D, 700, 17).name = "RecruitmentCostOverBudget"
+			Pieces.pastille(cost, 500, 124, "Hors budget", "warning", "RecruitmentCostOverBudget", "Le conseil peut accorder une rallonge si la caisse le permet.", Pieces.ROUGE, Charte.PANNEAU_3, func(): _vers_finances("transfers"))
 	else:
 		var cash: Variant = app.model.get("finance", {}).get("cash")
 		Kit.etiquette(cost, 500, 34, "Trésorerie du club", 520)
@@ -957,16 +997,29 @@ func _cout() -> void:
 	montant.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 	montant.name = "RecruitmentCostFee"
 	var max_years := int(player.get("maxYears", 0))
-	var annees := "%s à %s ans" % [G.n(player.get("minYears", 1)), G.n(max_years)] if max_years > 1 else "1 an" if max_years == 1 else ""
-	var salaire_txt := G.salary(quote.get("salary"))
-	Kit.texte(cost, 1290, 116, "Salaire demandé · " + salaire_txt + ((" · " + annees) if not annees.is_empty() else ""), Charte.IVOIRE_2, 440, 17).name = "RecruitmentCostSalary"
+	var annees := "%s–%s" % [G.n(player.get("minYears", 1)), G.n(max_years)] if max_years > 1 else "1" if max_years == 1 else "—"
+	var negociation: Variant = player.get("negotiation")
+	var reprise: bool = negociation is Dictionary and str(negociation.get("status", "")) == "withdrawn"
+	var offre_ouverte: bool = not (app.waiting or (not player.get("available", false) and not reprise) or not app._live().is_empty())
+	var vers_offre := Callable(self, "_approcher").bind(player) if offre_ouverte else Callable()
+	# Coût de l'offre en tuiles : salaire demandé, durée, masse salariale sur la durée, frais d'observation.
+	var tuile_y := 98.0
+	Pieces.tuile(cost, Rect2(1290, tuile_y, 112, 62), G.salary_amount(quote.get("salary")), G.salary_period(), Pieces.BLEU if offre_ouverte else Charte.IVOIRE, "RecruitmentCostSalary", 24, "Salaire demandé", "", false, vers_offre)
+	Pieces.tuile(cost, Rect2(1408, tuile_y, 112, 62), annees, "ans" if max_years != 1 else "an", Pieces.VIOLET if offre_ouverte else Charte.IVOIRE, "RecruitmentCostYears", 24, "Durée du contrat", "", false, vers_offre)
 	if (quote.get("salary") is int or quote.get("salary") is float) and max_years > 0:
 		var total_salaire := int(quote.salary) * WEEKS_PER_YEAR * max_years
-		Kit.texte(cost, 1290, 146, "Masse salariale sur %d ans : +%s" % [max_years, G.euros(total_salaire)], Charte.IVOIRE, 440, 17).name = "RecruitmentCostPayroll"
+		Pieces.tuile(cost, Rect2(1526, tuile_y, 112, 62), "+" + _compact(total_salaire), "sur %d %s" % [max_years, "an" if max_years == 1 else "ans"], Pieces.ORANGE, "RecruitmentCostPayroll", 24, "Masse salariale ajoutée sur la durée du contrat : %s" % G.euros(total_salaire), "", true, func(): _vers_finances("wages"))
 	# Observation (frais et délai) lue sur le joueur, jamais inventée.
 	var scouting: Dictionary = player.get("scouting", {}) if player.get("scouting") is Dictionary else {}
-	var frais := ""
-	if not scouting.is_empty() and not scouting.get("pending", false) and scouting.has("cost"): frais = "Observer : %s · %s" % [G.euros(scouting.get("cost", 0)), G.n(scouting.get("workCycles", 0)) + (" semaines" if scouting.get("workUnit") == "week" else " cycles")]
+	var frais_valeur := ""
+	var frais_delai := ""
+	if not scouting.is_empty() and not scouting.get("pending", false) and scouting.has("cost"):
+		frais_valeur = _compact(int(scouting.get("cost", 0)))
+		var cycles := int(scouting.get("workCycles", 0))
+		frais_delai = "%d %s" % [cycles, "sem." if scouting.get("workUnit") == "week" else "cycles"]
+	if not frais_valeur.is_empty():
+		var tuile_observation := Pieces.tuile(cost, Rect2(1644, tuile_y, 112, 62), frais_valeur, "observer · " + frais_delai, Pieces.TURQUOISE, "RecruitmentCostObservation", 24, "", "search")
+		tuile_observation.tooltip_text = "Observer : %s · %s" % [G.euros(scouting.get("cost", 0)), frais_delai]
 	# Actions : principale (ivoire plein), puis liens.
 	# Actions : principale (ivoire plein, un seul par écran), puis liens à la suite.
 	var consultation: bool = player.get("negotiation", {}).get("status", "") == "withdrawn" if player.get("negotiation") is Dictionary else false
@@ -977,8 +1030,6 @@ func _cout() -> void:
 	principal.tooltip_text = str(player.get("reason", "")) if not player.is_empty() else ""
 	if principal.disabled and not str(player.get("reason", "")).is_empty():
 		Kit.texte(cost, 1790, 92, str(player.get("reason", "")), Charte.D, 440, 17).name = "RecruitmentCostBlocked"
-	elif not frais.is_empty():
-		Kit.texte(cost, 1790, 92, frais, Charte.IVOIRE_2, 440, 17).name = "RecruitmentCostObservation"
 	var liens: Array = []
 	if observable: liens.append(["Observer →" if Observation.caption(player) == "Observer" else Observation.caption(player) + " →", "ObserveRecruitment", func(): _confirmer_observation(player), not Observation.reason(app, player).is_empty()])
 	liens.append(["Ouvrir la fiche →", "OpenRecruitmentPlayer", func(): app.navigation_controller.open_entity({"kind":"market", "id":player_id}), false])
@@ -998,6 +1049,24 @@ func _cout() -> void:
 		bouton.disabled = lien[3]
 		if str(lien[1]).begins_with("Follow"): bouton.set_meta("follow_id", player_id)
 		lx2 += largeur + 18
+	# La tuile des frais d'observation est cliquable comme le lien « Observer » : même confirmation en place.
+	var tuile_observation := cost.find_child("RecruitmentCostObservation", false, false) as Control
+	if tuile_observation != null and observable and Observation.reason(app, player).is_empty():
+		var clic := Button.new()
+		clic.name = "ObserveCostTile"
+		clic.flat = true
+		clic.focus_mode = Control.FOCUS_ALL
+		clic.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		clic.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+		clic.add_theme_stylebox_override("hover", C.box(Color(Charte.IVOIRE, .08), Color.TRANSPARENT, Charte.RAYON_CARTE, 0))
+		var focus_clic := C.box(Color.TRANSPARENT, Charte.IVOIRE, Charte.RAYON_CARTE, 0)
+		focus_clic.set_border_width_all(2)
+		clic.add_theme_stylebox_override("focus", focus_clic)
+		clic.accessibility_name = "Observer %s" % str(player.get("name", ""))
+		clic.tooltip_text = tuile_observation.tooltip_text
+		clic.pressed.connect(func(): _confirmer_observation(player))
+		tuile_observation.add_child(clic)
+		D.place(clic, Rect2(0, 0, 112, 62))
 
 ## Observation payante : confirmation EN PLACE (deux temps, aucune fenêtre), sur la partie droite du bloc de coût.
 func _confirmer_observation(player: Dictionary) -> void:
@@ -1065,6 +1134,13 @@ static func _clear(node: Node) -> void:
 
 static func _report_label(report: Dictionary) -> String:
 	return Sort.report_label(report)
+
+## Montant court pour une tuile : 43 680 € → « 43,7 k€ », 5 000 € → « 5 k€ », 1 200 000 € → « 1,2 M€ ».
+static func _compact(valeur: int) -> String:
+	var absolu := absf(float(valeur))
+	if absolu >= 1000000.0: return ("%.1f" % (absolu / 1000000.0)).replace(".", ",").trim_suffix(",0") + " M€"
+	if absolu >= 1000.0: return ("%.1f" % (absolu / 1000.0)).replace(".", ",").trim_suffix(",0") + " k€"
+	return "%d €" % int(absolu)
 
 static func _money(value: Variant) -> String:
 	return G.euros(value) if value is int or value is float else "—"

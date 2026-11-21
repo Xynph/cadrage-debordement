@@ -14,6 +14,7 @@ const Health = preload("res://ui/immersive08/finance_health.gd")
 const Budget = preload("res://ui/transfer_budget.gd")
 const Charte = preload("res://ui/charte.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
+const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
 const KEY = "immersive08_finance_tab"
 const PAGE_KEY_PREFIX = "immersive08_finance_page_"
 const LEDGER_SELECTION_KEY := "immersive08_finance_ledger_selection"
@@ -202,6 +203,10 @@ static func _panneau(parent: Node, rectangle: Rect2, titre: String, id: String, 
 			droite.name = "CardCaption"
 	return panel
 
+## Petit « i » juste après le titre d'un panneau (l'explication passe en infobulle).
+static func _info_titre(panel: Panel, titre: String, bulle: String, id: String) -> void:
+	Pieces.info(panel, 20.0 + Pieces.largeur_titre(titre.to_upper(), 26) + 12.0, 18, bulle, id)
+
 static func _bloc(parent: Node, rectangle: Rect2, fond: Color = Charte.PANNEAU_2, bord: Color = Color.TRANSPARENT) -> Panel:
 	var panel := Panel.new()
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -304,6 +309,20 @@ static func _vers_formation_ou_budget(app: Control) -> void:
 	if _onglet_courant(app) == "budget": app._navigate("Formation")
 	else: _ouvrir_onglet(app, "budget")
 
+## Chiffre ou pastille cliquable : ouvre l'onglet voulu, ou la Trésorerie (puis le Budget) si l'on y est déjà.
+static func _vers(app: Control, cle: String) -> void:
+	if _onglet_courant(app) == cle: cle = "cash" if cle != "cash" else "budget"
+	_ouvrir_onglet(app, cle)
+
+## Contrats à échéance : l'Effectif, onglet Contrats, trié par échéance.
+static func _vers_contrats(app: Control) -> void:
+	var lecture: Dictionary = app.management_ui.roster
+	lecture.immersive_tab = 2
+	lecture.sort = "Échéance"
+	lecture.descending = false
+	app.roster_sort = "Échéance"
+	app._navigate("Effectif")
+
 static func _onglet_cible(cle: String) -> Dictionary:
 	return {"kind": "finance", "id": cle}
 
@@ -403,7 +422,6 @@ static func _entete(app: Control, canvas: Control, tab: String) -> void:
 	var semaine := int(app.model.meta.get("week",0)) + 1
 	var etat := "bilan de la saison" if app.model.meta.get("phase","") == "ended" else "chiffres arrêtés à la semaine %d" % semaine
 	_texte(canvas, 300, 50, "Saison %s · %s" % [G.season_label(app.model.meta.get("season",1)), etat], 21, Charte.IVOIRE_2, 1100)
-	_texte(canvas, 2248, 50, "Ctrl+Tab · onglet suivant", 17, Charte.IVOIRE_2, 400, HORIZONTAL_ALIGNMENT_RIGHT)
 	D.line(canvas, Vector2(0, 134), Vector2(2248, 134), Charte.FILET)
 	var clavier := Clavier.new()
 	clavier.ouvrir = func(cle: String): _ouvrir_onglet(app, cle)
@@ -421,46 +439,35 @@ static func _entete(app: Control, canvas: Control, tab: String) -> void:
 
 static func _verdict_panneau(app: Control, canvas: Control, rectangle: Rect2, v: Dictionary, compact: bool, tab: String) -> void:
 	var largeur := rectangle.size.x
-	var panel := _panneau(canvas, rectangle, "Verdict" if compact else "Verdict de la semaine", "FinanceVerdict", "visible sur chaque onglet" if compact else "")
+	var panel := _panneau(canvas, rectangle, "Verdict" if compact else "Verdict de la semaine", "FinanceVerdict")
 	if tab != "budget":
 		var ouvrir := _zone(panel, Rect2(0, 0, largeur, rectangle.size.y), func(): _ouvrir_onglet(app, "budget"), "FinanceVerdictLink", "Voir le budget et ajuster les engagements")
 		_lier(app, ouvrir, _onglet_cible("budget"), "Ouvrir · Budget")
 		panel.move_child(ouvrir, 0)
 		# La zone couvre le panneau mais reste sous les libellés (ils laissent passer la souris).
 	var palier: int = v.palier
-	var mot := _titre(panel, 64, 100, str(v.mot).to_upper(), 42, Charte.IVOIRE, largeur - 260)
+	var mot := _titre(panel, 64, 100, str(v.mot).to_upper(), 42, Charte.IVOIRE, largeur - 318)
 	mot.name = "FinanceVerdictWord"
 	mot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_symbole(panel, Rect2(20, 68, 34, 34), _forme_palier(palier) if palier >= 0 else "exclam", Charte.IVOIRE)
+	_symbole(panel, Rect2(20, 68, 34, 34), _forme_palier(palier) if palier >= 0 else "exclam", [Pieces.VERT, Pieces.ORANGE, Pieces.ROUGE][palier] if palier >= 0 else Charte.IVOIRE)
 	var palier_texte := "palier %d sur 3" % (palier + 1) if palier >= 0 else "chiffres indisponibles"
-	_etiquette(panel, largeur - 20, 96, palier_texte, 240, HORIZONTAL_ALIGNMENT_RIGHT)
+	_etiquette(panel, largeur - 20, 96, palier_texte, 200, HORIZONTAL_ALIGNMENT_RIGHT)
 	var largeur_colonne := (largeur - 40.0 - 16.0) / 3.0
-	# Petite fenêtre : le plancher de 12 px grossit les descriptions, qui débordaient sur la phrase. On garde les
-	# trois paliers (mot + symbole) et la phrase ; le barème complet passe dans l'infobulle du bloc.
-	var etroit := _etroit()
+	# Les trois paliers : barre, symbole et mot ; le barème de chacun passe derrière un petit « i ».
+	# Sans phrase dessous, le bloc est centré dans le panneau.
+	var bas_bloc := 170.0
+	var decalage := maxf(0.0, (rectangle.size.y - bas_bloc - 60.0) * .5)
+	for composant: Node in panel.get_children():
+		if composant.name in ["FinanceVerdictLink", "CardTitle"]: continue
+		if composant is Control: (composant as Control).position.y += C.px(decalage)
 	for i in 3:
 		var x := 20.0 + i * (largeur_colonne + 8.0)
 		var actif := i == palier
-		_bloc(panel, Rect2(x, 120, largeur_colonne, 10), Charte.IVOIRE if actif else Charte.PANNEAU_3)
-		_symbole(panel, Rect2(x, 142, 20, 20), _forme_palier(i), Charte.IVOIRE if actif else Charte.IVOIRE_2)
-		D.text(panel, x + 28, 159, str(PALIERS[i][0]), 20, Charte.IVOIRE if actif else Charte.IVOIRE_2, 700, largeur_colonne - 30).mouse_filter = Control.MOUSE_FILTER_IGNORE
-		if etroit: continue
-		var description := C.wrap(str(PALIERS[i][1]), 16, Charte.IVOIRE if actif else Charte.IVOIRE_2)
-		description.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		panel.add_child(description)
-		D.place(description, Rect2(x, 172, largeur_colonne, 70))
-	var phrase := C.wrap(str(v.phrase), 19 if compact else 20, Charte.IVOIRE)
-	phrase.name = "FinanceVerdictSentence"
-	phrase.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_child(phrase)
-	var phrase_y := 184.0 if etroit else 258.0 if compact else 248.0
-	D.place(phrase, Rect2(20, phrase_y, largeur - 40, 90))
-	if etroit:
-		var bareme := PackedStringArray()
-		for palier_bareme: Array in PALIERS: bareme.append("%s : %s" % palier_bareme)
-		panel.tooltip_text = "\n".join(bareme)
-		var lien := panel.find_child("FinanceVerdictLink", false, false) as Control
-		if lien != null: lien.tooltip_text = "Voir le budget et ajuster les engagements\n" + panel.tooltip_text
+		var teinte: Color = [Pieces.VERT, Pieces.ORANGE, Pieces.ROUGE][i]
+		_bloc(panel, Rect2(x, 120 + decalage, largeur_colonne, 10), teinte if actif else Charte.PANNEAU_3)
+		_symbole(panel, Rect2(x, 142 + decalage, 20, 20), _forme_palier(i), teinte if actif else Charte.IVOIRE_2)
+		D.text(panel, x + 28, 159 + decalage, str(PALIERS[i][0]), 20, Charte.IVOIRE if actif else Charte.IVOIRE_2, 700, largeur_colonne - 64).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		Pieces.info(panel, x + largeur_colonne - 28, 139 + decalage, "%s : %s" % [PALIERS[i][0], PALIERS[i][1]], "Palier%d" % i)
 	panel.accessibility_name = "%s, trésorerie %s" % [v.mot, U.amount(v.cash)]
 
 # ---- Chiffres du haut -----------------------------------------------------------------------------------------
@@ -483,7 +490,7 @@ static func _carte(app: Control, canvas: Control, rectangle: Rect2, id: String, 
 	if not infobulle.is_empty(): ouvrir.tooltip_text = infobulle
 	return carte
 
-## Fait le lien entre la marge courante et la trésorerie prévue : trésorerie + marge courante + autres apports = prévision.
+## Détail de la prévision (trésorerie + marge courante + autres apports = prévision), en infobulle de la carte.
 static func _projection_reading(finance: Dictionary) -> String:
 	var detail: Variant = finance.get("projection")
 	if not (detail is Dictionary) or not finance.has("budget"): return "Hors billetterie aléatoire, primes et transferts futurs"
@@ -493,22 +500,29 @@ static func _projection_reading(finance: Dictionary) -> String:
 static func _carte_tresorerie(app: Control, canvas: Control, rectangle: Rect2, accounts: Dictionary, finance: Dictionary, v: Dictionary) -> void:
 	# Sur l'onglet Trésorerie, le bloc mène au budget qui explique la prévision de fin de saison.
 	var ici := _onglet_courant(app) == "cash"
-	var carte := _carte(app, canvas, rectangle, "FinanceMetric0", _onglet_cible("budget" if ici else "cash"), "Ouvrir · Budget" if ici else "Ouvrir · Trésorerie", "Trésorerie du club : prévision de fin de saison, dans l'onglet Budget." if ici else "Trésorerie du club : tous les mouvements et le solde, dans l'onglet Trésorerie.")
-	# Carte haute (Synthèse) : la prévision est expliquée dessous (trésorerie + marge courante + autres apports).
-	var lecture := _projection_reading(finance) if rectangle.size.y >= 200.0 else ""
-	var decalage := maxf(0.0, (rectangle.size.y - (200.0 if not lecture.is_empty() else 120.0)) * .5 - 10.0)
-	if not lecture.is_empty():
-		var explication := C.wrap(lecture, 16, Charte.IVOIRE_2)
-		explication.name = "FinanceProjectionReading"
-		explication.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		carte.add_child(explication)
-		D.place(explication, Rect2(20, 138 + decalage, rectangle.size.x - 40, rectangle.size.y - 146 - decalage))
+	var haute := rectangle.size.y >= 200.0
+	var lecture := _projection_reading(finance)
+	var bulle := "Trésorerie du club : prévision de fin de saison, dans l'onglet Budget." if ici else "Trésorerie du club : tous les mouvements et le solde, dans l'onglet Trésorerie."
+	var carte := _carte(app, canvas, rectangle, "FinanceMetric0", _onglet_cible("budget" if ici else "cash"), "Ouvrir · Budget" if ici else "Ouvrir · Trésorerie", bulle + "
+" + lecture)
+	# Carte haute (Synthèse) : titre et montant en haut, deux tuiles dessous (fin de saison prévue, guichet et soutien).
+	var decalage := maxf(0.0, (rectangle.size.y - 200.0) * .5 - 10.0) if haute else maxf(0.0, (rectangle.size.y - 120.0) * .5 - 10.0)
 	var cash: Variant = v.cash
 	_titre(carte, 20, 36 + decalage, "TRÉSORERIE", 22, Charte.IVOIRE_2, rectangle.size.x - 40).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var montant := _titre(carte, 20, 92 + decalage, U.amount(cash), 52, Charte.D if cash != null and float(cash) < 0.0 else Charte.IVOIRE, rectangle.size.x - 40)
 	montant.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var prevue: Variant = v.forecast
-	_texte(carte, 20, 124 + decalage, "fin de saison prévue : %s" % U.amount(prevue) if prevue != null else "fin de saison prévue : —", 17, Charte.IVOIRE_2, rectangle.size.x - 40).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var detail: Variant = finance.get("projection")
+	var tuiles: Array = [[U.amount(prevue) if prevue != null else "—", "fin de saison", Pieces.ROUGE if prevue != null and float(prevue) < 0.0 else Pieces.VERT, "FinanceProjectionEnd"]]
+	if detail is Dictionary and finance.has("budget"):
+		if absf(float(detail.otherInflows)) >= 1.0: tuiles.append([("+" if float(detail.otherInflows) > 0.0 else "") + U.amount(detail.otherInflows), "guichet · soutien", Pieces.VERT if float(detail.otherInflows) > 0.0 else Pieces.ROUGE, "FinanceProjectionBox"])
+		else: tuiles.append([U.amount(detail.marginTotal), "marge · %d sem." % int(detail.remainingWeeks), Pieces.VERT if float(detail.marginTotal) >= 0.0 else Pieces.ROUGE, "FinanceProjectionMargin"])
+	if haute:
+		var largeur_tuile := (rectangle.size.x - 40.0 - 8.0 * (tuiles.size() - 1)) / tuiles.size()
+		for k in tuiles.size(): Pieces.tuile(carte, Rect2(20 + k * (largeur_tuile + 8), 138 + decalage, largeur_tuile, 68), tuiles[k][0], tuiles[k][1], tuiles[k][2], tuiles[k][3], 30, "", "", false, func(): _vers(app, "budget"))
+	else:
+		# Carte basse (autres onglets) : une seule tuile, à droite du montant.
+		Pieces.tuile(carte, Rect2(rectangle.size.x - 20 - 150, 22 + decalage * .5, 150, 62), tuiles[0][0], tuiles[0][1], tuiles[0][2], tuiles[0][3], 26, "", "", false, func(): _vers(app, "budget"))
 
 static func _carte_budget(app: Control, canvas: Control, rectangle: Rect2, accounts: Dictionary, ledger: Array) -> void:
 	var transfer := Budget.data(app.model)
@@ -544,8 +558,12 @@ static func _carte_budget(app: Control, canvas: Control, rectangle: Rect2, accou
 	D.bar(carte, Rect2(20, 128 + decalage, largeur - 40, 8), part, Charte.IVOIRE_2)
 	var depenses := _dernieres_depenses(ledger)
 	var limite := int(transfer.get("disponible", 0)) < int(transfer.get("reste", transfer.get("disponible", 0)))
-	var note := "Limité par la caisse du club" if limite else depenses if not depenses.is_empty() else "Rien d'engagé pour l'instant"
-	_texte(carte, 20, 160 + decalage, note, 16, Charte.IVOIRE_2, largeur - 40).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if not limite and depenses.is_empty():
+		# Rien d'engagé : une pastille plutôt qu'une phrase.
+		Pieces.pastille(carte, 20, 142 + decalage, "0 € engagé", "check", "FinanceNothingCommitted", "", Pieces.VERT, Charte.PANNEAU_3, func(): _vers(app, "transfers"))
+	else:
+		var note := "Limité par la caisse du club" if limite else depenses
+		_texte(carte, 20, 160 + decalage, note, 16, Charte.IVOIRE_2, largeur - 40).mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 static func _carte_marge(app: Control, canvas: Control, rectangle: Rect2, finance: Dictionary, v: Dictionary) -> void:
 	var ici := _onglet_courant(app) == "budget"
@@ -555,15 +573,17 @@ static func _carte_marge(app: Control, canvas: Control, rectangle: Rect2, financ
 	_titre(carte, 20, 36 + decalage, "MARGE COURANTE", 22, Charte.IVOIRE_2, rectangle.size.x - 40).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var texte := "—"
 	if marge != null: texte = ("+" if float(marge) > 0.0 else "") + U.amount(marge)
-	_titre(carte, 20, 92 + decalage, texte + (" / sem." if marge != null else ""), 52, Charte.D if marge != null and float(marge) < 0.0 else Charte.IVOIRE, rectangle.size.x - 40).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_titre(carte, 20, 92 + decalage, texte + (" / sem." if marge != null else ""), 52 if rectangle.size.y >= 200.0 else 42, Charte.D if marge != null and float(marge) < 0.0 else Charte.IVOIRE, rectangle.size.x - 40).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var recettes: Variant = finance.get("weeklyIncome")
 	var charges: Variant = finance.get("weeklyCosts")
-	if _etroit() and rectangle.size.y >= 200.0:
-		# Carte étroite de la Synthèse : recettes et charges sur deux lignes plutôt que tronquées.
-		_texte(carte, 20, 124 + decalage, "recettes %s" % U.amount(recettes), 17, Charte.IVOIRE_2, rectangle.size.x - 40).mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_texte(carte, 20, 152 + decalage, "charges %s" % U.amount(charges), 17, Charte.IVOIRE_2, rectangle.size.x - 40).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var valeurs := [["▲ " + U.amount(recettes), "recettes", "FinanceMarginIncome", Pieces.VERT], ["▼ " + U.amount(charges), "charges", "FinanceMarginCosts", Pieces.ROUGE]]
+	if rectangle.size.y >= 200.0:
+		# Carte haute (Synthèse) : recettes et charges en deux tuiles sous la marge.
+		var largeur_tuile := (rectangle.size.x - 40.0 - 8.0) / 2.0
+		for k in 2: Pieces.tuile(carte, Rect2(20 + k * (largeur_tuile + 8), 138 + decalage, largeur_tuile, 68), valeurs[k][0], valeurs[k][1], valeurs[k][3], valeurs[k][2], 26, "", "", false, func(): _vers(app, "budget"))
 	else:
-		_texte(carte, 20, 124 + decalage, "recettes %s · charges %s" % [U.amount(recettes), U.amount(charges)], 17, Charte.IVOIRE_2, rectangle.size.x - 40).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		# Carte basse (autres onglets) : tuiles à droite de la marge.
+		for k in 2: Pieces.tuile(carte, Rect2(rectangle.size.x - 20 - 2 * 124 - 8 + k * 132, 20 + decalage * .5, 124, 62), valeurs[k][0], valeurs[k][1], valeurs[k][3], valeurs[k][2], 22, "", "", false, func(): _vers(app, "budget"))
 
 # ---- Synthèse -----------------------------------------------------------------------------------------------
 
@@ -616,14 +636,9 @@ static func _chart(app: Control, card: Panel, ledger: Array, largeur: float) -> 
 	_texte(card, 1008, 38, "Entrées", 16, Charte.IVOIRE, 130)
 	_hachure_legende(card, 1150, 24, false)
 	_texte(card, 1178, 38, "Sorties (hachurées)", 16, Charte.IVOIRE, 300)
-	if largeur > 2000: _texte(card, largeur - 20, 38, "plus ancien → plus récent · clic : le mouvement", 15, Charte.IVOIRE_2, 700, HORIZONTAL_ALIGNMENT_RIGHT)
+	Pieces.info(card, largeur - 46, 18, "Du plus ancien au plus récent · un clic sur un mouvement ouvre son détail", "FinanceChartInfo")
 	if recent.is_empty():
 		_titre(card, largeur * .5, 190, "Le premier mouvement reste à venir", 36, Charte.IVOIRE, 900, HORIZONTAL_ALIGNMENT_CENTER)
-		_texte(card, largeur * .5, 226, "La courbe se remplit après une journée jouée ou une décision financière.", 19, Charte.IVOIRE_2, 1000, HORIZONTAL_ALIGNMENT_CENTER)
-	else:
-		var bas := haut + hauteur + 26.0
-		_texte(card, 150, bas, "plus ancien", 16, Charte.IVOIRE_2, 300)
-		_texte(card, largeur - 40, bas, "plus récent", 16, Charte.IVOIRE_2, 300, HORIZONTAL_ALIGNMENT_RIGHT)
 
 ## Formation par semaine : le centre de formation (coût réel du budget de saison, compris dans le fonctionnement du
 ## moteur) plus l'investissement « formation payée » éventuel. Sans budget de saison, seul l'investissement existe.
@@ -664,8 +679,8 @@ static func _allocation(card: Panel, app: Control, finance: Dictionary, largeur:
 	# Deux mesures salariales distinctes : la charge versée (avec cotisations, comme l'écran Club) et les salaires des contrats.
 	if app.model.has("figures"):
 		var payroll := P.payroll(app.model)
-		_texte(card, 22, 298, "dont salaires des joueurs %s, hors cotisations" % G.salary_amount(payroll.players_weekly), 16, Charte.IVOIRE_2, largeur - 44).name = "FinancePlayersPayroll"
-	_texte(card, 22, 326, "Engagements connus · prévision sur %d semaine(s)" % remaining, 16, Charte.IVOIRE_2, largeur - 44)
+		Pieces.tuile(card, Rect2(22, 296, 190, 66), G.salary_amount(payroll.players_weekly), "joueurs", Pieces.BLEU, "FinancePlayersPayroll", 26, "Salaires des joueurs, hors cotisations", "", false, func(): _open_wages(app, false))
+	Pieces.tuile(card, Rect2(22 + (200 if app.model.has("figures") else 0), 296, 140, 66), "%d" % remaining, "semaines prévues", Pieces.TURQUOISE, "FinanceForecastWeeks", 26, "Engagements connus · prévision sur %d semaine(s)" % remaining, "", false, func(): _vers(app, "budget"))
 	# Un seul bouton ivoire par écran : sur l'onglet Budget, c'est « Ouvrir les décisions financières » ; ici un lien.
 	var sur_budget := _onglet_courant(app) == "budget"
 	_bouton(card, Rect2(largeur - 262, 334, 242, 38), "Ajuster le budget" if sur_budget else "AJUSTER LE BUDGET", func(): _strategy(app), "lien" if sur_budget else "ivoire", "arrow", "FinanceAdjustBudget")
@@ -726,8 +741,7 @@ static func _ledger(card: Panel, app: Control, ledger: Array, limit: int, key: S
 	_etiquette(card, droite_entrees, 84, "Entrées", 160, HORIZONTAL_ALIGNMENT_RIGHT)
 	_etiquette(card, droite_sorties, 84, "Sorties", 160, HORIZONTAL_ALIGNMENT_RIGHT)
 	if ledger.is_empty():
-		_titre(card, 23, 160, "Aucune opération enregistrée dans ce journal.", 30, Charte.IVOIRE, largeur - 46)
-		_texte(card, 23, 196, "Les mouvements seront consultables ici au fil de la carrière.", 20, Charte.IVOIRE_2, largeur - 46)
+		_titre(card, 23, 160, "Aucune opération enregistrée", 30, Charte.IVOIRE, largeur - 46)
 	var selected_index := ledger_index(app,app.management_ui.get(LEDGER_SELECTION_KEY,"")) if key == "cash" else -1
 	for i in mini(limit,ledger.size()-first):
 		var entry: Dictionary = ledger[first+i]
@@ -762,7 +776,7 @@ static func _vigilances(app: Control, finance: Dictionary) -> Array:
 	var counts := P.contract_counts(app.model)
 	var count := int(counts.by_horizon)
 	if count > 0:
-		lignes.append({"id": "FinanceWatchContracts", "titre": P.plural(count, "contrat à anticiper", "contrats à anticiper"), "detail": "%s en fin de saison · horizon fin %s" % [counts.end_of_season, G.season_label(counts.horizon_season)], "lien": "Contrats", "action": func(): _open_wages(app, true)})
+		lignes.append({"id": "FinanceWatchContracts", "titre": "Contrats à anticiper", "detail": "%s · %s en fin de saison · horizon fin %s" % [P.plural(count, "contrat à anticiper", "contrats à anticiper"), counts.end_of_season, G.season_label(counts.horizon_season)], "lien": "Contrats", "action": func(): _open_wages(app, true), "tuiles": [[str(count), "contrats", "FinanceWatchContractsCount", Pieces.BLEU], [str(counts.end_of_season), "cette saison", "FinanceWatchContractsSeason", Pieces.ORANGE]]})
 	var quote: Variant = finance.get("facility")
 	if quote is Dictionary:
 		lignes.append({"id": "FinanceWatchFacilities", "titre": "Infrastructures", "detail": "Devis indicatif · " + G.euros(quote.cost), "lien": "Infrastructures", "action": func(): _strategy(app)})
@@ -786,9 +800,14 @@ static func _watch(card: Panel, app: Control, finance: Dictionary, largeur: floa
 		var zone := _zone(card, Rect2(10, y, largeur - 20, 70), ligne.action, str(ligne.id), "%s · %s" % [ligne.titre, ligne.detail])
 		zone.accessibility_name = "%s · %s" % [ligne.titre, ligne.detail]
 		_symbole(card, Rect2(20, y + 20, 28, 28), "exclam", Charte.IVOIRE)
-		_texte(card, 62, y + 28, str(ligne.titre), 19, Charte.IVOIRE, largeur - 290).mouse_filter = Control.MOUSE_FILTER_IGNORE
-		# Le détail passe sous le lien (aligné sur le titre) et prend toute la largeur : plus de troncature à 1280.
-		_texte(card, 62, y + 56, str(ligne.detail), 16, Charte.IVOIRE_2, largeur - 86).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_texte(card, 62, y + 28, str(ligne.titre), 19, Charte.IVOIRE, 220 if ligne.has("tuiles") else largeur - 290).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if ligne.has("tuiles"):
+			# Compteurs du contrat à anticiper : deux tuiles (au total, et cette saison) au lieu d'une phrase.
+			var tuiles: Array = ligne.tuiles
+			for k in tuiles.size(): Pieces.tuile(card, Rect2(290 + k * 100, y + 4, 92, 62), tuiles[k][0], tuiles[k][1], tuiles[k][3], tuiles[k][2], 26, "", "", k == 1, func(): _vers_contrats(app))
+		else:
+			# Le détail passe sous le lien (aligné sur le titre) et prend toute la largeur : plus de troncature à 1280.
+			_texte(card, 62, y + 56, str(ligne.detail), 16, Charte.IVOIRE_2, largeur - 86).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_texte(card, largeur - 24, y + 28, str(ligne.lien) + " →", 17, Charte.IVOIRE, 220, HORIZONTAL_ALIGNMENT_RIGHT).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		if i < lignes.size() - 1: D.line(card, Vector2(20, y + 73), Vector2(largeur - 20, y + 73), Color(Charte.FILET,.7))
 
@@ -796,8 +815,9 @@ static func _due(card: Panel, app: Control, finance: Dictionary, largeur: float)
 	var remaining := int(finance.get("remainingWeeks",0))
 	var week := int(app.model.meta.get("week",0)) + 1
 	_etiquette(card, largeur - 20, 38, "semaine %d" % week, 200, HORIZONTAL_ALIGNMENT_RIGHT)
+	_info_titre(card, "Prochaines échéances", "Chaque ligne se répète jusqu'à la fin de la saison · %d sem." % remaining, "FinanceDueInfo")
 	if remaining <= 0:
-		_texte(card, 22, 119, "Aucun paiement hebdomadaire restant dans la projection.", 20, Charte.IVOIRE_2, largeur - 44)
+		_texte(card, 22, 119, "Aucun paiement restant", 20, Charte.IVOIRE_2, largeur - 44)
 		return
 	_etiquette(card, 22, 84, "Date", 100)
 	_etiquette(card, 140, 84, "Échéance", 300)
@@ -815,7 +835,6 @@ static func _due(card: Panel, app: Control, finance: Dictionary, largeur: float)
 		var amount: Variant = item[1]
 		var prefix := "−" if i < 2 else "+"
 		_texte(card, largeur - 22, y + 31, prefix + G.euros(absf(float(amount))) if amount != null and float(amount) != 0.0 else G.euros(amount) if amount != null else "—", 19, Charte.IVOIRE, 190, HORIZONTAL_ALIGNMENT_RIGHT).mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_texte(card, 22, 276, "Chaque ligne se répète jusqu'à la fin de la saison · %d sem." % remaining, 16, Charte.IVOIRE_2, largeur - 44)
 
 # ---- Colonne de verdict fixe (onglets autres que la Synthèse) -------------------------------------------------------
 
@@ -844,7 +863,9 @@ static func _cash(app: Control, canvas: Control, zone: Rect2, ledger: Array) -> 
 		_lier(app, total_lien, _onglet_cible("budget"), "Ouvrir · Budget")
 		_etiquette(totals, 20 + i * colonne, 34, details[i][0], colonne - 30).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_titre(totals, 20 + i * colonne, 82, details[i][1], 38, Charte.IVOIRE, colonne - 30).mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_texte(canvas, x + 4, zone.position.y + 470, "%d mouvements conservés · clic sur une ligne : l'écran qui l'explique · le journal ne se confond pas avec la trésorerie du club." % ledger.size(), 16, Charte.IVOIRE_2, zone.size.x - 8)
+	var texte_mouvements := P.plural(ledger.size(), "mouvement conservé", "mouvements conservés")
+	var largeur_mouvements := Pieces.pastille(canvas, x + 4, zone.position.y + 448, texte_mouvements, "", "FinanceLedgerCount")
+	Pieces.info(canvas, x + 4 + largeur_mouvements + 8, zone.position.y + 452, "Un clic sur une ligne ouvre l'écran qui l'explique · le journal ne se confond pas avec la trésorerie du club.", "FinanceLedgerInfo")
 	var journal := _panneau(canvas, Rect2(x, zone.position.y + 484, zone.size.x, 100 + LEDGER_PAGE * 33 + 14), "Journal des flux", "FinanceLedger")
 	_ledger(journal, app, ledger, LEDGER_PAGE, "cash", zone.size.x)
 
@@ -893,11 +914,14 @@ static func _wages(app: Control, canvas: Control, zone: Rect2, finance: Dictiona
 	var squad := P.contracts(app.model) if due_only else all_players.duplicate()
 	if due_only:
 		var horizon := int(app.model.meta.get("season", 1)) + 1
-		var scope := "%s jusqu’à la fin de %s · dont %d en fin de saison" % [P.plural(squad.size(), "échéance", "échéances"), G.season_label(horizon), P.contract_counts(app.model).end_of_season]
-		_texte(wages, 380, 36, scope, 18, Charte.IVOIRE, 640).name = "FinanceWagesScope"
+		var fin_saison: int = P.contract_counts(app.model).end_of_season
+		var horizon_texte := "Jusqu’à la fin de %s" % G.season_label(horizon)
+		var largeur_echeances := Pieces.pastille(wages, 380, 10, P.plural(squad.size(), "échéance", "échéances"), "calendar", "FinanceWagesScope", horizon_texte, Pieces.BLEU, Charte.PANNEAU_3, func(): _vers_contrats(app))
+		Pieces.pastille(wages, 380 + largeur_echeances + 8, 10, "%d en fin de saison" % fin_saison, "", "FinanceWagesSeasonEnd", "", Pieces.ORANGE, Charte.PANNEAU_3, func(): _vers_contrats(app))
 		_bouton(wages, Rect2(largeur - 330, 10, 310, 36), "Tous les %d joueurs" % all_players.size(), func(): _open_wages(app, false), "lien", "arrow", "FinanceWagesAll")
 	else:
-		_etiquette(wages, largeur - 20, 38, "%d joueurs · clic sur un nom : sa fiche" % squad.size(), 500, HORIZONTAL_ALIGNMENT_RIGHT)
+		var texte_joueurs := P.plural(squad.size(), "joueur", "joueurs")
+		Pieces.pastille(wages, largeur - 20 - Pieces.largeur_pastille(texte_joueurs, "people"), 10, texte_joueurs, "people", "FinanceWagesCount", "", Pieces.BLEU, Charte.PANNEAU_3, func(): app._navigate("Effectif"))
 	var sort_state: Dictionary = app.management_ui.get("finance_wage_sort", {"key":"contractEnd" if due_only else "salary", "descending":not due_only})
 	squad = wage_rows(squad,str(sort_state.key),bool(sort_state.descending))
 	_bloc(wages, Rect2(12, 62, largeur - 24, 38), Charte.PANNEAU_2)
@@ -948,11 +972,9 @@ static func _transfers(app: Control, canvas: Control, zone: Rect2, ledger: Array
 	var largeur := zone.size.x - gauche - 16
 	var market: Array = app.model.get("market",[])
 	_titre(card, 23, 132, "%d profils au marché" % market.size(), 40, Charte.IVOIRE, largeur - 46)
-	_texte(card, 23, 172, "Prime et salaire détaillés avant signature.", 19, Charte.IVOIRE_2, largeur - 46)
 	_bouton(card, Rect2(23, 196, largeur - 46, 50), "OUVRIR LE RECRUTEMENT", func(): app._navigate("Recrutement"), "ivoire", "arrow", "FinanceRecruitment")
 	D.line(card, Vector2(23, 280), Vector2(largeur - 23, 280), Charte.FILET)
 	_titre(card, 23, 336, "Contrats du groupe", 34, Charte.IVOIRE, largeur - 46)
-	_texte(card, 23, 372, "Prolongations : depuis les fiches joueurs.", 19, Charte.IVOIRE_2, largeur - 46)
 	_bouton(card, Rect2(23, 394, largeur - 46, 44), "Consulter les salaires et les échéances", func(): _open_wages(app, false), "lien", "arrow", "FinanceTransferContracts")
 
 # Classement financier du championnat (native/engine/club-finance-health.cjs) : du club le plus solide au plus fragile,
@@ -966,7 +988,7 @@ static func _clubs(app: Control, canvas: Control, zone: Rect2, accounts: Diction
 		return
 	# Sans saison close, la même phrase sur chaque ligne n'apprend rien : elle est dite une fois, ici.
 	var sans_courbe := clubs.all(func(club: Dictionary): return not (club.get("courbe") is Array) or (club.courbe as Array).is_empty())
-	_texte(panel, 25, 88, "Du plus solide au plus fragile, d’après la trésorerie de chaque club rapportée à la réserve qu’il se fixe.", 18, Charte.IVOIRE_2, largeur - 50)
+	_info_titre(panel, "Santé financière des clubs · %s" % P.league_name(app.model), "Du plus solide au plus fragile, d’après la trésorerie de chaque club rapportée à la réserve qu’il se fixe.", "FinanceClubsInfo")
 	var head := [["#",25,60],["Club",95,440],["Santé",560,170],["Propriétaire",760,300],["Trois dernières saisons" + (" · à venir" if sans_courbe else ""),1090,480]]
 	for h: Array in head: D.text(panel, h[1], 126, h[0], 15, Charte.IVOIRE_2, 600, h[2])
 	var row_height := minf(38.0, (zone.size.y - 150.0) / maxf(1.0, clubs.size()))
@@ -1005,8 +1027,7 @@ static func _levers(card: Panel, levers: Dictionary, largeur: float, y: float) -
 	verdict_texte.name = "FinanceLeversVerdict"
 	var items: Array = levers.get("leviers", [])
 	if items.is_empty():
-		_texte(card, 25, y + 34, "Les devis et conditions de signature sont détaillés dans les décisions du club.", 19, Charte.IVOIRE_2, largeur - 50).name = "FinanceLeversList"
-		return y + 40.0
+		return y + 4.0
 	var parts := PackedStringArray()
 	var details := PackedStringArray()
 	for item: Dictionary in items:
@@ -1065,9 +1086,7 @@ static func _budget(app: Control, canvas: Control, zone: Rect2, finance: Diction
 	if levers is Dictionary:
 		suite = _levers(decisions, levers, largeur, suite)
 	else:
-		_texte(decisions, 25, suite, "Les montants reprennent les engagements du club.", 20, Charte.IVOIRE_2, largeur - 50)
-		_texte(decisions, 25, suite + 34, "Les devis et conditions de signature sont détaillés dans les décisions du club.", 19, Charte.IVOIRE_2, largeur - 50)
-		suite += 40.0
+		suite += 4.0
 	_bouton(decisions, Rect2(25, suite + 10, 440, 46), "OUVRIR LES DÉCISIONS FINANCIÈRES", func(): _strategy(app), "ivoire", "arrow", "FinanceBudgetDecisions")
 	if finance.get("budget") is Dictionary: _season_budget(decisions, finance.budget, largeur, suite + 100.0)
 	var bas := y0 + 616.0
