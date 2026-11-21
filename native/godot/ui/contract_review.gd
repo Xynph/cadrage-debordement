@@ -489,7 +489,6 @@ func _build() -> void:
 	state = app.management_ui.roster.contract_review
 	if not state.has("sort"): state.sort = "contractEnd"
 	if not state.has("descending"): state.descending = false
-	add_child(_label("Les échéances de ton effectif", 26))
 	var delegation: Variant = app.model.get("decisions", {}).get("delegation") if app.model.get("decisions") is Dictionary else null
 	if delegation is Dictionary and delegation.has("contracts"):
 		_delegation_staff(delegation)
@@ -506,7 +505,7 @@ func _build() -> void:
 		var wage: Variant = player.get("salary")
 		if wage is int or wage is float: known_wage += float(wage)
 		else: unknown_wage += 1
-	var wage_note := " · %d non fourni(s)" % unknown_wage if unknown_wage > 0 else ""
+	var wage_note := " · %d ?" % unknown_wage if unknown_wage > 0 else ""
 	# Vraies tuiles chiffre (comme le haut de l'Effectif) : icône teintée, gros chiffre coloré, légende courte, léger fond teinté.
 	for metric in [["%d / %d" % [ending, squad.size()], "fin ≤ %s" % G.contract_year(current), "Échéances en %s ou avant : %d joueurs sur %d" % [G.contract_year(current), ending, squad.size()], "", ORANGE, "hourglass", "ContractReviewStatEnding", func(): _ouvrir_fenetre("Fin ≤ %s" % G.contract_year(current), {"season": current, "status": "Tous", "precision": "Toutes"}, ORANGE, "ContractReviewStatEnding")], ["%d" % renewals, "prolongeables", "Prolongations accessibles : %d joueurs" % renewals, "", VERT, "renew", "ContractReviewStatRenewable", func(): _ouvrir_fenetre("Prolongeables", {"season": 0, "status": "Prolongation accessible", "precision": "Toutes"}, VERT, "ContractReviewStatRenewable")], [G.salary_amount(known_wage), "salaires " + G.salary_period(true) + wage_note, "Salaires actuels projetés · " + G.salary_period() + " : ouvrir Finances, salaires", "ContractReviewWage", BLEU, "money", "ContractReviewStatWages", func(): _open_wages()]]:
 		var line := HBoxContainer.new()
@@ -743,7 +742,7 @@ func _refresh() -> void:
 		var pill := PanelContainer.new()
 		pill.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 		pill.add_theme_stylebox_override("panel", Charte.style_pilule(Charte.PANNEAU.lerp(tint, 0.16), Color.TRANSPARENT, 12, 3))
-		pill.tooltip_text = "%d sous contrat au-delà%s" % [group.remaining, " · %d échéance(s) inconnue(s)" % group.unknown if group.unknown > 0 else ""]
+		pill.tooltip_text = "%d sous contrat au-delà%s" % [group.remaining, " · %d sans échéance connue" % group.unknown if group.unknown > 0 else ""]
 		var pill_text := _label("%d au-delà%s" % [group.remaining, " · %d ?" % group.unknown if group.unknown > 0 else ""], 16, tint)
 		pill_text.autowrap_mode = TextServer.AUTOWRAP_OFF
 		pill.add_child(pill_text)
@@ -783,7 +782,7 @@ func _bar(parent: Node, caption: String, value: int, total: int, color: Color, i
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 	if action.is_valid():
-		var link := _link_button(id, row, Color.TRANSPARENT, "%s : %d joueur(s)" % [caption, value], action, Charte.RAYON_PETIT, 4)
+		var link := _link_button(id, row, Color.TRANSPARENT, "%s : %d" % [caption, value], action, Charte.RAYON_PETIT, 4)
 		link.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		link.custom_minimum_size.y = 34
 		parent.add_child(link)

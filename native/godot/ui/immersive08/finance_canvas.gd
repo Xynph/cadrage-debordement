@@ -917,7 +917,7 @@ static func _allocation(card: Panel, app: Control, finance: Dictionary, largeur:
 		var item: Array = rows[i]
 		var y := 70.0 + i * 74.0
 		var ratio := float(item[2])*100.0/total if total > 0 and item[2] != null else 0.0
-		var reste := "Reste de la saison : %s sur %d semaine(s)." % [U.amount(float(item[2])*remaining) if item[2] != null else "—", remaining]
+		var reste := "Reste de la saison : %s sur %d sem." % [U.amount(float(item[2])*remaining) if item[2] != null else "—", remaining]
 		_zone(card, Rect2(10, y - 4, largeur - 20, 66), destinations[i], "FinanceAllocationRow" + str(i), "Ouvrir · %s. %s" % [noms[i], reste])
 		D.text(card, 22, y + 24, item[0], 22, Charte.IVOIRE, 600, largeur - 330).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		D.bar(card, Rect2(22, y + 40, largeur - 44, 9), ratio, Charte.IVOIRE_2)
@@ -927,7 +927,7 @@ static func _allocation(card: Panel, app: Control, finance: Dictionary, largeur:
 	if app.model.has("figures"):
 		var payroll := P.payroll(app.model)
 		Pieces.tuile(card, Rect2(22, 296, 190, 66), G.salary_amount(payroll.players_weekly), "joueurs", Pieces.BLEU, "FinancePlayersPayroll", 26, "Salaires des joueurs, hors cotisations", "", false, func(): _open_wages(app, false))
-	Pieces.tuile(card, Rect2(22 + (200 if app.model.has("figures") else 0), 296, 140, 66), "%d" % remaining, "semaines prévues", Pieces.TURQUOISE, "FinanceForecastWeeks", 26, "Engagements connus · prévision sur %d semaine(s)" % remaining, "", false, func(): _vers(app, "budget"))
+	Pieces.tuile(card, Rect2(22 + (200 if app.model.has("figures") else 0), 296, 140, 66), "%d" % remaining, "semaines prévues", Pieces.TURQUOISE, "FinanceForecastWeeks", 26, "Engagements connus · prévision sur %d sem." % remaining, "", false, func(): _vers(app, "budget"))
 	# Un seul bouton ivoire par écran : sur l'onglet Budget, c'est « Ouvrir les décisions financières » ; ici un lien.
 	var sur_budget := _onglet_courant(app) == "budget"
 	_bouton(card, Rect2(largeur - 262, 334, 242, 38), "Ajuster le budget" if sur_budget else "AJUSTER LE BUDGET", func(): _strategy(app), "lien" if sur_budget else "ivoire", "arrow", "FinanceAdjustBudget")
@@ -1310,12 +1310,12 @@ static func _budget(app: Control, canvas: Control, zone: Rect2, finance: Diction
 	var decisions := _panneau(canvas, Rect2(x, y0, largeur, 600), "Engagements et investissements", "FinanceCommitments", "%d semaines restantes sur %d" % [int(finance.get("remainingWeeks",0)),int(finance.get("weeksPerSeason",0))])
 	var cards := [["Formation","Investissement par séance",finance.get("academyInvestment"),func(): app._navigate("Formation"),"Formation"],["Installations","Niveau indisponible",null,func(): _strategy(app),"Infrastructures"],["Partenaires","Recettes hebdomadaires du modèle",finance.get("weeklyIncome"),func(): _ouvrir_onglet(app, "cash"),"Trésorerie"]]
 	if finance.get("budget") is Dictionary and finance.budget.get("centreFormationHebdo") != null:
-		cards[0][1] = "Centre de formation · par semaine" + (" dont %s payés en plus" % U.amount(finance.get("academyInvestment")) if float(finance.get("academyInvestment", 0)) > 0.0 else "")
+		cards[0][1] = "Centre de formation / sem." + (" · dont %s en plus" % U.amount(finance.get("academyInvestment")) if float(finance.get("academyInvestment", 0)) > 0.0 else "")
 		cards[0][2] = formation_weekly(finance)
-	if finance.get("budget") is Dictionary: cards[2] = ["Recettes régulières","Par semaine · partenaires, ligue, abonnés",finance.get("weeklyIncome"),func(): _ouvrir_onglet(app, "cash"),"Trésorerie"]
+	if finance.get("budget") is Dictionary: cards[2] = ["Recettes régulières","Recettes / sem.",finance.get("weeklyIncome"),func(): _ouvrir_onglet(app, "cash"),"Trésorerie"]
 	var facility: Variant = finance.get("facility")
 	if facility is Dictionary:
-		cards[1][1] = "Niveau actuel %s / 10 · devis suivant" % G.n(facility.level)
+		cards[1][1] = "Niveau %s / 10 · devis" % G.n(facility.level)
 		cards[1][2] = facility.cost
 	var tuile_w := (largeur - 40.0 - 32.0) / 3.0
 	for i in cards.size():
