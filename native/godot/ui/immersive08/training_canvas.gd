@@ -13,6 +13,7 @@ const Anneau = preload("res://ui/anneau_repartition.gd")
 const Groupe = preload("res://ui/immersive08/training_group_panel.gd")
 const Watch = preload("res://ui/management_state.gd")
 const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
+const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
 const TABS = ["Semaine", "Groupes", "Individuel", "Staff", "Fatigue"]
 const MODES = {"repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
 const INDIVIDUAL = {"collective":"Suivre le collectif", "repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
@@ -164,12 +165,13 @@ func _metrics(meta: Dictionary) -> void:
 func _week(fixture: Dictionary) -> void:
 	var focus: Dictionary = training.get("collective", {})
 	var focus_label := _label(focus, "Sans préparation spécifique")
-	var state_caption := "Séance effectuée" if trained else _mode()
+	var state_caption := "Séance effectuée" if trained else "Séance indisponible" if locked else ""
+	var plans: Array = support.get("training", {}).get("plans", [])
 	var captions := [
-		state_caption, focus_label, "", "%d joueurs" % squad.size(),
-		"", "", "%d à suivre" % watched.size(),
+		state_caption, focus_label, P.plural(plans.size(), "plan", "plans") if not plans.is_empty() else "", "%d joueurs" % squad.size(),
+		"%d ciblés" % _axis_people()[1], "%d exceptions" % _load_exceptions().size(), "%d à suivre" % watched.size(),
 		"%d suivis" % support.get("medical", {}).get("players", []).size(), "",
-		_label(app.model.get("decisions", {}).get("difficulty", {}), "Niveau adverse"),
+		"",
 		"Feuille valide" if app.model.get("selection", {}).get("valid", false) else "Feuille à compléter",
 		str(fixture.get("label", "Aucune rencontre")), "", "",
 	]
@@ -197,7 +199,7 @@ func _week(fixture: Dictionary) -> void:
 			for j in lines.size(): D.text(hit, 60, 33 + j * 24, lines[j], 24, C.IVORY, 700, 146)
 			var details := D.words(captions[index], 18, 2)
 			for j in details.size(): D.text(hit, 13, 88 + j * 24, details[j], 24, C.IVORY, 500, 192)
-			if index == 0 and (trained or locked): D.text(hit, 13, 149, "Charge appliquée" if trained else "Séance indisponible", 20, C.MUTED, 500, 191)
+			_card_visual(hit, index, fixture)
 		if i == 0: D.line(column, Vector2(13, 310), Vector2(226, 310))
 	_chart()
 	_vigilance()
@@ -208,6 +210,212 @@ func _week(fixture: Dictionary) -> void:
 	D.photo(art, photo_centre(app.model), Rect2(2, 2, 1016, 373))
 	_axes(D.panel(self, Rect2(1039, 840, 560, 341), "Axes individuels", "star", "", "TrainingAxes"))
 	_staff_cards(D.panel(self, Rect2(1614, 840, 634, 341), "Encadrement", "people", "", "TrainingStaff"))
+
+## Bande visuelle du bas de chaque carte de la semaine (y 120-160 de la carte) : uniquement des données du moteur,
+## en cases, portraits et blasons ; chaque pièce qui a une destination est cliquable (écran, onglet ou petite fenêtre).
+func _card_visual(hit: Button, index: int, fixture: Dictionary) -> void:
+	var y := 120.0
+	match index:
+		0:
+			var mode := str(state.get("mode", state.get("stored_mode", "normal")))
+			var free := not (trained or locked)
+			var cells := [["repos", "Repos", C.Charte.REPOS], ["normal", "Normal", C.Charte.NORMAL], ["intense", "Intensif", C.Charte.INTENSIF]]
+			for k in cells.size():
+				var id: String = cells[k][0]
+				var pick := func():
+					state.mode = id
+					app._render()
+				_notch(hit, k, cells.size(), y, cells[k][1], cells[k][2], id == mode, "TrainingWeekMode_" + id, pick if free else Callable(), "heart" if id == "repos" else "train")
+		1:
+			var collective: Dictionary = training.get("collective", {})
+			var options: Array = collective.get("options", [])
+			var available: bool = collective.get("available", false)
+			var chosen: Variant = collective.get("selected")
+			var step := minf(38.0, 191.0 / maxi(1, options.size()))
+			for k in options.size():
+				var option: Dictionary = options[k]
+				var active: bool = option.get("id") == chosen
+				var rect := Rect2(13 + k * step, y + 4, step - 6, 32)
+				var dot := D.rect(hit, rect, C.Charte.PANNEAU_2.lerp(C.MINT, .45) if active else C.Charte.PANNEAU_3, 6, C.MINT if active else Color.TRANSPARENT)
+				dot.name = "TrainingWeekFocus_" + str(option.get("id", k))
+				if active: _icon(dot, "check", Rect2((rect.size.x - 20) / 2.0, 6, 20, 20), C.IVORY)
+				var tip := "%s · %s · %s" % [option.get("label", ""), option.get("cost", ""), option.get("effect", "")]
+				var option_id: Variant = option.get("id")
+				var choose := func(): app._command("set_collective_focus", {"focus":option_id})
+				var open := func(): _choices_dialog(false)
+				if not C.dense(): _zone(hit, C.reach_rect(rect), "TrainingWeekFocusLink_" + str(option.get("id", k)), tip, choose if available and not active else open)
+			# Petite fenêtre : points trop étroits pour un clic chacun, la rangée entière ouvre le choix.
+			if C.dense() and not options.is_empty(): _zone(hit, C.reach_rect(Rect2(9, y, 199, 40)), "TrainingWeekFocusRow", _label(collective, "Préparation spécifique"), func(): _choices_dialog(false))
+		2:
+			var plans: Array = support.get("training", {}).get("plans", [])
+			var tips := PackedStringArray()
+			for k in mini(3, plans.size()):
+				var plan: Dictionary = plans[k]
+				var counts: Dictionary = plan.get("effectiveCounts", plan.get("counts", {}))
+				var parts := [[int(counts.get("repos", 0)), C.Charte.REPOS], [int(counts.get("normal", 0)), C.Charte.NORMAL], [int(counts.get("intense", 0)), C.Charte.INTENSIF]]
+				var total := 0
+				for part: Array in parts: total += int(part[0])
+				var row_y := y - 4 + k * 15
+				var x := 13.0
+				for part: Array in parts:
+					if int(part[0]) <= 0 or total <= 0: continue
+					var w := 191.0 * float(part[0]) / total
+					D.rect(hit, Rect2(x, row_y, maxf(2.0, w - 2), 12), part[1], 3)
+					x += w
+				tips.append("%s · %d repos · %d normal · %d intensif" % [plan.get("label", ""), parts[0][0], parts[1][0], parts[2][0]])
+			if not plans.is_empty(): _zone(hit, C.reach_rect(Rect2(9, y - 7, 199, 46)), "TrainingWeekPlans", " / ".join(tips), func(): _open_tab(1))
+		3:
+			var forwards := squad.filter(func(p: Dictionary): return int(p.get("fam", -1)) in [0, 1, 2, 3])
+			var backs := squad.filter(func(p: Dictionary): return int(p.get("fam", -1)) >= 4)
+			for k in 2:
+				var players: Array = [forwards, backs][k]
+				var value := 0.0
+				for p: Dictionary in players: value += float(p.get("condition", 0))
+				value /= maxi(1, players.size())
+				var x := 13.0 + k * 103
+				D.text(hit, x, y + 16, ["AV", "AR"][k], 16, C.IVORY, 700, 30)
+				D.text(hit, x + 88, y + 17, "%d %%" % roundi(value), 18, C.Charte.GAIN, 700, 60, HORIZONTAL_ALIGNMENT_RIGHT)
+				D.rect(hit, Rect2(x, y + 25, 88, 12), C.Charte.PANNEAU_3, 4)
+				D.rect(hit, Rect2(x, y + 25, 88 * clampf(value, 0, 100) / 100.0, 12), C.Charte.GAIN, 4)
+				var title: String = ["Avants", "Arrières"][k]
+				if not players.is_empty():
+					_zone(hit, C.reach_rect(Rect2(x - 3, y - 2, 94, 44)), "TrainingWeekLine" + str(k), "%s · condition %d %% · %s" % [title, roundi(value), P.plural(players.size(), "joueur", "joueurs")], func(): Groupe.ouvrir(self, title, C.Charte.GAIN, players))
+		4:
+			var people: Array = (_axis_people()[0] as Array).map(func(p: Dictionary): return P.player(app.model, str(p.get("id", ""))))
+			_portraits(hit, people.filter(func(p: Dictionary): return not p.is_empty()), y, "TrainingWeekAxis", "Axes individuels", C.MINT)
+		5:
+			var exceptions := _load_exceptions()
+			var cells := [["repos", "repos", C.Charte.REPOS], ["normal", "normal", C.Charte.NORMAL], ["intense", "intensif", C.Charte.INTENSIF]]
+			for k in cells.size():
+				var mode: String = cells[k][0]
+				var players := exceptions.filter(func(p: Dictionary): return str(p.get("loadPlan", "")) == mode)
+				var title := "Charge individuelle · " + str(cells[k][1])
+				var colour: Color = cells[k][2]
+				var show := func(): Groupe.ouvrir(self, title, colour, players)
+				_cell(hit, Rect2(13 + k * 65, y, 61, 40), cells[k][1], str(players.size()), colour, not players.is_empty(), "TrainingWeekLoad_" + mode, show if not players.is_empty() else Callable())
+		6:
+			_portraits(hit, watched, y, "TrainingWeekWatch", "À surveiller", C.Charte.INTENSIF)
+		7:
+			var records: Array = support.get("medical", {}).get("players", [])
+			var people: Array = []
+			var weeks: Array = []
+			for record: Dictionary in records:
+				var person := P.player(app.model, str(record.get("id", "")))
+				if person.is_empty(): continue
+				people.append(person)
+				weeks.append(int(record.get("injury", 0)))
+			_portraits(hit, people, y, "TrainingWeekMedical", "Suivi médical", C.Charte.PERTE)
+			for k in mini(3, people.size()):
+				if int(weeks[k]) <= 0: continue
+				var badge := D.rect(hit, Rect2(13 + k * 46 + 24, y - 6, 22, 22), C.Charte.PERTE, 11)
+				badge.name = "TrainingWeekMedicalWeeks" + str(k)
+				badge.tooltip_text = P.plural(int(weeks[k]), "semaine d’indisponibilité", "semaines d’indisponibilité")
+				D.text(badge, 11, 17, str(weeks[k]), 15, C.Charte.ENCRE, 800, 22, HORIZONTAL_ALIGNMENT_CENTER)
+		9:
+			var difficulty: Dictionary = app.model.get("decisions", {}).get("difficulty", {})
+			var options: Array = difficulty.get("options", [])
+			for k in options.size():
+				var option: Dictionary = options[k]
+				var level: Variant = option.get("id")
+				var active: bool = level == difficulty.get("selected")
+				var choose := func(): app._command("set_opponent_level", {"level":level})
+				var open := func(): _choices_dialog(true)
+				_notch(hit, k, options.size(), y, str(option.get("label", "")), C.MINT, active, "TrainingWeekLevel_" + str(level), choose if difficulty.get("available", false) and not active else open, "shield")
+		10:
+			var starters := 0
+			var bench := 0
+			for slot: Dictionary in app.model.get("selection", {}).get("slots", []):
+				if str(slot.get("playerId", "")).is_empty(): continue
+				if int(slot.get("slot", -1)) < 15: starters += 1
+				else: bench += 1
+			var condition := P.lineup_condition(app.model).split(" ")[0]
+			var cells := [["XV", str(starters), C.IVORY], ["banc", str(bench), C.IVORY], ["cond. %", condition, C.Charte.GAIN]]
+			for k in cells.size():
+				_cell(hit, Rect2(13 + k * 65, y, 61, 40), cells[k][0], cells[k][1], cells[k][2], true, "TrainingWeekSheet" + str(k), func(): app._navigate("Composition"))
+		11:
+			if fixture.is_empty(): return
+			for k in 2:
+				var club: Dictionary = fixture.get(["home", "away"][k], {})
+				var crest := G.crest(club, C.px(40))
+				crest.name = "TrainingWeekCrest" + str(k)
+				hit.add_child(crest)
+				D.place(crest, Rect2(13 + k * 74, y - 2, 40, 40))
+			D.text(hit, 70, y + 26, "–", 22, C.IVORY, 700, 24, HORIZONTAL_ALIGNMENT_CENTER)
+			var date := str(fixture.get("date", "")).split("-")
+			if date.size() == 3: D.text(hit, 204, y + 26, "%s/%s" % [date[2], date[1]], 19, PALE_GOLD, 700, 70, HORIZONTAL_ALIGNMENT_RIGHT)
+			_zone(hit, C.reach_rect(Rect2(9, y - 4, 199, 44)), "TrainingWeekFixture", P.next_fixture_caption(app.model, "Prochaine rencontre"), func(): app._navigate("Match"))
+		12:
+			var advice: Dictionary = training.get("adviceState", {})
+			var kind := str(advice.get("kind", ""))
+			if kind.is_empty(): return
+			var count := int(advice.get("count", 0))
+			var look: Array = [C.Charte.GAIN, "check", "Prêt"] if kind == "pret" else [C.Charte.INTENSIF, "warning", "%d chargés" % count] if kind == "charge" else [C.Charte.PERTE, "heart", "XV fatigué"]
+			var width := Pieces.pastille(hit, 13, y + 3, look[2], look[1], "TrainingWeekAdvice", "", look[0])
+			_zone(hit, C.reach_rect(Rect2(11, y + 1, maxf(width + 4, 64.0), 38)), "TrainingWeekAdviceLink", look[2], func(): _open_tab(3))
+		13:
+			var delegation: Dictionary = app.model.get("decisions", {}).get("delegation", {})
+			var keys := [["training", "Charge"], ["lineup", "Les 23"]]
+			for k in keys.size():
+				var delegated: bool = delegation.get(keys[k][0], false)
+				_cell(hit, Rect2(13 + k * 97, y, 93, 40), keys[k][1], "", C.Charte.GAIN if delegated else C.IVORY, delegated, "TrainingWeekDelegation_" + str(keys[k][0]), func(): _open_tab(3), "check" if delegated else "people")
+
+## Cran d'une jauge à crans (charge collective, niveau adverse) : un segment par choix, le retenu plein et nommé dessous.
+func _notch(hit: Control, k: int, count: int, y: float, word: String, colour: Color, active: bool, id: String, action: Callable, icon: String) -> void:
+	var step := 195.0 / maxi(1, count)
+	var rect := Rect2(13 + k * step, y - 12, step - 4, 14)
+	var segment := D.rect(hit, rect, colour if active else C.Charte.PANNEAU_3.lerp(colour, .25), 4)
+	segment.name = id
+	if active:
+		_icon(hit, icon, Rect2(13, y + 11, 22, 22), colour)
+		var label := D.text(hit, 42, y + 30, word, Groupe._taille(word, 21, 700, 160), colour, 700, 162)
+		label.name = id + "Word"
+	if action.is_valid(): _zone(hit, C.reach_rect(Rect2(rect.position.x - 1, y - 16, rect.size.x + 2, 22)), id + "Link", word, action)
+
+## Case de la bande : un mot (et un chiffre au-dessus s'il y en a un), teintée quand elle est retenue.
+func _cell(parent: Control, rect: Rect2, word: String, value: String, colour: Color, active: bool, id: String, action: Callable, icon: String = "") -> Panel:
+	var cell := D.rect(parent, rect, C.Charte.PANNEAU_2.lerp(colour, .30) if active else C.Charte.PANNEAU_3, 6, colour if active and value.is_empty() else Color.TRANSPARENT)
+	cell.name = id
+	var tone := colour if active else C.MUTED
+	var left := 0.0
+	if not icon.is_empty():
+		_icon(cell, icon, Rect2(8, (rect.size.y - 20) / 2.0, 20, 20), tone)
+		left = 24.0
+	if value.is_empty():
+		D.text(cell, left + (rect.size.x - left) / 2.0, rect.size.y / 2.0 + 7, word, Groupe._taille(word, 17, 700, rect.size.x - left - 6), tone, 700, rect.size.x - left - 4, HORIZONTAL_ALIGNMENT_CENTER)
+	else:
+		D.text(cell, rect.size.x / 2.0, 21, value, 22, tone, 800, rect.size.x - 4, HORIZONTAL_ALIGNMENT_CENTER)
+		if Groupe._taille(word, 14, 600, rect.size.x - 4) >= 14:
+			D.text(cell, rect.size.x / 2.0, 36, word, 14, C.Charte.IVOIRE_2, 600, rect.size.x - 4, HORIZONTAL_ALIGNMENT_CENTER)
+		else: cell.tooltip_text = word
+	for label in cell.find_children("*", "Control", true, false): (label as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if action.is_valid(): _zone(parent, C.reach_rect(rect), id + "Link", (value + " " + word).strip_edges(), action)
+	return cell
+
+## Rangée de trois portraits au plus, puis « +N » qui ouvre tout le groupe en petite fenêtre.
+func _portraits(hit: Control, people: Array, y: float, id: String, title: String, colour: Color) -> void:
+	for k in mini(3, people.size()):
+		var p: Dictionary = people[k]
+		_portrait(hit, p, Rect2(13 + k * 46, y - 2, 40, 42))
+		var condition := clampf(float(p.get("condition", 0)), 0.0, 100.0)
+		D.rect(hit, Rect2(13 + k * 46, y + 42, 40 * condition / 100.0, 4), C.Charte.couleur_attribut(condition), 2)
+		if not C.dense(): _zone(hit, C.reach_rect(Rect2(11 + k * 46, y - 4, 44, 50)), id + str(k), "%s · %s · condition %d %%" % [p.get("name", ""), p.get("pos", ""), roundi(condition)], func(): _player_dialog(p))
+	# Petite fenêtre : portraits trop étroits pour un clic chacun, la rangée ouvre tout le groupe.
+	if C.dense() and not people.is_empty(): _zone(hit, C.reach_rect(Rect2(9, y - 4, 145 if people.size() > 3 else 199, 52)), id + "Row", "%s · %s" % [title, P.plural(people.size(), "joueur", "joueurs")], func(): Groupe.ouvrir(self, title, colour, people))
+	if people.size() > 3:
+		var more := D.rect(hit, Rect2(151, y + 4, 53, 32), C.Charte.PANNEAU_3.lerp(colour, .18), 16)
+		more.name = id + "More"
+		D.text(more, 26, 23, "+%d" % (people.size() - 3), 18, colour, 800, 50, HORIZONTAL_ALIGNMENT_CENTER)
+		_zone(hit, C.reach_rect(Rect2(149, y + 2, 57, 36)), id + "MoreLink", "%s · %s" % [title, P.plural(people.size(), "joueur", "joueurs")], func(): Groupe.ouvrir(self, title, colour, people))
+
+## Joueurs suivis pour un axe individuel (ciblés d'abord) et nombre de ciblés.
+func _axis_people() -> Array:
+	var people: Array = app.model.get("decisions", {}).get("development", {}).get("professionals", [])
+	var prioritized := people.filter(func(p: Dictionary): return p.get("development", {}).get("focus", "equilibre") != "equilibre")
+	return [prioritized + people.filter(func(p: Dictionary): return p not in prioritized), prioritized.size()]
+
+## Joueurs dont la charge individuelle s'écarte du collectif.
+func _load_exceptions() -> Array:
+	return squad.filter(func(p: Dictionary): return str(p.get("loadPlan", "collective")) in ["repos", "normal", "intense"])
 
 func _slot_style(hit: Button, selected: bool, match_slot: bool) -> void:
 	var fill := Color("20382d") if selected else Color("32291d") if match_slot else Color("10191a")

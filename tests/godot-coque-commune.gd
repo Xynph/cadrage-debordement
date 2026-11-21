@@ -158,6 +158,11 @@ func ombres(ecran: String) -> void:
 			if s == null: continue
 			var r := maxi(maxi(s.corner_radius_top_left, s.corner_radius_top_right), maxi(s.corner_radius_bottom_left, s.corner_radius_bottom_right))
 			var pilule := r >= Charte.RAYON_PILULE or float(r) * 2.0 >= minf(c.size.x, c.size.y) - 1.0
+			# Voile de survol : bouton transparent posé sur une tuile déjà ombrée (« …Lien », tuiles cliquables). Son survol
+			# éclaircit la tuile, ce n'est pas une carte : il ne porte aucune ombre (sinon elle doublerait celle de la tuile).
+			if etat in ["hover", "pressed"] and _voile(c) and s.bg_color.a < 0.5:
+				if s.shadow_size > 0: en_trop.append("%s.%s (voile ombré)" % [c.name, etat])
+				continue
 			if s.draw_center and s.bg_color.a > 0.0 and r >= seuil and not pilule:
 				tuiles += 1
 				var calque := c.get_parent().get_node_or_null(NodePath(str(c.name) + "Ombre")) as Control if c.get_parent() != null else null
@@ -180,6 +185,14 @@ func ombres(ecran: String) -> void:
 	check(sans.is_empty(), "%s : chaque panneau, carte ou tuile porte l'ombre des jetons (%d sans : %s)" % [ecran, sans.size(), str(sans.slice(0, 8))])
 	check(en_trop.is_empty(), "%s : aucune ombre sur pilules, boutons, cases ni lignes (%s)" % [ecran, str(en_trop.slice(0, 8))])
 	check(rognees.is_empty(), "%s : aucune ombre rognée (%d : %s)" % [ecran, rognees.size(), str(rognees.slice(0, 8))])
+
+## Bouton sans fond au repos (normal vide ou transparent) : son survol n'est qu'un voile sur ce qu'il recouvre.
+func _voile(c: Control) -> bool:
+	if not (c is Button): return false
+	var repos := c.get_theme_stylebox("normal")
+	if repos == null or repos is StyleBoxEmpty: return true
+	var plat := repos as StyleBoxFlat
+	return plat != null and (not plat.draw_center or plat.bg_color.a <= 0.0) and plat.shadow_size == 0
 
 ## Section d'un panneau qui masque ses enfants à sa forme (clip_children) : elle ne peut pas porter d'ombre au dehors,
 ## c'est le panneau qui la porte.
