@@ -60,7 +60,7 @@ func capture(nom: String) -> void:
 		if app.coach.has_method("fermer_bulle"): app.coach.fermer_bulle()
 		app.coach.close()
 	await settle(6)
-	await create_timer(0.3).timeout
+	await create_timer(1.2).timeout
 	var image := root.get_texture().get_image()
 	if image != null: image.save_png(captures.path_join("%s-%d.png" % [nom, taille.x]))
 
@@ -106,6 +106,13 @@ func run() -> void:
 	check(programme.get("days", []).size() == 7, "Programme de la semaine du moteur")
 	check(rel.get("playerTrust") is float or rel.get("playerTrust") is int, "Confiance des joueurs du moteur")
 
+	# Captures : premier passage sur l'Effectif pour laisser passer la bulle d'accueil de Gabi (une fois par écran).
+	if not captures.is_empty():
+		await effectif()
+		await create_timer(2.5).timeout
+		if app.coach.has_method("fermer_bulle"): app.coach.fermer_bulle()
+		app.coach.close()
+		await create_timer(1.0).timeout
 	# Déplié par défaut : trois panneaux empilés à gauche, tableau décalé.
 	await effectif()
 	for id in ["xv", "semaine", "groupe"]: check(found("PanneauEffectif_" + id) != null, "Panneau déplié · " + id)

@@ -1147,7 +1147,8 @@ func _row(player:Dictionary,index:int) -> void:
 				else:
 					D.text(row,x + l / 2.0,base,"—",19,C.FAINT,500,52,HORIZONTAL_ALIGNMENT_CENTER,true).name = "RosterNoteAverage"
 			"forme":
-				Listes.dessiner_forme(self, row, Rect2(x, 1, l, h - 2), notes, str(player.name)).name = "RosterForm"
+				# Cases ramenées dans la colonne quand les panneaux latéraux la resserrent.
+				Listes.dessiner_forme(self, row, Rect2(x, 1, l, h - 2), notes, str(player.name), minf(44.0, (l - 24.0) / 5.0)).name = "RosterForm"
 			"motif":
 				D.text(row,x,base,reason,19,C.IVORY,600,l,HORIZONTAL_ALIGNMENT_LEFT,true).name="RosterWatchReason"
 			"statut":

@@ -235,7 +235,7 @@ func _programme() -> void:
 		var aide := "%s · %s" % [str(j.get("date", "")), Panneaux.JOURS.get(kind, ["", kind])[1]]
 		if kind == "seance": aide += " · " + str(Panneaux.CHARGES.get(str(j.get("charge", "normal")), ""))
 		var cible: int = {"seance": 0, "match": 11, "veille": 11, "recuperation": 6}.get(kind, -1)
-		if cible >= 0: _zone(self, r, "TrainingDayOpen_%d" % i, aide, func(): _select(cible))
+		if cible >= 0: _zone(self, C.reach_rect(r), "TrainingDayOpen_%d" % i, aide, func(): _select(cible))
 		else: case_.tooltip_text = aide
 
 ## Bande visuelle du bas de chaque carte de la semaine (y 120-160 de la carte) : uniquement des données du moteur,
