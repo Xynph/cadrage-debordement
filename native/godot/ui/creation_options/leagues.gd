@@ -9,6 +9,7 @@ const GameSkin = preload("res://ui/game_skin.gd")
 const Editorial = preload("res://ui/entry_editorial.gd")
 const LeagueDetail = preload("res://ui/league_detail_view.gd")
 const Kit = preload("res://ui/creation_options/kit.gd")
+const PastillesClub = preload("res://ui/immersive08/pastilles_club.gd")
 
 ## Pays (ou ensemble de pays) : identifiant, nom, drapeaux (art/flags), championnats dans l'ordre du jeu.
 const GROUPS := [
@@ -25,13 +26,14 @@ static func build(app: Control, parent: Node, own: String, catalogue: Array) -> 
 	var all := LeagueDetail.leagues(app, catalogue)
 	var column := Kit.block(parent, "CreationLeagueDetail", "Championnats suivis", 1.0, true)
 	if all.size() < 2:
-		column.add_child(C.wrap("Ton championnat est suivi en détail complet : notes des joueurs, équipes-types et feuilles de match.", 19, C.MUTED))
+		var seul := PastillesClub.pastille("Détail complet", PastillesClub.VERT, "check", "Ton championnat est suivi en détail complet : notes des joueurs, équipes-types et feuilles de match.", 20, "CreationLeagueOwnDetail")
+		column.add_child(seul)
 		return column
 	LeagueDetail.request_benchmark(app)
 	var ids := LeagueDetail.selected(app, own, all)
 	var count := C.label("%d en détail complet sur %d" % [ids.size(), all.size()], 19, C.IVORY, false, 600)
 	count.name = "CreationLeagueDetailCount"
-	count.tooltip_text = "Les autres championnats sont suivis en consultation."
+	count.tooltip_text = "Détail complet : notes, équipes-types et feuilles de match. Consultation : scores, classements et blessures, et le monde avance plus vite. Clique sur un championnat pour changer. Ce choix reste modifiable en cours de partie, dans les Réglages."
 	count.mouse_filter = Control.MOUSE_FILTER_PASS
 	Kit.aside(column).add_child(count)
 	LeagueDetail.gauge(column, app, ids, true, true)
@@ -47,9 +49,6 @@ static func build(app: Control, parent: Node, own: String, catalogue: Array) -> 
 		Editorial.action(shortcut, false, false, maxi(28, C.px(40)))
 		shortcut.add_theme_font_size_override("font_size", maxi(13, C.px(19)))
 		shortcuts.add_child(shortcut)
-	var hint := C.wrap("Détail complet : notes, équipes-types et feuilles de match. Consultation : scores, classements et blessures, et le monde avance plus vite. Clique sur un championnat pour changer.", 17, C.MUTED)
-	hint.name = "CreationLeagueHint"
-	column.add_child(hint)
 	var known := {}
 	for league: Dictionary in all: known[str(league.id)] = league
 	var present: Array = []
@@ -68,14 +67,6 @@ static func build(app: Control, parent: Node, own: String, catalogue: Array) -> 
 		columns.add_child(stack)
 		for entry: Array in (present.slice(0, split) if side == 0 else present.slice(split)):
 			_country(app, stack, entry[0], entry[1], known, ids, own, catalogue)
-	var later := C.h(6)
-	later.name = "CreationLeagueLater"
-	later.size_flags_vertical = Control.SIZE_SHRINK_END
-	column.add_child(later)
-	var gear := C.icon("settings", 17, C.FAINT)
-	gear.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	later.add_child(gear)
-	later.add_child(C.fill(C.wrap("Ce choix reste modifiable en cours de partie, dans les Réglages.", 17, C.FAINT)))
 	return column
 
 static func _split(present: Array) -> int:

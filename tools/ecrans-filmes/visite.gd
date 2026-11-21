@@ -50,6 +50,7 @@ const EXTRAS := [
 	{"id": "classements-stats", "libelle": "Classements · onglet Statistiques", "type": "classements_onglet", "onglet": "stats"},
 	{"id": "formation-suivi", "libelle": "Formation · sous-page Suivi des jeunes", "type": "formation_suivi"},
 	{"id": "options", "libelle": "Options", "type": "options"},
+	{"id": "creation-options", "libelle": "Création · étape 2 Carrière (options)", "type": "creation_options"},
 	{"id": "avant-match-delegation", "libelle": "Avant-match · sous-page Déléguer le match", "type": "avant_delegation"},
 	{"id": "preparation-bas", "libelle": "Préparation · leur XV probable (bas de page)", "type": "preparation_bas"},
 	{"id": "preparation-consignes", "libelle": "Préparation · onglet Consignes", "type": "preparation_onglet", "onglet": 1},
@@ -690,6 +691,18 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			app.management_ui["immersive08_finance_tab"] = str(ecran.onglet)
 			app._navigate("Finances")
 			await stabiliser()
+		"creation_options":
+			app._navigate("Création")
+			await stabiliser()
+			var grille := app.find_child("CreationClubGrid", true, false) as GridContainer
+			if grille == null or grille.get_child_count() == 0: return {"statut": "echec", "note": "grille des clubs absente"}
+			(grille.get_child(0) as BaseButton).pressed.emit()
+			await stabiliser()
+			var etape := app.find_child("CreationStepCareer", true, false) as BaseButton
+			if etape == null or etape.disabled: return {"statut": "echec", "note": "étape Carrière inaccessible"}
+			etape.pressed.emit()
+			await stabiliser()
+			if app.find_child("CreationCareerOptions", true, false) == null: return {"statut": "echec", "note": "options de carrière non ouvertes"}
 		"options":
 			app._navigate("Bureau")
 			await stabiliser()
@@ -712,6 +725,9 @@ func refermer(ecran: Dictionary) -> void:
 		if avant != null: avant.fermer_page()
 	if str(ecran.type) in ["preparation_bas", "preparation_sous"] and app.management_ui.get("preparation") is Dictionary: app.management_ui.preparation.sub = ""
 	if str(ecran.type) == "preparation_onglet" and app.management_ui.get("preparation") is Dictionary: app.management_ui.preparation.tab = 0
+	if str(ecran.type) == "creation_options":
+		app.management_ui.erase("creation_step")
+		app.management_ui.erase("creation_selection")
 	if str(ecran.type) == "effectif_onglet": app.management_ui.roster.immersive_tab = 0
 	if str(ecran.type) == "finances_onglet": app.management_ui["immersive08_finance_tab"] = "summary"
 	if str(ecran.type) == "onglet_cle":

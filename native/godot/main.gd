@@ -986,7 +986,7 @@ func _render_screen(remember_ui: bool) -> void:
 	header_date = G.label("", 11, G.MUTED)
 	overline.add_child(header_date)
 	_update_header_date()
-	heading = G.label({"Bureau":"Le club, cette semaine.","Effectif":"Les hommes du projet.","Composition":"Ta feuille à 23.","Préparation":"Préparer la rencontre.","Calendrier":"Le fil de la saison.","Classements":"La course aux sommets.","Recrutement":"Construire l’effectif.","Finances":"Les moyens du projet.","Club":"Un club. Un territoire.","Match":"Le jour de match."}.get(route, route.to_upper()), 35, G.INK, true)
+	heading = G.label(route.to_upper(), 35, G.INK, true)
 	heading.add_theme_font_override("font", G.T.BODY)
 	heading.add_theme_font_size_override("font_size", 20)
 	titles.add_child(heading)

@@ -3,6 +3,7 @@ const Charte = preload("res://ui/charte.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const Editorial = preload("res://ui/entry_editorial.gd")
+const PastillesClub = preload("res://ui/immersive08/pastilles_club.gd")
 
 static func _action(button: Button, primary: bool = false, height: int = 42) -> void:
 	Editorial.action(button, primary, false, height)
@@ -139,14 +140,13 @@ static func _empty(parent: Container, picture_height: float) -> void:
 	for step in [["01", "Ouvrir le ZIP", "Choisis une archive sur ton ordinateur."], ["02", "Vérifier le contenu", "Consulte les clubs, joueurs, compétitions et médias fournis."], ["03", "Installer", "Le pack devient disponible pour tes prochaines carrières."]]:
 		content.add_child(C.rule())
 		var line := C.h(14)
+		line.name = "PackStep" + step[0]
+		line.tooltip_text = step[2]
+		line.mouse_filter = Control.MOUSE_FILTER_PASS
 		content.add_child(line)
 		line.add_child(C.label(step[0], 23, Editorial.BRASS))
 		var title := C.label(step[1], 23, C.IVORY, true, 700)
-		title.custom_minimum_size.x = C.px(190)
 		line.add_child(title)
-		var detail := C.wrap(step[2], 19)
-		C.fill(detail)
-		line.add_child(detail)
 
 static func _section(parent: Container, caption: String, title: String, art: String = "", picture_height: float = 0, fill_height: bool = false) -> VBoxContainer:
 	var frame := PanelContainer.new()
@@ -181,8 +181,6 @@ static func _picture(parent: Container, art: String, height: float) -> void:
 
 static func _catalogue(app: Control, parent: Container, selected: String, compatible: bool, picture_height: float) -> void:
 	var content := _section(parent, "Identités actives" if selected == "base" else "", "Jeu de base", "maquette-reality-base", picture_height, true)
-	content.add_child(C.label("Identités du jeu", 25, C.IVORY, false))
-	content.add_child(C.wrap("Retrouve les clubs, les joueurs et les compétitions de ta carrière.", 21, C.IVORY))
 	content.add_child(C.rule())
 	var facts := C.h(18)
 	content.add_child(facts)
@@ -190,8 +188,11 @@ static func _catalogue(app: Control, parent: Container, selected: String, compat
 	_fact(facts, app.pack_manager.playable_club_count(app.pack_manager.scope), "Clubs jouables")
 	Editorial.divider(facts)
 	_fact(facts, database.get("startingPlayerCount", database.get("playerCount", 0)), "Joueurs")
+	# La règle des packs passe derrière un « i » (plus de phrase d'aide à l'écran).
+	var regle := PastillesClub.info("Les packs changent les noms et les visuels. Le calendrier et les règles restent inchangés.", "i", "PackBaseInfo")
+	regle.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	facts.add_child(regle)
 	content.add_child(C.rule())
-	content.add_child(C.wrap("Les packs changent les noms et les visuels. Le calendrier et les règles restent inchangés.", 19))
 	var space := Control.new()
 	space.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_child(space)
@@ -207,7 +208,6 @@ static func _installed_card(app: Control, parent: Container, pack: Dictionary, s
 	var active := id == selected
 	var content := _section(parent, "Pack actif" if active else "Pack installé", str(pack.get("name", "Pack personnalisé")), "maquette-reality-pack", picture_height)
 	if featured:
-		content.add_child(C.wrap("Les identités et les médias fournis par ton pack, dans le monde commun de Rugby Legacy 27.", 21, C.IVORY))
 		_inventory(content, pack, app.pack_manager.playable_club_count(app.pack_manager.scope))
 		content.add_child(C.rule())
 	else:
@@ -291,7 +291,6 @@ static func _fact(parent: Container, value: Variant, caption: String) -> void:
 static func _preview(app: Control, parent: Container, pack: Dictionary) -> void:
 	var content := _section(parent, "Prêt à installer", str(pack.get("name", "Pack personnalisé")))
 	_inventory(content, pack, app.pack_manager.playable_club_count(app.pack_manager.scope))
-	content.add_child(C.wrap("L’installation ajoute le pack à ton profil. Tu pourras ensuite le sélectionner."))
 	if pack.get("rightsStatus", "") == "not-cleared-for-public-distribution":
 		content.add_child(C.wrap("Droits de redistribution publique des photos et logos à vérifier séparément."))
 	var install := C.button("INSTALLER CE PACK", app.pack_manager.install, true)
