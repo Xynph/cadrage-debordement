@@ -807,7 +807,7 @@ func _face_a_face(panneau: Panel, y: float) -> void:
 	var adversaire := _opponent()
 	var ouvrable := adversaire.get("id") != null and Link.available(app, "club", str(int(adversaire.get("id"))))
 	if issues.is_empty():
-		var aucune := R.tuile(panneau, Rect2(150, y - 2, 250, 36), "0", "confrontation", Charte.IVOIRE, "PreparationHeadToHeadNone", 26)
+		var aucune := R.tuile(panneau, C.reach_rect(Rect2(150, y - 2, 250, 36)), "0", "confrontation", Charte.IVOIRE, "PreparationHeadToHeadNone", 26)
 		if ouvrable: R.cliquable(aucune, _ouvrir_club.bind(adversaire), "PreparationHeadToHeadNoneOuvrir", "Fiche de " + G.club_name(adversaire))
 		return
 	if ouvrable:

@@ -97,4 +97,4 @@ static func _legende(canvas: Control, tuile: Panel, plan: Dictionary, donnees: A
 		D.text(tuile, 130, ligne, mot if int(part.n) > 0 else mot + " · aucun", 25, C.IVORY if int(part.n) > 0 else C.MUTED, 600, 380)
 		if int(part.n) > 0:
 			var indice := k
-			canvas._zone(tuile, Rect2(14, ligne - 31, tuile.size.x / C.density - 28.0, 40), "TrainingPlanPart_%s_%d" % [plan.get("key", ""), k], str(part.infobulle), func(): ouvrir_part(canvas, plan, donnees, indice))
+			canvas._zone(tuile, C.reach_rect(Rect2(14, ligne - 31, tuile.size.x / C.density - 28.0, 40)), "TrainingPlanPart_%s_%d" % [plan.get("key", ""), k], str(part.infobulle), func(): ouvrir_part(canvas, plan, donnees, indice))
