@@ -55,7 +55,7 @@ func tuile(between: Control, numero: int) -> Control:
 	var choisie: Control = null
 	for n: Node in between.find_children("MatchBetweenPlayer*", "Button", true, false):
 		var c := n as Control
-		if not c.is_visible_in_tree() or not c.has_meta("carte_joueur"): continue
+		if c.is_queued_for_deletion() or not c.is_visible_in_tree() or not c.has_meta("carte_joueur"): continue
 		if choisie == null: choisie = c
 		if str(c.name) == "MatchBetweenPlayer%d" % numero: return c
 	return choisie
@@ -110,12 +110,13 @@ func run() -> void:
 	var limite_survol := Time.get_ticks_msec() + 90000
 	while not apparue and Time.get_ticks_msec() < limite_survol:
 		await until(func(): return vue_2d(view), 30000)
-		cible = tuile(between, 10)
-		if cible == null:
-			await settle(10)
-			continue
 		souris(Vector2(4, 4))
 		await settle(2)
+		# Mon XV est redessiné à chaque action du direct : la tuile est relue juste avant de viser (l'ancienne est libérée).
+		cible = tuile(between, 10)
+		if not is_instance_valid(cible):
+			await settle(10)
+			continue
 		var debut := Time.get_ticks_msec()
 		souris(cible.get_global_rect().get_center())
 		apparue = await until(func(): return Carte.actuelle(app) != null, 3000)
@@ -132,13 +133,13 @@ func run() -> void:
 	await until(func(): return vue_2d(view), 60000)
 	if not app.model.live.get("finished", false) and not app.model.live.get("paused", false): await command("pause", {"paused": true})
 	await settle(20)
-	cible = tuile(between, 10)
-	check(cible != null, "Tuile du joueur à l'arrêt")
-	if cible == null:
-		finir()
-		return
 	souris(Vector2(4, 4))
 	await settle(4)
+	cible = tuile(between, 10)
+	check(is_instance_valid(cible), "Tuile du joueur à l'arrêt")
+	if not is_instance_valid(cible):
+		finir()
+		return
 	souris(cible.get_global_rect().get_center())
 	await until(func(): return Carte.actuelle(app) != null, 3000)
 	check(Carte.actuelle(app) != null, "La carte apparaît au survol")
@@ -159,7 +160,7 @@ func run() -> void:
 		souris(Vector2(4, 4))
 		await settle(40)
 		cible = tuile(between, 10)
-		if cible == null: continue
+		if not is_instance_valid(cible): continue
 		souris(cible.get_global_rect().get_center())
 		await until(func(): return Carte.actuelle(app) != null, 3000)
 		await settle(10)
@@ -168,7 +169,8 @@ func run() -> void:
 		if carte == null: continue
 		var ecran := Rect2(Vector2.ZERO, Vector2(taille))
 		check(ecran.encloses(carte.get_global_rect()), "%s : carte entière dans l'écran %s" % [str(taille), str(carte.get_global_rect())])
-		check(not carte.get_global_rect().intersects(cible.get_global_rect()), "%s : la carte ne cache pas le joueur survolé" % str(taille))
+		cible = tuile(between, 10)
+		check(is_instance_valid(cible) and not carte.get_global_rect().intersects(cible.get_global_rect()), "%s : la carte ne cache pas le joueur survolé" % str(taille))
 		var d := defauts(carte)
 		check(d.is_empty(), "%s : rien de coupé : %s" % [str(taille), str(d.slice(0, 6))])
 		check(carte.find_child("CarteJoueurMatch", true, false) != null, "%s : état du match en tête" % str(taille))
@@ -177,12 +179,14 @@ func run() -> void:
 		print("PLANCHE_CARTE_JOUEUR %s : carte %s" % [str(taille), str(carte.get_global_rect())])
 		await capture("carte-%dx%d" % [taille.x, taille.y])
 	# Clic sur le joueur : la carte se range, sa petite fenêtre s'ouvre (comportement inchangé).
-	if cible != null and Carte.actuelle(app) != null:
+	cible = tuile(between, 10)
+	if is_instance_valid(cible) and Carte.actuelle(app) != null:
+		var point := cible.get_global_rect().get_center()
 		for appui in [true, false]:
 			var bouton := InputEventMouseButton.new()
 			bouton.button_index = MOUSE_BUTTON_LEFT
 			bouton.pressed = appui
-			bouton.position = cible.get_global_rect().get_center()
+			bouton.position = point
 			bouton.global_position = bouton.position
 			root.push_input(bouton)
 			await process_frame

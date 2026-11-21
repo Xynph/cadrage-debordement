@@ -115,7 +115,7 @@ static func cacher(app: Control) -> void:
 ## Montre la carte du joueur à côté de `ancre` (sans délai : utilisé par le guetteur et les suites).
 static func montrer(app: Control, player_id: String, source: String, ancre: Control, direct: Dictionary = {}) -> Control:
 	cacher(app)
-	if not is_instance_valid(ancre) or not ancre.is_inside_tree(): return null
+	if not is_instance_valid(ancre) or ancre.is_queued_for_deletion() or not ancre.is_inside_tree(): return null
 	var trouve: Dictionary = _commune().trouver(app, player_id, source)
 	if trouve.is_empty(): return null
 	# Densité du gabarit (2560 × 1440 = 1) lue sur l'écran au moment de l'apparition, puis rendue telle quelle.
@@ -174,7 +174,10 @@ class Guetteur extends Node:
 		if souris.x < 0: return null
 		_purger()
 		for c: Variant in lies:
-			if (c as Control).is_inside_tree() and c.is_visible_in_tree() and c.get_global_rect().has_point(souris): return _lie(c)
+			if not is_instance_valid(c): continue
+			var controle := c as Control
+			if controle.is_queued_for_deletion() or not controle.is_inside_tree() or not controle.is_visible_in_tree(): continue
+			if controle.get_global_rect().has_point(souris): return _lie(controle)
 		return null
 
 	func _process(_delta: float) -> void:
@@ -188,17 +191,29 @@ class Guetteur extends Node:
 			depuis = Time.get_ticks_msec()
 			if masque != id: masque = ""
 			Carte.cacher(app)
-		# Mon XV redessiné sous la souris : même joueur, nouveau contrôle (l'ancien est libéré).
+		# Mon XV redessiné sous la souris : même joueur, nouveau contrôle (l'ancien est libéré) ; la carte suit la
+		# nouvelle ancre, et se ferme si son ancre a disparu sans remplaçante.
 		if lie != null: ancre = lie
+		var ouverte := Carte.actuelle(app)
+		if ouverte != null:
+			var tenue: Variant = ouverte.get_meta("ancre", null)
+			if not is_instance_valid(tenue) or (tenue as Control).is_queued_for_deletion() or not (tenue as Control).is_inside_tree():
+				if _valide(ancre) and str(ancre.get_meta("carte_joueur", "")) == str(ouverte.get_meta("player_id", "")):
+					ouverte.set_meta("ancre", ancre)
+				else:
+					Carte.cacher(app)
 		if id.is_empty() or id == masque: return
 		if Carte.actuelle(app) != null: return
-		if Time.get_ticks_msec() - depuis < int(Carte.DELAI * 1000.0) or not is_instance_valid(ancre): return
+		if Time.get_ticks_msec() - depuis < int(Carte.DELAI * 1000.0) or not _valide(ancre): return
 		var direct: Dictionary = {}
 		var lecture: Variant = ancre.get_meta("carte_direct") if ancre.has_meta("carte_direct") else null
 		if lecture is Callable and (lecture as Callable).is_valid():
 			var lu: Variant = (lecture as Callable).call()
 			if lu is Dictionary: direct = lu
 		Carte.montrer(app, id, str(ancre.get_meta("carte_source", "squad")), ancre, direct)
+
+	func _valide(controle: Variant) -> bool:
+		return is_instance_valid(controle) and not (controle as Control).is_queued_for_deletion() and (controle as Control).is_inside_tree()
 
 	## Contrôle lié le plus haut (la tuile plutôt que le nom qu'elle contient) pour le joueur survolé.
 	func _lie(controle: Control) -> Control:
