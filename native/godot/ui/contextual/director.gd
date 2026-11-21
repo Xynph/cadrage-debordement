@@ -1,6 +1,7 @@
 extends Node
 const S = preload("res://ui/contextual/skin.gd")
 const Charte = preload("res://ui/charte.gd")
+const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 const Locker = preload("res://ui/contextual/locker_view.gd")
 const Live = preload("res://ui/contextual/live_view.gd")
 const Conversation = preload("res://ui/contextual/conversation_view.gd")
@@ -295,6 +296,8 @@ func _input(event: InputEvent) -> void:
 	var code: int = event.keycode if event.keycode != 0 else event.physical_keycode
 	if (event.ctrl_pressed and code == KEY_K) or (event.alt_pressed and code in [KEY_LEFT, KEY_RIGHT]) or code in [KEY_F1, KEY_ESCAPE]:
 		get_viewport().set_input_as_handled()
+		# Une petite fenêtre ouverte (joueur du vestiaire…) : Échap la ferme et ne fait rien d'autre.
+		if code == KEY_ESCAPE and not event.echo and PetiteFenetre.fermer_derniere(get_tree()): return
 		# Direct : Échap met en pause et ouvre le menu du match (live_view.gd le traite d'ordinaire avant).
 		if code == KEY_ESCAPE and kind == "live" and is_instance_valid(view) and view.has_method("echap") and not event.echo: view.echap()
 

@@ -8,6 +8,7 @@ extends Control
 ## match se met en pause et « Retour au direct » le rend tel quel.
 const S = preload("res://ui/contextual/skin.gd")
 const Charte = preload("res://ui/charte.gd")
+const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const TempsForts = preload("res://ui/contextual/match_temps_forts.gd")
 const Meteo = preload("res://ui/contextual/meteo_texte.gd")
@@ -1141,7 +1142,8 @@ func _input(event: InputEvent) -> void:
 	var page_ouverte := is_instance_valid(page) and page.visible
 	if code == KEY_ESCAPE:
 		get_viewport().set_input_as_handled()
-		echap()
+		# Une petite fenêtre ouverte passe avant le menu du match.
+		if not PetiteFenetre.fermer_derniere(get_tree()): echap()
 	elif code == KEY_SPACE:
 		if menu_ouvert:
 			get_viewport().set_input_as_handled()

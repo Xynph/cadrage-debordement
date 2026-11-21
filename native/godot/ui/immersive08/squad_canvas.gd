@@ -12,6 +12,7 @@ const Charte = preload("res://ui/charte.gd")
 const Identity = preload("res://ui/player_identity.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const Notes = preload("res://ui/notes_match.gd")
+const R = preload("res://ui/immersive08/reperes.gd")
 const ROW_HEIGHT := 34
 const GROUP_HEIGHT := 30
 const FIRST_ROWS := 26
@@ -162,9 +163,11 @@ func _entete_page() -> void:
 	var saison := int(app.model.get("meta", {}).get("season", 1))
 	var joueurs: Array = app.model.get("squad", [])
 	_italique(D.text(self, 0, 64, "EFFECTIF", 58, C.IVORY, 800, 600)).name = "RosterTitre"
-	var identite := str(app.Immersive.TITLES.get("Effectif", "")).trim_suffix(".")
-	var sous := "%s%d joueur%s sous contrat · saison %s" % [identite + " · " if not identite.is_empty() else "", joueurs.size(), "s" if joueurs.size() > 1 else "", _saison_courte(G.season_label(saison))]
-	D.text(self, 0, 102, sous, 19, C.MUTED, 500, 1000, HORIZONTAL_ALIGNMENT_LEFT, true).name = "RosterSousTitre"
+	# Sous le titre : deux pastilles neutres « 36 joueurs » et « 2026-27 » (plus de phrase, 21/11).
+	var nombre := R.pastille(self, 0, 104, "%d joueur%s" % [joueurs.size(), "s" if joueurs.size() > 1 else ""], Charte.IVOIRE_2, "people", "RosterSousTitre")
+	R.cliquable(nombre, _tous_les_joueurs, "RosterSousTitreOuvrir", "Tous les joueurs sous contrat")
+	var saison_p := R.pastille(self, nombre.size.x / C.density + 10, 104, _saison_courte(G.season_label(saison)), Charte.IVOIRE_2, "calendar", "RosterSaison")
+	R.cliquable(saison_p, func(): app._navigate("Calendrier"), "RosterSaisonOuvrir", "Calendrier de la saison " + G.season_label(saison))
 	_tuiles(joueurs, saison)
 
 ## Moyenne de niveau du XV (numéros 1 à 15) et son évolution depuis le début de saison, si elle est connue pour tout le XV.
@@ -190,6 +193,15 @@ func _xv() -> Dictionary:
 	var resultat := {"moyenne": total / nombre}
 	if connus: resultat.evolution = (total - debut) / nombre
 	return resultat
+
+## Pastille « 36 joueurs » : retire filtres et recherche (tous onglets, y compris Contrats).
+func _tous_les_joueurs() -> void:
+	state.family = "Tous"
+	state.contract = "Tous"
+	state.search = ""
+	state.scroll = 0
+	app.roster_filter = "Tous"
+	app._render(false)
 
 ## « 2026-2027 » devient « 2026-27 » comme dans la maquette.
 static func _saison_courte(libelle: String) -> String:
@@ -220,13 +232,13 @@ func _tuiles(joueurs: Array, saison: int) -> void:
 	var tendance := ""
 	if xv.has("evolution"):
 		var e: float = xv.evolution
-		tendance = "= stable cette saison" if absf(e) < .05 else ("▲ +" if e > 0 else "▼ −") + _decimal(absf(e)) + " cette saison"
+		tendance = "—" if absf(e) < .05 else ("▲ +" if e > 0 else "▼ −") + _decimal(absf(e))
 	var etroit := _etroit()
 	var definitions := [
 		{"id": "Aptes", "cap": "APTES ▾", "val": str(joueurs.size() - indispos), "suf": "/ %d" % joueurs.size(), "l": 250.0 if not etroit else 210.0, "act": "aptes", "aide": "Joueurs aptes : survol pour l’équilibre par poste, clic pour ne garder qu’eux."},
 		{"id": "Indisponibles", "cap": "INDISPONIBLES", "val": str(indispos), "suf": " · ".join(detail) if not etroit else "", "l": 330.0 if not etroit else 250.0, "act": "indisponibles", "aide": "Indisponibles : " + (" · ".join(detail) if not detail.is_empty() else "aucun")},
 		{"id": "Contrats", "cap": "FINS DE CONTRAT", "val": str(fins), "suf": "cette saison", "l": 290.0 if not etroit else 250.0, "act": "fin", "aide": "Contrats qui s’achèvent cette saison."},
-		{"id": "Niveau", "cap": "NIVEAU MOYEN DU XV", "val": _decimal(xv.moyenne) if xv.has("moyenne") else "—", "suf": tendance if not etroit else "", "l": 360.0 if not etroit else 270.0, "act": "niveau", "aide": "Niveau moyen des quinze titulaires (clic : trier par niveau)." + ("\n" + tendance if not tendance.is_empty() else "")},
+		{"id": "Niveau", "cap": "NIVEAU MOYEN DU XV", "val": _decimal(xv.moyenne) if xv.has("moyenne") else "—", "suf": tendance if not etroit else "", "l": 360.0 if not etroit else 270.0, "act": "niveau", "aide": "Niveau moyen des quinze titulaires (clic : trier par niveau)." + ("\n" + ("Stable cette saison" if tendance == "—" else tendance + " cette saison") if not tendance.is_empty() else "")},
 	]
 	var x := LARGEUR
 	for i in range(definitions.size() - 1, -1, -1):
@@ -368,10 +380,7 @@ func _onglets() -> void:
 	var largeur_comparer := _largeur("Comparer 3/3 →", 19) + 36.0
 	compare = _lien(self, Rect2(droite - largeur_comparer, Y_ONGLETS, largeur_comparer, 44), texte, func(): app.SquadViews.comparison(app), "OpenComparison", Charte.IVOIRE, 19.0, HORIZONTAL_ALIGNMENT_CENTER, true)
 	droite -= largeur_comparer + 16.0
-	if not _etroit():
-		var suivant := _lien(self, Rect2(droite - 130, Y_ONGLETS, 130, 44), "Ctrl Tab", func(): _onglet_suivant(), "RosterNextTab", Charte.IVOIRE_2, 17.0, HORIZONTAL_ALIGNMENT_CENTER, true)
-		suivant.tooltip_text = "Onglet suivant"
-		droite -= 146.0
+	# « Ctrl Tab » (onglet suivant) est dans l'aide « ? » du pied du tableau (21/11).
 	if app.model.get("epcrPreparation") is Dictionary:
 		var europe := _lien(self, Rect2(droite - 300, Y_ONGLETS, 300, 44), "Préparer l’Europe →", func(): load("res://ui/immersive08/europe_canvas.gd").open(app), "OpenEpcrPreparation", Charte.IVOIRE, 19.0, HORIZONTAL_ALIGNMENT_CENTER, true)
 		europe.tooltip_text = "Préparer la campagne européenne"
@@ -683,9 +692,9 @@ func _tableau() -> void:
 	defile.add_child(rows)
 	count = D.text(table, 0, Y_PIED - Y_ENTETE + 26, "", 18, C.MUTED, 500, 1000, HORIZONTAL_ALIGNMENT_LEFT, true)
 	count.name = "RosterCount"
-	var aide := "↑↓ choisir · Entrée fiche complète · Maj Espace comparer · / chercher dans le tableau · Échap Menu" if not _etroit() else "Entrée : fiche · / : chercher · Échap Menu"
-	var conseil := D.text(table, LARGEUR, Y_PIED - Y_ENTETE + 26, aide, 18, C.MUTED, 500, 1100, HORIZONTAL_ALIGNMENT_RIGHT, true)
-	conseil.name = "RosterScrollHint"
+	# Raccourcis clavier derrière un « ? » (21/11) : plus de ligne de mode d'emploi au pied du tableau.
+	var aide := "Raccourcis\n↑↓ : choisir un joueur\nEntrée : fiche complète\nMaj Espace : comparer\n/ : chercher dans le tableau\nCtrl Tab : onglet suivant\nÉchap : Menu\nSurvol d'un nom : aperçu · clic : fiche"
+	R.rond(table, LARGEUR - 30, Y_PIED - Y_ENTETE + 18, aide, "?", "RosterScrollHint", 28)
 
 
 static func _known_number(value: Variant) -> bool:
@@ -859,8 +868,7 @@ func _refresh(reveal: bool) -> void:
 	var players := _players()
 	if app.selected_player.is_empty() and not players.is_empty():app.selected_player=str(players[0].id)
 	state.visible_player=app.selected_player
-	var tri := str(state.sort) + (" (ordre de la feuille)" if state.sort == "Poste" else "")
-	count.text="%d / %d joueurs · tri : %s · survol : aperçu · clic : fiche complète" % [players.size(),app.model.get("squad",[]).size(),tri]
+	count.text="%d / %d joueurs" % [players.size(),app.model.get("squad",[]).size()]
 	if compare != null: compare.text="Comparer %d/3 →" % app.management_ui.compare.size()
 	# Construction progressive : les lignes visibles sont créées tout de suite, le reste sur les
 	# images suivantes (60 lignes d'un coup coûtaient plus de 100 ms avant la première image).
@@ -906,12 +914,28 @@ func _bandeau_groupe(players: Array, group: String) -> void:
 	for p: Dictionary in membres:
 		if p.get("shirtNumber") is int or p.get("shirtNumber") is float:
 			if int(p.shirtNumber) <= 15: titulaires.append(int(p.shirtNumber))
-	var detail := "%d joueur%s" % [membres.size(), "s" if membres.size() > 1 else ""]
-	if not titulaires.is_empty(): detail += " · n° %d à %d · ordre de la feuille" % [titulaires.min(), titulaires.max()]
+	# Bandeau de groupe : « AVANTS 19 » (chiffre de tuile) et un « i » pour les numéros de la feuille (21/11).
 	var h := C.reach(GROUP_HEIGHT)
+	var filtre := "avants" if group == "AVANTS" else "arrieres"
+	var ouvrir := Button.new()
+	ouvrir.name = "RosterGroupFiltre" + ("Avants" if group == "AVANTS" else "Arrieres")
+	ouvrir.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	ouvrir.focus_mode = Control.FOCUS_NONE
+	ouvrir.tooltip_text = "Ne garder que les " + group.to_lower()
+	ouvrir.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+	ouvrir.add_theme_stylebox_override("hover", _plat(Color(Charte.IVOIRE, .06)))
+	ouvrir.add_theme_stylebox_override("pressed", _plat(Color(Charte.IVOIRE, .10)))
+	banner.add_child(ouvrir)
+	ouvrir.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	ouvrir.pressed.connect(func(): _appliquer_puce(filtre))
 	var titre := _italique(D.text(banner, 14, h / 2.0 + 8, group, 22, C.IVORY, 700, 200), false)
 	var l := _largeur(group, 22, false, 700)
-	D.text(banner, 14 + l + 16, h / 2.0 + 7, detail, 18, C.MUTED, 500, 900, HORIZONTAL_ALIGNMENT_LEFT, true)
+	var chiffre := _italique(D.text(banner, 14 + l + 14, h / 2.0 + 9, str(membres.size()), 26, C.IVORY, 800, 80), false)
+	chiffre.name = "RosterGroupNombre"
+	chiffre.tooltip_text = "%d joueur%s" % [membres.size(), "s" if membres.size() > 1 else ""]
+	if not titulaires.is_empty():
+		var lc := _largeur(str(membres.size()), 26, false, 800)
+		R.rond(banner, 14 + l + 14 + lc + 14, h / 2.0, "N° %d à %d · ordre de la feuille" % [titulaires.min(), titulaires.max()], "i", "RosterGroupNumeros", 22)
 	titre.name = "RosterGroupTitre"
 
 func _build_remaining(players: Array,from: int,generation: int) -> void:
@@ -949,7 +973,7 @@ func _statut(player: Dictionary) -> Dictionary:
 			var libelle := str(preload("res://ui/club_mail.gd").injury_label(app.model, player))
 			var precision := "" if libelle == "Blessure" or libelle.length() > 12 else " (" + libelle.to_lower() + ")"
 			var retour := _date_retour(semaines * 7)
-			return {"t": "✚ Blessé" + precision + " · " + ("retour " + retour if not retour.is_empty() else "retour dans %d sem." % semaines), "c": C.ALERT}
+			return {"t": "✚ Blessé" + precision + " · " + ("retour " + retour if not retour.is_empty() else "retour dans %d sem." % semaines), "c": C.ALERT, "pastille": "✚ " + (retour if not retour.is_empty() else "%d sem." % semaines)}
 		"suspendu":
 			var matchs := int(player.get("suspension", 1))
 			return {"t": "! Suspendu (%d match%s)" % [matchs, "s" if matchs > 1 else ""], "c": C.ALERT}
@@ -1070,8 +1094,12 @@ func _row(player:Dictionary,index:int) -> void:
 				D.text(row,x+l,base,G.n(player.get("minutes",0)),19,C.MUTED,500,l,HORIZONTAL_ALIGNMENT_RIGHT,true)
 			"contrat":
 				var echeance: String = _echeance(player)
-				var fin_saison: bool = echeance.contains("⧗")
-				D.text(row,x,base,echeance,19,C.IVORY if fin_saison else C.MUTED,500,l,HORIZONTAL_ALIGNMENT_LEFT,true).name = "RosterContractEnd"
+				if echeance.contains("⧗"):
+					# Fin de saison : pastille sablier + année (21/11) ; la précision dans l'infobulle.
+					var annee := echeance.get_slice(" ⧗", 0)
+					R.pastille(row, x, base, "⧗ " + annee, R.ORANGE, "", "RosterContractEnd", 21).tooltip_text = annee + " · fin de contrat en fin de saison"
+				else:
+					D.text(row,x,base,echeance,19,C.MUTED,500,l,HORIZONTAL_ALIGNMENT_LEFT,true).name = "RosterContractEnd"
 				_lien_lecture(row, Rect2(x - 6, 2, l + 8, h - 4), player, "contract", "SquadOpenContract_")
 			"moy":
 				var moyenne: Variant = notes.get("moyenne")
@@ -1087,8 +1115,13 @@ func _row(player:Dictionary,index:int) -> void:
 			"motif":
 				D.text(row,x,base,reason,19,C.IVORY,600,l,HORIZONTAL_ALIGNMENT_LEFT,true).name="RosterWatchReason"
 			"statut":
-				var texte := D.text(row,x,base,str(statut.t),19,statut.c,600 if statut.c != C.MUTED else 500,l,HORIZONTAL_ALIGNMENT_LEFT,true)
-				texte.name = "RosterStatut"
+				if statut.has("pastille"):
+					# Blessé : pastille croix + date de retour ; le motif complet dans l'infobulle.
+					var pastille_statut := R.pastille(row, x, base, str(statut.pastille), R.ROUGE, "", "RosterStatut", 21)
+					pastille_statut.tooltip_text = str(statut.t)
+				else:
+					var texte := D.text(row,x,base,str(statut.t),19,statut.c,600 if statut.c != C.MUTED else 500,l,HORIZONTAL_ALIGNMENT_LEFT,true)
+					texte.name = "RosterStatut"
 	var comparer_ligne := Button.new()
 	comparer_ligne.name = "RosterCompare_" + id.validate_node_name()
 	comparer_ligne.set_meta("player_id", id)

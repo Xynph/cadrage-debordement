@@ -577,7 +577,7 @@ static func fatigue(model: Dictionary) -> Dictionary:
 	# Version courte dans la bulle (le chiffre et la proposition) ; le détail (noms, remplaçants) se déplie.
 	var court := "%s — je propose %d changement%s pour %s faire souffler." % [titulaires, changes.size(), "s" if changes.size() > 1 else "", "le" if n == 1 else "les"]
 	if changes.size() < n: court = "%s — je propose %d changement%s ; pour les autres, personne de frais au poste." % [titulaires, changes.size(), "s" if changes.size() > 1 else ""]
-	var resultat := _resultat(court, "mise_en_garde", NEUTRE, {"type": "composition", "changements": changes.map(func(c: Dictionary) -> Dictionary: return {"slot": int(c.slot), "playerId": str(c.playerId), "sortant": str(c.sortant)}), "libelle": "Suivre le conseil", "detail": "Fait souffler les titulaires fatigués (tu peux toujours remettre la feuille comme avant)"})
+	var resultat := _resultat(court, "mise_en_garde", NEUTRE, {"type": "composition", "changements": changes.map(func(c: Dictionary) -> Dictionary: return {"slot": int(c.slot), "playerId": str(c.playerId), "sortant": str(c.sortant)}), "libelle": "Suivre le conseil", "detail": "Faire souffler les titulaires fatigués"})
 	resultat["plus"] = texte
 	return resultat
 

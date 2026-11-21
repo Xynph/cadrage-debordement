@@ -141,10 +141,12 @@ func bulle_et_carnet() -> void:
 	coach.fermer_bulle(); await settle()
 	# Carnet du Bureau : alerte et conseil avec « Suivre le conseil ».
 	app._navigate("Bureau"); await settle(40)
-	var ligne: Label = app.find_child("GabiLigne_alerte", true, false)
-	check(ligne != null and ligne.text.contains("70 %"), "Carnet du Bureau : ligne d'alerte sous 70 %")
+	# Alerte en pastille de l'État du groupe (« 3 < 70 % »), conseil réduit à « entrant → sortant » (+ autres changements).
+	var alerte: Label = app.find_child("OfficeFatigueActionTexte", true, false)
+	check(alerte != null and alerte.text.contains("< 70 %"), "Bureau : pastille d'alerte sous 70 %")
 	var conseil: Label = app.find_child("GabiLigne_conseil", true, false)
-	check(conseil != null and conseil.text.contains("souffler"), "Carnet du Bureau : conseil de fatigue")
+	var changement: Dictionary = Avis.fatigue(app.model).get("action", {}).get("changements", [{}])[0]
+	check(conseil != null and conseil.text.contains("→") and conseil.text.begins_with(str(Avis._nom(Avis.joueur(app.model, str(changement.get("playerId", "")))))), "Carnet du Bureau : conseil de fatigue (entrant → sortant)")
 	var suivre: Button = app.find_child("GabiBureauSuivre", true, false)
 	check(suivre != null and suivre.text == "Suivre le conseil" and not suivre.disabled, "Carnet du Bureau : « Suivre le conseil »")
 	await capture("gabi-alerte-fatigue")
