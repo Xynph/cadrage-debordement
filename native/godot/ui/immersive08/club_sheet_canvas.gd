@@ -182,7 +182,7 @@ func _hero() -> void:
 	crest.name = "ClubSheetCrest"
 	hero.add_child(crest)
 	D.place(crest, Rect2(60, 40, 220, 220))
-	D.text(hero, 330, 58, "FICHE DU CLUB", 26, C.GOLD, 800, 220)
+	D.text(hero, 330, 58, "FICHE DU CLUB", 26, C.GOLD, 800, 220).add_theme_font_override("font", C.Charte.TITRE_FICHE)
 	var title := D.text(hero, 330, 150, str(data.get("name", G.club_name(identity))), 78, C.IVORY, 800, 1030)
 	title.name = "ClubSheetName"
 	var place := PackedStringArray()

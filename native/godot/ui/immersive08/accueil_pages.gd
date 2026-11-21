@@ -68,7 +68,7 @@ static func remplir(app: Control, page: Control, quoi: String) -> void:
 	colonne.add_child(retour)
 	var titre := Label.new()
 	titre.text = str(TITRES[quoi]).to_upper()
-	titre.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
+	titre.add_theme_font_override("font", Charte.TITRE_FICHE)
 	titre.add_theme_font_size_override("font_size", C.font_px(72))
 	titre.add_theme_color_override("font_color", Charte.IVOIRE)
 	colonne.add_child(titre)

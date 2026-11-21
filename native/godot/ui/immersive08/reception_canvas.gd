@@ -416,11 +416,11 @@ static func heading(row: Control, app: Control) -> Label:
 	# Même hiérarchie que les autres pages (Bureau, Effectif) : surtitre, grand titre, puis l'état de la boîte.
 	# Maquette : « RÉCEPTION. » en capitales italiques, compteurs sur la même ligne, « ! N urgent » en rouge ; pas de surtitre.
 	var title := D.text(row,-1,58,"RÉCEPTION.",50,C.IVORY,800,520)
-	title.add_theme_font_override("font", C.Charte.TITRE_EXTRA_ITALIQUE)
+	title.add_theme_font_override("font", C.Charte.TITRE_FICHE)
 	title.name = "InboxPageTitle"
 	var messages := _messages(app)
 	var counts := Reading.counts(messages,app.model)
-	var x := C.Charte.TITRE_EXTRA_ITALIQUE.get_string_size("RÉCEPTION.", HORIZONTAL_ALIGNMENT_LEFT, -1, 50).x + 26.0
+	var x := C.Charte.TITRE_FICHE.get_string_size("RÉCEPTION.", HORIZONTAL_ALIGNMENT_LEFT, -1, 50).x + 26.0
 	var line := "%d non lus · %d à faire" % [unread(app),counts.todo]
 	D.text(row,x,56,line,19,C.MUTED,500,560).name = "InboxPageCounts"
 	if counts.urgent > 0:

@@ -94,7 +94,7 @@ static func build(app: Control, page: Control, kind: String) -> void:
 	var lien_retour := Kit.lien(page, Rect2(0, 4, 0, 38), libelle_retour, func(): retour(app), "RecrutementRetour", 20)
 	lien_retour.tooltip_text = ""
 	Kit.touche(page, lien_retour.size.x / C.density + 10, 32, "Échap")
-	var titre := Kit.titre(page, 0, 98, str(TITRES.get(kind, "")), 38, 1400)
+	var titre := Kit.titre_page(page, 0, 98, str(TITRES.get(kind, "")), 38, 1400)
 	titre.name = "RecrutementSubpageTitle"
 	D.line(page, Vector2(0, 122), Vector2(2248, 122), Charte.FILET)
 	var cadre := D.rect(page, Rect2(0, 146, LARGEUR, 1000), Charte.PANNEAU, Charte.RAYON_PANNEAU)

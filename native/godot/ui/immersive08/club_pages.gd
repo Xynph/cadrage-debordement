@@ -61,7 +61,7 @@ static func build(app: Control, canvas: Control) -> void:
 	var lien := Kit.lien(canvas, Rect2(0, TOP + 8, 0, 38), "← Retour au mentorat" if kind == "mentor" else "← Retour au staff", func(): retour(app), "ClubRetour", 20)
 	lien.tooltip_text = ""
 	Kit.touche(canvas, lien.size.x / C.density + 10, TOP + 38, "Échap")
-	var titre := Kit.titre(canvas, 0, TOP + 100, str(TITRES.get(kind, "")), 38, 1400)
+	var titre := Kit.titre_page(canvas, 0, TOP + 100, str(TITRES.get(kind, "")), 38, 1400)
 	titre.name = "ClubSubpageTitle"
 	D.line(canvas, Vector2(0, TOP + 124), Vector2(2248, TOP + 124), Charte.FILET)
 	var cadre := D.rect(canvas, Rect2(0, TOP + 148, LARGEUR, 900), Charte.PANNEAU, Charte.RAYON_PANNEAU)

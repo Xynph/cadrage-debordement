@@ -410,7 +410,9 @@ func _pression(parent: Node, brut: Variant) -> void:
 
 func _room_card(rect: Rect2) -> void:
 	var colonne := _boite(self, rect, "PressConferenceBrief", C.PANEL, 24)
-	colonne.add_child(_titre("LA SALLE DE PRESSE", 30))
+	var titre_presse := _titre("LA SALLE DE PRESSE", 30)
+	titre_presse.add_theme_font_override("font", Charte.TITRE_FICHE)
+	colonne.add_child(titre_presse)
 	var conference: Dictionary = data.get("conference", {})
 	var available: bool = conference.get("available", false)
 	var questions: Array = conference.get("questions", [])
