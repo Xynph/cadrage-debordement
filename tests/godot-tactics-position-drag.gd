@@ -5,7 +5,6 @@ var checks := 0
 var failures: Array[String] = []
 var output := OS.get_environment("CD_TACTICS_DRAG_OUTPUT")
 var Selection = load("res://ui/immersive08/tactics_selection.gd")
-var Carte = load("res://ui/carte_joueur_survol.gd")
 func _initialize() -> void:call_deferred("run")
 func check(ok: bool,message: String) -> void:
 	checks+=1
@@ -45,10 +44,6 @@ func drag(from: Control,to: Control,cancel: bool=false) -> void:
 	else:
 		await mouse(target,false);await worker()
 	check(not root.gui_is_dragging(),"Glisser terminé")
-## Étoiles de capacité au poste posées sur la carte du n° `numero` (-1 si absentes).
-func stars(numero: int) -> float:
-	var e:=named("TacticsPositionStars%02d" % numero)
-	return float(e.get_meta("etoiles",-1.0)) if e!=null and e.has_meta("etoiles") else -1.0
 func labels(node: Node) -> Array[String]:
 	var result:Array[String]=[]
 	for label:Label in node.find_children("*","Label",true,false):result.append(label.text)
@@ -92,13 +87,12 @@ func run() -> void:
 		check(portrait!=null and portrait.texture!=null,"Portrait chargé au poste "+str(i+1))
 		var person:Dictionary=Selection.player(app.model,str(assignment(i).get("playerId","")))
 		check(Selection.rating(app.model,person,i)!=null,"Projection moteur présente au poste "+str(i+1))
-		check(stars(i+1)==Carte.etoiles_poste(person,i+1) and stars(i+1)>=0.0,"Capacité au poste en étoiles (note au poste / meilleure note) au poste "+str(i+1))
+		check(str(int(person.get("positionRatings",{}).get(str(i+1),-1))) in labels(named("TacticsPositionRating%02d" % (i+1))),"Note projetée au poste "+str(i+1))
 		var card:=named("LineupSlot%02d" % (i+1))
 		for j in range(i+1,15):check(not card.get_global_rect().intersects(named("LineupSlot%02d" % (j+1)).get_global_rect()),"Surfaces distinctes %d/%d" % [i+1,j+1])
 	var pillar_id:=str(assignment(0).get("playerId"))
 	var pillar:Dictionary=Selection.player(app.model,pillar_id)
 	var own_note:Variant=Selection.rating(app.model,pillar,0);var wrong_note:Variant=Selection.rating(app.model,pillar,9)
-	var stars_pilier:=stars(1)
 	check(own_note!=null and wrong_note!=null and float(own_note)-float(wrong_note)>=35,"Pilier au n°10 : forte chute issue du moteur")
 	check(Selection.rating(app.model,{"note":99},9)==null,"Note principale jamais substituée à une projection manquante")
 	check(Selection.rating(app.model,{"positionRatings":{"10":0}},9)==0,"Aptitude nulle conservée")
@@ -194,7 +188,7 @@ func run() -> void:
 	if pillar_ready:
 		await drag(named("LineupSlot01"),named("LineupSlot10"))
 		check(str(assignment(9).playerId)==pillar_id and assignment(0).playerId==null,"Pilier1 vers10 : affectation réelle et source libérée si retour non qualifié")
-		check(stars(10)==Carte.etoiles_poste(Selection.player(app.model,pillar_id),10) and stars(10)<stars_pilier,"La carte10 affiche la faible capacité réelle du pilier en étoiles")
+		check(str(int(wrong_note)) in labels(named("TacticsPositionRating10")),"La carte10 affiche la faible note réelle du pilier")
 		check(Selection.player(app.model,pillar_id).get("note")==pillar.get("note"),"Note principale du joueur inchangée après déplacement")
 		check(app.model.meta.get("lineupChange",{}).get("vacatedSlot")==0,"Reçu moteur explicite la place source laissée vacante")
 		var defence_after:Variant=app.model.get("decisions",{}).get("lineupDefence")

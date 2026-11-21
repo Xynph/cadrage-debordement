@@ -7,8 +7,6 @@ test('Opponent threats inherit the real new player bank and public age without m
  const go=(command,payload={})=>{const r=b.handle({id:++id,command,payload});a.equal(r.ok,true,r.error);return r.model;};
  let m=advanceToNextMatch(go('new_career',{mode:'world-champ',club:0}),go),text=go('export').meta.exportText,state=JSON.parse(text).state;
  const source=m.decisions.preparation,opponent=state.clubs[source.opponent.id];a(source.threats.length>0);
- // Étoiles de capacité au poste (Préparation) : note à sa place et meilleure note au poste, jamais au-delà.
- for(const threat of source.threats)a(threat.bestPositionNote>0&&threat.positionNote>0&&threat.positionNote<=threat.bestPositionNote,JSON.stringify(threat));
  for(const threat of source.threats){const p=opponent.players.find(p=>p.id===threat.id);a(p);// La version de banque est celle du joueur source telle que le moteur la projette (absente de la sauvegarde pour les pros du Monde avant #641, v2 après) : la menace la suit, quelle qu'elle soit, sans valeur figée.
   if(p.appearanceBankVersion!==undefined)a.equal(threat.appearanceBankVersion,p.appearanceBankVersion,'la menace reprend la banque du joueur source');
   else a.ok(threat.appearanceBankVersion===undefined||[1,2].includes(threat.appearanceBankVersion),'banque projetée valide ou absente');

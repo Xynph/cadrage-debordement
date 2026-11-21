@@ -96,10 +96,20 @@ static func rating(model: Dictionary,person: Dictionary,index: int) -> Variant:
 	if not (value is int or value is float) or not is_finite(float(value)) or value<0 or value>100:return null
 	return value
 
-## Étoiles de capacité au poste (0 à 5, -1 si inconnues) du joueur à la place `index` : barème commun de la carte joueur.
-static func etoiles(model: Dictionary,person: Dictionary,index: int) -> float:
+## Rôle de chaque numéro (les deux 2e ligne, les deux 3e ligne aile, les deux centres, les deux ailiers se valent).
+const ROLES := [1, 2, 3, 4, 4, 6, 6, 8, 9, 10, 11, 12, 12, 11, 15]
+
+## Familiarité du joueur avec le poste de la place `index` : 3 poste naturel (même rôle que son poste principal),
+## 2 deuxième poste (même rôle qu'un poste secondaire), 1 dépanne, -1 inconnue (sans poste principal, place hors XV).
+static func familiarite(model: Dictionary,person: Dictionary,index: int) -> int:
 	var position:=number(model,index)
-	return -1.0 if position==0 else load("res://ui/carte_joueur_survol.gd").etoiles_poste(person,position)
+	var primary: Variant=person.get("primaryPosition")
+	if position<1 or position>15 or not (primary is int or primary is float) or int(primary)<1 or int(primary)>15:return -1
+	var role: int=ROLES[position-1]
+	if ROLES[int(primary)-1]==role:return 3
+	for secondary: Variant in person.get("secondaryPositions",[]):
+		if (secondary is int or secondary is float) and int(secondary)>=1 and int(secondary)<=15 and ROLES[int(secondary)-1]==role:return 2
+	return 1
 
 static func rating_text(model: Dictionary,person: Dictionary,index: int) -> String:
 	var value: Variant=rating(model,person,index)

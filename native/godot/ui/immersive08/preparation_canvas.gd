@@ -13,8 +13,8 @@ const Briefing = preload("res://ui/preparation_briefing.gd")
 const PersonName = preload("res://ui/person_name.gd")
 const Link = preload("res://ui/entity_link.gd")
 const Charte = preload("res://ui/charte.gd")
+const Savoir = preload("res://ui/player_knowledge_text.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
-const CarteSurvol = preload("res://ui/carte_joueur_survol.gd")
 const ClubSheet = preload("res://ui/immersive08/club_sheet_canvas.gd")
 const R = preload("res://ui/immersive08/reperes.gd")
 const Consignes = preload("res://ui/immersive08/preparation_consignes.gd")
@@ -912,17 +912,38 @@ func _surveiller(section: Control, rectangle: Rect2) -> void:
 			var neutre := C.icon("people", 48, Charte.IVOIRE_3)
 			carte.add_child(neutre)
 			D.place(neutre, Rect2(32, 40, 48, 48))
-		_lien_joueur(carte, Rect2(122, 4, 290, 34), menace, 21, "PreparationThreatName%d" % i, club_id)
+		_lien_joueur(carte, Rect2(122, 4, 212, 34), menace, 21, "PreparationThreatName%d" % i, club_id)
 		var age := "  ·  %d ans" % int(menace.get("age", 0)) if _nombre(menace.get("age")) else ""
-		_texte(carte, 126, 60, "%s%s" % [str(menace.get("pos", "")), age], 16, Charte.IVOIRE_2, 285)
+		_texte(carte, 126, 60, "%s%s" % [str(menace.get("pos", "")), age], 16, Charte.IVOIRE_2, 205)
 		var note: Variant = menace.get("note")
-		# Capacité au poste en étoiles (choix de Léo du 21/11/2026, à la place de « 72 au poste » ; jamais le niveau).
-		var meilleure: Variant = menace.get("bestPositionNote")
-		var a_sa_place: Variant = menace.get("positionNote")
-		if _nombre(meilleure) and float(meilleure) > 0.0 and _nombre(a_sa_place):
-			CarteSurvol.poser_etoiles(carte, Rect2(126, 70, 130, 24), CarteSurvol.etoiles_part(float(a_sa_place) / float(meilleure)), "PreparationThreatStars%d" % i)
-		elif _nombre(note): _titre(carte, 126, 92, "%d au poste" % int(note), 26, Charte.couleur_attribut(note), 285)
-		elif note != null and str(note) != "": _texte(carte, 126, 88, str(note), 17, Charte.IVOIRE, 285)
+		# Danger du joueur (les étoiles ont été rejetées par Léo le 21/11/2026) : sa note au poste en chiffre si elle est
+		# connue, sinon la fourchette de niveau publiée par le recrutement, sinon « ? » non observé ; pastille colorée par
+		# paliers, chiffre ou mot toujours écrit.
+		var fourchette := Savoir.bounds(menace, "rating")
+		var valeur := ""
+		var legende := "Au poste"
+		var fond := Charte.PANNEAU_3
+		var encre := Charte.IVOIRE_2
+		if _nombre(note):
+			valeur = str(roundi(float(note)))
+			fond = Charte.couleur_attribut(note)
+			encre = Charte.ENCRE
+		elif not fourchette.is_empty():
+			valeur = "%d–%d" % [roundi(float(fourchette.min)), roundi(float(fourchette.max))]
+			legende = "Niveau"
+			fond = Charte.couleur_attribut((float(fourchette.min) + float(fourchette.max)) / 2.0)
+			encre = Charte.ENCRE
+		else:
+			valeur = "?"
+			legende = "Non observé"
+		var large := 68.0 if valeur.length() <= 3 else 92.0
+		var pastille := D.rect(carte, Rect2(408 - large, 12, large, 38), fond, Charte.RAYON_PILULE)
+		pastille.name = "PreparationThreatLevel%d" % i
+		pastille.set_meta("valeur", valeur)
+		if _nombre(note): pastille.set_meta("note", roundi(float(note)))
+		var chiffre := D.text(pastille, large / 2.0, 28, valeur, 24 if large < 80 else 20, encre, 700, large, HORIZONTAL_ALIGNMENT_CENTER)
+		chiffre.name = "Chiffre"
+		_etiquette(carte, 408 - large / 2.0, 72, legende, 110, HORIZONTAL_ALIGNMENT_CENTER).name = "PreparationThreatLevelLabel%d" % i
 		_texte(carte, 126, 112, str(menace.get("role", "")), 16, Charte.IVOIRE, 285)
 		if _nombre(menace.get("fitness")) and not C.dense(): _texte(carte, 126, 130, "Condition %d %%" % int(menace.fitness), 15, Charte.IVOIRE_2, 285)
 	var signaux: Array = reports.get("signals", [])

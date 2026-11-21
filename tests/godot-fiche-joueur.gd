@@ -112,7 +112,7 @@ func run() -> void:
 	check(link.tooltip_text.is_empty(), "Nom : pas d'info-bulle système par-dessus la mini-fiche")
 
 	# Survol du nom : carte joueur (demande de Léo du 21/11/2026, même composant que le direct), Control posé dans la
-	# coque, aucune fenêtre, entière à l'écran. Le vrai survol à la souris est contrôlé par godot-etoiles-fiche-partout.
+	# coque, aucune fenêtre, entière à l'écran. Le vrai survol à la souris est contrôlé par godot-poste-carte-survol.
 	check(link.get_meta("carte_joueur", "") == id, "Survol du nom : carte joueur branchée")
 	var noeud: Node = Carte.montrer(app, id, "squad", link)
 	await settle(2)
