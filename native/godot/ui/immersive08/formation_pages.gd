@@ -17,11 +17,11 @@ const HOTE := "FormationHote"
 const PAGES := ["suivi", "revue", "pret"]
 const TITRES := {"suivi":"Suivi des jeunes", "revue":"Nouvelle génération du centre", "pret":"Prêt d’un jeune professionnel"}
 const LARGEUR := 1700.0
-## PROVISOIRE (choix visuel A/B du suivi des jeunes, 21/11/2026) : la sous-page prend toute la largeur de la page.
-const LARGEUR_SUIVI_VARIANTE := 2248.0
+## Le suivi des jeunes (grille de trois tuiles, choix de Léo du 21/11/2026) prend toute la largeur de la page.
+const LARGEUR_SUIVI := 2248.0
 
 static func _largeur(kind: String) -> float:
-	return LARGEUR_SUIVI_VARIANTE if kind == "suivi" and not load("res://ui/youth_development_view.gd").variante().is_empty() else LARGEUR
+	return LARGEUR_SUIVI if kind == "suivi" else LARGEUR
 
 static func actuelle(app: Control) -> String:
 	var etat_page: Variant = app.management_ui.get("formation_page")

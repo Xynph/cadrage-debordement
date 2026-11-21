@@ -24,18 +24,9 @@ var page_label: Label
 var focused_player_id := ""
 var show_all: Button
 var en_page := false
-## Dispositions A/B : tuiles chiffres et pastilles d'état de l'en-tête, mises à jour à chaque redessin.
+## Sous-page : tuiles chiffres et pastilles d'état de l'en-tête, mises à jour à chaque redessin.
 var tuiles := {}
 var etat_suivi: HFlowContainer
-
-## PROVISOIRE (choix visuel soumis à Léo le 21/11/2026, à retirer après son choix) : CD_VARIANTE_VISUELLE=A affiche la
-## carte joueur à jauges, =B la grille de tuiles ; vide = disposition actuelle. Ne vaut que pour la sous-page de la Formation.
-static func variante() -> String:
-	var choix := OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper()
-	return choix if choix in ["A", "B"] else ""
-
-func _variante() -> String:
-	return variante() if en_page else ""
 
 const TEXTE_REGLES := "Les entraînements et les matchs font progresser les attributs et le niveau pendant la saison. Les plans orientent le travail à venir, sans gain immédiat ; le mentorat partage le même apprentissage. Pour les profils à progression annuelle, ces plans servent uniquement d’objectifs de suivi. Âge, personnalité, blessures, fatigue et temps de jeu influencent les progrès. Le potentiel peut évoluer au bilan de saison et ne garantit jamais le niveau atteint."
 const TEXTE_TRAVAIL := "Progression par le travail : le plan répartit les efforts à venir, sans gain supplémentaire."
@@ -181,11 +172,11 @@ func _build() -> void:
 	for controle: Control in [search, stage, review_filter]: _habiller(controle)
 	if not _court():
 		counter = _t("",13); counter.name = "YouthDevelopmentCount"; body.add_child(counter)
-	if _variante() == "B":
+	if _court():
 		var grille := GridContainer.new(); grille.columns = 3
 		grille.add_theme_constant_override("h_separation", C.px(16)); grille.add_theme_constant_override("v_separation", C.px(16))
 		list = grille
-	else: list = G.v(8) if _variante().is_empty() else C.v(14)
+	else: list = G.v(8)
 	list.name = "YouthDevelopmentRows"; body.add_child(list)
 	var paging := G.h(8); body.add_child(paging)
 	previous = _b("← PRÉCÉDENT",func(): state.page -= 1; _redraw()); previous.name = "YouthDevelopmentPrevious"; paging.add_child(previous)
@@ -254,10 +245,8 @@ func _redraw() -> void:
 	page_label.text = "%d / %d" % [int(state.page)+1,maxi(1,ceili(float(people.size())/PAGE_SIZE))]
 
 func _person(person: Dictionary) -> void:
-	if _variante() == "A":
-		_person_a(person); return
-	if _variante() == "B":
-		_person_b(person); return
+	if _court():
+		_tuile_jeune(person); return
 	var card := _carte(list); card.name = "YouthDevelopmentCard"; card.set_meta("player_id",str(person.id))
 	var row := G.h(10); card.add_child(row)
 	var portrait := G.portrait(0,64,person)
@@ -311,7 +300,14 @@ func _objectif(card: Container, person: Dictionary, annual: bool) -> void:
 		focus.add_item(str(entry.label)); focus.set_item_metadata(focus.item_count-1,str(entry.key))
 		if entry.key==selected_focus: focus.select(focus.item_count-1)
 	_habiller(plan); _habiller(focus)
-	var description := _t("",12); card.add_child(description)
+	var description := _t("",12)
+	if _court() and not str(person.get("planReason","")).is_empty():
+		var ligne := C.h(8); card.add_child(ligne)
+		description.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		ligne.add_child(description)
+		var raison := _info(str(person.planReason)); raison.name = "YouthPlanReason"
+		ligne.add_child(raison)
+	else: card.add_child(description)
 	var update_focus := func():
 		var chosen: String = str(plan.get_item_metadata(plan.selected)) if plan.item_count>0 else ""
 		focus.visible = chosen in ["specialist","integration"] and focus.item_count>0
@@ -434,10 +430,10 @@ func _review(parent: Container,person: Dictionary,boutons: Container = null,tete
 		boutons.add_child(loan)
 
 
-## Dispositions A/B : plus de phrase d'explication à l'écran (règle de Léo, 21/11/2026) ; compteurs en tuiles, états en
-## pastilles, explications derrière un « i ».
+## Sous-page de la Formation (grille de tuiles, choix de Léo du 21/11/2026) : plus de phrase d'explication à l'écran ;
+## compteurs en tuiles, états en pastilles, explications derrière un « i ». La fenêtre d'origine garde son texte.
 func _court() -> bool:
-	return not _variante().is_empty()
+	return en_page
 
 ## « i » : explication en infobulle, au survol.
 func _info(texte: String) -> Control:
@@ -484,20 +480,20 @@ func _maj_entete(people: Array) -> void:
 	(tuiles.YouthTilePro as Label).text = G.n(tous.filter(func(p: Dictionary): return str(p.get("stage",""))=="professional").size())
 	var a_revoir := tous.filter(func(p: Dictionary): return str(p.get("review",{}).get("status","")) in ["review","context"]).size()
 	(tuiles.YouthTileReview as Label).text = G.n(a_revoir)
-	(tuiles.YouthTileReview as Label).add_theme_color_override("font_color",Charte.DORE if a_revoir > 0 else Charte.IVOIRE)
+	(tuiles.YouthTileReview as Label).add_theme_color_override("font_color",Jauges.ORANGE if a_revoir > 0 else Charte.IVOIRE)
 	for enfant in etat_suivi.get_children(): etat_suivi.remove_child(enfant); enfant.queue_free()
 	var actif: bool = _data().get("enabled",false)
-	etat_suivi.add_child(Jauges.pastille("Suivi actif" if actif else "Suivi à démarrer",Charte.V if actif else Charte.D,"check" if actif else "clock",17))
+	etat_suivi.add_child(Jauges.pastille("Suivi actif" if actif else "Suivi à démarrer",Jauges.VERT if actif else Jauges.BLEU,"check" if actif else "clock",17))
 	if _data().get("locked",false):
-		var verrou := Jauges.pastille("Objectifs verrouillés",Charte.D,"warning",17)
+		var verrou := Jauges.pastille("Objectifs verrouillés",Jauges.ORANGE,"warning",17)
 		verrou.tooltip_text = "Révise-les avant la séance, hors match et pendant la saison régulière."; verrou.mouse_filter = Control.MOUSE_FILTER_STOP
 		etat_suivi.add_child(verrou)
 	if not str(state.get("draft_notice","")).is_empty():
-		var remis := Jauges.pastille("Choix réinitialisés",Charte.D,"info",17)
+		var remis := Jauges.pastille("Choix réinitialisés",Jauges.ORANGE,"info",17)
 		remis.tooltip_text = str(state.draft_notice); remis.mouse_filter = Control.MOUSE_FILTER_STOP
 		etat_suivi.add_child(remis)
 
-# --- PROVISOIRE : dispositions A (carte à jauges) et B (grille de tuiles), en attente du choix de Léo ----------------------
+# --- Sous-page : tuiles des jeunes ------------------------------------------------------------------------------------
 
 ## Mêmes faits que la disposition d'origine, sans la phrase de modèle (écrite une fois en tête d'écran).
 func _faits(parent: Container, person: Dictionary) -> void:
@@ -523,7 +519,7 @@ func _suites(parent: Container, person: Dictionary) -> void:
 		var etape := _t(("✓ " if step.get("done",false) else "À préparer · ")+str(step.get("label","")),12)
 		etape.tooltip_text = Copy.notice("youth", step.get("detail","")); etape.mouse_filter = Control.MOUSE_FILTER_STOP
 		parent.add_child(etape)
-	if not str(person.get("planReason","")).is_empty(): parent.add_child(_t(str(person.planReason),13,G.ALERT))
+	if not _court() and not str(person.get("planReason","")).is_empty(): parent.add_child(_t(str(person.planReason),13,G.ALERT))
 
 func _modele(person: Dictionary) -> PanelContainer:
 	var annual: bool = str(person.get("model",""))=="annual-v11"
@@ -551,47 +547,9 @@ func _flux(ecart: int = 8) -> HFlowContainer:
 	flux.add_theme_constant_override("v_separation",C.px(6))
 	return flux
 
-## A · carte joueur à jauges : portrait, identité, niveau sur la fourchette, trois mini-jauges ; faits en deux colonnes.
-func _person_a(person: Dictionary) -> void:
-	var card := _carte(list); card.name = "YouthDevelopmentCard"; card.set_meta("player_id",str(person.id))
-	card.add_theme_constant_override("separation",C.px(12))
-	var annual: bool = str(person.get("model",""))=="annual-v11"
-	var current: Dictionary = person.get("current",{})
-	var tete := C.h(26); card.add_child(tete)
-	tete.add_child(_portrait(person,112))
-	var identite := C.v(4); identite.custom_minimum_size.x = C.px(400); tete.add_child(identite)
-	_identite(identite,person)
-	var pastilles := _flux(); identite.add_child(pastilles)
-	pastilles.add_child(_modele(person))
-	pastilles.add_child(Jauges.pastille("%s min en carrière" % G.n(person.get("careerMinutes",current.get("careerMinutes",0))),Charte.IVOIRE_2,"clock",16))
-	var fourchette := Jauges.niveau_sur_fourchette(G.knowledge_bounds(person,"rating",true),G.knowledge_bounds(person,"potential"),G.rating_text(person,true),G.potential_text(person),300)
-	fourchette.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	tete.add_child(fourchette)
-	var condition := float(person.get("condition",0))
-	tete.add_child(Jauges.mini_jauge("YouthCondition","Condition","%s %%" % G.n(condition),condition/100.0,Charte.V if condition >= 85 else Charte.N))
-	var fatigue := float(person.get("fatigue",0))
-	tete.add_child(Jauges.mini_jauge("YouthFatigue","Fatigue","%s / 100" % G.n(fatigue),fatigue/100.0,Charte.N))
-	var blesse := int(person.get("injury",0)) > 0
-	tete.add_child(Jauges.mini_jauge("YouthInjury","Blessure",_blessure(person),-1.0,Charte.D,Charte.D if blesse else Charte.IVOIRE,130))
-	var etats := _flux(); card.add_child(etats)
-	if not annual:
-		etats.add_child(Jauges.pastille("Progression générale %s · ciblée %s" % [_decimal(current.get("generalXP",0)),_decimal(current.get("focusedXP",0))],Charte.IVOIRE_2,"rating",16))
-	var colonnes := C.h(32); card.add_child(colonnes)
-	var gauche := C.v(5); gauche.size_flags_horizontal = Control.SIZE_EXPAND_FILL; colonnes.add_child(gauche)
-	var droite := C.v(5); droite.size_flags_horizontal = Control.SIZE_EXPAND_FILL; colonnes.add_child(droite)
-	gauche.add_child(Jauges.legende("Ce qui a été observé"))
-	_faits(gauche,person)
-	var actions := _flux(10)
-	_review(gauche,person,actions,etats)
-	droite.add_child(Jauges.legende("Suite du parcours"))
-	_suites(droite,person)
-	if actions.get_child_count() > 0: card.add_child(actions)
-	else: actions.queue_free()
-	_objectif(card,person,annual)
-
-## B · tuile (grille de trois) : portrait, niveau en gros chiffre au barème, potentiel dessous, barre de progression,
-## état du suivi en icône ; le détail des faits se déplie dans la tuile.
-func _person_b(person: Dictionary) -> void:
+## Tuile (grille de trois) : portrait, niveau en gros chiffre au barème, potentiel dessous, niveau posé sur la fourchette
+## de potentiel (40-100), progression, condition et fatigue en jauges ; état du suivi en icône ; détail des faits replié.
+func _tuile_jeune(person: Dictionary) -> void:
 	var card := _carte(list); card.name = "YouthDevelopmentCard"; card.set_meta("player_id",str(person.id))
 	card.add_theme_constant_override("separation",C.px(10))
 	var cadre := card.get_parent() as Control
@@ -614,22 +572,28 @@ func _person_b(person: Dictionary) -> void:
 	var pot := Jauges.chiffre(G.potential_text(person),26,Charte.couleur_attribut(potentiel) if potentiel != null else Charte.IVOIRE_3)
 	pot.tooltip_text = G.potential_tooltip(person); pot.mouse_filter = Control.MOUSE_FILTER_STOP
 	ligne_pot.add_child(pot)
+	card.add_child(Jauges.barre_niveau_potentiel(G.knowledge_bounds(person,"rating",true),G.knowledge_bounds(person,"potential"),G.rating_text(person,true),G.potential_text(person)))
 	if annual:
 		var modele := _modele(person); modele.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN; card.add_child(modele)
 	else:
 		var progression := C.v(3); card.add_child(progression)
 		var libelle := C.h(8); progression.add_child(libelle)
 		var leg := Jauges.legende("Progression générale"); leg.size_flags_horizontal = Control.SIZE_EXPAND_FILL; libelle.add_child(leg)
-		libelle.add_child(Jauges.legende("%s / 1 · ciblée %s" % [_decimal(current.get("generalXP",0)),_decimal(current.get("focusedXP",0))],16,Charte.IVOIRE_2))
-		var barre := Jauges.BarreFine.new(); barre.part = float(current.get("generalXP",0)); barre.couleur = Charte.VERT_FRANC
+		libelle.add_child(Jauges.legende("%s · ciblée %s" % [_pourcent(current.get("generalXP",0)),_pourcent(current.get("focusedXP",0))],16,Charte.IVOIRE_2))
+		var barre := Jauges.BarreFine.new(); barre.part = float(current.get("generalXP",0)); barre.couleur = Jauges.BLEU
 		barre.custom_minimum_size = Vector2(0,maxi(4,C.px(8))); barre.name = "YouthGeneralProgress"
 		progression.add_child(barre)
-	var faits := _flux(); card.add_child(faits)
+	var jauges := C.h(18); card.add_child(jauges)
 	var condition := float(person.get("condition",0))
+	var fatigue := float(person.get("fatigue",0))
 	var blesse := int(person.get("injury",0)) > 0
-	faits.add_child(Jauges.pastille("Condition %s %%" % G.n(condition),Charte.V if condition >= 85 else Charte.IVOIRE_2,"heart",16))
-	faits.add_child(Jauges.pastille("Fatigue %s / 100" % G.n(person.get("fatigue",0)),Charte.IVOIRE_2,"",16))
-	faits.add_child(Jauges.pastille("Blessure : "+_blessure(person),Charte.D if blesse else Charte.IVOIRE_2,"warning" if blesse else "",16))
+	var jauge_condition := Jauges.mini_jauge("YouthCondition","Condition","%s %%" % G.n(condition),condition/100.0,Jauges.VERT,Charte.IVOIRE,110)
+	var jauge_fatigue := Jauges.mini_jauge("YouthFatigue","Fatigue","%s / 100" % G.n(fatigue),fatigue/100.0,Jauges.ORANGE,Charte.IVOIRE,110)
+	for jauge: Control in [jauge_condition,jauge_fatigue]:
+		jauge.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		jauges.add_child(jauge)
+	jauges.add_child(Jauges.mini_jauge("YouthInjury","Blessure",_blessure(person),-1.0,Jauges.ORANGE,Jauges.ORANGE if blesse else Charte.IVOIRE,100))
+	var faits := _flux(); card.add_child(faits)
 	faits.add_child(Jauges.pastille("%s min en carrière" % G.n(person.get("careerMinutes",current.get("careerMinutes",0))),Charte.IVOIRE_2,"clock",16))
 	var detail := C.v(5); detail.name = "YouthTileDetail"
 	var actions := _flux(10)
@@ -661,5 +625,6 @@ func _confirm_plan(person: Dictionary,plan: String,focus: Variant) -> void:
 		detail += " Si la qualité ciblée change, la progression ciblée partielle non utilisée est remise à zéro ; les qualités déjà gagnées sont conservées."
 	preload("res://ui/immersive08/formation_pages.gd").confirmer(app,"Adapter l’objectif de "+str(person.name),detail+" Confirmer date une nouvelle période de suivi à partir d’aujourd’hui, même si le plan reste identique. Les minutes, la fatigue et les blessures restent prises en compte. Confirmer ?",Callable(app,"_command").bind("youth_development_plan",payload))
 
+static func _pourcent(value: Variant) -> String: return "%d %%" % roundi(float(value)*100)
 static func _decimal(value: Variant) -> String: return "%.2f" % float(value)
 static func _signed(value: Variant) -> String: return ("+" if float(value)>0 else "")+_decimal(value)

@@ -8,26 +8,48 @@ const C = preload("res://ui/immersive08/components.gd")
 ## Icône de l'état du suivi (statuts du moteur `youth-development.cjs`) ; le libellé reste toujours écrit à côté.
 const ICONES_ETAT := {"untracked": "search", "observing": "search", "context": "info", "review": "warning", "achieved": "check"}
 
-## Rail 0-100 : segment de la fourchette de potentiel (vert franc, surface) et niveau actuel (barème) posé dessus.
+## Couleurs du suivi des jeunes (choix de Léo du 21/11/2026 : plus de couleur, aucun doré) ; toujours avec un texte.
+const VERT := Color("7fbf7a")    ## condition, suivi actif, repère atteint
+const ORANGE := Color("e0a04a")  ## fatigue, parcours à revoir, blessure
+const BLEU := Color("5b9bd5")    ## observer, suivi à démarrer, progression
+
+## Fenêtre de la barre niveau / potentiel : 40-100 (sous 40, le niveau reste collé au bord gauche).
+const FENETRE_MIN := 40.0
+const FENETRE_MAX := 100.0
+const GRADUATIONS := [55, 70, 85]
+
+## Rail 40-100 : fourchette de potentiel en bande claire, niveau actuel au barème des notes posé dessus, trois
+## graduations discrètes chiffrées dessous.
 class BarreFourchette extends Control:
 	var niveau: float = -1.0
 	var pmin: float = -1.0
 	var pmax: float = -1.0
 	var epaisseur := 8
+	var police := 12
 
 	func _init() -> void:
-		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		mouse_filter = Control.MOUSE_FILTER_PASS
+
+	func _x(valeur: float) -> float:
+		return size.x * clampf((valeur - FENETRE_MIN) / (FENETRE_MAX - FENETRE_MIN), 0.0, 1.0)
 
 	func _draw() -> void:
 		var h := float(epaisseur)
-		var y := (size.y - h) * 0.5
+		var y := 2.0
 		_bande(0.0, size.x, y, h, Charte.PANNEAU_3)
 		if pmin >= 0 and pmax > pmin:
-			_bande(size.x * pmin / 100.0, size.x * (pmax - pmin) / 100.0, y, h, Charte.VERT_FRANC)
+			_bande(_x(pmin), maxf(h, _x(pmax) - _x(pmin)), y, h, Charte.PANNEAU_3.lerp(Charte.IVOIRE, .38))
 		if niveau >= 0:
-			_bande(0.0, size.x * niveau / 100.0, y + h * 0.25, h * 0.5, Charte.couleur_attribut(niveau))
-			var x := clampf(size.x * niveau / 100.0, 1.0, size.x - 1.0)
-			draw_line(Vector2(x, 0), Vector2(x, size.y), Charte.IVOIRE, 2.0, true)
+			_bande(0.0, maxf(h, _x(niveau)), y, h, Charte.couleur_attribut(niveau))
+			var x := clampf(_x(niveau), 1.0, size.x - 1.0)
+			draw_line(Vector2(x, y - 2.0), Vector2(x, y + h + 2.0), Charte.IVOIRE, 2.0, true)
+		var fonte: Font = Charte.TEXTE
+		for g: int in GRADUATIONS:
+			var gx := _x(g)
+			draw_line(Vector2(gx, y + h + 1.0), Vector2(gx, y + h + 4.0), Charte.IVOIRE_3, 1.0)
+			var texte := str(g)
+			var largeur := fonte.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, police).x
+			draw_string(fonte, Vector2(gx - largeur * 0.5, y + h + 5.0 + police), texte, HORIZONTAL_ALIGNMENT_LEFT, -1, police, Charte.IVOIRE_3)
 
 	func _bande(x: float, largeur: float, y: float, h: float, couleur: Color) -> void:
 		if largeur <= 0: return
@@ -73,37 +95,20 @@ static func chiffre(texte: String, taille: int, couleur: Color) -> Label:
 	_marque(etiquette)
 	return etiquette
 
-## Bloc « niveau sur la fourchette » : niveau (barème) à gauche, potentiel à droite, rail 0-100 dessous.
-static func niveau_sur_fourchette(niveau: Dictionary, potentiel: Dictionary, niveau_texte: String, potentiel_texte: String, largeur_min: int = 320) -> VBoxContainer:
-	var bloc := C.v(4)
-	bloc.name = "YouthLevelRange"
-	bloc.custom_minimum_size.x = C.px(largeur_min)
-	var tete := C.h(8)
-	bloc.add_child(tete)
-	var gauche := C.v(0)
-	gauche.add_child(legende("Niveau"))
-	var n_val: Variant = niveau.get("min")
-	gauche.add_child(chiffre(niveau_texte, 34, Charte.couleur_attribut(n_val) if n_val != null else Charte.IVOIRE_3))
-	tete.add_child(gauche)
-	var vide := Control.new(); vide.size_flags_horizontal = Control.SIZE_EXPAND_FILL; tete.add_child(vide)
-	var droite := C.v(0)
-	var leg := legende("Potentiel estimé")
-	leg.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	droite.add_child(leg)
-	var p_val: Variant = potentiel.get("min")
-	var pot := chiffre(potentiel_texte, 34, Charte.couleur_attribut(p_val) if p_val != null else Charte.IVOIRE_3)
-	pot.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	droite.add_child(pot)
-	tete.add_child(droite)
+## Barre de la tuile : niveau posé sur la fourchette de potentiel (fenêtre 40-100), valeurs écrites en infobulle et
+## déjà en gros chiffres dans la tuile.
+static func barre_niveau_potentiel(niveau: Dictionary, potentiel: Dictionary, niveau_texte: String, potentiel_texte: String) -> BarreFourchette:
 	var barre := BarreFourchette.new()
-	barre.epaisseur = maxi(6, C.px(10))
-	barre.custom_minimum_size = Vector2(0, C.px(18))
+	barre.name = "YouthLevelRange"
+	barre.epaisseur = maxi(6, C.px(12))
+	barre.police = maxi(12, C.px(15))
+	barre.custom_minimum_size = Vector2(0, barre.epaisseur + barre.police + 10)
+	var n_val: Variant = niveau.get("min")
 	barre.niveau = float(n_val) if n_val != null else -1.0
 	barre.pmin = float(potentiel.min) if not potentiel.is_empty() else -1.0
 	barre.pmax = float(potentiel.max) if not potentiel.is_empty() else -1.0
-	barre.tooltip_text = "Niveau %s posé sur la fourchette de potentiel %s (échelle 0-100)" % [niveau_texte, potentiel_texte]
-	bloc.add_child(barre)
-	return bloc
+	barre.tooltip_text = "Niveau %s · potentiel estimé %s" % [niveau_texte, potentiel_texte]
+	return barre
 
 ## Mini-jauge chiffrée : légende, valeur écrite, fine barre (part 0-1 ; négative = pas de barre).
 static func mini_jauge(nom: String, libelle: String, valeur: String, part: float, couleur: Color, couleur_valeur: Color = Charte.IVOIRE, largeur_min: int = 150) -> VBoxContainer:
@@ -138,8 +143,9 @@ static func pastille(texte: String, couleur: Color = Charte.IVOIRE_2, icone: Str
 	cadre.add_child(ligne)
 	return cadre
 
-## Couleur de l'état du suivi : doré « à revoir », vert clair « atteint », gris-vert sinon (toujours avec le libellé).
+## Couleur de l'état du suivi : orange « à revoir », vert « atteint », bleu « observer », gris-vert sinon (avec le libellé).
 static func couleur_etat(statut: String) -> Color:
-	if statut == "review": return Charte.DORE
-	if statut == "achieved": return Charte.VERT_CLAIR
+	if statut == "review": return ORANGE
+	if statut == "achieved": return VERT
+	if statut in ["untracked", "observing"]: return BLEU
 	return Charte.GRIS_VERT
