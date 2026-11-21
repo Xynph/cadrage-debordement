@@ -298,6 +298,8 @@ func run() -> void:
 		check(pas_de_phrase(panneau).is_empty(), "Plaque %d : aucun bloc de texte : %s" % [cote, str(pas_de_phrase(panneau))])
 		check(aplats_or(hote).is_empty() and angles_droits(panneau).is_empty(), "Plaque %d : aucun aplat doré ni à angles droits (%s / %s)" % [cote, str(aplats_or(hote)), str(angles_droits(panneau))])
 		check(dans_le_match(view), "Plaque %d : toujours dans le match (même direct, aucune page, aucune fenêtre système)" % cote)
+		# La pause part dès que le moteur est libre (demande différée pendant une réponse).
+		await until(func(): return bool(app.model.live.get("paused", false)) and not app.waiting, 10000)
 		check(bool(app.model.live.get("paused", false)), "Plaque %d : le match se met en pause pendant la fenêtre" % cote)
 		if proof != "": await capture("fenetre-club-%d" % cote)
 		touche(KEY_ESCAPE)

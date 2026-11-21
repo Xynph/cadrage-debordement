@@ -1594,7 +1594,7 @@ func ouvrir_fiche_club_id(id: int) -> void:
 	D.place(ecusson, Rect2(36, 84, 150, 150))
 	var rang := int(ligne.get("rank", club.get("rank", 0)))
 	var nous: bool = app.model.get("club") is Dictionary and str(app.model.club.get("id", "")) == str(id)
-	Pieces.tuile(fond, Rect2(216, 84, 176, 108), "%de" % rang if rang > 0 else "—", "classement", Charte.IVOIRE, "MatchFenetreClubRang", 46, "", "trophy")
+	Pieces.tuile(fond, Rect2(216, 84, 176, 108), ("1er" if rang == 1 else "%de" % rang) if rang > 0 else "—", "classement", Charte.IVOIRE, "MatchFenetreClubRang", 46, "", "trophy")
 	Pieces.tuile(fond, Rect2(406, 84, 176, 108), str(int(ligne.get("points", club.get("points", 0)))), "points", Charte.IVOIRE, "MatchFenetreClubPoints", 46)
 	# Forme : les cinq derniers résultats de championnat, le plus récent à droite.
 	var forme: Array = ligne.get("form", []) if ligne.get("form") is Array else []
