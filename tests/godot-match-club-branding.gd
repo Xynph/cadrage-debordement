@@ -26,7 +26,7 @@ func run() -> void:
 	view.set_process(false)
 	var batch := view.get_node("ManagedClubCrests") as MultiMeshInstance3D
 	check(batch != null and batch.visible, "actual club crest batch visible at ready")
-	check(batch.multimesh.instance_count == 2, "stadium fascia and pitch receive the managed club crest")
+	check(batch.multimesh.instance_count == 1, "stadium fascia receives the managed club crest")
 	var material := batch.material_override as StandardMaterial3D
 	check(material.albedo_texture != null and material.albedo_texture.get_width() == 30,
 		"active presentation pack crest wins over root identity")
