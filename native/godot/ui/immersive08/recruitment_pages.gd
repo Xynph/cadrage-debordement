@@ -157,7 +157,7 @@ static func _valider(app: Control, cadre: Control, zone: Control, ok: Button, de
 		return
 	var envoi := func():
 		if is_instance_valid(ok): ok.pressed.emit()
-	# Option visuelle (planche du 21/11/2026) : le récapitulatif figé en pièces visuelles, sans phrase.
+	# Offre au joueur (choix de Léo du 21/11/2026) : le récapitulatif figé en pièces visuelles, sans phrase.
 	var toile := zone.find_child("OffreVisuelle", true, false) as Control
 	if toile != null and toile.has_meta("recap"):
 		var bloc_visuel := EnPlace.ouvrir(app, cadre, "ContractSignatureConfirmation", "Confirmer l’offre", [], "Confirmer : autoriser la signature si accord", envoi)

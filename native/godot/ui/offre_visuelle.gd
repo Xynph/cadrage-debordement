@@ -1,9 +1,8 @@
 extends RefCounted
-## Offre au joueur : deux présentations visuelles à départager (planche de choix du 21/11/2026, provisoire).
-## CD_VARIANTE_VISUELLE=A : tuiles chiffres (prime, salaire, fin de contrat) et barre du budget de transferts.
-## CD_VARIANTE_VISUELLE=B : règle demande / proposition, frise des saisons, jeton de prime.
-## Sans la variable : l'écran d'offre reste celui de contract_negotiation.gd. Affichage seul : les champs de saisie
-## (OfferSalary, OfferYears) restent ceux de la négociation ; un clic sur la règle ou la frise ne fait que les régler.
+## Offre au joueur (choix de Léo du 21/11/2026, option B de la planche) : règle de salaire demande / proposition,
+## frise des saisons, jeton de prime ; la confirmation en place reprend les mêmes pièces, figées.
+## Affichage seul : les champs de saisie (OfferSalary, OfferYears) restent ceux de contract_negotiation.gd ; un clic sur la
+## règle ou la frise ne fait que les régler. Chiffres et pastilles ouvrent une petite fenêtre visuelle (petite_fenetre.gd).
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Charte = preload("res://ui/charte.gd")
@@ -18,13 +17,8 @@ const COULEUR_SALAIRE := Pieces.BLEU
 const COULEUR_DUREE := Pieces.VIOLET
 const COULEUR_PRIME := Pieces.TURQUOISE
 
-static func variante() -> String:
-	var valeur := OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper()
-	return valeur if valeur in ["A", "B"] else ""
-
 ## `ctx` : app, player, quote, salary (SpinBox), years (SpinBox), first_season, negotiation, phase, reuse (Button).
 static func construire(body: Control, ctx: Dictionary) -> Control:
-	var v := variante()
 	var toile := Control.new()
 	toile.name = "OffreVisuelle"
 	toile.custom_minimum_size = Vector2(LARGEUR, HAUTEUR) * C.density
@@ -40,18 +34,14 @@ static func construire(body: Control, ctx: Dictionary) -> Control:
 	for champ: SpinBox in [ctx.salary, ctx.years]:
 		if champ.get_parent() != null: champ.get_parent().remove_child(champ)
 		toile.add_child(champ)
-	if v == "A":
-		D.place(ctx.salary, Rect2(24, 244, 330, 50))
-		D.place(ctx.years, Rect2(390, 244, 250, 50))
-	else:
-		D.place(ctx.salary, Rect2(1196, 232, 280, 50))
-		D.place(ctx.years, Rect2(1196, 432, 280, 50))
-	var redessiner := func(): _dessiner(toile, dessin, ctx, v)
+	D.place(ctx.salary, Rect2(1196, 232, 280, 50))
+	D.place(ctx.years, Rect2(1196, 432, 280, 50))
+	var redessiner := func(): _dessiner(toile, dessin, ctx)
 	ctx.salary.value_changed.connect(func(_x: float): redessiner.call())
 	ctx.years.value_changed.connect(func(_x: float): redessiner.call())
 	redessiner.call()
-	toile.set_meta("recap", func() -> Control: return recap(ctx, v))
-	toile.set_meta("y_confirmation", 320.0 if v == "A" else 170.0)
+	toile.set_meta("recap", func() -> Control: return recap(ctx))
+	toile.set_meta("y_confirmation", 170.0)
 	return toile
 
 # --- Données ---------------------------------------------------------------------------------------------------------
@@ -79,9 +69,13 @@ static func _couleur_ecart(val: Dictionary) -> Color:
 	if int(val.ecart) >= 0: return Pieces.VERT
 	return Pieces.ORANGE if float(-int(val.ecart)) <= .1 * maxf(1.0, float(val.demande)) else Pieces.ROUGE
 
-static func _mot_ecart(val: Dictionary) -> String:
-	if int(val.ecart) == 0: return "Demande respectée"
-	return "%s au-dessus" % _signe(int(val.ecart)) if int(val.ecart) > 0 else "%s sous la demande" % _signe(int(val.ecart))
+## Zone cliquable posée sur un libellé déjà dessiné (chiffre, titre) : mène à sa petite fenêtre.
+static func _lien(parent: Control, zone: Rect2, id: String, libelle: String, action: Callable) -> void:
+	var cible := Control.new()
+	cible.name = id
+	parent.add_child(cible)
+	D.place(cible, zone)
+	Pieces.rendre_cliquable(cible, zone.size, action, id + "Lien", libelle, "", Charte.RAYON_PETIT)
 
 # --- Dessin ----------------------------------------------------------------------------------------------------------
 
@@ -95,19 +89,14 @@ static func _marquer(noeud: Node) -> void:
 	noeud.set_meta("style_charte", true)
 	for enfant in noeud.get_children(): _marquer(enfant)
 
-static func _dessiner(toile: Control, dessin: Control, ctx: Dictionary, v: String) -> void:
+static func _dessiner(toile: Control, dessin: Control, ctx: Dictionary) -> void:
 	if not is_instance_valid(dessin): return
 	_vider(dessin)
 	var val := valeurs(ctx)
-	_identite(toile, dessin, ctx, val, v)
-	if v == "A":
-		_proposition_a(dessin, val)
-		_tuiles(toile, dessin, val, 330.0, 120.0, 46)
-		_budget(toile, dessin, val, 470.0, true)
-	else:
-		_regle(toile, dessin, ctx, val, 170.0, true)
-		_frise(toile, dessin, ctx, val, Rect2(0, 370, LARGEUR, 130), true)
-		_jeton(toile, dessin, val, Rect2(0, 520, LARGEUR, 120))
+	_identite(toile, dessin, ctx, val)
+	_regle(toile, dessin, ctx, val, 170.0, true)
+	_frise(toile, dessin, ctx, val, Rect2(0, 370, LARGEUR, 130), true)
+	_jeton(toile, dessin, val, Rect2(0, 520, LARGEUR, 120))
 	_marquer(toile)
 
 static func _etiquette(parent: Node, x: float, y: float, texte: String, largeur: float = 600) -> Label:
@@ -115,7 +104,7 @@ static func _etiquette(parent: Node, x: float, y: float, texte: String, largeur:
 	l.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
 	return l
 
-static func _identite(toile: Control, parent: Control, ctx: Dictionary, val: Dictionary, v: String) -> void:
+static func _identite(toile: Control, parent: Control, ctx: Dictionary, val: Dictionary) -> void:
 	var joueur: Dictionary = ctx.player
 	var portrait := G.portrait(0, 150, joueur)
 	portrait.name = "ContractPlayerPortrait"
@@ -144,80 +133,15 @@ static func _identite(toile: Control, parent: Control, ctx: Dictionary, val: Dic
 	var x := 176.0
 	var phase: Dictionary = ctx.phase
 	var bloque := bool(phase.get("blocked", false))
-	x += Pieces.pastille(parent, x, 112, str(phase.action) if not bloque else "Discussion close", "renew" if not bloque else "lock", "OffreEtape", "", Pieces.ROUGE if bloque else Pieces.BLEU) + 10
+	x += Pieces.pastille(parent, x, 112, str(phase.action) if not bloque else "Discussion close", "renew" if not bloque else "lock", "OffreEtape", "", Pieces.ROUGE if bloque else Pieces.BLEU,
+		Charte.PANNEAU_3, func(): _fenetre_discussion(toile, ctx, val)) + 10
 	x += Pieces.pastille(parent, x, 112, "Demande %s" % G.salary(val.demande), "money", "OffreDemande", "", Pieces.VERT,
 		Charte.PANNEAU_3, func(): _fenetre_salaire(toile, val)) + 10
-	if v == "A":
-		x += Pieces.pastille(parent, x, 112, _mot_ecart(val), "check" if int(val.ecart) >= 0 else "warning", "OffreEcart", "", _couleur_ecart(val),
-			Charte.PANNEAU_3, func(): _fenetre_salaire(toile, val)) + 10
 	var negociation: Dictionary = ctx.negotiation
 	if str(negociation.get("status", "")) == "counter":
 		var reprendre: Button = ctx.reuse
 		Pieces.pastille(parent, x, 112, "Contre-offre %s · %d an(s)" % [G.salary(negociation.get("salary")), int(negociation.get("years", 1))], "mail", "OffreContreOffre", "", Pieces.ORANGE,
 			Charte.PANNEAU_3, func(): if is_instance_valid(reprendre) and not reprendre.disabled: reprendre.pressed.emit())
-
-# --- Option A ----------------------------------------------------------------------------------------------------------
-
-static func _proposition_a(parent: Control, val: Dictionary) -> void:
-	D.rect(parent, Rect2(0, 172, LARGEUR, 136), Charte.PANNEAU_2, Charte.RAYON_CARTE).name = "OffreProposition"
-	_etiquette(parent, 24, 204, "Ta proposition", 300)
-	D.text(parent, 24, 232, "SALAIRE " + G.salary_period(true).to_upper(), 14, COULEUR_SALAIRE, 700, 330).name = "OffreChampSalaire"
-	D.text(parent, 390, 232, "DURÉE", 14, COULEUR_DUREE, 700, 250).name = "OffreChampDuree"
-	# Rappel de la demande à droite : salaire et durées acceptées.
-	_etiquette(parent, 760, 204, "Ce qu’il demande", 300)
-	var bornes := "%d an" % int(val.min) if int(val.min) == int(val.max) else "%d à %d ans" % [int(val.min), int(val.max)]
-	var x := 760.0
-	x += Pieces.pastille(parent, x, 244, G.salary(val.demande), "money", "OffreRappelSalaire", "", Pieces.VERT) + 10
-	Pieces.pastille(parent, x, 244, bornes, "calendar", "OffreRappelDuree", "", COULEUR_DUREE)
-
-static func _tuiles(toile: Control, parent: Control, val: Dictionary, y: float, hauteur: float, taille: int) -> void:
-	var largeur := (LARGEUR - 2 * 20) / 3.0
-	var fee := int(val.fee)
-	Pieces.tuile(parent, Rect2(0, y, largeur, hauteur), G.euros(fee) if fee >= 0 else "—", "Prime à la signature", COULEUR_PRIME, "OffreTuilePrime", taille, "", "money", true, func(): _fenetre_budget(toile, val))
-	Pieces.tuile(parent, Rect2(largeur + 20, y, largeur, hauteur), G.salary(val.propose), "Salaire proposé", COULEUR_SALAIRE, "OffreTuileSalaire", taille, "", "people", true, func(): _fenetre_salaire(toile, val))
-	Pieces.tuile(parent, Rect2(2 * (largeur + 20), y, largeur, hauteur), str(val.fin), "Fin de contrat · %d an(s)" % int(val.annees), COULEUR_DUREE, "OffreTuileFin", taille, "", "calendar", true, func(): _fenetre_duree(toile, val))
-
-## Barre du budget de transferts : déjà engagé, cette prime, reste (même lecture que « Ce que coûte l'offre »).
-static func _budget(toile: Control, parent: Control, val: Dictionary, y: float, complet: bool, large: float = LARGEUR) -> void:
-	var hauteur := 150.0 if complet else 96.0
-	var cadre := D.rect(parent, Rect2(0, y, large, hauteur), Charte.PANNEAU_2, Charte.RAYON_CARTE)
-	cadre.name = "OffreBudget"
-	var budget: Dictionary = val.budget
-	var fee := maxi(0, int(val.fee))
-	if budget.is_empty():
-		_etiquette(cadre, 24, 36, "Trésorerie du club", 500)
-		var montant := D.text(cadre, 24, 84, G.euros(val.cash) if val.cash is int or val.cash is float else "—", 38, Charte.IVOIRE, 800, 600)
-		montant.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
-		return
-	var total := Budget.season_total(budget)
-	var depense := int(budget.get("depense", 0))
-	var reste := int(budget.get("disponible", 0)) - fee
-	_etiquette(cadre, 24, 36, "Budget de transferts · %s" % G.euros(total), 900)
-	var bx := 24.0
-	var by := 52.0 if complet else 46.0
-	var bw := large - 48
-	var bh := 30.0 if complet else 20.0
-	D.rect(cadre, Rect2(bx, by, bw, bh), Charte.PANNEAU_3, Charte.RAYON_PILULE)
-	if total > 0:
-		var l_dep := bw * clampf(float(depense) / total, 0, 1)
-		var l_fee := maxf(6.0 if fee > 0 else 0.0,bw * clampf(float(fee) / total, 0, 1 - l_dep / bw))
-		if l_dep > 0: D.rect(cadre, Rect2(bx, by, l_dep, bh), Charte.IVOIRE_3, Charte.RAYON_PILULE)
-		if l_fee > 0: D.rect(cadre, Rect2(bx + l_dep, by, l_fee, bh), COULEUR_PRIME, Charte.RAYON_PILULE).name = "OffreBudgetPrime"
-		var l_reste := maxf(0, bw - l_dep - l_fee)
-		if l_reste > 0: D.rect(cadre, Rect2(bx + l_dep + l_fee, by, l_reste, bh), Color(Pieces.VERT, .22), Charte.RAYON_PILULE, Pieces.VERT).name = "OffreBudgetReste"
-	var legende := [["Déjà engagé", G.euros(depense), Charte.IVOIRE_3], ["Cette prime", G.euros(fee), COULEUR_PRIME], ["Reste", G.euros(reste), Pieces.VERT if reste >= 0 else Pieces.ROUGE]]
-	var lx := 24.0
-	var ly := by + bh + (40.0 if complet else 30.0)
-	for element: Array in legende:
-		D.rect(cadre, Rect2(lx, ly - 15, 16, 16), element[2], 4)
-		var mot := D.text(cadre, lx + 26, ly, element[0], 19, Charte.IVOIRE_2, 600, 0, HORIZONTAL_ALIGNMENT_LEFT, true)
-		var largeur_mot := mot.size.x / C.density
-		var chiffre := D.text(cadre, lx + 34 + largeur_mot, ly + 1, element[1], 24, element[2] if element[2] != Charte.IVOIRE_3 else Charte.IVOIRE, 800, 0)
-		chiffre.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
-		lx += 34 + largeur_mot + chiffre.size.x / C.density + 60
-	if reste < 0:
-		Pieces.pastille(cadre, large - 220, ly - 26, "Hors budget", "warning", "OffreHorsBudget", "", Pieces.ROUGE)
-	Pieces.rendre_cliquable(cadre, Vector2(large, hauteur), func(): _fenetre_budget(toile, val), "OffreBudgetLien", "Budget de transferts", "", Charte.RAYON_CARTE)
 
 # --- Option B ----------------------------------------------------------------------------------------------------------
 
@@ -232,6 +156,7 @@ static func _regle(toile: Control, parent: Control, ctx: Dictionary, val: Dictio
 	var ecart := D.text(cadre, 24 + Pieces.largeur_titre("SALAIRE " + G.salary_period(true).to_upper(), 16) + 22, 38, _signe(int(val.ecart)), 30, couleur, 800, 300)
 	ecart.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 	ecart.name = "OffreRegleEcart"
+	_lien(cadre, Rect2(16, 4, 300, 46), "OffreRegleEcartZone", "Salaire", func(): _fenetre_salaire(toile, val))
 	# Positions aux montants affichés (arrondis à la centaine comme les salaires du jeu).
 	var demande := roundf(float(val.demande) / 100.0) * 100.0
 	var propose := roundf(float(val.propose) / 100.0) * 100.0
@@ -291,6 +216,7 @@ static func _frise(toile: Control, parent: Control, ctx: Dictionary, val: Dictio
 	var fin := D.text(cadre, 24 + Pieces.largeur_titre("DURÉE", 16) + 22, 38, "FIN %s" % str(val.fin), 30, COULEUR_DUREE, 800, 300)
 	fin.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 	fin.name = "OffreFriseFin"
+	_lien(cadre, Rect2(16, 4, 280, 46), "OffreFriseFinZone", "Durée du contrat", func(): _fenetre_duree(toile, val))
 	var x0 := 40.0
 	var w := (1150.0 if interactif else zone.size.x - 80) - x0
 	var n := maxi(1, int(val.max))
@@ -350,30 +276,17 @@ static func _jeton(toile: Control, parent: Control, val: Dictionary, zone: Rect2
 # --- Récapitulatif de la confirmation ------------------------------------------------------------------------------------
 
 ## Récapitulatif figé inséré dans la confirmation en place (aucune phrase : les mêmes pièces que l'écran, sans saisie).
-static func recap(ctx: Dictionary, v: String) -> Control:
+static func recap(ctx: Dictionary) -> Control:
 	var val := valeurs(ctx)
-	var hauteur := 236.0 if v == "A" else 272.0
 	var boite := Control.new()
 	boite.name = "OffreRecap"
-	boite.custom_minimum_size = Vector2(LARGEUR - 40, hauteur) * C.density
+	boite.custom_minimum_size = Vector2(LARGEUR - 40, 272) * C.density
 	boite.mouse_filter = Control.MOUSE_FILTER_PASS
-	var toile := boite
-	if v == "A":
-		_tuiles_recap(boite, val)
-		_budget(toile, boite, val, 128, false, LARGEUR - 40)
-	else:
-		_regle(toile, boite, ctx, val, 0, false)
-		_frise(toile, boite, ctx, val, Rect2(0, 140, 820, 110), false)
-		_jeton(toile, boite, val, Rect2(840, 140, LARGEUR - 40 - 840, 110))
+	_regle(boite, boite, ctx, val, 0, false)
+	_frise(boite, boite, ctx, val, Rect2(0, 140, 820, 110), false)
+	_jeton(boite, boite, val, Rect2(840, 140, LARGEUR - 40 - 840, 110))
 	_marquer(boite)
 	return boite
-
-static func _tuiles_recap(parent: Control, val: Dictionary) -> void:
-	var largeur := (LARGEUR - 40 - 2 * 16) / 3.0
-	var fee := int(val.fee)
-	Pieces.tuile(parent, Rect2(0, 0, largeur, 112), G.euros(fee) if fee >= 0 else "—", "Prime à la signature", COULEUR_PRIME, "OffreRecapPrime", 42, "", "money", true)
-	Pieces.tuile(parent, Rect2(largeur + 16, 0, largeur, 112), G.salary(val.propose), "Salaire · " + _mot_ecart(val).to_lower(), COULEUR_SALAIRE, "OffreRecapSalaire", 42, "", "people", true)
-	Pieces.tuile(parent, Rect2(2 * (largeur + 16), 0, largeur, 112), str(val.fin), "Fin de contrat · %d an(s)" % int(val.annees), COULEUR_DUREE, "OffreRecapFin", 42, "", "calendar", true)
 
 # --- Petites fenêtres visuelles ------------------------------------------------------------------------------------------
 
@@ -403,7 +316,7 @@ static func _fenetre(toile: Control, id: String, titre: String, tuiles: Array, c
 	D.place(a_cote, Rect2(Vector2.ZERO, taille_toile))
 	var n := maxi(1, tuiles.size())
 	var largeur := minf(taille_toile.x - 40, 40 + n * 250 + (n - 1) * 14)
-	var panneau := D.rect(calque, Rect2((taille_toile.x - largeur) / 2, 150, largeur, 200), Charte.PANNEAU, Charte.RAYON_PANNEAU, couleur)
+	var panneau := D.rect(calque, Rect2((taille_toile.x - largeur) / 2, clampf((taille_toile.y - 200) / 2, 10, 150), largeur, 200), Charte.PANNEAU, Charte.RAYON_PANNEAU, couleur)
 	panneau.name = id
 	panneau.mouse_filter = Control.MOUSE_FILTER_STOP
 	Charte.ombrer(panneau.get_theme_stylebox("panel") as StyleBoxFlat)
@@ -442,6 +355,16 @@ static func _fenetre_duree(toile: Control, val: Dictionary) -> void:
 		[str(val.fin), "Fin de contrat", COULEUR_DUREE, "flag"],
 		["%d à %d ans" % [int(val.min), int(val.max)] if int(val.min) != int(val.max) else "%d an" % int(val.min), "Accepté par le joueur", Pieces.VERT, "people"],
 	], COULEUR_DUREE)
+
+static func _fenetre_discussion(toile: Control, ctx: Dictionary, val: Dictionary) -> void:
+	var negociation: Dictionary = ctx.negotiation
+	var contre := str(negociation.get("status", "")) == "counter"
+	var tentatives := int(negociation.get("attempts", 0))
+	_fenetre(toile, "OffreFenetreDiscussion", "La discussion", [
+		["%d / 3" % mini(3, tentatives + 1), "Proposition", COULEUR_SALAIRE, "renew"],
+		[G.salary(negociation.get("salary")) if contre else "—", "Contre-offre", Pieces.ORANGE, "mail"],
+		[G.salary(val.demande), "Demande", Pieces.VERT, "money"],
+	], COULEUR_SALAIRE)
 
 static func _fenetre_budget(toile: Control, val: Dictionary) -> void:
 	var budget: Dictionary = val.budget
