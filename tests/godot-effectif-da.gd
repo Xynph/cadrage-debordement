@@ -214,13 +214,11 @@ func run() -> void:
 		var entete := table.find_child("RosterHeader", false, false) as Control
 		check(entete != null and absf(bandeau.get_rect().end.y - (table.position.y + entete.position.y + entete.size.y)) < 2.0, "Les en-têtes de colonnes ferment le bas du bandeau")
 		check(bandeau.find_child("BandeauEntete", false, false) != null, "Bande des en-têtes au bas du bandeau")
-		var x0 := table.position.x
 		table.position.x += 300.0
 		table.size.x -= 300.0
 		await settle(2)
 		check(absf(bandeau.position.x - table.position.x) < 1.0 and absf(bandeau.size.x - table.size.x) < 1.0, "Bandeau : suit le tableau décalé")
-		var tete := page().find_child("BandeauFiltresTete", false, false) as Control
-		check(tete != null and tete.visible and absf(tete.position.x - x0) < 1.0, "Bandeau : la rangée de recherche garde sa place")
+		check(page().find_child("BandeauFiltresTete", false, false) == null, "Bandeau : un seul bloc, jamais coupé en deux")
 		app._render(false)
 		await settle(12)
 	# Moral et condition : mini-courbe au survol des tuiles (relevé hebdomadaire du moteur, quand il existe).

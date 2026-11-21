@@ -25,9 +25,6 @@ var hauteur_entete := 0.0
 var _bande: Panel
 var _filet: ColorRect
 var _cible: Control
-var _origine := Rect2()
-var _tete_px := 0.0
-var _tete: Panel
 
 ## Pose le bandeau dans `parent`, derrière tous ses enfants. `zone` et `entete` en unités du gabarit.
 static func poser(parent: Control, zone: Rect2, entete := 0.0, nom := NOM) -> Panel:
@@ -71,14 +68,10 @@ static func style_entete(rayon_haut: int = Charte.RAYON_PANNEAU) -> StyleBoxFlat
 static func peindre_entete(bande: Panel, rayon_haut: int = Charte.RAYON_PANNEAU) -> void:
 	bande.add_theme_stylebox_override("panel", style_entete(rayon_haut))
 
-## Garde le bandeau aligné sur `cible` (même abscisse, même largeur) quand elle bouge ou change de taille.
-## `tete` (unités du gabarit) : hauteur du haut du bandeau (rangée de recherche et de puces) qui reste à sa place quand
-## la cible se décale (Effectif : colonne de panneaux ouverte à gauche, alignée sur les totaux) ; le bandeau se coupe
-## alors en deux : la tête à sa place d'origine, le reste aligné sur le tableau.
-func suivre(cible: Control, tete := 0.0) -> void:
+## Garde le bandeau aligné sur `cible` (même abscisse, même largeur) quand elle bouge ou change de taille (colonne de
+## panneaux de l'Effectif, fenêtre redimensionnée…) : toujours UN SEUL bloc, recherche comprise.
+func suivre(cible: Control) -> void:
 	_cible = cible
-	_origine = Rect2(position, size)
-	_tete_px = tete * C.density
 	if cible == null: return
 	cible.item_rect_changed.connect(_aligner)
 	cible.visibility_changed.connect(_aligner)
@@ -90,26 +83,8 @@ func _aligner() -> void:
 	var x := _cible.global_position.x - (parent.global_position.x if parent != null else 0.0)
 	if parent != null and parent.get_global_transform().get_scale().x != 0.0:
 		x /= parent.get_global_transform().get_scale().x
-	var largeur := _cible.size.x * _cible.scale.x
-	var decale := absf(x - _origine.position.x) > 1.0 or absf(largeur - _origine.size.x) > 1.0
-	if not decale or _tete_px <= 0.0:
-		position = Vector2(x, _origine.position.y)
-		size = Vector2(largeur, _origine.size.y)
-		if _tete != null: _tete.visible = false
-		return
-	if _tete == null:
-		_tete = Panel.new()
-		_tete.name = str(name) + "Tete"
-		_tete.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_tete.add_theme_stylebox_override("panel", style())
-		parent.add_child(_tete)
-		parent.move_child(_tete, 0)
-	_tete.visible = true
-	_tete.position = _origine.position
-	_tete.size = Vector2(_origine.size.x, _tete_px)
-	var ecart := maxf(2.0, C.density * 2.0)
-	position = Vector2(x, _origine.position.y + _tete_px + ecart)
-	size = Vector2(largeur, _origine.size.y - _tete_px - ecart)
+	position = Vector2(x, position.y)
+	size = Vector2(_cible.size.x * _cible.scale.x, size.y)
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_RESIZED: _mettre_entete()
