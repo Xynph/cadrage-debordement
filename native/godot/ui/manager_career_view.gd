@@ -147,7 +147,7 @@ static func _colonnes_vitrine(grille: GridContainer) -> void:
 static func _carte_club(app: Control, c: Dictionary) -> Control:
 	var club := _identite(app, c.get("clubId"))
 	var cadre := PanelContainer.new()
-	cadre.name = "VitrineCarte_" + str(c.get("clubId"))
+	cadre.name = "VitrineCarte_%d" % int(c.get("clubId", -1))
 	cadre.add_theme_stylebox_override("panel", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, Charte.RAYON_CARTE, 0))
 	cadre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var marge := MarginContainer.new()
@@ -192,7 +192,7 @@ static func _carte_club(app: Control, c: Dictionary) -> Control:
 	if not Link.available(app, "club", c.get("clubId")): return cadre
 	# Bouton transparent posé sur toute la carte (le cadre le dimensionne) : survol, focus clavier, clic -> fiche du club.
 	var bouton := Button.new()
-	bouton.name = "VitrineClub_" + str(c.get("clubId"))
+	bouton.name = "VitrineClub_%d" % int(c.get("clubId", -1))
 	bouton.flat = true
 	bouton.set_meta("immersive_style_applied", true)
 	bouton.focus_mode = Control.FOCUS_ALL
