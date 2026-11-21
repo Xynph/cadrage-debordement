@@ -10,6 +10,7 @@ const P = preload("res://ui/immersive08/projection.gd")
 const Link = preload("res://ui/entity_link.gd")
 const Competition = preload("res://ui/immersive08/competition_canvas.gd")
 const Agenda = preload("res://ui/immersive08/calendar_agenda.gd")
+const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
 const DAY_SECONDS := 86400
 const MONTHS := ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"]
 const WEEKDAYS := ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"]
@@ -190,7 +191,7 @@ func _refresh() -> void:
 		remove_child(child)
 		child.queue_free()
 	if month.is_empty():
-		_heading("Calendrier", "Les dates n’ont pas encore été fixées.", 0, 0)
+		_heading("Calendrier", "", 0, 0)
 		_undated_panel()
 		return
 	var month_name: String = MONTHS[month.right(2).to_int()-1]
@@ -205,11 +206,12 @@ func _refresh() -> void:
 	if venues.home > 0: summary.append(_plural(venues.home, "réception", "réceptions"))
 	if venues.away > 0: summary.append(_plural(venues.away, "déplacement", "déplacements"))
 	if venues.neutral > 0: summary.append(_plural(venues.neutral, "match sur terrain neutre", "matchs sur terrain neutre"))
-	var period := "Cette semaine" if view_mode == "week" else "Ce mois-ci"
-	var description := _next_match_banner() if summary.is_empty() else period + " · " + " · ".join(summary)
+	# Le détail réceptions / déplacements doublonne les pastilles de droite : seul le prochain match reste, s'il n'y a pas de rencontre.
+	var description := _next_match_banner() if summary.is_empty() else ""
 	_heading(month_name,description,current_fixtures.size(),current_sessions.size())
 	var availability := preload("res://ui/international_availability.gd")
-	if availability.data(app.model).get("clubManaged", false):
+	var absences: Dictionary = availability.data(app.model)
+	if absences.get("clubManaged", false) and int(absences.get("absentCount", 0)) > 0:
 		add_child(availability.calendar_summary(app))
 	var workspace := C.h(16)
 	C.fill(workspace, true)
@@ -287,6 +289,22 @@ func _heading(title: String, description: String, match_count: int, session_coun
 		line.add_child(_pill(_plural(session_count, "entraînement", "entraînements"), Charte.PANNEAU_3, C.IVORY))
 	elif show_table.is_valid():
 		line.add_child(_action("Tableau des rencontres", show_table, "CalendarShowTable"))
+	var suivi: Dictionary = preload("res://ui/international_availability.gd").data(app.model)
+	if not month.is_empty() and suivi.get("clubManaged", false) and int(suivi.get("absentCount", 0)) == 0:
+		line.add_child(_pastille_absents())
+
+## « 0 absent » : pastille verte qui mène au suivi des sélections (plus de bandeau d'explication).
+func _pastille_absents() -> Control:
+	var texte := "0 absent"
+	var largeur := Pieces.largeur_pastille(texte, "check")
+	var hote := Control.new()
+	hote.name = "CalendarAbsentsHost"
+	hote.custom_minimum_size = Vector2(C.px(largeur), C.px(34))
+	hote.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	Pieces.pastille(hote, 0, 0, texte, "check", "CalendarAbsents", "Aucun absent confirmé aujourd’hui", Pieces.VERT, Charte.PANNEAU_3, func(): preload("res://ui/international_availability.gd").open(app))
+	var lien := hote.find_child("CalendarAbsentsLien", true, false)
+	if lien != null: lien.name = "InternationalAvailabilityOpen"
+	return hote
 
 func _toolbar(parent: Node) -> void:
 	var padding := C.margin(12)
@@ -301,7 +319,7 @@ func _toolbar(parent: Node) -> void:
 		tabs.add_child(_onglet(str(spec[0]), str(spec[1]), str(spec[2])))
 	var bar := C.h(10)
 	rows.add_child(bar)
-	var caption := C.label("Planning du club",22,C.IVORY,true,700)
+	var caption := C.label("",22,C.IVORY,true,700)
 	caption.name = "MonthCalendarCaption"
 	caption.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	bar.add_child(C.fill(caption))
@@ -503,7 +521,7 @@ func _day(date: String, weekend: bool, height: int) -> Button:
 		cell.tooltip_text = marker.tooltip_text
 		cell.accessibility_name += " · " + marker.accessibility_name
 	if view_mode == "week" and lines.get_child_count() == 1:
-		lines.add_child(C.wrap("Aucun événement publié pour ce filtre.",16,C.FAINT))
+		lines.add_child(C.wrap("Aucun événement",16,C.FAINT))
 		var next := _next_event_after(date)
 		if not next.is_empty(): lines.add_child(C.wrap(next,16,C.MUTED))
 	cell.custom_minimum_size.y = maxi(C.px(height), ceili(lines.get_combined_minimum_size().y) + 2*C.px(6))
@@ -521,11 +539,11 @@ func _day_key(event: InputEvent, date: String) -> void:
 
 ## Bandeau d'un mois ou d'une semaine sans rencontre : annonce la prochaine, jamais un simple « aucune rencontre ».
 func _next_match_banner() -> String:
-	if next_fixture.is_empty() or today.is_empty(): return "Aucune rencontre programmée sur cette période."
+	if next_fixture.is_empty() or today.is_empty(): return ""
 	var days := maxi(0, _days_before(today, next_fixture.date))
 	var opponent := G.club_name(_opponent(next_fixture))
 	var when := "aujourd’hui" if days == 0 else "demain" if days == 1 else "dans %d jours" % days
-	return "Aucune rencontre sur cette période · prochain match %s%s." % [when, " (%s)" % opponent if not opponent.is_empty() else ""]
+	return "Prochain match %s%s" % [when, " (%s)" % opponent if not opponent.is_empty() else ""]
 
 static func _days_before(start: String, finish: String) -> int:
 	return roundi((Time.get_unix_time_from_datetime_string(finish+"T00:00:00") - Time.get_unix_time_from_datetime_string(start+"T00:00:00")) / DAY_SECONDS)
@@ -782,7 +800,7 @@ func _context_panels(parent: Node) -> void:
 	var reference := selected if today.is_empty() or selected >= today else today
 	var next_games: Array = fixtures.filter(func(fixture: Dictionary): return fixture.date >= reference and not fixture.get("played",false))
 	next_games.sort_custom(func(a: Dictionary,b: Dictionary): return a.date < b.date if a.date != b.date else Agenda.fixture_key(a) < Agenda.fixture_key(b))
-	if next_games.is_empty(): list.add_child(C.wrap("Aucune prochaine rencontre datée dans le calendrier publié.",17,C.MUTED))
+	if next_games.is_empty(): list.add_child(C.wrap("Aucune rencontre",17,C.MUTED))
 	for fixture: Dictionary in next_games.slice(0,3):
 		var line := C.h(8)
 		list.add_child(line)
@@ -819,7 +837,7 @@ func _context_panels(parent: Node) -> void:
 		bar.custom_minimum_size = Vector2(C.px(22),C.px(58))
 		bar.add_theme_stylebox_override("background",_sbox(Charte.PANNEAU_2,Color.TRANSPARENT,Charte.RAYON_PILULE,0))
 		bar.add_theme_stylebox_override("fill",_sbox(Charte.IVOIRE_2,Color.TRANSPARENT,Charte.RAYON_PILULE,0))
-		bar.tooltip_text = _display_date(day)+" · "+str(count)+" créneau(x) publié(s)"
+		bar.tooltip_text = _display_date(day)+" · "+_plural(count,"créneau","créneaux")
 		column.add_child(bar)
 		var label := C.label(SHORT_DAYS[_weekday(day)],16,C.MUTED)
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -840,7 +858,7 @@ func _week_sessions(parent: Node) -> void:
 	var dates := Agenda.week(selected)
 	var week_sessions: Array = sessions.filter(func(session: Dictionary): return session.date in dates)
 	week_sessions.sort_custom(func(a: Dictionary,b: Dictionary): return a.date < b.date if a.date != b.date else str(a.get("id","")) < str(b.get("id","")))
-	if week_sessions.is_empty(): body.add_child(C.wrap("Aucune séance datée publiée pour cette semaine.",18,C.MUTED))
+	if week_sessions.is_empty(): body.add_child(C.wrap("Aucune séance",18,C.MUTED))
 	for session: Dictionary in week_sessions:
 		var line := C.h(12)
 		line.name = "CalendarWeekSession_"+str(session.get("id",session.date)).validate_node_name()
@@ -876,7 +894,7 @@ func _detail(parent: Node) -> void:
 	for fixture: Dictionary in day_fixtures: body.add_child(_fixture_detail(fixture))
 	if not day_absences.is_empty(): body.add_child(_absence_chip(day_absences,true))
 	if day_sessions.is_empty() and day_fixtures.is_empty() and day_absences.is_empty():
-		body.add_child(C.wrap("Aucun événement correspondant au filtre dans les données publiées pour ce jour.",20,C.MUTED))
+		body.add_child(C.wrap("Aucun événement",20,C.MUTED))
 	if selected == today and filter in ["all","training"]:
 		body.add_child(_action("Entraînement de la semaine", _open_training_today, "CalendarOpenTraining"))
 	var next_visible := filter != "travel" or P.fixture_location_kind(next_fixture,_club_id()) == "away"
