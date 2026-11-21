@@ -6,6 +6,7 @@ const Pilotage = preload("res://ui/contextual/match_consignes.gd")
 const Nom = preload("res://ui/person_name.gd")
 const Icones = preload("res://ui/immersive08/components.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
+const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 ## Six tons de causerie (match-pilotage.js, TONS_LABELS) : libellé de repli quand le moteur n'en donne pas.
 const TONS := {"calm": "Calme", "demanding": "Exigeant", "warm": "Encourageant", "furious": "Furieux", "protective": "Rassurant", "assertive": "Affirmé"}
 ## Pictogramme de chaque ton (tracés 24 × 24, trait de 1,8 comme les icônes de la coque) : vague, cible, cœur, flamme,
@@ -650,6 +651,8 @@ func open_player_window(id: Variant) -> void:
 	S.full(layer)
 	ui.add_child(layer)
 	_fenetre = layer
+	# Petite fenêtre : Échap la ferme (mécanisme commun, ui/petite_fenetre.gd).
+	PetiteFenetre.enregistrer(layer, close_player_window)
 	var voile := ColorRect.new()
 	voile.color = Color(Charte.NUIT, .55)
 	S.full(voile)
@@ -790,6 +793,8 @@ func open_full_sheet(id: Variant) -> void:
 	S.full(page)
 	ui.add_child(page)
 	_page_fiche = page
+	# Échap revient au vestiaire, comme le bouton Retour.
+	PetiteFenetre.enregistrer(page, close_full_sheet)
 	var fond := ColorRect.new()
 	fond.color = Charte.FOND
 	S.full(fond)
