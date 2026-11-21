@@ -8,7 +8,7 @@ const Finance = preload("res://ui/immersive08/finance_canvas.gd")
 const U = preload("res://ui/immersive08/club_ui.gd")
 const TABS := ["summary", "cash", "wages", "transfers", "budget", "clubs"]
 ## Zones cliquables dont le clic doit mener ailleurs (écran ou onglet différent) ; les tris et pages restent sur place.
-const PREFIXES := ["FinanceMetricLink", "FinanceVerdictLink", "FinanceWatch", "FinanceDueRow", "FinanceAllocationRow", "FinanceLedgerRow_", "FinanceCommitmentLink", "FinanceAdjustBudget", "FinanceRecruitment", "FinanceTransferContracts", "FinanceBudgetDecisions", "FinanceTotalLink", "FinanceProjection", "FinanceMargin", "FinancePlayersPayroll", "FinanceForecastWeeks", "FinanceNothingCommitted", "FinanceWagesScope", "FinanceWagesSeasonEnd", "FinanceWagesCount", "FinanceVerdictMargin", "FinanceVerdictAutonomy"]
+const PREFIXES := ["FinanceSeasonBudget", "FinanceMetricLink", "FinanceVerdictLink", "FinanceWatch", "FinanceDueRow", "FinanceAllocationRow", "FinanceLedgerRow_", "FinanceCommitmentLink", "FinanceAdjustBudget", "FinanceRecruitment", "FinanceTransferContracts", "FinanceBudgetDecisions", "FinanceTotalLink", "FinanceProjection", "FinanceMargin", "FinancePlayersPayroll", "FinanceForecastWeeks", "FinanceNothingCommitted", "FinanceWagesScope", "FinanceWagesSeasonEnd", "FinanceWagesCount", "FinanceVerdictMargin", "FinanceVerdictAutonomy"]
 var app: Control
 var checks := 0
 var failures: Array[String] = []
