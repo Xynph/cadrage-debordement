@@ -40,6 +40,11 @@ const ENCRE_2 := Color("4d5853")
 const OR_ENCRE := Color("7d5b10")
 const V_PAPIER := VERT_FRANC
 const D_PAPIER := Color("8a5a12")
+## Nuances de service du papier : encre posée en transparence sur PAPIER, figées en opaque (feuilles du carnet).
+const PAPIER_CLAIR := Color("faf6ec")   ## commande ou carte sur la feuille (blanc 45 %)
+const PAPIER_SURVOL := Color("e0dbcc")  ## survol d'une commande (encre 8 %)
+const PAPIER_PRESSE := Color("d2cec0")  ## commande pressée, choix courant (encre 14 %)
+const FILET_PAPIER := Color("c4c1b5")   ## trait sur papier : contour des commandes et des champs (encre 20 %)
 ## Club : couleur réelle du club, seulement sur écusson, maillot et liseré ; les dérivés se calculent.
 const CLUB := Color("71322f")
 const CLUB_TRAIT := Color("b5524a")

@@ -8,19 +8,21 @@ const SeasonLabel = preload("res://ui/season_label.gd")
 const Art = preload("res://ui/art_widgets.gd")
 # Jetons communs du bureau du manager : seule source des couleurs d'encre et d'or.
 # carnet_skin.gd (papier clair) et contextual/skin.gd (salles du club) les reprennent.
-const BG = Color("151b1f")
-const PANEL = Color("1d262b")
-const LINE = Color("445259")
-const INK = Color("f5f4ec")
-const MUTED = Color("bdc8c9")
-const GOLD = Color("ddbd80")
+## Depuis la charte finale, ces noms pointent sur les jetons de `Charte` (ui/charte.gd), seule source des couleurs.
+const Charte = preload("res://ui/charte.gd")
+const BG = Charte.FOND
+const PANEL = Charte.PANNEAU
+const LINE = Charte.FILET
+const INK = Charte.IVOIRE
+const MUTED = Charte.IVOIRE_2
+const GOLD = Charte.OR
 ## Or lisible sur papier clair uniquement (carnet) ; sur fond sombre, toujours GOLD.
-const PAPER_GOLD = Color("82592e")
-const GOOD = Color("a6d2ae")
-## Trois rayons d'angle seulement : puces et pastilles, boutons et cartes, panneaux.
-const RADIUS_CHIP := 4
-const RADIUS_CONTROL := 8
-const RADIUS_PANEL := 12
+const PAPER_GOLD = Charte.OR_ENCRE
+const GOOD = Charte.V
+## Trois rayons d'angle seulement (charte) : pastilles et cases, cartes, panneaux. Boutons et onglets : pilule.
+const RADIUS_CHIP := Charte.RAYON_PETIT
+const RADIUS_CONTROL := Charte.RAYON_CARTE
+const RADIUS_PANEL := Charte.RAYON_PANNEAU
 const RADII := {"chip": RADIUS_CHIP, "control": RADIUS_CONTROL, "panel": RADIUS_PANEL}
 # Assez large pour un groupe pro entier (60 photos de 512 px) : plus petit, le cache
 # se renouvelle à chaque ouverture de l'effectif. Les plus anciens partent en premier (LRU).
@@ -38,8 +40,8 @@ static func reading_size(requested: int) -> int:
 	if requested >= 15: return 12
 	return mini(requested, 12)
 
-## Rayon d'angle d'un rôle : "chip" (4), "control" (8, boutons et cartes) ou "panel" (12).
-## Exemple : `G.radius("panel")` vaut 12 ; un rôle inconnu prend le rayon des boutons.
+## Rayon d'angle d'un rôle : "chip" (6), "control" (12, cartes) ou "panel" (18).
+## Exemple : `G.radius("panel")` vaut 18 ; un rôle inconnu prend le rayon des cartes.
 static func radius(kind: String) -> int:
 	return int(RADII.get(kind, RADIUS_CONTROL))
 
@@ -65,13 +67,15 @@ static func wrap(text: Variant, size: int = 14, color: Color = MUTED) -> Label:
 static func button(text: String, callback: Callable, primary: bool = false) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.custom_minimum_size.y = 28
-	b.add_theme_font_size_override("font_size", 12)
+	b.custom_minimum_size.y = 32
+	b.add_theme_font_size_override("font_size", 14)
+	# Charte : pilule. Principal = aplat doré, texte PANNEAU ; secondaire = pilule du thème (contour FILET sur le
+	# sombre, T.make ; papier clair, T.paper).
 	if primary:
-		b.add_theme_stylebox_override("normal", box(INK))
-		b.add_theme_stylebox_override("hover", box(Color("d7d6c9")))
-		b.add_theme_stylebox_override("pressed", box(Color("bec8ba")))
-		for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: b.add_theme_color_override(key, BG)
+		b.add_theme_stylebox_override("normal", T.pilule(Charte.OR))
+		b.add_theme_stylebox_override("hover", T.pilule(Charte.OR_VIF))
+		b.add_theme_stylebox_override("pressed", T.pilule(Charte.OR.darkened(.15)))
+		for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: b.add_theme_color_override(key, Charte.PANNEAU)
 	b.pressed.connect(callback)
 	return b
 
@@ -83,28 +87,29 @@ static func h(gap: int = 6) -> HBoxContainer:
 static func nav_button(text:String,callback:Callable,accent:Color,selected:bool,chapter:String="") -> Button:
 	var b:=button(text,callback)
 	b.alignment=HORIZONTAL_ALIGNMENT_LEFT
-	b.custom_minimum_size.y=28
-	b.add_theme_font_size_override("font_size",12)
-	var normal:=box(Color("263238").lerp(Color(accent,1),.20) if selected else Color.TRANSPARENT,"control")
+	b.custom_minimum_size.y=30
+	b.add_theme_font_size_override("font_size",13)
+	# Entrée de menu (charte) : pilule ; active = aplat crème, texte PANNEAU ; les autres sans fond, survol PANNEAU_2.
+	# La couleur du club (`accent`) n'habille plus le menu.
+	var normal:=T.pilule(Charte.CREME if selected else Color.TRANSPARENT)
 	normal.content_margin_top=4
 	normal.content_margin_bottom=4
-	normal.content_margin_left=34 if not chapter.is_empty() else 10
-	if selected:
-		normal.border_width_left=3
-		normal.border_color=accent.lightened(.3)
+	normal.content_margin_left=34 if not chapter.is_empty() else 12
 	b.add_theme_stylebox_override("normal",normal)
 	var hover:=normal.duplicate()
-	hover.bg_color=Color("344349").lerp(Color(accent,1),.12)
+	if not selected: hover.bg_color=Charte.PANNEAU_2
 	b.add_theme_stylebox_override("hover",hover)
 	var pressed:=normal.duplicate()
-	pressed.bg_color=Color("44575b").lerp(Color(accent,1),.16)
+	if not selected: pressed.bg_color=Charte.PANNEAU_3
 	b.add_theme_stylebox_override("pressed",pressed)
-	var focus:=box(Color.TRANSPARENT,"control",INK)
+	var focus:=T.pilule(Color.TRANSPARENT,Charte.OR)
 	focus.set_border_width_all(2)
+	focus.set_expand_margin_all(2)
 	b.add_theme_stylebox_override("focus",focus)
-	for state in ["font_color","font_hover_color","font_pressed_color","font_focus_color"]:b.add_theme_color_override(state,INK if selected else MUTED)
+	var ink:=Charte.PANNEAU if selected else MUTED
+	for state in ["font_color","font_hover_color","font_pressed_color","font_focus_color"]:b.add_theme_color_override(state,ink)
 	if not chapter.is_empty():
-		var icon:=Art.glyph(chapter,INK if selected else MUTED,18)
+		var icon:=Art.glyph(chapter,ink,18)
 		icon.name="ChapterIcon"
 		b.add_child(icon)
 		icon.position=Vector2(10,5)
@@ -132,11 +137,8 @@ static func panel(parent: Node, ratio: float = 1.0, color: Color = PANEL) -> VBo
 	var p := PanelContainer.new()
 	p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	p.size_flags_stretch_ratio = ratio
-	var style:=box(color,"panel",LINE)
-	style.shadow_color=Color(0,0,0,.09)
-	style.shadow_size=2
-	style.shadow_offset=Vector2(0,1)
-	p.add_theme_stylebox_override("panel",style)
+	# Panneau de la charte : sans bordure, rayon 18, ombre des jetons.
+	p.add_theme_stylebox_override("panel",Charte.ombrer(box(color,"panel"),Charte.RAYON_PANNEAU))
 	parent.add_child(p)
 	var m := margin(4)
 	p.add_child(m)

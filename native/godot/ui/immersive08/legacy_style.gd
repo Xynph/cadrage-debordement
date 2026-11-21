@@ -19,42 +19,68 @@ static func theme(accent: Color) -> Theme:
 		for state in ["font_color","font_hover_color","font_pressed_color","font_focus_color","font_selected_color"]:
 			theme.set_color(state,kind,C.IVORY)
 		theme.set_color("font_disabled_color",kind,C.MUTED)
+	# Charte finale : boutons, onglets et champs en pilule (secondaire à contour FILET), focus doré ; panneaux et
+	# fenêtres arrondis sans bordure ; aucune couleur de club en fond (`accent` ne sert plus qu'aux encres de texte).
+	var pill := Charte.RAYON_PILULE
 	for kind in ["Button","OptionButton"]:
 		theme.set_font("font",kind,C.DISPLAY)
-		theme.set_stylebox("normal",kind,C.box(C.PANEL,C.LINE,6,8))
-		theme.set_stylebox("hover",kind,C.box(C.RAISED,P.safe_accent(accent),6,8))
-		theme.set_stylebox("pressed",kind,C.box(accent.darkened(.48),P.safe_accent(accent),6,8))
-		theme.set_stylebox("disabled",kind,C.box(C.BG,C.LINE,6,8))
-		theme.set_stylebox("focus",kind,C.box(Color.TRANSPARENT,C.GOLD,6,8))
+		theme.set_stylebox("normal",kind,_pill(Color.TRANSPARENT,C.LINE))
+		theme.set_stylebox("hover",kind,_pill(C.RAISED,C.FAINT))
+		theme.set_stylebox("pressed",kind,_pill(Charte.SELECTION,C.IVORY))
+		theme.set_stylebox("disabled",kind,_pill(Color.TRANSPARENT,C.LINE))
+		theme.set_stylebox("focus",kind,_focus_ring())
 	for kind in ["LineEdit","TextEdit"]:
-		theme.set_stylebox("normal",kind,C.box(C.BG,C.LINE,5,6))
-		theme.set_stylebox("focus",kind,C.box(Color.TRANSPARENT,C.GOLD,5,6))
+		theme.set_stylebox("normal",kind,C.box(C.SELECTED,C.LINE,pill if kind=="LineEdit" else 16,10))
+		var edit_focus := C.box(C.SELECTED,Charte.OR,pill if kind=="LineEdit" else 16,10)
+		edit_focus.set_border_width_all(2)
+		theme.set_stylebox("focus",kind,Charte.sans_ombre(edit_focus))
 		theme.set_color("font_color",kind,C.IVORY)
 		theme.set_color("font_placeholder_color",kind,C.MUTED)
 		theme.set_color("caret_color",kind,C.IVORY)
-		theme.set_color("selection_color",kind,accent.darkened(.45))
-	theme.set_stylebox("panel","PopupMenu",C.box(C.PANEL,C.LINE,6,8))
-	theme.set_stylebox("hover","PopupMenu",C.box(C.RAISED,C.GOLD,4,6))
+		theme.set_color("selection_color",kind,Charte.SELECTION)
+	theme.set_stylebox("panel","PopupMenu",Charte.sans_ombre(C.box(C.PANEL,Color.TRANSPARENT,16,8)))
+	theme.set_stylebox("hover","PopupMenu",C.box(C.SELECTED,Color.TRANSPARENT,8,6))
 	theme.set_color("font_color","PopupMenu",C.IVORY)
 	theme.set_color("font_hover_color","PopupMenu",C.IVORY)
 	theme.set_color("font_disabled_color","PopupMenu",C.MUTED)
-	for kind in ["AcceptDialog","FileDialog","Window","PanelContainer","Tree","ItemList"]:
-		theme.set_stylebox("panel",kind,C.box(C.PANEL,C.LINE,7,10))
+	for kind in ["AcceptDialog","FileDialog","Window"]:
+		theme.set_stylebox("panel",kind,_panel(24,14))
+	for kind in ["PanelContainer","Tree","ItemList"]:
+		theme.set_stylebox("panel",kind,_panel(16,10))
 	for kind in ["Tree","ItemList"]:
 		for state in ["selected","selected_focus"]:
-			theme.set_stylebox(state,kind,C.box(accent.darkened(.44),P.safe_accent(accent),4,4))
+			theme.set_stylebox(state,kind,C.box(Charte.SELECTION,Color.TRANSPARENT,8,4))
 	theme.set_font("title_font","Window",C.BOLD)
 	theme.set_font_size("title_font_size","Window",maxi(17,C.px(25)))
 	theme.set_color("title_color","Window",C.IVORY)
-	theme.set_stylebox("panel","TabContainer",Paper.T.box(C.PANEL,2,C.LINE))
+	theme.set_stylebox("panel","TabContainer",_panel(24,10))
 	for kind in ["TabContainer","TabBar"]:
 		theme.set_font("font",kind,C.DISPLAY)
-		for state in ["font_selected_color","font_hovered_color"]: theme.set_color(state,kind,C.IVORY)
+		theme.set_color("font_selected_color",kind,Charte.PANNEAU)
+		theme.set_color("font_hovered_color",kind,C.IVORY)
 		theme.set_color("font_unselected_color",kind,C.MUTED)
-		theme.set_stylebox("tab_selected",kind,C.box(accent.darkened(.5),P.safe_accent(accent),5,9))
-		theme.set_stylebox("tab_unselected",kind,C.box(C.PANEL,C.LINE,5,9))
-		theme.set_stylebox("tab_hovered",kind,C.box(C.RAISED,C.LINE,5,9))
+		theme.set_stylebox("tab_selected",kind,_pill(C.IVORY,Color.TRANSPARENT,9))
+		theme.set_stylebox("tab_unselected",kind,_pill(Color.TRANSPARENT,C.LINE,9))
+		theme.set_stylebox("tab_hovered",kind,_pill(C.RAISED,C.FAINT,9))
 	return theme
+
+## Pilule de la charte (bouton, onglet) : aplat `fill`, contour fin `border`, jamais d'ombre.
+static func _pill(fill: Color, border: Color, padding: int = 12) -> StyleBoxFlat:
+	var style := C.box(fill,border,Charte.RAYON_PILULE,padding)
+	style.content_margin_top = C.px(6)
+	style.content_margin_bottom = C.px(6)
+	return style
+
+## Anneau de focus clavier : doré, 2 px, en pilule.
+static func _focus_ring() -> StyleBoxFlat:
+	var ring := C.box(Color.TRANSPARENT,Charte.OR,Charte.RAYON_PILULE,12)
+	ring.set_border_width_all(2)
+	ring.set_expand_margin_all(2)
+	return ring
+
+## Panneau ou carte de la charte : PANNEAU, sans bordure, rayon (gabarit 2560 : 24 panneau, 16 carte) et ombre.
+static func _panel(radius: int, padding: int) -> StyleBoxFlat:
+	return C.box(C.PANEL,Color.TRANSPARENT,radius,padding)
 
 static func _style(node: Node, accent: Color) -> void:
 	if not node is Control or node.get_meta("immersive_style_applied",false) or node.has_meta("semantic_role"): return
@@ -78,8 +104,7 @@ static func _style(node: Node, accent: Color) -> void:
 		node.add_theme_color_override("font_color",C.GOLD)
 		for state in ["font_hover_color","font_pressed_color","font_focus_color"]:
 			node.add_theme_color_override(state,C.IVORY)
-		var focus := C.box(Color.TRANSPARENT,C.GOLD,4,2)
-		node.add_theme_stylebox_override("focus",focus)
+		node.add_theme_stylebox_override("focus",_focus_ring())
 	elif node is CheckBox or node is CheckButton:
 		node.custom_minimum_size.y = maxf(25,node.custom_minimum_size.y)
 	elif node is LineEdit or node is TextEdit:
@@ -88,9 +113,12 @@ static func _style(node: Node, accent: Color) -> void:
 		node.add_theme_color_override("font_color",C.IVORY)
 		node.add_theme_color_override("font_placeholder_color",C.MUTED)
 		node.add_theme_color_override("caret_color",C.IVORY)
-		node.add_theme_color_override("selection_color",accent.darkened(.48))
-		node.add_theme_stylebox_override("normal",C.box(C.BG,C.LINE,5,6))
-		node.add_theme_stylebox_override("focus",C.box(Color.TRANSPARENT,C.GOLD,5,6))
+		node.add_theme_color_override("selection_color",Charte.SELECTION)
+		var round_edit := Charte.RAYON_PILULE if node is LineEdit else 16
+		node.add_theme_stylebox_override("normal",C.box(C.SELECTED,C.LINE,round_edit,10))
+		var edit_focus := C.box(C.SELECTED,Charte.OR,round_edit,10)
+		edit_focus.set_border_width_all(2)
+		node.add_theme_stylebox_override("focus",Charte.sans_ombre(edit_focus))
 		node.end_bulk_theme_override()
 	elif node is Panel or node is PanelContainer:
 		_surface(node)
@@ -101,7 +129,7 @@ static func _style(node: Node, accent: Color) -> void:
 		for state in ["font_selected_color","font_unselected_color","font_hovered_color"]:
 			node.remove_theme_color_override(state)
 	elif node is ProgressBar:
-		node.add_theme_stylebox_override("background",C.box(Color("283634"),Color.TRANSPARENT,Charte.RAYON_PILULE,0))
+		node.add_theme_stylebox_override("background",C.box(C.SELECTED,Color.TRANSPARENT,Charte.RAYON_PILULE,0))
 		var fill: StyleBox = node.get_theme_stylebox("fill")
 		if fill is StyleBoxFlat:
 			node.add_theme_stylebox_override("fill",C.box(_ink(fill.bg_color),Color.TRANSPARENT,Charte.RAYON_PILULE,0))
@@ -124,9 +152,10 @@ static func _surface(node: Control) -> void:
 	if not original is StyleBoxFlat or original.bg_color.a < .25: return
 	var style: StyleBoxFlat = original.duplicate()
 	style.bg_color = C.PANEL if original.bg_color.get_luminance()>.22 else C.PANEL.lerp(original.bg_color,.35)
-	style.border_color = C.LINE if original.border_color.s<.27 else P.safe_accent(original.border_color)
-	style.set_corner_radius_all(Charte.RAYON_CARTE)
-	node.add_theme_stylebox_override("panel",style)
+	# Carte de la charte : sans bordure (ni liseré du club), rayon des cartes, ombre portée des jetons.
+	style.set_border_width_all(0)
+	style.set_corner_radius_all(maxi(3,C.px(16)))
+	node.add_theme_stylebox_override("panel",Charte.ombrer(style,Charte.RAYON_CARTE))
 
 static func _button(button: Button, accent: Color) -> void:
 	# Un seul recalcul de thème (forme du texte, taille minimale) pour la douzaine de réglages.
@@ -146,55 +175,42 @@ static func _button_overrides(button: Button, accent: Color) -> void:
 		return
 	var original := button.get_theme_stylebox("normal")
 	var selected: bool = button.get_meta("carnet_selected",false)
-	var primary: bool = original is StyleBoxFlat and (original.bg_color==Paper.INK or button.get_theme_color("font_color")==C.BG)
+	var primary: bool = original is StyleBoxFlat and (original.bg_color==Paper.INK or original.bg_color==Charte.OR or button.get_theme_color("font_color")==C.BG)
 	button.add_theme_font_override("font",C.BOLD if primary else C.DISPLAY)
 	button.add_theme_font_size_override("font_size",maxi(12,C.px(20)))
 	button.custom_minimum_size.y = maxf(button.custom_minimum_size.y,C.px(36))
 	var paint := _button_surfaces.bind(accent,primary)
 	button.set_meta("carnet_selection_skin",paint)
 	paint.call(button,selected)
-	var focus := C.box(Color.TRANSPARENT,C.GOLD,5,0)
-	focus.set_border_width_all(2)
-	button.add_theme_stylebox_override("focus",focus)
-	for key in ["font_color","font_hover_color","font_pressed_color","font_hover_pressed_color","font_focus_color"]: button.add_theme_color_override(key,C.IVORY)
+	button.add_theme_stylebox_override("focus",_focus_ring())
 	button.add_theme_color_override("font_disabled_color",C.MUTED)
 
-# Couleurs de fond par (accent, état, emphase) : calcul pur, répété pour chaque bouton d'un écran.
-static var _fills: Dictionary = {}
-static var _maximum_fill := -1.0
 static var _in_bulk := false
 
-static func _fill_for(state: String, accent: Color, emphasis: bool, group_choice: bool) -> Color:
-	var key := [state, accent, emphasis, group_choice]
-	if _fills.has(key): return _fills[key]
-	if _maximum_fill < 0.0:
-		var text_limit := (_luminance(C.IVORY)+.05)/TEXT_CONTRAST-.05
-		var focus_limit := (_luminance(C.GOLD)+.05)/3.1-.05
-		_maximum_fill = minf(text_limit,focus_limit)
-	var pressed: bool = state=="pressed" or state=="hover_pressed"
-	var fill := accent.darkened(.48) if emphasis or group_choice else C.PANEL
-	if state=="hover": fill=fill.lightened(.13)
-	if pressed: fill=fill.darkened(.16)
-	if state=="disabled": fill=C.BG
-	while _luminance(fill)>_maximum_fill: fill=fill.darkened(.10)
-	_fills[key] = fill
-	return fill
-
-static func _button_surfaces(button: Button, selected: bool, accent: Color, primary: bool) -> void:
-	var emphasis := selected or primary
-	var border := P.safe_accent(accent) if emphasis else C.LINE
+## Habillage d'un bouton de vue ancienne (charte §7) : pilule. Onglet ou choix courant (`selected`, ou bouton à bascule
+## d'un groupe enfoncé) = aplat crème, texte PANNEAU, comme les onglets du socle ; bouton principal de la vue = contour
+## crème (l'aplat doré reste à Continuer, un seul par écran) ; les autres = contour FILET, texte crème.
+static func _button_surfaces(button: Button, selected: bool, _accent: Color, primary: bool) -> void:
 	var own_bulk := not _in_bulk
 	if own_bulk: button.begin_bulk_theme_override()
+	var group_toggle: bool = button.toggle_mode and button.button_group!=null
 	for state in ["normal","hover","pressed","hover_pressed","disabled"]:
 		var old := button.get_theme_stylebox("pressed" if state=="hover_pressed" else state)
 		var pressed: bool = state=="pressed" or state=="hover_pressed"
-		var group_choice: bool = pressed and button.toggle_mode and button.button_group!=null
-		var fill := _fill_for(state,accent,emphasis,group_choice)
-		var style := C.box(fill,C.GOLD if group_choice else border,5,10)
-		for side in [SIDE_LEFT,SIDE_RIGHT,SIDE_TOP,SIDE_BOTTOM]:
-			style.set_content_margin(side,old.get_content_margin(side))
-		if selected or group_choice: style.border_width_left=maxi(2,C.px(4))
+		var cream: bool = (selected and state!="disabled") or (pressed and group_toggle)
+		var style: StyleBoxFlat
+		if cream: style = _pill(C.IVORY,Color.TRANSPARENT)
+		elif state=="hover": style = _pill(C.RAISED,C.FAINT)
+		elif pressed: style = _pill(Charte.SELECTION,C.IVORY)
+		elif state=="disabled": style = _pill(Color.TRANSPARENT,C.LINE)
+		else: style = _pill(Color.TRANSPARENT,C.IVORY if primary else C.LINE)
+		if old != null:
+			for side in [SIDE_LEFT,SIDE_RIGHT,SIDE_TOP,SIDE_BOTTOM]:
+				style.set_content_margin(side,maxf(old.get_content_margin(side),style.get_content_margin(side)))
 		button.add_theme_stylebox_override(state,style)
+	var ink := Charte.PANNEAU if selected else C.IVORY
+	for key in ["font_color","font_hover_color","font_focus_color"]: button.add_theme_color_override(key,ink)
+	for key in ["font_pressed_color","font_hover_pressed_color"]: button.add_theme_color_override(key,Charte.PANNEAU if selected or group_toggle else C.IVORY)
 	if own_bulk: button.end_bulk_theme_override()
 
 static func _luminance(color: Color) -> float:
