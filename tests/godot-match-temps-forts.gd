@@ -1501,15 +1501,17 @@ func terrain2d(view: Control) -> void:
 	if not nom_lien.is_empty():
 		(nom_lien[0] as Button).pressed.emit()
 		await settle(6)
-		var fiche: Variant = between.get("fiche_match")
-		check(fiche is Control and is_instance_valid(fiche) and (fiche as Control).is_visible_in_tree() and between.find_child("ImmersivePlayerFull", true, false) != null and str(lineup[2].name) in str((between.find_child("ImmersivePlayerFull", true, false) as Control).find_children("*", "Label", true, false).map(func(l: Label): return l.text)), "Nom du 3 : sa fiche complète s'ouvre sur l'entracte")
-		check(app.model.live.paused, "Fiche ouverte : le match est en pause")
+		# Plein écran obligatoire : sa petite fenêtre par-dessus le match, jamais une sous-page qui remplace la vue.
+		var hote: Control = view.get("fenetre_hote") if view.fenetre_ouverte() else null
+		var panneau: Control = hote.find_child("MatchFenetreJoueurPanneau", true, false) if hote != null else null
+		check(between.get("fiche_match") == null and panneau != null and str(panneau.get_meta("player_id", "")) == str(lineup[2].id), "Nom du 3 : sa petite fenêtre s'ouvre par-dessus l'entracte")
+		check(app.model.live.paused, "Fenêtre ouverte : le match est en pause")
 		var echap := InputEventKey.new()
 		echap.keycode = KEY_ESCAPE
 		echap.pressed = true
-		between._input(echap)
+		view._input(echap)
 		await settle(4)
-		check(between.get("fiche_match") == null and between.is_visible_in_tree() and surface() == view, "Échap referme la fiche et revient à l'entracte, le match continue d'exister")
+		check(not view.fenetre_ouverte() and between.is_visible_in_tree() and surface() == view, "Échap referme la fenêtre et revient à l'entracte, le match continue d'exister")
 	var menu: MenuButton = view.find_child("MatchBetweenMore", true, false)
 	check(menu != null and menu.get_popup().get_item_text(0) == "Statistiques", "Tous les chiffres du moteur restent dans le tiroir Statistiques (menu Plus)")
 	await layout(view, Vector2i(1280, 720))

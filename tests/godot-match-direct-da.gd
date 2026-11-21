@@ -2,8 +2,8 @@ extends SceneTree
 ## Écran 13 « Match en direct » dans le vrai jeu (godot-match-direct-da.cjs prépare la carrière Monde).
 ## Décisions contrôlées (charte finale du 20/11/2026) : bandeau du score sur panneau rayon 18, couleur des clubs sur
 ## l'écusson seul, bannière d'essai en aplat à la couleur du club qui marque (exception de Léo), menu du match par Échap (seule fenêtre
-## permise), plaques → fiche du club sans casser le match, noms de nos joueurs liés dans le journal, un seul aplat
-## doré (« Valider la journée »), aucune fenêtre ouverte par un clic.
+## permise), plein écran obligatoire : plaques et noms de nos joueurs → petite fenêtre visuelle par-dessus le match
+## (Échap, ✕, clic à côté la ferment), noms liés dans le journal, un seul aplat doré (« Valider la journée »).
 const Charte = preload("res://ui/charte.gd")
 const LiveView = preload("res://ui/contextual/live_view.gd")
 const Regie = preload("res://ui/contextual/match_temps_forts.gd")
@@ -142,6 +142,20 @@ func muets(racine: Node) -> Array[String]:
 		if b.get_signal_connection_list("pressed").is_empty() and b.get_signal_connection_list("toggled").is_empty(): trouves.append(str(b.name))
 	return trouves
 
+## Fenêtre visuelle : aucun bloc de texte (étiquette de plus de 4 mots ou de 32 signes, hors titre).
+func pas_de_phrase(racine: Node) -> Array[String]:
+	var trouves: Array[String] = []
+	for n: Node in racine.find_children("*", "Label", true, false):
+		var t := (n as Label).text
+		if str(n.name).ends_with("Titre"): continue
+		if t.split(" ", false).size() > 4 or t.length() > 32: trouves.append(t)
+	return trouves
+
+## Toujours dans le match : même direct, route Match, aucune page du direct ni fenêtre système.
+func dans_le_match(view: Control) -> bool:
+	var p: Variant = view.get("page")
+	return surface() == view and app.route == "Match" and fenetres().is_empty() and (p == null or not (p as Control).visible)
+
 func fenetres() -> Array:
 	return app.find_children("*", "Window", true, false).filter(func(w: Window) -> bool: return w.visible)
 
@@ -259,72 +273,80 @@ func run() -> void:
 	var fond_valider := valider.get_theme_stylebox("normal") as StyleBoxFlat if valider != null else null
 	check(fond_valider != null and fond_valider.corner_radius_top_left >= 999, "« Valider la journée » : pilule (rayon 999)")
 
-	# 4. Plaque cliquée : fiche du club dans le direct, match en pause, aucune fenêtre ; retour au direct.
-	if app.model.live.get("paused", false): await command("pause", {"paused": false})
-	var clic := InputEventMouseButton.new()
-	clic.button_index = MOUSE_BUTTON_LEFT
-	clic.pressed = true
-	view.plaques[1].gui_input.emit(clic)
-	await wait_command()
-	await settle(6)
-	var page: Control = view.get("page")
-	check(page != null and page.visible and page.find_child("MatchClubSheetCanvas", true, false) != null, "Plaque du visiteur : la fiche du club s'ouvre dans le direct")
-	check(surface() == view and app.route == "Match", "La fiche ne casse pas le match (même direct, route Match)")
-	check(fenetres().is_empty(), "Aucune fenêtre ouverte par le clic : " + str(fenetres().map(func(w: Window): return w.name)))
-	await until(func(): return page.find_child("FicheClub", true, false) != null and page.find_child("ClubSheetLoading", true, false) == null, 30000)
-	check(page.find_child("FicheClub", true, false) != null, "Fiche du club construite")
-	var toile: Control = page.find_child("MatchClubSheetCanvas", true, false)
-	var apres: Label = toile.find_child("ClubSheetAfterMatch", true, false) as Label
-	check(["ClubSheetCalendar", "ClubSheetCompare", "ClubSheetRecruit"].all(func(n: String) -> bool: return toile.find_child(n, true, false) == null) and apres != null and apres.text.contains("après le match"), "Fiche du club en match : Calendrier, Comparer, Recruter écrits « disponibles après le match »")
-	check(actifs_hors_place(toile).is_empty(), "Fiche du club en match : tout lien vers un autre écran est grisé : " + str(actifs_hors_place(toile)))
-	check(muets(page).is_empty(), "Fiche du club en match : aucun clic sans réponse : " + str(muets(page)))
-	check(toile.find_child("ClubSheetLiveMatch", true, false) != null, "La fiche du club sait que le match est en cours")
-	if proof != "": await capture("fiche-club")
-	var retour: Button = page.find_child("MatchPageBack", true, false)
-	check(retour != null and retour.text.contains("Retour au direct"), "Lien « Retour au direct »")
-	if retour != null: retour.pressed.emit()
-	await wait_command()
-	check(not page.visible and surface() == view and not app.has_meta("fiche_club_en_match"), "Retour au direct")
-	# Notre club : ni suivi, ni comparaison, ni recrutement.
-	var notre_cote := 0 if int(app.model.live.teams[0].get("id", -1)) == int(app.model.club.id) else 1
-	view.ouvrir_fiche_club(notre_cote)
-	await wait_command()
-	await until(func(): return page.find_child("FicheClub", true, false) != null and page.find_child("ClubSheetLoading", true, false) == null, 30000)
-	check(page.find_child("ClubSheetFollow", true, false) == null and page.find_child("ClubSheetAfterMatch", true, false) != null, "Notre club : pas de « Suivre », calendrier après le match")
-	# Onglet Effectif de notre club : chaque ligne de joueur ouvre sa fiche complète dans le direct (pas grisée).
-	var onglet_effectif: Button = page.find_child("ClubSheetTab1", true, false)
-	if onglet_effectif != null: onglet_effectif.pressed.emit()
-	await until(func(): return page.find_child("ClubSheetPlayer0", true, false) != null, 15000)
-	await settle(2)
-	var ligne_joueur := page.find_child("ClubSheetPlayer0", true, false) as BaseButton
-	check(ligne_joueur != null and not ligne_joueur.disabled and ligne_joueur.has_meta("fiche_en_match"), "Effectif de notre club en match : la ligne d'un joueur reste active")
-	if ligne_joueur != null and not ligne_joueur.disabled:
-		ligne_joueur.pressed.emit()
+	# 4. Plein écran obligatoire (règle de Léo du 21/11/2026) : la plaque de chaque club ouvre une petite fenêtre
+	# visuelle par-dessus le match (écusson, forme en pastilles, score et chiffres du match en tuiles), jamais une page
+	# qui remplace la vue ; le match se met en pause, Échap ferme la fenêtre (pas le menu) et le match repart.
+	if proof != "": await capture("match-1920")
+	for cote in 2:
+		if app.model.live.get("paused", false): await command("pause", {"paused": false})
+		var clic := InputEventMouseButton.new()
+		clic.button_index = MOUSE_BUTTON_LEFT
+		clic.pressed = true
+		view.plaques[cote].gui_input.emit(clic)
 		await wait_command()
+		await settle(6)
+		var hote: Control = view.get("fenetre_hote")
+		var panneau: Control = hote.find_child("MatchFenetreClubPanneau", true, false) if hote != null else null
+		check(view.fenetre_ouverte() and panneau != null and panneau.is_visible_in_tree(), "Plaque %d : petite fenêtre du club par-dessus le match" % cote)
+		if panneau == null: continue
+		check(int(panneau.get_meta("club_id", -1)) == int(float(app.model.live.teams[cote].id)), "Plaque %d : la fenêtre est celle de ce club" % cote)
+		var marque: Array = app.model.live.score
+		var score_tuile: Label = panneau.find_child("MatchFenetreClubScoreValeur", true, false)
+		check(score_tuile != null and score_tuile.text == "%d – %d" % [int(marque[cote]), int(marque[1 - cote])], "Plaque %d : score du match de son point de vue en tuile (%s)" % [cote, score_tuile.text if score_tuile != null else "?"])
+		check(["MatchFenetreClubEcusson", "MatchFenetreClubForme", "MatchFenetreClubRang", "MatchFenetreClubPoints", "MatchFenetreClubEssais", "MatchFenetreClubPossession", "MatchFenetreClubTerritoire", "MatchFenetreClubPénalités", "MatchFenetreClubLieu"].all(func(n: String) -> bool: return panneau.find_child(n, true, false) != null), "Plaque %d : écusson, forme, rang, points, chiffres du match, lieu" % cote)
+		check(Rect2(Vector2.ZERO, Vector2(root.size)).encloses(panneau.get_global_rect()), "Plaque %d : fenêtre entière à l'écran" % cote)
+		check(pas_de_phrase(panneau).is_empty(), "Plaque %d : aucun bloc de texte : %s" % [cote, str(pas_de_phrase(panneau))])
+		check(aplats_or(hote).is_empty() and angles_droits(panneau).is_empty(), "Plaque %d : aucun aplat doré ni à angles droits (%s / %s)" % [cote, str(aplats_or(hote)), str(angles_droits(panneau))])
+		check(dans_le_match(view), "Plaque %d : toujours dans le match (même direct, aucune page, aucune fenêtre système)" % cote)
+		check(bool(app.model.live.get("paused", false)), "Plaque %d : le match se met en pause pendant la fenêtre" % cote)
+		if proof != "": await capture("fenetre-club-%d" % cote)
+		touche(KEY_ESCAPE)
+		await until(func(): return not bool(app.model.live.get("paused", false)) and not app.waiting, 20000)
 		await settle(4)
-		check(page.visible and page.find_child("MatchPlayerSheet", true, false) != null and fenetres().is_empty(), "Effectif de notre club : clic sur un joueur = sa fiche complète dans le direct")
-	view.fermer_page()
-	await wait_command()
-
-	# 4 bis. Nom d'un de nos joueurs dans le journal : sa fiche complète dans le direct, retour au direct.
-	view.ouvrir_joueur(str(notre.id))
+		check(not view.fenetre_ouverte() and not (view.get("menu") != null and view.menu.visible), "Plaque %d : Échap ferme la fenêtre, pas le menu du match" % cote)
+		check(dans_le_match(view) and not bool(app.model.live.get("paused", false)), "Plaque %d : après Échap, toujours dans le match, qui repart" % cote)
+	# ✕ et clic à côté ferment aussi.
+	view.ouvrir_fiche_club(0)
 	await wait_command()
 	await settle(4)
-	var fiche_joueur: Control = page.find_child("MatchPlayerSheet", true, false)
-	check(page.visible and fiche_joueur != null and fenetres().is_empty(), "Nom du journal : fiche complète du joueur dans le direct")
-	if fiche_joueur != null:
-		var retour_effectif: Control = fiche_joueur.find_child("PlayerBackToSquad", true, false)
-		check(retour_effectif == null or not retour_effectif.visible, "Le retour vers l'Effectif laisse place à « Retour au direct »")
-		check(actifs_hors_place(fiche_joueur).is_empty() and muets(page).is_empty(), "Fiche joueur en match : liens hors match grisés, aucun clic muet (%s / %s)" % [str(actifs_hors_place(fiche_joueur)), str(muets(page))])
-		var onglet: Button = fiche_joueur.find_child("FullPlayerTab2", true, false)
-		if onglet != null:
-			onglet.pressed.emit()
-			await settle(4)
-			check(page.visible and page.find_child("MatchPlayerSheet", true, false) != null and int(app.management_ui.get("immersive_player_tab", 0)) == 2, "Onglet de la fiche joueur : sur place, dans le direct")
-	if proof != "": await capture("fiche-joueur")
-	view.fermer_page()
+	var croix: Button = view.get("fenetre_hote").find_child("MatchFenetreClubFermer", true, false) if view.fenetre_ouverte() else null
+	check(croix != null, "Fenêtre du club : ✕")
+	if croix != null: croix.pressed.emit()
 	await wait_command()
-	check(not page.visible, "Retour au direct depuis la fiche joueur")
+	await settle(2)
+	check(not view.fenetre_ouverte() and dans_le_match(view), "✕ ferme la fenêtre, toujours dans le match")
+	view.ouvrir_fiche_club(1)
+	await wait_command()
+	await settle(4)
+	var a_cote: Button = view.get("fenetre_hote").find_child("MatchFenetreACote", true, false) if view.fenetre_ouverte() else null
+	check(a_cote != null and a_cote.is_visible_in_tree(), "Fenêtre du club : voile sur tout l'écran")
+	if a_cote != null: a_cote.pressed.emit()
+	await wait_command()
+	await settle(2)
+	check(not view.fenetre_ouverte() and dans_le_match(view), "Clic à côté ferme la fenêtre, toujours dans le match")
+
+	# 4 bis. Nom d'un de nos joueurs cliqué dans le journal : sa petite fenêtre (portrait, poste, note, énergie en jauge,
+	# niveau, chiffres du match en tuiles) ; Échap la ferme, toujours dans le match.
+	if app.model.live.get("paused", false): await command("pause", {"paused": false})
+	riche.meta_clicked.emit(str(notre.id))
+	await wait_command()
+	await settle(6)
+	var hote_joueur: Control = view.get("fenetre_hote")
+	var fiche_joueur: Control = hote_joueur.find_child("MatchFenetreJoueurPanneau", true, false) if hote_joueur != null else null
+	check(view.fenetre_ouverte() and fiche_joueur != null and str(fiche_joueur.get_meta("player_id", "")) == str(notre.id), "Nom du journal : petite fenêtre du joueur par-dessus le match")
+	if fiche_joueur != null:
+		check(["MatchFenetreJoueurPortrait", "MatchFenetreJoueurNote", "MatchFenetreJoueurEnergie", "MatchFenetreJoueurNiveau", "MatchFenetreJoueurEssais", "MatchFenetreJoueurPlaquages", "MatchFenetreJoueurMetres"].all(func(n: String) -> bool: return fiche_joueur.find_child(n, true, false) != null), "Fenêtre du joueur : portrait, note, énergie, niveau, chiffres du match")
+		var titre_joueur: Label = fiche_joueur.find_child("MatchFenetreJoueurTitre", true, false)
+		check(titre_joueur != null and titre_joueur.text == str(notre.name).to_upper(), "Fenêtre du joueur : son nom en titre")
+		check(pas_de_phrase(fiche_joueur).is_empty(), "Fenêtre du joueur : aucun bloc de texte : " + str(pas_de_phrase(fiche_joueur)))
+		check(Rect2(Vector2.ZERO, Vector2(root.size)).encloses(fiche_joueur.get_global_rect()) and aplats_or(hote_joueur).is_empty(), "Fenêtre du joueur : entière à l'écran, sans aplat doré")
+		check(dans_le_match(view) and bool(app.model.live.get("paused", false)), "Fenêtre du joueur : toujours dans le match, en pause")
+		if proof != "": await capture("fenetre-joueur")
+	touche(KEY_ESCAPE)
+	await until(func(): return not bool(app.model.live.get("paused", false)) and not app.waiting, 20000)
+	await settle(4)
+	check(not view.fenetre_ouverte() and not (view.get("menu") != null and view.menu.visible) and dans_le_match(view) and not bool(app.model.live.get("paused", false)), "Fenêtre du joueur : Échap la ferme, toujours dans le match, qui repart")
+	var page: Control = null
 
 	# 4 ter. Tiroir Journal (Plus → Journal du match) : jetons de la Charte, aucun cadre complet, noms de nos joueurs
 	# liés ; « Relire » ouvre une page du direct avec « ← Retour au direct », jamais une fenêtre.
@@ -348,6 +370,7 @@ func run() -> void:
 		relire.pressed.emit()
 		await wait_command()
 		await settle(6)
+		page = view.get("page")
 		check(page.visible and page.find_child("ActionReviewPage", true, false) != null and fenetres().is_empty() and app.find_child("MatchActionReview", true, false) == null, "Relire : page du direct, pas une fenêtre")
 		check(app.model.live.get("paused", false), "Relire : le match est en pause")
 		check(aplats_or(page).is_empty() and angles_droits(page).is_empty(), "Page de relecture : aucun aplat doré (anneau de focus permis), aucun aplat à angles droits (%s / %s)" % [str(aplats_or(page)), str(angles_droits(page))])
@@ -376,8 +399,8 @@ func run() -> void:
 	nom_banniere.gui_input.emit(clic_nom)
 	await wait_command()
 	await settle(4)
-	check(page.visible and page.find_child("MatchPlayerSheet", true, false) != null and fenetres().is_empty(), "Bannière : clic sur notre marqueur = sa fiche complète dans le direct")
-	view.fermer_page()
+	check(view.fenetre_ouverte() and view.get("fenetre_hote").find_child("MatchFenetreJoueurPanneau", true, false) != null and dans_le_match(view), "Bannière : clic sur notre marqueur = sa petite fenêtre, toujours dans le match")
+	view.fermer_fenetre()
 	await wait_command()
 	view.regie.montrer_bandeau("ESSAI", "Zzyzx QUELCONQUE", "Club · 13e minute", 3.0, Color("b0302a"), "+5\n5 – 5")
 	await settle(2)
@@ -410,7 +433,7 @@ func run() -> void:
 	clic_menu.pressed = true
 	view.plaques[0].gui_input.emit(clic_menu)
 	await settle(2)
-	check(not view.get("page").visible and menu.visible, "Plaque inactive tant que le menu est ouvert")
+	check(not view.fenetre_ouverte() and menu.visible, "Plaque inactive tant que le menu est ouvert")
 	check(view.get_viewport().gui_get_focus_owner() == menu.find_child("MatchMenuReprendre", true, false), "Focus sur « Reprendre le match »")
 	if proof != "": await capture("menu-echap")
 	var vitesse_avant := str(view.regie.horloge)
@@ -432,6 +455,7 @@ func run() -> void:
 	check(precision != null and precision.text.begins_with("Appuie encore") and not app.closing, "Quitter : un premier appui prévient, rien ne se ferme")
 	(menu.find_child("MatchMenuReglages", true, false) as Button).pressed.emit()
 	await settle(4)
+	page = view.get("page")
 	check(page.visible and page.find_child("PreferencesPage", true, false) != null and not menu.visible and fenetres().is_empty(), "Réglages : page du direct, pas une fenêtre")
 	for nom in ["PreferencesLeagueDetail", "PreferencesPack", "PreferencesCoachHelp"]:
 		var b := page.find_child(nom, true, false) as Button
@@ -508,6 +532,19 @@ func run() -> void:
 
 	# Captures : un moment de jeu ordinaire, puis la bannière d'essai si un essai passe.
 	if proof != "": await capture("jeu")
+	# Le direct en 1280 × 720 (même vue, mise à l'échelle).
+	if proof != "" and DisplayServer.get_name() != "headless":
+		if app.model.live.get("paused", false) and not app.model.live.get("finished", false): await command("pause", {"paused": false})
+		root.size = Vector2i(1280, 720)
+		root.content_scale_size = root.size
+		await settle(30)
+		await capture("match-1280")
+		view.ouvrir_fiche_club(0)
+		await wait_command()
+		await settle(8)
+		await capture("fenetre-club-0-1280")
+		view.fermer_fenetre()
+		await wait_command()
 	finir()
 
 func capture(nom: String) -> void:
