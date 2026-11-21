@@ -906,6 +906,7 @@ func _poser_plaques(teams: Array) -> void:
 		style.content_margin_top = roundf(2 * echelle)
 		style.content_margin_bottom = roundf(2 * echelle)
 		puce.add_theme_stylebox_override("panel", style)
+		_poser_ecusson(cote, teams)
 		# Noms très longs : 300 px au plus (1920 × 1080) par plaque, environ 150 px en 1280 × 720 (les commandes
 		# tiennent sur la même rangée) ; au-delà, le nom court (sans ses derniers mots), sinon le sigle. Jamais « … ».
 		var nom: Label = home if cote == 0 else away
@@ -917,6 +918,23 @@ func _poser_plaques(teams: Array) -> void:
 		nom.custom_minimum_size.x = police.get_string_size(nom.text, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x + 2.0
 		plaques[cote].tooltip_text = ("%s : fiche du club (le match se met en pause)." % complet) if not complet.is_empty() else "Fiche du club (le match se met en pause)."
 	_coque_score.queue_redraw()
+
+## PROVISOIRE (choix de Léo) : variante B du bandeau, l'écusson du club (pack, sinon écusson officiel, sinon écusson
+## recoloré) à côté du sigle, ~30 px de haut en 1080p. Actif avec CD_VARIANTE_VISUELLE=B seulement.
+func _poser_ecusson(cote: int, teams: Array) -> void:
+	if OS.get_environment("CD_VARIANTE_VISUELLE") != "B": return
+	var rangee: HBoxContainer = plaques[cote].get_child(0)
+	var ancien := rangee.get_node_or_null("MatchClubCrest%d" % cote)
+	if ancien != null:
+		rangee.remove_child(ancien)
+		ancien.queue_free()
+	if teams.size() <= cote or not (teams[cote] is Dictionary): return
+	var ecusson: Control = S.G.crest(teams[cote], roundi(30 * echelle))
+	ecusson.name = "MatchClubCrest%d" % cote
+	ecusson.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	ecusson.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rangee.add_child(ecusson)
+	rangee.move_child(ecusson, 0 if cote == 0 else rangee.get_child_count() - 1)
 
 ## Fond de l'écusson d'une plaque : la vraie couleur du club, assombrie (même teinte) jusqu'à ce que l'ivoire y soit lu à
 ## 5:1 au moins, contraste mesuré comme la charte (Charte.contraste) ; un club jaune ou or passe au bordeaux
