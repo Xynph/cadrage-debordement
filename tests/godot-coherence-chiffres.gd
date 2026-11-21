@@ -135,7 +135,13 @@ func run() -> void:
 	var office := texts(app)
 	await capture("bureau")
 	check(office.contains(opponent), "Bureau : prochaine rencontre contre " + opponent)
-	check(office.contains("%d échéances de contrat en fin de saison" % int(counts.end_of_season)), "Bureau : échéances de la saison, même définition que le courrier et Recrutement")
+	# Tuile de priorité (21/11) : « 8 · CONTRATS · FIN DE SAISON ».
+	var tuile_contrats := false
+	for tuile: Node in app.find_children("OfficePriorityTile*", "Panel", true, false):
+		var valeur := tuile.find_child("TuileValeur", true, false) as Label
+		var legende := tuile.find_child("TuileLegende", true, false) as Label
+		if valeur != null and legende != null and legende.text.contains("FIN DE SAISON") and valeur.text == str(int(counts.end_of_season)): tuile_contrats = true
+	check(tuile_contrats, "Bureau : échéances de la saison, même définition que le courrier et Recrutement")
 	forbidden_none(office, "Bureau")
 	# Tactique, Entraînement, Compétitions : même rencontre que le Bureau
 	app._navigate("Composition")

@@ -17,6 +17,7 @@ const SeasonPreparation = preload("res://ui/immersive08/season_preparation.gd")
 const Zones = preload("res://ui/immersive08/standings_zones.gd")
 const Charte = preload("res://ui/charte.gd")
 const Link = preload("res://ui/entity_link.gd")
+const R = preload("res://ui/immersive08/reperes.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 
 const PAGE_WIDTH := 2248
@@ -434,7 +435,8 @@ static func _priorities(card: Panel, app: Control, w: int = 900) -> void:
 	for i in tasks.size():
 		var y := 100.0 + i * 90.0
 		var item: Dictionary = tasks[i]
-		var tint := Office.priority_color(item)
+		# Couleur franche selon le niveau (rouge urgent, orange important, bleu le reste), jamais seule : pastille écrite.
+		var tint: Color = R.ROUGE if item.level == "urgent" else R.ORANGE if item.level == "important" else R.BLEU
 		D.line(card, Vector2(20, y), Vector2(w - 20, y), Color(Charte.FILET, .7))
 		D.rect(card, Rect2(20, y + 10, 4, 66), tint).name = "OfficePriority" + str(i + 1)
 		_ex(D.text(card, 44, y + 60, str(i + 1), 46, Charte.IVOIRE, 800, 44))
@@ -444,16 +446,23 @@ static func _priorities(card: Panel, app: Control, w: int = 900) -> void:
 		action.set_meta("inline_number", false)
 		action.tooltip_text = item.title + "\n" + Office.priority_description(item)
 		action.accessibility_name = action.tooltip_text.replace("\n", " · ")
-		D.text(card, w - 52, y + 28, str(item.deadline) + "  →", 19, tint, 650, echeance_w + 20, HORIZONTAL_ALIGNMENT_RIGHT).name = "OfficePriorityDeadline" + str(i + 1)
-		var raison := D.text(card, 92, y + 56, item.detail, 18, Charte.IVOIRE_2, 400, w - 150, HORIZONTAL_ALIGNMENT_LEFT, true)
-		raison.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		raison.max_lines_visible = 2
-		raison.size.y = C.px(46)
-		raison.name = "OfficePriorityReason" + str(i + 1)
-		raison.tooltip_text = item.detail
-		# Noms de joueurs du titre et du détail : fiche au clic, mini-fiche au survol.
-		noms_cliquables(app, card, Rect2(90, y + 10, w - 260, 30), str(item.title), 22, C.font(700))
-		noms_cliquables(app, card, Rect2(92, y + 40, w - 150, 46), str(item.detail), 18, C.BODY)
+		# Échéance : pastille (icône + mot) au bord droit ; plus de phrase d'explication sous le titre (21/11) :
+		# le motif reste dans l'infobulle de la ligne, un compte devient une tuile (chiffre + légende courte).
+		var pastille := R.pastille(card, 0, y + 30, str(item.deadline), tint, "calendar", "OfficePriorityDeadline" + str(i + 1), 21)
+		pastille.position.x = C.px(w - 40) - pastille.size.x
+		var compte: Variant = item.get("count")
+		var tuile_seule: bool = bool(item.get("tile_only", false)) and compte != null
+		if tuile_seule:
+			action.text = ""
+			R.tuile(card, Rect2(92, y + 14, minf(w - 150 - echeance_w, R.largeur(G.n(compte), 40, 800) + R.largeur(str(item.get("unit", "")).to_upper(), 17) + 56), 62), G.n(compte), str(item.get("unit", "")), R.ORANGE, "OfficePriorityTile" + str(i + 1), 40, true)
+		elif compte != null:
+			R.tuile(card, Rect2(92, y + 44, minf(w - 150 - echeance_w, R.largeur(G.n(compte), 26, 800) + R.largeur(str(item.get("unit", "")).to_upper(), 17) + 56), 38), G.n(compte), str(item.get("unit", "")), R.ROUGE if item.id == "OfficeMedicalPriorityAction" else R.ORANGE, "OfficePriorityTile" + str(i + 1), 26, true)
+		else:
+			for etat in ["normal", "hover", "pressed", "focus"]:
+				var style := action.get_theme_stylebox(etat) as StyleBoxFlat
+				if style != null: style.content_margin_bottom = 0
+		# Noms de joueurs du titre : fiche au clic, mini-fiche au survol.
+		if not tuile_seule: noms_cliquables(app, card, Rect2(90, y + (10 if compte != null else 28), w - 260, 30), str(item.title), 22, C.font(700))
 	var y_pied := 100.0 + 3 * 90.0 + 14.0
 	# « Mon carnet personnel » (une fenêtre) n'est plus au Bureau : décision de Léo, plus de petite fenêtre ; le carnet
 	# de la semaine est celui de Gabi, à droite.
@@ -489,7 +498,7 @@ static func _group(card: Panel, app: Control, w: int = 580) -> void:
 		else: app.navigation_controller.open_roster_group()
 	var blesses := _zone(card, Rect2(250, 66, 220, 70), "", vers_blesses, "OfficeGroupInjured", 20)
 	blesses.tooltip_text = "Voir les %s joueurs blessés" % G.n(group.injured)
-	D.text(card, 258, 118, "! " + G.n(group.injured) if int(group.injured) > 0 else G.n(group.injured), 52, Charte.D if int(group.injured) > 0 else Charte.IVOIRE_2, 800, 100)
+	D.text(card, 258, 118, "! " + G.n(group.injured) if int(group.injured) > 0 else G.n(group.injured), 52, R.ROUGE if int(group.injured) > 0 else Charte.IVOIRE_2, 800, 100)
 	D.text(card, 258 + _largeur("! " + G.n(group.injured), 52, C.font(800)) + 14, 116, "blessés", 21, Charte.IVOIRE, 600, 110)
 	var fatigue := Avis.fatigue_resume(app.model)
 	var titulaires := int(fatigue.count)
@@ -506,14 +515,17 @@ static func _group(card: Panel, app: Control, w: int = 580) -> void:
 		D.text(card, right, y + 4, str(jauge[2]), 21, Charte.IVOIRE, 600, 110, HORIZONTAL_ALIGNMENT_RIGHT)
 		D.bar(card, Rect2(24, y + 12, right - 24 - 130, 8), float(jauge[1]), jauge[3])
 		if float(jauge[4]) >= 0.0: D.rect(card, Rect2(24 + (right - 24 - 130) * float(jauge[4]) / 100.0, y + 8, 2, 16), Charte.IVOIRE)
-	var y_alerte := 318.0 if group.watched > 0 else 296.0
-	var texte_fatigue := "%d titulaire%s du prochain match sous %d %%" % [titulaires, "s" if titulaires > 1 else "", int(fatigue.seuil)]
-	if group.watched > 0:
-		var action := _lien(card, 20, 270, U.watch_caption(group.watched) + " →", app.navigation_controller.open_watched_roster, "OfficeWatchedAction", 20)
-		action.tooltip_text = action.text
+	# Alertes en pastilles cliquables (21/11) : « ⚠ 8 < 70 % » (titulaires fatigués → composition) et « ⚑ 15 »
+	# (joueurs sous surveillance → effectif filtré) ; la phrase reste dans l'infobulle.
+	var y_alerte := 296.0
+	var x_pastille := 24.0
 	if titulaires > 0:
-		_fatigue_line(card, app, y_alerte, w - 50, texte_fatigue)
-		y_alerte += 30
+		var texte_fatigue := "%d titulaire%s du prochain match sous %d %%" % [titulaires, "s" if titulaires > 1 else "", int(fatigue.seuil)]
+		x_pastille += _pastille_action(card, x_pastille, 290, "%d < %d %%" % [titulaires, int(fatigue.seuil)], R.ORANGE, "warning", func(): app._navigate("Composition"), "OfficeFatigueAction", texte_fatigue + " · ouvrir la composition") + 12
+		y_alerte = 336.0
+	if group.watched > 0:
+		_pastille_action(card, x_pastille, 290, G.n(group.watched), R.ORANGE, "flag", app.navigation_controller.open_watched_roster, "OfficeWatchedAction", U.watch_caption(group.watched))
+		y_alerte = 336.0
 	var avec_blesses := _blesses(card, app, y_alerte, w)
 	if group.watched > 0 and not avec_blesses:
 		for player: Dictionary in app.model.get("squad", []):
@@ -535,7 +547,7 @@ static func _blesses(card: Panel, app: Control, baseline: float, w: int) -> bool
 		if float(player.get("injury", 0)) > 0 and not str(player.get("id", "")).is_empty(): noms.append(player)
 	if noms.is_empty(): return false
 	var x := 25.0
-	var entete := D.text(card, x, baseline, "! Blessés :", 20, Charte.D, 700, 130)
+	var entete := D.text(card, x, baseline, "! Blessés :", 20, R.ROUGE, 700, 130)
 	entete.name = "OfficeInjuredHeading"
 	x += 112
 	for player: Dictionary in noms.slice(0, 2):
@@ -557,16 +569,19 @@ static func _blesses(card: Panel, app: Control, baseline: float, w: int) -> bool
 		plus.tooltip_text = "Voir tous les joueurs blessés"
 	return true
 
-## Ligne d'alerte « titulaires sous le seuil » : texte sans cadre, cliquable (ouvre la composition).
-static func _fatigue_line(card: Panel, app: Control, baseline: float, width: float, caption: String) -> void:
-	var line := D.text(card, 25, baseline, caption + "  →", 20, Charte.IVOIRE, 600, width)
-	line.name = "OfficeFatigueAction"
-	line.mouse_filter = Control.MOUSE_FILTER_STOP
-	line.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	line.tooltip_text = "Ouvrir la composition : Gabi propose les changements."
-	line.gui_input.connect(func(event: InputEvent):
-		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-			app._navigate("Composition"))
+## Pastille d'alerte cliquable (contour fin = cliquable) ; renvoie sa largeur (gabarit).
+static func _pastille_action(card: Panel, x: float, baseline: float, texte: String, couleur: Color, icone: String, action: Callable, id: String, aide: String) -> float:
+	var fond := R.pastille(card, x, baseline, texte, couleur, icone, id + "Texte", 20)
+	var style := (fond.get_theme_stylebox("panel") as StyleBoxFlat).duplicate() as StyleBoxFlat
+	style.border_color = Color(couleur, .55)
+	style.set_border_width_all(1)
+	fond.add_theme_stylebox_override("panel", style)
+	var zone := Rect2(fond.position / C.density, fond.size / C.density)
+	var bouton := _zone(card, zone, "", action, id, 20)
+	bouton.tooltip_text = aide
+	bouton.accessibility_name = aide
+	bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	return zone.size.x
 
 # ---------------------------------------------------------------------------------------------------------
 # Classement court
@@ -747,7 +762,15 @@ static func _journal(card: Panel, app: Control, w: int = 1132) -> void:
 			# Catégorie du courrier : celle que la Réception attribue à la lettre (même fonction, pas de mots-clés ici).
 			var categorie := str(reception._category(U.fold(message)))
 			D.text(card, 26, y + 29, categorie, 20, Charte.IVOIRE_2, 500, 190, HORIZONTAL_ALIGNMENT_LEFT, true)
-		var texte := D.text(card, x_titre, y + 29, titre, 21, Charte.IVOIRE, 600, w - x_titre - 60, HORIZONTAL_ALIGNMENT_LEFT, true)
+		# Blessure : le nom puis une pastille « ✚ 2 sem. » (la phrase complète reste dans l'infobulle de la ligne).
+		var blessure := RegEx.create_from_string("^(.+?) (?:s’est blessée?|est blessée?|se blesse) .*?(\\d+) semaine").search(message.get_slice(char(10), 0))
+		if blessure != null:
+			var nom := blessure.get_string(1)
+			D.text(card, x_titre, y + 29, nom, 21, Charte.IVOIRE, 600, w - x_titre - 200, HORIZONTAL_ALIGNMENT_LEFT, true).name = "OfficeJournalTitre" + str(i + 1)
+			R.pastille(card, x_titre + minf(_largeur(nom, 21, C.BODY), w - x_titre - 200) + 16, y + 29, "✚ %s sem." % blessure.get_string(2), R.ROUGE, "", "OfficeJournalBlessure" + str(i + 1))
+			noms_cliquables(app, card, Rect2(x_titre, y + 8, w - x_titre - 200, 30), nom, 21, C.BODY)
+			continue
+		D.text(card, x_titre, y + 29, titre, 21, Charte.IVOIRE, 600, w - x_titre - 60, HORIZONTAL_ALIGNMENT_LEFT, true).name = "OfficeJournalTitre" + str(i + 1)
 		noms_cliquables(app, card, Rect2(x_titre, y + 8, w - x_titre - 60, 30), titre, 21, C.BODY)
 
 # ---------------------------------------------------------------------------------------------------------

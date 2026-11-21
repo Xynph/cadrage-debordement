@@ -26,6 +26,7 @@ const Semaine = preload("res://guide/gabi_semaine.gd")
 const Medaillon = preload("res://guide/gabi_medaillon.gd")
 const PremiersPas = preload("res://guide/gabi_premiers_pas.gd")
 const Accueil = preload("res://guide/gabi_accueil.gd")
+const R = preload("res://ui/immersive08/reperes.gd")
 const ACCENT = Color("176e49")
 const FOND = Color("10241b")
 ## Bulle spontanée (première visite d'un écran, conseil de composition) : au plus une par jour de jeu.
@@ -936,9 +937,14 @@ func _disposer_bureau(zone: Control) -> void:
 	y += 14
 	var lignes: Array = _semaine.get("lignes", [])
 	for ligne: Dictionary in lignes:
+		# Seule la phrase du match reste (21/11) : le groupe et l'alerte répétaient l'État du groupe et ses pastilles.
+		if str(ligne.get("cle", "")) != "match": continue
 		y = _ligne_carnet(carnet, pad, y, text_w, str(ligne.get("libelle", "")), str(ligne.get("texte", "")), "", _couleur(str(ligne.get("couleur", "or"))), "GabiLigne_" + str(ligne.get("cle", "")), _ouvrir_ligne(str(ligne.get("cle", ""))))
 	var conseil: Dictionary = _semaine.get("conseil", {})
-	if not conseil.is_empty():
+	var changements: Array = conseil.get("action", {}).get("changements", []) if conseil.get("action") is Dictionary and conseil.action.get("changements") is Array else []
+	if not conseil.is_empty() and not changements.is_empty():
+		y = _conseil_changements(carnet, pad, y, text_w, conseil, changements)
+	elif not conseil.is_empty():
 		y = _ligne_carnet(carnet, pad, y, text_w, "MON CONSEIL", str(conseil.get("texte", "")), "", Charte.IVOIRE, "GabiLigne_conseil", (func(): suivre_conseil(conseil.get("action", {}))) if conseil.get("action") is Dictionary and not conseil.action.is_empty() else Callable())
 	var carnet_h := y + 4
 	D.place(carnet, Rect2(0, 0, w, carnet_h))
@@ -1107,6 +1113,29 @@ func _ligne_carnet(parent: Control, pad: float, y: float, text_w: float, libelle
 	D.place(label, Rect2(x0, y + 24, text_w, height + 2))
 	if ouvrir.is_valid(): load("res://ui/immersive08/office_canvas.gd").noms_cliquables(app, parent, Rect2(x0, y + 24, text_w, height + 2), texte, 19, C.BODY)
 	return y + 24 + height + 12
+## « MON CONSEIL » d'un changement de feuille : un nom → un nom, puis « +5 » pour les autres changements (la phrase
+## complète de Gabi reste dans l'infobulle). Toute la ligne suit le conseil.
+func _conseil_changements(parent: Control, pad: float, y: float, text_w: float, conseil: Dictionary, changements: Array) -> float:
+	var action: Dictionary = conseil.action
+	var zone := Link.styled_button(parent, Rect2(pad - 8, y - 2, text_w + 16, 66), "", 19, Charte.IVOIRE, "GabiLigne_conseil_ouvrir")
+	zone.pressed.connect(func(): suivre_conseil(action))
+	zone.tooltip_text = str(conseil.get("texte", ""))
+	zone.accessibility_name = "Mon conseil · " + zone.tooltip_text
+	D.text(parent, pad, y + 17, "MON CONSEIL", 16, Charte.IVOIRE_2, 700, text_w).name = "GabiLigne_conseil_libelle"
+	var premier: Dictionary = changements[0]
+	var entrant := str(Avis._nom(Avis.joueur(app.model, str(premier.get("playerId", "")))))
+	var sortant := str(Avis._nom(Avis.joueur(app.model, str(premier.get("sortant", "")))))
+	var texte := "%s → %s" % [entrant, sortant]
+	var restants := changements.size() - 1
+	var largeur_plus := 70.0 if restants > 0 else 0.0
+	var ligne := D.text(parent, pad, y + 50, texte, 22, Charte.IVOIRE, 700, minf(text_w - largeur_plus, R.largeur(texte, 22) + 4))
+	ligne.name = "GabiLigne_conseil"
+	ligne.tooltip_text = zone.tooltip_text
+	ligne.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if restants > 0:
+		R.pastille(parent, pad + ligne.size.x / C.density + 12, y + 50, "+%d" % restants, Charte.IVOIRE_2, "", "GabiLigne_conseil_plus").tooltip_text = zone.tooltip_text
+	return y + 66 + 8
+
 ## Panneau du carnet : surface plate `panneau`, rayon 0 (charte : ni cadre complet, ni ombre).
 class Carnet extends Control:
 	var pointe_x := 0.0
