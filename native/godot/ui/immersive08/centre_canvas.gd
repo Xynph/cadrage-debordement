@@ -218,7 +218,7 @@ func _summary() -> void:
 	D.button(panel, Rect2(21, 439 + dy, 676, 55), "Consulter les Espoirs", func(): app._navigate("Formation"), false, "arrow", false, ACCENT, "CentreOpenAcademy")
 	var dl := dy - 83
 	var lower := D.panel(self, Rect2(1531, 749 + dy, 717, 474 - dy), "De l’académie à l’équipe première", "trophy", "", "CentreDevelopment")
-	D.photo(lower, "academy-training", Rect2(14, 70, 689, 211 - dl))
+	D.photo(lower, "mail-jeunes", Rect2(14, 70, 689, 211 - dl), .62)
 	var places := G.n(data.get("places", "—"))
 	D.text(lower, 22, 328 - dl, "Places professionnelles disponibles", 26, C.IVORY, 700, 480)
 	D.text(lower, 689, 340 - dl, places, 43, GREEN, 800, 183, HORIZONTAL_ALIGNMENT_RIGHT)
