@@ -463,7 +463,6 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			if salle == null: return {"statut": "echec", "note": "salle d'entraînement non ouverte"}
 			if bool(ecran.get("joueur", false)):
 				var visuels = load("res://ui/contextual/training_visuels.gd")
-				if visuels.variante().is_empty(): return {"statut": "indisponible", "note": "petite fenêtre seulement avec CD_VARIANTE_VISUELLE"}
 				var blesses: Array = app.model.get("squad", []).filter(func(j: Dictionary) -> bool: return int(j.get("injury", 0)) > 0)
 				visuels.ouvrir_joueur(salle, blesses[0] if not blesses.is_empty() else app.model.squad[0])
 				await stabiliser()

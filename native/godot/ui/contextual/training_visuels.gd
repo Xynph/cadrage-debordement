@@ -1,19 +1,14 @@
 extends RefCounted
-## Observer la préparation : deux options visuelles à départager (revue du 21/11/2026, n° 7), provisoires.
-## CD_VARIANTE_VISUELLE=A : lignes joueur (portrait, prénom / NOM, jauges condition et charge, pastille blessure).
-## CD_VARIANTE_VISUELLE=B : grille de portraits à anneau de condition, triée, et plans en tuiles à icône.
-## Sans la variable : rien de ce fichier n'est utilisé (écran actuel).
-## Tout est cliquable : un joueur ouvre sa petite fenêtre (Échap, ✕ ou clic à côté la ferment), d'où l'on ouvre sa fiche.
+## Observer la préparation (revue du 21/11/2026, n° 7, option B choisie par Léo) : grille de portraits à anneau de
+## condition, triée du plus fatigué au plus frais, croix des blessés ; tuiles Aptes / Blessés / Chargés qui filtrent ;
+## plans du staff en tuiles à icône, avec la répartition des séances calculée par le moteur (effectiveCounts).
+## Tout est cliquable : un joueur ouvre sa petite fenêtre (Échap, × ou clic à côté la ferment), d'où l'on ouvre sa fiche.
 const S = preload("res://ui/contextual/skin.gd")
 const Charte = preload("res://ui/charte.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 
 const LARGEUR_COLONNE := 500.0
-
-static func variante() -> String:
-	var v := OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper()
-	return v if v in ["A", "B"] else ""
 
 # --- Données lues (aucun calcul de jeu) -----------------------------------------------------------
 
@@ -257,7 +252,7 @@ static func tuiles_groupe(vue: Control, effectif: Array) -> HBoxContainer:
 		var cle: String = t[0]
 		var bouton := cliquable(tuile, func():
 			vue.set_meta("filtre_groupe", "" if str(vue.get_meta("filtre_groupe", "")) == cle else cle)
-			vue.call("_draw"), "TrainingGroupTile_" + cle, "%d %s" % [t[1], str(t[2]).to_lower()])
+			vue.call("_draw"), "TrainingRoomFilter_" + cle, "%d %s" % [t[1], str(t[2]).to_lower()])
 		bouton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		rangee.add_child(bouton)
 	return rangee
@@ -271,45 +266,7 @@ static func filtrer(vue: Control, effectif: Array) -> Array:
 			"charges": return charge(j) >= 45.0
 		return true)
 
-## Option A : une ligne par joueur.
-static func ligne_joueur(vue: Control, joueur: Dictionary) -> Control:
-	var fond := carte(Charte.PANNEAU_2, Charte.RAYON_CARTE, 6)
-	var rangee := HBoxContainer.new()
-	rangee.add_theme_constant_override("separation", 10)
-	fond.add_child(rangee)
-	var image := S.G.portrait(int(joueur.get("portraitIndex", 0)), 44, joueur)
-	image.custom_minimum_size = Vector2(44, 52)
-	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	rangee.add_child(image)
-	var nom := nom_deux_lignes(joueur, 140)
-	nom.custom_minimum_size.x = 140
-	nom.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	rangee.add_child(nom)
-	var jauges := VBoxContainer.new()
-	jauges.add_theme_constant_override("separation", 2)
-	jauges.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	jauges.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	rangee.add_child(jauges)
-	var cond := condition(joueur)
-	var chg := charge(joueur)
-	for m: Array in [["heart", cond, Charte.CONDITION], ["train", chg, couleur_charge(chg)]]:
-		var l := HBoxContainer.new()
-		l.add_theme_constant_override("separation", 6)
-		l.add_child(icone(m[0], 15, m[2]))
-		var j := jauge(m[1], m[2], 80, 7)
-		j.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		l.add_child(j)
-		var chiffre := texte(str(roundi(m[1])), 17, Charte.IVOIRE, C.EXTRA_BOLD)
-		chiffre.custom_minimum_size.x = 30
-		chiffre.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		l.add_child(chiffre)
-		jauges.add_child(l)
-	var semaines := blessure(joueur)
-	if semaines > 0: rangee.add_child(pastille("croix", "%d sem." % semaines, Charte.PERTE, 14))
-	return cliquable(fond, func(): ouvrir_joueur(vue, joueur), "TrainingPlayerRow_" + str(joueur.get("id", "")).validate_node_name(), str(joueur.get("name", "")))
-
-## Option B : une case de la grille (portrait à anneau, chiffre de condition, NOM).
+## Une case de la grille (portrait à anneau, chiffre de condition, NOM).
 static func case_joueur(vue: Control, joueur: Dictionary) -> Control:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 0)
@@ -330,19 +287,17 @@ static func case_joueur(vue: Control, joueur: Dictionary) -> Control:
 	b.custom_minimum_size = Vector2(108, 122)
 	return b
 
-static func colonne_groupe(vue: Control, parent: Container, effectif: Array, var_: String) -> void:
+static func colonne_groupe(vue: Control, parent: Container, effectif: Array) -> void:
 	parent.add_child(tuiles_groupe(vue, effectif))
 	var liste := filtrer(vue, effectif)
-	if var_ == "B":
-		liste.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return condition(a) < condition(b))
-		var grille := GridContainer.new()
-		grille.columns = 4
-		grille.add_theme_constant_override("h_separation", 6)
-		grille.add_theme_constant_override("v_separation", 6)
-		for j: Dictionary in liste: grille.add_child(case_joueur(vue, j))
-		parent.add_child(grille)
-	else:
-		for j: Dictionary in liste: parent.add_child(ligne_joueur(vue, j))
+	liste.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return condition(a) < condition(b))
+	var grille := GridContainer.new()
+	grille.name = "TrainingPlayerGrid"
+	grille.columns = 4
+	grille.add_theme_constant_override("h_separation", 6)
+	grille.add_theme_constant_override("v_separation", 6)
+	for j: Dictionary in liste: grille.add_child(case_joueur(vue, j))
+	parent.add_child(grille)
 
 # --- Petite fenêtre du joueur ----------------------------------------------------------------------
 
@@ -439,41 +394,49 @@ static func fermer_joueur(vue: Control) -> void:
 		vue.remove_child(ancien)
 		ancien.queue_free()
 
-# --- Option B : plans en tuiles à icône -------------------------------------------------------------
+# --- Plans du staff en tuiles à icône -----------------------------------------------------------------
 
-const PLANS_B := {
-	"proteger": {"signe": "shield", "parts": [["XV", "Repos", Charte.REPOS], ["Remplaçants", "Normal", Charte.NORMAL]]},
-	"relever": {"signe": "school", "parts": [["Jeunes", "Intensif", Charte.INTENSIF], ["XV fatigué", "Repos", Charte.REPOS]]},
-	"equilibrer": {"signe": "renew", "parts": [["Chargés", "Repos", Charte.REPOS], ["Autres", "Collectif", Charte.NORMAL]]},
-}
+## Pictogramme de chaque plan (choix d'affichage) ; la répartition des séances vient du moteur.
+const ICONES_PLAN := {"proteger": "shield", "relever": "school", "equilibrer": "renew"}
+## Modes de séance du moteur (effectiveCounts) : mot et couleur de la charte.
+const MODES := [["repos", "Repos", "renew"], ["normal", "Normal", "check"], ["intense", "Intensif", "train"]]
+
+static func couleur_mode(mode: String) -> Color:
+	return {"repos": Charte.REPOS, "intense": Charte.INTENSIF}.get(mode, Charte.NORMAL)
 
 static func tuile_plan(plan: Dictionary, action: Callable, actif: bool) -> Control:
 	var cle := str(plan.get("key", ""))
-	var def: Dictionary = PLANS_B.get(cle, {"signe": "train", "parts": []})
 	var fond := carte(Charte.PANNEAU_2, Charte.RAYON_CARTE, 10)
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 6)
 	fond.add_child(col)
 	var titre := HBoxContainer.new()
 	titre.add_theme_constant_override("separation", 8)
-	titre.add_child(icone(def.signe, 24, Charte.IVOIRE))
-	var nom := texte(str(plan.get("label", "")), 19, Charte.IVOIRE, C.BOLD)
-	titre.add_child(nom)
+	titre.add_child(icone(str(ICONES_PLAN.get(cle, "train")), 24, Charte.IVOIRE))
+	titre.add_child(texte(str(plan.get("label", "")), 19, Charte.IVOIRE, C.BOLD))
 	col.add_child(titre)
+	# Répartition prévue par le moteur : une pilule par mode de séance non vide (chiffre + mot + couleur).
 	var parts := HBoxContainer.new()
+	parts.name = "TrainingPlanSplit"
 	parts.add_theme_constant_override("separation", 6)
-	for p: Array in def.parts:
+	var comptes: Dictionary = plan.get("effectiveCounts", {})
+	for m: Array in MODES:
+		var n := int(comptes.get(m[0], 0))
+		if n <= 0: continue
 		var pilule := PanelContainer.new()
-		var st := Charte.style_pilule(Color(p[2], .2), Color.TRANSPARENT, 8, 2)
+		var st := Charte.style_pilule(Color(couleur_mode(m[0]), .2), Color.TRANSPARENT, 8, 2)
 		st.set_corner_radius_all(Charte.RAYON_PETIT)
 		pilule.add_theme_stylebox_override("panel", st)
 		var l := HBoxContainer.new()
 		l.add_theme_constant_override("separation", 5)
-		l.add_child(texte(p[0], 14, Charte.IVOIRE_2, C.MEDIUM))
-		l.add_child(texte(str(p[1]), 14, p[2], C.BOLD))
+		l.add_child(icone(m[2], 14, couleur_mode(m[0])))
+		l.add_child(texte(str(n), 15, Charte.IVOIRE, C.EXTRA_BOLD))
+		l.add_child(texte(m[1], 14, couleur_mode(m[0]), C.BOLD))
 		pilule.add_child(l)
 		parts.add_child(pilule)
 	col.add_child(parts)
-	var b := cliquable(fond, action, "TrainingPlanTile_" + cle, str(plan.get("detail", "")))
-	(b.get_meta("bouton") as Button).disabled = not actif
+	var b := cliquable(fond, action, "TrainingRoomPlan_" + cle, str(plan.get("detail", "")))
+	var bouton := b.get_meta("bouton") as Button
+	bouton.set_meta("contextual_enabled", actif)
+	bouton.disabled = not actif
 	return b
