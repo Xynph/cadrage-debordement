@@ -19,6 +19,8 @@ const Charte = preload("res://ui/charte.gd")
 const Link = preload("res://ui/entity_link.gd")
 const R = preload("res://ui/immersive08/reperes.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
+const EquipeType = preload("res://ui/equipe_type_view.gd")
+const NotesMatch = preload("res://ui/notes_match.gd")
 
 const PAGE_WIDTH := 2248
 const GABI_WIDTH := 736
@@ -758,6 +760,10 @@ static func _journal(card: Panel, app: Control, w: int = 1132) -> void:
 		var ligne := _zone(card, Rect2(16, y, w - 32, 44), "", open_message.bind(app, ids[i]), "OfficeJournalMessage" + str(i + 1), 21)
 		ligne.tooltip_text = "Ouvrir la lettre · " + titre
 		ligne.accessibility_name = ligne.tooltip_text
+		# Les lettres « XV de la journée / de la saison » portent la vignette du XV : un clic ouvre l'écran XV type.
+		var vignette := _vignette_xv(app, str(messages[i]), Rect2(w - 92, y + 2, 52, 40))
+		var reserve := 60 if vignette == null else 108
+		if vignette != null: card.add_child(vignette)
 		if avec_categorie:
 			# Catégorie du courrier : celle que la Réception attribue à la lettre (même fonction, pas de mots-clés ici).
 			var categorie := str(reception._category(U.fold(message)))
@@ -775,8 +781,20 @@ static func _journal(card: Panel, app: Control, w: int = 1132) -> void:
 					R.cliquable(marque, func(): app.navigation_controller.open_entity(cible), "OfficeJournalBlessureOuvrir" + str(i + 1), "Fiche de " + nom)
 			noms_cliquables(app, card, Rect2(x_titre, y + 8, w - x_titre - 200, 30), nom, 21, C.BODY)
 			continue
-		D.text(card, x_titre, y + 29, titre, 21, Charte.IVOIRE, 600, w - x_titre - 60, HORIZONTAL_ALIGNMENT_LEFT, true).name = "OfficeJournalTitre" + str(i + 1)
-		noms_cliquables(app, card, Rect2(x_titre, y + 8, w - x_titre - 60, 30), titre, 21, C.BODY)
+		D.text(card, x_titre, y + 29, titre, 21, Charte.IVOIRE, 600, w - x_titre - reserve, HORIZONTAL_ALIGNMENT_LEFT, true).name = "OfficeJournalTitre" + str(i + 1)
+		noms_cliquables(app, card, Rect2(x_titre, y + 8, w - x_titre - reserve, 30), titre, 21, C.BODY)
+
+## Vignette cliquable du XV (équipe-type de la journée ou de la saison) d'une lettre du courrier ; null si la lettre n'en est pas une.
+static func _vignette_xv(app: Control, message: String, zone: Rect2) -> Button:
+	if not message.begins_with("XV de ") or not EquipeType.disponible(app.model): return null
+	var saison := message.begins_with("XV de la saison")
+	var ligues: Array = NotesMatch.bilan(app.model).get("equipeType", {}).get("ligues", [])
+	var cible: Dictionary = ligues[0] if not ligues.is_empty() else {}
+	var equipe: Variant = cible.get("saison" if saison else "journee")
+	if not equipe is Dictionary: return null
+	var vignette: Button = EquipeType.vignette(equipe, Rect2(0, 0, zone.size.x, zone.size.y), func(): EquipeType.ouvrir(app, str(cible.get("id", "")), "saison" if saison else "journee"))
+	D.place(vignette, zone)
+	return vignette
 
 # ---------------------------------------------------------------------------------------------------------
 # Noms de joueurs et classement court
