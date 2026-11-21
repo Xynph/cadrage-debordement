@@ -54,7 +54,7 @@ static func workspace(app: Control, page: Control, creation: bool) -> Control:
 	D.photo(banner,"brand",Rect2(41,16,162,71) if compact else Rect2(41,34,252,110))
 	D.line(banner,Vector2(divider,19 if compact else 35),Vector2(divider,height-(19 if compact else 39)),Color(C.GOLD,.75))
 	D.text(banner,divider+38,34 if compact else 67,"TA PREMIÈRE SAISON" if creation else "L’ATELIER DES IDENTITÉS",22 if compact else 24,C.GOLD,700,1040)
-	D.text(banner,divider+36,80 if compact else 131,"Prendre les rênes" if creation else "Habiller ton rugby",44 if compact else 57,C.IVORY,700,1050).add_theme_font_override("font",Charte.TITRE_FICHE)
+	D.text(banner,divider+36,80 if compact else 131,"Prendre les rênes" if creation else "Habiller ton rugby",44 if compact else 57,C.IVORY,700,1050).add_theme_font_override("font",C.Charte.TITRE_FICHE)
 	D.line(banner,Vector2(0,height-1),Vector2(2560,height-1),C.LINE)
 	var inset := C.margin(38)
 	inset.add_theme_constant_override("margin_top",C.px(6 if compact else 14))
