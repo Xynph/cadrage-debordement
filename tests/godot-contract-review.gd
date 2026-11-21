@@ -1,6 +1,7 @@
 extends SceneTree
 const Rooms = preload("res://qa_runner.gd")
 const Review = preload("res://ui/contract_review.gd")
+const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -102,6 +103,80 @@ func capture(id: String) -> void:
 	var image := root.get_texture().get_image()
 	check(image.get_size() == Vector2i(2560,1440), "Image exclusivement 1440p")
 	check(image.save_png(OS.get_environment("CD_CONTRACT_REVIEW_OUTPUT").path_join(id + ".png")) == OK, "Capture : " + id)
+## Tuiles, pastilles, barres et icônes de l'onglet Contrats : chaque clic arrive où il doit (filtre ou changement d'écran).
+func rouvrir_contrats() -> void:
+	app._navigate("Effectif")
+	await settle()
+	var onglet := app.find_child("RosterTab2", true, false) as Button
+	if onglet != null: onglet.pressed.emit()
+	await settle()
+
+func cliquer(id: String) -> bool:
+	var cible := app.find_child(id, true, false) as Button
+	check(cible != null, "Élément cliquable présent : " + id)
+	if cible == null: return false
+	cible.pressed.emit()
+	await settle()
+	return true
+
+func clics_et_destinations() -> void:
+	var etat: Dictionary = app.management_ui.roster.contract_review
+	var saison := int(app.model.meta.season)
+	app.find_child("ContractReviewReset", true, false).pressed.emit()
+	await settle()
+	# Tuiles et barres : une petite fenêtre de portraits, fermée par ✕, Échap, clic à côté ; un portrait ouvre la fiche.
+	var cibles: Array = ["ContractReviewStatEnding", "ContractReviewStatRenewable"]
+	for barre: Node in app.find_children("ContractReviewBar_*", "Button", true, false): cibles.append(str(barre.name))
+	check(cibles.size() > 2, "Barres Échéances par année cliquables")
+	for cible: String in cibles:
+		if not await cliquer(cible): continue
+		var fenetre := app.find_child("ContractWindow", true, false)
+		check(fenetre != null and PetiteFenetre.ouverte(app.get_tree()) != null, "Petite fenêtre ouverte : " + cible)
+		check(app.find_child("ContractWindowTitle", true, false) != null, "Fenêtre : titre court " + cible)
+		var tuiles := app.find_children("ContractWindowPlayer_*", "Button", true, false)
+		if cible == "ContractReviewStatEnding": check(tuiles.size() == Review.filtered(app.model.squad, {"season": saison}).size(), "Fenêtre échéances : un portrait par joueur concerné")
+		if fenetre != null:
+			for etiquette: Node in fenetre.find_children("*", "Label", true, false): check(not (etiquette as Label).text.ends_with("…"), "Fenêtre : aucun nom tronqué")
+		check(PetiteFenetre.fermer_derniere(app.get_tree()), "Échap ferme la petite fenêtre : " + cible)
+		await settle()
+		check(app.find_child("ContractWindow", true, false) == null, "Petite fenêtre refermée par Échap : " + cible)
+		if not await cliquer(cible): continue
+		app.find_child("ContractWindowClose", true, false).pressed.emit()
+		await settle()
+		check(app.find_child("ContractWindow", true, false) == null, "Petite fenêtre refermée par ✕ : " + cible)
+		if not await cliquer(cible): continue
+		var voile := app.find_child("ContractWindowVeil", true, false) as Control
+		var clic := InputEventMouseButton.new()
+		clic.button_index = MOUSE_BUTTON_LEFT
+		clic.pressed = true
+		voile.gui_input.emit(clic)
+		await settle()
+		check(app.find_child("ContractWindow", true, false) == null, "Petite fenêtre refermée par clic à côté : " + cible)
+	if await cliquer("ContractReviewStatEnding"):
+		await capture("contrats-fenetre-echeance")
+		var portraits := app.find_children("ContractWindowPlayer_*", "Button", true, false)
+		if not portraits.is_empty():
+			portraits[0].pressed.emit()
+			await settle()
+			check(review() == null and app.find_child("ContractWindow", true, false) == null, "Portrait de la fenêtre : fiche du joueur")
+			await rouvrir_contrats()
+	app.find_child("ContractReviewReset", true, false).pressed.emit()
+	await settle()
+	var passages := [["ContractReviewStatWages", "Finances", "Tuile salaires : Finances"], ["ContractDelegationChip", "Staff", "Pastille Staff : écran Staff"], ["ContractReviewDepartures", "Recrutement", "Pastille départs : Recrutement"], ["ContractReviewOpenSales", "Recrutement", "Tuile Offres : Recrutement"], ["ContractReviewSalesListed", "Recrutement", "Tuile Proposés : Recrutement"], ["ContractReviewSalesPending", "Recrutement", "Tuile Ventes : Recrutement"]]
+	for passage: Array in passages:
+		await rouvrir_contrats()
+		if passage[0] == "ContractDelegationChip" and app.find_child("ContractDelegationChip", true, false) == null: continue  # pas de délégation hors mode Monde
+		if await cliquer(passage[0]): check(str(app.route) == passage[1], passage[2] + " (route : " + str(app.route) + ")")
+	check(str(app.management_ui.get("recrutement_page", {}).get("kind", "")) == "offres", "Les tuiles du marché ouvrent la page Offres reçues")
+	await rouvrir_contrats()
+	var icones := app.find_children("ContractRenewal_*", "Button", true, false)
+	check(not icones.is_empty(), "Icône de prolongation cliquable")
+	if not icones.is_empty():
+		icones[0].pressed.emit()
+		await settle()
+		check(review() == null, "Icône de prolongation : quitte l'onglet pour l'écran du joueur")
+	await rouvrir_contrats()
+
 func run() -> void:
 	pure_cases()
 	root.size = Vector2i(2560,1440)
@@ -277,6 +352,7 @@ func run() -> void:
 	app.find_child("ContractReviewReset", true, false).pressed.emit()
 	await settle()
 	check(app.find_child("ContractReviewCount", true, false).text.contains("%d / %d" % [app.model.squad.size(),app.model.squad.size()]), "Réinitialisation retrouve l’effectif")
+	await clics_et_destinations()
 	var original: Dictionary = app.model.squad[0].duplicate(true)
 	app.model.squad[0].name = "Jean-Baptiste des Très Longs Noms de Club et de Famille pour la Lecture des Contrats"
 	app.management_ui.roster.contract_review.search = "Très Longs"
