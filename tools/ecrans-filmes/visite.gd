@@ -35,6 +35,8 @@ const EXTRAS := [
 	{"id": "mini-fiche", "libelle": "Mini-fiche au survol (Effectif)", "type": "mini_fiche"},
 	{"id": "equilibre-postes", "libelle": "Équilibre par poste (infobulle Aptes)", "type": "equilibre_postes"},
 	{"id": "comparateur", "libelle": "Comparateur (trois joueurs)", "type": "comparateur"},
+	{"id": "salle-conseil", "libelle": "Salle du conseil", "type": "salle_conseil"},
+	{"id": "salle-conseil-fenetre", "libelle": "Salle du conseil · petite fenêtre", "type": "salle_conseil", "fenetre": true},
 	{"id": "presse-ouverte", "libelle": "Presse : conférence avec questions ouvertes", "type": "presse_ouverte"},
 	{"id": "presse-conference", "libelle": "Presse : Conférence", "type": "presse_onglet", "onglet": 1},
 	{"id": "presse-historique", "libelle": "Presse : Historique", "type": "presse_onglet", "onglet": 2},
@@ -483,6 +485,21 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				var visuels = load("res://ui/contextual/training_visuels.gd")
 				var blesses: Array = app.model.get("squad", []).filter(func(j: Dictionary) -> bool: return int(j.get("injury", 0)) > 0)
 				visuels.ouvrir_joueur(salle, blesses[0] if not blesses.is_empty() else app.model.squad[0])
+				await stabiliser()
+		"salle_conseil":
+			if not (app.contextual_director.active() and app.contextual_director.kind == "board"):
+				if not app._command("new_career", {"mode": "world-champ", "club": 102, "start": "premiers-clubs"}): return {"statut": "echec", "note": "carrière neuve refusée"}
+				while app.waiting: await process_frame
+				app.timer.stop()
+				var muet_c := func(_ok: bool, _message: String) -> void: pass
+				await load("res://qa_runner.gd").settle_club_meetings(app, self, muet_c, "board")
+				app.contextual_director.sync()
+				await stabiliser()
+			if app.contextual_director.kind != "board": return {"statut": "indisponible", "note": "pas de rendez-vous de la direction"}
+			if bool(ecran.get("fenetre", false)):
+				var vue: Control = app.contextual_director.view
+				var cible := vue.find_child("BoardFinance_cash", true, false) as BaseButton
+				if cible != null: cible.pressed.emit()
 				await stabiliser()
 		"presse_ouverte":
 			# Même recette que tests/godot-presse-da.gd : carrière neuve, avance jusqu'à la conférence d'arrivée,
