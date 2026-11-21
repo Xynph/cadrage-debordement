@@ -1,9 +1,8 @@
 extends RefCounted
 ## Valeur d'un joueur au poste (Tactique : cartes du terrain, liste des candidats) : la note au poste en chiffre, colorée
 ## par paliers (barème des attributs de la charte), et sa familiarité avec le poste (naturel, 2e poste, dépanne).
-## Deux présentations à départager par Léo (CD_VARIANTE_VISUELLE=POSTE_A | POSTE_B, A par défaut) :
-## - A : chiffre dans une pastille colorée + petite pastille « 2e poste » / « Dépanne » (mot + couleur) hors poste naturel ;
-## - B : chiffre + barre remplie selon la note (couleur par paliers) + trois points ●●● naturel / ●●○ 2e poste / ●○○ dépanne.
+## Choix de Léo (21/11/2026) : chiffre dans une pastille colorée par paliers + petite pastille « 2e poste » (bleu) /
+## « Dépanne » (rouge), mot + couleur, seulement hors poste naturel.
 ## Exemple : `Poste.poser(bouton, Rect2(60, 30, 138, 18), 72, 3, "TacticsPositionRating01")`.
 const D = preload("res://ui/immersive08/primitives.gd")
 const Charte = preload("res://ui/charte.gd")
@@ -12,11 +11,7 @@ const Kit = preload("res://ui/immersive08/tactics_kit.gd")
 const MOTS := {2: "2e poste", 1: "Dépanne"}
 const MOTS_COURTS := {2: "2e", 1: "Dép."}
 
-static func variante() -> String:
-	return "B" if OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper() == "POSTE_B" else "A"
-
-## Couleur de la familiarité : vert clair au poste naturel, bleu au 2e poste, rouge en dépanne (toujours avec un mot ou
-## un nombre de points).
+## Couleur de la familiarité : vert clair au poste naturel, bleu au 2e poste, rouge en dépanne (toujours avec un mot).
 static func couleur_familiarite(familiarite: int) -> Color:
 	return Charte.V if familiarite >= 3 else Charte.V_DALTONIEN if familiarite == 2 else Charte.PERTE
 
@@ -25,7 +20,6 @@ static func mot(familiarite: int) -> String:
 
 ## Largeur (unités du gabarit) que prend la valeur au poste ; `court` = mots abrégés (carte du terrain encombrée).
 static func largeur(note: Variant, familiarite: int, hauteur: float, court: bool = false) -> float:
-	if variante() == "B": return 30.0 + 4.0 + 44.0 + 6.0 + 30.0
 	var l := _pastille(hauteur)
 	if familiarite in [1, 2]: l += 5.0 + _largeur_marque(familiarite, court)
 	return l
@@ -37,15 +31,13 @@ static func _largeur_marque(familiarite: int, court: bool) -> float:
 	return Kit.largeur(str((MOTS_COURTS if court else MOTS).get(familiarite, "")), 13) + 12.0
 
 ## Pose la valeur au poste dans `zone` (alignée à gauche, ou à droite si `droite`). Le conteneur porte les méta
-## « note », « familiarite » et « variante » ; le chiffre est un Label enfant. Note inconnue : « — » seul.
+## « note » et « familiarite » ; le chiffre est un Label enfant. Note inconnue : « — » seul.
 static func poser(parent: Control, zone: Rect2, note: Variant, familiarite: int, nom: String, droite: bool = false, court: bool = false, attenue: bool = false) -> Control:
 	var boite := Control.new()
 	boite.name = nom
 	boite.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(boite)
 	var connue := (note is int or note is float) and is_finite(float(note))
-	var v := variante()
-	boite.set_meta("variante", v)
 	boite.set_meta("familiarite", familiarite)
 	if connue: boite.set_meta("note", roundi(float(note)))
 	if not connue:
@@ -57,25 +49,7 @@ static func poser(parent: Control, zone: Rect2, note: Variant, familiarite: int,
 	var h := zone.size.y
 	var chiffre := str(roundi(float(note)))
 	var palier := Charte.couleur_attribut(note)
-	if v == "B":
-		var l := minf(zone.size.x, largeur(note, familiarite, h))
-		var x0 := zone.size.x - l if droite else 0.0
-		D.place(boite, Rect2(zone.position.x + x0, zone.position.y, l, h))
-		boite.set_meta("largeur", l)
-		var nombre := D.text(boite, 30, h / 2.0 + 6, chiffre, 18, palier, 700, 30, HORIZONTAL_ALIGNMENT_RIGHT, true)
-		nombre.add_theme_font_override("font", Kit.texte_gras())
-		nombre.name = "Chiffre"
-		var barre := l - 30.0 - 4.0 - 6.0 - 30.0
-		if barre >= 12.0: D.bar(boite, Rect2(34, h / 2.0 - 3, barre, 6), float(note), palier)
-		if familiarite >= 1:
-			var couleur := couleur_familiarite(familiarite)
-			for i in 3:
-				var plein := i < familiarite
-				var point := D.rect(boite, Rect2(l - 30.0 + i * 11.0, h / 2.0 - 4.0, 8, 8), couleur if plein else Charte.PANNEAU_3, Charte.RAYON_PILULE, Color.TRANSPARENT if plein else Charte.IVOIRE_3)
-				point.name = "Point%d" % i
-		if attenue: boite.modulate = Color(1, 1, 1, .45)
-		return boite
-	# A : pastille chiffrée + marque hors poste naturel.
+	# Pastille chiffrée + marque hors poste naturel.
 	var p := _pastille(h)
 	var avec_marque := familiarite in [1, 2]
 	var lm := _largeur_marque(familiarite, court) if avec_marque else 0.0

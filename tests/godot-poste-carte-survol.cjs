@@ -1,6 +1,6 @@
 'use strict';
 // Carte joueur au survol sur les écrans joueurs (Effectif, Composition, Recrutement, Entraînement, Vestiaire), note au
-// poste chiffrée + familiarité en Tactique (variantes POSTE_A puis POSTE_B, Tactique seule) et danger chiffré en
+// poste chiffrée + familiarité en Tactique (pastille chiffrée, « 2e poste » / « Dépanne » hors poste naturel) et danger chiffré en
 // Préparation (Léo, 21/11/2026 : plus d'étoiles hors carte joueur). Jeu rendu : à lancer sur le bureau caché
 // (godot-slot.ps1). CD_ETOILES_FICHE_CAPTURES=<dossier> reçoit les captures 2560 et 1920.
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path'), assert = require('node:assert/strict');
@@ -24,10 +24,11 @@ fs.mkdirSync(sortie, {recursive: true});
 }
 const journal = path.join(sortie, 'journal.log'), erreurs = path.join(sortie, 'journal-erreurs.log');
 let echec = false;
-for (const variante of ['POSTE_A', 'POSTE_B']) {
+for (const variante of ['A']) {
   const env = {...process.env, CD_GODOT_SELF_TEST: '0', CD_NODE_EXECUTABLE: process.env.CD_NODE_EXECUTABLE || process.execPath,
     CD_GODOT_DATA_DIR: path.join(process.env.CD_ETOILES_FICHE_PROFIL || directory, 'jeu-' + variante, 'PrototypeGodot'), CD_ETOILES_FICHE_CAPTURES: sortie, CD_GODOT_SEED: '3',
-    CD_VARIANTE_VISUELLE: variante, CD_POSTE_SEUL: variante === 'POSTE_B' ? '1' : '0'};
+    CD_POSTE_SEUL: '0'};
+  delete env.CD_VARIANTE_VISUELLE;
   const result = spawnSync(godot, ['--audio-driver', 'Dummy', '--max-fps', '60', '--path', path.resolve(__dirname, '../native/godot'), '--script', path.resolve(__dirname, 'godot-poste-carte-survol.gd')],
     {env, stdio: ['ignore', fs.openSync(journal, 'w'), fs.openSync(erreurs, 'w')], windowsHide: true, timeout: 900000});
   const output = fs.readFileSync(journal, 'utf8') + fs.readFileSync(erreurs, 'utf8');

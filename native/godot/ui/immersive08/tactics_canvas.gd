@@ -77,7 +77,7 @@ static func _construire(app: Control, page: Control) -> Control:
 	var bleus := _bleus_marques(app)
 	var premiere := Selection.premiere_ligne(app.model)
 	Kit.titre(page, 0, 226, "XV de départ", 24, 500)
-	Kit.etiquette(page, TERRAIN.size.x, 224, ("Note au poste /100 · ●●● naturel · ●●○ 2e poste · ●○○ dépanne · Espace prendre / poser" if Poste.variante() == "B" else "Note au poste /100 · Espace prendre / poser"), 700, true)
+	Kit.etiquette(page, TERRAIN.size.x, 224, "Note au poste /100 · Espace prendre / poser", 700, true)
 	D.line(page, Vector2(0, 238), Vector2(TERRAIN.size.x, 238), Charte.FILET)
 	Terrain.build(app, page, TERRAIN, choisir_cb, clavier_cb, avis, bleus)
 	Banc.build(app, page, BANC, choisir_cb, clavier_cb, avis, bleus, premiere)

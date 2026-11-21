@@ -4,10 +4,10 @@ extends SceneTree
 ##   carte (même composant que le direct) apparaît après le délai, entière dans l'écran ; la souris part, elle disparaît ;
 ## - Tactique : plus d'étoiles ; note au poste chiffrée + familiarité (naturel / 2e poste / dépanne) sur les 15 cartes du
 ##   terrain et dans la liste des candidats, tri sur la vraie note ; un joueur dépanne et un joueur à son 2e poste sont
-##   placés exprès dans le XV. Variante CD_VARIANTE_VISUELLE=POSTE_A | POSTE_B ;
+##   placés exprès dans le XV. Choix de Léo : pastille chiffrée + « 2e poste » / « Dépanne » seulement hors poste naturel ;
 ## - Préparation : plus d'étoiles ; chaque joueur à surveiller porte sa note au poste en chiffre dans une pastille colorée.
 ## Captures 2560 × 1440 et 1920 × 1080 dans CD_ETOILES_FICHE_CAPTURES. godot-poste-carte-survol.cjs prépare la carrière ;
-## CD_POSTE_SEUL=1 ne rejoue que la Tactique (seconde variante).
+## CD_POSTE_SEUL=1 ne rejoue que la Tactique.
 const Carte = preload("res://ui/carte_joueur_survol.gd")
 const Selection = preload("res://ui/immersive08/tactics_selection.gd")
 const Poste = preload("res://ui/immersive08/tactics_poste.gd")
@@ -173,7 +173,6 @@ func tactique(suffixe: String) -> void:
 	app.selected_slot = 12
 	app._render()
 	await settle(20)
-	var v := Poste.variante()
 	var poses := 0
 	var hors := 0
 	for i in 15:
@@ -183,7 +182,7 @@ func tactique(suffixe: String) -> void:
 		var e := named("TacticsPositionRating%02d" % (i + 1))
 		var note: Variant = Selection.rating(app.model, person, i)
 		var fam := Selection.familiarite(app.model, person, i)
-		if e != null and note != null and int(e.get_meta("note", -1)) == roundi(float(note)) and int(e.get_meta("familiarite", 0)) == fam and str(e.get_meta("variante", "")) == v: poses += 1
+		if e != null and note != null and int(e.get_meta("note", -1)) == roundi(float(note)) and int(e.get_meta("familiarite", 0)) == fam: poses += 1
 		if e != null and note != null:
 			var chiffre := e.find_child("Chiffre", true, false) as Label
 			check(chiffre != null and chiffre.text == str(roundi(float(note))), "Terrain : chiffre de la note au poste (n° %d)" % (i + 1))
@@ -191,13 +190,10 @@ func tactique(suffixe: String) -> void:
 			if carte != null: check(carte.get_global_rect().grow(1.0).encloses(e.get_global_rect()), "Terrain : valeur au poste dans la carte n° %d" % (i + 1))
 			if fam in [1, 2]:
 				hors += 1
-				if v == "A":
-					var mot := e.find_child("MarqueMot", true, false) as Label
-					check(mot != null and mot.text in ["2e poste", "Dépanne", "2e", "Dép."] and (mot.text.begins_with("D") == (fam == 1)), "Terrain A : pastille « 2e poste / Dépanne » (n° %d)" % (i + 1))
-				else:
-					check(e.find_children("Point*", "", true, false).size() == 3, "Terrain B : trois points de familiarité (n° %d)" % (i + 1))
-			elif fam == 3 and v == "A":
-				check(e.find_child("Marque", true, false) == null, "Terrain A : rien de plus au poste naturel (n° %d)" % (i + 1))
+				var mot := e.find_child("MarqueMot", true, false) as Label
+				check(mot != null and mot.text in ["2e poste", "Dépanne", "2e", "Dép."] and (mot.text.begins_with("D") == (fam == 1)), "Terrain : pastille « 2e poste / Dépanne » (n° %d)" % (i + 1))
+			elif fam == 3:
+				check(e.find_child("Marque", true, false) == null, "Terrain : rien de plus au poste naturel (n° %d)" % (i + 1))
 	check(poses >= 14, "Terrain : note au poste et familiarité sur les cartes (%d/15)" % poses)
 	check(hors >= 1, "Terrain : au moins un joueur hors de son poste naturel visible (%d)" % hors)
 	var notes: Array = []
@@ -214,8 +210,8 @@ func tactique(suffixe: String) -> void:
 	if is_instance_valid(app.coach) and app.coach.has_method("fermer_bulle"): app.coach.fermer_bulle()
 	souris(Vector2(2, 2))
 	await settle(10)
-	await capture("tactique-poste-%s%s" % [v, suffixe])
-	await survoler("Composition", named("TacticsName10"), "tactique-survol-%s%s" % [v, suffixe])
+	await capture("tactique-poste" + suffixe)
+	await survoler("Composition", named("TacticsName10"), "tactique-survol" + suffixe)
 
 ## Préparation : chaque joueur à surveiller porte sa note au poste en chiffre dans une pastille colorée (jamais d'étoiles).
 func preparation(suffixe: String) -> void:
