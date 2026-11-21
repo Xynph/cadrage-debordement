@@ -176,7 +176,6 @@ func executer() -> void:
 	app._navigate("Effectif"); await poser(20)
 	var etat := noeud(app, "ProfileSaleStatus") as Label
 	var bascule: Button = (noeud(app, "SquadSaleAction") if etat == null else noeud(app, "ProfileSaleToggle")) as Button
-	verifier(etat != null or noeud(app, "SquadSaleAction") != null, "état de vente dans l’Effectif")
 	if etat != null:
 		verifier(etat.text.begins_with("Offre reçue"), "Effectif : " + etat.text)
 		verifier(taille(etat) >= TAILLE_MIN, "Effectif : texte lisible (%d px)" % taille(etat))
@@ -184,7 +183,20 @@ func executer() -> void:
 		verifier(noeud(app, "ProfileSaleOffers") != null, "Effectif : accès aux offres")
 	elif bascule != null:
 		verifier(bascule.text == "Voir l’offre", "Effectif (grand écran) : " + bascule.text)
+	# Liste de l'Effectif : pastille « En vente » (icône + mot) sur le joueur proposé, cliquable vers l'onglet Contrat de la fiche.
+	var liste := noeud(app, "SquadPlayer" + str(attendu.propose).replace(":", "_")) as Control
+	var pastille := noeud(liste, "RosterEnVente") as Label
+	verifier(pastille != null and pastille.is_visible_in_tree() and pastille.text == "En vente", "pastille « En vente » dans la liste de l’Effectif")
+	if pastille != null:
+		verifier(taille(pastille) >= TAILLE_MIN, "pastille « En vente » lisible (%d px)" % taille(pastille))
+		verifier(pastille.get_theme_color("font_color").is_equal_approx(Color("5b9bd5")), "pastille « En vente » : bleu de la charte")
+	var lien_vente := noeud(liste, "RosterEnVenteLien_" + str(attendu.propose).validate_node_name()) as Button
+	verifier(lien_vente != null, "pastille « En vente » cliquable")
 	await capturer("vente-effectif.png")
+	if lien_vente != null:
+		lien_vente.pressed.emit(); await poser(20)
+		verifier(app.selected_player == str(attendu.propose) and int(app.management_ui.get("immersive_player_tab", 0)) == 3, "clic sur « En vente » : fiche du joueur, onglet Contrat")
+		verifier(noeud(app, "PlayerSalePanel") != null, "clic sur « En vente » : partie vente / offres de la fiche")
 
 	# 6. Courrier « offre_transfert » : « Ouvrir · Offres reçues » mène à Recrutement et ouvre la boîte.
 	var courrier: Dictionary = {}
