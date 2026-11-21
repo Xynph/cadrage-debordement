@@ -157,11 +157,10 @@ func gabi() -> void:
 		app.coach._semaine = Semaine.synthese(model)
 		app.coach._disposer_bureau(zone)
 		await settle(10)
-		var ligne_groupe := zone.find_child("GabiLigne_groupe", true, false) as Label
-		check(ligne_groupe != null and ligne_groupe.text.contains("3 titulaires de la feuille sous 70 %"), "Bureau : la ligne groupe du carnet affiche l'alerte fatigue : " + (ligne_groupe.text if ligne_groupe != null else "absente"))
-		check(ligne_groupe != null and not ligne_groupe.text.contains("Rien d'inquiétant"), "Bureau : pas de « Rien d'inquiétant » à côté d'une alerte")
-		var ligne_alerte := zone.find_child("GabiLigne_alerte", true, false) as Label
-		check(ligne_alerte != null and ligne_alerte.text.contains("3 titulaires"), "Bureau : l'alerte voisine donne le même chiffre : " + (ligne_alerte.text if ligne_alerte != null else "absente"))
+		# Depuis le 21/11, le carnet ne répète plus l'État du groupe : pas de ligne groupe ni alerte (doublons),
+		# donc jamais de « Rien d'inquiétant » à côté de la pastille d'alerte fatigue.
+		check(zone.find_child("GabiLigne_groupe", true, false) == null and zone.find_child("GabiLigne_alerte", true, false) == null, "Bureau : le carnet ne répète pas l'État du groupe (pas de ligne groupe ni alerte)")
+		check(zone.find_child("GabiLigne_match", true, false) != null, "Bureau : la phrase du match reste dans le carnet")
 		await capture("gabi-bureau")
 	app.model = reel
 	groupe = {}

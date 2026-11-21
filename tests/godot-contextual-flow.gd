@@ -3,6 +3,8 @@ const ContextualFlow = preload("helpers/contextual_flow.gd")
 # Run against the staged native project and an empty CD_GODOT_DATA_DIR. Every
 # career/match transition below goes through main._command and the real worker.
 const G = preload("res://ui/game_skin.gd")
+## Contour du bouton « Voir l'entraînement » (director.gd, _add_training_entry).
+const OBSERVE_BORDER = preload("res://ui/immersive08/components.gd").GOLD
 var app: Control
 var director: Node
 var failures: Array[String] = []
@@ -109,12 +111,11 @@ func locker_check(phase: String) -> void:
 			if number in [6, 7] and expected_position == "Troisième ligne": expected_position = "Troisième ligne aile"
 		if expected_position in ["Numéro 8", "N° 8", "N°8"]: expected_position = "Troisième ligne centre"
 		var position_label: Label = card.find_child("ParticipantPosition", true, false)
-		check(position_label != null and position_label.text == expected_position and not expected_position.is_empty(), "Jersey role for starter or actual primary position for substitute " + id)
+		check(position_label != null and str(position_label.get_meta("position", "")) == expected_position and not expected_position.is_empty(), "Jersey role for starter or actual primary position for substitute " + id)
 		if position_label != null:
 			check(position_label.is_visible_in_tree() and card.get_global_rect().encloses(position_label.get_global_rect()), "Position is visibly contained in the actual player card")
-			var name_label: Label
-			for label in card.find_children("*", "Label", true, false):
-				if not str(player.get("name", "")).is_empty() and str(label.text).contains(str(player.name)): name_label = label
+			var name_label: Label = card.find_child("ParticipantName", true, false)
+			check(str(card.get_meta("player_name", "")) == str(player.get("name", "")) and name_label != null and not name_label.text.is_empty(), "Card names the actual player")
 			check(name_label != null and position_label.get_global_rect().position.y > name_label.get_global_rect().position.y, "Actual position is displayed below the player name")
 		var portrait: TextureRect = card.find_child("ParticipantPortrait", true, false)
 		check(portrait != null and portrait.texture != null, "Actual participant has a visible portrait")
@@ -223,7 +224,10 @@ func run() -> void:
 		check(observe != null and observe.is_visible_in_tree(), "Actual training route exposes Observe at " + str(resolution))
 		if observe != null:
 			var fond := observe.get_theme_stylebox("normal") as StyleBoxFlat
-			check(fond != null and fond.bg_color.get_luminance() < .3 and observe.size_flags_horizontal != Control.SIZE_EXPAND_FILL and observe.has_theme_stylebox_override("normal"), "Observe : style de bouton du jeu, plus le bouton blanc pleine largeur")
+			# Charte : pilule à contour (fond transparent) ou fond sombre, jamais l'aplat blanc pleine largeur du thème Godot.
+			var fond_sombre := fond != null and (fond.bg_color.a < .05 or fond.bg_color.get_luminance() < .3)
+			var contour := fond != null and fond.border_width_top > 0 and fond.border_color.is_equal_approx(OBSERVE_BORDER)
+			check(fond_sombre and contour and observe.size_flags_horizontal != Control.SIZE_EXPAND_FILL and observe.has_theme_stylebox_override("normal"), "Observe : style de bouton du jeu, plus le bouton blanc pleine largeur")
 			observe.pressed.emit()
 		else: director.open_training()
 		await settle()
@@ -244,6 +248,26 @@ func run() -> void:
 		check(root.size == resolution, "Actual locker client area matches requested " + str(resolution))
 		locker_check("pre")
 		await capture("pre-" + str(resolution.x))
+	# Toute tuile agit : un joueur cliqué (onglet Groupe) ouvre sa petite fenêtre, puis sa fiche complète, puis le retour.
+	var first_card: Button = director.view.find_child("Participant_1", true, false)
+	check(first_card != null, "Player tile 1 exists")
+	if first_card != null:
+		first_card.pressed.emit()
+		await settle()
+		var popup: Node = director.view.find_child("TalkPlayerPopup", true, false)
+		check(popup != null and popup.is_visible_in_tree(), "Clicking a player tile opens his window")
+		await capture("pre-window")
+		var full_sheet: Button = director.view.find_child("TalkPlayerFullSheet", true, false)
+		check(full_sheet != null, "Player window offers the full sheet")
+		if full_sheet != null:
+			full_sheet.pressed.emit()
+			await settle()
+			check(director.view.find_child("TalkPlayerSheetCanvas", true, false) != null, "Full sheet opens over the locker")
+			await capture("pre-sheet")
+			var back: Button = director.view.find_child("TalkPlayerSheetBack", true, false)
+			if back != null: back.pressed.emit()
+			await settle()
+			check(director.view.find_child("TalkPlayerSheet", true, false) == null, "Back closes the full sheet")
 	root.size = initial_resolution
 	await settle()
 	# A rejected public command remains visible inside the immersive surface.
@@ -276,17 +300,15 @@ func run() -> void:
 	var stage: Node3D = director.view.stage
 	check(stage != null and stage.get_script().resource_path == "res://match_view.gd", "Live match uses the production moving NativeMatchView")
 	if stage != null:
-		var club_crest := G.crest(app.model.club)
-		var expected_texture: Texture2D = club_crest.texture if club_crest is TextureRect else null
-		check(stage._club_crest == expected_texture, "Production stadium resolves the actual active club crest")
+		check(stage._club_crest != null and club_crest_matches(stage._club_crest, app.model.club), "Production stadium resolves the actual active club crest (pack, official, else recoloured club crest)")
 		var branding: MultiMeshInstance3D = stage.get_node_or_null("ManagedClubCrests")
-		check(branding != null and branding.visible == (expected_texture != null), "Missing active crest leaves neutral stadium fascia")
-		if branding != null: check(branding.material_override.albedo_texture == expected_texture, "Stadium fascia uses the active club identity")
-		var advertisements := stage.find_children("*", "Label3D", true, false)
+		check(branding != null and branding.visible, "Stadium fascia always carries the club crest")
+		if branding != null: check(branding.material_override.albedo_texture == stage._club_crest, "Stadium fascia uses the active club identity")
+		# Panneaux du pourtour : enfants directs du stade (les numéros des marqueurs tactiques des joueurs sont aussi des Label3D).
+		var advertisements := stage.find_children("*", "Label3D", false, false)
 		check(advertisements.size() == 16, "All sixteen Rugby Legacy advertising boards remain present")
 		for label in advertisements:
 			check(str(label.text) == "RUGBY LEGACY 27", "Advertising boards retain Rugby Legacy 27")
-		club_crest.free()
 	var original_scene := JSON.stringify(app.model.live.scene)
 	var original_positions: Array[Vector3] = actor_positions(stage) if stage != null else []
 	await ask("tick", {"steps":6})
@@ -341,3 +363,20 @@ func finish() -> void:
 	app.queue_free()
 	await process_frame
 	quit(0 if failures.is_empty() else 1)
+
+## Blason attendu sur une surface 3D : celui du pack ou l'écusson officiel s'il existe, sinon l'écusson recoloré du
+## club rendu depuis le contrôle de l'interface (ses initiales, sa couleur), jamais le bouclier gris de la banque.
+func club_crest_matches(texture: Texture2D, club: Dictionary) -> bool:
+	var Skin = load("res://ui/game_skin.gd")
+	var real: Texture2D = Skin.crest_texture(club)
+	if real != null: return texture == real
+	var shown: Control = Skin.crest_render_control(texture)
+	if shown == null or shown.name != "ClubCrestRecolored" or not shown.material is ShaderMaterial: return false
+	var identity: Dictionary = club.get("presentation", club) if club.get("presentation") is Dictionary else club
+	var initials := false
+	for label in shown.find_children("*", "Label", true, false):
+		if label.text == str(identity.get("abbr", "XV")): initials = true
+	var primary: Color = load("res://ui/contextual/rooms/room_identity.gd").primary(identity)
+	var material := shown.material as ShaderMaterial
+	var tinted: bool = (material.get_shader_parameter("couleur_base") as Color).is_equal_approx(primary) or (material.get_shader_parameter("couleur_motif") as Color).is_equal_approx(primary)
+	return initials and tinted

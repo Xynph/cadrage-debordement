@@ -95,6 +95,7 @@ func run() -> void:
 	await decision_strip()
 	await tabs()
 	await subpages()
+	await youth_clicks()
 	await colors()
 	shot("formation-1920x1080")
 	finish()
@@ -251,6 +252,51 @@ func subpages() -> void:
 			(premier[0] as Button).pressed.emit()
 			await settle(8)
 			check(windows().is_empty() and node("YouthReviewFilter") == null, "Suivi des jeunes : le clic sur un nom ouvre la fiche, sans fenêtre")
+
+## Clic gauche relâché sur un contrôle (tuile, jauge, pastille) : même chemin que la souris.
+func click(control: Control) -> void:
+	var event := InputEventMouseButton.new()
+	event.button_index = MOUSE_BUTTON_LEFT
+	event.pressed = false
+	control.gui_input.emit(event)
+	await settle(10)
+
+func open_youth_page() -> bool:
+	app._navigate("Formation", false)
+	await settle(8)
+	return await press("OpenYouthDevelopment") and page_kind() == "suivi"
+
+## Suivi des jeunes : tout ce qui ressemble à une tuile, une jauge, une pastille ou un chiffre ouvre quelque chose.
+func youth_clicks() -> void:
+	check(await open_youth_page(), "Clics suivi : sous-page ouverte")
+	var youth: Dictionary = app.management_ui.get("youth_development", {})
+	var filters := {"YouthTileAcademy": [1, false], "YouthTilePro": [2, false], "YouthTileReview": [0, true], "YouthTileCount": [0, false]}
+	for tile_name: String in filters:
+		var tile := node(tile_name)
+		check(tile != null and tile.mouse_default_cursor_shape == Control.CURSOR_POINTING_HAND, "Compteur cliquable · " + tile_name)
+		if tile == null: continue
+		await click(tile)
+		var expected: Array = filters[tile_name]
+		check(int(youth.get("stage", -1)) == int(expected[0]) and bool(youth.get("review", false)) == bool(expected[1]), "Compteur → filtre de la liste · " + tile_name)
+		check((node("YouthDevelopmentStage") as OptionButton).selected == int(expected[0]) and (node("YouthReviewFilter") as CheckButton).button_pressed == bool(expected[1]), "Compteur → contrôles de filtre synchronisés · " + tile_name)
+	var state_pill := node("YouthReviewState")
+	if state_pill != null:
+		var detail := state_pill.get_parent().get_parent().get_parent().get_parent().find_child("YouthTileDetail", true, false) as Control
+		var before := detail != null and detail.visible
+		await click(state_pill)
+		check(detail != null and detail.visible != before, "Pastille d'état → détail du suivi déplié")
+	# Chaque destination de fiche : tuile entière, niveau, barre niveau / potentiel, jauges, minutes.
+	var targets := {"YouthTile_*": 0, "YouthLevelBlock": 4, "YouthLevelRange": 4, "YouthCondition": 0, "YouthFatigue": 0, "YouthInjury": 0}
+	for target: String in targets:
+		check(await open_youth_page(), "Clics suivi : réouverture · " + target)
+		var control := (app.root_content.find_children(target, "Control", true, false).front() if target.ends_with("*") else node(target)) as Control
+		check(control != null and control.mouse_default_cursor_shape == Control.CURSOR_POINTING_HAND, "Cliquable · " + target)
+		if control == null: continue
+		if target.ends_with("*"): check(str(control.get_meta("mini_fiche_joueur", "")) != "", "Survol de la tuile = mini-fiche")
+		app.management_ui.immersive_player_tab = -1
+		await click(control)
+		check(windows().is_empty() and node("YouthReviewFilter") == null, "Clic → fiche du joueur en plein écran, sans fenêtre · " + target)
+		check(int(app.management_ui.get("immersive_player_tab", -1)) == int(targets[target]), "Clic → bon onglet de la fiche · " + target)
 
 func colors() -> void:
 	app._navigate("Formation", false)
