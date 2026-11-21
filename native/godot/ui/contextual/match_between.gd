@@ -1022,6 +1022,7 @@ func _construire() -> void:
 	# Pastilles à l'échelle du terrain (demande de Léo du 21/11/2026 : « ça fait pâté ») : petits ronds nets, numéros
 	# écrits quand ils tiennent (masqués en dessous, infobulle au survol), ballon cerclé d'un halo.
 	terrain.plancher_pastilles = 0.0
+	terrain.pelouse = true
 	terrain.taille_pastilles = 1.15
 	terrain.remplir = true
 	terrain.custom_minimum_size = Vector2(320, 180)
