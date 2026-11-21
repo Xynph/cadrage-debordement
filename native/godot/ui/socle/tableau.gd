@@ -23,6 +23,7 @@ signal tri_change(colonne: String, decroissant: bool)
 signal contenu_change(visibles: int, total: int)
 
 const J = preload("res://ui/socle/jetons.gd")
+const SurvolLigne = preload("res://ui/survol_ligne.gd")
 
 var colonnes: Array = []
 var cle := "id"
@@ -33,6 +34,8 @@ var entete_groupe := Callable()
 var ordre_groupes: Array = []
 var choisie := ""
 var message_vide := "Aucune ligne ne correspond."
+## Couleur du club : liseré de la ligne survolée (ui/survol_ligne.gd).
+var accent := J.TEXTE
 
 var _source: Array = []
 var _filtre := Callable()
@@ -41,6 +44,8 @@ var _lignes: Array = []
 var _hauteur := 0.0
 var _defilement := 0.0
 var _survol := -1
+## Vrai quand la dernière action dans le tableau vient du clavier : la ligne choisie reçoit alors un contour discret.
+var _clavier := false
 var _places: Array = []
 var _vignettes: Dictionary = {}
 var _zone: Zone
@@ -65,6 +70,8 @@ func _init() -> void:
 	_zone.name = "Lignes"
 	_zone.clip_contents = true
 	_zone.mouse_filter = Control.MOUSE_FILTER_STOP
+	_zone.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	add_to_group("survol_tableau")
 	add_child(_zone)
 	_barre = VScrollBar.new()
 	_barre.name = "Defilement"
@@ -77,8 +84,8 @@ func _init() -> void:
 		_zone.queue_redraw())
 	add_child(_barre)
 	resized.connect(_disposer)
-	focus_entered.connect(queue_redraw)
-	focus_exited.connect(queue_redraw)
+	focus_entered.connect(func(): queue_redraw(); _zone.queue_redraw())
+	focus_exited.connect(func(): queue_redraw(); _zone.queue_redraw())
 
 # ---------------------------------------------------------------- données
 
@@ -310,6 +317,7 @@ func _dessiner_lignes(zone: Control) -> void:
 	if _lignes.is_empty():
 		_ecrire(zone, J.CORPS, J.px(J.T_CORPS), message_vide, Rect2(0, J.px(J.E4), zone.size.x, J.px(J.LIGNE_H)), J.TEXTE_DOUX)
 		return
+	if SurvolLigne.simulation_rang >= 0 and _survol < 0: _survol = _rang_simule(SurvolLigne.simulation_rang)
 	var taille := J.px(J.T_CELLULE)
 	var gras := J.corps_gras()
 	for element: Dictionary in _elements:
@@ -325,12 +333,12 @@ func _dessiner_lignes(zone: Control) -> void:
 			zone.draw_rect(Rect2(0, haut + element.h - 1, zone.size.x, 1), J.TRAIT)
 			continue
 		var ligne: Dictionary = element.ligne
-		var est_choisie := str(ligne.get(cle, "")) == choisie
-		# Charte §7.1 : filet entre les lignes, pas de bandes ; survol PANNEAU_2 ; ligne choisie SELECTION sur toute la
-		# ligne, rayon 6.
+		# Filet entre les lignes ; survol : composant commun ui/survol_ligne.gd (bande + liseré club). La ligne choisie
+		# n'est jamais colorée (décision de Léo : pas de vert de sélection dans les listes).
 		zone.draw_rect(Rect2(0, haut + element.h - 1, zone.size.x, 1), J.TRAIT)
-		if est_choisie or element.rang == _survol:
-			zone.draw_style_box(J.boite(J.SELECTION if est_choisie else J.SURVOL, J.RAYON_PETIT), Rect2(0, haut, zone.size.x, element.h - 1))
+		SurvolLigne.dessiner(zone, Rect2(0, haut, zone.size.x, element.h - 1), element.rang == _survol, accent, J.echelle, J.RAYON_PETIT)
+		if _clavier and has_focus() and str(ligne.get(cle, "")) == choisie:
+			zone.draw_style_box(SurvolLigne.style_focus(J.RAYON_PETIT), Rect2(0, haut, zone.size.x, element.h - 1))
 		for place: Dictionary in _places:
 			var colonne: Dictionary = place.colonne
 			var rect := Rect2(place.x, haut, place.l, element.h)
@@ -386,6 +394,7 @@ func _entree_zone(event: InputEvent) -> void:
 		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN: _defiler(J.px(J.LIGNE_H) * 3.0); _zone.accept_event()
 		elif event.button_index == MOUSE_BUTTON_WHEEL_UP: _defiler(-J.px(J.LIGNE_H) * 3.0); _zone.accept_event()
 		elif event.button_index == MOUSE_BUTTON_LEFT:
+			_clavier = false
 			grab_focus()
 			var element := _element_sous(event.position.y)
 			if element.is_empty() or element.groupe: return
@@ -428,6 +437,7 @@ func _gui_input(event: InputEvent) -> void:
 				accept_event()
 				return
 	elif event is InputEventKey and event.pressed:
+		_clavier = true
 		var page := maxi(1, int(_zone.size.y / J.px(J.LIGNE_H)) - 1)
 		var rang := _rang_choisi()
 		match event.keycode:
@@ -445,3 +455,16 @@ func _get_tooltip(at: Vector2) -> String:
 		if at.x >= place.x and at.x < place.x + place.l and at.y < J.px(J.ENTETE_H):
 			return str(place.colonne.get("aide", ""))
 	return ""
+
+## Captures et suites (ui/survol_ligne.gd, simuler) : survole la n-ième ligne visible.
+func simuler_survol(n: int) -> void:
+	_survol = _rang_simule(n)
+	_zone.queue_redraw()
+
+func _rang_simule(n: int) -> int:
+	var vus := 0
+	for element: Dictionary in _elements:
+		if element.groupe or element.y < _defilement: continue
+		if vus == n: return int(element.rang)
+		vus += 1
+	return -1
