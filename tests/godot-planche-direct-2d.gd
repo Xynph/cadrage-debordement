@@ -80,7 +80,8 @@ func run() -> void:
 		return
 	if app.model.live.get("paused", false): await command("pause", {"paused": false})
 	# En jeu, entre deux temps forts (écran 2D), une fois la journée en direct calculée (après quelques minutes).
-	await until(func(): return int(app.model.live.get("minute", 0)) >= 12, 240000)
+	var minute_voulue := int(OS.get_environment("CD_PLANCHE_MINUTE")) if OS.get_environment("CD_PLANCHE_MINUTE").is_valid_int() else 12
+	await until(func(): return int(app.model.live.get("minute", 0)) >= minute_voulue, 600000)
 	check(await until(func(): return vue_2d(view), 240000), "Écran 2D du direct avec classement et multiplex")
 	if app.model.live.get("finished", false) == false and not app.model.live.get("paused", false): await command("pause", {"paused": true})
 	await settle(30)
@@ -91,6 +92,18 @@ func run() -> void:
 		await settle(40)
 		check(vue_2d(view), "%s : classement et multiplex à l'écran" % str(taille))
 		check(debordements(between).is_empty(), "%s : rien ne déborde : %s" % [str(taille), str(debordements(between).slice(0, 6))])
+		if between.variante in ["C", "D"]:
+			var lignes: int = between.classement_lignes.get_children().filter(func(n: Node): return str(n.name).begins_with("MatchBetweenLiveRow")).size()
+			var attendu: int = (between.journee_vue.get("classement", []) as Array).size() if between.journee_vue is Dictionary else -1
+			check(lignes == attendu and lignes >= 8, "%s : classement complet (%d lignes sur %d)" % [str(taille), lignes, attendu])
+			var bas_tableau: float = between.classement_lignes.get_global_rect().end.y
+			var bas_panneau: float = between.panneaux_direct[0].get_global_rect().end.y
+			check(bas_tableau <= bas_panneau + 1.0, "%s : classement entier dans son panneau" % str(taille))
+			check(not between.defile_xv.get_v_scroll_bar().visible, "%s : Mon XV sans ascenseur" % str(taille))
+			check(not between.multiplex_deborde(), "%s : multiplex entier" % str(taille))
+			var defile_chiffres := between.find_child("MatchBetweenFiguresScroll", true, false) as ScrollContainer
+			check(defile_chiffres != null and not defile_chiffres.get_v_scroll_bar().visible, "%s : chiffres clés sans ascenseur" % str(taille))
+			print("PLANCHE_DIRECT_2D %s : classement %d lignes, multiplex %d matchs" % [str(taille), lignes, between.multiplex_cartes.get_child_count()])
 		await capture("direct-2d-%dx%d" % [taille.x, taille.y])
 	# Un club du classement : sa petite fenêtre par-dessus le match.
 	root.size = Vector2i(2560, 1440)
@@ -111,6 +124,21 @@ func run() -> void:
 		await settle(10)
 		check(view.fenetre_ouverte(), "Clic sur un club du classement : sa petite fenêtre")
 		await capture("direct-2d-fenetre-club")
+		view.fermer_fenetre()
+		await settle(10)
+	# Un nom de Mon XV : la petite fenêtre du joueur.
+	var nom_joueur: Button = null
+	for n: Node in between.xv.find_children("MatchBetweenPlayerName_*", "Button", true, false):
+		if (n as Control).is_visible_in_tree():
+			nom_joueur = n
+			break
+	check(nom_joueur != null, "Nom d'un joueur de Mon XV")
+	if nom_joueur != null:
+		nom_joueur.pressed.emit()
+		await wait_command()
+		await settle(10)
+		check(view.fenetre_ouverte(), "Clic sur un joueur : sa petite fenêtre")
+		await capture("direct-2d-fenetre-joueur")
 		view.fermer_fenetre()
 	finir()
 
