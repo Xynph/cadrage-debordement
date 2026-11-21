@@ -1,5 +1,5 @@
 extends RefCounted
-## Prolongation de contrat, option B de la planche (21/11/2026, CD_VARIANTE_VISUELLE=B) : mêmes pièces que l'offre au joueur
+## Prolongation de contrat (option B choisie par Léo le 21/11/2026) : mêmes pièces que l'offre au joueur
 ## (offre_visuelle.gd) avec l'ancien contrat mis en regard du nouveau : cartes « aujourd'hui → prolongé », règle de salaire
 ## avec le salaire actuel, frise à deux lignes (contrat en cours / nouveau contrat).
 const C = preload("res://ui/immersive08/components.gd")
@@ -13,7 +13,6 @@ const LARGEUR := O.LARGEUR
 const HAUTEUR := 660.0
 
 static func construire(body: Control, ctx: Dictionary) -> Control:
-	ctx["avant_apres"] = true
 	var toile := Control.new()
 	toile.name = "OffreVisuelle"
 	toile.custom_minimum_size = Vector2(LARGEUR, HAUTEUR) * C.density

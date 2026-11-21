@@ -96,6 +96,13 @@ static func _vider(noeud: Node) -> void:
 ## Habillage déjà conforme à la charte : la page adoptée ne doit pas le reteindre.
 static func _marquer(noeud: Node) -> void:
 	noeud.set_meta("style_charte", true)
+	# Petite fenêtre de jeu (1280 × 720) : chaque cible garde au moins C.TARGET_MIN px, agrandie autour de son centre.
+	if noeud is Button:
+		var bouton := noeud as Button
+		var manque := Vector2(maxf(0.0, C.TARGET_MIN - bouton.size.x), maxf(0.0, C.TARGET_MIN - bouton.size.y))
+		if manque != Vector2.ZERO:
+			bouton.position -= manque / 2.0
+			bouton.size += manque
 	for enfant in noeud.get_children(): _marquer(enfant)
 
 static func _dessiner(toile: Control, dessin: Control, ctx: Dictionary) -> void:
@@ -148,12 +155,6 @@ static func _identite(toile: Control, parent: Control, ctx: Dictionary, val: Dic
 		Charte.PANNEAU_3, func(): _fenetre_discussion(toile, ctx, val)) + 10
 	x += Pieces.pastille(parent, x, 112, "Demande %s" % G.salary(val.demande), "money", "OffreDemande", "", Pieces.VERT,
 		Charte.PANNEAU_3, func(): _fenetre_salaire(toile, val)) + 10
-	if val.prolongation and not ctx.get("avant_apres", false):
-		# Contrat en cours : salaire et échéance actuels.
-		x += Pieces.pastille(parent, x, 112, "Actuel %s" % G.salary(val.actuel), "lock", "OffreActuel", "", Charte.IVOIRE,
-			Charte.PANNEAU_3, func(): _fenetre_salaire(toile, val)) + 10
-		x += Pieces.pastille(parent, x, 112, "Fin %s" % ("—" if val.fin_actuelle == null else G.contract_year(val.fin_actuelle)), "calendar", "OffreFinActuelle", "", Charte.IVOIRE,
-			Charte.PANNEAU_3, func(): _fenetre_duree(toile, val)) + 10
 	var negociation: Dictionary = ctx.negotiation
 	if str(negociation.get("status", "")) == "counter":
 		var reprendre: Button = ctx.reuse
