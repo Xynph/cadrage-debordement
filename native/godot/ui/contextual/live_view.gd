@@ -424,7 +424,7 @@ static func _texte(texte: String, police: Font, couleur: Color) -> Label:
 	etiquette.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	return etiquette
 
-## Plaque d'un club : sigle encadré du liseré du club, nom en capitales ; survol ou focus : le nom se souligne.
+## Plaque d'un club : logo du club (_poser_ecusson, à la place de la pastille du sigle), nom en capitales ; survol ou focus : le nom se souligne.
 ## Clic ou Entrée : fiche du club dans une page du direct (le match se met en pause).
 func _plaque(cote: int) -> PanelContainer:
 	var plaque := _segment("MatchClubPlaque%d" % cote, Charte.CLUB)
@@ -920,11 +920,11 @@ func _poser_plaques(teams: Array) -> void:
 		plaques[cote].tooltip_text = ("%s : fiche du club (le match se met en pause)." % complet) if not complet.is_empty() else "Fiche du club (le match se met en pause)."
 	_coque_score.queue_redraw()
 
-## PROVISOIRE (choix de Léo) : variante B du bandeau, un logo À LA PLACE de la pastille du sigle (même emplacement,
-## 44 px en 1080p) : le vrai logo du club quand un pack d'identité en fournit un (logoPath de la présentation), sinon
-## l'écusson dessiné aux couleurs et initiales du club (celui du stade). Actif avec CD_VARIANTE_VISUELLE=B seulement.
+## Choix de Léo (21/11/2026) : le logo du club À LA PLACE de la pastille du sigle (même emplacement, 44 px en 1080p),
+## jamais les deux : le vrai logo quand un pack d'identité en fournit un (logoPath de la présentation), sinon l'écusson
+## dessiné aux couleurs et initiales du club (celui du stade). La pastille reste cachée, stylée (couleur de l'écusson).
+## Le logo laisse passer la souris : un clic dessus ouvre la fiche du club comme la plaque.
 func _poser_ecusson(cote: int, teams: Array) -> void:
-	if OS.get_environment("CD_VARIANTE_VISUELLE") != "B": return
 	var puce: Control = plaques[cote].find_child("MatchClubChip%d" % cote, true, false)
 	var rangee: Container = puce.get_parent()
 	var ancien := rangee.get_node_or_null("MatchClubCrest%d" % cote)
@@ -943,15 +943,20 @@ func _poser_ecusson(cote: int, teams: Array) -> void:
 		image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		image.custom_minimum_size = Vector2.ONE * largeur
+		image.set_meta("logo_pack", true)
 		ecusson = image
 	else:
 		ecusson = load("res://ui/tenue_club.gd").ecusson(club, largeur)
 		if ecusson == null: ecusson = S.G.crest(club, largeur)
 		ecusson.custom_minimum_size = Vector2.ONE * largeur
+		# Initiales jamais masquées dans le bandeau (l'écusson les cache sous 11 px) : 11 px au moins.
+		for initiales in ecusson.find_children("*", "Label", true, false):
+			(initiales as Label).add_theme_font_size_override("font_size", maxi(11, roundi(largeur * 0.27)))
 	ecusson.name = "MatchClubCrest%d" % cote
 	ecusson.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	ecusson.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ecusson.tooltip_text = ""
+	for enfant in ecusson.find_children("*", "Control", true, false): (enfant as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rangee.add_child(ecusson)
 	rangee.move_child(ecusson, puce.get_index())
 	puce.visible = false
