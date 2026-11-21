@@ -29,6 +29,8 @@ const HORS_CARRIERE := ["Accueil", "Création", "Packs"]
 const EXTRAS := [
 	{"id": "calendrier-semaine", "libelle": "Calendrier (semaine)", "type": "calendrier_semaine"},
 	{"id": "entrainement-groupes", "libelle": "Entraînement · onglet Groupes", "type": "entrainement_onglet", "onglet": 1},
+	{"id": "salle-entrainement", "libelle": "Observer la préparation (salle d'entraînement)", "type": "salle_entrainement"},
+	{"id": "salle-entrainement-joueur", "libelle": "Observer la préparation · petite fenêtre d'un joueur", "type": "salle_entrainement", "joueur": true},
 	{"id": "fiche-joueur", "libelle": "Fiche joueur", "type": "joueur"},
 	{"id": "mini-fiche", "libelle": "Mini-fiche au survol (Effectif)", "type": "mini_fiche"},
 	{"id": "equilibre-postes", "libelle": "Équilibre par poste (infobulle Aptes)", "type": "equilibre_postes"},
@@ -452,6 +454,19 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			if entrainement == null: return {"statut": "echec", "note": "entraînement non ouvert"}
 			entrainement._open_tab(int(ecran.onglet))
 			await stabiliser()
+		"salle_entrainement":
+			app._navigate("Préparation")
+			await stabiliser()
+			app.contextual_director.open_training()
+			await stabiliser()
+			var salle: Control = app.find_child("ContextualTraining", true, false)
+			if salle == null: return {"statut": "echec", "note": "salle d'entraînement non ouverte"}
+			if bool(ecran.get("joueur", false)):
+				var visuels = load("res://ui/contextual/training_visuels.gd")
+				if visuels.variante().is_empty(): return {"statut": "indisponible", "note": "petite fenêtre seulement avec CD_VARIANTE_VISUELLE"}
+				var blesses: Array = app.model.get("squad", []).filter(func(j: Dictionary) -> bool: return int(j.get("injury", 0)) > 0)
+				visuels.ouvrir_joueur(salle, blesses[0] if not blesses.is_empty() else app.model.squad[0])
+				await stabiliser()
 		"presse_ouverte":
 			# Même recette que tests/godot-presse-da.gd : carrière neuve, avance jusqu'à la conférence d'arrivée,
 			# puis page Presse avec l'origine du courrier (questions ouvertes sous les yeux).

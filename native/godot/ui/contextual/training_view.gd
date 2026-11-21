@@ -1,5 +1,6 @@
 extends Control
 const S = preload("res://ui/contextual/skin.gd")
+const TV = preload("res://ui/contextual/training_visuels.gd")
 var director: Node
 var app: Control
 var model: Dictionary = {}
@@ -32,6 +33,10 @@ func _draw() -> void:
 	column.add_child(content)
 	var facts := S.panel(content, 16)
 	S.G.fill(facts.get_parent(), true)
+	# Colonne de largeur fixe : sans elle, le panneau se réduisait à sa largeur minimale et le texte s'écrivait lettre par lettre.
+	facts.get_parent().custom_minimum_size.x = TV.LARGEUR_COLONNE
+	facts.get_parent().size_flags_horizontal = Control.SIZE_FILL
+	var variante := TV.variante()
 	var scroll := S.G.scroll(facts)
 	S.G.fill(scroll.get_parent(), true)
 	var training: Dictionary = model.get("decisions", {}).get("training", {})
@@ -42,18 +47,22 @@ func _draw() -> void:
 	if trained:
 		scroll.add_child(S.wrap(str(session.get("reason")) if session.get("reason") != null else "Séance effectuée. Aucun compte rendu détaillé n’est enregistré pour cette séance.", 17, S.TEXT))
 	else: scroll.add_child(S.wrap(str(training.get("advice", "Aucun diagnostic disponible pour cette semaine.")), 17, S.TEXT))
-	scroll.add_child(S.label("État actuel du groupe", 16, S.GOLD))
-	for player: Dictionary in model.get("squad", []):
-		var row := S.G.h(9)
-		scroll.add_child(row)
-		row.add_child(S.G.portrait(int(player.get("portraitIndex", 0)), 34, player))
-		var fatigue: Variant = player.get("physicalLoad", {})
-		if fatigue is Dictionary: fatigue = fatigue.get("fatigue", "—")
-		var injury := int(player.get("injury", 0))
-		var detail := S.wrap("%s · condition %s · charge %s%s" % [str(player.get("name", "")), _entier(player.get("condition", "—")), _entier(fatigue), " · indisponible (%d sem.)" % injury if injury > 0 else ""], 13, S.TEXT)
-		# Le texte prend la largeur restante à côté du portrait (sans cela il se replie lettre par lettre).
-		detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.add_child(detail)
+	if not variante.is_empty():
+		scroll.add_child(S.label("Le groupe", 19, S.GOLD))
+		TV.colonne_groupe(self, scroll, model.get("squad", []), variante)
+	else:
+		scroll.add_child(S.label("État actuel du groupe", 16, S.GOLD))
+		for player: Dictionary in model.get("squad", []):
+			var row := S.G.h(9)
+			scroll.add_child(row)
+			row.add_child(S.G.portrait(int(player.get("portraitIndex", 0)), 34, player))
+			var fatigue: Variant = player.get("physicalLoad", {})
+			if fatigue is Dictionary: fatigue = fatigue.get("fatigue", "—")
+			var injury := int(player.get("injury", 0))
+			var detail := S.wrap("%s · condition %s · charge %s%s" % [str(player.get("name", "")), _entier(player.get("condition", "—")), _entier(fatigue), " · indisponible (%d sem.)" % injury if injury > 0 else ""], 13, S.TEXT)
+			# Le texte prend la largeur restante à côté du portrait (sans cela il se replie lettre par lettre).
+			detail.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			row.add_child(detail)
 	var air := Control.new()
 	air.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	S.G.fill(air, true)
@@ -68,14 +77,24 @@ func _draw() -> void:
 		list.add_child(S.wrap("Les décisions de cette séance sont en lecture seule.", 16))
 	else:
 		list.add_child(S.label("Préparer la séance", 21, S.GOLD))
-		list.add_child(S.wrap("Configurer les charges et la priorité ne lance pas la séance.", 14))
 		var current_mode: String = {"repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}.get(str(model.get("meta", {}).get("training", "normal")), str(model.get("meta", {}).get("training", "normal")))
-		list.add_child(S.label("Séance prévue : " + current_mode, 14, S.GOLD))
+		if variante.is_empty():
+			list.add_child(S.wrap("Configurer les charges et la priorité ne lance pas la séance.", 14))
+			list.add_child(S.label("Séance prévue : " + current_mode, 14, S.GOLD))
+		else:
+			var mode := str(model.get("meta", {}).get("training", "normal"))
+			var couleur: Color = {"repos": TV.Charte.REPOS, "intense": TV.Charte.INTENSIF}.get(mode, TV.Charte.NORMAL)
+			list.add_child(TV.pastille({"repos": "renew", "intense": "train"}.get(mode, "check"), current_mode, couleur, 17))
 		list.add_child(S.button("MAINTENIR LES RÉGLAGES", func(): maintained = true; _draw()))
 		if maintained: list.add_child(S.label("Réglages conservés. La séance reste à effectuer.", 12, S.GOLD))
+		if variante == "B": list.add_child(S.label("Plans du staff", 16, S.GOLD))
 		for plan: Dictionary in plan_data.get("plans", []):
+			var appliquer := func(): director.command("training_plan", {"context":support.get("context"), "plan":plan.get("key")})
+			if variante == "B":
+				list.add_child(TV.tuile_plan(plan, appliquer, plan_data.get("available", false)))
+				continue
 			list.add_child(S.wrap(str(plan.get("detail", "")), 13))
-			list.add_child(S.button(str(plan.get("label", "")), func(): director.command("training_plan", {"context":support.get("context"), "plan":plan.get("key")}), plan_data.get("available", false)))
+			list.add_child(S.button(str(plan.get("label", "")), appliquer, plan_data.get("available", false)))
 		var collective: Dictionary = training.get("collective", {})
 		list.add_child(S.label("Changer la priorité", 16, S.GOLD))
 		for option: Dictionary in collective.get("options", []):
