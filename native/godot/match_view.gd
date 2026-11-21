@@ -255,11 +255,9 @@ func set_club_identity(club: Dictionary) -> void:
 	if key == _club_identity_key:
 		return
 	_club_identity_key = key
-	# Exactly the same active pack priority as the UI. Its initials fallback is
-	# deliberately left off the physical surfaces when no texture is available.
-	var crest_control: Control = ClubPresentation.crest(club, 256)
-	_club_crest = crest_control.texture if crest_control is TextureRect else null
-	crest_control.free()
+	# Same priority as the UI: pack crest, official badge, else the club's recoloured
+	# crest with its initials (rendered from the interface control, never a grey shield).
+	_club_crest = ClubPresentation.crest_surface_texture(club)
 	if is_instance_valid(_club_branding):
 		_update_club_branding()
 
@@ -2240,7 +2238,7 @@ func _update_club_branding() -> void:
 	if _club_crest == null:
 		return
 	var aspect := float(_club_crest.get_width()) / maxf(1.0, _club_crest.get_height())
-	var height := minf(2.9, 12.0 / maxf(aspect, 0.01))
+	var height := minf(3.5, 16.0 / maxf(aspect, 0.01))
 	_club_branding.multimesh.set_instance_transform(0,
 		Transform3D(Basis.from_scale(Vector3(height * aspect, height, 1.0)), Vector3(0, 10.6, -54.6)))
 

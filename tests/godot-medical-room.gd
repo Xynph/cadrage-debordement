@@ -52,7 +52,7 @@ func settle() -> void:
 	for i in 5: await process_frame
 
 func run() -> void:
-	var portrait_path := "/tmp/oval-medical-room-portrait.png"
+	var portrait_path := OS.get_user_data_dir().path_join("oval-medical-room-portrait.png")
 	var supplied_image := Image.create(30,40,false,Image.FORMAT_RGBA8)
 	supplied_image.fill(Color("c83c64"))
 	check(supplied_image.save_png(portrait_path) == OK, "create supplied portrait fixture")
