@@ -91,6 +91,7 @@ func _header() -> void:
 	C.veil(shadow)
 	D.text(hero, 26, 36, "LE CARNET TACTIQUE", 27, GOLD, 700, 771)
 	app.heading = D.text(hero, 24, 112, "Plan de jeu", 69, C.IVORY, 800, 1132)
+	app.heading.add_theme_font_override("font", Charte.TITRE_FICHE)
 	# La règle des consignes locales passe derrière un « i » à côté du surtitre.
 	var regle := _notice_text()
 	if not regle.is_empty() and available: Pastilles.poser(hero, Pastilles.info(regle, "i", "PlaybookRuleInfo"), 300, 14)

@@ -123,7 +123,7 @@ func _build() -> void:
 # --- En-tête, compteurs, onglets ---------------------------------------------------------------------------------------
 
 func _heading() -> void:
-	var titre := Kit.titre(self, 0, 44, "Formation", 38, 700)
+	var titre := Kit.titre_page(self, 0, 44, "Formation", 38, 700)
 	titre.name = "AcademyTitle"
 	app.heading = titre
 	var decider := _compter(roster, "decide")

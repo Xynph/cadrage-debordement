@@ -1261,9 +1261,9 @@ static func _key_figure(row: Control, area: Rect2, index: int, item: Array) -> P
 	frame.accessibility_name = frame.tooltip_text
 	return frame
 
-## Titre du Bureau (maquette « Affiche et Gabi ») : « LE BUREAU » en italique, la saison à droite (plus de phrase d'accueil, 21/11).
+## Titre du Bureau (maquette « Affiche et Gabi ») : « LE BUREAU » en Anton, la saison à droite (plus de phrase d'accueil, 21/11).
 static func _entete_bureau(row: Control, app: Control) -> void:
-	app.heading.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
+	app.heading.add_theme_font_override("font", Charte.TITRE_FICHE)
 	var meta: Dictionary = app.model.get("meta", {})
 	if meta.has("season"):
 		D.text(row, 2248, 54, "Saison %s · semaine %d" % [G.season_label(meta.season), int(meta.get("week", 0)) + 1], 21, Charte.IVOIRE_2, 500, 700, HORIZONTAL_ALIGNMENT_RIGHT, true).name = "OfficeSeason"
@@ -1283,6 +1283,7 @@ static func _heading(parent: Node, app: Control) -> void:
 		parent.add_child(app.minibar)
 		return
 	app.heading = D.text(row,-1,56 if app.route=="Bureau" else 76,"LE BUREAU" if app.route=="Bureau" else app.route.to_upper(),53,C.IVORY,800 if app.route=="Bureau" else 700,1190)
+	app.heading.add_theme_font_override("font", Charte.TITRE_FICHE)
 	if app.route=="Bureau": _entete_bureau(row,app)
 	if COMPACT_ART.has(app.route):
 		var image := D.panel(row,Rect2(1438,6,810,89),"","","","CompactRouteArt")

@@ -37,7 +37,7 @@ static func build(app: Control, page: Control, kind: String) -> void:
 	var retour := Kit.lien(page, Rect2(0, 4, 0, 38), "← Retour à la composition", func(): fermer(app), "CompositionRetour", 20)
 	retour.tooltip_text = "Retour à la composition · Échap"
 	Kit.touche(page, retour.size.x / C.density + 10, 32, "Échap")
-	var titre := Kit.titre(page, 0, 98, str(TITRES.get(kind, "")), 38, 1400)
+	var titre := Kit.titre_page(page, 0, 98, str(TITRES.get(kind, "")), 38, 1400)
 	titre.name = "CompositionSubpageTitle"
 	D.line(page, Vector2(0, 122), Vector2(2248, 122), Charte.FILET)
 	var bloc := D.rect(page, Rect2(0, 146, 1500, 760), Charte.PANNEAU, Charte.RAYON_PANNEAU)

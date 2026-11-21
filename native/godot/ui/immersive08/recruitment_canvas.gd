@@ -173,7 +173,7 @@ func _vers_finances(onglet: String) -> void:
 	app.navigation_controller.open_entity({"kind":"finance", "id":onglet})
 
 func _header() -> void:
-	var titre := Kit.titre(self, 0, 44, "Recrutement", 38, 700)
+	var titre := Kit.titre_page(self, 0, 44, "Recrutement", 38, 700)
 	titre.name = "RecruitmentTitle"
 	# Calendrier du recrutement (calendrier-mutations.cjs, model.mutations) : période des joueurs sans club en pastille
 	# (icône + « Ouvert · 31 déc. ») ; la raison et la période des mutations restent dans l'infobulle.

@@ -81,6 +81,12 @@ static func titre(parent: Control, x: float, ligne: float, texte: String, taille
 	label.name = "CardTitle"
 	return label
 
+## Grand titre de page : Anton droite (Charte.TITRE_FICHE), comme la fiche joueur, Carrière et Vestiaire.
+static func titre_page(parent: Control, x: float, ligne: float, texte: String, taille: int = 38, largeur: float = 900) -> Label:
+	var label := titre(parent, x, ligne, texte, taille, largeur)
+	label.add_theme_font_override("font", Charte.TITRE_FICHE)
+	return label
+
 ## Étiquette en petites capitales (ivoire-2), alignée à droite si `droite`.
 static func etiquette(parent: Control, x: float, ligne: float, texte: String, largeur: float, droite: bool = false, couleur: Color = Charte.IVOIRE_2) -> Label:
 	return D.text(parent, x, ligne, texte.to_upper(), 16, couleur, 600, largeur, HORIZONTAL_ALIGNMENT_RIGHT if droite else HORIZONTAL_ALIGNMENT_LEFT)

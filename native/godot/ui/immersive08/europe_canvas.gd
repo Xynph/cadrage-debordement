@@ -55,7 +55,7 @@ func _construire() -> void:
 	C.style_bouton_lien(retour_lien, 20)
 	retour_lien.accessibility_name = "Retour à l’écran d’origine · Échap"
 	Kit.touche(self, retour_lien.size.x / C.density + 10, 32, "Échap")
-	Kit.titre(self, 0, 98, "Préparer l’Europe", 56, 1200).name = "EuropeTitre"
+	Kit.titre_page(self, 0, 98, "Préparer l’Europe", 56, 1200).name = "EuropeTitre"
 	var coupe: String = str(app.pack_manager.competition(str(preview.get("competitionId", "")), "career").get("name", "Coupe d’Europe"))
 	Kit.texte(self, 0, 134, coupe + " · " + str(preview.get("season", "")), Charte.IVOIRE, 1400, 22)
 	var notice := Kit.texte(self, 0, 170, "Prépare une liste pour vérifier ses limites et la présence de ta feuille actuelle. Ce brouillon ne vaut pas inscription officielle et reste local.", Charte.IVOIRE_2, 1700, 19)
