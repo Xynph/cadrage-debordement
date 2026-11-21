@@ -61,7 +61,7 @@ func executer() -> void:
 	verifier(app.find_child("RosterColumnForm", true, false) != null, "colonne FORME de l'effectif")
 	var pastilles := app.find_children("RosterNoteAverage", "", true, false)
 	verifier(pastilles.size() >= 15, "moyennes dans les lignes : %d" % pastilles.size())
-	var formes := app.find_children("FormeNote*", "", true, false)
+	var formes := app.find_children("FormeMatch*", "Button", true, false)
 	verifier(formes.size() >= 15, "pastilles de forme : %d" % formes.size())
 	mesures["pastilles_forme"] = formes.size()
 	await capture("notes-match-effectif")

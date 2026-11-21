@@ -112,6 +112,46 @@ test('Effets bornés : composition, valeur, intérêt, salaire, sélection, mora
   assert.deepEqual(extremes.bas, { composition: 0.97, valeur: 0.92, interet: -2, salaire: 0.96, selection: -1.5 }, 'planchers');
 });
 
+test('Forme récente : adversaire et score de chaque note, anciennes sauvegardes sans plantage', () => {
+  const c = domaine(false);
+  const out = JSON.parse(c.run(`(()=>{
+    S.clubs[1].name='Rivaux';
+    const vieux=[1,1,'league',80,70,0,3,20,0,1,2,3,4,5,6,7,8,9,10];
+    S.matchNotes={version:2,saison:S.season,joueurs:{
+      c0p0:{s:[3,210,240,0,0,0,0],f:[60,65,70,72],m:[[2,1,24,10],[3,1,7,30]]},
+      c1p0:{s:[1,70,80,0,0,0,0],f:[70]},
+      c1p1:{s:[1,70,80,0,0,0,0],f:[70],m:[[4,0,12,15]]}},
+     detail:{c0p0:[vieux,[2,1,'league',80,72,1,5,40,1,1,2,3,4,5,6,7,8,9,10,24,10]]},passees:{},confiance:{},semaine:null,recompenses:[],dernier:null,reg:{},regJ:{},equipes:{},saisons:[]};
+    dom.validate(S);
+    const p=dom.project();
+    return JSON.stringify({club:dom.formeJoueur('c0p0'),sans:dom.formeJoueur('c1p0'),autre:dom.formeJoueur('c1p1'),aucun:dom.formeJoueur('zz'),h:p.joueurs.c0p0.historique,fm:p.joueurs.c0p0.formeMatchs});})()`));
+  assert.deepEqual(out.club.forme, [6, 6.5, 7, 7.2]);
+  assert.deepEqual(out.club.matchs[0], { note: 6 }, 'note d’avant l’enregistrement des matchs : note seule');
+  assert.deepEqual(out.club.matchs[1], { note: 6.5 });
+  assert.deepEqual(out.club.matchs[2], { note: 7, semaine: 2, adversaire: 'Rivaux', adversaireId: 1, scorePour: 24, scoreContre: 10 }, 'alignés sur la fin');
+  assert.equal(out.club.matchs[3].scoreContre, 30);
+  assert.deepEqual(out.sans, { forme: [7], matchs: [{ note: 7 }] }, 'ancienne sauvegarde : notes seules');
+  assert.equal(out.autre.matchs[0].scorePour, 12, 'joueur d’un autre club');
+  assert.equal(out.aucun, null);
+  assert.deepEqual([out.h[0].scorePour, out.h[0].scoreContre], [24, 10], 'historique : score du match');
+  assert.deepEqual([out.h[1].scorePour, out.h[1].scoreContre], [null, null], 'ancienne ligne : sans score');
+  assert.equal(out.fm.length, 4);
+  // État incohérent refusé.
+  assert.throws(() => c.run(`(()=>{S.matchNotes.joueurs.c1p1.m=[[4,0,12]];dom.validate(S)})()`), /Notes de match/);
+  assert.throws(() => c.run(`(()=>{S.matchNotes.joueurs.c1p1.m=[[4,0,12,15]];S.matchNotes.detail.c0p0[1].push(3);dom.validate(S)})()`), /Notes de match/);
+});
+
+test('Fin de saison : la forme récente des agents libres est gardée, celle des retraités oubliée', () => {
+  const c = domaine(false);
+  const out = JSON.parse(c.run(`(()=>{
+    S.economy={freeAgents:[{id:'libre'}]};
+    S.matchNotes={version:2,saison:S.season,joueurs:{libre:{s:[1,70,80,0,0,0,0],f:[70],m:[[1,0,10,3]]},parti:{s:[1,70,80,0,0,0,0],f:[70]}},detail:{},passees:{},confiance:{},semaine:null,recompenses:[],dernier:null,reg:{},regJ:{},equipes:{},saisons:[]};
+    S.season=2;dom.rollover(S);dom.validate(S);
+    return JSON.stringify(Object.keys(S.matchNotes.joueurs).concat([JSON.stringify(dom.formeJoueur('libre'))]));})()`));
+  assert.deepEqual(out.slice(0, 1), ['libre']);
+  assert.equal(JSON.parse(out[1]).matchs[0].scorePour, 10);
+});
+
 // ---- Équipe-type de la journée, équipe de la saison (demande de Léo, 13 novembre 2026) ----------
 const POSTES = ['Pilier gauche', 'Talonneur', 'Pilier droit', 'Deuxième ligne', 'Deuxième ligne', 'Troisième ligne', 'Troisième ligne', 'Numéro 8', 'Demi de mêlée', 'Demi d’ouverture', 'Ailier', 'Centre', 'Centre', 'Ailier', 'Arrière'];
 const GROUPES = [0, 1, 2, 3, 3, 4, 4, 4, 5, 6, 7, 8, 8, 7, 9];
@@ -300,6 +340,10 @@ function partage() {
       obs.matchNotes = { dernier: mn.dernier };
       obs.nbClub = club.length;
       obs.historique = club.length ? mn.joueurs[club[0].id].historique[0] : undefined;
+      obs.formeMatchs = club.length ? mn.joueurs[club[0].id].formeMatchs : undefined;
+      // Joueur d'un autre club : la note et son match (adversaire, score) sont gardés.
+      const autre = etat.clubs.filter(c => c.id !== etat.club).flatMap(c => c.players).find(p => etat.matchNotes.joueurs[p.id]);
+      obs.autre = autre ? etat.matchNotes.joueurs[autre.id] : undefined;
       obs.clubsNotes = new Set(etat.clubs.flatMap(c => c.players.filter(p => etat.matchNotes.joueurs[p.id]).map(() => c.id))).size;
       obs.actualite = !!(model.news?.some?.(t => /Homme du match/.test(t)) || etat.news.some(t => /Homme du match/.test(t)));
     }
@@ -329,6 +373,12 @@ test('Direct (Monde) : la note affichée en fin de match est la note enregistré
   assert.ok(obs.nbClub >= 15, 'joueurs du club notés : ' + obs.nbClub);
   const h = obs.historique;
   assert.ok(h.adversaire && h.competition && h.minutes > 0 && h.note >= 1, 'historique du match');
+  assert.ok(Number.isInteger(h.scorePour) && Number.isInteger(h.scoreContre), 'score du match gardé dans l’historique');
+  assert.deepEqual(notes.dernier.score.slice().sort(), [h.scorePour, h.scoreContre].sort(), 'score de l’historique = score du match');
+  assert.equal(obs.formeMatchs.length, 1, 'forme récente : un match');
+  assert.equal(obs.formeMatchs[0].adversaire, h.adversaire, 'forme récente : adversaire');
+  assert.equal(obs.formeMatchs[0].scorePour, h.scorePour, 'forme récente : score');
+  assert.ok(obs.autre && obs.autre.m.length === obs.autre.f.length && obs.autre.m[0].length === 4, 'autre club : match de chaque note gardé');
   // Autres matchs de la journée (simulés sans direct) : notés aussi.
   assert.ok(obs.clubsNotes > 2, 'joueurs d’autres clubs notés : ' + obs.clubsNotes + ' clubs');
   assert.ok(obs.actualite, 'actualité de l’homme du match');
