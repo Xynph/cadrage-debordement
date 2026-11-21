@@ -25,7 +25,7 @@ static func lecture(app: Control) -> Dictionary:
 		app.management_ui.candidates_reading = {"key":"note", "descending":true, "hors_feuille":false, "recherche":""}
 	return app.management_ui.candidates_reading
 
-static func build(app: Control, page: Control, zone: Rect2, premiere: Dictionary, choisir: Callable, avis_haut: float = 0.0) -> Panel:
+static func build(app: Control, page: Control, zone: Rect2, premiere: Dictionary, choisir: Callable, avis_haut: float = 0.0, encart_l: float = ENCART) -> Panel:
 	var bloc := D.rect(page, zone, Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	bloc.name = "TacticsCandidates"
 	bloc.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -67,8 +67,8 @@ static func build(app: Control, page: Control, zone: Rect2, premiere: Dictionary
 	D.line(bloc, Vector2(22, 48), Vector2(w - 22, 48), Charte.FILET)
 	var haut := 48.0 + avis_haut
 	var encart := Selection.place_premiere_ligne(app.model, slot)
-	var largeur_table := w - 44 - (ENCART + 24 if encart else 0.0)
-	if encart: _encart(app, bloc, Rect2(w - 22 - ENCART, haut + 8, ENCART, zone.size.y - haut - 16), slot, premiere, choisir)
+	var largeur_table := w - 44 - (encart_l + 24 if encart else 0.0)
+	if encart: _encart(app, bloc, Rect2(w - 22 - encart_l, haut + 8, encart_l, zone.size.y - haut - 16), slot, premiere, choisir)
 	var message := Kit.texte(bloc, 22, zone.size.y - 12, str(Selection.state(app).get("message", "")), Charte.IVOIRE_2, largeur_table)
 	message.name = "TacticsCandidateMessage"
 	var colonnes := _colonnes(largeur_table)
@@ -304,7 +304,7 @@ static func _encart(app: Control, bloc: Control, zone: Rect2, slot: int, premier
 	Kit.titre(cadre, 0, y, "Première ligne formée · %d/%d" % [mini(formes, cible), cible], 22, zone.size.x * .6).name = "TacticsFrontRowTitle"
 	Kit.etiquette(cadre, zone.size.x, y - 2, "Loi 3 · feuille à 23" if reduit == 0 else "Loi 3 · feuille à 22 : cinq formés", 320, true)
 	D.line(cadre, Vector2(0, y + 10), Vector2(zone.size.x, y + 10), Charte.FILET)
-	var xs := [8.0, 168.0, 400.0, zone.size.x - 8]
+	var xs := [8.0, roundf(zone.size.x * .233), roundf(zone.size.x * .556), zone.size.x - 8]
 	for i in 4:
 		Kit.etiquette(cadre, xs[i], y + 36, ["Poste", "Titulaire", "Remplaçant", "Formés"][i], 200, i == 3)
 	for i: int in (premiere.postes as Array).size():

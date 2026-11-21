@@ -20,6 +20,7 @@ const Banc = preload("res://ui/immersive08/tactics_banc.gd")
 const Impact = preload("res://ui/immersive08/tactics_impact.gd")
 const Candidats = preload("res://ui/immersive08/tactics_candidats.gd")
 const SousPages = preload("res://ui/immersive08/tactics_sous_pages.gd")
+const Vertical = preload("res://ui/immersive08/tactics_vertical.gd")
 const Roles = preload("res://ui/immersive08/tactics_roles.gd")
 const Cover = preload("res://ui/lineup_cover.gd")
 const Espoir = preload("res://ui/espoir_appel.gd")
@@ -76,6 +77,14 @@ static func _construire(app: Control, page: Control) -> Control:
 	var avis := Impact.avis(app)
 	var bleus := _bleus_marques(app)
 	var premiere := Selection.premiere_ligne(app.model)
+	# Options du terrain vertical vert (CD_VARIANTE_VISUELLE=TERRAIN_A | TERRAIN_B), à départager par Léo.
+	if Vertical.variante() != "":
+		Vertical.build(app, page, choisir_cb, clavier_cb, avis, bleus, premiere)
+		var alertes_v := _alertes(app)
+		var bloc_v := Candidats.build(app, page, Vertical.CANDIDATS, premiere, choisir_cb, alertes_v.size() * 56.0, 560.0)
+		for i in alertes_v.size(): (alertes_v[i] as Callable).call(bloc_v, 52.0 + i * 56.0)
+		_restore_focus.call_deferred(app)
+		return page
 	Kit.titre(page, 0, 226, "XV de départ", 24, 500)
 	Kit.etiquette(page, TERRAIN.size.x, 224, "Note au poste /100 · Espace prendre / poser", 700, true)
 	D.line(page, Vector2(0, 238), Vector2(TERRAIN.size.x, 238), Charte.FILET)
@@ -317,7 +326,7 @@ static func _alertes(app: Control) -> Array:
 	return alertes
 
 static func _bandeau(bloc: Control, y: float, id: String, couleur: Color) -> Panel:
-	var bandeau := D.rect(bloc, Rect2(22, y + 4, 2204, 48), Charte.PANNEAU_2, Charte.RAYON_CARTE)
+	var bandeau := D.rect(bloc, Rect2(22, y + 4, bloc.size.x / C.density - 44, 48), Charte.PANNEAU_2, Charte.RAYON_CARTE)
 	bandeau.name = id
 	bandeau.mouse_filter = Control.MOUSE_FILTER_PASS
 	Kit.marqueur(bandeau, Rect2(6, 8, 4, 32), couleur)
@@ -326,14 +335,15 @@ static func _bandeau(bloc: Control, y: float, id: String, couleur: Color) -> Pan
 static func _bandeau_bleus(app: Control, bloc: Control, y: float, bleus: Dictionary) -> void:
 	var bandeau := _bandeau(bloc, y, "LineupBleusNotice", Charte.D)
 	bandeau.tooltip_text = "Liste de 33 joueurs du XV de France : les clubs les laissent hors de la feuille au moins 2 fois sur 8 rencontres. Ligne directrice, ajustable par accord avec le staff des Bleus.\n\nRemplaçants proposés par le staff :\n" + "\n".join(bleus.lignes)
-	var titre := D.text(bandeau, 22, 31, str(bleus.titre), 20, Charte.D, 700, 900)
+	var titre := D.text(bandeau, 22, 31, str(bleus.titre), 20, Charte.D, 700, bandeau.size.x / C.density * .408)
 	titre.name = "LineupBleusTitle"
 	var echanges: Array = bleus.echanges
 	var aide := "Au moins 2 repos sur 8 matchs de club ; l’aligner quand même coûte la confiance du staff des Bleus. "
 	aide += ("Remplaçant proposé : " + str(bleus.lignes[0])) if echanges.size() == 1 else ("Remplaçants proposés pour %d postes (repère « 33 »)." % echanges.size() if echanges.size() > 1 else "Aucun remplaçant disponible au même poste.")
-	Kit.texte(bandeau, 940, 31, aide, Charte.IVOIRE_2, 1000, 17).name = "LineupBleusChanges"
+	var bw := bandeau.size.x / C.density
+	Kit.texte(bandeau, bw * .43, 31, aide, Charte.IVOIRE_2, bw * .45, 17).name = "LineupBleusChanges"
 	if echanges.is_empty(): return
-	var faire := Kit.lien(bandeau, Rect2(2190, 5, 0, 38), "Faire souffler →" if echanges.size() == 1 else "Faire souffler les %d →" % echanges.size(), func(): app._command("set_lineup", {"changes": bleus.lot}), "LineupBleusRestAll", 18, true)
+	var faire := Kit.lien(bandeau, Rect2(bw - 14, 5, 0, 38), "Faire souffler →" if echanges.size() == 1 else "Faire souffler les %d →" % echanges.size(), func(): app._command("set_lineup", {"changes": bleus.lot}), "LineupBleusRestAll", 18, true)
 	faire.tooltip_text = "\n".join(bleus.lignes)
 	faire.disabled = not Selection.editable(app)
 
@@ -342,7 +352,8 @@ static func _bandeau_nationale(bloc: Control, y: float, notice: Dictionary) -> v
 	var bandeau := _bandeau(bloc, y, "NationaleLicenceNotice", Charte.D if alerte else Charte.IVOIRE_2)
 	bandeau.tooltip_text = str(notice.get("detail", ""))
 	D.text(bandeau, 22, 31, str(notice.get("title", "")), 20, Charte.IVOIRE, 700, 700).name = "NationaleQualificationTitle"
-	Kit.texte(bandeau, 740, 31, str(notice.get("summary", "")), Charte.D if alerte else Charte.IVOIRE, 1440, 18).name = "NationaleQualificationSummary"
+	var bw := bandeau.size.x / C.density
+	Kit.texte(bandeau, bw * .336, 31, str(notice.get("summary", "")), Charte.D if alerte else Charte.IVOIRE, bw * .653, 18).name = "NationaleQualificationSummary"
 
 static func _bleus_marques(app: Control) -> Dictionary:
 	var marques := {}
