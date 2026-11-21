@@ -22,6 +22,7 @@ const Pilotage = preload("res://ui/contextual/match_consignes.gd")
 const Charte = preload("res://ui/charte.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
+const CarteSurvol = preload("res://ui/carte_joueur_survol.gd")
 const Meteo = preload("res://ui/contextual/meteo_texte.gd")
 const Zones = preload("res://ui/immersive08/standings_zones.gd")
 const Visuels = preload("res://ui/contextual/training_visuels.gd")
@@ -2621,6 +2622,8 @@ func _tuile_joueur(poste: int, joueur: Dictionary, info: Dictionary) -> Button:
 	case.set_meta("player_id", str(info.id))
 	if grave: case.set_meta("signale", true)
 	case.tooltip_text = str(info.detail)
+	var app_carte: Object = _app()
+	if app_carte is Control: CarteSurvol.lier(app_carte, case, str(info.id), "squad", func(): return _direct_carte(str(info.id)))
 	_remplir_carte_haute(case, poste, joueur, info)
 	return case
 
@@ -3892,7 +3895,7 @@ func _nom_joueur(nom: String, id: String, alerte: String = "", humeur: Dictionar
 	lien.set_meta("player_id", id)
 	lien.pressed.connect(func(): ouvrir_fiche(id))
 	var app: Object = _app()
-	if app is Control and not id.is_empty(): MiniFiche.lier(app, lien, id, "squad")
+	if app is Control and not id.is_empty(): CarteSurvol.lier(app, lien, id, "squad", func(): return _direct_carte(id))
 	rangee.add_child(lien)
 	if not alerte.is_empty():
 		var mot := _texte(alerte, 18, ALERTE if alerte in ["épuisé", "blessé", "exclu"] or alerte.begins_with("carton") else Charte.ATTRIBUT_40)
@@ -4048,6 +4051,13 @@ func _infos_xv(joueurs: Array, direct: Dictionary) -> Array:
 		info.merge({"alerte": alerte, "carton": cartons.has(id), "etat": humeur, "detail": detail + "\nClic : l'écran Équipe sur ce joueur ; son nom : sa fiche."}, true)
 		infos.append(info)
 	return infos
+
+## Carte joueur au survol : l'état du joueur dans ce match (note, énergie, plaquages…), lu à son apparition.
+func _direct_carte(id: String) -> Dictionary:
+	if _xv_donnees.size() < 2: return {}
+	for info: Variant in _infos_xv(_xv_donnees[0], _xv_donnees[1]):
+		if info is Dictionary and str(info.get("id", "")) == id: return info
+	return {}
 
 ## État d'un joueur après la causerie (« Motivé », « Vexé »…) : vert s'il porte, rouge de l'alerte s'il
 ## pèse, neutre sinon.
