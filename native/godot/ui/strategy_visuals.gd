@@ -78,11 +78,11 @@ static func tuile_offre(parent: Container, icone: String, titre: String, chiffre
 	parent.add_child(tuile)
 	var image := picto(icone, 34, couleur)
 	if tuile.titre != null:
-		var tete := tuile.titre.get_parent()
+		var tete: Control = tuile.titre.get_parent()
 		tete.add_child(image)
 		tete.move_child(image, 0)
 		# Hauteur de deux lignes de titre : chiffres et graphiques alignés d'une tuile à l'autre.
-		(tete as Control).custom_minimum_size.y = C.px(64)
+		tete.custom_minimum_size.y = C.px(64)
 	else:
 		tuile.contenu.add_child(image)
 		image.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN

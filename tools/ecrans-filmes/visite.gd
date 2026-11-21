@@ -61,6 +61,7 @@ const EXTRAS := [
 	{"id": "strategie-finances", "libelle": "Club › Direction · onglet Finances", "type": "strategie_onglet", "onglet": 0},
 	{"id": "strategie-projet", "libelle": "Club › Direction · onglet Projet sportif", "type": "strategie_onglet", "onglet": 1},
 	{"id": "strategie-supporters", "libelle": "Club › Direction · onglet Supporters", "type": "strategie_onglet", "onglet": 2},
+	{"id": "strategie-public", "libelle": "Club › Direction · petite fenêtre Le public", "type": "strategie_onglet", "onglet": 2, "zone": "DirectionLien_Sentiment"},
 ]
 ## Écrans du match en direct : le coup d'envoi est donné une fois, après tous les autres écrans.
 const EN_DIRECT := [
@@ -470,6 +471,14 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			if app.route != "Stratégie": return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
 			var onglets := app.find_child("StrategyTabs", true, false) as TabContainer
 			if onglets == null or onglets.current_tab != int(ecran.onglet): return {"statut": "echec", "note": "onglet de Direction non affiché"}
+			if ecran.has("zone"):
+				var zone := app.find_child(str(ecran.zone), true, false) as Control
+				if zone == null: return {"statut": "echec", "note": "zone %s absente" % ecran.zone}
+				var clic := InputEventMouseButton.new()
+				clic.button_index = MOUSE_BUTTON_LEFT
+				clic.pressed = true
+				zone.gui_input.emit(clic)
+				await stabiliser()
 		"presse_onglet":
 			preparer_presse()
 			app.management_ui.press_tab = int(ecran.onglet)
