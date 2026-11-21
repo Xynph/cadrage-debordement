@@ -538,18 +538,19 @@ static func _list_filters(card: Panel, app: Control, state: Dictionary, active: 
 			state.category = "Tous"
 			if activity != "all": state.selected = ""
 			state.scroll = 0
-			_redraw(app,id), chosen, app.accent)
+			_redraw(app,id), false, app.accent)
 		action.name = id
 		action.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		action.add_theme_font_size_override("font_size", maxi(12, C.px(19)))
 		action.custom_minimum_size = Vector2(C.px(84), 0)
 		for look in ["normal", "hover", "pressed", "focus"]:
-			# Puce active : contour ivoire fin, sans remplissage (la couleur du club reste sur les marques du club).
-			var pill := C.box(C.RAISED if look == "hover" else Color(C.PANEL, 0), C.IVORY if (chosen or look == "focus") else C.LINE, 0, 16)
-			pill.border_color = C.IVORY if (chosen or look == "focus") else C.LINE
+			# Charte finale : filtre actif = pilule en aplat crème, texte panneau ; inactif = pilule à contour.
+			var pill := C.box(C.IVORY if chosen else C.RAISED if look == "hover" else Color(C.PANEL, 0), C.Charte.OR if look == "focus" else Color.TRANSPARENT if chosen else C.LINE, C.Charte.RAYON_PILULE, 16)
 			pill.content_margin_top = 0; pill.content_margin_bottom = 0
 			action.add_theme_stylebox_override(look, pill)
 		action.tooltip_text = filter[4]
+		for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+			action.add_theme_color_override(key, C.Charte.PANNEAU if chosen else C.Charte.IVOIRE)
 		bar.add_child(action)
 	var subject := OptionButton.new()
 	subject.name = "InboxSubject"
@@ -853,7 +854,7 @@ static func _blocking_notice(rows: Control, app: Control) -> void:
 	C.fill(why)
 	notice.add_child(why)
 	if blocking.get("kind") == "press" and not blocking.get("completed", false):
-		var go := C.button("OUVRIR LA CONFÉRENCE DE PRESSE", func(): app._open_press_conference(), true, app.accent)
+		var go := C.button("OUVRIR LA CONFÉRENCE DE PRESSE", func(): app._open_press_conference(), false, app.accent)
 		go.name = "ContextualOpenPress"
 		go.add_theme_font_size_override("font_size", C.px(17))
 		notice.add_child(go)
@@ -1687,13 +1688,13 @@ static func _send_row(card: Panel, app: Control, state: Dictionary, message: Dic
 	C.style_bouton_contour(send, 21)
 	send.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	if letter.is_empty():
-		D.text(card, PAD + 380, top + 30, "Un clic sur une carte choisit ; rien ne part sans confirmation.", 17, C.MUTED, 500, minf(700.0, _reading_width() - 380))
+		D.text(card, PAD + 380, top + 30, "Un clic sur une carte choisit ; rien ne part sans confirmation.", 17, C.MUTED, 500, minf(700.0, _reading_width() - 380), HORIZONTAL_ALIGNMENT_LEFT, true)
 		return
 	var cancel := D.button(card, Rect2(PAD + 380, top, 150, _h(46)), "Annuler", func():
 		state.reply_pick.erase(str(mail.id))
 		_redraw(app, "InboxClubMailReply_" + picked), false, "arrow", true, app.accent, "InboxClubMailCancel")
 	C.style_bouton_lien(cancel, 19)
-	D.text(card, PAD + 550, top + 30, "Rien ne part sans cette confirmation.", 17, C.MUTED, 500, minf(500.0, _reading_width() - 550))
+	D.text(card, PAD + 550, top + 30, "Rien ne part sans cette confirmation.", 17, C.MUTED, 500, minf(500.0, _reading_width() - 550), HORIZONTAL_ALIGNMENT_LEFT, true)
 
 static func _send_reply(app: Control, state: Dictionary, mail_id: String, choice: String) -> void:
 	state.reply_pick.erase(mail_id)

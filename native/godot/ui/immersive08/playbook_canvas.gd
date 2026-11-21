@@ -5,8 +5,9 @@ const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const Rules = preload("res://ui/playbook_view.gd")
-const GREEN = Color("64e896")
-const GOLD = Color("f7ca68")
+const Charte = preload("res://ui/charte.gd")
+const GREEN = Charte.VERT_CLAIR
+const GOLD = Charte.DORE
 const TABS = ["Les quatre zones", "Phases arrêtées", "Lecture du match"]
 
 class Field extends Control:
@@ -58,13 +59,13 @@ func _build() -> void:
 	tabs.name = "PlaybookTabs"
 	tabs.add_theme_font_override("font", C.BOLD)
 	tabs.add_theme_font_size_override("font_size", C.font_px(28))
-	var panel := C.box(Color("0c1415"), C.LINE, 7, 0)
+	var panel := C.box(Charte.PANNEAU, Color.TRANSPARENT, Charte.RAYON_PANNEAU, 0)
 	for edge in [SIDE_LEFT, SIDE_RIGHT, SIDE_TOP, SIDE_BOTTOM]: panel.set_content_margin(edge, 0)
 	tabs.add_theme_stylebox_override("panel", panel)
-	tabs.add_theme_stylebox_override("tab_selected", C.box(Color("0b5435"), GREEN, 7, 16))
-	tabs.add_theme_stylebox_override("tab_unselected", C.box(Color("172321"), C.LINE, 7, 16))
-	tabs.add_theme_stylebox_override("tab_hovered", C.box(Color("204434"), GREEN, 7, 16))
-	tabs.add_theme_color_override("font_selected_color", C.IVORY)
+	tabs.add_theme_stylebox_override("tab_selected", C.box(Charte.IVOIRE, Color.TRANSPARENT, Charte.RAYON_PILULE, 16))
+	tabs.add_theme_stylebox_override("tab_unselected", C.box(Color.TRANSPARENT, Color.TRANSPARENT, Charte.RAYON_PILULE, 16))
+	tabs.add_theme_stylebox_override("tab_hovered", C.box(Charte.PANNEAU_2, Color.TRANSPARENT, Charte.RAYON_PILULE, 16))
+	tabs.add_theme_color_override("font_selected_color", Charte.PANNEAU)
 	tabs.add_theme_color_override("font_unselected_color", C.MUTED)
 	tabs.add_theme_color_override("font_hovered_color", C.IVORY)
 	add_child(tabs)
@@ -96,7 +97,7 @@ func _header() -> void:
 	var back := D.button(hero, Rect2(1845, 127, 381, 53), "Consignes principales", func():
 		if not app.management_ui.get("preparation") is Dictionary: app.management_ui.preparation = {"tab":1,"outer":[0,0,0],"attack":0,"defense":0,"focus":["","",""]}
 		else: app.management_ui.preparation.tab = 1
-		app._navigate("Préparation"), true, "arrow", false, Color("09673e"), "PlaybookOpenPreparation")
+		app._navigate("Préparation"), false, "arrow", false, Color("09673e"), "PlaybookOpenPreparation")
 	back.tooltip_text = "Régler les intentions de jeu avec et sans le ballon"
 
 func _tab(parent: TabContainer, caption: String) -> Control:
@@ -143,7 +144,7 @@ func _field(zones: Array) -> void:
 	var centers := [.89, .64, .36, .11]
 	for i in mini(centers.size(), zones.size()):
 		var y: float = 608.0 * centers[i]
-		D.rect(field, Rect2(53, y - 24, 414, 49), Color("103127"), 5, GREEN if field.current == i else Color("45675a"))
+		D.rect(field, Rect2(53, y - 24, 414, 49), Color("103127"), Charte.RAYON_PETIT, GREEN if field.current == i else Color("45675a"))
 		D.text(field, 260, y + 11, "%02d  ·  %s" % [i + 1, zones[i].label], 29, C.IVORY, 700, 391, HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(panel, 346, 763, "TON EN-BUT", 21, GREEN, 700, 602, HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(panel, 346, 797, "Orientation selon ton équipe", 21, C.MUTED, 500, 602, HORIZONTAL_ALIGNMENT_CENTER)
@@ -162,7 +163,7 @@ func _phases() -> void:
 		var y := 247
 		for option: Dictionary in options:
 			var selected: bool = option.id == choice
-			D.rect(tile, Rect2(20, y, 684, 94), Color("0c3227") if selected else Color("172321"), 5, Color(GREEN, .67) if selected else Color(C.LINE, .5))
+			D.rect(tile, Rect2(20, y, 684, 94), Charte.SELECTION if selected else Charte.PANNEAU_2, Charte.RAYON_PETIT, Color(GREEN, .67) if selected else Color(C.LINE, .5))
 			D.text(tile, 37, y + 29, option.label, 26, GREEN if selected else C.IVORY, 700, 643)
 			var lines := D.words(str(option.get("description", "")), 72, 2)
 			for j in lines.size(): D.text(tile, 37, y + 57 + j * 25, lines[j], 22, C.MUTED, 500, 643)
@@ -199,7 +200,7 @@ func _advice() -> void:
 	D.chip(scene, Rect2(21, 433, 321, 43), context, GREEN)
 	var lines := D.words(str(data.get("reason", "")), 79, 4)
 	for i in lines.size(): D.text(scene, 22, 531 + i * 31, lines[i], 24, C.MUTED, 500, 701)
-	D.button(scene, Rect2(21, 729, 709, 62), "Ouvrir le match", func(): app._navigate("Match"), true, "arrow", false, Color("09673e"), "PlaybookGoMatch")
+	D.button(scene, Rect2(21, 729, 709, 62), "Ouvrir le match", func(): app._navigate("Match"), false, "arrow", false, Color("09673e"), "PlaybookGoMatch")
 	_notice(advice_page, 872)
 
 func _notice(parent: Node, y: int) -> void:
@@ -220,10 +221,10 @@ func _selector(parent: Node, rectangle: Rect2, key: String, options: Array, sele
 	control.add_theme_color_override("font_color", C.IVORY)
 	control.add_theme_color_override("font_hover_color", C.IVORY)
 	control.add_theme_color_override("font_disabled_color", C.MUTED)
-	control.add_theme_stylebox_override("normal", C.box(Color("162723"), C.LINE, 6, 13))
-	control.add_theme_stylebox_override("hover", C.box(Color("204434"), GREEN, 6, 13))
-	control.add_theme_stylebox_override("disabled", C.box(Color("111c1b"), C.LINE, 6, 13))
-	control.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT, GOLD, 6, 0))
+	control.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU_3, Charte.FILET, Charte.RAYON_PILULE, 13))
+	control.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_2, Charte.IVOIRE_3, Charte.RAYON_PILULE, 13))
+	control.add_theme_stylebox_override("disabled", C.box(Charte.PANNEAU, Charte.FILET, Charte.RAYON_PILULE, 13))
+	control.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT, GOLD, Charte.RAYON_PILULE, 0))
 	var popup := control.get_popup()
 	popup.add_theme_stylebox_override("panel", C.box(C.PANEL, C.LINE, 5, 10))
 	popup.add_theme_font_override("font", C.DISPLAY)
@@ -239,7 +240,7 @@ func _selector(parent: Node, rectangle: Rect2, key: String, options: Array, sele
 	D.place(control, rectangle)
 
 func _metric(parent: Node, rectangle: Rect2, label: String, value: Variant, tone: Color) -> void:
-	var tile := D.rect(parent, rectangle, Color("132721"), 5, Color(C.LINE, .80))
+	var tile := D.rect(parent, rectangle, Charte.PANNEAU_2, Charte.RAYON_PETIT, Color(C.LINE, .80))
 	var middle := rectangle.size.y / 2.0 + 7
 	D.text(tile, 12, middle, label, 21, C.MUTED, 500, rectangle.size.x * .46)
 	D.text(tile, rectangle.size.x - 12, middle, value, 24, tone, 700, rectangle.size.x * .55, HORIZONTAL_ALIGNMENT_RIGHT)

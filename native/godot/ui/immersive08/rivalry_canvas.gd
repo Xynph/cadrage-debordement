@@ -86,7 +86,7 @@ func _hero() -> void:
 		var daily: bool = app.model.meta.has("calendarCadence")
 		var description := "Le calendrier avance jour par jour jusqu’à la rencontre." if daily else "La préparation avance jusqu’à la prochaine rencontre."
 		D.text(card,24,155,description,22,C.MUTED,400,686,HORIZONTAL_ALIGNMENT_LEFT,true)
-		var advance := D.button(card,Rect2(24,182,687,53),app.primary_text().trim_suffix("  →"),app.primary_action,true,"arrow",false,app.accent,section+"Advance")
+		var advance := D.button(card,Rect2(24,182,687,53),app.primary_text().trim_suffix("  →"),app.primary_action,false,"arrow",false,app.accent,section+"Advance")
 		advance.disabled = app.waiting
 
 func _navigation() -> void:
@@ -119,7 +119,8 @@ func _pairs() -> void:
 			state.page = 0
 			_display()
 			var focus := workspace.find_child("RivalryFilter" + str(i), true, false) as Button
-			if focus != null: FocusLater.grab(focus), (i == 1) == only_club, "shield" if i == 1 else "people", true, PRIMARY, "RivalryFilter" + str(i))
+			if focus != null: FocusLater.grab(focus), false, "shield" if i == 1 else "people", true, PRIMARY, "RivalryFilter" + str(i))
+		D.tab_state(panel.get_node("RivalryFilter" + str(i)) as Button, Vector2(223, 40), (i == 1) == only_club, "shield" if i == 1 else "people")
 	var pairs: Array = data.get("pairs", [])
 	if only_club: pairs = pairs.filter(func(pair: Dictionary): return own.get("id") in [pair.get("a"), pair.get("b")])
 	var selected := str(state.get("selected_pair", ""))
@@ -179,10 +180,10 @@ func _pair_row(parent: Panel, pair: Dictionary, index: int, selected: bool) -> v
 		state.selected_pair = key
 		_display()
 		var focus := workspace.find_child(id, true, false) as Button
-		if focus != null: FocusLater.grab(focus), selected, "", false, PRIMARY, id)
+		if focus != null: FocusLater.grab(focus), false, "", false, PRIMARY, id)
 	row.set_meta("pair_key", key)
 	row.accessibility_name = _club(a) + " contre " + _club(b)
-	row.add_theme_stylebox_override("normal", C.box(Color("17462f") if selected else Color("131d20") if index % 2 == 0 else Color("101819"), Color(C.LINE, .55), 3, 0))
+	row.add_theme_stylebox_override("normal", C.box(C.Charte.SELECTION if selected else Color("131d20") if index % 2 == 0 else Color("101819"), Color(C.LINE, .55), C.Charte.RAYON_PETIT, 0))
 	_crest(row, a, Rect2(18, 9, 43, 43))
 	D.text(row, 73, 37, _club(a), 27, C.IVORY, 700, 284)
 	D.text(row, 359, 37, "VS", 22, C.GOLD, 700, 41, HORIZONTAL_ALIGNMENT_CENTER)
@@ -307,7 +308,7 @@ func _archives() -> void:
 	D.photo(context, "trophy", Rect2(17, 69, RIGHT - 34, 302))
 	D.text(context, 24, 425, "%d saison(s) suivie(s)" % years.size(), 37, C.IVORY, 800, RIGHT - 49)
 	_notice(context, Rect2(24, 453, RIGHT - 49, 132), str(data.get("notice", "")))
-	D.button(context, Rect2(22, 744, RIGHT - 44, 60), "Ouvrir les archives des championnats", func(): app.ClubViews.season_archives(app), true, "arrow", false, PRIMARY, "RivalryOpenSeasonArchives")
+	D.button(context, Rect2(22, 744, RIGHT - 44, 60), "Ouvrir les archives des championnats", func(): app.ClubViews.season_archives(app), false, "arrow", false, PRIMARY, "RivalryOpenSeasonArchives")
 
 func _world() -> void:
 	var panel := D.panel(workspace, Rect2(0, 0, WIDTH, 828), "Carnet des territoires", "flag", "", "RivalryWorldNotebook")

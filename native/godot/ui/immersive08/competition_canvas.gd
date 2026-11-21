@@ -274,16 +274,18 @@ func _onglet(area: Rect2, caption: String, selected: bool, callback: Callable, i
 	button.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	for look in ["normal", "hover", "pressed", "focus"]:
 		var style := StyleBoxFlat.new()
-		style.bg_color = Charte.PANNEAU_3 if selected else (Charte.PANNEAU_2 if look == "hover" else Color(0, 0, 0, 0))
+		# Charte finale : onglet en pilule, actif = aplat crème (texte panneau).
+		style.bg_color = Charte.IVOIRE if selected else (Charte.PANNEAU_2 if look == "hover" else Color(0, 0, 0, 0))
 		style.set_corner_radius_all(Charte.RAYON_PILULE)
-		style.border_color = Charte.IVOIRE
-		style.border_width_bottom = maxi(2, C.px(5)) if selected else (maxi(2, C.px(3)) if look == "focus" else 0)
+		style.anti_aliasing = true
+		style.border_color = Charte.OR
+		if look == "focus": style.set_border_width_all(2)
 		style.content_margin_left = C.px(16)
 		style.content_margin_right = C.px(16)
 		button.add_theme_stylebox_override(look, style)
 	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
-		button.add_theme_color_override(key, Charte.IVOIRE if selected else Charte.IVOIRE_2)
-	button.add_theme_color_override("font_hover_color", Charte.IVOIRE)
+		button.add_theme_color_override(key, Charte.PANNEAU if selected else Charte.IVOIRE_2)
+	button.add_theme_color_override("font_hover_color", Charte.PANNEAU if selected else Charte.IVOIRE)
 	button.add_theme_font_override("font", C.BOLD)
 	button.add_theme_font_size_override("font_size", maxi(12, C.px(24)))
 	button.pressed.connect(callback)
@@ -298,7 +300,7 @@ func _header() -> void:
 	var round_label := str(app.model.meta.get("roundLabel", "")) if league.id == state.club_league else "Phase régulière" if league.get("phase", "league") == "league" else _phase(league)
 	var short_round := round_label.trim_prefix(str(league.get("name","")) + " · ")
 	var subhead := "%s  ·  saison %s  ·  %s" % [_league_short(league), G.season_label(app.model.meta.get("season", "—")), short_round]
-	var sub := D.text(self, 450, 46, subhead, 22, C.MUTED, 500, 1100)
+	var sub := D.text(self, 450, 46, subhead, 22, C.MUTED, 500, 1100, HORIZONTAL_ALIGNMENT_LEFT, true)
 	sub.name = "CompetitionSubhead"
 	if _followed_from_afar():
 		var afar := D.text(self, 1580, 44, "CONSULTATION", 20, C.MUTED, 700, 200)
@@ -665,13 +667,13 @@ func _classement() -> void:
 	var bounds := _pager(panel, "StandingsPagination", page_key, rows.size(), capacity, rows_y + shown * ROW + 8, 24)
 	for i in range(bounds.x, bounds.y):
 		_ligne_classement(body, rows[i], i - bounds.x, ROW)
-	if rows.is_empty(): D.text(body, 24, 40, "Aucun classement renseigné pour cette division.", 22, C.MUTED, 500, LEFT - 50)
+	if rows.is_empty(): D.text(body, 24, 40, "Aucun classement renseigné pour cette division.", 22, C.MUTED, 500, LEFT - 50, HORIZONTAL_ALIGNMENT_LEFT, true)
 	var y := rows_y + shown * ROW + 18 + (44 if paged else 0)
 	if not zones.is_empty():
 		_zone_legend(panel, zones, 24, y)
 		y += zones.size() * 30
 	if not zone_note.is_empty():
-		var note := D.text(panel, 24, y + 20, zone_note, 18, C.MUTED, 500, LEFT - 48)
+		var note := D.text(panel, 24, y + 20, zone_note, 18, C.MUTED, 500, LEFT - 48, HORIZONTAL_ALIGNMENT_LEFT, true)
 		note.name = "StandingsZoneNote"
 		y += 30
 	if has_champion:
@@ -877,7 +879,7 @@ func _ligne_classement(parent: Node, club: Dictionary, index: int, stride: int) 
 		marker.polygon = shape
 		marker.position = Vector2(14, 6) * C.density
 		row.add_child(marker)
-		var underline := D.rect(row, Rect2(0, stride - 3, LEFT, 3), Charte.club_trait(_couleur_club(club)))
+		var underline := D.rect(row, Rect2(0, stride - 3, LEFT, 3), Charte.VERT_CLAIR)
 		underline.name = "StandingsOwnTrait"
 	var emblem := mini(26, stride - 4)
 	_crest(row, club, Rect2(152, (stride - emblem) / 2.0, emblem, emblem))
@@ -938,26 +940,29 @@ class Plaque extends Button:
 	var droite := false
 
 	func _draw() -> void:
-		var decalage := size.y * tan(deg_to_rad(Charte.INCLINAISON_DEGRES))
-		var points := PackedVector2Array([Vector2(decalage, 0), Vector2(size.x, 0), Vector2(size.x - decalage, size.y), Vector2(0, size.y)]) if not droite \
-			else PackedVector2Array([Vector2(0, 0), Vector2(size.x - decalage, 0), Vector2(size.x, size.y), Vector2(decalage, size.y)])
-		draw_colored_polygon(points, couleur)
+		# Charte finale : tuile arrondie avec ombre ; camps en vert clair (nous) et doré (adversaire), jamais la couleur du club.
+		var style := StyleBoxFlat.new()
+		style.bg_color = couleur
+		style.set_corner_radius_all(Charte.RAYON_CARTE)
+		style.anti_aliasing = true
+		Charte.ombrer(style, Charte.RAYON_CARTE)
 		if has_focus() or is_hovered():
-			var contour := points.duplicate()
-			contour.append(points[0])
-			draw_polyline(contour, Charte.IVOIRE, 3.0, true)
+			style.border_color = Charte.OR
+			style.set_border_width_all(2)
+		draw_style_box(style, Rect2(Vector2.ZERO, size))
 
 func _plaque(parent: Node, area: Rect2, club: Dictionary, id: String, right: bool) -> Button:
 	var plaque := Plaque.new()
 	plaque.name = id
 	plaque.flat = true
 	plaque.set_meta("immersive_style_applied", true)
-	plaque.couleur = _couleur_club(club).darkened(0.1)
+	var nous := str(club.get("id", "")) == str(app.model.get("club", {}).get("id", "-"))
+	plaque.couleur = Charte.VOILE_VERT if nous else Charte.VOILE_DORE
 	plaque.droite = right
 	for look in ["normal", "hover", "pressed", "disabled", "focus"]: plaque.add_theme_stylebox_override(look, StyleBoxEmpty.new())
 	parent.add_child(plaque)
 	D.place(plaque, area)
-	var ink := Charte.IVOIRE if Charte.contraste(Charte.IVOIRE, plaque.couleur) >= 3.0 else Charte.NUIT
+	var ink := Charte.VERT_CLAIR if nous else Charte.DORE
 	_crest(plaque, club, Rect2(22 if not right else 20, 8, 48, 48))
 	var short_name := str(G.identity(club).get("shortName", ""))
 	var plate_name := short_name if C.dense() and not short_name.is_empty() else G.club_name(club)
@@ -1064,7 +1069,7 @@ func _prochain(y: float) -> float:
 		if not str(info.title_name).is_empty(): title.name = str(info.title_name)
 		var moment := D.text(card, 24, 184, str(info["when"]), 24, C.IVORY, 600, RIGHT - 48)
 		if info.title_name == "UpcomingOpponent": moment.name = "UpcomingWhen"
-		if not str(info.venue).is_empty(): D.text(card, 24, 222, "Lieu · " + str(info.venue), 20, C.MUTED, 500, RIGHT - 48)
+		if not str(info.venue).is_empty(): D.text(card, 24, 222, "Lieu · " + str(info.venue), 20, C.MUTED, 500, RIGHT - 48, HORIZONTAL_ALIGNMENT_LEFT, true)
 		_principal(card, Rect2(24, 262, RIGHT - 48, 52), str(info.button).to_upper() + "  →", info.action, str(info.id))
 		return y + 330
 	var home: Dictionary = next_fixture.get("home", {})
@@ -1111,7 +1116,7 @@ func _prochain(y: float) -> float:
 		if target_available(app, "fixture", recorded_id):
 			var meeting := _lien(card, Rect2(18, 322, RIGHT - 36, 36), text, func(): open_target(app, "fixture", recorded_id), "CompetitionLastMeeting", 19, true)
 			meeting.tooltip_text = "Voir la rencontre"
-		else: D.text(card, 24, 346, text, 19, C.MUTED, 500, RIGHT - 48)
+		else: D.text(card, 24, 346, text, 19, C.MUTED, 500, RIGHT - 48, HORIZONTAL_ALIGNMENT_LEFT, true)
 	var live: bool = not app._live().is_empty()
 	var action := _principal(card, Rect2(24, 368, 330, 52), ("Rejoindre le match" if live else "Préparer le match").to_upper() + "  →", func(): app._navigate("Match" if live else "Préparation"), "CompetitionPrepareMatch")
 	action.tooltip_text = "Préparer le match"
@@ -1143,7 +1148,7 @@ func _calendrier_club(y: float) -> float:
 	D.text(card, RIGHT - 24, 40, "6 prochains", 17, C.MUTED, 500, 200, HORIZONTAL_ALIGNMENT_RIGHT)
 	_lien(card, Rect2(RIGHT - 264, 296, 250, 36), "Toute la saison →", func(): _switch("calendar"), "OpenFullCalendar", 20, false, HORIZONTAL_ALIGNMENT_RIGHT)
 	if fixtures.is_empty():
-		D.text(card, 24, 112, "Aucun rendez-vous programmé.", 22, C.MUTED, 500, RIGHT - 48)
+		D.text(card, 24, 112, "Aucun rendez-vous programmé.", 22, C.MUTED, 500, RIGHT - 48, HORIZONTAL_ALIGNMENT_LEFT, true)
 		return y + 340
 	for entry: Array in [[14, "J."], [74, "DATE"], [206, "ADVERSAIRE"], [444, "LIEU"], [546, "RANG"]]:
 		D.text(card, entry[0], 78, entry[1], 14, C.MUTED, 700, 150)
@@ -1202,7 +1207,7 @@ func _bas_gauche() -> void:
 		D.text(line, 904, 23, G.club_name(clubs[1]), 21, C.IVORY, 700, 420)
 		_entity_area(line, Rect2(300, 0, 440, 32), {"kind":"club", "id":str(clubs[0].get("id", ""))}, "RecentHome_%d" % i, "Ouvrir le club · " + G.club_name(clubs[0]))
 		_entity_area(line, Rect2(864, 0, 460, 32), {"kind":"club", "id":str(clubs[1].get("id", ""))}, "RecentAway_%d" % i, "Ouvrir le club · " + G.club_name(clubs[1]))
-	if results.is_empty(): D.text(recent, 24, 100, "Aucun résultat enregistré pour cette division.", 22, C.MUTED, 500, LEFT - 48)
+	if results.is_empty(): D.text(recent, 24, 100, "Aucun résultat enregistré pour cette division.", 22, C.MUTED, 500, LEFT - 48, HORIZONTAL_ALIGNMENT_LEFT, true)
 	y += height + GAP
 	var half := (LEFT - GAP) / 2.0
 	_leader(Rect2(0, y, half, 130), "MEILLEURE ATTAQUE", "pf", "Points marqués", true)
@@ -1224,7 +1229,7 @@ func _opening_strip(y: float) -> void:
 		var tile := D.rect(panel, Rect2(24 + i * (tile_w + 14), 62, tile_w, 134), Charte.PANNEAU_2, Charte.RAYON_CARTE)
 		D.text(tile, 18, 32, facts[i][0], 16, C.MUTED, 700, tile_w - 30)
 		D.text(tile, 18, 76, facts[i][1] if not str(facts[i][1]).is_empty() else "À venir", 34, C.IVORY, 800, tile_w - 30)
-		D.text(tile, 18, 112, facts[i][2], 17, C.MUTED, 500, tile_w - 30)
+		D.text(tile, 18, 112, facts[i][2], 17, C.MUTED, 500, tile_w - 30, HORIZONTAL_ALIGNMENT_LEFT, true)
 
 func _leader(area: Rect2, title: String, metric: String, caption: String, high: bool) -> void:
 	var panel := _panel(self, area, title, "", "CompetitionLeader_" + metric)
@@ -1239,7 +1244,7 @@ func _leader(area: Rect2, title: String, metric: String, caption: String, high: 
 			tied += 1
 	if not best.is_empty(): _crest(panel, best, Rect2(24, 56, 64, 64))
 	var club_name := D.text(panel, 106, 82, "Donnée à venir" if best.is_empty() else G.club_name(best), 26, C.IVORY, 700, area.size.x - 330)
-	D.text(panel, 106, 110, caption + (" · %d ex æquo" % tied if tied > 1 else ""), 18, C.MUTED, 500, area.size.x - 330)
+	D.text(panel, 106, 110, caption + (" · %d ex æquo" % tied if tied > 1 else ""), 18, C.MUTED, 500, area.size.x - 330, HORIZONTAL_ALIGNMENT_LEFT, true)
 	var value := D.text(panel, area.size.x - 24, 108, S.count_text(best.get(metric)), 56, C.IVORY, 800, 180, HORIZONTAL_ALIGNMENT_RIGHT)
 	value.add_theme_font_override("font", Charte.TITRE_EXTRA)
 	if not best.is_empty():
@@ -1277,7 +1282,7 @@ func _calendar() -> void:
 	left_bottom = TOP + panel_h
 	for i in visible.size():
 		_calendar_row(panel, visible[i], 148 + 48 * i, LEFT, false)
-	if visible.is_empty(): D.text(panel, 23, 219, "Aucune rencontre dans cette vue du calendrier.", 24, C.MUTED, 500, LEFT - 47)
+	if visible.is_empty(): D.text(panel, 23, 219, "Aucune rencontre dans cette vue du calendrier.", 24, C.MUTED, 500, LEFT - 47, HORIZONTAL_ALIGNMENT_LEFT, true)
 	_result_legend(panel, 24, panel_h - 48)
 
 ## Date courte « 21/11 » d'une rencontre (vide sans date ISO).
@@ -1429,7 +1434,7 @@ func _playoffs() -> void:
 		_icon(panel, "trophy", Rect2(22, 121, 51, 51), WARM)
 		D.text(panel, 89, 156, "CHAMPION · " + G.club_name(league.champion).to_upper(), 36, WARM, 800, 1180)
 		if league.get("finalist") is Dictionary:
-			D.text(panel, 89, 188, "Finaliste · " + G.club_name(league.finalist), 25, C.IVORY, 500, 1160)
+			D.text(panel, 89, 188, "Finaliste · " + G.club_name(league.finalist), 25, C.IVORY, 500, 1160, HORIZONTAL_ALIGNMENT_LEFT, true)
 	else:
 		D.text(panel, 21, 154, "Les affiches se précisent au fil de la saison.", 30, C.IVORY, 700, 1250)
 		# Les phases citées sont celles que le moteur a déjà publiées pour cette compétition (jamais de règlement figé).
@@ -1437,8 +1442,8 @@ func _playoffs() -> void:
 		for result: Dictionary in phases:
 			var stage_name := _phase(result).get_slice(" · ", 0)
 			if stage_name not in stages: stages.append(stage_name)
-		if not stages.is_empty(): D.text(panel, 22, 185, " · ".join(stages), 23, C.MUTED, 500, 1250)
-	if phases.is_empty(): D.text(panel, 23, 244, "Aucun résultat de phase finale conservé cette saison.", 27, C.MUTED, 500, 1230)
+		if not stages.is_empty(): D.text(panel, 22, 185, " · ".join(stages), 23, C.MUTED, 500, 1250, HORIZONTAL_ALIGNMENT_LEFT, true)
+	if phases.is_empty(): D.text(panel, 23, 244, "Aucun résultat de phase finale conservé cette saison.", 27, C.MUTED, 500, 1230, HORIZONTAL_ALIGNMENT_LEFT, true)
 	for i in phases.size():
 		var result: Dictionary = phases[i]
 		var card := _bande(panel, Rect2(16, 218 + i * 54, LEFT - 32, 47))
@@ -1481,7 +1486,7 @@ func _stats() -> void:
 		var quantity := S.count_text(own_row.get(["won", "drawn", "lost"][i]))
 		_result_badge(summary, Rect2(135 + 166 * i, 161, 148, 43), code, quantity + " " + str(S.RESULTS[code].plural).to_lower(), quantity != "—")
 	_recent_form(summary, own_row.get("form"), 132, 219)
-	D.text(summary, 357, 241, "Forme · du plus ancien au plus récent", 22, C.MUTED, 500, 718)
+	D.text(summary, 357, 241, "Forme · du plus ancien au plus récent", 22, C.MUTED, 500, 718, HORIZONTAL_ALIGNMENT_LEFT, true)
 	var rows_played := rows.filter(func(row: Dictionary): return float(row.get("played", 0)) > 0)
 	var aggregate := _section(panel, Rect2(16, 411, LEFT - 32, 294), "CHIFFRES DE LA PHASE DE POULES" if league.has("pools") else "CHIFFRES DE LA PHASE RÉGULIÈRE", "trophy", "CompetitionLeagueStats")
 	var games := 0
@@ -1500,7 +1505,7 @@ func _stats() -> void:
 		D.text(aggregate, x + 22, 170, values[i], 61, C.IVORY, 800, 253)
 	var caption := "Résultats de toutes les poules conservés par la carrière." if league.has("pools") else "Résultats et compteurs de championnat conservés par la carrière."
 	if _followed_from_afar(): caption = "Championnat en consultation : scores, essais et classement, sans notes individuelles."
-	D.text(aggregate, 28, 248, caption, 26, C.MUTED, 500, 1210)
+	D.text(aggregate, 28, 248, caption, 26, C.MUTED, 500, 1210, HORIZONTAL_ALIGNMENT_LEFT, true)
 
 
 func _page_state(key: String) -> Dictionary:

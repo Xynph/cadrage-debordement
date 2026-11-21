@@ -120,7 +120,7 @@ func _build() -> void:
 		var waiting := D.panel(self, Rect2(0, 396, WIDTH, 300), "Fiche du club", "shield", "", "ClubSheetLoading")
 		var failed: bool = app.get_meta("club_sheet_requested", "") == "%d|%s" % [club_id, stamp(app)] and not app.waiting
 		D.text(waiting, 40, 150, "La fiche n’a pas pu être préparée. Réessaie." if failed else "Préparation de la fiche du club…", 30, C.MUTED, 600, 1600)
-		if failed: D.button(waiting, Rect2(40, 200, 300, 56), "Réessayer", func(): app.remove_meta("club_sheet_requested"); request(app, club_id), true, "arrow", false, app.accent, "ClubSheetRetry")
+		if failed: D.button(waiting, Rect2(40, 200, 300, 56), "Réessayer", func(): app.remove_meta("club_sheet_requested"); request(app, club_id), false, "arrow", false, app.accent, "ClubSheetRetry")
 		else: request(app, club_id)
 		return
 	_hero()
@@ -258,7 +258,7 @@ func _form(parent: Control, origin: Vector2, form: Variant, side: float) -> void
 func _tabs() -> void:
 	for i in TABS.size():
 		var rect := Rect2(i * 300, 320, 288, 58)
-		var tab := D.button(self, rect, TABS[i], _select.bind(i), i == active, TAB_ICONS[i], false, app.accent, "ClubSheetTab%d" % i)
+		var tab := D.button(self, rect, TABS[i], _select.bind(i), false, TAB_ICONS[i], false, app.accent, "ClubSheetTab%d" % i)
 		D.tab_state(tab, rect.size, i == active, TAB_ICONS[i])
 		tab.toggle_mode = true
 		tab.button_pressed = i == active

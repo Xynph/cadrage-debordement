@@ -170,6 +170,12 @@ static func _style(fond: Color, bord: Color = Color.TRANSPARENT, epaisseur: int 
 		else: style.set_border_width_all(epaisseur)
 	return style
 
+static func _pilule(fond: Color, contour: Color = Color.TRANSPARENT) -> StyleBoxFlat:
+	var style := C.box(fond, contour, Charte.RAYON_PILULE, 12)
+	style.content_margin_top = 0
+	style.content_margin_bottom = 0
+	return style
+
 static func _titre(parent: Node, x: float, baseline: float, valeur: String, taille: int, couleur: Color = Charte.IVOIRE, largeur: float = 0.0, aligne: HorizontalAlignment = HORIZONTAL_ALIGNMENT_LEFT) -> Label:
 	var label := D.text(parent, x, baseline, valeur, taille, couleur, 700, largeur, aligne)
 	label.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
@@ -233,13 +239,21 @@ static func _bouton(parent: Node, rectangle: Rect2, libelle: String, action: Cal
 	var titre := mode in ["ivoire", "onglet"]
 	bouton.add_theme_font_override("font", Charte.TITRE_GRAS if titre else C.font(600))
 	bouton.add_theme_font_size_override("font_size", C.font_px(21 if titre else 18))
-	var texte: Color = Charte.FOND if mode == "ivoire" else Charte.IVOIRE if (mode == "lien" or choisi) else Charte.IVOIRE_2
+	var texte: Color = Charte.IVOIRE if (mode in ["lien", "ivoire"] or choisi) else Charte.IVOIRE_2
 	for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
 		bouton.add_theme_color_override(etat, texte)
 	bouton.add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)
 	var normal := _style(Charte.PANNEAU_3 if mode == "onglet" and choisi else Charte.IVOIRE if mode == "ivoire" else Color.TRANSPARENT, Charte.IVOIRE if choisi else Color.TRANSPARENT, 3, true)
 	var survol := _style(Charte.IVOIRE_2 if mode == "ivoire" else Charte.PANNEAU_3 if choisi else Charte.PANNEAU_2, Charte.IVOIRE if choisi else Color.TRANSPARENT, 3, true)
 	var inactif := _style(Charte.PANNEAU_3 if mode == "ivoire" else Color.TRANSPARENT)
+	if mode in ["onglet", "ivoire"]:
+		# Charte finale : pilule. Onglet actif = aplat crème ; bouton « ivoire » = pilule à contour (un seul aplat doré : Continuer).
+		var plein := mode == "onglet" and choisi
+		normal = _pilule(Charte.IVOIRE if plein else Color.TRANSPARENT, Charte.FILET if mode == "ivoire" else Color.TRANSPARENT)
+		survol = _pilule(Charte.IVOIRE if plein else Charte.PANNEAU_2, Charte.IVOIRE_3 if mode == "ivoire" else Color.TRANSPARENT)
+		inactif = _pilule(Color.TRANSPARENT, Charte.FILET if mode == "ivoire" else Color.TRANSPARENT)
+		for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
+			bouton.add_theme_color_override(etat, Charte.PANNEAU if plein else (Charte.IVOIRE_2 if mode == "onglet" and etat == "font_color" else Charte.IVOIRE))
 	for style: StyleBoxFlat in [normal, survol, inactif]:
 		style.content_margin_left = C.px(12)
 		style.content_margin_right = C.px(12)
@@ -252,7 +266,7 @@ static func _bouton(parent: Node, rectangle: Rect2, libelle: String, action: Cal
 	bouton.add_theme_stylebox_override("disabled", inactif)
 	bouton.add_theme_stylebox_override("focus", _style(Color.TRANSPARENT, Charte.IVOIRE, 2))
 	if not icone.is_empty():
-		bouton.icon = C.icon_texture(icone, Charte.FOND if mode == "ivoire" else Charte.IVOIRE)
+		bouton.icon = C.icon_texture(icone, Charte.PANNEAU if mode == "onglet" and choisi else Charte.IVOIRE)
 		bouton.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		bouton.expand_icon = true
 		bouton.add_theme_constant_override("icon_max_width", C.px(20))
@@ -568,7 +582,7 @@ static func _chart(app: Control, card: Panel, ledger: Array, largeur: float) -> 
 	var graph := LedgerPlot.new()
 	graph.name = "FinanceLedgerPlot"
 	graph.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	graph.trait_club = Charte.club_trait(app.accent)
+	graph.trait_club = Charte.VERT_CLAIR
 	graph.set_operations(recent)
 	card.add_child(graph)
 	var haut := 84.0
@@ -595,7 +609,7 @@ static func _chart(app: Control, card: Panel, ledger: Array, largeur: float) -> 
 			card.add_child(link)
 			D.place(link,Rect2(x-pas*.5,haut,pas,hauteur))
 	# Légende : forme et mot (série « nous » en trait du club, entrées pleines, sorties hachurées).
-	var trait_legende := _bloc(card, Rect2(480, 28, 30, 5), Charte.club_trait(app.accent))
+	var trait_legende := _bloc(card, Rect2(480, 28, 30, 5), Charte.VERT_CLAIR)
 	trait_legende.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_texte(card, 520, 38, "Solde cumulé de ces mouvements", 16, Charte.IVOIRE, 440)
 	_hachure_legende(card, 980, 24, true)

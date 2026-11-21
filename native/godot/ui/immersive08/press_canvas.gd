@@ -517,16 +517,18 @@ func _mark_tabs() -> void:
 		var bouton := controls[i]
 		for etat in ["normal", "hover", "pressed", "focus", "hover_pressed"]:
 			var style := StyleBoxFlat.new()
-			style.bg_color = C.SELECTED if choisi else (C.RAISED if etat in ["hover", "hover_pressed"] else Color(0, 0, 0, 0))
-			style.set_corner_radius_all(0)
-			style.border_color = C.IVORY
-			style.border_width_bottom = maxi(2, C.px(4)) if choisi or etat == "focus" else 0
+			# Charte finale : onglet en pilule, actif = aplat crème (texte panneau).
+			style.bg_color = Charte.IVOIRE if choisi else (C.RAISED if etat in ["hover", "hover_pressed"] else Color(0, 0, 0, 0))
+			style.set_corner_radius_all(Charte.RAYON_PILULE)
+			style.anti_aliasing = true
+			style.border_color = Charte.OR
+			if etat == "focus": style.set_border_width_all(2)
 			style.content_margin_left = C.px(16)
 			style.content_margin_right = C.px(16)
 			bouton.add_theme_stylebox_override(etat, style)
 		for cle in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
-			bouton.add_theme_color_override(cle, C.IVORY if choisi else C.MUTED)
-		bouton.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE if choisi else C.BOLD)
+			bouton.add_theme_color_override(cle, Charte.PANNEAU if choisi else C.MUTED)
+		bouton.add_theme_font_override("font", Charte.TITRE_GRAS if choisi else C.BOLD)
 		bouton.add_theme_font_size_override("font_size", maxi(14, C.px(24)))
 	if division_chooser != null: division_chooser.visible = active == 0
 	_style_action()
