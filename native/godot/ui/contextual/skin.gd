@@ -108,7 +108,7 @@ static func heading(parent: Node, club: Dictionary, title: String, subtitle: Str
 	G.fill(words)
 	row.add_child(words)
 	words.add_child(label(title, 25, GOLD))
-	words.add_child(label(subtitle, 13))
+	if not subtitle.is_empty(): words.add_child(label(subtitle, 13))
 
 static func clear(parent: Node) -> void:
 	for child in parent.get_children():

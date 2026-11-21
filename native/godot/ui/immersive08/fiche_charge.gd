@@ -43,8 +43,7 @@ static func build(app: Control, page: Control, player: Dictionary) -> void:
 	var resume := "%s · condition %s %% · charge %s / 100" % [str(player.get("pos", "")), G.n(player.get("condition", 0)), G.n(player.get("physicalLoad", 0))]
 	Kit.texte(bloc, 28, 46, resume, Charte.IVOIRE, 1240, 20)
 	var raison: String = app.SquadViews.player_load_unavailable_reason(app)
-	var aide := Kit.texte(bloc, 28, 84, raison if not raison.is_empty() else "La charge individuelle sera appliquée à la prochaine préparation.", Charte.D if not raison.is_empty() else Charte.IVOIRE_2, 1240, 18)
-	if not raison.is_empty(): aide.name = "PlayerLoadUnavailableReason"
+	if not raison.is_empty(): Kit.texte(bloc, 28, 84, raison, Charte.D, 1240, 18).name = "PlayerLoadUnavailableReason"
 	D.line(bloc, Vector2(28, 104), Vector2(1272, 104), Charte.FILET)
 	var actuel := str(player.get("loadPlan", "collective"))
 	for i in MODES.size():
@@ -58,7 +57,7 @@ static func build(app: Control, page: Control, player: Dictionary) -> void:
 		D.line(ligne, Vector2(0, 51), Vector2(1260, 51), Charte.FILET)
 		if choisi: Kit.marqueur(ligne, Rect2(6, 8, 4, 36))
 		D.text(ligne, 22, 33, str(mode[1]), 20, Charte.IVOIRE, 700, 340, HORIZONTAL_ALIGNMENT_LEFT, true).add_theme_font_override("font", Kit.texte_gras())
-		Kit.texte(ligne, 380, 33, str(mode[2]), Charte.IVOIRE_2, 720, 18)
+		ligne.tooltip_text = str(mode[2])
 		Kit.texte(ligne, 1240, 33, "actuel" if choisi else "Choisir →", Charte.IVOIRE if choisi else Charte.IVOIRE, 160, 18, HORIZONTAL_ALIGNMENT_RIGHT)
 		ligne.disabled = not raison.is_empty()
 		if ligne.disabled: ligne.focus_mode = Control.FOCUS_NONE
