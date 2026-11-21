@@ -10,6 +10,7 @@ const SeasonLabel = preload("res://ui/season_label.gd")
 const Portraits = preload("res://ui/game_skin.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
+const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
 const U = preload("res://ui/management_state.gd")
 const Press = preload("res://ui/press_view.gd")
 const Link = preload("res://ui/entity_link.gd")
@@ -408,7 +409,7 @@ static func _tasks(app: Control) -> Array:
 	if not contracts.is_empty(): tasks.append(["Examiner %s de contrat en fin de saison" % P.plural(contracts.size(), "échéance", "échéances"), "Effectif"])
 	if P.group(app.model).injured > 0: tasks.append(["Consulter les indisponibilités de l’effectif", "Effectif"])
 	var reports: Array = app.model.get("decisions", {}).get("recruitment", {}).get("reports", [])
-	if not reports.is_empty(): tasks.append(["Consulter %d rapport(s) de recrutement" % reports.size(), "Recrutement"])
+	if not reports.is_empty(): tasks.append(["Consulter %s de recrutement" % P.plural(reports.size(), "rapport", "rapports"), "Recrutement"])
 	return tasks
 
 static func heading(row: Control, app: Control) -> Label:
@@ -425,23 +426,35 @@ static func heading(row: Control, app: Control) -> Label:
 	if counts.urgent > 0:
 		var after := x + C.font(500).get_string_size(line + " · ", HORIZONTAL_ALIGNMENT_LEFT, -1, 19).x
 		D.text(row,after,56,"! %d urgent%s" % [counts.urgent, "" if counts.urgent == 1 else "s"],19,C.ALERT,700,260).name = "InboxPageUrgent"
-	# En haut à droite : volume de la semaine et « Tout marquer comme lu → » (agit sur les courriers d'information).
+	# En haut à droite : volume de la semaine, archives et « Tout lu » (agit sur les courriers d'information).
 	var today := _unix(_today(app))
 	var week := messages.filter(func(message: Dictionary) -> bool:
 		var day := _day(message)
 		return not day.is_empty() and today - _unix(day) <= 7 * 86400 and today - _unix(day) >= 0).size()
-	D.text(row,PAGE.x - 24,50,"%s cette semaine · %s" % [P.plural(week,"message","messages"), P.plural(messages_archived(app),"archivé","archivés")],17,C.MUTED,500,640,HORIZONTAL_ALIGNMENT_RIGHT).name = "InboxPageVolume"
+	var state := _state(app)
+	var archived := messages_archived(app)
 	var pending := markable_read(app, messages).size()
-	var all_read := C.button("Tout marquer comme lu →" if pending > 0 else "Tout est lu", func():
+	# Volume de la semaine et archives en tuiles (gros chiffre + légende) ; les archives ouvrent leur dossier.
+	var bandeau := C.h(10)
+	bandeau.name = "InboxPageVolume"
+	bandeau.add_child(Pastilles.tuile(str(week), "cette semaine", C.Charte.MORAL, C.Charte.PANNEAU_2, 26, "InboxPageWeekTile", true))
+	var ouvrir_archives := func():
+		state.folder = 3
+		state.category = "Tous"
+		state.activity_filter = "all"
+		state.scroll = 0
+		_redraw(app, "InboxFolder3")
+	bandeau.add_child(Pastilles.tuile(str(archived), "archivé" if archived < 2 else "archivés", C.Charte.IVOIRE if archived == 0 else C.Charte.REPOS, C.Charte.PANNEAU_2, 26, "InboxPageArchiveTile", true, Callable() if archived == 0 else ouvrir_archives))
+	var all_read := C.button("Tout lu ✓" if pending > 0 else "Tout est lu", func():
 		mark_all_read(app, _messages(app))
 		_redraw(app, "InboxMarkAllRead"), false, app.accent)
 	all_read.name = "InboxMarkAllRead"
 	C.style_bouton_lien(all_read, 19)
 	all_read.alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	all_read.disabled = pending == 0
-	all_read.tooltip_text = "Marque lus les courriers d'information ; les décisions à prendre restent à faire."
-	row.add_child(all_read)
-	D.place(all_read, Rect2(PAGE.x - 24 - 360, 66, 360, 36))
+	all_read.tooltip_text = "Tout marquer comme lu : les courriers d'information ; les décisions à prendre restent à faire."
+	bandeau.add_child(all_read)
+	Pastilles.poser_a_droite(row, bandeau, PAGE.x - 24, 50)
 	return title
 
 
@@ -1687,9 +1700,7 @@ static func _send_row(card: Panel, app: Control, state: Dictionary, message: Dic
 	send.disabled = letter.is_empty() or app.waiting
 	C.style_bouton_contour(send, 21)
 	send.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	if letter.is_empty():
-		D.text(card, PAD + 380, top + 30, "Un clic sur une carte choisit ; rien ne part sans confirmation.", 17, C.MUTED, 500, minf(700.0, _reading_width() - 380), HORIZONTAL_ALIGNMENT_LEFT, true)
-		return
+	if letter.is_empty(): return
 	var cancel := D.button(card, Rect2(PAD + 380, top, 150, _h(46)), "Annuler", func():
 		state.reply_pick.erase(str(mail.id))
 		_redraw(app, "InboxClubMailReply_" + picked), false, "arrow", true, app.accent, "InboxClubMailCancel")

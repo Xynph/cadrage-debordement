@@ -6,6 +6,7 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const Rules = preload("res://ui/playbook_view.gd")
 const Charte = preload("res://ui/charte.gd")
+const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
 const GREEN = Charte.VERT_CLAIR
 const GOLD = Charte.DORE
 const TABS = ["Les quatre zones", "Phases arrêtées", "Lecture du match"]
@@ -89,8 +90,10 @@ func _header() -> void:
 	D.place(shadow, Rect2(1030, 1, 480, 192))
 	C.veil(shadow)
 	D.text(hero, 26, 36, "LE CARNET TACTIQUE", 27, GOLD, 700, 771)
-	app.heading = D.text(hero, 24, 102, "Un plan pour chaque terrain.", 69, C.IVORY, 800, 1132)
-	D.text(hero, 28, 145, "Consignes par zone · Mêlées · Touches · Renvois", 25, C.IVORY, 500, 1059)
+	app.heading = D.text(hero, 24, 112, "Plan de jeu", 69, C.IVORY, 800, 1132)
+	# La règle des consignes locales passe derrière un « i » à côté du surtitre.
+	var regle := _notice_text()
+	if not regle.is_empty() and available: Pastilles.poser(hero, Pastilles.info(regle, "i", "PlaybookRuleInfo"), 300, 14)
 	var general: Dictionary = data.get("general", {})
 	_metric(hero, Rect2(28, 156, 490, 30), "Attaque principale", general.get("attackLabel", "—"), GREEN)
 	_metric(hero, Rect2(530, 156, 500, 30), "Défense principale", general.get("defenceLabel", "—"), GOLD)
@@ -124,10 +127,11 @@ func _zones() -> void:
 			var top := 109 + j * 140
 			_metric(tile, Rect2(22, top, 702, 29), "Attaque" if j == 0 else "Défense", _option_title(options, effective), GREEN if j == 0 else GOLD)
 			_selector(tile, C.reach_rect(Rect2(22, top + 38, 703, 50)), key, options, chosen, str(zone.id))
-			var label := _description(options, chosen)
+			# « Suivre le choix général » est dit par « Plan principal » : seule une consigne locale se décrit.
+			var label := "" if chosen == "inherit" else _description(options, chosen)
 			# Petite fenêtre : au plancher de 12 px, deux lignes espacées de 23 unités se touchent ; une seule ligne,
 			# terminée par des points de suspension si la description dépasse.
-			var lines: Array = [label] if C.dense() else Array(D.words(label, 82, 2))
+			var lines: Array = [] if label.is_empty() else ([label] if C.dense() else Array(D.words(label, 82, 2)))
 			for k in lines.size(): D.text(tile, 24, top + 112 + k * 23, lines[k], 20, C.MUTED, 500, 700)
 	_field(zones)
 	_notice(zone_page, 872)
@@ -147,7 +151,6 @@ func _field(zones: Array) -> void:
 		D.rect(field, Rect2(53, y - 24, 414, 49), Color("103127"), Charte.RAYON_PETIT, GREEN if field.current == i else Color("45675a"))
 		D.text(field, 260, y + 11, "%02d  ·  %s" % [i + 1, zones[i].label], 29, C.IVORY, 700, 391, HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(panel, 346, 763, "TON EN-BUT", 21, GREEN, 700, 602, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(panel, 346, 797, "Orientation selon ton équipe", 21, C.MUTED, 500, 602, HORIZONTAL_ALIGNMENT_CENTER)
 
 func _phases() -> void:
 	var phases: Array = data.get("setPieces", [])
@@ -203,11 +206,18 @@ func _advice() -> void:
 	D.button(scene, Rect2(21, 729, 709, 62), "Ouvrir le match", func(): app._navigate("Match"), false, "arrow", false, Color("09673e"), "PlaybookGoMatch")
 	_notice(advice_page, 872)
 
+func _notice_text() -> String:
+	return Copy.notice("playbook", data.get("notice", "")) if available else str(data.get("reason", ""))
+
+## La règle d'usage est derrière le « i » du surtitre ; la bande ne s'affiche que pour une alerte (carnet indisponible)
+## ou un traitement en cours.
 func _notice(parent: Node, y: int) -> void:
-	var tile := D.panel(parent, Rect2(15, y, 2216, 60), "", "", "", "PlaybookNotice")
-	var text := Copy.notice("playbook", data.get("notice", "")) if available else str(data.get("reason", ""))
+	var text := _notice_text()
+	if available: return
 	if text.is_empty() and app.waiting: text = "Décision en cours de traitement…"
-	D.text(tile, 21, 41, text, 24, C.MUTED if available else C.ALERT, 500, 2173)
+	if text.is_empty(): return
+	var tile := D.panel(parent, Rect2(15, y, 2216, 60), "", "", "", "PlaybookNotice")
+	D.text(tile, 21, 41, text, 24, C.ALERT, 500, 2173)
 
 func _selector(parent: Node, rectangle: Rect2, key: String, options: Array, selected: String, zone: String = "") -> void:
 	var control := OptionButton.new()
