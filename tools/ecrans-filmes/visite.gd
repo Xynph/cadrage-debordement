@@ -28,6 +28,7 @@ const ROUTES_GEOMETRIE := ["Réception","Bureau","Effectif","Composition","Prép
 const HORS_CARRIERE := ["Accueil", "Création", "Packs"]
 const EXTRAS := [
 	{"id": "calendrier-semaine", "libelle": "Calendrier (semaine)", "type": "calendrier_semaine"},
+	{"id": "entrainement-semaine", "libelle": "Entraînement · onglet Semaine", "type": "entrainement_onglet", "onglet": 0},
 	{"id": "entrainement-groupes", "libelle": "Entraînement · onglet Groupes", "type": "entrainement_onglet", "onglet": 1},
 	{"id": "salle-entrainement", "libelle": "Observer la préparation (salle d'entraînement)", "type": "salle_entrainement"},
 	{"id": "salle-entrainement-joueur", "libelle": "Observer la préparation · petite fenêtre d'un joueur", "type": "salle_entrainement", "joueur": true},
