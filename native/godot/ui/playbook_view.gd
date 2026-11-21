@@ -1,6 +1,8 @@
 extends RefCounted
 const Copy = preload("res://ui/management_copy.gd")
 const G = preload("res://ui/carnet_skin.gd")
+const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
+const Charte = preload("res://ui/charte.gd")
 
 static func _choose(app: Control, key: String, value: String, zone: String = "", staff: bool = false) -> void:
 	var payload := {"context":app.model.clubLife.playbook.context.duplicate(true), "key":key, "value":value}
@@ -95,13 +97,39 @@ static func _phases(app: Control, parent: Container, data: Dictionary, available
 
 static func _advice(app: Control, parent: Container, data: Dictionary, available: bool) -> void:
 	if not data.inMatch or not data.staffAdvice is Dictionary:
-		parent.add_child(G.wrap("La lecture du rapport de force apparaîtra pendant le match. Prépare d’abord tes zones et tes phases arrêtées ; tu pourras les ajuster en pause.", 17))
+		# Avant le match : la lecture arrive au coup d'envoi ; d'ici là, zones et phases arrêtées se préparent (un clic y mène).
+		var attente := _rangee(parent)
+		attente.name = "PlaybookAdviceAttente"
+		attente.add_child(Pastilles.pastille("Pendant le match", Pastilles.BLEU, "clock", "La lecture du rapport de force apparaîtra pendant le match ; ajustable en pause.", 20, "PlaybookAdvicePendant"))
+		attente.add_child(Pastilles.pastille("Zones", Pastilles.VERT, "flag", "Préparer les quatre zones", 20, "PlaybookAdviceZones", func(): _onglet(app, 0)))
+		attente.add_child(Pastilles.pastille("Phases arrêtées", Pastilles.VERT, "ball", "Préparer les phases arrêtées", 20, "PlaybookAdvicePhases", func(): _onglet(app, 1)))
+		# Ce qui est prêt pour le coup d'envoi : une tuile par zone (attaque appliquée) et par phase arrêtée.
+		var zones := _rangee(parent)
+		zones.name = "PlaybookAdvicePretZones"
+		for zone: Dictionary in data.get("zones", []):
+			zones.add_child(Pastilles.tuile(_libelle(data.get("attackOptions", []), str(zone.get("effectiveAttack", ""))), str(zone.get("label", "")), Pastilles.VERT if zone.get("attack") != "inherit" else Charte.IVOIRE, Charte.PANNEAU_2, 24, "PlaybookAdvicePret_" + str(zone.get("id", "")), false, func(): _onglet(app, 0)))
+		var phases := _rangee(parent)
+		phases.name = "PlaybookAdvicePretPhases"
+		for phase: Dictionary in data.get("setPieces", []):
+			phases.add_child(Pastilles.tuile(_libelle(phase.get("options", []), str(phase.get("selected", ""))), str(phase.get("label", "")), Charte.IVOIRE, Charte.PANNEAU_2, 24, "PlaybookAdvicePret_" + str(phase.get("key", "")), false, func(): _onglet(app, 1)))
 		return
 	var advice: Dictionary = data.staffAdvice
 	var card := G.panel(parent)
-	card.add_child(G.section("Ce que voit l’adjoint", "Un conseil de situation, jamais un changement automatique."))
-	for field: String in ["scoreNote", "clockNote"]:
-		if not str(advice.get(field, "")).is_empty(): card.add_child(G.wrap(str(advice[field]), 15))
+	var tete := _rangee(card)
+	tete.add_child(G.label("Ce que voit l’adjoint", 19, G.INK, true))
+	tete.add_child(Pastilles.info("Un conseil de situation, jamais un changement automatique.", "i", "PlaybookAdviceInfo"))
+	# Rapport de force : tuiles chiffrées et pastilles (score, météo, exclusions).
+	var terrain := _rangee(card)
+	terrain.name = "PlaybookAdviceTerrain"
+	if advice.has("ours") and advice.has("theirs"):
+		var ecart := int(advice.ours) - int(advice.theirs)
+		terrain.add_child(Pastilles.tuile("%d / %d" % [int(advice.ours), int(advice.theirs)], "joueurs sur le terrain", Pastilles.VERT if ecart > 0 else Pastilles.ROUGE if ecart < 0 else Charte.IVOIRE, Charte.PANNEAU_2, 30, "PlaybookAdviceJoueurs"))
+	if advice.has("remaining"): terrain.add_child(Pastilles.tuile(str(int(advice.remaining)), "min restantes", Pastilles.TURQUOISE, Charte.PANNEAU_2, 30, "PlaybookAdviceMinutes"))
+	var etats := _rangee(card)
+	var score := str(advice.get("scoreNote", ""))
+	if not score.is_empty(): etats.add_child(Pastilles.pastille(score.left(1).to_upper() + score.substr(1), Pastilles.BLEU, "trophy", "", 18, "PlaybookAdviceScore"))
+	if not str(advice.get("weather", "")).is_empty(): etats.add_child(Pastilles.pastille(str(advice.weather), Charte.IVOIRE_2, "cloud", "", 18, "PlaybookAdviceMeteo"))
+	if not str(advice.get("clockNote", "")).is_empty(): etats.add_child(Pastilles.pastille(_exclusion(str(advice.clockNote)), Pastilles.ORANGE, "clock", str(advice.clockNote), 18, "PlaybookAdviceExclusion"))
 	var suggestions: Array = []
 	var seen: Dictionary = {}
 	for suggestion: Dictionary in advice.get("suggestions", []) + advice.get("zoneSuggestions", []):
@@ -114,10 +142,38 @@ static func _advice(app: Control, parent: Container, data: Dictionary, available
 		var label := str(suggestion.value)
 		for option: Dictionary in options:
 			if option.id == suggestion.value: label = str(option.label)
-		card.add_child(G.label(("Attaque : " if suggestion.kind == "attack" else "Défense : ") + label, 19, G.INK, true))
+		var conseil := _rangee(card)
+		var attaque: bool = suggestion.kind == "attack"
+		conseil.add_child(Pastilles.pastille(("Attaque · " if attaque else "Défense · ") + label, Pastilles.VERT if attaque else Pastilles.BLEU, "tactic" if attaque else "shield", str(suggestion.get("reason", "")), 19, "PlaybookAdviceConseil_" + str(suggestion.kind)))
 		for zone: Dictionary in data.zones:
 			if zone[suggestion.kind] == "inherit" or zone[suggestion.kind] == suggestion.value: continue
 			var button := G.button("ADAPTER « %s » → %s" % [zone.label, label], func(): _choose(app, str(suggestion.kind), str(suggestion.value), str(zone.id), true))
 			button.disabled = not available
 			card.add_child(button)
-	if suggestions.is_empty(): card.add_child(G.wrap("Aucune consigne supplémentaire recommandée pour l’instant. Garde ta lecture du terrain.", 15))
+	if suggestions.is_empty(): card.add_child(Pastilles.pastille("Plan conforme", Pastilles.VERT, "check", "Aucune consigne supplémentaire recommandée pour l’instant.", 19, "PlaybookAdviceConforme"))
+
+## « Carton jaune : fin d'exclusion dans 4 minute(s)… » → « Jaune · 4 min » ; la phrase complète reste en infobulle.
+static func _exclusion(note: String) -> String:
+	var minutes := RegEx.create_from_string("(\\d+) minute").search(note)
+	var duree := (" · %s min" % minutes.get_string(1)) if minutes != null else ""
+	if note.begins_with("Carton jaune"): return "Jaune" + duree
+	if note.begins_with("Rouge remplaçable"): return "Rouge remplaçable" + duree
+	if note.begins_with("Rouge définitif"): return "Rouge définitif"
+	return note
+
+static func _libelle(options: Array, id: String) -> String:
+	for option: Dictionary in options:
+		if str(option.get("id", "")) == id: return str(option.get("label", id))
+	return "—"
+
+static func _onglet(app: Control, index: int) -> void:
+	app.management_ui.playbook_tab = index
+	var onglets := app.find_child("PlaybookTabs", true, false) as TabContainer
+	if onglets != null: onglets.current_tab = index
+
+static func _rangee(parent: Node) -> HFlowContainer:
+	var rangee := HFlowContainer.new()
+	rangee.add_theme_constant_override("h_separation", 10)
+	rangee.add_theme_constant_override("v_separation", 8)
+	parent.add_child(rangee)
+	return rangee
