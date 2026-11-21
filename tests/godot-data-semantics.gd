@@ -22,6 +22,7 @@ class AppFixture extends Control:
  var catalogue: Array = []
  var route := "Bureau"
  var commands := 0
+ var navigation_controller: Node = null
  func _navigate(next: String): route = next
  func _render(): pass
  func _command(_name: String, _payload: Dictionary = {}): commands += 1
@@ -304,8 +305,23 @@ func real_standings(viewport: Vector2i, league: Dictionary) -> void:
  check(region!=null,"Zone réelle du classement présente")
  check(not displayed.is_empty(),"Vraies lignes du championnat présentes")
  if region==null or displayed.is_empty():return
- if viewport.y>=1080:check(displayed.size()==rows.size(),"Toute la division %s visible à %s"%[league.id,viewport])
- if viewport.y==720:check(displayed.size()<rows.size(),"720p garde la pagination de division")
+ if viewport.y>=1080 or scroll==null:check(displayed.size()==rows.size(),"Toute la division %s visible à %s"%[league.id,viewport])
+ # Tout le classement sur la page, qui défile (décision de Léo, plus de pagination) : en 720p, chaque ligne
+ # s'amène entière dans le défilement de la page.
+ if viewport.y==720 and scroll==null:
+  var page_scroll: ScrollContainer=null
+  var parent: Node=native_rows.get_parent() if native_rows!=null else null
+  while parent!=null and page_scroll==null:
+   if parent is ScrollContainer:page_scroll=parent
+   parent=parent.get_parent()
+  check(page_scroll!=null,"720p : le classement défile avec la page")
+  if page_scroll!=null:
+   for row: Control in displayed:
+    page_scroll.ensure_control_visible(row)
+    await settle_app()
+    check(page_scroll.get_global_rect().grow(1).encloses(row.get_global_rect()) and row.is_visible_in_tree(),"720p : ligne %s amenée entière à l'écran"%row.name)
+   page_scroll.scroll_vertical=0
+   await settle_app()
  for i in displayed.size():
   check(displayed[i].get_meta("club_id")==rows[i].id,"Ordre natif des clubs conservé")
   check(region.get_global_rect().grow(1).encloses(displayed[i].get_global_rect()),"Ligne entière dans la zone visible")

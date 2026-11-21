@@ -170,20 +170,24 @@ func executer() -> void:
 		verifier((noeud(panneau, "PlayerSaleToggle") as Button).disabled, "pas de remise en vente d’un joueur déjà vendu")
 	await capturer("vente-fiche-accord.png")
 
-	# 5. Effectif : état de vente et boutons dans le dossier du joueur.
+	# 5. Effectif : depuis la fiche complète (#1013), la ligne du joueur ouvre directement sa fiche, qui porte l'état
+	# de vente et ses boutons (plus de dossier « joueur choisi » dans la liste).
 	app.set_meta("immersive08_full_player", false)
 	app.selected_player = str(attendu.propose)
 	app._navigate("Effectif"); await poser(20)
-	var etat := noeud(app, "ProfileSaleStatus") as Label
-	var bascule: Button = (noeud(app, "SquadSaleAction") if etat == null else noeud(app, "ProfileSaleToggle")) as Button
-	verifier(etat != null or noeud(app, "SquadSaleAction") != null, "état de vente dans l’Effectif")
-	if etat != null:
-		verifier(etat.text.begins_with("Offre reçue"), "Effectif : " + etat.text)
-		verifier(taille(etat) >= TAILLE_MIN, "Effectif : texte lisible (%d px)" % taille(etat))
-		verifier(bascule != null and bascule.text == "RETIRER DU MARCHÉ", "Effectif : bouton retirer")
-		verifier(noeud(app, "ProfileSaleOffers") != null, "Effectif : accès aux offres")
-	elif bascule != null:
-		verifier(bascule.text == "Voir l’offre", "Effectif (grand écran) : " + bascule.text)
+	var ligne := noeud(app, "SquadPlayer" + str(attendu.propose).replace(":", "_")) as Button
+	verifier(ligne != null and ligne.is_visible_in_tree() and not ligne.disabled, "Effectif : ligne du joueur proposé, cliquable")
+	if ligne != null:
+		ligne.pressed.emit(); await poser(20)
+		var etat := noeud(app, "PlayerSalePanel") as Control
+		verifier(etat != null and etat.is_visible_in_tree(), "Effectif : la ligne ouvre la fiche avec l’état de vente")
+		if etat != null:
+			verifier(texte(etat, "PlayerSaleStatus").begins_with("Offre reçue"), "Effectif → fiche : " + texte(etat, "PlayerSaleStatus"))
+			var bascule := noeud(etat, "PlayerSaleToggle") as Button
+			verifier(bascule != null and bascule.is_visible_in_tree() and not bascule.disabled and bascule.text == "Retirer du marché", "Effectif → fiche : bouton retirer")
+			var offres := noeud(etat, "PlayerSaleOffers") as Button
+			verifier(offres != null and offres.is_visible_in_tree() and not offres.disabled, "Effectif → fiche : accès aux offres")
+			textes_lisibles(etat, "Effectif → fiche · marché")
 	await capturer("vente-effectif.png")
 
 	# 6. Courrier « offre_transfert » : « Ouvrir · Offres reçues » mène à Recrutement et ouvre la boîte.
