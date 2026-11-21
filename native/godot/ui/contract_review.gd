@@ -6,6 +6,7 @@ const Pages = preload("res://ui/immersive08/recruitment_pages.gd")
 const U = preload("res://ui/management_state.gd")
 const G = preload("res://ui/game_skin.gd")
 const Sales = preload("res://ui/player_sales_view.gd")
+const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 const STATUS_OPTIONS := ["Tous","Prolongation accessible","Discussion en cours","Échanges clos","Sans contrat renseigné"]
 var app: Control
 var state: Dictionary
@@ -15,14 +16,23 @@ var _count: Label
 var _scroll: ScrollContainer
 var _season: OptionButton
 var _position: OptionButton
+var _status_choice: OptionButton
+var _precision_choice: OptionButton
 var _headers: Dictionary = {}
 ## Colonnes du tableau : [clé, largeur minimale, poids]. Les poids reprennent les anciennes largeurs fixes (1920) ; le tableau
 ## se partage la largeur du panneau au lieu de la dépasser (1920, 1280, échelle d'interface 90-130 %).
 const COLS := [["name", 126, 264], ["pos", 76, 160], ["rating", 40, 72], ["potential", 62, 84], ["age", 34, 60], ["contractEnd", 56, 145], ["salary", 62, 145], ["minutes", 34, 95], ["status", 62, 110], ["renewal", 44, 100], ["actions", 150, 276]]
 const COL_GAP := 4
+## Couleurs franches par sens (jamais seules : chaque couleur accompagne un chiffre, une icône ou un mot).
+const ORANGE := Color("e0a04a")
+const VERT := Color("7fbf7a")
+const BLEU := Color("5b9bd5")
+const CITRON := Color("d4e35c")
+const ROUGE := Color("d9534a")
 ## Largeur de la page en dessous de laquelle le panneau « Échéances » passe sous le tableau.
 const LARGEUR_DEUX_COLONNES := 1500.0
 var _columns: BoxContainer
+var _fenetre: Control
 const SORT_KEYS := ["name","pos","rating","potential","age","contractEnd","salary","minutes","status","renewal"]
 
 static func build(owner_app: Control) -> Control:
@@ -156,22 +166,8 @@ func _delegation_staff(delegation: Dictionary) -> void:
 	detail.name = "ContractDelegationDetail"
 	detail.visible = false
 	row.add_child(detail)
-	var chip := PanelContainer.new()
-	chip.name = "ContractDelegationChip"
-	chip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	chip.add_theme_stylebox_override("panel", Charte.style_pilule(Charte.PANNEAU_3, Charte.FILET, 12, 4))
-	var chip_row := HBoxContainer.new()
-	chip_row.add_theme_constant_override("separation", 8)
-	chip.add_child(chip_row)
-	chip_row.add_child(C.icon("people", 18, C.MUTED))
-	var chip_text := _label(delegation_chip(app.model, box.button_pressed), 16, C.IVORY)
-	chip_text.autowrap_mode = TextServer.AUTOWRAP_OFF
-	chip_row.add_child(chip_text)
-	chip_row.add_child(C.icon("info", 16, C.MUTED))
-	chip.tooltip_text = detail.text
-	chip.mouse_filter = Control.MOUSE_FILTER_STOP
-	for part: Control in [chip_row]: part.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	chip_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var chip := _chip_button("ContractDelegationChip", "people", C.MUTED, delegation_chip(app.model, box.button_pressed), detail.text, func(): app._navigate("Staff"), true)
+	var chip_text := chip.get_meta("label") as Label
 	row.add_child(chip)
 	box.toggled.connect(func(value: bool):
 		# Même mécanisme que les autres réglages de délégation (staff_view.gd) : décision optimiste côté interface.
@@ -223,7 +219,7 @@ func _label(text: String, size: int = 18, color: Color = C.IVORY, width: float =
 
 ## Une colonne du tableau : largeur minimale réduite, le reste partagé selon le poids (même règle en-tête et lignes).
 ## Tuile de chiffre (libellé + nombre), cliquable : ouvre le marché des transferts.
-func _tile(caption: String, value: int, id: String, tip: String) -> Button:
+func _tile(caption: String, value: int, id: String, tip: String, color: Color, glyph: String) -> Button:
 	var tile := Button.new()
 	tile.name = id
 	tile.custom_minimum_size = Vector2(0, 66)
@@ -240,11 +236,18 @@ func _tile(caption: String, value: int, id: String, tip: String) -> Button:
 	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	tile.add_child(content)
 	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var number := _label(str(value), 26, C.IVORY)
+	var tint := color if value > 0 else Charte.GRIS_VERT
+	var top_line := HBoxContainer.new()
+	top_line.alignment = BoxContainer.ALIGNMENT_CENTER
+	top_line.add_theme_constant_override("separation", 8)
+	top_line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	content.add_child(top_line)
+	top_line.add_child(C.icon(glyph, 24, tint))
+	var number := _label(str(value), 28, tint)
 	number.autowrap_mode = TextServer.AUTOWRAP_OFF
 	number.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	number.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	content.add_child(number)
+	top_line.add_child(number)
 	var name_label := _label(caption, 16, C.MUTED)
 	name_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -252,6 +255,178 @@ func _tile(caption: String, value: int, id: String, tip: String) -> Button:
 	content.add_child(name_label)
 	tile.pressed.connect(func(): Pages.ouvrir(app, "offres"))
 	return tile
+
+## Contenu non cliquable lui-même : tous les enfants laissent passer la souris au bouton qui les porte.
+func _ignore_mouse(node: Node) -> void:
+	if node is Control: (node as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for child in node.get_children(): _ignore_mouse(child)
+
+## Bouton à contenu libre (tuile, pastille, ligne de barre) : fond teinté, survol, focus en anneau, curseur main.
+func _link_button(id: String, content: Control, fill: Color, tip: String, action: Callable, radius: int = Charte.RAYON_CARTE, margin: int = 10) -> Button:
+	var link := Button.new()
+	link.name = id
+	link.tooltip_text = tip
+	link.focus_mode = Control.FOCUS_ALL
+	link.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	link.add_theme_stylebox_override("normal", C.box(fill, Color.TRANSPARENT, radius, margin))
+	link.add_theme_stylebox_override("hover", C.box(fill.lerp(Color.WHITE, 0.06), Color.TRANSPARENT, radius, margin))
+	link.add_theme_stylebox_override("pressed", C.box(fill.lerp(Color.WHITE, 0.12), Color.TRANSPARENT, radius, margin))
+	link.add_theme_stylebox_override("focus", C.box(Color.TRANSPARENT, Charte.IVOIRE, radius, margin))
+	_ignore_mouse(content)
+	link.add_child(content)
+	link.custom_minimum_size = content.get_combined_minimum_size() + Vector2(margin * 2, margin * 2)
+	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, margin)
+	link.pressed.connect(action)
+	return link
+
+## Pastille cliquable : icône teintée + texte (+ « i » facultatif). Le libellé est gardé en méta « label ».
+func _chip_button(id: String, glyph: String, tint: Color, text: String, tip: String, action: Callable, info: bool = false) -> Button:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	row.add_child(C.icon(glyph, 18, tint))
+	var label := _label(text, 16, C.IVORY)
+	label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	row.add_child(label)
+	if info: row.add_child(C.icon("info", 16, C.MUTED))
+	var chip := _link_button(id, row, Charte.PANNEAU_3, tip, action, Charte.RAYON_PILULE, 6)
+	chip.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	chip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	chip.set_meta("label", label)
+	return chip
+
+## Petite fenêtre visuelle : les joueurs concernés en tuiles (portrait, prénom, NOM, poste, salaire). Échap, ✕ et clic à côté la ferment.
+func _ouvrir_fenetre(titre: String, filtres: Dictionary, teinte: Color, focus: String) -> void:
+	_fermer_fenetre()
+	var joueurs: Array = filtered(app.model.get("squad", []), filtres)
+	state.focus = focus
+	var calque := Control.new()
+	calque.name = "ContractWindowLayer"
+	calque.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	calque.z_index = 50
+	app.add_child(calque)
+	_fenetre = calque
+	PetiteFenetre.enregistrer(calque, _fermer_fenetre)
+	var voile := ColorRect.new()
+	voile.name = "ContractWindowVeil"
+	voile.color = Color(Charte.NUIT, 0.6)
+	voile.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	voile.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT: _fermer_fenetre())
+	calque.add_child(voile)
+	var centre := CenterContainer.new()
+	centre.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	centre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	calque.add_child(centre)
+	var panneau := PanelContainer.new()
+	panneau.name = "ContractWindow"
+	panneau.add_theme_stylebox_override("panel", C.box(Charte.PANNEAU, teinte, Charte.RAYON_CARTE, 18))
+	centre.add_child(panneau)
+	var boite := VBoxContainer.new()
+	boite.add_theme_constant_override("separation", 14)
+	panneau.add_child(boite)
+	var tete := HBoxContainer.new()
+	tete.add_theme_constant_override("separation", 14)
+	boite.add_child(tete)
+	var titre_label := _label(titre, 30, teinte)
+	titre_label.name = "ContractWindowTitle"
+	titre_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	tete.add_child(titre_label)
+	var compte := _label(str(joueurs.size()), 30, C.IVORY)
+	compte.autowrap_mode = TextServer.AUTOWRAP_OFF
+	tete.add_child(compte)
+	var espace := Control.new()
+	espace.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tete.add_child(espace)
+	var fermer := Button.new()
+	fermer.name = "ContractWindowClose"
+	fermer.text = "✕"
+	fermer.focus_mode = Control.FOCUS_ALL
+	fermer.custom_minimum_size = Vector2(44, 44)
+	fermer.accessibility_name = "Fermer"
+	fermer.pressed.connect(_fermer_fenetre)
+	tete.add_child(fermer)
+	var defilement := ScrollContainer.new()
+	defilement.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	defilement.custom_minimum_size = Vector2(4 * 236 + 3 * 12, minf(560.0, 88.0 * ceilf(maxf(1.0, joueurs.size()) / 4.0)))
+	boite.add_child(defilement)
+	var grille := GridContainer.new()
+	grille.columns = 4
+	grille.add_theme_constant_override("h_separation", 12)
+	grille.add_theme_constant_override("v_separation", 12)
+	defilement.add_child(grille)
+	for joueur: Dictionary in joueurs: grille.add_child(_tuile_joueur(joueur, teinte))
+	var premier := grille.get_child(0) if grille.get_child_count() > 0 else fermer
+	(premier as Control).call_deferred("grab_focus")
+
+func _tuile_joueur(joueur: Dictionary, teinte: Color) -> Button:
+	var ligne := HBoxContainer.new()
+	ligne.add_theme_constant_override("separation", 10)
+	var portrait: Control = G.portrait(int(joueur.get("portraitIndex", 0)), 60, joueur)
+	portrait.custom_minimum_size = Vector2(60, 60)
+	ligne.add_child(portrait)
+	var colonne := VBoxContainer.new()
+	colonne.add_theme_constant_override("separation", 0)
+	colonne.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	colonne.alignment = BoxContainer.ALIGNMENT_CENTER
+	ligne.add_child(colonne)
+	var mots := str(joueur.get("name", "Joueur")).split(" ", false)
+	var nom_famille: Array = []
+	var prenom: Array = []
+	for mot: String in mots:
+		if mot == mot.to_upper() and mot.length() > 1: nom_famille.append(mot)
+		else: prenom.append(mot)
+	if nom_famille.is_empty() and not prenom.is_empty(): nom_famille.append(prenom.pop_back())
+	var petit := _label(" ".join(prenom), 14, C.MUTED)
+	petit.autowrap_mode = TextServer.AUTOWRAP_OFF
+	colonne.add_child(petit)
+	var gras := _label(" ".join(nom_famille), 20, C.IVORY)
+	gras.autowrap_mode = TextServer.AUTOWRAP_OFF
+	colonne.add_child(gras)
+	var pastilles := HBoxContainer.new()
+	pastilles.add_theme_constant_override("separation", 6)
+	colonne.add_child(pastilles)
+	var poste := _label(position_text(joueur), 14, teinte)
+	poste.autowrap_mode = TextServer.AUTOWRAP_OFF
+	pastilles.add_child(poste)
+	var salaire := _label(G.salary_amount(joueur.get("salary")), 14, BLEU)
+	salaire.autowrap_mode = TextServer.AUTOWRAP_OFF
+	pastilles.add_child(salaire)
+	var identifiant := str(joueur.get("id", ""))
+	var tuile := _link_button(action_id("ContractWindowPlayer", identifiant), ligne, Charte.PANNEAU_3.lerp(teinte, 0.14), str(joueur.get("name", "Joueur")), func():
+		_fermer_fenetre()
+		_open_profile(identifiant, "", action_id("ContractWindowPlayer", identifiant)), Charte.RAYON_PETIT, 8)
+	tuile.custom_minimum_size = Vector2(236, 76)
+	tuile.size_flags_horizontal = Control.SIZE_FILL
+	return tuile
+
+func _fermer_fenetre() -> void:
+	if _fenetre != null and is_instance_valid(_fenetre):
+		_fenetre.remove_from_group(PetiteFenetre.GROUPE)
+		_fenetre.queue_free()
+	_fenetre = null
+	call_deferred("_restore_focus")
+
+## Filtre posé depuis une tuile ou une barre : les menus et le tableau suivent.
+func _apply_filter(values: Dictionary, focus: String) -> void:
+	state.merge(values, true)
+	state.scroll = 0
+	state.focus = focus
+	_sync_choices()
+	_refresh()
+	call_deferred("_restore_focus")
+
+func _sync_choices() -> void:
+	for index in _season.item_count:
+		if int(_season.get_item_metadata(index)) == int(state.season): _season.select(index)
+	_select_text(_status_choice, str(state.status), "Contrats : tous")
+	_select_text(_precision_choice, str(state.precision), "Échéance : toutes")
+	_select_text(_position, str(state.position), "Tous les postes")
+
+func _select_text(choice: OptionButton, value: String, first: String) -> void:
+	if choice == null: return
+	choice.select(0)
+	for index in choice.item_count:
+		if choice.get_item_text(index) == value: choice.select(index)
 
 func _fit(control: Control, key: String) -> Control:
 	for column: Array in COLS:
@@ -332,20 +507,29 @@ func _build() -> void:
 		if wage is int or wage is float: known_wage += float(wage)
 		else: unknown_wage += 1
 	var wage_note := " · %d non fourni(s)" % unknown_wage if unknown_wage > 0 else ""
-	# Vraies tuiles chiffre (comme le haut de l'Effectif) : gros chiffre, légende courte dessous.
-	for metric in [["%d / %d" % [ending, squad.size()], "fin ≤ %s" % G.contract_year(current), "Échéances en %s ou avant : %d joueurs sur %d" % [G.contract_year(current), ending, squad.size()], ""], ["%d" % renewals, "prolongeables", "Prolongations accessibles : %d joueurs" % renewals, ""], [G.salary_amount(known_wage), "salaires " + G.salary_period(true) + wage_note, "Salaires actuels projetés · " + G.salary_period(), "ContractReviewWage"]]:
-		var card := _panel(top)
-		var value := _label(str(metric[0]), 30, C.IVORY)
+	# Vraies tuiles chiffre (comme le haut de l'Effectif) : icône teintée, gros chiffre coloré, légende courte, léger fond teinté.
+	for metric in [["%d / %d" % [ending, squad.size()], "fin ≤ %s" % G.contract_year(current), "Échéances en %s ou avant : %d joueurs sur %d" % [G.contract_year(current), ending, squad.size()], "", ORANGE, "hourglass", "ContractReviewStatEnding", func(): _ouvrir_fenetre("Fin ≤ %s" % G.contract_year(current), {"season": current, "status": "Tous", "precision": "Toutes"}, ORANGE, "ContractReviewStatEnding")], ["%d" % renewals, "prolongeables", "Prolongations accessibles : %d joueurs" % renewals, "", VERT, "renew", "ContractReviewStatRenewable", func(): _ouvrir_fenetre("Prolongeables", {"season": 0, "status": "Prolongation accessible", "precision": "Toutes"}, VERT, "ContractReviewStatRenewable")], [G.salary_amount(known_wage), "salaires " + G.salary_period(true) + wage_note, "Salaires actuels projetés · " + G.salary_period() + " : ouvrir Finances, salaires", "ContractReviewWage", BLEU, "money", "ContractReviewStatWages", func(): _open_wages()]]:
+		var line := HBoxContainer.new()
+		line.add_theme_constant_override("separation", 14)
+		var glyph := C.icon(str(metric[5]), 34, metric[4])
+		glyph.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		line.add_child(glyph)
+		var texts := VBoxContainer.new()
+		texts.add_theme_constant_override("separation", 0)
+		texts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		line.add_child(texts)
+		var value := _label(str(metric[0]), 34, metric[4])
 		value.autowrap_mode = TextServer.AUTOWRAP_OFF
 		if not str(metric[3]).is_empty(): value.name = str(metric[3])
-		card.add_child(value)
+		texts.add_child(value)
 		var legend := _label(str(metric[1]), 16, C.MUTED)
 		legend.autowrap_mode = TextServer.AUTOWRAP_OFF
 		legend.clip_text = true
 		legend.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		card.add_child(legend)
-		card.get_parent().tooltip_text = str(metric[2])
-		card.get_parent().mouse_filter = Control.MOUSE_FILTER_PASS
+		texts.add_child(legend)
+		var stat := _link_button(str(metric[6]), line, Charte.PANNEAU.lerp(metric[4], 0.10), str(metric[2]), metric[7], Charte.RAYON_CARTE, 14)
+		stat.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		top.add_child(stat)
 	var filters := HBoxContainer.new()
 	filters.add_theme_constant_override("separation", 8)
 	add_child(filters)
@@ -371,8 +555,10 @@ func _build() -> void:
 		_season.set_item_metadata(_season.item_count - 1, year)
 		if year == int(state.season): _season.select(_season.item_count - 1)
 	var status := _choice(filters, "ContractReviewStatus", "Contrats : tous", func(index): state.status = STATUS_OPTIONS[index]; state.scroll = 0; _refresh())
+	_status_choice = status
 	_fill_choice(status, STATUS_OPTIONS.slice(1), str(state.status))
 	var precision := _choice(filters, "ContractReviewPrecision", "Échéance : toutes", func(index): state.precision = ["Toutes","Échéance connue","Non renseignée"][index]; state.scroll = 0; _refresh())
+	_precision_choice = precision
 	_fill_choice(precision, ["Échéance connue", "Non renseignée"], str(state.precision))
 	_position = _choice(filters, "ContractReviewPosition", "Tous les postes", func(index): state.position = "Tous" if index == 0 else _position.get_item_text(index); state.scroll = 0; _refresh())
 	var positions: Array = []
@@ -454,23 +640,12 @@ func _build() -> void:
 		tiles.add_theme_constant_override("separation", 8)
 		sidebar.add_child(tiles)
 		# Les trois chiffres ouvrent la même fenêtre (offres, ventes en attente, joueurs proposés).
-		tiles.add_child(_tile("Proposés", (sales.get("listed", []) as Array).size(), "ContractReviewSalesListed", "Joueurs proposés aux autres clubs : ouvrir l'écran des offres"))
-		tiles.add_child(_tile("Offres", (sales.get("offers", []) as Array).size(), "ContractReviewOpenSales", "Offres reçues : ouvrir l'écran des offres"))
-		tiles.add_child(_tile("Ventes", (sales.get("pending", []) as Array).size(), "ContractReviewSalesPending", "Ventes en attente : ouvrir l'écran des offres"))
+		tiles.add_child(_tile("Proposés", (sales.get("listed", []) as Array).size(), "ContractReviewSalesListed", "Joueurs proposés aux autres clubs : ouvrir l'écran des offres", BLEU, "people"))
+		tiles.add_child(_tile("Offres", (sales.get("offers", []) as Array).size(), "ContractReviewOpenSales", "Offres reçues : ouvrir l'écran des offres", VERT, "mail"))
+		tiles.add_child(_tile("Ventes", (sales.get("pending", []) as Array).size(), "ContractReviewSalesPending", "Ventes en attente : ouvrir l'écran des offres", ORANGE, "money"))
 	sidebar.add_child(_label("Échéances et postes à anticiper", 24))
 	var departures := (sales.get("pending", []) as Array).size()
-	var departures_chip := PanelContainer.new()
-	departures_chip.name = "ContractReviewDepartures"
-	departures_chip.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	departures_chip.add_theme_stylebox_override("panel", Charte.style_pilule(Charte.PANNEAU_3, Charte.FILET, 12, 4))
-	var departures_row := HBoxContainer.new()
-	departures_row.add_theme_constant_override("separation", 8)
-	departures_chip.add_child(departures_row)
-	departures_row.add_child(C.icon("check" if departures == 0 else "warning", 18, C.MUTED))
-	var departures_text := _label("Aucun départ annoncé" if departures == 0 else "%d départ%s annoncé%s" % [departures, "s" if departures > 1 else "", "s" if departures > 1 else ""], 16, C.IVORY)
-	departures_text.autowrap_mode = TextServer.AUTOWRAP_OFF
-	departures_row.add_child(departures_text)
-	departures_chip.tooltip_text = "Postes principaux : clique un poste pour filtrer le tableau."
+	var departures_chip := _chip_button("ContractReviewDepartures", "check" if departures == 0 else "warning", VERT if departures == 0 else ORANGE, "Aucun départ annoncé" if departures == 0 else "%d départ%s annoncé%s" % [departures, "s" if departures > 1 else "", "s" if departures > 1 else ""], "Ouvrir les offres et ventes (Recrutement)", func(): Pages.ouvrir(app, "offres"))
 	sidebar.add_child(departures_chip)
 	var side_scroll := ScrollContainer.new()
 	side_scroll.follow_focus = true
@@ -542,8 +717,8 @@ func _refresh() -> void:
 	var seasons: Array = horizons.keys()
 	seasons.sort()
 	for end in seasons:
-		_bar(_coverage, "Non renseignée" if int(end) < 0 else "Fin " + G.contract_year(end), int(horizons[end]), app.model.get("squad", []).size(), C.MUTED if int(end) < 0 else C.GOLD if int(end) <= year else C.MINT)
-	_coverage.add_child(_label("Couverture · horizon " + G.contract_year(year), 19, C.GOLD))
+		_bar(_coverage, "Non renseignée" if int(end) < 0 else "Fin " + G.contract_year(end), int(horizons[end]), app.model.get("squad", []).size(), C.MUTED if int(end) < 0 else ORANGE if int(end) <= year else CITRON if int(end) == year + 1 else VERT, "ContractReviewBar_" + str(end), func(): _ouvrir_fenetre("Non renseignée" if int(end) < 0 else "Fin " + G.contract_year(end), {"season": 0, "precision": "Non renseignée"} if int(end) < 0 else {"season": int(end), "precision": "Toutes"}, C.MUTED if int(end) < 0 else ORANGE if int(end) <= year else CITRON if int(end) == year + 1 else VERT, "ContractReviewBar_" + str(end)))
+	_coverage.add_child(_label("Couverture · horizon " + G.contract_year(year), 19, C.IVORY))
 	for group: Dictionary in coverage(app.model.get("squad", []), year):
 		var button := _button("%s · %d / %d" % [group.position, group.ending, group.total], "ContractReviewCoverage_" + str(group.position).sha256_text().substr(0,16), func():
 			state.position = str(group.position)
@@ -555,14 +730,24 @@ func _refresh() -> void:
 		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		button.tooltip_text = "Filtrer le tableau sur ce poste"
 		_coverage.add_child(button)
+		var ratio := float(group.remaining) / maxf(1.0, float(group.total))
+		var tint := ROUGE if ratio < 0.5 else ORANGE if ratio < 0.75 else VERT
 		var progress := ProgressBar.new()
-		progress.custom_minimum_size.y = 5
+		progress.custom_minimum_size.y = 8
 		progress.max_value = maxf(1, group.total)
-		progress.value = group.ending
+		progress.value = group.remaining
 		progress.show_percentage = false
-		progress.add_theme_stylebox_override("fill", C.box(C.GOLD, Color.TRANSPARENT, 0, 0))
+		progress.add_theme_stylebox_override("background", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 4, 0))
+		progress.add_theme_stylebox_override("fill", C.box(tint, Color.TRANSPARENT, 4, 0))
 		_coverage.add_child(progress)
-		_coverage.add_child(_label("%d sous contrat au-delà%s" % [group.remaining, " · %d échéance(s) inconnue(s)" % group.unknown if group.unknown > 0 else ""], 16, C.MUTED))
+		var pill := PanelContainer.new()
+		pill.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		pill.add_theme_stylebox_override("panel", Charte.style_pilule(Charte.PANNEAU.lerp(tint, 0.16), Color.TRANSPARENT, 12, 3))
+		pill.tooltip_text = "%d sous contrat au-delà%s" % [group.remaining, " · %d échéance(s) inconnue(s)" % group.unknown if group.unknown > 0 else ""]
+		var pill_text := _label("%d au-delà%s" % [group.remaining, " · %d ?" % group.unknown if group.unknown > 0 else ""], 16, tint)
+		pill_text.autowrap_mode = TextServer.AUTOWRAP_OFF
+		pill.add_child(pill_text)
+		_coverage.add_child(pill)
 	_scroll.set_deferred("scroll_vertical", int(state.scroll))
 
 func _cell(text: String, width: float, color: Color = C.IVORY, font_size: int = 18) -> Label:
@@ -594,10 +779,16 @@ func _reading_cell(content: Control, player: Dictionary, prefix: String, section
 	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	return link
 
-func _bar(parent: Node, caption: String, value: int, total: int, color: Color) -> void:
+func _bar(parent: Node, caption: String, value: int, total: int, color: Color, id: String = "", action: Callable = Callable()) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
-	parent.add_child(row)
+	if action.is_valid():
+		var link := _link_button(id, row, Color.TRANSPARENT, "%s : %d joueur(s)" % [caption, value], action, Charte.RAYON_PETIT, 4)
+		link.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		link.custom_minimum_size.y = 34
+		parent.add_child(link)
+	else:
+		parent.add_child(row)
 	row.add_child(_cell(caption, 142, C.MUTED, 16))
 	var progress := ProgressBar.new()
 	progress.custom_minimum_size = Vector2(140, 12)
@@ -665,19 +856,11 @@ func _row(player: Dictionary) -> void:
 	line.add_child(_fit(status_cell, "status"))
 	# Colonne PROLONGATION : icône seule (la forme porte le sens, pas la couleur) ; le motif exact est en infobulle.
 	var can_renew: bool = app._live().is_empty() and renewal_short(player, false) == "Accessible"
-	var renewal_icon := C.icon("renew" if can_renew else "lock", 24, Charte.VERT_CLAIR if can_renew else Charte.GRIS_VERT)
-	renewal_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	renewal_icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	var renewal_cell := Control.new()
-	renewal_cell.name = action_id("ContractRenewal", str(player.id))
-	renewal_cell.mouse_filter = Control.MOUSE_FILTER_STOP
+	var renewal_icon := C.icon("renew" if can_renew else "lock", 24, VERT if can_renew else Charte.GRIS_VERT)
+	var renewal_cell := _reading_cell(renewal_icon, player, "ContractRenewal", "contract")
 	renewal_cell.tooltip_text = renewal_reason(player, not app._live().is_empty())
+	renewal_cell.accessibility_name = "Prolongation · " + renewal_cell.tooltip_text
 	renewal_cell.set_meta("renewal_short", renewal_short(player, not app._live().is_empty()))
-	var centre := CenterContainer.new()
-	centre.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	renewal_cell.add_child(centre)
-	centre.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	centre.add_child(renewal_icon)
 	line.add_child(_fit(renewal_cell, "renewal"))
 	var actions := HBoxContainer.new()
 	_fit(actions, "actions")
@@ -715,6 +898,10 @@ func _find(id: String) -> Dictionary:
 func _remember(id: String) -> void:
 	state.focus = id
 	state.scroll = _scroll.scroll_vertical
+
+func _open_wages() -> void:
+	app.management_ui["immersive08_finance_tab"] = "wages"
+	app._navigate("Finances")
 
 func _open_profile(id: String, section: String = "", control_id: String = "") -> void:
 	if _find(id).is_empty(): return

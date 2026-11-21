@@ -894,7 +894,7 @@ func recent_office_results() -> void:
 const FAMILIES = [
 		["Recrutement","ImmersiveMarketRows","10-recrutement"],
 		["Club","ClubStadium","11-club"],
-		["Finances","FinanceLedgerPlot","12-finances"],
+		["Finances","FinanceVerdict","12-finances"],
 		["Classements","StandingsRows","13-competitions"],
 		["Calendrier","CarnetCalendar","14-calendrier"],
 		["Formation","AcademyImmersiveRows","15-formation"],

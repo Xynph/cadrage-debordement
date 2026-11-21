@@ -1,8 +1,20 @@
 extends RefCounted
+## Club › Direction (« Les moyens de tes ambitions »), choix de Léo du 21/11/2026 sur la revue visuelle n° 2 :
+## Finances = règle à trois crans pour la relève + tuiles des partenaires avec mini-histogramme semaine / avance /
+## victoire ; Projet sportif = tuiles d'offre des projets ; Supporters = photo, anneau du sentiment, affluence et abonnés,
+## puis tuiles des actions. Explications derrière un « i » ; chaque chiffre ou jauge ouvre son écran ou une petite
+## fenêtre visuelle ; chaque tuile agit comme sa pilule ; l'argent se confirme en place (confirmation_en_place.gd).
 const Copy = preload("res://ui/management_copy.gd")
 const Champs = preload("res://ui/immersive08/champs_charte.gd")
 const Charte = preload("res://ui/charte.gd")
 const G = preload("res://ui/carnet_skin.gd")
+const C = preload("res://ui/immersive08/components.gd")
+const Tuile = preload("res://ui/tuile_choix.gd")
+const LienZone = preload("res://ui/lien_zone.gd")
+const Visuel = preload("res://ui/strategy_visuals.gd")
+
+const PRIX := {"accessible":"Accessible", "equilibree":"Équilibrée", "premium":"Premium"}
+const STATUTS := {"pending":["À suivre", "clock", Charte.GRIS_VERT], "met":["Atteint", "check", Charte.V], "missed":["Manqué", "warning", Charte.D], "unverified":["Non vérifiable", "info", Charte.GRIS_VERT]}
 
 static func _send(app: Control, command: String, payload: Dictionary, confirmation: String = "") -> void:
 	var values := payload.duplicate(true)
@@ -13,28 +25,40 @@ static func _send(app: Control, command: String, payload: Dictionary, confirmati
 		values.confirmed = true
 		app.confirm_decision(command, values, "Engager le club", confirmation, func(): app._command(command, values))
 
-static func _amount(parent: Container, label: String, value: String, color: Color = G.INK) -> void:
+## Chiffre clé (gros chiffre, légende) ; `open` : ce qu'ouvre un clic (écran ou petite fenêtre), sinon apparence neutre.
+static func _amount(parent: Container, label: String, value: String, color: Color = G.INK, name: String = "", destination: String = "", open: Callable = Callable()) -> VBoxContainer:
 	var column := G.v(2)
 	G.fill(column)
 	parent.add_child(column)
 	column.add_child(G.label(value, 29, color, true))
 	column.add_child(G.label(label, 12, G.MUTED))
+	if open.is_valid(): LienZone.relier(column, name, destination, open)
+	return column
 
-static func _action_row(app: Control, parent: Container, label: String, detail: String, command: String, payload: Dictionary, blocked: bool, confirmation: String = "") -> void:
-	var tile := G.card(parent)
-	var row := G.h(14)
-	tile.add_child(row)
-	var text := G.v(3)
-	G.fill(text)
-	row.add_child(text)
-	var heading := G.wrap(label, 20, G.INK)
-	heading.add_theme_font_override("font", G.T.DISPLAY)
-	text.add_child(heading)
-	text.add_child(G.wrap(detail, 12))
-	var button := G.button("CHOISIR →", func(): _send(app, command, payload, confirmation))
-	button.name = command + "_" + str(payload.get("key", payload.get("kind", payload.get("amount", "action"))))
-	button.disabled = blocked
-	row.add_child(button)
+static func _go(app: Control, route: String) -> Callable:
+	return func(): app._navigate(route)
+
+## Pilule d'une décision du club (charte : contour, texte crème). Grisée : la raison connue passe en info-bulle.
+static func _choice(app: Control, command: String, payload: Dictionary, blocked: bool, confirmation: String = "", text: String = "Choisir", reason: String = "") -> Button:
+	var name := command + "_" + str(payload.get("key", payload.get("kind", payload.get("amount", "action"))))
+	return Tuile.pilule(text, name, not blocked, reason, func(): _send(app, command, payload, confirmation))
+
+## Pastille « Trésorerie insuffisante » : ouvre l'écran Finances.
+static func _short(app: Control, name: String) -> Control:
+	return LienZone.relier(Tuile.pastille("Trésorerie insuffisante", Visuel.ORANGE, "warning"), name, "Finances", _go(app, "Finances"))
+
+## Choix exclusif (cap du club, politique de prix) : pilule de la charte, le choix courant en aplat crème avec une coche.
+static func _toggle(text: String, callback: Callable, chosen: bool) -> Button:
+	var button := C.button(text, callback)
+	button.set_meta("style_charte", true)
+	if chosen:
+		for state in ["normal", "hover", "pressed", "disabled"]:
+			button.add_theme_stylebox_override(state, C.box(Charte.IVOIRE, Color.TRANSPARENT, Charte.RAYON_PILULE, 18))
+		for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_disabled_color"]:
+			button.add_theme_color_override(key, Charte.PANNEAU)
+		button.icon = Visuel.picto_texture("check", Charte.PANNEAU)
+		button.add_theme_constant_override("icon_max_width", C.px(24))
+	return button
 
 static func _tab(tabs: TabContainer, name: String) -> VBoxContainer:
 	var scroll := ScrollContainer.new()
@@ -58,7 +82,7 @@ static func build(app: Control) -> Control:
 	if data.is_empty():
 		page.add_child(G.wrap("Les décisions du club seront disponibles avec une carrière ouverte.", 17))
 		return page
-	G.chapter(paper, "15", "Les moyens de tes ambitions", "Financer, donner un cap, fédérer la ville.", app.accent)
+	G.chapter(paper, "15", "Les moyens de tes ambitions", "", app.accent)
 	var tabs := TabContainer.new()
 	tabs.name = "StrategyTabs"
 	tabs.custom_minimum_size.y = 280
@@ -78,14 +102,13 @@ static func _finance(app: Control, page: Container, data: Dictionary, locked: bo
 	var card := G.panel(page)
 	var amounts := G.h(20)
 	card.add_child(amounts)
-	_amount(amounts, "TRÉSORERIE DISPONIBLE", G.euros(f.cash), G.GOOD if f.cash >= 0 else G.ALERT)
-	_amount(amounts, "SALAIRES "+G.salary_period(true).to_upper(), G.salary_amount(f.weeklyWages))
-	_amount(amounts, "PROJECTION DES ENGAGEMENTS", G.euros(f.baseForecast), G.GOLD)
-	card.add_child(G.wrap("%d semaines restantes sur %d · %s" % [f.remainingWeeks, f.weeksPerSeason, Copy.notice("strategy", f.notice)], 12))
+	_amount(amounts, "TRÉSORERIE DISPONIBLE", G.euros(f.cash), G.GOOD if f.cash >= 0 else G.ALERT, "DirectionLien_Tresorerie", "Finances", _go(app, "Finances"))
+	_amount(amounts, "SALAIRES "+G.salary_period(true).to_upper(), G.salary_amount(f.weeklyWages), G.INK, "DirectionLien_Salaires", "Finances", _go(app, "Finances"))
+	_amount(amounts, "PROJECTION DES ENGAGEMENTS", G.euros(f.baseForecast), G.GOLD, "DirectionLien_Projection", "Finances", _go(app, "Finances"))
+	_amount(amounts, "SEMAINES RESTANTES", "%d / %d" % [f.remainingWeeks, f.weeksPerSeason], G.INK, "DirectionLien_Semaines", "Calendrier", _go(app, "Calendrier"))
+	amounts.add_child(Tuile.info(Copy.notice("strategy", f.notice)))
 	if not f.facility is Dictionary:
-		var notice := G.wrap("Installations · Aucun devis disponible", 22, G.MUTED)
-		notice.add_theme_font_size_override("font_size", 22)
-		card.add_child(notice)
+		card.add_child(Tuile.pastille("Installations · aucun devis", Charte.GRIS_VERT, "settings"))
 	var columns := G.h(16)
 	page.add_child(columns)
 	var investments := G.v(14)
@@ -94,48 +117,100 @@ static func _finance(app: Control, page: Container, data: Dictionary, locked: bo
 	var partners := G.v(14)
 	G.fill(partners)
 	columns.add_child(partners)
+	var trained: bool = app.model.meta.trained
 	var academy := G.panel(investments)
-	academy.add_child(G.section("Financer la relève", "L’engagement est prélevé à la séance ; il développe les Espoirs."))
+	academy.add_child(Tuile.titre_bloc("Financer la relève", "L’engagement est prélevé à la séance ; il développe les Espoirs."))
+	var notches: Array = []
+	var pills: Array = []
 	for amount in [0, 4000, 12000]:
-		_action_row(app, academy, "%s par semaine%s" % [G.euros(amount), " · ACTUEL" if f.academyInvestment == amount else ""], "Déjà investi cette saison : " + G.euros(f.academySpent), "club_academy_investment", {"amount":amount}, locked or app.model.meta.trained or f.academyInvestment == amount, "Engager %s à chaque séance de formation ?" % G.euros(amount))
+		var current: bool = f.academyInvestment == amount
+		notches.append({"valeur":amount, "actuel":current})
+		pills.append(_choice(app, "club_academy_investment", {"amount":amount}, locked or trained or current, "Engager %s à chaque séance de formation ?" % G.euros(amount), "%s / semaine" % G.euros(amount), "Montant actuel" if current else ""))
+	var ruler := Visuel.Regle.new(notches, pills)
+	ruler.name = "StrategieRegleReleve"
+	academy.add_child(ruler)
+	_amount(academy, "DÉJÀ INVESTI CETTE SAISON", G.euros(f.academySpent), G.INK, "DirectionLien_Releve", "Formation", _go(app, "Formation"))
 	if f.facility is Dictionary:
 		var q: Dictionary = f.facility
 		var facility := G.panel(investments)
-		_action_row(app, facility, "Installations · niveau %d / 10" % q.level, "%s · entretien du prochain niveau indiqué au devis. Une amélioration par saison." % G.euros(q.cost), "club_facility_upgrade", {"cost":q.cost,"level":q.level}, locked or app.model.meta.trained or q.used or not q.affordable, "Investir %s pour passer les installations au niveau %d ?" % [G.euros(q.cost), q.nextLevel])
+		var blocked: bool = locked or trained or q.used or not q.affordable
+		var reason := "Une amélioration par saison" if q.used else "Trésorerie insuffisante" if not q.affordable else ""
+		var row := G.h(12)
+		facility.add_child(row)
+		var tile := Visuel.tuile_offre(row, "settings", "Installations", G.euros(q.cost), "niveau %d / 10" % q.level, _choice(app, "club_facility_upgrade", {"cost":q.cost,"level":q.level}, blocked, "Investir %s pour passer les installations au niveau %d ?" % [G.euros(q.cost), q.nextLevel], "Choisir", reason), _short(app, "DirectionLien_InstallationsTresorerie") if not q.affordable and not q.used else null, null, "Entretien du prochain niveau indiqué au devis. Une amélioration par saison.")
+		# Grille de trois places comme les partenaires (colonnes de même largeur) : la tuile prend la place du milieu,
+		# même largeur que les tuiles d'en face, jamais étirée seule sur toute la colonne.
+		for side in [0, 2]:
+			var slot := Control.new()
+			slot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			row.add_child(slot)
+			row.move_child(slot, side)
+		tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var sponsors := G.panel(partners)
-	sponsors.add_child(G.section("Choisir son partenaire", "Une signature par saison, avant la cinquième journée."))
+	sponsors.add_child(Tuile.titre_bloc("Choisir son partenaire", "Une signature par saison, avant la cinquième journée."))
+	var best := {"weekly":1.0, "signing":1.0, "win":1.0}
+	for offer: Dictionary in data.sponsors:
+		for key in best: best[key] = maxf(best[key], float(offer[key]))
+	var cards := G.h(12)
+	sponsors.add_child(cards)
 	for offer: Dictionary in data.sponsors:
 		var detail := "%s / semaine · avance %s · prime de victoire %s" % [G.euros(offer.weekly), G.euros(offer.signing), G.euros(offer.win)]
-		_action_row(app, sponsors, offer.label + (" · SIGNÉ" if offer.selected else ""), detail, "club_sponsor_sign", {"key":offer.id}, locked or not offer.available, "Signer « %s » ? %s." % [offer.label, detail])
+		var chart := Visuel.Histogramme.new([
+			{"valeur":offer.weekly, "maximum":best.weekly, "montant":G.euros(offer.weekly), "critere":"semaine"},
+			{"valeur":offer.signing, "maximum":best.signing, "montant":G.euros(offer.signing), "critere":"avance"},
+			{"valeur":offer.win, "maximum":best.win, "montant":G.euros(offer.win), "critere":"victoire"}])
+		Visuel.tuile_offre(cards, "poignee", offer.label, G.euros(offer.weekly), "par semaine", _choice(app, "club_sponsor_sign", {"key":offer.id}, locked or not offer.available, "Signer « %s » ? %s." % [offer.label, detail], "Choisir", "Partenaire signé" if offer.selected else ""), Tuile.pastille("Signé", Charte.V, "check") if offer.selected else null, chart)
+
+static func _goal_label(goal: Dictionary) -> String:
+	var target := G.n(goal.target)
+	match str(goal.type):
+		"wins": target = "Victoires ≥ " + target
+		"points": target = "Points ≥ " + target
+		"rank": target = "Classement ≤ " + target
+		"cash": target = "Trésorerie ≥ " + G.euros(goal.target)
+		_: target = str(goal.type) + " · " + target
+	return "%s · S%d" % [target, int(goal.deadline)]
 
 static func _board(app: Control, page: Container, data: Dictionary, locked: bool) -> void:
 	var b: Dictionary = data.board
 	var card := G.panel(page)
-	card.add_child(G.section("Donner un cap", "Une priorité claire pour arbitrer les décisions."))
+	card.add_child(Tuile.titre_bloc("Donner un cap", "Une priorité claire pour arbitrer les décisions.\n\n" + Copy.notice("strategy", b.notice)))
 	var row := G.h(10)
 	card.add_child(row)
 	for key: String in ["performance", "stabilite", "finances", "effectif"]:
 		var names := {"performance":"Résultats", "stabilite":"Stabilité", "finances":"Finances", "effectif":"Effectif"}
-		var button := G.button(names[key], func(): _send(app, "club_board_priority", {"key":key}), b.priority == key)
+		var button := _toggle(names[key], func(): _send(app, "club_board_priority", {"key":key}), b.priority == key)
 		button.name = "BoardPriority_" + key
 		button.disabled = locked
 		row.add_child(button)
-	card.add_child(G.wrap(Copy.notice("strategy", b.notice), 12))
 	var health := G.h(18)
 	card.add_child(health)
-	_amount(health, "JOUEURS DISPONIBLES", G.n(b.readiness.available))
-	_amount(health, "CONDITION SATISFAISANTE", "%d %%" % b.readiness.coverage)
-	_amount(health, "ORGANISATION", "%d / 100" % b.organizationScore, G.GOLD)
+	_amount(health, "JOUEURS DISPONIBLES", G.n(b.readiness.available), G.INK, "DirectionLien_Disponibles", "Effectif", _go(app, "Effectif"))
+	_amount(health, "CONDITION SATISFAISANTE", "%d %%" % b.readiness.coverage, G.INK, "DirectionLien_Condition", "Effectif", _go(app, "Effectif"))
+	_amount(health, "ORGANISATION", "%d / 100" % b.organizationScore, G.GOLD, "DirectionLien_Organisation", "Organisation du club", func(): _organisation(app, b))
 	G.gauge(card, "Disponibilité du groupe", float(b.readiness.coverage), 100, G.GOOD)
+	LienZone.relier(card.get_child(card.get_child_count() - 1), "DirectionLien_Jauge", "Effectif", _go(app, "Effectif"))
 	var projects := G.panel(page)
-	projects.add_child(G.section("Structurer le club", "Projets d’organisation, sans bonus de match automatique."))
+	projects.add_child(Tuile.titre_bloc("Structurer le club", "Projets d’organisation, sans bonus de match automatique."))
+	var cards := G.h(12)
+	projects.add_child(cards)
 	for project: Dictionary in b.projectOptions:
-		_action_row(app, projects, project.label, G.euros(project.cost) + (" · ENGAGÉ" if project.used else " · paiement unique"), "club_board_project", {"kind":project.id}, locked or project.used or data.finance.cash < project.cost, "Financer %s pour %s ?" % [project.label, G.euros(project.cost)])
+		var short: bool = data.finance.cash < project.cost
+		var state: Control = Tuile.pastille("Engagé", Charte.V, "check") if project.used else _short(app, "DirectionLien_Projet_" + str(project.id)) if short else null
+		Visuel.tuile_offre(cards, {"video":"video", "medical":"croix", "logistique":"camion"}.get(project.id, "settings"), project.label, G.euros(project.cost), "paiement unique", _choice(app, "club_board_project", {"kind":project.id}, locked or project.used or short, "Financer %s pour %s ?" % [project.label, G.euros(project.cost)], "Choisir", "Déjà engagé" if project.used else "Trésorerie insuffisante" if short else ""), state)
 	var objectives := G.panel(page)
-	objectives.add_child(G.section("Les rendez-vous du conseil", "Objectifs suivis depuis les résultats de ta carrière."))
+	var empty := "Fixe un premier jalon. Les objectifs servent au suivi du projet ; la confiance du président dépend du bilan du club."
+	objectives.add_child(Tuile.titre_bloc("Les rendez-vous du conseil", "Objectifs suivis depuis les résultats de ta carrière." + ("\n\n" + empty if b.objectives.is_empty() else "")))
 	for goal: Dictionary in b.objectives:
-		objectives.add_child(G.wrap("%s · cible %s · semaine %d · %s" % [goal.type, G.n(goal.target), goal.deadline, {"pending":"À suivre","met":"Atteint","missed":"Manqué","unverified":"Non vérifiable"}.get(goal.status, goal.status)], 14))
-	if b.objectives.is_empty(): objectives.add_child(G.wrap("Fixe un premier jalon. Les objectifs servent au suivi du projet ; la confiance du président dépend du bilan du club.", 14))
+		var line := G.h(12)
+		objectives.add_child(line)
+		var text := C.label(_goal_label(goal), 22, Charte.IVOIRE, true, 600)
+		text.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		line.add_child(text)
+		var status: Array = STATUTS.get(str(goal.status), [str(goal.status), "info", Charte.GRIS_VERT])
+		line.add_child(Tuile.pastille(status[0], status[2], status[1]))
+		Tuile.proteger(line)
 	var goal_row := G.h(10)
 	objectives.add_child(goal_row)
 	var kind := OptionButton.new()
@@ -157,30 +232,106 @@ static func _board(app: Control, page: Container, data: Dictionary, locked: bool
 	deadline.custom_minimum_size.x = 125
 	Champs.champ(deadline.get_line_edit())
 	goal_row.add_child(deadline)
-	var add := G.button("FIXER LE JALON", func(): _send(app, "club_board_objective", {"type":["wins","points","rank","cash"][kind.selected],"target":target.value,"deadline":int(deadline.value)}))
-	add.name = "BoardObjectiveAdd"
-	add.disabled = locked or data.context.week >= data.finance.weeksPerSeason
+	var season_over: bool = data.context.week >= data.finance.weeksPerSeason
+	var add := Tuile.pilule("Fixer le jalon", "BoardObjectiveAdd", not (locked or season_over), "Saison terminée" if season_over else "", func(): _send(app, "club_board_objective", {"type":["wins","points","rank","cash"][kind.selected],"target":target.value,"deadline":int(deadline.value)}))
 	goal_row.add_child(add)
 
 static func _fans(app: Control, page: Container, data: Dictionary, locked: bool) -> void:
 	var f: Dictionary = data.fans
 	G.photo_note(page, app.model.club, "Le territoire", "Une ville derrière toi", "city", 140)
 	var card := G.panel(page)
-	card.add_child(G.section("Une ville derrière toi", "L’accueil et l’ancrage local se construisent toute la saison."))
-	var metrics := G.h(18)
+	card.add_child(Tuile.titre_bloc("Une ville derrière toi", "L’accueil et l’ancrage local se construisent toute la saison.\n\n" + Copy.notice("strategy", f.notice)))
+	# Trois cellules de même largeur sur toute la carte, contenu centré : espacement régulier, milieux alignés.
+	var metrics := G.h(0)
 	card.add_child(metrics)
-	_amount(metrics, "SENTIMENT", "%d / 100" % f.sentiment, G.GOLD)
-	_amount(metrics, "AFFLUENCE PRÉVUE", G.n(f.expectedAttendance))
-	_amount(metrics, "ABONNÉS", G.n(f.subscribers))
-	card.add_child(G.wrap(Copy.notice("strategy", f.notice), 12))
+	var cell := func() -> CenterContainer:
+		var box := CenterContainer.new()
+		box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		box.size_flags_stretch_ratio = 1.0
+		metrics.add_child(box)
+		Tuile.proteger(box)
+		return box
+	var open := func(): _public(app, f)
+	var mood := C.v(4)
+	cell.call().add_child(mood)
+	mood.add_child(Visuel.Anneau.new(float(f.sentiment), 100.0))
+	mood.add_child(C.label("SENTIMENT", 17, Charte.IVOIRE_2, true, 600))
+	(mood.get_child(1) as Label).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	Tuile.proteger(mood)
+	LienZone.relier(mood, "DirectionLien_Sentiment", "Le public", open)
+	LienZone.relier(Visuel.chiffre_picto(cell.call(), "people", G.n(f.expectedAttendance), "AFFLUENCE PRÉVUE"), "DirectionLien_Affluence", "Le public", open)
+	LienZone.relier(Visuel.chiffre_picto(cell.call(), "star", G.n(f.subscribers), "ABONNÉS"), "DirectionLien_Abonnes", "Le public", open)
 	var price_row := G.h(10)
 	card.add_child(price_row)
 	for price: Dictionary in f.prices:
-		var button := G.button("%s · %s" % [price.id.capitalize(), G.euros(price.price)], func(): _send(app, "club_fans_price", {"key":price.id}), f.policy == price.id)
+		var button := _toggle("%s · %s" % [PRIX.get(price.id, str(price.id).capitalize()), G.euros(price.price)], func(): _send(app, "club_fans_price", {"key":price.id}), f.policy == price.id)
+		button.name = "FansPrice_" + str(price.id)
 		button.disabled = locked
 		price_row.add_child(button)
-	for category: Dictionary in [{"title":"Faire venir","key":"campaigns","command":"club_fans_campaign"},{"title":"Tisser des liens","key":"community","command":"club_fans_community"},{"title":"Accueillir au stade","key":"services","command":"club_fans_service"}]:
+	for category: Dictionary in [{"title":"Faire venir","key":"campaigns","command":"club_fans_campaign","icon":"people"},{"title":"Tisser des liens","key":"community","command":"club_fans_community","icon":"heart"},{"title":"Accueillir au stade","key":"services","command":"club_fans_service","icon":"home"}]:
 		var actions := G.panel(page)
-		actions.add_child(G.section(category.title, "Dépenses prévues, sans nouvelle recette automatique."))
+		actions.add_child(Tuile.titre_bloc(category.title, "Dépenses prévues, sans nouvelle recette automatique."))
+		var cards := G.h(12)
+		actions.add_child(cards)
 		for option: Dictionary in f[category.key]:
-			_action_row(app, actions, option.label, G.euros(option.cost) + (" · DÉJÀ ENGAGÉ" if option.used else ""), category.command, {"key":option.id}, locked or option.used or data.finance.cash < option.cost, "Engager « %s » pour %s ?" % [option.label, G.euros(option.cost)])
+			var short: bool = data.finance.cash < option.cost
+			var state: Control = Tuile.pastille("Déjà engagé", Charte.V, "check") if option.used else _short(app, "DirectionLien_%s_%s" % [category.key, option.id]) if short else null
+			Visuel.tuile_offre(cards, category.icon, option.label, G.euros(option.cost), "", _choice(app, category.command, {"key":option.id}, locked or option.used or short, "Engager « %s » pour %s ?" % [option.label, G.euros(option.cost)], "Choisir", "Déjà engagé" if option.used else "Trésorerie insuffisante" if short else ""), state)
+
+## Saison lisible d'une entrée d'historique (saison, sinon semaine).
+static func _when(entry: Dictionary) -> String:
+	if entry.has("season"): return G.season_label(entry.season)
+	return "S%d" % int(entry.get("week", 0))
+
+## Petite fenêtre « Le public » : sentiment, affluence et capacité, demande, billet, recette prévue, abonnés, et
+## l'évolution des saisons passées quand elle existe.
+static func _public(app: Control, f: Dictionary) -> void:
+	var ring := C.v(4)
+	ring.add_child(Visuel.Anneau.new(float(f.sentiment), 100.0))
+	var caption := C.label("SENTIMENT", 16, Charte.IVOIRE_2, true, 600)
+	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	ring.add_child(caption)
+	var capacity: Variant = f.get("capacity")
+	var first: Array = [ring, Visuel.tuile_chiffre("people", G.n(f.expectedAttendance) + ("" if capacity == null else " / " + G.n(capacity)), "Affluence prévue" + ("" if capacity == null else " / places"))]
+	if f.has("demand"): first.append(Visuel.tuile_chiffre("target", "%d %%" % int(f.demand), "Demande"))
+	var second: Array = []
+	if f.has("price"): second.append(Visuel.tuile_chiffre("money", G.euros(f.price), "Billet · " + str(PRIX.get(f.policy, f.policy))))
+	if f.has("expectedTicketRevenue"): second.append(Visuel.tuile_chiffre("money", G.euros(f.expectedTicketRevenue), "Recette prévue par match"))
+	second.append(Visuel.tuile_chiffre("star", G.n(f.subscribers), "Abonnés"))
+	var blocks: Array = [Visuel.rangee(first), Visuel.rangee(second)]
+	var history: Array = f.get("history", [])
+	if not history.is_empty():
+		var moods: Array = []
+		var subs: Array = []
+		var top := 1.0
+		for entry: Dictionary in history: top = maxf(top, float(entry.get("subscribers", 0)))
+		for i in range(history.size() - 1, -1, -1):
+			var entry: Dictionary = history[i]
+			moods.append({"valeur":entry.get("sentiment", 0), "maximum":100, "montant":str(int(entry.get("sentiment", 0))), "critere":_when(entry), "couleur":Visuel.TURQUOISE})
+			subs.append({"valeur":entry.get("subscribers", 0), "maximum":top, "montant":G.n(entry.get("subscribers", 0)), "critere":_when(entry), "couleur":Visuel.VIOLET})
+		blocks.append(Tuile.titre_bloc("Sentiment des saisons passées"))
+		blocks.append(Visuel.Histogramme.new(moods, 140))
+		blocks.append(Tuile.titre_bloc("Abonnés des saisons passées"))
+		blocks.append(Visuel.Histogramme.new(subs, 140))
+	Visuel.petite_fenetre(app, "DirectionFenetrePublic", "Le public", blocks)
+
+## Petite fenêtre « Organisation du club » : score, projets, missions et risques suivis, bilans passés s'il y en a.
+static func _organisation(app: Control, b: Dictionary) -> void:
+	var ring := C.v(4)
+	ring.add_child(Visuel.Anneau.new(float(b.organizationScore), 100.0, Visuel.BLEU))
+	var caption := C.label("ORGANISATION", 16, Charte.IVOIRE_2, true, 600)
+	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	ring.add_child(caption)
+	var blocks: Array = [Visuel.rangee([ring,
+		Visuel.tuile_chiffre("target", G.n((b.get("projects", []) as Array).size()), "Projets engagés"),
+		Visuel.tuile_chiffre("check", G.n((b.get("missions", []) as Array).size()), "Missions"),
+		Visuel.tuile_chiffre("warning", G.n((b.get("risks", []) as Array).size()), "Risques suivis")])]
+	var history: Array = b.get("history", [])
+	if not history.is_empty():
+		var bars: Array = []
+		for entry: Dictionary in history:
+			var value := float(entry.get("score", entry.get("trust", entry.get("confidence", 0))))
+			bars.append({"valeur":value, "maximum":100, "montant":str(int(value)), "critere":_when(entry), "couleur":Visuel.BLEU})
+		blocks.append(Tuile.titre_bloc("Bilans passés"))
+		blocks.append(Visuel.Histogramme.new(bars, 140))
+	Visuel.petite_fenetre(app, "DirectionFenetreOrganisation", "Organisation du club", blocks)
