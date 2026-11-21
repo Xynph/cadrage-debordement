@@ -435,7 +435,6 @@ static func _priorities(card: Panel, app: Control, w: int = 900) -> void:
 	for i in tasks.size():
 		var y := 100.0 + i * 90.0
 		var item: Dictionary = tasks[i]
-		# Couleur franche selon le niveau (rouge urgent, orange important, bleu le reste), jamais seule : pastille écrite.
 		# Rouge si urgent, orange si c'est pour aujourd'hui, bleu sinon (le seul doré de l'écran reste Continuer).
 		var tint: Color = R.ROUGE if item.level == "urgent" else R.ORANGE if str(item.deadline) in ["Aujourd’hui", "Maintenant", "Résultat en attente"] else R.BLEU
 		D.line(card, Vector2(20, y), Vector2(w - 20, y), Color(Charte.FILET, .7))
