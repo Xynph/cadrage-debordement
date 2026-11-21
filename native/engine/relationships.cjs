@@ -9,6 +9,8 @@ module.exports={
   const text=(x,max=160)=>typeof x==='string'&&x.length>0&&x.length<=max&&!/[\u0000-\u001f]/.test(x);
   const check=(ok,detail)=>{if(!ok)throw Error('Relations de vestiaire incohérentes : '+detail+'.');};
   const keys=(x,allowed)=>object(x)&&Object.keys(x).every(k=>allowed.includes(k));
+  // Dernière journée (numérotée à partir de 1) où une promesse de temps de jeu peut être faite : la règle de dist/economy.js (makePlayingPromise : refus si round > 23, round compté à partir de 0).
+  const PROMISE_LAST_JOURNEY=24;
   function validate(s){
    if(!s)return true;
    const time=(x)=>integer(x.season,1,s.season)&&integer(x.week,0,s.economy?.week??0);
@@ -42,9 +44,9 @@ module.exports={
    const ctx=context(),active=S.satisfactionVersion===1&&S.relationsVersion===1,blocked=locked()||Object.keys(S.economy?.talks||{}).length>0;
    const event=CDLivingLockerRoom.weeklyEvent(S),history=S.livingLockerRoom?.history||[];
    return {context:ctx,active,available:!blocked,reason:blocked?'Match en cours, saison terminée ou négociation ouverte.':'',morale:S.morale,trust:S.trust,
-    players:roster().map(p=>({id:p.id,pos:p.pos,score:p.satisfaction?.score??null,condition:p.condition,injury:p.injury,minutes:p.dev?.minutes??null,personality:CDLivingLockerRoom.personality(p),promise:p.satisfaction?.promise?copy(p.satisfaction.promise):null,promiseHistory:copy(p.satisfaction?.history||[]),conversationAvailable:active&&!blocked&&!(p.satisfaction?.coachMeeting?.season===S.season&&p.satisfaction.coachMeeting.week===S.economy.week),promiseAvailable:active&&!blocked&&S.phase==='league'&&S.round<=23&&!p.injury&&!p.satisfaction?.promise})),
+    players:roster().map(p=>({id:p.id,pos:p.pos,score:p.satisfaction?.score??null,condition:p.condition,injury:p.injury,minutes:p.dev?.minutes??null,personality:CDLivingLockerRoom.personality(p),promise:p.satisfaction?.promise?copy(p.satisfaction.promise):null,promiseHistory:copy(p.satisfaction?.history||[]),conversationAvailable:active&&!blocked&&!(p.satisfaction?.coachMeeting?.season===S.season&&p.satisfaction.coachMeeting.week===S.economy.week),promiseAvailable:active&&!blocked&&S.phase==='league'&&S.round<PROMISE_LAST_JOURNEY&&!p.injury&&!p.satisfaction?.promise})),
     conversations:[{id:'ecouter',label:'Écouter',detail:'Satisfaction +2.'},{id:'rassurer',label:'Rassurer',detail:'Satisfaction +1 ; premier entretien : moral +1.'},{id:'clarifier',label:'Clarifier',detail:'Premier entretien : confiance +1.'}],
-    promiseOptions:Object.entries(PROMISE_MINUTES).map(([id,minutes])=>({id,minutes})),
+    promiseLastJourney:PROMISE_LAST_JOURNEY,promiseOptions:Object.entries(PROMISE_MINUTES).map(([id,minutes])=>({id,minutes})),
     leaderId:CDRelationsV70.leader(S)?.id??null,pairs:copy(S.v70Relations?.pairs||[]),duoAvailable:CDRelationsV70.allowed(S),duoActions:Object.entries(CDRelationsV70.ACTIONS).map(([id,c])=>({id,...c})),
     event:event?{...event,available:CDLivingLockerRoom.allowed(S)&&!blocked,choices:Object.entries(CDLivingLockerRoom.CHOICES).map(([id,c])=>({id,label:c.label,detail:c.detail}))}:null,
     commitments:copy(S.livingLockerRoom?.commitments||[]),history:copy(history).reverse(),conversationHistory:(S.economy.relationLog||[]).filter(e=>e.kind==='coach').map(e=>({season:e.season,round:e.round,playerId:e.playerId,choice:e.detail,before:e.amount,after:e.minimum})),

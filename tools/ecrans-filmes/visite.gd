@@ -57,6 +57,8 @@ const EXTRAS := [
 	{"id": "preparation-conseils", "libelle": "Préparation · conseils détaillés (sous-page)", "type": "preparation_sous", "sous": "conseils"},
 	{"id": "preparation-reperes", "libelle": "Préparation · tous les repères (sous-page)", "type": "preparation_sous", "sous": "reperes"},
 	{"id": "effectif-contrats", "libelle": "Effectif · onglet Contrats", "type": "effectif_onglet", "onglet": 2},
+	{"id": "contrats-prolongation", "libelle": "Effectif · Contrats · prolongation d'un joueur", "type": "effectif_onglet", "onglet": 2, "ouvrir_prefixe": "ContractRenew_"},
+	{"id": "contrats-prolongation-fenetre", "libelle": "Effectif · Contrats · petite fenêtre de la prolongation", "type": "effectif_onglet", "onglet": 2, "ouvrir_prefixe": "ContractRenew_", "puis": ["ProlongationApresLien"]},
 	{"id": "contrats-fenetre-echeance", "libelle": "Effectif · Contrats · petite fenêtre des échéances", "type": "effectif_onglet", "onglet": 2, "ouvrir": "ContractReviewStatEnding"},
 	{"id": "effectif-condition", "libelle": "Effectif · onglet Condition", "type": "effectif_onglet", "onglet": 1},
 	{"id": "effectif-developpement", "libelle": "Effectif · onglet Développement", "type": "effectif_onglet", "onglet": 3},
@@ -673,6 +675,28 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				if cible == null: return {"statut": "echec", "note": "élément introuvable : " + str(ecran.ouvrir)}
 				cible.pressed.emit()
 				await stabiliser()
+			if ecran.has("ouvrir_prefixe"):
+				# Joueur le plus parlant : prolongation ouverte dont la demande s'écarte le plus du salaire actuel.
+				var premier: Button = null
+				var meilleur := -1
+				for joueur: Variant in app.model.get("squad", []):
+					if not joueur is Dictionary or not (joueur.get("renewal", {}) is Dictionary) or not bool(joueur.renewal.get("available", false)): continue
+					var bouton := app.find_child(str(ecran.ouvrir_prefixe) + str(joueur.id).sha256_text().substr(0, 16), true, false) as Button
+					if bouton == null or not bouton.is_visible_in_tree() or bouton.disabled: continue
+					var ecart := absi(int(joueur.renewal.get("salary", 0)) - int(joueur.get("salary", 0)))
+					if ecart > meilleur:
+						meilleur = ecart
+						premier = bouton
+				if premier == null: return {"statut": "echec", "note": "aucun bouton " + str(ecran.ouvrir_prefixe)}
+				premier.pressed.emit()
+				await stabiliser()
+				await stabiliser()
+				for nom_suite: String in ecran.get("puis", []):
+					var suite := app.find_child(nom_suite, true, false) as Button
+					if suite == null: continue
+					suite.pressed.emit()
+					await stabiliser()
+					break
 		"onglet_cle":
 			app.management_ui[str(ecran.cle)] = str(ecran.onglet)
 			app._navigate(str(ecran.route))

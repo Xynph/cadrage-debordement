@@ -61,7 +61,9 @@ func contracts(host: Host) -> void:
 			var report := {"frame":rect_data(frame),"frame_overflow":overflow(frame,bounds),"resolution":[resolution.x,resolution.y],"recruiting":recruiting,"dialog":rect_data(dialog_rect),"overflow":overflow(dialog_rect,bounds),"controls":[]}
 			if report.frame_overflow.max()>1: failures.append("dialog frame "+str(resolution)+" "+str(recruiting))
 			if report.overflow.max()>0: failures.append("dialog "+str(resolution)+" "+str(recruiting))
-			for id in ["OfferSalary","OfferYears","ContractUseCounteroffer","OfferSummary","ContractNextAction","ok","cancel"]:
+			# Offre au joueur : récapitulatif, prochaine étape et reprise de la contre-offre sont le jeton, la pastille d'étape et
+			# la pastille de contre-offre (les anciennes lignes restent construites mais masquées).
+			for id in ["OfferSalary","OfferYears","OffreContreOffreLien","OffreJetonLien","OffreEtapeLien","ok","cancel"]:
 				var control: Control = dialog.get_ok_button() if id=="ok" else (dialog.get_cancel_button() if id=="cancel" else dialog.find_child(id,true,false))
 				var scroll := control.get_parent()
 				while scroll != dialog and not scroll is ScrollContainer: scroll=scroll.get_parent()
@@ -79,7 +81,59 @@ func contracts(host: Host) -> void:
 				await RenderingServer.frame_post_draw
 				root.get_texture().get_image().save_png(output.path_join("%dx%d-%s.png" % [resolution.x,resolution.y,"recruit" if recruiting else "renew"]))
 			reports.append(report)
-			dialog.queue_free();await settle()
+			if not recruiting: await prolongation_pieces(dialog,resolution)
+			if is_instance_valid(dialog): dialog.queue_free()
+			await settle()
+
+## Prolongation (choix B de Léo, 21/11/2026) : cartes aujourd'hui → prolongé, pastilles « vs actuel » et « +N saison », chiffres
+## de la règle, de la frise et du jeton ; chacun ouvre sa petite fenêtre visuelle, qu'Échap referme sans fermer l'offre.
+## Toile entière dans la fenêtre, cibles d'au moins 24 px, pas de bande vide sous la prime.
+func prolongation_pieces(dialog: ConfirmationDialog, resolution: Vector2i) -> void:
+	var cle := " " + str(resolution)
+	for id in ["ProlongationAvant","ProlongationApres","ProlongationRegleActuel","ProlongationFriseActuel_1","OffreFriseSaison_1","OffreRegleCurseur"]:
+		if dialog.find_child(id,true,false)==null: failures.append("prolongation piece "+id+cle)
+	var toile := dialog.find_child("OffreVisuelle",true,false) as Control
+	if toile==null: failures.append("prolongation toile"+cle);return
+	var scroll := toile.get_parent()
+	while scroll != dialog and not scroll is ScrollContainer: scroll=scroll.get_parent()
+	if scroll is ScrollContainer: (scroll as ScrollContainer).scroll_vertical=0
+	await settle()
+	var haut_boutons := dialog.get_ok_button().get_global_rect().position.y
+	var bas_toile := toile.get_global_rect().end.y
+	if haut_boutons-bas_toile>48*C.density: failures.append("prolongation bande vide %.0f px%s" % [haut_boutons-bas_toile,cle])
+	if toile.get_global_rect().end.x>dialog.size.x+1: failures.append("prolongation toile tronquée"+cle)
+	if scroll is ScrollContainer and toile.get_global_rect().end.y>(scroll as ScrollContainer).get_global_rect().end.y+1: failures.append("prolongation toile coupée en bas"+cle)
+	var attendus := {"ProlongationAvantLien":"ProlongationFenetreAvantApres","ProlongationApresLien":"ProlongationFenetreAvantApres",
+		"ProlongationHausseLien":"ProlongationFenetreAvantApres","ProlongationGainLien":"ProlongationFenetreAvantApres",
+		"OffreRegleEcartZoneLien":"OffreFenetreSalaire","OffreFriseFinZoneLien":"OffreFenetreDuree","OffreJetonLien":"OffreFenetreBudget",
+		"OffreEtapeLien":"OffreFenetreDiscussion","OffreDemandeLien":"OffreFenetreSalaire"}
+	for lien: String in attendus:
+		var bouton := dialog.find_child(lien,true,false) as Button
+		if bouton==null or not bouton.is_visible_in_tree(): failures.append("prolongation "+lien+" absent"+cle);continue
+		if bouton.size.x<C.TARGET_MIN-1 or bouton.size.y<C.TARGET_MIN-1: failures.append("prolongation "+lien+" < 24 px "+str(bouton.size)+cle)
+		bouton.pressed.emit();await settle()
+		var calque := dialog.find_child("OffrePetiteFenetre",true,false)
+		if calque==null or calque.find_child(attendus[lien],true,false)==null: failures.append("prolongation "+lien+" -> "+attendus[lien]+cle);continue
+		if attendus[lien]=="ProlongationFenetreAvantApres" and calque.find_children("ProlongationFenetreAvantApresTuile_*","Panel",true,false).size()!=5:
+			failures.append("prolongation fenetre ancien -> nouveau : 5 tuiles"+cle)
+		var escape := InputEventKey.new();escape.keycode=KEY_ESCAPE;escape.pressed=true;root.push_input(escape,true)
+		escape=escape.duplicate();escape.pressed=false;root.push_input(escape,true)
+		await settle()
+		if dialog.find_child("OffrePetiteFenetre",true,false)!=null: failures.append("prolongation Échap ne ferme pas la petite fenêtre de "+lien+cle)
+		if not is_instance_valid(dialog) or not dialog.visible: failures.append("prolongation Échap ferme l'offre ("+lien+")"+cle);return
+	var annees := dialog.find_child("OfferYears",true,false) as SpinBox
+	var avant := annees.value
+	var cible := int(annees.min_value) if annees.value!=annees.min_value else int(annees.max_value)
+	var segment := dialog.find_child("OffreFriseClic_%d" % cible,true,false) as Button
+	if segment==null: failures.append("prolongation frise saison %d%s" % [cible,cle])
+	else:
+		segment.pressed.emit();await settle()
+		if int(annees.value)!=cible: failures.append("prolongation frise règle la durée"+cle)
+		annees.value=avant;await settle()
+	# Sans petite fenêtre, Échap ferme l'offre.
+	var fin := InputEventKey.new();fin.keycode=KEY_ESCAPE;fin.pressed=true;root.push_input(fin,true)
+	await settle()
+	if is_instance_valid(dialog) and dialog.visible: failures.append("prolongation Échap sans petite fenêtre ne ferme pas l'offre"+cle)
 
 func measure_shared(dialog: AcceptDialog, label: String, ids: Array[String] = [], capture: bool = true) -> void:
 	await settle()
@@ -177,7 +231,10 @@ func contract_focus(dialog: Window, controls: Dictionary) -> String:
 	var focused := dialog.gui_get_focus_owner()
 	if focused==null: return "none"
 	for id in controls:
-		if controls[id]==focused or controls[id].is_ancestor_of(focused): return id
+		# Pièce de l'offre redessinée à chaque saisie : reconnue par son nom.
+		if controls[id] is String:
+			if str(focused.name)==controls[id]: return id
+		elif controls[id]==focused or controls[id].is_ancestor_of(focused): return id
 	return str(focused.get_path())
 
 func open_contract_resize(host: Host) -> void:
@@ -191,7 +248,7 @@ func open_contract_resize(host: Host) -> void:
 	var salary := dialog.find_child("OfferSalary",true,false) as SpinBox
 	var years := dialog.find_child("OfferYears",true,false) as SpinBox
 	var edit := salary.get_line_edit()
-	var controls := {"salary":salary,"years":years,"reuse":dialog.find_child("ContractUseCounteroffer",true,false),"ok":dialog.get_ok_button(),"cancel":dialog.get_cancel_button()}
+	var controls := {"salary":salary,"years":years,"reuse":"OffreContreOffreLien","ok":dialog.get_ok_button(),"cancel":dialog.get_cancel_button()}
 	var dialog_id := dialog.get_instance_id()
 	var salary_id := salary.get_instance_id()
 	var years_id := years.get_instance_id()
@@ -208,7 +265,7 @@ func open_contract_resize(host: Host) -> void:
 		if dialog.get_instance_id()!=dialog_id or salary.get_instance_id()!=salary_id or years.get_instance_id()!=years_id: failures.append("open contract controls recreated during resize")
 		if int(salary.value)!=expected_value or int(years.value)!=3 or edit.text!=expected_text: failures.append("salary draft or duration lost during resize "+str(resolution))
 		if not edit.has_focus(): failures.append("salary keyboard focus lost during resize "+str(resolution))
-		await measure_shared(dialog,"open-contract-resize",["OfferSalary","OfferYears","ContractUseCounteroffer","OfferSummary","ContractNextAction"],false)
+		await measure_shared(dialog,"open-contract-resize",["OfferSalary","OfferYears","OffreContreOffreLien","OffreJetonLien","OffreEtapeLien"],false)
 		state["geometry"]=shared_reports.back()
 		resize_report.stages.append(state)
 		if resolution.x==1280:

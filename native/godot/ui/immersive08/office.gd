@@ -752,7 +752,7 @@ static func _zone_legend(zones: Array) -> HFlowContainer:
 		var slot := Zones.mark_slot(kind, Zones.BUREAU_MARK_PX)
 		slot.get_child(0).name = "StandingsZoneLegendMark_" + kind
 		item.add_child(slot)
-		var label := C.label(str(zones[i].get("label", "")), 18, C.IVORY, true, 600)
+		var label := C.label(Zones.short_label(zones[i]), 18, C.IVORY, true, 600)
 		label.name = "StandingsZoneLegendItem_%d" % i
 		label.set_meta("zone_kind", kind)
 		item.add_child(label)

@@ -95,6 +95,21 @@ static func bureau_note(model: Dictionary) -> String:
 			if league.get("zoneNote") is String: return str(league.zoneNote)
 	return ""
 
+## Mot court d'une zone pour les pastilles de légende (le libellé complet reste dans l'infobulle et le nom lu).
+## Libellé inconnu : on garde le libellé complet plutôt que d'inventer un raccourci.
+const SHORT_LABELS := {"Demi-finale directe": "Demi", "Demi-finale": "Demi", "Quart de finale": "Quart", "Huitièmes de finale": "Huitième",
+	"Barrage phase finale": "Phase finale", "Barrage d’accession": "Barrage", "Barrage de maintien": "Barrage", "Barrage contre la D2": "Barrage D2",
+	"Barrage de montée": "Montée", "Relégation": "Relég.", "Repêchage possible": "Repêchage", "Match éliminatoire": "Élimin."}
+static func short_label(zone: Dictionary) -> String:
+	var label := str(zone.get("label", ""))
+	return str(SHORT_LABELS.get(label, label))
+
+## Rangs d'une zone : « 1–2 », ou « 13 » pour un seul rang.
+static func span_text(zone: Dictionary) -> String:
+	var from := int(zone.get("from", 0))
+	var to := int(zone.get("to", 0))
+	return str(from) if from == to else "%d–%d" % [from, to]
+
 ## Texte lu d'une légende courte : « ★ Demi-finale directe · ▼ Relégation ».
 static func legend_text(zones: Array) -> String:
 	var spoken: Array[String] = []

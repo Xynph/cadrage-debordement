@@ -296,7 +296,10 @@ static func _promesses(app: Control, parent: VBoxContainer, data: Dictionary, p:
 	var titre := Components.h(8)
 	titre.name = "RelationshipPromiseRule"
 	titre.add_child(Components.label("Temps de jeu promis", 20, Charte.IVOIRE, true, 600))
-	titre.add_child(Pastilles.pastille("J24", Pastilles.BLEU, "calendar", "Dernière ouverture : journée 24.", 16))
+	# Dernière journée où le moteur accepte encore une promesse (relationships.cjs : promiseLastJourney) ; « — » si le moteur ne la donne pas.
+	var derniere := int(data.get("promiseLastJourney", 0))
+	var echeance := Pastilles.pastille("J%d" % derniere if derniere > 0 else "—", Pastilles.BLEU, "calendar", "Dernière journée pour promettre : J%d" % derniere if derniere > 0 else "Dernière journée pour promettre : inconnue", 16, "RelationshipPromiseDeadline", func(): app._navigate("Calendrier"))
+	titre.add_child(echeance)
 	parent.add_child(titre)
 	if promise is Dictionary:
 		var suivi := Components.h(8)

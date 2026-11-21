@@ -660,7 +660,7 @@ static func _zone_legend(card: Panel, zones: Array, note: String, x: float, base
 			cursor += 20
 		var mark := Zones.mark(group, kind, Rect2(cursor, 19 - side, side, side), Zones.tint(kind))
 		mark.name = "StandingsZoneLegendMark_" + kind
-		var label := D.text(group, cursor + side + 5, 18, str(zones[i].get("label", "")), 18, Charte.IVOIRE, 600)
+		var label := D.text(group, cursor + side + 5, 18, Zones.short_label(zones[i]), 18, Charte.IVOIRE, 600)
 		label.name = "StandingsZoneLegendItem_%d" % i
 		label.set_meta("zone_kind", kind)
 		cursor += side + 5 + label.size.x / C.density
