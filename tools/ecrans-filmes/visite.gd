@@ -52,6 +52,7 @@ const EXTRAS := [
 	{"id": "preparation-conseils", "libelle": "Préparation · conseils détaillés (sous-page)", "type": "preparation_sous", "sous": "conseils"},
 	{"id": "preparation-reperes", "libelle": "Préparation · tous les repères (sous-page)", "type": "preparation_sous", "sous": "reperes"},
 	{"id": "effectif-contrats", "libelle": "Effectif · onglet Contrats", "type": "effectif_onglet", "onglet": 2},
+	{"id": "contrats-fenetre-echeance", "libelle": "Effectif · Contrats · petite fenêtre des échéances", "type": "effectif_onglet", "onglet": 2, "ouvrir": "ContractReviewStatEnding"},
 	{"id": "effectif-condition", "libelle": "Effectif · onglet Condition", "type": "effectif_onglet", "onglet": 1},
 	{"id": "effectif-developpement", "libelle": "Effectif · onglet Développement", "type": "effectif_onglet", "onglet": 3},
 	{"id": "finances-tresorerie", "libelle": "Finances · onglet Trésorerie (colonne de verdict)", "type": "finances_onglet", "onglet": "cash"},
@@ -610,6 +611,11 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			app.management_ui.roster.immersive_tab = int(ecran.onglet)
 			app._navigate("Effectif")
 			await stabiliser()
+			if ecran.has("ouvrir"):
+				var cible := app.find_child(str(ecran.ouvrir), true, false) as Button
+				if cible == null: return {"statut": "echec", "note": "élément introuvable : " + str(ecran.ouvrir)}
+				cible.pressed.emit()
+				await stabiliser()
 		"onglet_cle":
 			app.management_ui[str(ecran.cle)] = str(ecran.onglet)
 			app._navigate(str(ecran.route))
