@@ -137,7 +137,16 @@ static func _finance(app: Control, page: Container, data: Dictionary, locked: bo
 		var reason := "Une amélioration par saison" if q.used else "Trésorerie insuffisante" if not q.affordable else ""
 		var row := G.h(12)
 		facility.add_child(row)
-		Visuel.tuile_offre(row, "settings", "Installations · niveau %d / 10" % q.level, G.euros(q.cost), "", _choice(app, "club_facility_upgrade", {"cost":q.cost,"level":q.level}, blocked, "Investir %s pour passer les installations au niveau %d ?" % [G.euros(q.cost), q.nextLevel], "Choisir", reason), _short(app, "DirectionLien_InstallationsTresorerie") if not q.affordable and not q.used else null, null, "Entretien du prochain niveau indiqué au devis. Une amélioration par saison.")
+		var tile := Visuel.tuile_offre(row, "settings", "Installations", G.euros(q.cost), "niveau %d / 10" % q.level, _choice(app, "club_facility_upgrade", {"cost":q.cost,"level":q.level}, blocked, "Investir %s pour passer les installations au niveau %d ?" % [G.euros(q.cost), q.nextLevel], "Choisir", reason), _short(app, "DirectionLien_InstallationsTresorerie") if not q.affordable and not q.used else null, null, "Entretien du prochain niveau indiqué au devis. Une amélioration par saison.")
+		# Grille de trois places comme les partenaires (colonnes de même largeur) : la tuile prend la place du milieu,
+		# même largeur que les tuiles d'en face, jamais étirée seule sur toute la colonne.
+		for side in [0, 2]:
+			var slot := Control.new()
+			slot.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			row.add_child(slot)
+			row.move_child(slot, side)
+		tile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var sponsors := G.panel(partners)
 	sponsors.add_child(Tuile.titre_bloc("Choisir son partenaire", "Une signature par saison, avant la cinquième journée."))
 	var best := {"weekly":1.0, "signing":1.0, "win":1.0}
@@ -232,18 +241,26 @@ static func _fans(app: Control, page: Container, data: Dictionary, locked: bool)
 	G.photo_note(page, app.model.club, "Le territoire", "Une ville derrière toi", "city", 140)
 	var card := G.panel(page)
 	card.add_child(Tuile.titre_bloc("Une ville derrière toi", "L’accueil et l’ancrage local se construisent toute la saison.\n\n" + Copy.notice("strategy", f.notice)))
-	var metrics := G.h(72)
+	# Trois cellules de même largeur sur toute la carte, contenu centré : espacement régulier, milieux alignés.
+	var metrics := G.h(0)
 	card.add_child(metrics)
+	var cell := func() -> CenterContainer:
+		var box := CenterContainer.new()
+		box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		box.size_flags_stretch_ratio = 1.0
+		metrics.add_child(box)
+		Tuile.proteger(box)
+		return box
 	var open := func(): _public(app, f)
 	var mood := C.v(4)
-	metrics.add_child(mood)
+	cell.call().add_child(mood)
 	mood.add_child(Visuel.Anneau.new(float(f.sentiment), 100.0))
 	mood.add_child(C.label("SENTIMENT", 17, Charte.IVOIRE_2, true, 600))
 	(mood.get_child(1) as Label).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	Tuile.proteger(mood)
 	LienZone.relier(mood, "DirectionLien_Sentiment", "Le public", open)
-	LienZone.relier(Visuel.chiffre_picto(metrics, "people", G.n(f.expectedAttendance), "AFFLUENCE PRÉVUE"), "DirectionLien_Affluence", "Le public", open)
-	LienZone.relier(Visuel.chiffre_picto(metrics, "star", G.n(f.subscribers), "ABONNÉS"), "DirectionLien_Abonnes", "Le public", open)
+	LienZone.relier(Visuel.chiffre_picto(cell.call(), "people", G.n(f.expectedAttendance), "AFFLUENCE PRÉVUE"), "DirectionLien_Affluence", "Le public", open)
+	LienZone.relier(Visuel.chiffre_picto(cell.call(), "star", G.n(f.subscribers), "ABONNÉS"), "DirectionLien_Abonnes", "Le public", open)
 	var price_row := G.h(10)
 	card.add_child(price_row)
 	for price: Dictionary in f.prices:
