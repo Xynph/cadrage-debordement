@@ -394,7 +394,7 @@ func invitations_in_list(mail: Dictionary) -> void:
 		if open != null:
 			check(open.text == "Ouvrir l’entretien", "Entretien : bouton « Ouvrir l’entretien » (%s)" % open.text)
 			check(open.text != open.text.to_upper(), "Entretien : libellé en casse normale, pas en capitales")
-			check(open.has_theme_stylebox_override("normal") and open.get_theme_stylebox("normal") is StyleBoxFlat and (open.get_theme_stylebox("normal") as StyleBoxFlat).bg_color == C.Charte.IVOIRE, "Entretien : action principale en ivoire plein (style « action » de la charte), pas au style par défaut")
+			check(open.has_theme_stylebox_override("normal") and open.get_theme_stylebox("normal") is StyleBoxFlat and (open.get_theme_stylebox("normal") as StyleBoxFlat).bg_color.a == 0.0 and (open.get_theme_stylebox("normal") as StyleBoxFlat).border_color == C.Charte.FILET and open.get_theme_color("font_color") == C.Charte.IVOIRE, "Entretien : action principale en pilule à contour, texte ivoire (charte finale : le seul aplat doré reste Continuer), pas au style par défaut")
 			var detail := node("InboxDetail") as Control
 			check(detail != null and detail.get_global_rect().grow(1.0).encloses(open.get_global_rect()), "Entretien : bouton dans la colonne du message")
 		check(Reception.scene_invitation_caption({"title":"Moment au club"}) == "Ouvrir l’invitation", "Autres invitations : « Ouvrir l’invitation »")

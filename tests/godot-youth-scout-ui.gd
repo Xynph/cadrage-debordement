@@ -202,7 +202,10 @@ func run() -> void:
 		var contract:=dialog("ContractOffer")
 		check(contract!=null,"Réemploi vrai dialogue contrat")
 		if contract!=null:
-			var years:=app.find_child("OfferYears",true,false) as SpinBox;years.value=years.min_value
+			# Demande du joueur, durée proposée par défaut : une saison seule relève son salaire de réserve (+8 %),
+			# d'où une contre-offre légitime selon le joueur tiré.
+			var years:=app.find_child("OfferYears",true,false) as SpinBox
+			check(years!=null and years.value>=years.min_value,"Durée du contrat proposée")
 			contract.get_ok_button().pressed.emit();await response("recruit")
 			check(app.model.squad.any(func(p):return p.id==signed_id),"Recrutement réel dans effectif")
 			scout=await open_scout()
@@ -242,6 +245,9 @@ func run() -> void:
 	if annual.is_empty():
 		annual = xp.duplicate(true); annual.id="qa-legacy-annual"; annual.model="annual-v11"
 		annual.availablePlans=["general","integration"]; annual.focusOptions=[]; annual.focus=null; annual.defaultFocus=null; annual.plan="general"
+		# Copie : depuis #770, le pont applique ses patchs sur son propre modèle, partagé par référence avec app.model ;
+		# la projection d'affichage ne doit jamais l'altérer (sinon le snapshot suivant repart de cette liste factice).
+		app.model=annual_model.duplicate(true)
 		app.model.clubLife.youthDevelopment.players=[annual]
 	young=await open_youth(); await search(young,"YouthDevelopmentSearch",annual.name)
 	var annual_plan:=young.find_child("YouthPlan",true,false) as OptionButton

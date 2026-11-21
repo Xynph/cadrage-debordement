@@ -1317,6 +1317,9 @@ static func _column_height(column: Control, width: float) -> float:
 	for block: Node in column.get_children():
 		if block is Label: total += _label_height(block, width)
 		elif block.has_meta("hauteur_px"): total += float(block.get_meta("hauteur_px"))
+		elif block is MarginContainer and block.get_child_count() == 1 and block.get_child(0).has_meta("hauteur_px"):
+			# Lettre posée dans son support à marges (ombre de la charte) : sa hauteur connue plus les marges haute et basse.
+			total += float(block.get_child(0).get_meta("hauteur_px")) + float(block.get_theme_constant("margin_top") + block.get_theme_constant("margin_bottom"))
 		else: total += (block as Control).get_combined_minimum_size().y
 	return total + C.px(6)
 

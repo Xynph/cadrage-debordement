@@ -121,7 +121,13 @@ static func info(texte: String, signe: String = "i", id: String = "", cote: int 
 	bouton.mouse_default_cursor_shape = Control.CURSOR_HELP
 	bouton.tooltip_text = texte
 	bouton.accessibility_name = ("Aide · " if signe == "?" else "Légende · ") + texte
-	bouton.custom_minimum_size = Vector2(C.px(cote), C.px(cote))
+	# Cible cliquable d'au moins 24 px à l'écran quelle que soit la résolution (à 1280×720, 26 unités du gabarit ne font
+	# que 13 px) : plancher de 26 px, la coque réduisant encore un peu la page (≈ 0,98) à cette taille. Le rond dessiné
+	# garde sa taille du gabarit : seule la zone cliquable s'agrandit autour de lui (marges négatives des styles).
+	var rond := float(C.px(cote))
+	var cote_px := maxf(26.0, rond)
+	var retrait := -(cote_px - rond) / 2.0
+	bouton.custom_minimum_size = Vector2(cote_px, cote_px)
 	bouton.add_theme_font_override("font", C.BOLD)
 	bouton.add_theme_font_size_override("font_size", maxi(12, C.px(cote * .62)))
 	for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: bouton.add_theme_color_override(etat, BLEU)
@@ -133,9 +139,11 @@ static func info(texte: String, signe: String = "i", id: String = "", cote: int 
 		style.content_margin_right = 0
 		style.content_margin_top = 0
 		style.content_margin_bottom = 0
+		style.set_expand_margin_all(retrait)
 		bouton.add_theme_stylebox_override(etat, style)
 	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, Charte.RAYON_PILULE, 0)
 	focus.set_border_width_all(2)
+	focus.set_expand_margin_all(retrait)
 	Charte.sans_ombre(focus)
 	bouton.add_theme_stylebox_override("focus", focus)
 	bouton.set_meta("immersive_style_applied", true)
