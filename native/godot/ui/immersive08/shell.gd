@@ -890,6 +890,9 @@ static func refresh_save_line(app: Control, line: Button = null) -> void:
 		# Place comptée : le jour de la semaine tombe, la date reste ; le texte complet est dans l'infobulle.
 		var compact := RegEx.create_from_string("\\s[^\\s\\d]+\\.?(?=\\s\\d)").sub(caption, "")
 		if not compact.is_empty(): caption = compact
+		# Toujours trop large (rail étroit, 1280) : le picto ✓ dit « sauvegardé », il ne reste que la date.
+		if caption.begins_with("Sauvegardé ") and _rw(C.BODY, caption, 19) > RAIL_WIDTH - 2.0 * RAIL_INSET - RAIL_LABEL - 8.0:
+			caption = caption.get_slice(" ", caption.get_slice_count(" ") - 1)
 	line.text = caption
 	line.tooltip_text = state[3]
 	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]: line.add_theme_color_override(key, state[1])

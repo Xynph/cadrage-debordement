@@ -4,6 +4,7 @@ extends RefCounted
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
+const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 const COLONNES := 6
 const TUILE := Vector2(232, 110)
 
@@ -46,6 +47,7 @@ static func ouvrir(canvas: Control, titre: String, couleur: Color, joueurs: Arra
 		canvas._person_link(carte, Rect2(8, 8, 66, 94), "player", p, "TrainingGroupPortrait_" + cle)
 		canvas._person_link(carte, Rect2(80, 6, TUILE.x - 86, 50), "player", p, "TrainingGroupName_" + cle)
 	fermer_bouton.grab_focus()
+	PetiteFenetre.enregistrer(panneau, func(): fermer(canvas))
 	return panneau
 
 ## Plus grande taille (gabarit, au plus `taille`, au moins 12) où `texte` tient dans `largeur` unités.

@@ -50,6 +50,8 @@ declare -A suite_limits=(
   [tests/godot-art-direction.cjs]=600
   [tests/godot-match-temps-forts.cjs]=1200
   [tests/godot-immersive08.cjs]=600
+  # Avant-match « Dernière rencontre » : carrière Monde jusqu'au 1er match, match délégué, match suivant, 3 tailles.
+  [tests/godot-avant-match-bilan.cjs]=900
   # Notes de match : préparation Node de la carrière Monde (~68 jours jusqu'au premier match, 3 matchs), puis Godot.
   # Mesuré sur runner le 13/11 (run 43474285948) : 311 s, suite verte ; plafond 600 s = marge d'environ deux fois.
   [tests/godot-notes-match.cjs]=600
