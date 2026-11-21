@@ -194,7 +194,7 @@ class Guetteur extends Node:
 		# Mon XV redessiné sous la souris : même joueur, nouveau contrôle (l'ancien est libéré) ; la carte suit la
 		# nouvelle ancre, et se ferme si son ancre a disparu sans remplaçante.
 		if lie != null: ancre = lie
-		var ouverte := Carte.actuelle(app)
+		var ouverte: Control = Carte.actuelle(app)
 		if ouverte != null:
 			var tenue: Variant = ouverte.get_meta("ancre", null)
 			if not is_instance_valid(tenue) or (tenue as Control).is_queued_for_deletion() or not (tenue as Control).is_inside_tree():

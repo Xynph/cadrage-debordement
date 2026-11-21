@@ -32,6 +32,12 @@ func command(id: String, payload: Dictionary = {}) -> void:
 func surface() -> Control:
 	return app.contextual_director.view if app.contextual_director.active() and app.contextual_director.kind == "live" else null
 
+## Écran 2D du direct relu à chaque fois : la vue du direct peut être reconstruite pendant le match (l'ancienne est
+## libérée), jamais gardée d'une attente à l'autre.
+func entre() -> Control:
+	var v := surface()
+	return v.regie.between if is_instance_valid(v) and v.regie != null and is_instance_valid(v.regie.between) else null
+
 func until(condition: Callable, limit_ms: int) -> bool:
 	var deadline := Time.get_ticks_msec() + limit_ms
 	while not condition.call() and Time.get_ticks_msec() < deadline: await process_frame
@@ -53,6 +59,7 @@ func souris(position: Vector2) -> void:
 ## Tuile de Mon XV du joueur n° `numero` (sinon la première visible).
 func tuile(between: Control, numero: int) -> Control:
 	var choisie: Control = null
+	if not is_instance_valid(between): return null
 	for n: Node in between.find_children("MatchBetweenPlayer*", "Button", true, false):
 		var c := n as Control
 		if c.is_queued_for_deletion() or not c.is_visible_in_tree() or not c.has_meta("carte_joueur"): continue
@@ -99,9 +106,8 @@ func run() -> void:
 	var minute_voulue := int(OS.get_environment("CD_PLANCHE_MINUTE")) if OS.get_environment("CD_PLANCHE_MINUTE").is_valid_int() else 12
 	Engine.time_scale = 16.0
 	await until(func(): return int(app.model.live.get("minute", 0)) >= minute_voulue, 600000)
-	check(await until(func(): return vue_2d(view), 240000), "Écran 2D du direct")
+	check(await until(func(): return vue_2d(surface()), 240000), "Écran 2D du direct")
 	Engine.time_scale = 1.0
-	var between: Control = view.regie.between
 	# Survol pendant que le match tourne (l'écran 2D alterne avec les temps forts : on revient sur le joueur tant que la
 	# carte n'est pas apparue) ; le survol ne met pas le match en pause.
 	var cible: Control = null
@@ -109,11 +115,11 @@ func run() -> void:
 	var delai_ms := 0
 	var limite_survol := Time.get_ticks_msec() + 90000
 	while not apparue and Time.get_ticks_msec() < limite_survol:
-		await until(func(): return vue_2d(view), 30000)
+		await until(func(): return vue_2d(surface()), 30000)
 		souris(Vector2(4, 4))
 		await settle(2)
 		# Mon XV est redessiné à chaque action du direct : la tuile est relue juste avant de viser (l'ancienne est libérée).
-		cible = tuile(between, 10)
+		cible = tuile(entre(), 10)
 		if not is_instance_valid(cible):
 			await settle(10)
 			continue
@@ -127,15 +133,15 @@ func run() -> void:
 	# Le direct continue (Mon XV redessiné sous la souris) : la carte reste ouverte tant que l'écran 2D est là.
 	for i in 60:
 		await process_frame
-		if not vue_2d(view): break
-	check(Carte.actuelle(app) != null or not vue_2d(view), "Match en cours : la carte reste ouverte sous la souris")
+		if not vue_2d(surface()): break
+	check(Carte.actuelle(app) != null or not vue_2d(surface()), "Match en cours : la carte reste ouverte sous la souris")
 	# Match figé sur l'écran 2D (pause du test, pas de la carte) pour des captures stables.
-	await until(func(): return vue_2d(view), 60000)
+	await until(func(): return vue_2d(surface()), 60000)
 	if not app.model.live.get("finished", false) and not app.model.live.get("paused", false): await command("pause", {"paused": true})
 	await settle(20)
 	souris(Vector2(4, 4))
 	await settle(4)
-	cible = tuile(between, 10)
+	cible = tuile(entre(), 10)
 	check(is_instance_valid(cible), "Tuile du joueur à l'arrêt")
 	if not is_instance_valid(cible):
 		finir()
@@ -159,7 +165,7 @@ func run() -> void:
 		root.content_scale_size = taille
 		souris(Vector2(4, 4))
 		await settle(40)
-		cible = tuile(between, 10)
+		cible = tuile(entre(), 10)
 		if not is_instance_valid(cible): continue
 		souris(cible.get_global_rect().get_center())
 		await until(func(): return Carte.actuelle(app) != null, 3000)
@@ -169,7 +175,7 @@ func run() -> void:
 		if carte == null: continue
 		var ecran := Rect2(Vector2.ZERO, Vector2(taille))
 		check(ecran.encloses(carte.get_global_rect()), "%s : carte entière dans l'écran %s" % [str(taille), str(carte.get_global_rect())])
-		cible = tuile(between, 10)
+		cible = tuile(entre(), 10)
 		check(is_instance_valid(cible) and not carte.get_global_rect().intersects(cible.get_global_rect()), "%s : la carte ne cache pas le joueur survolé" % str(taille))
 		var d := defauts(carte)
 		check(d.is_empty(), "%s : rien de coupé : %s" % [str(taille), str(d.slice(0, 6))])
@@ -179,7 +185,7 @@ func run() -> void:
 		print("PLANCHE_CARTE_JOUEUR %s : carte %s" % [str(taille), str(carte.get_global_rect())])
 		await capture("carte-%dx%d" % [taille.x, taille.y])
 	# Clic sur le joueur : la carte se range, sa petite fenêtre s'ouvre (comportement inchangé).
-	cible = tuile(between, 10)
+	cible = tuile(entre(), 10)
 	if is_instance_valid(cible) and Carte.actuelle(app) != null:
 		var point := cible.get_global_rect().get_center()
 		for appui in [true, false]:
@@ -193,7 +199,7 @@ func run() -> void:
 		await wait_command()
 		await settle(20)
 		check(Carte.actuelle(app) == null, "Clic : la carte se range")
-		check(view.fenetre_ouverte(), "Clic : la petite fenêtre du joueur s'ouvre")
+		check(is_instance_valid(surface()) and surface().fenetre_ouverte(), "Clic : la petite fenêtre du joueur s'ouvre")
 	finir()
 
 func finir() -> void:
