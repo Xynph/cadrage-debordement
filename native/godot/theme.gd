@@ -78,13 +78,15 @@ static func make() -> Theme:
 	t.set_stylebox("panel", "TabContainer", box(PANEL, Charte.RAYON_PANNEAU))
 	return t
 
+## Feuille claire du carnet (lettre, contrat, dossier) : reste claire (PAPIER), mais rayons et commandes de la charte :
+## boutons, champs et onglets en pilule ; cadres arrondis ; encre ENCRE ; jamais de gris de l'ancien carnet.
 static func paper() -> Theme:
 	var t := make()
 	t.default_font_size = 12
-	var ink := Color("20282c")
-	var muted := Color("5f6a6e")
-	var paper := Color("f0f1ec")
-	var line := Color("ccd2d0")
+	var ink := Charte.ENCRE
+	var muted := Charte.ENCRE_2
+	var paper := Charte.PAPIER
+	var line := Charte.FILET_PAPIER
 	for kind in ["Label", "Button", "OptionButton", "CheckButton", "PopupMenu", "LineEdit", "SpinBox", "AcceptDialog", "Window", "FileDialog"]:
 		t.set_color("font_color", kind, ink)
 		t.set_color("font_hover_color", kind, ink)
@@ -92,49 +94,48 @@ static func paper() -> Theme:
 		t.set_color("font_focus_color", kind, ink)
 		t.set_color("font_disabled_color", kind, muted)
 		t.set_font_size("font_size", kind, 12)
+	var focus := pilule(Color.TRANSPARENT, muted)
+	focus.set_border_width_all(2)
+	focus.set_expand_margin_all(2)
 	for kind in ["Button", "OptionButton"]:
-		t.set_stylebox("normal", kind, box(Color("fcfcf8"), 3, Color("b6bfbd")))
+		t.set_stylebox("normal", kind, pilule(Charte.PAPIER_CLAIR, line))
 		for state in ["icon_normal_color", "icon_hover_color", "icon_pressed_color", "icon_focus_color"]: t.set_color(state,kind,ink)
-		t.set_stylebox("hover", kind, box(Color("e3ebe8"), 3, Color("788b86")))
-		t.set_stylebox("pressed", kind, box(Color("d1dfd9"), 3, Color("506a60")))
-		t.set_stylebox("disabled", kind, box(Color("e5e8e3"), 3, line))
-		var focus := box(Color.TRANSPARENT, 3, Color("345c57"))
-		focus.set_border_width_all(2)
+		t.set_stylebox("hover", kind, pilule(Charte.PAPIER_SURVOL, muted))
+		t.set_stylebox("pressed", kind, pilule(Charte.PAPIER_PRESSE, ink))
+		t.set_stylebox("disabled", kind, pilule(paper, line))
 		t.set_stylebox("focus", kind, focus)
-	t.set_stylebox("panel", "PopupMenu", box(paper, 3, line))
+	t.set_stylebox("panel", "PopupMenu", Charte.sans_ombre(box(paper, Charte.RAYON_CARTE)))
 	t.set_color("font_hover_color", "PopupMenu", paper)
-	t.set_stylebox("hover", "PopupMenu", box(ink, 2))
-	t.set_stylebox("normal", "LineEdit", box(Color("ffffff"), 3, Color("b6bfbd")))
-	var edit_focus := box(Color("ffffff"), 3, Color("345c57"))
+	t.set_stylebox("hover", "PopupMenu", box(ink, Charte.RAYON_PETIT))
+	t.set_stylebox("normal", "LineEdit", pilule(Charte.PAPIER_CLAIR, line))
+	var edit_focus := pilule(Charte.PAPIER_CLAIR, muted)
 	edit_focus.set_border_width_all(2)
 	t.set_stylebox("focus", "LineEdit", edit_focus)
 	t.set_color("caret_color", "LineEdit", ink)
-	t.set_color("selection_color", "LineEdit", Color("c7dcd2"))
+	t.set_color("selection_color", "LineEdit", Charte.PAPIER_PRESSE)
 	for kind in ["AcceptDialog", "Window", "PanelContainer", "Tree", "ItemList"]:
-		t.set_stylebox("panel", kind, box(paper, 3, line))
+		t.set_stylebox("panel", kind, box(paper, Charte.RAYON_CARTE))
 	t.set_color("title_color", "Window", paper)
 	t.set_constant("modulate_arrow","OptionButton",1)
 	for state in ["up_icon_modulate","up_hover_icon_modulate","up_pressed_icon_modulate","down_icon_modulate","down_hover_icon_modulate","down_pressed_icon_modulate"]:t.set_color(state,"SpinBox",ink)
 	for state in ["up_disabled_icon_modulate","down_disabled_icon_modulate"]:t.set_color(state,"SpinBox",muted)
 	for kind in ["Tree","ItemList"]:
 		t.set_color("font_selected_color",kind,ink)
-		for state in ["selected","selected_focus"]:t.set_stylebox(state,kind,box(Color("d8e6df"),2,line))
+		for state in ["selected","selected_focus"]:t.set_stylebox(state,kind,box(Charte.PAPIER_PRESSE,Charte.RAYON_PETIT))
 	t.set_color("font_color", "Tree", ink)
 	t.set_color("font_color", "ItemList", ink)
-	t.set_stylebox("background", "ProgressBar", box(Color("d9dfd9"), 2))
-	t.set_stylebox("fill", "ProgressBar", box(Color("38664b"), 2))
+	t.set_stylebox("background", "ProgressBar", box(Charte.PAPIER_PRESSE, Charte.RAYON_PILULE))
+	t.set_stylebox("fill", "ProgressBar", box(Charte.V_PAPIER, Charte.RAYON_PILULE))
+	# Onglets sur papier : pilules ; l'actif en aplat d'encre (la crème de la charte ne se verrait pas sur la feuille).
 	for kind in ["TabContainer", "TabBar"]:
-		t.set_color("font_selected_color", kind, ink)
+		t.set_color("font_selected_color", kind, paper)
 		t.set_color("font_unselected_color", kind, muted)
 		t.set_color("font_hovered_color", kind, ink)
-		var tab_selected := box(Color("fcfcf8"), 2, line)
-		tab_selected.border_width_bottom=2
-		tab_selected.border_color=Color("506a60")
-		t.set_stylebox("tab_selected", kind, tab_selected)
-		t.set_stylebox("tab_unselected", kind, box(Color("e3e7e2"), 2, line))
-		t.set_stylebox("tab_hovered", kind, box(Color("edf3ee"), 2, Color("788b86")))
+		t.set_stylebox("tab_selected", kind, pilule(ink))
+		t.set_stylebox("tab_unselected", kind, pilule(Color.TRANSPARENT, line))
+		t.set_stylebox("tab_hovered", kind, pilule(Charte.PAPIER_SURVOL, muted))
 		t.set_font_size("font_size", kind, 12)
-	t.set_stylebox("panel", "TabContainer", box(paper, 2, line))
+	t.set_stylebox("panel", "TabContainer", box(paper, Charte.RAYON_CARTE))
 	for kind in ["CheckBox", "CheckButton"]:
 		t.set_color("font_color", kind, ink)
 		t.set_color("font_hover_color", kind, ink)
