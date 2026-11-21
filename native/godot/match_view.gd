@@ -2238,7 +2238,7 @@ func _update_club_branding() -> void:
 	if _club_crest == null:
 		return
 	var aspect := float(_club_crest.get_width()) / maxf(1.0, _club_crest.get_height())
-	var height := minf(2.9, 12.0 / maxf(aspect, 0.01))
+	var height := minf(3.5, 16.0 / maxf(aspect, 0.01))
 	_club_branding.multimesh.set_instance_transform(0,
 		Transform3D(Basis.from_scale(Vector3(height * aspect, height, 1.0)), Vector3(0, 10.6, -54.6)))
 
