@@ -157,6 +157,16 @@ func lot6() -> void:
 func lot7() -> void:
 	var Shell = preload("res://ui/immersive08/shell.gd")
 	verifier(Shell.fond_ecran("Bureau") == "fond-bureau" and Shell.fond_ecran("Bureau", "offseason") == "fond-fin-de-saison" and Shell.fond_ecran("Match") == "", "fonds d'écran par route")
+	# Une photo par page : chaque groupe du rail (pages voisines) et chaque onglet à thème propre a sa propre image.
+	verifier(Shell.fond_ecran("Préparation", "", {"preparation": {"tab": 2}}) == Shell.FOND_ENTRAINEMENT and Shell.fond_ecran("Club", "", {"immersive08_club_tab": "history"}) == "fond-palmares", "fonds des onglets Entraînement et Histoire")
+	for groupe: Array in Shell.GROUPS:
+		var vus := {}
+		for route: String in groupe[2]:
+			var fond := Shell.fond_ecran(route)
+			if fond.is_empty(): continue
+			verifier(not vus.has(fond), "fond %s unique dans le groupe %s (%s)" % [fond, groupe[0], route])
+			vus[fond] = true
+	for route: String in Shell.FONDS: verifier(not Shell.fond_ecran(route).is_empty(), "fond de %s présent" % route)
 	for cas: Array in [["Le président", "staff-president"], ["Le quotidien régional", "presse-journaliste"], ["Cellule médicale", "staff-medecin"], ["Inconnu", "mail-staff"]]:
 		verifier(Reception.portrait_expediteur(cas[0]) == cas[1], "expéditeur « %s » : %s" % [cas[0], Reception.portrait_expediteur(cas[0])])
 	verifier(BanqueImages.poste("Pilier gauche") == "poste-pilier" and BanqueImages.poste("Demi d’ouverture") == "poste-ouvreur" and BanqueImages.poste("Troisième ligne aile") == "poste-troisieme-ligne" and BanqueImages.poste("?") == "", "postes")
