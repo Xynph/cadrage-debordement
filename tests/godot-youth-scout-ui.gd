@@ -207,6 +207,41 @@ func run() -> void:
 			var years:=app.find_child("OfferYears",true,false) as SpinBox
 			check(years!=null and years.value>=years.min_value,"Durée du contrat proposée")
 			contract.get_ok_button().pressed.emit();await response("recruit")
+			if str(app.model.meta.get("negotiation",{}).get("status",""))=="counter":
+				# Contre-offre légitime (salaire de réserve propre à chaque joueur) : le manager rouvre l'offre, saisit le
+				# salaire et la durée demandés dans les champs visibles, puis envoie.
+				var asked: Dictionary=app.model.meta.negotiation.duplicate()
+				scout=await open_scout()
+				var again:=player_button("RegenScoutOffer",signed_id)
+				if again==null:
+					var followed:=scout.find_child("RegenScoutWatched",true,false) as CheckBox
+					if followed!=null and not followed.button_pressed:await press(followed)
+					again=player_button("RegenScoutOffer",signed_id)
+				check(again!=null,"Piste rouverte après la contre-offre")
+				if again!=null:
+					await press(again)
+					var salary_field: SpinBox=null
+					var years_field: SpinBox=null
+					for item: SpinBox in app.find_children("OfferSalary","SpinBox",true,false):
+						if item.is_visible_in_tree():salary_field=item
+					for item: SpinBox in app.find_children("OfferYears","SpinBox",true,false):
+						if item.is_visible_in_tree():years_field=item
+					check(salary_field!=null and salary_field.editable and years_field!=null and years_field.editable,"Champs salaire et durée visibles et modifiables")
+					if salary_field!=null and years_field!=null:
+						load("res://ui/salary_display.gd").set_input_weekly(salary_field,float(asked.salary))
+						years_field.value=float(asked.years)
+						await settle()
+					# Offre en fenêtre (détection ouverte) ou en page « Offre au joueur » (envoi en deux temps).
+					var send:=button("RecrutementPageValider")
+					if send!=null:
+						send.pressed.emit();await settle()
+						var ok:=button("ContractSignatureConfirmationOk")
+						check(ok!=null,"Confirmation en place de l'offre")
+						if ok!=null:ok.pressed.emit();await response("recruit contre-offre")
+					else:
+						var shown: Array=app.find_children("ContractOffer*","ConfirmationDialog",true,false).filter(func(d):return d.visible)
+						check(shown.size()==1,"Offre rouverte en fenêtre")
+						if shown.size()==1:shown[0].get_ok_button().pressed.emit();await response("recruit contre-offre")
 			check(app.model.squad.any(func(p):return p.id==signed_id),"Recrutement réel dans effectif")
 			scout=await open_scout()
 			var archive: Array=app.model.clubLife.regenScouting.shortlist.filter(func(p):return p.id==signed_id)

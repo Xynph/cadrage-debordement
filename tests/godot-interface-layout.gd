@@ -304,7 +304,7 @@ func run() -> void:
 		await resize_to(resolution)
 		var receipt_button := named("DecisionFeedbackButton")
 		var guide_dock := guide_place()
-		check(receipt_button!=null and receipt_button.is_visible_in_tree() and guide_dock!=null and guide_dock.is_visible_in_tree(),"Reçu et emplacement du guide présents "+str(resolution)+" reçu=%s/%s guide=%s/%s" % [receipt_button!=null, receipt_button!=null and receipt_button.is_visible_in_tree(), guide_dock.name if guide_dock!=null else "-", guide_dock!=null and guide_dock.is_visible_in_tree()])
+		check(receipt_button!=null and receipt_button.is_visible_in_tree() and guide_dock!=null and guide_dock.is_visible_in_tree(),"Reçu et emplacement du guide présents "+str(resolution))
 		if receipt_button==null or guide_dock==null:continue
 		# Ancien pied de page : dock d'au moins 100 px ; coque de la charte : médaillon de Gabi dans le bandeau du haut.
 		var guide_size := guide_dock.get_global_rect().size
