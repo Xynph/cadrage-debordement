@@ -42,6 +42,11 @@ func expect_panel(label: String, expected: int) -> void:
 	if panel==null: return
 	var names:=panel.find_children("TrainingGroupName_*","Button",true,false)
 	check(names.size()==expected,"%s : %d joueur(s) attendus, %d affichés" % [label,expected,names.size()])
+	var tronques:=0
+	for l: Label in panel.find_children("*","Label",true,false):
+		var police:=l.get_theme_font("font")
+		if police!=null and police.get_string_size(l.text,HORIZONTAL_ALIGNMENT_LEFT,-1,l.get_theme_font_size("font_size")).x>l.size.x+1.0: tronques+=1
+	check(tronques==0,"%s : aucun texte tronqué dans le panneau (%d)" % [label,tronques])
 	if not names.is_empty():
 		var id:=str(names[0].get_meta("entity_id"))
 		await click_control(names[0])

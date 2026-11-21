@@ -5,7 +5,7 @@ const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
 const COLONNES := 6
-const TUILE := Vector2(206, 92)
+const TUILE := Vector2(232, 110)
 
 static func ouvrir(canvas: Control, titre: String, couleur: Color, joueurs: Array) -> Panel:
 	fermer(canvas)
@@ -28,18 +28,33 @@ static func ouvrir(canvas: Control, titre: String, couleur: Color, joueurs: Arra
 		var x := 19.0 + (i % COLONNES) * (TUILE.x + 10.0)
 		var y := 96.0 + (i / COLONNES) * (TUILE.y + 10.0)
 		var carte := D.rect(panneau, Rect2(x, y, TUILE.x, TUILE.y), C.Charte.PANNEAU_2, C.Charte.RAYON_CARTE)
-		canvas._portrait(carte, p, Rect2(8, 8, 66, 76))
-		D.text(carte, 84, 30, str(p.get("name", "")), 21, C.IVORY, 700, TUILE.x - 92)
-		D.text(carte, 84, 52, str(p.get("pos", "")), 17, C.MUTED, 500, TUILE.x - 92)
+		canvas._portrait(carte, p, Rect2(8, 8, 66, 94))
+		# Prénom et nom sur deux lignes, jamais tronqués : la taille baisse si un nom très long dépasse.
+		var nom_complet := str(p.get("name", "")).strip_edges()
+		var coupure := nom_complet.find(" ")
+		var prenom := nom_complet.substr(0, coupure) if coupure > 0 else ""
+		var nom := nom_complet.substr(coupure + 1) if coupure > 0 else nom_complet
+		var largeur_texte := TUILE.x - 92
+		if not prenom.is_empty(): D.text(carte, 84, 26, prenom, _taille(prenom, 17, 500, largeur_texte), C.MUTED, 500, largeur_texte)
+		D.text(carte, 84, 50, nom, _taille(nom, 21, 700, largeur_texte), C.IVORY, 700, largeur_texte)
+		D.text(carte, 84, 72, str(p.get("pos", "")), _taille(str(p.get("pos", "")), 16, 500, largeur_texte), C.MUTED, 500, largeur_texte)
 		var condition := clampf(float(p.get("condition", 0)), 0.0, 100.0)
-		D.rect(carte, Rect2(84, 66, 62, 8), C.Charte.PANNEAU_3, 4)
-		D.rect(carte, Rect2(84, 66, 62.0 * condition / 100.0, 8), C.Charte.couleur_attribut(condition), 4)
-		D.text(carte, 154, 76, G.n(roundi(condition)), 19, C.IVORY, 700, 46)
+		D.rect(carte, Rect2(84, 86, 82, 8), C.Charte.PANNEAU_3, 4)
+		D.rect(carte, Rect2(84, 86, 82.0 * condition / 100.0, 8), C.Charte.couleur_attribut(condition), 4)
+		D.text(carte, 174, 96, G.n(roundi(condition)), 19, C.IVORY, 700, 46)
 		var cle := str(p.get("id", "")).validate_node_name()
-		canvas._person_link(carte, Rect2(8, 8, 66, 76), "player", p, "TrainingGroupPortrait_" + cle)
-		canvas._person_link(carte, Rect2(80, 8, TUILE.x - 86, 28), "player", p, "TrainingGroupName_" + cle)
+		canvas._person_link(carte, Rect2(8, 8, 66, 94), "player", p, "TrainingGroupPortrait_" + cle)
+		canvas._person_link(carte, Rect2(80, 6, TUILE.x - 86, 50), "player", p, "TrainingGroupName_" + cle)
 	fermer_bouton.grab_focus()
 	return panneau
+
+## Plus grande taille (gabarit, au plus `taille`, au moins 12) où `texte` tient dans `largeur` unités.
+static func _taille(texte: String, taille: int, graisse: int, largeur: float) -> int:
+	var police: Font = C.font(graisse)
+	var t := taille
+	while t > 12 and police.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(t))).x > C.px(largeur) - 1.0:
+		t -= 1
+	return t
 
 static func fermer(canvas: Control) -> void:
 	for nom in ["TrainingGroupPanel", "TrainingGroupVeil"]:
