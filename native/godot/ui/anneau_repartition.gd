@@ -6,11 +6,7 @@ extends RefCounted
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 
-## Palette commune avec Club › Staff (choix de Léo du 21/11/2026). À remplacer par les jetons de charte.gd
-## (REPOS, NORMAL, INTENSIF, CONDITION, MORAL, CONFIANCE, GAIN, PERTE) une fois la PR Staff fusionnée.
-const REPOS := Color("4fb3a9")
-const NORMAL := Color("7fbf7a")
-const INTENSIF := Color("e0a04a")
+## Couleurs des parts : jetons de charte.gd (REPOS, NORMAL, INTENSIF…), communs avec Club › Staff.
 
 static func total(parts: Array) -> int:
 	var somme := 0

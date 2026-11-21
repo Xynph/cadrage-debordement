@@ -56,7 +56,7 @@ func run() -> void:
 	var until:=Time.get_ticks_msec()+30000
 	while app.model.is_empty() and Time.get_ticks_msec()<until: await process_frame
 	app.timer.stop()
-	await command("new_career",{"mode":"common","club":29})
+	await command("new_career",{"mode":"world-champ","club":29})
 	await ContextualFlow.settle_club_meetings(app,self,check)
 	app.coach.close()
 	app.Immersive.open_training(app); await settle()
@@ -94,12 +94,20 @@ func run() -> void:
 			await click(ring.get_global_transform_with_canvas()*(ring.size/2.0+Vector2(cos(angle),sin(angle))*radius))
 			await expect_panel("%s part %d (anneau)" % [key,k],expected)
 	# Graphique : chaque poste ouvre ses joueurs.
+	var chart:=found("TrainingLoadChart")
+	var bars:=0
+	for child in chart.get_children():
+		if child is Panel and child.tooltip_text.contains("charge moyenne"): bars+=1
+	check(bars>=10,"Graphique : barres de charge et de condition dessinées (%d)" % bars)
+	var zones:=0
 	for i in 7:
 		var zone:=found("TrainingChartFamily"+str(i))
 		if zone==null: continue
+		zones+=1
 		await click_control(zone)
 		check(found("TrainingGroupPanel")!=null,"Poste %d -> panneau de joueurs" % i)
 		await close_panel()
+	check(zones>=5,"Graphique : postes cliquables (%d)" % zones)
 	finish()
 func finish() -> void:
 	print("TRAINING GROUPS CLICKS : ",checks," contrôles ; ",failures.size()," échec(s)")

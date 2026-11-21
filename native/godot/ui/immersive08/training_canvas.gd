@@ -264,7 +264,7 @@ func _chart() -> void:
 		D.text(tile, 60, y + 5, str(i * 20), 16, C.MUTED, 500, 39, HORIZONTAL_ALIGNMENT_RIGHT)
 	for i in FAMILIES.size():
 		var family: Array = FAMILIES[i]
-		var players := squad.filter(func(p: Dictionary): return p.get("fam", -1) in family[1])
+		var players := squad.filter(func(p: Dictionary): return int(p.get("fam", -1)) in family[1])
 		var load_total := 0.0
 		var condition_total := 0.0
 		for player: Dictionary in players:
@@ -277,7 +277,7 @@ func _chart() -> void:
 		D.text(tile, x + 24, 253, family[0], 16, C.IVORY, 600, 56, HORIZONTAL_ALIGNMENT_CENTER)
 		if players.is_empty(): continue
 		var tip := "%s · charge moyenne %.0f / 100 · condition moyenne %.0f %% · %d joueur(s)" % [family[0], load_value, condition_value, players.size()]
-		var series := [[load_value, Anneau.INTENSIF if load_value >= 55.0 else Anneau.NORMAL, x], [condition_value, Anneau.REPOS, x + 25]]
+		var series := [[load_value, C.Charte.INTENSIF if load_value >= 55.0 else C.Charte.NORMAL, x], [condition_value, C.Charte.REPOS, x + 25]]
 		for serie: Array in series:
 			var h := maxf(2.0, (bottom - top) * float(serie[0]) / 100.0)
 			var bar := D.rect(tile, Rect2(float(serie[2]), bottom - h, 22, h), serie[1], 3)
@@ -286,23 +286,23 @@ func _chart() -> void:
 			D.text(tile, float(serie[2]) + 11, bottom - h - 4, "%.0f" % float(serie[0]), 15, C.IVORY, 700, 30, HORIZONTAL_ALIGNMENT_CENTER)
 	for i in FAMILIES.size():
 		var famille: Array = FAMILIES[i]
-		var membres := squad.filter(func(p: Dictionary): return p.get("fam", -1) in famille[1])
+		var membres := squad.filter(func(p: Dictionary): return int(p.get("fam", -1)) in famille[1])
 		if membres.is_empty(): continue
 		membres.sort_custom(func(a: Dictionary, b: Dictionary): return float(a.get("physicalLoad", 0)) > float(b.get("physicalLoad", 0)))
-		_zone(tile, Rect2(left + 6 + 56 * i, top - 14, 54, bottom - top + 52), "TrainingChartFamily" + str(i), "%s · voir les %d joueur(s)" % [famille[0], membres.size()], func(): Groupe.ouvrir(self, "Poste · " + str(famille[0]), Anneau.NORMAL, membres))
+		_zone(tile, Rect2(left + 6 + 56 * i, top - 14, 54, bottom - top + 52), "TrainingChartFamily" + str(i), "%s · voir les %d joueur(s)" % [famille[0], membres.size()], func(): Groupe.ouvrir(self, "Poste · " + str(famille[0]), C.Charte.NORMAL, membres))
 	# Seuil de vigilance : trait horizontal à 55.
 	var seuil := bottom - (bottom - top) * 0.55
-	D.line(tile, Vector2(left, seuil), Vector2(right, seuil), Anneau.INTENSIF, 2)
-	D.rect(tile, Rect2(21, 270, 16, 16), Anneau.NORMAL, 3)
+	D.line(tile, Vector2(left, seuil), Vector2(right, seuil), C.Charte.INTENSIF, 2)
+	D.rect(tile, Rect2(21, 270, 16, 16), C.Charte.NORMAL, 3)
 	D.text(tile, 43, 284, "Charge", 17, C.MUTED, 500, 80)
-	D.rect(tile, Rect2(130, 270, 16, 16), Anneau.REPOS, 3)
+	D.rect(tile, Rect2(130, 270, 16, 16), C.Charte.REPOS, 3)
 	D.text(tile, 152, 284, "Condition", 17, C.MUTED, 500, 95)
-	D.rect(tile, Rect2(268, 277, 22, 3), Anneau.INTENSIF, 1)
+	D.rect(tile, Rect2(268, 277, 22, 3), C.Charte.INTENSIF, 1)
 	D.text(tile, 298, 284, "Vigilance dès 55", 17, C.MUTED, 500, 160)
 
 func _vigilance() -> void:
 	var tile := D.panel(self, Rect2(1760, 318, 488, 178), "", "", "", "TrainingRisk")
-	_icon(tile, "warning", Rect2(18, 13, 25, 25), Anneau.INTENSIF)
+	_icon(tile, "warning", Rect2(18, 13, 25, 25), C.Charte.INTENSIF)
 	D.text(tile, 54, 35, "VIGILANCE PHYSIQUE  (%d)" % watched.size(), 25, C.IVORY, 700, 410)
 	D.line(tile, Vector2(17, 47), Vector2(469, 47))
 	if watched.is_empty():

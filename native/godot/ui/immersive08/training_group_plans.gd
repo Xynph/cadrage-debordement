@@ -6,12 +6,12 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
 const R = preload("res://ui/anneau_repartition.gd")
 const ICONES := {"proteger": "shield", "relever": "star", "equilibrer": "train"}
-const TEINTES := {"proteger": R.REPOS, "relever": R.INTENSIF, "equilibrer": R.NORMAL}
+const TEINTES := {"proteger": C.Charte.REPOS, "relever": C.Charte.INTENSIF, "equilibrer": C.Charte.NORMAL}
 ## Règles de chaque plan en pastilles courtes [texte, couleur du mode] ; le texte complet reste en infobulle.
 const REGLES := {
-	"proteger": [["Titulaires → repos", R.REPOS], ["Remplaçants aptes → normal", R.NORMAL]],
-	"relever": [["Jeunes aptes et frais → intensif", R.INTENSIF], ["Titulaires fatigués → repos", R.REPOS]],
-	"equilibrer": [["Charge ou condition critique → repos", R.REPOS], ["Les autres → mode collectif", R.NORMAL]],
+	"proteger": [["Titulaires → repos", C.Charte.REPOS], ["Remplaçants aptes → normal", C.Charte.NORMAL]],
+	"relever": [["Jeunes aptes et frais → intensif", C.Charte.INTENSIF], ["Titulaires fatigués → repos", C.Charte.REPOS]],
+	"equilibrer": [["Charge ou condition critique → repos", C.Charte.REPOS], ["Les autres → mode collectif", C.Charte.NORMAL]],
 }
 const HAUTEUR := 690.0
 const MODES := [["repos"], ["normal", "collective"], ["intense"]]
@@ -19,9 +19,9 @@ const MODES := [["repos"], ["normal", "collective"], ["intense"]]
 static func parts(plan: Dictionary) -> Array:
 	var n: Dictionary = plan.get("counts", {})
 	var liste := [
-		{"n": int(n.get("repos", 0)), "couleur": R.REPOS, "encre": C.Charte.PANNEAU, "mot": "récupération"},
-		{"n": int(n.get("normal", 0)) + int(n.get("collective", 0)), "couleur": R.NORMAL, "encre": C.Charte.PANNEAU, "mot": "normal ou collectif"},
-		{"n": int(n.get("intense", 0)), "couleur": R.INTENSIF, "encre": C.Charte.PANNEAU, "mot": "intensif"},
+		{"n": int(n.get("repos", 0)), "couleur": C.Charte.REPOS, "encre": C.Charte.PANNEAU, "mot": "récupération"},
+		{"n": int(n.get("normal", 0)) + int(n.get("collective", 0)), "couleur": C.Charte.NORMAL, "encre": C.Charte.PANNEAU, "mot": "normal ou collectif"},
+		{"n": int(n.get("intense", 0)), "couleur": C.Charte.INTENSIF, "encre": C.Charte.PANNEAU, "mot": "intensif"},
 	]
 	for part: Dictionary in liste: part["infobulle"] = "%d · %s : voir les joueurs" % [part.n, part.mot]
 	return liste
@@ -53,7 +53,7 @@ static func build(canvas: Control, section: Panel, plans: Array, disponible: boo
 	for i in plans.size():
 		var plan: Dictionary = plans[i]
 		var cle := str(plan.get("key", ""))
-		var teinte: Color = TEINTES.get(cle, R.NORMAL)
+		var teinte: Color = TEINTES.get(cle, C.Charte.NORMAL)
 		var x := 23.0 + i * (largeur + 22.0)
 		var tuile := D.panel(section, Rect2(x, haut, largeur, HAUTEUR), str(plan.label), str(ICONES.get(cle, "train")), "", "TrainingPlanTile_" + cle)
 		# Léger fond teinté, icône teintée.
