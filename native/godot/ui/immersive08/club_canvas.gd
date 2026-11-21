@@ -20,6 +20,7 @@ const History = preload("res://ui/club_memory_view.gd")
 const World = preload("res://ui/immersive08/world_archive.gd")
 const Strategy = preload("res://ui/strategy_view.gd")
 const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
+const HistoireVisuels = preload("res://ui/immersive08/histoire_visuels.gd")
 const Pages = preload("res://ui/immersive08/club_pages.gd")
 const Habillage = preload("res://ui/immersive08/recruitment_pages.gd")
 const Etat = preload("res://ui/management_state.gd")
@@ -947,11 +948,22 @@ static func _world_history(app: Control, canvas: Control, data: Dictionary) -> v
 	var list := C.v(15)
 	C.fill(list)
 	scroll.add_child(list)
+	var years: Array = data.seasons
+	# Planche de choix (revue du 21/11/2026, n° 8) : CD_VARIANTE_VISUELLE=A|B remplace bilan, palmarès et résultats.
+	if not HistoireVisuels.variante().is_empty():
+		list.add_child(HistoireVisuels.build(app, years))
+		list.add_child(C.rule())
+		var individuel := C.v(9)
+		preload("res://ui/performance_analysis_view.gd")._individual(app, individuel)
+		Legacy.apply(individuel, app.accent)
+		list.add_child(individuel)
+		list.add_child(C.rule())
+		_world_coach(list, data)
+		return
 	var analysis: Control = preload("res://ui/performance_analysis_view.gd").build(app)
 	Legacy.apply(analysis,app.accent)
 	list.add_child(analysis)
 	list.add_child(C.rule())
-	var years: Array = data.seasons
 	var palmares: Dictionary = app.model.get("club",{}).get("palmares",{})
 	var titre_palmares := HBoxContainer.new()
 	titre_palmares.add_theme_constant_override("separation", C.px(10))
@@ -987,6 +999,9 @@ static func _world_history(app: Control, canvas: Control, data: Dictionary) -> v
 		if not str(event.get("reaction","")).is_empty():
 			notes.add_child(C.wrap("Réaction du banc · %s  « %s »" % [event.get("reaction_club_name","Banc"),event.reaction],21,C.MUTED,true))
 	list.add_child(C.rule())
+	_world_coach(list, data)
+
+static func _world_coach(list: VBoxContainer, data: Dictionary) -> void:
 	list.add_child(C.label("LE PARCOURS DU COACH",27,C.GOLD,true,700))
 	if data.manager_current_from != null: list.add_child(C.label("Mandat actuel depuis la saison "+G.season_label(data.manager_current_from),24))
 	if data.manager_history.is_empty(): list.add_child(Pastilles.pastille("Aucune prise de poste", Charte.IVOIRE_2, "check", "Aucune prise de poste antérieure enregistrée.", 20, "ClubHistoryNoMove"))
