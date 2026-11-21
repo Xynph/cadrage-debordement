@@ -108,45 +108,61 @@ func run() -> void:
 			check(defile_chiffres != null and not defile_chiffres.get_v_scroll_bar().visible, "%s : chiffres clés sans ascenseur" % str(taille))
 			print("PLANCHE_DIRECT_2D %s : classement %d lignes, multiplex %d matchs" % [str(taille), lignes, between.multiplex_cartes.get_child_count()])
 		await capture("direct-2d-%dx%d" % [taille.x, taille.y])
-	# Un club du classement : sa petite fenêtre par-dessus le match.
+	# Plein écran obligatoire : chaque type d'élément ouvre sa petite fenêtre par-dessus le match ; Échap la ferme et
+	# l'on reste dans le direct (2560 × 1440, référence de Léo).
 	root.size = Vector2i(2560, 1440)
 	root.content_scale_size = root.size
 	await settle(40)
-	var ligne: Control = null
-	for n: Node in between.find_children("*", "PanelContainer", true, false):
-		if n.get_parent() != null and n.get_parent().name == "MatchBetweenLiveTableRows" and (n as Control).is_visible_in_tree():
-			ligne = n
-			break
-	check(ligne != null, "Ligne du classement en direct")
-	if ligne != null:
-		var clic := InputEventMouseButton.new()
-		clic.button_index = MOUSE_BUTTON_LEFT
-		clic.pressed = true
-		ligne.gui_input.emit(clic)
-		await wait_command()
-		await settle(10)
-		check(view.fenetre_ouverte(), "Clic sur un club du classement : sa petite fenêtre")
-		await capture("direct-2d-fenetre-club")
-		view.fermer_fenetre()
-		await settle(10)
-	# Un nom de Mon XV : la petite fenêtre du joueur.
-	var nom_joueur: Button = null
-	for n: Node in between.xv.find_children("MatchBetweenPlayerName_*", "Button", true, false):
-		if (n as Control).is_visible_in_tree():
-			nom_joueur = n
-			break
-	check(nom_joueur != null, "Nom d'un joueur de Mon XV")
-	if nom_joueur != null:
-		nom_joueur.pressed.emit()
-		await wait_command()
-		await settle(10)
-		check(view.fenetre_ouverte(), "Clic sur un joueur : sa petite fenêtre")
-		await capture("direct-2d-fenetre-joueur")
-		view.fermer_fenetre()
+	var clic := InputEventMouseButton.new()
+	clic.button_index = MOUSE_BUTTON_LEFT
+	clic.pressed = true
+	var premier := func(racine: Node, motif: String, classe: String = "Control") -> Control:
+		for n: Node in racine.find_children(motif, classe, true, false):
+			if (n as Control).is_visible_in_tree(): return n
+		return null
+	# Le nom d'un joueur de Mon XV (capture dédiée demandée par Léo).
+	var nom_joueur: Button = premier.call(between.xv, "MatchBetweenPlayerName_*", "Button")
+	await essayer("nom d'un joueur", "MatchFenetreJoueur", "direct-2d-fenetre-joueur-nom-2560", func(): nom_joueur.pressed.emit(), nom_joueur != null, view)
+	var carte: Button = premier.call(between.xv, "MatchBetweenPlayer1", "Button")
+	await essayer("carte d'un joueur", "MatchFenetreJoueur", "direct-2d-fenetre-joueur-carte-2560", func(): carte.pressed.emit(), carte != null, view)
+	var banc: Button = premier.call(between.banc, "MatchBetweenBench16", "Button")
+	await essayer("remplaçant du banc", "MatchFenetreJoueur", "", func(): banc.pressed.emit(), banc != null, view)
+	var ligne: Control = premier.call(between.classement_lignes, "MatchBetweenLiveRow*", "PanelContainer")
+	await essayer("ligne du classement", "MatchFenetreClub", "direct-2d-fenetre-club-2560", func(): ligne.gui_input.emit(clic), ligne != null, view)
+	var rencontre: Control = premier.call(between.multiplex_cartes, "MatchBetweenMultiplexMatch*", "PanelContainer")
+	await essayer("carte du multiplex", "MatchFenetreMatch", "direct-2d-fenetre-match-2560", func(): rencontre.gui_input.emit(clic), rencontre != null, view)
+	var stat: Button = premier.call(between, "MatchBetweenMirror_possession_0", "Button")
+	await essayer("ligne de chiffre", "MatchFenetreStat", "direct-2d-fenetre-stat-2560", func(): stat.pressed.emit(), stat != null, view)
+	var fait: Control = premier.call(between, "MatchBetweenEvent*", "PanelContainer")
+	if fait == null: fait = premier.call(between, "MatchBetweenHighlight*", "PanelContainer")
+	await essayer("événement du match", "MatchFenetreFait", "direct-2d-fenetre-fait-2560", func(): fait.gui_input.emit(clic), fait != null, view)
 	finir()
 
+## Clic sur un élément : sa petite fenêtre `nom` s'ouvre par-dessus le match (capture), Échap la ferme, le direct reste.
+func essayer(element: String, nom: String, fichier: String, action: Callable, present: bool, view: Control) -> void:
+	check(present, "%s : présent à l'écran" % element)
+	if not present: return
+	action.call()
+	await wait_command()
+	await settle(12)
+	var fenetre: Node = view.fenetre_hote.find_child(nom + "*", true, false) if view.fenetre_ouverte() else null
+	check(view.fenetre_ouverte() and fenetre != null, "%s : sa petite fenêtre %s" % [element, nom])
+	if not fichier.is_empty(): await capture(fichier)
+	var echap := InputEventKey.new()
+	echap.keycode = KEY_ESCAPE
+	echap.physical_keycode = KEY_ESCAPE
+	echap.pressed = true
+	Input.parse_input_event(echap)
+	await settle(4)
+	var relache := echap.duplicate()
+	relache.pressed = false
+	Input.parse_input_event(relache)
+	await settle(12)
+	check(not view.fenetre_ouverte(), "%s : Échap ferme la fenêtre" % element)
+	check(surface() == view and view.regie != null, "%s : on reste dans le direct" % element)
+
 func finir() -> void:
-	print("PLANCHE_DIRECT_2D %s %d controles, %d echec" % [OS.get_environment("CD_VARIANTE_VISUELLE"), checks, failures.size()])
+	print("PLANCHE_DIRECT_2D %d controles, %d echec" % [checks, failures.size()])
 	for f in failures: print("  - ", f)
 	if is_instance_valid(app):
 		app.closing = true

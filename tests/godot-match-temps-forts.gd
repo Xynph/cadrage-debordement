@@ -122,10 +122,10 @@ func layout(view: Control, size: Vector2i) -> void:
 	var vue_avant: String = between.vue_xv
 	between.choisir_vue_xv("tableau")
 	await settle(4)
-	check(between.vue_xv == "tableau" and between.xv.is_visible_in_tree() and between.xv.columns == 1 and between.tuile_principale.is_ancestor_of(between.xv), label + " : Mon XV en tableau, tuile principale")
+	check(between.vue_xv == "tableau" and between.xv.is_visible_in_tree() and between.xv.columns == 15 and between.tuile_principale.is_ancestor_of(between.xv), label + " : Mon XV en barre basse, une carte par joueur")
 	var lignes_xv: Array = between.xv.get_children().filter(func(n: Node): return n is Button and str(n.name).begins_with("MatchBetweenPlayer"))
 	check(lignes_xv.size() == 15, label + " : quinze lignes dans Mon XV (%d)" % lignes_xv.size())
-	check(between.banc.is_visible_in_tree() and between.banc.get_child_count() >= 1, label + " : le banc sous Mon XV")
+	check(between.banc.is_visible_in_tree() and between.banc.get_child_count() >= 1, label + " : le banc dans son cadre")
 	_pas_coupe(between, label + " (Mon XV)")
 	if proof != "" and OS.get_environment("CD_MATCH_TEMPS_FORTS_CAPTURES") != "": await _capture(label, "tableau")
 	between.find_child("MatchBetweenTabOpponent", true, false).pressed.emit()
@@ -138,8 +138,9 @@ func layout(view: Control, size: Vector2i) -> void:
 	# Mise à l'échelle : textes à l'échelle de la fenêtre, jamais sous 12 px.
 	var density: float = between.densite_pour(Vector2(size))
 	var figure: Label = between.chiffres.get_child(0).find_children("*", "Label", true, false)[0]
-	check(is_equal_approx(between._densite, density) and figure.get_theme_font_size("font_size") == maxi(12, roundi(15 * density)), label + " : chiffres à l'échelle (%d points)" % figure.get_theme_font_size("font_size"))
-	check(figure.get_theme_font_size("font_size") >= 12 and between.etat.get_theme_font_size("font_size") == maxi(12, roundi(22 * density)), label + " : texte lisible")
+	check(is_equal_approx(between._densite, density) and figure.get_theme_font_size("font_size") == maxi(12, roundi(18 * density)), label + " : chiffres à l'échelle (%d points)" % figure.get_theme_font_size("font_size"))
+	# L'état du jeu s'écrit en entier : sa taille baisse s'il le faut, jamais sous 12 px.
+	check(figure.get_theme_font_size("font_size") >= 12 and between.etat.get_theme_font_size("font_size") >= 12 and between.etat.get_theme_font_size("font_size") <= maxi(12, roundi(22 * density)), label + " : texte lisible")
 	# Les commandes communes sont dans la bande sous le score (la même qu'en 3D).
 	var bande: Control = view.get("bande_temps_forts")
 	# Écran 13 (20/11/2026) : la bande est sur la rangée du score, à sa droite (maquettes 13 et 14).
@@ -151,13 +152,16 @@ func layout(view: Control, size: Vector2i) -> void:
 	check(between.domination.is_visible_in_tree() and between.domination.size.y >= between.px(120), label + " : frise de domination visible (%d px)" % int(between.domination.size.y))
 	check(not between.adjoint_cadre.visible or between.adjoint_cadre.is_visible_in_tree(), label + " : carte de Gabi à l'écran")
 	check(between.find_child("MatchBetweenConsignes", true, false) == null and between.find_children("Consigne_*", "BoxContainer", true, false).is_empty(), label + " : pas de consignes sur l'écran 2D")
-	# Maquette DA (variante 1) : le terrain 2D au centre, plus large que Mon XV et que les chiffres clés.
+	# « Bord de terrain » (choix de Léo du 21/11/2026) : le terrain au centre entre les chiffres des deux clubs en miroir,
+	# les événements à gauche, Mon XV en barre basse.
 	var colonne_xv: Control = between.tuile_principale
 	var column: Control = between.find_child("MatchBetweenColumn", true, false)
+	var miroir0: Control = between.find_child("MatchBetweenMirror0", true, false)
+	var miroir1: Control = between.find_child("MatchBetweenMirror1", true, false)
 	var bandeau: Control = between.bandeau
 	var tuile_terrain: Control = between.find_child("MatchBetweenPitchTile", true, false)
-	check(pitch.size.x >= size.x * 0.38 and pitch.size.y >= size.y * 0.25 and pitch.size.x > colonne_xv.size.x and pitch.size.x > column.size.x, label + " : terrain 2D en grand au centre (%s)" % str(pitch.size))
-	check(colonne_xv.get_global_rect().end.x <= pitch.get_global_rect().position.x and column.get_global_rect().position.x >= pitch.get_global_rect().end.x, label + " : Mon XV à gauche, chiffres clés à droite")
+	check(pitch.size.x >= size.x * 0.22 and pitch.size.y >= size.y * 0.25 and pitch.size.x > column.size.x and pitch.size.x > miroir0.size.x, label + " : terrain 2D en grand au centre (%s)" % str(pitch.size))
+	check(column.get_global_rect().end.x <= miroir0.get_global_rect().position.x + 1.0 and miroir0.get_global_rect().end.x <= pitch.get_global_rect().position.x and miroir1.get_global_rect().position.x >= pitch.get_global_rect().end.x and colonne_xv.get_global_rect().position.y >= pitch.get_global_rect().end.y, label + " : événements à gauche, chiffres en miroir autour du terrain, Mon XV en bas")
 	check(bandeau.is_visible_in_tree() and tuile_terrain != null and tuile_terrain.is_ancestor_of(bandeau) and not pitch.is_ancestor_of(bandeau)
 		and bandeau.get_global_rect().end.y <= pitch.get_global_rect().position.y + 0.5 and not bandeau.get_global_rect().intersects(pitch.get_global_rect()),
 		label + " : dernier fait au-dessus du terrain, sans chevauchement (%s / %s)" % [str(bandeau.get_global_rect()), str(pitch.get_global_rect())])
@@ -166,10 +170,10 @@ func layout(view: Control, size: Vector2i) -> void:
 	var direct_vu: Dictionary = between._dernier[2] if between._dernier.size() == 4 else {}
 	check(str(between.chiffres.get_child(0).name) == "MatchBetweenFigure_possession", label + " : la possession en tête des chiffres clés")
 	check((between.chiffres.find_child("MatchBetweenFigure_zone22", false, false) != null) == (direct_vu.get("zone22") is Dictionary), label + " : entrées dans les 22 montrées seulement avec leur donnée")
-	# Domination en largeur sous les trois colonnes, Gabi en largeur dessous.
+	# Domination sous le terrain et ses chiffres en miroir ; Gabi en tête de la colonne de gauche.
 	var frise: Control = between.find_child("MatchBetweenMomentumTile", true, false)
-	check(frise != null and frise.size.x >= between.size.x * 0.9 and frise.get_global_rect().position.y >= pitch.get_global_rect().end.y, label + " : domination en largeur sous le terrain")
-	check(not between.adjoint_cadre.visible or between.adjoint_cadre.size.x >= between.size.x * 0.9 and between.adjoint_cadre.get_global_rect().position.y >= frise.get_global_rect().end.y, label + " : carte de Gabi en largeur, en bas (%s)" % str(between.adjoint_cadre.get_global_rect()))
+	check(frise != null and frise.size.x >= tuile_terrain.size.x and frise.get_global_rect().position.y >= pitch.get_global_rect().end.y, label + " : domination sous le terrain")
+	check(not between.adjoint_cadre.visible or (between.adjoint_cadre.get_global_rect().end.x <= pitch.get_global_rect().position.x and between.adjoint_cadre.get_global_rect().end.y <= column.get_global_rect().position.y + 1.0), label + " : carte de Gabi en tête de la colonne de gauche (%s)" % str(between.adjoint_cadre.get_global_rect()))
 	for row: Control in between.chiffres.get_children():
 		for cell: Label in row.find_children("*", "Label", true, false):
 			check(cell.get_minimum_size().x <= cell.size.x + 1.0 or cell.clip_text, label + " : chiffre entier : " + cell.text)
@@ -198,10 +202,10 @@ func _tient(view: Control, between: Control, label: String, screen: Rect2) -> vo
 	for nom in ["MatchBetweenAdvice", "MatchBetweenBonus", "MatchBetweenColumn", "MatchBetweenMain", "MatchBetweenPitchTile", "MatchBetweenSquadScroll"]:
 		var noeud: Control = between.find_child(nom, true, false)
 		if noeud != null and noeud.is_visible_in_tree(): check(inside(screen, noeud.get_global_rect()) and inside(zone, noeud.get_global_rect()), label + " : " + nom + " dans l'écran (%s)" % str(noeud.get_global_rect()))
-	# Gabi : hauteur bornée (portrait, phrase sur deux lignes au plus).
-	check(not between.adjoint_cadre.visible or between.adjoint.get_combined_minimum_size().y <= maxf(between.px(110), 60.0), label + " : carte de Gabi de hauteur bornée (%d px)" % int(between.adjoint.get_combined_minimum_size().y))
+	# Gabi : hauteur bornée (portrait, phrase sur quatre lignes au plus dans sa colonne, l'action dessous).
+	check(not between.adjoint_cadre.visible or between.adjoint.get_combined_minimum_size().y <= maxf(between.px(300), 60.0), label + " : carte de Gabi de hauteur bornée (%d px)" % int(between.adjoint.get_combined_minimum_size().y))
 	for etiquette: Label in between.adjoint.find_children("*", "Label", true, false):
-		if etiquette.autowrap_mode != TextServer.AUTOWRAP_OFF: check(etiquette.max_lines_visible >= 1 and etiquette.max_lines_visible <= 2, label + " : phrase de Gabi sur deux lignes au plus")
+		if etiquette.autowrap_mode != TextServer.AUTOWRAP_OFF: check(etiquette.max_lines_visible >= 1 and etiquette.max_lines_visible <= 4, label + " : phrase de Gabi sur quatre lignes au plus")
 	# Multiplex (panneau « Autres matchs ») : une seule rangée de cartes, la première entière, la suite défile.
 	if between.journee_vue != null:
 		between.montrer_droite("journee")
@@ -209,8 +213,8 @@ func _tient(view: Control, between: Control, label: String, screen: Rect2) -> vo
 		var cartes := _cartes_multiplex(between)
 		if between.multiplex.is_visible_in_tree() and not cartes.is_empty():
 			var defile: Control = between.multiplex_defile
-			check(defile.is_ancestor_of(between.multiplex_cartes) and between.multiplex_cartes.columns == cartes.size(), label + " : multiplex sur une seule rangée (%d colonnes, %d cartes)" % [between.multiplex_cartes.columns, cartes.size()])
-			check(cartes.all(func(c: Control): return absf(c.get_global_rect().position.y - (cartes[0] as Control).get_global_rect().position.y) < 1.0), label + " : cartes du multiplex alignées sur une rangée")
+			check(defile.is_ancestor_of(between.multiplex_cartes) and between.multiplex_cartes.columns == Between.colonnes_multiplex(cartes.size(), 2), label + " : multiplex en grille de trois rangées au plus (%d colonnes, %d cartes)" % [between.multiplex_cartes.columns, cartes.size()])
+			check(cartes.all(func(c: Control): return inside(defile.get_global_rect().grow_individual(0, 0, 100000, 0), c.get_global_rect())), label + " : cartes du multiplex dans leur zone (la suite défile en largeur)")
 			check(inside(defile.get_global_rect(), (cartes[0] as Control).get_global_rect()) and inside(zone, between.multiplex.get_global_rect()), label + " : première carte du multiplex entière, panneau dans l'écran")
 			var fondu: Control = between.multiplex_fondu
 			var reste_a_droite: bool = between.multiplex_deborde() and float(between.multiplex_defile.scroll_horizontal) + defile.size.x < between.multiplex_cartes.size.x - 1.0
@@ -684,8 +688,8 @@ func active(view: Control) -> void:
 	var minute: int = app.model.live.minute
 	await settle(40)
 	check(app.model.live.minute == minute and not app.waiting, "En pause, aucune minute n'est demandée")
-	await layout(view, Vector2i(1280, 720))
 	await layout(view, Vector2i(1920, 1080))
+	await layout(view, Vector2i(2560, 1440))
 	root.size = Vector2i(1280, 720)
 	root.content_scale_size = root.size
 	# Reprise : la régie demande elle-même les minutes, une par une.
@@ -1491,10 +1495,15 @@ func terrain2d(view: Control) -> void:
 	check(between.panneau_parametres.is_visible_in_tree() and between.grille_niveaux.get_child_count() == 6 and not between.find_child("MatchBetweenDuel", true, false).is_visible_in_tree(), "Réglages : le panneau prend la colonne de droite avec les six niveaux de temps forts")
 	between.montrer_droite("chiffres")
 	var rangs_xv: Array = between.xv.get_children().filter(func(n: Node): return n is Button)
+	# Plein écran obligatoire (Léo, 21/11/2026) : la carte d'un joueur ouvre sa petite fenêtre par-dessus le match ;
+	# la fenêtre Équipe reste ouverte par le bouton Équipe, T et « Remplacer le N » de Gabi.
 	(rangs_xv[9] as Button).pressed.emit()
+	await settle(6)
+	var hote_carte: Control = view.get("fenetre_hote") if view.fenetre_ouverte() else null
+	var panneau_carte: Control = hote_carte.find_child("MatchFenetreJoueurPanneau", true, false) if hote_carte != null else null
+	check(panneau_carte != null and str(panneau_carte.get_meta("player_id", "")) == str(lineup[9].id) and surface() == view, "La carte d'un joueur de Mon XV ouvre sa petite fenêtre par-dessus le match (poste 10)")
+	view.fermer_fenetre()
 	await settle(4)
-	check(view.equipe.visible and view.equipe.poste_choisi == 9, "Un joueur de Mon XV ouvre la fenêtre Équipe sur lui (poste %d)" % view.equipe.poste_choisi)
-	view.equipe.fermer()
 	await settle(2)
 	# Le nom d'un joueur ouvre sa fiche sur l'entracte (match en pause), Échap revient à l'entracte sans casser le match.
 	var nom_lien := (rangs_xv[2] as Node).find_children("MatchBetweenPlayerName_*", "Button", true, false)
@@ -1514,7 +1523,7 @@ func terrain2d(view: Control) -> void:
 		check(not view.fenetre_ouverte() and between.is_visible_in_tree() and surface() == view, "Échap referme la fenêtre et revient à l'entracte, le match continue d'exister")
 	var menu: MenuButton = view.find_child("MatchBetweenMore", true, false)
 	check(menu != null and menu.get_popup().get_item_text(0) == "Statistiques", "Tous les chiffres du moteur restent dans le tiroir Statistiques (menu Plus)")
-	await layout(view, Vector2i(1280, 720))
+	# 1280×720 ne compte pas pour cet écran (décision de Léo du 21/11/2026) : 1920×1080 et 2560×1440 (sa référence).
 	await layout(view, Vector2i(1920, 1080))
 	await layout(view, Vector2i(2560, 1440))
 	# Carrière Monde : la vraie journée en direct arrive avec chaque minute et remplacerait la journée injectée ;
@@ -1541,7 +1550,7 @@ func journee_injectee(view: Control, direct: Dictionary) -> void:
 	# élargissait la page au-delà de l'écran en 1280×720, colonne de droite coupée, constaté au match filmé).
 	avec["bonus"] = {"regle": "3 essais d'écart · défaite de 7 pts ou moins", "offensif": {"texte": "Bonus offensif à 3 essais", "manque": 2}, "defensif": {"texte": "Défensif : défaite de 7 pts ou moins", "statut": "tenu"}}
 	between.update_frame(app.model, app.model.live, avec, func(_c: Dictionary): pass)
-	for taille: Vector2i in [Vector2i(1280, 720), Vector2i(1920, 1080)]:
+	for taille: Vector2i in [Vector2i(1920, 1080), Vector2i(2560, 1440)]:
 		root.size = taille
 		root.content_scale_size = taille
 		await settle(12)
@@ -1567,7 +1576,7 @@ func journee_injectee(view: Control, direct: Dictionary) -> void:
 		between.multiplex_defile.scroll_horizontal = 0
 		await settle(3)
 		check(between.multiplex_fondu.visible, label + " : revenu au début, le fondu revient")
-		check(between.adjoint_cadre.is_visible_in_tree() and between.adjoint_cadre.size.x >= between.size.x * 0.9, label + " : Gabi garde sa largeur (%d px)" % int(between.adjoint_cadre.size.x))
+		check(between.adjoint_cadre.is_visible_in_tree() and inside(ecran, between.adjoint_cadre.get_global_rect()), label + " : Gabi reste entier à l'écran (%s)" % str(between.adjoint_cadre.get_global_rect()))
 		if proof != "" and OS.get_environment("CD_MATCH_TEMPS_FORTS_CAPTURES") != "": await _capture(label.replace(" ", "-"), "journee")
 		between.montrer_droite("chiffres")
 	# Deux matchs seulement : la rangée tient, pas de fondu ni de « › ».
@@ -1633,7 +1642,7 @@ func consignes_fictives(view: Control, direct: Dictionary) -> void:
 	var etat_xv: Label = ligne_xv.find_child("MatchBetweenPlayerState", true, false) if ligne_xv != null else null
 	check(etat_xv != null and etat_xv.text == "Vexé", "Mon XV (Tableau) : état du 3")
 	# Mise en page avec le pilotage (rien ne doit être coupé en 720p comme en 1440p).
-	await layout(view, Vector2i(1280, 720))
+	await layout(view, Vector2i(1920, 1080))
 	await layout(view, Vector2i(2560, 1440))
 	between.update_frame(app.model, app.model.live, direct, func(_c: Dictionary): pass)
 	await settle(2)
@@ -1713,7 +1722,7 @@ func journee_directe(view: Control) -> void:
 		between.montrer_droite("chiffres")
 		print("MULTIPLEX_REEL ", JSON.stringify({"minute": journee.get("minute"), "matchs": matchs.size(), "clubs": classement.size(), "nous": nous[0].rang if nous.size() == 1 else null}))
 	await _mise_en_page_journee(view, "reel")
-	for taille: Vector2i in [Vector2i(1280, 720), Vector2i(1920, 1080), Vector2i(2560, 1440)]: await layout(view, taille)
+	for taille: Vector2i in [Vector2i(1920, 1080), Vector2i(2560, 1440)]: await layout(view, taille)
 	var relancer := await suspendre_direct()
 	await journee_fictive(view, direct)
 	if relancer: await command("pause", {"paused": false})
@@ -1767,12 +1776,10 @@ func journee_fictive(view: Control, direct: Dictionary) -> void:
 	# Autres matchs et classement : panneau de la colonne de droite (menu Plus).
 	between.montrer_droite("journee")
 	await settle(4)
-	# Classement : notre voisinage (5e à 11e, nous 8e au milieu) ; rien de plus, sans défilement.
+	# Classement complet de la poule (choix de Léo du 21/11/2026), sans défilement.
 	var lignes := _lignes_classement(between)
 	var rangs: Array = lignes.map(func(n: Node): return int(n.get_meta("rang")) if n.has_meta("rang") else -1)
-	# Sept lignes en 720p (± 3) ; neuf sinon (le leader, « … », notre voisinage) : le panneau a toute la colonne de droite.
-	var attendus: Array = [5, 6, 7, 8, 9, 10, 11] if between._densite < 0.6 else [1, -1, 5, 6, 7, 8, 9, 10, 11]
-	check(between.classement_tuile.is_visible_in_tree() and rangs == attendus, "Classement fictif : notre voisinage, nous au milieu " + str(rangs))
+	check(between.classement_tuile.is_visible_in_tree() and rangs == range(1, 15), "Classement fictif : les quatorze clubs " + str(rangs))
 	# Règle de sélection, indépendante de la fenêtre : 1280×720 (sept lignes) et plus grand (neuf).
 	var tableau: Array = _journee_test(52, 14).classement
 	check(between.lignes_classement(tableau, 7) == [4, 5, 6, 7, 8, 9, 10] and between.lignes_classement(tableau, 5) == [5, 6, 7, 8, 9] and between.lignes_classement(tableau, 9) == [0, -1, 4, 5, 6, 7, 8, 9, 10] and between.lignes_classement(tableau.slice(0, 9), 9) == range(9), "Classement : lignes choisies (voisinage, leader, tableau court entier)")
@@ -1788,11 +1795,10 @@ func journee_fictive(view: Control, direct: Dictionary) -> void:
 	check(leader_ok and badges.call(8) == ["BD"] and badges.call(10) == ["BO", "BD"] and badges.call(5).is_empty(), "Classement fictif : badges BO/BD (%s, %s, %s, %s)" % [badges.call(1), badges.call(8), badges.call(10), badges.call(5)])
 	var nous: Control = _ligne_nous(between)
 	var style: StyleBoxFlat = nous.get_theme_stylebox("panel") if nous != null else null
-	# Charte finale (20/11/2026) : notre ligne est la ligne choisie, fond SELECTION en case de 6 px (plus de liseré).
-	check(nous != null and int(nous.get_meta("rang")) == 8 and style != null and style.bg_color.is_equal_approx(preload("res://ui/charte.gd").SELECTION) and style.corner_radius_top_left == preload("res://ui/charte.gd").RAYON_PETIT and texte.call(nous, "Club") == "NOUS", "Classement fictif : notre club surligné")
+	# Notre ligne sur un aplat à la couleur du club, case de 6 px, liseré gauche épais ; le nom du club en entier.
+	check(nous != null and int(nous.get_meta("rang")) == 8 and style != null and style.border_width_left > 0 and style.corner_radius_top_left == preload("res://ui/charte.gd").RAYON_PETIT and texte.call(nous, "Nom") == "Club 8", "Classement fictif : notre club surligné")
 	check(nous != null and int(nous.find_child("Evolution", true, false).delta) == 2 and int(par_rang[9].find_child("Evolution", true, false).delta) == -1 and int(par_rang[5].find_child("Evolution", true, false).delta) == 0, "Classement fictif : flèches de l'évolution")
-	var teinte_nous: Variant = S_couleur(app.model.get("club", {}))
-	check(nous != null and (teinte_nous == null or (nous.find_child("Couleur", true, false).teinte as Color).is_equal_approx(teinte_nous)) and (par_rang[5].find_child("Couleur", true, false).teinte as Color).is_equal_approx(between.FAIBLE), "Classement fictif : pastille aux couleurs du club, neutre sinon")
+	check(nous != null and nous.find_child("Ecusson", true, false) != null and par_rang[5].find_child("Ecusson", true, false) != null, "Classement fictif : écusson de chaque club")
 	# Multiplex : six cartes, scores et essais, « Terminé », liseré vert sur le seul score qui a changé.
 	var cartes := _cartes_multiplex(between)
 	check(cartes.size() == 6 and between.multiplex.is_visible_in_tree(), "Multiplex fictif : six cartes (%d)" % cartes.size())
@@ -1800,10 +1806,10 @@ func journee_fictive(view: Control, direct: Dictionary) -> void:
 		var scores: Array = cartes.map(func(c: Node): return c.find_children("Score", "Label", true, false).map(func(l: Label): return l.text))
 		check(scores[2] == ["19", "9"] and scores[0] == ["10", "7"] and scores[5] == ["20", "12"], "Multiplex fictif : scores " + str(scores))
 		var essais: Array = cartes[2].find_children("Essais", "Label", true, false).map(func(l: Label): return l.text)
-		check(essais == ["(2)", "(1)"], "Multiplex fictif : essais en petit " + str(essais))
-		check((cartes[0].find_child("Minute", true, false) as Label).text == "Terminé" and (cartes[1].find_child("Minute", true, false) as Label).text == "53′", "Multiplex fictif : minute et « Terminé »")
+		check(essais == ["2 E", "1 E"], "Multiplex fictif : essais en petit " + str(essais))
+		check(cartes[0].find_child("Fin", true, false) != null and cartes[1].find_child("Fin", true, false) == null and between.multiplex_precision.text == "53′", "Multiplex fictif : « FIN » sur le match terminé, minute en tête du multiplex")
 		var changes: Array = cartes.map(func(c: Node): return bool(c.get_meta("change", false)))
-		check(changes == [false, false, true, false, false, false] and (cartes[2].get_theme_stylebox("panel") as StyleBoxFlat).border_width_left > 0 and (cartes[2].get_theme_stylebox("panel") as StyleBoxFlat).border_width_top == 0 and (cartes[1].get_theme_stylebox("panel") as StyleBoxFlat).border_width_left == 0, "Multiplex fictif : filet gauche vert (jamais un cadre complet) sur le score qui a changé " + str(changes))
+		check(changes == [false, false, true, false, false, false] and cartes[2].find_child("Gain", true, false) != null and cartes[1].find_child("Gain", true, false) == null, "Multiplex fictif : ce qu'a rapporté le score qui a changé (« +5 ») " + str(changes))
 	check(between.fil.is_visible_in_tree() and between.fil.get_child_count() >= 1, "Faits marquants visibles avec le classement")
 	await _mise_en_page_journee(view, "fictif")
 	# Hors phase de ligue : classement vide, multiplex seul.
@@ -1833,7 +1839,7 @@ static func S_couleur(club: Dictionary) -> Variant:
 ## Les deux tuiles de la journée dans l'écran, entières et lisibles, aux trois tailles de fenêtre.
 func _mise_en_page_journee(view: Control, variante: String) -> void:
 	var between: Control = view.regie.between
-	for taille: Vector2i in [Vector2i(1280, 720), Vector2i(1920, 1080), Vector2i(2560, 1440)]:
+	for taille: Vector2i in [Vector2i(1920, 1080), Vector2i(2560, 1440)]:
 		root.size = taille
 		root.content_scale_size = taille
 		await settle(12)
