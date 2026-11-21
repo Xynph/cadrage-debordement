@@ -84,26 +84,35 @@ func geometrie_bureau(taille: Vector2i) -> void:
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png(sortie.path_join("bureau-%d.png" % taille.x))
 
-## En-tête Effectif (1920 × 1080) : chiffres clés en gros chiffre + légende, lisibles (contraste ≥ 4,5:1 sur leur fond).
+## En-tête Effectif (1920 × 1080) : quatre tuiles chiffre (aptes, indisponibles, fins de contrat, niveau du XV),
+## cliquables, gros chiffre sous sa légende et détail à droite du chiffre, lisibles (contraste ≥ 4,5:1 sur leur fond).
 func chiffres_effectif() -> void:
 	app._navigate("Effectif"); await poser(20)
-	var fond := Color("16201f")
 	var trouves := 0
-	for i in 4:
-		var bloc := app.find_child("EffectifChiffre%d" % i, true, false) as Control
-		if bloc == null: continue
+	for id: String in ["Aptes", "Indisponibles", "Contrats", "Niveau"]:
+		var tuile := app.find_child("EffectifTuile" + id, true, false) as Button
+		if tuile == null: continue
 		trouves += 1
-		var valeur := bloc.find_child("EffectifChiffreValeur", false, false) as Label
-		var legende := bloc.find_child("EffectifChiffreLegende", false, false) as Label
-		verifier(valeur != null and legende != null, "Effectif : chiffre %d avec sa légende" % i)
+		verifier(tuile.is_visible_in_tree() and not tuile.disabled and tuile.focus_mode == Control.FOCUS_ALL, "Effectif : tuile %s visible et cliquable" % id)
+		var fond: Color = (tuile.get_theme_stylebox("normal") as StyleBoxFlat).bg_color
+		var valeur := tuile.find_child("EffectifTuileValeur", false, false) as Label
+		var legende: Label = null
+		for enfant in tuile.get_children():
+			if enfant is Label and enfant != valeur and str(enfant.name) != "EffectifTuileDetail": legende = enfant; break
+		verifier(valeur != null and legende != null and not legende.text.is_empty(), "Effectif : chiffre %s avec sa légende" % id)
 		if valeur == null or legende == null: continue
-		verifier(valeur.get_theme_font_size("font_size") >= C.px(36), "Effectif : gros chiffre %d (%s)" % [i, valeur.text])
-		verifier(valeur.get_theme_font_size("font_size") > legende.get_theme_font_size("font_size"), "Effectif : chiffre plus grand que sa légende %d" % i)
-		for l: Label in [valeur, legende]:
+		verifier(valeur.get_theme_font_size("font_size") >= C.px(36), "Effectif : gros chiffre %s (%s)" % [id, valeur.text])
+		verifier(valeur.get_theme_font_size("font_size") > legende.get_theme_font_size("font_size"), "Effectif : chiffre plus grand que sa légende %s" % id)
+		var detail := tuile.find_child("EffectifTuileDetail", false, false) as Label
+		var textes: Array[Label] = [valeur, legende]
+		if detail != null: textes.append(detail)
+		for l: Label in textes:
 			var ratio := contraste(l.get_theme_color("font_color"), fond)
 			verifier(ratio >= 4.5, "Effectif : contraste %.1f:1 de « %s »" % [ratio, l.text])
-			verifier(bloc.get_global_rect().grow(1.0).encloses(l.get_global_rect()), "Effectif : « %s » dans son bloc" % l.text)
-		verifier(valeur.get_global_rect().end.x <= legende.get_global_rect().position.x + 1.0, "Effectif : légende à droite du chiffre %d" % i)
+			verifier(tuile.get_global_rect().grow(1.0).encloses(l.get_global_rect()), "Effectif : « %s » dans sa tuile" % l.text)
+		verifier(legende.get_global_rect().position.y < valeur.get_global_rect().position.y, "Effectif : légende au-dessus du chiffre %s" % id)
+		if detail != null:
+			verifier(valeur.get_global_rect().position.x + C.px(20) <= detail.get_global_rect().position.x, "Effectif : détail à droite du chiffre %s" % id)
 	verifier(trouves == 4, "Effectif : quatre chiffres clés en 1920 × 1080 (%d)" % trouves)
 
 func executer() -> void:
