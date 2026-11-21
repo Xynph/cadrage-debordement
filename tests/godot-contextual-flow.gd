@@ -281,11 +281,10 @@ func run() -> void:
 	var stage: Node3D = director.view.stage
 	check(stage != null and stage.get_script().resource_path == "res://match_view.gd", "Live match uses the production moving NativeMatchView")
 	if stage != null:
-		var expected_texture: Texture2D = G.crest_texture(app.model.club)
-		check(stage._club_crest == expected_texture, "Production stadium resolves the actual active club crest")
+		check(stage._club_crest != null and club_crest_matches(stage._club_crest, app.model.club), "Production stadium resolves the actual active club crest (pack, official, else recoloured club crest)")
 		var branding: MultiMeshInstance3D = stage.get_node_or_null("ManagedClubCrests")
-		check(branding != null and branding.visible == (expected_texture != null), "Missing active crest leaves neutral stadium fascia")
-		if branding != null: check(branding.material_override.albedo_texture == expected_texture, "Stadium fascia uses the active club identity")
+		check(branding != null and branding.visible, "Stadium fascia always carries the club crest")
+		if branding != null: check(branding.material_override.albedo_texture == stage._club_crest, "Stadium fascia uses the active club identity")
 		# Panneaux du pourtour : enfants directs du stade (les numéros des marqueurs tactiques des joueurs sont aussi des Label3D).
 		var advertisements := stage.find_children("*", "Label3D", false, false)
 		check(advertisements.size() == 16, "All sixteen Rugby Legacy advertising boards remain present")
@@ -345,3 +344,20 @@ func finish() -> void:
 	app.queue_free()
 	await process_frame
 	quit(0 if failures.is_empty() else 1)
+
+## Blason attendu sur une surface 3D : celui du pack ou l'écusson officiel s'il existe, sinon l'écusson recoloré du
+## club rendu depuis le contrôle de l'interface (ses initiales, sa couleur), jamais le bouclier gris de la banque.
+func club_crest_matches(texture: Texture2D, club: Dictionary) -> bool:
+	var Skin = load("res://ui/game_skin.gd")
+	var real: Texture2D = Skin.crest_texture(club)
+	if real != null: return texture == real
+	var shown: Control = Skin.crest_render_control(texture)
+	if shown == null or shown.name != "ClubCrestRecolored" or not shown.material is ShaderMaterial: return false
+	var identity: Dictionary = club.get("presentation", club) if club.get("presentation") is Dictionary else club
+	var initials := false
+	for label in shown.find_children("*", "Label", true, false):
+		if label.text == str(identity.get("abbr", "XV")): initials = true
+	var primary: Color = load("res://ui/contextual/rooms/room_identity.gd").primary(identity)
+	var material := shown.material as ShaderMaterial
+	var tinted: bool = (material.get_shader_parameter("couleur_base") as Color).is_equal_approx(primary) or (material.get_shader_parameter("couleur_motif") as Color).is_equal_approx(primary)
+	return initials and tinted

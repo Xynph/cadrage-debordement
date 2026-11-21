@@ -105,8 +105,7 @@ func run() -> void:
 	check(view.room != null and view.room.find_child("PressRoomCamera", true, false) != null, "actual 3D press set and camera")
 	check(view.room.get_meta("identity").get("name") == G.club_name(career.club), "3D room uses actual active club identity")
 	check(view.room.get_meta("primary_color") == Color(G.identity(career.club).get("color", "#596368")), "3D room uses actual club palette")
-	var expected_texture: Texture2D = G.crest_texture(career.club)
-	check(view.room.crest_texture == expected_texture, "physical crest uses production resolver or stays blank")
+	check(view.room.crest_texture != null and club_crest_matches(view.room.crest_texture, career.club), "physical crest uses production resolver (pack, official, else recoloured club crest)")
 	var world_id: int = view.room.get_instance_id()
 	for resolution in [Vector2i(1280,720), Vector2i(1600,900)]:
 		root.size = resolution
@@ -205,3 +204,20 @@ func finish() -> void:
 	await settle()
 	print("PRESS_ROOM_CHECKS ", JSON.stringify({"checks":checks,"failures":failures,"real_projection":true,"commands_stubbed":true}))
 	quit(0 if failures.is_empty() else 1)
+
+## Blason attendu sur une surface 3D : celui du pack ou l'écusson officiel s'il existe, sinon l'écusson recoloré du
+## club rendu depuis le contrôle de l'interface (ses initiales, sa couleur), jamais le bouclier gris de la banque.
+func club_crest_matches(texture: Texture2D, club: Dictionary) -> bool:
+	var Skin = load("res://ui/game_skin.gd")
+	var real: Texture2D = Skin.crest_texture(club)
+	if real != null: return texture == real
+	var shown: Control = Skin.crest_render_control(texture)
+	if shown == null or shown.name != "ClubCrestRecolored" or not shown.material is ShaderMaterial: return false
+	var identity: Dictionary = club.get("presentation", club) if club.get("presentation") is Dictionary else club
+	var initials := false
+	for label in shown.find_children("*", "Label", true, false):
+		if label.text == str(identity.get("abbr", "XV")): initials = true
+	var primary: Color = load("res://ui/contextual/rooms/room_identity.gd").primary(identity)
+	var material := shown.material as ShaderMaterial
+	var tinted: bool = (material.get_shader_parameter("couleur_base") as Color).is_equal_approx(primary) or (material.get_shader_parameter("couleur_motif") as Color).is_equal_approx(primary)
+	return initials and tinted

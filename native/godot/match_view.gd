@@ -255,9 +255,9 @@ func set_club_identity(club: Dictionary) -> void:
 	if key == _club_identity_key:
 		return
 	_club_identity_key = key
-	# Exactly the same active pack priority as the UI. Its recoloured initials fallback
-	# is deliberately left off the physical surfaces when no real crest is available.
-	_club_crest = ClubPresentation.crest_texture(club)
+	# Same priority as the UI: pack crest, official badge, else the club's recoloured
+	# crest with its initials (rendered from the interface control, never a grey shield).
+	_club_crest = ClubPresentation.crest_surface_texture(club)
 	if is_instance_valid(_club_branding):
 		_update_club_branding()
 

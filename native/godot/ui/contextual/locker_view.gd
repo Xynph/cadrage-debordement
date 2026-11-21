@@ -87,19 +87,22 @@ func _draw() -> void:
 	else:
 		var recipient_row := S.G.h(8)
 		declarations.add_child(recipient_row)
-		for item in [["group", "GROUPE"], ["forwards", "AVANTS"], ["backs", "ARRIÈRES"], ["players", "JOUEURS"]]:
+		# Pas de mode d'emploi à l'écran (règle de Léo) : les onglets se comprennent seuls, le détail est en infobulle.
+		for item in [["group", "GROUPE", "Parler à tout le groupe"], ["forwards", "AVANTS", "Parler aux avants"], ["backs", "ARRIÈRES", "Parler aux arrières"], ["players", "JOUEURS", "Viser des joueurs : touche leurs cartes, puis ta phrase"]]:
 			var button := S.button(item[1], func(): _set_audience(item[0]))
+			button.tooltip_text = item[2]
 			button.custom_minimum_size.y = 46
 			button.add_theme_font_size_override("font_size", 16)
 			S.G.fill(button)
 			if audience == item[0]: S.selected(button, S.GOLD)
 			recipient_row.add_child(button)
 		var waiting_players: bool = audience == "players" and selected_ids.is_empty()
-		var prompt := "À qui t’adresses-tu ? Puis clique sur ta phrase."
-		if audience == "players": prompt = "Clique d’abord sur les cartes des joueurs visés." if waiting_players else "%d joueur(s) visé(s) · clique sur ta phrase." % selected_ids.size()
-		var prompt_label := S.label(prompt, 17, S.GOLD if waiting_players else S.TEXT)
-		prompt_label.name = "TalkPrompt"
-		declarations.add_child(prompt_label)
+		# En mode Joueurs, seul l'état compte : combien de joueurs sont visés.
+		if audience == "players":
+			var prompt := "Aucun joueur visé" if waiting_players else "%d joueur%s visé%s" % [selected_ids.size(), "s" if selected_ids.size() > 1 else "", "s" if selected_ids.size() > 1 else ""]
+			var prompt_label := S.label(prompt, 17, S.GOLD if waiting_players else S.TEXT)
+			prompt_label.name = "TalkPrompt"
+			declarations.add_child(prompt_label)
 		options_grid = GridContainer.new()
 		options_grid.name = "TalkDeclarations"
 		options_grid.columns = 2

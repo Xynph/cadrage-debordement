@@ -46,11 +46,29 @@ func run() -> void:
 		"repeated frames retain static branding batch")
 	check(view.get_child_count() == children_count, "no scene rebuild or extra nodes per identity refresh")
 	check(club == before, "club presentation data is not mutated")
-	view.set_club_identity({"name":"Sans blason", "abbr":"SB", "color":"#aa4455"})
-	check(not batch.visible and material.albedo_texture == null, "missing crest leaves neutral boards without initials")
+	var without_crest := {"name":"Sans blason", "abbr":"SB", "color":"#aa4455"}
+	view.set_club_identity(without_crest)
+	check(batch.visible and club_crest_matches(material.albedo_texture, without_crest), "missing crest shows the club's recoloured crest with its initials, never a grey shield")
 	view.set_club_identity(club)
 	check(batch.visible and material.albedo_texture != null, "club pack restored without rebuilding stadium")
 	view.free()
 	DirAccess.remove_absolute(path)
 	print("MATCH_CLUB_BRANDING_CHECKS ", JSON.stringify({"failures":failures}))
 	quit(0 if failures.is_empty() else 1)
+
+## Blason attendu sur une surface 3D : celui du pack ou l'écusson officiel s'il existe, sinon l'écusson recoloré du
+## club rendu depuis le contrôle de l'interface (ses initiales, sa couleur), jamais le bouclier gris de la banque.
+func club_crest_matches(texture: Texture2D, club: Dictionary) -> bool:
+	var Skin = load("res://ui/game_skin.gd")
+	var real: Texture2D = Skin.crest_texture(club)
+	if real != null: return texture == real
+	var shown: Control = Skin.crest_render_control(texture)
+	if shown == null or shown.name != "ClubCrestRecolored" or not shown.material is ShaderMaterial: return false
+	var identity: Dictionary = club.get("presentation", club) if club.get("presentation") is Dictionary else club
+	var initials := false
+	for label in shown.find_children("*", "Label", true, false):
+		if label.text == str(identity.get("abbr", "XV")): initials = true
+	var primary: Color = load("res://ui/contextual/rooms/room_identity.gd").primary(identity)
+	var material := shown.material as ShaderMaterial
+	var tinted: bool = (material.get_shader_parameter("couleur_base") as Color).is_equal_approx(primary) or (material.get_shader_parameter("couleur_motif") as Color).is_equal_approx(primary)
+	return initials and tinted

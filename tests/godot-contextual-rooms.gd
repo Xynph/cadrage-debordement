@@ -60,14 +60,33 @@ func run() -> void:
 		viewport.free()
 	# Each new opening resolves identity independently, with no fictitious default.
 	var neutral := Factory.build("locker", {})
-	check(neutral.crest_texture == null, "missing crest stays blank")
+	var neutral_crest: Texture2D = neutral.crest_texture
+	check(neutral_crest != null and club_crest_matches(neutral_crest, {}), "missing crest shows the club's recoloured crest, never a grey generic shield")
 	check(neutral.get_meta("primary_color") == Identity.NEUTRAL_PRIMARY, "missing color stays neutral")
 	neutral.free()
 	var changed := Factory.build("office", {"name":"Autre club", "color":"#e8ddcc"})
 	check(changed.get_meta("primary_color") == Color("e8ddcc"), "club change color is fresh")
 	check(changed.get_meta("contrast_color") == Color("252b2e"), "light kit derives dark neutral contrast")
-	check(changed.crest_texture == null, "no initials substituted for absent crest")
+	var changed_club := {"name":"Autre club", "color":"#e8ddcc"}
+	check(changed.crest_texture != null and changed.crest_texture != neutral_crest and club_crest_matches(changed.crest_texture, changed_club), "club change renders its own recoloured crest with its colour")
 	changed.free()
 	DirAccess.remove_absolute(crest_path)
 	print("CONTEXTUAL_ROOMS_CHECKS failures=", failures)
 	quit(0 if failures == 0 else 1)
+
+## Blason attendu sur une surface 3D : celui du pack ou l'écusson officiel s'il existe, sinon l'écusson recoloré du
+## club rendu depuis le contrôle de l'interface (ses initiales, sa couleur), jamais le bouclier gris de la banque.
+func club_crest_matches(texture: Texture2D, club: Dictionary) -> bool:
+	var Skin = load("res://ui/game_skin.gd")
+	var real: Texture2D = Skin.crest_texture(club)
+	if real != null: return texture == real
+	var shown: Control = Skin.crest_render_control(texture)
+	if shown == null or shown.name != "ClubCrestRecolored" or not shown.material is ShaderMaterial: return false
+	var identity: Dictionary = club.get("presentation", club) if club.get("presentation") is Dictionary else club
+	var initials := false
+	for label in shown.find_children("*", "Label", true, false):
+		if label.text == str(identity.get("abbr", "XV")): initials = true
+	var primary: Color = load("res://ui/contextual/rooms/room_identity.gd").primary(identity)
+	var material := shown.material as ShaderMaterial
+	var tinted: bool = (material.get_shader_parameter("couleur_base") as Color).is_equal_approx(primary) or (material.get_shader_parameter("couleur_motif") as Color).is_equal_approx(primary)
+	return initials and tinted

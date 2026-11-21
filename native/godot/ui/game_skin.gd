@@ -211,8 +211,51 @@ static func crest(club: Dictionary, width: int = 56) -> Control:
 	w.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return w
 
-## Blason réel du club pour les surfaces 3D (stade, salles) : celui du pack actif, sinon l'écusson officiel du
-## championnat. Null sans blason : l'écusson recoloré à initiales de crest() reste propre à l'interface.
+## Blason des surfaces 3D (stade, salles) : blason du pack > écusson officiel du championnat > écusson recoloré
+## aux couleurs et initiales du club. Ce dernier est le rendu exact de crest() (même code que l'interface : shader
+## de recoloration et initiales), dessiné hors écran dans une SubViewport gardée sous la racine, une par club.
+const CREST_RENDER_SIZE := 256
+static var _crest_renders: Node
+
+static func crest_surface_texture(club: Dictionary) -> Texture2D:
+	var real := crest_texture(club)
+	if real != null: return real
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree == null: return null
+	if not is_instance_valid(_crest_renders):
+		_crest_renders = Node.new()
+		_crest_renders.name = "ClubCrestRenders"
+		tree.root.add_child.call_deferred(_crest_renders)
+	var c := identity(club)
+	var key := JSON.stringify([c.get("slug", ""), c.get("name", club.get("name", "")), c.get("abbr", ""), str(c.get("color", club.get("color", ""))), str(c.get("color2", ""))])
+	for existing in _crest_renders.get_children():
+		if existing.get_meta("crest_key", "") == key: return (existing as SubViewport).get_texture()
+	var viewport := SubViewport.new()
+	viewport.name = "ClubCrestRender"
+	viewport.set_meta("crest_key", key)
+	viewport.size = Vector2i(CREST_RENDER_SIZE, CREST_RENDER_SIZE)
+	viewport.transparent_bg = true
+	viewport.disable_3d = true
+	viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+	# Un rendu à l'entrée dans l'arbre, un autre une fois les initiales réglées (leur visibilité est différée).
+	viewport.tree_entered.connect(func() -> void:
+		viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+		viewport.set_deferred("render_target_update_mode", SubViewport.UPDATE_ONCE))
+	var shown := crest(club, CREST_RENDER_SIZE)
+	shown.position = Vector2.ZERO
+	shown.size = Vector2(CREST_RENDER_SIZE, CREST_RENDER_SIZE)
+	viewport.add_child(shown)
+	_crest_renders.add_child(viewport)
+	return viewport.get_texture()
+
+## Contrôle d'interface dont une texture de surface est le rendu (null pour un blason de pack ou officiel).
+static func crest_render_control(texture: Texture2D) -> Control:
+	if not texture is ViewportTexture or not is_instance_valid(_crest_renders): return null
+	for viewport in _crest_renders.get_children():
+		if (viewport as SubViewport).get_texture() == texture and viewport.get_child_count() > 0: return viewport.get_child(0) as Control
+	return null
+
+## Blason réel du club : celui du pack actif, sinon l'écusson officiel du championnat ; null sinon.
 static func crest_texture(club: Dictionary) -> Texture2D:
 	var c := identity(club)
 	var texture := _pack_texture(str(c.get("logoPath", club.get("logoPath", ""))))
