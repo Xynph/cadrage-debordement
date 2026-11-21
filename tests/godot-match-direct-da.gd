@@ -195,6 +195,37 @@ func run() -> void:
 		var puce: Control = view.plaques[cote].find_child("MatchClubChip%d" % cote, true, false)
 		var fond_puce := puce.get_theme_stylebox("panel") as StyleBoxFlat if puce != null else null
 		check((view.plaques[cote].get_meta("ecusson") as Color).is_equal_approx(voulu) and fond_puce != null and fond_puce.bg_color.is_equal_approx(voulu) and fond_puce.corner_radius_top_left == Charte.RAYON_PETIT, "Écusson %d à la couleur du club, case rayon 6" % cote)
+	# Logo du club à la place de la pastille du sigle, jamais les deux. Jeu de base : l'écusson dessiné, initiales lisibles.
+	for cote in 2:
+		var puce: Control = view.plaques[cote].find_child("MatchClubChip%d" % cote, true, false)
+		var logo: Control = view.plaques[cote].find_child("MatchClubCrest%d" % cote, true, false)
+		var initiales: Array = logo.find_children("*", "Label", true, false) if logo != null else []
+		check(logo != null and logo.is_visible_in_tree() and puce != null and not puce.visible, "Logo %d à la place de la pastille du sigle, jamais les deux" % cote)
+		check(logo != null and not logo.has_meta("logo_pack") and initiales.size() == 1 and (initiales[0] as Label).is_visible_in_tree() and (initiales[0] as Label).text == Base.club_abbr(equipes[cote]) and (initiales[0] as Label).get_theme_font_size("font_size") >= 11, "Jeu de base : écusson dessiné %d aux initiales du club, lisibles" % cote)
+		check(logo != null and logo.get_global_rect().size.y >= 40.0 and view.plaques[cote].get_global_rect().encloses(logo.get_global_rect()) and logo.find_children("*", "Control", true, false).all(func(c: Control) -> bool: return c.mouse_filter == Control.MOUSE_FILTER_IGNORE) and logo.mouse_filter == Control.MOUSE_FILTER_IGNORE and view.plaques[cote].mouse_filter == Control.MOUSE_FILTER_STOP, "Logo %d dans la plaque cliquable (clic : fiche du club)" % cote)
+		check(view.plaques[cote].get_global_rect().end.x <= r.end.x + 1.0 and view.plaques[cote].get_global_rect().position.x >= r.position.x - 1.0, "Plaque %d avec son logo dans le bandeau" % cote)
+	# Faux pack d'identité (image générée pendant le test) : son logo remplace l'écusson dessiné, toujours sans pastille.
+	var dossier_pack := OS.get_user_data_dir().path_join("faux-pack-bandeau")
+	DirAccess.make_dir_recursive_absolute(dossier_pack)
+	var image_logo := Image.create(64, 64, false, Image.FORMAT_RGBA8)
+	image_logo.fill(Color(0.1, 0.6, 0.9))
+	var chemin_logo := dossier_pack.path_join("logo-0.png")
+	image_logo.save_png(chemin_logo)
+	var avec_pack: Array = equipes.duplicate(true)
+	if avec_pack[0].get("presentation") is Dictionary: avec_pack[0].presentation["logoPath"] = chemin_logo
+	else: avec_pack[0]["logoPath"] = chemin_logo
+	view.set("_plaques_cle", "")
+	view._poser_plaques(avec_pack)
+	await settle(2)
+	var logo_pack: Control = view.plaques[0].find_child("MatchClubCrest0", true, false)
+	var puce_pack: Control = view.plaques[0].find_child("MatchClubChip0", true, false)
+	check(logo_pack is TextureRect and logo_pack.has_meta("logo_pack") and (logo_pack as TextureRect).texture != null and (logo_pack as TextureRect).texture.get_image().get_pixel(32, 32).is_equal_approx(image_logo.get_pixel(32, 32)) and not puce_pack.visible and view.plaques[0].find_children("MatchClubCrest*", "", true, false).size() == 1, "Pack d'identité : son logo à la place de l'écusson dessiné, sans pastille")
+	check(not view.plaques[1].find_child("MatchClubCrest1", true, false).has_meta("logo_pack"), "Club sans logo de pack : écusson dessiné")
+	view.set("_plaques_cle", "")
+	view._poser_plaques(equipes)
+	await settle(2)
+	check(not view.plaques[0].find_child("MatchClubCrest0", true, false).has_meta("logo_pack") and view.plaques[0].find_children("MatchClubCrest*", "", true, false).size() == 1, "Sans pack : retour à l'écusson dessiné")
+	DirAccess.remove_absolute(chemin_logo)
 	check(angles_droits(bandeau).is_empty(), "Bandeau du score : aucun aplat à angles droits : " + str(angles_droits(bandeau)))
 	check(not view.home.text.is_empty() and not view.away.text.is_empty() and not view.phase.text.is_empty(), "Noms des clubs et période écrits (%s / %s / %s)" % [view.home.text, view.away.text, view.phase.text])
 	var bande: Control = view.get("bande_temps_forts")

@@ -1105,7 +1105,7 @@ func player_path() -> Array:
 		check(bloc.size.y <= screen.size.y * 0.12 and bloc.size.x <= screen.size.x * 0.6 and bloc.position.x <= screen.size.x * 0.1, "Bloc compact en haut à gauche, petit : " + str(bloc))
 		# Écran 13 (variante 1 de Léo, 20/11/2026) : le bandeau d'angle garde les noms pendant l'action ; seules
 		# la météo et l'aide « Échap » se retirent.
-		check(view.home.is_visible_in_tree() and (view.get("_sigles")[0] as Label).is_visible_in_tree() and view.clock.is_visible_in_tree() and view.score.is_visible_in_tree() and not view.get("_meteo_boite").is_visible_in_tree(), "Bandeau d'angle pendant l'action : horloge, plaques et score, sans météo")
+		check(view.home.is_visible_in_tree() and view.plaques[0].find_child("MatchClubCrest0", true, false).is_visible_in_tree() and not (view.get("_sigles")[0] as Label).is_visible_in_tree() and view.clock.is_visible_in_tree() and view.score.is_visible_in_tree() and not view.get("_meteo_boite").is_visible_in_tree(), "Bandeau d'angle pendant l'action : horloge, plaques et score, sans météo")
 		check(float(regie.cadrage.couvert_haut) <= view.clock.get_global_rect().end.y / maxf(1.0, view.size.y) + 0.031, "Cadrage : part cachée en haut ramenée au bloc compact (%.3f)" % float(regie.cadrage.couvert_haut))
 	view._pause()
 	await wait_command()
