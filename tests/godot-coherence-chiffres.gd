@@ -164,8 +164,8 @@ func run() -> void:
 	# Zones du règlement (moteur) : légende et note dès l'avant-saison ; aucune ligne en zone tant que le classement n'est pas ouvert.
 	var zone_legend: Control = app.find_child("StandingsZoneLegend", true, false)
 	check(zone_legend != null and zone_legend.accessibility_name.contains("◆ 13 Barrage d’accession") and zone_legend.accessibility_name.contains("▼ 14 Relégation"), "Classement : légende des zones du Top 14 (moteur)")
-	var zone_note: Label = app.find_child("StandingsZoneNote", true, false)
-	check(zone_note != null and zone_note.text.contains("barrage d’accession"), "Classement : note du règlement sous la légende")
+	var zone_note: Control = app.find_child("StandingsZoneNote", true, false)
+	check(zone_note != null and zone_note.tooltip_text.contains("barrage d’accession"), "Classement : note du règlement derrière un « i » en bout de légende")
 	check(app.find_children("StandingsZoneMark", "Control", true, false).filter(func(mark: Control): return mark.get_parent().name.begins_with("StandingsRow_")).is_empty(), "Classement : aucune ligne en zone avant la 1re journée")
 	# Choix de la compétition : menu déroulant dans la page ; on l'ouvre pour mesurer chaque entrée.
 	var menu_button := app.find_child("StandingsDivisionMenu", true, false) as Button

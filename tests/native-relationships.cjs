@@ -18,6 +18,7 @@ try{
  for(let i=0;i<3;i++)good('snapshot');
  assert.equal(good('export').meta.exportText,before);assert.deepEqual(fs.readFileSync(path.join(m.meta.dataDir,'donnees.json')),bytes);
  const p=rel().players[0],sat=p.score,morale=m.meta.morale;
+ assert.equal(rel().promiseLastJourney,24,'La journée limite des promesses vient du moteur (round 23 = journée 24).');
  m=good('relationship_conversation',{context:ctx(),playerId:p.id,choice:'rassurer'});
  assert.equal(rel().players.find(x=>x.id===p.id).score,Math.min(95,sat+1));assert.equal(m.meta.morale,Math.min(98,morale+1));
  bad('relationship_conversation',{context:ctx(),playerId:p.id,choice:'rassurer'});
