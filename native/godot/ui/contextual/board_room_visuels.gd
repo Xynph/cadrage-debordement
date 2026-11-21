@@ -10,6 +10,8 @@ const TV = preload("res://ui/contextual/training_visuels.gd")
 const JaugeAnneau = preload("res://ui/jauge_anneau.gd")
 const BarreEmpilee = preload("res://ui/barre_empilee.gd")
 const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
+const G = preload("res://ui/carnet_skin.gd")
+const ClubViews = preload("res://ui/club_views.gd")
 
 const ICONES_JALON := {"wins": "trophy", "points": "star", "rank": "flag", "cash": "money"}
 const COURTS_JALON := {"wins": "Victoires", "points": "Points", "rank": "Classement", "cash": "Trésorerie"}
@@ -191,14 +193,14 @@ static func carte_jalon(goal: Dictionary, metrics: Dictionary, id: String, actio
 
 ## Frise de la saison : semaines 0..fin, semaine en cours, matchs du club (ballons : plein = joué, creux = à venir),
 ## drapeau de fin de saison, jalons posés à leur échéance (pictogramme dans un disque de la couleur du statut).
-## Chaque jalon est un bouton (petite fenêtre) ; chaque ballon et le drapeau ouvrent le Calendrier sur la date du match
-## (survol : main + halo). Un jalon proche de la fin monte au-dessus du drapeau, qui reste visible et cliquable.
+## Chaque jalon est un bouton (petite fenêtre) ; chaque ballon et le drapeau (dernier match) ouvrent la petite fenêtre
+## du match (survol : main + halo). Un jalon proche de la fin monte au-dessus du drapeau, qui reste visible et cliquable.
 ## Hauteur ajustée aux jalons empilés : pas de vide sans jalon.
 class Frise extends Control:
 	var semaine := 0
 	var fin := 1
 	var jalons: Array = []  ## [{goal, action, id}]
-	var matchs: Array = []  ## [{semaine, joue, date}]
+	var matchs: Array = []  ## [{semaine, joue, date, fixture}]
 	var boutons: Array = []
 	var ballons: Array = []  ## boutons des matchs, même ordre que matchs
 	var drapeau: Button
@@ -317,7 +319,7 @@ static func zone_frise(id: String, libelle: String, action: Callable) -> Button:
 	b.pressed.connect(action)
 	return b
 
-## `ouvrir_match` reçoit l'entrée du match ({semaine, joue, date}) ; le drapeau ouvre le dernier match de la saison.
+## `ouvrir_match` reçoit l'entrée du match ({semaine, joue, date, fixture}) ; le drapeau ouvre le dernier match de la saison.
 static func frise(semaine: int, fin: int, jalons: Array, matchs: Array = [], ouvrir_match: Callable = Callable()) -> Frise:
 	var f := Frise.new()
 	f.name = "BoardSeasonFrise"
@@ -591,4 +593,129 @@ static func contenu_jalon(goal: Dictionary, metrics: Dictionary, semaine: int) -
 	var ligne := rangee(8)
 	ligne.add_child(TV.pastille(etat[1], etat[0], etat[2], 16))
 	c.add_child(ligne)
+	return c
+
+## Contenu : un match de la frise. Écussons des deux clubs, score (vert gagné, rouge perdu) ou « VS », date + semaine,
+## lieu (pastille icône + mot), compétition, enjeu court (classements ou phase) et forme récente de l'adversaire.
+## Tout vient de la projection (calendrier, classements) ; rien d'inventé : sans donnée, la tuile ou la ligne disparaît.
+const LIEUX := {"home": "Domicile", "away": "Extérieur", "neutral": "Terrain neutre"}
+const PHASES := {"barrage": "Barrage", "semi": "Demi-finale", "final": "Finale", "access": "Barrage d’accession", "quarter": "Quart de finale"}
+
+static func rang(valeur: Variant) -> String:
+	if not nombre(valeur) or roundi(float(valeur)) <= 0: return "—"
+	return "1er" if roundi(float(valeur)) == 1 else "%de" % roundi(float(valeur))
+
+static func ligne_classement(model: Dictionary, id: Variant) -> Dictionary:
+	if id == null: return {}
+	for division: Variant in model.get("leagues", []):
+		if not division is Dictionary: continue
+		for row: Variant in division.get("rows", []):
+			if row is Dictionary and str(row.get("id")) == str(id): return row
+	return {}
+
+## Ovale V / N / D de la forme : couleur franche et lettre (la couleur n'est jamais seule).
+static func ovale_forme(code: String) -> PanelContainer:
+	var couleur: Color = {"V": Charte.GAIN, "D": Charte.PERTE}.get(code, Charte.GRIS_VERT)
+	var p := PanelContainer.new()
+	var style := Charte.style_pilule(couleur, Color.TRANSPARENT, 0, 0)
+	style.set_corner_radius_all(14)
+	p.add_theme_stylebox_override("panel", style)
+	p.custom_minimum_size = Vector2(34, 28)
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var l := TV.texte(code, 16, Charte.ENCRE, C.EXTRA_BOLD)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	p.add_child(l)
+	return p
+
+static func club_colonne(club: Dictionary, id: String) -> VBoxContainer:
+	var c := colonne(6)
+	c.name = id
+	c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	c.alignment = BoxContainer.ALIGNMENT_CENTER
+	var ecusson: Control = G.crest(club, 72)
+	ecusson.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	c.add_child(ecusson)
+	var nom := TV.texte(G.club_name(club), 18, Charte.IVOIRE, C.BOLD)
+	nom.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	nom.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	nom.custom_minimum_size.x = 200
+	c.add_child(nom)
+	return c
+
+static func contenu_match(fixture: Dictionary, semaine: int, model: Dictionary) -> Control:
+	var own: Variant = model.get("club", {}).get("id")
+	var home: Dictionary = fixture.get("home", {}) if fixture.get("home") is Dictionary else {}
+	var away: Dictionary = fixture.get("away", {}) if fixture.get("away") is Dictionary else {}
+	var chez_nous := home.has("id") and str(home.get("id")) == str(own)
+	var adversaire := away if chez_nous else home
+	var c := colonne(16)
+	c.name = "BoardMatchWindow"
+	# Les deux clubs, score ou VS au milieu.
+	var face := rangee(12)
+	face.add_child(club_colonne(home, "BoardMatchHome"))
+	var milieu := colonne(6)
+	milieu.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var score: Variant = fixture.get("score")
+	if score is Array and score.size() == 2 and nombre(score[0]) and nombre(score[1]):
+		var nous := float(score[0] if chez_nous else score[1])
+		var eux := float(score[1] if chez_nous else score[0])
+		var issue: Array = ["Victoire", "check", Charte.GAIN] if nous > eux else (["Défaite", "warning", Charte.PERTE] if nous < eux else ["Nul", "info", Charte.GRIS_VERT])
+		var chiffres := TV.texte("%s – %s" % [entier(score[0]), entier(score[1])], 44, issue[2], Charte.TITRE_EXTRA)
+		chiffres.name = "BoardMatchScore"
+		chiffres.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		milieu.add_child(chiffres)
+		var p := TV.pastille(issue[1], issue[0], issue[2], 16)
+		p.name = "BoardMatchOutcome"
+		p.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		milieu.add_child(p)
+	else:
+		var vs := TV.texte("VS", 40, Charte.IVOIRE_2, Charte.TITRE_EXTRA)
+		vs.name = "BoardMatchVs"
+		vs.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		milieu.add_child(vs)
+		if bool(fixture.get("played", false)):
+			var joue := TV.pastille("check", "Joué", Charte.IVOIRE_2, 15)
+			joue.name = "BoardMatchPlayed"
+			joue.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+			milieu.add_child(joue)
+	face.add_child(milieu)
+	face.add_child(club_colonne(away, "BoardMatchAway"))
+	c.add_child(face)
+	# Date + semaine, lieu, compétition.
+	var infos := rangee(10)
+	var date := str(fixture.get("date", "")).left(10)
+	var jour := date.right(2) + "/" + date.substr(5, 2) if date.length() == 10 else "—"
+	infos.add_child(tuile(jour, "S%d" % semaine, Charte.REPOS, "calendar", "BoardMatchDate", Callable(), 26))
+	var lieu := "home" if chez_nous else "away"
+	if fixture.get("neutral", false): lieu = "neutral"
+	var couleur_lieu: Color = {"home": Charte.GAIN, "away": Charte.INTENSIF}.get(lieu, Charte.MORAL)
+	infos.add_child(tuile(LIEUX[lieu], "Lieu", couleur_lieu, C.fixture_location_icon(lieu, true), "BoardMatchVenue", Callable(), 22))
+	var competition := str(fixture.get("competitionId", ""))
+	if not competition.is_empty() or fixture.has("phase"):
+		infos.add_child(tuile(ClubViews.competition_name(competition, model), "Compétition", Charte.CONFIANCE, "trophy", "BoardMatchCompetition", Callable(), 20))
+	c.add_child(infos)
+	# Enjeu court : phase finale, sinon les deux places au classement.
+	var bas := rangee(10)
+	var phase := str(fixture.get("phase", ""))
+	var mine := ligne_classement(model, own)
+	var theirs := ligne_classement(model, adversaire.get("id"))
+	if PHASES.has(phase):
+		bas.add_child(tuile(PHASES[phase], "Enjeu", Charte.INTENSIF, "flag", "BoardMatchStake", Callable(), 22))
+	elif not mine.is_empty() and not theirs.is_empty():
+		bas.add_child(tuile(rang(mine.get("rank")), "Nous", Charte.MORAL, "flag", "BoardMatchRankOwn", Callable(), 26))
+		bas.add_child(tuile(rang(theirs.get("rank")), "Eux", Charte.IVOIRE, "flag", "BoardMatchRankThem", Callable(), 26))
+	var forme: Variant = theirs.get("form")
+	if forme is Array and not forme.is_empty():
+		var carte := TV.carte(Charte.PANNEAU_2, Charte.RAYON_CARTE, 12)
+		carte.name = "BoardMatchForm"
+		carte.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var col := colonne(6)
+		carte.add_child(col)
+		var ovales := rangee(4)
+		for code: Variant in forme.slice(maxi(0, forme.size() - 5)): ovales.add_child(ovale_forme(str(code)))
+		col.add_child(ovales)
+		col.add_child(TV.texte("FORME · EUX", 14, Charte.IVOIRE_2, C.BOLD))
+		bas.add_child(carte)
+	if bas.get_child_count() > 0: c.add_child(bas)
 	return c

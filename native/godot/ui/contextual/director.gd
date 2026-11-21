@@ -62,33 +62,8 @@ func revenir_apres_match() -> void:
 	if not en_consultation(): return
 	app._navigate("Match")
 
-## Consultation pendant un rendez-vous (salle du conseil : ballon de la frise → Calendrier), comme l'après-match :
-## la salle se ferme, l'écran consulté s'ouvre ; « Continuer » de la coque ramène au rendez-vous, qui reste en attente
-## du serveur (rien n'avance tant qu'il n'est pas réglé). Vaut pour ce rendez-vous seulement (identifiant).
-var consultation_reunion := ""
-
-func en_consultation_reunion() -> bool:
-	return not consultation_reunion.is_empty() and str(_meeting().get("id", "")) == consultation_reunion
-
-## Ouvre `cible` (navigation_controller.open_entity, par ex. {kind: "date", id: "2026-09-26"}) depuis le rendez-vous.
-func consulter_depuis_reunion(cible: Dictionary) -> bool:
-	var meeting := _meeting()
-	if app == null or app.waiting or meeting.is_empty() or not is_instance_valid(app.navigation_controller): return false
-	consultation_reunion = str(meeting.get("id", ""))
-	_close()
-	var ouvert: bool = app.navigation_controller.open_entity(cible)
-	if not ouvert:
-		consultation_reunion = ""
-		sync()
-	return ouvert
-
-## Retour au rendez-vous depuis l'écran consulté.
-func revenir_reunion() -> void:
-	consultation_reunion = ""
-	sync()
-
 func active_meeting() -> bool:
-	return not _meeting().is_empty() and not en_consultation_reunion()
+	return not _meeting().is_empty()
 
 func _meeting() -> Dictionary:
 	var club_life: Dictionary = app.model.get("clubLife", {})
@@ -171,7 +146,7 @@ func sync(_received_command: String = "", _response_ok: bool = true) -> bool:
 		next = "conversation"
 		data = invitation
 		key = str(invitation.get("id", ""))
-	elif not _meeting().is_empty() and not en_consultation_reunion():
+	elif not _meeting().is_empty():
 		var meeting := _meeting()
 		next = str(meeting.get("kind", ""))
 		data = meeting.duplicate(true)

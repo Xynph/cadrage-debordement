@@ -1309,8 +1309,6 @@ func _update_live_bar() -> void:
 			primary_button.text = "Valider le résultat" if live.get("finished",false) else "Retour au direct"
 		if primary_button.name == "ImmersiveContinue" and live.get("finished",false) and is_instance_valid(contextual_director) and contextual_director.en_consultation():
 			primary_button.text = "Après-match"
-		if primary_button.name == "ImmersiveContinue" and is_instance_valid(contextual_director) and contextual_director.en_consultation_reunion():
-			primary_button.text = "Direction"
 		if connection_error and bridge.child_pid <= 0 and primary_button.name == "ImmersiveContinue": primary_button.text = "Relancer"
 		primary_button.tooltip_text = primary_tooltip()
 		if primary_button.name == "ImmersiveContinue": Immersive.sync_continue(self)
@@ -1361,7 +1359,6 @@ func continue_block() -> String:
 
 func primary_text() -> String:
 	if connection_error and bridge.child_pid <= 0: return "RELANCER LE MOTEUR  →"
-	if is_instance_valid(contextual_director) and contextual_director.en_consultation_reunion(): return "RETOUR À LA DIRECTION  →"
 	var live := _live()
 	if not live.is_empty():
 		if live.get("finished",false) and is_instance_valid(contextual_director) and contextual_director.en_consultation(): return "RETOUR À L’APRÈS-MATCH  →"
@@ -1383,10 +1380,6 @@ func primary_action() -> void:
 	# l'écran de l'événement en attente, dont aucune décision ne pourrait être enregistrée.
 	if connection_error and bridge.child_pid <= 0:
 		reconnect()
-		return
-	# Écran consulté depuis un rendez-vous (frise de la salle du conseil) : Continuer ramène au rendez-vous.
-	if is_instance_valid(contextual_director) and contextual_director.en_consultation_reunion():
-		contextual_director.revenir_reunion()
 		return
 	if not _live().is_empty():
 		# Après-match consulté depuis un autre écran : Continuer ramène à l'après-match (le résultat s'y valide).

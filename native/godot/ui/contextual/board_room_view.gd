@@ -158,7 +158,7 @@ func _semaines_matchs() -> Array:
 			var semaine := int(fixture.week)
 			if vues.has(semaine):continue
 			vues[semaine]=true
-			source.append({"semaine":semaine,"joue":fixture.has("score") or bool(fixture.get("played",false)),"date":str(fixture.get("date","")).left(10)})
+			source.append({"semaine":semaine,"joue":fixture.has("score") or bool(fixture.get("played",false)),"date":str(fixture.get("date","")).left(10),"fixture":fixture})
 	return source
 
 ## Grand titre de page : écusson + Anton (règle du 21/11/2026), ivoire ; le doré reste à Continuer.
@@ -182,12 +182,11 @@ func _fenetre_jalon(goal: Dictionary) -> void:
 	var type := str(goal.get("type",""))
 	V.fenetre(ui,TYPES.get(type,type),V.ICONES_JALON.get(type,"target"),V.statut(goal)[2],V.contenu_jalon(goal,_board().get("metrics",{}),_week()),640.0)
 
-## Ballon ou drapeau de la frise : le Calendrier, ouvert sur la date du match (sans date connue : le Calendrier du jour).
-## La salle se ferme le temps de la consultation ; « Continuer » ramène au rendez-vous (director.consulter_depuis_reunion).
-func _ouvrir_calendrier(m: Dictionary) -> void:
-	if app==null or app.waiting or director==null or not director.has_method("consulter_depuis_reunion"):return
-	var date:=str(m.get("date",""))
-	director.consulter_depuis_reunion({"kind":"date","id":date} if Agenda.valid_date(date) else {"kind":"menu","route":"Calendrier"})
+## Ballon ou drapeau de la frise : petite fenêtre du match (la réunion est obligatoire, on ne la quitte pas).
+func _fenetre_match(m: Dictionary) -> void:
+	var fixture: Dictionary=m.get("fixture",{}) if m.get("fixture") is Dictionary else {}
+	if fixture.is_empty():return
+	V.fenetre(ui,"Match · S%d"%int(m.get("semaine",0)),"calendar",Charte.MORAL,V.contenu_match(fixture,int(m.get("semaine",0)),app.model if app!=null else model),660.0)
 
 func _anneaux(diametre: float) -> HBoxContainer:
 	var row := V.rangee(4)
@@ -309,7 +308,7 @@ func _draw_visuel() -> void:
 	var jalons: Array=[]
 	for goal: Dictionary in _board().get("objectives",[]):
 		jalons.append({"goal":goal,"id":"BoardFriseGoal_"+str(goal.get("id","")).validate_node_name(),"action":func():_fenetre_jalon(goal)})
-	season.add_child(V.frise(_week(),int(_finance().get("weeksPerSeason",_week()+1)),jalons,_semaines_matchs(),_ouvrir_calendrier))
+	season.add_child(V.frise(_week(),int(_finance().get("weeksPerSeason",_week()+1)),jalons,_semaines_matchs(),_fenetre_match))
 	var cards := HFlowContainer.new();cards.add_theme_constant_override("h_separation",10);cards.add_theme_constant_override("v_separation",10);season.add_child(cards)
 	_cartes_jalons(cards,true)
 	for card in cards.get_children():card.custom_minimum_size.x=maxf(card.custom_minimum_size.x,280 if _compacte else 320)

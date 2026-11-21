@@ -37,8 +37,7 @@ const EXTRAS := [
 	{"id": "comparateur", "libelle": "Comparateur (trois joueurs)", "type": "comparateur"},
 	{"id": "salle-conseil", "libelle": "Salle du conseil", "type": "salle_conseil"},
 	{"id": "salle-conseil-fenetre", "libelle": "Salle du conseil · petite fenêtre", "type": "salle_conseil", "fenetre": true},
-	{"id": "salle-conseil-calendrier", "libelle": "Salle du conseil · Calendrier ouvert par un ballon", "type": "salle_conseil", "ballon": true},
-	{"id": "salle-conseil-retour", "libelle": "Salle du conseil · retour par Continuer", "type": "salle_conseil", "ballon": true, "retour": true},
+	{"id": "salle-conseil-match", "libelle": "Salle du conseil · fenêtre d'un match", "type": "salle_conseil", "ballon": true},
 	{"id": "presse-ouverte", "libelle": "Presse : conférence avec questions ouvertes", "type": "presse_ouverte"},
 	{"id": "presse-conference", "libelle": "Presse : Conférence", "type": "presse_onglet", "onglet": 1},
 	{"id": "presse-historique", "libelle": "Presse : Historique", "type": "presse_onglet", "onglet": 2},
@@ -489,9 +488,6 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				visuels.ouvrir_joueur(salle, blesses[0] if not blesses.is_empty() else app.model.squad[0])
 				await stabiliser()
 		"salle_conseil":
-			if app.contextual_director.en_consultation_reunion():
-				app.contextual_director.revenir_reunion()
-				await stabiliser()
 			if not (app.contextual_director.active() and app.contextual_director.kind == "board"):
 				if not app._command("new_career", {"mode": "world-champ", "club": 102, "start": "premiers-clubs"}): return {"statut": "echec", "note": "carrière neuve refusée"}
 				while app.waiting: await process_frame
@@ -510,13 +506,11 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				var frise: Node = app.contextual_director.view.find_child("BoardSeasonFrise", true, false)
 				var ballons: Array = frise.ballons if frise != null else []
 				if ballons.is_empty(): return {"statut": "indisponible", "note": "aucun match sur la frise"}
-				(ballons[mini(1, ballons.size() - 1)] as BaseButton).pressed.emit()
+				(ballons[0] as BaseButton).pressed.emit()
 				await stabiliser()
-				if app.route != "Calendrier" or not app.contextual_director.en_consultation_reunion(): return {"statut": "echec", "note": "le ballon n'a pas ouvert le Calendrier"}
-				if bool(ecran.get("retour", false)):
-					app.primary_action()
-					await stabiliser()
-					if app.contextual_director.kind != "board": return {"statut": "echec", "note": "Continuer n'a pas ramené à la direction"}
+				var vue_m: Control = app.contextual_director.view
+				if vue_m.find_child("BoardMatchWindow", true, false) == null: return {"statut": "echec", "note": "le ballon n'a pas ouvert la fenêtre du match"}
+				if app.contextual_director.kind != "board": return {"statut": "echec", "note": "la réunion s'est fermée"}
 		"presse_ouverte":
 			# Même recette que tests/godot-presse-da.gd : carrière neuve, avance jusqu'à la conférence d'arrivée,
 			# puis page Presse avec l'origine du courrier (questions ouvertes sous les yeux).
