@@ -179,6 +179,50 @@ func plan_de_jeu() -> void:
 			var apres: Dictionary = app.model.get("clubLife", {}).get("playbook", {})
 			check(str(apres.zones[0].attack) == "inherit", "Plan de jeu : la pastille revient au plan principal")
 			destinations.append("Pastille « Consigne locale » -> plan principal")
+	await phases_et_lecture()
+
+## Phases arrêtées : effets en pastilles (plus de description écrite), chaque ligne choisit l'option ;
+## Lecture du match (avant le match) : pastilles qui mènent aux zones et aux phases arrêtées.
+func phases_et_lecture() -> void:
+	app.management_ui.playbook_tab = 1
+	app._navigate("Plan de jeu")
+	await settle(12)
+	var plan: Dictionary = app.model.get("clubLife", {}).get("playbook", {})
+	var descriptions: Array[String] = []
+	for phase: Dictionary in plan.get("setPieces", []):
+		for option: Dictionary in phase.get("options", []): descriptions.append(str(option.get("description", "")))
+	for ligne in textes(app.root_content): check(not ligne in descriptions, "Phases arrêtées : description écrite retirée « %s »" % ligne)
+	for nom in ["PlaybookPortee_court", "PlaybookPortee_long"]: check(app.root_content.find_child(nom, true, false) != null, "Phases arrêtées : schéma de portée " + nom)
+	check(app.root_content.find_children("PlaybookEffet_*", "", true, false).size() >= 9, "Phases arrêtées : pastilles d'effet")
+	var melee: Dictionary = plan.get("setPieces", [{}])[0]
+	var autre := ""
+	for option: Dictionary in melee.get("options", []):
+		if str(option.id) != str(melee.get("selected", "")): autre = str(option.id); break
+	var ligne := app.root_content.find_child("PlaybookChoix_%s_%s" % [melee.get("key", ""), autre], true, false) as Button
+	check(ligne != null and not ligne.disabled, "Phases arrêtées : ligne « %s » cliquable" % autre)
+	if ligne != null and plan.get("available", false):
+		ligne.pressed.emit()
+		await wait_engine()
+		var apres: Dictionary = app.model.get("clubLife", {}).get("playbook", {}).get("setPieces", [{}])[0]
+		check(str(apres.get("selected", "")) == autre, "Phases arrêtées : la ligne choisit l'option")
+		destinations.append("Ligne de phase arrêtée -> choix retenu")
+	app.management_ui.playbook_tab = 2
+	app._navigate("Plan de jeu")
+	await settle(12)
+	for texte in textes(app.root_content): check(not texte.contains("apparaîtra pendant le match"), "Lecture du match : phrase retirée")
+	for cas: Array in [["PlaybookAdviceZones", 0], ["PlaybookAdvicePhases", 1]]:
+		var pastille := app.root_content.find_child(cas[0], true, false) as Button
+		check(pastille != null, "Lecture du match : %s cliquable" % cas[0])
+		if pastille == null: continue
+		pastille.pressed.emit()
+		await settle()
+		var onglets := app.root_content.find_child("PlaybookTabs", true, false) as TabContainer
+		check(onglets != null and onglets.current_tab == cas[1], "Lecture du match : %s ouvre l'onglet %d" % cas)
+		destinations.append("%s -> onglet %d" % cas)
+		app.management_ui.playbook_tab = 2
+		app._navigate("Plan de jeu")
+		await settle(12)
+	app.management_ui.playbook_tab = 0
 
 func match_direct() -> void:
 	pass
