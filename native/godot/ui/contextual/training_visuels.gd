@@ -486,3 +486,119 @@ static func tuile_plan(plan: Dictionary, action: Callable, actif: bool) -> Contr
 	bouton.set_meta("contextual_enabled", actif)
 	bouton.disabled = not actif
 	return b
+
+# --- Colonne de droite : charge, priorités, actions (revue de Léo du 21/11/2026 : même style que les tuiles de plans) ---
+
+## Une tuile par mode de séance ; le mode choisi est teinté, liseré et coché. Le choix reste local jusqu'à la séance.
+static func choix_charge(mode_actuel: String, au_choix: Callable, actif: bool) -> HBoxContainer:
+	var rangee := HBoxContainer.new()
+	rangee.name = "TrainingModeChoice"
+	rangee.add_theme_constant_override("separation", 6)
+	for m: Array in MODES:
+		var choisi: bool = m[0] == mode_actuel
+		var couleur := couleur_mode(m[0])
+		var fond := carte(Charte.PANNEAU_2.lerp(couleur, .22 if choisi else .05), Charte.RAYON_CARTE, 8)
+		if choisi:
+			var st := (fond.get_theme_stylebox("panel") as StyleBoxFlat).duplicate() as StyleBoxFlat
+			st.set_border_width_all(2)
+			st.border_color = couleur
+			fond.add_theme_stylebox_override("panel", st)
+		var l := HBoxContainer.new()
+		l.add_theme_constant_override("separation", 6)
+		l.alignment = BoxContainer.ALIGNMENT_CENTER
+		l.add_child(icone("check" if choisi else m[2], 18, couleur))
+		l.add_child(texte(m[1], 17, Charte.IVOIRE if choisi else Charte.IVOIRE_2, C.BOLD))
+		fond.add_child(l)
+		var cle: String = m[0]
+		var b := cliquable(fond, func(): au_choix.call(cle), "TrainingMode_" + cle, str(m[1]))
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var bouton := b.get_meta("bouton") as Button
+		bouton.set_meta("contextual_enabled", actif)
+		bouton.disabled = not actif
+		rangee.add_child(b)
+	return rangee
+
+## Priorités de la semaine : une couleur et un pictogramme par priorité (ids du moteur, COLLECTIVE_FOCI).
+const PRIORITES := {"aucune": ["heart", Charte.REPOS], "conquete": ["target", Charte.INTENSIF], "defence": ["shield", Charte.MORAL], "pied": ["ball", Charte.CONFIANCE]}
+
+static func tuiles_priorites(options: Array, choisie: Variant, au_choix: Callable, actif: bool) -> GridContainer:
+	var grille := GridContainer.new()
+	grille.name = "TrainingFocusGrid"
+	grille.columns = 2
+	grille.add_theme_constant_override("h_separation", 8)
+	grille.add_theme_constant_override("v_separation", 8)
+	for option: Dictionary in options:
+		var id := str(option.get("id", ""))
+		var def: Array = PRIORITES.get(id, ["target", Charte.NORMAL])
+		var couleur: Color = def[1]
+		var choisi := str(choisie) == id
+		var fond := carte(Charte.PANNEAU_2.lerp(couleur, .2 if choisi else .04), Charte.RAYON_CARTE, 10)
+		if choisi:
+			var st := (fond.get_theme_stylebox("panel") as StyleBoxFlat).duplicate() as StyleBoxFlat
+			st.set_border_width_all(2)
+			st.border_color = couleur
+			fond.add_theme_stylebox_override("panel", st)
+		var col := VBoxContainer.new()
+		col.add_theme_constant_override("separation", 4)
+		var haut := HBoxContainer.new()
+		haut.add_child(icone(def[0], 34, couleur))
+		var air := Control.new()
+		air.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		haut.add_child(air)
+		if choisi: haut.add_child(icone("check", 20, couleur))
+		col.add_child(haut)
+		var nom := str(option.get("label", ""))
+		col.add_child(texte(nom, _taille(nom, 17, C.BOLD, 140), Charte.IVOIRE if choisi else Charte.IVOIRE_2, C.BOLD))
+		fond.add_child(col)
+		var b := cliquable(fond, func(): au_choix.call(id), "TrainingFocus_" + id, str(option.get("description", "")))
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var bouton := b.get_meta("bouton") as Button
+		bouton.set_meta("contextual_enabled", actif)
+		bouton.disabled = not actif
+		grille.add_child(b)
+	return grille
+
+## Bouton secondaire discret (contour fin, pictogramme) : garder les réglages.
+static func bouton_secondaire(mot: String, icone_id: String, action: Callable, nom: String) -> Control:
+	var fond := PanelContainer.new()
+	var st := Charte.style_pilule(Color.TRANSPARENT, Charte.FILET.lightened(.2), 12, 6)
+	st.set_border_width_all(1)
+	fond.add_theme_stylebox_override("panel", st)
+	var l := HBoxContainer.new()
+	l.add_theme_constant_override("separation", 6)
+	l.add_child(icone(icone_id, 16, Charte.IVOIRE_2))
+	l.add_child(texte(mot, 15, Charte.IVOIRE_2, C.BOLD))
+	fond.add_child(l)
+	var b := cliquable(fond, action, nom, mot)
+	b.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	(b.get_meta("bouton") as Button).set_meta("contextual_enabled", true)
+	return b
+
+## Bouton principal de la salle : aplat vert franc de la charte (le doré reste à Continuer), texte crème.
+static func bouton_seance(action: Callable, actif: bool) -> Button:
+	var b := Button.new()
+	b.name = "TrainingPerform"
+	b.text = "Effectuer la séance"
+	b.icon = C.icon_texture("train", Charte.CREME)
+	b.expand_icon = false
+	b.add_theme_constant_override("icon_max_width", 24)
+	b.add_theme_constant_override("h_separation", 10)
+	b.custom_minimum_size.y = 54
+	b.focus_mode = Control.FOCUS_ALL
+	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	b.add_theme_font_override("font", C.EXTRA_BOLD)
+	b.add_theme_font_size_override("font_size", 22)
+	for cle in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: b.add_theme_color_override(cle, Charte.CREME)
+	b.add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)
+	var fonds := {"normal": Charte.VERT_FRANC, "hover": Charte.VERT_FRANC.lightened(.12), "pressed": Charte.VERT_FRANC.darkened(.1), "focus": Charte.VERT_FRANC}
+	for etat in fonds:
+		var st := Charte.style_panneau(fonds[etat], Charte.RAYON_CARTE, 10)
+		if etat == "focus":
+			st.set_border_width_all(2)
+			st.border_color = Charte.CREME
+		b.add_theme_stylebox_override(etat, st)
+	b.add_theme_stylebox_override("disabled", Charte.style_panneau(Charte.PANNEAU_3, Charte.RAYON_CARTE, 10))
+	b.set_meta("contextual_enabled", actif)
+	b.disabled = not actif
+	b.pressed.connect(action)
+	return b

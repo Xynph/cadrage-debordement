@@ -108,6 +108,20 @@ func run() -> void:
 		await press(avis.get_meta("bouton"),"avis du préparateur")
 		check(not director.active() and app.route=="Effectif","Avis du préparateur -> Effectif & 23 (%s)" % app.route)
 	await open_room()
+	# Charge : une tuile par mode, le choix est coché et part avec la séance ; priorités : tuiles, choix du moteur.
+	for mode in ["repos","intense","normal"]:
+		await press(found("TrainingMode_"+mode).get_meta("bouton"),"charge "+mode)
+		check(str(view().mode_choisi)==mode,"Charge %s choisie" % mode)
+	var focus:=found("TrainingFocus_conquete")
+	check(focus!=null and found("TrainingFocusGrid").get_child_count()==app.model.decisions.training.collective.options.size(),"Une tuile par priorité")
+	if focus!=null:
+		await press(focus.get_meta("bouton"),"priorité Conquête")
+		await wait_engine()
+		check(str(app.model.decisions.training.collective.selected)=="conquete","Priorité Conquête retenue par le moteur")
+	await press(found("TrainingMaintain").get_meta("bouton"),"Maintenir les réglages")
+	check(found("TrainingMaintain")==null and view().maintained,"Réglages gardés")
+	var seance:=found("TrainingPerform") as Button
+	check(seance!=null and not seance.disabled and seance.get_theme_stylebox("normal").bg_color!=preload("res://ui/charte.gd").DORE,"Effectuer la séance : bouton principal, pas doré")
 	# Plans du staff : pilules = répartition du moteur, clic = plan appliqué par le worker.
 	var plans: Array = app.model.clubLife.clubSupport.training.plans
 	check(plans.size()==3,"Trois plans du staff projetés")
