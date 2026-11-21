@@ -1602,8 +1602,9 @@ func run() -> void:
 				var rb := bench.get_global_rect()
 				var ri := impact.get_global_rect()
 				check(rp.end.x<=rb.position.x+1 and rb.end.x<=ri.position.x+1,"Terrain, puis banc, puis impact de gauche à droite")
-				check(under.get_global_rect().position.y>=maxf(rp.end.y,rb.end.y)-1,"Candidats sous le terrain")
-				check(absf(rp.size.x/rp.size.y-100.0/70.0)<.02,"Terrain aux proportions réelles (100 × 70, charte §6)")
+				# Terrain vertical (option A de Léo, 22/11/2026) : candidats sous le banc, à droite du terrain.
+				check(under.get_global_rect().position.y>=rb.end.y-1 and under.get_global_rect().position.x>=rp.end.x-1,"Candidats sous le banc, à droite du terrain")
+				check(rp.size.y>rp.size.x*1.25 and rp.size.y<rp.size.x*1.7,"Terrain vertical aux proportions du terrain (%s)" % str(rp.size))
 			for slot in 23:
 				var jersey: Button = app.find_child("LineupSlot%02d" % (slot+1),true,false)
 				check(jersey != null,"Poste réel disponible : "+str(slot+1))
@@ -1671,8 +1672,8 @@ func run() -> void:
 		check(app.bridge.last_response_ok and app.model.tactics.defense=="pression" and app.model.tactics.attack=="occupation","Consigne défensive enregistrée sans écraser l’attaque")
 		app._navigate("Composition")
 		await settle()
-		var plan_summary := app.find_child("TacticsPlanSummary",true,false) as Label
-		check(plan_summary!=null and plan_summary.text.begins_with("Plan :"),"Résumé du plan sur la composition")
+		var plan_summary := app.find_child("TacticsPlanSummaryTexte",true,false) as Label
+		check(plan_summary!=null and plan_summary.text.begins_with("Plan ·") and app.find_child("TacticsDefenseSummary",true,false)!=null,"Pastilles Plan et Défense sur la composition")
 		await capture("03b-tactique-plan-2560x1440")
 		if OS.get_environment("CD_IMMERSIVE_SCOPE") != "office": await footer_feedback()
 		app.find_child("LineupSlot01",true,false).pressed.emit()
