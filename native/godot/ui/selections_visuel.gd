@@ -1,8 +1,7 @@
 extends RefCounted
-## Sélections › Offres et Disponibilités : deux options visuelles à départager (planche de choix du 21/11/2026).
-## CD_VARIANTE_VISUELLE=A : tuiles drapeaux (offres en grille, fenêtres en tuiles).
-## CD_VARIANTE_VISUELLE=B : frise des 90 jours (fenêtres en bandes datées, offres rangées par compétition).
-## Sans la variable : écran actuel inchangé (aucune de ces fonctions n'est appelée).
+## Sélections › Offres et Disponibilités (choix de Léo du 21/11/2026, option « frise des 90 jours ») :
+## fenêtres internationales en bandes datées avec les drapeaux des nations, offres rangées par compétition
+## (le choix se fait dans une petite fenêtre), annuaire des sélections avec drapeaux. Aucune phrase d'aide.
 const C = preload("res://ui/immersive08/components.gd")
 const G = preload("res://ui/game_skin.gd")
 const Charte = preload("res://ui/charte.gd")
@@ -12,10 +11,6 @@ const MOIS := ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août
 const PALETTE := [Charte.MORAL, Charte.CONFIANCE, Charte.REPOS, Charte.INTENSIF, Charte.CONDITION, Charte.PERTE]
 const DUAL := Charte.MORAL
 const SEULE := Charte.CONFIANCE
-
-static func variante() -> String:
-	var v := OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper()
-	return v if v in ["A", "B"] else ""
 
 # ---------------------------------------------------------------- petites pièces (conteneurs)
 
@@ -262,46 +257,6 @@ static func _pied_offres(app: Control, view: Control, role: String) -> void:
 	ligne.add_child(_pilule("Quitter la sélection", Charte.PERTE, func():
 		app.confirm("Quitter la sélection", "Ta carrière en club continue.", func(): app._command("national_leave_job", {"confirmed": true})), "NationalJobLeave", "arrow"))
 
-## Option A : grille de tuiles drapeaux, deux pilules courtes par pays.
-static func offres_a(app: Control, international: Dictionary, role: String) -> Control:
-	var view := C.v(12)
-	view.name = "Offres"
-	var jobs := _jobs(app, international)
-	var tete := C.h(10)
-	view.add_child(tete)
-	tete.add_child(_pastille("%d postes ouverts" % jobs.size(), Charte.INTENSIF, "flag"))
-	tete.add_child(_pastille("Club + sélection", DUAL, "shield"))
-	tete.add_child(_pastille("Sélection seule", SEULE, "flag"))
-	var grille := GridContainer.new()
-	grille.name = "OffresGrille"
-	grille.columns = 4
-	grille.add_theme_constant_override("h_separation", C.px(12))
-	grille.add_theme_constant_override("v_separation", C.px(12))
-	view.add_child(grille)
-	for job: Dictionary in jobs:
-		var nation := str(job.nation)
-		var carte := PanelContainer.new()
-		carte.name = "OffreTuile_" + nation.validate_node_name()
-		C.fill(carte)
-		carte.add_theme_stylebox_override("panel", _boite(Charte.PANNEAU_2, Color.TRANSPARENT, Charte.RAYON_CARTE, 12))
-		grille.add_child(carte)
-		var col := C.v(8)
-		carte.add_child(col)
-		var tete_pays := C.h(10)
-		col.add_child(tete_pays)
-		var drapeau := _drapeau(app, nation, 56)
-		tete_pays.add_child(drapeau)
-		var nom := C.label(str(job.get("name", nation)), 24, Charte.IVOIRE, true, 800)
-		nom.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		nom.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		C.fill(nom)
-		tete_pays.add_child(nom)
-		_cliquable(tete_pays, _ouvrir_nation.bind(app, nation), "OffreNation_" + nation.validate_node_name(), "Consulter la sélection · " + str(job.get("name", nation)))
-		_boutons_offre(app, col, job, role, 23)
-	if jobs.is_empty(): view.add_child(_pastille("Aucun poste ouvert", Charte.IVOIRE_2, "flag"))
-	_pied_offres(app, view, role)
-	return marquer(view)
-
 ## Compétition à venir d'une nation (fenêtre des 90 jours, sinon première rencontre annoncée).
 static func _competition_de(international: Dictionary, nation: String, today: String) -> Dictionary:
 	var dispo: Dictionary = international.get("availability", {}) if international.get("availability") is Dictionary else {}
@@ -318,8 +273,8 @@ static func _competition_de(international: Dictionary, nation: String, today: St
 				meilleur = {"cle": str(edition.get("id", "")), "nom": str(edition.get("name", edition.get("id", ""))), "from": d, "through": ""}
 	return meilleur
 
-## Option B : offres rangées par compétition, un drapeau par pays ; le choix se fait dans une petite fenêtre.
-static func offres_b(app: Control, international: Dictionary, role: String) -> Control:
+## Offres rangées par compétition, un drapeau par pays ; le choix se fait dans une petite fenêtre.
+static func offres(app: Control, international: Dictionary, role: String) -> Control:
 	var view := C.v(12)
 	view.name = "Offres"
 	var jobs := _jobs(app, international)
@@ -451,11 +406,15 @@ static func _joueurs(app: Control, view: Control, state: Dictionary) -> void:
 	if int(state.get("absentCount", 0)) > 0:
 		for player: Dictionary in state.get("players", []): view.add_child(_carte_joueur(app, player, false))
 		var postes := C.h(10)
+		postes.name = "InternationalPositionCoverage"
 		view.add_child(postes)
 		for position: Dictionary in state.get("positions", []):
 			var couleur := Charte.PERTE if int(position.available) == 0 else Charte.CONDITION
 			var t := _tuile("%d / %d" % [position.available, position.total], str(position.position), couleur, "people", func(): app._navigate("Composition"), "DispoPoste_" + str(position.position).validate_node_name())
 			postes.add_child(t)
+		var compo := _pilule("Composition", Charte.MORAL, func(): app._navigate("Composition"), "InternationalAvailabilityLineup", "tactic", 23)
+		compo.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		postes.add_child(compo)
 	if not state.get("returned", []).is_empty():
 		view.add_child(C.label("RETOURS · 7 JOURS", 20, Charte.IVOIRE_2, true, 700))
 		for player: Dictionary in state.returned: view.add_child(_carte_joueur(app, player, true))
@@ -474,57 +433,8 @@ static func _fenetre_window(app: Control, w: Dictionary, couleur: Color) -> void
 		for n: Dictionary in w.nations: flux.add_child(puce_nation(app, str(n.id), str(n.name), 34))
 		col.add_child(_pastille("Convocations à venir", Charte.INTENSIF, "clock")))
 
-## Option A : chiffres en tuiles, fenêtres en tuiles drapeaux.
-static func disponibilites_a(app: Control) -> Control:
-	var view := C.v(14)
-	view.name = "Disponibilités"
-	var state: Dictionary = load("res://ui/international_availability.gd").data(app.model)
-	if state.is_empty(): return view
-	var chiffres := C.h(12)
-	view.add_child(chiffres)
-	for c: Array in _chiffres(app, state):
-		var t := _tuile(c[0], c[1], c[2], c[3], c[4], c[5])
-		C.fill(t)
-		chiffres.add_child(t)
-	_joueurs(app, view, state)
-	view.add_child(C.label("FENÊTRES · 90 JOURS", 20, Charte.IVOIRE_2, true, 700))
-	var grille := GridContainer.new()
-	grille.name = "DispoFenetres"
-	grille.columns = 2
-	grille.add_theme_constant_override("h_separation", C.px(12))
-	grille.add_theme_constant_override("v_separation", C.px(12))
-	view.add_child(grille)
-	for w: Dictionary in state.get("windows", []):
-		var couleur := _couleur(str(w.competitionId))
-		var carte := PanelContainer.new()
-		carte.name = "DispoFenetre_" + (str(w.competitionId) + str(w.from)).validate_node_name()
-		C.fill(carte)
-		carte.add_theme_stylebox_override("panel", _boite(Charte.PANNEAU_2.lerp(couleur, .10), Color.TRANSPARENT, Charte.RAYON_CARTE, 12))
-		grille.add_child(carte)
-		var col := C.v(8)
-		carte.add_child(col)
-		var tete := C.h(8)
-		col.add_child(tete)
-		tete.add_child(C.icon("trophy", 22, couleur))
-		var nom := C.label(str(w.competitionName), 22, couleur.lerp(Charte.IVOIRE, .2), true, 800)
-		nom.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		C.fill(nom)
-		tete.add_child(nom)
-		_cliquable(tete, _fenetre_window.bind(app, w, couleur), "DispoFenetreOuvrir_" + (str(w.competitionId) + str(w.from)).validate_node_name(), str(w.competitionName))
-		var dates := C.label("%s → %s" % [_date(w.from), _date(w.through)], 30, Charte.IVOIRE, true, 800)
-		dates.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
-		col.add_child(dates)
-		var flux := HFlowContainer.new()
-		flux.add_theme_constant_override("h_separation", C.px(6))
-		flux.add_theme_constant_override("v_separation", C.px(6))
-		col.add_child(flux)
-		for n: Dictionary in w.nations: flux.add_child(puce_nation(app, str(n.id), str(n.name), 26))
-		col.add_child(_pastille("Convocations à venir", Charte.INTENSIF, "clock"))
-	if state.get("windows", []).is_empty(): view.add_child(_pastille("Aucune fenêtre", Charte.CONDITION, "check"))
-	return marquer(view)
-
-## Option B : frise des 90 jours, une bande par fenêtre, drapeaux des nations engagées au bout.
-static func disponibilites_b(app: Control) -> Control:
+## Disponibilités : frise des 90 jours, une bande par fenêtre, drapeaux des nations engagées au bout.
+static func disponibilites(app: Control) -> Control:
 	var view := C.v(14)
 	view.name = "Disponibilités"
 	var state: Dictionary = load("res://ui/international_availability.gd").data(app.model)
@@ -622,6 +532,8 @@ static func _frise(app: Control, state: Dictionary) -> Control:
 		for i in lignes.size() - 1:
 			var y := haut_axe + (i + 1) * rangee - C.px(2)
 			toile.draw_line(Vector2(0, y), Vector2(toile.size.x, y), Charte.FILET, 1.0)
+		var fin_txt := _date(fin).to_upper()
+		var lf := police.get_string_size(fin_txt, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x
 		var d := Time.get_datetime_dict_from_unix_time(int(j0 * 86400))
 		var annee := int(d.year)
 		var mois := int(d.month) + 1
@@ -633,15 +545,15 @@ static func _frise(app: Control, state: Dictionary) -> Control:
 			if jj > j1: break
 			var x := gauche + (jj - j0) / (j1 - j0) * zone
 			toile.draw_line(Vector2(x, y_axe - C.px(10)), Vector2(x, toile.size.y), Color(Charte.IVOIRE_3, .3), 1.0)
-			toile.draw_string(police, Vector2(x + C.px(6), y_axe - C.px(8)), MOIS[mois - 1].to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, taille, Charte.IVOIRE_2)
+			var libelle: String = MOIS[mois - 1].to_upper()
+			if x + C.px(6) + police.get_string_size(libelle, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x < toile.size.x - lf - C.px(12):
+				toile.draw_string(police, Vector2(x + C.px(6), y_axe - C.px(8)), libelle, HORIZONTAL_ALIGNMENT_LEFT, -1, taille, Charte.IVOIRE_2)
 			mois += 1
 			if mois > 12:
 				mois = 1
 				annee += 1
 		toile.draw_circle(Vector2(gauche, y_axe), C.px(7), Charte.CONDITION)
 		toile.draw_string(police, Vector2(0, y_axe + C.px(6)), "AUJOURD’HUI · " + _date(debut).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, taille, Charte.CONDITION)
-		var fin_txt := _date(fin).to_upper()
-		var lf := police.get_string_size(fin_txt, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x
 		toile.draw_string(police, Vector2(toile.size.x - lf, y_axe - C.px(8)), fin_txt, HORIZONTAL_ALIGNMENT_LEFT, -1, taille, Charte.IVOIRE_2))
 	if windows.is_empty():
 		toile.add_child(_pastille("Aucune fenêtre", Charte.CONDITION, "check"))
