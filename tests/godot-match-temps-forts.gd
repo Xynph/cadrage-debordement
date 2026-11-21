@@ -138,9 +138,9 @@ func layout(view: Control, size: Vector2i) -> void:
 	# Mise à l'échelle : textes à l'échelle de la fenêtre, jamais sous 12 px.
 	var density: float = between.densite_pour(Vector2(size))
 	var figure: Label = between.chiffres.get_child(0).find_children("*", "Label", true, false)[0]
-	check(is_equal_approx(between._densite, density) and figure.get_theme_font_size("font_size") == maxi(12, roundi(18 * density)), label + " : chiffres à l'échelle (%d points)" % figure.get_theme_font_size("font_size"))
+	check(is_equal_approx(between._densite, density) and figure.get_theme_font_size("font_size") == between.fpx(18), label + " : chiffres à l'échelle (%d points)" % figure.get_theme_font_size("font_size"))
 	# L'état du jeu s'écrit en entier : sa taille baisse s'il le faut, jamais sous 12 px.
-	check(figure.get_theme_font_size("font_size") >= 12 and between.etat.get_theme_font_size("font_size") >= 12 and between.etat.get_theme_font_size("font_size") <= maxi(12, roundi(22 * density)), label + " : texte lisible")
+	check(figure.get_theme_font_size("font_size") >= 12 and between.etat.get_theme_font_size("font_size") >= 12 and between.etat.get_theme_font_size("font_size") <= between.fpx(22), label + " : texte lisible")
 	# Les commandes communes sont dans la bande sous le score (la même qu'en 3D).
 	var bande: Control = view.get("bande_temps_forts")
 	# Écran 13 (20/11/2026) : la bande est sur la rangée du score, à sa droite (maquettes 13 et 14).

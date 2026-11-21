@@ -312,8 +312,8 @@ class Domination extends Control:
 
 	func _draw() -> void:
 		_etiquettes.clear()
-		var corps := maxi(13, roundi(22.0 * densite))
-		var petit := maxi(13, roundi(20.0 * densite))
+		var corps := maxi(13, roundi(20.0 * densite))
+		var petit := maxi(13, roundi(18.0 * densite))
 		var ligne_texte := corps * 1.3
 		var gauche := maxf(150.0, 250.0 * densite)
 		var droite := maxf(28.0, 48.0 * densite)
@@ -748,8 +748,9 @@ func px(valeur: float) -> int:
 	return roundi(valeur * _densite)
 
 ## Taille de police à l'échelle, jamais sous le plancher de 12 px de la charte.
+## Textes de l'écran 2D d'un à deux points sous la taille écrite (retouche de Léo du 21/11/2026 : écran plus aéré).
 func fpx(valeur: float) -> int:
-	return maxi(12, px(valeur))
+	return maxi(12, px(valeur - (2.0 if valeur >= 20.0 else 1.0)))
 
 func _texte(texte: String, taille: float, couleur: Color, retour: bool = false, titre: bool = false) -> Label:
 	var etiquette := S.wrap(texte, fpx(taille), couleur) if retour else S.label(texte, fpx(taille), couleur)
@@ -1192,7 +1193,7 @@ func _cellule(texte: String, largeur: int, couleur: Color, taille: float = 19, c
 
 ## Mise en page (maquette 14-match-entracte-1, choix de Léo du 19/11/2026).
 func _page() -> void:
-	var page := S.G.v(px(16))
+	var page := S.G.v(px(22))
 	page.name = "MatchBetweenPage"
 	S.full(page)
 	# Marge basse : le pied des raccourcis ne touche jamais le bord de l'écran.
@@ -1401,7 +1402,7 @@ func _colonne_centre(grille: Control) -> void:
 ## Colonne droite : un seul panneau à la fois, à la même place (jamais une fenêtre) — chiffres clés par
 ## défaut, réglages, autres matchs et classement, confirmation de la délégation, et le panneau d'arrêt.
 func _colonne_droite(grille: Control) -> void:
-	colonne_droite = S.G.v(px(16))
+	colonne_droite = S.G.v(px(22))
 	colonne_droite.name = "MatchBetweenColumn"
 	colonne_droite.custom_minimum_size.x = px(540)
 	grille.add_child(colonne_droite)
@@ -1524,7 +1525,7 @@ func _colonne_droite(grille: Control) -> void:
 	var cadre_classement := S.G.v(px(4))
 	classement_tuile.add_child(cadre_classement)
 	cadre_classement.add_child(_titre("Classement en direct", "si ça finit ainsi"))
-	classement_lignes = S.G.v(px(2))
+	classement_lignes = S.G.v(px(3))
 	classement_lignes.name = "MatchBetweenLiveTableRows"
 	cadre_classement.add_child(classement_lignes)
 	classement_tuile.visible = false
@@ -1544,8 +1545,8 @@ func _colonne_droite(grille: Control) -> void:
 	tete_multiplex.add_child(multiplex_precision)
 	multiplex_cartes = GridContainer.new()
 	multiplex_cartes.name = "MatchBetweenMultiplexCards"
-	multiplex_cartes.add_theme_constant_override("h_separation", px(10))
-	multiplex_cartes.add_theme_constant_override("v_separation", px(6))
+	multiplex_cartes.add_theme_constant_override("h_separation", px(14))
+	multiplex_cartes.add_theme_constant_override("v_separation", px(10))
 	multiplex_defile = ScrollContainer.new()
 	multiplex_defile.name = "MatchBetweenMultiplexScroll"
 	multiplex_defile.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
@@ -1637,11 +1638,11 @@ var banc_cadre: Control
 ## des deux clubs en miroir, la domination dessous ; à droite le classement complet et le multiplex ; en bas, la barre
 ## de Mon XV, une carte par joueur (visage, numéro, note, énergie).
 func _page_d3(page: Control) -> void:
-	var grille := S.G.h(px(20))
+	var grille := S.G.h(px(26))
 	grille.name = "MatchBetweenTiles"
 	S.G.fill(grille, true, 1.0)
 	page.add_child(grille)
-	var gauche := S.G.v(px(16))
+	var gauche := S.G.v(px(22))
 	gauche.name = "MatchBetweenEventsColumn"
 	gauche.custom_minimum_size.x = px(540)
 	grille.add_child(gauche)
@@ -1679,11 +1680,11 @@ func _page_d3(page: Control) -> void:
 	if defile_ev != null:
 		defile_ev.size_flags_vertical = Control.SIZE_FILL
 		defile_ev.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	var centre := S.G.v(px(16))
+	var centre := S.G.v(px(22))
 	centre.name = "MatchBetweenCentre"
 	S.G.fill(centre, true, 1.0)
 	grille.add_child(centre)
-	var rangee := S.G.h(px(16))
+	var rangee := S.G.h(px(22))
 	rangee.name = "MatchBetweenPitchRow"
 	S.G.fill(rangee, true, 1.0)
 	centre.add_child(rangee)
@@ -1710,14 +1711,14 @@ func _page_d3(page: Control) -> void:
 	S.G.fill(cadre_frise.get_parent().get_parent(), true, 0.5)
 	S.G.fill(cadre_frise, true)
 	S.G.fill(domination, true)
-	var droite := S.G.v(px(16))
+	var droite := S.G.v(px(22))
 	droite.name = "MatchBetweenStandingsColumn"
 	droite.custom_minimum_size.x = px(560)
 	grille.add_child(droite)
 	_poser_journee_v2(droite, droite, 2)
 	panneaux_direct[1].size_flags_vertical = Control.SIZE_FILL
 	# Barre basse : Mon XV, une carte par joueur ; le tri, le total de l'équipe et le XV adverse dans son en-tête.
-	var barre_xv := S.G.h(px(20))
+	var barre_xv := S.G.h(px(26))
 	barre_xv.name = "MatchBetweenSquadBar"
 	page.add_child(barre_xv)
 	_colonne_xv(barre_xv)
@@ -3636,8 +3637,8 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 	S.clear(xv)
 	# D : Mon XV en tuiles, trois par rangée ; le XV adverse reste un tableau.
 	xv.columns = 5 if vue_xv == "adverse" else 15
-	xv.add_theme_constant_override("h_separation", 0 if vue_xv == "adverse" else px(10))
-	xv.add_theme_constant_override("v_separation", 0 if vue_xv == "adverse" else px(10))
+	xv.add_theme_constant_override("h_separation", 0 if vue_xv == "adverse" else px(14))
+	xv.add_theme_constant_override("v_separation", 0 if vue_xv == "adverse" else px(14))
 	if is_instance_valid(pied_xv): S.clear(pied_xv)
 	var infos := _infos_xv(joueurs, direct)
 	_remplir_changement(infos)
