@@ -159,7 +159,9 @@ module.exports = function playerFacts(catalogue = {}, origins = {}, clubs = {}, 
   }
 
   function project(id, appearance = null, player = null) {
-    const record = source(id);
+    // Joueur ajouté par un pack (rubrique talents) : sa nation documentée est portée par le joueur (nationCode).
+    const added = !source(id).nationality && Object.hasOwn(nations, player?.nationCode ?? '') ? nations[player.nationCode] : null;
+    const record = added ? { ...source(id), nationality: added[0], flagCode: added[1] } : source(id);
     const inferred = record.nationality ? null : estimate(id);
     const origin = nations[inferred];
     const seniorNation = appearance?.nation ?? record.seniorNation ?? null;

@@ -165,7 +165,9 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
     return h >>> 0;
   };
   const NONE = Object.freeze(['aucune', 'inconnu', 0, 'basse']);
-  const levelOf = id => levels?.joueurs?.[id] || NONE;
+  // Niveau d'un joueur ajouté par un pack (calibrateAdded), le temps de son calcul.
+  const addedLevels = new Map();
+  const levelOf = id => addedLevels.get(id) || levels?.joueurs?.[id] || NONE;
   const etageOf = clubId => levels?.clubs?.[clubId] ?? 'milieu';
   const leagueScale = leagueId => scale.leagues[leagueId] || scale.leagues.guest;
   // Niveau du club : son étage (cador +2 … relégable −2) affiné par son rang réel dans le championnat
@@ -481,5 +483,23 @@ module.exports = function createSeniorCalibration(projectSkills, roleNote, roleW
     }
   }
 
-  return Object.freeze({ version, worldVersion, versions, alignStartingRole, apply, settle, youthPotential, targetRating });
+  // Joueur ajouté par la rubrique « talents » d'un pack (pack-talents.cjs) : pas de note de départ, le niveau
+  // [classe, statut, u20, confiance] vient du pack. La note est la cible du barème pour un joueur à l'écart nul de
+  // son groupe (championnat, poste, âge ou statut) ; renvoie le potentiel de départ, calculé comme pour les autres.
+  function calibrateAdded(player, context, level) {
+    if (worldVersion !== 2) return null;
+    addedLevels.set(player.id, level);
+    try {
+      const stats = leagueStats(context.registry), statut = level[1];
+      const own = statut !== 'inconnu' ? stats.get(context.leagueId + '|' + statut + '|' + player.fam) : null;
+      const fine = stats.get(context.leagueId + '|' + player.fam + '|' + band(player.age));
+      const group = own && own.n >= 6 ? own : statut !== 'inconnu' && stats.get(context.leagueId + '|' + statut)?.n >= 6
+        ? stats.get(context.leagueId + '|' + statut) : fine && fine.n >= 6 ? fine : stats.get(context.leagueId + '|' + player.fam);
+      if (group) player.rating = group.mean;
+      player.rating = targetRating(player, context);
+      return startingPotential(player, context);
+    } finally { addedLevels.delete(player.id); }
+  }
+
+  return Object.freeze({ version, worldVersion, versions, alignStartingRole, apply, settle, youthPotential, targetRating, calibrateAdded });
 };
