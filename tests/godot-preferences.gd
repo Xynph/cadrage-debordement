@@ -127,13 +127,16 @@ func profile_cases() -> void:
 	check(p.set_value("stadium","evening") and p.data.display_screen == 1,"L’éclairage est enregistré sans modifier l’écran choisi")
 	# Fréquence de la sauvegarde complète : lue par le moteur dans ce même fichier (native/engine/action-journal.cjs).
 	check(p.set_value("autosave","mois") and JSON.parse_string(FileAccess.get_file_as_string(folder.path_join("interface.json"))).autosave == "mois","Fréquence de sauvegarde enregistrée dans interface.json")
+	# Panneaux de l'Effectif : état replié et panneaux ouverts mémorisés (clé facultative).
+	check(p.set_value("panneaux_effectif",{"replie":true,"semaine":false}) and p.data.panneaux_effectif == {"replie":true,"xv":true,"semaine":false,"groupe":true},"Panneaux de l’effectif enregistrés, champs manquants complétés")
 	var raw := FileAccess.get_file_as_string(folder.path_join("interface.json"))
 	var q = profile_script.new()
 	check(q.load_profile(folder) and q.data.volume == 42 and q.data.quality == "detail" and q.data.camera == "action","Redémarrage relit les effets choisis")
 	check(q.data.get("display_screen") == 1,"Redémarrage relit l’écran choisi")
 	check(q.data.get("stadium") == "evening","Redémarrage relit l’éclairage choisi")
 	check(q.data.get("autosave") == "mois","Redémarrage relit la fréquence de sauvegarde")
-	for item in [["volume",-1],["volume",101],["volume",5.5],["volume",true],["quality","ultra"],["camera","orbit"],["reduced_motion",1],["secret","x"],["version",2],["display_screen",-2],["display_screen",1.5],["display_screen",true],["display_screen","1"],["display_screen",2147483648],["stadium","night"],["stadium",true],["autosave","desactivee"],["autosave","continuer"],["autosave",7]]:
+	check(q.data.get("panneaux_effectif",{}).get("replie") == true,"Redémarrage relit les panneaux repliés")
+	for item in [["volume",-1],["volume",101],["volume",5.5],["volume",true],["quality","ultra"],["camera","orbit"],["reduced_motion",1],["secret","x"],["version",2],["display_screen",-2],["display_screen",1.5],["display_screen",true],["display_screen","1"],["display_screen",2147483648],["stadium","night"],["stadium",true],["autosave","desactivee"],["autosave","continuer"],["autosave",7],["panneaux_effectif",{"tiroir":true}],["panneaux_effectif",{"replie":1}],["panneaux_effectif","replie"]]:
 		check(not p.set_value(item[0],item[1]) and not p.last_error.is_empty(),"Réglage invalide refusé : "+str(item))
 		check(FileAccess.get_file_as_string(folder.path_join("interface.json")) == raw,"Refus conserve octets originaux")
 	var legacy_folder := directory.path_join("legacy-display")

@@ -19,6 +19,10 @@ const CONTINUE_INJURIES := ["titulaires","effectif"]
 const MATCH_HIGHLIGHTS := ["aucun","resume","cles","etendus","dynamique","integral"]
 ## Anciennes clés ignorées à la lecture (jamais refusées, jamais réécrites) : l'introduction se joue toujours en entier.
 const LEGACY_KEYS := ["intro"]
+## Panneaux latéraux de l'Effectif (21/11/2026) : colonne dépliée ou rail replié, et chaque panneau ouvert ou fermé.
+## Clé facultative, écrite seulement quand le manager touche aux panneaux (les profils existants restent identiques).
+const PANNEAUX_KEY := "panneaux_effectif"
+const PANNEAUX_DEFAULTS := {"replie":false,"xv":true,"semaine":true,"groupe":true}
 const MAX_BYTES := 16 * 1024
 var data: Dictionary = DEFAULTS.duplicate(true)
 var last_error := ""
@@ -35,7 +39,7 @@ func _validated(candidate: Variant) -> Dictionary:
 		return {}
 	for key in candidate:
 		if key in RETIRED_KEYS: continue
-		if not DEFAULTS.has(key) and key not in LEGACY_KEYS:
+		if not DEFAULTS.has(key) and key not in LEGACY_KEYS and key != PANNEAUX_KEY:
 			_fail("Préférences refusées : champ inconnu « %s ». Le fichier original est conservé." % key)
 			return {}
 	for key in DEFAULTS:
@@ -78,7 +82,16 @@ func _validated(candidate: Variant) -> Dictionary:
 	if not autosave is String or autosave not in AUTOSAVE:
 		_fail("Fréquence de sauvegarde refusée : choisis chaque jour, chaque semaine ou chaque mois.")
 		return {}
-	return {"version":1,"volume":int(volume),"reduced_motion":candidate.reduced_motion,"quality":candidate.quality,"camera":candidate.camera,"display_screen":int(screen),"stadium":stadium,"salary_period":salary_period,"match_highlights":match_highlights,"continue_messages":continue_messages,"continue_injuries":continue_injuries,"autosave":autosave}
+	var sortie := {"version":1,"volume":int(volume),"reduced_motion":candidate.reduced_motion,"quality":candidate.quality,"camera":candidate.camera,"display_screen":int(screen),"stadium":stadium,"salary_period":salary_period,"match_highlights":match_highlights,"continue_messages":continue_messages,"continue_injuries":continue_injuries,"autosave":autosave}
+	if candidate.has(PANNEAUX_KEY):
+		var panneaux: Variant = candidate[PANNEAUX_KEY]
+		if not panneaux is Dictionary or panneaux.keys().any(func(k): return not PANNEAUX_DEFAULTS.has(k)) or panneaux.values().any(func(v): return not v is bool):
+			_fail("Panneaux de l’effectif refusés : réglage inconnu.")
+			return {}
+		var propres: Dictionary = PANNEAUX_DEFAULTS.duplicate()
+		propres.merge(panneaux, true)
+		sortie[PANNEAUX_KEY] = propres
+	return sortie
 
 func load_profile(directory: String) -> bool:
 	_available = false
@@ -144,7 +157,7 @@ func _save(candidate: Dictionary) -> bool:
 func set_value(key: String, value: Variant) -> bool:
 	if not _available:
 		return _fail(last_error if not last_error.is_empty() else "Préférences non chargées : aucun dossier de repli ne sera utilisé.")
-	if key == "version" or not DEFAULTS.has(key): return _fail("Préférence inconnue : « %s »." % key)
+	if key == "version" or (not DEFAULTS.has(key) and key != PANNEAUX_KEY): return _fail("Préférence inconnue : « %s »." % key)
 	var candidate := data.duplicate(true)
 	candidate[key] = value
 	var normalized := _validated(candidate)

@@ -18,6 +18,7 @@ const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const Competition = preload("res://ui/immersive08/competition_canvas.gd")
 const Reading = preload("res://ui/immersive08/reception_reading.gd")
 const ClubMail = preload("res://ui/club_mail.gd")
+const Bandeau = preload("res://ui/bandeau_filtres.gd")
 
 const CATEGORIES = ["Tous", "Staff", "Médical", "Direction", "Recrutement", "Compétitions"]
 const ICONS = {"Staff":"train", "Médical":"heart", "Direction":"shield", "Recrutement":"search", "Formation":"school", "Compétitions":"trophy", "Club":"mail", "Météo":"cloud"}
@@ -539,6 +540,8 @@ static func _list_filters(card: Panel, app: Control, state: Dictionary, active: 
 	bar.name = "InboxFilterRow"
 	card.add_child(bar)
 	D.place(bar, Rect2(14,_header_rows()[0],LIST_WIDTH-28,_h(44)))
+	# Bandeau des filtres (demande de Léo du 21/11/2026) : la rangée de filtres dans un panneau teinté détouré.
+	Bandeau.poser(card, Rect2(6, _header_rows()[0] - 8, LIST_WIDTH - 12, _h(44) + 16))
 	for index in filters.size():
 		var filter: Array = filters[index]
 		var folder: int = filter[2]

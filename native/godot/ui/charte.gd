@@ -25,6 +25,11 @@ const FILET := Color("272f2f")      ## trait : séparations, contour des boutons
 const SELECTION := Color("1d392e")  ## ligne de tableau sélectionnée (vert franc 45 %)
 const VOILE_DORE := Color("2c2d22") ## fond d'une pastille « à traiter » (doré 16 %), toujours avec texte doré
 const VOILE_VERT := Color("252f2c") ## fond d'une pastille de bon état (vert clair 14 %), avec texte vert clair
+## Bandeau des filtres au-dessus d'une liste (recherche, pastilles, menus, en-têtes de colonnes) : panneau teinté vert
+## franc, nettement distinct des lignes ; contour crème 22 % comme les grandes tuiles du direct (choix de Léo 21/11/2026).
+const BANDEAU := Color("1b3029")          ## fond du bandeau (vert franc 35 % sur panneau)
+const BANDEAU_ENTETE := Color("13241f")   ## bande des en-têtes de colonnes, bas du bandeau (même famille, plus sombre)
+const BANDEAU_BORD := Color(0.949, 0.925, 0.863, 0.22) ## contour 1 px : crème 22 %
 ## Textes.
 const IVOIRE := CREME               ## texte principal
 const IVOIRE_2 := GRIS_VERT         ## texte secondaire, étiquettes

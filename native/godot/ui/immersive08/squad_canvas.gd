@@ -15,7 +15,10 @@ const CarteSurvol = preload("res://ui/carte_joueur_survol.gd")
 const Notes = preload("res://ui/notes_match.gd")
 const R = preload("res://ui/immersive08/reperes.gd")
 const Sales = preload("res://ui/player_sales_view.gd")
+const Panneaux = preload("res://ui/immersive08/panneaux_effectif.gd")
 const Listes = preload("res://ui/immersive08/listes_joueurs.gd")
+const Bandeau = preload("res://ui/bandeau_filtres.gd")
+const Courbe = preload("res://ui/mini_courbe_survol.gd")
 const ROW_HEIGHT := 34
 const GROUP_HEIGHT := 30
 const FIRST_ROWS := 26
@@ -45,6 +48,9 @@ var _marques_tuiles: Dictionary = {}
 var _colonnes_actives: Array = []
 ## Vrai pendant que le focus mémorisé est rendu : il ne doit pas déplacer la sélection choisie ailleurs (palette, retour de fiche).
 var _restaurant := false
+## Panneaux latéraux à gauche (panneaux_effectif.gd) : décalage et largeur du tableau.
+var _x0 := 0.0
+var _lt := LARGEUR
 ## Rangées au-dessus du tableau (choix de Léo du 21/11/2026) : tuiles des totaux de la liste filtrée, puis pastilles de poste.
 const Y_TOTAUX := Y_FILTRES + 52.0
 const Y_POSTES := Y_FILTRES + 122.0
@@ -78,11 +84,25 @@ func _build() -> void:
 		D.place(review, Rect2(0, Y_FILTRES, LARGEUR, HAUT_PAGE - Y_FILTRES - 40))
 		return
 	_dy = DY_RANGEES
+	# Panneaux latéraux à gauche : bandeau des filtres, totaux, pastilles de poste et tableau prennent la largeur restante.
+	_x0 = Panneaux.reserve(app)
+	_lt = LARGEUR - _x0
 	_filtres()
 	_rangees_listes()
 	_tableau()
+	_bandeau_filtres()
+	Panneaux.construire(self, app, Y_FILTRES - 10.0, HAUT_PAGE - 4)
 	_refresh(true)
 	_restaurer()
+
+## Bandeau des filtres (demande de Léo du 21/11/2026) : recherche, puces, tuiles des totaux, pastilles de poste et
+## en-têtes de colonnes dans un panneau teinté détouré, aligné sur la largeur réelle du tableau.
+func _bandeau_filtres() -> void:
+	var haut := Y_FILTRES - 10.0
+	# Un seul bloc, recherche comprise, aligné sur le tableau à droite des panneaux latéraux (même haut que la colonne).
+	var bandeau := Bandeau.poser(self, Rect2(_x0, haut, _lt, Y_ENTETE + _dy + 36.0 - haut), 40.0)
+	var table := get_node_or_null("ImmersiveRosterTable") as Control
+	if table != null: bandeau.suivre(table)
 
 ## Rend la lecture (focus, défilement) puis, si personne n'a fait défiler la liste, ramène le joueur choisi dans la zone visible.
 func _restaurer() -> void:
@@ -504,15 +524,18 @@ func _filtres() -> void:
 	champ_actif.content_margin_right = C.px(60)
 	recherche.add_theme_stylebox_override("focus", champ_actif)
 	add_child(recherche)
-	D.place(recherche, C.reach_rect(Rect2(0, y, 440, 42)))
+	# Colonne de panneaux dépliée : la rangée tient dans la largeur restante (recherche et menu Poste plus étroits).
+	var l_rech := 440.0 if _lt > 2000.0 else 300.0
+	var l_poste := 330.0 if _lt > 2000.0 else 250.0
+	D.place(recherche, C.reach_rect(Rect2(_x0 + Bandeau.MARGE, y, l_rech, 42)))
 	var loupe := C.icon("search", 21, Charte.IVOIRE_2)
 	loupe.name = "RosterSearchGlyph"
 	recherche.add_child(loupe)
 	D.place(loupe, Rect2(14, 10, 21, 21))
-	var touche := D.text(recherche, 414, 28, "/", 19, C.MUTED, 700, 28, HORIZONTAL_ALIGNMENT_RIGHT)
+	var touche := D.text(recherche, l_rech - 26.0, 28, "/", 19, C.MUTED, 700, 28, HORIZONTAL_ALIGNMENT_RIGHT)
 	touche.name = "RosterSearchKey"
 	recherche.text_changed.connect(func(valeur: String): state.search = valeur; state.scroll = 0; _refresh(false))
-	var x := 464.0
+	var x := _x0 + Bandeau.MARGE + l_rech + 24.0
 	var definitions := [["tous", "Tous"], ["avants", "Avants"], ["arrieres", "Arrières"], ["indisponibles", "Indisponibles"], ["fin", "Fin de contrat"], ["surveiller", "À surveiller"]]
 	if str(state.family) == "Aptes": definitions.append(["aptes", "Aptes"])
 	for definition: Array in definitions:
@@ -544,7 +567,7 @@ func _filtres() -> void:
 	filtres.add_theme_constant_override("icon_max_width", C.px(22))
 	filtres.add_theme_constant_override("h_separation", C.px(8))
 	add_child(filtres)
-	D.place(filtres, C.reach_rect(Rect2(LARGEUR - largeur_filtres, y, largeur_filtres, 42)))
+	D.place(filtres, C.reach_rect(Rect2(LARGEUR - Bandeau.MARGE - largeur_filtres, y, largeur_filtres, 42)))
 	var menu := filtres.get_popup()
 	menu.name = "RosterFiltersMenu"
 	menu.about_to_popup.connect(_remplir_menu.bind(menu))
@@ -567,7 +590,7 @@ func _filtres() -> void:
 	poste.select(maxi(0, valeurs.find(str(state.position))))
 	poste.item_selected.connect(func(index: int): state.position = str(valeurs[index]); _refresh(false))
 	add_child(poste)
-	D.place(poste, C.reach_rect(Rect2(LARGEUR - largeur_filtres - 20 - 330, y, 330, 42)))
+	D.place(poste, C.reach_rect(Rect2(LARGEUR - Bandeau.MARGE - largeur_filtres - 20 - l_poste, y, l_poste, 42)))
 
 func _remplir_menu(menu: PopupMenu) -> void:
 	menu.clear()
@@ -667,14 +690,15 @@ func _tableau() -> void:
 	table.name = "ImmersiveRosterTable"
 	table.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(table)
-	D.place(table, Rect2(0, Y_ENTETE + _dy, LARGEUR, HAUT_PAGE - Y_ENTETE - _dy))
+	D.place(table, Rect2(_x0, Y_ENTETE + _dy, _lt, HAUT_PAGE - Y_ENTETE - _dy))
 	_colonnes_actives = _colonnes(int(state.get("immersive_tab", 0)), _etroit(), state.family == U.WATCH_FILTER)
+	if _lt < LARGEUR: _colonnes_actives = _resserrer(_colonnes_actives)
 	var entete := Control.new()
 	entete.name = "RosterHeader"
 	entete.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	table.add_child(entete)
-	D.place(entete, Rect2(0, 0, LARGEUR, 36))
-	D.line(entete, Vector2(0, 35), Vector2(LARGEUR, 35), Charte.FILET)
+	D.place(entete, Rect2(0, 0, _lt, 36))
+	D.line(entete, Vector2(0, 35), Vector2(_lt, 35), Charte.FILET)
 	var noms := {"Salaire": "RosterColumnSalary", "Potentiel": "RosterColumnPotential", "Poste": "RosterColumn_POSTE", "Autres postes": "RosterColumnSecondaryPositions", "Moyenne": "RosterColumnNote", "Forme": "RosterColumnForm", "Fatigue": "RosterColumnFatigue"}
 	for colonne: Dictionary in _colonnes_actives:
 		var cle := str(colonne.s)
@@ -703,19 +727,31 @@ func _tableau() -> void:
 	defile.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	defile.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	table.add_child(defile)
-	D.place(defile, Rect2(0, Y_LIGNES - Y_ENTETE, LARGEUR, Y_PIED - Y_LIGNES - 8 - _dy))
+	D.place(defile, Rect2(0, Y_LIGNES - Y_ENTETE + Bandeau.ECART_LIGNES, _lt, Y_PIED - Y_LIGNES - 8 - _dy - Bandeau.ECART_LIGNES))
 	rows = C.v(2)
 	rows.add_theme_constant_override("separation", C.px(2))
 	rows.name = "ImmersiveRosterRows"
-	rows.custom_minimum_size.x = C.px(LARGEUR)
+	rows.custom_minimum_size.x = C.px(_lt)
 	C.fill(rows)
 	defile.add_child(rows)
 	count = D.text(table, 0, Y_PIED - Y_ENTETE - _dy + 26, "", 18, C.MUTED, 500, 1000, HORIZONTAL_ALIGNMENT_LEFT, true)
 	count.name = "RosterCount"
 	# Raccourcis clavier derrière un « ? » (21/11) : plus de ligne de mode d'emploi au pied du tableau.
 	var aide := "Raccourcis\n↑↓ : choisir un joueur\nEntrée : fiche complète\nMaj Espace : comparer\n/ : chercher dans le tableau\nCtrl Tab : onglet suivant\nÉchap : Menu\nSurvol d'un nom : aperçu · clic : fiche"
-	R.rond(table, LARGEUR - 30, Y_PIED - Y_ENTETE - _dy + 18, aide, "?", "RosterScrollHint", 28)
+	R.rond(table, _lt - 30, Y_PIED - Y_ENTETE - _dy + 18, aide, "?", "RosterScrollHint", 28)
 
+
+## Panneaux dépliés : colonnes après « Joueur » resserrées dans la largeur restante.
+func _resserrer(colonnes: Array) -> Array:
+	var k := (_lt - 560.0) / (LARGEUR - 560.0)
+	var sortie: Array = []
+	for c: Dictionary in colonnes:
+		var d := c.duplicate()
+		if float(d.x) >= 540.0:
+			d.x = 560.0 + (float(d.x) - 560.0) * k
+			d.w = float(d.w) * k
+		sortie.append(d)
+	return sortie
 
 static func _known_number(value: Variant) -> bool:
 	return (value is int or value is float) and is_finite(float(value))
@@ -929,7 +965,7 @@ func _build_rows(players: Array,from: int,to: int) -> void:
 func _bandeau_groupe(players: Array, group: String) -> void:
 	var banner:=Control.new()
 	banner.name = "RosterGroup" + ("Avants" if group == "AVANTS" else "Arrieres")
-	banner.custom_minimum_size=Vector2(C.px(LARGEUR),C.px(C.reach(GROUP_HEIGHT)))
+	banner.custom_minimum_size=Vector2(C.px(_lt),C.px(C.reach(GROUP_HEIGHT)))
 	rows.add_child(banner)
 	var source: Array = players if state.family==U.WATCH_FILTER else app.model.get("squad",[])
 	var membres: Array = source.filter(func(p:Dictionary):return (float(p.get("fam",0))<=3)==(group=="AVANTS"))
@@ -1036,7 +1072,7 @@ func _row(player:Dictionary,index:int) -> void:
 	row.name="SquadPlayer"+id.replace(":","_")
 	row.set_meta("player_id",id)
 	row.set_meta("index",index)
-	row.custom_minimum_size=Vector2(C.px(LARGEUR),C.px(h))
+	row.custom_minimum_size=Vector2(C.px(_lt),C.px(h))
 	row.clip_contents = true
 	row.focus_mode = Control.FOCUS_ALL
 	row.accessibility_name = "%s · %s · %s · ouvrir la fiche" % [str(player.name), primary_caption(player), str(statut.t)]
@@ -1127,7 +1163,8 @@ func _row(player:Dictionary,index:int) -> void:
 				else:
 					D.text(row,x + l / 2.0,base,"—",19,C.FAINT,500,52,HORIZONTAL_ALIGNMENT_CENTER,true).name = "RosterNoteAverage"
 			"forme":
-				Listes.dessiner_forme(self, row, Rect2(x, 1, l, h - 2), notes, str(player.name)).name = "RosterForm"
+				# Cases ramenées dans la colonne quand les panneaux latéraux la resserrent.
+				Listes.dessiner_forme(self, row, Rect2(x, 1, l, h - 2), notes, str(player.name), minf(44.0, (l - 24.0) / 5.0)).name = "RosterForm"
 			"motif":
 				D.text(row,x,base,reason,19,C.IVORY,600,l,HORIZONTAL_ALIGNMENT_LEFT,true).name="RosterWatchReason"
 			"statut":
@@ -1145,7 +1182,7 @@ func _row(player:Dictionary,index:int) -> void:
 	C.style_bouton_lien(comparer_ligne, 19)
 	comparer_ligne.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	row.add_child(comparer_ligne)
-	D.place(comparer_ligne, C.reach_rect(Rect2(LARGEUR - 78, 2, 70, h - 4)))
+	D.place(comparer_ligne, C.reach_rect(Rect2(_lt - 78, 2, 70, h - 4)))
 	comparer_ligne.pressed.connect(func(): _basculer_comparaison(id))
 	_etat_comparaison(comparer_ligne, id, false)
 	row.mouse_entered.connect(func(): _etat_comparaison(comparer_ligne, id, true))
@@ -1300,11 +1337,11 @@ func _choisir_groupe(id: String) -> void:
 
 func _rangees_listes() -> void:
 	var joueurs: Array = app.model.get("squad", [])
-	Listes.pastilles_postes(self, Vector2(0, Y_POSTES), Listes.compter_groupes(joueurs), joueurs.size(), str(state.get("poste_groupe", "")), _choisir_groupe)
+	Listes.pastilles_postes(self, Vector2(_x0 + Bandeau.MARGE, Y_POSTES), Listes.compter_groupes(joueurs), joueurs.size(), str(state.get("poste_groupe", "")), _choisir_groupe)
 	_bandeau_totaux = Control.new()
 	_bandeau_totaux.name = "RosterTuilesTotaux"
 	add_child(_bandeau_totaux)
-	D.place(_bandeau_totaux, Rect2(0, Y_TOTAUX, LARGEUR, 62))
+	D.place(_bandeau_totaux, Rect2(_x0 + Bandeau.MARGE, Y_TOTAUX, _lt - 2.0 * Bandeau.MARGE, 62))
 
 ## Chiffres de la liste filtrée : {id, v, cap, c (couleur), act}. Pas de tuile « fins de contrat » : la tuile du haut
 ## de l'écran la donne déjà.
@@ -1316,6 +1353,7 @@ func _definitions_totaux(players: Array) -> Array:
 		{"id": "Lignes", "v": "%d · %d" % [t.avants, t.arrieres], "cap": "av. · arr.", "c": Charte.IVOIRE, "act": func(): _toggle_sort("Poste")},
 		{"id": "Niveau", "v": "—" if t.niveau == null else str(roundi(float(t.niveau))), "cap": "niveau moyen", "c": Charte.couleur_attribut(t.niveau) if t.niveau != null else Charte.IVOIRE, "act": func(): _toggle_sort("Niveau")},
 		{"id": "Condition", "v": "—" if t.condition == null else "%d %%" % roundi(float(t.condition)), "cap": "condition moy.", "c": Charte.CONDITION, "act": func(): _toggle_sort("Condition")},
+		{"id": "Moral", "v": str(roundi(float(app.model.get("meta", {}).get("morale", 0)))) if app.model.get("meta", {}).get("morale") != null else "—", "cap": "moral", "c": Charte.MORAL, "act": func(): app._navigate("Vestiaire")},
 		{"id": "Age", "v": Listes.decimal(t.age), "cap": "âge moyen", "c": Charte.IVOIRE, "act": func(): _toggle_sort("Âge")},
 		{"id": "Masse", "v": masse, "cap": "masse salariale", "c": R.BLEU, "act": func(): app._navigate("Finances")},
 	]
@@ -1329,5 +1367,8 @@ func _totaux(players: Array) -> void:
 	for d: Dictionary in _definitions_totaux(players):
 		var l := maxf(R.largeur(str(d.v), 34, 800) + R.largeur(str(d.cap).to_upper(), 17) + 52.0, 180.0)
 		var tuile := R.tuile(_bandeau_totaux, Rect2(x, 0, l, 60), str(d.v), str(d.cap), d.c, "TotalTuile_" + str(d.id), 34)
-		R.cliquable(tuile, d.act, "TotalTuileOuvrir_" + str(d.id), str(d.cap))
+		var bouton := R.cliquable(tuile, d.act, "TotalTuileOuvrir_" + str(d.id), str(d.cap))
+		# Mini-courbe au survol (relevé hebdomadaire du moteur, mêmes bulles que le Bureau et l'Entraînement).
+		if str(d.id) == "Condition": Courbe.lier(app, bouton, "condition", "Condition du groupe")
+		elif str(d.id) == "Moral": Courbe.lier(app, bouton, "morale", "Moral du vestiaire")
 		x += l + 12.0
