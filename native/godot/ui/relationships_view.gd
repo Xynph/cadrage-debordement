@@ -139,8 +139,8 @@ static func build(app: Control) -> Control:
 	var anneaux := G.h(24)
 	anneaux.alignment = BoxContainer.ALIGNMENT_CENTER
 	anneaux.name = "RelationshipRings"
-	if data.get("morale") != null: anneaux.add_child(V.anneau(float(data.morale), "Moral", "heart", Charte.MORAL, 120, "RelationshipRingMorale", func(): app._navigate("Effectif")))
-	if data.get("trust") != null: anneaux.add_child(V.anneau(float(data.trust), "Conseil", "shield", Charte.CONFIANCE, 120, "RelationshipRingTrust", func(): app._navigate("Club")))
+	if data.get("morale") != null: anneaux.add_child(V.anneau(float(data.morale), "Moral", "heart", Charte.MORAL, "RelationshipRingMorale", func(): app._navigate("Effectif")))
+	if data.get("trust") != null: anneaux.add_child(V.anneau(float(data.trust), "Conseil", "shield", Charte.CONFIANCE, "RelationshipRingTrust", func(): app._navigate("Club")))
 	if anneaux.get_child_count() > 0: follow.add_child(anneaux)
 	var event: Variant = data.get("event")
 	if event is Dictionary:
@@ -249,7 +249,7 @@ static func _player(app: Control, parent: VBoxContainer, data: Dictionary, p: Di
 	# La personne choisie : anneau de satisfaction, nom, pastilles d'état, tuiles condition et minutes.
 	var scene := G.h(18)
 	scene.name = "RelationshipScene"
-	scene.add_child(V.anneau(float(p.score) if p.get("score") != null else 0.0, "Satisf.", "heart", V.teinte(p.get("score")), 132, "RelationshipRingSatisfaction", fiche))
+	scene.add_child(V.anneau(float(p.score) if p.get("score") != null else 0.0, "Satisf.", "heart", V.teinte(p.get("score")), "RelationshipRingSatisfaction", fiche))
 	var cote := G.v(8)
 	G.fill(cote)
 	scene.add_child(cote)

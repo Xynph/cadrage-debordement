@@ -12,6 +12,7 @@ const C = preload("res://ui/immersive08/components.gd")
 const Tuile = preload("res://ui/tuile_choix.gd")
 const LienZone = preload("res://ui/lien_zone.gd")
 const Visuel = preload("res://ui/strategy_visuals.gd")
+const JaugeAnneau = preload("res://ui/jauge_anneau.gd")
 
 const PRIX := {"accessible":"Accessible", "equilibree":"Équilibrée", "premium":"Premium"}
 const STATUTS := {"pending":["À suivre", "clock", Charte.GRIS_VERT], "met":["Atteint", "check", Charte.V], "missed":["Manqué", "warning", Charte.D], "unverified":["Non vérifiable", "info", Charte.GRIS_VERT]}
@@ -252,11 +253,8 @@ static func _fans(app: Control, page: Container, data: Dictionary, locked: bool)
 		Tuile.proteger(box)
 		return box
 	var open := func(): _public(app, f)
-	var mood := C.v(4)
+	var mood := JaugeAnneau.new(float(f.sentiment), "Sentiment", Charte.MORAL, 100.0, "people")
 	cell.call().add_child(mood)
-	mood.add_child(Visuel.Anneau.new(float(f.sentiment), 100.0))
-	mood.add_child(C.label("SENTIMENT", 17, Charte.IVOIRE_2, true, 600))
-	(mood.get_child(1) as Label).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	Tuile.proteger(mood)
 	LienZone.relier(mood, "DirectionLien_Sentiment", "Le public", open)
 	LienZone.relier(Visuel.chiffre_picto(cell.call(), "people", G.n(f.expectedAttendance), "AFFLUENCE PRÉVUE"), "DirectionLien_Affluence", "Le public", open)
@@ -286,11 +284,7 @@ static func _when(entry: Dictionary) -> String:
 ## Petite fenêtre « Le public » : sentiment, affluence et capacité, demande, billet, recette prévue, abonnés, et
 ## l'évolution des saisons passées quand elle existe.
 static func _public(app: Control, f: Dictionary) -> void:
-	var ring := C.v(4)
-	ring.add_child(Visuel.Anneau.new(float(f.sentiment), 100.0))
-	var caption := C.label("SENTIMENT", 16, Charte.IVOIRE_2, true, 600)
-	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	ring.add_child(caption)
+	var ring := JaugeAnneau.new(float(f.sentiment), "Sentiment", Charte.MORAL, 100.0, "people")
 	var capacity: Variant = f.get("capacity")
 	var first: Array = [ring, Visuel.tuile_chiffre("people", G.n(f.expectedAttendance) + ("" if capacity == null else " / " + G.n(capacity)), "Affluence prévue" + ("" if capacity == null else " / places"))]
 	if f.has("demand"): first.append(Visuel.tuile_chiffre("target", "%d %%" % int(f.demand), "Demande"))
@@ -307,7 +301,7 @@ static func _public(app: Control, f: Dictionary) -> void:
 		for entry: Dictionary in history: top = maxf(top, float(entry.get("subscribers", 0)))
 		for i in range(history.size() - 1, -1, -1):
 			var entry: Dictionary = history[i]
-			moods.append({"valeur":entry.get("sentiment", 0), "maximum":100, "montant":str(int(entry.get("sentiment", 0))), "critere":_when(entry), "couleur":Visuel.TURQUOISE})
+			moods.append({"valeur":entry.get("sentiment", 0), "maximum":100, "montant":str(int(entry.get("sentiment", 0))), "critere":_when(entry), "couleur":Charte.MORAL})
 			subs.append({"valeur":entry.get("subscribers", 0), "maximum":top, "montant":G.n(entry.get("subscribers", 0)), "critere":_when(entry), "couleur":Visuel.VIOLET})
 		blocks.append(Tuile.titre_bloc("Sentiment des saisons passées"))
 		blocks.append(Visuel.Histogramme.new(moods, 140))
@@ -317,11 +311,7 @@ static func _public(app: Control, f: Dictionary) -> void:
 
 ## Petite fenêtre « Organisation du club » : score, projets, missions et risques suivis, bilans passés s'il y en a.
 static func _organisation(app: Control, b: Dictionary) -> void:
-	var ring := C.v(4)
-	ring.add_child(Visuel.Anneau.new(float(b.organizationScore), 100.0, Visuel.BLEU))
-	var caption := C.label("ORGANISATION", 16, Charte.IVOIRE_2, true, 600)
-	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	ring.add_child(caption)
+	var ring := JaugeAnneau.new(float(b.organizationScore), "Organisation", Charte.REPOS, 100.0, "target")
 	var blocks: Array = [Visuel.rangee([ring,
 		Visuel.tuile_chiffre("target", G.n((b.get("projects", []) as Array).size()), "Projets engagés"),
 		Visuel.tuile_chiffre("check", G.n((b.get("missions", []) as Array).size()), "Missions"),
@@ -331,7 +321,7 @@ static func _organisation(app: Control, b: Dictionary) -> void:
 		var bars: Array = []
 		for entry: Dictionary in history:
 			var value := float(entry.get("score", entry.get("trust", entry.get("confidence", 0))))
-			bars.append({"valeur":value, "maximum":100, "montant":str(int(value)), "critere":_when(entry), "couleur":Visuel.BLEU})
+			bars.append({"valeur":value, "maximum":100, "montant":str(int(value)), "critere":_when(entry), "couleur":Charte.REPOS})
 		blocks.append(Tuile.titre_bloc("Bilans passés"))
 		blocks.append(Visuel.Histogramme.new(bars, 140))
 	Visuel.petite_fenetre(app, "DirectionFenetreOrganisation", "Organisation du club", blocks)

@@ -10,11 +10,14 @@ var valeur := 0.0
 var maximum := 100.0
 var legende := ""
 var couleur := Charte.VERT_CLAIR
+## Pictogramme (id de `C.icon_texture`) dessiné à gauche de la légende, de la couleur de l'anneau ; vide = aucun.
+var icone := ""
 ## Unités du gabarit 2560 (mises à l'échelle par C.px).
 var diametre := 132.0
 
-func _init(p_valeur: float = 0.0, p_legende: String = "", p_couleur: Color = Charte.VERT_CLAIR, p_maximum: float = 100.0) -> void:
+func _init(p_valeur: float = 0.0, p_legende: String = "", p_couleur: Color = Charte.VERT_CLAIR, p_maximum: float = 100.0, p_icone: String = "") -> void:
 	valeur = p_valeur
+	icone = p_icone
 	legende = p_legende
 	couleur = p_couleur
 	maximum = maxf(1.0, p_maximum)
@@ -47,4 +50,14 @@ func _draw() -> void:
 	var l_sur := C.DISPLAY.get_string_size(sur, HORIZONTAL_ALIGNMENT_LEFT, -1, petit).x
 	draw_string(C.DISPLAY, centre + Vector2(-l_sur * .5, corps * .34 + petit + 1.0), sur, HORIZONTAL_ALIGNMENT_LEFT, -1, petit, Charte.IVOIRE_3)
 	var corps_legende := maxi(12, C.px(20))
-	draw_string(C.BOLD, Vector2(0, d + 8.0 + corps_legende), legende.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, size.x, corps_legende, Charte.IVOIRE_2)
+	var mot := legende.to_upper()
+	var base := Vector2(0, d + 8.0 + corps_legende)
+	if icone.is_empty():
+		draw_string(C.BOLD, base, mot, HORIZONTAL_ALIGNMENT_CENTER, size.x, corps_legende, Charte.IVOIRE_2)
+		return
+	var cote := float(corps_legende) + 4.0
+	var l_mot := C.BOLD.get_string_size(mot, HORIZONTAL_ALIGNMENT_LEFT, -1, corps_legende).x
+	var ecart := 6.0
+	var x0 := (size.x - (cote + ecart + l_mot)) * .5
+	draw_texture_rect(C.icon_texture(icone, couleur), Rect2(x0, base.y - cote + 3.0, cote, cote), false)
+	draw_string(C.BOLD, Vector2(x0 + cote + ecart, base.y), mot, HORIZONTAL_ALIGNMENT_LEFT, -1, corps_legende, Charte.IVOIRE_2)

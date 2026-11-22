@@ -108,9 +108,9 @@ static func cliquable(contenu: Control, id: String, action: Callable, libelle: S
 	return bouton
 
 ## Anneau chiffré (JaugeAnneau) cliquable ; sans valeur connue, une tuile « — ».
-static func anneau(valeur: Variant, legende: String, couleur: Color, id: String, action: Callable, diametre: float = 150.0) -> Control:
+static func anneau(valeur: Variant, legende: String, couleur: Color, id: String, action: Callable, diametre: float = 132.0, icone: String = "") -> Control:
 	if not nombre(valeur): return P.tuile("—", legende, Charte.IVOIRE, Charte.PANNEAU_2, 34, id, false, action)
-	var jauge := JaugeAnneau.new(float(valeur), legende, couleur)
+	var jauge := JaugeAnneau.new(float(valeur), legende, couleur, 100.0, icone)
 	jauge.diametre = diametre
 	jauge.custom_minimum_size = Vector2(C.px(diametre + 60.0), C.px(diametre + 46.0))
 	return cliquable(jauge, id, action, "%s %s / 100" % [legende, entier(valeur)])

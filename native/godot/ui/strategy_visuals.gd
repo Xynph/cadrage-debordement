@@ -215,27 +215,6 @@ class Histogramme extends Dessin:
 			ecrire(C.BOLD, Vector2(x, socle - hauteur - C.px(7)), str(barre.montant), C.font_px(17), Charte.IVOIRE, colonne, HORIZONTAL_ALIGNMENT_CENTER)
 			ecrire(Charte.TEXTE, Vector2(x, size.y - C.px(6)), str(barre.critere), C.font_px(16), couleur, colonne, HORIZONTAL_ALIGNMENT_CENTER)
 
-## Anneau : part de `valeur` sur `maximum`, chiffre au centre (« 50 » et « / 100 »).
-class Anneau extends Dessin:
-	var valeur := 0.0
-	var maximum := 100.0
-	var couleur := TURQUOISE
-	func _init(v: float = 0.0, m: float = 100.0, c: Color = TURQUOISE) -> void:
-		valeur = v
-		maximum = m
-		couleur = c
-		custom_minimum_size = Vector2(C.px(150), C.px(150))
-		mouse_filter = Control.MOUSE_FILTER_IGNORE
-	func _draw() -> void:
-		var centre := size / 2.0
-		var epaisseur := float(C.px(16))
-		var rayon := minf(size.x, size.y) / 2.0 - epaisseur / 2.0 - 1.0
-		draw_arc(centre, rayon, 0, TAU, 96, Charte.PANNEAU_3, epaisseur, true)
-		var part := clampf(valeur / maxf(1.0, maximum), 0.0, 1.0)
-		if part > 0: draw_arc(centre, rayon, -PI / 2.0, -PI / 2.0 + TAU * part, 96, couleur, epaisseur, true)
-		ecrire(C.BOLD, Vector2(0, centre.y + C.px(14)), str(roundi(valeur)), C.font_px(52), Charte.IVOIRE, size.x, HORIZONTAL_ALIGNMENT_CENTER)
-		ecrire(Charte.TEXTE, Vector2(0, centre.y + C.px(40)), "/ %d" % roundi(maximum), C.font_px(17), Charte.IVOIRE_2, size.x, HORIZONTAL_ALIGNMENT_CENTER)
-
 ## Règle à crans : un rail, un cran par montant placé à l'échelle, une pilule cliquable sous chaque cran ; le cran actuel
 ## est plein et marqué « ACTUEL » (mot écrit, pas seulement la couleur). Un clic sur un cran vaut un clic sur sa pilule.
 ## `crans` : [{valeur, actuel}] ; `boutons` : une pilule par cran, construite par la vue (commande, confirmation en place).
