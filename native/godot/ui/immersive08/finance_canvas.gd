@@ -13,6 +13,7 @@ const G = preload("res://ui/game_skin.gd")
 const Health = preload("res://ui/immersive08/finance_health.gd")
 const Budget = preload("res://ui/transfer_budget.gd")
 const Charte = preload("res://ui/charte.gd")
+const SurvolLigne = preload("res://ui/survol_ligne.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
 const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
@@ -382,7 +383,9 @@ static func _bouton(parent: Node, rectangle: Rect2, libelle: String, action: Cal
 	return bouton
 
 ## Zone cliquable d'une ligne ou d'un bloc (posée AVANT son texte : les libellés laissent passer la souris).
-static func _zone(parent: Node, rectangle: Rect2, action: Callable, id: String, infobulle: String) -> Button:
+## `ligne` : la zone est une ligne de tableau (survol de ligne commun, rayure une sur deux) ; sinon une tuile (retour
+## commun de ui/retour_tuile.gd).
+static func _zone(parent: Node, rectangle: Rect2, action: Callable, id: String, infobulle: String, ligne: bool = false) -> Button:
 	var zone := Button.new()
 	zone.name = id
 	zone.flat = true
@@ -397,7 +400,14 @@ static func _zone(parent: Node, rectangle: Rect2, action: Callable, id: String, 
 	zone.pressed.connect(action)
 	parent.add_child(zone)
 	D.place(zone, rectangle)
+	if ligne: SurvolLigne.appliquer(zone)
+	else: load("res://ui/retour_tuile.gd").brancher(zone, zone, C.px(Charte.RAYON_CARTE))
 	return zone
+
+## Rayure d'une ligne sur deux (rang impair) posée en Panel, comme l'Effectif (ui/survol_ligne.gd).
+static func _rayer(parent: Node, rectangle: Rect2, rang: int) -> void:
+	var rayure := SurvolLigne.rayure(parent, rang)
+	if rayure != null: D.place(rayure, rectangle)
 
 static func _lier(app: Control, zone: Button, cible: Dictionary, libelle: String) -> void:
 	Link.bind(zone, app, cible, libelle)
@@ -998,9 +1008,8 @@ static func _ledger(card: Panel, app: Control, ledger: Array, limit: int, key: S
 		var y := 100.0 + i * 33.0
 		var selected := selected_index == first+i
 		if selected: _bloc(card, Rect2(12, y, largeur - 24, 32), Charte.PANNEAU_3, Charte.IVOIRE).name = "FinanceLedgerSelection"
-		elif i%2 == 0: _bloc(card, Rect2(12, y, largeur - 24, 32), Charte.PANNEAU_2)
 		var destination := _destination_categorie(app, str(category[0]))
-		_zone(card, Rect2(12, y, largeur - 24, 32), destination[1], "FinanceLedgerRow_%d" % (first+i), "Ouvrir · %s : %s" % [destination[0], title])
+		_zone(card, Rect2(12, y, largeur - 24, 32), destination[1], "FinanceLedgerRow_%d" % (first+i), "Ouvrir · %s : %s" % [destination[0], title], true)
 		_texte(card, 24, y + 22, "%02d" % (first+i+1), 17, Charte.IVOIRE_2, 60).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var title_label := _texte(card, 113, y + 22, title, 19, Charte.IVOIRE, chip_x - 130)
 		title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1075,8 +1084,7 @@ static func _due(card: Panel, app: Control, finance: Dictionary, largeur: float)
 	for i in rows.size():
 		var item: Array = rows[i]
 		var y := 96.0 + i * 52.0
-		if i % 2 == 0: _bloc(card, Rect2(10, y, largeur - 20, 48), Charte.PANNEAU_2)
-		_zone(card, Rect2(10, y, largeur - 20, 48), item[2], "FinanceDueRow" + str(i), "Ouvrir · " + str(item[3]))
+		_zone(card, Rect2(10, y, largeur - 20, 48), item[2], "FinanceDueRow" + str(i), "Ouvrir · " + str(item[3]), true)
 		_texte(card, 22, y + 31, "Sem. %02d" % week, 17, Charte.IVOIRE_2, 110).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_texte(card, 140, y + 31, str(item[0]), 19, Charte.IVOIRE, largeur - 360).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var amount: Variant = item[1]
@@ -1194,7 +1202,7 @@ static func _wages(app: Control, canvas: Control, zone: Rect2, finance: Dictiona
 	for i in squad.size():
 		var player: Dictionary = squad[i]
 		var y := i*34
-		if i%2 == 0: _bloc(rows, Rect2(0,y,largeur - 50,33), Charte.PANNEAU_2)
+		_zone(rows, Rect2(0,y,largeur - 50,33), func(): _open_player(app, str(player.id)), "FinanceWageRow_"+str(player.id).validate_node_name(), "Consulter le contrat · " + str(player.get("name","")), true)
 		var name_link := _bouton(rows, Rect2(21,y+1,520,31), str(player.get("name","—")), func(): pass, "lien", "", "FinancePlayerName_"+str(player.id).validate_node_name())
 		name_link.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		Link.bind(name_link,app,{"kind":"player","id":str(player.id),"section":"contract"},"Consulter le contrat · " + str(player.get("name","")))
@@ -1247,7 +1255,7 @@ static func _clubs(app: Control, canvas: Control, zone: Rect2, accounts: Diction
 			# Ton club : fond relevé + liseré ivoire à gauche (pas de cadre complet), et « · ton club » écrit.
 			_bloc(panel, Rect2(14, y + 1, largeur - 28, row_height - 2), Charte.PANNEAU_3)
 			_bloc(panel, Rect2(14, y + 1, 5, row_height - 2), Charte.IVOIRE)
-		elif i % 2 == 1: _bloc(panel, Rect2(14, y + 1, largeur - 28, row_height - 2), Charte.PANNEAU_2)
+		else: _rayer(panel, Rect2(14, y + 1, largeur - 28, row_height - 2), i)
 		var base := y + row_height * .72
 		D.text(panel, 25, base, str(i + 1), 20, Charte.IVOIRE_2, 600, 60)
 		var caption := G.club_name(club) + ("  · ton club" if own else "")

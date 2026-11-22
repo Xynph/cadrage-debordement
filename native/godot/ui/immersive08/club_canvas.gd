@@ -686,6 +686,7 @@ static func _vestiaire(panneau: Panel, app: Control) -> void:
 		# Mini-courbe du moral au survol (relevé hebdomadaire du moteur).
 		if str(tuile.id) == "ClubMorale": preload("res://ui/mini_courbe_survol.gd").lier(app, bouton, "morale", "Moral du vestiaire")
 		D.place(bouton, Rect2(24 + i * (cote + 12), 66, cote, 150))
+		load("res://ui/retour_tuile.gd").brancher(bouton, bouton, C.px(16))
 		Kit.etiquette(bouton, 14, 30, str(tuile.etiquette), cote - 28)
 		var chiffre := D.text(bouton, 14, 88, str(tuile.valeur), 46, Charte.IVOIRE, 800, 120)
 		chiffre.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)

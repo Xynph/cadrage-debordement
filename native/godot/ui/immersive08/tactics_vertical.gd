@@ -180,7 +180,8 @@ static func carte(app: Control, page: Control, zone: Rect2, slot: int, choisir: 
 	# Carte transparente : seule la plaque du nom est pleine (le gazon reste visible autour du portrait).
 	var normal := C.box(Color.TRANSPARENT, Charte.IVOIRE if choisi else Color.TRANSPARENT, Charte.RAYON_CARTE, 0)
 	normal.set_border_width_all(3 if choisi else 0)
-	var survol := C.box(Color(1, 1, 1, .1), Charte.IVOIRE if choisi else Color.TRANSPARENT, Charte.RAYON_CARTE, 0)
+	# Voile de survol sur une carte transparente : pas une tuile, donc sans ombre (celle de la plaque suffit).
+	var survol := Charte.sans_ombre(C.box(Color(1, 1, 1, .1), Charte.IVOIRE if choisi else Color.TRANSPARENT, Charte.RAYON_CARTE, 0))
 	survol.set_border_width_all(3 if choisi else 0)
 	var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, Charte.RAYON_CARTE, 0)
 	focus.set_border_width_all(2)
@@ -352,6 +353,7 @@ static func _tuile_banc(app: Control, parent: Control, zone: Rect2, slot: int, c
 		if s != null:
 			s = s.duplicate() as StyleBoxFlat
 			s.set_corner_radius_all(int(Charte.RAYON_CARTE * C.density))
+			Charte.ombrer(s, Charte.RAYON_CARTE) # tuile du banc : l'ombre des jetons, comme toute tuile
 			if choisi:
 				s.border_color = Charte.IVOIRE
 				s.set_border_width_all(2)

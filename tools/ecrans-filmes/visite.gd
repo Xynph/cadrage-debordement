@@ -60,6 +60,7 @@ const EXTRAS := [
 	{"id": "classements-stats", "libelle": "Classements · onglet Statistiques", "type": "classements_onglet", "onglet": "stats"},
 	{"id": "formation-suivi", "libelle": "Formation · sous-page Suivi des jeunes", "type": "formation_suivi"},
 	{"id": "options", "libelle": "Options", "type": "options"},
+	{"id": "recherche", "libelle": "Recherche (résultats de la barre haute)", "type": "recherche"},
 	{"id": "creation-options", "libelle": "Création · étape 2 Carrière (options)", "type": "creation_options"},
 	{"id": "avant-match-delegation", "libelle": "Avant-match · sous-page Déléguer le match", "type": "avant_delegation"},
 	{"id": "avant-match-bilan", "libelle": "Avant-match · petite fenêtre de la dernière rencontre", "type": "avant_bilan"},
@@ -825,6 +826,13 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			app.settings()
 			await stabiliser()
 			if app.route != "Réglages" or app.root_content.find_child("PreferencesPage", true, false) == null: return {"statut": "echec", "note": "écran Réglages non ouvert"}
+		"recherche":
+			app._navigate("Bureau")
+			await stabiliser()
+			# Comme Ctrl+K puis Entrée dans la barre haute : résultats de la requête « a » dans la coque.
+			app.navigation_controller.submit_search("a")
+			await stabiliser()
+			if app.route != "Recherche" or app.root_content.find_child("SearchResult0", true, false) == null: return {"statut": "echec", "note": "écran Recherche sans résultat"}
 		"avant_bilan":
 			# Bilan de la dernière rencontre : pastille du bandeau → petite fenêtre.
 			app._navigate("Match")
@@ -993,6 +1001,14 @@ func capturer(entree: Dictionary, o: Dictionary, taille: Vector2i) -> void:
 	if OS.get_environment("CD_FILM_SURVOL_LIGNE") == "1":
 		print("ECRANS_FILMES survol de ligne : ", load("res://ui/survol_ligne.gd").simuler(self), " liste(s)")
 		await stabiliser()
+	# CD_FILM_RETOUR_TUILE=1 : une tuile survolée et une enfoncée (ui/retour_tuile.gd) ; CD_FILM_RETOUR_TUILE_CIBLES
+	# choisit les zones par nom.
+	if OS.get_environment("CD_FILM_RETOUR_TUILE") == "1":
+		print("ECRANS_FILMES retour de tuile : ", load("res://ui/retour_tuile.gd").simuler(self))
+		print("ECRANS_FILMES lignes : ", load("res://ui/survol_ligne.gd").simuler(self), " survolée(s), ", load("res://ui/survol_ligne.gd").simuler_appui(self), " enfoncée(s)")
+		await stabiliser()
+	if OS.get_environment("CD_FILM_AUDIT_TUILES") == "1":
+		for ligne in load("res://ui/retour_tuile.gd").auditer(self): print("AUDIT_TUILE ", entree.id, "|", ligne)
 	var prise: Dictionary = await image_stable()
 	var image: Image = prise.image
 	if image == null:

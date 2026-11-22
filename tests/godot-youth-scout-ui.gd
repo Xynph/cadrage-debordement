@@ -316,7 +316,38 @@ func run() -> void:
 	check(text.contains("Séance") and text.contains("Objectifs verrouillés"),"Séance et prochaine possibilité de révision expliquées")
 	check(not text.contains("V11") and not text.contains("annual-v11"),"Aucun jargon modèle dans le parcours")
 	await capture("progression-apres-seance")
+	await counter_on_page()
 	await finish()
 func finish() -> void:
 	print(JSON.stringify({"checks":checks,"failures":failures}))
 	app.queue_free();await process_frame;quit(0 if failures.is_empty() else 1)
+## Offre faite depuis la relève (page du Recrutement) : si le joueur répond par une contre-offre, l'écran « Offre au joueur »
+## se rouvre avec la contre-offre en pastille, au lieu de revenir muet à la liste.
+func counter_on_page() -> void:
+	var Pages=load("res://ui/immersive08/recruitment_pages.gd")
+	var candidates: Array=app.model.get("clubLife",{}).get("regenScouting",{}).get("candidates",[]).filter(func(c):return c.has("name") and c.get("available",false))
+	var seen_counter := false
+	for person: Dictionary in candidates.slice(0,10):
+		app.management_ui.erase("recrutement_page");app.management_ui.erase("regen_scouting");app._clear_dialogs();app._navigate("Recrutement");await settle()
+		Pages.ouvrir(app,"releve");await settle()
+		var offer:=player_button("RegenScoutOffer",str(person.id))
+		if offer==null:continue
+		offer.pressed.emit();await settle()
+		var salary:=app.find_child("OfferSalary",true,false) as SpinBox
+		var years:=app.find_child("OfferYears",true,false) as SpinBox
+		if salary==null or years==null:continue
+		load("res://ui/salary_display.gd").set_input_weekly(salary,float(salary.min_value));years.value=years.min_value;await settle()
+		var send:=button("RecrutementPageValider")
+		if send==null:continue
+		send.pressed.emit();await settle()
+		var ok:=button("ContractSignatureConfirmationOk")
+		if ok==null:continue
+		ok.pressed.emit();await response("offre depuis la relève")
+		await settle()
+		if str(app.model.meta.get("negotiation",{}).get("status",""))=="counter":
+			seen_counter=true
+			check(str(app.management_ui.get("recrutement_page",{}).get("kind",""))=="negociation","Contre-offre : l'écran « Offre au joueur » reste ouvert")
+			var chip:=app.find_child("OffreContreOffre",true,false)
+			check(chip!=null and chip.is_visible_in_tree(),"Contre-offre affichée dans l'offre faite depuis la relève")
+			break
+	check(seen_counter,"Une contre-offre a pu être observée depuis la relève")

@@ -224,7 +224,7 @@ func run() -> void:
 		if caption.is_empty(): continue
 		if not caption in found_roles: found_roles.append(caption)
 		var row := view.find_child(Review.action_id("ContractRow", str(person.id)), true, false)
-		var position_label := row.get_child(0).get_child(1) as Label
+		var position_label := row.find_children("*", "HBoxContainer", false, false)[0].get_child(1) as Label
 		check(position_label.text == ("3E L" if caption == "Troisième ligne aile" else "8") and position_label.tooltip_text.contains(caption), "Colonne POSTE réelle : rôle distinct et nom principal complet pour " + str(person.id))
 	for caption in ["Troisième ligne aile", "Troisième ligne centre"]:
 		check(caption in found_roles and caption in captions, "Filtre réel : poste principal complet disponible pour " + caption)

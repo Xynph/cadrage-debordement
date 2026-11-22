@@ -5706,6 +5706,66 @@
    },
    "synthetique": true,
    "outil": "OpenAI ImageGen"
+  },
+  {
+   "id": "fond-staff",
+   "categorie": "fonds",
+   "fichier": "fonds/fond-staff.webp",
+   "largeur": 2560,
+   "hauteur": 1440,
+   "octets": 97786,
+   "sha256": "31e55cfc3f8b33c87160fe0d5fd177b258bd39c9c7584e8237914c5f6dacc843",
+   "source_sha256": "31e55cfc3f8b33c87160fe0d5fd177b258bd39c9c7584e8237914c5f6dacc843",
+   "source_octets": 97786,
+   "repli": "fond-bureau",
+   "etiquettes": {
+    "ecrans": [
+     "staff"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "Codex ImageGen"
+  },
+  {
+   "id": "fond-reglages",
+   "categorie": "fonds",
+   "fichier": "fonds/fond-reglages.webp",
+   "largeur": 2560,
+   "hauteur": 1440,
+   "octets": 116116,
+   "sha256": "c7c10e9ce069380e998d283ea6d02def91f16c6dff27e656e8b8bf42eddf5633",
+   "source_sha256": "c7c10e9ce069380e998d283ea6d02def91f16c6dff27e656e8b8bf42eddf5633",
+   "source_octets": 116116,
+   "repli": "fond-bureau",
+   "etiquettes": {
+    "ecrans": [
+     "reglages"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "Codex ImageGen"
+  },
+  {
+   "id": "fond-recherche",
+   "categorie": "fonds",
+   "fichier": "fonds/fond-recherche.webp",
+   "largeur": 2560,
+   "hauteur": 1440,
+   "octets": 124312,
+   "sha256": "408a944f85d69f173a5b7d89e12a8a8752a95c501c4c0e42685cb5d06e80da4a",
+   "source_sha256": "408a944f85d69f173a5b7d89e12a8a8752a95c501c4c0e42685cb5d06e80da4a",
+   "source_octets": 124312,
+   "repli": "fond-bureau",
+   "etiquettes": {
+    "ecrans": [
+     "recherche"
+    ],
+    "resultat": "neutre"
+   },
+   "synthetique": true,
+   "outil": "Codex ImageGen"
   }
  ]
 }

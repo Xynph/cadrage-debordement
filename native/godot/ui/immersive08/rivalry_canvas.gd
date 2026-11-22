@@ -173,8 +173,14 @@ func _first_fixtures(panel: Panel) -> void:
 		var home: Dictionary = fixture.get("home", {})
 		var is_home: bool = home.get("id") == own.get("id")
 		var opponent: Dictionary = fixture.get("away", {}) if is_home else home
-		var row := D.rect(panel, Rect2(2, 180 + 70 * i, LEFT - 4, 62), Color("131d20") if i % 2 == 0 else Color("101819"), 3, Color(C.LINE, .55))
+		var row := D.rect(panel, Rect2(2, 180 + 70 * i, LEFT - 4, 62), Color.TRANSPARENT, 3)
 		row.name = "RivalryFirstFixture" + str(i)
+		# Rayure une ligne sur deux commune (ui/survol_ligne.gd), derrière les textes de la ligne.
+		var rayure = load("res://ui/survol_ligne.gd").rayure(row, i)
+		if rayure != null:
+			row.move_child(rayure, 0)
+			rayure.position = Vector2.ZERO
+			rayure.size = row.size
 		_crest(row, opponent.get("id"), Rect2(18, 9, 43, 43))
 		D.text(row, 78, 40, G.club_name(opponent) if not opponent.is_empty() else "Adversaire à confirmer", 29, C.IVORY, 700, 700)
 		D.text(row, 800, 40, P.fixture_date(fixture), 25, C.MUTED, 600, 360)
@@ -192,7 +198,8 @@ func _pair_row(parent: Panel, pair: Dictionary, index: int, selected: bool) -> v
 		if focus != null: FocusLater.grab(focus), false, "", false, PRIMARY, id)
 	row.set_meta("pair_key", key)
 	row.accessibility_name = _club(a) + " contre " + _club(b)
-	row.add_theme_stylebox_override("normal", C.box(C.Charte.SELECTION if selected else Color("131d20") if index % 2 == 0 else Color("101819"), Color(C.LINE, .55), C.Charte.RAYON_PETIT, 0))
+	# Rayure une ligne sur deux, survol et appui communs (ui/survol_ligne.gd) ; jamais de vert de sélection.
+	load("res://ui/survol_ligne.gd").appliquer(row, selected, Color.TRANSPARENT, app.accent).rang_fixe = index
 	_crest(row, a, Rect2(18, 9, 43, 43))
 	D.text(row, 73, 37, _club(a), 27, C.IVORY, 700, 284)
 	D.text(row, 359, 37, "VS", 22, C.GOLD, 700, 41, HORIZONTAL_ALIGNMENT_CENTER)
