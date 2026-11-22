@@ -13,7 +13,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict');
 const H=require('./helpers/carriere-monde.cjs');
 const CLUBS=(process.env.CD_CENTRE_CLUBS||'102,91,0').split(',').map(Number);
 const SAISON=process.env.CD_CENTRE_SAISON==='1';
-const BASE={scout:35000,mentor:8000,facilities:85000,coaches:55000};
+const BASE={scout:35000,mentor:8000,facilities:85000,coaches:55000,discover:3000,watch:500,trial:1000,partner:2000,recruit:8000,meeting:2000};
 const BUREAUX=['v72Youth','v76Scouting','v77Promotions','v78to81','v82to85','v86to89','v90to94','v95to100','v101to104'];
 
 function ouvrir(club){
@@ -33,7 +33,7 @@ function decisions(t,club){
  const costs=ap().costs,means=lire('S.clubBudget.clubs[S.club].depart');
  // Prix indexés : proportionnels aux moyens du club (4 M€ = prix historiques), bornés entre 10 % et 200 %.
  const k=Math.min(2,Math.max(.1,means/4e6));
- for(const key of ['scout','mentor'])assert.ok(Math.abs(costs[key]-BASE[key]*k)<=Math.max(100,BASE[key]*k*.03),club+' prix '+key+' '+costs[key]);
+ for(const key of ['scout','mentor','discover','watch','trial','partner','recruit','meeting'])assert.ok(Math.abs(costs[key]-BASE[key]*k)<=Math.max(100,BASE[key]*k*.03),club+' prix '+key+' '+costs[key]);
  assert.ok(costs.facilities[0]<=cash()*.1,'premier niveau des installations abordable ('+costs.facilities[0]+' pour '+cash()+')');
  if(means>=6e6)assert.ok(costs.scout>BASE.scout&&costs.facilities[0]>BASE.facilities,'gros club : prix au-dessus des prix historiques');
  if(means<=5e5)assert.ok(costs.scout<=5000&&costs.facilities[0]<=10000,'petit club : prix réduits');
@@ -84,15 +84,15 @@ function decisions(t,club){
  const binome=ap().players.map(p=>[p,ap().seniors.find(x=>x.pos===p.pos&&x.age>=23)]).find(([,x])=>x);
  if(binome)ok('academy_pair',{playerId:binome[0].id,seniorId:binome[1].id});
  ok('academy_identity',{identity:'mouvement'});assert.equal(ap().identity,'mouvement');
- before=cash();const cohesion=ap().cohesion;ok('academy_meeting',{confirmed:true});assert.equal(cash(),before-2000);assert.ok(ap().cohesion>cohesion,'réunion de cohésion');
+ before=cash();const cohesion=ap().cohesion;ok('academy_meeting',{confirmed:true});assert.equal(cash(),before-costs.meeting,'réunion au prix indexé');assert.ok(ap().cohesion>cohesion,'réunion de cohésion');
  // Filières : grandes zones du rugby mondial, la zone du club en tête ; l'union du club est « nationale ».
  assert.equal(ap().regions.length,6);assert.ok(!ap().regions.includes('Bretagne'),'plus de régions françaises en Monde');
  assert.equal(ap().homeUnion,lire('CDWorldEditions.forState(S).registry.clubs.find(c=>c.id===S.club).country'));
  const zone=lire('S.v95to100.region');assert.ok(ap().regions.includes(zone),'zone du club : '+zone);
- ok('academy_discover',{region:zone,confirmed:true});
+ before=cash();ok('academy_discover',{region:zone,confirmed:true});assert.equal(cash(),before-costs.discover,'détection de filière au prix indexé');
  const espoir=ap().prospects.find(p=>p.scouted>0)||ap().prospects[0];assert.ok(espoir,'jeunes des filières');
- ok('academy_watch',{playerId:espoir.id,confirmed:true});ok('academy_trial',{playerId:espoir.id,confirmed:true});
- ok('academy_partner',{feederId:ap().feeders[0].id,confirmed:true});assert.ok(ap().partners.includes(ap().feeders[0].id));
+ before=cash();ok('academy_watch',{playerId:espoir.id,confirmed:true});assert.equal(cash(),before-costs.watch);before=cash();ok('academy_trial',{playerId:espoir.id,confirmed:true});assert.equal(cash(),before-costs.trial);
+ before=cash();ok('academy_partner',{feederId:ap().feeders[0].id,confirmed:true});assert.equal(cash(),before-costs.partner);assert.ok(ap().partners.includes(ap().feeders[0].id));
  const offre=ap().offers.find(o=>o.clubs.length);if(offre)ok('academy_retain',{playerId:offre.id,clubId:offre.clubs[0].clubId,confirmed:true});
  // Championnat Espoirs français refusé en Monde.
  assert.throws(()=>jeu.bridge.vm.run('const old=S.v73Espoirs;try{S.v73Espoirs={};CDNativeAcademy.validate(S)}finally{if(old===undefined)delete S.v73Espoirs;else S.v73Espoirs=old}'),/championnat Espoirs/);
@@ -179,6 +179,19 @@ test('Centre Monde : centre du temps 1 complété',{timeout:600000},()=>{
   assert.deepEqual(lire(`${JSON.stringify(BUREAUX)}.filter(k=>S[k]===undefined)`),[],'bureaux complétés');
   assert.equal(lire('S.nativeAcademy.mode'),'equilibre');assert.equal(ap.goal,'prets');assert.equal(ap.closedModules,undefined);
   assert.doesNotThrow(()=>jeu.bridge.vm.run('validateCareer(S)'));
+ }finally{t.jeu.fermer();}
+});
+
+// Non-régression des prix : hors Monde (carrière France) et à la caisse de référence (4 M€), chaque prix du Centre
+// (filières, réunion de cohésion et recrutement compris) reste le prix historique.
+test('Centre : prix historiques hors Monde et à 4 M€',{timeout:600000},()=>{
+ const t=ouvrir(91);
+ try{
+  const {lire}=t,bases=Object.values(BASE),liste=JSON.stringify(bases);
+  assert.deepEqual(lire(`${liste}.map(v=>CDNativeAcademy.fee({club:0,clubs:[{cash:1e5}]},v))`),bases,'France : prix inchangés');
+  assert.deepEqual(lire(`(()=>{const b=S.clubBudget.clubs[S.club],d=b.depart;b.depart=4e6;try{return ${liste}.map(v=>CDNativeAcademy.fee(S,v))}finally{b.depart=d}})()`),bases,'caisse de référence : prix historiques');
+  const petit=lire(`${liste}.map(v=>CDNativeAcademy.fee(S,v))`);
+  assert.ok(petit.every((v,i)=>v<bases[i]),'Nationale à 400 000 € : tous les prix réduits '+petit);
  }finally{t.jeu.fermer();}
 });
 
