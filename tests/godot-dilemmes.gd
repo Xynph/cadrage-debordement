@@ -162,11 +162,17 @@ func run() -> void:
 			check(r.size.x > 0 and r.end.y <= taille.y + 0.5, "Bannière des Bleus dans l'écran 1280x720 (%s)" % str(r))
 			check(page_visible("ImmersiveTactics") != null, "1280x720 : écran Composition de la maquette (plus d'ancienne feuille)")
 			check(page_visible("CarnetLineup") == null, "1280x720 : l'ancienne feuille de match n'apparaît plus")
-			var tous := (banniere as Node).find_children("LineupBleusRestAll", "Button", true, false)
-			check(tous.size() == 1, "Bannière des Bleus : bouton « Faire souffler »")
+			# Pastille « 33 · n au repos » : la petite fenêtre des Bleus porte « Faire souffler ».
+			var lien := (banniere as Node).find_child("LineupBleusNoticeLien", true, false) as Button
+			check(lien != null, "Pastille des Bleus cliquable")
+			if lien != null:
+				lien.pressed.emit()
+				await settle()
+			var tous := app.find_children("LineupBleusRestAll", "Button", true, false)
+			check(tous.size() == 1, "Petite fenêtre des Bleus : bouton « Faire souffler »")
 		await capture("4-feuille-match-banniere-bleus")
 		if banniere != null:
-			var bouton := (banniere as Node).find_children("LineupBleusRestAll", "Button", true, false)
+			var bouton := app.find_children("LineupBleusRestAll", "Button", true, false)
 			if bouton.size() == 1:
 				(bouton[0] as Button).pressed.emit()
 				await wait_engine()
@@ -187,6 +193,10 @@ func run() -> void:
 			check(page_visible("LineupBleusNotice") != null, "Maquette : bannière des Bleus visible")
 			check(page_visible("LineupJiffNotice") != null, "Maquette : ligne du quota visible")
 			await capture("6-composition-1920-banniere-bleus")
+			var lien_1920 := app.find_child("LineupBleusNoticeLien", true, false) as Button
+			if lien_1920 != null:
+				lien_1920.pressed.emit()
+				await settle()
 			var tous := app.find_child("LineupBleusRestAll", true, false) as Button
 			if tous != null:
 				tous.pressed.emit()

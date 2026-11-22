@@ -25,6 +25,7 @@ const Espoir = preload("res://ui/espoir_appel.gd")
 const PersonName = preload("res://ui/person_name.gd")
 const CarteSurvol = preload("res://ui/carte_joueur_survol.gd")
 const Entete = preload("res://ui/immersive08/tactics_entete.gd")
+const Onglets = preload("res://ui/immersive08/tactics_onglets.gd")
 ## Hauteur du gabarit (unités) ; largeur 2248 comme toutes les pages de la coque.
 const HAUTEUR := 1305.0
 
@@ -65,6 +66,12 @@ static func _construire(app: Control, page: Control) -> Control:
 	if not sous.is_empty():
 		SousPages.build(app, page, sous)
 		return page
+	# Onglets Consignes, Phases arrêtées, Entraînement : même page, même en-tête (tactics_onglets.gd).
+	var onglet := Onglets.actuel(app)
+	if onglet != 0:
+		Onglets.build(app, page, onglet)
+		_onglets(app, page)
+		return page
 	var choisir_cb := func(slot: int): choisir(app, slot)
 	var clavier_cb := func(event: InputEvent, slot: int, carte: Control): clavier(app, event, slot, carte)
 	_entete(app, page)
@@ -75,13 +82,11 @@ static func _construire(app: Control, page: Control) -> Control:
 	# Terrain vertical vert, banc en tuiles, doublures, impact (option A de Léo, 22/11/2026), candidats dessous à droite.
 	Vertical.build(app, page, choisir_cb, clavier_cb, avis, bleus, premiere)
 	# Bas à droite : candidats du poste choisi, ou tout le reste de l'effectif (« Hors groupe »), au choix en pilules.
-	var alertes := _alertes(app)
-	var bloc: Control
+	# Alertes des sélections (Bleus, Nationale) : pastilles de la ligne des onglets (Onglets.alertes), plus de bandeau.
 	if str(Selection.state(app).get("bas", "candidats")) == "hors_groupe":
-		bloc = Vertical.hors_groupe(app, page, Vertical.CANDIDATS, alertes.size() * 56.0)
+		Vertical.hors_groupe(app, page, Vertical.CANDIDATS, 0.0)
 	else:
-		bloc = Candidats.build(app, page, Vertical.CANDIDATS, premiere, choisir_cb, alertes.size() * 56.0, 560.0, func(b: Control): Vertical.onglets_bas(app, b))
-	for i in alertes.size(): (alertes[i] as Callable).call(bloc, 52.0 + i * 56.0)
+		Candidats.build(app, page, Vertical.CANDIDATS, premiere, choisir_cb, 0.0, 560.0, func(b: Control): Vertical.onglets_bas(app, b))
 	_restore_focus.call_deferred(app)
 	return page
 
@@ -114,6 +119,7 @@ static func _onglets(app: Control, page: Control) -> void:
 		var largeur := C.DISPLAY.get_string_size(str(onglet[1]).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(20))).x / C.density + 40
 		_onglet(app, page, Rect2(x, 132, largeur, 44), str(onglet[1]), index)
 		x += largeur + 6
+	Onglets.alertes(app, page, x + 24, 137)
 	D.line(page, Vector2(0, 176), Vector2(2248, 176), Charte.FILET)
 	var tactique: Dictionary = app.model.get("tactics", {})
 	Entete.plan(app, page, _libelle(tactique.get("attacks", []), tactique.get("attack")), _libelle(tactique.get("defenses", []), tactique.get("defense")))
@@ -125,7 +131,7 @@ static func _libelle(options: Variant, id: Variant) -> String:
 	return str(id) if id != null else "—"
 
 static func _onglet(app: Control, page: Control, zone: Rect2, texte: String, index: int) -> void:
-	var choisi := index == 0
+	var choisi := index == Onglets.actuel(app)
 	var bouton := Button.new()
 	bouton.name = "TacticsTab" + str(index)
 	bouton.text = texte.to_upper()
@@ -146,57 +152,12 @@ static func _onglet(app: Control, page: Control, zone: Rect2, texte: String, ind
 	page.add_child(bouton)
 	D.place(bouton, zone)
 
-## Composition (onglet courant) : focus sur les candidats du poste choisi ; les autres onglets changent d'écran.
+## Onglets de la même page (tactics_onglets.gd) ; Composition déjà ouverte : focus sur les candidats du poste choisi.
 static func _ouvrir_onglet(app: Control, index: int) -> void:
-	match index:
-		1: app.Immersive.open_preparation(app, 1)
-		2:
-			app.management_ui.playbook_tab = 1
-			app._navigate("Plan de jeu")
-		4: app.Immersive.open_training(app)
-		_: choisir(app, app.selected_slot)
-
-## Bandeaux d'alerte posés en tête des candidats : protocole des Bleus (liste des 33) et qualification de Nationale.
-## Rend des Callable(bloc, y) ; leur nombre fixe la place réservée.
-static func _alertes(app: Control) -> Array:
-	var alertes: Array = []
-	var bleus: Dictionary = app.SquadViews.bleus_resume(app)
-	if not bleus.is_empty():
-		alertes.append(func(bloc: Control, y: float): _bandeau_bleus(app, bloc, y, bleus))
-	var notice: Dictionary = app.model.get("selection", {}).get("nationaleQualification", {}).get("notice", {})
-	if not notice.is_empty():
-		alertes.append(func(bloc: Control, y: float): _bandeau_nationale(bloc, y, notice))
-	return alertes
-
-static func _bandeau(bloc: Control, y: float, id: String, couleur: Color) -> Panel:
-	var bandeau := D.rect(bloc, Rect2(22, y + 4, bloc.size.x / C.density - 44, 48), Charte.PANNEAU_2, Charte.RAYON_CARTE)
-	bandeau.name = id
-	bandeau.mouse_filter = Control.MOUSE_FILTER_PASS
-	Kit.marqueur(bandeau, Rect2(6, 8, 4, 32), couleur)
-	return bandeau
-
-static func _bandeau_bleus(app: Control, bloc: Control, y: float, bleus: Dictionary) -> void:
-	var bandeau := _bandeau(bloc, y, "LineupBleusNotice", Charte.D)
-	bandeau.tooltip_text = "Liste de 33 joueurs du XV de France : les clubs les laissent hors de la feuille au moins 2 fois sur 8 rencontres. Ligne directrice, ajustable par accord avec le staff des Bleus.\n\nRemplaçants proposés par le staff :\n" + "\n".join(bleus.lignes)
-	var titre := D.text(bandeau, 22, 31, str(bleus.titre), 20, Charte.D, 700, bandeau.size.x / C.density * .408)
-	titre.name = "LineupBleusTitle"
-	var echanges: Array = bleus.echanges
-	var aide := "Au moins 2 repos sur 8 matchs de club ; l’aligner quand même coûte la confiance du staff des Bleus. "
-	aide += ("Remplaçant proposé : " + str(bleus.lignes[0])) if echanges.size() == 1 else ("Remplaçants proposés pour %d postes (repère « 33 »)." % echanges.size() if echanges.size() > 1 else "Aucun remplaçant disponible au même poste.")
-	var bw := bandeau.size.x / C.density
-	Kit.texte(bandeau, bw * .43, 31, aide, Charte.IVOIRE_2, bw * .45, 17).name = "LineupBleusChanges"
-	if echanges.is_empty(): return
-	var faire := Kit.lien(bandeau, Rect2(bw - 14, 5, 0, 38), "Faire souffler →" if echanges.size() == 1 else "Faire souffler les %d →" % echanges.size(), func(): app._command("set_lineup", {"changes": bleus.lot}), "LineupBleusRestAll", 18, true)
-	faire.tooltip_text = "\n".join(bleus.lignes)
-	faire.disabled = not Selection.editable(app)
-
-static func _bandeau_nationale(bloc: Control, y: float, notice: Dictionary) -> void:
-	var alerte: bool = notice.get("tone") == "alert"
-	var bandeau := _bandeau(bloc, y, "NationaleLicenceNotice", Charte.D if alerte else Charte.IVOIRE_2)
-	bandeau.tooltip_text = str(notice.get("detail", ""))
-	D.text(bandeau, 22, 31, str(notice.get("title", "")), 20, Charte.IVOIRE, 700, 700).name = "NationaleQualificationTitle"
-	var bw := bandeau.size.x / C.density
-	Kit.texte(bandeau, bw * .336, 31, str(notice.get("summary", "")), Charte.D if alerte else Charte.IVOIRE, bw * .653, 18).name = "NationaleQualificationSummary"
+	if index == 0 and Onglets.actuel(app) == 0:
+		choisir(app, app.selected_slot)
+		return
+	Onglets.choisir_onglet(app, index)
 
 static func _bleus_marques(app: Control) -> Dictionary:
 	var marques := {}

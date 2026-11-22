@@ -1106,6 +1106,8 @@ static func _page_caption(app: Control) -> String:
 	# Liste du Recrutement : le fil d'Ariane dit aussi l'onglet courant (Besoins du club, Recherche, Joueurs suivis, Rapports).
 	if app.route == "Recrutement" and FichePage.actuelle(app).is_empty() and app.management_ui.get("market") is Dictionary:
 		return str(Recruitment.TABS[clampi(int(app.management_ui.market.get("immersive_tab", 0)), 0, Recruitment.TABS.size() - 1)])
+	# Tactique : le fil d'Ariane dit l'onglet courant (Consignes, Phases arrêtées, Entraînement).
+	if app.route == "Composition" and int(app.management_ui.get("tactique_onglet", 0)) in [1, 2, 4]: return str(["", "Consignes", "Phases arrêtées", "", "Entraînement"][int(app.management_ui.tactique_onglet)])
 	if app.route == Comparateur.ROUTE: return Comparateur.caption(app)
 	if app.route == EuropePage.ROUTE: return "Préparer l’Europe"
 	if _is_training(app): return "Entraînement"

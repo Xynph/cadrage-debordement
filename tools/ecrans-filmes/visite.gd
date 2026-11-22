@@ -29,6 +29,12 @@ const HORS_CARRIERE := ["Accueil", "Création", "Packs"]
 const EXTRAS := [
 	{"id": "calendrier-semaine", "libelle": "Calendrier (semaine)", "type": "calendrier_semaine"},
 	{"id": "entrainement-semaine", "libelle": "Entraînement · onglet Semaine", "type": "entrainement_onglet", "onglet": 0},
+	{"id": "tactique-consignes", "libelle": "Tactique · onglet Consignes (depuis la Composition)", "type": "tactique_onglet", "onglet": 1},
+	{"id": "tactique-phases", "libelle": "Tactique · onglet Phases arrêtées (depuis la Composition)", "type": "tactique_onglet", "onglet": 2},
+	{"id": "tactique-entrainement", "libelle": "Tactique · onglet Entraînement (depuis la Composition)", "type": "tactique_onglet", "onglet": 4},
+	{"id": "tactique-alertes", "libelle": "Tactique · pastilles Bleus et Nationale (maquette)", "type": "tactique_alertes"},
+	{"id": "tactique-bleus", "libelle": "Tactique · petite fenêtre des Bleus (maquette)", "type": "tactique_alertes", "fenetre": "LineupBleusNoticeLien"},
+	{"id": "tactique-nationale", "libelle": "Tactique · petite fenêtre des qualifications FFR (maquette)", "type": "tactique_alertes", "fenetre": "NationaleLicenceNoticeLien"},
 	{"id": "entrainement-groupes", "libelle": "Entraînement · onglet Groupes", "type": "entrainement_onglet", "onglet": 1},
 	{"id": "salle-entrainement", "libelle": "Observer la préparation (salle d'entraînement)", "type": "salle_entrainement"},
 	{"id": "salle-entrainement-joueur", "libelle": "Observer la préparation · petite fenêtre d'un joueur", "type": "salle_entrainement", "joueur": true},
@@ -475,6 +481,34 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				app._navigate("Réception", false)
 				await stabiliser()
 			if app.route != route: return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
+		"tactique_onglet":
+			app._navigate("Composition")
+			await stabiliser()
+			var onglet_tactique := app.find_child("TacticsTab%d" % int(ecran.onglet), true, false) as Button
+			if onglet_tactique == null: return {"statut": "echec", "note": "onglet de la Tactique absent"}
+			onglet_tactique.pressed.emit()
+			await stabiliser()
+		"tactique_alertes":
+			# Maquette d'affichage (la carrière filmée n'a ni liste des 33 ni Nationale) : données posées sur la projection
+			# seulement, le temps de la capture ; le prochain retour du moteur les efface.
+			app._navigate("Composition")
+			await stabiliser()
+			var slots: Array = app.model.get("selection", {}).get("slots", [])
+			if slots.size() < 23: return {"statut": "indisponible", "note": "feuille incomplète"}
+			var titulaires := [str(slots[1].get("playerId", "")), str(slots[9].get("playerId", ""))]
+			app.model.clubLife["doublons"] = {"applies": true, "reposer": [{"playerId": titulaires[0]}, {"playerId": titulaires[1]}],
+				"changes": [{"slot": 1, "playerId": slots[15].get("playerId"), "sortant": titulaires[0], "entrantCondition": 94}, {"slot": 9, "playerId": slots[20].get("playerId"), "sortant": titulaires[1], "entrantCondition": 88}]}
+			var entrees: Array = []
+			for i in 23: entrees.append({"playerId": str(slots[i].get("playerId", "")), "code": ["A", "A", "B", "A", "C", null, "A", "B"][i % 8]})
+			app.model.selection["nationaleQualification"] = {"notice": {"title": "Qualifications FFR", "summary": "", "detail": "", "tone": "alert"},
+				"verified": {"A": 12, "B": 6, "C": 3}, "limits": {"bc": 8, "c": 2}, "unverified": 2, "entries": entrees}
+			app._render()
+			await stabiliser()
+			if ecran.has("fenetre"):
+				var lien := app.find_child(str(ecran.fenetre), true, false) as Button
+				if lien == null: return {"statut": "echec", "note": "pastille absente"}
+				lien.pressed.emit()
+				await stabiliser()
 		"entrainement_onglet":
 			app._navigate("Composition")
 			await stabiliser()
