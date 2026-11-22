@@ -323,9 +323,6 @@ static func build(app: Control, parent: Container, data: Dictionary) -> void:
 	tabs.item_selected.connect(func(index: int): reading.tab = index; local.page = 0; redraw.call())
 	search.text_changed.connect(func(query: String): reading.search = query; local.page = 0; redraw.call())
 	redraw.call()
-	var note := texte("Âges et contrats de ta carrière ; seuls les contrats rémunérés pèsent sur le budget du club.", 16, Charte.IVOIRE_3)
-	note.name = "StaffFootnote"
-	parent.add_child(note)
 
 const FIRST_CARDS := 6
 const CARDS_PER_FRAME := 7
