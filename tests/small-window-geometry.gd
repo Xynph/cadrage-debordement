@@ -232,8 +232,9 @@ func run() -> void:
 				await check_reading("Préparation entraînement")
 				await audit_interactions("Préparation entraînement")
 			if route == "Calendrier":
+				# Liste des rencontres depuis le 22/11/2026 (programme du mois dans Entraînement › Mois) : pas de vue semaine.
 				var month: Control = app.find_child("CarnetCalendar",true,false)
-				if month != null:
+				if month != null and month.has_method("_view_as"):
 					month._view_as("week"); await settle(); measure("Calendrier semaine")
 					month._view_as("month"); await settle()
 			print("GEOMETRY ",resolution," ",route," scroll=",record.get("outer_scroll",0)," outside=",record.outside_unscrolled.size()," clips=",record.clips.size())

@@ -150,20 +150,11 @@ static func open_target(owner_app: Control, kind: String, id: Variant) -> bool:
 		owner_app.management_ui.competition.club_league = str(owner_app.model.get("meta", {}).get("leagueId", ""))
 		owner_app._navigate("Classements", false)
 		return true
+	# Date ou séance : le programme du mois (Entraînement › Mois, qui remplace l'ancienne grille du Calendrier depuis le
+	# 22/11/2026), au mois de ce jour, avec la petite fenêtre du jour.
 	if kind in ["date", "session"]:
-		var reading: Dictionary = owner_app.management_ui.get("calendar_reading", {}).duplicate(true)
-		reading.erase("selected_session")
-		if kind == "session":
-			var session := _target_session(owner_app, id)
-			reading.selected = session.date
-			reading.filter = "all"
-			reading.selected_session = id
-			owner_app.set_meta("calendar_table", false)
-		else: reading.selected = str(id)
-		reading.today = str(owner_app.model.get("calendarPlanning", {}).get("today", owner_app.model.get("meta", {}).get("date", "")))
-		reading.focus = session_focus_name(id) if kind == "session" else "MonthDay_" + str(id)
-		owner_app.management_ui.calendar_reading = reading
-		owner_app._navigate("Calendrier", false)
+		var date := str(_target_session(owner_app, id).get("date", "")) if kind == "session" else str(id)
+		load("res://ui/immersive08/training_mois.gd").ouvrir(owner_app, date, true)
 		return true
 	# Club : fiche du club (écran). Rencontre : sous-page de Classements, avec retour et historique (jamais une fenêtre).
 	if kind == "club":
