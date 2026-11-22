@@ -459,6 +459,7 @@ func preparer_presse() -> void:
 ## Ouvre un écran hors direct. Renvoie {"statut": ok|redirige|indisponible|echec, "route", "note"}.
 func ouvrir(ecran: Dictionary) -> Dictionary:
 	fermer_fenetres()
+	await retirer_maquette_tactique()
 	# Bulle de survol montrée par programme pour l'écran précédent : rangée avant l'écran suivant.
 	load("res://ui/bulle_survol.gd").cacher(app)
 	# La salle d'entraînement couvre tout l'écran : refermée avant l'écran suivant.
@@ -495,6 +496,9 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			await stabiliser()
 			var slots: Array = app.model.get("selection", {}).get("slots", [])
 			if slots.size() < 23: return {"statut": "indisponible", "note": "feuille incomplète"}
+			# Valeurs d'origine gardées : retirer_maquette_tactique() les remet avant l'écran suivant.
+			if not has_meta("maquette_tactique"):
+				set_meta("maquette_tactique", {"doublons": app.model.clubLife.get("doublons"), "nationale": app.model.selection.get("nationaleQualification")})
 			var titulaires := [str(slots[1].get("playerId", "")), str(slots[9].get("playerId", ""))]
 			app.model.clubLife["doublons"] = {"applies": true, "reposer": [{"playerId": titulaires[0]}, {"playerId": titulaires[1]}],
 				"changes": [{"slot": 1, "playerId": slots[15].get("playerId"), "sortant": titulaires[0], "entrantCondition": 94}, {"slot": 9, "playerId": slots[20].get("playerId"), "sortant": titulaires[1], "entrantCondition": 88}]}
@@ -865,6 +869,17 @@ func surface() -> Control:
 
 ## Coup d'envoi comme le bouton du jeu, causeries passées comme le ferait un joueur (même logique que
 ## tools/match-filme/match_filme.gd). Renvoie "" si le direct est ouvert, sinon la raison.
+## Données de maquette des pastilles Bleus / Nationale (captures seulement) : remises à leur valeur d'origine.
+func retirer_maquette_tactique() -> void:
+	if not has_meta("maquette_tactique"): return
+	var origine: Dictionary = get_meta("maquette_tactique")
+	remove_meta("maquette_tactique")
+	for paire: Array in [[app.model.get("clubLife", {}), "doublons", origine.doublons], [app.model.get("selection", {}), "nationaleQualification", origine.nationale]]:
+		if paire[2] == null: (paire[0] as Dictionary).erase(paire[1])
+		else: paire[0][paire[1]] = paire[2]
+	app._render()
+	await stabiliser()
+
 func ouvrir_direct() -> String:
 	fermer_fenetres()
 	var limite := Time.get_ticks_msec() + 180000

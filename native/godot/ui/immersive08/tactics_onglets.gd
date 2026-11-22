@@ -2,9 +2,8 @@ extends RefCounted
 ## Onglets Consignes, Phases arrêtées et Entraînement de la Tactique (Léo, 22/11/2026 : « tout l'écran Tactique trop
 ## moche, pas assez coloré, pas dans notre DA ») : même page que la Composition, même en-tête (titre Anton, pastilles,
 ## bandeau du match aux couleurs des clubs, onglets), contenu en cartes flottantes, terrains verts et pastilles franches.
-## Deux options à départager sur captures (CD_VARIANTE_VISUELLE) :
-## - A « Cartes » : grilles de cartes pleine largeur, terrain horizontal des quatre zones sous les consignes ;
-## - B « Terrain » : la mise en page de la Composition, grand terrain vertical à gauche et cartes à droite.
+## Mise en page « Terrain » (choix de Léo, 22/11/2026) : celle de la Composition, grand terrain vertical à gauche et
+## cartes à droite.
 ## Aucune phrase d'aide : les descriptions du moteur passent en infobulle. Commandes du moteur seulement
 ## (`set_tactics`, `playbook_set`) ; les écrans complets (Préparation, Plan de jeu, Entraînement) restent ouverts par
 ## le bouton de l'en-tête et par chaque tuile qui y mène.
@@ -33,9 +32,6 @@ const COULEURS_PHASE := {"scrum": Pieces.ORANGE, "lineout": Pieces.TURQUOISE, "k
 ## Zones de chute des renvois (mètres depuis la médiane).
 const PORTEES := {"normal": Vector2(10, 22), "court": Vector2(10, 14), "long": Vector2(25, 35)}
 
-static func variante() -> String:
-	return "B" if OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper() == "B" else "A"
-
 static func actuel(app: Control) -> int:
 	var onglet := int(app.management_ui.get("tactique_onglet", 0))
 	return onglet if NOMS.has(onglet) else 0
@@ -45,7 +41,6 @@ static func choisir_onglet(app: Control, index: int) -> void:
 	app._render()
 
 static func build(app: Control, page: Control, onglet: int) -> void:
-	page.set_meta("tactique_variante", variante())
 	_entete(app, page, onglet)
 	match onglet:
 		1: _consignes(app, page)
@@ -116,9 +111,9 @@ static func _titre_bloc(page: Control, x: float, y: float, texte: String, couleu
 	t.name = "TacticsBloc_" + texte.validate_node_name()
 	return x + 16 + Charte.TITRE_FICHE.get_string_size(texte.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(28))).x / C.density + 18
 
-## Fond d'une carte : A plein (panneau 2), B posé sur la pelouse (panneau presque opaque).
+## Fond d'une carte : panneau presque opaque, comme les plaques posées sur la pelouse.
 static func _fond() -> Color:
-	return Charte.PANNEAU_2 if variante() == "A" else Color(Charte.PANNEAU, .9)
+	return Color(Charte.PANNEAU, .9)
 
 ## Carte de choix (bouton) : contour franc de la couleur quand elle est retenue ; posée avant son contenu.
 static func _carte(page: Control, zone: Rect2, id: String, choisi: bool, couleur: Color, actif: bool, action: Callable, bulle: String) -> Button:
@@ -181,7 +176,7 @@ static func _transparent(noeud: Node) -> void:
 		if enfant is Control and not enfant is Button: (enfant as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_transparent(enfant)
 
-## Pelouse verticale de la Composition (option B), à la même place que le terrain du XV.
+## Pelouse verticale de la Composition, à la même place que le terrain du XV.
 static func _pelouse(page: Control) -> Control:
 	var pelouse = Vertical.Pelouse.new()
 	pelouse.name = "TacticsTabPitch"
@@ -204,23 +199,14 @@ static func _intentions_editables(app: Control) -> bool:
 static func _consignes(app: Control, page: Control) -> void:
 	var t: Dictionary = app.model.get("tactics", {})
 	var cotes := [["attack", "attacks", "Avec le ballon", "Attack", ATTAQUE], ["defense", "defenses", "Sans le ballon", "Defense", DEFENSE]]
-	if variante() == "A":
-		# Deux colonnes de cartes à schéma, puis le terrain horizontal des quatre zones.
-		for i in 2:
-			var c: Array = cotes[i]
-			var x0 := i * 1136.0
-			_titre_bloc(page, x0, HAUT, str(c[2]), c[4])
-			_grille_intentions(app, page, Rect2(x0, HAUT + 48, 1112, 500), c, t, 1)
-		_zones_horizontales(app, page, Rect2(0, 770, 2248, BAS - 770))
-	else:
-		# Composition : terrain vertical des zones à gauche, cartes d'intention à droite.
-		_zones_verticales(app, page)
-		var gauche := Vertical.DROITE
-		var largeur := 2248.0 - gauche
-		_titre_bloc(page, gauche, HAUT - 4, str(cotes[0][2]), ATTAQUE)
-		_grille_intentions(app, page, Rect2(gauche, HAUT + 44, largeur, 490), cotes[0], t, 1)
-		_titre_bloc(page, gauche, 752, str(cotes[1][2]), DEFENSE)
-		_grille_intentions(app, page, Rect2(gauche, 800, largeur, BAS - 800), cotes[1], t, 1)
+	# Composition : terrain vertical des zones à gauche, cartes d'intention à droite.
+	_zones_verticales(app, page)
+	var gauche := Vertical.DROITE
+	var largeur := 2248.0 - gauche
+	_titre_bloc(page, gauche, HAUT - 4, str(cotes[0][2]), ATTAQUE)
+	_grille_intentions(app, page, Rect2(gauche, HAUT + 44, largeur, 490), cotes[0], t, 1)
+	_titre_bloc(page, gauche, 752, str(cotes[1][2]), DEFENSE)
+	_grille_intentions(app, page, Rect2(gauche, 800, largeur, BAS - 800), cotes[1], t, 1)
 
 ## Une ligne de cartes d'intention : schéma dessiné, titre en Anton, pastilles d'effet ; la carte entière choisit.
 static func _grille_intentions(app: Control, page: Control, zone: Rect2, cote: Array, t: Dictionary, _lignes: int) -> void:
@@ -281,40 +267,7 @@ static func _plaque_zone(app: Control, page: Control, rect: Rect2, z: Array) -> 
 	_transparent(plaque)
 	Pieces.rendre_cliquable(plaque, rect.size, func(): _ouvrir_carnet(app, 0), "TacticsZoneLien_%s" % z[6], "Zone %d · %s" % [int(z[0]), str(z[1])], "", Charte.RAYON_CARTE)
 
-## Option A : terrain horizontal, notre en-but à gauche, quatre zones côte à côte.
-static func _zones_horizontales(app: Control, page: Control, zone: Rect2) -> void:
-	var zones: Array = _carnet(app).get("zones", [])
-	_titre_bloc(page, zone.position.x, zone.position.y, "Par zone", Pieces.VERT)
-	if zones.is_empty(): return
-	var terrain := Rect2(zone.position.x, zone.position.y + 48, zone.size.x, zone.size.y - 48)
-	var gazon := D.rect(page, terrain, Charte.VERT_FRANC, Charte.RAYON_PANNEAU)
-	gazon.name = "TacticsZonesPitch"
-	gazon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var but := 90.0
-	var largeur := (terrain.size.x - 2 * but) / 4.0
-	for k in 8:
-		if k % 2 == 1: D.rect(gazon, Rect2(but + k * largeur / 2.0, 0, largeur / 2.0, terrain.size.y), Color(1, 1, 1, .04)).mouse_filter = Control.MOUSE_FILTER_IGNORE
-	for bord: float in [0.0, terrain.size.x - but]: D.rect(gazon, Rect2(bord, 0, but, terrain.size.y), Color(0, 0, 0, .16)).mouse_filter = Control.MOUSE_FILTER_IGNORE
-	for k in 5:
-		var lx := but + k * largeur
-		D.line(gazon, Vector2(lx, 0), Vector2(lx, terrain.size.y), Color(1, 1, 1, .85 if k in [0, 4] else .55), 3 if k in [0, 2, 4] else 2)
-	for k: int in [1, 3]:
-		for m in range(0, int(terrain.size.y), 36): D.line(gazon, Vector2(but + (k * 2 - 1) * largeur / 2.0 + (largeur * .14 if k == 1 else -largeur * .14), m), Vector2(but + (k * 2 - 1) * largeur / 2.0 + (largeur * .14 if k == 1 else -largeur * .14), m + 18), Color(1, 1, 1, .3), 2)
-	for cote in 2:
-		var mot := "TON EN-BUT" if cote == 0 else "EN-BUT ADVERSE"
-		var etiquette := D.text(gazon, 0, 0, mot, 16, Charte.VERT_CLAIR if cote == 0 else Charte.IVOIRE, 700, terrain.size.y, HORIZONTAL_ALIGNMENT_CENTER)
-		etiquette.pivot_offset = Vector2.ZERO
-		etiquette.rotation = -PI / 2.0 if cote == 0 else PI / 2.0
-		etiquette.position = Vector2(but / 2.0 - 12, terrain.size.y) * C.density if cote == 0 else Vector2(terrain.size.x - but / 2.0 + 12, 0) * C.density
-	var fleche := D.rect(gazon, Rect2(terrain.size.x / 2.0 - 80, 16, 160, 34), Color(Charte.PANNEAU, .88), Charte.RAYON_PILULE)
-	fleche.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	D.text(fleche, 80, 24, "ATTAQUE ▶", 17, Charte.CONDITION, 700, 156, HORIZONTAL_ALIGNMENT_CENTER, true)
-	for i in mini(4, zones.size()):
-		var z := _zone(app, i)
-		if z[5]: D.rect(gazon, Rect2(but + i * largeur, 0, largeur, terrain.size.y), Color(Charte.VERT_CLAIR, .14)).mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_plaque_zone(app, page, Rect2(terrain.position.x + but + i * largeur + 22, terrain.position.y + (terrain.size.y - 150) / 2.0 + 20, largeur - 44, 150), z)
-
-## Option B : les quatre zones en bandes sur la pelouse verticale (en-but adverse en haut).
+## Les quatre zones en bandes sur la pelouse verticale (en-but adverse en haut).
 static func _zones_verticales(app: Control, page: Control) -> void:
 	var t := Kit.titre(page, 0, Vertical.BANDEAU.position.y + 32, "PAR ZONE", 28, 300)
 	t.add_theme_font_override("font", Charte.TITRE_FICHE)
@@ -336,16 +289,11 @@ static func _phases(app: Control, page: Control) -> void:
 	var carnet := _carnet(app)
 	var phases: Array = carnet.get("setPieces", [])
 	var actif := bool(carnet.get("available", false)) and not bool(app.get("waiting"))
-	if variante() == "A":
-		var w := (2248.0 - 2 * 24) / 3.0
-		for i in phases.size():
-			_colonne_phase(app, page, Rect2(i * (w + 24), HAUT, w, BAS - HAUT), phases[i], actif)
-	else:
-		_terrain_phases(app, page, phases)
-		var gauche := Vertical.DROITE
-		var w := (2248.0 - gauche - 2 * 20) / 3.0
-		for i in phases.size():
-			_colonne_phase(app, page, Rect2(gauche + i * (w + 20), HAUT - 4, w, BAS - HAUT + 4), phases[i], actif)
+	_terrain_phases(app, page, phases)
+	var gauche := Vertical.DROITE
+	var w := (2248.0 - gauche - 2 * 20) / 3.0
+	for i in phases.size():
+		_colonne_phase(app, page, Rect2(gauche + i * (w + 20), HAUT - 4, w, BAS - HAUT + 4), phases[i], actif)
 
 ## Colonne d'une phase : titre (icône, Anton), puis une carte par choix (croquis, nom, pastilles d'effet).
 static func _colonne_phase(app: Control, page: Control, zone: Rect2, phase: Dictionary, actif: bool) -> void:
@@ -378,7 +326,7 @@ static func _colonne_phase(app: Control, page: Control, zone: Rect2, phase: Dict
 		if choisi: Consignes.coche(carte, zone.size.x - 14, h - 48)
 		_transparent(carte)
 
-## Option B : repères des phases sur la pelouse verticale (mêlée, touche, zone de chute du renvoi choisi).
+## Repères des phases sur la pelouse verticale (mêlée, touche, zone de chute du renvoi choisi).
 static func _terrain_phases(app: Control, page: Control, phases: Array) -> void:
 	var t := Kit.titre(page, 0, Vertical.BANDEAU.position.y + 32, "SUR LE TERRAIN", 28, 360)
 	t.add_theme_font_override("font", Charte.TITRE_FICHE)
@@ -488,10 +436,9 @@ static func _entrainement(app: Control, page: Control) -> void:
 		["%d" % roundi(charge / maxi(1, squad.size())), "Charge /100", Charte.INTENSIF, "train", func(): _ouvrir_entrainement(app, 4)],
 		[str(surveilles.size()), "À surveiller", Charte.PERTE if not surveilles.is_empty() else Charte.IVOIRE_2, "warning", func(): _ouvrir_entrainement(app, 4)],
 	]
-	var a := variante() == "A"
-	var gauche := 0.0 if a else Vertical.DROITE
+	var gauche := Vertical.DROITE
 	var largeur := 2248.0 - gauche
-	if not a: _carte_forme(app, page)
+	_carte_forme(app, page)
 	# Tuiles de chiffres (clic → onglet Fatigue de l'entraînement ou Vestiaire).
 	_titre_bloc(page, gauche, HAUT, "Le groupe", Charte.CONDITION)
 	var tw := (largeur - 3 * 16) / 4.0
@@ -541,7 +488,7 @@ static func _semaine(app: Control, page: Control, zone: Rect2) -> void:
 
 ## Joueurs à surveiller : tuile portrait (anneau = condition), nom (survol = carte joueur, clic = fiche), chiffres.
 static func _surveilles(app: Control, page: Control, zone: Rect2, joueurs: Array) -> void:
-	var colonnes := 5 if variante() == "A" else 4
+	var colonnes := 4
 	var w := (zone.size.x - (colonnes - 1) * 12) / colonnes
 	var h := 112.0
 	var lignes := floori((zone.size.y + 12) / (h + 12))
@@ -563,7 +510,7 @@ static func _surveilles(app: Control, page: Control, zone: Rect2, joueurs: Array
 		var ch := float(p.get("physicalLoad", 0))
 		if ch >= 70 and x + 90 < w: Pieces.pastille(tuile, x, 62, "%d" % roundi(ch), "train", "TacticsTabSurveilleCharge%d" % n, "", Charte.INTENSIF)
 
-## Option B : la pelouse verticale porte le XV de la feuille, anneau et chiffre de condition (carte de forme).
+## La pelouse verticale porte le XV de la feuille, anneau et chiffre de condition (carte de forme).
 static func _carte_forme(app: Control, page: Control) -> void:
 	var t := Kit.titre(page, 0, Vertical.BANDEAU.position.y + 32, "FORME DU XV", 28, 360)
 	t.add_theme_font_override("font", Charte.TITRE_FICHE)
@@ -592,7 +539,7 @@ static func _carte_forme(app: Control, page: Control) -> void:
 		var nw := minf(150, Kit.largeur(court, 15) + 6)
 		Kit.nom(app, page, Rect2(centre.x - nw / 2.0, centre.y + 48, nw, 24), court, str(person.get("id", "")), "TacticsTabFormeNom%02d" % numero, Charte.IVOIRE, 15)
 
-# --- Alertes des sélections (toutes les variantes, ligne des onglets) -----------------------------------------------
+# --- Alertes des sélections (ligne des onglets) ---------------------------------------------------------------
 
 ## Pastilles des sélections à droite des onglets : Bleus (liste des 33) et qualifications de Nationale. Rend x.
 static func alertes(app: Control, page: Control, x: float, y: float) -> float:

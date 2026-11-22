@@ -1658,26 +1658,27 @@ func run() -> void:
 		await capture("37-candidats-1280x720")
 		root.size=Vector2i(2560,1440)
 		await settle()
-		# Consignes : « Modifier → » ouvre l'onglet Consignes de la préparation (attaque et défense).
+		# Consignes : « Modifier → » ouvre l'onglet Consignes de la Tactique, même page (attaque et défense).
 		var original_defense:String=app.model.tactics.defense
 		var modify := app.find_child("TacticsPlanModify",true,false) as Button
 		check(modify!=null,"Résumé du plan avec « Modifier → »")
 		if modify!=null: modify.pressed.emit()
 		await settle()
-		check(app.route=="Préparation","« Modifier → » ouvre les consignes")
-		var attack: Button=app.find_child("PreparationAttack_occupation",true,false)
+		check(app.route=="Composition" and int(app.management_ui.get("tactique_onglet",0))==1,"« Modifier → » ouvre les consignes")
+		var attack: Button=app.find_child("TacticsTabAttack_occupation",true,false)
 		check(attack!=null,"Choix d’attaque dans les consignes")
 		if attack!=null:
 			attack.pressed.emit()
 			await worker()
 		check(app.bridge.last_response_ok and app.model.tactics.attack=="occupation","Le choix d’attaque commande réellement le moteur")
 		check(app.model.tactics.defense==original_defense,"Changer l’attaque conserve la défense")
-		var pressure: Button=app.find_child("PreparationDefense_pression",true,false)
+		var pressure: Button=app.find_child("TacticsTabDefense_pression",true,false)
 		check(pressure!=null,"Choix défensif dans les consignes")
 		if pressure!=null:
 			pressure.pressed.emit()
 			await worker()
 		check(app.bridge.last_response_ok and app.model.tactics.defense=="pression" and app.model.tactics.attack=="occupation","Consigne défensive enregistrée sans écraser l’attaque")
+		app.management_ui.tactique_onglet=0
 		app._navigate("Composition")
 		await settle()
 		var plan_summary := app.find_child("TacticsPlanSummaryTexte",true,false) as Label
