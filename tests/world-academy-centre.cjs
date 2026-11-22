@@ -75,6 +75,13 @@ function decisions(t,club){
  t.model=model;return {senior:senior.id,accueil:accueil.id,mentored:jeune.id};
 }
 
+// Conférence de presse obligatoire encore ouverte (bilan de fin de saison) : réponses prudentes, comme le manager.
+function presse(jeu,model){
+ for(let i=0;i<4;i++){const press=model.clubLife.press,c=press?.conference;if(!c?.available||!c.questions?.length)return model;
+  model=jeu.regler(jeu.call('press_conference',{context:press.context,answers:c.questions.map(q=>({questionId:q.id,answerId:(q.answers.find(a=>a.tone==='cautious')||q.answers[0]).id})),...(typeof c.invitationId==='string'?{invitationId:c.invitationId}:{})}));}
+ return model;
+}
+
 // Saison complète jour par jour, mentorat chaque semaine où c'est possible, puis fin de saison et saison suivante.
 function saison(t,club,suivi){
  const {jeu,lire}=t;let model=t.model;
@@ -99,6 +106,13 @@ function saison(t,club,suivi){
   jeu.bridge.vm.run(`if(!managerMobilityActive())managerMobilityEnable();{const target=${cible};let d=managerMobilityDecision(target);if(!d?.accepted){S.clubs[target].cash=Math.max(S.clubs[target].cash,10000000);worldClub(target).debt=0;worldClub(target).reputation=0;worldClub(target).coachConfidence=0;}if(!managerMobilityApply(target)||!managerMobilityAccept('job-'+S.season+'-'+target))throw Error('Mobilité refusée.');}`);
  }
  const season=lire('S.season');
+ // Intersaison : journées jusqu'à l'ouverture de la saison suivante (calendrier international), comme le manager.
+ model=presse(jeu,jeu.regler(model));
+ for(let j=0;j<200&&!model.meta.canAdvanceSeason;j++){
+  assert.equal(model.meta.calendarCadence?.canAdvance,true,'journée d’intersaison autorisée ('+model.meta.calendarToday+')');
+  model=presse(jeu,jeu.regler(jeu.call('advance_day',{fromDate:model.meta.calendarToday})));
+ }
+ assert.equal(model.meta.canAdvanceSeason,true,'saison suivante ouverte');
  model=jeu.regler(jeu.call('next_season',{confirmed:true}));
  assert.equal(lire('S.season'),season+1);
  assert.ok(lire(`S.clubs[S.nativeAcademy.club]&&S.nativeAcademy.season===S.season&&S.nativeAcademy.lastClosed===${season}`),'centre clos et rouvert');
