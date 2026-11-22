@@ -16,6 +16,7 @@ const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
 const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
 const Carte = preload("res://ui/carte_joueur_survol.gd")
 const Lignes = preload("res://ui/immersive08/training_semaine_lignes.gd")
+const IntensiteAuto = preload("res://ui/immersive08/intensite_auto.gd")
 const TABS = ["Semaine", "Groupes", "Individuel", "Staff", "Fatigue"]
 const MODES = {"repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
 const INDIVIDUAL = {"collective":"Suivre le collectif", "repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
@@ -578,6 +579,14 @@ func _plans_reason() -> String:
 	return "Les plans ne sont disponibles qu'en période de championnat."
 
 func _individuals() -> void:
+	# Planche « intensite-auto » (revue FM27, idée 13) : options A/B sous CD_VARIANTE_VISUELLE.
+	match IntensiteAuto.variante():
+		"A":
+			IntensiteAuto.build_a(app, self, state, squad)
+			return
+		"B":
+			IntensiteAuto.build_b(app, self, state, squad)
+			return
 	var tile := D.panel(self, Rect2(4, 260, 1740, 950), "Le travail individuel", "train", "", "TrainingIndividuals")
 	var scroll := ScrollContainer.new()
 	scroll.name = "TrainingIndividualsScroll"
