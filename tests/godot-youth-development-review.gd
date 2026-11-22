@@ -41,12 +41,15 @@ func run() -> void:
 		await press(navigate)
 		check(dialog("YouthDevelopment") == null,"Dialogue fermé avant navigation")
 		await settle()
-		# Écran Centre : page canvas (CentreHero) en mode immersif, carnet des parcours (CarnetAcademyPathways) sinon.
+		# Écran Centre : parcours actifs = pages façon Effectif (CentreVisuel, onglet Parcours accessible) ; sinon héros
+		# et aperçu (CentreHero) en mode immersif, carnet des parcours (CarnetAcademyPathways) hors immersif.
+		var actifs: bool = app.model.get("clubLife",{}).get("academyPathways",{}).get("active",false)
 		var centre: Control = null
-		for id in ["CentreHero","CarnetAcademyPathways"]:
+		for id in (["CentreVisuel"] if actifs else ["CentreHero","CarnetAcademyPathways"]):
 			var found := app.find_child(id,true,false) as Control
 			if found != null and found.is_visible_in_tree(): centre = found; break
 		check(app.route == "Centre" and centre != null,"Parcours du centre effectivement ouvert")
+		if actifs: check(app.find_child("CentreOnglet_Parcours",true,false) != null,"Onglet Parcours du Centre accessible")
 	view = await open_youth()
 	filter = view.find_child("YouthReviewFilter",true,false) as CheckButton
 	filter.button_pressed=true;filter.toggled.emit(true);await settle()

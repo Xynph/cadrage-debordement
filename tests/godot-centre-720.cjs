@@ -1,6 +1,7 @@
 'use strict';
 // Centre de formation en 2560 × 1440, 1920 × 1080 et 1280 × 720 (carrière world-champ, club 5, début de saison) :
-// pastilles « AU CALENDRIER DES ESPOIRS » entières et pas de bande vide au-dessus de « SAISON JUNIOR ».
+// pastilles « AU CALENDRIER DES ESPOIRS » entières et pas de bande vide au-dessus de « SAISON JUNIOR » ; puis, parcours
+// activés, les pages façon Effectif (six onglets, textes ≥ 11 px, commandes ≥ 24 px, panneaux remplis, petite fenêtre).
 // Captures (affichage graphique) : CD_CENTRE_GRAPHICS=1 CD_CENTRE_OUTPUT=<dossier>.
 const assert = require('node:assert/strict');
 const { spawnSync } = require('node:child_process');
@@ -30,7 +31,7 @@ test('Centre en 1280 × 720 : pastilles entières, Saison junior sous les tuiles
     const rapport = JSON.parse(ligne.slice('CENTRE '.length));
     console.log('Centre (Godot) : ' + JSON.stringify(rapport));
     assert.deepEqual(rapport.failures, []);
-    for (const t of ['2560x1440', '1920x1080', '1280x720']) assert.ok(rapport.mesures[t], 'mesure en ' + t);
+    for (const t of ['2560x1440', '1920x1080', '1280x720']) { assert.ok(rapport.mesures[t], 'mesure en ' + t); assert.ok(rapport.mesures['actif-' + t], 'pages actives en ' + t); }
     assert.equal(r.status, 0, journal.slice(-3000));
     console.log('Captures : ' + sortie);
   } finally { fs.rmSync(profil, { recursive: true, force: true }); }

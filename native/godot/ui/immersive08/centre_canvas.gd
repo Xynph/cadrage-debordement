@@ -7,9 +7,9 @@ const BanqueImages = preload("res://ui/banque_images.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
-const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const Academy = preload("res://ui/academy_pathways_view.gd")
 const Juniors = preload("res://ui/immersive08/centre_juniors.gd")
+const Visuel = preload("res://ui/immersive08/centre_visuel.gd")
 const GREEN = Color("64e896")
 const GOLD = Color("f8cd73")
 const ACCENT = Color("09673e")
@@ -17,7 +17,6 @@ const ACCENT = Color("09673e")
 var app: Control
 var data: Dictionary
 var state: Dictionary
-var restored_scrolls := {}
 
 static func build(application: Control, canvas: Control) -> void:
 	var page := new()
@@ -37,8 +36,14 @@ func _build() -> void:
 	if state.get("club") != club:
 		state.clear()
 		state.merge({"club":club,"tab":"","scroll":{}})
+	# Parcours actifs : page façon Effectif, pleine largeur (choix de Léo du 22/11/2026). Sinon : héros et aperçu.
+	if data.get("active", false):
+		Visuel.construire(app, self)
+		return
 	_hero()
-	_workbench()
+	var surface := D.panel(self, Rect2(0, 218, 1513, 1005), "", "", "", "CentreWorkbench")
+	surface.clip_contents = true
+	_preview(surface)
 	_summary()
 
 func _hero() -> void:
@@ -52,43 +57,6 @@ func _hero() -> void:
 	D.text(hero, 28, 151, G.club_name(app.model.club), 25, C.IVORY, 500, 1100, HORIZONTAL_ALIGNMENT_LEFT, true)
 	D.chip(hero, Rect2(29, 163, 288, 30), _pathway_status().to_upper(), GREEN if data.get("active", false) else GOLD)
 	D.button(hero, Rect2(1840, 126, 388, 56), "Revenir à la formation", func(): app._navigate("Formation"), false, "arrow", false, ACCENT, "CentreBackFormation")
-
-func _workbench() -> void:
-	var surface := D.panel(self, Rect2(0, 218, 1513, 1005), "", "", "", "CentreWorkbench")
-	surface.clip_contents = true
-	if not data.get("active", false):
-		_preview(surface)
-		return
-	# Les contrôles et commandes du Centre viennent de la vue métier partagée.
-	# Son onglet international peut évoluer sans recopier ni figer sa structure.
-	var viewport := ScrollContainer.new()
-	viewport.name = "CentreWorkbenchViewport"
-	viewport.follow_focus = true
-	viewport.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	surface.add_child(viewport)
-	D.place(viewport, Rect2(12, 12, 1489, 981))
-	var controls := Academy.build(app, str(state.tab))
-	viewport.add_child(controls)
-	Legacy.apply(controls, ACCENT)
-	C.reach_controls(controls)
-	var tabs := controls.find_child("AcademyTabs", true, false) as TabContainer
-	if tabs == null: return
-	_style_tabs(tabs)
-	var scrolls: Dictionary = {}
-	for i in tabs.get_tab_count():
-		var tab := tabs.get_tab_control(i)
-		var key := str(tab.name)
-		var nodes := tab.find_children("*", "ScrollContainer", true, false)
-		if not nodes.is_empty():
-			var scroll: ScrollContainer = nodes[0]
-			scrolls[key] = scroll
-			scroll.get_v_scroll_bar().value_changed.connect(func(value: float):
-				if restored_scrolls.has(key): state.scroll[key] = int(value))
-	tabs.tab_changed.connect(func(index: int):
-		state.tab = str(tabs.get_tab_control(index).name)
-		_restore_scroll.call_deferred(str(state.tab), scrolls.get(state.tab)))
-	var active := str(tabs.get_tab_control(tabs.current_tab).name)
-	_restore_scroll.call_deferred(active, scrolls.get(active))
 
 func _pathway_status() -> String:
 	if not data.get("available", false): return "Relève suivie en formation"
@@ -156,32 +124,6 @@ func _note(parent: Control, rectangle: Rect2, text: String, pixels: int) -> void
 	parent.add_child(label)
 	D.place(label, rectangle)
 	label.text = text
-
-func _style_tabs(tabs: TabContainer) -> void:
-	tabs.add_theme_font_override("font", C.BOLD)
-	tabs.add_theme_font_size_override("font_size", C.font_px(24))
-	var selected := C.box(Color("0b5435"), GREEN, 6, 12)
-	var unselected := C.box(Color("152322"), C.LINE, 6, 12)
-	var hover := C.box(Color("204634"), GREEN, 6, 12)
-	for style: StyleBoxFlat in [selected, unselected, hover]:
-		style.content_margin_top = maxi(5, C.px(8))
-		style.content_margin_bottom = maxi(5, C.px(8))
-	tabs.add_theme_stylebox_override("tab_selected", selected)
-	tabs.add_theme_stylebox_override("tab_unselected", unselected)
-	tabs.add_theme_stylebox_override("tab_hovered", hover)
-	tabs.add_theme_color_override("font_selected_color", C.IVORY)
-	tabs.add_theme_color_override("font_unselected_color", C.MUTED)
-	tabs.add_theme_color_override("font_hovered_color", C.IVORY)
-
-func _restore_scroll(key: String, scroll: ScrollContainer) -> void:
-	if scroll == null or restored_scrolls.has(key) or not is_inside_tree(): return
-	var tree := get_tree()
-	for frame in 2:
-		await tree.process_frame
-		if not is_inside_tree(): return
-	if not scroll.is_visible_in_tree() or restored_scrolls.has(key): return
-	scroll.scroll_vertical = int(state.scroll.get(key, 0))
-	restored_scrolls[key] = true
 
 func _summary() -> void:
 	var active: bool = data.get("active", false)
