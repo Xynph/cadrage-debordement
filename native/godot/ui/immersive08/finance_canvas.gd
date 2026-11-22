@@ -707,6 +707,11 @@ static func _carte_marge(app: Control, canvas: Control, rectangle: Rect2, financ
 # ---- Synthèse -----------------------------------------------------------------------------------------------
 
 static func _synthese(app: Control, canvas: Control, accounts: Dictionary, finance: Dictionary, ledger: Array, v: Dictionary) -> void:
+	# Planche A/B « façon Effectif » (22/11/2026) : variantes isolées dans finance_variantes.gd, sinon la Synthèse de main.
+	var variante := OS.get_environment("CD_VARIANTE_VISUELLE")
+	if variante in ["A", "B"]:
+		load("res://ui/immersive08/finance_variantes.gd").construire(variante, app, canvas, accounts, finance, ledger, v)
+		return
 	_verdict_panneau(app, canvas, Rect2(0, HAUT, 880, 300), v, false, "summary")
 	_carte_tresorerie(app, canvas, Rect2(896, HAUT, 400, 300), accounts, finance, v)
 	_carte_budget(app, canvas, Rect2(1312, HAUT, 500, 300), accounts, ledger)
