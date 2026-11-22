@@ -245,7 +245,8 @@ func check_competitions() -> void:
 	check(rivalry_archives != null and text_present(rivalry_archives, "SAISON 2026-2027") and text_present(rivalry_archives, prem + " · Bath témoin") and text_present(rivalry_archives, challenge + " ·") and not text_present(rivalry_archives, "Club 31"), "Le palmarès des rivalités distingue les titres et les identités des champions")
 	app._navigate("Centre")
 	await settle()
-	check(text_present(app, "Les compétitions Espoirs ne sont pas encore disponibles") and button("ACTIVER LES PARCOURS") == null, "Centre mondial · raison visible et activation absente")
+	# 22/11/2026 : parcours ouverts en Monde, aucun module fermé (ni cadenas), sans phrase d'explication.
+	check(not text_present(app, "Les compétitions Espoirs ne sont pas encore disponibles") and button("ACTIVER LES PARCOURS") != null and named("AcademyPreviewJuniorLock") == null and named("CentreJuniorFerme") == null, "Centre mondial · activation offerte, aucun module fermé")
 	# Centre en attente (1280 × 720) : chiffres du centre, trois parcours illustrés et chemin vers Formation, sans grand vide.
 	await settle()
 	check(app.heading != null and app.heading.is_visible_in_tree() and not app.heading.text.strip_edges().is_empty(), "Centre · titre de la page visible")

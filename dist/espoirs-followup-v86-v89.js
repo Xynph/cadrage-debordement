@@ -6,7 +6,7 @@
   const own=s=>s?.clubs?.[s.club]?.players||[];
   const academy=s=>s?.development?.academy||[];
   const persons=s=>[...academy(s),...own(s)];
-  const currentMinutes=(s,id)=>Math.max(0,Math.min(50000,Math.floor(finite(s?.v73Espoirs?.minutes?.[id]))));
+  const currentMinutes=(s,id)=>Math.max(0,Math.min(50000,Math.floor(finite((root.CDNativeAcademy?.worldTopology?.(s)?root.CDNativeAcademy.minutes(s,id):s?.v73Espoirs?.minutes?.[id])))));
   const potential=p=>Math.max(finite(p?.rating),finite(p?.dev?.potential??p?.potential??p?.rating));
   const valid=st=>!!st&&st.version===1&&Number.isInteger(st.season)&&st.season>=1&&
     Array.isArray(st.targets)&&st.targets.length<=30&&Array.isArray(st.history)&&st.history.length<=5&&

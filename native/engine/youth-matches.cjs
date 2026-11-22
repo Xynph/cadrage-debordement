@@ -100,7 +100,13 @@ function factory(){
  const URC={ulster:'irl',leinster:'irl',munster:'irl',connacht:'irl',glasgow:'sco',edinburgh:'sco',cardiff:'wal',dragons:'wal',ospreys:'wal',scarlets:'wal',benetton:'ita',zebre:'ita',stormers:'rsa',bulls:'rsa',sharks:'rsa',lions:'rsa',cheetahs:'rsa'};
 
  // ---------------------------------------------------------------- outils d'état
- const active=s=>!!s&&s.academyGroupPolicy===3&&!!s.development&&Array.isArray(s.aiRoster?.academies)&&s.nativeAcademy?.version!==2&&Array.isArray(s.clubs)&&!!s.clubs[s.club];
+ // Le parcours Espoirs v73 (France) a ses propres rencontres ; le Centre du Monde (topologie « monde », 22/11/2026)
+ // s'appuie au contraire sur ces vrais matchs de jeunes : ils continuent une fois ses parcours activés.
+ const worldCentre=s=>s?.nativeAcademy?.version===2&&s.nativeAcademy.topology==='monde';
+ const active=s=>!!s&&s.academyGroupPolicy===3&&!!s.development&&Array.isArray(s.aiRoster?.academies)&&(s.nativeAcademy?.version!==2||worldCentre(s))&&Array.isArray(s.clubs)&&!!s.clubs[s.club];
+ // Plan des rencontres juniors du club joué (Centre du Monde) : poids de la fatigue, seuil de rotation et bonus de développement.
+ const PLANS={equilibre:[.5,18,0],performance:[.3,22,0],developpement:[.5,18,.35],repos:[.9,14,0]};
+ const planOf=(s,clubId)=>clubId===s.club&&worldCentre(s)?PLANS[s.nativeAcademy.mode]||PLANS.equilibre:PLANS.equilibre;
  const world=s=>typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(s);
  function today(s){
   if(world(s)){const d=Date.parse(CDWorldCareer.calendarToday(s)+'T00:00:00Z');return Number.isFinite(d)?Math.floor(d/DAY):null;}
@@ -239,7 +245,8 @@ function factory(){
   if(cat==='E'&&pool.length<23)pool=pool.concat(all.filter(p=>p.age===17&&!used.has(p.id)).filter(p=>{refresh(s,p,day);const y=load(s,p);return !(y[5]>0)&&total(y,s,p)<CAP;}).sort((a,b)=>b.rating-a.rating).slice(0,23-pool.length));
   // Valeur du jour : niveau, fatigue, charge de la saison et petit aléa de rotation (une fois par joueur).
   const base=new Map(),ramp=new Set();
-  for(const p of pool){const y=load(s,p);base.set(p,p.rating-Math.max(0,y[4]-35)*.5-Math.max(0,y[1]-18)*2.5-(y[1]>=RISK_FROM?6:0)+r()*2.5);if(y[6]>0)ramp.add(p);}
+  const [tired,rotate,grow]=planOf(s,clubId);
+  for(const p of pool){const y=load(s,p);base.set(p,p.rating-Math.max(0,y[4]-35)*tired-Math.max(0,y[1]-rotate)*2.5-(y[1]>=RISK_FROM?6:0)+(grow?Math.max(0,(p.dev?.potential??p.rating)-p.rating)*grow+(p.age<=19?2:0):0)+r()*2.5);if(y[6]>0)ramp.add(p);}
   const xv=Array(15).fill(null),bench=[],taken=new Set();
   const pick=(slot,starter)=>{let best=null,bs=-1e9;for(const [p,v0]of base){if(taken.has(p))continue;const v=v0+fit(p,slot)-(starter&&ramp.has(p)?8:0);if(v>bs){bs=v;best=p;}}if(best)taken.add(best);return best;};
   for(const slot of ORDER)xv[slot]=pick(slot,true);
@@ -420,6 +427,13 @@ function factory(){
 
  // ---------------------------------------------------------------- projection, validation, crochets
  function project(){return projectFor(typeof S==='undefined'?null:S);}
+ // Derniers résultats du club joué (Crabos 'C' ou Espoirs 'E'), du plus ancien au plus récent ; opponentId -1 = adversaire simulé.
+ function ownResults(s,cat){
+  const st=s?.youthMatches;if(!active(s)||!st)return [];const name=id=>id<0?null:s.clubs[id]?.name||null;
+  return st.own[cat].map(([day,comp,opp,home,pf,pa])=>({date:iso(day),day,competition:specOf(comp)?.name||'Match de club ou d’école',opponent:opp<0?(FILL[region(s,s.clubs[s.club])]?.[cat]||'Club local'):name(opp),opponentId:opp,home:!!home,for:pf,against:pa}));
+ }
+ // Jour de la saison des jeunes (0 = 1er juillet) déjà joué, pour les périodes du Centre.
+ function seasonDay(s){const st=s?.youthMatches;if(!active(s)||!st||st.season!==s.season)return 0;return Math.max(0,st.day-(Math.floor(Date.UTC(year(s),6,1)/DAY)-1));}
  function projectFor(s){
   if(!active(s)||!s.youthMatches)return {available:false};
   const st=s.youthMatches,name=id=>id<0?null:s.clubs[id]?.name||null,mine=[];
@@ -428,7 +442,7 @@ function factory(){
    const tables=Object.entries(comp.t).map(([key,pools])=>({phase:key,rows:(pools.find(p=>p.some(r=>r[0]===s.club))||[]).length?sorted(pools.find(p=>p.some(r=>r[0]===s.club))).map(r=>({club:name(r[0]),own:r[0]===s.club,played:r[1],won:r[2],drawn:r[3],lost:r[4],for:r[5],against:r[6],points:r[7]})):[]})).filter(t=>t.rows.length);
    mine.push({id,name:spec.name,category:spec.cat==='C'?'Crabos':'Espoirs',tables,champion:name(comp.champ??-1)});
   }
-  const results=cat=>st.own[cat].map(([day,comp,opp,home,pf,pa])=>({date:iso(day),competition:specOf(comp)?.name||'Match de club ou d’école',opponent:opp<0?(FILL[region(s,s.clubs[s.club])]?.[cat]||'Club local'):name(opp),home:!!home,for:pf,against:pa}));
+  const results=cat=>ownResults(s,cat).map(({day,opponentId,...r})=>r);
   const plan=schedule(s),upcoming=plan.days.filter(d=>d>st.day).slice(0,40).flatMap(day=>plan.events.get(day).filter(e=>e.fill===s.club||e.comp&&st.comps[e.comp].m.includes(s.club)).map(e=>({date:iso(day),competition:e.fill!==undefined?'Match de club ou d’école':specOf(e.comp).name,category:(e.cat||specOf(e.comp).cat)==='C'?'Crabos':'Espoirs'}))).slice(0,6);
   const players=s.development.academy.map(p=>{const y=Array.isArray(p.youthLoad)&&p.youthLoad[0]===s.season?p.youthLoad:[0,0,0,0,0,0,0,0,0,0];return {id:p.id,matches:y[1],starts:y[2],minutes:y[3],tries:y[8],selection:selections(s,p,y),cap:CAP,fatigue:y[4],injuredWeeks:Math.ceil(y[5]/7),returning:y[6]>0?y[6]:0};});
   return {available:true,season:st.season,date:iso(st.day),competitions:mine,results:{crabos:results('C'),espoirs:results('E')},upcoming,players,titles:st.history.filter(r=>r[2]===s.club).map(([season,comp])=>({season,competition:specOf(comp)?.name||comp}))};
@@ -461,7 +475,7 @@ function factory(){
   const advance=g.advanceSeason;if(typeof advance==='function'){const wrapped=function(){const s=typeof S==='undefined'?null:S;if(active(s)&&!s.live)process(s,endOfYear(s));return advance.apply(this,arguments);};Object.assign(wrapped,advance);g.advanceSeason=wrapped;}
   return true;
  }
- const api=Object.freeze({process,setup,today,recordSelection,matches,project,validate,CATALOG,CAP});
+ const api=Object.freeze({process,setup,today,recordSelection,matches,project,validate,ownResults,seasonDay,CATALOG,CAP,PLANS:Object.keys(PLANS)});
  g.CDYouthMatches=api;
  g.CDYouthCompetitions=Object.freeze({appearances,summary});
  return {project,validate,execute,installHooks,process,recordSelection,matches};

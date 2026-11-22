@@ -11,7 +11,8 @@
       Array.isArray(st.contracts)&&st.contracts.length<=75&&
       Array.isArray(st.u20)&&st.u20.length<=5&&
       Array.isArray(st.history)&&st.history.length<=4&&
-      st.loans.every(x=>x&&typeof x.id==='string'&&Number.isInteger(x.to)&&x.to>=0&&x.to<30)&&
+      // Club d'accueil : n'importe quel club de la carrière (borne vérifiée par le centre natif).
+      st.loans.every(x=>x&&typeof x.id==='string'&&Number.isInteger(x.to)&&x.to>=0)&&
       st.contracts.every(x=>x&&typeof x.id==='string'&&Number.isInteger(x.expires))&&
       st.u20.every(x=>x&&typeof x.id==='string'&&Number.isFinite(x.gain));
   }
@@ -37,6 +38,10 @@
     (p.id.startsWith('youth-')||p.joinedSeason!==undefined)&&
     p.contractEnd>=s.season)||[];
   const cash=s=>s?.clubs?.[s.club]?.cash;
+  // Carrière Monde : prix indexés sur les moyens du club (CDNativeAcademy.fee) ; ailleurs, prix historiques.
+  const fee=(s,v)=>root.CDNativeAcademy?.fee?root.CDNativeAcademy.fee(s,v):v;
+  const stipend=(s,p,years)=>{const v=600+years*250+Math.max(0,Math.round(p.dev?.potential||p.rating)-60)*25;return fee(s,v);};
+  const upgradeFee=(s,key,level)=>fee(s,level*(key==='facilities'?85000:55000));
   function transact(s,fn,save){
     const before=copy(s);
     try{if(!fn())return false;
@@ -53,14 +58,13 @@
     if(!st||s.live||s.phase==='ended'||!Number.isInteger(years)||years<1||years>3)return false;
     const p=available(s).find(x=>x.id===id);
     if(!p||st.contracts.some(x=>x.id===id&&x.expires>=s.season+years-1))return false;
-    const stipend=600+years*250+Math.max(0,Math.round(p.dev?.potential||p.rating)-60)*25;
-    const price=stipend*10;
+    const monthly=stipend(s,p,years),price=monthly*10;
     if(!Number.isFinite(cash(s))||cash(s)<price)return false;
     return transact(s,()=>{
       s.clubs[s.club].cash-=price;
       st.contracts=st.contracts.filter(x=>x.id!==id);
       st.contracts.push({id,name:p.name,season:s.season,expires:s.season+years-1,
-        stipend,fee:price});
+        stipend:monthly,fee:price});
       s.news.unshift('Centre : engagement Espoir '+p.name+' pour '+years+' saison(s).');
       s.news=s.news.slice(0,100);return true;
     },save);
@@ -84,10 +88,10 @@
   function upgrade(s,kind,save){
     const st=ensure(s),key=kind==='facilities'?'facilities':kind==='coaches'?'coaches':null;
     if(!st||!key||s.live||s.phase==='ended'||st[key]>=3)return false;
-    const fee=(st[key]+1)*(key==='facilities'?85000:55000);
-    if(!Number.isFinite(cash(s))||cash(s)<fee)return false;
+    const price=upgradeFee(s,key,st[key]+1);
+    if(!Number.isFinite(cash(s))||cash(s)<price)return false;
     return transact(s,()=>{
-      s.clubs[s.club].cash-=fee;st[key]++;
+      s.clubs[s.club].cash-=price;st[key]++;
       s.news.unshift('Centre de formation : '+(key==='facilities'?'installations':'éducateurs')+' niveau '+st[key]+'.');
       s.news=s.news.slice(0,100);return true;
     },save);
@@ -194,7 +198,7 @@
     g.v81Upgrade=kind=>{const ok=upgrade(get(),kind,save);if(ok)g.render();return ok};
     return true;
   }
-  const api={valid,ensure,available,eligiblePro,contract,u20,upgrade,loan,returnLoans,year,panel,install};
+  const api={stipend,upgradeFee,valid,ensure,available,eligiblePro,contract,u20,upgrade,loan,returnLoans,year,panel,install};
   root.CDEspoirsPathwaysV78V81=api;
   if(typeof module==='object'&&module.exports)module.exports=api;
   if(!root.CDNativeHeadless&&typeof document!=='undefined')install(root);

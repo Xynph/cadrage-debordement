@@ -51,8 +51,9 @@ func lien(nom: String) -> Button:
 	check(bouton != null, "%s présent" % nom)
 	if bouton == null: return null
 	check(bouton.mouse_default_cursor_shape == Control.CURSOR_POINTING_HAND, "%s : curseur main" % nom)
+	# Depuis #1152, le survol vient du retour commun des tuiles (ui/retour_tuile.gd, nœud « RetourTuile » sur le bouton).
 	var survol := bouton.get_theme_stylebox("hover") as StyleBoxFlat
-	check(survol != null and survol.bg_color.a > 0.0, "%s : effet de survol" % nom)
+	check(bouton.has_node("RetourTuile") or survol != null and survol.bg_color.a > 0.0, "%s : effet de survol" % nom)
 	check(bouton.is_visible_in_tree(), "%s visible" % nom)
 	return bouton
 

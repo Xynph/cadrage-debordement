@@ -53,10 +53,11 @@
     const st=ensure(s),source=s.development.academy,team=s.clubs[s.club].players;
     const original=source.find(p=>p.id===id),slot=POS.indexOf(original.pos);
     if(slot<0)return false;
-    const own=scout().own(s),m=movement()?.ensure(s);
-    if(!m)return false;
+    // Carrière Monde : pas de mouvement Élite/Accession, le centre du club est son académie.
+    const own=scout().own(s),worldCentre=!!root.CDNativeAcademy?.worldTopology?.(s),m=worldCentre?null:movement()?.ensure(s);
+    if(!m&&!worldCentre)return false;
     const oldAcademy=clone(source),oldTeam=clone(team),oldState=clone(st);
-    const oldRoster=m.rosters[own.id]===undefined?undefined:clone(m.rosters[own.id]);
+    const oldRoster=!m||m.rosters[own.id]===undefined?undefined:clone(m.rosters[own.id]);
     const oldLineup=s.v73Espoirs?.lineup?.slice(),oldNews=s.news?.slice();
     const promoted=clone(original);
     promoted.academy=false;promoted.joinedSeason=s.season;promoted.joinedRound=s.round;
@@ -89,7 +90,7 @@
     }catch{
       s.development.academy=oldAcademy;s.clubs[s.club].players=oldTeam;
       s.v77Promotions=oldState;
-      if(oldRoster===undefined)delete m.rosters[own.id];else m.rosters[own.id]=oldRoster;
+      if(m){if(oldRoster===undefined)delete m.rosters[own.id];else m.rosters[own.id]=oldRoster;}
       if(oldLineup&&s.v73Espoirs)s.v73Espoirs.lineup=oldLineup;
       if(oldNews)s.news=oldNews;
       return false;

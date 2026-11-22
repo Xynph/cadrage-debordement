@@ -793,15 +793,18 @@ func _systems_reception() -> void:
 	await _native06_reception()
 	var professional_ids: Array = app.model.squad.map(func(p: Dictionary): return str(p.id))
 	app._navigate("Centre")
-	# En carrière Monde les parcours Espoirs ne sont pas encore ouverts : le Centre en donne la raison et
-	# n'offre pas d'activation (même contrôle que tests/world-native-ui.gd). Sinon l'activation reste exigée.
+	# Carrière Monde (22/11/2026) : les parcours s'ouvrent pour tous les clubs du monde, tous les modules ouverts (les vrais
+	# matchs des jeunes du pays remplacent le championnat Espoirs). L'activation par l'interface exportée est exigée.
 	var pathways_open: bool = app.model.clubLife.academyPathways.get("available", false)
+	_check(pathways_open or not app.model.clubLife.academyPathways.get("world", true), "Monde Centre opens pathways for every world club")
 	if pathways_open:
 		_press("ACTIVER LES PARCOURS")
 		await _settle()
 		_confirm()
 		await _wait()
 		_check(app.model.clubLife.academyPathways.active, "Actual exported UI activates academy pathways")
+		if app.model.clubLife.academyPathways.get("world", false):
+			_check(not app.model.clubLife.academyPathways.has("closedModules") and int(app.model.clubLife.academyPathways.get("totalRounds", 0)) == 26, "Monde Centre opens every module, junior periods included")
 	else:
 		await _settle()
 		var activation: Array = app.root_content.find_children("*", "Button", true, false).filter(func(b: Button): return b.text == "ACTIVER LES PARCOURS")

@@ -63,6 +63,8 @@ budget() {
     tests/native-manager-career-reverse-offre.cjs|tests/native-manager-career-reverse-saison.cjs) echo 300s ;;
     # Lot 03 (Monde) : saison de 46 semaines jouée jusqu'à la fenêtre de mobilité, puis saison suivante : 1250 s en local sous charge.
     tests/native-academy-integrated-long.cjs) echo 1800s ;;
+    # Centre en carrière Monde (temps 1) : trois carrières (Champ, Nationale, Top 14), activation et décisions : 55 s en local.
+    tests/world-academy-centre.cjs) echo 420s ;;
     tests/native-delegate-transaction06.cjs|tests/native-contextual-integration.cjs) echo 600s ;;
     # Décisions natives et sauvegardes du direct en carrière Monde (une carrière pèse ~20 Mo de sauvegarde) : 314 s et 152 s en local sous charge.
     tests/native-decisions.cjs) echo 600s ;;
