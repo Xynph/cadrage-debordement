@@ -216,6 +216,16 @@ static func construire(app: Control, cadre: Control, titre: Label, courant: Dict
 	titre.text = "RAPPORT DU RECRUTEUR"
 	cadre.set_meta("rapport", {"lettre": r.lettre, "rang": r.rang, "poste": r.numero, "pret": p.get("loan", {})})
 	_mise_en_page(app, cadre, r)
+	# Discussion avec l'agent (planche FM 24, CD_VARIANTE_VISUELLE=A|B) : sans variable, rien ne change.
+	var Agent: Variant = load("res://ui/discussion_agent.gd")
+	if not Agent.variante().is_empty():
+		var stade := str(p.get("knowledge", {}).get("stage", "")) if p.get("knowledge") is Dictionary else ""
+		var mot := {"deep": "Bien connu", "observed": "Observé"}.get(stade, "Non observé") as String
+		Pieces.pastille(cadre, 172 + Pieces.largeur_pastille(mot, "search"), 124, "Parler à l’agent", "people", "RapportAgentOuvrir", "", Pieces.BLEU, Charte.PANNEAU_3,
+			func(): Agent.ouvrir(app, cadre.get_parent(), p))
+		if bool(courant.get("agent", false)):
+			courant.erase("agent")
+			Agent.ouvrir(app, cadre.get_parent(), p)
 
 ## Identité : visage, nom (fiche), poste, âge.
 static func _identite(app: Control, cadre: Control, r: Dictionary, x: float, y: float, cote: float) -> void:

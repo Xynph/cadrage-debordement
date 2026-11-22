@@ -83,6 +83,8 @@ const EXTRAS := [
 	{"id": "classements-calendrier", "libelle": "Classements · onglet Calendrier (tableau)", "type": "classements_onglet", "onglet": "calendar"},
 	{"id": "recrutement-entre-clubs", "libelle": "Recrutement · sous-page Marché entre clubs", "type": "recrutement_sous", "page": "interclub"},
 	{"id": "recrutement-rapport-recruteur", "libelle": "Recrutement · Rapport du recruteur", "type": "recrutement_sous", "page": "recruteur"},
+	{"id": "agent-discussion", "libelle": "Recrutement · discussion avec l'agent (CD_VARIANTE_VISUELLE)", "type": "recrutement_sous", "page": "recruteur", "presser": "RapportAgentOuvrirLien"},
+	{"id": "agent-ton", "libelle": "Recrutement · discussion avec l'agent, ton enthousiaste choisi", "type": "recrutement_sous", "page": "recruteur", "presser": "RapportAgentOuvrirLien", "puis": ["AgentTon_enthousiaste"]},
 	{"id": "finances-tresorerie", "libelle": "Finances · onglet Trésorerie (colonne de verdict)", "type": "finances_onglet", "onglet": "cash"},
 	{"id": "finances-salaires", "libelle": "Finances · onglet Salaires", "type": "finances_onglet", "onglet": "wages"},
 	{"id": "finances-budget", "libelle": "Finances · onglet Budget", "type": "finances_onglet", "onglet": "budget"},
@@ -666,6 +668,16 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			await stabiliser()
 			await stabiliser()
 			if app.find_child("RecrutementSubpage_" + str(ecran.page), true, false) == null: return {"statut": "echec", "note": "sous-page non ouverte"}
+			if ecran.has("presser"):
+				var ouvre := app.find_child(str(ecran.presser), true, false) as Button
+				if ouvre == null: return {"statut": "echec", "note": "bouton %s absent" % ecran.presser}
+				ouvre.pressed.emit()
+				await stabiliser()
+				for nom_puis: Variant in ecran.get("puis", []):
+					var suite := app.find_child(str(nom_puis), true, false) as Button
+					if suite == null: return {"statut": "echec", "note": "bouton %s absent" % nom_puis}
+					suite.pressed.emit()
+					await stabiliser()
 		"classements_page":
 			# Sous-pages de Classements (décision de Léo du 19/11/2026 : plus de petite fenêtre) : une rencontre du calendrier du club, les archives.
 			app.management_ui.erase("competition_page")
@@ -944,6 +956,9 @@ func refermer(ecran: Dictionary) -> void:
 	if str(ecran.type) == "creation_options":
 		app.management_ui.erase("creation_step")
 		app.management_ui.erase("creation_selection")
+	if str(ecran.type) == "recrutement_sous" and ecran.has("presser"):
+		load("res://ui/petite_fenetre.gd").fermer_derniere(app.get_tree())
+		app.management_ui.erase("agent_tons")
 	if str(ecran.type) == "effectif_onglet": app.management_ui.roster.immersive_tab = 0
 	if str(ecran.type) == "finances_onglet": app.management_ui["immersive08_finance_tab"] = "summary"
 	if str(ecran.type) == "centre_onglet": app.management_ui.immersive_centre = {"club": app.model.get("club", {}).get("id"), "tab": "", "scroll": {}}
