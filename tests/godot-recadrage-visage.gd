@@ -34,6 +34,25 @@ func joueur_en_pied(w: int, h: int, fond: Color) -> Image:
 	ellipse(image, Vector2(100, 56) * k, Vector2(16, 20) * k, PEAU)
 	return image
 
+## Buste de studio 400 x 500 : maillot sombre, cou, cheveux, visage. `ombre` : visage dans l'ombre sauf une bande à
+## droite ; `reflet` : seul le nez accroche la lumière ; `poing` : barbe sombre et poing levé loin à gauche, bras compris.
+func buste_studio(fond: Color, cheveux: Color, ombre: Color, eclaire_x: int, reflet: bool, poing: bool) -> Image:
+	var image := Image.create(400, 500, false, Image.FORMAT_RGBA8)
+	image.fill(fond)
+	image.fill_rect(Rect2i(182, 200, 36, 60), ombre)
+	image.fill_rect(Rect2i(80, 212 if poing else 250, 240, 290 if poing else 250), Color8(16, 16, 20))
+	ellipse(image, Vector2(200, 128), Vector2(44, 42), cheveux)
+	for y in range(112, 209):
+		for x in range(164, 237):
+			if pow((x - 200) / 36.0, 2) + pow((y - 160) / 48.0, 2) > 1.0: continue
+			if poing and y >= 145: image.set_pixel(x, y, Color8(30, 22, 18))
+			else: image.set_pixel(x, y, PEAU if x >= eclaire_x else ombre)
+	if reflet: image.fill_rect(Rect2i(190, 130, 20, 60), Color8(120, 80, 62))
+	if poing:
+		image.fill_rect(Rect2i(62, 60, 20, 191), PEAU)
+		ellipse(image, Vector2(72, 42), Vector2(34, 34), PEAU)
+	return image
+
 func run() -> void:
 	var dossier := OS.get_environment("CD_GODOT_DATA_DIR")
 	if dossier.is_empty():
@@ -82,6 +101,17 @@ func run() -> void:
 	var z_affiche := R.detecter(affiche)
 	check(z_affiche.encloses(Rect2(70.0 / 240, 58.0 / 300, 60.0 / 240, 80.0 / 300)), "Affiche : le visage est dans le carré %s" % z_affiche)
 	check(z_affiche.size.x < 0.95 and z_affiche.get_center().x < 0.48 and z_affiche.position.y < 0.15, "Affiche : cadre sur le joueur, pas sur le texte %s" % z_affiche)
+	# 2d. Ratés rares de la planche (photos de studio en buste ; tête x 0,41-0,59, y 0,22-0,42).
+	var tete := Rect2(0.42, 0.23, 0.16, 0.18)
+	# Visage à moitié dans l'ombre sur fond bordeaux (cheveux fondus dans le fond) : buste, pas un gros plan sur la joue.
+	var ombre := R.detecter(buste_studio(Color8(110, 30, 45), Color8(95, 35, 40), Color8(85, 35, 40), 212, false, false))
+	check(ombre.encloses(tete) and ombre.size.x > 0.35, "Visage mi-ombre sur fond bordeaux : tête entière en buste %s" % ombre)
+	# Studio sombre, peau foncée peu éclairée (reflet sur le nez seulement) : buste, pas le seul reflet.
+	var sombre := R.detecter(buste_studio(Color8(28, 28, 30), Color8(36, 26, 20), Color8(46, 31, 25), 400, true, false))
+	check(sombre.encloses(tete) and sombre.size.x > 0.45, "Studio sombre : tête entière en buste %s" % sombre)
+	# Poing levé loin du visage barbu : le cadre reste sur la tête.
+	var poing := R.detecter(buste_studio(Color8(128, 128, 128), Color8(36, 26, 20), PEAU, 0, false, true))
+	check(poing.encloses(tete) and absf(poing.get_center().x - 0.5) < 0.08, "Poing levé loin du visage barbu : cadre sur la tête %s" % poing)
 	# 3. Portrait serré (visage déjà grand) : on garde presque toute l'image.
 	var serre := Image.create(200, 200, false, Image.FORMAT_RGBA8)
 	serre.fill(Color8(120, 120, 125))
