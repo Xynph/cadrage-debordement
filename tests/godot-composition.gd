@@ -110,6 +110,89 @@ func composition() -> void:
 	app._navigate("Composition")
 	await settle(10)
 
+const ENTETE := ["CompositionTitle", "TacticsValidity", "TacticsCountStarters", "TacticsCountBench", "TacticsCountFrontRow", "LineupAutomatic", "LineupRoles", "TacticsValidate", "TacticsFixtureHome", "TacticsFixtureAway", "TacticsFixtureCompetition", "TacticsFixtureDate", "TacticsFixtureVenue", "TacticsFixturePlace", "TacticsPlanSummary", "TacticsDefenseSummary"]
+
+## En-tête visuel (demande de Léo du 22/11/2026) : pastilles et bandeau sans chevauchement ni texte coupé (1920 et
+## 2560), plus de phrase d'aide dans la bulle de Gabi ; chaque pastille et écusson mène à sa destination.
+func entete_visuel() -> void:
+	for taille: Vector2i in [Vector2i(1920, 1080), Vector2i(2560, 1440)]:
+		root.size = taille
+		await settle(4)
+		await composition()
+		var page := named("ImmersiveTactics")
+		var cadres: Array[Rect2] = []
+		var manquants: Array[String] = []
+		for id: String in ENTETE:
+			var n := named(id)
+			if n == null or not n.is_visible_in_tree(): manquants.append(id); continue
+			cadres.append(n.get_global_rect())
+		check(manquants.is_empty(), "%d : en-tête complet (manque %s)" % [taille.x, ", ".join(manquants)])
+		var chevauchent: Array[String] = []
+		for i in cadres.size():
+			if cadres[i].end.x > page.get_global_rect().end.x + 1: chevauchent.append(ENTETE[i] + " hors de l'écran")
+			for j in range(i + 1, cadres.size()):
+				if cadres[i].grow(-1).intersects(cadres[j].grow(-1)): chevauchent.append(ENTETE[i] + "/" + ENTETE[j])
+		check(chevauchent.is_empty(), "%d : aucun chevauchement dans l'en-tête : %s" % [taille.x, ", ".join(chevauchent)])
+		var coupes: Array[String] = []
+		for id: String in ENTETE:
+			var n := named(id)
+			if n == null: continue
+			var labels: Array = n.find_children("*", "Label", true, false)
+			if n is Label: labels.append(n)
+			for node in labels:
+				var label := node as Label
+				var largeur := label.get_theme_font("font").get_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, label.get_theme_font_size("font_size")).x
+				if label.text.ends_with("…") or largeur > label.size.x + 1: coupes.append(label.text)
+			if n is Button and not (n as Button).text.is_empty():
+				var b := n as Button
+				var texte := b.get_theme_font("font").get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, b.get_theme_font_size("font_size")).x
+				if texte + C.px(20) > b.size.x: coupes.append(b.text)
+		check(coupes.is_empty(), "%d : aucun texte coupé dans l'en-tête : %s" % [taille.x, ", ".join(coupes)])
+		var ecusson := named("TacticsFixtureHome").find_child("Ecusson", true, false) if named("TacticsFixtureHome") != null else null
+		check(ecusson != null and ecusson.has_meta("bulle_survol"), "%d : écusson à mini-carte club au survol" % taille.x)
+		check(not _contient_texte(named("TacticsStaffAdvice"), "Clique un poste"), "Bulle de Gabi : plus de « Clique un poste… »")
+		if is_instance_valid(app.coach):
+			if app.coach.has_method("fermer_bulle"): app.coach.fermer_bulle()
+			if app.coach.has_method("close"): app.coach.close()
+		await settle(2)
+		await capture("composition-entete-%d" % taille.x)
+	root.size = Vector2i(1920, 1080)
+	await settle(4)
+	# Clics : chaque pastille et écusson mène à sa destination.
+	var domicile := _contient_texte(named("TacticsFixturePlace"), "DOM.")
+	for paire: Array in [["TacticsFixtureHome", "Club" if domicile else "Fiche club"], ["TacticsFixtureAway", "Fiche club" if domicile else "Club"], ["TacticsFixtureCompetitionLien", "Classements"], ["TacticsFixtureDateLien", "Calendrier"], ["TacticsFixtureVenueLien", "Club" if domicile else "Fiche club"], ["TacticsPlanModify", "Préparation"], ["TacticsDefenseSummaryLien", "Préparation"]]:
+		await composition()
+		var b := named(paire[0]) as Button
+		check(b != null, "Présent : " + str(paire[0]))
+		if b == null: continue
+		b.pressed.emit()
+		await settle()
+		check(app.route == paire[1], "%s → %s (route : %s)" % [paire[0], paire[1], app.route])
+	for paire: Array in [["TacticsCountStartersLien", -1], ["TacticsCountBenchLien", 15], ["TacticsCountFrontRowLien", 0]]:
+		await composition()
+		app.selected_slot = 7
+		var b := named(paire[0]) as Button
+		check(b != null, "Présent : " + str(paire[0]))
+		if b == null: continue
+		b.pressed.emit()
+		await settle()
+		var attendu: int = paire[1]
+		check(app.route == "Composition" and (app.selected_slot == attendu if attendu >= 0 else app.selected_slot < 15) and named("TacticsCandidateRows") != null, "%s → candidats du n° %d" % [paire[0], app.selected_slot + 1])
+	await composition()
+	var valide := named("TacticsValidityLien") as Button
+	if valide != null:
+		valide.pressed.emit()
+		await settle()
+		check(app.route == "Composition" and (named("TacticsValidate") as Control).has_focus(), "Pastille Valide → bouton Valider la feuille")
+	else:
+		check(named("TacticsCorriger") != null, "Pastille Incomplète → place à corriger")
+
+func _contient_texte(noeud: Node, morceau: String) -> bool:
+	if noeud == null: return false
+	for n in noeud.find_children("*", "Label", true, false):
+		if (n as Label).text.contains(morceau): return true
+	return false
+
 func proche_de_l_or(couleur: Color) -> bool:
 	return couleur.a > .05 and (Color(couleur, 1).is_equal_approx(Charte.OR) or Color(couleur, 1).is_equal_approx(Charte.OR_VIF))
 
@@ -197,6 +280,7 @@ func run() -> void:
 		if bouton.pressed.get_connections().is_empty(): muets.append(str(bouton.name))
 	check(muets.is_empty(), "Aucune zone cliquable sans effet : " + ", ".join(muets))
 	await capture("composition-1920")
+	await entete_visuel()
 
 	# 2. Choisir des postes : terrain, banc, doublures ; candidats dessous, sans fenêtre.
 	for numero in [5, 12, 19]:

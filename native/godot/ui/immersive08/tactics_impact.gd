@@ -183,10 +183,9 @@ static func _gabi(app: Control, bloc: Control, w: float, h: float, choisir: Call
 	if data is Dictionary and conseils.is_empty():
 		Kit.texte(bulle, 22, 58, "Ton staff valide ta feuille.", Charte.IVOIRE, texte_l).name = "TacticsStaffAdviceAgree"
 	elif conseils.is_empty():
-		var phrase := "Clique un poste pour voir qui peut le tenir."
+		# Plus de mode d'emploi (règle du 21/11/2026) : seulement la raison du moteur quand la feuille est incomplète.
 		var erreurs: Array = app.model.get("selection", {}).get("errors", [])
-		if not erreurs.is_empty(): phrase = "Complète d’abord la feuille : " + str(erreurs[0])
-		Kit.flux(app, bulle, 22, 58, texte_l, [{"texte":phrase}], 17, 22, 6, "TacticsStaffAdviceText")
+		if not erreurs.is_empty(): Kit.flux(app, bulle, 22, 58, texte_l, [{"texte":"! " + str(erreurs[0]), "couleur":Charte.D}], 17, 22, 6, "TacticsStaffAdviceText")
 	var interligne := maxf(22.0, Kit.hauteur_ligne(17) + 2)
 	var pas := 2 * interligne + 8
 	for i in mini(conseils.size(), 2 if C.dense() else 3):

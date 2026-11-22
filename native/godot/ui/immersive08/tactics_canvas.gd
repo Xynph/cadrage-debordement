@@ -1,8 +1,8 @@
 extends RefCounted
 ## Écran Composition (route « Composition », chapitre Tactique) — choix de Léo du 19/11/2026 : variante 1 « Terrain au
 ## centre, candidats dessous » (design/ux/10-composition.md, direction-artistique/interface/revue-20261119) et l'encart
-## « Première ligne formée » de la variante 3. En-tête (titre, affiche, Proposition du staff, Tireurs et lanceur,
-## Valider la feuille), ligne de validité, onglets, puis terrain vertical, banc et doublures (tactics_vertical.gd, option
+## « Première ligne formée » de la variante 3. En-tête visuel (tactics_entete.gd : pastilles de la feuille, actions,
+## bandeau du match), onglets, puis terrain vertical, banc et doublures (tactics_vertical.gd, option
 ## A de Léo du 22/11/2026), impact (tactics_impact.gd) et candidats (tactics_candidats.gd). Jamais de petite fenêtre : les choix annexes sont des
 ## sous-pages (tactics_sous_pages.gd). L'interface n'écrit jamais l'état du jeu : commandes du moteur seulement.
 ## Exemple : page dédiée de la coque, `TacticsCanvas.build(app, canvas)`.
@@ -24,6 +24,7 @@ const Cover = preload("res://ui/lineup_cover.gd")
 const Espoir = preload("res://ui/espoir_appel.gd")
 const PersonName = preload("res://ui/person_name.gd")
 const CarteSurvol = preload("res://ui/carte_joueur_survol.gd")
+const Entete = preload("res://ui/immersive08/tactics_entete.gd")
 ## Hauteur du gabarit (unités) ; largeur 2248 comme toutes les pages de la coque.
 const HAUTEUR := 1305.0
 
@@ -84,21 +85,6 @@ static func _construire(app: Control, page: Control) -> Control:
 	_restore_focus.call_deferred(app)
 	return page
 
-## Affiche : « Domicile – Extérieur · Compétition, journée · date heure · stade · domicile ».
-static func _affiche(app: Control) -> Array[String]:
-	var match_ := P.next_fixture(app.model)
-	if match_.is_empty(): return ["Aucun prochain match", ""]
-	var equipes := G.club_name(match_.get("home", {})) + " – " + G.club_name(match_.get("away", {}))
-	var reste: Array[String] = []
-	if not str(match_.get("label", "")).is_empty(): reste.append(str(match_.label))
-	var date := P.fixture_date(match_)
-	if not date.is_empty(): reste.append(date)
-	var stade := P.fixture_venue(match_, true, true)
-	if not stade.is_empty(): reste.append(stade)
-	var lieu: String = {"home":"domicile", "away":"extérieur", "neutral":"terrain neutre"}.get(P.fixture_location_kind(match_, app.model.get("club", {}).get("id")), "")
-	if not lieu.is_empty(): reste.append(lieu)
-	return [equipes, " · ".join(reste)]
-
 static func _adversaire(app: Control) -> String:
 	var match_ := P.next_fixture(app.model)
 	if match_.is_empty(): return ""
@@ -106,133 +92,9 @@ static func _adversaire(app: Control) -> String:
 	var autre: Dictionary = match_.get("away", {}) if match_.get("home", {}).get("id") == club_id else match_.get("home", {})
 	return G.club_name(autre)
 
+## En-tête visuel (tactics_entete.gd) : titre, pastilles de la feuille, actions, bandeau du match.
 static func _entete(app: Control, page: Control) -> void:
-	var titre := Kit.titre_page(page, 0, 40, "Composition", 38, 500)
-	titre.name = "CompositionTitle"
-	var largeur_titre := Charte.TITRE_FICHE.get_string_size("COMPOSITION", HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(38))).x / C.density
-	if P.is_derby(app.model): Kit.puce(page, Rect2(largeur_titre + 18, 14, 90, 26), "DERBY", Charte.PANNEAU_3, Charte.IVOIRE, "DerbyTag").tooltip_text = "Derby : une rivalité ancienne, plus de tension sur le terrain et dans les tribunes."
-	var affiche := _affiche(app)
-	var equipes := Kit.texte(page, 0, 72, affiche[0], Charte.IVOIRE, 0, 18)
-	equipes.name = "TacticsFixture"
-	if not affiche[1].is_empty():
-		Kit.texte(page, Kit.largeur(affiche[0], 18) + 4, 72, " · " + affiche[1], Charte.IVOIRE_2, 1300 - Kit.largeur(affiche[0], 18), 18).name = "TacticsFixtureDetail"
-	# Actions, de droite à gauche : touche Ctrl Entrée, Valider la feuille (seul bouton plein), liens.
-	var droite := 2248.0
-	droite -= Kit.touche(page, droite, 56, "Ctrl Entrée", true) + 14
-	var selection: Dictionary = app.model.get("selection", {})
-	var valider := Kit.bouton_ivoire(page, Rect2(droite - 250, 26, 250, 44), "Valider la feuille", func(): validate(app), "TacticsValidate")
-	valider.disabled = not selection.get("valid", false) or not Selection.editable(app)
-	valider.tooltip_text = "Valider la feuille et passer à la préparation · Ctrl+Entrée" if not valider.disabled else "Feuille à compléter : voir la ligne de validité"
-	droite -= 250 + 30
-	if not Roles.view(app.model).is_empty():
-		var roles := Kit.lien(page, Rect2(droite, 30, 0, 38), "Tireurs et lanceur →", func(): SousPages.ouvrir(app, "roles"), "LineupRoles", 18, true)
-		roles.tooltip_text = "Désigner le buteur, son remplaçant, le lanceur en touche et le joueur au pied d’occupation."
-		droite -= roles.size.x / C.density + 22
-	var auto := Kit.lien(page, Rect2(droite, 30, 0, 38), "Proposition du staff →", func(): app._command("auto_lineup"), "LineupAutomatic", 18, true)
-	auto.disabled = not Selection.editable(app)
-	auto.tooltip_text = "Appliquer la composition recommandée par le staff"
-	_validite(app, page)
-	D.line(page, Vector2(0, 122), Vector2(2248, 122), Charte.FILET)
-
-## Ligne de validité (le moteur décide : selection.valid / errors) : ✓ ivoire, jamais de vert ; sinon la première raison
-## et « Corriger → » ; premier avertissement de condition ; actions de feuille incomplète ; quota JIFF / EQP à droite.
-static func _validite(app: Control, page: Control) -> void:
-	var selection: Dictionary = app.model.get("selection", {})
-	var valide := bool(selection.get("valid", false))
-	var erreurs: Array = selection.get("errors", [])
-	var curseur := {"x": 0.0}
-	var ligne := 108.0
-	var ajouter := func(texte: String, couleur: Color, gras: bool, id: String) -> Label:
-		var label := Kit.texte(page, curseur.x, ligne, texte, couleur, Kit.largeur(texte, 18) + 6, 18)
-		if gras: label.add_theme_font_override("font", Kit.texte_gras())
-		if not id.is_empty(): label.name = id
-		curseur.x += Kit.largeur(texte, 18) + (10 if gras else 6)
-		return label
-	var titulaires := 0
-	var remplacants := 0
-	for index in 23:
-		if not Selection.occupant(app.model, index).is_empty():
-			if index < 15: titulaires += 1
-			else: remplacants += 1
-	var premiere := Selection.premiere_ligne(app.model)
-	if valide:
-		ajouter.call("✓", Charte.IVOIRE, true, "")
-		ajouter.call("Feuille valide", Charte.IVOIRE, true, "TacticsValidity")
-		ajouter.call("· %d titulaires + %d remplaçants · première ligne %d/%d formés" % [titulaires, remplacants, mini(int(premiere.formes), int(premiere.cible)), int(premiere.cible)], Charte.IVOIRE_2, false, "TacticsValidityDetail")
-	else:
-		ajouter.call("!", Charte.D, true, "")
-		ajouter.call("Feuille incomplète", Charte.IVOIRE, true, "TacticsValidity")
-		if not erreurs.is_empty():
-			var raison := str(erreurs[0])
-			if raison.length() > 90: raison = raison.left(88) + "…"
-			var label: Label = ajouter.call(": " + raison, Charte.IVOIRE_2, false, "TacticsLineupIssue")
-			label.tooltip_text = "\n".join(erreurs)
-			label.mouse_filter = Control.MOUSE_FILTER_PASS
-			if erreurs.size() > 1: ajouter.call("(+%d)" % (erreurs.size() - 1), Charte.IVOIRE_2, false, "TacticsLineupIssueCount").tooltip_text = "\n".join(erreurs)
-		var a_corriger := _place_a_corriger(app)
-		if a_corriger >= 0:
-			var corriger := Kit.lien(page, Rect2(curseur.x, ligne - 28, 0, 38), "Corriger →", func(): choisir(app, a_corriger), "TacticsCorriger")
-			curseur.x += corriger.size.x / C.density + 12
-		if not Espoir.offer(app.model).is_empty():
-			var appel := Kit.lien(page, Rect2(curseur.x, ligne - 28, 0, 38), "Appeler un espoir →", func(): SousPages.ouvrir(app, "espoir"), "LineupCallEspoir")
-			appel.tooltip_text = Espoir.vacancy_text(app.model)
-			curseur.x += appel.size.x / C.density + 12
-		elif P.reduced_bench_number(app.model) != 0:
-			var a22 := Kit.lien(page, Rect2(curseur.x, ligne - 28, 0, 38), "Jour de match · feuille à 22 →", func(): app._navigate("Match"), "LineupOpenMatchAt22")
-			a22.tooltip_text = P.reduced_bench_vacancy(P.reduced_bench_number(app.model))
-			curseur.x += a22.size.x / C.density + 12
-		var devis := Cover.data(app)
-		if not devis.is_empty():
-			var renforts := Kit.lien(page, Rect2(curseur.x, ligne - 28, 0, 38), Cover.caption(devis) + " →", func(): SousPages.ouvrir(app, "renforts"), "LineupCover")
-			Cover.configure(renforts, devis)
-			curseur.x += renforts.size.x / C.density + 12
-	# Avertissements non bloquants : joueurs de la feuille sous 80 % de condition.
-	var bas: Array = []
-	for index in 23:
-		var person := Selection.occupant(app.model, index)
-		var forme: Variant = person.get("condition")
-		if (forme is int or forme is float) and float(forme) < 80: bas.append([index, person, roundi(float(forme))])
-	if not bas.is_empty() and curseur.x < 1500:
-		D.line(page, Vector2(curseur.x + 4, ligne - 18), Vector2(curseur.x + 5, ligne + 4), Charte.FILET)
-		curseur.x += 16
-		# Menu déroulant (exception autorisée) : chaque joueur sous 80 %, l'entrée montre les candidats de son poste.
-		var avertissements := "! %d avertissement%s ▾" % [bas.size(), "s" if bas.size() > 1 else ""]
-		var menu := MenuButton.new()
-		menu.name = "TacticsWarnings"
-		menu.text = avertissements
-		menu.flat = true
-		menu.add_theme_font_override("font", Kit.texte_gras())
-		menu.add_theme_font_size_override("font_size", maxi(12, C.px(18)))
-		for couleur in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]: menu.add_theme_color_override(couleur, Charte.D)
-		var focus := C.box(Color.TRANSPARENT, Charte.IVOIRE, Charte.RAYON_PETIT, 2)
-		focus.set_border_width_all(2)
-		menu.add_theme_stylebox_override("focus", focus)
-		Impact._styler_menu(menu.get_popup())
-		for i in bas.size():
-			menu.get_popup().add_item("%s (n° %d) · %d %% de condition" % [Kit.casse(str(bas[i][1].get("name", ""))), int(bas[i][0]) + 1, int(bas[i][2])], i)
-		menu.get_popup().id_pressed.connect(func(i: int): choisir(app, int(bas[i][0])))
-		page.add_child(menu)
-		var large := Kit.largeur(avertissements, 18) + 16
-		D.place(menu, Rect2(curseur.x - 6, ligne - 28, large, 38))
-		curseur.x += large + 4
-		# Premier avertissement : le nom ouvre la fiche (survol = mini-fiche), « voir le poste » ses candidats.
-		var premier: Array = bas[0]
-		var nom_joueur := Kit.casse(str(premier[1].get("name", "")), true)
-		Kit.nom(app, page, Rect2(curseur.x, ligne - 24, Kit.largeur(nom_joueur, 18) + 4, 32), nom_joueur, str(premier[1].get("id", "")), "TacticsWarningName", Charte.IVOIRE, 18)
-		curseur.x += Kit.largeur(nom_joueur, 18) + 8
-		ajouter.call("(n° %d) à %d %% de condition" % [int(premier[0]) + 1, int(premier[2])], Charte.IVOIRE_2, false, "TacticsWarningDetail")
-		Kit.lien(page, Rect2(curseur.x - 6, ligne - 28, 0, 38), "voir le poste →", func(): choisir(app, int(premier[0])), "TacticsWarning")
-	# Quota du championnat (JIFF / EQP), à droite de la ligne.
-	var quota: Dictionary = app.model.get("clubLife", {}).get("jiff", {})
-	if bool(quota.get("applies", false)):
-		var compte := int(quota.get("currentSheet", 0)) + int(quota.get("doublon", 0))
-		var cible := int(quota.get("target", 16))
-		var alerte := bool(quota.get("alert", false))
-		var texte := "%s%s %d / %d" % ["! " if alerte else "", str(quota.get("label", "JIFF")), compte, cible]
-		var puce := Kit.texte(page, 2248, ligne, texte, Charte.D if alerte else Charte.IVOIRE_2, 300, 18, HORIZONTAL_ALIGNMENT_RIGHT)
-		puce.name = "LineupJiffNotice"
-		puce.tooltip_text = app.SquadViews.quota_line(quota) + "\n" + app.SquadViews.quota_tooltip(quota)
-		puce.mouse_filter = Control.MOUSE_FILTER_PASS
+	Entete.build(app, page, {"choisir": func(slot: int): choisir(app, slot), "valider": func(): validate(app), "corriger": _place_a_corriger(app)})
 
 ## Première place à corriger : vide, sinon tenue par un joueur que le moteur n'y accepte plus ; -1 sinon.
 static func _place_a_corriger(app: Control) -> int:
@@ -243,7 +105,7 @@ static func _place_a_corriger(app: Control) -> int:
 		if id != null and str(id) not in Selection.slot(app.model, index).get("eligibleIds", []): return index
 	return -1
 
-## Onglets du chapitre Tactique et résumé du plan (« Modifier → » ouvre les consignes).
+## Onglets du chapitre Tactique et pastilles Plan / Défense (→ Consignes).
 static func _onglets(app: Control, page: Control) -> void:
 	var onglets := [[0, "Composition"], [1, "Consignes"], [2, "Phases arrêtées"], [4, "Entraînement"]]
 	var x := 0.0
@@ -254,13 +116,7 @@ static func _onglets(app: Control, page: Control) -> void:
 		x += largeur + 6
 	D.line(page, Vector2(0, 176), Vector2(2248, 176), Charte.FILET)
 	var tactique: Dictionary = app.model.get("tactics", {})
-	var plan := _libelle(tactique.get("attacks", []), tactique.get("attack"))
-	var defense := _libelle(tactique.get("defenses", []), tactique.get("defense"))
-	var modifier := Kit.lien(page, Rect2(2248, 136, 0, 38), "Modifier →", func(): app.Immersive.open_preparation(app, 1), "TacticsPlanModify", 18, true)
-	modifier.tooltip_text = "Consignes d’attaque et de défense"
-	var resume := "Plan : %s · Défense : %s" % [plan, defense]
-	var label := Kit.texte(page, 2248 - modifier.size.x / C.density - 14, 162, resume, Charte.IVOIRE_2, 800, 18, HORIZONTAL_ALIGNMENT_RIGHT)
-	label.name = "TacticsPlanSummary"
+	Entete.plan(app, page, _libelle(tactique.get("attacks", []), tactique.get("attack")), _libelle(tactique.get("defenses", []), tactique.get("defense")))
 
 static func _libelle(options: Variant, id: Variant) -> String:
 	if options is Array:
@@ -443,7 +299,7 @@ static func _restore_focus(app: Control) -> void:
 	if focus != null: FocusLater.grab(focus)
 
 ## « Valider la feuille » : feuille valide → préparation du match. Sinon rien n'est envoyé : la ligne de validité dit
-## pourquoi et « Corriger → » prend le focus (aucune fenêtre).
+## pourquoi (pastille « Incomplète ») et son lien prend le focus (aucune fenêtre).
 static func validate(app: Control) -> void:
 	if app.model.get("selection", {}).get("valid", false):
 		app._navigate("Préparation")
