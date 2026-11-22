@@ -40,6 +40,8 @@ const EXTRAS := [
 	{"id": "salle-entrainement-joueur", "libelle": "Observer la préparation · petite fenêtre d'un joueur", "type": "salle_entrainement", "joueur": true},
 	{"id": "fiche-joueur", "libelle": "Fiche joueur", "type": "joueur"},
 	{"id": "mini-fiche", "libelle": "Mini-fiche au survol (Effectif)", "type": "mini_fiche"},
+	{"id": "progression", "libelle": "Fiche joueur · progression par qualité", "type": "progression"},
+	{"id": "progression-autre", "libelle": "Fiche joueur · progression, autre vue", "type": "progression", "autre": true},
 	{"id": "equilibre-postes", "libelle": "Équilibre par poste (infobulle Aptes)", "type": "equilibre_postes"},
 	{"id": "comparateur", "libelle": "Comparateur (trois joueurs)", "type": "comparateur"},
 	{"id": "salle-conseil", "libelle": "Salle du conseil", "type": "salle_conseil"},
@@ -695,6 +697,26 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			var ouvert: bool = app.navigation_controller.open_entity({"kind": "player", "id": ident(effectif[0].get("id"))})
 			await stabiliser()
 			if not ouvert or app.route != "Effectif" or not bool(app.get_meta("immersive08_full_player", false)): return {"statut": "echec", "note": "fiche joueur non ouverte"}
+		"progression":
+			var effectif_p: Array = app.model.get("squad", [])
+			if effectif_p.is_empty(): return {"statut": "indisponible", "note": "effectif vide"}
+			var jeune: Dictionary = effectif_p[0]
+			for p: Dictionary in effectif_p:
+				if p.get("attributesV2") is Dictionary and int(p.get("age", 99)) < int(jeune.get("age", 99)) and int(p.get("age", 0)) >= 21: jeune = p
+			app.management_ui.erase("progression")
+			app.management_ui.immersive_player_tab = 4
+			app._navigate("Effectif")
+			await stabiliser()
+			var ouvert_p: bool = app.navigation_controller.open_entity({"kind": "player", "id": ident(jeune.get("id"))})
+			await stabiliser()
+			if not ouvert_p: return {"statut": "echec", "note": "fiche joueur non ouverte"}
+			if ecran.get("autre", false):
+				var vue: Dictionary = app.management_ui.get("progression", {})
+				var cible := "ProgressionVue_qualites" if str(vue.get("vue", "")) == "niveau" else "ProgressionVue_niveau"
+				var pilule := app.root_content.find_child(cible, true, false) as BaseButton
+				if pilule == null: return {"statut": "echec", "note": "pilule de vue absente"}
+				pilule.pressed.emit()
+				await stabiliser()
 		"mini_fiche":
 			# Le bureau séparé n'a pas de souris : la mini-fiche est affichée par programme sur le nom d'un joueur
 			# (même appel que le survol, ui/immersive08/mini_fiche.gd).
