@@ -4,6 +4,7 @@ const Portrait = preload("res://ui/regen_portrait.gd")
 const Training = preload("res://ui/immersive08/training_canvas.gd")
 const Recruitment = preload("res://ui/immersive08/recruitment_canvas.gd")
 const Office = preload("res://ui/immersive08/office.gd")
+const PortraitLoader = preload("res://ui/portrait_loader.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -46,10 +47,8 @@ func run() -> void:
 	if row!=null:
 		var images: Array=row.find_children("*","TextureRect",true,false)
 		check(images.size()>0 and images[0].texture==Portrait.texture(promoted) and images[0].material==Portrait.material(promoted),"Petite vignette utilise même banque/base/variantes")
-	var large:=false
-	for image: TextureRect in app.body.find_children("*","TextureRect",true,false):
-		if image.size.x>100 and image.texture==Portrait.texture(promoted) and image.material==Portrait.material(promoted):large=true
-	check(large,"Grand dossier utilise le même portrait")
+	# Plus de dossier à droite de l'Effectif (charte de Léo) : le grand portrait est celui de la fiche pleine page, vérifié plus bas.
+	check(app.body.find_children("*","TextureRect",true,false).all(func(image:TextureRect):return image.size.x<=100),"Effectif sans dossier à droite")
 	app.set_meta("immersive08_full_player",true);app._render();await settle()
 	var full: Node=app.body.find_child("FullPlayerHero",true,false)
 	check(full!=null,"Fiche pleine page réelle ouverte")
@@ -74,7 +73,10 @@ func run() -> void:
 	if not market.is_empty():
 		var spotlight: Dictionary=Office.recruitment_spotlight(app.model)
 		app._navigate("Bureau");await settle()
-		if not spotlight.player.is_empty():
+		var office_panel:=app.find_child("OfficeRecruitment",true,false)
+		if office_panel==null:
+			pass # Bureau large : « Le profil à suivre » est au Recrutement, plus au Bureau.
+		elif not spotlight.player.is_empty():
 			check(has_portrait(app.body,spotlight.player),"La piste réellement publiée au Bureau conserve sa banque")
 		else:
 			var panel:=app.find_child("OfficeRecruitment",true,false)
@@ -82,6 +84,7 @@ func run() -> void:
 		for full_size in [false,true]:
 			var parent:=Control.new();root.add_child(parent)
 			Recruitment._portrait(parent,Rect2(0,0,80,80),market[0],str(market[0].id),full_size)
+			PortraitLoader.flush() # Liste de recrutement : petites cases remplies par tranches, on attend la fin.
 			check(has_portrait(parent,market[0]),"Recrutement petite/grande image conserve sa banque")
 			parent.queue_free();await settle()
 	var helper:=Training.new();helper.app=app
