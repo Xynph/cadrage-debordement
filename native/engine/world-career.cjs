@@ -475,7 +475,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
    }
   }
  }
- function result(l){return{pair:l.pair.slice(),score:l.score.slice(),tries:l.tries.slice(),stats:copy(l.stats),weather:l.weather,duration:l.minute,...(l.winner!==undefined?{winner:l.winner,decision:copy(l.decision)}:{}),...(l.worldContext?.competitionId==='srp'?CDWorldSRPMatch.historyFields(l):JP&&CDWorldJapanMatch.isFixture(l.worldContext)?CDWorldJapanMatch.historyFields(l):CH&&CDWorldChampMatch.isFixture(l.worldContext)?CDWorldChampMatch.historyFields(l):N&&typeof CDWorldNationaleMatch!=='undefined'?CDWorldNationaleMatch.historyFields(l):{})};}
+ function result(l){return{pair:l.pair.slice(),score:l.score.slice(),tries:l.tries.slice(),stats:copy(l.stats),weather:l.weather,duration:l.minute,...(Array.isArray(l.essaisDetail)?{essais:l.essaisDetail.map(e=>e.slice())}:{}),...(l.winner!==undefined?{winner:l.winner,decision:copy(l.decision)}:{}),...(l.worldContext?.competitionId==='srp'?CDWorldSRPMatch.historyFields(l):JP&&CDWorldJapanMatch.isFixture(l.worldContext)?CDWorldJapanMatch.historyFields(l):CH&&CDWorldChampMatch.isFixture(l.worldContext)?CDWorldChampMatch.historyFields(l):N&&typeof CDWorldNationaleMatch!=='undefined'?CDWorldNationaleMatch.historyFields(l):{})};}
  // Rencontre de l'IA : moteur complet, ou suivi de loin selon les championnats suivis (league-detail.cjs).
  // `watch(l)` (déroulé anticipé du multiplex, match-multiplex.cjs) : appelé après chaque minute jouée.
  // Sans `watch`, une rencontre dont le déroulé a été montré garde ce résultat (CDMultiplex.official).
