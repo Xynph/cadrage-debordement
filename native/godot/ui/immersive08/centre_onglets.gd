@@ -89,6 +89,26 @@ static func _centre(ctx: Dictionary, zone: Rect2) -> void:
 	for i in lignes.size():
 		var l: Array = lignes[i]
 		_ligne_chiffre(det, Rect2(22, 296 + i * 62, w1 - 44, 56), l[0], l[1], l[2], l[3], l[4], "CentreDetectionLigne%d" % i)
+	# Jeunes repérés par région : barres de couleur (un seul lien vers Filières).
+	var regions: Array = data.get("regions", [])
+	var y_reg := 296 + lignes.size() * 62 + 18
+	var h_reg := h - y_reg - 18
+	if not regions.is_empty() and h_reg > 120:
+		D.line(det, Vector2(22, y_reg - 10), Vector2(w1 - 22, y_reg - 10))
+		var prospects: Array = data.get("prospects", [])
+		var max_r := 1
+		for zr: Variant in regions: max_r = maxi(max_r, prospects.filter(func(q: Dictionary): return str(q.region) == str(zr)).size())
+		var pas := minf(34.0, (h_reg - 8) / regions.size())
+		for i in regions.size():
+			var rg := str(regions[i])
+			var teinte: Color = V.COULEURS[i % V.COULEURS.size()]
+			var n := prospects.filter(func(q: Dictionary): return str(q.region) == rg).size()
+			var ry0 := y_reg + 4 + i * pas
+			V.texte(det, 22, ry0 + pas / 2.0 + 6, rg, 16, Charte.IVOIRE_2, 150, HORIZONTAL_ALIGNMENT_LEFT, 600)
+			D.rect(det, Rect2(180, ry0 + pas / 2.0 - 5, w1 - 180 - 70, 10), Charte.PANNEAU_3, Charte.RAYON_PILULE)
+			D.rect(det, Rect2(180, ry0 + pas / 2.0 - 5, maxf(10.0, (w1 - 250) * float(n) / max_r), 10), teinte, Charte.RAYON_PILULE)
+			V.chiffre(det, w1 - 22, ry0 + pas / 2.0 + 9, G.n(n), 22, teinte, 50, HORIZONTAL_ALIGNMENT_RIGHT)
+		V.zone_cliquable(det, Rect2(12, y_reg, w1 - 24, regions.size() * pas + 8), V.aller(ctx, "Filières"), "CentreDetectionRegions", "Jeunes repérés par région", 8)
 	_fleche_droite(racine, x + w1 + 6, y + h / 2.0)
 	x += w1 + fl
 	# 2. Le centre
@@ -156,6 +176,27 @@ static func _centre(ctx: Dictionary, zone: Rect2) -> void:
 		V.texte(ligne, 236, 33, str(r.get("awayCenter") if dom else r.get("homeCenter")), 19, Charte.IVOIRE_2, lz.size.x - 250)
 		D.line(ren, Vector2(14, ry + 52), Vector2(w3 - 14, ry + 52))
 		ry += 54.0
+	# Bilan des derniers matchs : victoires, nuls, défaites, points marqués et encaissés.
+	var bilan := [0, 0, 0]
+	var points := [0, 0]
+	for r: Dictionary in resultats:
+		var dom2 := int(r.get("home", -1)) == club
+		var a2 := int(r.score[0] if dom2 else r.score[1])
+		var b2 := int(r.score[1] if dom2 else r.score[0])
+		points[0] += a2
+		points[1] += b2
+		bilan[0 if a2 > b2 else (1 if a2 == b2 else 2)] += 1
+	var yb := ry + 22
+	if not resultats.is_empty() and h - 56 - yb > 150:
+		var wt := (w3 - 44 - 2 * 12) / 3.0
+		var tuiles := [[bilan[0], "VICTOIRES", V.PROGRES], [bilan[1], "NULS", Charte.IVOIRE_2], [bilan[2], "DÉFAITES", V.ALERTE]]
+		for i in 3:
+			var t: Array = tuiles[i]
+			var c := D.rect(ren, Rect2(22 + i * (wt + 12), yb, wt, 92), Charte.PANNEAU_2.lerp(t[2], .12), Charte.RAYON_CARTE)
+			V.chiffre(c, 18, 56, G.n(t[0]), 46, t[2], wt - 30)
+			V.texte(c, 18, 80, t[1], 15, Charte.IVOIRE_2, wt - 30, HORIZONTAL_ALIGNMENT_LEFT, 700, false)
+		_ligne_chiffre(ren, Rect2(22, yb + 104, w3 - 44, 50), "ball", "Points marqués · encaissés", "%d · %d" % [points[0], points[1]], V.MINUTES, Callable(), "")
+		V.zone_cliquable(ren, Rect2(12, yb - 4, w3 - 24, 166), func(): Juniors.ouvrir(ctx.app, ctx.page), "CentreBilanJuniors", "Bilan des matchs juniors", 8)
 	var mode := "developpement" if str(data.get("mode", "")) == "formation" else str(data.get("mode", ""))
 	for m: Array in MODES:
 		if m[0] == mode: R.pastille(ren, 22, h - 30, str(m[1]), m[2], "calendar", "CentrePlanActif", 19)
@@ -428,17 +469,28 @@ static func _filieres(ctx: Dictionary, zone: Rect2) -> void:
 	var feeders: Array = data.get("feeders", [])
 	var partenaires: Array = data.get("partners", [])
 	var fp := V.panneau(ctx.racine, Rect2(0, yf, GAUCHE, zone.size.y - h_reg - ECART), "Clubs formateurs", "flag", "FilieresFormateurs", Callable(), G.n(partenaires.size()), V.PROGRES)
-	var hl := minf(40.0, (zone.size.y - h_reg - ECART - V.ENTETE - 12) / maxf(1, feeders.size()))
+	# Une ligne par club ; en petite fenêtre (cibles de 25 px), la liste défile dans le panneau.
+	var h_dispo := zone.size.y - h_reg - ECART - V.ENTETE - 12
+	var hl := maxf(C.reach(34.0) + 2, minf(40.0, h_dispo / maxf(1, feeders.size())))
+	var defile := ScrollContainer.new()
+	defile.name = "FilieresFormateursDefile"
+	defile.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	fp.add_child(defile)
+	D.place(defile, Rect2(0, V.ENTETE + 4, GAUCHE, h_dispo + 4))
+	var liste_f := Control.new()
+	liste_f.mouse_filter = Control.MOUSE_FILTER_PASS
+	liste_f.custom_minimum_size = Vector2(GAUCHE - 14, feeders.size() * hl) * C.density
+	defile.add_child(liste_f)
 	for i in feeders.size():
 		var f: Dictionary = feeders[i]
 		var fid := str(f.id)
 		var ok := partenaires.has(fid)
-		var y := V.ENTETE + 4 + i * hl
+		var y := i * hl
 		var nom_f := str(f.name)
-		var b := V.zone_cliquable(fp, Rect2(10, y, GAUCHE - 20, hl - 2), func(): _partenariat(ctx, fid, nom_f, ok or verrou, partner), "FilieresFormateur_" + fid.validate_node_name(), nom_f, 6)
+		var b := V.zone_cliquable(liste_f, Rect2(10, y, GAUCHE - 34, hl - 2), func(): _partenariat(ctx, fid, nom_f, ok or verrou, partner), "FilieresFormateur_" + fid.validate_node_name(), nom_f, 6)
 		V.icone(b, Rect2(10, (hl - 2 - 20) / 2.0, 20, 20), "check" if ok else "flag", V.PROGRES if ok else Charte.IVOIRE_3)
 		V.texte(b, 40, hl / 2.0 + 6, str(f.name), 18, Charte.IVOIRE if ok else Charte.IVOIRE_2, 270, HORIZONTAL_ALIGNMENT_LEFT, 600)
-		V.texte(b, GAUCHE - 34, hl / 2.0 + 6, "Partenaire" if ok else V.euros(partner), 17, V.PROGRES if ok else V.DEPENSE, 120, HORIZONTAL_ALIGNMENT_RIGHT, 700, false)
+		V.texte(b, GAUCHE - 48, hl / 2.0 + 6, "Partenaire" if ok else V.euros(partner), 17, V.PROGRES if ok else V.DEPENSE, 120, HORIZONTAL_ALIGNMENT_RIGHT, 700, false)
 	# Jeunes repérés.
 	var filtre := str(ctx.state.get("filtre_prospects", ""))
 	var garde := func(p: Dictionary, f: String) -> bool:

@@ -100,9 +100,9 @@ static func _entete(ctx: Dictionary) -> void:
 	app.heading = titre
 	var n: int = data.get("players", []).size()
 	var espoirs := R.pastille(ctx.racine, 0, 104, "%d Espoirs" % n, Charte.IVOIRE_2, "people", "CentreSousTitre")
-	R.cliquable(espoirs, aller(ctx, "Parcours"), "CentreSousTitreOuvrir", "Espoirs du centre")
+	zone_cliquable(ctx.racine, Rect2(espoirs.position / C.density, espoirs.size / C.density), aller(ctx, "Parcours"), "CentreSousTitreOuvrir", "Espoirs du centre", 8)
 	var saison := R.pastille(ctx.racine, espoirs.size.x / C.density + 10, 104, "Période %s / %s" % [G.n(data.get("juniorRound", 0)), G.n(data.get("totalRounds", 26))], MINUTES, "calendar", "CentreSaison")
-	R.cliquable(saison, func(): Juniors.ouvrir(app, ctx.page), "CentreSaisonOuvrir", "Saison junior")
+	zone_cliquable(ctx.racine, Rect2(saison.position / C.density, saison.size / C.density), func(): Juniors.ouvrir(app, ctx.page), "CentreSaisonOuvrir", "Saison junior", 8)
 	var tuiles := [
 		["Cohesion", "COHÉSION", G.n(data.get("cohesion", 0)), "/ 100", COHESION, 250.0, aller(ctx, "Centre")],
 		["Reputation", "RÉPUTATION", G.n(data.get("reputation", 0)), "/ 100", REPUTATION, 250.0, aller(ctx, "Générations")],
@@ -166,7 +166,7 @@ static func _onglets(ctx: Dictionary) -> void:
 		focus.set_expand_margin_all(2)
 		b.add_theme_stylebox_override("focus", focus)
 		ctx.racine.add_child(b)
-		D.place(b, Rect2(x, Y_ONGLETS, lo, 44))
+		D.place(b, C.reach_rect(Rect2(x, Y_ONGLETS, lo, 44)))
 		b.pressed.connect(aller(ctx, nom))
 		x += lo + 8.0
 	var droite := LARGEUR
@@ -181,7 +181,7 @@ static func _onglets(ctx: Dictionary) -> void:
 		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		C.style_bouton_lien(b, 19)
 		ctx.racine.add_child(b)
-		D.place(b, Rect2(droite, Y_ONGLETS, l, 44))
+		D.place(b, C.reach_rect(Rect2(droite, Y_ONGLETS, l, 44)))
 		b.pressed.connect(func(): ctx.app._navigate(route))
 		droite -= 16.0
 
@@ -252,6 +252,8 @@ static func zone_cliquable(parent: Control, zone: Rect2, action: Callable, id: S
 		b.add_theme_stylebox_override(etat, s)
 	parent.add_child(b)
 	D.place(b, zone)
+	# Petite fenêtre (densité < 0,75) : cible d'au moins 25 px ; le bouton grandit vers le bas, son contenu reste en place.
+	b.custom_minimum_size = Vector2(C.px(C.reach(zone.size.y)), C.px(C.reach(zone.size.y)))
 	if action.is_valid(): b.pressed.connect(action)
 	return b
 
@@ -274,6 +276,7 @@ static func pilule(parent: Control, x: float, y: float, libelle: String, couleur
 		b.add_theme_stylebox_override(etat, s)
 	parent.add_child(b)
 	D.place(b, Rect2(x, y, l, h))
+	b.custom_minimum_size = Vector2(C.px(C.reach(h)), C.px(C.reach(h)))
 	var encre := Charte.PANNEAU if choisie else (Charte.IVOIRE if actif else Charte.IVOIRE_3)
 	var gauche := 18.0
 	if point:
@@ -369,6 +372,7 @@ static func liste(ctx: Dictionary, zone: Rect2, haut_filtres: float, colonnes: A
 	for col: Dictionary in colonnes:
 		var al: int = col.get("a", HORIZONTAL_ALIGNMENT_LEFT)
 		col.ax = float(col.x) + (float(col.w) if al == HORIZONTAL_ALIGNMENT_RIGHT else (float(col.w) / 2.0 if al == HORIZONTAL_ALIGNMENT_CENTER else 0.0))
+	h_ligne = C.reach(h_ligne)
 	var tri: Variant = ctx.state.get("tri_" + id)
 	if not tri is Array or (tri as Array).size() < 2: tri = tri_defaut if tri_defaut.size() >= 2 else []
 	var table := Control.new()
@@ -394,7 +398,7 @@ static func liste(ctx: Dictionary, zone: Rect2, haut_filtres: float, colonnes: A
 		entete.add_child(b)
 		var lt := R.largeur(str(col.t) + " ▼", 17, 700) + 26.0
 		var x0: float = col.x - 13.0 if a == HORIZONTAL_ALIGNMENT_LEFT else (col.x + col.w - lt + 13.0 if a == HORIZONTAL_ALIGNMENT_RIGHT else col.x + col.w / 2.0 - lt / 2.0)
-		D.place(b, Rect2(x0, 2, lt, 32))
+		D.place(b, C.reach_rect(Rect2(x0, 2, lt, 32)))
 		entete.move_child(b, legende.get_index())
 		var actif: bool = tri is Array and (tri as Array).size() >= 2 and str(tri[0]) == k
 		Listes.styler_entete(b, legende, actif, actif and bool(tri[1]), str(col.t))
@@ -468,6 +472,7 @@ static func _groupe(lignes: VBoxContainer, largeur: float, titre: String, n: int
 static func _ligne(ctx: Dictionary, lignes: VBoxContainer, largeur: float, h: float, colonnes: Array, e: Variant, rang: int, cellule: Callable, au_clic: Callable, nom_ligne: Callable) -> void:
 	var ligne := Button.new()
 	ligne.name = str(nom_ligne.call(e, rang))
+	ligne.set_meta("element", e)
 	ligne.custom_minimum_size = Vector2(C.px(largeur), C.px(h))
 	ligne.clip_contents = true
 	ligne.focus_mode = Control.FOCUS_ALL
@@ -658,7 +663,7 @@ static func fenetre_liste(ctx: Dictionary, nom: String, titre: String, icone_id:
 		var e: Dictionary = elements[i]
 		var ligne := Button.new()
 		ligne.name = "%sLigne%d" % [nom, i]
-		ligne.custom_minimum_size = Vector2(C.px(L - 66), C.px(LIGNE))
+		ligne.custom_minimum_size = Vector2(C.px(L - 66), C.px(C.reach(LIGNE)))
 		load("res://ui/survol_ligne.gd").appliquer(ligne, false, Color.TRANSPARENT, ctx.app.accent)
 		lignes.add_child(ligne)
 		var teinte: Color = e.get("couleur", COULEURS[i % COULEURS.size()])

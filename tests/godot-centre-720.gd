@@ -1,7 +1,10 @@
 extends SceneTree
 ## Centre de formation en 1440p, 1080p et 1280 × 720 (profil Monde préparé par tests/godot-centre-720.cjs) : les pastilles
 ## « AU CALENDRIER DES ESPOIRS » tiennent sans points de suspension et le bloc « SAISON JUNIOR » suit
-## directement les tuiles du tableau du centre (pas de bande vide). Captures en affichage graphique.
+## directement les tuiles du tableau du centre (pas de bande vide). Puis, parcours activés par la vraie commande, les
+## pages façon Effectif (choix de Léo du 22/11/2026) à chaque taille : six onglets, tuiles chiffres, textes d'au moins
+## 11 px et commandes d'au moins 24 px, page entière dans la fenêtre, panneaux Détection et Rencontres remplis
+## jusqu'en bas, parcours individuel en petite fenêtre (Échap la ferme). Captures en affichage graphique.
 var app: Control
 var sortie := OS.get_environment("CD_CENTRE_OUTPUT")
 var echecs: Array[String] = []
@@ -82,6 +85,92 @@ func controler(taille: Vector2i) -> void:
 func C_density() -> float:
 	return float(load("res://ui/immersive08/components.gd").get("density"))
 
+## Plus petite police et plus petite commande visibles sous `noeud` (pixels de fenêtre).
+func plus_petits(noeud: Node) -> Dictionary:
+	var texte := [INF, ""]
+	var cible := [INF, ""]
+	for n: Node in noeud.find_children("*", "Label", true, false):
+		var l := n as Label
+		if not l.is_visible_in_tree() or l.text.strip_edges().is_empty(): continue
+		var t := float(l.get_theme_font_size("font_size")) * l.get_global_transform().get_scale().y
+		if t < texte[0]: texte = [t, l.text.left(30)]
+	for n: Node in noeud.find_children("*", "BaseButton", true, false):
+		var b := n as Control
+		if not b.is_visible_in_tree(): continue
+		var r := b.get_global_rect()
+		var cote := minf(r.size.x, r.size.y)
+		if cote < cible[0]: cible = [cote, str(b.name)]
+	return {"texte": texte, "cible": cible}
+
+## Vide sous le contenu d'un panneau, en part de sa hauteur.
+func vide_bas(panneau: Control) -> float:
+	var bas := panneau.get_global_rect().position.y
+	for n: Node in panneau.find_children("*", "Control", true, false):
+		var c := n as Control
+		if c.is_visible_in_tree() and c.size.y < panneau.size.y * .9: bas = maxf(bas, c.get_global_rect().end.y)
+	return (panneau.get_global_rect().end.y - bas) / maxf(1.0, panneau.size.y)
+
+func onglet(nom: String) -> Control:
+	var b := app.find_child("CentreOnglet_" + nom.validate_node_name(), true, false) as Button
+	verifier(b != null, "onglet " + nom)
+	if b == null: return null
+	b.pressed.emit(); await poser(12)
+	var v := app.find_child("CentreVisuel", true, false) as Control
+	verifier(v != null and str(v.get_meta("onglet", "")) == nom, "onglet %s ouvert" % nom)
+	return v
+
+func controler_actif(taille: Vector2i) -> void:
+	root.size = taille
+	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(taille)
+	await poser(4)
+	app._navigate("Centre"); await poser(20)
+	var cle := "actif-%dx%d" % [taille.x, taille.y]
+	var page := app.find_child("CentreVisuel", true, false) as Control
+	verifier(page != null and page.is_visible_in_tree(), cle + " : pages du Centre (parcours actifs)")
+	if page == null: return
+	verifier(app.find_child("CentreHero", true, false) == null and app.find_child("CentreStatus", true, false) == null, cle + " : ni héros ni colonne de droite")
+	for t in ["Cohesion", "Reputation", "Enveloppe", "Places"]: verifier(page.find_child("CentreTuile" + t, true, false) != null, cle + " : tuile " + t)
+	var mesure := {}
+	for nom: String in ["Centre", "Parcours", "Centres", "Filières", "Passerelle pro", "Générations"]:
+		var v := await onglet(nom)
+		if v == null: continue
+		var fenetre := Rect2(Vector2.ZERO, Vector2(taille))
+		verifier(fenetre.grow(1).encloses(v.get_global_rect()), "%s : %s entier dans la fenêtre" % [cle, nom])
+		var p := plus_petits(v)
+		mesure[nom] = {"texte": snappedf(p.texte[0], .1), "cible": snappedf(p.cible[0], .1)}
+		verifier(p.texte[0] >= 11.0, "%s : %s, texte de %s px « %s »" % [cle, nom, snappedf(p.texte[0], .1), p.texte[1]])
+		verifier(p.cible[0] >= 24.0, "%s : %s, commande de %s px (%s)" % [cle, nom, snappedf(p.cible[0], .1), p.cible[1]])
+		if nom == "Centre":
+			for id in ["CentreDetection", "CentreRencontres"]:
+				var panneau := v.find_child(id, true, false) as Control
+				verifier(panneau != null, cle + " : panneau " + id)
+				if panneau != null:
+					var vide := vide_bas(panneau)
+					mesure[id] = snappedf(vide, .01)
+					verifier(vide <= .2, "%s : %s vide sur %d %% de sa hauteur" % [cle, id, roundi(vide * 100)])
+		if nom == "Parcours":
+			var ligne := v.find_child("CentreVisuelJoueur0", true, false) as Button
+			verifier(ligne != null, cle + " : première ligne d'Espoir")
+			if ligne != null:
+				ligne.pressed.emit(); await poser(12)
+				var parcours := app.find_child("CentreVisuelParcours", true, false) as Control
+				verifier(parcours != null and parcours.is_visible_in_tree(), cle + " : parcours individuel en petite fenêtre")
+				verifier(load("res://ui/petite_fenetre.gd").fermer_derniere(self), cle + " : Échap ferme le parcours individuel")
+				await poser(6)
+		if DisplayServer.get_name() != "headless" and not sortie.is_empty():
+			verifier(root.get_texture().get_image().save_png(sortie.path_join("centre-%s-%s.png" % [cle, nom.validate_node_name()])) == OK, "capture %s %s" % [cle, nom])
+	mesures[cle] = mesure
+
+func activer() -> void:
+	app._navigate("Centre"); await poser(12)
+	await load("res://qa_runner.gd").settle_club_meetings(app, self, verifier)
+	var ap: Dictionary = app.model.clubLife.academyPathways
+	var contexte: Dictionary = ap.get("context", {}).duplicate()
+	contexte.confirmed = true
+	app._command("academy_activate", contexte)
+	await attendre_moteur()
+	verifier(app.model.clubLife.academyPathways.get("active", false), "parcours activés par la vraie commande")
+
 func executer() -> void:
 	root.size = Vector2i(1280, 720)
 	app = load("res://main.tscn").instantiate(); root.add_child(app); await attendre_moteur()
@@ -89,6 +178,8 @@ func executer() -> void:
 	await controler(Vector2i(1280, 720))
 	await controler(Vector2i(1920, 1080))
 	await controler(Vector2i(2560, 1440))
+	await activer()
+	for taille in [Vector2i(1280, 720), Vector2i(1920, 1080), Vector2i(2560, 1440)]: await controler_actif(taille)
 	print("CENTRE ", JSON.stringify({"controles": controles, "mesures": mesures, "failures": echecs}))
 	app.closing = true
 	app.bridge.stop()
