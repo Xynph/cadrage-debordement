@@ -151,24 +151,24 @@ static func _onglets(ctx: Dictionary) -> void:
 	for nom: String in ONGLETS:
 		var actif: bool = nom == ctx.onglet
 		var libelle := nom if not comptes.has(nom) else "%s  %d" % [nom, comptes[nom]]
-		var largeur := R.largeur(libelle, 19, 600) + 44.0
+		var lo := largeur(libelle, 20) + 44.0
 		var b := Button.new()
 		b.name = "CentreOnglet_" + nom.validate_node_name()
 		b.text = libelle
 		b.focus_mode = Control.FOCUS_ALL
 		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		b.add_theme_font_override("font", C.font(600))
-		b.add_theme_font_size_override("font_size", maxi(12, C.px(19)))
+		b.add_theme_font_override("font", C.BODY)
+		b.add_theme_font_size_override("font_size", maxi(12, C.px(20)))
 		b.accessibility_name = "Onglet " + nom + (" · actif" if actif else "")
-		D.tab_state(b, Vector2(largeur, 44), actif, "")
+		D.tab_state(b, Vector2(lo, 44), actif, "")
 		b.icon = null
 		var focus := plat(Color.TRANSPARENT, Charte.IVOIRE, 2, Charte.RAYON_PILULE)
 		focus.set_expand_margin_all(2)
 		b.add_theme_stylebox_override("focus", focus)
 		ctx.racine.add_child(b)
-		D.place(b, Rect2(x, Y_ONGLETS, largeur, 44))
+		D.place(b, Rect2(x, Y_ONGLETS, lo, 44))
 		b.pressed.connect(aller(ctx, nom))
-		x += largeur + 8.0
+		x += lo + 8.0
 	var droite := LARGEUR
 	for lien: Array in [["Formation →", "Formation", "CentreLienFormation"], ["Suivi des jeunes →", "Suivi des jeunes", "CentreLienSuivi"]]:
 		var l := R.largeur(str(lien[0]), 19, 600) + 36.0
@@ -214,6 +214,11 @@ static func icone(parent: Node, zone: Rect2, id: String, couleur: Color) -> Text
 	D.place(i, zone)
 	return i
 
+## Largeur (unités) d'un texte : police du corps (DM Sans) ou Barlow Condensed de graisse `graisse`.
+static func largeur(t: String, taille: int, corps: bool = true, graisse: int = 600) -> float:
+	var police: Font = C.BODY if corps else C.font(graisse)
+	return police.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(taille))).x / C.density
+
 ## Nombre avec espace des milliers (« 32 911 »).
 static func mille(n: Variant) -> String:
 	return G.euros(int(n) if n != null else 0).replace("€", "").strip_edges()
@@ -254,7 +259,7 @@ static func zone_cliquable(parent: Control, zone: Rect2, action: Callable, id: S
 ## discret et point de couleur. Renvoie la largeur posée.
 static func pilule(parent: Control, x: float, y: float, libelle: String, couleur: Color, choisie: bool, action: Callable, id: String, nombre: String = "", actif: bool = true, h: float = 40.0, taille: int = 19) -> float:
 	var point := couleur != Charte.IVOIRE and not choisie
-	var l := R.largeur(libelle, taille, 600) + (12.0 + R.largeur(nombre, taille, 700) if not nombre.is_empty() else 0.0) + 36.0 + (18.0 if point else 0.0)
+	var l := largeur(libelle, taille) + (10.0 + largeur(nombre, taille, false, 700) if not nombre.is_empty() else 0.0) + 36.0 + (18.0 if point else 0.0)
 	var b := Button.new()
 	b.name = id
 	b.focus_mode = Control.FOCUS_ALL
@@ -276,7 +281,7 @@ static func pilule(parent: Control, x: float, y: float, libelle: String, couleur
 		gauche = 34.0
 	texte(b, gauche, h / 2.0 + taille * .36, libelle, taille, encre, l)
 	if not nombre.is_empty():
-		var c := D.text(b, gauche + R.largeur(libelle, taille, 600) + 12.0, h / 2.0 + taille * .36, nombre, taille, Charte.PANNEAU if choisie else (couleur if point else Charte.IVOIRE_2), 700, 160)
+		var c := D.text(b, gauche + largeur(libelle, taille) + 10.0, h / 2.0 + taille * .36, nombre, taille, Charte.PANNEAU if choisie else (couleur if point else Charte.IVOIRE_2), 700, 160)
 		c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if actif: b.pressed.connect(action)
 	return l
@@ -289,7 +294,7 @@ static func pilules(parent: Control, x: float, y: float, defs: Array, courant: V
 		var valeur: Variant = d[0]
 		var nombre := str(d[3]) if d.size() > 3 else ""
 		var actif: bool = bool(d[4]) if d.size() > 4 else true
-		var l := R.largeur(str(d[1]), taille, 600) + (12.0 + R.largeur(nombre, taille, 700) if not nombre.is_empty() else 0.0) + 54.0
+		var l := largeur(str(d[1]), taille) + (10.0 + largeur(nombre, taille, false, 700) if not nombre.is_empty() else 0.0) + 54.0
 		if cx > x and cx + l > x + largeur_max:
 			cx = x
 			cy += h + 8.0
@@ -319,7 +324,7 @@ static func portrait(parent: Control, zone: Rect2, joueur: Dictionary, bord: Col
 static func cellule_joueur(ctx: Dictionary, ligne: Control, x: float, h: float, base: float, p: Dictionary, largeur: float, source: String = "academy") -> void:
 	portrait(ligne, Rect2(x, (h - 30) / 2.0, 31, 30), p)
 	var nom := str(p.get("name", ""))
-	var l := minf(largeur - 80, R.largeur(nom, 20, 600))
+	var l := minf(largeur - 80, largeur(nom, 20))
 	var t := texte(ligne, x + 42, base, nom, 20, Charte.IVOIRE, largeur - 80)
 	t.name = "CentreNom"
 	if source.is_empty() or str(p.get("id", "")).is_empty(): return
@@ -360,6 +365,10 @@ static func blason(parent: Control, zone: Rect2, nom: String, teinte: Color) -> 
 ## `colonnes` : [{k, t, x, w, a, tri}] ; `cellule(ligne, colonne, element, h, base)` ; `cle_tri(element, k)` ;
 ## `groupes` : [[titre, couleur, filtre(element) -> bool]] ; `au_clic(element, ligne)` ; `nom_ligne(element, rang)`.
 static func liste(ctx: Dictionary, zone: Rect2, haut_filtres: float, colonnes: Array, elements: Array, cellule: Callable, cle_tri: Callable, au_clic: Callable, nom_ligne: Callable, id: String, groupes: Array = [], tri_defaut: Array = [], h_ligne: float = LIGNE) -> Control:
+	# Abscisse d'ancrage du texte : bord gauche, droit ou centre selon l'alignement (D.text ancre à droite sur x).
+	for col: Dictionary in colonnes:
+		var al: int = col.get("a", HORIZONTAL_ALIGNMENT_LEFT)
+		col.ax = float(col.x) + (float(col.w) if al == HORIZONTAL_ALIGNMENT_RIGHT else (float(col.w) / 2.0 if al == HORIZONTAL_ALIGNMENT_CENTER else 0.0))
 	var tri: Variant = ctx.state.get("tri_" + id)
 	if not tri is Array or (tri as Array).size() < 2: tri = tri_defaut if tri_defaut.size() >= 2 else []
 	var table := Control.new()
@@ -375,7 +384,7 @@ static func liste(ctx: Dictionary, zone: Rect2, haut_filtres: float, colonnes: A
 	for col: Dictionary in colonnes:
 		var k := str(col.k)
 		var a: HorizontalAlignment = col.get("a", HORIZONTAL_ALIGNMENT_LEFT)
-		var legende := D.text(entete, col.x, 26, str(col.t), 17, Charte.IVOIRE_3, 700, col.w, a)
+		var legende := D.text(entete, col.ax, 26, str(col.t), 17, Charte.IVOIRE_3, 700, col.w, a)
 		legende.name = id + "Colonne_" + k
 		if not col.get("tri", false): continue
 		var b := Button.new()
@@ -390,7 +399,7 @@ static func liste(ctx: Dictionary, zone: Rect2, haut_filtres: float, colonnes: A
 		var actif: bool = tri is Array and (tri as Array).size() >= 2 and str(tri[0]) == k
 		Listes.styler_entete(b, legende, actif, actif and bool(tri[1]), str(col.t))
 		b.pressed.connect(func():
-			var desc := not (actif and bool(tri[1])) if actif else bool(col.get("desc", true))
+			var desc: bool = (not bool(tri[1])) if actif else bool(col.get("desc", true))
 			ctx.state["tri_" + id] = [k, desc]
 			(ctx.reconstruire as Callable).call())
 	Bandeau.poser(table, Rect2(0, 0, zone.size.x, haut_filtres + 36), 36)
@@ -545,7 +554,7 @@ static func fenetre_parcours(ctx: Dictionary, id: String) -> void:
 	ctx.state.fenetre = {"kind": "joueur", "id": id}
 	var etat: Dictionary = ctx.state
 	var L := 1840.0
-	var H := 1000.0
+	var H := 640.0
 	var fond := Fenetre.ouvrir(ctx.page, NOM_FENETRE, str(p.name).to_upper(), "school", L, H, func(): etat.erase("fenetre"))
 	var verrou: bool = data.get("locked", false)
 	var traj := trajectoire(str(p.path))
@@ -580,7 +589,7 @@ static func fenetre_parcours(ctx: Dictionary, id: String) -> void:
 	y = reglage(fond, x1, y, col, "Ambition", [["accompagner", "Accompagner", PROGRES, "", a], ["patienter", "Patienter", COHESION, "", a], ["professionnel", "Passer pro", DEPENSE, "", a], ["pret", "Prêt", REPUTATION, "", a]], null, envoi.call("academy_ambition", "decision"), "CVAmbition")
 	# Colonne de droite : accompagnement, mentor, contrats.
 	var mentor := cout(ctx, "mentor", 8000)
-	var am := a and not data.get("weekMentored", false)
+	var am: bool = a and not bool(data.get("weekMentored", false))
 	var y2 := 214.0
 	y2 = reglage(fond, x2, y2, col, "Accompagnement · " + euros(mentor), [["technique", "Technique", REPUTATION, "", am], ["mental", "Mental", COHESION, "", am], ["physique", "Physique", ALERTE, "", am]], null, func(v: Variant): envoyer(ctx, "academy_mentor", {"playerId": id, "focus": v}, mentor, "Accompagnement " + str(v)), "CVAccompagnement")
 	y2 = _mentors(ctx, fond, x2, y2, col, p, a)
@@ -620,7 +629,7 @@ static func _mentors(ctx: Dictionary, parent: Control, x: float, y: float, large
 		var choisi := str(p.get("mentor", "")) == str(s.id)
 		var mots := str(s.name).split(" ")
 		var nom: String = mots[mots.size() - 1]
-		var l := R.largeur(nom, 19, 600) + R.largeur(niveau_txt(s), 19, 700) + 80.0
+		var l := largeur(nom, 19) + largeur(niveau_txt(s), 19, false, 700) + 80.0
 		if cx + l > x + largeur: break
 		var sid := str(s.id)
 		var b := zone_cliquable(parent, Rect2(cx, y, l, 40), func(): envoyer(ctx, "academy_pair", {"playerId": str(p.id), "seniorId": sid}), "CVMentor_" + sid.validate_node_name(), str(s.name), Charte.RAYON_PILULE)
@@ -628,7 +637,7 @@ static func _mentors(ctx: Dictionary, parent: Control, x: float, y: float, large
 		b.disabled = not actif
 		portrait(b, Rect2(4, 4, 32, 32), s, Color.TRANSPARENT, true)
 		texte(b, 44, 27, nom, 19, Charte.IVOIRE, l)
-		texte(b, 52 + R.largeur(nom, 19, 600), 27, niveau_txt(s), 19, couleur(valeur(s, "rating")), 60, HORIZONTAL_ALIGNMENT_LEFT, 700)
+		texte(b, 52 + largeur(nom, 19), 27, niveau_txt(s), 19, couleur(valeur(s, "rating")), 60, HORIZONTAL_ALIGNMENT_LEFT, 700)
 		cx += l + 8.0
 	return y + 54.0
 

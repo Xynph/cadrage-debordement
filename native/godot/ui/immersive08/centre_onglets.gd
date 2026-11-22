@@ -61,7 +61,7 @@ static func _centre(ctx: Dictionary, zone: Rect2) -> void:
 	var data: Dictionary = ctx.data
 	var racine: Control = ctx.racine
 	var verrou: bool = data.get("locked", false)
-	var h_regl := 236.0
+	var h_regl := 258.0
 	var h := zone.size.y - h_regl - ECART
 	var y := zone.position.y
 	var fl := 40.0
@@ -117,13 +117,13 @@ static func _centre(ctx: Dictionary, zone: Rect2) -> void:
 		V.icone(ctr, Rect2(22, yy + 16, 24, 24), "home" if k == 0 else "people", V.PROGRES)
 		V.texte(ctr, 58, yy + 35, titre, 20, Charte.IVOIRE, 170, HORIZONTAL_ALIGNMENT_LEFT, 700, false)
 		V.crans(ctr, 220, yy + 23, niveau, 3, V.PROGRES, 30, 10)
-		if niveau < 3: V.pilule(ctr, w2 - 22 - R.largeur(V.euros(prix), 19, 600) - 76, yy + 8, V.euros(prix), V.DEPENSE, false, func(): V.envoyer(ctx, "academy_upgrade", {"kind": kind}, prix, titre), "CentreAmeliorer_" + kind, "", not verrou)
+		if niveau < 3: V.pilule(ctr, w2 - 22 - V.largeur(V.euros(prix), 19) - 58, yy + 8, V.euros(prix), V.DEPENSE, false, func(): V.envoyer(ctx, "academy_upgrade", {"kind": kind}, prix, titre), "CentreAmeliorer_" + kind, "", not verrou)
 		else: R.pastille(ctr, w2 - 120, yy + 35, "3 / 3", V.PROGRES, "check", "CentreMax_" + kind, 19)
 		yy += 64.0
 	var reunion := V.cout(ctx, "meeting", 2000)
 	V.icone(ctr, Rect2(22, yy + 16, 24, 24), "people", V.COHESION)
 	V.texte(ctr, 58, yy + 35, "Réunion de cohésion", 20, Charte.IVOIRE, 260, HORIZONTAL_ALIGNMENT_LEFT, 700, false)
-	V.pilule(ctr, w2 - 22 - R.largeur(V.euros(reunion), 19, 600) - 76, yy + 8, V.euros(reunion), V.DEPENSE, false, func(): V.envoyer(ctx, "academy_meeting", {}, reunion, "Réunion de cohésion"), "CentreReunion", "", not verrou)
+	V.pilule(ctr, w2 - 22 - V.largeur(V.euros(reunion), 19) - 58, yy + 8, V.euros(reunion), V.DEPENSE, false, func(): V.envoyer(ctx, "academy_meeting", {}, reunion, "Réunion de cohésion"), "CentreReunion", "", not verrou)
 	_fleche_droite(racine, x + w2 + 6, y + h / 2.0)
 	x += w2 + fl
 	# 3. Rencontres juniors
@@ -183,14 +183,11 @@ static func _centre(ctx: Dictionary, zone: Rect2) -> void:
 	var choix := func(commande: String, cle: String) -> Callable:
 		return func(v: Variant): V.envoyer(ctx, commande, {cle: v})
 	var rangs := [["Plan des rencontres", MODES, mode, choix.call("academy_mode", "mode"), "CentreMode"], ["Objectif annuel", OBJECTIFS, str(data.get("goal", "")), choix.call("academy_goal", "goal"), "CentreObjectif"], ["Identité", IDENTITES, str(data.get("identity", "")), choix.call("academy_identity", "identity"), "CentreIdentite"]]
-	var colonne := (zone.size.x - 44 - 40) / 2.0
 	for i in rangs.size():
 		var rg: Array = rangs[i]
 		var defs: Array = []
 		for o: Array in rg[1]: defs.append([o[0], o[1], o[2], "", not verrou])
-		var rx := 22.0 if i < 2 else 22.0 + colonne + 40
-		var ryy := 78.0 + (i % 2) * 62.0 if i < 2 else 78.0
-		V.reglage(regl, rx, ryy, colonne, str(rg[0]), defs, rg[2], rg[3], str(rg[4]))
+		V.reglage(regl, 22, 74.0 + i * 56.0, zone.size.x - 44, str(rg[0]), defs, rg[2], rg[3], str(rg[4]))
 
 ## Prix indexé du niveau suivant (moteur), sinon `defaut`.
 static func _cout_niveau(data: Dictionary, kind: String, niveau: int, defaut: int) -> int:
@@ -215,8 +212,9 @@ static func _chemin(ctx: Dictionary, zone: Rect2, etapes: Array, actif: String, 
 		V.texte(c, 22, 34, str(e[1]).to_upper(), 19, Charte.IVOIRE, r.size.x - 150, HORIZONTAL_ALIGNMENT_LEFT, 700, false)
 		V.chiffre(c, r.size.x - 18, 50, str(e[3]), 48, e[2], 130, HORIZONTAL_ALIGNMENT_RIGHT)
 		var visages: Array = e[4]
-		for k in mini(visages.size(), 5):
-			V.portrait(c, Rect2(22 + k * 46, hb - 54, 40, 40), visages[k], e[2], true)
+		var par := floori((r.size.x - 36) / 46.0)
+		for k in mini(visages.size(), par * 2):
+			V.portrait(c, Rect2(22 + (k % par) * 46, hb - 100 + floori(k / float(par)) * 46, 40, 40), visages[k], e[2], true)
 		var suite := "" if choisi else valeur
 		V.zone_cliquable(c, Rect2(Vector2.ZERO, r.size), V.aller(ctx, ctx.onglet, cle, suite), "%sEtape_%s" % [id, valeur], str(e[1]), Charte.RAYON_CARTE)
 		y += hb
@@ -260,7 +258,7 @@ static func _parcours(ctx: Dictionary, zone: Rect2) -> void:
 		{"k": "cond", "t": "COND.", "x": 1630.0, "w": 80.0, "a": HORIZONTAL_ALIGNMENT_RIGHT, "tri": true},
 	]
 	var cellule := func(ligne: Control, col: Dictionary, p: Dictionary, h: float, base: float):
-		var x: float = col.x
+		var x: float = col.ax
 		var w: float = col.w
 		var a: HorizontalAlignment = col.get("a", HORIZONTAL_ALIGNMENT_LEFT)
 		match str(col.k):
@@ -339,7 +337,7 @@ static func _centres(ctx: Dictionary, zone: Rect2) -> void:
 		var b := V.zone_cliquable(cand, Rect2(12, yk, GAUCHE - 24, 80), func(): V.envoyer(ctx, "academy_recruit", {"playerId": pid, "offer": fee}, fee, "Recruter " + str(p.name)), "CentresCandidat%d" % i, str(p.name), Charte.RAYON_CARTE)
 		V.portrait(b, Rect2(10, 10, 60, 60), p, pt, true)
 		V.texte(b, 84, 34, str(p.name), 20, Charte.IVOIRE, 220, HORIZONTAL_ALIGNMENT_LEFT, 700)
-		V.texte(b, 84, 60, "%s · %s" % [p.pos, p.centre], 16, Charte.IVOIRE_2, 220)
+		V.texte(b, 84, 60, str(p.pos), 16, Charte.IVOIRE_2, 220)
 		V.chiffre(b, GAUCHE - 40, 44, V.potentiel_txt(p), 32, pt, 130, HORIZONTAL_ALIGNMENT_RIGHT)
 		V.texte(b, GAUCHE - 40, 68, V.euros(fee), 17, V.DEPENSE, 130, HORIZONTAL_ALIGNMENT_RIGHT, 700, false)
 		yk += 86.0
@@ -360,7 +358,7 @@ static func _centres(ctx: Dictionary, zone: Rect2) -> void:
 		for p: Dictionary in c.get("candidates", []): m = maxf(m, V.valeur(p, "potential"))
 		return m
 	var cellule := func(ligne: Control, col: Dictionary, c: Dictionary, h: float, base: float):
-		var x: float = col.x
+		var x: float = col.ax
 		var w: float = col.w
 		match str(col.k):
 			"nom":
@@ -425,7 +423,7 @@ static func _filieres(ctx: Dictionary, zone: Rect2) -> void:
 		D.rect(b, Rect2(12, 19, 12, 12), teinte, Charte.RAYON_PILULE)
 		V.texte(b, 36, 32, region, 20, Charte.IVOIRE, 200, HORIZONTAL_ALIGNMENT_LEFT, 700, false)
 		V.chiffre(b, 262, 35, G.n(n), 28, teinte, 50, HORIZONTAL_ALIGNMENT_RIGHT)
-		V.pilule(b, GAUCHE - 20 - R.largeur(V.euros(discover), 17, 600) - 64, 7, V.euros(discover), V.DEPENSE, false, func(): V.envoyer(ctx, "academy_discover", {"region": region}, discover, "Détecter · " + region), "FilieresDetecter%d" % i, "", not verrou, 36, 17)
+		V.pilule(b, GAUCHE - 30 - V.largeur(V.euros(discover), 17) - 54, 7, V.euros(discover), V.DEPENSE, false, func(): V.envoyer(ctx, "academy_discover", {"region": region}, discover, "Détecter · " + region), "FilieresDetecter%d" % i, "", not verrou, 36, 17)
 	var yf := zone.position.y + h_reg + ECART
 	var feeders: Array = data.get("feeders", [])
 	var partenaires: Array = data.get("partners", [])
@@ -465,7 +463,7 @@ static func _filieres(ctx: Dictionary, zone: Rect2) -> void:
 	var trial := V.cout(ctx, "trial", 1000)
 	var recruit := V.cout(ctx, "recruit", 8000)
 	var cellule := func(ligne: Control, col: Dictionary, p: Dictionary, h: float, base: float):
-		var x: float = col.x
+		var x: float = col.ax
 		var w: float = col.w
 		var a: HorizontalAlignment = col.get("a", HORIZONTAL_ALIGNMENT_LEFT)
 		match str(col.k):
@@ -517,7 +515,7 @@ static func _fenetre_prospect(ctx: Dictionary, p: Dictionary) -> void:
 	var watch := V.cout(ctx, "watch", 500)
 	var trial := V.cout(ctx, "trial", 1000)
 	var recruit := V.cout(ctx, "recruit", 8000)
-	var a := not data.get("locked", false)
+	var a: bool = not bool(data.get("locked", false))
 	var L := 1100.0
 	var fond := Fenetre.ouvrir(ctx.page, "FilieresProspectFenetre", str(p.name).to_upper(), "search", L, 330.0)
 	var vu := int(p.scouted) > 0
@@ -572,7 +570,7 @@ static func _passerelle(ctx: Dictionary, zone: Rect2) -> void:
 		{"k": "act", "t": "", "x": 1420.0, "w": 300.0},
 	]
 	var cellule := func(ligne: Control, col: Dictionary, e: Dictionary, h: float, base: float):
-		var x: float = col.x
+		var x: float = col.ax
 		var w: float = col.w
 		var a: HorizontalAlignment = col.get("a", HORIZONTAL_ALIGNMENT_LEFT)
 		var pret: bool = e.get("pret", false)
@@ -671,7 +669,7 @@ static func _generations(ctx: Dictionary, zone: Rect2) -> void:
 		{"k": "traj", "t": "TRAJECTOIRE", "x": 1260.0, "w": 260.0, "tri": true, "desc": false},
 	]
 	var cellule := func(ligne: Control, col: Dictionary, p: Dictionary, h: float, base: float):
-		var x: float = col.x
+		var x: float = col.ax
 		var w: float = col.w
 		var a: HorizontalAlignment = col.get("a", HORIZONTAL_ALIGNMENT_LEFT)
 		match str(col.k):
