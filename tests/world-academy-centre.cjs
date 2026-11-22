@@ -1,9 +1,11 @@
 'use strict';
-// Centre de formation en carrière Monde, temps 1 (22/11/2026) : les parcours s'ouvrent pour tous les clubs du monde,
-// sur un centre par vrai club (aucun invité fictif, aucune borne à 44), sans championnat Espoirs. Ouverts : détection,
-// mentorat, centres observés et recrutement de leurs jeunes, installations, éducateurs, engagements, stage U20,
-// passerelle pro, prêts vers n'importe quel club du monde. Prix indexés sur les moyens du club (petit club : premier
-// niveau abordable ; gros club : plus cher). Modules lisant les compétitions Espoirs : fermés (temps 2).
+// Centre de formation en carrière Monde (22/11/2026) : les parcours s'ouvrent pour tous les clubs du monde, sur un
+// centre par vrai club (aucun invité fictif, aucune borne à 44). Temps 1 : détection, mentorat, centres observés et
+// recrutement de leurs jeunes, installations, éducateurs, engagements, stage U20, passerelle pro, prêts vers n'importe
+// quel club du monde, prix indexés sur les moyens du club. Temps 2 : plus aucun module fermé. Minutes, périodes,
+// résultats et plan des rencontres viennent des vrais matchs de jeunes de chaque pays (youthMatches) ; objectifs, plans
+// de carrière, filières (zones du rugby mondial), réputation, cohésion et générations ouverts. Aucun championnat
+// Espoirs français (v73-v75) dans le Monde ; les centres ouverts au temps 1 sont complétés.
 // Clubs : Alder Fen XV (102, Champ anglais), Marcq Métropole XV (91, Nationale, 400 000 €), Toulouse (0, Top 14).
 // CD_CENTRE_SAISON=1 : en plus, saison complète en cadence JOURNALIÈRE (comme le jeu), fin de saison, mobilité du
 // manager (Alder Fen) et saison suivante (~15 min par club ; local, hors CI). CD_CENTRE_CLUBS=102,91,0 : clubs testés.
@@ -12,7 +14,7 @@ const H=require('./helpers/carriere-monde.cjs');
 const CLUBS=(process.env.CD_CENTRE_CLUBS||'102,91,0').split(',').map(Number);
 const SAISON=process.env.CD_CENTRE_SAISON==='1';
 const BASE={scout:35000,mentor:8000,facilities:85000,coaches:55000};
-const FERMES=['academy_mode','academy_goal','academy_plan','academy_target','academy_path','academy_identity','academy_discover','academy_meeting','academy_retain'];
+const BUREAUX=['v72Youth','v76Scouting','v77Promotions','v78to81','v82to85','v86to89','v90to94','v95to100','v101to104'];
 
 function ouvrir(club){
  const jeu=H.ouvrir({simulation:true,testVm:true});
@@ -40,7 +42,11 @@ function decisions(t,club){
  const clubs=lire('S.clubs.length');
  assert.equal(ap().active,true);assert.equal(ap().centers.length,clubs,'un centre par club du monde');
  assert.equal(ap().centers.filter(c=>c.clubId===null).length,0,'aucun centre invité');
- assert.equal(lire("['v73Espoirs','v74Accession','v75Movement','v82to85','v86to89','v90to94','v95to100','v101to104'].filter(k=>S[k]!==undefined).length"),0,'aucun module Espoirs créé');
+ assert.equal(lire("['v73Espoirs','v74Accession','v75Movement'].filter(k=>S[k]!==undefined).length"),0,'aucun championnat Espoirs français');
+ assert.deepEqual(lire(`${JSON.stringify(BUREAUX)}.filter(k=>S[k]===undefined)`),[],'tous les bureaux du Centre ouverts');
+ assert.equal(ap().closedModules,undefined,'aucun module fermé');assert.equal(ap().totalRounds,26);assert.equal(ap().mode,'equilibre');
+ // Les vrais matchs des jeunes continuent une fois le Centre activé (ils nourrissent minutes, périodes et résultats).
+ assert.equal(lire('CDYouthMatches.project().available===true||S.youthMatches===undefined'),true,'matchs des jeunes actifs');
  // Identifiants uniques sur toutes les académies du monde (plus de jeunes « youth-100+i » d'invités).
  assert.equal(lire('(()=>{const ids=[...S.development.academy,...S.aiRoster.academies.flatMap(a=>a.players),...S.clubs.flatMap(c=>c.players)].map(p=>p.id);return ids.length-new Set(ids).size})()'),0,'identifiants de joueurs uniques');
  assert.equal(ap().loanClubs.length>=clubs-5,true,'prêt possible vers presque tous les clubs du monde');
@@ -66,13 +72,32 @@ function decisions(t,club){
  assert.ok(senior&&accueil,'un jeune professionnel prêtable et un club d’accueil');
  ok('academy_loan',{playerId:senior.id,to:accueil.id,confirmed:true});
  assert.ok(lire(`S.clubs[${accueil.id}].players.some(p=>p.id===${JSON.stringify(senior.id)})`),'joueur prêté dans l’effectif d’accueil');
- // Modules du temps 2 : refusés sans mutation.
- const etat=lire('S');
- for(const command of FERMES){const r=jeu.brut(command,{...ctx(),mode:'performance',goal:'formation',playerId:jeune.id,target:'minutes',minutes:480,strategy:'minutes',identity:'mouvement',region:'Centre',clubId:accueil.id,confirmed:true});assert.equal(r.ok,false,command+' doit rester fermé');}
- assert.deepEqual(lire('S').nativeAcademy,etat.nativeAcademy);
- assert.deepEqual(ap().closedModules,['juniors','objectifs','plans','filieres','generations']);
+ // Temps 2 : plan des rencontres, objectifs, plans de carrière, filières et cohésion ouverts en Monde.
+ ok('academy_mode',{mode:'developpement'});assert.equal(ap().mode,'developpement');assert.equal(lire('S.nativeAcademy.mode'),'developpement');
+ assert.equal(jeu.brut('academy_mode',{...ctx(),mode:'inconnu'}).ok,false,'plan des rencontres inconnu refusé');
+ ok('academy_goal',{goal:'promotions'});assert.equal(ap().goal,'promotions');
+ const suivi=ap().players.find(p=>p.id!==candidat.id&&p.age<=21&&ap().players.some(q=>q.id===p.id))||ap().players[0];
+ ok('academy_plan',{playerId:suivi.id,target:'minutes'});ok('academy_target',{playerId:suivi.id,minutes:480});ok('academy_path',{playerId:suivi.id,strategy:'minutes'});
+ assert.equal(ap().players.find(p=>p.id===suivi.id).target,480);assert.equal(ap().players.find(p=>p.id===suivi.id).path,'minutes');
+ ok('academy_specialize',{playerId:suivi.id,kind:'vitesse'});ok('academy_load',{playerId:suivi.id,load:'allegee'});
+ ok('academy_interview',{playerId:suivi.id,answer:'minutes'});ok('academy_ambition',{playerId:suivi.id,decision:'accompagner'});
+ const binome=ap().players.map(p=>[p,ap().seniors.find(x=>x.pos===p.pos&&x.age>=23)]).find(([,x])=>x);
+ if(binome)ok('academy_pair',{playerId:binome[0].id,seniorId:binome[1].id});
+ ok('academy_identity',{identity:'mouvement'});assert.equal(ap().identity,'mouvement');
+ before=cash();const cohesion=ap().cohesion;ok('academy_meeting',{confirmed:true});assert.equal(cash(),before-2000);assert.ok(ap().cohesion>cohesion,'réunion de cohésion');
+ // Filières : grandes zones du rugby mondial, la zone du club en tête ; l'union du club est « nationale ».
+ assert.equal(ap().regions.length,6);assert.ok(!ap().regions.includes('Bretagne'),'plus de régions françaises en Monde');
+ assert.equal(ap().homeUnion,lire('CDWorldEditions.forState(S).registry.clubs.find(c=>c.id===S.club).country'));
+ const zone=lire('S.v95to100.region');assert.ok(ap().regions.includes(zone),'zone du club : '+zone);
+ ok('academy_discover',{region:zone,confirmed:true});
+ const espoir=ap().prospects.find(p=>p.scouted>0)||ap().prospects[0];assert.ok(espoir,'jeunes des filières');
+ ok('academy_watch',{playerId:espoir.id,confirmed:true});ok('academy_trial',{playerId:espoir.id,confirmed:true});
+ ok('academy_partner',{feederId:ap().feeders[0].id,confirmed:true});assert.ok(ap().partners.includes(ap().feeders[0].id));
+ const offre=ap().offers.find(o=>o.clubs.length);if(offre)ok('academy_retain',{playerId:offre.id,clubId:offre.clubs[0].clubId,confirmed:true});
+ // Championnat Espoirs français refusé en Monde.
+ assert.throws(()=>jeu.bridge.vm.run('const old=S.v73Espoirs;try{S.v73Espoirs={};CDNativeAcademy.validate(S)}finally{if(old===undefined)delete S.v73Espoirs;else S.v73Espoirs=old}'),/championnat Espoirs/);
  assert.doesNotThrow(()=>jeu.bridge.vm.run('validateCareer(S)'));
- t.model=model;return {senior:senior.id,accueil:accueil.id,mentored:jeune.id};
+ t.model=model;return {senior:senior.id,accueil:accueil.id,mentored:jeune.id,suivi:suivi.id};
 }
 
 // Conférence de presse obligatoire encore ouverte (bilan de fin de saison) : réponses prudentes, comme le manager.
@@ -97,6 +122,11 @@ function saison(t,club,suivi){
   model=jeu.call('advance_day',{fromDate:model.meta.calendarToday});
  }
  assert.equal(model.meta.phase,'ended','saison terminée en '+jours+' jours');
+ // Temps 2 : la saison des jeunes a vraiment eu lieu (minutes, périodes et résultats tirés des matchs de jeunes du pays).
+ const fin=ap(),minutes=fin.players.reduce((n,p)=>n+p.minutes,0);
+ assert.ok(minutes>0&&fin.players.some(p=>p.minutes>=240),'minutes juniors de la saison ('+minutes+')');
+ assert.ok(fin.juniorRound>=20,'périodes juniors avancées ('+fin.juniorRound+'/26)');
+ assert.ok(fin.results.length>0&&fin.results.every(r=>r.score.length===2&&typeof r.homeCenter==='string'&&typeof r.awayCenter==='string'),'résultats Espoirs du centre');
  const appliques=lire('S.v72Youth.mentors.filter(x=>x.done).length');
  assert.ok(mentorats>=10&&appliques>=mentorats-2,'mentorats appliqués à l’entraînement ('+appliques+'/'+mentorats+')');
  assert.doesNotThrow(()=>jeu.bridge.vm.run('validateCareer(S)'));
@@ -118,6 +148,11 @@ function saison(t,club,suivi){
  assert.ok(lire(`S.clubs[S.nativeAcademy.club]&&S.nativeAcademy.season===S.season&&S.nativeAcademy.lastClosed===${season}`),'centre clos et rouvert');
  assert.ok(lire(`!S.clubs[${suivi.accueil}].players.some(p=>p.id===${JSON.stringify(suivi.senior)})`),'retour de prêt à l’intersaison');
  assert.ok(lire(`S.v72Youth.scouts.some(x=>x.target===${season+1})`)||cible!==null,'détection suivie');
+ // Bilans de fin de saison des bureaux du temps 2 (génération archivée, objectifs, cohésion/réputation, promesses).
+ const bureau=cible===null?'S':`S.nativeAcademy.offices[${club}]`;
+ assert.ok(lire(`${bureau}.v101to104.archive.some(h=>h.season===${season}&&h.players.length>0)`),'génération archivée');
+ assert.ok(lire(`${bureau}.v101to104.archive.find(h=>h.season===${season}).players.some(p=>p.minutes>0)`),'minutes de la génération archivées');
+ for(const k of ['v82to85','v90to94','v95to100'])assert.ok(lire(`${bureau}.${k}.history.some(h=>h.season===${season})`),'bilan '+k);
  if(cible!==null){
   assert.equal(lire('S.club'),cible);assert.equal(lire('S.nativeAcademy.club'),cible);
   assert.ok(lire('S.nativeAcademy.offices[102]?.v78to81!==undefined'),'bureau de formation d’Alder Fen archivé');
@@ -130,6 +165,22 @@ function saison(t,club,suivi){
  t.model=model;
  return {jours,matchs,mentorats,appliques,club:lire('S.club'),cash:ap().cash,costs:ap().costs};
 }
+
+// Centre ouvert au temps 1 (bureaux v72-v81, sans plan des rencontres) : la sauvegarde se valide telle quelle, puis le
+// Centre est complété à la première lecture (aucun module fermé).
+test('Centre Monde : centre du temps 1 complété',{timeout:600000},()=>{
+ const t=ouvrir(91);
+ try{
+  const {jeu,lire}=t;let model=t.model;
+  model=jeu.call('academy_activate',{...model.clubLife.academyPathways.context,confirmed:true});
+  jeu.bridge.vm.run(`for(const k of ${JSON.stringify(BUREAUX.slice(4))})delete S[k];delete S.nativeAcademy.mode;`);
+  assert.doesNotThrow(()=>jeu.bridge.vm.run('CDNativeAcademy.validate(S)'),'sauvegarde du temps 1 valide');
+  const ap=jeu.call('academy_goal',{...model.clubLife.academyPathways.context,goal:'prets'}).clubLife.academyPathways;
+  assert.deepEqual(lire(`${JSON.stringify(BUREAUX)}.filter(k=>S[k]===undefined)`),[],'bureaux complétés');
+  assert.equal(lire('S.nativeAcademy.mode'),'equilibre');assert.equal(ap.goal,'prets');assert.equal(ap.closedModules,undefined);
+  assert.doesNotThrow(()=>jeu.bridge.vm.run('validateCareer(S)'));
+ }finally{t.jeu.fermer();}
+});
 
 for(const club of CLUBS){
  test('Centre Monde : club '+club+' (activation, décisions'+(SAISON?', saison journalière':'')+')',{timeout:SAISON?3600000:600000},()=>{
