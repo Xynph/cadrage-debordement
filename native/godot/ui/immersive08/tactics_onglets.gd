@@ -286,6 +286,10 @@ static func _zones_verticales(app: Control, page: Control) -> void:
 # --- Phases arrêtées -------------------------------------------------------------------------------------------------
 
 static func _phases(app: Control, page: Control) -> void:
+	var Combinaisons: Script = load("res://ui/immersive08/tactics_combinaisons_vues.gd")
+	if not Combinaisons.variante().is_empty():
+		Combinaisons.build(app, page, Combinaisons.variante())
+		return
 	var carnet := _carnet(app)
 	var phases: Array = carnet.get("setPieces", [])
 	var actif := bool(carnet.get("available", false)) and not bool(app.get("waiting"))
