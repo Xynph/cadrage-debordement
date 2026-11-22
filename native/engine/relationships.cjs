@@ -37,14 +37,59 @@ module.exports={
    return true;
   }
   const context=()=>({season:S.season,week:S.economy.week,club:S.club});
+  // Confiance des joueurs envers le manager (21/11/2026) : distincte de S.trust (confiance du conseil). Par joueur :
+  // 70 % de sa satisfaction (temps de jeu, entretiens, décisions de vestiaire) et 30 % de la fiabilité du manager envers
+  // lui (promesses de temps de jeu et engagements de vestiaire tenus ou non, base 70, +10 par parole tenue, −15 par
+  // parole non tenue). Groupe : moyenne pondérée par le leadership (un cadre pèse plus). Calculée à la volée depuis la
+  // carrière : une ancienne sauvegarde a donc sa valeur dès le chargement.
+  const satisfactionOf=p=>Number.isFinite(p?.satisfaction?.score)?p.satisfaction.score:65;
+  function paroles(p,s=S){
+   let tenues=0,rompues=0;
+   for(const h of p?.satisfaction?.history||[]){if(h?.status==='kept')tenues++;else if(h?.status==='broken')rompues++;}
+   for(const c of s?.livingLockerRoom?.commitments||[])if(c?.playerId===p?.id){if(c.status==='honored')tenues++;else if(c.status==='broken')rompues++;}
+   return {tenues,rompues};
+  }
+  function playerTrust(p,s=S){
+   const {tenues,rompues}=paroles(p,s),fiabilite=clamp(70+10*tenues-15*rompues,0,100);
+   return clamp(Math.round(.7*satisfactionOf(p)+.3*fiabilite),0,100);
+  }
+  function groupTrust(s=S){
+   const players=s?.clubs?.[s.club]?.players||[];if(!players.length)return null;
+   let n=0,d=0;for(const p of players){const w=.5+(CDLivingLockerRoom.personality(p)?.leadership??50)/100;n+=w*playerTrust(p,s);d+=w;}
+   return d?Math.round(n/d):null;
+  }
+  // Tensions du vestiaire : joueurs mécontents (satisfaction < 45, forte sous 30), paroles non tenues cette saison
+  // (promesse de temps de jeu ou engagement de vestiaire), duos en risque de rivalité (lien suivi ≤ −12, ou deux
+  // joueurs du même poste insatisfaits, règle du lien des duos). Niveau 0 calme, 1 faible, 2 vive, 3 crise.
+  function tensions(s=S){
+   const players=s?.clubs?.[s.club]?.players||[],rows=new Map(),add=(p,raison,points)=>{const r=rows.get(p.id)||{id:p.id,satisfaction:satisfactionOf(p),trust:playerTrust(p,s),raisons:[],points:0};if(!r.raisons.includes(raison)){r.raisons.push(raison);r.points+=points;}rows.set(p.id,r);};
+   for(const p of players){
+    const sat=satisfactionOf(p);if(sat<45)add(p,'mecontent',sat<30?3:2);
+    const rompue=(p.satisfaction?.history||[]).some(h=>h?.status==='broken'&&h.season===s.season)||(s.livingLockerRoom?.commitments||[]).some(c=>c?.playerId===p.id&&c.status==='broken'&&c.originSeason===s.season);
+    if(rompue)add(p,'promesse',2);
+   }
+   const byId=new Map(players.map(p=>[p.id,p])),duos=[],seen=new Set();
+   for(const r of s?.v70Relations?.pairs||[]){const a=byId.get(r.a),b=byId.get(r.b);if(a&&b&&Number.isFinite(r.score)&&r.score<=-12&&!seen.has(r.key)){seen.add(r.key);duos.push({a:a.id,b:b.id,score:r.score});}}
+   const tristes=players.filter(p=>satisfactionOf(p)<55);
+   for(let i=0;i<tristes.length;i++)for(let j=i+1;j<tristes.length;j++){
+    const a=tristes[i],b=tristes[j],key=[a.id,b.id].sort().join('|');
+    if(a.fam!==b.fam||seen.has(key)||(s?.v70Relations?.pairs||[]).some(r=>r.key===key))continue;
+    seen.add(key);duos.push({a:a.id,b:b.id,score:Math.min(satisfactionOf(a),satisfactionOf(b))<40?-20:-15});
+   }
+   duos.sort((x,y)=>x.score-y.score||String(x.a+x.b).localeCompare(String(y.a+y.b)));
+   for(const d of duos)for(const id of [d.a,d.b])add(byId.get(id),'rivalite',1);
+   const joueurs=[...rows.values()].sort((x,y)=>y.points-x.points||x.satisfaction-y.satisfaction||String(x.id).localeCompare(String(y.id)));
+   const score=joueurs.reduce((n,r)=>n+r.points,0);
+   return {level:score===0?0:score<=3?1:score<=7?2:3,score,players:joueurs,duos:duos.slice(0,6)};
+  }
   const locked=()=>!!S.live||S.phase==='ended';
   const roster=()=>S.clubs[S.club].players;
   function project(){
    if(!S)return null;
    const ctx=context(),active=S.satisfactionVersion===1&&S.relationsVersion===1,blocked=locked()||Object.keys(S.economy?.talks||{}).length>0;
    const event=CDLivingLockerRoom.weeklyEvent(S),history=S.livingLockerRoom?.history||[];
-   return {context:ctx,active,available:!blocked,reason:blocked?'Match en cours, saison terminée ou négociation ouverte.':'',morale:S.morale,trust:S.trust,
-    players:roster().map(p=>({id:p.id,pos:p.pos,score:p.satisfaction?.score??null,condition:p.condition,injury:p.injury,minutes:p.dev?.minutes??null,personality:CDLivingLockerRoom.personality(p),promise:p.satisfaction?.promise?copy(p.satisfaction.promise):null,promiseHistory:copy(p.satisfaction?.history||[]),conversationAvailable:active&&!blocked&&!(p.satisfaction?.coachMeeting?.season===S.season&&p.satisfaction.coachMeeting.week===S.economy.week),promiseAvailable:active&&!blocked&&S.phase==='league'&&S.round<PROMISE_LAST_JOURNEY&&!p.injury&&!p.satisfaction?.promise})),
+   return {context:ctx,active,available:!blocked,reason:blocked?'Match en cours, saison terminée ou négociation ouverte.':'',morale:S.morale,trust:S.trust,playerTrust:groupTrust(),playerTrustHistory:(Array.isArray(S.groupHistory)?S.groupHistory:[]).filter(h=>Number.isInteger(h?.confiance)).map(h=>({date:h.date,saison:h.saison,confiance:h.confiance})),tensions:tensions(),
+    players:roster().map(p=>({id:p.id,pos:p.pos,score:p.satisfaction?.score??null,trust:playerTrust(p),condition:p.condition,injury:p.injury,minutes:p.dev?.minutes??null,personality:CDLivingLockerRoom.personality(p),promise:p.satisfaction?.promise?copy(p.satisfaction.promise):null,promiseHistory:copy(p.satisfaction?.history||[]),conversationAvailable:active&&!blocked&&!(p.satisfaction?.coachMeeting?.season===S.season&&p.satisfaction.coachMeeting.week===S.economy.week),promiseAvailable:active&&!blocked&&S.phase==='league'&&S.round<PROMISE_LAST_JOURNEY&&!p.injury&&!p.satisfaction?.promise})),
     conversations:[{id:'ecouter',label:'Écouter',detail:'Satisfaction +2.'},{id:'rassurer',label:'Rassurer',detail:'Satisfaction +1 ; premier entretien : moral +1.'},{id:'clarifier',label:'Clarifier',detail:'Premier entretien : confiance +1.'}],
     promiseLastJourney:PROMISE_LAST_JOURNEY,promiseOptions:Object.entries(PROMISE_MINUTES).map(([id,minutes])=>({id,minutes})),
     leaderId:CDRelationsV70.leader(S)?.id??null,pairs:copy(S.v70Relations?.pairs||[]),duoAvailable:CDRelationsV70.allowed(S),duoActions:Object.entries(CDRelationsV70.ACTIONS).map(([id,c])=>({id,...c})),
@@ -93,6 +138,6 @@ module.exports={
    const oldReset=resetSatisfactionSeason;resetSatisfactionSeason=function(){const out=oldReset.apply(this,arguments);if(S)CDLivingLockerRoom.settle(S);return out;};
    return true;
   }
-  return {project,execute,validate,installHooks};
+  return {project,execute,validate,installHooks,tensions,groupTrust,playerTrust};
  }
 };

@@ -27,6 +27,7 @@ const Identity = preload("res://ui/player_identity.gd")
 const EnPlace = preload("res://ui/confirmation_en_place.gd")
 const Attributs = preload("res://ui/player_attributes.gd")
 const Listes = preload("res://ui/immersive08/listes_joueurs.gd")
+const Bandeau = preload("res://ui/bandeau_filtres.gd")
 const ROW_HEIGHT := 32
 # Construction progressive de la liste : les premières lignes tout de suite, le reste sur les images suivantes.
 const FIRST_ROWS := 26
@@ -40,6 +41,9 @@ const ROWS_H := 640.0
 ## Marge sous la dernière ligne : elle reste entière et loin des coins arrondis du panneau en fin de défilement.
 const BAS_TABLEAU := 22.0
 const COST_TOP := 1020.0
+## Bandeau des filtres (demande de Léo du 21/11/2026) : sous les onglets, filtres puis pastilles de poste, détouré.
+const Y_BANDEAU := 294.0
+const Y_FILTRES := Y_BANDEAU + 10.0
 const TABS := ["Besoins du club", "Recherche", "Joueurs suivis", "Rapports"]
 const WEEKS_PER_YEAR := 52
 
@@ -461,24 +465,24 @@ func _filters(positions: Array) -> void:
 	focus.set_border_width_all(2)
 	recherche.add_theme_stylebox_override("focus", focus)
 	add_child(recherche)
-	D.place(recherche, Rect2(0, 292, 330, 38))
+	D.place(recherche, Rect2(Bandeau.MARGE, Y_FILTRES, 330, 38))
 	recherche.text_changed.connect(func(value: String):
 		state.search = value
 		state.navigation_id = ""
 		_filter_changed())
 	var k := 1.3 if C.density < .75 else 1.0
-	var x := 346.0
-	position_filter = _choice(Rect2(x, 292, 270, 38), "MarketPosition", "Poste", positions, state.position, func(value: String): state.position = value; state.position_libre = true; _filter_changed())
+	var x := 346.0 + Bandeau.MARGE
+	position_filter = _choice(Rect2(x, Y_FILTRES, 270, 38), "MarketPosition", "Poste", positions, state.position, func(value: String): state.position = value; state.position_libre = true; _filter_changed())
 	x += 282
-	_choice(Rect2(x, 292, 190, 38), "MarketAge", "Âge", ["Tous", "≤ 22 ans", "23–28 ans", "≥ 29 ans"], state.get("age_filter", "Tous"), func(value: String): state.age_filter = value; _filter_changed())
+	_choice(Rect2(x, Y_FILTRES, 190, 38), "MarketAge", "Âge", ["Tous", "≤ 22 ans", "23–28 ans", "≥ 29 ans"], state.get("age_filter", "Tous"), func(value: String): state.age_filter = value; _filter_changed())
 	x += 202
-	_choice(Rect2(x, 292, 210, 38), "MarketAvailability", "Offres", ["Tous", "Disponibles", "Indisponibles"], state.available, func(value: String): state.available = value; _filter_changed())
+	_choice(Rect2(x, Y_FILTRES, 210, 38), "MarketAvailability", "Offres", ["Tous", "Disponibles", "Indisponibles"], state.available, func(value: String): state.available = value; _filter_changed())
 	x += 222
-	_choice(Rect2(x, 292, 250 * k, 38), "MarketBudget", "Indemnité", ["Toutes", "≤ 100 k€", "≤ 400 k€", "≤ 1 M€"], state.get("budget_filter", "Toutes"), func(value: String): state.budget_filter = value; _filter_changed())
+	_choice(Rect2(x, Y_FILTRES, 250 * k, 38), "MarketBudget", "Indemnité", ["Toutes", "≤ 100 k€", "≤ 400 k€", "≤ 1 M€"], state.get("budget_filter", "Toutes"), func(value: String): state.budget_filter = value; _filter_changed())
 	x += 262 * k
-	_choice(Rect2(x, 292, 290, 38), "MarketObservation", "Observation", ["Toutes", "Observées", "Non observées"], state.get("observation", "Toutes"), func(value: String): state.observation = value; _filter_changed())
+	_choice(Rect2(x, Y_FILTRES, 290, 38), "MarketObservation", "Observation", ["Toutes", "Observées", "Non observées"], state.get("observation", "Toutes"), func(value: String): state.observation = value; _filter_changed())
 	x += 302
-	var reset := Kit.lien(self, Rect2(x, 296, 0, 32), "Réinitialiser", func():
+	var reset := Kit.lien(self, Rect2(x, Y_FILTRES + 4, 0, 32), "Réinitialiser", func():
 		app.management_ui.market = U.defaults()
 		app.management_ui.market.immersive_tab = tab
 		app.management_ui.market.followed = tab == 2
@@ -486,12 +490,12 @@ func _filters(positions: Array) -> void:
 		app._render(false), "MarketReset", 18)
 	reset.tooltip_text = ""
 	# Liens d'action, de droite à gauche : « Comparer », puis ceux de la ligne des onglets qui n'y tenaient pas.
-	var droite := float(WIDTH)
-	var comparer := Kit.lien(self, Rect2(droite, 296, 0, 32), "Comparer →", func(): _compare(), "CompareMarket", 18, true)
+	var droite := float(WIDTH) - Bandeau.MARGE
+	var comparer := Kit.lien(self, Rect2(droite, Y_FILTRES + 4, 0, 32), "Comparer →", func(): _compare(), "CompareMarket", 18, true)
 	comparer.accessibility_name = "Comparer deux pistes de recrutement"
 	droite -= comparer.size.x / C.density + 18
 	for lien: Array in _liens_filtre:
-		var bouton := Kit.lien(self, Rect2(droite, 296, 0, 32), str(lien[1]), lien[2], str(lien[0]), 18, true)
+		var bouton := Kit.lien(self, Rect2(droite, Y_FILTRES + 4, 0, 32), str(lien[1]), lien[2], str(lien[0]), 18, true)
 		bouton.tooltip_text = ""
 		if lien[3]: bouton.add_theme_font_override("font", Charte.TITRE_GRAS)
 		droite -= bouton.size.x / C.density + 18	# Barre des rapports (onglet Rapports) : les filtres de la liste n'y servent pas.
@@ -499,7 +503,7 @@ func _filters(positions: Array) -> void:
 		var champ := get_node_or_null(nom) as Control
 		if champ != null: champ.visible = tab != 3
 	reset.visible = tab != 3
-	var missions := Kit.lien(self, Rect2(0, 296, 0, 32), "Missions et échéances →", func(): _staff(1), "OpenRecruitmentMissions", 18)
+	var missions := Kit.lien(self, Rect2(Bandeau.MARGE, Y_FILTRES + 4, 0, 32), "Missions et échéances →", func(): _staff(1), "OpenRecruitmentMissions", 18)
 	missions.visible = tab == 3
 
 func _choice(zone: Rect2, id: String, caption: String, values: Array, current: Variant, change: Callable) -> OptionButton:
@@ -560,7 +564,7 @@ func _table() -> void:
 	panel.mouse_filter = Control.MOUSE_FILTER_PASS
 	var entete := D.rect(panel, Rect2(0, 0, WIDTH, HEADER_H), Color.TRANSPARENT, 0)
 	entete.name = "MarketHeader"
-	D.line(panel, Vector2(0, HEADER_H - 1), Vector2(WIDTH, HEADER_H - 1), Charte.FILET)
+	Bandeau.peindre_entete(entete)
 	entete.set_meta("rows_origin", Vector2(0, TABLE_TOP + _dy))
 	table_scroll = ScrollContainer.new()
 	table_scroll.name = "MarketScroll"
@@ -1187,7 +1191,11 @@ func _choisir_groupe(id: String) -> void:
 	app._render(false)
 
 func _pastilles_postes() -> void:
+	# Le bandeau des filtres finit au-dessus du tableau ; Rapports : filtres seuls, sans pastilles de poste.
+	var bas := Y_FILTRES + 38.0 + 10.0
+	if tab != 3: bas += 48.0
+	_dy = bas + Bandeau.ECART_LIGNES - TABLE_TOP
+	Bandeau.poser(self, Rect2(0, Y_BANDEAU, WIDTH, bas - Y_BANDEAU))
 	if tab == 3: return
 	var marche: Array = app.model.get("market", [])
-	_dy = 50.0
-	Listes.pastilles_postes(self, Vector2(0, TABLE_TOP + 4), Listes.compter_groupes(marche), marche.size(), str(state.get("poste_groupe", "")), _choisir_groupe)
+	Listes.pastilles_postes(self, Vector2(Bandeau.MARGE, Y_FILTRES + 46.0), Listes.compter_groupes(marche), marche.size(), str(state.get("poste_groupe", "")), _choisir_groupe)

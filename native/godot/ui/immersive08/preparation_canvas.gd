@@ -193,7 +193,7 @@ func _barre(parent: Node, rectangle: Rect2, fond: Color, bord: Color = Color.TRA
 
 ## Pastille de forme ovale : la lettre V / N / D est toujours écrite.
 func _pastille(parent: Control, rectangle: Rect2, lettre: String, nom: String) -> Panel:
-	var couleur: Color = Charte.D if lettre == "D" else Charte.N if lettre == "N" else Charte.V
+	var couleur: Color = Charte.PERTE if lettre == "D" else Charte.N if lettre == "N" else Charte.V
 	var panel := Panel.new()
 	panel.name = nom
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE

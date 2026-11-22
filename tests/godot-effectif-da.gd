@@ -200,6 +200,36 @@ func run() -> void:
 	check(app.route == "Finances", "Tuile Masse salariale : écran Finances")
 	app._navigate("Effectif")
 	await settle(12)
+	# Bandeau des filtres (21/11/2026) : panneau teinté détouré, derrière la recherche, les tuiles, les pastilles et les
+	# en-têtes, à la largeur du tableau ; il suit le tableau quand une colonne s'ouvre à gauche (la tête reste en place).
+	var bandeau := page().find_child("BandeauFiltres", false, false) as Panel
+	var table := page().find_child("ImmersiveRosterTable", false, false) as Control
+	check(bandeau != null and bandeau.get_index() == 0, "Bandeau des filtres derrière les commandes")
+	if bandeau != null and table != null:
+		var style := bandeau.get_theme_stylebox("panel") as StyleBoxFlat
+		check(style != null and style.bg_color == Charte.BANDEAU and style.border_color == Charte.BANDEAU_BORD and style.border_width_top == 1, "Bandeau : teinte et contour 1 px de la charte")
+		check(absf(bandeau.position.x - table.position.x) < 1.0 and absf(bandeau.size.x - table.size.x) < 1.0, "Bandeau à la largeur du tableau")
+		var recherche := page().find_child("RosterSearch", true, false) as Control
+		check(recherche != null and bandeau.get_rect().encloses(recherche.get_rect()), "Recherche dans le bandeau")
+		var entete := table.find_child("RosterHeader", false, false) as Control
+		check(entete != null and absf(bandeau.get_rect().end.y - (table.position.y + entete.position.y + entete.size.y)) < 2.0, "Les en-têtes de colonnes ferment le bas du bandeau")
+		check(bandeau.find_child("BandeauEntete", false, false) != null, "Bande des en-têtes au bas du bandeau")
+		table.position.x += 300.0
+		table.size.x -= 300.0
+		await settle(2)
+		check(absf(bandeau.position.x - table.position.x) < 1.0 and absf(bandeau.size.x - table.size.x) < 1.0, "Bandeau : suit le tableau décalé")
+		check(page().find_child("BandeauFiltresTete", false, false) == null, "Bandeau : un seul bloc, jamais coupé en deux")
+		app._render(false)
+		await settle(12)
+	# Moral et condition : mini-courbe au survol des tuiles (relevé hebdomadaire du moteur, quand il existe).
+	check(app.find_child("TotalTuileOuvrir_Moral", true, false) is Button, "Tuile Moral cliquable")
+	if (app.model.get("groupHistory", []) as Array).size() >= 2:
+		var cond := app.find_child("TotalTuileOuvrir_Condition", true, false) as Control
+		check(cond != null and str(cond.get_meta("bulle_survol", "")) == "courbe:condition", "Tuile Condition : courbe au survol")
+	await press("TotalTuileOuvrir_Moral")
+	check(app.route == "Vestiaire", "Tuile Moral : Vestiaire (%s)" % app.route)
+	app._navigate("Effectif")
+	await settle(12)
 	# Forme récente : cinq cases colorées (note dedans), clic = petite fenêtre du match avec le score.
 	var cible := str(squad[0].id)
 	var vie: Dictionary = app.model.get("clubLife", {})

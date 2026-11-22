@@ -1,7 +1,7 @@
 extends RefCounted
 ## Mini-courbe d'évolution au survol d'un chiffre (planche de Léo du 21/11/2026), sans clic ; le clic garde son effet.
 ## Courbe remplie dans une bulle. Séries gardées par le moteur, un relevé par semaine jouée (70 semaines) :
-## trésorerie (finance.cashHistory), moral du vestiaire et condition du groupe (groupHistory).
+## trésorerie (finance.cashHistory), moral du vestiaire, condition du groupe et confiance des joueurs (groupHistory).
 ## Ancienne sauvegarde sans relevé (moins de 2 semaines) : pas de bulle.
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")

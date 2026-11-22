@@ -7,6 +7,7 @@ const U = preload("res://ui/management_state.gd")
 const G = preload("res://ui/game_skin.gd")
 const Sales = preload("res://ui/player_sales_view.gd")
 const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
+const Bandeau = preload("res://ui/bandeau_filtres.gd")
 const STATUS_OPTIONS := ["Tous","Prolongation accessible","Discussion en cours","Échanges clos","Sans contrat renseigné"]
 var app: Control
 var state: Dictionary
@@ -19,9 +20,9 @@ var _position: OptionButton
 var _status_choice: OptionButton
 var _precision_choice: OptionButton
 var _headers: Dictionary = {}
-## Colonnes du tableau : [clé, largeur minimale, poids]. Les poids reprennent les anciennes largeurs fixes (1920) ; le tableau
+## Colonnes du tableau : [clé, largeur minimale, poids]. Les poids donnent la place aux noms et aux statuts (1920 : plus aucun texte coupé) ; le tableau
 ## se partage la largeur du panneau au lieu de la dépasser (1920, 1280, échelle d'interface 90-130 %).
-const COLS := [["name", 126, 264], ["pos", 76, 160], ["rating", 40, 72], ["potential", 62, 84], ["age", 34, 60], ["contractEnd", 56, 145], ["salary", 62, 145], ["minutes", 34, 95], ["status", 62, 110], ["renewal", 44, 100], ["actions", 150, 276]]
+const COLS := [["name", 126, 300], ["pos", 76, 140], ["rating", 40, 60], ["potential", 62, 80], ["age", 34, 50], ["contractEnd", 56, 115], ["salary", 62, 150], ["minutes", 34, 60], ["status", 62, 130], ["renewal", 44, 80], ["actions", 150, 215]]
 const COL_GAP := 4
 ## Couleurs franches par sens (jamais seules : chaque couleur accompagne un chiffre, une icône ou un mot).
 const ORANGE := Color("e0a04a")
@@ -531,7 +532,12 @@ func _build() -> void:
 		top.add_child(stat)
 	var filters := HBoxContainer.new()
 	filters.add_theme_constant_override("separation", 8)
-	add_child(filters)
+	# Bandeau des filtres (demande de Léo du 21/11/2026) : panneau teinté détouré, distinct des lignes de contrats.
+	var bandeau := PanelContainer.new()
+	bandeau.name = "BandeauFiltres"
+	bandeau.add_theme_stylebox_override("panel", Bandeau.style(10))
+	add_child(bandeau)
+	bandeau.add_child(filters)
 	var search := LineEdit.new()
 	search.name = "ContractReviewSearch"
 	search.placeholder_text = "Nom ou poste…"
@@ -608,7 +614,16 @@ func _build() -> void:
 	var outset := Control.new()
 	outset.custom_minimum_size.x = 8
 	header.add_child(outset)
-	main.add_child(header)
+	# En-têtes de colonnes : bande de la même famille que le bandeau des filtres.
+	var bande := PanelContainer.new()
+	bande.name = "BandeauEntete"
+	var style_bande := Bandeau.style_entete(Charte.RAYON_PETIT)
+	style_bande.corner_radius_bottom_left = style_bande.corner_radius_top_left
+	style_bande.corner_radius_bottom_right = style_bande.corner_radius_top_right
+	style_bande.set_content_margin_all(0)
+	bande.add_theme_stylebox_override("panel", style_bande)
+	main.add_child(bande)
+	bande.add_child(header)
 	_scroll = ScrollContainer.new()
 	_scroll.name = "ContractReviewScroll"
 	_scroll.follow_focus = true
