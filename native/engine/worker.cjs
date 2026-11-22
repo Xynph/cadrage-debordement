@@ -213,6 +213,12 @@ function createBridge(options={}){
   const engineIntl=Object.create(Intl,{NumberFormat:{value:NumberFormat,writable:true,configurable:true}});
   ctx=vm.createContext({console:{log(){},warn(){},error(){}},Intl:engineIntl,Math:math,Date:EngineDate,Set,JSON,CDNativeHeadless:true,document:{querySelector:()=>element},window:{CDNativeHeadless:true,CDOfflineStorage:storage,CDOfflineError:true},localStorage:storage,setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},nativeDataDirectory:dataDir});
   const run=(source,filename)=>vm.runInContext(source,ctx,filename?{timeout:15000,filename}:{timeout:15000});
+  // Visage affiché d'un joueur (même calcul que la projection des portraits) : repris tel quel par la reconversion en staff.
+  ctx.nativePortraitLook=process.env.CD_PORTRAIT_CARRURE==='0'?undefined:(player,world)=>{
+    if(portraitLooks.hasRealPhoto(player))return null;
+    const upgrade=world===true&&player.appearanceBankVersion===undefined,r=portraitLooks.resolve(player,upgrade);
+    return {appearanceId:r.appearanceId,appearanceBuild:r.appearanceBuild,bank:upgrade||player.appearanceBankVersion===2?2:1};
+  };
   // Lecture ou bascule immédiate de l'état (aucune boucle, aucun calcul) : sans minuterie de garde. Sa mise en place (un
   // fil par appel) coûtait ~0,1 à 1 ms à chaque appel, soit plusieurs ms par réponse.
   const peek=source=>vm.runInContext(source,ctx);
