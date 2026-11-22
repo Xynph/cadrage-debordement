@@ -4,19 +4,21 @@ extends RefCounted
 ## Les photos d'un pack (photos en pied, demi-corps, portraits serrés) sont affichées telles
 ## quelles dans des cases carrées : sur une photo en pied, le visage devient minuscule.
 ## Ici, on cherche le visage sur une copie réduite de la photo (peau la plus haute au centre,
-## largeur de tête lue sur la silhouette) et on rend un carré tête et épaules. Sans visage
+## largeur de tête lue sur la silhouette) et on rend un portrait buste (tête dans le tiers haut, centrée). Sans visage
 ## trouvé : carré en haut au centre pour une photo en hauteur dont le sujet se détache, photo entière sinon.
 ## Rien n'est écrit dans le pack : le résultat (rectangle en fractions de l'image) est gardé en
 ## mémoire et dans le profil du joueur (`<profil>/recadrage-visages.json`, profil = CD_GODOT_DATA_DIR sinon
 ## le dossier de données du jeu, comme main.gd).
 ## Exemple : `RecadrageVisage.region(chemin, image)` → Rect2(0.31, 0.04, 0.38, 0.25).
 
-const VERSION := 1
+const VERSION := 2
 const CACHE_NAME := "recadrage-visages.json"
-## Côté le plus long de la copie analysée (px) : de quoi voir un visage de 6 à 8 px sur une photo en pied.
-const ANALYSE := 96
-## Côté du carré rendu, en largeurs de tête (tête, cou et haut des épaules).
-const MARGE_TETE := 2.6
+## Côté le plus long de la copie analysée (px) : de quoi voir un visage d'une dizaine de px sur une photo en pied.
+const ANALYSE := 160
+## Côté du carré en largeurs de tête : portrait « buste » (tête, épaules, haut du torse).
+const BUSTE := 3.3
+## Air laissé au-dessus du crâne, en fraction du côté : la tête tombe dans le tiers haut.
+const AIR_CRANE := 0.09
 
 static var _regions: Dictionary = {}
 static var _charge := false
@@ -171,7 +173,7 @@ static func detecter(source: Image) -> Rect2:
 		var cxi := roundi(float(somme) / maxi(1, compte))
 		# Largeur de tête : d'après la peau des premières lignes…
 		var largeur_peau := 0
-		for y in range(y0, mini(h, y0 + 8)):
+		for y in range(y0, mini(h, y0 + maxi(8, h / 12))):
 			var gauche := -1
 			var droite := -1
 			for x in range(maxi(0, cxi - w / 4), mini(w, cxi + w / 4 + 1)):
@@ -180,7 +182,7 @@ static func detecter(source: Image) -> Rect2:
 					droite = x
 			if gauche >= 0: largeur_peau = maxi(largeur_peau, droite - gauche + 1)
 		# … et d'après la silhouette au niveau du front (cheveux compris), si le fond s'en distingue.
-		var yf := mini(h - 1, y0 + 2)
+		var yf := mini(h - 1, y0 + maxi(2, h / 50))
 		var a := cxi
 		var b := cxi
 		var silhouette_ok := fg[yf * w + cxi] == 1
@@ -192,9 +194,47 @@ static func detecter(source: Image) -> Rect2:
 		if not silhouette_ok or largeur > 0.6 * w or largeur < largeur_peau:
 			largeur = maxi(largeur_peau, largeur if silhouette_ok and largeur <= 0.6 * w else 0)
 			centre_x = cxi + 0.5
+			silhouette_ok = false
 		largeur = maxi(largeur, 3)
-		cote = largeur * MARGE_TETE
-		centre = Vector2(centre_x, y0 + 0.65 * largeur)
+		# Centre horizontal : médiane des milieux de la peau du visage (ligne par ligne, du front au bas du visage),
+		# plus sûre que la silhouette quand les cheveux, un bras ou le fond la déportent.
+		var milieux: Array[float] = []
+		for y in range(y0, mini(h, y0 + maxi(2, roundi(largeur * 0.9)))):
+			var c := cxi
+			if peau[y * w + c] == 0:
+				var trouve := -1
+				for d in range(1, maxi(2, largeur / 3)):
+					if c - d >= 0 and peau[y * w + c - d] == 1:
+						trouve = c - d
+						break
+					if c + d < w and peau[y * w + c + d] == 1:
+						trouve = c + d
+						break
+				if trouve < 0: continue
+				c = trouve
+			var g := c
+			var dr := c
+			while g > 0 and (peau[y * w + g - 1] == 1 or (g > 1 and peau[y * w + g - 2] == 1)): g -= 1
+			while dr < w - 1 and (peau[y * w + dr + 1] == 1 or (dr < w - 2 and peau[y * w + dr + 2] == 1)): dr += 1
+			# Ligne élargie par les épaules ou un bras : on s'arrête au cou.
+			if dr - g + 1 > largeur * 1.3: break
+			milieux.append((g + dr + 1) / 2.0)
+		if milieux.size() >= 2:
+			milieux.sort()
+			var milieu_peau := milieux[milieux.size() / 2]
+			# Silhouette et peau d'accord (écart < un quart de tête) : moyenne ; sinon la peau.
+			centre_x = (centre_x + milieu_peau) / 2.0 if silhouette_ok and absf(centre_x - milieu_peau) < largeur * 0.25 else milieu_peau
+		# Haut du crâne : on remonte la silhouette au-dessus du front, sinon ~ un tiers de tête de cheveux.
+		var crane := float(y0) - largeur * 0.3
+		if silhouette_ok:
+			var yc := y0
+			var xc := clampi(roundi(centre_x), 0, w - 1)
+			while yc > 0 and fg[(yc - 1) * w + xc] == 1 and y0 - yc < largeur: yc -= 1
+			# Jamais moins d'un quart de tête au-dessus du front (cheveux clairs ou fondus dans le fond).
+			crane = minf(float(yc), y0 - largeur * 0.25)
+		# Buste : tête (crâne → menton ≈ 1,35 largeur) dans le tiers haut, un peu d'air au-dessus du crâne.
+		cote = largeur * BUSTE
+		centre = Vector2(centre_x, crane - AIR_CRANE * cote + cote / 2.0)
 	elif h > w * 1.15:
 		# Pas de visage : carré en haut au centre (haut de la silhouette si elle se distingue).
 		var haut := -1
@@ -211,4 +251,8 @@ static func detecter(source: Image) -> Rect2:
 		return Rect2(0, 0, 1, 1)
 	cote = clampf(cote, mini(w, h) * 0.25, mini(w, h))
 	var coin := Vector2(clampf(centre.x - cote / 2.0, 0.0, w - cote), clampf(centre.y - cote / 2.0, 0.0, h - cote))
-	return Rect2(coin.x / w, coin.y / h, cote / w, cote / h)
+	# Carré exact dans la photo d'origine (l'arrondi de la copie réduite déforme d'un pixel).
+	var cote_source := minf(cote / echelle, mini(W, H))
+	var x := clampf(coin.x / w * W, 0.0, W - cote_source)
+	var y := clampf(coin.y / h * H, 0.0, H - cote_source)
+	return Rect2(x / W, y / H, cote_source / W, cote_source / H)

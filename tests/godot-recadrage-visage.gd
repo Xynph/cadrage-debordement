@@ -48,12 +48,17 @@ func run() -> void:
 	var ms := (Time.get_ticks_usec() - debut) / 1000.0
 	var visage := Rect2(84.0 / 200, 36.0 / 300, 32.0 / 200, 40.0 / 300)
 	check(zone.encloses(visage), "Photo en pied : le visage est dans le carré %s" % zone)
-	check(zone.size.x < 0.6 and absf(zone.get_center().x - 0.5) < 0.08, "Photo en pied : carré serré et centré sur la tête %s" % zone)
+	check(zone.size.x < 0.75 and absf(zone.get_center().x - 0.5) < 0.03, "Photo en pied : buste centré sur la tête %s" % zone)
+	var crane := 28.0 / 300
+	check(crane - zone.position.y > zone.size.y * 0.04, "Photo en pied : de l'air au-dessus du crâne %s" % zone)
+	var tete_y := (56.0 / 300 - zone.position.y) / zone.size.y
+	check(tete_y > 0.15 and tete_y < 0.45, "Photo en pied : tête dans le tiers haut du cercle (%.2f)" % tete_y)
+	check((zone.end.y - 88.0 / 300) / zone.size.y > 0.2, "Photo en pied : épaules et haut du torse visibles")
 	check(is_equal_approx(zone.size.x * 400, zone.size.y * 600), "Photo en pied : la zone est carrée")
 	check(zone.get_center().y < 0.3, "Photo en pied : carré en haut de l'image (tête), pas sur le corps")
 	# 2. Même joueur sur fond gris uni (sans transparence).
 	var gris := R.detecter(joueur_en_pied(200, 300, Color8(128, 128, 128)))
-	check(gris.encloses(visage) and gris.size.x < 0.6, "Fond uni : même recadrage sur la tête %s" % gris)
+	check(gris.encloses(visage) and gris.size.x < 0.75, "Fond uni : même recadrage sur la tête %s" % gris)
 	# 3. Portrait serré (visage déjà grand) : on garde presque toute l'image.
 	var serre := Image.create(200, 200, false, Image.FORMAT_RGBA8)
 	serre.fill(Color8(120, 120, 125))
@@ -72,7 +77,7 @@ func run() -> void:
 	var rect := G.portrait(0, 90, {"name": "Joueur Pied", "portraitPath": chemin})
 	check(rect.texture is AtlasTexture and (rect.texture as AtlasTexture).atlas == G.textures.get(chemin), "Case carrée : photo du pack recadrée, même photo décodée")
 	var region := (rect.texture as AtlasTexture).region if rect.texture is AtlasTexture else Rect2()
-	check(absf(region.size.x - region.size.y) <= 1.0 and region.size.x < 300, "Case carrée : région carrée tête et épaules %s" % region)
+	check(absf(region.size.x - region.size.y) <= 1.0 and region.size.x < 300, "Case carrée : région carrée en buste %s" % region)
 	var autre := G.portrait(1, 40, {"name": "Joueur Pied", "portraitPath": chemin})
 	check(autre.texture == rect.texture, "Texture recadrée partagée entre les vues")
 	check(FileAccess.file_exists(R.chemin_cache()), "Recadrage gardé dans le profil")
