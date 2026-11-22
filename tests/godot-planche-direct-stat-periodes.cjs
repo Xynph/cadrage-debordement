@@ -31,12 +31,13 @@ let echecs = 0;
     CD_PLANCHE_STAT_PERIODES: dossier, CD_MATCH_TEMPS_FORTS: '1', CD_MATCH_TEMPS_FORTS_HORLOGE: 'eclair', CD_MATCH_TEMPS_FORTS_VITESSE: '8', CD_MATCH_TEMPS_FORTS_NIVEAU: 'cles', CD_GODOT_SEED: '3'};
   for (const name of ['CD_VARIANTE_VISUELLE', 'CD_MATCH_GESTES', 'CD_MATCH_CHOREGRAPHE', 'CD_MATCH_TEMPS_FORTS_ENTRACTE', 'CD_MATCH_SORTIE']) delete env[name];
   const result = spawnSync(godot, ['--audio-driver', 'Dummy', '--max-fps', '60', '--fixed-fps', '30', '--disable-vsync', '--path', path.resolve(__dirname, '../native/godot'), '--script', path.resolve(__dirname, 'godot-planche-direct-stat-periodes.gd')],
-    {env, encoding: 'utf8', windowsHide: true, timeout: 900000});
+    {env, encoding: 'utf8', windowsHide: true, timeout: 1000000});
   const output = (result.stdout || '') + (result.stderr || '');
   fs.writeFileSync(path.join(dossier, 'godot.log'), output);
   console.log(output.split(/\r?\n/).filter(l => /PLANCHE_STAT|ECHEC|SCRIPT ERROR|^  - /.test(l)).join('\n'));
   fs.rmSync(path.join(dossier, 'monde.json'), {force: true});
-  if (result.status !== 0 || /SCRIPT ERROR/.test(output)) echecs++;
+  if (result.error || result.status === null) { console.log('ECHEC planche-direct-stat-periodes : Godot interrompu (' + (result.error?.code || result.signal || 'délai de 1000 s dépassé') + ') avant la fin des captures ; dernières lignes du log :\n' + output.split(/\r?\n/).slice(-15).join('\n')); echecs++; }
+  else if (result.status !== 0 || /SCRIPT ERROR/.test(output)) { console.log('ECHEC planche-direct-stat-periodes : Godot sort en ' + result.status + ' (voir les lignes ECHEC et « - » ci-dessus).'); echecs++; }
 }
 fs.rmSync(directory, {recursive: true, force: true});
 process.exit(echecs ? 1 : 0);

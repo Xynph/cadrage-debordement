@@ -84,14 +84,20 @@ func run() -> void:
 	if app.model.live.get("paused", false): await command("pause", {"paused": false})
 	# Vitesse maximale jusqu'à la 2e mi-temps (consigne : jamais en temps réel dans les tests).
 	Engine.time_scale = 8.0
+	# Avance rapide en petite taille (rendu logiciel lent en CI) ; la taille des captures est remise ensuite.
+	root.size = Vector2i(960, 540)
+	root.content_scale_size = root.size
 	var minute_voulue := int(OS.get_environment("CD_PLANCHE_MINUTE")) if OS.get_environment("CD_PLANCHE_MINUTE").is_valid_int() else 55
 	var depart := Time.get_ticks_msec()
-	while Time.get_ticks_msec() - depart < 900000 and int(app.model.live.get("minute", 0)) < minute_voulue and not app.model.live.get("finished", false):
+	while Time.get_ticks_msec() - depart < 600000 and int(app.model.live.get("minute", 0)) < minute_voulue and not app.model.live.get("finished", false):
 		# Mi-temps, causerie : on passe.
 		var scene: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
 		if scene is Dictionary and not app.waiting: await command("match_talk_continue", {"key": scene.key, "phase": scene.phase, "skip": true})
 		await settle(2)
 	print("PLANCHE_STAT minute %d atteinte en %d s" % [int(app.model.live.get("minute", 0)), (Time.get_ticks_msec() - depart) / 1000])
+	check(int(app.model.live.get("minute", 0)) >= minute_voulue, "minute %d non atteinte en 600 s (minute %d)" % [minute_voulue, int(app.model.live.get("minute", 0))])
+	root.size = Vector2i(2560, 1440)
+	root.content_scale_size = root.size
 	# La vue du direct est reconstruite à la mi-temps : on reprend la vue courante.
 	check(await until(func(): return surface() != null and vue_2d(surface()), 240000), "Écran 2D du direct")
 	view = surface()
