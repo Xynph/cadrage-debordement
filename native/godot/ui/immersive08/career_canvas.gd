@@ -15,6 +15,10 @@ static func build(app: Control, canvas: Control) -> void:
 	canvas.name = "ImmersiveManagerCareer"
 	var data: Dictionary = app.model.get("clubLife",{}).get("managerCareer",{})
 	var tab := str(app.management_ui.get(KEY,"summary"))
+	# Synthèse « façon Effectif » (choix de Léo du 22/11/2026) ; Plan et Mobilité gardent leur page.
+	if tab not in ["plan","details"]:
+		load("res://ui/immersive08/career_synthese.gd").construire(app,canvas,data)
+		return
 	_hero(app,canvas,data)
 	_tabs(app,canvas,tab)
 	match tab:
@@ -23,9 +27,13 @@ static func build(app: Control, canvas: Control) -> void:
 			var detail := Manager.build(app)
 			U.place_detail(canvas, Rect2(0,439,2248,805), detail)
 			Legacy.apply(detail,U.GREEN)
-		_: _overview(app,canvas,data)
 
 static func _hero(app: Control, canvas: Control, data: Dictionary) -> void:
+	_bandeau_photo(app,canvas,data)
+	_metriques(app,canvas,data)
+
+## Bandeau photo du héros : blason, titre, club et ligue, mandat, crédit photo.
+static func _bandeau_photo(app: Control, canvas: Control, data: Dictionary) -> void:
 	var hero := D.panel(canvas,Rect2(0,0,2248,227),"","","","CareerHero")
 	hero.clip_contents = true
 	var picture := G.club_picture(app.model.club, "city", false)
@@ -47,6 +55,7 @@ static func _hero(app: Control, canvas: Control, data: Dictionary) -> void:
 		credit.tooltip_text = picture.tooltip_text
 		credit.accessibility_name = credit.tooltip_text.replace("\n", " · ")
 
+static func _metriques(app: Control, canvas: Control, data: Dictionary) -> void:
 	var metrics := [
 		["Places occupées","people","%s / %s" % [G.n(data.get("occupied","—")),G.n(data.get("capacity","—"))],C.IVORY],
 		["Places disponibles","shield",G.n(data.get("places","—")),C.MINT],
@@ -66,76 +75,12 @@ static func _tabs(app: Control, canvas: Control, selected: String) -> void:
 		var id := "CareerTab_"+key
 		U.tab(canvas,Rect2(i*353,380,343,45),tabs[i][1],selected == key,func(): U.select(app,KEY,key,id),id)
 
-static func _overview(app: Control, canvas: Control, data: Dictionary) -> void:
-	_mandate(D.panel(canvas,Rect2(0,441,855,526),"Mandat et mobilité","flag","","CareerMandate"),app,data)
-	_seasons(D.panel(canvas,Rect2(871,441,1377,526),"Plan sur trois saisons","tactic","","CareerPlanSummary"),app,data)
-	_history(D.panel(canvas,Rect2(0,983,1300,261),"Dernière prise de poste","clock","","CareerHistorySummary"),app,data)
-	_recruitment(D.panel(canvas,Rect2(1316,983,932,261),"Le carnet du recrutement","search","","CareerRecruitmentSummary"),app,data)
-
-static func _mandate(card: Panel, app: Control, data: Dictionary) -> void:
-	var active: bool = data.get("active",false)
-	var pending: Variant = data.get("pending")
-	var window: bool = data.get("window",false)
-	D.text(card,23,108,"TON CLUB",25,C.GOLD,700,804)
-	D.text(card,23,162,G.club_name(app.model.club),46,C.IVORY,700,803)
-	D.text(card,23,198,"Mandat depuis la saison "+G.season_label(data.get("currentFrom",app.model.meta.get("season",1))),26,C.MUTED,500,804,HORIZONTAL_ALIGNMENT_LEFT,true)
-	D.line(card,Vector2(23,221),Vector2(832,221))
-	var caption := "Candidatures ouvertes" if window else "Candidatures en fin de saison" if active else "Suivi des candidatures à activer"
-	var subtitle := ""
-	if pending is Dictionary:
-		caption = "Prochaine saison"
-		subtitle = Manager._club(app,pending.toClub)
-	D.text(card,23,274,caption,37,C.MINT if window else C.IVORY,700,640)
-	if subtitle.is_empty():
-		Pieces.info(card,23+minf(640.0,Pieces.largeur_titre(caption,37))+16,248,"La prise de poste est effective au passage à la saison suivante.","Mandat")
-	else:
-		D.text(card,23,315,subtitle,24,C.MUTED,500,804,HORIZONTAL_ALIGNMENT_LEFT,true)
-	if not active:
-		var enable := _action(card,Rect2(23,365,809,59),"Activer les candidatures",func(): app._command("manager_career_activate",{"context":data.get("context",{})}),"ManagerCareerActivate")
-		enable.disabled = app.waiting or not data.get("available",false)
-	_action(card,Rect2(23,444,809,57),"Ouvrir les dossiers de mobilité",func(): U.select(app,KEY,"details","CareerTab_details"),"CareerMobility")
-
-static func _seasons(card: Panel, app: Control, data: Dictionary) -> void:
-	var plans: Array = data.get("plan",[])
-	if plans.is_empty(): D.text(card,23,121,"Aucun engagement de saison à afficher.",29,C.MUTED,600,1327,HORIZONTAL_ALIGNMENT_LEFT,true)
-	for i in mini(3,plans.size()):
-		var entry: Dictionary = plans[i]
-		var tile := D.panel(card,Rect2(23+i*446,78,434,318),"","","","CareerYear"+G.n(entry.year))
-		D.text(tile,22,58,"SAISON "+G.season_label(entry.year),34,C.IVORY,700,384)
-		D.line(tile,Vector2(22,76),Vector2(412,76))
-		var covered := int(entry.get("covered",0))
-		D.text(tile,22,139,"%d / 15" % covered,50,C.MINT if covered==15 else C.AMBER,800,388)
-		D.text(tile,22,172,"Postes couverts",23,C.MUTED,500,388,HORIZONTAL_ALIGNMENT_LEFT,true)
-		D.bar(tile,Rect2(22,189,390,9),100.0*covered/15,C.MINT if covered==15 else C.AMBER)
-		D.text(tile,22,240,U.amount(entry.get("payroll")),36,C.IVORY,700,388)
-		_pastilles_saison(tile,22,258,entry,func(): U.select(app,KEY,"plan","CareerTab_plan"))
-	_action(card,Rect2(23,444,1330,57),"Examiner la couverture poste par poste",func(): U.select(app,KEY,"plan","CareerTab_plan"),"CareerOpenPlan")
-
-## Deux pastilles : semaines de salaires connues et postes fragiles (orange avec ⚠ s'il y en a, vert sinon).
 static func _pastilles_saison(parent: Control, x: float, y: float, entry: Dictionary, action: Callable) -> void:
 	var semaines := int(entry.get("payments",0))
 	var fragiles := int(entry.get("thin",0))
 	var largeur := Pieces.pastille(parent,x,y,"%d sem." % semaines,"calendar","CareerWeeks"+G.n(entry.year),"Salaires connus sur %d %s." % [semaines,"semaine" if semaines <= 1 else "semaines"],Pieces.BLEU,Charte.PANNEAU_3,action)
 	var texte := "%d %s < 2 candidats" % [fragiles,"poste" if fragiles <= 1 else "postes"] if fragiles > 0 else "Tous couverts"
 	Pieces.pastille(parent,x+largeur+8,y,texte,"warning" if fragiles > 0 else "check","CareerThin"+G.n(entry.year),"Postes avec moins de deux candidats : %d." % fragiles,Pieces.ORANGE if fragiles > 0 else Pieces.VERT,Charte.PANNEAU_3,action)
-
-static func _history(card: Panel, app: Control, data: Dictionary) -> void:
-	var moves: Array = data.get("history",[])
-	if moves.is_empty():
-		D.text(card,23,125,"Premier mandat de la carrière",34,C.IVORY,700,1249)
-	else:
-		var move: Dictionary = moves[0]
-		var origin := Manager._club(app,move.get("fromClub"))
-		var destination := Manager._club(app,move.get("toClub"))
-		D.text(card,23,123,origin+"  →  "+destination,34,C.IVORY,700,1249)
-		D.text(card,23,160,"Prise de poste en saison "+G.season_label(move.get("arrivalSeason","—")),25,C.GOLD,600,1249)
-	_action(card,Rect2(23,186,1254,48),"Consulter le parcours et les archives",func(): U.select(app,KEY,"details","CareerTab_details"),"CareerOpenHistory",true)
-
-static func _recruitment(card: Panel, app: Control, data: Dictionary) -> void:
-	var profiles: Array = data.get("recruitment",[])
-	var reports: Array = data.get("reports",[])
-	D.text(card,23,122,"%d profils au carnet  ·  %d rapports datés" % [profiles.size(),reports.size()],33,C.IVORY,700,882)
-	_action(card,Rect2(23,186,886,48),"Ouvrir le carnet du recrutement",func(): U.select(app,KEY,"details","CareerTab_details"),"CareerOpenRecruitment",true)
 
 static func _plan(app: Control, canvas: Control, data: Dictionary) -> void:
 	var grid := D.panel(canvas,Rect2(0,441,1456,803),"Couverture de l’effectif","tactic","","CareerCoverageTable")

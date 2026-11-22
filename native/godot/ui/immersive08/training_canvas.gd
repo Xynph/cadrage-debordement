@@ -15,10 +15,10 @@ const Watch = preload("res://ui/management_state.gd")
 const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
 const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
 const Carte = preload("res://ui/carte_joueur_survol.gd")
+const Lignes = preload("res://ui/immersive08/training_semaine_lignes.gd")
 const TABS = ["Semaine", "Groupes", "Individuel", "Staff", "Fatigue"]
 const MODES = {"repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
 const INDIVIDUAL = {"collective":"Suivre le collectif", "repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
-const TOPICS = ["COLLECTIF", "GROUPES", "INDIVIDUEL", "VIGILANCE", "CONSIGNES", "MATCH", "ENCADREMENT"]
 const FAMILIES = [["PIL.", [0]], ["TAL.", [1]], ["2e L.", [2]], ["3e L.", [3]], ["CHAR.", [4, 5]], ["CEN.", [7]], ["3/4", [6, 8]]]
 const GREEN = Color("b6d6b6")
 const PALE_GOLD = Color("d7aa5a")
@@ -50,7 +50,6 @@ var locked := false
 var trained := false
 var active_tab := 0
 var week_panel: Panel
-var selection_buttons: Array[Button] = []
 
 static func build(application: Control, canvas: Control) -> void:
 	var page := new()
@@ -93,7 +92,7 @@ func _build() -> void:
 		var location := "Terrain neutre" if opponent.get("neutral", false) else ("Réception" if is_home else "Déplacement")
 		fixture = location + " · " + G.club_name(opponent.get("away", {}) if is_home else home)
 	D.text(self, 30, 142, "Semaine %s  ·  %s" % [G.n(int(meta.get("week", 0)) + 1), fixture], 27, C.IVORY, 500, 785)
-	_metrics(meta)
+	Lignes.entete(self, meta)
 	for i in TABS.size():
 		var tab := ClubUI.tab(self, Rect2(4 + i * 199, 169, 188, 58), TABS[i], i == active_tab, func(): _open_tab(i), "TrainingTab" + str(i))
 		tab.add_theme_font_size_override("font_size", C.font_px(30))
@@ -115,7 +114,7 @@ func _build() -> void:
 	validate.add_theme_font_size_override("font_size", C.font_px(33))
 	D.line(self, Vector2(2, 234), Vector2(1741, 234))
 	match active_tab:
-		0: _week(opponent)
+		0: Lignes.semaine(self, opponent)
 		1: _groups()
 		2: _individuals()
 		3: _staff_tab()
@@ -141,36 +140,13 @@ func _open_metric(index: int) -> void:
 	if index == 1: app._navigate("Vestiaire")
 	else: _open_tab(4)
 
-func _metrics(meta: Dictionary) -> void:
-	var group := P.group(app.model)
-	var total_load := 0.0
-	for p: Dictionary in squad: total_load += float(p.get("physicalLoad", 0))
-	var metrics := D.panel(self, Rect2(815, 24, 928, 106), "", "", "", "TrainingMetrics")
-	var values := [
-		["heart", "Condition", G.n(group.condition) + " %", GREEN],
-		["people", "Moral", G.n(meta.get("morale", "—")), C.IVORY],
-		["train", "Charge moyenne", "%d / 100" % roundi(total_load / maxi(1, squad.size())), C.IVORY],
-		["warning", "À surveiller", str(watched.size()), C.ALERT if not watched.is_empty() else C.MUTED],
-	]
-	for i in values.size():
-		var value: Array = values[i]
-		var x := i * 232
-		if i > 0: D.line(metrics, Vector2(x, 8), Vector2(x, 98), Color(C.LINE, .8))
-		if i == 3 and not watched.is_empty(): D.rect(metrics, Rect2(x+1, 1, 230, 104), C.SELECTED, 8)
-		_icon(metrics, value[0], Rect2(x + 20, 36, 48, 48), value[3])
-		D.text(metrics, x + 81, 40, value[1], 24, C.IVORY, 500, 144)
-		D.text(metrics, x + 81, 85, value[2], 38, value[3], 700, 144)
-		var destination: String = ["Condition de l'effectif : ouvrir la fatigue", "Moral : ouvrir le vestiaire", "Charge moyenne : ouvrir la fatigue", "Joueurs à surveiller : ouvrir la fatigue"][i]
-		var zone := _zone(metrics, Rect2(x + 4, 4, 224, 98), "TrainingMetric" + str(i), destination, func(): _open_metric(i))
-		# Mini-courbe au survol de la condition et du moral (relevé hebdomadaire du moteur).
-		if i < 2: preload("res://ui/mini_courbe_survol.gd").lier(app, zone, ["condition", "morale"][i], ["Condition du groupe", "Moral du vestiaire"][i])
-
-func _week(fixture: Dictionary) -> void:
+## Ligne d'état de chaque carte de la semaine (même ordre que SLOTS).
+func _captions(fixture: Dictionary) -> Array:
 	var focus: Dictionary = training.get("collective", {})
 	var focus_label := _label(focus, "Sans préparation spécifique")
 	var state_caption := "Séance effectuée" if trained else "Séance indisponible" if locked else ""
 	var plans: Array = support.get("training", {}).get("plans", [])
-	var captions := [
+	return [
 		state_caption, focus_label, P.plural(plans.size(), "plan", "plans") if not plans.is_empty() else "", "%d joueurs" % squad.size(),
 		"%d ciblés" % _axis_people()[1], "%d exceptions" % _load_exceptions().size(), "%d à suivre" % watched.size(),
 		"%d suivis" % support.get("medical", {}).get("players", []).size(), "",
@@ -178,41 +154,6 @@ func _week(fixture: Dictionary) -> void:
 		"Feuille valide" if app.model.get("selection", {}).get("valid", false) else "Feuille à compléter",
 		str(fixture.get("label", "Aucune rencontre")), "", "",
 	]
-	var selected := clampi(int(state.get("slot", 0)), 0, SLOTS.size() - 1)
-	_programme()
-	for i in TOPICS.size():
-		var column := D.panel(self, Rect2(4 + i * 250, 270, 239, 545), "", "", "", "TrainingWeekColumn" + str(i))
-		var match_column := i == 5 and not fixture.is_empty()
-		var tone := PALE_GOLD if match_column else C.MINT if i == 0 else C.MUTED
-		D.rect(column, Rect2(1, 1, 237, 82), C.SELECTED if match_column or i == 0 else C.RAISED, 8)
-		D.text(column, 119, 51, TOPICS[i], 29, tone, 700, 224, HORIZONTAL_ALIGNMENT_CENTER)
-		for band in 2:
-			var index := i * 2 + band
-			var slot: Array = SLOTS[index]
-			var y := 99 + band * 220
-			D.rect(column, Rect2(11, y, 217, 31), C.SELECTED, 5)
-			D.text(column, 23, y + 23, "PRÉPARER" if band == 0 else "SUIVRE", 23, C.IVORY, 700, 200)
-			var hit := _action(column, Rect2(11, y + 39, 217, 168), "", func(): _select(index), false, "", "TrainingStep" + str(index))
-			hit.tooltip_text = slot[3]
-			hit.accessibility_name = str(slot[1])
-			selection_buttons.append(hit)
-			_slot_style(hit, index == selected, index == 11 and not fixture.is_empty())
-			_icon(hit, slot[0], Rect2(12, 16, 39, 39), tone if i in [0, 1, 5] else C.IVORY)
-			var lines := D.words(str(slot[1]), 14, 2)
-			for j in lines.size(): D.text(hit, 60, 33 + j * 24, lines[j], 24, C.IVORY, 700, 146)
-			var details := D.words(captions[index], 18, 2)
-			for j in details.size(): D.text(hit, 13, 88 + j * 24, details[j], 24, C.IVORY, 500, 192)
-			_card_visual(hit, index, fixture)
-		if i == 0: D.line(column, Vector2(13, 310), Vector2(226, 310))
-	_chart()
-	_vigilance()
-	week_panel = D.panel(self, Rect2(1760, 509, 488, 306), "Séance sélectionnée", "train", "", "TrainingSelectedSession")
-	_selection(selected)
-	var art := D.panel(self, Rect2(4, 840, 1020, 377), "", "", "", "TrainingPhoto")
-	art.clip_contents = true
-	D.photo(art, photo_centre(app.model), Rect2(2, 2, 1016, 373))
-	_axes(D.panel(self, Rect2(1039, 840, 560, 341), "Axes individuels", "star", "", "TrainingAxes"))
-	_staff_cards(D.panel(self, Rect2(1614, 840, 634, 341), "Encadrement", "people", "", "TrainingStaff"))
 
 ## Programme de la semaine jour par jour (moteur : clubLife.weekProgram) : sept cases du lundi au dimanche, couleur et
 ## icône par jour (séance à sa charge, veille, match, récupération, repos), aujourd'hui cerclé, jour passé estompé.
@@ -241,7 +182,7 @@ func _programme() -> void:
 
 ## Bande visuelle du bas de chaque carte de la semaine (y 120-160 de la carte) : uniquement des données du moteur,
 ## en cases, portraits et blasons ; chaque pièce qui a une destination est cliquable (écran, onglet ou petite fenêtre).
-func _card_visual(hit: Button, index: int, fixture: Dictionary) -> void:
+func _card_visual(hit: Control, index: int, fixture: Dictionary) -> void:
 	var y := 120.0
 	match index:
 		0:
@@ -370,7 +311,7 @@ func _card_visual(hit: Button, index: int, fixture: Dictionary) -> void:
 				D.place(crest, Rect2(13 + k * 74, y - 2, 40, 40))
 			D.text(hit, 70, y + 26, "–", 22, C.IVORY, 700, 24, HORIZONTAL_ALIGNMENT_CENTER)
 			var date := str(fixture.get("date", "")).split("-")
-			if date.size() == 3: D.text(hit, 204, y + 26, "%s/%s" % [date[2], date[1]], 19, PALE_GOLD, 700, 70, HORIZONTAL_ALIGNMENT_RIGHT)
+			if date.size() == 3: D.text(hit, 204, y + 26, "%s/%s" % [date[2], date[1]], 19, C.IVORY, 700, 70, HORIZONTAL_ALIGNMENT_RIGHT)
 			_zone(hit, C.reach_rect(Rect2(9, y - 4, 199, 44)), "TrainingWeekFixture", P.next_fixture_caption(app.model, "Prochaine rencontre"), func(): app._navigate("Match"))
 		12:
 			var advice: Dictionary = training.get("adviceState", {})
@@ -447,17 +388,9 @@ func _axis_people() -> Array:
 func _load_exceptions() -> Array:
 	return squad.filter(func(p: Dictionary): return str(p.get("loadPlan", "collective")) in ["repos", "normal", "intense"])
 
-func _slot_style(hit: Button, selected: bool, match_slot: bool) -> void:
-	var fill := Color("20382d") if selected else Color("32291d") if match_slot else Color("10191a")
-	var border := C.MINT if selected else PALE_GOLD if match_slot else Color("3d4946")
-	for state in ["normal", "hover", "pressed"]:
-		var style := C.box(fill.lightened(.06) if state == "hover" else fill, border, 6, 0)
-		style.set_border_width_all(2 if selected else 1)
-		hit.add_theme_stylebox_override(state, style)
-
 func _select(index: int) -> void:
 	state.slot = index
-	for i in selection_buttons.size(): _slot_style(selection_buttons[i], i == index, i == 11 and app.model.get("next") is Dictionary)
+	Lignes.marquer(self, index)
 	_selection(index)
 
 func _selection(index: int) -> void:

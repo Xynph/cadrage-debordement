@@ -77,11 +77,10 @@ func executer() -> void:
 	# 2. Finances : tuile à côté de la trésorerie.
 	app.management_ui["immersive08_finance_tab"] = "summary"
 	app._navigate("Finances"); await poser(20)
-	var tuile := app.find_child("FinanceMetric1", true, false)
-	var titre: Label = null
-	if tuile != null: titre = tuile.find_child("CardTitle", true, false) as Label
-	# DA 20/11/2026 : bloc « Budget de transferts » en trois cases Alloué / Engagé / Restant.
-	verifier(titre != null and titre.text == "BUDGET DE TRANSFERTS", "titre du bloc Finances : « %s »" % (titre.text if titre != null else ""))
+	# Synthèse « façon Effectif » (22/11/2026) : panneau « Transferts » en trois lignes Alloué / Engagé / Restant,
+	# plus la tuile « Transferts restants » du bandeau.
+	verifier(app.find_child("FinanceMetric1", true, false) != null, "panneau Transferts des Finances présent")
+	verifier(app.find_child("FinanceTransfersLeft", true, false) != null, "tuile « Transferts restants » présente")
 	verifier(texte("FinanceTransferBudgetAmount") == reste, "Restant Finances « %s » = disponible « %s »" % [texte("FinanceTransferBudgetAmount"), reste])
 	verifier(texte("FinanceTransferBudgetAllocated").contains(enveloppe), "Alloué aux Finances : " + texte("FinanceTransferBudgetAllocated"))
 	verifier(not texte("FinanceTransferBudgetEngaged").is_empty(), "case Engagé présente")

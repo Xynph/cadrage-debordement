@@ -436,79 +436,8 @@ static func _entrainement(app: Control, page: Control) -> void:
 		["%d" % roundi(charge / maxi(1, squad.size())), "Charge /100", Charte.INTENSIF, "train", func(): _ouvrir_entrainement(app, 4)],
 		[str(surveilles.size()), "À surveiller", Charte.PERTE if not surveilles.is_empty() else Charte.IVOIRE_2, "warning", func(): _ouvrir_entrainement(app, 4)],
 	]
-	var gauche := Vertical.DROITE
-	var largeur := 2248.0 - gauche
 	_carte_forme(app, page)
-	# Tuiles de chiffres (clic → onglet Fatigue de l'entraînement ou Vestiaire).
-	_titre_bloc(page, gauche, HAUT, "Le groupe", Charte.CONDITION)
-	var tw := (largeur - 3 * 16) / 4.0
-	for i in tuiles.size():
-		var tuile: Array = tuiles[i]
-		Pieces.tuile(page, Rect2(gauche + i * (tw + 16), HAUT + 48, tw, 130), tuile[0], tuile[1], tuile[2], "TacticsTabTuile%d" % i, 56, "", tuile[3], true, tuile[4])
-	# Semaine : un grand pavé par jour, couleur de la séance.
-	var y := HAUT + 204
-	_titre_bloc(page, gauche, y, "La semaine", Charte.REPOS)
-	_semaine(app, page, Rect2(gauche, y + 48, largeur, 230))
-	y += 300
-	_titre_bloc(page, gauche, y, "À surveiller", Charte.PERTE)
-	_surveilles(app, page, Rect2(gauche, y + 48, largeur, BAS - y - 48), surveilles)
-
-static func _semaine(app: Control, page: Control, zone: Rect2) -> void:
-	var Panneaux = load("res://ui/immersive08/panneaux_effectif.gd")
-	var jours: Array = Panneaux._jours_programme(app)
-	if jours.is_empty(): return
-	var w := (zone.size.x - 6 * 12) / 7.0
-	for i in jours.size():
-		var j: Dictionary = jours[i]
-		var kind := str(j.get("kind", "repos"))
-		var couleur: Color = Panneaux._couleur_jour(j)
-		var rect := Rect2(zone.position.x + i * (w + 12), zone.position.y, w, zone.size.y)
-		var pave := D.rect(page, rect, Charte.PANNEAU_2.lerp(couleur, .22) if kind != "repos" else Charte.PANNEAU_2, Charte.RAYON_CARTE, Charte.IVOIRE if bool(j.get("today", false)) else Color.TRANSPARENT)
-		pave.name = "TacticsTabJour%d" % i
-		if bool(j.get("past", false)): pave.modulate = Color(1, 1, 1, .55)
-		D.rect(pave, Rect2(0, 0, w, 10), couleur, Charte.RAYON_PETIT).mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var lettre := D.text(pave, 18, 70, str(j.get("lettre", "")), 48, couleur if kind != "repos" else Charte.IVOIRE_2, 500, 60)
-		lettre.add_theme_font_override("font", Charte.TITRE_FICHE)
-		var icone_id: String = Panneaux.JOURS.get(kind, ["", ""])[0]
-		if bool(j.get("done", false)) or (kind == "match" and bool(j.get("played", false))): icone_id = "check"
-		if not icone_id.is_empty():
-			var icone := C.icon(icone_id, 40, couleur if kind != "repos" else Charte.IVOIRE_2)
-			pave.add_child(icone)
-			D.place(icone, Rect2(w - 58, 24, 40, 40))
-		var mot: String = Panneaux.JOURS.get(kind, ["", kind])[1]
-		Kit.titre(pave, 18, 140, mot, 24, w - 30).add_theme_font_override("font", Charte.TITRE_FICHE)
-		if kind == "seance":
-			var ch := str(j.get("charge", "normal"))
-			var c: Color = {"repos": Charte.REPOS, "intense": Charte.INTENSIF}.get(ch, Charte.NORMAL)
-			Pieces.pastille(pave, 18, 168, str(Panneaux.CHARGES.get(ch, "")), "train", "TacticsTabCharge%d" % i, "", c)
-		D.text(pave, 18, zone.size.y - 14, str(j.get("date", "")), 15, Charte.IVOIRE_2, 600, w - 30)
-		_transparent(pave)
-		var aide := "%s · %s" % [str(j.get("date", "")), mot]
-		Pieces.rendre_cliquable(pave, rect.size, func(): _ouvrir_entrainement(app, 0), "TacticsTabJourLien%d" % i, aide, "", Charte.RAYON_CARTE)
-
-## Joueurs à surveiller : tuile portrait (anneau = condition), nom (survol = carte joueur, clic = fiche), chiffres.
-static func _surveilles(app: Control, page: Control, zone: Rect2, joueurs: Array) -> void:
-	var colonnes := 4
-	var w := (zone.size.x - (colonnes - 1) * 12) / colonnes
-	var h := 112.0
-	var lignes := floori((zone.size.y + 12) / (h + 12))
-	for n in mini(joueurs.size(), colonnes * lignes):
-		var p: Dictionary = joueurs[n]
-		var rect := Rect2(zone.position.x + (n % colonnes) * (w + 12), zone.position.y + floorf(n / float(colonnes)) * (h + 12), w, h)
-		var tuile := D.rect(page, rect, Charte.PANNEAU_2, Charte.RAYON_CARTE)
-		tuile.name = "TacticsTabSurveille%d" % n
-		tuile.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var portrait := Vertical._portrait(p, 84)
-		tuile.add_child(portrait)
-		portrait.position = Vector2(14, 14) * C.density
-		portrait.size = Vector2(84, 84) * C.density
-		var court := Kit.casse(str(p.get("name", "")), true)
-		Kit.nom(app, tuile, Rect2(112, 14, minf(w - 124, Kit.largeur(court, 20) + 6), 30), court, str(p.get("id", "")), "TacticsTabSurveilleNom%d" % n, Charte.IVOIRE, 20)
-		var x := 112.0
-		var cond := float(p.get("condition", 100))
-		if cond < 80: x += Pieces.pastille(tuile, x, 62, "%d %%" % roundi(cond), "heart", "TacticsTabSurveilleCond%d" % n, "", Charte.PERTE if cond < 70 else Pieces.ORANGE) + 8
-		var ch := float(p.get("physicalLoad", 0))
-		if ch >= 70 and x + 90 < w: Pieces.pastille(tuile, x, 62, "%d" % roundi(ch), "train", "TacticsTabSurveilleCharge%d" % n, "", Charte.INTENSIF)
+	load("res://ui/immersive08/tactics_entrainement_lignes.gd").construire(app, page, tuiles, surveilles)
 
 ## La pelouse verticale porte le XV de la feuille, anneau et chiffre de condition (carte de forme).
 static func _carte_forme(app: Control, page: Control) -> void:

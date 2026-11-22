@@ -2,6 +2,7 @@ extends SceneTree
 ## Entraînement › Semaine : chaque pièce visuelle ajoutée aux cartes (crans, cases, portraits, blasons, pastilles)
 ## mène à sa destination (choix appliqué, onglet, écran ou petite fenêtre) ; Échap ferme la petite fenêtre de joueurs.
 const ContextualFlow = preload("helpers/contextual_flow.gd")
+const SurvolLigne = preload("res://ui/survol_ligne.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -76,6 +77,7 @@ func run() -> void:
 	app.coach.close()
 	await week()
 	check(tab()==0,"Onglet Semaine ouvert")
+	await layout()
 	var squad: Array=app.model.squad
 	# Séance collective : chaque cran choisit la charge.
 	for mode in ["repos","intense","normal"]:
@@ -141,6 +143,38 @@ func run() -> void:
 	await week()
 	if await click_id("TrainingWeekDelegation_trainingLink"): check(tab()==3,"Case de délégation -> onglet Staff")
 	finish()
+## Mise en page « façon Effectif » (choix du 22/11/2026) : quatre petites tuiles-chiffres en tête, les sept volets en
+## sept lignes (deux cases chacune), plus aucune colonne de cartes ; survol de ligne ; clic volet / case / tuile.
+func layout() -> void:
+	for i in 4:
+		var tuile:=found("TrainingMetric%d" % i)
+		check(tuile is Button and tuile.is_visible_in_tree(),"Tuile-chiffre %d en tête" % i)
+		if tuile!=null: check(tuile.size.y<=found("ImmersiveTraining").size.y*.1,"Tuile-chiffre %d compacte" % i)
+	check(found("TrainingMetrics")==null and found("TrainingWeekColumn0")==null,"Ancienne rangée de chiffres et colonnes de cartes retirées")
+	check(found("TrainingWeekTable")!=null,"Tableau de la semaine présent")
+	var y_precedent:=-1.0
+	for i in 7:
+		var ligne:=found("TrainingWeekRow%d" % i)
+		check(ligne!=null and ligne.is_visible_in_tree(),"Volet %d en ligne" % i)
+		if ligne==null: continue
+		check(ligne.get_global_rect().position.y>y_precedent,"Volets empilés de haut en bas · %d" % i)
+		y_precedent=ligne.get_global_rect().position.y
+		check(ligne.get_node_or_null(SurvolLigne.NOM)!=null,"Survol de ligne posé · volet %d" % i)
+		for k in 2: check(ligne.find_child("TrainingStep%d" % (i*2+k),true,false) is Button,"Case %d dans le volet %d" % [i*2+k,i])
+		check(ligne.find_child("TrainingWeekVolet%d" % i,true,false) is Button,"Nom du volet %d cliquable" % i)
+	# Clic sur un nom de volet : sa première case est retenue (contour) et la séance sélectionnée suit.
+	(found("TrainingWeekVolet3") as Button).pressed.emit(); await settle()
+	check(int(page().state.get("slot",-1))==6,"Volet Vigilance -> case Récupération retenue")
+	check(found("TrainingWeekPick6")!=null and found("TrainingWeekPick6").visible and not found("TrainingWeekPick0").visible,"Contour sur la case retenue")
+	(found("TrainingStep11") as Button).pressed.emit(); await settle()
+	check(int(page().state.get("slot",-1))==11 and found("TrainingWeekPick11").visible,"Case Jour de match retenue")
+	# Tuiles : moral -> Vestiaire ; condition -> onglet Fatigue.
+	(found("TrainingMetric0") as Button).pressed.emit(); await settle()
+	check(tab()==4,"Tuile Condition -> onglet Fatigue")
+	await week()
+	(found("TrainingMetric1") as Button).pressed.emit(); await settle()
+	check(app.route=="Vestiaire","Tuile Moral -> Vestiaire")
+	await back()
 func finish() -> void:
 	print("TRAINING WEEK CLICKS : ",checks," contrôles ; ",failures.size()," échec(s)")
 	if app!=null: app.bridge.stop()

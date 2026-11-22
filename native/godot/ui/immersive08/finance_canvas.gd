@@ -1,7 +1,7 @@
 extends RefCounted
-## Finances (direction artistique, variante 1 « Verdict en tête, quatre blocs », revue du 19/11/2026).
-## Synthèse : verdict en mots, trésorerie, budget de transferts (alloué / engagé / restant), marge, puis vigilances,
-## échéances, répartition et « Solde sur 12 mois » (trésorerie semaine par semaine). Les autres onglets gardent une colonne de verdict fixe à gauche.
+## Finances (direction artistique du 19/11/2026). Synthèse « façon Effectif » (finance_synthese.gd, choix du 22/11) :
+## cinq tuiles-chiffres, trois colonnes de listes à lignes et « Solde sur 12 mois » (trésorerie semaine par semaine).
+## Les autres onglets gardent une colonne de verdict fixe à gauche (verdict, trésorerie, budget de transferts, marge).
 ## Tout montant, ligne ou nom ouvre l'écran qui l'explique ; une semaine du solde ouvre une petite fenêtre visuelle ; aucun or (réservé à Continuer).
 const FocusLater := preload("res://ui/focus_later.gd")
 const C = preload("res://ui/immersive08/components.gd")
@@ -619,29 +619,18 @@ static func _projection_reading(finance: Dictionary) -> String:
 static func _carte_tresorerie(app: Control, canvas: Control, rectangle: Rect2, accounts: Dictionary, finance: Dictionary, v: Dictionary) -> void:
 	# Sur l'onglet Trésorerie, le bloc mène au budget qui explique la prévision de fin de saison.
 	var ici := _onglet_courant(app) == "cash"
-	var haute := rectangle.size.y >= 200.0
 	var lecture := _projection_reading(finance)
 	var bulle := "Trésorerie du club : prévision de fin de saison, dans l'onglet Budget." if ici else "Trésorerie du club : tous les mouvements et le solde, dans l'onglet Trésorerie."
 	var carte := _carte(app, canvas, rectangle, "FinanceMetric0", _onglet_cible("budget" if ici else "cash"), "Ouvrir · Budget" if ici else "Ouvrir · Trésorerie", bulle + "
 " + lecture)
-	# Carte haute (Synthèse) : titre et montant en haut, deux tuiles dessous (fin de saison prévue, guichet et soutien).
-	var decalage := maxf(0.0, (rectangle.size.y - 200.0) * .5 - 10.0) if haute else maxf(0.0, (rectangle.size.y - 120.0) * .5 - 10.0)
+	var decalage := maxf(0.0, (rectangle.size.y - 120.0) * .5 - 10.0)
 	var cash: Variant = v.cash
 	_titre(carte, 20, 36 + decalage, "TRÉSORERIE", 22, Charte.IVOIRE_2, rectangle.size.x - 40).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var montant := _titre(carte, 20, 92 + decalage, U.amount(cash), 52, Charte.D if cash != null and float(cash) < 0.0 else Charte.IVOIRE, rectangle.size.x - 40)
 	montant.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Fin de saison prévue : une tuile à droite du montant.
 	var prevue: Variant = v.forecast
-	var detail: Variant = finance.get("projection")
-	var tuiles: Array = [[U.amount(prevue) if prevue != null else "—", "fin de saison", Pieces.ROUGE if prevue != null and float(prevue) < 0.0 else Pieces.VERT, "FinanceProjectionEnd"]]
-	if detail is Dictionary and finance.has("budget"):
-		if absf(float(detail.otherInflows)) >= 1.0: tuiles.append([("+" if float(detail.otherInflows) > 0.0 else "") + U.amount(detail.otherInflows), "guichet · soutien", Pieces.VERT if float(detail.otherInflows) > 0.0 else Pieces.ROUGE, "FinanceProjectionBox"])
-		else: tuiles.append([U.amount(detail.marginTotal), "marge · %d sem." % int(detail.remainingWeeks), Pieces.VERT if float(detail.marginTotal) >= 0.0 else Pieces.ROUGE, "FinanceProjectionMargin"])
-	if haute:
-		var largeur_tuile := (rectangle.size.x - 40.0 - 8.0 * (tuiles.size() - 1)) / tuiles.size()
-		for k in tuiles.size(): Pieces.tuile(carte, Rect2(20 + k * (largeur_tuile + 8), 138 + decalage, largeur_tuile, 68), tuiles[k][0], tuiles[k][1], tuiles[k][2], tuiles[k][3], 30, "", "", false, func(): _vers(app, "budget"))
-	else:
-		# Carte basse (autres onglets) : une seule tuile, à droite du montant.
-		Pieces.tuile(carte, Rect2(rectangle.size.x - 20 - 150, 22 + decalage * .5, 150, 62), tuiles[0][0], tuiles[0][1], tuiles[0][2], tuiles[0][3], 26, "", "", false, func(): _vers(app, "budget"))
+	Pieces.tuile(carte, Rect2(rectangle.size.x - 20 - 150, 22 + decalage * .5, 150, 62), U.amount(prevue) if prevue != null else "—", "fin de saison", Pieces.ROUGE if prevue != null and float(prevue) < 0.0 else Pieces.VERT, "FinanceProjectionEnd", 26, "", "", false, func(): _vers(app, "budget"))
 
 static func _carte_budget(app: Control, canvas: Control, rectangle: Rect2, accounts: Dictionary, ledger: Array) -> void:
 	var transfer := Budget.data(app.model)
@@ -692,29 +681,18 @@ static func _carte_marge(app: Control, canvas: Control, rectangle: Rect2, financ
 	_titre(carte, 20, 36 + decalage, "MARGE COURANTE", 22, Charte.IVOIRE_2, rectangle.size.x - 40).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var texte := "—"
 	if marge != null: texte = ("+" if float(marge) > 0.0 else "") + U.amount(marge)
-	_titre(carte, 20, 92 + decalage, texte + (" / sem." if marge != null else ""), 52 if rectangle.size.y >= 200.0 else 42, Charte.D if marge != null and float(marge) < 0.0 else Charte.IVOIRE, rectangle.size.x - 40).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_titre(carte, 20, 92 + decalage, texte + (" / sem." if marge != null else ""), 42, Charte.D if marge != null and float(marge) < 0.0 else Charte.IVOIRE, rectangle.size.x - 40).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var recettes: Variant = finance.get("weeklyIncome")
 	var charges: Variant = finance.get("weeklyCosts")
 	var valeurs := [["▲ " + U.amount(recettes), "recettes", "FinanceMarginIncome", Pieces.VERT], ["▼ " + U.amount(charges), "charges", "FinanceMarginCosts", Pieces.ROUGE]]
-	if rectangle.size.y >= 200.0:
-		# Carte haute (Synthèse) : recettes et charges en deux tuiles sous la marge.
-		var largeur_tuile := (rectangle.size.x - 40.0 - 8.0) / 2.0
-		for k in 2: Pieces.tuile(carte, Rect2(20 + k * (largeur_tuile + 8), 138 + decalage, largeur_tuile, 68), valeurs[k][0], valeurs[k][1], valeurs[k][3], valeurs[k][2], 26, "", "", false, func(): _vers(app, "budget"))
-	else:
-		# Carte basse (autres onglets) : tuiles à droite de la marge.
-		for k in 2: Pieces.tuile(carte, Rect2(rectangle.size.x - 20 - 2 * 124 - 8 + k * 132, 20 + decalage * .5, 124, 62), valeurs[k][0], valeurs[k][1], valeurs[k][3], valeurs[k][2], 22, "", "", false, func(): _vers(app, "budget"))
+	# Recettes et charges : deux tuiles à droite de la marge.
+	for k in 2: Pieces.tuile(carte, Rect2(rectangle.size.x - 20 - 2 * 124 - 8 + k * 132, 20 + decalage * .5, 124, 62), valeurs[k][0], valeurs[k][1], valeurs[k][3], valeurs[k][2], 22, "", "", false, func(): _vers(app, "budget"))
 
 # ---- Synthèse -----------------------------------------------------------------------------------------------
 
 static func _synthese(app: Control, canvas: Control, accounts: Dictionary, finance: Dictionary, ledger: Array, v: Dictionary) -> void:
-	_verdict_panneau(app, canvas, Rect2(0, HAUT, 880, 300), v, false, "summary")
-	_carte_tresorerie(app, canvas, Rect2(896, HAUT, 400, 300), accounts, finance, v)
-	_carte_budget(app, canvas, Rect2(1312, HAUT, 500, 300), accounts, ledger)
-	_carte_marge(app, canvas, Rect2(1828, HAUT, 420, 300), finance, v)
-	_watch(_panneau(canvas, Rect2(0, 466, 690, 380), "Vigilances", "FinanceWatch"), app, finance, 690)
-	_due(_panneau(canvas, Rect2(706, 466, 840, 380), "Prochaines échéances", "FinanceDue"), app, finance, 840)
-	_allocation(_panneau(canvas, Rect2(1562, 466, 686, 380), "Où va l'argent", "FinanceAllocation", "par semaine"), app, finance, 686)
-	_solde(app, canvas, _panneau(canvas, Rect2(0, 862, 2248, 368), "Solde sur 12 mois", "FinanceSolde"), accounts, 2248)
+	# Synthèse « façon Effectif » (choix de Léo du 22/11/2026) : tuiles du bandeau, trois colonnes de listes, solde.
+	load("res://ui/immersive08/finance_synthese.gd").construire(app, canvas, accounts, finance, ledger, v)
 
 ## Semaines des 12 derniers mois (relevés du moteur) ; la trésorerie du jour s'ajoute si elle a bougé depuis le dernier relevé.
 static func solde_semaines(app: Control, accounts: Dictionary) -> Array:
