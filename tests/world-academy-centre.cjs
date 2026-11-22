@@ -81,6 +81,11 @@ function decisions(t,club){
  assert.equal(ap().players.find(p=>p.id===suivi.id).target,480);assert.equal(ap().players.find(p=>p.id===suivi.id).path,'minutes');
  ok('academy_specialize',{playerId:suivi.id,kind:'vitesse'});ok('academy_load',{playerId:suivi.id,load:'allegee'});
  ok('academy_interview',{playerId:suivi.id,answer:'minutes'});ok('academy_ambition',{playerId:suivi.id,decision:'accompagner'});
+ assert.equal(ap().players.find(p=>p.id===suivi.id).load,'allegee');assert.equal(ap().players.find(p=>p.id===suivi.id).ambition,'accompagner');
+ // Tous les jeunes du centre (souvent 60 en Monde, au-delà des anciennes bornes de 35 charges et 40 réponses) : une charge
+ // et une réponse à l'ambition chacun, gardées par le moteur (un club suffit : ~120 commandes).
+ if(club===91)ap().players.filter(p=>p.age<=21&&p.id!==suivi.id).forEach((p,i)=>{ok('academy_load',{playerId:p.id,load:['equilibree','intensive','allegee'][i%3]});ok('academy_ambition',{playerId:p.id,decision:i%2?'patienter':'accompagner'});});
+ if(club===91)assert.ok(ap().players.filter(p=>p.age<=21).every(p=>p.load&&p.ambition),'charge et ambition gardées pour chaque jeune ('+ap().players.length+')');
  const binome=ap().players.map(p=>[p,ap().seniors.find(x=>x.pos===p.pos&&x.age>=23)]).find(([,x])=>x);
  if(binome)ok('academy_pair',{playerId:binome[0].id,seniorId:binome[1].id});
  ok('academy_identity',{identity:'mouvement'});assert.equal(ap().identity,'mouvement');
@@ -193,6 +198,88 @@ test('Centre : prix historiques hors Monde et à 4 M€',{timeout:600000},()=>{
   const petit=lire(`${liste}.map(v=>CDNativeAcademy.fee(S,v))`);
   assert.ok(petit.every((v,i)=>v<bases[i]),'Nationale à 400 000 € : tous les prix réduits '+petit);
  }finally{t.jeu.fermer();}
+});
+
+// Recrutement d'un jeune des filières de bout en bout (22/11/2026) : observations, essai, autorisation si étranger, projet
+// accepté → il arrive au Centre avec un parcours ; sa charge de travail et la réponse à son ambition sont gardées par le
+// moteur, agissent à l'entraînement de la semaine, et survivent à la sauvegarde puis à la réouverture du jeu. Ancienne
+// sauvegarde (lignes de jeunes partis) : lue telle quelle ; à la saison suivante, charges reprises, ambition rouverte.
+test('Centre Monde : jeune des filières recruté, choix du parcours gardés après rechargement',{timeout:900000},()=>{
+ const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+ const dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'rl-centre-filieres-'));
+ let jeu=H.ouvrir({dataDir,testVm:true});
+ try{
+  const lire=expr=>JSON.parse(jeu.bridge.vm.run('JSON.stringify('+expr+')'));
+  let model=H.creer(jeu,91);
+  const ap=()=>model.clubLife.academyPathways;
+  const ok=(command,payload={})=>{const r=jeu.brut(command,{...ap().context,...payload});assert.equal(r.ok,true,command+' : '+r.error);model=r.model;return model;};
+  ok('academy_activate',{confirmed:true});
+  const home=ap().homeUnion,zone=lire('S.v95to100.region');
+  ok('academy_discover',{region:zone,confirmed:true});
+  // Prospects des filières, ceux de la zone du club d'abord ; on suit le vrai parcours du manager jusqu'à un « oui ».
+  let recrue=null;
+  const tries=ap().prospects.filter(p=>p.age>=16&&(p.union===home||p.age>=18)).sort((a,b)=>b.scouted-a.scouted);
+  assert.ok(tries.length>0,'jeunes des filières à recruter');
+  for(const prospect of tries.slice(0,8)){
+   const effectif=ap().players.length;
+   while(ap().prospects.find(p=>p.id===prospect.id).scouted<2)ok('academy_watch',{playerId:prospect.id,confirmed:true});
+   ok('academy_trial',{playerId:prospect.id,confirmed:true});
+   if(prospect.union!==home)ok('academy_clearance',{playerId:prospect.id});
+   ok('academy_feeder_recruit',{playerId:prospect.id,confirmed:true});
+   if(ap().players.some(p=>p.id===prospect.id)){assert.equal(ap().players.length,effectif+1);recrue=prospect;break;}
+   assert.equal(lire(`S.v95to100.network.players.find(p=>p.id===${JSON.stringify(prospect.id)}).status`),'declined','refus du projet enregistré');
+  }
+  assert.ok(recrue,'un jeune des filières accepte le projet');
+  const id=recrue.id,q=JSON.stringify(id);
+  // Il arrive au Centre (plus dans les filières), avec son origine et un parcours.
+  assert.ok(!ap().prospects.some(p=>p.id===id),'il quitte les filières disponibles');
+  assert.equal(lire(`S.development.academy.find(p=>p.id===${q}).trainingOrigin.clubId`),recrue.clubId,'club formateur d’origine gardé');
+  let jeune=()=>ap().players.find(p=>p.id===id);
+  assert.equal(jeune().path,'equilibre','parcours par défaut');assert.equal(jeune().load,'equilibree','charge par défaut');assert.equal(jeune().ambition,null);
+  ok('academy_path',{playerId:id,strategy:'progression'});ok('academy_target',{playerId:id,minutes:960});
+  ok('academy_load',{playerId:id,load:'intensive'});ok('academy_ambition',{playerId:id,decision:'patienter'});
+  assert.equal(jeune().load,'intensive','charge gardée par le moteur');assert.equal(jeune().ambition,'patienter','réponse à l’ambition gardée');
+  assert.equal(jeu.brut('academy_ambition',{...ap().context,playerId:id,decision:'professionnel'}).ok,false,'une réponse par saison');
+  const autre=ap().players.find(p=>p.id!==id&&p.age<=21&&!p.injury);
+  ok('academy_load',{playerId:autre.id,load:'allegee'});ok('academy_load',{playerId:autre.id,load:'equilibree'});ok('academy_load',{playerId:autre.id,load:'allegee'});
+  assert.equal(ap().players.find(p=>p.id===autre.id).load,'allegee','dernier choix de charge retenu');
+  assert.equal(lire(`S.v95to100.loads.filter(l=>l.id===${JSON.stringify(autre.id)}).length`),1,'une ligne par jeune');
+  // Effet à l'entraînement de la semaine (le premier arrive avec le premier match, après la préparation) : la charge
+  // intensive fatigue (condition -3) et fait progresser.
+  const avant=lire(`(p=>({c:p.condition,xp:p.dev.xp,r:p.rating}))(S.development.academy.find(p=>p.id===${q}))`);
+  for(let j=0;j<80&&lire(`S.development.academy.find(p=>p.id===${q}).condition`)===avant.c;j++){
+   model=jeu.regler(model);
+   if(model.meta.calendarCadence?.matchReady&&model.next){model=H.jouerLeMatch(jeu,model);continue;}
+   model=jeu.regler(jeu.call('advance_day',{fromDate:model.meta.calendarToday}));
+  }
+  const apres=lire(`(p=>({c:p.condition,xp:p.dev.xp,r:p.rating,injury:p.injury}))(S.development.academy.find(p=>p.id===${q}))`);
+  if(!apres.injury){
+   assert.ok(apres.c<avant.c,'charge intensive : condition en baisse ('+avant.c+' → '+apres.c+')');
+   assert.ok(apres.r>avant.r||apres.xp>avant.xp,'charge intensive : progression à l’entraînement');
+  }
+  model=H.jusquALaSemaineSuivante(jeu,model);
+  assert.equal(lire('!S.live&&S.phase!=="ended"'),true,'journée close, Centre de nouveau ouvert aux décisions');
+  assert.doesNotThrow(()=>jeu.bridge.vm.run('validateCareer(S)'));
+  // Sauvegarde puis réouverture du jeu (même dossier de profil) : les choix sont toujours cochés.
+  const sauve=jeu.call('export').meta.exportText;
+  jeu.bridge.close();jeu=H.ouvrir({dataDir,testVm:true});
+  model=jeu.call('snapshot');
+  assert.equal(jeu.call('export').meta.exportText,sauve,'carrière rechargée à l’identique');
+  jeune=()=>model.clubLife.academyPathways.players.find(p=>p.id===id);
+  assert.ok(jeune(),'le jeune est toujours au Centre');
+  assert.equal(jeune().load,'intensive');assert.equal(jeune().ambition,'patienter');assert.equal(jeune().path,'progression');assert.equal(jeune().target,960);
+  assert.equal(model.clubLife.academyPathways.players.find(p=>p.id===autre.id).load,'allegee');
+  // Ancienne sauvegarde (ligne d'un jeune parti, aucun champ nouveau) : lue telle quelle ; la ligne part au choix suivant.
+  jeu.bridge.vm.run(`S.v95to100.loads.push({id:'youth-parti-1',load:'allegee'})`);
+  assert.doesNotThrow(()=>jeu.bridge.vm.run('validateCareer(S)'),'ancienne sauvegarde valide');
+  // Saison suivante (sur une copie de l'état) : charges reprises pour les jeunes encore au Centre, ambition à redemander.
+  const suite=lire(`(()=>{const A=CDEspoirsStrategyV95V100,c=JSON.parse(JSON.stringify(S));c.season++;c.phase='league';const st=A.ensure(c);return {valid:A.valid(st),choix:A.choices(c,${q}),parti:st.loads.some(l=>l.id==='youth-parti-1')}})()`);
+  assert.deepEqual(suite,{valid:true,choix:{load:'intensive',ambition:null},parti:false},'charge reprise d’une saison à l’autre');
+  model=jeu.call('academy_load',{...model.clubLife.academyPathways.context,playerId:autre.id,load:'intensive'});
+  assert.equal(lire('S.v95to100.loads.some(l=>l.id==="youth-parti-1")'),false,'ligne du jeune parti retirée');
+  assert.equal(jeune().load,'intensive');assert.equal(jeune().ambition,'patienter');
+  assert.doesNotThrow(()=>jeu.bridge.vm.run('validateCareer(S)'));
+ }finally{jeu.fermer();fs.rmSync(dataDir,{recursive:true,force:true});}
 });
 
 for(const club of CLUBS){

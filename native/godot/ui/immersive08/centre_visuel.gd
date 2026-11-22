@@ -591,7 +591,10 @@ static func fenetre_parcours(ctx: Dictionary, id: String) -> void:
 	y = reglage(fond, x1, y, col, "Spécialisation", [["puissance", "Puissance", ALERTE, "", a], ["vitesse", "Vitesse", MINUTES, "", a], ["endurance", "Endurance", PROGRES, "", a], ["technique", "Technique", REPUTATION, "", a]], p.get("program"), envoi.call("academy_specialize", "kind"), "CVSpecialisation")
 	y = reglage(fond, x1, y, col, "Charge", [["allegee", "Allégée", Charte.REPOS, "", a], ["equilibree", "Équilibrée", Charte.NORMAL, "", a], ["intensive", "Intensive", Charte.INTENSIF, "", a]], p.get("load"), envoi.call("academy_load", "load"), "CVCharge")
 	y = reglage(fond, x1, y, col, "Entretien", [["minutes", "Minutes", MINUTES, "", a], ["promouvoir", "Promotion", DEPENSE, "", a], ["preter", "Prêt", COHESION, "", a], ["refuser", "Refus", ALERTE, "", a]], _entree(data.get("promises", []), id, "answer"), envoi.call("academy_interview", "answer"), "CVEntretien")
-	y = reglage(fond, x1, y, col, "Ambition", [["accompagner", "Accompagner", PROGRES, "", a], ["patienter", "Patienter", COHESION, "", a], ["professionnel", "Passer pro", DEPENSE, "", a], ["pret", "Prêt", REPUTATION, "", a]], null, envoi.call("academy_ambition", "decision"), "CVAmbition")
+	# Réponse à l'ambition : une par saison (le moteur la garde) ; la réponse donnée reste en aplat, les autres se figent.
+	var ambition: Variant = p.get("ambition")
+	var aa := a and ambition == null
+	y = reglage(fond, x1, y, col, "Ambition", [["accompagner", "Accompagner", PROGRES, "", aa], ["patienter", "Patienter", COHESION, "", aa], ["professionnel", "Passer pro", DEPENSE, "", aa], ["pret", "Prêt", REPUTATION, "", aa]], ambition, envoi.call("academy_ambition", "decision"), "CVAmbition")
 	# Colonne de droite : accompagnement, mentor, contrats.
 	var mentor := cout(ctx, "mentor", 8000)
 	var am: bool = a and not bool(data.get("weekMentored", false))

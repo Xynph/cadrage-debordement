@@ -11,6 +11,10 @@
  const homeZone=s=>ZONES[homeUnionOf(s)]||'Europe';
  const IDENTITIES=['mouvement','puissance','defense','polyvalence'];
  const DECISIONS=['accompagner','pret','professionnel','patienter'];
+ // Charge de travail gardée par jeune d'une saison à l'autre (22/11/2026) : une ligne par Espoir du centre (75 au plus,
+ // comme le centre élargi ; un centre du Monde compte souvent 60 jeunes) ; réponses à l'ambition : une par jeune et par
+ // saison, jeunes partis en cours de saison compris (bilan de fin de saison). Anciennes sauvegardes (35 et 40) valides.
+ const LOADS=['allegee','equilibree','intensive'],LOADS_MAX=75,AMBITIONS_MAX=120;
  const safe=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const clean=x=>String(x??'').replace(/[&<>"'\x00-\x1f]/g,' ').slice(0,100);
  const copy=x=>JSON.parse(JSON.stringify(x));
@@ -28,8 +32,8 @@
    Number.isInteger(st.meetings)&&st.meetings>=0&&st.meetings<=3&&
    Array.isArray(st.candidates)&&st.candidates.length<=9&&
    Array.isArray(st.recruits)&&st.recruits.length<=5&&
-   Array.isArray(st.loads)&&st.loads.length<=35&&
-   Array.isArray(st.ambitions)&&st.ambitions.length<=40&&
+   Array.isArray(st.loads)&&st.loads.length<=LOADS_MAX&&
+   Array.isArray(st.ambitions)&&st.ambitions.length<=AMBITIONS_MAX&&
    Array.isArray(st.history)&&st.history.length<=15&&
    st.candidates.every(x=>x&&typeof x.id==='string'&&ALL_REGIONS.includes(x.region)&&Number.isInteger(x.rating)&&Number.isInteger(x.potential))&&
    st.loads.every(x=>x&&typeof x.id==='string'&&['allegee','equilibree','intensive'].includes(x.load))&&
@@ -48,7 +52,8 @@
   if(old!==undefined){
    if(!valid(old)||old.season>s.season)return null;
    if(old.season===s.season){network(old,s);return old;}
-   s.v95to100={...old,season:s.season,scouts:0,meetings:0,candidates:[],recruits:[],loads:[],ambitions:[],
+   const kept=old.loads.filter(l=>youth(s).some(p=>p.id===l.id&&p.age<=21)).slice(0,LOADS_MAX);
+   s.v95to100={...old,season:s.season,scouts:0,meetings:0,candidates:[],recruits:[],loads:kept,ambitions:[],
     history:old.history.slice(0,15)};
    evolveNetwork(network(s.v95to100,s),s);return s.v95to100;
   }
@@ -272,23 +277,49 @@
  }
  function load(s,id,value,save){
   const st=ensure(s),p=youth(s).find(x=>x.id===id);
-  if(!st||!unlocked(s)||!p||!['allegee','equilibree','intensive'].includes(value)||p.age>21)return false;
+  if(!st||!unlocked(s)||!p||!LOADS.includes(value)||p.age>21)return false;
   return transact(s,()=>{
+   // Jeunes partis (promus, prêtés, sortis) : leur ligne est retirée avant de compter la place.
+   st.loads=st.loads.filter(x=>x.id===id||youth(s).some(q=>q.id===x.id));
    const existing=st.loads.find(x=>x.id===id);
    if(existing)existing.load=value;
-   else{if(st.loads.length>=35)return false;st.loads.push({id,load:value})}
+   else{if(st.loads.length>=LOADS_MAX)return false;st.loads.push({id,load:value})}
    return true;
   },save);
  }
  function ambition(s,id,decision,save){
   const st=ensure(s),p=youth(s).find(x=>x.id===id);
-  if(!st||!unlocked(s)||!p||p.age>21||!DECISIONS.includes(decision)||
+  if(!st||!unlocked(s)||!p||p.age>21||!DECISIONS.includes(decision)||st.ambitions.length>=AMBITIONS_MAX||
    st.ambitions.some(x=>x.id===id&&x.season===s.season))return false;
   return transact(s,()=>{
    st.ambitions.push({id,season:s.season,decision,fulfilled:decision==='accompagner'||decision==='patienter'});
    st.cohesion=clamp(st.cohesion+(decision==='patienter'?-2:2),0,100);
    return true;
   },save);
+ }
+ // Choix actifs d'un Espoir : charge (« equilibree » sans choix) et réponse à l'ambition de la saison en cours.
+ function choices(s,id){
+  const st=s?.v95to100,current=st&&st.season===s.season;
+  return {load:st?.loads?.find(x=>x.id===id)?.load||'equilibree',
+   ambition:current?st.ambitions.find(x=>x.id===id&&x.season===s.season)?.decision||null:null};
+ }
+ // Effet de la charge à chaque entraînement de la semaine (en plus du bilan de fin de saison) : « allegee » récupère
+ // (condition +4, fatigue des matchs de jeunes -6), « intensive » fait progresser plus vite tant que le jeune est en
+ // forme (condition 55 et plus) mais fatigue (condition -3, fatigue des matchs +4) ; « equilibree » = entraînement normal.
+ function train(s,grow){
+  const st=ensure(s);if(!st)return 0;
+  let count=0;
+  for(const l of st.loads){
+   const p=youth(s).find(x=>x.id===l.id);if(!p||p.injury>0||l.load==='equilibree')continue;
+   const y=Array.isArray(p.youthLoad)&&p.youthLoad.length===10&&p.youthLoad[0]===s.season?p.youthLoad:null;
+   const c=Number.isFinite(p.condition)?p.condition:75;
+   if(l.load==='allegee'){p.condition=clamp(Math.round(c+4),35,100);if(y)y[4]=clamp(y[4]-6,0,100);count++;continue}
+   if(c>=55&&p.dev&&typeof grow==='function'){
+    const age=typeof root.ageGrowth==='function'?root.ageGrowth(p):1;grow(p,.045*age);
+   }
+   p.condition=clamp(Math.round(c-3),35,100);if(y)y[4]=clamp(y[4]+4,0,100);count++;
+  }
+  return count;
  }
  function identity(s,value,save){
   const st=ensure(s);
@@ -415,7 +446,7 @@
   }
   return true;
  }
- const api={regions:regionsOf,homeUnion:homeUnionOf,valid,ensure,network,model,watch,trial,partner,clearance,recruitFeeder,networkPanel,discover,recruit,meeting,load,ambition,identity,rankings,settle,panel,install};
+ const api={regions:regionsOf,homeUnion:homeUnionOf,valid,ensure,network,model,watch,trial,partner,clearance,recruitFeeder,networkPanel,discover,recruit,meeting,load,ambition,choices,train,identity,rankings,settle,panel,install};
  root.CDEspoirsStrategyV95V100=api;
  if(typeof module==='object'&&module.exports)module.exports=api;
  if(!root.CDNativeHeadless&&typeof document!=='undefined')install(root);
