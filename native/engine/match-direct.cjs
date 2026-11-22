@@ -353,7 +353,15 @@ function periodes(vues,events,finIndice,rencontre,lire,feuille=null){
   const fin=k===derniere?Math.max(k*PAS_PERIODE+1,Math.min((k+1)*PAS_PERIODE,jouees.at(-1).minute)):(k+1)*PAS_PERIODE;
   tranches.push({de:k*PAS_PERIODE,a:(k+1)*PAS_PERIODE,fin,enCours:k===derniere,valeurs,parts});
  }
- return {pas:PAS_PERIODE,tranches};
+ // Minute par minute (courbe de possession / d'occupation) : faits de chaque camp, même source que les tranches.
+ const fin=Math.max(0,jouees.at(-1).minute),minutes={possession:[],occupation:[]};
+ for(let m=0;m<=fin;m++){minutes.possession.push([0,0]);minutes.occupation.push([0,0])}
+ for(const l of jouees){
+  if(SANS_IMAGE.has(l.kind))continue;const m=Math.min(fin,Math.max(0,l.minute));
+  if(l.possession===0||l.possession===1)minutes.possession[m][l.possession]++;
+  if(l.x!==null&&l.x!==50)minutes.occupation[m][l.x>50?0:1]++;
+ }
+ return {pas:PAS_PERIODE,tranches,minutes};
 }
 
 function releve(rencontre,n,valeurs,borne){

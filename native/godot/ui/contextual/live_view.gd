@@ -1983,7 +1983,9 @@ func ouvrir_fenetre_stat(rang: Dictionary) -> void:
 				var c: Dictionary = _club_complet(teams[nous if k == 0 else 1 - nous]) if teams[nous if k == 0 else 1 - nous] is Dictionary else {}
 				sigles.append(str(c.get("abbr", "")))
 			var globale: Array = [null, null] if vide else [float(valeurs[nous]), float(valeurs[1 - nous])]
-			if OS.get_environment("CD_VARIANTE_VISUELLE") == "F": _frise_parts(fond, zone, tranches, nos_valeurs, teintes, sigles, globale)
+			var minutes: Variant = ((direct.get("periodes", {}) as Dictionary).get("minutes", {}) as Dictionary).get(cle) if direct.get("periodes") is Dictionary and direct.periodes.get("minutes") is Dictionary else null
+			if OS.get_environment("CD_VARIANTE_VISUELLE") == "G" and minutes is Array: _courbe_parts(fond, zone, minutes, teintes, sigles, globale, nous)
+			elif OS.get_environment("CD_VARIANTE_VISUELLE") == "F": _frise_parts(fond, zone, tranches, nos_valeurs, teintes, sigles, globale)
 			else: _cadran_parts(fond, zone, tranches, nos_valeurs, teintes, sigles, globale, parts_mi_temps(tranches, cle, nous))
 		elif taux: _barres_periodes(fond, zone, tranches, nos_valeurs, teintes, true)
 		else: _courbe_periodes(fond, zone, tranches, nos_valeurs, teintes, false)
@@ -2153,7 +2155,7 @@ func _courbe_periodes(fond: Control, zone: Rect2, tranches: Array, valeurs: Arra
 		var valeur := float(f[2])
 		D.text(cadre, p.x + 14, p.y + 9, ("%d%%" % roundi(valeur)) if pourcent else str(roundi(valeur)), 24, teintes[int(f[0])], 800, 84).name = "MatchFenetreStatFin%d" % int(f[0])
 
-## Parts entre les deux clubs (somme 100 %) : choix visuel ouvert sous CD_VARIANTE_VISUELLE (E cadran du match, F frise).
+## Parts entre les deux clubs (somme 100 %) : choix visuel ouvert sous CD_VARIANTE_VISUELLE (E cadran du match, F frise, G courbe du match).
 const STATS_PARTS := ["possession", "occupation"]
 
 ## Parts : pastilles de légende (couleur et sigle des deux clubs), notre club toujours en premier.
@@ -2286,6 +2288,96 @@ func _frise_parts(fond: Control, zone: Rect2, tranches: Array, valeurs: Array, t
 		var x := gauche + k * case + (coupure if k > 4 else 0.0)
 		D.rect(cadre, Rect2(x - 1, haut, 2, hauteur), Color(Charte.PANNEAU_2, 0.9))
 	D.rect(cadre, Rect2(gauche, haut + hauteur / 2.0, largeur, 1), Color(Charte.NOIR_PANNEAU, 0.45)).name = "MatchFenetreStat50"
+
+## Variante G « courbe du match » (idée de Léo, 22/11/2026) : part minute par minute, lissée sur 5 minutes, de part et
+## d'autre de la ligne des 50 % : au-dessus quand nous avons le ballon (zone à notre couleur), en dessous pour l'adversaire.
+## Axe 0′→80′, mi-temps marquée, minute actuelle repérée, futur vide ; survol : « 34′ · 62 % / 38 % ».
+func _courbe_parts(fond: Control, zone: Rect2, minutes: Array, teintes: Array[Color], sigles: Array, globale: Array, nous: int) -> void:
+	var cadre := D.rect(fond, zone, Charte.PANNEAU_2, Charte.RAYON_CARTE)
+	cadre.name = "MatchFenetreStatPeriodes"
+	_legende_parts(cadre, 30, 48, teintes, sigles)
+	var total := ("%s  %d %%" % [str(sigles[0]), roundi(float(globale[0]))]) if globale.size() == 2 and globale[0] != null else ""
+	D.text(cadre, zone.size.x - 30, 54, total, 30, teintes[0], 800, 400, HORIZONTAL_ALIGNMENT_RIGHT).name = "MatchFenetreStatCentre"
+	var gauche := 90.0
+	var droite := 30.0
+	var haut := 84.0
+	var bas := zone.size.y - 50.0
+	var courbe := CourbeParts.new()
+	courbe.name = "MatchFenetreStatCourbe"
+	courbe.mouse_filter = Control.MOUSE_FILTER_PASS
+	courbe.tooltip_text = " "
+	courbe.teintes = teintes
+	for m: Variant in minutes:
+		courbe.comptes.append([float(m[nous]), float(m[1 - nous])] if m is Array and (m as Array).size() == 2 else [0.0, 0.0])
+	courbe.duree = maxf(80.0, float(minutes.size() - 1))
+	cadre.add_child(courbe)
+	D.place(courbe, Rect2(gauche, haut, zone.size.x - gauche - droite, bas - haut))
+	var w := zone.size.x - gauche - droite
+	for k in 9:
+		var x := gauche + w * k * 10.0 / courbe.duree
+		D.text(cadre, x, bas + 30, "%d′" % (k * 10), 16 if k != 4 else 18, Charte.IVOIRE_3 if k != 4 else Charte.IVOIRE, 700, 70, HORIZONTAL_ALIGNMENT_CENTER)
+	D.text(cadre, gauche + w * 20.0 / courbe.duree, haut - 10, "1re MI-TEMPS", 15, Charte.IVOIRE_3, 700, 300, HORIZONTAL_ALIGNMENT_CENTER)
+	D.text(cadre, gauche + w * 60.0 / courbe.duree, haut - 10, "2e MI-TEMPS", 15, Charte.IVOIRE_3, 700, 300, HORIZONTAL_ALIGNMENT_CENTER)
+	# Minute actuelle repérée au-dessus de la courbe.
+	if minutes.size() > 0:
+		D.text(cadre, gauche + w * float(minutes.size() - 1) / courbe.duree, haut - 34, "%d′" % (minutes.size() - 1), 18, Charte.IVOIRE, 800, 70, HORIZONTAL_ALIGNMENT_CENTER).name = "MatchFenetreStatMaintenant"
+	# Qui est où : notre sigle au-dessus de la ligne des 50 %, l'adversaire en dessous.
+	var milieu := haut + (bas - haut) / 2.0
+	D.text(cadre, 24, milieu - 24, "▲ " + str(sigles[0]), 18, teintes[0], 800, 80).name = "MatchFenetreStatNous"
+	D.text(cadre, 24, milieu + 40, "▼ " + str(sigles[1]), 18, teintes[1], 800, 80).name = "MatchFenetreStatEux"
+
+## Courbe de part minute par minute : `comptes[m]` = faits [nous, eux] de la minute m ; part lissée sur ±2 minutes.
+class CourbeParts extends Control:
+	const LISSAGE := 2
+	var comptes: Array = []
+	var teintes: Array[Color] = [Charte.IVOIRE, Charte.IVOIRE_2]
+	var duree := 80.0
+	func part(m: int) -> float:
+		var a := 0.0
+		var b := 0.0
+		for j in range(maxi(0, m - LISSAGE), mini(comptes.size() - 1, m + LISSAGE) + 1):
+			a += float(comptes[j][0])
+			b += float(comptes[j][1])
+		return a / (a + b) if a + b > 0.0 else 0.5
+	func _x(m: float) -> float: return size.x * m / duree
+	func _y(p: float) -> float: return size.y * (1.0 - p)
+	func _get_tooltip(at_position: Vector2) -> String:
+		var m := roundi(at_position.x / size.x * duree)
+		if m < 0 or m >= comptes.size(): return ""
+		var p := part(m)
+		return "%d′ · %d %% / %d %%" % [m, roundi(p * 100.0), 100 - roundi(p * 100.0)]
+	func _draw() -> void:
+		var milieu := size.y / 2.0
+		# Repères : minutes de 10 en 10, mi-temps, ligne des 50 %.
+		for k in range(1, int(duree / 10.0) + 1):
+			draw_line(Vector2(_x(k * 10.0), 0), Vector2(_x(k * 10.0), size.y), Color(Charte.PANNEAU_3, 0.8 if k != 4 else 0.0), 1.0)
+		draw_line(Vector2(_x(40.0), -14), Vector2(_x(40.0), size.y), Color(Charte.IVOIRE_3, 0.6), 2.0)
+		if comptes.size() >= 2:
+			var points: Array[Vector2] = []
+			for m in comptes.size(): points.append(Vector2(_x(m), _y(part(m))))
+			# Zones : au-dessus de la médiane à notre couleur, en dessous à la sienne (coupées au croisement).
+			for i in points.size() - 1:
+				var p0 := points[i]
+				var p1 := points[i + 1]
+				var d0 := p0.y - milieu
+				var d1 := p1.y - milieu
+				if d0 * d1 < 0.0:
+					var t := d0 / (d0 - d1)
+					var c := Vector2(lerpf(p0.x, p1.x, t), milieu)
+					_zone(p0, c, d0)
+					_zone(c, p1, d1)
+				else: _zone(p0, p1, d0 if absf(d0) > 0.0 else d1)
+			draw_polyline(PackedVector2Array(points), Charte.IVOIRE, maxf(2.0, size.y * 0.008), true)
+			# Minute actuelle.
+			var maintenant := points[-1].x
+			draw_line(Vector2(maintenant, -6), Vector2(maintenant, size.y + 6), Charte.IVOIRE, 2.0)
+			draw_circle(points[-1], maxf(4.0, size.y * 0.02), Charte.IVOIRE)
+		draw_line(Vector2(0, milieu), Vector2(size.x, milieu), Color(Charte.IVOIRE_2, 0.7), 2.0)
+	func _zone(a: Vector2, b: Vector2, signe: float) -> void:
+		var milieu := size.y / 2.0
+		if absf(b.x - a.x) < 0.5 or (absf(a.y - milieu) < 0.5 and absf(b.y - milieu) < 0.5): return
+		var couleur: Color = Color(teintes[0], 0.85) if signe < 0.0 else Color(teintes[1], 0.6)
+		draw_colored_polygon(PackedVector2Array([a, b, Vector2(b.x, milieu), Vector2(a.x, milieu)]), couleur)
 
 ## Couleur d'un club (identité), sinon vert pour nous / ivoire pour l'adversaire.
 func _couleur_club(club: Dictionary, k: int) -> Color:

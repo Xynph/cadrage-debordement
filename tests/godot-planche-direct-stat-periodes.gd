@@ -124,8 +124,8 @@ func run() -> void:
 		root.size = taille
 		root.content_scale_size = taille
 		await settle(40)
-		# Parts (choix ouvert) en variantes E (cadran) et F (frise) ; taux en barres et comptes en courbes, fixés.
-		for passe: Array in [["E", ["possession", "occupation"]], ["F", ["possession", "occupation"]], ["", ["plaquages_reussis", "penalites"]]]:
+		# Parts (choix ouvert) en variantes G (courbe), F (frise) et E (cadran) ; taux en barres et comptes en courbes, fixés.
+		for passe: Array in [["G", ["possession", "occupation"]], ["F", ["possession", "occupation"]], ["E", ["possession"]], ["", ["plaquages_reussis", "penalites"]]]:
 			var variante: String = passe[0]
 			OS.set_environment("CD_VARIANTE_VISUELLE", variante)
 			for cle: String in passe[1]:
@@ -148,6 +148,10 @@ func run() -> void:
 					if c.is_visible_in_tree() and c.size.x >= 1.0 and not cadre.encloses(c.get_global_rect()):
 						check(false, "%s %s : %s hors de la fenêtre" % [cle, str(taille), c.name])
 						break
+				if variante == "G":
+					var courbe := fenetre.find_child("MatchFenetreStatCourbe", true, false) as Control
+					var bulle_g: String = courbe._get_tooltip(Vector2(courbe.size.x * 34.0 / 80.0, courbe.size.y / 2.0)) if courbe != null else ""
+					check(bulle_g.begins_with("34′ · ") and bulle_g.ends_with("%"), "courbe : survol d'une minute (« %s »)" % bulle_g)
 				if variante == "E":
 					var cadran := fenetre.find_child("MatchFenetreStatCadran", true, false) as Control
 					var bulle: String = cadran._get_tooltip(Vector2(cadran.size.x * 0.75, cadran.size.y * 0.1)) if cadran != null else ""
