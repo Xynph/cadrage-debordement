@@ -98,6 +98,12 @@ const EXTRAS := [
 	{"id": "vestiaire-groupe", "libelle": "Vestiaire · petite fenêtre du groupe (portraits)", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week", "presser": "RelationshipAllPortraits"},
 	{"id": "carriere-mobilite", "libelle": "Carrière · onglet Mobilité et recrutement", "type": "onglet_cle", "route": "Carrière", "cle": "immersive08_career_tab", "onglet": "details", "repos": "summary"},
 	{"id": "vestiaire-historique", "libelle": "Vestiaire · onglet Engagements et historique", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "history", "repos": "week"},
+	## Onglets du Centre (parcours activés) : un écran par onglet ; Parcours avec le parcours individuel du premier Espoir ouvert.
+	{"id": "centre-parcours", "libelle": "Centre · onglet Parcours (parcours individuel ouvert)", "type": "centre_onglet", "onglet": "Parcours", "texte": "OUVRIR LE PARCOURS INDIVIDUEL"},
+	{"id": "centre-centres", "libelle": "Centre · onglet Centres", "type": "centre_onglet", "onglet": "Centres"},
+	{"id": "centre-filieres", "libelle": "Centre · onglet Filières", "type": "centre_onglet", "onglet": "Filières"},
+	{"id": "centre-passerelle", "libelle": "Centre · onglet Passerelle pro", "type": "centre_onglet", "onglet": "Passerelle pro"},
+	{"id": "centre-generations", "libelle": "Centre · onglet Générations", "type": "centre_onglet", "onglet": "Générations"},
 ]
 ## Écrans du match en direct : le coup d'envoi est donné une fois, après tous les autres écrans.
 const EN_DIRECT := [
@@ -803,6 +809,19 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				if bouton == null: return {"statut": "echec", "note": "bouton %s absent" % ecran.presser}
 				bouton.pressed.emit()
 				await stabiliser()
+		"centre_onglet":
+			app.management_ui.immersive_centre = {"club": app.model.get("club", {}).get("id"), "tab": str(ecran.onglet), "scroll": {}}
+			app._navigate("Centre")
+			await stabiliser()
+			var onglets := app.find_child("AcademyTabs", true, false) as TabContainer
+			if onglets == null: return {"statut": "indisponible", "note": "parcours du centre non activés"}
+			if str(onglets.get_tab_control(onglets.current_tab).name) != str(ecran.onglet): return {"statut": "echec", "note": "onglet %s non ouvert" % ecran.onglet}
+			if ecran.has("texte"):
+				for bouton: Node in onglets.get_tab_control(onglets.current_tab).find_children("*", "Button", true, false):
+					if (bouton as Button).text == str(ecran.texte):
+						(bouton as Button).pressed.emit()
+						break
+				await stabiliser()
 		"finances_onglet":
 			app.management_ui["immersive08_finance_tab"] = str(ecran.onglet)
 			app._navigate("Finances")
@@ -863,6 +882,7 @@ func refermer(ecran: Dictionary) -> void:
 		app.management_ui.erase("creation_selection")
 	if str(ecran.type) == "effectif_onglet": app.management_ui.roster.immersive_tab = 0
 	if str(ecran.type) == "finances_onglet": app.management_ui["immersive08_finance_tab"] = "summary"
+	if str(ecran.type) == "centre_onglet": app.management_ui.immersive_centre = {"club": app.model.get("club", {}).get("id"), "tab": "", "scroll": {}}
 	if str(ecran.type) == "onglet_cle":
 		if ecran.has("presser"): load("res://ui/petite_fenetre.gd").fermer_derniere(app.get_tree())
 		app.management_ui[str(ecran.cle)] = str(ecran.repos)
