@@ -87,7 +87,11 @@ func run() -> void:
 	check(not labels(app).any(func(label:Label):return label.text=="NOTE AU POSTE"),"La note au poste reste réservée à la tactique")
 	var roles = preload("res://ui/immersive08/squad_canvas.gd")
 	var pitch: Control=app.find_child("PlayerRolePitch",true,false)
-	check(pitch.primary_numbers==roles.primary_numbers(own) and pitch.secondary_numbers==roles.secondary_numbers(own),"Terrain de la fiche : uniquement les vrais postes maîtrisés")
+	var fiche_roles = preload("res://ui/immersive08/fiche_roles.gd")
+	var postes_roles: Array = []
+	for n: int in fiche_roles.numeros(own): postes_roles.append(fiche_roles.FAMILLE[n-1])
+	var roles_listes: Array = app.find_children("PlayerRole_*","Button",true,false)
+	check(pitch!=null and pitch.principaux==roles.primary_numbers(own) and not roles_listes.is_empty() and roles_listes.all(func(b:Button):return fiche_roles.role(b.name.trim_prefix("PlayerRole_"))[1] in postes_roles),"Fiche : rôles et terrain tirés des vrais postes maîtrisés")
 	var other: Label=app.find_child("PlayerOtherRoles",true,false)
 	var autres_noms: Array[String]=[]
 	for ligne: String in roles.secondary_tooltip(own,app.model).split("\n"):autres_noms.append(ligne.get_slice(" · ",1))
@@ -98,6 +102,8 @@ func run() -> void:
 	var target: Dictionary=original.market.filter(func(p:Dictionary):return p.get("scouting",{}).get("available",false))[0]
 	check(G.rating_text(target)=="—" and G.potential_text(target)=="—","Étranger non observé : niveau et potentiel inconnus")
 	check(A.detail(target).is_empty(),"Attributs étrangers non observés masqués")
+	var fiche_roles_inconnus = preload("res://ui/immersive08/fiche_roles.gd")
+	check(fiche_roles_inconnus.etoiles_role(A.detail(target),fiche_roles_inconnus.ROLES[0])==-1.0,"Qualités inconnues : étoiles du rôle en « ? », jamais inventées")
 	var page: Control=app.find_child("CarnetMarket",true,false)
 	page.state.player_id=str(target.id)
 	page.state.immersive_tab=1;app._render(false);await settle()

@@ -1570,7 +1570,20 @@ func run() -> void:
 				var expected_number := "—" if target.get("shirtNumber")==null else str(int(target.shirtNumber))
 				check(shirt!=null and shirt.text==expected_number and shirt.get_theme_font_size("font_size")==120,"Le bandeau reprend le vrai numéro en filigrane (maquette du 19/11)")
 				var role_pitch: Control = full.find_child("PlayerRolePitch",true,false)
-				check(role_pitch!=null and role_pitch.is_visible_in_tree() and role_pitch.size==Vector2(316,190),"Le schéma des postes tient dans la carte Postes de la maquette")
+				check(role_pitch!=null and role_pitch.is_visible_in_tree() and role_pitch.size==Vector2(160,214),"Le terrain des postes tient dans la carte Postes et rôles")
+				# Rôles du poste (option A choisie par Léo le 22/11/2026) : un clic sur un rôle surligne ses qualités clés.
+				var FicheRoles = preload("res://ui/immersive08/fiche_roles.gd")
+				var role_buttons: Array = full.find_children("PlayerRole_*","Button",true,false)
+				check(not role_buttons.is_empty() and role_buttons.size() <= FicheRoles.LIGNES_MAX,"La fiche liste les rôles des postes du joueur")
+				if not role_buttons.is_empty():
+					var dernier: Button = role_buttons[-1]
+					var role_id := dernier.name.trim_prefix("PlayerRole_")
+					dernier.pressed.emit()
+					await settle()
+					var choisi: Array = FicheRoles.role(role_id)
+					check(not choisi.is_empty() and app.find_child("RoleCle_"+str(choisi[3][0]),true,false)!=null and app.find_child("RoleUtile_"+str(choisi[4][0]),true,false)!=null,"Clic sur un rôle : qualités clés (vert) et utiles (bleu) surlignées dans la grille")
+					check(app.find_child("PlayerRoleSelection",true,false)!=null and app.find_child("PlayerRoleSien",true,false)!=null,"Rôle choisi bien marqué, et « Son rôle » reste visible après un autre choix")
+					full=app.find_child("ImmersivePlayerFull",true,false)
 				var global_rating := full.find_child("PlayerGlobalRating",true,false) as Label
 				check(global_rating != null and global_rating.text.to_int() == int(target.rating), "Note globale exacte dans la fiche complète")
 				check(app.find_child("ProfilePlayerName",true,false).text.to_lower()==str(target.name).to_lower(),"Identité exacte dans la fiche complète")
