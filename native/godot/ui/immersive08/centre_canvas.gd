@@ -10,6 +10,7 @@ const G = preload("res://ui/game_skin.gd")
 const Legacy = preload("res://ui/immersive08/legacy_style.gd")
 const Academy = preload("res://ui/academy_pathways_view.gd")
 const Juniors = preload("res://ui/immersive08/centre_juniors.gd")
+const Visuel = preload("res://ui/immersive08/centre_visuel.gd")
 const GREEN = Color("64e896")
 const GOLD = Color("f8cd73")
 const ACCENT = Color("09673e")
@@ -38,6 +39,13 @@ func _build() -> void:
 		state.clear()
 		state.merge({"club":club,"tab":"","scroll":{}})
 	_hero()
+	# Planche A/B du Centre « plus visuel » (CD_VARIANTE_VISUELLE, en attente du choix de Léo) : toute la largeur.
+	var variante := Visuel.variante()
+	if not variante.is_empty() and data.get("active", false):
+		var surface := D.panel(self, Rect2(0, 218, 2248, 1005), "", "", "", "CentreWorkbench")
+		surface.clip_contents = true
+		Visuel.construire(app, self, surface, variante)
+		return
 	_workbench()
 	_summary()
 

@@ -104,6 +104,7 @@ const EXTRAS := [
 	{"id": "centre-filieres", "libelle": "Centre · onglet Filières", "type": "centre_onglet", "onglet": "Filières"},
 	{"id": "centre-passerelle", "libelle": "Centre · onglet Passerelle pro", "type": "centre_onglet", "onglet": "Passerelle pro"},
 	{"id": "centre-generations", "libelle": "Centre · onglet Générations", "type": "centre_onglet", "onglet": "Générations"},
+	{"id": "centre-parcours-fenetre", "libelle": "Centre · parcours individuel en petite fenêtre (variantes visuelles)", "type": "centre_onglet", "onglet": "Parcours", "presser_visuel": "CentreVisuelJoueur0"},
 ]
 ## Écrans du match en direct : le coup d'envoi est donné une fois, après tous les autres écrans.
 const EN_DIRECT := [
@@ -813,6 +814,18 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			app.management_ui.immersive_centre = {"club": app.model.get("club", {}).get("id"), "tab": str(ecran.onglet), "scroll": {}}
 			app._navigate("Centre")
 			await stabiliser()
+			# Variantes visuelles du Centre (CD_VARIANTE_VISUELLE=A|B) : onglets dessinés, sans TabContainer.
+			var visuel := app.find_child("CentreVisuel", true, false)
+			if visuel != null:
+				if str(visuel.get_meta("onglet", "")) != str(ecran.onglet): return {"statut": "echec", "note": "onglet %s non ouvert" % ecran.onglet}
+				if ecran.has("presser_visuel"):
+					var cible := app.find_child(str(ecran.presser_visuel), true, false) as Button
+					if cible == null: return {"statut": "echec", "note": "bouton %s absent" % ecran.presser_visuel}
+					cible.pressed.emit()
+					await stabiliser()
+					await stabiliser()
+				return {"statut": "ok"}
+			if ecran.has("presser_visuel"): return {"statut": "indisponible", "note": "variante visuelle seulement"}
 			var onglets := app.find_child("AcademyTabs", true, false) as TabContainer
 			if onglets == null: return {"statut": "indisponible", "note": "parcours du centre non activés"}
 			if str(onglets.get_tab_control(onglets.current_tab).name) != str(ecran.onglet): return {"statut": "echec", "note": "onglet %s non ouvert" % ecran.onglet}
