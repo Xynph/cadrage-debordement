@@ -393,4 +393,12 @@ static func _relais(app: Variant, kind: String, essai: int) -> void:
 	if kind == "negociation" and essai < 24 and attente:
 		app.get_tree().create_timer(.25).timeout.connect(func(): _relais(app, kind, essai + 1))
 		return
+	# Contre-offre reçue : l'offre se rouvre avec la contre-offre en pastille (jamais un retour muet à la liste).
+	if kind == "negociation" and str(app.get("last_command")) == "recruit":
+		var reponse: Variant = app.model.get("meta", {}).get("negotiation")
+		if reponse is Dictionary and str(reponse.get("status", "")) == "counter":
+			var id := str(reponse.get("playerId", ""))
+			if app.model.get("market", []).any(func(m): return m is Dictionary and str(m.get("id", "")) == id):
+				ouvrir(app, "negociation", {"player_id": id})
+				return
 	fermer(app)
