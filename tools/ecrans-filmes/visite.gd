@@ -82,6 +82,7 @@ const EXTRAS := [
 	{"id": "effectif-courbe", "libelle": "Effectif · mini-courbe au survol de la condition", "type": "effectif_onglet", "onglet": 0, "survol": "TotalTuileOuvrir_Condition"},
 	{"id": "classements-calendrier", "libelle": "Classements · onglet Calendrier (tableau)", "type": "classements_onglet", "onglet": "calendar"},
 	{"id": "recrutement-entre-clubs", "libelle": "Recrutement · sous-page Marché entre clubs", "type": "recrutement_sous", "page": "interclub"},
+	{"id": "recrutement-rapport-recruteur", "libelle": "Recrutement · Rapport du recruteur", "type": "recrutement_sous", "page": "recruteur"},
 	{"id": "finances-tresorerie", "libelle": "Finances · onglet Trésorerie (colonne de verdict)", "type": "finances_onglet", "onglet": "cash"},
 	{"id": "finances-salaires", "libelle": "Finances · onglet Salaires", "type": "finances_onglet", "onglet": "wages"},
 	{"id": "finances-budget", "libelle": "Finances · onglet Budget", "type": "finances_onglet", "onglet": "budget"},
