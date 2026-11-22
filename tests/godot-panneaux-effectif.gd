@@ -186,6 +186,28 @@ func run() -> void:
 		if found("PanneauPoignee_" + id) != null and not bool(prefs().get(id, true)): await click_id("PanneauPoignee_" + id)
 	check(not bool(prefs().get("replie", true)) and found("PanneauEffectif_groupe") != null, "Colonne rouverte en entier")
 
+	# Dernier état choisi : la page se rouvre comme le manager l'a laissée (changement d'écran, rechargement, relance).
+	for replie in [true, false]:
+		await effectif()
+		if replie:
+			if found("PanneauxReplier") != null: await click_id("PanneauxReplier")
+		elif found("PanneauxRail") != null: await click_id("PanneauOnglet_xv")
+		var etiquette := "replié" if replie else "déplié"
+		check(bool(prefs().get("replie", false)) == replie, "Dernier état noté · " + etiquette)
+		app._navigate("Vestiaire")
+		await settle(8)
+		await effectif()
+		check((found("PanneauxRail") != null) == replie and (found("PanneauEffectif_xv") == null) == replie, "Changement d'écran : rouvre " + etiquette)
+		check(app._command("import", {"text": FileAccess.get_file_as_string(export)}), "Rechargement de la sauvegarde · " + etiquette)
+		await wait_worker()
+		await effectif()
+		check((found("PanneauxRail") != null) == replie and (found("PanneauEffectif_xv") == null) == replie, "Sauvegarde rechargée : rouvre " + etiquette)
+		app.management_ui.erase(Panneaux.CLE)
+		await effectif()
+		check((found("PanneauxRail") != null) == replie, "Interface remise à zéro : rouvre " + etiquette)
+		var relance = load("res://ui/user_preferences.gd").new()
+		check(relance.load_profile(str(app.model.meta.dataDir)) and bool(relance.data.get(Panneaux.CLE, {}).get("replie", false)) == replie, "Relance du jeu (fichier des préférences) : rouvre " + etiquette)
+
 	# Entraînement : programme jour par jour du moteur, clic sur la séance -> sa carte.
 	app.Immersive.open_training(app)
 	await settle(12)
