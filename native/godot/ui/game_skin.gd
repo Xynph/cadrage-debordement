@@ -283,6 +283,30 @@ static func _pack_texture(path: String) -> Texture2D:
 	textures[path] = texture
 	return texture
 
+## Photo de pack recadrée sur le visage pour une case carrée (ui/recadrage_visage.gd) ; null sans photo.
+static var portrait_textures: Dictionary = {}
+
+static func _pack_portrait_texture(path: String) -> Texture2D:
+	if portrait_textures.has(path):
+		var known: Texture2D = portrait_textures[path]
+		portrait_textures.erase(path)
+		portrait_textures[path] = known
+		return known
+	var photo := _pack_texture(path)
+	if photo == null: return null
+	var zone: Rect2 = preload("res://ui/recadrage_visage.gd").region(path, photo.get_image())
+	var texture: Texture2D = photo
+	if zone != Rect2(0, 0, 1, 1):
+		var atlas := AtlasTexture.new()
+		atlas.atlas = photo
+		var taille := photo.get_size()
+		atlas.region = Rect2(zone.position * taille, zone.size * taille)
+		atlas.filter_clip = true
+		texture = atlas
+	if portrait_textures.size() >= PACK_TEXTURES: portrait_textures.erase(portrait_textures.keys()[0])
+	portrait_textures[path] = texture
+	return texture
+
 static func portrait(index: int, width: int = 60, player: Dictionary = {}) -> TextureRect:
 	var r := _portrait_rect(width, player)
 	fill_portrait(r, index, player)
@@ -307,7 +331,7 @@ static func fill_portrait(r: TextureRect, index: int, player: Dictionary) -> voi
 	var caption := str(player.get("name", "Portrait"))
 	if caption.is_empty(): caption = "Portrait"
 	var path := _pack_path(player)
-	var texture := _pack_texture(path)
+	var texture := _pack_portrait_texture(path)
 	if texture != null:
 		r.texture = texture
 		r.tooltip_text = caption
@@ -329,12 +353,12 @@ static func fill_portrait(r: TextureRect, index: int, player: Dictionary) -> voi
 		r.tooltip_text = caption if path.is_empty() else "Image du pack indisponible · " + caption
 
 ## Préchauffe le cache d'un portrait sans créer de nœud (ui/portrait_warmup.gd) : mêmes étapes coûteuses et
-## mêmes clés de cache que fill_portrait — photo du pack (textures[chemin]), sinon visage composé
+## mêmes clés de cache que fill_portrait — photo du pack recadrée (portrait_textures[chemin]), sinon visage composé
 ## (regen_portrait.gd : base recadrée par planche et case, puis composition par profil). La planche éditoriale
 ## du dernier repli est une ressource déjà gardée par Godot : rien à préparer.
 ## Exemple : `G.warm_portrait(player)` puis `G._portrait_ready(player)` est vrai.
 static func warm_portrait(player: Dictionary) -> void:
-	if _pack_texture(_pack_path(player)) != null: return
+	if _pack_portrait_texture(_pack_path(player)) != null: return
 	if str(player.get("id", "")).is_empty(): return
 	if preload("res://ui/regen_portrait.gd").texture(player) != null: preload("res://ui/regen_portrait.gd").material(player)
 
@@ -348,7 +372,7 @@ static func portrait_lazy(index: int, width: int = 60, player: Dictionary = {}) 
 
 static func _portrait_ready(player: Dictionary) -> bool:
 	var path := _pack_path(player)
-	if not path.is_empty() and textures.has(path): return true
+	if not path.is_empty() and portrait_textures.has(path): return true
 	if not path.is_empty() and path.is_absolute_path() and FileAccess.file_exists(path): return false
 	if str(player.get("id", "")).is_empty(): return true
 	return preload("res://ui/regen_portrait.gd").cached(player)

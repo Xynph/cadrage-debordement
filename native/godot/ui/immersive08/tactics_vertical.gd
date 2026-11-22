@@ -197,7 +197,8 @@ static func carte(app: Control, page: Control, zone: Rect2, slot: int, choisir: 
 	glisser(app, bouton, person, true)
 	# Plaque du nom en bas (nom + pastille), portrait au-dessus : rien ne sort de la carte.
 	var bas_y := h - 56.0
-	var cote := minf(bas_y - 6.0, 74.0)
+	# Cercle entier au-dessus de la plaque (4 px en haut, 6 px d'écart avec la plaque) : jamais de chevauchement.
+	var cote := minf(bas_y - 10.0, 74.0)
 	var accessible := "Poste n° %d · " % (slot + 1)
 	if person.is_empty():
 		var vide := D.rect(bouton, Rect2((w - cote) / 2.0, 6, cote, cote), Color(Charte.PANNEAU, .7), Charte.RAYON_PILULE, Charte.IVOIRE_2)

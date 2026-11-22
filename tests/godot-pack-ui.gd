@@ -346,7 +346,8 @@ func _run() -> void:
 	var path := OS.get_environment("CD_GODOT_PACK_TEST_IMAGE")
 	var official: TextureRect = skin.portrait(0, 90, {"portraitPath":path,"portraitStatus":"official"})
 	var synthetic: TextureRect = skin.portrait(1, 90, {"portraitPath":path,"portraitStatus":"synthetic"})
-	check(official.texture is ImageTexture and official.texture.get_size().x <= 512, "Portrait du pack décodé et texture bornée")
+	var decoded: Texture2D = official.texture.atlas if official.texture is AtlasTexture else official.texture
+	check(decoded is ImageTexture and decoded.get_size().x <= 512, "Portrait du pack décodé et texture bornée (recadrage visage compris)")
 	check(official.tooltip_text == "Portrait", "Portrait du pack présenté normalement")
 	check(synthetic.tooltip_text == "Portrait", "Même présentation du portrait sans badge d’origine")
 	check(official.texture == synthetic.texture, "Texture partagée entre vues, sans duplication")
