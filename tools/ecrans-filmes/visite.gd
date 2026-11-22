@@ -950,6 +950,8 @@ func capturer(entree: Dictionary, o: Dictionary, taille: Vector2i) -> void:
 		print("ECRANS_FILMES retour de tuile : ", load("res://ui/retour_tuile.gd").simuler(self))
 		print("ECRANS_FILMES lignes : ", load("res://ui/survol_ligne.gd").simuler(self), " survolée(s), ", load("res://ui/survol_ligne.gd").simuler_appui(self), " enfoncée(s)")
 		await stabiliser()
+	if OS.get_environment("CD_FILM_AUDIT_TUILES") == "1":
+		for ligne in load("res://ui/retour_tuile.gd").auditer(self): print("AUDIT_TUILE ", entree.id, "|", ligne)
 	var prise: Dictionary = await image_stable()
 	var image: Image = prise.image
 	if image == null:

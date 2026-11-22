@@ -1206,20 +1206,8 @@ func _bas_gauche() -> void:
 		var line := Button.new()
 		line.name = "RecentResult_%d" % i
 		line.set_meta("immersive_style_applied", true)
-		var normal := StyleBoxFlat.new()
-		normal.bg_color = Charte.PANNEAU_2 if i % 2 == 1 else Charte.PANNEAU
-		normal.set_corner_radius_all(Charte.RAYON_PETIT)
-		var hover: StyleBoxFlat = normal.duplicate()
-		hover.bg_color = Charte.PANNEAU_3
-		line.add_theme_stylebox_override("normal", normal)
-		line.add_theme_stylebox_override("hover", hover)
-		line.add_theme_stylebox_override("pressed", hover)
-		var focus := StyleBoxFlat.new()
-		focus.bg_color = Color(0, 0, 0, 0)
-		focus.border_color = Charte.IVOIRE
-		focus.set_border_width_all(2)
-		focus.set_corner_radius_all(Charte.RAYON_PETIT)
-		line.add_theme_stylebox_override("focus", focus)
+		# Rayure une ligne sur deux et survol de ligne communs (ui/survol_ligne.gd, comme l'Effectif).
+		load("res://ui/survol_ligne.gd").appliquer(line, false, Color.TRANSPARENT, app.accent).rang_fixe = i
 		if target_available(app, "fixture", fixture_id):
 			Link.bind(line, app, {"kind":"fixture", "id":fixture_id}, "Ouvrir la rencontre · %s %s %s" % [G.club_name(clubs[0]), _score(result), G.club_name(clubs[1])])
 		else:

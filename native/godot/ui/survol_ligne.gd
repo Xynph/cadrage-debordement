@@ -26,13 +26,20 @@ const LISERE := 4.0
 const RAYURE := Color(0.96, 0.93, 0.86, 0.065)
 ## Captures seulement : rang de ligne à montrer survolé dans les tableaux dessinés (-1 : jamais).
 static var simulation_rang := -1
+## Captures seulement : la 6e ligne des tableaux dessinés est montrée enfoncée.
+static var simulation_appui := false
 
 var ligne: Control
 var choisi := false
 var survole := false
 ## Ligne enfoncée (bouton tenu) : bande plus claire et filet sombre en haut, comme l'appui d'une tuile. Jamais d'ombre.
 var appuye := false
-var accent := Charte.IVOIRE
+## Vrai quand la rayure est posée à part (Panel derrière la ligne) : le composant ne dessine alors que le survol.
+var sans_rayure := false
+## Rang imposé par l'écran (-1 : rang parmi les frères portant ce composant).
+var rang_fixe := -1
+## Couleur du club ; transparente = celle du club de la partie (lue sur la scène courante au premier dessin).
+var accent := Color.TRANSPARENT
 var rayon := float(Charte.RAYON_PETIT)
 ## Décalage du liseré en pixels (Classements : laisse la bande de zone des places 1 à 6 visible à sa gauche).
 var decalage := 0.0
@@ -59,14 +66,31 @@ static func rayer(toile: CanvasItem, rect: Rect2, rang: int, k: float = 1.0, r: 
 	if rang % 2 != 1: return
 	toile.draw_style_box(_boite(RAYURE, r * k), rect)
 
+## Rayure d'une ligne posée en Panel (écrans en canvas : le tableau n'est pas dessiné par ui/socle/tableau.gd) : même
+## crème et même rayon que `rayer`. Renvoie null pour une ligne de rang pair (fond de base) ; l'appelant place le Panel
+## (`D.place`) et le range derrière les textes de la ligne.
+static func rayure(parent: Node, rang: int, nom: String = "") -> Panel:
+	if rang % 2 != 1: return null
+	var panneau := Panel.new()
+	panneau.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if not nom.is_empty(): panneau.name = nom
+	panneau.add_theme_stylebox_override("panel", _boite(RAYURE, float(maxi(3, preload("res://ui/immersive08/components.gd").px(8.0)))))
+	panneau.set_meta("immersive_style_applied", true)
+	parent.add_child(panneau)
+	return panneau
+
 ## Fond d'une ligne survolée. `rect` : la ligne dans le repère de `toile` ; `k` : échelle (1 en 1920×1080) ;
 ## `decal` : décalage du liseré en pixels. Rien n'est dessiné hors survol (pas de couleur de sélection).
-static func dessiner(toile: CanvasItem, rect: Rect2, survol: bool, couleur_club: Color, k: float = 1.0, r: float = Charte.RAYON_PETIT, decal: float = 0.0) -> void:
-	if not survol: return
+static func dessiner(toile: CanvasItem, rect: Rect2, survol: bool, couleur_club: Color, k: float = 1.0, r: float = Charte.RAYON_PETIT, decal: float = 0.0, appui: bool = false) -> void:
+	if not survol and not appui: return
 	toile.draw_style_box(_boite(BANDE, r * k), rect)
 	var epaisseur := roundf(LISERE * k)
 	var lisere := _boite(accent_lisible(couleur_club), minf(r * k, epaisseur / 2.0))
 	toile.draw_style_box(lisere, Rect2(rect.position + Vector2(decal, 0), Vector2(epaisseur, rect.size.y)))
+	# Appui (bouton tenu) : voile plus clair et filet sombre en haut, comme l'appui d'une tuile (ui/retour_tuile.gd).
+	if appui:
+		toile.draw_style_box(_boite(Color(Charte.IVOIRE, 0.08), r * k), rect)
+		toile.draw_rect(Rect2(rect.position.x + r * k, rect.position.y, maxf(0.0, rect.size.x - r * k * 2.0), maxf(2.0, roundf(2.0 * k))), Color(0, 0, 0, 0.4))
 
 ## Contour du focus clavier : crème discret, sans fond (la ligne focalisée n'est pas colorée).
 static func style_focus(r: float = Charte.RAYON_PETIT) -> StyleBoxFlat:
@@ -79,31 +103,49 @@ static func style_focus(r: float = Charte.RAYON_PETIT) -> StyleBoxFlat:
 ## Ligne en Button : prend la main sur son fond (normal = `fond`, pas de survol propre au bouton), curseur main,
 ## contour crème discret au focus clavier. Rappelable sans reconstruire la ligne. `est_choisie` est mémorisé (lecture
 ## par les suites) mais n'est jamais dessiné.
-static func appliquer(bouton: Button, est_choisie: bool = false, fond: Color = Color.TRANSPARENT, couleur_club: Color = Charte.IVOIRE, r: float = Charte.RAYON_PETIT, decal: float = 0.0) -> Control:
+static func appliquer(bouton: Button, est_choisie: bool = false, fond: Color = Color.TRANSPARENT, couleur_club: Color = Color.TRANSPARENT, r: float = Charte.RAYON_PETIT, decal: float = 0.0) -> Variant:
 	var plat := _boite(fond, r)
 	for etat in ["normal", "hover", "pressed", "hover_pressed", "disabled"]: bouton.add_theme_stylebox_override(etat, plat)
 	bouton.add_theme_stylebox_override("focus", style_focus(r))
 	bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	var fond_ligne = bouton.get_node_or_null(NOM)
+	var fond_ligne = poser(bouton, est_choisie, couleur_club, r, decal)
+	return fond_ligne
+
+## Pose le fond de ligne (rayure + survol + appui) en premier enfant de `ligne`, derrière ses textes. Rappelable.
+## Une ligne qui n'est pas un bouton (conteneur de cellules) reçoit la souris en mode PASS.
+static func poser(ligne: Control, est_choisie: bool = false, couleur_club: Color = Color.TRANSPARENT, r: float = Charte.RAYON_PETIT, decal: float = 0.0) -> Variant:
+	var fond_ligne = ligne.get_node_or_null(NOM)
 	if fond_ligne == null:
 		fond_ligne = load("res://ui/survol_ligne.gd").new()
 		fond_ligne.name = NOM
-		fond_ligne.ligne = bouton
+		fond_ligne.ligne = ligne
 		fond_ligne.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		fond_ligne.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		bouton.add_child(fond_ligne)
-		bouton.move_child(fond_ligne, 0)
+		ligne.add_child(fond_ligne)
+		ligne.move_child(fond_ligne, 0)
 		fond_ligne.add_to_group(GROUPE)
-		bouton.mouse_entered.connect(fond_ligne._entree)
-		bouton.mouse_exited.connect(fond_ligne._sortie)
-		bouton.button_down.connect(fond_ligne._appui.bind(true))
-		bouton.button_up.connect(fond_ligne._appui.bind(false))
+		ligne.mouse_entered.connect(fond_ligne._entree)
+		ligne.mouse_exited.connect(fond_ligne._sortie)
+		if ligne is BaseButton:
+			(ligne as BaseButton).button_down.connect(fond_ligne._appui.bind(true))
+			(ligne as BaseButton).button_up.connect(fond_ligne._appui.bind(false))
+		else:
+			if ligne.mouse_filter != Control.MOUSE_FILTER_PASS: ligne.mouse_filter = Control.MOUSE_FILTER_PASS
+			ligne.gui_input.connect(fond_ligne._entree_souris)
 	fond_ligne.choisi = est_choisie
 	fond_ligne.accent = couleur_club
 	fond_ligne.rayon = r
 	fond_ligne.decalage = decal
 	fond_ligne.queue_redraw()
 	return fond_ligne
+
+func _entree_souris(evenement: InputEvent) -> void:
+	var clic := evenement as InputEventMouseButton
+	if clic == null or clic.button_index != MOUSE_BUTTON_LEFT: return
+	_appui(clic.pressed)
+
+func _accent_scene() -> Color:
+	return load("res://ui/retour_tuile.gd").couleur_du_club(self)
 
 func _appui(valeur: bool) -> void:
 	appuye = valeur
@@ -136,6 +178,7 @@ func _ready() -> void:
 ## Rang de la ligne parmi les lignes visibles de sa liste (frères portant ce composant : les en-têtes de groupe et
 ## autres nœuds n'en font pas partie).
 func rang() -> int:
+	if rang_fixe >= 0: return rang_fixe
 	if ligne == null or ligne.get_parent() == null: return 0
 	var n := 0
 	for frere in ligne.get_parent().get_children():
@@ -143,13 +186,24 @@ func rang() -> int:
 		if frere is Control and frere.visible and frere.has_node(NOM): n += 1
 	return n
 
+## Zone peinte : tout le nœud ; dans un PanelContainer (ligne de cellules), le conteneur retire ses marges intérieures à
+## ses enfants, le fond les récupère pour couvrir toute la ligne.
+func _cadre() -> Rect2:
+	var cadre := Rect2(Vector2.ZERO, size)
+	var parent := get_parent() as PanelContainer
+	if parent != null:
+		var style := parent.get_theme_stylebox("panel")
+		if style != null:
+			var g := style.get_margin(SIDE_LEFT)
+			var h := style.get_margin(SIDE_TOP)
+			cadre = Rect2(Vector2(-g, -h), size + Vector2(g + style.get_margin(SIDE_RIGHT), h + style.get_margin(SIDE_BOTTOM)))
+	return cadre
+
 func _draw() -> void:
-	rayer(self, Rect2(Vector2.ZERO, size), rang(), echelle(self), rayon)
-	dessiner(self, Rect2(Vector2.ZERO, size), survole or appuye, accent, echelle(self), rayon, decalage)
-	if appuye:
-		var k := echelle(self)
-		draw_style_box(_boite(Color(Charte.IVOIRE, 0.08), rayon * k), Rect2(Vector2.ZERO, size))
-		draw_rect(Rect2(rayon * k, 0, maxf(0.0, size.x - rayon * k * 2.0), maxf(2.0, roundf(2.0 * k))), Color(0, 0, 0, 0.4))
+	var cadre := _cadre()
+	var k := echelle(self)
+	if not sans_rayure: rayer(self, cadre, rang(), k, rayon)
+	dessiner(self, cadre, survole or appuye, accent if accent.a > 0.0 else _accent_scene(), k, rayon, decalage, appuye)
 
 ## Captures du retour commun : la 6e ligne visible de chaque liste est montrée enfoncée (bouton tenu).
 static func simuler_appui(arbre: SceneTree) -> int:
@@ -168,6 +222,11 @@ static func simuler_appui(arbre: SceneTree) -> int:
 		liste.sort_custom(func(a, b): return a.ligne.global_position.y < b.ligne.global_position.y)
 		liste[5]._appui(true)
 		touchees += 1
+	simulation_appui = true
+	for tableau in arbre.get_nodes_in_group("survol_tableau"):
+		if (tableau as Control).is_visible_in_tree() and tableau.has_method("simuler_survol"):
+			tableau.simuler_survol(2)
+			touchees += 1
 	return touchees
 
 ## Captures et suites : simule le survol d'une ligne visible (la 3e) dans chaque liste. Renvoie le nombre de listes
