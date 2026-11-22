@@ -1582,6 +1582,7 @@ func run() -> void:
 					await settle()
 					var choisi: Array = FicheRoles.role(role_id)
 					check(not choisi.is_empty() and app.find_child("RoleCle_"+str(choisi[3][0]),true,false)!=null and app.find_child("RoleUtile_"+str(choisi[4][0]),true,false)!=null,"Clic sur un rôle : qualités clés (vert) et utiles (bleu) surlignées dans la grille")
+					check(app.find_child("PlayerRoleSelection",true,false)!=null and app.find_child("PlayerRoleSien",true,false)!=null,"Rôle choisi bien marqué, et « Son rôle » reste visible après un autre choix")
 					full=app.find_child("ImmersivePlayerFull",true,false)
 				var global_rating := full.find_child("PlayerGlobalRating",true,false) as Label
 				check(global_rating != null and global_rating.text.to_int() == int(target.rating), "Note globale exacte dans la fiche complète")

@@ -163,11 +163,12 @@ static func bandes(card: Control, origine: Vector2, dimension: Vector2, r: Array
 static func _bouton(parent: Control, zone: Rect2, id: String, choisi: bool, action: Callable) -> Button:
 	var b := Button.new()
 	b.name = id
-	b.flat = true
+	b.flat = false
 	b.focus_mode = Control.FOCUS_ALL
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	var fond := Charte.sans_ombre(C.box(Charte.SELECTION if choisi else Color.TRANSPARENT, Color.TRANSPARENT, 6, 0))
-	var survol := Charte.sans_ombre(C.box(Charte.SELECTION if choisi else Charte.PANNEAU_2, Color(Charte.CREME, .25), 6, 0))
+	# Ligne choisie : aplat vert franc (charte 5/7) ; les autres restent neutres, survol en panneau clair.
+	var fond := Charte.sans_ombre(C.box(Charte.VERT_FRANC if choisi else Color.TRANSPARENT, Color.TRANSPARENT, 6, 0))
+	var survol := Charte.sans_ombre(C.box(Charte.VERT_FRANC if choisi else Charte.PANNEAU_2, Color(Charte.CREME, .25), 6, 0))
 	for s in ["normal", "pressed", "focus"]: b.add_theme_stylebox_override(s, fond)
 	for s in ["hover", "hover_pressed"]: b.add_theme_stylebox_override(s, survol)
 	b.pressed.connect(action)
@@ -193,8 +194,11 @@ static func _qualite(parent: Control, x: float, y: float, cle: String, valeur: V
 static func carte(card: Control, app: Control, player: Dictionary, values: Dictionary) -> void:
 	var e := etat(app, player, values)
 	D.text(card, 24, 86, "RÔLE", 16, Charte.IVOIRE_2, 700, 200)
-	D.text(card, 250, 86, "POSTE", 16, Charte.IVOIRE_2, 700, 200)
-	D.text(card, 470, 86, "CAPACITÉ", 16, Charte.IVOIRE_2, 700, 200)
+	D.text(card, 230, 86, "POSTE", 16, Charte.IVOIRE_2, 700, 200)
+	D.text(card, 500, 86, "CAPACITÉ", 16, Charte.IVOIRE_2, 700, 200)
+	# Son rôle : meilleur rôle au poste principal (qualités connues seulement), marqué en permanence.
+	var principaux := Roster.primary_numbers(player)
+	var son_role := meilleur_role(values, principaux[0]) if not principaux.is_empty() and not values.is_empty() else ""
 	var liste := roles_joueur(player, values).slice(0, LIGNES_MAX)
 	var y := 92.0
 	for item: Dictionary in liste:
@@ -202,10 +206,17 @@ static func carte(card: Control, app: Control, player: Dictionary, values: Dicti
 		var choisi: bool = r[0] == e.role
 		var b := _bouton(card, Rect2(16, y, 640, 28), "PlayerRole_" + str(r[0]), choisi, func(): choisir(app, player, str(r[0]), int(item.numero)))
 		b.tooltip_text = "%s · %s" % [r[2], POSTE[r[1]]]
-		if choisi: D.rect(card, Rect2(16, y, 5, 28), Charte.CREME, 2)
-		D.text(card, 30, y + 21, r[2], 20, Charte.CREME if choisi else Charte.IVOIRE, 700 if choisi else 600, 210).mouse_filter = Control.MOUSE_FILTER_IGNORE
-		D.text(card, 250, y + 21, "%s · %s" % [item.numero, POSTE[r[1]]], 18, Charte.IVOIRE_2, 500, 210).mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_etoiles(card, Rect2(470, y + 4, 130, 20), item.etoiles, "PlayerRoleStars_" + str(r[0]))
+		if choisi:
+			D.rect(card, Rect2(16, y, 8, 28), CLE, 3).name = "PlayerRoleSelection"
+			D.text(card, 30, y + 21, "▶", 16, Charte.CREME, 800, 20).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var nom := D.text(card, 50, y + 21, r[2], 20, Charte.CREME if choisi else Charte.IVOIRE_2, 800 if choisi else 500, 175)
+		nom.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		D.text(card, 230, y + 21, "%s · %s" % [item.numero, POSTE[r[1]]], 18, Charte.CREME if choisi else Charte.IVOIRE_2, 500, 160).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if r[0] == son_role:
+			var pastille := D.rect(card, Rect2(398, y + 4, 92, 20), Charte.CREME, 10)
+			pastille.name = "PlayerRoleSien"
+			D.text(card, 444, y + 19, "SON RÔLE", 13, Charte.ENCRE, 800, 92, HORIZONTAL_ALIGNMENT_CENTER).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_etoiles(card, Rect2(500, y + 4, 130, 20), item.etoiles, "PlayerRoleStars_" + str(r[0]))
 		y += 29
 	var r: Array = role(str(e.role))
 	if not r.is_empty():
