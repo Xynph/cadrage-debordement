@@ -1,7 +1,7 @@
 extends SceneTree
 ## Planche « évolution d'un chiffre du direct » (choix visuel ouvert, 22/11/2026) : en 2e mi-temps, entre deux temps forts,
-## un chiffre de l'écran 2D ouvre sa petite fenêtre (match en pause), avec l'évolution par tranche de 10 minutes en
-## variante A (barres en miroir) puis B (courbes cumulées), aux tailles de CD_PLANCHE_TAILLES (2560 × 1440 puis 1920 × 1080).
+## un chiffre de l'écran 2D ouvre sa petite fenêtre (match en pause), avec l'évolution par tranche de 10 minutes : parts
+## en variantes C (bande de domination) et D (anneaux), taux en barres, comptes en courbes, aux tailles de CD_PLANCHE_TAILLES (2560 × 1440 puis 1920 × 1080).
 ## Contrôles : tranches présentes, rien hors de la fenêtre, Échap ferme, on reste dans le direct.
 ## godot-planche-direct-stat-periodes.cjs prépare la carrière Monde.
 var app: Control
@@ -104,6 +104,19 @@ func run() -> void:
 	var between: Control = view.regie.between
 	var tranches: Array = (app.model.live.get("direct", {}) as Dictionary).get("periodes", {}).get("tranches", [])
 	check(tranches.size() >= 5, "au moins 5 tranches de 10 minutes en 2e mi-temps (%d)" % tranches.size())
+	# Les tranches retombent sur les chiffres du match (mêlées, touches : gagnées / tentées par club).
+	var tableau: Array = (app.model.live.get("direct", {}) as Dictionary).get("tableau", [])
+	for cle: String in ["melees", "touches"]:
+		var total := [[0, 0], [0, 0]]
+		for t: Dictionary in tranches:
+			for s in 2:
+				total[s][0] += int(t.parts[cle][s][0])
+				total[s][1] += int(t.parts[cle][s][1])
+		for rang: Dictionary in tableau:
+			if str(rang.get("cle", "")) == cle:
+				var attendu := [[int(rang.valeurs[0]), int(rang.sur[0])], [int(rang.valeurs[1]), int(rang.sur[1])]]
+				print("PLANCHE_STAT %s : tranches %s, match %s" % [cle, str(total), str(attendu)])
+				check(total == attendu, "%s : somme des tranches %s = chiffres du match %s" % [cle, str(total), str(attendu)])
 	var tailles: Array[Vector2i] = []
 	for t: String in (OS.get_environment("CD_PLANCHE_TAILLES") if not OS.get_environment("CD_PLANCHE_TAILLES").is_empty() else "2560x1440,1920x1080").split(","):
 		tailles.append(Vector2i(t.get_slice("x", 0).to_int(), t.get_slice("x", 1).to_int()))
@@ -111,9 +124,11 @@ func run() -> void:
 		root.size = taille
 		root.content_scale_size = taille
 		await settle(40)
-		for variante: String in ["A", "B"]:
+		# Parts (choix ouvert) en variantes C et D ; taux de réussite (barres) et comptes (courbes) fixés par Léo.
+		for passe: Array in [["C", ["possession", "occupation"]], ["D", ["possession", "occupation"]], ["", ["plaquages_reussis", "melees", "penalites", "metres"]]]:
+			var variante: String = passe[0]
 			OS.set_environment("CD_VARIANTE_VISUELLE", variante)
-			for cle: String in ["possession", "plaquages_reussis", "penalites"]:
+			for cle: String in passe[1]:
 				var bouton := premier(between, "MatchBetweenMirror_%s_*" % cle)
 				if bouton == null: bouton = premier(between, "MatchBetweenFigure_%s" % cle)
 				check(bouton != null, "%s : chiffre « %s » à l'écran" % [str(taille), cle])
@@ -133,7 +148,7 @@ func run() -> void:
 					if c.is_visible_in_tree() and c.size.x >= 1.0 and not cadre.encloses(c.get_global_rect()):
 						check(false, "%s %s %s : %s hors de la fenêtre" % [variante, cle, str(taille), c.name])
 						break
-				await capture("stat-%s-%s-%dx%d" % [variante, cle, taille.x, taille.y])
+				await capture(("parts-%s-%s-%dx%d" % [variante, cle, taille.x, taille.y]) if not variante.is_empty() else ("stat-%s-%dx%d" % [cle, taille.x, taille.y]))
 				await echap()
 				check(not view.fenetre_ouverte(), "%s %s : Échap ferme la fenêtre" % [variante, cle])
 				check(surface() == view and view.regie != null, "%s %s : on reste dans le direct" % [variante, cle])

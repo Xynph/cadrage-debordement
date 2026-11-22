@@ -306,7 +306,7 @@ function totauxPeriode(events,n,rencontre,lire,feuille){
  const f=n<=0?null:feuille||feuilleStats.feuilleMontree(events,n,rencontre,lire);
  const t=[0,1].map(s=>{const e=f?.equipes?.[s];const o={};
   for(const [c,champ] of Object.entries(CHAMPS_PERIODES))o[c]=Number(e?.[champ])||0;
-  o.rucks=Number(e?.rucks)||0;o.melees=Number(e?.melees?.gagnees)||0;o.touches=Number(e?.touches?.gagnees)||0;
+  o.rucks=Number(e?.rucks)||0;
   o.cartons=(Number(e?.cartonsJaunes)||0)+(Number(e?.cartonsRouges)||0);return o;});
  // Bornes closes (tranche finie) : la feuille ne bouge plus, on la garde (une feuille par borne, quelques rencontres).
  if(!feuille&&n>0&&n<events.length){FEUILLES_PERIODES.set(cle,t);while(FEUILLES_PERIODES.size>48)FEUILLES_PERIODES.delete(FEUILLES_PERIODES.keys().next().value)}
@@ -333,9 +333,22 @@ function periodes(vues,events,finIndice,rencontre,lire,feuille=null){
   for(const c of Object.keys(cumuls[0][0]))valeurs[c]=[0,1].map(s=>Math.max(0,cumuls[k+1][s][c]-cumuls[k][s][c]));
   valeurs.zone22=[0,1].map(s=>Math.max(0,(zones[k+1][s]||0)-(zones[k][s]||0)));
   valeurs.plaquages_reussis=[0,1].map(s=>{const t=valeurs.plaquages[s]+valeurs.plaquages_manques[s];return t?Math.round(valeurs.plaquages[s]/t*100):null});
+  // Mêlées et touches : comptes du moteur (l.stats) lus dans le journal de la tranche : chaque conquête disputée écrit
+  // « setpiece-win » (équipe qui lance) ou « setpiece-loss » (équipe qui vole) ; mêlée non disputée = gagnée.
+  const conquete={melees:[[0,0],[0,0]],touches:[[0,0],[0,0]]};
+  for(const l of jouees.filter(l=>tranche(l)===k)){
+   if(l.equipe===null)continue;
+   // Chaque lancer ou introduction est préparé (« lineout » / « scrum », setup : équipe qui lance) ; une faute le
+   // termine sans « setpiece-* » mais le moteur le compte. Gagné : « setpiece-win » de l'équipe qui lance.
+   if(l.kind==='setpiece-win')conquete[l.touche?'touches':'melees'][l.equipe][0]++;
+   else if((l.kind==='lineout'||l.kind==='scrum')&&l.type==='setup')conquete[l.kind==='lineout'?'touches':'melees'][l.equipe][1]++;
+   else if(l.kind==='scrum'&&/non disputée/.test(String(events[l.i]?.text||''))){const c=conquete.melees[l.equipe];c[0]++;c[1]++}
+  }
+  for(const c of ['melees','touches'])valeurs[c]=[0,1].map(s=>conquete[c][s][0]);
   // Comptes des parts (numérateur, dénominateur par club) : la courbe cumulée refait la part depuis le coup d'envoi.
   const parts={possession:[[tenus[0],tenus[0]+tenus[1]],[tenus[1],tenus[0]+tenus[1]]],occupation:[[occupes[0],occupes[0]+occupes[1]],[occupes[1],occupes[0]+occupes[1]]],
-   plaquages_reussis:[0,1].map(s=>[valeurs.plaquages[s],valeurs.plaquages[s]+valeurs.plaquages_manques[s]])};
+   plaquages_reussis:[0,1].map(s=>[valeurs.plaquages[s],valeurs.plaquages[s]+valeurs.plaquages_manques[s]]),
+   melees:conquete.melees,touches:conquete.touches};
   // `fin` : minute de fin de la tranche, ou dernière minute montrée pour la tranche en cours.
   const fin=k===derniere?Math.max(k*PAS_PERIODE+1,Math.min((k+1)*PAS_PERIODE,jouees.at(-1).minute)):(k+1)*PAS_PERIODE;
   tranches.push({de:k*PAS_PERIODE,a:(k+1)*PAS_PERIODE,fin,enCours:k===derniere,valeurs,parts});
