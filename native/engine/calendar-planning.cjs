@@ -102,7 +102,7 @@ function freeSessions(first, last) {
  return sessions;
 }
 
-function preparation(model, state, today, anchors) {
+function preparation(model, state, today, anchors, chosen = null) {
  const stored = activeState(model,state);
  const saved = state?.season === seasonOf(model) ? state : null;
  const anchorByFixture = anchorIndex(anchors);
@@ -122,6 +122,7 @@ function preparation(model, state, today, anchors) {
   const previous = fixtures[index-1];
   if (previous) freeSessions(previous.anchor,fixture.anchor).forEach(add);
   const programme = fixture.override?.template ?? defaultProgramme(fixture,previous,model);
+  if (chosen) chosen[fixture.id] = programme;
   programmes[programme].slots.forEach((slot,slotIndex)=>{
    const [offset] = slot;
    const date = dayOffset(fixture.anchor,offset);
@@ -149,10 +150,13 @@ function project(model, state, date, {anchors = []} = {}) {
  const appliedTemplates = Object.fromEntries(fixturesOf(model)
   .filter(fixture=>!fixture.played && owns(stored,fixture.id))
   .map(fixture=>[fixture.id,stored[fixture.id].template]));
+ // Modèle de semaine en vigueur pour chaque rencontre (choisi ou proposé par le staff) : vue Mois de l'entraînement.
+ const programmeByFixture = {};
  return {
   today,
-  sessions:today ? preparation(model,state,today,anchors) : [],
+  sessions:today ? preparation(model,state,today,anchors,programmeByFixture) : [],
   appliedTemplates,
+  programmeByFixture,
   templates:Object.entries(programmes).map(([id,{label}])=>({id,label}))
  };
 }
