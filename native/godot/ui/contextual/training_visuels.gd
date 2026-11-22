@@ -198,28 +198,18 @@ static func portrait_anneau(joueur: Dictionary, cote: float, epaisseur: float = 
 	disque.size = Vector2(diametre, diametre)
 	disque.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	boite.add_child(disque)
-	# Recadrage centré sur le visage : image un peu plus grande que le disque, décalée vers le bas pour que le visage
-	# (dans le tiers haut des photos) tombe au centre du cercle ; proportions gardées (COVERED).
-	var agrandi := diametre * 1.12
+	# Vraie photo du pack : déjà recadrée en buste par game_skin.gd (ui/recadrage_visage.gd, même cadrage que le banc
+	# et les listes) ; elle remplit le disque telle quelle, sans second rognage. Visage généré : image un peu plus
+	# grande que le disque, décalée vers le bas pour que le visage tombe au centre du cercle (COVERED).
+	var photo_pack := not S.Base._pack_path(joueur).is_empty()
+	var agrandi := diametre if photo_pack else diametre * 1.12
 	var image := S.G.portrait(int(joueur.get("portraitIndex", 0)), int(agrandi), joueur)
 	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	var texture := image.texture
-	if texture != null and image.material == null and not S.Base._pack_path(joueur).is_empty():
-		# Vraie photo du pack (carrée ou 2:3, souvent en pied) : fenêtre carrée sur le haut du corps, centrée en
-		# largeur, prise près du haut de l'image, pour que le visage remplisse le disque ; proportions exactes.
-		var w := float(texture.get_width())
-		var h := float(texture.get_height())
-		# Photo en hauteur (2:3, buste ou mi-corps) : 60 % de la largeur depuis le haut ; photo carrée (souvent en pied,
-		# visage plus bas et plus petit) : 45 % de la largeur à partir de 10 % de la hauteur.
-		var en_hauteur := h > w * 1.2
-		var cote_fenetre := minf(w * (0.6 if en_hauteur else 0.45), h)
-		var haut := clampf(h * (0.02 if en_hauteur else 0.1), 0.0, h - cote_fenetre)
-		var fenetre := AtlasTexture.new()
-		fenetre.atlas = texture
-		fenetre.region = Rect2((w - cote_fenetre) / 2.0, haut, cote_fenetre, cote_fenetre)
-		image.texture = fenetre
-	image.position = Vector2((diametre - agrandi) / 2.0, (diametre - agrandi) / 2.0 + diametre * 0.04)
+	if photo_pack and image.material == null:
+		image.position = Vector2.ZERO
+	else:
+		image.position = Vector2((diametre - agrandi) / 2.0, (diametre - agrandi) / 2.0 + diametre * 0.04)
 	image.size = Vector2(agrandi, agrandi)
 	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	disque.add_child(image)

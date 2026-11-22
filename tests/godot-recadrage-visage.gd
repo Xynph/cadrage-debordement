@@ -80,6 +80,13 @@ func run() -> void:
 	check(absf(region.size.x - region.size.y) <= 1.0 and region.size.x < 300, "Case carrée : région carrée en buste %s" % region)
 	var autre := G.portrait(1, 40, {"name": "Joueur Pied", "portraitPath": chemin})
 	check(autre.texture == rect.texture, "Texture recadrée partagée entre les vues")
+	# Cercles à anneau (terrain de la Composition, Entraînement, avant-match) : même recadrage, sans second rognage.
+	var anneau: Control = load("res://ui/contextual/training_visuels.gd").portrait_anneau({"name": "Joueur Pied", "portraitPath": chemin}, 80.0)
+	var disque: Control = anneau.get_node("PortraitDisque")
+	var dans_disque := disque.get_child(0) as TextureRect
+	check(dans_disque != null and dans_disque.texture == rect.texture, "Cercle à anneau : même photo recadrée que les vignettes")
+	check(dans_disque != null and dans_disque.position == Vector2.ZERO and dans_disque.size.is_equal_approx(disque.size), "Cercle à anneau : photo entière dans le disque, ni agrandie ni décalée")
+	anneau.free()
 	check(FileAccess.file_exists(R.chemin_cache()), "Recadrage gardé dans le profil")
 	var garde: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(R.chemin_cache()))
 	check(int(garde.get("version", 0)) == R.VERSION and garde.regions.size() == 1, "Cache du profil : une entrée par photo")
