@@ -139,8 +139,8 @@ func run() -> void:
 		var bas := (ecran.find_child("MatchBetweenMain", true, false) as Control).get_global_rect()
 		var centre := (ecran.find_child("MatchBetweenPitchTile", true, false) as Control).get_global_rect()
 		var gauche := (ecran.find_child("MatchBetweenDuel", true, false) as Control).get_global_rect()
-		var miroirs: Array = [ecran.find_child("MatchBetweenMirror0", true, false), ecran.find_child("MatchBetweenMirror1", true, false)]
-		check(gauche.end.x <= centre.position.x and bas.position.y >= centre.end.y and miroirs.all(func(m: Variant): return m is Control and (m as Control).is_visible_in_tree()) and (miroirs[0] as Control).get_global_rect().end.x <= centre.position.x + 1.0 and (miroirs[1] as Control).get_global_rect().position.x >= centre.end.x - 1.0, cadre + " : événements à gauche, terrain au centre entre les chiffres en miroir, Mon XV en barre basse")
+		var miroirs: Array = [ecran.find_child("MatchBetweenLineup0", true, false), ecran.find_child("MatchBetweenLineup1", true, false)]
+		check(gauche.end.x <= centre.position.x and bas.position.y >= centre.end.y and miroirs.all(func(m: Variant): return m is Control and (m as Control).is_visible_in_tree()) and (miroirs[0] as Control).get_global_rect().end.x <= centre.position.x + 1.0 and (miroirs[1] as Control).get_global_rect().position.x >= centre.end.x - 1.0, cadre + " : événements à gauche, terrain au centre entre les deux compositions, Mon XV en barre basse")
 		check(centre.get_area() > gauche.get_area() and centre.size.x > (miroirs[0] as Control).size.x, cadre + " : le terrain est le plus grand bloc")
 		var lignes: Array = ecran.xv.get_children().filter(func(n: Node): return n is Button and str(n.name).begins_with("MatchBetweenPlayer"))
 		check(lignes.size() == 15, cadre + " : quinze lignes dans Mon XV (%d)" % lignes.size())
@@ -216,8 +216,8 @@ func run() -> void:
 		# Comparaisons aux couleurs des deux clubs (choix de Léo du 21/11/2026), chiffres en miroir autour du terrain.
 		var barres: Array = ecran.chiffres.find_children("*", "Control", true, false).filter(func(n: Node): return n.get("valeurs") != null and n.get("couleurs") != null)
 		check(not barres.is_empty() and barres.all(func(b: Control): return (b.get("couleurs") as Array) == ecran._teintes_duel()), cadre + " : barres des chiffres aux couleurs des deux clubs")
-		var ligne_miroir := ecran.find_child("MatchBetweenMirror_possession_0", true, false) as Button
-		check(ligne_miroir != null and ligne_miroir.is_visible_in_tree() and ecran.find_child("MatchBetweenMirror_possession_1", true, false) != null, cadre + " : chiffres des deux clubs en miroir autour du terrain")
+		var ligne_miroir := ecran.find_child("MatchBetweenMirrorBar_possession", true, false) as Button
+		check(ligne_miroir != null and ligne_miroir.is_visible_in_tree(), cadre + " : chiffres des deux clubs en barres miroir sous le terrain")
 		check(dores.is_empty(), cadre + " : aucun aplat doré hors bouton principal " + str(dores.slice(0, 6)))
 		# Banc : zone fixe, entière dans l'écran ; barème des notes écrit ; terrain qui remplit sa tuile.
 		var zone_banc := ecran.find_child("MatchBetweenBenchZone", true, false) as Control
