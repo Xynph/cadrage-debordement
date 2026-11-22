@@ -1,10 +1,7 @@
 extends RefCounted
-## Carrière › Synthèse : deux variantes « moins de tuiles, façon Effectif » à comparer sur planche (22/11/2026),
-## choisies par CD_VARIANTE_VISUELLE (sans elle, career_canvas.gd garde l'écran de main). Rien n'est intégré.
-##  A : en-tête de l'Effectif (titre Anton, pastilles, quatre tuiles chiffres compactes, onglets en pilules), saisons en
-##      tableau à lignes, mandat / parcours / carnet en liste à groupes.
-##  B : bandeau photo gardé, cinq tuiles chiffres colorées, onglets à leur place, deux colonnes de listes à lignes.
-## Mêmes données et mêmes destinations de clic qu'aujourd'hui (noms des boutons repris de career_canvas.gd).
+## Carrière › Synthèse « façon Effectif » (choix de Léo du 22/11/2026, option B) : bandeau photo gardé, cinq tuiles
+## chiffres colorées, onglets à leur place, tableau des saisons, trois courtes listes à lignes côte à côte.
+## Les onglets Plan et Mobilité restent dans career_canvas.gd. Noms des boutons repris de career_canvas.gd.
 ## Coordonnées en unités du gabarit (toile 2248 de large).
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
@@ -29,69 +26,7 @@ const SUIVIS := Charte.REPOS
 const CARNET := Charte.INTENSIF
 const SEMAINES := Charte.MORAL
 
-static func variante() -> String:
-	var v := OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper()
-	return v if v in ["A", "B"] else ""
-
-static func construire(app: Control, canvas: Control, data: Dictionary, v: String) -> void:
-	if v == "A": _variante_a(app, canvas, data)
-	else: _variante_b(app, canvas, data)
-
-# --- Variante A : version Effectif ----------------------------------------------------------------------------------
-
-static func _variante_a(app: Control, canvas: Control, data: Dictionary) -> void:
-	var titre := D.text(canvas, 0, 64, "LE PARCOURS DU MANAGER", 58, Charte.IVOIRE, 800, 1000)
-	titre.add_theme_font_override("font", Charte.TITRE_FICHE)
-	titre.name = "CareerTitre"
-	var club := R.pastille(canvas, 0, 112, G.club_name(app.model.club) + "  ·  " + P.league_name(app.model), Charte.IVOIRE_2, "shield", "CareerSousTitre")
-	var since: Variant = data.get("currentFrom", app.model.meta.get("season", 1))
-	R.pastille(canvas, club.size.x / C.density + 10, 112, "Mandat depuis " + G.season_label(since), SEMAINES, "calendar", "CareerMandatDepuis")
-	var tuiles := _metriques(data)
-	var x := LARGEUR
-	for i in range(tuiles.size() - 1, -1, -1):
-		var t: Array = tuiles[i]
-		x -= float(t[5])
-		_tuile(canvas, Rect2(x, 0, float(t[5]), 88), t, "CareerMetricLien" + str(i), _vers(app, "details", "CareerTab_details"))
-		x -= 14.0
-	_onglets_pilules(app, canvas, 130.0)
-	# Les saisons : tableau pleine largeur.
-	var plan := _panneau(canvas, Rect2(0, 196, LARGEUR, 346), "Plan sur trois saisons", "tactic", "CareerPlanSummary")
-	_lien(plan, LARGEUR - 24, 13, "Couverture poste par poste →", _vers(app, "plan", "CareerTab_plan"), "CareerOpenPlan")
-	_saisons(app, plan, data, Rect2(14, 66, LARGEUR - 28, 0), 74.0, [
-		{"k": "saison", "t": "SAISON", "x": 24, "w": 300},
-		{"k": "couverts", "t": "POSTES COUVERTS", "x": 380, "w": 600},
-		{"k": "masse", "t": "MASSE SALARIALE", "x": 1060, "w": 280},
-		{"k": "semaines", "t": "SEMAINES CONNUES", "x": 1400, "w": 260},
-		{"k": "fragiles", "t": "POSTES FRAGILES", "x": 1720, "w": 480},
-	])
-	# Mandat, parcours, carnet : une liste à groupes, à la hauteur de son contenu.
-	var moves: Array = data.get("history", [])
-	var n_parcours := maxi(1, mini(4, moves.size()))
-	var h := 70.0
-	var hauteur := 3 * 46.0 + (4 + n_parcours) * (h + 2.0)
-	var dossiers := _panneau(canvas, Rect2(0, 558, LARGEUR, 70 + hauteur + 14), "Mandat et mobilité", "flag", "CareerMandate")
-	_lien(dossiers, LARGEUR - 24, 13, "Dossiers de mobilité →", _vers(app, "details", "CareerTab_details"), "CareerMobilityLien")
-	var largeur := LARGEUR - 28
-	var liste := _liste(dossiers, Rect2(14, 70, largeur, hauteur), "CareerDossiers")
-	var y := _groupe(liste, 0.0, "Mandat", 2, SEMAINES, largeur)
-	_ligne_club(app, liste, data, Rect2(0, y, largeur, h), 0, [24, 640, largeur - 24])
-	_ligne_candidatures(app, liste, data, Rect2(0, y + h + 2.0, largeur, h), 1, [24, 640, largeur - 24])
-	y += 2 * (h + 2.0)
-	var rang := 2
-	y = _groupe(liste, y, "Parcours", n_parcours, CANDIDATURES, largeur)
-	for i in n_parcours:
-		_ligne_parcours(app, liste, data, Rect2(0, y, largeur, h), rang, [24, 640], i)
-		y += h + 2.0
-		rang += 1
-	y = _groupe(liste, y, "Carnet du recrutement", 2, CARNET, largeur)
-	for i in 2:
-		_ligne_carnet(app, liste, data, Rect2(0, y, largeur, h), rang, [24, 640], i)
-		y += h + 2.0
-		rang += 1
-
-# --- Variante B : mixte -----------------------------------------------------------------------------------------------
-
-static func _variante_b(app: Control, canvas: Control, data: Dictionary) -> void:
+static func construire(app: Control, canvas: Control, data: Dictionary) -> void:
 	_bandeau_photo(app, canvas, data)
 	var tuiles := _metriques(data)
 	tuiles.append(["Carnet", "PROFILS AU CARNET", str(data.get("recruitment", []).size()), "", CARNET, 0.0, "search"])
@@ -162,7 +97,7 @@ static func _bandeau_photo(app: Control, canvas: Control, data: Dictionary) -> v
 
 # --- Pièces communes --------------------------------------------------------------------------------------------------
 
-## Les quatre chiffres de l'en-tête : [nom, légende, valeur, suffixe, couleur, largeur (A), icône].
+## Les quatre chiffres de l'en-tête : [nom, légende, valeur, suffixe, couleur, largeur, icône].
 static func _metriques(data: Dictionary) -> Array:
 	return [
 		["Occupees", "PLACES OCCUPÉES", G.n(data.get("occupied", "—")), "/ " + G.n(data.get("capacity", "—")), OCCUPEES, 290.0, "people"],
@@ -226,32 +161,6 @@ static func _tuile(parent: Control, zone: Rect2, t: Array, id: String, action: C
 	tuile.pressed.connect(action)
 	return tuile
 
-## Onglets en pilules à la largeur du mot (rendu de l'Effectif) ; mêmes noms et destinations que les onglets de main.
-static func _onglets_pilules(app: Control, canvas: Control, y: float) -> void:
-	var x := 0.0
-	for o: Array in [["summary", "Synthèse"], ["plan", "Plan sur trois saisons"], ["details", "Mobilité et recrutement"]]:
-		var cle: String = o[0]
-		var id := "CareerTab_" + cle
-		var actif := cle == "summary"
-		var lo := C.BODY.get_string_size(str(o[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(20))).x / C.density + 44.0
-		var b := Button.new()
-		b.name = id
-		b.text = str(o[1])
-		b.focus_mode = Control.FOCUS_ALL
-		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		b.add_theme_font_override("font", C.BODY)
-		b.add_theme_font_size_override("font_size", maxi(12, C.px(20)))
-		b.accessibility_name = "Onglet " + str(o[1]) + (" · actif" if actif else "")
-		D.tab_state(b, Vector2(lo, 44), actif, "")
-		b.icon = null
-		var focus := _plat(Color.TRANSPARENT, Charte.IVOIRE, 2, Charte.RAYON_PILULE)
-		focus.set_expand_margin_all(2)
-		b.add_theme_stylebox_override("focus", focus)
-		canvas.add_child(b)
-		D.place(b, C.reach_rect(Rect2(x, y, lo, 44)))
-		b.pressed.connect(func(): U.select(app, KEY, cle, id))
-		x += lo + 8.0
-
 ## Panneau de l'Effectif : fond PANNEAU, pictogramme et titre Anton.
 static func _panneau(parent: Control, zone: Rect2, titre: String, icone_id: String, id: String) -> Panel:
 	var p := D.panel(parent, zone, "", "", "", id)
@@ -283,19 +192,6 @@ static func _liste(parent: Control, zone: Rect2, id: String) -> Control:
 	return liste
 
 ## Titre de groupe (comme AVANTS / ARRIÈRES de l'Effectif) : barre de couleur, titre, compte. Renvoie le y suivant.
-static func _groupe(parent: Control, y: float, titre: String, n: int, couleur: Color, largeur: float) -> float:
-	var g := Control.new()
-	g.name = "CareerGroupe_" + titre.validate_node_name()
-	g.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	parent.add_child(g)
-	D.place(g, Rect2(0, y, largeur, 44))
-	D.rect(g, Rect2(0, 12, 6, 24), couleur, 3)
-	var t := D.text(g, 18, 34, titre.to_upper(), 22, Charte.IVOIRE, 800, 900)
-	t.add_theme_font_override("font", Charte.TITRE_EXTRA)
-	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_chiffre(g, 18 + R.largeur(titre.to_upper(), 22, 800) + 12, 34, str(n), 22, couleur, 80)
-	return y + 46.0
-
 ## Ligne de liste cliquable : survol commun (bande claire + liseré club), rayure une ligne sur deux, filet bas.
 static func _ligne(app: Control, parent: Control, zone: Rect2, rang: int, action: Callable, id: String, aide: String = "") -> Button:
 	var ligne := Button.new()

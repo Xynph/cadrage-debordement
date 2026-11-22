@@ -1,9 +1,7 @@
 extends RefCounted
-## Plan d'entraînement › Semaine, variantes « façon Effectif » (planche A/B du 22/11/2026 ; rien d'intégré, Léo choisit).
-## CD_VARIANTE_VISUELLE=A : tuiles-chiffres compactes dans l'en-tête (gabarit de l'Effectif), puis les sept volets en
-##   sept LIGNES d'un tableau (volet | préparer + état | repères | suivre + état | repères), survol de ligne, rayures.
-## CD_VARIANTE_VISUELLE=B : bandeau de cinq tuiles-chiffres colorées sous les onglets, programme des jours dans l'en-tête,
-##   le même tableau dessous.
+## Plan d'entraînement › Semaine « façon Effectif » (choix de Léo du 22/11/2026, option A) : quatre tuiles-chiffres
+## compactes dans l'en-tête (gabarit de l'Effectif), puis les sept volets en sept LIGNES d'un tableau
+## (volet | préparer + état | repères | suivre + état | repères), survol de ligne.
 ## Chaque case garde la destination de la carte qu'elle remplace (`_select` → Séance sélectionnée, puis son action) ;
 ## les repères (crans, portraits, blasons, cases) sont ceux des cartes actuelles (`_card_visual`) avec leurs liens.
 ## Coordonnées en unités du gabarit (toile 2248 × 1230). `page` : la toile de l'entraînement (training_canvas.gd).
@@ -31,10 +29,6 @@ const X_VOLET := 236.0
 const MOITIE := 748.0
 const NOM_MARQUE := "TrainingWeekPick"
 
-static func variante() -> String:
-	var v := OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper()
-	return v if v in ["A", "B"] else ""
-
 # --- En-tête --------------------------------------------------------------------------------------------------------
 
 ## Les quatre chiffres de l'en-tête actuel : [id, légende, valeur, suffixe, couleur, icône].
@@ -51,27 +45,24 @@ static func _chiffres(page: Control, meta: Dictionary) -> Array:
 		["Surveiller", "À SURVEILLER", str(surveiller), "joueurs" if surveiller > 1 else "joueur", Charte.PERTE if surveiller > 0 else Charte.IVOIRE_3, "warning"],
 	]
 
-## A : tuiles compactes à droite du titre (gabarit de l'Effectif) ; B : rien ici (bandeau sous les onglets) et le
-## programme des jours remonte dans l'en-tête.
+## Tuiles compactes à droite du titre (gabarit de l'Effectif).
 static func entete(page: Control, meta: Dictionary) -> void:
-	if page.variante == "B": return
 	var chiffres := _chiffres(page, meta)
 	var x := 1743.0
 	for i in range(chiffres.size() - 1, -1, -1):
 		x -= 218.0
-		_tuile(page, Rect2(x, 26, 218, 92), chiffres[i], i, false)
+		_tuile(page, Rect2(x, 26, 218, 92), chiffres[i], i)
 		x -= 12.0
 
 ## Tuile-chiffre cliquable (même destination que les tuiles actuelles : moral → Vestiaire, le reste → Fatigue).
-## `grande` : tuile du bandeau B (icône, fond teinté de la couleur de la donnée).
-static func _tuile(page: Control, zone: Rect2, t: Array, i: int, grande: bool) -> Button:
+static func _tuile(page: Control, zone: Rect2, t: Array, i: int) -> Button:
 	var tuile := Button.new()
 	tuile.name = "TrainingMetric" + str(i)
 	tuile.focus_mode = Control.FOCUS_ALL
 	tuile.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	tuile.accessibility_name = "%s %s %s" % [t[1], t[2], t[3]]
-	tuile.tooltip_text = ["Condition de l'effectif : ouvrir la fatigue", "Moral : ouvrir le vestiaire", "Charge moyenne : ouvrir la fatigue", "Joueurs à surveiller : ouvrir la fatigue", "Séance collective"][i]
-	var fond: Color = Charte.PANNEAU.lerp(t[4], .14) if grande else Charte.PANNEAU
+	tuile.tooltip_text = ["Condition de l'effectif : ouvrir la fatigue", "Moral : ouvrir le vestiaire", "Charge moyenne : ouvrir la fatigue", "Joueurs à surveiller : ouvrir la fatigue"][i]
+	var fond: Color = Charte.PANNEAU
 	tuile.add_theme_stylebox_override("normal", _plat(fond, 16))
 	tuile.add_theme_stylebox_override("hover", _plat(fond.lerp(Charte.IVOIRE, .06), 16))
 	tuile.add_theme_stylebox_override("pressed", _plat(fond.lerp(Charte.IVOIRE, .10), 16))
@@ -83,15 +74,9 @@ static func _tuile(page: Control, zone: Rect2, t: Array, i: int, grande: bool) -
 	D.place(tuile, zone)
 	load("res://ui/retour_tuile.gd").brancher(tuile, tuile, C.px(16))
 	var gauche := 18.0
-	if grande:
-		var icone := C.icon(str(t[5]), 40, t[4])
-		icone.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		tuile.add_child(icone)
-		D.place(icone, Rect2(22, (zone.size.y - 40) / 2.0, 40, 40))
-		gauche = 82.0
 	var legende := D.text(tuile, gauche, 30, t[1], 17, Charte.IVOIRE_2, 700, zone.size.x - gauche - 12)
 	legende.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var taille := 52 if grande else 46
+	var taille := 46
 	var base := zone.size.y - 16
 	var valeur := D.text(tuile, gauche, base, t[2], taille, t[4], 800, zone.size.x - gauche - 12)
 	valeur.add_theme_font_override("font", Charte.TITRE_EXTRA)
@@ -101,8 +86,7 @@ static func _tuile(page: Control, zone: Rect2, t: Array, i: int, grande: bool) -
 		var l: float = Charte.TITRE_EXTRA.get_string_size(str(t[2]), HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(taille))).x / C.density
 		var suffixe := D.text(tuile, gauche + l + 10, base - 4, t[3], 18, Charte.IVOIRE_2, 500, zone.size.x - gauche - l - 22, HORIZONTAL_ALIGNMENT_LEFT, true)
 		suffixe.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if i < 4: tuile.pressed.connect(func(): page._open_metric(i))
-	else: tuile.pressed.connect(func(): page._select(0))
+	tuile.pressed.connect(func(): page._open_metric(i))
 	if i < 2: preload("res://ui/mini_courbe_survol.gd").lier(page.app, tuile, ["condition", "morale"][i], ["Condition du groupe", "Moral du vestiaire"][i])
 	return tuile
 
@@ -113,33 +97,13 @@ static func _plat(fond: Color, rayon: int) -> StyleBoxFlat:
 	s.anti_aliasing = true
 	return s
 
-## B : cinq tuiles colorées sur toute la largeur (les quatre chiffres + la charge de la séance collective).
-static func _bandeau(page: Control, y: float, h: float) -> void:
-	var meta: Dictionary = page.app.model.get("meta", {})
-	var chiffres := _chiffres(page, meta)
-	var mode := str(page.state.get("mode", page.state.get("stored_mode", "normal")))
-	var seance: Array = [["repos", "Repos", Charte.REPOS, "heart"], ["normal", "Normale", Charte.NORMAL, "train"], ["intense", "Intensive", Charte.INTENSIF, "train"]].filter(func(m: Array): return m[0] == mode)
-	if seance.is_empty(): seance = [["normal", "Normale", Charte.NORMAL, "train"]]
-	chiffres.append(["Seance", "SÉANCE", seance[0][1], "faite" if page.trained else "", seance[0][2], seance[0][3]])
-	var ecart := 14.0
-	var w := (LARGEUR - ecart * (chiffres.size() - 1)) / chiffres.size()
-	for i in chiffres.size():
-		_tuile(page, Rect2(4 + i * (w + ecart), y, w, h), chiffres[i], i, true)
-
 # --- Onglet Semaine -------------------------------------------------------------------------------------------------
 
 static func semaine(page: Control, fixture: Dictionary) -> void:
-	page.teinte_date = Charte.IVOIRE
 	var selected := clampi(int(page.state.get("slot", 0)), 0, _slots(page).size() - 1)
-	if page.variante == "B":
-		page._programme(Vector2(1015, 104))
-		_bandeau(page, 242, 96)
-		_tableau(page, Rect2(4, 352, LARGEUR, 522), 66.0, fixture, selected)
-	else:
-		page._programme()
-		_tableau(page, Rect2(4, 278, LARGEUR, 546), 70.0, fixture, selected)
-	# B : le tableau descend sous le bandeau, la rangée du bas se resserre (mêmes panneaux, trois lignes chacun).
-	var y_bas := 884.0 if page.variante == "B" else 840.0
+	page._programme()
+	_tableau(page, Rect2(4, 278, LARGEUR, 546), 70.0, fixture, selected)
+	var y_bas := 840.0
 	var h_bas := 1217.0 - y_bas
 	page._chart()
 	page._vigilance()
@@ -149,10 +113,10 @@ static func semaine(page: Control, fixture: Dictionary) -> void:
 	var art := D.panel(page, Rect2(4, y_bas, 1020, h_bas), "", "", "", "TrainingPhoto")
 	art.clip_contents = true
 	D.photo(art, page.photo_centre(page.app.model), Rect2(2, 2, 1016, h_bas - 4))
-	var axes := D.panel(page, Rect2(1039, y_bas, 560, minf(341.0, h_bas)), "Axes individuels", "star", "", "TrainingAxes")
+	var axes := D.panel(page, Rect2(1039, y_bas, 560, 341), "Axes individuels", "star", "", "TrainingAxes")
 	page._axes(axes)
 	_lignes_survol(axes, "TrainingAxis")
-	page._staff_cards(D.panel(page, Rect2(1614, y_bas, 634, minf(341.0, h_bas)), "Encadrement", "people", "", "TrainingStaff"))
+	page._staff_cards(D.panel(page, Rect2(1614, y_bas, 634, 341), "Encadrement", "people", "", "TrainingStaff"))
 
 ## Lignes-boutons déjà posées (vigilance, axes) : survol commun (bande claire + liseré club) et rayure une sur deux.
 static func _lignes_survol(parent: Node, prefixe: String) -> void:
@@ -195,9 +159,20 @@ static func _tableau(page: Control, zone: Rect2, h: float, fixture: Dictionary, 
 		var titre := D.text(ligne, 66, (h - 2) / 2.0 + 11, str(v[0]).to_upper(), 27, Charte.IVOIRE, 700, 166)
 		titre.add_theme_font_override("font", Charte.TITRE_FICHE)
 		titre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		# Nom du volet cliquable : retient sa première étape (« Préparer »), comme un clic sur la case.
+		var volet := Button.new()
+		volet.name = "TrainingWeekVolet%d" % i
+		volet.focus_mode = Control.FOCUS_NONE
+		volet.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		volet.accessibility_name = str(v[0])
+		for etat in ["normal", "hover", "pressed", "hover_pressed", "focus"]: volet.add_theme_stylebox_override(etat, StyleBoxEmpty.new())
+		ligne.add_child(volet)
+		D.place(volet, Rect2(0, 0, X_VOLET - 4, h - 2))
+		var premiere := i * 2
+		volet.pressed.connect(func(): page._select(premiere))
 		for k in 2:
 			marques.append(_case(page, ligne, i * 2 + k, X_VOLET + k * MOITIE, h - 2, str(captions[i * 2 + k]), fixture, i * 2 + k == selected))
-	page.set_meta("variante_marques", marques)
+	page.set_meta("semaine_marques", marques)
 
 ## Une case du tableau : icône + nom de l'étape, état en pastille, repères de la carte actuelle. Clic = `_select`.
 static func _case(page: Control, ligne: Control, index: int, x: float, h: float, caption: String, fixture: Dictionary, choisie: bool) -> Panel:
@@ -270,7 +245,7 @@ static func _etat(page: Control, index: int, caption: String) -> Array:
 
 ## Après un clic : le contour suit la case retenue.
 static func marquer(page: Control, index: int) -> void:
-	var marques: Variant = page.get_meta("variante_marques", [])
+	var marques: Variant = page.get_meta("semaine_marques", [])
 	if not marques is Array: return
 	for k in (marques as Array).size():
 		var m: Variant = marques[k]

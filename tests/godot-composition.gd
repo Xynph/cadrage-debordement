@@ -106,6 +106,47 @@ func glisser_souris(depart: Vector2, arrivee: Vector2, pendant: Callable = Calla
 	await wait_idle()
 	await settle()
 
+## Tactique › Entraînement « façon Effectif » (choix du 22/11/2026) : quatre petites tuiles, la semaine en bande de
+## sept jours, « À surveiller » en liste à lignes triable avec filtres en pastilles ; ligne = fiche joueur.
+func entrainement_facon_effectif() -> void:
+	await composition()
+	var onglet := named("TacticsTab4") as Button
+	check(onglet != null, "Onglet Entraînement présent")
+	if onglet == null: return
+	onglet.pressed.emit()
+	await settle()
+	for i in 4:
+		var tuile := named("TacticsTabTuile%dLien" % i) as Button
+		check(tuile != null and tuile.is_visible_in_tree(), "Entraînement : tuile %d cliquable" % i)
+		var fond := named("TacticsTabTuile%d" % i)
+		if fond != null: check(fond.get_global_rect().size.y < app.size.y * .08, "Entraînement : tuile %d compacte" % i)
+	var jours := 0
+	for i in 7: if named("TacticsTabJourLien%d" % i) is Button: jours += 1
+	check(jours == 0 or jours == 7, "Entraînement : semaine en bande de sept jours (%d)" % jours)
+	if jours == 7: check(absf(named("TacticsTabJour0").get_global_rect().position.y - named("TacticsTabJour6").get_global_rect().position.y) < 1.0, "Entraînement : jours sur une seule rangée")
+	check(named("TacticsTabSurveilles") != null, "Entraînement : liste « À surveiller »")
+	for filtre in ["tous", "cond", "charge"]: check(named("TacticsTabFiltre_" + filtre) != null, "Entraînement : filtre en pastille " + filtre)
+	var tri := named("TacticsTabTri_charge") as Button
+	check(tri != null, "Entraînement : colonne Charge triable")
+	if tri != null:
+		tri.pressed.emit()
+		await settle()
+		if named("TacticsTabSurveilles") == null:
+			(named("TacticsTab4") as Button).pressed.emit()
+			await settle()
+		var ordre: Variant = app.management_ui.get("tactique_entrainement_tri")
+		check(ordre is Array and str(ordre[0]) == "charge", "Entraînement : tri par charge appliqué")
+	if named("TacticsTabSurveilles") == null and named("TacticsTab4") != null:
+		(named("TacticsTab4") as Button).pressed.emit()
+		await settle()
+	var ligne := named("TacticsTabSurveille0") as Button
+	if ligne != null:
+		check(ligne.get_node_or_null("SurvolLigne") != null, "Entraînement : survol de ligne façon Effectif")
+		ligne.pressed.emit()
+		await settle()
+		check(app.route == "Effectif", "Entraînement : une ligne ouvre la fiche joueur (%s)" % app.route)
+	app.management_ui.erase("tactique_entrainement_tri")
+
 func composition() -> void:
 	app._navigate("Composition")
 	await settle(10)
@@ -567,6 +608,7 @@ func run() -> void:
 		check(app.route == "Composition" and int(app.management_ui.get("tactique_onglet", 0)) == paire[1] and named("TacticsTabTitle") != null and named("TacticsFixtureHome") != null, "%s ouvre l'onglet %d" % [paire[0], paire[1]])
 		var complet := named("TacticsTabOpenFull") as Button
 		check(complet != null, "Onglet %d : bouton vers l'écran complet" % paire[1])
+	await entrainement_facon_effectif()
 	app.management_ui.tactique_onglet = 0
 	await composition()
 	var dossier := named("TacticsOpponentFile") as Button

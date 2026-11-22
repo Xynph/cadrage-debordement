@@ -1,10 +1,8 @@
 extends RefCounted
-## Tactique › Entraînement : deux variantes « moins de tuiles, façon Effectif » (Léo, 22/11/2026), lues dans
-## CD_VARIANTE_VISUELLE (A ou B). Le terrain « Forme du XV » à gauche ne change pas ; seule la colonne de droite change.
-##  - A : rangée compacte de tuiles-chiffres (Le groupe), bande compacte des 7 jours, liste à lignes « À surveiller ».
-##  - B : bandeau de tuiles-chiffres colorées, puis la semaine en agenda vertical à gauche de la liste à lignes.
-## Mêmes données et mêmes destinations de clic que l'écran actuel ; ligne joueur : survol = carte joueur (nom, « i »),
-## clic = fiche joueur.
+## Tactique › Entraînement « façon Effectif » (choix de Léo du 22/11/2026, option A). Le terrain « Forme du XV » à
+## gauche ne change pas ; colonne de droite : rangée compacte de tuiles-chiffres (Le groupe), bande compacte des
+## 7 jours, liste à lignes « À surveiller » triable, filtres en pastilles. Ligne joueur : survol = carte joueur
+## (nom, « i »), clic = fiche joueur.
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Charte = preload("res://ui/charte.gd")
@@ -21,18 +19,8 @@ const FIN := 2248.0
 const TRI := "tactique_entrainement_tri"
 const FILTRE := "tactique_entrainement_filtre"
 
-static func variante() -> String:
-	var v := OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper()
-	return v if v in ["A", "B"] else ""
-
-## `tuiles` : [valeur, légende, couleur, icône, action] (mêmes que l'écran actuel).
-static func construire(app: Control, page: Control, v: String, tuiles: Array, surveilles: Array) -> void:
-	if v == "A": _variante_a(app, page, tuiles, surveilles)
-	else: _variante_b(app, page, tuiles, surveilles)
-
-# --- A : version Effectif ----------------------------------------------------------------------------------------
-
-static func _variante_a(app: Control, page: Control, tuiles: Array, surveilles: Array) -> void:
+## `tuiles` : [valeur, légende, couleur, icône, action].
+static func construire(app: Control, page: Control, tuiles: Array, surveilles: Array) -> void:
 	var gauche := Vertical.DROITE
 	var largeur := FIN - gauche
 	var tw := (largeur - 3 * 12) / 4.0
@@ -50,27 +38,6 @@ static func _variante_a(app: Control, page: Control, tuiles: Array, surveilles: 
 		{"k": "etat", "t": "STATUT", "x": 1256.0, "w": 170.0, "tri": true, "desc": false},
 	]
 	_liste(app, page, Rect2(gauche, y, largeur, BAS - y), colonnes, surveilles, 46.0)
-
-# --- B : mixte ---------------------------------------------------------------------------------------------------
-
-static func _variante_b(app: Control, page: Control, tuiles: Array, surveilles: Array) -> void:
-	var gauche := Vertical.DROITE
-	var largeur := FIN - gauche
-	var tw := (largeur - 3 * 16) / 4.0
-	for i in tuiles.size():
-		var t: Array = tuiles[i]
-		Pieces.tuile(page, Rect2(gauche + i * (tw + 16), HAUT, tw, 108), t[0], t[1], t[2], "TacticsTabTuile%d" % i, 52, "", t[3], true, t[4])
-	var y := HAUT + 132
-	var lg := 420.0
-	_titre(page, gauche, y, "La semaine", Charte.REPOS)
-	_agenda(app, page, Rect2(gauche, y + 46, lg, BAS - y - 46))
-	var colonnes := [
-		{"k": "nom", "t": "JOUEUR", "x": 16.0, "w": 330.0, "tri": true, "desc": false},
-		{"k": "poste", "t": "POSTE", "x": 356.0, "w": 190.0, "tri": true, "desc": false},
-		{"k": "cond", "t": "CONDITION", "x": 560.0, "w": 230.0, "tri": true, "desc": false},
-		{"k": "charge", "t": "CHARGE", "x": 816.0, "w": 170.0, "tri": true},
-	]
-	_liste(app, page, Rect2(gauche + lg + 24, y, largeur - lg - 24, BAS - y), colonnes, surveilles, 48.0)
 
 # --- Pièces --------------------------------------------------------------------------------------------------------
 
@@ -112,7 +79,7 @@ static func _date_courte(j: Dictionary) -> String:
 static func _ouvrir(app: Control) -> void:
 	load("res://ui/immersive08/tactics_onglets.gd")._ouvrir_entrainement(app, 0)
 
-## A : bande compacte des 7 jours (comme le panneau Semaine de l'Effectif, en une rangée) : lettre, jour, icône.
+## Bande compacte des 7 jours (comme le panneau Semaine de l'Effectif, en une rangée) : lettre, jour, icône.
 static func _bande_semaine(app: Control, page: Control, zone: Rect2) -> void:
 	var P = _panneaux()
 	var jours: Array = P._jours_programme(app)
@@ -151,57 +118,6 @@ static func _bande_semaine(app: Control, page: Control, zone: Rect2) -> void:
 			case_.add_child(icone)
 			D.place(icone, Rect2(w - 36, zone.size.y - 34, 24, 24))
 		Pieces.rendre_cliquable(case_, rect.size, func(): _ouvrir(app), "TacticsTabJourLien%d" % i, "%s · %s" % [str(j.get("date", "")), mot], "", Charte.RAYON_CARTE)
-
-## B : la semaine en agenda vertical, une ligne par jour (rayures, survol), puis la charge de la semaine en pastilles.
-static func _agenda(app: Control, page: Control, zone: Rect2) -> void:
-	var P = _panneaux()
-	var jours: Array = P._jours_programme(app)
-	if jours.is_empty(): return
-	var cadre := Control.new()
-	cadre.name = "TacticsTabAgenda"
-	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	page.add_child(cadre)
-	var h := 84.0
-	D.place(cadre, Rect2(zone.position, Vector2(zone.size.x, 7 * (h + 4))))
-	for i in jours.size():
-		var j: Dictionary = jours[i]
-		var kind := str(j.get("kind", "repos"))
-		var couleur: Color = P._couleur_jour(j)
-		var vif: Color = couleur if kind != "repos" else Charte.IVOIRE_2
-		var aujourdhui := bool(j.get("today", false))
-		var ligne := Button.new()
-		ligne.name = "TacticsTabJour%d" % i
-		ligne.focus_mode = Control.FOCUS_ALL
-		cadre.add_child(ligne)
-		D.place(ligne, Rect2(0, i * (h + 4), zone.size.x, h))
-		load("res://ui/survol_ligne.gd").appliquer(ligne, false, Color.TRANSPARENT, app.accent)
-		var mot: String = P.JOURS.get(kind, ["", kind])[1]
-		ligne.accessibility_name = "%s · %s" % [str(j.get("date", "")), mot]
-		ligne.pressed.connect(func(): _ouvrir(app))
-		if bool(j.get("past", false)): ligne.modulate = Color(1, 1, 1, .55)
-		var carre := D.rect(ligne, Rect2(10, 8, h - 16, h - 16), Charte.PANNEAU_2.lerp(couleur, .5) if kind != "repos" else Charte.PANNEAU_3, Charte.RAYON_PETIT, Charte.IVOIRE if aujourdhui else Color.TRANSPARENT)
-		carre.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		if aujourdhui: (carre.get_theme_stylebox("panel") as StyleBoxFlat).set_border_width_all(maxi(2, C.px(3)))
-		var lettre := D.text(carre, (h - 16) / 2.0, (h - 16) / 2.0 + 14, str(j.get("lettre", "")), 38, Charte.IVOIRE if kind != "repos" else Charte.IVOIRE_2, 500, h - 16, HORIZONTAL_ALIGNMENT_CENTER)
-		lettre.add_theme_font_override("font", Charte.TITRE_FICHE)
-		lettre.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var titre := D.text(ligne, h + 10, h / 2.0 + 10, mot.to_upper(), 26, vif if kind != "repos" else Charte.IVOIRE_2, 500, 200)
-		titre.add_theme_font_override("font", Charte.TITRE_FICHE)
-		titre.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var icone_id: String = P.JOURS.get(kind, ["", ""])[0]
-		if bool(j.get("done", false)) or (kind == "match" and bool(j.get("played", false))): icone_id = "check"
-		var x := h + 10 + Charte.TITRE_FICHE.get_string_size(mot.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(26))).x / C.density + 12
-		if not icone_id.is_empty() and kind != "seance":
-			var icone := C.icon(icone_id, 22, vif)
-			icone.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			ligne.add_child(icone)
-			D.place(icone, Rect2(x, (h - 22) / 2.0, 22, 22))
-		if kind == "seance":
-			var ch := str(j.get("charge", "normal"))
-			var c: Color = {"repos": Charte.REPOS, "intense": Charte.INTENSIF}.get(ch, Charte.NORMAL)
-			Pieces.pastille(ligne, x, (h - 34) / 2.0, str(P.CHARGES.get(ch, "")), "train", "TacticsTabCharge%d" % i, "", c)
-		var date := D.text(ligne, zone.size.x - 14, h / 2.0 + 7, _date_courte(j), 18, Charte.IVOIRE_2, 700, 80, HORIZONTAL_ALIGNMENT_RIGHT, true)
-		date.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 # --- Liste à lignes « À surveiller » -------------------------------------------------------------------------------
 

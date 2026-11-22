@@ -200,9 +200,10 @@ func run() -> void:
 	check(money.to_lower().contains("marge courante") and money.contains("hors guichet"), "Finances : la marge hebdomadaire est qualifiée")
 	var projection: Dictionary = finance.projection
 	check(money.contains("marge courante " + U.amount(projection.marginTotal)) and money.contains("guichet, primes et soutien +" + U.amount(projection.otherInflows)), "Finances : la projection relie marge courante et trésorerie prévue")
-	var tuile_echeances_horizon := app.find_child("FinanceWatchContractsCountValeur", true, false) as Label
-	var tuile_saison := app.find_child("FinanceWatchContractsSeasonValeur", true, false) as Label
-	check(tuile_echeances_horizon != null and tuile_echeances_horizon.text == str(int(counts.by_horizon)) and tuile_saison != null and tuile_saison.text == str(int(counts.end_of_season)), "Finances : échéances à l'horizon et en fin de saison (deux tuiles)")
+	# Synthèse « façon Effectif » (22/11/2026) : les deux compteurs de contrats sont des pastilles de la ligne Vigilances.
+	var tuile_echeances_horizon := app.find_child("FinanceWatchContractsCountTexte", true, false) as Label
+	var tuile_saison := app.find_child("FinanceWatchContractsSeasonTexte", true, false) as Label
+	check(tuile_echeances_horizon != null and tuile_echeances_horizon.text.begins_with(str(int(counts.by_horizon)) + " ") and tuile_saison != null and tuile_saison.text.begins_with(str(int(counts.end_of_season)) + " "), "Finances : échéances à l'horizon et en fin de saison (deux pastilles)")
 	forbidden_none(money, "Finances")
 	await capture("finances")
 	# Réception et Recrutement : pluriels accordés

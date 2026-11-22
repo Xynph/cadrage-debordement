@@ -1,12 +1,8 @@
 extends RefCounted
-## Finances › Synthèse : deux variantes « moins de tuiles, façon Effectif » (planche A/B du 22/11/2026, rien d'intégré).
-## Lues dans CD_VARIANTE_VISUELLE (finance_canvas.gd, _synthese) :
-##  A = version Effectif : rangée compacte de tuiles-chiffres dans l'en-tête, puis listes à lignes (verdict, transferts,
-##      vigilances à gauche ; « Budget de la semaine » en tableau à droite : charges, recettes, marge et fin de saison) ;
-##  B = mixte : bandeau de cinq tuiles-chiffres colorées (sans sous-tuile), puis trois colonnes de listes à lignes
-##      (verdict + vigilances, échéances + transferts, où va l'argent).
-## Mêmes données et mêmes destinations de clic que la Synthèse de main ; courbe « Solde sur 12 mois », verdict (paliers
-## et deux pastilles) inchangés. Coordonnées en unités du gabarit (toile 2248 × 1230).
+## Finances › Synthèse « façon Effectif » (choix de Léo du 22/11/2026, option B) : bandeau de cinq tuiles-chiffres
+## colorées (sans sous-tuile), trois colonnes de listes à lignes (verdict + vigilances, échéances + transferts, où va
+## l'argent), puis la courbe « Solde sur 12 mois ». Mêmes destinations de clic que l'ancienne Synthèse.
+## Coordonnées en unités du gabarit (toile 2248 × 1230).
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
@@ -32,56 +28,13 @@ const TRANSFERTS := Charte.REPOS
 const GAIN := Charte.GAIN
 const PERTE := Charte.PERTE
 
-static func construire(variante: String, app: Control, canvas: Control, accounts: Dictionary, finance: Dictionary, ledger: Array, v: Dictionary) -> void:
-	if variante == "A": _variante_a(app, canvas, accounts, finance, ledger, v)
-	else: _variante_b(app, canvas, accounts, finance, ledger, v)
+static func construire(app: Control, canvas: Control, accounts: Dictionary, finance: Dictionary, ledger: Array, v: Dictionary) -> void:
+	_colonnes(app, canvas, accounts, finance, ledger, v)
 	var solde := F._panneau(canvas, Rect2(0, Y_SOLDE, LARGEUR, 1230 - Y_SOLDE), "Solde sur 12 mois", "FinanceSolde")
 	_anton(solde)
 	F._solde(app, canvas, solde, accounts, LARGEUR)
 
-# --- Variante A : version Effectif -------------------------------------------------------------------------------------
-
-static func _variante_a(app: Control, canvas: Control, accounts: Dictionary, finance: Dictionary, ledger: Array, v: Dictionary) -> void:
-	_tuiles_entete(app, canvas, finance, v)
-	var gauche := 640.0
-	_verdict(app, canvas, Rect2(0, HAUT, gauche, 236), v)
-	_transferts(app, canvas, Rect2(0, HAUT + 252, gauche, 214), accounts, ledger, 46.0)
-	_vigilances(app, canvas, Rect2(0, HAUT + 482, gauche, Y_SOLDE - 16 - HAUT - 482), finance)
-	_budget_semaine(app, canvas, Rect2(gauche + 16, HAUT, LARGEUR - gauche - 16, Y_SOLDE - 16 - HAUT), finance, v)
-
-## Tuiles-chiffres de l'en-tête (gabarit de l'Effectif) : à droite des onglets, alignées sur le bord droit.
-static func _tuiles_entete(app: Control, canvas: Control, finance: Dictionary, v: Dictionary) -> void:
-	var transfer := Budget.data(app.model)
-	var marge: Variant = v.margin
-	var defs := [
-		["FinanceHeadCash", "TRÉSORERIE", U.amount(v.cash), "", TRESORERIE if v.cash == null or float(v.cash) >= 0.0 else PERTE, "money", _lien_carte(app, F._onglet_cible("cash"), "Ouvrir · Trésorerie")],
-		["FinanceHeadForecast", "FIN DE SAISON", U.amount(v.forecast), "", PERTE if v.forecast != null and float(v.forecast) < 0.0 else GAIN, "calendar", func(): F._vers(app, "budget")],
-		["FinanceHeadMargin", "MARGE COURANTE", ("—" if marge == null else ("▲ +" if float(marge) > 0.0 else "▼ " if float(marge) < 0.0 else "") + U.amount(marge)), "/ sem.", PERTE if marge != null and float(marge) < 0.0 else GAIN, "renew", _lien_carte(app, F._onglet_cible("budget"), "Ouvrir · Budget")],
-	]
-	if not transfer.is_empty():
-		defs.append(["FinanceHeadTransfers", "TRANSFERTS", U.amount(transfer.get("disponible", 0)), "restants", TRANSFERTS if int(transfer.get("disponible", 0)) > 0 else PERTE, "people", _lien_carte(app, {"kind": "menu", "route": "Recrutement"}, "Ouvrir · Recrutement")])
-	# Largeur de chaque tuile au plus juste ; la taille du chiffre baisse si la rangée déborderait sur les onglets.
-	var place := LARGEUR - 1400.0
-	var taille := 42
-	var largeurs: Array = []
-	while true:
-		largeurs.clear()
-		var total := 0.0
-		for d: Array in defs:
-			var l := maxf(_largeur(str(d[1]), 16, false, 700) + 44.0, _largeur(str(d[2]), taille, false, 800) + (_largeur(str(d[3]), 18) + 10.0 if not str(d[3]).is_empty() else 0.0) + 34.0)
-			largeurs.append(l)
-			total += l + 12.0
-		if total - 12.0 <= place or taille <= 30: break
-		taille -= 2
-	var x := LARGEUR
-	for i in range(defs.size() - 1, -1, -1):
-		x -= float(largeurs[i])
-		_tuile(canvas, Rect2(x, 0, largeurs[i], 98), defs[i], taille, false)
-		x -= 12.0
-
-# --- Variante B : mixte -----------------------------------------------------------------------------------------------
-
-static func _variante_b(app: Control, canvas: Control, accounts: Dictionary, finance: Dictionary, ledger: Array, v: Dictionary) -> void:
+static func _colonnes(app: Control, canvas: Control, accounts: Dictionary, finance: Dictionary, ledger: Array, v: Dictionary) -> void:
 	_bandeau_tuiles(app, canvas, Rect2(0, HAUT, LARGEUR, 116), finance, v)
 	var y := HAUT + 132.0
 	var bas := Y_SOLDE - 16.0
@@ -103,18 +56,18 @@ static func _bandeau_tuiles(app: Control, canvas: Control, zone: Rect2, finance:
 	var detail: Variant = finance.get("projection")
 	var defs := [
 		["FinanceMetric0", "TRÉSORERIE", U.amount(v.cash), "", TRESORERIE if v.cash == null or float(v.cash) >= 0.0 else PERTE, "money", _lien_carte(app, F._onglet_cible("cash"), "Ouvrir · Trésorerie")],
-		["FinanceProjectionEnd", "FIN DE SAISON PRÉVUE", U.amount(v.forecast), "", PERTE if v.forecast != null and float(v.forecast) < 0.0 else GAIN, "calendar", func(): F._vers(app, "budget")],
+		["FinanceProjectionEnd", "FIN DE SAISON PRÉVUE", U.amount(v.forecast), "", PERTE if v.forecast != null and float(v.forecast) < 0.0 else GAIN, "calendar", func(): F._vers(app, "budget"), F._projection_reading(finance)],
 	]
 	if detail is Dictionary and finance.has("budget") and absf(float(detail.otherInflows)) >= 1.0:
 		var autres := float(detail.otherInflows)
 		defs.append(["FinanceProjectionBox", "GUICHET · SOUTIEN", ("▲ +" if autres > 0.0 else "▼ ") + U.amount(autres), "saison", GAIN if autres > 0.0 else PERTE, "home", func(): F._vers(app, "budget")])
 	defs.append(["FinanceMetric2", "MARGE COURANTE", ("—" if marge == null else ("▲ +" if float(marge) > 0.0 else "▼ " if float(marge) < 0.0 else "") + U.amount(marge)), "/ sem.", PERTE if marge != null and float(marge) < 0.0 else GAIN, "renew", _lien_carte(app, F._onglet_cible("budget"), "Ouvrir · Budget")])
 	if not transfer.is_empty():
-		defs.append(["FinanceMetric1", "TRANSFERTS RESTANTS", G.euros(transfer.get("disponible", 0)), "", TRANSFERTS if int(transfer.get("disponible", 0)) > 0 else PERTE, "people", _lien_carte(app, {"kind": "menu", "route": "Recrutement"}, "Ouvrir · Recrutement")])
+		defs.append(["FinanceTransfersLeft", "TRANSFERTS RESTANTS", G.euros(transfer.get("disponible", 0)), "", TRANSFERTS if int(transfer.get("disponible", 0)) > 0 else PERTE, "people", _lien_carte(app, {"kind": "menu", "route": "Recrutement"}, "Ouvrir · Recrutement")])
 	var ecart := 16.0
 	var l := (zone.size.x - ecart * (defs.size() - 1)) / defs.size()
 	for i in defs.size():
-		_tuile(canvas, Rect2(zone.position.x + i * (l + ecart), zone.position.y, l, zone.size.y), defs[i], 50, true)
+		_tuile(canvas, Rect2(zone.position.x + i * (l + ecart), zone.position.y, l, zone.size.y), defs[i], 50)
 
 ## Échéances de la semaine en liste à lignes (date, échéance, montant signé et coloré).
 static func _echeances(app: Control, canvas: Control, zone: Rect2, finance: Dictionary) -> void:
@@ -196,7 +149,7 @@ static func _ou_va_l_argent(app: Control, canvas: Control, zone: Rect2, finance:
 	Pieces.pastille(p, 22, bas + 6, "%d semaines prévues" % remaining, "clock", "FinanceForecastWeeks", "", TRANSFERTS, Charte.PANNEAU_3, func(): F._vers(app, "budget"))
 	F._bouton(p, Rect2(w - 262, bas + 4, 242, 40), "Ajuster le budget" if sur_budget else "AJUSTER LE BUDGET", func(): F._strategy(app), "lien" if sur_budget else "ivoire", "arrow", "FinanceAdjustBudget")
 
-# --- Pièces communes aux deux variantes --------------------------------------------------------------------------------
+# --- Pièces --------------------------------------------------------------------------------
 
 ## Verdict de la semaine (paliers et deux pastilles validés par Léo), titre en Anton.
 static func _verdict(app: Control, canvas: Control, zone: Rect2, v: Dictionary) -> void:
@@ -273,122 +226,18 @@ static func _vigilances(app: Control, canvas: Control, zone: Rect2, finance: Dic
 			Pieces.pastille(p, x, py, str(ligne.detail), "", str(ligne.id) + "Detail", "", Charte.INTENSIF, Charte.PANNEAU_3)
 		_icone(p, Rect2(w - 46, y + (h - 22) / 2.0, 22, 22), "arrow", Charte.IVOIRE_2)
 
-## « Budget de la semaine » (variante A) : tableau façon Effectif. Bandeau (titre, semaines prévues, ajuster le budget,
-## en-têtes), groupes Charges et Recettes, marge courante, puis la fin de saison (trésorerie + marge + guichet).
-static func _budget_semaine(app: Control, canvas: Control, zone: Rect2, finance: Dictionary, v: Dictionary) -> void:
-	var w := zone.size.x
-	var p := F._panneau(canvas, zone, "", "FinanceBudgetTable")
-	var remaining := int(finance.get("remainingWeeks", 0))
-	var week := int(app.model.meta.get("week", 0)) + 1
-	var detail: Variant = finance.get("projection")
-	# Bandeau : titre, échéance de la semaine, pastilles, action ; en bas la bande des en-têtes de colonnes.
-	var bandeau_h := 104.0
-	_icone(p, Rect2(30, 20, 26, 26), "calendar", Charte.IVOIRE_2)
-	var titre := _t(p, 68, 46, "BUDGET DE LA SEMAINE", 30, Charte.IVOIRE, 520, HORIZONTAL_ALIGNMENT_LEFT, 400, false)
-	titre.add_theme_font_override("font", Charte.TITRE_FICHE)
-	var lt := _largeur("BUDGET DE LA SEMAINE", 30, false, 400, true)
-	var x := 68 + lt + 16
-	x += Pieces.pastille(p, x, 16, "Sem. %02d" % week, "", "FinanceWeekPill", "", Charte.IVOIRE, Charte.PANNEAU_3) + 8
-	x += Pieces.pastille(p, x, 16, "%d semaines prévues" % remaining, "clock", "FinanceForecastWeeks", "Engagements connus · prévision sur %d sem." % remaining, TRANSFERTS, Charte.PANNEAU_3, func(): F._vers(app, "budget")) + 8
-	Pieces.info(p, x + 4, 20, "Chaque ligne se répète jusqu'à la fin de la saison · %d sem." % remaining, "FinanceDueInfo")
-	var sur_budget := F._onglet_courant(app) == "budget"
-	F._bouton(p, Rect2(w - 288, 14, 262, 40), "Ajuster le budget" if sur_budget else "AJUSTER LE BUDGET", func(): F._strategy(app), "lien" if sur_budget else "ivoire", "arrow", "FinanceAdjustBudget")
-	# Colonnes : poste, répartition, part, par semaine, reste de la saison, écran d'arrivée.
-	var c_barre := 470.0
-	var c_part := 930.0
-	var c_sem := 1140.0
-	var c_saison := 1340.0
-	var c_ecran := w - 34.0
-	var entete := Control.new()
-	entete.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	p.add_child(entete)
-	D.place(entete, Rect2(12, 12, w - 24, bandeau_h))
-	for col: Array in [["Poste", 54.0 - 12.0, 300.0, HORIZONTAL_ALIGNMENT_LEFT], ["Répartition", c_barre - 12.0, 300.0, HORIZONTAL_ALIGNMENT_LEFT], ["Part", c_part - 12.0, 90.0, HORIZONTAL_ALIGNMENT_RIGHT], ["Par semaine", c_sem - 12.0, 200.0, HORIZONTAL_ALIGNMENT_RIGHT], ["Reste · %d sem." % remaining, c_saison - 12.0, 220.0, HORIZONTAL_ALIGNMENT_RIGHT], ["Écran", c_ecran - 12.0, 160.0, HORIZONTAL_ALIGNMENT_RIGHT]]:
-		_t(entete, col[1], bandeau_h - 11, str(col[0]).to_upper(), 16, Charte.IVOIRE_3, col[2], col[3], 700, false)
-	Bandeau.poser(p, Rect2(12, 12, w - 24, bandeau_h), 36)
-	var y := 12.0 + bandeau_h + Bandeau.ECART_LIGNES
-	var h := 48.0
-	var rang := 0
-	var rows := F._weekly(finance)
-	var total := float(finance.get("weeklyCosts", 0))
-	var destinations := [func(): F._open_wages(app, false), func(): F._vers_formation_ou_budget(app), func(): F._strategy(app)]
-	var noms := ["Salaires", "Formation" if F._onglet_courant(app) == "budget" else "Budget", "Infrastructures"]
-	var couleurs := [SALAIRES, FORMATION, FONCTIONNEMENT]
-	# Charges.
-	y = _groupe(p, y, w, "Charges", ("−" + U.amount(total) + " / sem.") if total > 0 else "", PERTE)
-	for i in rows.size():
-		var item: Array = rows[i]
-		var ratio := float(item[2]) * 100.0 / total if total > 0 and item[2] != null else 0.0
-		var reste: Variant = float(item[2]) * remaining if item[2] != null else null
-		_ligne(p, Rect2(12, y, w - 24, h), rang, destinations[i], "FinanceAllocationRow" + str(i), "Ouvrir · %s" % noms[i])
-		rang += 1
-		var base := y + h / 2.0 + 7.0
-		_icone(p, Rect2(30, y + (h - 24) / 2.0, 24, 24), str(item[1]), couleurs[i])
-		_t(p, 66, base, str(item[0]), 20, Charte.IVOIRE, c_barre - 90)
-		_barre(p, Rect2(c_barre, y + h / 2.0 - 4, c_part - c_barre - 120, 9), ratio, couleurs[i])
-		_t(p, c_part, base + 1, "%d %%" % roundi(ratio) if total > 0 else "—", 22, couleurs[i], 90, HORIZONTAL_ALIGNMENT_RIGHT, 800, false)
-		_t(p, c_sem, base + 1, _signe(item[2], -1.0), 22, PERTE, 210, HORIZONTAL_ALIGNMENT_RIGHT, 800, false)
-		_t(p, c_saison, base + 1, _signe_court(reste, -1.0), 20, Charte.IVOIRE_2, 210, HORIZONTAL_ALIGNMENT_RIGHT, 700, false)
-		_t(p, c_ecran, base, noms[i] + " →", 17, Charte.IVOIRE_2, 170, HORIZONTAL_ALIGNMENT_RIGHT)
-		y += h + 2.0
-		if i == 0 and app.model.has("figures"):
-			var payroll := P.payroll(app.model)
-			_ligne(p, Rect2(12, y, w - 24, h - 6), rang, func(): F._open_wages(app, false), "FinancePlayersPayroll", "Salaires des joueurs, hors cotisations")
-			rang += 1
-			D.rect(p, Rect2(41, y + 6, 2, h - 18), Charte.FILET)
-			_t(p, 66, y + (h - 6) / 2.0 + 7, "dont joueurs", 18, Charte.IVOIRE_2, 200)
-			_t(p, c_sem, y + (h - 6) / 2.0 + 8, G.salary_amount(payroll.players_weekly), 20, SALAIRES, 210, HORIZONTAL_ALIGNMENT_RIGHT, 800, false)
-			_t(p, c_ecran, y + (h - 6) / 2.0 + 7, "Salaires →", 17, Charte.IVOIRE_2, 170, HORIZONTAL_ALIGNMENT_RIGHT)
-			y += h - 4.0
-	# Recettes régulières.
-	var recettes: Variant = finance.get("weeklyIncome")
-	y = _groupe(p, y + 4, w, "Recettes", ("+" + U.amount(recettes) + " / sem.") if recettes != null else "", GAIN)
-	var nom_recettes := "Recettes régulières hors guichet" if finance.has("budget") else "Recettes prévues au modèle"
-	_ligne(p, Rect2(12, y, w - 24, h), rang, func(): F._ouvrir_onglet(app, "cash"), "FinanceDueRow2", "Ouvrir · Trésorerie")
-	rang += 1
-	var base_r := y + h / 2.0 + 7.0
-	_icone(p, Rect2(30, y + (h - 24) / 2.0, 24, 24), "money", GAIN)
-	_t(p, 66, base_r, nom_recettes, 20, Charte.IVOIRE, c_barre - 90)
-	_t(p, c_sem, base_r + 1, _signe(recettes, 1.0), 22, GAIN, 210, HORIZONTAL_ALIGNMENT_RIGHT, 800, false)
-	_t(p, c_saison, base_r + 1, _signe_court(float(recettes) * remaining if recettes != null else null, 1.0), 20, Charte.IVOIRE_2, 210, HORIZONTAL_ALIGNMENT_RIGHT, 700, false)
-	_t(p, c_ecran, base_r, "Trésorerie →", 17, Charte.IVOIRE_2, 170, HORIZONTAL_ALIGNMENT_RIGHT)
-	y += h + 2.0
-	# Fin de saison : trésorerie du jour + marge courante sur les semaines restantes + guichet et soutien = prévision.
-	var marge: Variant = v.margin
-	var total_marge: Variant = float(detail.marginTotal) if detail is Dictionary and detail.get("marginTotal") != null else (float(marge) * remaining if marge != null else null)
-	y = _groupe(p, y + 4, w, "Fin de saison", U.amount(v.forecast) if v.forecast != null else "", PERTE if v.forecast != null and float(v.forecast) < 0.0 else GAIN)
-	var fin: Array = [
-		["Trésorerie aujourd'hui", "money", TRESORERIE, null, v.cash, _lien_carte(app, F._onglet_cible("cash"), "Ouvrir · Trésorerie"), "FinanceCashRow", "Trésorerie →"],
-		["Marge courante", "renew", PERTE if marge != null and float(marge) < 0.0 else GAIN, marge, total_marge, _lien_carte(app, F._onglet_cible("budget"), "Ouvrir · Budget"), "FinanceMarginRow", "Budget →"],
-	]
-	if detail is Dictionary and finance.has("budget") and absf(float(detail.otherInflows)) >= 1.0:
-		fin.append(["Guichet · soutien", "home", GAIN if float(detail.otherInflows) > 0.0 else PERTE, null, float(detail.otherInflows), func(): F._vers(app, "budget"), "FinanceProjectionBox", "Budget →"])
-	for k in fin.size():
-		var f: Array = fin[k]
-		_ligne(p, Rect2(12, y, w - 24, h), rang, f[5], str(f[6]), str(f[7]).replace(" →", ""))
-		rang += 1
-		var base := y + h / 2.0 + 7.0
-		_icone(p, Rect2(30, y + (h - 24) / 2.0, 24, 24), str(f[1]), f[2])
-		_t(p, 66, base, str(f[0]), 20, Charte.IVOIRE, c_barre - 90)
-		if f[3] != null: _t(p, c_sem, base + 1, _signe(f[3], 0.0), 22, f[2], 210, HORIZONTAL_ALIGNMENT_RIGHT, 800, false)
-		var signe_saison := 0.0 if k == 0 else 1.0
-		_t(p, c_saison, base + 1, _signe_court(f[4], signe_saison) if k > 0 else U.amount(f[4]), 22, f[2] if k > 0 else Charte.IVOIRE, 210, HORIZONTAL_ALIGNMENT_RIGHT, 800, false)
-		_t(p, c_ecran, base, str(f[7]), 17, Charte.IVOIRE_2, 170, HORIZONTAL_ALIGNMENT_RIGHT)
-		y += h + 2.0
-
-# --- Petites pièces ---------------------------------------------------------------------------------------------------
-
-## Tuile-chiffre cliquable (en-tête ou bandeau) : intitulé en capitales, pictogramme teinté, chiffre coloré, suffixe.
-## `teinte` : léger fond de la couleur du chiffre et liseré gauche (bandeau de la variante B).
-static func _tuile(parent: Control, zone: Rect2, d: Array, taille: int, teinte: bool) -> void:
+## Tuile-chiffre cliquable du bandeau : léger fond de la couleur du chiffre, liseré gauche, intitulé en capitales,
+## pictogramme teinté, chiffre coloré, suffixe.
+static func _tuile(parent: Control, zone: Rect2, d: Array, taille: int) -> void:
 	var couleur: Color = d[4]
-	var fond := Charte.PANNEAU.lerp(couleur, .13) if teinte else Charte.PANNEAU
+	var fond := Charte.PANNEAU.lerp(couleur, .13)
 	var tuile := Button.new()
 	tuile.name = str(d[0])
 	tuile.focus_mode = Control.FOCUS_ALL
 	tuile.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	tuile.accessibility_name = "%s %s %s" % [d[1], d[2], d[3]]
-	tuile.tooltip_text = tuile.accessibility_name
+	# Infobulle : la lecture de la prévision quand la tuile en porte une (fin de saison), sinon le libellé.
+	tuile.tooltip_text = str(d[7]) if d.size() > 7 else tuile.accessibility_name
 	tuile.add_theme_stylebox_override("normal", Charte.ombrer(_plat(fond, 12), Charte.RAYON_CARTE))
 	tuile.add_theme_stylebox_override("hover", Charte.ombrer(_plat(fond.lightened(.06), 12), Charte.RAYON_CARTE))
 	tuile.add_theme_stylebox_override("pressed", _plat(fond.lightened(.1), 12))
@@ -399,11 +248,11 @@ static func _tuile(parent: Control, zone: Rect2, d: Array, taille: int, teinte: 
 	parent.add_child(tuile)
 	D.place(tuile, zone)
 	load("res://ui/retour_tuile.gd").brancher(tuile, tuile, C.px(Charte.RAYON_CARTE))
-	if teinte: D.rect(tuile, Rect2(0, 14, 5, zone.size.y - 28), couleur, 3)
-	var gauche := 22.0 if teinte else 16.0
-	_t(tuile, gauche, 30 if not teinte else 36, str(d[1]), 16 if not teinte else 18, Charte.IVOIRE_2, zone.size.x - gauche - 40, HORIZONTAL_ALIGNMENT_LEFT, 700, false)
-	_icone(tuile, Rect2(zone.size.x - 38, 12 if not teinte else 16, 22, 22), str(d[5]), couleur)
-	var base := zone.size.y - (16.0 if not teinte else 22.0)
+	D.rect(tuile, Rect2(0, 14, 5, zone.size.y - 28), couleur, 3)
+	var gauche := 22.0
+	_t(tuile, gauche, 36, str(d[1]), 18, Charte.IVOIRE_2, zone.size.x - gauche - 40, HORIZONTAL_ALIGNMENT_LEFT, 700, false)
+	_icone(tuile, Rect2(zone.size.x - 38, 16, 22, 22), str(d[5]), couleur)
+	var base := zone.size.y - 22.0
 	var v := _t(tuile, gauche, base, str(d[2]), taille, couleur, zone.size.x - gauche - 12, HORIZONTAL_ALIGNMENT_LEFT, 800, false)
 	v.add_theme_font_override("font", Charte.TITRE_EXTRA)
 	v.name = str(d[0]) + "Valeur"
@@ -449,15 +298,6 @@ static func _entete_colonnes(parent: Control, zone: Rect2, colonnes: Array) -> v
 		_t(parent, col[1], zone.position.y + zone.size.y / 2.0 + 6, str(col[0]).to_upper(), 16, Charte.IVOIRE_3, col[2], col[3], 700, false)
 
 ## En-tête de groupe (comme « AVANTS 16 » de l'Effectif) : repère coloré, titre, montant coloré. Renvoie le y suivant.
-static func _groupe(parent: Control, y: float, _w: float, titre: String, valeur: String, couleur: Color) -> float:
-	D.rect(parent, Rect2(20, y + 8, 6, 24), couleur, 3)
-	var t := _t(parent, 36, y + 29, titre.to_upper(), 22, Charte.IVOIRE, 400, HORIZONTAL_ALIGNMENT_LEFT, 800, false)
-	t.add_theme_font_override("font", Charte.TITRE_EXTRA)
-	if not valeur.is_empty():
-		var c := _t(parent, 36 + _largeur(titre.to_upper(), 22, false, 800) + 12, y + 29, valeur, 22, couleur, 300, HORIZONTAL_ALIGNMENT_LEFT, 800, false)
-		c.add_theme_font_override("font", Charte.TITRE_EXTRA)
-	return y + 38.0
-
 ## Ligne cliquable : survol commun (bande claire + liseré club), rayure une ligne sur deux (rang dans sa liste).
 static func _ligne(parent: Control, zone: Rect2, rang: int, action: Callable, id: String, bulle: String) -> Button:
 	var b := F._zone(parent, zone, action, id, bulle, true)
@@ -505,9 +345,3 @@ static func _signe(valeur: Variant, sens: float) -> String:
 	var negatif := sens < 0.0 or (sens == 0.0 and x < 0.0)
 	return ("−" if negatif else "+") + G.euros(absf(x))
 
-static func _signe_court(valeur: Variant, sens: float) -> String:
-	if valeur == null: return "—"
-	var x := float(valeur)
-	if is_zero_approx(x): return G.euros(0)
-	var negatif := sens < 0.0 or (sens == 0.0 and x < 0.0) or (sens > 0.0 and x < 0.0)
-	return ("−" if negatif else "+") + U.amount(absf(x))

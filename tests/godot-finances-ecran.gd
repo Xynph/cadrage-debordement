@@ -1,5 +1,6 @@
 extends SceneTree
-## Écran « Finances » (revue DA du 19/11/2026, variante 1) : verdict en mots, colonne de verdict sur chaque onglet,
+## Écran « Finances » (revue DA du 19/11/2026 ; Synthèse « façon Effectif » du 22/11/2026, option B : cinq tuiles,
+## trois colonnes de listes, solde) : verdict en mots, colonne de verdict sur les autres onglets,
 ## tout ce qui a l'air cliquable change d'écran / d'onglet, aucune fenêtre ouverte par un clic, aucun or (réservé à
 ## Continuer), valeurs lues dans les données du club. Carrière world-champ préparée par le .cjs.
 const ContextualFlow = preload("helpers/contextual_flow.gd")
@@ -8,7 +9,7 @@ const Finance = preload("res://ui/immersive08/finance_canvas.gd")
 const U = preload("res://ui/immersive08/club_ui.gd")
 const TABS := ["summary", "cash", "wages", "transfers", "budget", "clubs"]
 ## Zones cliquables dont le clic doit mener ailleurs (écran ou onglet différent) ; les tris et pages restent sur place.
-const PREFIXES := ["FinanceSeasonBudget", "FinanceMetricLink", "FinanceVerdictLink", "FinanceWatch", "FinanceDueRow", "FinanceAllocationRow", "FinanceLedgerRow_", "FinanceCommitmentLink", "FinanceAdjustBudget", "FinanceRecruitment", "FinanceTransferContracts", "FinanceBudgetDecisions", "FinanceTotalLink", "FinanceProjection", "FinanceMargin", "FinancePlayersPayroll", "FinanceForecastWeeks", "FinanceNothingCommitted", "FinanceWagesScope", "FinanceWagesSeasonEnd", "FinanceWagesCount", "FinanceVerdictMargin", "FinanceVerdictAutonomy"]
+const PREFIXES := ["FinanceSeasonBudget", "FinanceMetricLink", "FinanceVerdictLink", "FinanceWatch", "FinanceDueRow", "FinanceAllocationRow", "FinanceLedgerRow_", "FinanceCommitmentLink", "FinanceAdjustBudget", "FinanceRecruitment", "FinanceTransferContracts", "FinanceBudgetDecisions", "FinanceTotalLink", "FinanceProjection", "FinanceMargin", "FinancePlayersPayroll", "FinanceForecastWeeks", "FinanceNothingCommitted", "FinanceWagesScope", "FinanceWagesSeasonEnd", "FinanceWagesCount", "FinanceVerdictMargin", "FinanceVerdictAutonomy", "FinanceMetric0", "FinanceMetric2", "FinanceTransfersLeft", "FinanceTransferRow"]
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -99,7 +100,13 @@ func run() -> void:
 		await ouvrir(tab)
 		var noms := cliquables(tab)
 		if tab == "summary":
-			for tuile in ["FinanceProjectionEndLien", "FinanceMarginIncomeLien", "FinanceMarginCostsLien", "FinanceWatchContractsCountLien", "FinanceWatchContractsSeasonLien", "FinancePlayersPayrollLien", "FinanceForecastWeeksLien"]: check(tuile in noms or (named(tuile) == null and tuile not in ["FinanceProjectionEndLien", "FinanceMarginIncomeLien", "FinanceMarginCostsLien", "FinanceForecastWeeksLien"]), "Synthèse : la tuile « %s » est cliquable" % tuile)
+			# Bandeau de tuiles (sans sous-tuile), puis lignes des trois colonnes : tout mène ailleurs.
+			for tuile in ["FinanceMetric0", "FinanceProjectionEnd", "FinanceMetric2", "FinanceForecastWeeksLien"]: check(tuile in noms, "Synthèse : « %s » est cliquable" % tuile)
+			check(not noms.filter(func(n: String): return n.begins_with("FinanceMarginIncome") or n.begins_with("FinanceMarginCosts")).is_empty(), "Synthèse : recettes et charges en lignes cliquables")
+			check(not noms.filter(func(n: String): return n.begins_with("FinanceTransferRow")).is_empty(), "Synthèse : lignes du budget de transferts cliquables")
+			check(not noms.filter(func(n: String): return n.begins_with("FinanceDueRow")).is_empty(), "Synthèse : échéances en lignes cliquables")
+			check(named("FinanceSolde") != null, "Synthèse : courbe « Solde sur 12 mois » gardée")
+			for ancien in ["FinanceMarginIncomeLien", "FinanceProjectionEndLien"]: check(named(ancien) == null, "Synthèse : plus de sous-tuile « %s »" % ancien)
 		if tab == "summary": check(noms.size() >= 8, "La Synthèse offre au moins huit zones cliquables (%d)" % noms.size())
 		for nom in noms:
 			await ouvrir(tab)
