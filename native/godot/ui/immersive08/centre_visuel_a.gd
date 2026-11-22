@@ -33,8 +33,9 @@ static func onglet(ctx: Dictionary, nom: String, zone: Rect2) -> void:
 
 ## Carte joueur : visage cerclé de la couleur de sa trajectoire, nom, poste et âge, niveau et potentiel en grand,
 ## jauge des minutes. Le clic ouvre `action` ; le visage, la carte joueur au survol.
-static func carte_espoir(ctx: Dictionary, parent: Control, zone: Rect2, p: Dictionary, id_bouton: String, action: Callable, source: String = "academy", minutes: bool = true) -> Panel:
+static func carte_espoir(ctx: Dictionary, parent: Control, zone: Rect2, p: Dictionary, id_bouton: String, action: Callable, source: String = "academy", minutes: bool = true, etiquette: Array = []) -> Panel:
 	var traj := V.trajectoire(str(p.get("path", p.get("strategy", "equilibre"))))
+	if not etiquette.is_empty(): traj = ["", etiquette[0], etiquette[1], etiquette[2]]
 	var teinte: Color = traj[3]
 	var c := V.carte(parent, zone, teinte, "CVACarte_" + str(p.id).validate_node_name())
 	c.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -57,7 +58,7 @@ static func carte_espoir(ctx: Dictionary, parent: Control, zone: Rect2, p: Dicti
 	if minutes and p.has("minutes"):
 		var cible := float(p.get("target", 0))
 		var m := float(p.minutes)
-		V.jauge(c, Rect2(18, 216, zone.size.x - 150, 14), m / (cible if cible > 0 else 480.0), V.MINUTES)
+		V.jauge(c, Rect2(18, 216, zone.size.x - 172, 14), m / (cible if cible > 0 else 480.0), V.MINUTES)
 		var texte := "%s / %s" % [G.n(int(m)), G.n(int(cible))] if cible > 0 else "%s min" % G.n(int(m))
 		V.chiffre(c, zone.size.x - 18, 232, texte, 22, V.MINUTES, 128, HORIZONTAL_ALIGNMENT_RIGHT)
 	return c
@@ -136,7 +137,7 @@ static func _centre(ctx: Dictionary, zone: Rect2) -> void:
 		var prix := Academy.cost(data, kind, (niveau + 1) * (85000 if k == 0 else 55000), niveau) if niveau < 3 else 0
 		var titre := "Installations" if k == 0 else "Éducateurs"
 		var t := tuile_reglage(cadre, Rect2((4 + k) * (wt + ECART), y, wt, ht), titre, "%d / 3" % niveau, "home" if k == 0 else "people", V.PROGRES, func(): V.envoyer(ctx, "academy_upgrade", {"kind": kind}, prix, titre), "CVA" + kind.capitalize(), G.euros(prix) if niveau < 3 else "", not verrou and niveau < 3)
-		V.crans(t, 128, ht - 112, niveau, 3, V.PROGRES, 40, 14)
+		V.crans(t, 128, ht - 88, niveau, 3, V.PROGRES, 40, 14)
 	var reunion := Academy.cost(data, "meeting", 2000)
 	tuile_reglage(cadre, Rect2(6 * (wt + ECART), y, wt, ht), "Réunion", "Cohésion", "people", V.COHESION, func(): V.envoyer(ctx, "academy_meeting", {}, reunion, "Réunion de cohésion"), "CVAReunion", G.euros(reunion), not verrou)
 	# Rangée 3 : la saison junior (frise des périodes, scores) et les chiffres du centre.
@@ -176,10 +177,10 @@ static func _centre(ctx: Dictionary, zone: Rect2) -> void:
 	var wf := (L - xr - ECART) / 2.0
 	var hf := (hs - ECART) / 2.0
 	var faits := [
-		[G.n(data.get("players", []).size()), "Espoirs", "people", V.PROGRES, func(): ctx.state.tab = "Parcours"; (ctx.reconstruire as Callable).call()],
+		[G.n(data.get("players", []).size()), "Espoirs", "people", V.PROGRES, _aller(ctx, "Parcours")],
 		[G.n(data.get("places", 0)), "Places pro", "shield", V.REPUTATION, func(): ctx.app._navigate("Effectif")],
 		[G.euros(data.get("recruitBudget", 0)), "Enveloppe junior", "money", V.DEPENSE, func(): ctx.app._navigate("Finances")],
-		[G.n(data.get("centers", []).filter(func(c: Dictionary): return c.get("scouted", false) and not c.get("own", false)).size()), "Centres observés", "search", V.MINUTES, func(): ctx.state.tab = "Centres"; (ctx.reconstruire as Callable).call()],
+		[G.n(data.get("centers", []).filter(func(c: Dictionary): return c.get("scouted", false) and not c.get("own", false)).size()), "Centres observés", "search", V.MINUTES, _aller(ctx, "Centres")],
 	]
 	for i in faits.size():
 		var f: Array = faits[i]
@@ -189,6 +190,11 @@ static func _centre(ctx: Dictionary, zone: Rect2) -> void:
 		V.petit(t, 58, 42, str(f[1]).to_upper(), 18, Charte.IVOIRE_2, wf - 70)
 		V.chiffre(t, 18, hf - 22, f[0], 54, f[3], wf - 30)
 		Pieces.rendre_cliquable(t, r.size, f[4], "CVAFait%dLien" % i, str(f[1]), "", Charte.RAYON_CARTE)
+
+static func _aller(ctx: Dictionary, onglet_nom: String) -> Callable:
+	return func():
+		ctx.state.tab = onglet_nom
+		(ctx.reconstruire as Callable).call()
 
 ## Objectifs en cours d'abord, puis potentiel décroissant.
 static func _ordre(a: Dictionary, b: Dictionary) -> bool:
@@ -443,11 +449,7 @@ static func _passerelle(ctx: Dictionary, zone: Rect2) -> void:
 				return
 			ctx.app.selected_player = sid
 			ctx.app.navigation_controller.open_entity({"kind": "player", "id": sid, "section": ""})
-		var s2 := s.duplicate()
-		s2.path = "minutes" if ok else "equilibre"
-		var c := carte_espoir(ctx, contenu, r, s2, "CVAJeunePro%d" % i, action, "squad", false)
-		if not ok: Pieces.pastille(c, w - 150, 18, "Effectif", "lock", "", "", Charte.IVOIRE_3)
-		else: Pieces.pastille(c, w - 130, 18, "Prêt", "bus", "", "", V.MINUTES)
+		carte_espoir(ctx, contenu, r, s, "CVAJeunePro%d" % i, action, "squad", false, ["Prêtable", "bus", V.MINUTES] if ok else ["Effectif", "lock", Charte.IVOIRE_3])
 	V.petit(contenu, 0, y_prets + 28, "EN PRÊT", 20, Charte.IVOIRE_2, 600)
 	for i in prets.size():
 		var pr: Dictionary = prets[i]
