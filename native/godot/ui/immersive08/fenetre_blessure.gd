@@ -123,7 +123,7 @@ static func donnees(model: Dictionary, j: Dictionary) -> Dictionary:
 		"Frais" if energie >= 75 else "Entamé" if energie >= 50 else "Fatigué" if energie >= 30 else "Épuisé"))
 	var ratio := minutes / max_minutes
 	jauges.append(_jauge("match", "Charge en match", "ball", Charte.INTENSIF, ratio, "%d min" % roundi(minutes),
-		"Légère" if ratio < .34 else "Moyenne" if ratio < .67 else "Lourde", "%d match%s · saison" % [matchs, "s" if matchs > 1 else ""]))
+		"Légère" if ratio < .34 else "Moyenne" if ratio < .67 else "Lourde", "%d match%s" % [matchs, "s" if matchs > 1 else ""]))
 	var niveaux := {"repos": [.25, "Repos", Charte.REPOS], "normal": [.5, "Normale", Charte.NORMAL], "collective": [.5, "Collectif", Charte.NORMAL], "intense": [1.0, "Intensive", Charte.INTENSIF]}
 	var n: Array = niveaux.get(plan, niveaux.collective)
 	jauges.append(_jauge("entrainement", "Charge à l'entraînement", "train", n[2], n[0], "", n[1]))
@@ -174,7 +174,7 @@ static func _entete(fond: Panel, page: Control, app: Control, j: Dictionary, x: 
 	var id := str(j.get("id", ""))
 	_bouton(fond, Rect2(x - 6, y - 6, largeur, 96), func(): _fiche(page, app, id), "FenetreBlessureFiche", "Fiche du joueur")
 
-static func _pastilles(fond: Panel, d: Dictionary, x: float, base: float) -> float:
+static func _pastilles(fond: Control, d: Dictionary, x: float, base: float) -> float:
 	var cx := x
 	if not d.zone.is_empty():
 		cx += R.pastille(fond, cx, base, "✚ " + d.zone, R.ROUGE, "", "FenetreBlessureZone", 21).size.x / C.density + 10
@@ -203,8 +203,8 @@ static func _variante_a(fond: Panel, page: Control, app: Control, j: Dictionary,
 	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_silhouette(cadre, Rect2(28, 40, 190, 456), d, "F")
 	_silhouette(cadre, Rect2(252, 40, 190, 456), d, "B")
-	D.text(cadre, 123, 532, "FACE", 18, Charte.IVOIRE_3, 700, 120, HORIZONTAL_ALIGNMENT_CENTER).position.x -= 60 * C.density
-	D.text(cadre, 347, 532, "DOS", 18, Charte.IVOIRE_3, 700, 120, HORIZONTAL_ALIGNMENT_CENTER).position.x -= 60 * C.density
+	D.text(cadre, 123, 532, "FACE", 18, Charte.IVOIRE_3, 700, 120, HORIZONTAL_ALIGNMENT_CENTER)
+	D.text(cadre, 347, 532, "DOS", 18, Charte.IVOIRE_3, 700, 120, HORIZONTAL_ALIGNMENT_CENTER)
 	if not d.zone.is_empty():
 		var p := R.pastille(cadre, 0, 600, "✚ " + d.zone, R.ROUGE, "", "FenetreBlessureZoneCorps", 22)
 		p.position.x = (470 * C.density - p.size.x) / 2.0
@@ -238,11 +238,11 @@ static func _variante_a(fond: Panel, page: Control, app: Control, j: Dictionary,
 		ligne.add_child(ic)
 		D.place(ic, Rect2(6, 15, 24, 24))
 		D.text(ligne, 42, 35, str(jauge.titre), 21, Charte.IVOIRE_2, 600, 250)
-		_segments(ligne, Rect2(300, 18, 250, 18), float(jauge.valeur), jauge.couleur, 7)
-		D.text(ligne, 572, 35, str(jauge.mot), 22, jauge.couleur if float(jauge.valeur) >= 0 else Charte.IVOIRE_3, 700, 150)
-		var droite := str(jauge.chiffre) + ("  " + str(jauge.detail) if not str(jauge.detail).is_empty() else "")
-		D.text(ligne, l - 8, 35, droite, 19, Charte.IVOIRE_3, 600, 200, HORIZONTAL_ALIGNMENT_RIGHT).position.x -= 200 * C.density
-		if float(jauge.valeur) < 0: R.rond(ligne, 724, 27, "Le moteur n'envoie pas cette donnée", "i", "FenetreBlessureSansDonnee")
+		_segments(ligne, Rect2(270, 18, 200, 18), float(jauge.valeur), jauge.couleur, 7)
+		D.text(ligne, 488, 35, str(jauge.mot), 22, jauge.couleur if float(jauge.valeur) >= 0 else Charte.IVOIRE_3, 700, 140)
+		var droite := str(jauge.chiffre) + (" · " + str(jauge.detail) if not str(jauge.detail).is_empty() else "")
+		D.text(ligne, l - 8, 35, droite, 19, Charte.IVOIRE_3, 600, 160, HORIZONTAL_ALIGNMENT_RIGHT)
+		if float(jauge.valeur) < 0: R.rond(ligne, 636, 27, "Le moteur n'envoie pas cette donnée", "i", "FenetreBlessureSansDonnee")
 		D.line(ligne, Vector2(0, 53), Vector2(l, 53), Charte.FILET, 1)
 		_bouton(ligne, Rect2(0, 0, l, 54), _action_jauge(page, app, str(j.get("id", "")), jauge), "FenetreBlessureJaugeClic_" + str(jauge.id), str(jauge.titre))
 		y += 54.0
@@ -252,7 +252,6 @@ static func _variante_a(fond: Panel, page: Control, app: Control, j: Dictionary,
 static func _variante_b(fond: Panel, page: Control, app: Control, j: Dictionary, d: Dictionary) -> void:
 	_entete(fond, page, app, j, 36, 90, 600)
 	var titre := D.text(fond, 1324, 130, d.libelle.to_upper(), 36, R.ROUGE, 700, 640, HORIZONTAL_ALIGNMENT_RIGHT)
-	titre.position.x -= 640 * C.density
 	titre.add_theme_font_override("font", Charte.TITRE_FICHE)
 	titre.name = "FenetreBlessureLibelle"
 	var px := 1324.0
@@ -297,10 +296,10 @@ static func _variante_b(fond: Panel, page: Control, app: Control, j: Dictionary,
 		var cse := D.rect(fond, Rect2(cx, 380, cw, 54), Color(R.ROUGE, .85) if not derniere else Color(R.ORANGE, .85), 6)
 		cse.name = "FenetreBlessureSemaine%d" % (i + 1)
 		cse.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		D.text(cse, cw / 2.0, 36, ("S%d" % (i + 1)) if not derniere else "✓", 20, Charte.NUIT, 800, cw, HORIZONTAL_ALIGNMENT_CENTER).position.x -= cw / 2.0 * C.density
+		D.text(cse, cw / 2.0, 36, ("S%d" % (i + 1)) if not derniere else "✓", 20, Charte.NUIT, 800, cw, HORIZONTAL_ALIGNMENT_CENTER)
 	D.text(fond, fx, 466, "▲ " + (("blessé le " + d.depuis) if not d.depuis.is_empty() else "aujourd'hui"), 18, Charte.IVOIRE_3, 600, 300)
 	if not d.retour.is_empty():
-		D.text(fond, fx + fl, 466, d.retour + " ▲", 18, R.ORANGE, 700, 200, HORIZONTAL_ALIGNMENT_RIGHT).position.x -= 200 * C.density
+		D.text(fond, fx + fl, 466, d.retour + " ▲", 18, R.ORANGE, 700, 200, HORIZONTAL_ALIGNMENT_RIGHT)
 	if d.semaines > 10: D.text(fond, fx + fl / 2.0 - 60, 466, "1 case ≈ %d sem." % ceili(d.semaines / 10.0), 18, Charte.IVOIRE_3, 600, 160)
 	# Six anneaux.
 	var ay := 628.0
@@ -321,10 +320,9 @@ static func _variante_b(fond: Panel, page: Control, app: Control, j: Dictionary,
 		D.place(anneau, Rect2(aw / 2.0 - 46, 0, 92, 92))
 		var chiffre := str(jauge.chiffre) if not str(jauge.chiffre).is_empty() else str(jauge.mot).substr(0, 3)
 		var ch := D.text(anneau, 46, 54, chiffre.replace(" min", "'").replace(" %", "%"), 26, Charte.IVOIRE if float(jauge.valeur) >= 0 else Charte.IVOIRE_3, 800, 92, HORIZONTAL_ALIGNMENT_CENTER)
-		ch.position.x -= 46 * C.density
 		ch.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
-		D.text(bloc, aw / 2.0, 126, str(jauge.titre).to_upper(), 16, Charte.IVOIRE_2, 700, aw - 8, HORIZONTAL_ALIGNMENT_CENTER).position.x -= (aw - 8) / 2.0 * C.density
-		D.text(bloc, aw / 2.0, 156, str(jauge.mot), 21, jauge.couleur if float(jauge.valeur) >= 0 else Charte.IVOIRE_3, 700, aw - 8, HORIZONTAL_ALIGNMENT_CENTER).position.x -= (aw - 8) / 2.0 * C.density
+		D.text(bloc, aw / 2.0, 126, str(jauge.titre).to_upper(), 16, Charte.IVOIRE_2, 700, aw - 8, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(bloc, aw / 2.0, 156, str(jauge.mot), 21, jauge.couleur if float(jauge.valeur) >= 0 else Charte.IVOIRE_3, 700, aw - 8, HORIZONTAL_ALIGNMENT_CENTER)
 		if float(jauge.valeur) < 0: bloc.tooltip_text = "Le moteur n'envoie pas cette donnée"
 		_bouton(bloc, Rect2(6, 0, aw - 12, 172), _action_jauge(page, app, str(j.get("id", "")), jauge), "FenetreBlessureJaugeClic_" + str(jauge.id), str(jauge.titre) + " · " + str(jauge.mot) + (" · " + str(jauge.detail) if not str(jauge.detail).is_empty() else ""))
 
