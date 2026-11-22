@@ -1,6 +1,6 @@
 'use strict';
 // Petite fenêtre d'un chiffre du direct avec son évolution par tranche de 10 minutes (22/11/2026) : taux en barres, comptes
-// en courbes, parts (possession, occupation) en anneaux ; capturée en jeu en 2e mi-temps
+// en courbes, possession en courbe, occupation en frise ; capturée en jeu en 2e mi-temps
 // (2560x1440 puis 1920x1080).
 // Jeu rendu : à lancer sur le bureau caché (godot-slot.ps1). CD_PLANCHE_STAT_PERIODES=<dossier> reçoit stat-<chiffre>-<taille>.png.
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path'), assert = require('node:assert/strict');

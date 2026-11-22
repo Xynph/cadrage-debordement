@@ -1963,7 +1963,7 @@ func ouvrir_fenetre_stat(rang: Dictionary) -> void:
 	if not tranches.is_empty():
 		var zone := Rect2(36, 352, L - 72, h_zone)
 		# Choix de Léo (22/11/2026) : taux de réussite en barres par tranche, comptes en courbes cumulées, parts entre
-		# les deux clubs (possession, occupation) en anneaux.
+		# les deux clubs : possession en courbe du match, occupation en frise.
 		var taux := (pourcent or rang.get("sur") is Array) and not cle in STATS_PARTS
 		var nos_valeurs: Array = []
 		for t: Dictionary in tranches:
@@ -1984,30 +1984,15 @@ func ouvrir_fenetre_stat(rang: Dictionary) -> void:
 				sigles.append(str(c.get("abbr", "")))
 			var globale: Array = [null, null] if vide else [float(valeurs[nous]), float(valeurs[1 - nous])]
 			var minutes: Variant = ((direct.get("periodes", {}) as Dictionary).get("minutes", {}) as Dictionary).get(cle) if direct.get("periodes") is Dictionary and direct.periodes.get("minutes") is Dictionary else null
-			if OS.get_environment("CD_VARIANTE_VISUELLE") == "G" and minutes is Array: _courbe_parts(fond, zone, minutes, teintes, sigles, globale, nous)
-			elif OS.get_environment("CD_VARIANTE_VISUELLE") == "F": _frise_parts(fond, zone, tranches, nos_valeurs, teintes, sigles, globale)
-			else: _cadran_parts(fond, zone, tranches, nos_valeurs, teintes, sigles, globale, parts_mi_temps(tranches, cle, nous))
+			# Choix de Léo (22/11/2026) : possession en courbe minute par minute, occupation en frise des tranches.
+			if cle == "possession" and minutes is Array: _courbe_parts(fond, zone, minutes, teintes, sigles, globale, nous)
+			else: _frise_parts(fond, zone, tranches, nos_valeurs, teintes, sigles, globale)
 		elif taux: _barres_periodes(fond, zone, tranches, nos_valeurs, teintes, true)
 		else: _courbe_periodes(fond, zone, tranches, nos_valeurs, teintes, false)
 		y_bas = 352.0 + h_zone + 16.0
 	Pieces.pastille(fond, 36, y_bas, "Statistiques", "rating", "MatchFenetreStatTiroir", "", Charte.IVOIRE, Charte.PANNEAU_3, func():
 		fermer_fenetre()
 		if regie != null and regie.has_method("ouvrir_stats_a"): regie.ouvrir_stats_a(str(rang.get("stats", rang.get("label", "")))))
-
-## Part de chaque club par mi-temps (nous, eux), refaite des comptes des tranches ; null sans fait.
-static func parts_mi_temps(tranches: Array, cle: String, nous: int) -> Array:
-	var sortie: Array = []
-	for m in 2:
-		var num := [0.0, 0.0]
-		var den := 0.0
-		for k in range(m * 4, m * 4 + 4):
-			if k >= tranches.size(): continue
-			var p: Variant = (tranches[k].get("parts", {}) as Dictionary).get(cle) if tranches[k].get("parts") is Dictionary else null
-			if not p is Array: continue
-			for s in 2: num[s] += float(p[nous if s == 0 else 1 - nous][0])
-			den += float(p[nous][1])
-		sortie.append([100.0 * num[0] / den, 100.0 * num[1] / den] if den > 0.0 else null)
-	return sortie
 
 ## Tranches de 10 minutes du direct (`direct.periodes`, moteur) qui portent le chiffre `cle` ; vide sans donnée
 ## (début de match, chiffre sans évolution) : la fenêtre reste sans évolution.
@@ -2155,7 +2140,7 @@ func _courbe_periodes(fond: Control, zone: Rect2, tranches: Array, valeurs: Arra
 		var valeur := float(f[2])
 		D.text(cadre, p.x + 14, p.y + 9, ("%d%%" % roundi(valeur)) if pourcent else str(roundi(valeur)), 24, teintes[int(f[0])], 800, 84).name = "MatchFenetreStatFin%d" % int(f[0])
 
-## Parts entre les deux clubs (somme 100 %) : choix visuel ouvert sous CD_VARIANTE_VISUELLE (E cadran du match, F frise, G courbe du match).
+## Parts entre les deux clubs (somme 100 %) : possession en courbe du match, occupation en frise (choix de Léo, 22/11/2026).
 const STATS_PARTS := ["possession", "occupation"]
 
 ## Parts : pastilles de légende (couleur et sigle des deux clubs), notre club toujours en premier.
@@ -2166,89 +2151,7 @@ func _legende_parts(cadre: Control, x: float, y: float, teintes: Array[Color], s
 		D.text(cadre, x + 32, y + 2, str(sigles[s]), 20, Charte.IVOIRE, 800, 120)
 		x += 150.0
 
-## Variante E « cadran du match » : un seul anneau = les 80 minutes comme une horloge (0' en haut, sens horaire),
-## 8 secteurs de 10 minutes à la couleur du club qui a dominé la tranche, plus franche quand l'écart est grand ;
-## coupure de la mi-temps marquée, tranche en cours atténuée, à venir vides ; notre part du match au centre.
-## Survol d'un secteur : « 20'–30' · 63 % / 37 % ». À droite, la part de chaque mi-temps.
-func _cadran_parts(fond: Control, zone: Rect2, tranches: Array, valeurs: Array, teintes: Array[Color], sigles: Array, globale: Array, mi_temps: Array) -> void:
-	var cadre := D.rect(fond, zone, Charte.PANNEAU_2, Charte.RAYON_CARTE)
-	cadre.name = "MatchFenetreStatPeriodes"
-	var diametre := zone.size.y - 90.0
-	var centre := Vector2(60.0 + 50.0 + diametre / 2.0, 48.0 + diametre / 2.0)
-	var cadran := Cadran.new()
-	cadran.name = "MatchFenetreStatCadran"
-	cadran.mouse_filter = Control.MOUSE_FILTER_PASS
-	cadran.teintes = teintes
-	for k in 8:
-		var v: Variant = valeurs[k] if k < valeurs.size() else null
-		cadran.secteurs.append({"de": k * 10, "a": (k + 1) * 10, "parts": v, "en_cours": k < valeurs.size() and bool((tranches[k] as Dictionary).get("enCours", false)), "joue": k < valeurs.size()})
-	cadran.tooltip_text = " "
-	cadre.add_child(cadran)
-	D.place(cadran, Rect2(centre.x - diametre / 2.0, centre.y - diametre / 2.0, diametre, diametre))
-	# Graduations autour du cadran (minutes), 0' et 80' se rejoignent en haut.
-	var rayon := diametre / 2.0 + 30.0
-	for k in 8:
-		var angle := -PI / 2.0 + TAU * k / 8.0
-		var p := centre + Vector2(cos(angle), sin(angle)) * rayon
-		D.text(cadre, p.x, p.y + 8, "0′ · 80′" if k == 0 else "%d′" % (k * 10), 18 if k % 4 == 0 else 16, Charte.IVOIRE if k % 4 == 0 else Charte.IVOIRE_3, 700, 110, HORIZONTAL_ALIGNMENT_CENTER).name = "MatchFenetreStatGraduation%d" % k
-	# Notre part du match au centre, à notre couleur.
-	var total := ("%d %%" % roundi(float(globale[0]))) if globale.size() == 2 and globale[0] != null else "—"
-	D.text(cadre, centre.x, centre.y + 22, total, 64, teintes[0], 800, diametre * 0.6, HORIZONTAL_ALIGNMENT_CENTER).name = "MatchFenetreStatCentre"
-	D.text(cadre, centre.x, centre.y + 52, str(sigles[0]), 18, Charte.IVOIRE_2, 700, diametre * 0.6, HORIZONTAL_ALIGNMENT_CENTER)
-	# Légende et parts par mi-temps.
-	var x := centre.x + diametre / 2.0 + 140.0
-	_legende_parts(cadre, x, 70, teintes, sigles)
-	var largeur := zone.size.x - x - 30.0
-	for m in 2:
-		var part: Variant = mi_temps[m]
-		var texte := ("%d %%  ·  %d %%" % [roundi(float(part[0])), roundi(float(part[1]))]) if part is Array else "—"
-		var teinte: Color = (teintes[0] if float(part[0]) > float(part[1]) else teintes[1]) if part is Array else Charte.IVOIRE_3
-		Pieces.tuile(cadre, Rect2(x, 100 + m * 124, largeur, 110), texte, "1re mi-temps" if m == 0 else "2e mi-temps", teinte if part is Array else Charte.IVOIRE, "MatchFenetreStatMiTemps%d" % (m + 1), 40)
-
-## Cadran des 80 minutes : 8 secteurs (0' en haut, sens horaire), couleur du club qui domine la tranche, intensité selon
-## l'écart ; traits de la mi-temps (bas) et du coup d'envoi (haut) ; info-bulle de la tranche survolée.
-class Cadran extends Control:
-	var secteurs: Array = []
-	var teintes: Array[Color] = [Charte.IVOIRE, Charte.IVOIRE_2]
-	func _secteur(position_locale: Vector2) -> int:
-		var d := position_locale - size / 2.0
-		var r := minf(size.x, size.y) / 2.0
-		if d.length() > r or d.length() < r * 0.62: return -1
-		var angle := fposmod(atan2(d.y, d.x) + PI / 2.0, TAU)
-		return clampi(int(angle / (TAU / 8.0)), 0, 7)
-	func _get_tooltip(at_position: Vector2) -> String:
-		var k := _secteur(at_position)
-		if k < 0 or k >= secteurs.size(): return ""
-		var s: Dictionary = secteurs[k]
-		if not s.parts is Array: return "%d′–%d′" % [s.de, s.a]
-		return "%d′–%d′ · %d %% / %d %%" % [s.de, s.a, roundi(float(s.parts[0])), roundi(float(s.parts[1]))]
-	func _draw() -> void:
-		var r := minf(size.x, size.y) / 2.0
-		var epaisseur := r * 0.36
-		var centre := size / 2.0
-		var rayon := r - epaisseur / 2.0
-		var pas := TAU / 8.0
-		for k in secteurs.size():
-			var s: Dictionary = secteurs[k]
-			var debut := -PI / 2.0 + k * pas + 0.012
-			var fin := debut + pas - 0.024
-			var couleur := Color(Charte.PANNEAU_3, 0.6)
-			if s.parts is Array:
-				var nous := float(s.parts[0])
-				var ecart := absf(nous - 50.0)
-				var c: Color = teintes[0] if nous >= 50.0 else teintes[1]
-				couleur = Color(c, 0.3 + 0.7 * clampf(ecart / 25.0, 0.0, 1.0))
-				if s.en_cours: couleur.a *= 0.55
-			elif not s.joue:
-				draw_arc(centre, rayon, debut, fin, 24, Color(Charte.PANNEAU_3, 0.9), maxf(2.0, epaisseur * 0.08), true)
-				continue
-			draw_arc(centre, rayon, debut, fin, 24, couleur, epaisseur, true)
-		# Coup d'envoi (haut) et mi-temps (bas) : traits francs à travers l'anneau.
-		for angle: float in [-PI / 2.0, PI / 2.0]:
-			var u := Vector2(cos(angle), sin(angle))
-			draw_line(centre + u * (r - epaisseur - 6.0), centre + u * (r + 6.0), Charte.IVOIRE, maxf(2.0, r * 0.025), true)
-
-## Variante F « frise du temps » : une frise 0'→80' de 8 cases jointives libellées « 0–10' »… ; chaque case partagée
+## Frise du temps (occupation) : une frise 0'→80' de 8 cases jointives libellées « 0–10' »… ; chaque case partagée
 ## entre les deux clubs (nous en haut, eux en bas, à leur couleur), notre part seule en chiffre ; mi-temps marquée.
 func _frise_parts(fond: Control, zone: Rect2, tranches: Array, valeurs: Array, teintes: Array[Color], sigles: Array, globale: Array) -> void:
 	var cadre := D.rect(fond, zone, Charte.PANNEAU_2, Charte.RAYON_CARTE)
@@ -2289,7 +2192,7 @@ func _frise_parts(fond: Control, zone: Rect2, tranches: Array, valeurs: Array, t
 		D.rect(cadre, Rect2(x - 1, haut, 2, hauteur), Color(Charte.PANNEAU_2, 0.9))
 	D.rect(cadre, Rect2(gauche, haut + hauteur / 2.0, largeur, 1), Color(Charte.NOIR_PANNEAU, 0.45)).name = "MatchFenetreStat50"
 
-## Variante G « courbe du match » (idée de Léo, 22/11/2026) : part minute par minute, lissée sur 5 minutes, de part et
+## Courbe du match (possession, idée de Léo, 22/11/2026) : part minute par minute, lissée sur 5 minutes, de part et
 ## d'autre de la ligne des 50 % : au-dessus quand nous avons le ballon (zone à notre couleur), en dessous pour l'adversaire.
 ## Axe 0′→80′, mi-temps marquée, minute actuelle repérée, futur vide ; survol : « 34′ · 62 % / 38 % ».
 func _courbe_parts(fond: Control, zone: Rect2, minutes: Array, teintes: Array[Color], sigles: Array, globale: Array, nous: int) -> void:

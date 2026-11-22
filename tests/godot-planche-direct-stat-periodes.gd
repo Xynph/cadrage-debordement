@@ -1,7 +1,7 @@
 extends SceneTree
 ## Évolution d'un chiffre du direct (choix de Léo, 22/11/2026) : en 2e mi-temps, entre deux temps forts,
 ## un chiffre de l'écran 2D ouvre sa petite fenêtre (match en pause), avec l'évolution par tranche de 10 minutes : parts
-## en anneaux, taux en barres, comptes en courbes, aux tailles de CD_PLANCHE_TAILLES (2560 × 1440 puis 1920 × 1080).
+## possession en courbe du match, occupation en frise, taux en barres, comptes en courbes, aux tailles de CD_PLANCHE_TAILLES (2560 × 1440 puis 1920 × 1080).
 ## Contrôles : tranches présentes, rien hors de la fenêtre, Échap ferme, on reste dans le direct.
 ## godot-planche-direct-stat-periodes.cjs prépare la carrière Monde.
 var app: Control
@@ -124,10 +124,9 @@ func run() -> void:
 		root.size = taille
 		root.content_scale_size = taille
 		await settle(40)
-		# Parts (choix ouvert) en variantes G (courbe), F (frise) et E (cadran) ; taux en barres et comptes en courbes, fixés.
-		for passe: Array in [["G", ["possession", "occupation"]], ["F", ["possession", "occupation"]], ["E", ["possession"]], ["", ["plaquages_reussis", "penalites"]]]:
+		# Possession en courbe (G), occupation en frise (F), taux en barres, comptes en courbes (choix de Léo, 22/11/2026).
+		for passe: Array in [["G", ["possession"]], ["F", ["occupation"]], ["", ["plaquages_reussis", "penalites"]]]:
 			var variante: String = passe[0]
-			OS.set_environment("CD_VARIANTE_VISUELLE", variante)
 			for cle: String in passe[1]:
 				var bouton := premier(between, "MatchBetweenMirror_%s_*" % cle)
 				if bouton == null: bouton = premier(between, "MatchBetweenFigure_%s" % cle)
@@ -152,11 +151,7 @@ func run() -> void:
 					var courbe := fenetre.find_child("MatchFenetreStatCourbe", true, false) as Control
 					var bulle_g: String = courbe._get_tooltip(Vector2(courbe.size.x * 34.0 / 80.0, courbe.size.y / 2.0)) if courbe != null else ""
 					check(bulle_g.begins_with("34′ · ") and bulle_g.ends_with("%"), "courbe : survol d'une minute (« %s »)" % bulle_g)
-				if variante == "E":
-					var cadran := fenetre.find_child("MatchFenetreStatCadran", true, false) as Control
-					var bulle: String = cadran._get_tooltip(Vector2(cadran.size.x * 0.75, cadran.size.y * 0.1)) if cadran != null else ""
-					check(bulle.begins_with("0′–10′ · "), "cadran : survol d'un secteur (« %s »)" % bulle)
-				await capture(("parts-%s-%s-%dx%d" % [variante, cle, taille.x, taille.y]) if not variante.is_empty() else ("stat-%s-%dx%d" % [cle, taille.x, taille.y]))
+				await capture("stat-%s-%dx%d" % [cle, taille.x, taille.y])
 				await echap()
 				check(not view.fenetre_ouverte(), "%s %s : Échap ferme la fenêtre" % [str(taille), cle])
 				check(surface() == view and view.regie != null, "%s %s : on reste dans le direct" % [str(taille), cle])
