@@ -53,7 +53,9 @@ static func ouvrir(page: Control, nom: String, titre: String, icone: String, lar
 	croix.accessibility_name = "Fermer"
 	croix.pressed.connect(refermer)
 	fond.add_child(croix)
-	D.place(croix, Rect2(largeur - 62, 18, 44, 44))
+	var cote := C.reach(44.0)
+	var large := maxf(cote, ceilf(40.0 / C.density))  # le ✕ a sa largeur propre en petite fenêtre
+	D.place(croix, Rect2(largeur - 18.0 - large, 18, large, cote))
 	croix.grab_focus.call_deferred()
 	return fond
 

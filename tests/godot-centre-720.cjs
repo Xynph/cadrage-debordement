@@ -19,8 +19,8 @@ test('Centre en 1280 × 720 : pastilles entières, Saison junior sous les tuiles
     const sortie = process.env.CD_CENTRE_OUTPUT || fs.mkdtempSync(path.join(os.tmpdir(), 'rl27-centre-captures-'));
     fs.mkdirSync(sortie, { recursive: true });
     const graphique = process.env.CD_CENTRE_GRAPHICS === '1';
-    const args = [...(graphique ? ['--display-driver', 'x11', '--rendering-method', 'gl_compatibility', '--windowed', '--resolution', '1280x720'] : ['--headless']), '--audio-driver', 'Dummy', '--path', 'native/godot', '--script', path.resolve(__dirname, 'godot-centre-720.gd')];
-    const commande = graphique && !process.env.DISPLAY ? 'xvfb-run' : godot;
+    const args = [...(graphique ? [...(process.platform === 'win32' ? [] : ['--display-driver', 'x11']), '--rendering-method', 'gl_compatibility', '--windowed', '--resolution', '1280x720'] : ['--headless']), '--audio-driver', 'Dummy', '--path', 'native/godot', '--script', path.resolve(__dirname, 'godot-centre-720.gd')];
+    const commande = graphique && process.platform !== 'win32' && !process.env.DISPLAY ? 'xvfb-run' : godot;
     const complet = commande === 'xvfb-run' ? ['-a', '-s', '-screen 0 2560x1440x24', godot, ...args] : args;
     const r = spawnSync(commande, complet, { cwd: racine, encoding: 'utf8', timeout: 300000, env: { ...process.env, CD_GODOT_SELF_TEST: '0', CD_GODOT_GUIDE_MODULE_TEST: '1', CD_NODE_EXECUTABLE: process.execPath, CD_GODOT_DATA_DIR: profil, CD_CENTRE_OUTPUT: sortie } });
     const journal = (r.stdout || '') + (r.stderr || '');
