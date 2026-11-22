@@ -393,7 +393,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
  // Nom de base inventé (comme les joueurs de complément) : prénom et nom pris à deux coéquipiers, unique dans le monde ;
  // le pack le présente sous le vrai nom.
  function talentName(id,roster,taken){
-  const parts=roster.map(p=>String(p.name).trim().split(/s+/)).filter(p=>p.length>1);
+  const parts=roster.map(p=>String(p.name).trim().split(/\s+/)).filter(p=>p.length>1);
   for(let k=0;k<60&&parts.length;k++){const name=parts[(seedHash(id)+k*7)%parts.length][0]+' '+parts[(seedHash(id+':nom')+k*13)%parts.length].at(-1);if(!taken.has(name))return name;}
   for(let k=0;;k++){const name=FIRST[(seedHash(id)+k)%FIRST.length]+' '+LAST[(seedHash(id+':nom')+3*k)%LAST.length];if(!taken.has(name))return name;}
  }

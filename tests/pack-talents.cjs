@@ -72,6 +72,7 @@ test('Rubrique talents : potentiels relevés et joueurs ajoutés à la création
   assert.equal(a1.clubId,CLUB);assert.equal(a2.clubId,0);
   assert.equal(a1.pos,'Ailier');assert.equal(a1.age,20);assert.equal(a2.pos,'Demi d’ouverture');assert.equal(a2.age,18);
   assert.notEqual(a1.name,'Ailier Témoin');
+  for(const p of [a1,a2])assert.match(p.name,/^\S+ \S+$/,'nom de base inventé entier : '+p.name);
   assert.ok(a1.rating>=40&&a1.rating<a1.dev.potential&&a1.dev.potential<=99,JSON.stringify([a1.rating,a1.dev.potential]));
   const row=m.squad.find(p=>p.id==='pack:temoin-1');
   assert.ok(row,'joueur ajouté dans l’effectif');
