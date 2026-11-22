@@ -87,6 +87,7 @@ const EPUISE := 40
 const FOND := Charte.FOND
 const PANNEAU := Charte.PANNEAU
 const RELIEF := Charte.PANNEAU_2
+const SurvolLigne = preload("res://ui/survol_ligne.gd")
 const SURVOL := Charte.PANNEAU_3
 const TRAIT := Charte.FILET
 const IVOIRE := Charte.IVOIRE
@@ -2358,7 +2359,7 @@ func _ligne_classement_v2(r: Dictionary, teintes: Dictionary) -> Control:
 		fond.border_width_left = maxi(3, px(8))
 		fond.border_color = Charte.club_trait(teinte)
 	else:
-		fond.bg_color = Color(RELIEF, 0.55) if rang_n % 2 == 0 else Color(0, 0, 0, 0)
+		fond.bg_color = Color(0, 0, 0, 0)
 		if not kind.is_empty():
 			fond.border_width_left = maxi(2, px(5))
 			fond.border_color = _teinte_zone(kind)
@@ -2444,9 +2445,12 @@ func _ligne_classement_v2(r: Dictionary, teintes: Dictionary) -> Control:
 	points.name = "Points"
 	points.add_theme_font_override("font", TITRES_EXTRA)
 	rangee.add_child(points)
-	var survol: StyleBoxFlat = fond.duplicate()
-	survol.bg_color = fond.bg_color.lightened(0.12) if nous else SURVOL
-	_cliquable_club(ligne, r.get("clubId"), survol)
+	# Rayure une ligne sur deux et survol de ligne communs (ui/survol_ligne.gd, comme l'Effectif) ; la bande de zone à
+	# gauche reste visible (le liseré du club commence après elle), notre ligne garde son aplat.
+	var fond_ligne = SurvolLigne.poser(ligne, false, Color.TRANSPARENT, float(Charte.RAYON_PETIT), float(fond.border_width_left))
+	fond_ligne.rang_fixe = rang_n - 1
+	fond_ligne.sans_rayure = nous
+	_cliquable_club(ligne, r.get("clubId"))
 	return ligne
 
 ## Légende des zones présentes : pastille symbole, rangs et mot court (« ● 1–6 Phase finale »).

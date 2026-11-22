@@ -5,7 +5,7 @@ CreateProcess lpDesktop), dans un job Windows, et surveille le bureau de l'utili
 
 À charger par dot-sourcing (`. "$PSScriptRoot\bureau-cache.ps1"`), puis :
   $outils = Resolve-OutilsBureauCache -Godot $Godot -Node $Node   # exécutables Godot (version fenêtre) et Node
-  Wait-GodotSeul -AttenteGodot 600                                 # un seul Godot à la fois
+  $place = Enter-PlaceGodot -Libelle 'film' -AttenteGodot 3600     # une des 8 places Godot (verrou commun), puis Exit-PlaceGodot $place dans un finally
   $bilan = Invoke-GodotSurBureauCache -Godot $outils.Godot -Arguments $arguments -Sortie $Sortie -Prefixe 'MatchFilme' -LimiteSecondes 1500
   # $bilan : code_sortie, arret_force, premier_plan_godot, fenetres_visibles_sur_le_bureau_utilisateur… ; surveillance.json écrit dans -Sortie.
 
@@ -159,15 +159,37 @@ function Resolve-OutilsBureauCache {
   return @{ Godot = $Godot; Node = $Node }
 }
 
-## Un seul Godot à la fois : attendre que l'autre se termine (exception après -AttenteGodot secondes).
-function Wait-GodotSeul {
-  param([int]$AttenteGodot = 600)
+## Une des 8 places Godot partagées par tous les chantiers (même verrou que E:\Cadrage-Debordement\temp\godot-slot.ps1 :
+## fichiers godot-1..8.lock en création exclusive). Attend qu'une place se libère (exception après -AttenteGodot secondes),
+## écrit « <PID> <Libelle> » dedans et renvoie son chemin ($null si le script tourne déjà sous godot-slot.ps1, qui tient
+## la place : variable CD_GODOT_PLACE, rien à prendre). Une place dont le PID écrit n'existe plus est libérée d'office.
+## À rendre avec Exit-PlaceGodot dans un finally.
+function Enter-PlaceGodot {
+  param([string]$Libelle = 'captures', [int]$AttenteGodot = 3600)
+  if ($env:CD_GODOT_PLACE) { return $null }
+  $dossier = if ($env:CD_GODOT_VERROUS) { $env:CD_GODOT_VERROUS } else { 'E:\Cadrage-Debordement\temp' }
   $attente = [Diagnostics.Stopwatch]::StartNew()
-  while (Get-Process | Where-Object { $_.ProcessName -like 'Godot*' }) {
-    if ($attente.Elapsed.TotalSeconds -ge $AttenteGodot) { throw "Un autre Godot tourne encore après $AttenteGodot s : rien n'a été lancé." }
+  while ($true) {
+    foreach ($i in 1..8) {
+      $p = Join-Path $dossier "godot-$i.lock"
+      try {
+        $flux = [IO.File]::Open($p, 'CreateNew', 'Write', 'None')
+        $b = [Text.Encoding]::UTF8.GetBytes("$PID $Libelle"); $flux.Write($b, 0, $b.Length); $flux.Close()
+        return $p
+      } catch {
+        try {
+          $texte = (Get-Content -Raw -ErrorAction Stop $p)
+          if ($texte -match '^\s*(\d+)\s' -and -not (Get-Process -Id ([int]$Matches[1]) -ErrorAction SilentlyContinue)) { Remove-Item $p -Force -ErrorAction SilentlyContinue }
+        } catch {}
+      }
+    }
+    if ($attente.Elapsed.TotalSeconds -ge $AttenteGodot) { throw "Aucune des 8 places Godot ne s'est libérée en $AttenteGodot s : rien n'a été lancé." }
     Start-Sleep -Seconds 5
   }
 }
+
+## Rend la place prise par Enter-PlaceGodot (sans effet si elle valait $null).
+function Exit-PlaceGodot { param([string]$Place) if ($Place) { Remove-Item $Place -Force -ErrorAction SilentlyContinue } }
 
 ## Argument de ligne de commande entre guillemets (chemins avec espaces).
 function ConvertTo-ArgumentCite { param([string]$Valeur) return '"' + $Valeur + '"' }

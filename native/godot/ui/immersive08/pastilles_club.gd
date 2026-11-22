@@ -100,6 +100,8 @@ static func _cliquable(contenu: PanelContainer, action: Callable, rayon: int) ->
 	bouton.custom_minimum_size = Vector2(minimum.x, haut)
 	bouton.size = Vector2(minimum.x, haut)
 	bouton.pressed.connect(action)
+	# Survol et appui : retour commun des tuiles cliquables (ui/retour_tuile.gd).
+	load("res://ui/retour_tuile.gd").brancher(bouton, bouton, vide.corner_radius_top_left)
 	return bouton
 
 ## Le style de la page (legacy_style) ne retouche pas ces contrôles : couleurs, rayons et focus sont déjà ceux de la charte.

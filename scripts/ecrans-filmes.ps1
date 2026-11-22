@@ -29,7 +29,9 @@ Paramètres :
   -SansPlanche     pas de planche par taille
   -Club, -Graine, -Matchs  carrière préparée (défauts 102, 4242, 1 rencontre jouée)
   -GarderCarriere  copie la carrière préparée dans -Sortie (carriere.json) pour la rejouer avec -Export
-  -Godot, -Node, -AttenteGodot  comme scripts/match-filme.ps1
+  -AttenteGodot  attente maximale d'une des 8 places Godot partagées (défaut 3600 s ; aucune si le script tourne déjà sous godot-slot.ps1)
+  -Profil    dossier parent des profils jetables (défaut : E:\Cadrage-Debordement\temp\profils\captures-<nom du dossier du dépôt>)
+  -Godot, -Node  comme scripts/match-filme.ps1
 
 Code de sortie : 0 si au moins un écran est filmé, aucun en échec, et ni fenêtre ni premier plan pris.
 #>
@@ -48,7 +50,8 @@ param(
   [switch]$GarderCarriere,
   [string]$Godot = '',
   [string]$Node = '',
-  [int]$AttenteGodot = 600
+  [int]$AttenteGodot = 3600,
+  [string]$Profil = ''
 )
 $ErrorActionPreference = 'Stop'
 $depot = Split-Path -Parent $PSScriptRoot
@@ -68,9 +71,13 @@ $premiere = ($Tailles -split ',')[0]
 $outils = Resolve-OutilsBureauCache -Godot $Godot -Node $Node
 $Godot = $outils.Godot; $Node = $outils.Node
 
-$travail = Join-Path ([IO.Path]::GetTempPath()) ('ecrans-filmes-profil-' + [guid]::NewGuid().ToString('N').Substring(0, 12))
+# Profil jetable isolé par chantier (nom du dossier du dépôt/worktree) : jamais la sauvegarde de l'utilisateur,
+# jamais le profil d'un autre chantier. -Profil impose un autre dossier parent.
+if (-not $Profil) { $Profil = if (Test-Path 'E:\Cadrage-Debordement\temp\profils') { Join-Path 'E:\Cadrage-Debordement\temp\profils' ('captures-' + (Split-Path -Leaf $depot)) } else { [IO.Path]::GetTempPath() } }
+$travail = Join-Path $Profil ('ecrans-filmes-profil-' + [guid]::NewGuid().ToString('N').Substring(0, 12))
 $donnees = Join-Path $travail 'PrototypeGodot'
 New-Item -ItemType Directory -Force $donnees | Out-Null
+$place = $null
 $anciens = @{ CD_GODOT_DATA_DIR = $env:CD_GODOT_DATA_DIR; CD_NODE_EXECUTABLE = $env:CD_NODE_EXECUTABLE; CD_GODOT_SELF_TEST = $env:CD_GODOT_SELF_TEST; CD_GODOT_IMMERSIVE_SELF_TEST = $env:CD_GODOT_IMMERSIVE_SELF_TEST }
 try {
   if ($Export) {
@@ -84,8 +91,8 @@ try {
   }
   if ($GarderCarriere) { Copy-Item $Export (Join-Path $Sortie 'carriere.json') -Force }
 
-  # Un seul Godot à la fois : attendre que l'autre se termine.
-  Wait-GodotSeul -AttenteGodot $AttenteGodot
+  # Une des 8 places Godot partagées (verrou commun à tous les chantiers) : plusieurs captures peuvent tourner en parallèle.
+  $place = Enter-PlaceGodot -Libelle ('ecrans-filmes ' + (Split-Path -Leaf $depot)) -AttenteGodot $AttenteGodot
 
   $env:CD_GODOT_DATA_DIR = $donnees
   $env:CD_NODE_EXECUTABLE = $Node
@@ -117,6 +124,7 @@ try {
   if ($code -ne 0 -or $reussis -eq 0 -or $echecs -gt 0 -or $volS -gt 0 -or $visibles -gt 0 -or $arret) { exit 1 }
   exit 0
 } finally {
+  Exit-PlaceGodot $place
   foreach ($nom in $anciens.Keys) { Set-Item -Path "env:$nom" -Value $anciens[$nom] -ErrorAction SilentlyContinue; if ($null -eq $anciens[$nom]) { Remove-Item "env:$nom" -ErrorAction SilentlyContinue } }
   Remove-Item -Recurse -Force $travail -ErrorAction SilentlyContinue
 }

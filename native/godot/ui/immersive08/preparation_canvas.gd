@@ -13,6 +13,7 @@ const Briefing = preload("res://ui/preparation_briefing.gd")
 const PersonName = preload("res://ui/person_name.gd")
 const Link = preload("res://ui/entity_link.gd")
 const Charte = preload("res://ui/charte.gd")
+const SurvolLigne = preload("res://ui/survol_ligne.gd")
 const Savoir = preload("res://ui/player_knowledge_text.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const ClubSheet = preload("res://ui/immersive08/club_sheet_canvas.gd")
@@ -190,6 +191,17 @@ func _barre(parent: Node, rectangle: Rect2, fond: Color, bord: Color = Color.TRA
 	parent.add_child(panel)
 	D.place(panel, rectangle)
 	return panel
+
+## Rayure d'une ligne sur deux (rang impair), comme l'Effectif (ui/survol_ligne.gd).
+func _rayer(parent: Control, rectangle: Rect2, rang: int) -> void:
+	var rayure := SurvolLigne.rayure(parent, rang)
+	if rayure != null: D.place(rayure, rectangle)
+
+## Survol de ligne commun sur la zone cliquable d'une ligne (la rayure est posée à part par `_rayer`).
+func _survol_ligne(zone: Button) -> Button:
+	var fond = SurvolLigne.appliquer(zone, false, Color.TRANSPARENT, app.accent)
+	fond.sans_rayure = true
+	return zone
 
 ## Pastille de forme ovale : la lettre V / N / D est toujours écrite.
 func _pastille(parent: Control, rectangle: Rect2, lettre: String, nom: String) -> Panel:
@@ -667,10 +679,10 @@ func _rapport(section: Control, rectangle: Rect2) -> void:
 		var y := 108.0 + pas * i
 		var code: String = SECTEURS.get(str(domaine.get("key", "")), "")
 		var libelle := str(domaine.get("label", "Secteur"))
-		if i % 2 == 1: _barre(panneau, Rect2(0, y, 1344, pas - 2), Charte.PANNEAU_2)
+		_rayer(panneau, Rect2(0, y, 1344, pas - 2), i)
 		if not code.is_empty():
 			var destination: String = DESTINATIONS[code]
-			_zone(panneau, Rect2(0, y, 1344, pas), _agir.bind(code), "PreparationSector_" + str(domaine.get("key", i)), "%s : agir dans « %s »" % [libelle, destination])
+			_survol_ligne(_zone(panneau, Rect2(0, y, 1344, pas), _agir.bind(code), "PreparationSector_" + str(domaine.get("key", i)), "%s : agir dans « %s »" % [libelle, destination]))
 		var centre := y + pas / 2.0
 		var propre: Variant = domaine.get("own")
 		var adverse: Variant = domaine.get("opponent")
@@ -704,8 +716,8 @@ func _a_faire(section: Control, rectangle: Rect2) -> void:
 	for index in limite:
 		var check: Dictionary = verifs[index]
 		var y := 56.0 + pas * index
-		if index % 2 == 1: _barre(panneau, Rect2(0, y, rectangle.size.x, pas - 2), Charte.PANNEAU_2)
-		var zone := _zone(panneau, Rect2(0, y, rectangle.size.x, pas - 2), Briefing.open_action.bind(app, check.action, _choose.bind(1)), "PreparationBriefing_" + str(check.id), check.detail + "\n" + check.caption)
+		_rayer(panneau, Rect2(0, y, rectangle.size.x, pas - 2), index)
+		var zone := _survol_ligne(_zone(panneau, Rect2(0, y, rectangle.size.x, pas - 2), Briefing.open_action.bind(app, check.action, _choose.bind(1)), "PreparationBriefing_" + str(check.id), check.detail + "\n" + check.caption))
 		zone.accessibility_name = check.title + " · " + check.detail
 		# Repère en pastille ✓ / ! + deux mots (21/11) : le titre et le détail restent dans l'infobulle de la ligne.
 		var grave: bool = check.level in ["urgent", "important"]
@@ -789,9 +801,9 @@ func _forme(section: Control, rectangle: Rect2) -> float:
 		var autre := _club(resultat.get("opponentId"))
 		var y := 100.0 + pas * i
 		var etape := "J" + G.n(int(resultat.get("round", 0)) + 1) if resultat.get("phase") == "league" else str(resultat.get("phase", ""))
-		if i % 2 == 0: _barre(panneau, Rect2(0, y, 900, pas - 2), Charte.PANNEAU_2)
+		_rayer(panneau, Rect2(0, y, 900, pas - 2), i)
 		if autre.get("id") != null and Link.available(app, "club", str(int(autre.get("id")))):
-			_zone(panneau, Rect2(0, y, 900, pas), _ouvrir_club.bind(autre), "PreparationFormRow%d" % i, "%s · %s : ouvrir la fiche de %s" % [etape, G.club_name(autre), G.club_name(autre)])
+			_survol_ligne(_zone(panneau, Rect2(0, y, 900, pas), _ouvrir_club.bind(autre), "PreparationFormRow%d" % i, "%s · %s : ouvrir la fiche de %s" % [etape, G.club_name(autre), G.club_name(autre)]))
 		_texte(panneau, 24, y + pas / 2.0 + 6, etape, 16, Charte.IVOIRE_2, 110)
 		Link.name_link(app, panneau, Rect2(130, y, 420, pas), "club", str(int(autre.get("id", -1))) if autre.get("id") != null else "", G.club_name(autre), 18, Charte.IVOIRE, "PreparationFormOpponent%d" % i)
 		_titre(panneau, 700, y + pas / 2.0 + 8, "%s–%s" % [G.n(score[cote]), G.n(score[1 - cote])] if score.size() == 2 else "—", 24, Charte.IVOIRE, 120, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -1075,7 +1087,7 @@ func _xv_tableau(section: Control, rectangle: Rect2, adversaire: Dictionary) -> 
 		var joueur: Dictionary = effectif.get(str(emplacement.get("id", "")), {})
 		var y := 100.0 + pas * index
 		var centre := y + pas / 2.0
-		if index % 2 == 1: _barre(panneau, Rect2(0, y, rectangle.size.x, pas - 2), Charte.PANNEAU_2)
+		_rayer(panneau, Rect2(0, y, rectangle.size.x, pas - 2), index)
 		_titre(panneau, 84, centre + 9, str(index + 1), 24, Charte.IVOIRE_2, 60, HORIZONTAL_ALIGNMENT_RIGHT)
 		if joueur.is_empty():
 			_texte(panneau, 108, centre + 7, "Poste non pourvu", 18, Charte.IVOIRE_2, 420)
@@ -1151,8 +1163,8 @@ func _sous_reperes(section: Control) -> float:
 	for index in verifs.size():
 		var check: Dictionary = verifs[index]
 		var y := 64.0 + pas * index
-		if index % 2 == 1: _barre(panneau, Rect2(0, y, 2248, pas - 2), Charte.PANNEAU_2)
-		var zone := _zone(panneau, Rect2(0, y, 2248, pas - 2), Briefing.open_action.bind(app, check.action, func(): _choose(1)), "PreparationBriefingAll_" + str(check.id), check.detail)
+		_rayer(panneau, Rect2(0, y, 2248, pas - 2), index)
+		var zone := _survol_ligne(_zone(panneau, Rect2(0, y, 2248, pas - 2), Briefing.open_action.bind(app, check.action, func(): _choose(1)), "PreparationBriefingAll_" + str(check.id), check.detail))
 		zone.accessibility_name = check.title + " · " + check.detail
 		var grave: bool = check.level in ["urgent", "important"]
 		var teinte: Color = Charte.D if check.level == "urgent" else Charte.N if check.level == "important" else Charte.V

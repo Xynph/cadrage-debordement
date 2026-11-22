@@ -425,13 +425,16 @@ func _overview() -> void:
 		["Masse salariale estimée", _wage_text(data.get("wageBill"))], ["Objectif", data.get("goal")], ["Stratégie", _strategy(data.get("strategy"))],
 	]
 	var y := 104
-	for row: Array in rows:
+	for rang in rows.size():
+		var row: Array = rows[rang]
+		# Rayure une ligne sur deux commune (ui/survol_ligne.gd), derrière les textes.
+		var rayure = load("res://ui/survol_ligne.gd").rayure(club, rang, "ClubSheetIdentityStripe%d" % rang)
+		if rayure != null: D.place(rayure, Rect2(12, y - 34, 676, 54))
 		D.text(club, 24, y, str(row[0]), 24, C.MUTED, 500, 250)
 		if str(row[0]) == "Finances" and data.get("finances") is Dictionary:
 			_health_row(club, y)
 		else:
 			D.text(club, 280, y, str(row[1]) if row[1] != null and str(row[1]) != "" else "—", 26, C.IVORY, 600, 400)
-		D.line(club, Vector2(24, y + 22), Vector2(676, y + 22), Color(C.LINE, .35))
 		y += 58
 	# Tenue du club : maillot de la banque d'images aux couleurs du club, en haut à droite du panneau.
 	var kit := Tenue.maillot(_identity(club_id))
@@ -687,8 +690,14 @@ func _compare_players(a: Dictionary, b: Dictionary, key: String, descending: boo
 
 func _squad_row(body: Control, index: int, p: Dictionary) -> void:
 	var y := index * 50
-	var row := D.rect(body, Rect2(12, y + 4, WIDTH - 24, 46), Color("121c1d") if index % 2 == 0 else Color("0f1718"), 4)
+	# Ligne cliquable (ouvre le dossier du joueur comme son nom) : rayure une sur deux et survol de ligne communs.
+	var row := Button.new()
 	row.name = "ClubSheetRow%d" % index
+	row.flat = true
+	row.focus_mode = Control.FOCUS_ALL
+	body.add_child(row)
+	D.place(row, Rect2(12, y + 4, WIDTH - 24, 46))
+	load("res://ui/survol_ligne.gd").appliquer(row, false, Color.TRANSPARENT, app.accent).rang_fixe = index
 	var values := {
 		"fam": str(p.get("pos", "")), "age": G.n(p.get("age", "—")), "rating": Knowledge.rating_text(p), "potential": Knowledge.potential_text(p),
 		"nationality": str(p.get("nationality", "—")) if p.get("nationality") != null else "—", "seniorCaps": G.n(p.get("seniorCaps")) if p.get("seniorCaps") is float or p.get("seniorCaps") is int else "—",
@@ -698,7 +707,8 @@ func _squad_row(body: Control, index: int, p: Dictionary) -> void:
 	for column: Array in COLUMNS:
 		var key := str(column[1])
 		if key == "name":
-			_player_link(body, Rect2(column[2], y + 6, column[3], 40), p, 24, "ClubSheetPlayer%d" % index)
+			var lien := _player_link(body, Rect2(column[2], y + 6, column[3], 40), p, 24, "ClubSheetPlayer%d" % index)
+			if lien is BaseButton: row.pressed.connect(func(): (lien as BaseButton).pressed.emit())
 			continue
 		var align: HorizontalAlignment = [HORIZONTAL_ALIGNMENT_LEFT, HORIZONTAL_ALIGNMENT_CENTER, HORIZONTAL_ALIGNMENT_RIGHT][column[4]]
 		var x: float = column[2] + (column[3] if align == HORIZONTAL_ALIGNMENT_RIGHT else 0)
