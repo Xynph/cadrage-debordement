@@ -11,6 +11,7 @@ const U = preload("res://ui/management_state.gd")
 const Charte = preload("res://ui/charte.gd")
 const Identity = preload("res://ui/player_identity.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
+const CarteSurvol = preload("res://ui/carte_joueur_survol.gd")
 const Notes = preload("res://ui/notes_match.gd")
 const R = preload("res://ui/immersive08/reperes.gd")
 const Sales = preload("res://ui/player_sales_view.gd")
@@ -1220,7 +1221,7 @@ func _repere_comparaison(id: String) -> String:
 	var rang := memo.find(id)
 	return "" if rang < 0 else ["A", "B", "C"][rang]
 
-## Portrait, drapeau, nom (souligné au survol) et « i » : le nom ouvre la fiche, le survol montre la mini-fiche.
+## Portrait, drapeau, nom (souligné au survol) et « i » : le nom ouvre la fiche, le survol montre la carte joueur.
 func _cellule_joueur(row: Control, player: Dictionary, index: int, h: float, base: float) -> void:
 	var id := str(player.id)
 	var portrait: Control = G.portrait_lazy(int(player.get("portraitIndex", 0)), C.px(31), player) if not id.is_empty() else C.photo("player-%02d" % posmod(int(player.get("portraitIndex", index)), 16))
@@ -1257,7 +1258,7 @@ func _cellule_joueur(row: Control, player: Dictionary, index: int, h: float, bas
 	lien.mouse_entered.connect(func(): soulignement.visible = true)
 	lien.mouse_exited.connect(func(): soulignement.visible = false)
 	var taille_i := maxf(20.0, ceilf(16.0 / C.density))
-	MiniFiche.icone(app, row, Rect2(176 + largeur_nom + 12, (h - taille_i) / 2.0, taille_i, taille_i), id, "squad")
+	CarteSurvol.icone(app, row, Rect2(176 + largeur_nom + 12, (h - taille_i) / 2.0, taille_i, taille_i), id, "squad")
 	if en_vente: _pastille_en_vente(row, player, 176 + largeur_nom + 12 + taille_i + 10, base, h)
 
 ## Pastille « En vente » (bleu de la charte + pièces + mot) : le clic ouvre la fiche sur l'onglet Contrat (offres, retrait du marché).
@@ -1288,8 +1289,8 @@ func _lien_lecture(parent: Control, zone: Rect2, player: Dictionary, section: St
 	link.pressed.connect(func(): _ouvrir(id, section))
 	parent.add_child(link)
 	D.place(link, zone)
-	# Le nom : survol (ou focus + I) = mini-fiche, clic = fiche complète.
-	if section.is_empty(): MiniFiche.lier(app, link, id, "squad")
+	# Le nom et le portrait : survol (ou focus + I) = carte joueur, clic = fiche complète.
+	if section.is_empty(): CarteSurvol.lier(app, link, id, "squad")
 	return link
 
 func _ouvrir(id: String, section: String) -> void:

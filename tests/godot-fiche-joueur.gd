@@ -8,6 +8,7 @@ const PlayerAttributes = preload("res://ui/player_attributes.gd")
 const Identity = preload("res://ui/player_identity.gd")
 const Commune = preload("res://ui/immersive08/fiche_commune.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
+const Carte = preload("res://ui/carte_joueur_survol.gd")
 var app: Control
 var failures: Array[String] = []
 var checks := 0
@@ -112,35 +113,28 @@ func run() -> void:
 	await settle()
 	check(link.tooltip_text.is_empty(), "Nom : pas d'info-bulle système par-dessus la mini-fiche")
 
-	# Survol du nom : mini-fiche, Control posé dans la coque, aucune fenêtre, entière à l'écran.
-	link.mouse_entered.emit()
+	# Survol du nom : carte joueur (demande de Léo du 21/11/2026, même composant que le direct), Control posé dans la
+	# coque, aucune fenêtre, entière à l'écran. Le vrai survol à la souris est contrôlé par godot-poste-carte-survol.
+	check(link.get_meta("carte_joueur", "") == id, "Survol du nom : carte joueur branchée")
+	var noeud: Node = Carte.montrer(app, id, "squad", link)
 	await settle(2)
-	var noeud: Node = app.get_node_or_null(MiniFiche.NOM)
 	var mini := noeud as Control
-	check(mini != null and not (noeud is Window) and mini.is_visible_in_tree(), "Survol du nom : la mini-fiche apparaît (Control)")
+	check(mini != null and not (noeud is Window) and mini.is_visible_in_tree(), "Survol du nom : la carte joueur apparaît (Control)")
 	check(windows(app).is_empty() and windows(root).is_empty(), "Survol : aucune fenêtre ouverte")
 	if mini != null:
 		var screen := Rect2(Vector2.ZERO, app.get_viewport_rect().size)
-		check(screen.encloses(mini.get_global_rect()), "Mini-fiche entièrement dans l'écran")
-		check_grid(mini, "MiniFicheAttribut_", PlayerAttributes.detail(target, true), "Mini-fiche")
-		var nom := mini.find_child("MiniFicheNom", true, false) as Label
-		check(nom != null and nom.text == str(target.name).to_upper(), "Mini-fiche : nom du joueur")
-		check(mini.find_child("MiniFicheDrapeau", true, false) != null, "Mini-fiche : drapeau en couleur")
-		check(mini.find_child("MiniFicheForme", true, false) != null or mini.find_child("MiniFicheRaison", true, false) != null, "Mini-fiche : forme ou raison d'absence")
-		check(mini.find_child("LegendeBaremeAttributs", true, false) != null, "Mini-fiche : légende du barème")
-	link.mouse_exited.emit()
+		check(screen.encloses(mini.get_global_rect()), "Carte joueur entièrement dans l'écran")
+		check_grid(mini, "CarteJoueurAttribut_", PlayerAttributes.detail(target, true), "Carte joueur")
+		var nom := mini.find_child("CarteJoueurNom", true, false) as Label
+		check(nom != null and nom.text == str(target.name).to_upper(), "Carte joueur : nom du joueur")
+		check(mini.find_child("CarteJoueurEtat", true, false) != null and mini.find_child("CarteJoueurPolyvalence", true, false) != null, "Carte joueur : état et postes en étoiles")
+	Carte.cacher(app)
 	await settle(2)
-	check(MiniFiche.actuelle(app) == null, "La souris quitte le nom : la mini-fiche disparaît")
+	check(Carte.actuelle(app) == null, "La souris quitte le nom : la carte disparaît")
 
-	# Le « i » voisin : même mini-fiche.
-	var info := app.find_child("MiniFicheInfo_" + id.validate_node_name(), true, false) as Control
-	check(info != null, "Petit « i » à côté du nom")
-	if info != null:
-		info.mouse_entered.emit()
-		await settle(2)
-		check(MiniFiche.actuelle(app) != null, "Survol du « i » : mini-fiche")
-		info.mouse_exited.emit()
-		await settle(2)
+	# Le « i » voisin : même carte.
+	var info := app.find_child("CarteJoueurInfo_" + id.validate_node_name(), true, false) as Control
+	check(info != null and info.get_meta("carte_joueur", "") == id, "Petit « i » à côté du nom : carte joueur")
 
 	# Clavier : focus sur le nom + I.
 	link.grab_focus()
@@ -149,17 +143,17 @@ func run() -> void:
 	touche.pressed = true
 	link.gui_input.emit(touche)
 	await settle(2)
-	check(MiniFiche.actuelle(app) != null, "Focus sur le nom + I : mini-fiche")
+	check(Carte.actuelle(app) != null, "Focus sur le nom + I : carte joueur")
 	link.gui_input.emit(touche)
 	await settle(2)
-	check(MiniFiche.actuelle(app) == null, "I de nouveau : la mini-fiche se ferme")
+	check(Carte.actuelle(app) == null, "I de nouveau : la carte se ferme")
 
 	# Clic sur le nom : route de la fiche complète.
 	link.pressed.emit()
 	await settle(8)
 	var full := app.find_child("ImmersivePlayerFull", true, false) as Control
 	check(app.route == "Effectif" and app.get_meta("immersive08_full_player", false) and app.selected_player == id and full != null, "Clic sur le nom : fiche complète du joueur")
-	check(MiniFiche.actuelle(app) == null, "Fiche ouverte : plus de mini-fiche")
+	check(Carte.actuelle(app) == null, "Fiche ouverte : plus de carte joueur")
 	if full == null: return finish()
 	check(full.find_child("FullPlayerTab1", true, false) == null and full.find_child("FullPlayerTab0", true, false) != null, "Plus d'onglet Attributs : Vue d'ensemble en premier")
 	check_grid(full, "PlayerDetailedAttribute_", PlayerAttributes.detail(target, true), "Fiche complète, première page")
@@ -210,11 +204,10 @@ func run() -> void:
 		check(app.route == "Recrutement" and app.find_child("ImmersivePlayerFull", true, false) == null, "Retour à la liste du recrutement")
 		var nom_piste := app.find_child("MarketEntity_" + str(piste.id).validate_node_name(), true, false) as Button
 		if nom_piste != null:
-			nom_piste.mouse_entered.emit()
+			var mini_piste := Carte.montrer(app, str(piste.id), "market", nom_piste)
 			await settle(2)
-			var mini_piste := MiniFiche.actuelle(app)
-			check(mini_piste != null, "Recrutement : survol du nom = mini-fiche")
-			if mini_piste != null: check_grid(mini_piste, "MiniFicheAttribut_", {}, "Mini-fiche d'une piste inconnue")
-			nom_piste.mouse_exited.emit()
+			check(mini_piste != null and nom_piste.has_meta("carte_joueur"), "Recrutement : survol du nom = carte joueur")
+			if mini_piste != null: check_grid(mini_piste, "CarteJoueurAttribut_", {}, "Carte d'une piste inconnue")
+			Carte.cacher(app)
 			await settle(2)
 	finish()

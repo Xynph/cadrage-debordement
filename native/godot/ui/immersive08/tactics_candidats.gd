@@ -1,6 +1,6 @@
 extends RefCounted
 ## Candidats pour le poste choisi (maquette 10-composition-1, sous le terrain) : tout l'effectif dans un tableau dense
-## trié par note au poste (barème coloré de la charte, chiffre toujours écrit, « — » si inconnue), condition (repère
+## trié par note au poste (chiffre coloré par paliers + familiarité naturel / 2e poste / dépanne, « — » si inconnue), condition (repère
 ## 80 %), statut en mots et action (Choisir, Échanger, Libérer). Les joueurs non qualifiés ou indisponibles restent
 ## visibles en bas, grisés, avec leur raison. Filtre « Hors feuille seulement », recherche par nom, tri par en-tête.
 ## Emprunt de la variante 3 : sur les n° 1-3 et 16-18, l'encart « Première ligne formée » (loi 3) se place à droite.
@@ -15,6 +15,8 @@ const Selection = preload("res://ui/immersive08/tactics_selection.gd")
 const Commune = preload("res://ui/immersive08/fiche_commune.gd")
 const PersonName = preload("res://ui/person_name.gd")
 const P = preload("res://ui/immersive08/projection.gd")
+const Carte = preload("res://ui/carte_joueur_survol.gd")
+const Poste = preload("res://ui/immersive08/tactics_poste.gd")
 const LIGNE := 33.0
 const ENCART := 720.0
 
@@ -23,7 +25,9 @@ static func lecture(app: Control) -> Dictionary:
 		app.management_ui.candidates_reading = {"key":"note", "descending":true, "hors_feuille":false, "recherche":""}
 	return app.management_ui.candidates_reading
 
-static func build(app: Control, page: Control, zone: Rect2, premiere: Dictionary, choisir: Callable, avis_haut: float = 0.0) -> Panel:
+## `titre_pose` (facultatif) : pose le titre à la place du titre par défaut (Composition : onglets Candidats / Hors groupe) ;
+## il doit nommer « TacticsCandidatesTitle » le libellé qui porte le numéro du poste.
+static func build(app: Control, page: Control, zone: Rect2, premiere: Dictionary, choisir: Callable, avis_haut: float = 0.0, encart_l: float = ENCART, titre_pose: Callable = Callable()) -> Panel:
 	var bloc := D.rect(page, zone, Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	bloc.name = "TacticsCandidates"
 	bloc.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -31,7 +35,8 @@ static func build(app: Control, page: Control, zone: Rect2, premiere: Dictionary
 	var poste := Selection.slot(app.model, slot)
 	var numero := slot + 1
 	var titre := "Candidats pour le poste n° %d · %s" % [numero, str(poste.get("label", ""))] if slot < 15 else "Candidats pour le n° %d · %s remplaçant" % [numero, str(poste.get("label", "")).to_lower()]
-	Kit.titre(bloc, 22, 34, titre, 24, 1000).name = "TacticsCandidatesTitle"
+	if titre_pose.is_valid(): titre_pose.call(bloc)
+	else: Kit.titre(bloc, 22, 34, titre, 24, 1000).name = "TacticsCandidatesTitle"
 	var etat := lecture(app)
 	var w := zone.size.x
 	# Filtre et recherche, à droite du titre.
@@ -65,8 +70,8 @@ static func build(app: Control, page: Control, zone: Rect2, premiere: Dictionary
 	D.line(bloc, Vector2(22, 48), Vector2(w - 22, 48), Charte.FILET)
 	var haut := 48.0 + avis_haut
 	var encart := Selection.place_premiere_ligne(app.model, slot)
-	var largeur_table := w - 44 - (ENCART + 24 if encart else 0.0)
-	if encart: _encart(app, bloc, Rect2(w - 22 - ENCART, haut + 8, ENCART, zone.size.y - haut - 16), slot, premiere, choisir)
+	var largeur_table := w - 44 - (encart_l + 24 if encart else 0.0)
+	if encart: _encart(app, bloc, Rect2(w - 22 - encart_l, haut + 8, encart_l, zone.size.y - haut - 16), slot, premiere, choisir)
 	var message := Kit.texte(bloc, 22, zone.size.y - 12, str(Selection.state(app).get("message", "")), Charte.IVOIRE_2, largeur_table)
 	message.name = "TacticsCandidateMessage"
 	var colonnes := _colonnes(largeur_table)
@@ -102,13 +107,13 @@ static func build(app: Control, page: Control, zone: Rect2, premiere: Dictionary
 ## Colonnes du tableau selon sa largeur : [clé, titre, x, largeur, alignement à droite].
 static func _colonnes(largeur: float) -> Dictionary:
 	var k := largeur / 2204.0
-	return {"name":[8, 400 * k], "positions":[420 * k, 180 * k], "note":[600 * k, 210 * k], "condition":[850 * k, 230 * k],
+	return {"name":[8, 370 * k], "positions":[390 * k, 160 * k], "note":[560 * k, 260 * k], "condition":[850 * k, 230 * k],
 		"status":[1110 * k, largeur - 1110 * k - 200 * k], "action":[largeur - 190 * k, 180 * k]}
 
 static func _entete(app: Control, entete: Control, colonnes: Dictionary, remplir: Callable) -> void:
 	var etat := lecture(app)
 	var large := float(colonnes.note[1]) >= 180
-	for colonne: Array in [["name", "Joueur"], ["positions", "Postes maîtrisés" if large else "Postes"], ["note", "Note au poste" if large else "Note"], ["condition", "Condition"], ["status", "Statut"]]:
+	for colonne: Array in [["name", "Joueur"], ["positions", "Postes maîtrisés" if large else "Postes"], ["note", "Au poste"], ["condition", "Condition"], ["status", "Statut"]]:
 		var cle: String = colonne[0]
 		var place: Array = colonnes[cle]
 		var droite := cle == "note"
@@ -208,13 +213,14 @@ static func _ligne(app: Control, parent: Control, rang: int, person: Dictionary,
 	if gris: portrait.modulate = Color(1, 1, 1, .55)
 	bouton.add_child(portrait)
 	D.place(portrait, Rect2(colonnes.name[0], 3, 27, 27))
+	Carte.lier(app, portrait, id, "squad")
 	Kit.nom(app, bouton, Rect2(colonnes.name[0] + 36, 3, colonnes.name[1] - 40, 27), str(person.get("name", "")), id, "TacticsCandidateName_" + id.validate_node_name(), encre)
 	Kit.texte(bouton, colonnes.positions[0], 23, Selection.positions(person), Charte.IVOIRE_3 if gris else Charte.IVOIRE_2, colonnes.positions[1], 16)
-	var note: Variant = Selection.rating(app.model, person, slot)
 	var non_qualifie := str(s.texte) == "Non qualifié au poste"
-	var chiffre := D.text(bouton, colonnes.note[0] + colonnes.note[1], 23, "—" if non_qualifie else Selection.rating_text(app.model, person, slot), 18, Charte.IVOIRE_3 if gris else Charte.couleur_attribut(note), 700, colonnes.note[1], HORIZONTAL_ALIGNMENT_RIGHT, true)
-	chiffre.add_theme_font_override("font", Kit.texte_gras())
-	chiffre.name = "TacticsCandidateRating"
+	# Note au poste chiffrée + familiarité (les étoiles ont été rejetées par Léo le 21/11/2026) ; le tri reste sur la note.
+	var note: Variant = null if non_qualifie else Selection.rating(app.model, person, slot)
+	var familiarite := -1 if non_qualifie else Selection.familiarite(app.model, person, slot)
+	Poste.poser(bouton, Rect2(colonnes.note[0], 8, colonnes.note[1], 18), note, familiarite, "TacticsCandidateRating", true, false, gris)
 	if gris:
 		var v: Variant = person.get("condition")
 		Kit.texte(bouton, colonnes.condition[0] + 140, 23, ("%d %%" % roundi(float(v))) if v is int or v is float else "—", Charte.IVOIRE_3, 74, 18, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -230,7 +236,7 @@ static func _ligne(app: Control, parent: Control, rang: int, person: Dictionary,
 		lien.alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		lien.focus_mode = Control.FOCUS_NONE
 		lien.mouse_filter = Control.MOUSE_FILTER_PASS
-	bouton.accessibility_name = "%s · %s · note au poste %s · %s" % [str(person.get("name", "")), Selection.positions(person), Selection.rating_text(app.model, person, slot), str(s.texte)]
+	bouton.accessibility_name = "%s · %s · %s · %s" % [str(person.get("name", "")), Selection.positions(person), Poste.accessible(note, familiarite), str(s.texte)]
 	bouton.pressed.connect(func(): activer(app, id, slot))
 
 ## Clic ou Entrée sur un candidat : affecte (ou échange) par la commande du moteur ; « Libérer » pour le joueur en place ;
@@ -301,7 +307,7 @@ static func _encart(app: Control, bloc: Control, zone: Rect2, slot: int, premier
 	Kit.titre(cadre, 0, y, "Première ligne formée · %d/%d" % [mini(formes, cible), cible], 22, zone.size.x * .6).name = "TacticsFrontRowTitle"
 	Kit.etiquette(cadre, zone.size.x, y - 2, "Loi 3 · feuille à 23" if reduit == 0 else "Loi 3 · feuille à 22 : cinq formés", 320, true)
 	D.line(cadre, Vector2(0, y + 10), Vector2(zone.size.x, y + 10), Charte.FILET)
-	var xs := [8.0, 168.0, 400.0, zone.size.x - 8]
+	var xs := [8.0, roundf(zone.size.x * .233), roundf(zone.size.x * .556), zone.size.x - 8]
 	for i in 4:
 		Kit.etiquette(cadre, xs[i], y + 36, ["Poste", "Titulaire", "Remplaçant", "Formés"][i], 200, i == 3)
 	for i: int in (premiere.postes as Array).size():

@@ -291,10 +291,10 @@ static func styler_ligne(bouton: Button, fond: Color, choisi: bool = false, coul
 	bouton.focus_mode = Control.FOCUS_ALL
 	bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
-## Nom de joueur cliquable : clic = fiche complète, survol (ou focus + I) = mini-fiche. Laisse passer le glisser
+## Nom de joueur cliquable : clic = fiche complète, survol (ou focus + I) = carte joueur. Laisse passer le glisser
 ## vers la carte ou la ligne qui le porte.
 static func nom(app: Control, parent: Control, zone: Rect2, valeur: String, player_id: String, id: String, couleur: Color = Charte.IVOIRE, taille: int = 18) -> Button:
-	var MiniFiche: Script = load("res://ui/immersive08/mini_fiche.gd")
+	var Carte: Script = load("res://ui/carte_joueur_survol.gd")
 	var bouton := Link.styled_button(parent, zone, valeur, taille, couleur, id)
 	bouton.add_theme_font_override("font", Charte.texte_moyen())
 	var plat := C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0)
@@ -310,5 +310,5 @@ static func nom(app: Control, parent: Control, zone: Rect2, valeur: String, play
 	bouton.mouse_filter = Control.MOUSE_FILTER_PASS
 	bouton.accessibility_name = valeur + " · fiche joueur"
 	bouton.pressed.connect(func(): app.navigation_controller.open_entity({"kind":"player", "id":player_id}))
-	MiniFiche.lier(app, bouton, player_id, "squad")
+	Carte.lier(app, bouton, player_id, "squad")
 	return bouton

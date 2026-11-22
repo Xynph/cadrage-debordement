@@ -17,14 +17,17 @@ const DUELS := [["scrum", "Mêlée", "mêlée"], ["lineout", "Touche", "touche"]
 	["backs", "Passe et vitesse", "passe et vitesse"], ["kick", "Jeu au pied", "jeu au pied"], ["discipline", "Discipline", "discipline"]]
 const PRES := ["scrum", "lineout", "power"]
 const LARGE := ["backs", "kick"]
+## Écart en couleur franche (▲ vert / ▼ rouge, avec le signe) : options du terrain vertical (tactics_vertical.gd).
+static var colore := false
 
 static func build(app: Control, page: Control, zone: Rect2, adversaire: String, choisir: Callable = Callable()) -> Panel:
 	var bloc := D.rect(page, zone, Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	bloc.name = "TacticsImpact"
 	bloc.mouse_filter = Control.MOUSE_FILTER_PASS
 	var w := zone.size.x
-	Kit.titre(bloc, 22, 34, "Impact face à " + adversaire if not adversaire.is_empty() else "Impact face à l’adversaire", 24, w - 44)
-	D.line(bloc, Vector2(22, 46), Vector2(w - 22, 46), Charte.FILET)
+	var titre_impact := Kit.titre(bloc, 22, 40 if colore else 34, "Impact face à " + adversaire if not adversaire.is_empty() else "Impact face à l’adversaire", 26 if colore else 24, w - 44)
+	if colore: titre_impact.add_theme_font_override("font", Charte.TITRE_FICHE)
+	D.line(bloc, Vector2(22, 52 if colore else 46), Vector2(w - 22, 52 if colore else 46), Charte.FILET)
 	var preparation: Variant = app.model.get("decisions", {}).get("preparation")
 	var domaines: Array = preparation.get("domains", []) if preparation is Dictionary else []
 	var valeurs := {}
@@ -62,17 +65,20 @@ static func _duel(app: Control, bloc: Control, rang: int, y: float, w: float, du
 	var a := D.text(ligne, 48, 25, G.n(roundi(nous)) if nous != null else "—", 18, Charte.IVOIRE, 700, 38, HORIZONTAL_ALIGNMENT_RIGHT, true)
 	a.add_theme_font_override("font", gras)
 	a.name = "TacticsDomainOwn"
-	if nous != null: D.rect(ligne, Rect2(56 + barre * (1.0 - clampf(nous, 0, 100) / 100.0), 12, barre * clampf(nous, 0, 100) / 100.0, 13), Charte.club_trait(app.accent), Charte.RAYON_PILULE)
+	if nous != null: D.rect(ligne, Rect2(56 + barre * (1.0 - clampf(nous, 0, 100) / 100.0), 12, barre * clampf(nous, 0, 100) / 100.0, 13), (Charte.couleur_attribut(nous) if colore else Charte.club_trait(app.accent)), Charte.RAYON_PILULE)
 	Kit.texte(ligne, 256, 25, str(duel[1]), Charte.IVOIRE, 190, 18, HORIZONTAL_ALIGNMENT_CENTER)
-	if eux != null: D.rect(ligne, Rect2(358, 12, barre * clampf(eux, 0, 100) / 100.0, 13), Charte.IVOIRE_2, Charte.RAYON_PILULE)
-	var b := D.text(ligne, 466, 25, G.n(roundi(eux)) if eux != null else "—", 18, Charte.IVOIRE, 700, 40, HORIZONTAL_ALIGNMENT_LEFT, true)
+	var barre_eux := 76.0 if colore else barre
+	if eux != null: D.rect(ligne, Rect2(358, 12, barre_eux * clampf(eux, 0, 100) / 100.0, 13), Charte.IVOIRE_2, Charte.RAYON_PILULE)
+	var b := D.text(ligne, 442.0 if colore else 466.0, 25, G.n(roundi(eux)) if eux != null else "—", 18, Charte.IVOIRE, 700, 40, HORIZONTAL_ALIGNMENT_LEFT, true)
 	b.add_theme_font_override("font", gras)
 	b.name = "TacticsDomainOpponent"
 	var libelle := "%s : %s contre %s" % [duel[1], a.text, b.text]
 	if nous != null and eux != null:
 		var ecart := roundi(nous) - roundi(eux)
 		var texte := "▲ +%d" % ecart if ecart > 0 else ("▼ −%d" % -ecart if ecart < 0 else "= 0")
-		var e := D.text(ligne, w - 36, 25, texte, 18, Charte.IVOIRE if ecart >= 0 else Charte.IVOIRE_2, 700, 70, HORIZONTAL_ALIGNMENT_RIGHT, true)
+		var teinte := (Charte.GAIN if ecart > 0 else (Charte.PERTE if ecart < 0 else Charte.IVOIRE_2)) if colore else (Charte.IVOIRE if ecart >= 0 else Charte.IVOIRE_2)
+		if colore: D.rect(ligne, Rect2(w - 36 - 70, 7, 74, 24), Color(teinte, .18), Charte.RAYON_PILULE).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var e := D.text(ligne, w - 36 - (4.0 if colore else 0.0), 25, texte, 18, teinte, 700, 70, HORIZONTAL_ALIGNMENT_RIGHT, true)
 		e.add_theme_font_override("font", gras)
 		e.name = "TacticsDomainGap"
 		libelle += " (%s)" % texte

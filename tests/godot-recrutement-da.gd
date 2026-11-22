@@ -229,19 +229,18 @@ func tuiles_cliquables() -> void:
 		await settle(10)
 	check(windows().is_empty(), "Aucune fenêtre ouverte par les tuiles et pastilles")
 
-## Clic sur le nom = fiche complète ; survol = mini-fiche ; jamais de fenêtre.
+## Clic sur le nom = fiche complète ; survol = carte joueur ; jamais de fenêtre.
 func names_open_sheets() -> void:
 	var noms: Array = app.root_content.find_children("MarketEntity_*", "Button", true, false)
 	check(not noms.is_empty(), "Chaque nom de piste est un lien")
 	if noms.is_empty(): return
 	var lien := noms[0] as Button
-	lien.mouse_entered.emit()
-	await settle(4)
-	check(app.get_node_or_null("MiniFicheJoueur") != null, "Survol du nom : mini-fiche")
-	lien.mouse_exited.emit()
+	var carte = load("res://ui/carte_joueur_survol.gd")
+	check(lien.has_meta("carte_joueur") and carte.montrer(app, str(lien.get_meta("carte_joueur")), "market", lien) != null, "Survol du nom : carte joueur")
+	carte.cacher(app)
 	await settle(3)
-	check(app.get_node_or_null("MiniFicheJoueur") == null, "La souris part : la mini-fiche disparaît")
-	var infos: Array = app.root_content.find_children("MiniFicheInfo_*", "Control", true, false)
+	check(carte.actuelle(app) == null, "La souris part : la carte disparaît")
+	var infos: Array = app.root_content.find_children("CarteJoueurInfo_*", "Control", true, false)
 	check(not infos.is_empty(), "Un « i » suit chaque nom")
 	lien.pressed.emit()
 	await settle(10)

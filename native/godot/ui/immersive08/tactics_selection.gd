@@ -11,25 +11,75 @@ class PlayerButton extends Button:
 	var make_payload: Callable
 	var accepts_payload: Callable
 	var apply_payload: Callable
+	## Aperçu qui suit la souris (tuile portrait) ; sinon le nom dans une pastille.
+	var make_preview: Callable
+	## Pendant un glisser, sur la place survolée : `apercu_depot.call(bouton, data)` pose la pastille au poste du joueur
+	## traîné (nœud « TacticsDropPreview ») ; retiré quand la souris part ou que le glisser finit.
+	var apercu_depot: Callable
+	## État visuel du glisser : 1 = place possible (contour vert), 2 = survolée et possible, -1 = survolée et refusée.
+	var etat_depot := 0
+	func _ready() -> void:
+		mouse_exited.connect(func(): if etat_depot == 2 or etat_depot == -1: _etat(1 if _possible() else 0))
 	func _input(event: InputEvent) -> void:
 		var viewport:=get_viewport()
 		if event.is_action_pressed("ui_cancel") and viewport.gui_is_dragging():
 			viewport.gui_cancel_drag()
 			viewport.set_input_as_handled()
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_DRAG_BEGIN: _etat(1 if _possible() else 0)
+		elif what == NOTIFICATION_DRAG_END: _etat(0)
+	func _possible() -> bool:
+		var viewport := get_viewport()
+		if viewport == null or not viewport.gui_is_dragging() or target_slot < 0 or not accepts_payload.is_valid(): return false
+		var data: Variant = viewport.gui_get_drag_data()
+		return data is Dictionary and accepts_payload.call(data, target_slot)
+	func _etat(valeur: int, data: Variant = null) -> void:
+		if valeur == etat_depot: return
+		etat_depot = valeur
+		set_meta("depot", valeur)
+		var ancien := get_node_or_null("TacticsDropPreview")
+		if ancien != null:
+			remove_child(ancien)
+			ancien.queue_free()
+		if valeur == 2 and apercu_depot.is_valid(): apercu_depot.call(self, data)
+		queue_redraw()
+	func _draw() -> void:
+		if etat_depot == 0: return
+		var couleur := Charte.PERTE if etat_depot == -1 else Charte.CONDITION
+		var epaisseur := 4.0 if etat_depot != 1 else 2.0
+		var fond := StyleBoxFlat.new()
+		fond.bg_color = Color(couleur, 0.22 if etat_depot != 1 else 0.08)
+		fond.border_color = couleur
+		fond.set_border_width_all(int(epaisseur))
+		fond.set_corner_radius_all(int(Charte.RAYON_CARTE * C.density))
+		draw_style_box(fond, Rect2(Vector2.ZERO, size))
+		if etat_depot == -1:
+			var police := get_theme_default_font()
+			var t := int(minf(size.y * .5, 44.0))
+			var largeur := police.get_string_size("✕", HORIZONTAL_ALIGNMENT_LEFT, -1, t).x
+			draw_string(police, Vector2((size.x - largeur) / 2.0, size.y / 2.0 + t * .35), "✕", HORIZONTAL_ALIGNMENT_LEFT, -1, t, Charte.PERTE)
 	func _get_drag_data(_at: Vector2) -> Variant:
 		if drag_player.is_empty() or not make_payload.is_valid(): return null
 		var data: Variant = make_payload.call(drag_player,source_slot)
 		if data == null: return null
-		var preview := PanelContainer.new()
-		# Aperçu du glisser aux jetons de la charte : panneau-3, rayon 6, sans cadre, texte ivoire.
-		preview.add_theme_stylebox_override("panel",C.box(C.SELECTED,Color.TRANSPARENT,Charte.RAYON_PETIT,12))
-		preview.add_child(C.label(drag_caption,20,C.IVORY,false,500))
+		var preview: Control = make_preview.call() if make_preview.is_valid() else null
+		if preview == null:
+			var pastille := PanelContainer.new()
+			# Aperçu du glisser aux jetons de la charte : panneau-3, rayon 6, sans cadre, texte ivoire.
+			pastille.add_theme_stylebox_override("panel",C.box(C.SELECTED,Color.TRANSPARENT,Charte.RAYON_PETIT,12))
+			pastille.add_child(C.label(drag_caption,20,C.IVORY,false,500))
+			preview = pastille
 		preview.mouse_filter=Control.MOUSE_FILTER_IGNORE
 		set_drag_preview(preview)
 		return data
 	func _can_drop_data(_at: Vector2,data: Variant) -> bool:
-		return target_slot>=0 and accepts_payload.is_valid() and accepts_payload.call(data,target_slot)
+		var ok: bool = target_slot>=0 and accepts_payload.is_valid() and accepts_payload.call(data,target_slot)
+		# Retour visuel sur la place survolée : vert + pastille au poste du joueur traîné, ou rouge ✕ (refus du jeu).
+		if target_slot >= 0 and data is Dictionary and data.get("kind") == "tactics_player" and str(data.get("player_id", "")) != drag_player:
+			_etat(2 if ok else -1, data)
+		return ok
 	func _drop_data(_at: Vector2,data: Variant) -> void:
+		_etat(0)
 		if _can_drop_data(_at,data) and apply_payload.is_valid():apply_payload.call(data,target_slot)
 
 static func state(app: Control) -> Dictionary:
@@ -95,6 +145,21 @@ static func rating(model: Dictionary,person: Dictionary,index: int) -> Variant:
 	var value: Variant=ratings.get(str(position))
 	if not (value is int or value is float) or not is_finite(float(value)) or value<0 or value>100:return null
 	return value
+
+## Rôle de chaque numéro (les deux 2e ligne, les deux 3e ligne aile, les deux centres, les deux ailiers se valent).
+const ROLES := [1, 2, 3, 4, 4, 6, 6, 8, 9, 10, 11, 12, 12, 11, 15]
+
+## Familiarité du joueur avec le poste de la place `index` : 3 poste naturel (même rôle que son poste principal),
+## 2 deuxième poste (même rôle qu'un poste secondaire), 1 dépanne, -1 inconnue (sans poste principal, place hors XV).
+static func familiarite(model: Dictionary,person: Dictionary,index: int) -> int:
+	var position:=number(model,index)
+	var primary: Variant=person.get("primaryPosition")
+	if position<1 or position>15 or not (primary is int or primary is float) or int(primary)<1 or int(primary)>15:return -1
+	var role: int=ROLES[position-1]
+	if ROLES[int(primary)-1]==role:return 3
+	for secondary: Variant in person.get("secondaryPositions",[]):
+		if (secondary is int or secondary is float) and int(secondary)>=1 and int(secondary)<=15 and ROLES[int(secondary)-1]==role:return 2
+	return 1
 
 static func rating_text(model: Dictionary,person: Dictionary,index: int) -> String:
 	var value: Variant=rating(model,person,index)

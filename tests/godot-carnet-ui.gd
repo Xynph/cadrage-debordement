@@ -158,8 +158,9 @@ func readability() -> void:
 		var tile := named(app,"LineupSlot%02d"%number) as Button
 		check(tile!=null,"Poste réel du terrain "+str(number))
 		if tile==null:continue
-		var captions := tile.find_children("*","Label",true,false)
-		var caption := captions.back() as Label if not captions.is_empty() else null
+		# Texte de la carte (nom du joueur ; la note au poste est passée en étoiles, sans texte) : hors numéro de l'ovale.
+		var captions := tile.find_children("*","Label",true,false).filter(func(l: Label): return not l.text.is_valid_int())
+		var caption: Control = captions.back() as Label if not captions.is_empty() else tile.find_child("TacticsName%02d"%number,true,false) as Control
 		var background := tile.get_theme_stylebox("normal") as StyleBoxFlat
 		var surfaces := tile.find_children("*","Panel",true,false)
 		if background==null and not surfaces.is_empty():background=surfaces.back().get_theme_stylebox("panel") as StyleBoxFlat

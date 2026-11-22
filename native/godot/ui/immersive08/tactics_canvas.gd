@@ -2,8 +2,8 @@ extends RefCounted
 ## Écran Composition (route « Composition », chapitre Tactique) — choix de Léo du 19/11/2026 : variante 1 « Terrain au
 ## centre, candidats dessous » (design/ux/10-composition.md, direction-artistique/interface/revue-20261119) et l'encart
 ## « Première ligne formée » de la variante 3. En-tête (titre, affiche, Proposition du staff, Tireurs et lanceur,
-## Valider la feuille), ligne de validité, onglets, puis terrain (tactics_terrain.gd), banc (tactics_banc.gd), impact
-## (tactics_impact.gd) et candidats (tactics_candidats.gd). Jamais de petite fenêtre : les choix annexes sont des
+## Valider la feuille), ligne de validité, onglets, puis terrain vertical, banc et doublures (tactics_vertical.gd, option
+## A de Léo du 22/11/2026), impact (tactics_impact.gd) et candidats (tactics_candidats.gd). Jamais de petite fenêtre : les choix annexes sont des
 ## sous-pages (tactics_sous_pages.gd). L'interface n'écrit jamais l'état du jeu : commandes du moteur seulement.
 ## Exemple : page dédiée de la coque, `TacticsCanvas.build(app, canvas)`.
 const FocusLater := preload("res://ui/focus_later.gd")
@@ -13,23 +13,19 @@ const G = preload("res://ui/game_skin.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const Charte = preload("res://ui/charte.gd")
 const Kit = preload("res://ui/immersive08/tactics_kit.gd")
+const Poste = preload("res://ui/immersive08/tactics_poste.gd")
 const Selection = preload("res://ui/immersive08/tactics_selection.gd")
-const Terrain = preload("res://ui/immersive08/tactics_terrain.gd")
-const Banc = preload("res://ui/immersive08/tactics_banc.gd")
 const Impact = preload("res://ui/immersive08/tactics_impact.gd")
 const Candidats = preload("res://ui/immersive08/tactics_candidats.gd")
 const SousPages = preload("res://ui/immersive08/tactics_sous_pages.gd")
+const Vertical = preload("res://ui/immersive08/tactics_vertical.gd")
 const Roles = preload("res://ui/immersive08/tactics_roles.gd")
 const Cover = preload("res://ui/lineup_cover.gd")
 const Espoir = preload("res://ui/espoir_appel.gd")
 const PersonName = preload("res://ui/person_name.gd")
-const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
+const CarteSurvol = preload("res://ui/carte_joueur_survol.gd")
 ## Hauteur du gabarit (unités) ; largeur 2248 comme toutes les pages de la coque.
 const HAUTEUR := 1305.0
-const TERRAIN := Rect2(0, 246, 990, 693)
-const BANC := Rect2(1012, 200, 624, 739)
-const IMPACT := Rect2(1658, 200, 590, 739)
-const CANDIDATS_Y := 955.0
 
 ## Page : Ctrl+Entrée valide la feuille depuis n'importe quel poste.
 class PageComposition extends Control:
@@ -75,14 +71,15 @@ static func _construire(app: Control, page: Control) -> Control:
 	var avis := Impact.avis(app)
 	var bleus := _bleus_marques(app)
 	var premiere := Selection.premiere_ligne(app.model)
-	Kit.titre(page, 0, 226, "XV de départ", 24, 500)
-	Kit.etiquette(page, TERRAIN.size.x, 224, "Note au poste /100 · Espace prendre / poser", 600, true)
-	D.line(page, Vector2(0, 238), Vector2(TERRAIN.size.x, 238), Charte.FILET)
-	Terrain.build(app, page, TERRAIN, choisir_cb, clavier_cb, avis, bleus)
-	Banc.build(app, page, BANC, choisir_cb, clavier_cb, avis, bleus, premiere)
-	Impact.build(app, page, IMPACT, _adversaire(app), choisir_cb)
+	# Terrain vertical vert, banc en tuiles, doublures, impact (option A de Léo, 22/11/2026), candidats dessous à droite.
+	Vertical.build(app, page, choisir_cb, clavier_cb, avis, bleus, premiere)
+	# Bas à droite : candidats du poste choisi, ou tout le reste de l'effectif (« Hors groupe »), au choix en pilules.
 	var alertes := _alertes(app)
-	var bloc := Candidats.build(app, page, Rect2(0, CANDIDATS_Y, 2248, HAUTEUR - CANDIDATS_Y), premiere, choisir_cb, alertes.size() * 56.0)
+	var bloc: Control
+	if str(Selection.state(app).get("bas", "candidats")) == "hors_groupe":
+		bloc = Vertical.hors_groupe(app, page, Vertical.CANDIDATS, alertes.size() * 56.0)
+	else:
+		bloc = Candidats.build(app, page, Vertical.CANDIDATS, premiere, choisir_cb, alertes.size() * 56.0, 560.0, func(b: Control): Vertical.onglets_bas(app, b))
 	for i in alertes.size(): (alertes[i] as Callable).call(bloc, 52.0 + i * 56.0)
 	_restore_focus.call_deferred(app)
 	return page
@@ -316,7 +313,7 @@ static func _alertes(app: Control) -> Array:
 	return alertes
 
 static func _bandeau(bloc: Control, y: float, id: String, couleur: Color) -> Panel:
-	var bandeau := D.rect(bloc, Rect2(22, y + 4, 2204, 48), Charte.PANNEAU_2, Charte.RAYON_CARTE)
+	var bandeau := D.rect(bloc, Rect2(22, y + 4, bloc.size.x / C.density - 44, 48), Charte.PANNEAU_2, Charte.RAYON_CARTE)
 	bandeau.name = id
 	bandeau.mouse_filter = Control.MOUSE_FILTER_PASS
 	Kit.marqueur(bandeau, Rect2(6, 8, 4, 32), couleur)
@@ -325,14 +322,15 @@ static func _bandeau(bloc: Control, y: float, id: String, couleur: Color) -> Pan
 static func _bandeau_bleus(app: Control, bloc: Control, y: float, bleus: Dictionary) -> void:
 	var bandeau := _bandeau(bloc, y, "LineupBleusNotice", Charte.D)
 	bandeau.tooltip_text = "Liste de 33 joueurs du XV de France : les clubs les laissent hors de la feuille au moins 2 fois sur 8 rencontres. Ligne directrice, ajustable par accord avec le staff des Bleus.\n\nRemplaçants proposés par le staff :\n" + "\n".join(bleus.lignes)
-	var titre := D.text(bandeau, 22, 31, str(bleus.titre), 20, Charte.D, 700, 900)
+	var titre := D.text(bandeau, 22, 31, str(bleus.titre), 20, Charte.D, 700, bandeau.size.x / C.density * .408)
 	titre.name = "LineupBleusTitle"
 	var echanges: Array = bleus.echanges
 	var aide := "Au moins 2 repos sur 8 matchs de club ; l’aligner quand même coûte la confiance du staff des Bleus. "
 	aide += ("Remplaçant proposé : " + str(bleus.lignes[0])) if echanges.size() == 1 else ("Remplaçants proposés pour %d postes (repère « 33 »)." % echanges.size() if echanges.size() > 1 else "Aucun remplaçant disponible au même poste.")
-	Kit.texte(bandeau, 940, 31, aide, Charte.IVOIRE_2, 1000, 17).name = "LineupBleusChanges"
+	var bw := bandeau.size.x / C.density
+	Kit.texte(bandeau, bw * .43, 31, aide, Charte.IVOIRE_2, bw * .45, 17).name = "LineupBleusChanges"
 	if echanges.is_empty(): return
-	var faire := Kit.lien(bandeau, Rect2(2190, 5, 0, 38), "Faire souffler →" if echanges.size() == 1 else "Faire souffler les %d →" % echanges.size(), func(): app._command("set_lineup", {"changes": bleus.lot}), "LineupBleusRestAll", 18, true)
+	var faire := Kit.lien(bandeau, Rect2(bw - 14, 5, 0, 38), "Faire souffler →" if echanges.size() == 1 else "Faire souffler les %d →" % echanges.size(), func(): app._command("set_lineup", {"changes": bleus.lot}), "LineupBleusRestAll", 18, true)
 	faire.tooltip_text = "\n".join(bleus.lignes)
 	faire.disabled = not Selection.editable(app)
 
@@ -341,7 +339,8 @@ static func _bandeau_nationale(bloc: Control, y: float, notice: Dictionary) -> v
 	var bandeau := _bandeau(bloc, y, "NationaleLicenceNotice", Charte.D if alerte else Charte.IVOIRE_2)
 	bandeau.tooltip_text = str(notice.get("detail", ""))
 	D.text(bandeau, 22, 31, str(notice.get("title", "")), 20, Charte.IVOIRE, 700, 700).name = "NationaleQualificationTitle"
-	Kit.texte(bandeau, 740, 31, str(notice.get("summary", "")), Charte.D if alerte else Charte.IVOIRE, 1440, 18).name = "NationaleQualificationSummary"
+	var bw := bandeau.size.x / C.density
+	Kit.texte(bandeau, bw * .336, 31, str(notice.get("summary", "")), Charte.D if alerte else Charte.IVOIRE, bw * .653, 18).name = "NationaleQualificationSummary"
 
 static func _bleus_marques(app: Control) -> Dictionary:
 	var marques := {}
@@ -357,6 +356,7 @@ static func choisir(app: Control, index: int) -> void:
 		_focus_candidat(app)
 		return
 	app.selected_slot = index
+	etat.bas = "candidats"
 	etat.message = ""
 	etat.scroll = 0
 	etat.focus = "LineupSlot%02d" % (index + 1)
@@ -421,8 +421,9 @@ static func clavier(app: Control, event: InputEvent, slot: int, carte: Control) 
 		KEY_I:
 			if person.is_empty() or touche.shift_pressed: return
 			carte.accept_event()
-			if MiniFiche.visible_pour(app, carte): MiniFiche.cacher(app, carte)
-			else: MiniFiche.montrer(app, id, "squad", carte)
+			var ouverte: Control = CarteSurvol.actuelle(app)
+			if ouverte != null and ouverte.get_meta("player_id", "") == id: CarteSurvol.cacher(app)
+			else: CarteSurvol.montrer(app, id, "squad", carte)
 
 ## Message lisible sous les candidats ; `rendre` redessine l'écran (marques « pris » / destinations) et garde le focus.
 static func _annoncer(app: Control, texte: String, carte: Control, rendre: bool = false) -> void:
