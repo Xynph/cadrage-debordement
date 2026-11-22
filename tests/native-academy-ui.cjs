@@ -2,7 +2,7 @@
 // Réception native du Centre de formation (carrière Monde, vrai Godot + vrai moteur) : activation des parcours par le
 // vrai bouton, puis les pages façon Effectif (choix de Léo du 22/11/2026) au clavier et à la souris : détection payée
 // après confirmation puis « Faite », six onglets, filtre de trajectoire local (aucune requête), tri par en-tête,
-// parcours individuel en petite fenêtre fermée par Échap, page entière en 1280 × 720, 1600 × 900 et 1920 × 1080,
+// parcours individuel en petite fenêtre (charge et réponse à l'ambition gardées en aplat) fermée par Échap, page entière en 1280 × 720, 1600 × 900 et 1920 × 1080,
 // consultations sans mutation de carrière. Captures : CD_ACADEMY_GRAPHICS=1.
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),assert=require('node:assert/strict'),{spawnSync}=require('node:child_process');
 const M=require('./helpers/carriere-monde.cjs');
@@ -94,6 +94,15 @@ func run() -> void:
  check(tries,"Tri par l'en-tête Âge, décroissant dans chaque étape")
  await enter(named("CentreVisuelJoueur0") as Control)
  check(named("CentreVisuelParcours")!=null and (named("CentreVisuelParcours") as Control).is_visible_in_tree(),"Parcours individuel en petite fenêtre")
+ # Charge de travail et réponse à l'ambition : le choix gardé par le moteur reste en aplat quand la fenêtre se rouvre.
+ check(choisi("CVCharge_equilibree"),"Charge par défaut en aplat : équilibrée")
+ await enter(named("CVCharge_intensive") as Control);await response()
+ check(choisi("CVCharge_intensive") and not choisi("CVCharge_equilibree"),"Charge intensive en aplat après le choix")
+ check(not choisi("CVAmbition_patienter"),"Ambition sans réponse au départ")
+ await enter(named("CVAmbition_patienter") as Control);await response()
+ check(choisi("CVAmbition_patienter"),"Réponse à l'ambition en aplat")
+ check(named("CVAmbition_accompagner") is Button and (named("CVAmbition_accompagner") as Button).disabled,"Une réponse par saison : les autres se figent")
+ check(choisi("CVCharge_intensive"),"Charge toujours en aplat après la réponse à l'ambition")
  var esc:=InputEventKey.new();esc.keycode=KEY_ESCAPE;esc.pressed=true;Input.parse_input_event(esc);await settle()
  var esc2:=InputEventKey.new();esc2.keycode=KEY_ESCAPE;esc2.pressed=false;Input.parse_input_event(esc2);await settle()
  check(named("CentreVisuelParcours")==null or not (named("CentreVisuelParcours") as Control).is_visible_in_tree(),"Échap ferme la petite fenêtre")
@@ -116,6 +125,10 @@ func run() -> void:
  print("ACADEMY UI: ",checks," checks, ",failures.size()," failures")
  app.bridge.stop()
  quit(0 if failures.is_empty() else 1)
+## Pastille en aplat (choix actif) de la petite fenêtre du parcours.
+func choisi(id:String) -> bool:
+ var b:=named(id) as Button
+ return b!=null and b.is_visible_in_tree() and str(b.accessibility_name).ends_with("· choisi")
 ## L'action ne doit envoyer aucune commande au moteur (filtre local).
 func command_free(action:Callable) -> void:
  var attente_avant:bool=app.waiting
