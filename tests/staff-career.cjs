@@ -72,6 +72,28 @@ test('Reconversion dédoublonnée : source joueur et visage exacts, aucun médec
  h.ctx.S.staffCareer.people.flat().find(p=>p.id===converted.id).appearanceId='different';
  assert.throws(()=>h.run('CDStaffCareer.validate(S)'),/visage/);
 });
+test('Reconversion : le staff garde exactement le visage affiché du joueur (variante de portrait-looks, banque, carrure)',()=>{
+ const looks=require('../native/engine/portrait-looks.cjs').createLooks(require('../native/engine/worker.cjs').nationalFacts);
+ const h=fixture();h.run('CDStaffCareer.initialize(S)');
+ h.ctx.nativePortraitLook=(player,world)=>{const up=world===true&&player.appearanceBankVersion===undefined,r=looks.resolve(player,up);return {appearanceId:r.appearanceId,appearanceBuild:r.appearanceBuild,bank:up||player.appearanceBankVersion===2?2:1};};
+ let found=null,shown=null;
+ for(let n=0;n<400&&!found;n++){
+  const p={id:'youth-0-1-'+n,name:'Ancien joueur '+n,pos:['R2','R1','R3','R4','R5','R6','R7','R8'][n%8],age:38,rating:78,fam:5,skills:{mental:75},dev:{careerMinutes:3000},appearanceBankVersion:2,appearanceId:'youth-0-1-'+n};
+  const look=looks.resolve(p,false);if(look.appearanceId===p.id)continue;
+  h.ctx.player=p;
+  if(h.run('CDStaffCareer.captureRetirement(S,player,0)')){found=p;shown=look;}
+ }
+ assert(found,'un joueur dont le visage affiché est une variante');
+ const converted=h.model().candidates.find(p=>p.sourcePlayerId===found.id);
+ assert(converted);assert.equal(converted.appearanceId,shown.appearanceId);assert.notEqual(converted.appearanceId,found.id);
+ assert.equal(converted.appearanceBankVersion,2);assert.equal(converted.appearanceBuild??null,shown.appearanceBuild);
+ const portraits=require('../native/engine/portraits.cjs'),face=portraits.describe({...found,appearanceId:shown.appearanceId,appearanceBuild:shown.appearanceBuild}),staffFace=portraits.describe(converted);
+ for(const k of ['appearanceId','seed','cell','faceWidth','jawWidth','zoom'])assert.equal(staffFace[k],face[k],k);
+ const serialized=JSON.stringify(h.ctx.S);h.ctx.S=JSON.parse(serialized);
+ assert.equal(h.run('CDStaffCareer.validate(S)'),true);assert.equal(JSON.stringify(h.ctx.S),serialized);
+ h.ctx.S.staffCareer.people.flat().find(p=>p.id===converted.id).appearanceId='autre:visage';
+ assert.throws(()=>h.run('CDStaffCareer.validate(S)'),/visage/);
+});
 test('Registre complet : texte compatible sauvegarde, pages bornées et annuaire immuable',()=>{
  const staff=require('../native/engine/staff.cjs');
  const database='rugby-world-2026-11-09-champ-v5',teams=staff.forDatabase(database).registry.clubs;
