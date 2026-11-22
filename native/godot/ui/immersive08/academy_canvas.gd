@@ -1027,10 +1027,6 @@ func _junior(parent: Control) -> void:
 		contexte = "période %d / %d" % [mini(tour + 1, total), total] if tour < total else "périodes terminées"
 	Kit.etiquette(parent, 24, 790, "Compétition junior", 600)
 	var phrase := "Calendrier indépendant du championnat pro" if pathway.get("available", false) else "Suivi des Espoirs dans Formation"
-	# Carrière Monde, temps 1 : le championnat Espoirs reste fermé (cadenas au Centre).
-	if pathway.get("closedModules", []).has("juniors"):
-		contexte = "fermé"
-		phrase = "Championnat Espoirs"
 	if not results.is_empty():
 		var dernier: Dictionary = results[-1]
 		var club: Dictionary = app.model.club

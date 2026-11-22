@@ -4,62 +4,11 @@ const Charte = preload("res://ui/charte.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const C = preload("res://ui/immersive08/components.gd")
 
-const ORANGE := Color("e0a04a")
-## Carrière Monde, temps 1 (22/11/2026) : modules encore fermés (ils lisent le championnat Espoirs).
-const MODULES := {"juniors": "Championnat Espoirs", "objectifs": "Objectifs", "plans": "Plans de carrière", "filieres": "Filières", "generations": "Générations"}
-
-## Affichage des modules fermés, choix de Léo en attente (planche A/B) : A = en place, grisés et cadenassés ;
-## B = retirés des onglets, regroupés dans une bande de cadenas en tête du Centre.
-static func variante() -> String:
-	return "B" if OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper() == "B" else "A"
-
-static func closed(data: Dictionary, module: String) -> bool:
-	return data.get("closedModules", []).has(module)
-
 ## Prix indexés envoyés par le moteur (carrière Monde) ; prix historiques sinon.
 static func cost(data: Dictionary, key: String, fallback: int, level: int = -1) -> int:
 	var value: Variant = data.get("costs", {}).get(key, null)
 	if level >= 0: value = value[level] if value is Array and level < value.size() else null
 	return int(value) if value is int or value is float else fallback
-
-## Cadenas : icône + un mot, orange (vigilance), jamais cliquable.
-static func lock(parent: Node, caption: String, id: String = "") -> PanelContainer:
-	var chip := PanelContainer.new()
-	chip.name = id if not id.is_empty() else "AcademyLock"
-	chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	chip.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	chip.add_theme_stylebox_override("panel", C.box(Color(ORANGE, .15), Color.TRANSPARENT, 6, 8))
-	var row := G.h(8)
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	chip.add_child(row)
-	var icon := C.icon("lock", 22, ORANGE)
-	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(icon)
-	var text := G.label(caption.to_upper(), 15, ORANGE, true)
-	text.name = (id + "Texte") if not id.is_empty() else "AcademyLockTexte"
-	row.add_child(text)
-	parent.add_child(chip)
-	return chip
-
-## Variante A : la décision fermée reste à sa place, grisée, avec son cadenas. Variante B : rien.
-static func _closed_row(parent: Node, caption: String, id: String) -> void:
-	if variante() == "B": return
-	var row := G.h(12)
-	row.name = id
-	parent.add_child(row)
-	row.add_child(G.label(caption, 15, G.MUTED))
-	lock(row, "Fermé", id + "Cadenas")
-
-## Variante B : les modules fermés regroupés en une bande de cadenas.
-static func _closed_band(parent: Node, data: Dictionary) -> void:
-	if variante() != "B" or data.get("closedModules", []).is_empty(): return
-	var band := HFlowContainer.new()
-	band.name = "AcademyClosedBand"
-	band.add_theme_constant_override("h_separation", 10)
-	band.add_theme_constant_override("v_separation", 8)
-	parent.add_child(band)
-	for module: String in data.closedModules:
-		lock(band, str(MODULES.get(module, module)), "AcademyClosed_" + module)
 
 static func _send(app: Control, data: Dictionary, command: String, payload: Dictionary, title: String = "", detail: String = "") -> void:
 	var args: Dictionary = data.context.duplicate()
@@ -120,9 +69,7 @@ static func build(app: Control, initial_tab: String = "") -> Control:
 	var summary := G.h(18)
 	paper.add_child(summary)
 	summary.add_child(G.metric(data.players.size(), "espoirs au centre"))
-	if closed(data, "juniors"):
-		if variante() == "A": lock(summary, "Périodes juniors", "AcademyJuniorRoundsLock")
-	else: summary.add_child(G.metric("%d / %d" % [data.juniorRound, data.totalRounds], "périodes juniors"))
+	summary.add_child(G.metric("%d / %d" % [data.juniorRound, data.totalRounds], "périodes juniors"))
 	summary.add_child(G.metric(G.euros(data.recruitBudget), "enveloppe de détection junior"))
 	var tabs := TabContainer.new()
 	tabs.name = "AcademyTabs"
@@ -141,10 +88,6 @@ static func build(app: Control, initial_tab: String = "") -> Control:
 		"Passerelle pro": _professionals.bind(app, data),
 		"Générations": _history.bind(data),
 	}
-	# Modules fermés (carrière Monde, temps 1) : variante B retire leurs onglets.
-	if variante() == "B":
-		if closed(data, "filieres"): builders.erase("Filières")
-		if closed(data, "generations"): builders.erase("Générations")
 	var lists: Array[VBoxContainer] = []
 	var selected := 0
 	for title: String in builders:
@@ -161,11 +104,6 @@ static func build(app: Control, initial_tab: String = "") -> Control:
 		var builder: Callable = builders[str(tabs.get_tab_control(index).name)]
 		builder.call(list)
 		scroll.add_child(list)
-	# Variante A : les onglets des modules fermés restent, marqués d'un cadenas.
-	tabs.add_theme_constant_override("icon_max_width", C.px(22))
-	for index in tabs.get_tab_count():
-		var module: String = {"Filières": "filieres", "Générations": "generations"}.get(str(tabs.get_tab_control(index).name), "")
-		if not module.is_empty() and closed(data, module): tabs.set_tab_icon(index, C.icon_texture("lock", ORANGE))
 	tabs.current_tab = selected
 	open_tab.call(selected)
 	tabs.tab_changed.connect(open_tab)
@@ -199,7 +137,6 @@ static func _preview(paper: VBoxContainer, app: Control, data: Dictionary, open:
 		G.fill(picture, true)
 		card.add_child(picture)
 		if not open: card.add_child(G.label("AU CALENDRIER DES ESPOIRS", 12, G.GOLD))
-		elif offer[0] == "Junior" and closed(data, "juniors"): lock(card, "Fermé", "AcademyPreviewJuniorLock")
 		card.add_child(G.label(offer[1], 20, G.INK, true))
 		card.add_child(G.wrap(offer[3], 13))
 	var follow := G.card(paper, G.accent_ink(app.accent))
@@ -217,19 +154,15 @@ static func _preview(paper: VBoxContainer, app: Control, data: Dictionary, open:
 	row.add_child(go)
 
 static func _center(list: VBoxContainer, app: Control, data: Dictionary) -> void:
-	_closed_band(list, data)
-	var network_closed := closed(data, "filieres")
-	if network_closed: _closed_row(list, "Cohésion · Réputation", "AcademyPulseClosed")
-	else:
-		var pulse := G.h(24)
-		list.add_child(pulse)
-		G.gauge(pulse, "Cohésion du centre", float(data.cohesion))
-		G.gauge(pulse, "Réputation", float(data.reputation), 100, G.GOLD)
+	var world: bool = data.get("world", false)
+	var pulse := G.h(24)
+	list.add_child(pulse)
+	G.gauge(pulse, "Cohésion du centre", float(data.cohesion))
+	G.gauge(pulse, "Réputation", float(data.reputation), 100, G.GOLD)
 	list.add_child(G.section("Préparer la prochaine génération"))
 	var scout := cost(data, "scout", 35000)
 	_action(list, app, data, "DÉTECTION ANNUELLE · %s" % G.euros(scout), "academy_scout", {}, scout, data.nextScouted)
-	if closed(data, "juniors"): _closed_row(list, "Plan des rencontres juniors", "AcademyModeClosed")
-	else: _choice(list, "Plan des rencontres juniors · " + str(data.mode), [["equilibre","Équilibré"],["performance","Performance"],["developpement","Développement"],["repos","Repos"]], func(value): _send(app, data, "academy_mode", {"mode":value})).disabled = data.locked
+	_choice(list, "Plan des rencontres juniors · " + str(data.mode), [["equilibre","Équilibré"],["performance","Performance"],["developpement","Développement"],["repos","Repos"]], func(value): _send(app, data, "academy_mode", {"mode":value})).disabled = data.locked
 	if data.division == "elite":
 		list.add_child(G.section("Le XV junior", "Composé automatiquement par l’entraîneur des Espoirs : les matchs des jeunes sont simulés."))
 	list.add_child(G.separator())
@@ -238,15 +171,10 @@ static func _center(list: VBoxContainer, app: Control, data: Dictionary) -> void
 		var level: int = int(data[kind])
 		var fee: int = cost(data, kind, (level + 1) * (85000 if kind == "facilities" else 55000), level) if level < 3 else 0
 		_action(list, app, data, "%s %d/3 · niveau suivant %s" % ["Installations" if kind == "facilities" else "Éducateurs", level, G.euros(fee)] if level < 3 else "%s 3/3" % ("Installations" if kind == "facilities" else "Éducateurs"), "academy_upgrade", {"kind":kind}, fee, level >= 3)
-	if closed(data, "objectifs"): _closed_row(list, "Objectif annuel", "AcademyGoalClosed")
-	else: _choice(list, "Objectif annuel · " + str(data.goal), [["formation","Deux objectifs individuels"],["promotions","Deux promotions professionnelles"],["prets","Un prêt à 200 minutes"]], func(value): _send(app, data, "academy_goal", {"goal":value})).disabled = data.locked
-	if network_closed:
-		_closed_row(list, "Identité de formation", "AcademyIdentityClosed")
-		_closed_row(list, "Réunion de cohésion", "AcademyMeetingClosed")
-		return
+	_choice(list, "Objectif annuel · " + str(data.goal), [["formation","Deux objectifs individuels"],["promotions","Deux promotions professionnelles"],["prets","Un prêt à 200 minutes"]], func(value): _send(app, data, "academy_goal", {"goal":value})).disabled = data.locked
 	_choice(list, "Identité de formation · " + str(data.identity), [["polyvalence","Polyvalence"],["mouvement","Mouvement"],["puissance","Puissance"],["defense","Défense"]], func(value): _send(app, data, "academy_identity", {"identity":value})).disabled = data.locked
 	_action(list, app, data, "RÉUNION DE COHÉSION · 2 000 €", "academy_meeting", {}, 2000)
-	list.add_child(G.wrap("Cohésion %d/100 · réputation %d/100. Trois réunions maximum par saison ; les effets annuels sont enregistrés une seule fois." % [data.cohesion, data.reputation], 14))
+	if not world: list.add_child(G.wrap("Cohésion %d/100 · réputation %d/100. Trois réunions maximum par saison ; les effets annuels sont enregistrés une seule fois." % [data.cohesion, data.reputation], 14))
 	for result: Dictionary in data.results:
 		list.add_child(G.wrap("Période %d · %s  %d – %d  %s" % [int(result.round)+1, result.homeCenter, result.score[0], result.score[1], result.awayCenter], 15))
 
@@ -268,9 +196,8 @@ static func _player(parent: Node, app: Control, data: Dictionary, p: Dictionary)
 	var card := G.card(parent, G.accent_ink(app.accent))
 	card.set_meta("academy_player", p.id)
 	G.person(card, p, p.name, "%s · %d ans · %s / %s · condition %d%%" % [p.pos, p.age, G.rating_text(p,true), G.potential_text(p), p.condition])
-	if not closed(data, "juniors"):
-		if float(p.target) > 0: G.gauge(card, "Minutes juniors / objectif", float(p.minutes), float(p.target))
-		card.add_child(G.wrap("%d minutes juniors · objectif %d · parcours %s" % [p.minutes, p.target, p.path], 15))
+	if float(p.target) > 0: G.gauge(card, "Minutes juniors / objectif", float(p.minutes), float(p.target))
+	card.add_child(G.wrap("%d minutes juniors · objectif %d · parcours %s" % [p.minutes, p.target, p.path], 15))
 	var detail := VBoxContainer.new()
 	detail.visible = false
 	card.add_child(G.button("OUVRIR LE PARCOURS INDIVIDUEL", func():
@@ -280,20 +207,12 @@ static func _player(parent: Node, app: Control, data: Dictionary, p: Dictionary)
 	card.add_child(G.separator())
 
 static func _player_details(detail: VBoxContainer, app: Control, data: Dictionary, p: Dictionary) -> void:
-	# Carrière Monde (temps 1) : accompagnement, U20, engagements et contrat pro ouverts ; le reste lit les Espoirs.
-	if closed(data, "plans"):
-		for caption in ["Trajectoire", "Objectif de minutes", "Objectif individuel"]: _closed_row(detail, caption, "AcademyPlayerClosed" + caption.replace(" ", ""))
-		var mentor := cost(data, "mentor", 8000)
-		for focus in ["technique","mental","physique"]:
-			_action(detail, app, data, "ACCOMPAGNEMENT %s · %s" % [str(focus).to_upper(), G.euros(mentor)], "academy_mentor", {"playerId":p.id,"focus":focus}, mentor, data.weekMentored)
-		for caption in ["Mentorat de saison", "Spécialisation", "Charge de travail", "Entretien", "Ambition"]: _closed_row(detail, caption, "AcademyPlayerClosed" + caption.replace(" ", ""))
-		_open_player_decisions(detail, app, data, p)
-		return
 	_choice(detail, "Trajectoire choisie", [["equilibre","Équilibre"],["minutes","Donner des minutes"],["progression","Développer le potentiel"],["professionnel","Préparer le passage pro"]], func(value): _send(app, data, "academy_path", {"playerId":p.id,"strategy":value})).disabled = data.locked
 	_choice(detail, "Objectif de minutes", [[480,"480 minutes"],[960,"960 minutes"],[1440,"1 440 minutes"]], func(value): _send(app, data, "academy_target", {"playerId":p.id,"minutes":value})).disabled = data.locked
 	_choice(detail, "Objectif individuel · trois joueurs maximum", [["minutes","Temps de jeu"],["progression","Progression"],["regularite","Régularité"]], func(value): _send(app, data, "academy_plan", {"playerId":p.id,"target":value})).disabled = data.locked
+	var mentor := cost(data, "mentor", 8000)
 	for focus in ["technique","mental","physique"]:
-		_action(detail, app, data, "ACCOMPAGNEMENT %s · 8 000 €" % str(focus).to_upper(), "academy_mentor", {"playerId":p.id,"focus":focus}, 8000, data.weekMentored)
+		_action(detail, app, data, "ACCOMPAGNEMENT %s · %s" % [str(focus).to_upper(), G.euros(mentor)], "academy_mentor", {"playerId":p.id,"focus":focus}, mentor, data.weekMentored)
 	var mentors: Array = [["", "Choisir un professionnel du même poste"]]
 	for senior: Dictionary in data.seniors:
 		if senior.pos == p.pos and senior.age >= 23: mentors.append([senior.id, senior.name])
@@ -334,11 +253,11 @@ static func _scouting(list: VBoxContainer, app: Control, data: Dictionary) -> vo
 		list.add_child(G.separator())
 
 static func _network(list: VBoxContainer, app: Control, data: Dictionary) -> void:
-	if closed(data, "filieres"):
-		lock(list, "Filières", "AcademyNetworkClosed")
-		return
-	list.add_child(G.section("Les filières de recrutement", "Observations, essai et accord du joueur. Les autorisations internationales nécessaires restent à vérifier."))
-	for region in ["Atlantique","Bretagne","Centre","Sud-Ouest","Mediterranee","Alpes"]:
+	var world: bool = data.get("world", false)
+	list.add_child(G.section("Les filières de recrutement", "" if world else "Observations, essai et accord du joueur. Les autorisations internationales nécessaires restent à vérifier."))
+	# Carrière Monde : grandes zones du rugby envoyées par le moteur ; « national » = l'union du club.
+	var home := str(data.get("homeUnion", "FR"))
+	for region in data.get("regions", ["Atlantique","Bretagne","Centre","Sud-Ouest","Mediterranee","Alpes"]):
 		_action(list, app, data, "DÉTECTER · %s · 3 000 €" % region, "academy_discover", {"region":region}, 3000)
 	for feeder: Dictionary in data.feeders:
 		_action(list, app, data, "PARTENARIAT · %s · 2 000 €" % feeder.name, "academy_partner", {"feederId":feeder.id}, 2000, data.partners.has(feeder.id))
@@ -348,7 +267,7 @@ static func _network(list: VBoxContainer, app: Control, data: Dictionary) -> voi
 		list.add_child(G.wrap("Observations %d/3 · essai %s · niveau %s · potentiel %s" % [p.scouted,"réalisé" if p.trial else "à organiser",G.rating_text(p),G.potential_text(p)],14))
 		_action(list, app, data, "OBSERVER · 500 €", "academy_watch", {"playerId":p.id}, 500, p.scouted >= 3)
 		_action(list, app, data, "ESSAI · 1 000 €", "academy_trial", {"playerId":p.id}, 1000, p.trial or p.scouted == 0)
-		if p.union != "FR": _action(list, app, data, "ENREGISTRER L’AUTORISATION", "academy_clearance", {"playerId":p.id}, -1, p.age < 18 or not p.trial or p.get("clearanceRecorded",false))
+		if p.union != home: _action(list, app, data, "ENREGISTRER L’AUTORISATION", "academy_clearance", {"playerId":p.id}, -1, p.age < 18 or not p.trial or p.get("clearanceRecorded",false))
 		_action(list, app, data, "PROPOSER LE PROJET · 8 000 € SI ACCEPTÉ", "academy_feeder_recruit", {"playerId":p.id}, 8000, p.scouted < 2 or not p.trial or p.age < 16)
 
 static func _professionals(list: VBoxContainer, app: Control, data: Dictionary, player_id: String = "") -> void:
@@ -371,11 +290,11 @@ static func _professionals(list: VBoxContainer, app: Control, data: Dictionary, 
 	if data.loans.is_empty() and not world: list.add_child(G.wrap("Aucun prêt en cours. Les joueurs de la feuille de 23 doivent d’abord être retirés de la sélection.",15))
 
 static func _history(list: VBoxContainer, data: Dictionary) -> void:
-	if closed(data, "generations"):
-		lock(list, "Générations", "AcademyHistoryClosed")
-		return
-	list.add_child(G.section("La mémoire des générations", "Quinze saisons maximum, archivées une seule fois. Retrouve les résultats des générations précédentes."))
-	if data.generations.is_empty(): list.add_child(G.wrap("La première génération sera archivée à la fin de cette saison.",18))
+	var world: bool = data.get("world", false)
+	list.add_child(G.section("La mémoire des générations", "" if world else "Quinze saisons maximum, archivées une seule fois. Retrouve les résultats des générations précédentes."))
+	if data.generations.is_empty():
+		if world: list.add_child(G.metric(0, "générations archivées"))
+		else: list.add_child(G.wrap("La première génération sera archivée à la fin de cette saison.",18))
 	for generation: Dictionary in data.generations:
 		list.add_child(G.section("Saison %s" % G.season_label(generation.season), "%d joueurs suivis · %d promotions · réputation %d" % [generation.players.size(),generation.graduates,generation.reputation]))
 		for p: Dictionary in generation.players:

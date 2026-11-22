@@ -110,8 +110,6 @@ func _preview(surface: Panel) -> void:
 		# Chaque carte mène quelque part (décision de Léo du 21/11/2026) ; le « i » reste au-dessus du bouton.
 		Pieces.rendre_cliquable(card, Vector2(483, 590), _destination(str(offer[0])), "CentreOffer%sLien" % offer[0], str(offer[1]), "", 12)
 		if not open: _chip_fitted(card, Vector2(27, 27), "AU CALENDRIER DES ESPOIRS", GOLD, 423)
-		# Carrière Monde, temps 1 : le championnat Espoirs reste fermé (cadenas + un mot).
-		elif offer[0] == "Junior" and Academy.closed(data, "juniors"): Reperes.pastille(card, 27, 52, "Fermé", Academy.ORANGE, "lock", "CentreJuniorFerme", 22)
 		D.line(card, Vector2(15, 476), Vector2(468, 476))
 		var icon := C.icon(offer[3], 32, GOLD)
 		card.add_child(icon)
@@ -216,8 +214,7 @@ func _summary() -> void:
 	var round := _pathway_status()
 	if active:
 		round = "%s / %s périodes" % [G.n(data.get("juniorRound", "—")), G.n(data.get("totalRounds", "—"))]
-	if Academy.closed(data, "juniors"): Reperes.pastille(panel, 22, 390 + dy, "Fermé", Academy.ORANGE, "lock", "CentreSaisonJuniorFermee", 26)
-	else: D.text(panel, 22, 394 + dy, round, 39, C.IVORY, 700, 672)
+	D.text(panel, 22, 394 + dy, round, 39, C.IVORY, 700, 672)
 	D.button(panel, Rect2(21, 439 + dy, 676, 55), "Consulter les Espoirs", func(): app._navigate("Formation"), false, "arrow", false, ACCENT, "CentreOpenAcademy")
 	var dl := dy - 83
 	var lower := D.panel(self, Rect2(1531, 749 + dy, 717, 474 - dy), "De l’académie à l’équipe première", "trophy", "", "CentreDevelopment")
