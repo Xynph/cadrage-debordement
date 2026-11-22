@@ -1052,6 +1052,13 @@ func capturer(entree: Dictionary, o: Dictionary, taille: Vector2i) -> void:
 		print("ECRANS_FILMES retour de tuile : ", load("res://ui/retour_tuile.gd").simuler(self))
 		print("ECRANS_FILMES lignes : ", load("res://ui/survol_ligne.gd").simuler(self), " survolée(s), ", load("res://ui/survol_ligne.gd").simuler_appui(self), " enfoncée(s)")
 		await stabiliser()
+	# CD_FILM_BLESSURE=1 : ouvre la petite fenêtre « blessure » du premier blessé (pastille Blessé de l'écran).
+	if OS.get_environment("CD_FILM_BLESSURE") == "1":
+		var pastilles := get_nodes_in_group(&"ouvre_blessure")
+		print("ECRANS_FILMES blessure : ", pastilles.size(), " pastille(s)")
+		if not pastilles.is_empty() and pastilles[0] is BaseButton:
+			(pastilles[0] as BaseButton).pressed.emit()
+			await stabiliser()
 	if OS.get_environment("CD_FILM_AUDIT_TUILES") == "1":
 		for ligne in load("res://ui/retour_tuile.gd").auditer(self): print("AUDIT_TUILE ", entree.id, "|", ligne)
 	var prise: Dictionary = await image_stable()

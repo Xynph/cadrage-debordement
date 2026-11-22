@@ -118,6 +118,25 @@ func _draw() -> void:
 		person.add_child(words)
 		words.add_child(S.wrap(str(player.get("name", "")), 21, S.GOLD))
 		words.add_child(S.label(str(player.get("pos", "")), 14))
+		if int(player.get("injury", 0)) > 0:
+			# Pastille Blessé : clic = petite fenêtre « blessure » (silhouette, retour, jauges).
+			var pastille := Button.new()
+			pastille.name = "MedicalInjuryChip"
+			pastille.text = "✚ Blessé · %d sem." % int(player.injury)
+			pastille.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			pastille.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+			pastille.add_theme_color_override("font_color", Color("d9634f"))
+			pastille.add_theme_color_override("font_hover_color", Color("d9634f"))
+			for etat: String in ["normal", "hover", "pressed", "focus"]:
+				var style := StyleBoxFlat.new()
+				style.bg_color = Color(Color("d9634f"), .15 if etat != "hover" else .26)
+				style.set_corner_radius_all(6)
+				style.content_margin_left = 10; style.content_margin_right = 10; style.content_margin_top = 3; style.content_margin_bottom = 3
+				pastille.add_theme_stylebox_override(etat, style)
+			var pid := selected_id
+			pastille.pressed.connect(func(): preload("res://ui/immersive08/fenetre_blessure.gd").ouvrir_sur_salle(self, app, pid, pastille))
+			pastille.add_to_group(&"ouvre_blessure")
+			words.add_child(pastille)
 		facts_scroll.add_child(S.label("Les repères actuels", 18, S.GOLD))
 		facts_scroll.add_child(S.label("Condition : %s / 100" % str(player.get("condition", "—")), 16))
 		var fatigue: Variant = player.get("physicalLoad", "—")
