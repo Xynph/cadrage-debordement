@@ -54,6 +54,9 @@ const EXTRAS := [
 	{"id": "v2-recrutement-offre", "libelle": "Recrutement : écran Offre au joueur", "type": "recrutement_etape", "etape": "offre"},
 	{"id": "v2-recrutement-confirmation", "libelle": "Recrutement : confirmation en place de l'offre", "type": "recrutement_etape", "etape": "offre_confirmation"},
 	{"id": "v2-recrutement-offre-fenetre", "libelle": "Recrutement : petite fenêtre du salaire sur l'offre", "type": "recrutement_etape", "etape": "offre_fenetre"},
+	{"id": "negociation-promesses", "libelle": "Négociation avec l'agent : promesses (CD_VARIANTE_VISUELLE)", "type": "recrutement_etape", "etape": "offre"},
+	{"id": "negociation-contrat", "libelle": "Négociation avec l'agent : contrat après une contre-offre", "type": "recrutement_etape", "etape": "offre_contre", "puis": ["NegoRole_rotation", "NegoEtapeContrat"]},
+	{"id": "negociation-disponibilite", "libelle": "Fiche joueur : petite fenêtre Disponibilité", "type": "joueur", "onglet": 3, "presser": "PlayerSaleToggle"},
 	{"id": "v2-recrutement-observation", "libelle": "Recrutement : confirmation en place de l'observation", "type": "recrutement_etape", "etape": "observation"},
 	{"id": "fiche-club", "libelle": "Fiche d'un club adverse", "type": "club"},
 	{"id": "classements-rencontre", "libelle": "Classements · sous-page d'une rencontre", "type": "classements_page", "page": "rencontre"},
@@ -646,6 +649,29 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			if cible == null or cible.disabled: return {"statut": "indisponible", "note": "action absente ou grisée pour la piste choisie"}
 			cible.pressed.emit()
 			await stabiliser()
+			if etape == "offre_contre":
+				# Proposition basse envoyée au moteur, puis l'offre rouverte : l'agent a répondu par une contre-offre.
+				var champ := app.find_child("OfferSalary", true, false) as SpinBox
+				var envoi := app.find_child("RecrutementPageValider", true, false) as Button
+				if champ == null or envoi == null or envoi.disabled: return {"statut": "indisponible", "note": "offre non envoyable"}
+				champ.value = maxf(champ.min_value, roundf(champ.value * 0.8 / 100.0) * 100.0)
+				(envoi.get_meta("source") as Button).pressed.emit()
+				await stabiliser()
+				while app.waiting: await process_frame
+				await stabiliser()
+				app.management_ui.erase("recrutement_page")
+				app._navigate("Recrutement")
+				await stabiliser()
+				liste = app.find_child("CarnetMarket", true, false)
+				cible = liste.find_child("OfferRecruitment", true, false) as Button if liste != null else null
+				if cible == null or cible.disabled: return {"statut": "indisponible", "note": "offre non rouvrable après la contre-offre"}
+				cible.pressed.emit()
+				await stabiliser()
+			for nom: Variant in ecran.get("puis", []):
+				var bouton := app.find_child(str(nom), true, false) as Button
+				if bouton != null and not bouton.disabled:
+					bouton.pressed.emit()
+					await stabiliser()
 			if etape == "offre_fenetre":
 				var salaire := app.find_child("OffreRegleEcartZoneLien", true, false) as Button
 				if salaire == null: return {"statut": "echec", "note": "chiffre du salaire absent de l'offre"}
@@ -710,6 +736,18 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			var ouvert: bool = app.navigation_controller.open_entity({"kind": "player", "id": ident(effectif[0].get("id"))})
 			await stabiliser()
 			if not ouvert or app.route != "Effectif" or not bool(app.get_meta("immersive08_full_player", false)): return {"statut": "echec", "note": "fiche joueur non ouverte"}
+			if ecran.has("onglet") and int(app.management_ui.get("immersive_player_tab", 0)) != int(ecran.onglet):
+				var onglet_fiche := app.find_child("FullPlayerTab%d" % int(ecran.onglet), true, false) as Button
+				if onglet_fiche != null: onglet_fiche.pressed.emit()
+				else:
+					app.management_ui.immersive_player_tab = int(ecran.onglet)
+					app.navigation_controller.open_entity({"kind": "player", "id": ident(effectif[0].get("id"))})
+				await stabiliser()
+			if ecran.has("presser"):
+				var bouton_fiche := app.find_child(str(ecran.presser), true, false) as Button
+				if bouton_fiche == null: return {"statut": "echec", "note": "bouton %s absent" % ecran.presser}
+				bouton_fiche.pressed.emit()
+				await stabiliser()
 		"mini_fiche":
 			# Le bureau séparé n'a pas de souris : la mini-fiche est affichée par programme sur le nom d'un joueur
 			# (même appel que le survol, ui/immersive08/mini_fiche.gd).

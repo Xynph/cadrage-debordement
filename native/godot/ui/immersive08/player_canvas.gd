@@ -768,7 +768,7 @@ static func _sale(card:Panel,app:Control,player:Dictionary,width:float) -> void:
 	elif not blocked.is_empty() and not pending:
 		D.text(card,24,142,blocked,26,C.ALERT,500,width-48).name = "PlayerSaleReason"
 	var half := (width-60)/2.0
-	var toggle := D.button(card,Rect2(24,162,half,52),"Retirer du marché" if listed else "Proposer aux autres clubs",func(): Sales.toggle(app,player),not listed,"money",false,app.accent,"PlayerSaleToggle")
+	var toggle := D.button(card,Rect2(24,162,half,52),"Retirer du marché" if listed else "Proposer aux autres clubs",func(): (preload("res://ui/negociation_agent.gd").ouvrir_disponibilite(card.get_parent(),app,player) if not preload("res://ui/negociation_agent.gd").variante().is_empty() else Sales.toggle(app,player)),not listed,"money",false,app.accent,"PlayerSaleToggle")
 	toggle.add_theme_font_size_override("font_size",maxi(14,C.px(28)))
 	toggle.disabled = pending or (not listed and not blocked.is_empty()) or not app._live().is_empty()
 	if toggle.disabled: toggle.tooltip_text = blocked if not blocked.is_empty() else status

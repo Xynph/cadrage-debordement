@@ -192,7 +192,10 @@ static func open(app: Control, player: Dictionary, recruiting: bool, answer: Str
 		if ancien != null: (ancien as Control).visible = false
 	var ctx := {"app":app, "player":player, "quote":quote, "salary":salary, "years":years, "first_season":first_season,
 		"negotiation":negotiation, "phase":phase, "reuse":reuse, "prolongation":not recruiting}
-	if recruiting: preload("res://ui/offre_visuelle.gd").construire(body, ctx)
+	# Négociation avec l'agent (planche FM 18, CD_VARIANTE_VISUELLE=A|B) : sans variable, écran inchangé.
+	var nego := preload("res://ui/negociation_agent.gd")
+	if not nego.variante().is_empty(): nego.construire(body, ctx, nego.variante())
+	elif recruiting: preload("res://ui/offre_visuelle.gd").construire(body, ctx)
 	else: Prolongation.construire(body, ctx)
 	dialog.get_ok_button().text = "AUTORISER LA SIGNATURE SI ACCORD"
 	dialog.get_ok_button().tooltip_text = "Envoie ces conditions. Si le joueur accepte, le contrat est signé et la prime est débitée ; sinon, seule la discussion est enregistrée. Annuler ne transmet aucune proposition."
