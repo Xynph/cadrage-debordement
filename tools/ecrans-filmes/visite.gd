@@ -522,11 +522,11 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				lien.pressed.emit()
 				await stabiliser()
 		"entrainement_onglet":
-			app._navigate("Composition")
-			await stabiliser()
-			var onglet_entrainement := app.find_child("TacticsTab4", true, false) as Button
-			if onglet_entrainement == null: return {"statut": "echec", "note": "onglet Entraînement absent"}
-			onglet_entrainement.pressed.emit()
+			# Plan d'entraînement complet (même chemin que le bouton « Plan d'entraînement » de la Tactique) : l'onglet
+			# Entraînement de la Composition n'est qu'un résumé et n'ouvre pas la page complète.
+			if not app.management_ui.get("immersive_training") is Dictionary: app.management_ui.immersive_training = {}
+			app.management_ui.immersive_training.tab = int(ecran.onglet)
+			app.Immersive.open_training(app)
 			await stabiliser()
 			var entrainement := app.find_child("ImmersiveTraining", true, false)
 			if entrainement == null: return {"statut": "echec", "note": "entraînement non ouvert"}
