@@ -5,14 +5,16 @@ extends RefCounted
 ## quelles dans des cases carrées : sur une photo en pied, le visage devient minuscule.
 ## Ici, on cherche le visage sur une copie réduite de la photo (plaque de peau épaisse, haute et centrale :
 ## pas une main levée, un bras collé à la tête, des avant-bras croisés ni le texte ou le fond rouge d'une affiche ;
-## largeur de tête lue sur la peau du visage et la silhouette) et on rend un portrait buste (tête dans le tiers haut, centrée). Sans visage
+## largeur de tête lue sur la peau du visage et la silhouette, et aussi, pour un visage à moitié dans l'ombre ou peu
+## éclairé, sur sa hauteur et sur la peau sombre autour ; un poing levé loin de l'axe du corps perd face au visage)
+## et on rend un portrait buste (tête dans le tiers haut, centrée). Sans visage
 ## trouvé : carré en haut au centre pour une photo en hauteur dont le sujet se détache, photo entière sinon.
 ## Rien n'est écrit dans le pack : le résultat (rectangle en fractions de l'image) est gardé en
 ## mémoire et dans le profil du joueur (`<profil>/recadrage-visages.json`, profil = CD_GODOT_DATA_DIR sinon
 ## le dossier de données du jeu, comme main.gd).
 ## Exemple : `RecadrageVisage.region(chemin, image)` → Rect2(0.31, 0.04, 0.38, 0.25).
 
-const VERSION := 3
+const VERSION := 4
 const CACHE_NAME := "recadrage-visages.json"
 ## Côté le plus long de la copie analysée (px) : de quoi voir un visage d'une dizaine de px sur une photo en pied.
 const ANALYSE := 160
@@ -62,6 +64,17 @@ static func _sauver() -> void:
 	if f == null: return
 	f.store_string(JSON.stringify({"version": VERSION, "regions": _regions}))
 	f.close()
+
+## Peau relâchée (visage dans l'ombre) : teinte de peau même sombre et moins rouge.
+static func _peau_relachee(r: int, g: int, b: int) -> bool:
+	var lum := 0.299 * r + 0.587 * g + 0.114 * b
+	var cb := 128.0 - 0.168736 * r - 0.331264 * g + 0.5 * b
+	var cr := 128.0 + 0.5 * r - 0.418688 * g - 0.081312 * b
+	return cb >= 77.0 and cb <= 127.0 and cr >= 133.0 and cr <= 175.0 and lum > 12.0 and r > g and r >= b and g * 10 >= r * 3 and b * 20 <= g * 23
+
+static func _peau_relachee_px(px: PackedByteArray, i: int, fg: PackedByteArray, sur_sujet: bool) -> bool:
+	if sur_sujet and fg[i] == 0: return false
+	return px[i * 4 + 3] >= 128 and _peau_relachee(px[i * 4], px[i * 4 + 1], px[i * 4 + 2])
 
 ## Analyse pure (sans cache) : rectangle carré en fractions de l'image.
 static func detecter(source: Image) -> Rect2:
@@ -157,6 +170,16 @@ static func detecter(source: Image) -> Rect2:
 	var epaisseur_visage := 0
 	var pile := PackedInt32Array()
 	var numero := 0
+	# Axe du corps : médiane des colonnes du sujet dans le tiers bas. Un poing ou une main levés loin de cet axe
+	# (plus de 15 % de la largeur) perdent face au visage, même barbu (peu de peau).
+	var colonnes: Array[int] = []
+	for y in range(h * 2 / 3, h):
+		for x in w:
+			if fg[y * w + x] == 1: colonnes.append(x)
+	var axe_corps := w / 2.0
+	if colonnes.size() >= w:
+		colonnes.sort()
+		axe_corps = float(colonnes[colonnes.size() / 2])
 	var bande0 := roundi(w * 0.15)
 	var bande1 := roundi(w * 0.85)
 	for depart in n:
@@ -179,7 +202,7 @@ static func detecter(source: Image) -> Rect2:
 			# Point du visage : épais, haut et central, pris dans la bande centrale (un fond d'affiche ou une chemise éclairée
 			# collés au visage ne le déportent pas).
 			if cx >= bande0 and cx <= bande1 and epaisseur[i] >= 2:
-				var valeur := pow(epaisseur[i], 0.75) * maxf(0.05, 1.0 - 1.25 * cy / h) * (1.0 - absf(cx - w / 2.0) / w)
+				var valeur := pow(epaisseur[i], 0.75) * maxf(0.05, 1.0 - 1.25 * cy / h) * (1.0 - absf(cx - w / 2.0) / w) * maxf(0.3, 1.0 - 1.5 * maxf(0.0, absf(cx - axe_corps) - 0.15 * w) / w)
 				if valeur > meilleur_point or (valeur == meilleur_point and i < point):
 					meilleur_point = valeur
 					plus_epais = epaisseur[i]
@@ -200,6 +223,8 @@ static func detecter(source: Image) -> Rect2:
 	var haut_meilleure := h
 	var x0m := w
 	var x1m := 0
+	var coeur_haut := 0
+	var coeur_bas := 0
 	if meilleure >= 0:
 		# Visage seul : cœur épais autour du point le plus épais, regonflé de son épaisseur ; un bras collé au visage,
 		# plus fin, reste dehors.
@@ -207,10 +232,14 @@ static func detecter(source: Image) -> Rect2:
 		var coeur := PackedByteArray(); coeur.resize(n)
 		coeur[coeur_depart] = 1
 		pile.append(coeur_depart)
+		coeur_haut = coeur_depart / w
+		coeur_bas = coeur_haut
 		while not pile.is_empty():
 			var i := pile[pile.size() - 1]
 			pile.remove_at(pile.size() - 1)
 			var cx := i % w
+			coeur_haut = mini(coeur_haut, i / w)
+			coeur_bas = maxi(coeur_bas, i / w)
 			for v: int in [i - 1 if cx > 0 else -1, i + 1 if cx < w - 1 else -1, i - w, i + w]:
 				if v < 0 or v >= n or coeur[v] == 1 or etiquettes[v] != meilleure or epaisseur[v] < seuil: continue
 				coeur[v] = 1
@@ -271,6 +300,7 @@ static func detecter(source: Image) -> Rect2:
 					if gauche < 0: gauche = x
 					droite = x
 			if gauche >= 0: largeur_peau = maxi(largeur_peau, droite - gauche + 1)
+		var saut := maxi(2, epaisseur_visage / 2)
 		# … et d'après la silhouette au niveau du front (cheveux compris), si le fond s'en distingue.
 		var yf := mini(h - 1, y0 + maxi(2, h / 50))
 		var a := cxi
@@ -287,6 +317,70 @@ static func detecter(source: Image) -> Rect2:
 			silhouette_ok = false
 		# Visage à moitié dans l'ombre : la peau n'en montre qu'une moitié ; l'épaisseur donne un minimum.
 		largeur = maxi(largeur, maxi(3, roundi(epaisseur_visage * 2.4)))
+		# … et sa hauteur : la peau d'un visage éclairé d'un seul côté est une bande haute et étroite ; un visage
+		# est à peu près 1,3 fois plus haut que large (cœur épais + bords perdus au seuil d'épaisseur).
+		var largeur_haute := (coeur_bas - coeur_haut + 1 + 1.1 * epaisseur_visage) / 1.3
+		if largeur_haute > largeur * 1.6: largeur = mini(roundi(largeur_haute), largeur * 2)
+		# Visage dans l'ombre (studio sombre, peau foncée) : peau relâchée (sombre, rouge moins franc) autour du
+		# visage, d'un seul tenant, sur la hauteur d'un visage ; si le fond lui-même passe pour de la peau (bordeaux),
+		# seulement sur le sujet.
+		var fond_peau := _peau_relachee(fr, fv, fb)
+		# Seulement pour un visage sombre (peau du visage peu éclairée) : sur un visage bien éclairé, la peau relâchée
+		# prendrait les cheveux ou la barbe.
+		var somme_lum := 0.0
+		var nb_lum := 0
+		for i in n:
+			if peau[i] == 1:
+				somme_lum += 0.299 * px[i * 4] + 0.587 * px[i * 4 + 1] + 0.114 * px[i * 4 + 2]
+				nb_lum += 1
+		var lum_visage := somme_lum / maxi(1, nb_lum)
+		# (ou un peu moins sombre mais réduit à quelques pixels de peau : visage barbu levé vers le ciel)
+		var visage_sombre := lum_visage < 100.0 or (lum_visage < 115.0 and epaisseur_visage <= 2)
+		var portee := roundi(largeur * 1.5)
+		var largeurs: Array[int] = []
+		var milieux_relaches: Array[float] = []
+		var centre_relache := -1.0
+		var fin_relachee := mini(h, y0 + roundi(largeur * 1.1) + 1) if visage_sombre else y0
+		for y in range(y0, fin_relachee):
+			var c := -1
+			for d in range(0, demi + 1):
+				if cxi - d >= 0 and (peau[y * w + cxi - d] == 1 or _peau_relachee_px(px, y * w + cxi - d, fg, fond_peau)):
+					c = cxi - d
+					break
+				if cxi + d < w and (peau[y * w + cxi + d] == 1 or _peau_relachee_px(px, y * w + cxi + d, fg, fond_peau)):
+					c = cxi + d
+					break
+			if c < 0: continue
+			var gauche := c
+			var droite := c
+			var vide := 0
+			var x := c - 1
+			while x >= maxi(0, cxi - portee) and vide <= saut:
+				if peau[y * w + x] == 1 or _peau_relachee_px(px, y * w + x, fg, fond_peau):
+					gauche = x
+					vide = 0
+				else:
+					vide += 1
+				x -= 1
+			vide = 0
+			x = c + 1
+			while x <= mini(w - 1, cxi + portee) and vide <= saut:
+				if peau[y * w + x] == 1 or _peau_relachee_px(px, y * w + x, fg, fond_peau):
+					droite = x
+					vide = 0
+				else:
+					vide += 1
+				x += 1
+			largeurs.append(droite - gauche + 1)
+			milieux_relaches.append((gauche + droite + 1) / 2.0)
+		if largeurs.size() >= 3:
+			largeurs.sort()
+			# Ligne large mais pas la plus large (une oreille, un reflet) : 3/4 des lignes.
+			var relachee := largeurs[largeurs.size() * 3 / 4]
+			if relachee > largeur * 1.2:
+				largeur = mini(relachee, roundi(largeur * 2.5))
+				milieux_relaches.sort()
+				centre_relache = milieux_relaches[milieux_relaches.size() / 2]
 		# Centre horizontal : médiane des milieux de la peau du visage (ligne par ligne, du front au bas du visage),
 		# plus sûre que la silhouette quand les cheveux, un bras ou le fond la déportent.
 		var milieux: Array[float] = []
@@ -315,6 +409,8 @@ static func detecter(source: Image) -> Rect2:
 			var milieu_peau := milieux[milieux.size() / 2]
 			# Silhouette et peau d'accord (écart < un quart de tête) : moyenne ; sinon la peau.
 			centre_x = (centre_x + milieu_peau) / 2.0 if silhouette_ok and absf(centre_x - milieu_peau) < largeur * 0.25 else milieu_peau
+		# Visage élargi par la peau dans l'ombre : son milieu est celui de toute la peau, ombre comprise.
+		if centre_relache >= 0.0 and absf(centre_relache - centre_x) <= largeur * 0.3: centre_x = centre_relache
 		# Haut du crâne : on remonte la silhouette au-dessus du front, sinon ~ un tiers de tête de cheveux.
 		var crane := float(y0) - largeur * 0.3
 		if silhouette_ok:
