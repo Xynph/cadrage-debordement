@@ -383,6 +383,9 @@ func _choice_card(option: Dictionary, enabled: bool = true) -> Button:
 	sentence.max_lines_visible = 3
 	S.G.fill(sentence)
 	words.add_child(sentence)
+	# La carte grandit avec sa phrase (jamais de texte qui dépasse en bas).
+	var hauteur := px(88)
+	margin.minimum_size_changed.connect(func(): if is_instance_valid(card): card.custom_minimum_size.y = maxf(hauteur, margin.get_combined_minimum_size().y))
 	return card
 
 ## Bouton commun aux tuiles de ton : nom, métadonnées (id, ton, phrase), fond de carte.

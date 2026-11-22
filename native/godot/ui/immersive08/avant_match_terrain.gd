@@ -48,8 +48,29 @@ static func donnees(app: Control, model: Dictionary, next: Dictionary, nous: int
 	for s: Dictionary in fiche.get("xv", {}).get("slots", []):
 		var n := int(s.get("jersey", 0)) - 1
 		if n >= 0 and n < 15 and s.get("id") != null: sortie.leurs[n] = effectif.get(str(s.id), {})
+	# Blessés et suspendus (indisponibilités de la fiche) : remplacés par le meilleur disponible au même poste.
+	var pris := {}
+	for j: Dictionary in sortie.leurs:
+		if not j.is_empty() and disponible(j): pris[str(j.get("id", ""))] = true
+	for n in 15:
+		var j: Dictionary = sortie.leurs[n]
+		if j.is_empty() or disponible(j): continue
+		var remplacant: Dictionary = {}
+		for c: Dictionary in effectif.values():
+			if str(c.get("pos", "")) != str(j.get("pos", "")) or not disponible(c) or pris.has(str(c.get("id", ""))): continue
+			if remplacant.is_empty() or _niveau(c) > _niveau(remplacant): remplacant = c
+		sortie.leurs[n] = remplacant
+		if not remplacant.is_empty(): pris[str(remplacant.get("id", ""))] = true
 	sortie.pret = true
 	return sortie
+
+static func _niveau(joueur: Dictionary) -> float:
+	var n: Variant = joueur.get("rating")
+	return float(n) if n is int or n is float else 0.0
+
+## Joueur disponible pour le match : ni blessé ni suspendu.
+static func disponible(joueur: Dictionary) -> bool:
+	return int(joueur.get("injury", 0)) <= 0 and int(joueur.get("suspension", 0)) <= 0
 
 static func couleur(club: Dictionary) -> Color:
 	return RI.primary(G.identity(club))
