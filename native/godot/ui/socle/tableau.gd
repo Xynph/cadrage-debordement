@@ -44,6 +44,8 @@ var _lignes: Array = []
 var _hauteur := 0.0
 var _defilement := 0.0
 var _survol := -1
+## Ligne enfoncée (bouton gauche tenu) : même retour que l'appui d'une tuile (ui/survol_ligne.gd).
+var _appui := -1
 ## Vrai quand la dernière action dans le tableau vient du clavier : la ligne choisie reçoit alors un contour discret.
 var _clavier := false
 var _places: Array = []
@@ -58,8 +60,9 @@ class Zone extends Control:
 	func _gui_input(event: InputEvent) -> void: tableau._entree_zone(event)
 	func _get_tooltip(at: Vector2) -> String: return tableau._infobulle(at)
 	func _notification(what: int) -> void:
-		if what == NOTIFICATION_MOUSE_EXIT and tableau._survol != -1:
+		if what == NOTIFICATION_MOUSE_EXIT and (tableau._survol != -1 or tableau._appui != -1):
 			tableau._survol = -1
+			tableau._appui = -1
 			queue_redraw()
 
 func _init() -> void:
@@ -337,7 +340,7 @@ func _dessiner_lignes(zone: Control) -> void:
 		# n'est jamais colorée (décision de Léo : pas de vert de sélection dans les listes).
 		zone.draw_rect(Rect2(0, haut + element.h - 1, zone.size.x, 1), J.TRAIT)
 		SurvolLigne.rayer(zone, Rect2(0, haut, zone.size.x, element.h - 1), int(element.rang), J.echelle, J.RAYON_PETIT)
-		SurvolLigne.dessiner(zone, Rect2(0, haut, zone.size.x, element.h - 1), element.rang == _survol, accent, J.echelle, J.RAYON_PETIT)
+		SurvolLigne.dessiner(zone, Rect2(0, haut, zone.size.x, element.h - 1), element.rang == _survol, accent, J.echelle, J.RAYON_PETIT, 0.0, element.rang == _appui)
 		if _clavier and has_focus() and str(ligne.get(cle, "")) == choisie:
 			zone.draw_style_box(SurvolLigne.style_focus(J.RAYON_PETIT), Rect2(0, haut, zone.size.x, element.h - 1))
 		for place: Dictionary in _places:
@@ -391,6 +394,9 @@ func _entree_zone(event: InputEvent) -> void:
 		if rang != _survol:
 			_survol = rang
 			_zone.queue_redraw()
+	elif event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT and _appui != -1:
+		_appui = -1
+		_zone.queue_redraw()
 	elif event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN: _defiler(J.px(J.LIGNE_H) * 3.0); _zone.accept_event()
 		elif event.button_index == MOUSE_BUTTON_WHEEL_UP: _defiler(-J.px(J.LIGNE_H) * 3.0); _zone.accept_event()
@@ -399,6 +405,8 @@ func _entree_zone(event: InputEvent) -> void:
 			grab_focus()
 			var element := _element_sous(event.position.y)
 			if element.is_empty() or element.groupe: return
+			_appui = int(element.rang)
+			_zone.queue_redraw()
 			_choisir_rang(int(element.rang), false)
 			if event.double_click: ligne_activee.emit(element.ligne)
 			_zone.accept_event()
@@ -460,6 +468,8 @@ func _get_tooltip(at: Vector2) -> String:
 ## Captures et suites (ui/survol_ligne.gd, simuler) : survole la n-ième ligne visible.
 func simuler_survol(n: int) -> void:
 	_survol = _rang_simule(n)
+	# Captures : la ligne 6 est montrée enfoncée.
+	_appui = _rang_simule(5) if SurvolLigne.simulation_appui else -1
 	_zone.queue_redraw()
 
 func _rang_simule(n: int) -> int:

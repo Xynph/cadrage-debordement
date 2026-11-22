@@ -295,6 +295,7 @@ func _onglet(area: Rect2, caption: String, selected: bool, callback: Callable, i
 	button.pressed.connect(callback)
 	add_child(button)
 	D.place(button, area)
+	load("res://ui/retour_tuile.gd").brancher(button, button, Charte.RAYON_PILULE)
 	return button
 
 func _header() -> void:
@@ -1063,7 +1064,9 @@ func _ta_place(y: float) -> float:
 		D.fit_title(D.text(tile, 14, 78, G.club_name(club), 16, C.MUTED, 500, tile_w - 20), tile_w - 20, 30, 2, 13)
 		D.text(tile, tile_w - 14, 40, "→", 24, C.MUTED, 700, 30, HORIZONTAL_ALIGNMENT_RIGHT)
 		var link := _entity_area(tile, Rect2(0, 0, tile_w, 84), {"kind":"club", "id":str(club.id)}, "CompetitionGapLink_%d" % i, "Ouvrir le club · " + G.club_name(club))
-		if link != null: link.tooltip_text = "Ouvrir le club · " + G.club_name(club)
+		if link != null:
+			link.tooltip_text = "Ouvrir le club · " + G.club_name(club)
+			load("res://ui/retour_tuile.gd").brancher(link, tile, C.px(Charte.RAYON_CARTE))
 	return y + 300
 
 ## Libellés du rendez-vous quand aucune rencontre du championnat n'est à venir (exempt, préparation, saison terminée).
@@ -1203,20 +1206,8 @@ func _bas_gauche() -> void:
 		var line := Button.new()
 		line.name = "RecentResult_%d" % i
 		line.set_meta("immersive_style_applied", true)
-		var normal := StyleBoxFlat.new()
-		normal.bg_color = Charte.PANNEAU_2 if i % 2 == 1 else Charte.PANNEAU
-		normal.set_corner_radius_all(Charte.RAYON_PETIT)
-		var hover: StyleBoxFlat = normal.duplicate()
-		hover.bg_color = Charte.PANNEAU_3
-		line.add_theme_stylebox_override("normal", normal)
-		line.add_theme_stylebox_override("hover", hover)
-		line.add_theme_stylebox_override("pressed", hover)
-		var focus := StyleBoxFlat.new()
-		focus.bg_color = Color(0, 0, 0, 0)
-		focus.border_color = Charte.IVOIRE
-		focus.set_border_width_all(2)
-		focus.set_corner_radius_all(Charte.RAYON_PETIT)
-		line.add_theme_stylebox_override("focus", focus)
+		# Rayure une ligne sur deux et survol de ligne communs (ui/survol_ligne.gd, comme l'Effectif).
+		load("res://ui/survol_ligne.gd").appliquer(line, false, Color.TRANSPARENT, app.accent).rang_fixe = i
 		if target_available(app, "fixture", fixture_id):
 			Link.bind(line, app, {"kind":"fixture", "id":fixture_id}, "Ouvrir la rencontre · %s %s %s" % [G.club_name(clubs[0]), _score(result), G.club_name(clubs[1])])
 		else:

@@ -8,6 +8,7 @@ extends Control
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Charte = preload("res://ui/charte.gd")
+const SurvolLigne = preload("res://ui/survol_ligne.gd")
 const G = preload("res://ui/game_skin.gd")
 const S = preload("res://ui/data_semantics.gd")
 const Link = preload("res://ui/entity_link.gd")
@@ -167,7 +168,7 @@ func _sombre(bouton: Button) -> Button:
 
 func _club_lien(id: Variant, nom: String, taille: int = 19, sur_papier: bool = false) -> Control:
 	if Link.available(app, "club", id):
-		var bouton := _lien(nom, func(): pass, taille, true)
+		var bouton := _lien(nom, func(): pass, taille, sur_papier)
 		Link.bind(bouton, app, Link.target("club", id), nom)
 		bouton.tooltip_text = ""
 		if sur_papier: _sombre(bouton)
@@ -179,7 +180,7 @@ func _joueur_lien(id: String, nom: String, taille: int = 19) -> Control:
 	var trouve: Dictionary = Commune.trouver(app, id, source)
 	if trouve.is_empty() or not Link.available(app, "player", id):
 		return _cellule(nom, 0, C.IVORY, false, taille)
-	var bouton := _lien(nom, func(): pass, taille, true)
+	var bouton := _lien(nom, func(): pass, taille)
 	Link.bind(bouton, app, Link.target("player", id), nom)
 	MiniFiche.lier(app, bouton, id, str(trouve.source))
 	return bouton
@@ -209,16 +210,20 @@ func _case(controle: Control, largeur: float) -> Control:
 func _ligne(parent: Node, rang: int, choisie: bool = false) -> HBoxContainer:
 	var fond := PanelContainer.new()
 	var style := StyleBoxFlat.new()
-	style.bg_color = C.SELECTED if choisie else (C.RAISED if rang % 2 == 1 else Color(0, 0, 0, 0))
+	style.bg_color = C.SELECTED if choisie else Color(0, 0, 0, 0)
 	style.set_corner_radius_all(0)
 	if choisie:
 		style.border_color = C.IVORY
 		style.border_width_left = maxi(2, C.px(4))
-	style.content_margin_left = C.px(10)
-	style.content_margin_right = C.px(10)
 	fond.add_theme_stylebox_override("panel", style)
+	# Rayure une ligne sur deux et survol de ligne communs (ui/survol_ligne.gd), derrière les cellules.
+	SurvolLigne.poser(fond).rang_fixe = rang
+	var marge := MarginContainer.new()
+	marge.add_theme_constant_override("margin_left", C.px(10))
+	marge.add_theme_constant_override("margin_right", C.px(10))
 	var rang_h := C.h(8)
-	fond.add_child(rang_h)
+	marge.add_child(rang_h)
+	fond.add_child(marge)
 	parent.add_child(fond)
 	return rang_h
 
@@ -1131,19 +1136,17 @@ func _ligne_bouton(texte: String, choisie: bool, rang: int, id: String, rappel: 
 	bouton.focus_mode = Control.FOCUS_ALL
 	bouton.custom_minimum_size.y = C.px(34)
 	bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	for etat in ["normal", "hover", "pressed", "hover_pressed", "focus"]:
+	# Rayure une ligne sur deux et survol de ligne communs (ui/survol_ligne.gd) ; la ligne ouverte garde son fond relevé.
+	SurvolLigne.appliquer(bouton, choisie).rang_fixe = rang
+	for etat in ["normal", "hover", "pressed", "hover_pressed"]:
 		var style := StyleBoxFlat.new()
-		style.bg_color = C.SELECTED if choisie or etat in ["pressed", "hover_pressed"] else (C.RAISED if etat == "hover" or rang % 2 == 1 else Color(0, 0, 0, 0))
+		style.bg_color = C.SELECTED if choisie else Color(0, 0, 0, 0)
 		style.set_corner_radius_all(0)
 		style.content_margin_left = C.px(14)
 		style.content_margin_right = C.px(10)
 		if choisie:
 			style.border_color = C.IVORY
 			style.border_width_left = maxi(2, C.px(4))
-		if etat == "focus":
-			style.bg_color = Color(0, 0, 0, 0)
-			style.set_border_width_all(2)
-			style.border_color = C.IVORY
 		bouton.add_theme_stylebox_override(etat, style)
 	for cle in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
 		bouton.add_theme_color_override(cle, C.IVORY)

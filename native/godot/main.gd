@@ -213,6 +213,8 @@ func _ready() -> void:
 			get_tree().quit(2)
 			return
 	theme = G.T.make()
+	# Retour visuel commun des tuiles et pastilles (survol, appui) : branché au premier survol de chaque bouton.
+	load("res://ui/retour_tuile.gd").installer(self)
 	_trace_startup("theme.ready")
 	interface_layout = load("res://ui/interface_layout.gd").new()
 	add_child(interface_layout)

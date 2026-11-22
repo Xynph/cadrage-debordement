@@ -161,7 +161,8 @@ static func _plan(app: Control, canvas: Control, data: Dictionary) -> void:
 	for i in mini(15,slots.size()):
 		var slot: Dictionary = slots[i]
 		var y := 107+i*44
-		if i%2==0: D.rect(grid,Rect2(14,y,1428,42),Color("142021"))
+		var rayure = load("res://ui/survol_ligne.gd").rayure(grid,i)
+		if rayure != null: D.place(rayure,Rect2(14,y,1428,42))
 		D.text(grid,25,y+31,"%02d" % (int(slot.get("slot",i))+1),23,C.MUTED,600,67,HORIZONTAL_ALIGNMENT_LEFT,true)
 		D.text(grid,111,y+31,slot.get("pos","—"),25,C.IVORY,700,545)
 		var count := int(slot.get("count",0))

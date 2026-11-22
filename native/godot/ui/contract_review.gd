@@ -820,11 +820,12 @@ func _row(player: Dictionary) -> void:
 	panel.name = action_id("ContractRow", str(player.id))
 	panel.set_meta("player_id", str(player.id))
 	panel.custom_minimum_size.y = 34
-	var background := Color("18242a") if _rows.get_child_count() % 2 == 0 else Color("111b20")
-	var style := C.box(background, Color.TRANSPARENT, 0, 0)
+	var style := C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0)
 	style.content_margin_left = 8
 	style.content_margin_right = 8
 	panel.add_theme_stylebox_override("panel", style)
+	# Rayure une ligne sur deux et survol de ligne communs à toutes les listes (ui/survol_ligne.gd).
+	load("res://ui/survol_ligne.gd").poser(panel).rang_fixe = _rows.get_child_count()
 	_rows.add_child(panel)
 	var line := HBoxContainer.new()
 	line.add_theme_constant_override("separation", COL_GAP)
