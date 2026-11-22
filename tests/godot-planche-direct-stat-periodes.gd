@@ -124,31 +124,38 @@ func run() -> void:
 		root.size = taille
 		root.content_scale_size = taille
 		await settle(40)
-		# Parts en anneaux, taux en barres, comptes en courbes (choix de Léo, 22/11/2026).
-		for cle: String in ["possession", "occupation", "plaquages_reussis", "melees", "penalites", "metres"]:
-			var bouton := premier(between, "MatchBetweenMirror_%s_*" % cle)
-			if bouton == null: bouton = premier(between, "MatchBetweenFigure_%s" % cle)
-			check(bouton != null, "%s : chiffre « %s » à l'écran" % [str(taille), cle])
-			if bouton == null: continue
-			bouton.pressed.emit()
-			await wait_command()
-			await settle(16)
-			var fenetre: Control = view.fenetre_hote.find_child("MatchFenetreStatPanneau", true, false) if view.fenetre_ouverte() else null
-			check(fenetre != null, "%s %s : petite fenêtre du chiffre" % [str(taille), cle])
-			if fenetre == null: continue
-			check(bool(app.model.live.get("paused", false)), "%s %s : match en pause à l'ouverture" % [str(taille), cle])
-			var periodes := fenetre.find_child("MatchFenetreStatPeriodes", true, false) as Control
-			check(periodes != null, "%s %s : évolution par période" % [str(taille), cle])
-			var cadre := fenetre.get_global_rect().grow(1.0)
-			for n: Node in fenetre.find_children("*", "Control", true, false):
-				var c := n as Control
-				if c.is_visible_in_tree() and c.size.x >= 1.0 and not cadre.encloses(c.get_global_rect()):
-					check(false, "%s %s : %s hors de la fenêtre" % [cle, str(taille), c.name])
-					break
-			await capture("stat-%s-%dx%d" % [cle, taille.x, taille.y])
-			await echap()
-			check(not view.fenetre_ouverte(), "%s %s : Échap ferme la fenêtre" % [str(taille), cle])
-			check(surface() == view and view.regie != null, "%s %s : on reste dans le direct" % [str(taille), cle])
+		# Parts (choix ouvert) en variantes E (cadran) et F (frise) ; taux en barres et comptes en courbes, fixés.
+		for passe: Array in [["E", ["possession", "occupation"]], ["F", ["possession", "occupation"]], ["", ["plaquages_reussis", "penalites"]]]:
+			var variante: String = passe[0]
+			OS.set_environment("CD_VARIANTE_VISUELLE", variante)
+			for cle: String in passe[1]:
+				var bouton := premier(between, "MatchBetweenMirror_%s_*" % cle)
+				if bouton == null: bouton = premier(between, "MatchBetweenFigure_%s" % cle)
+				check(bouton != null, "%s : chiffre « %s » à l'écran" % [str(taille), cle])
+				if bouton == null: continue
+				bouton.pressed.emit()
+				await wait_command()
+				await settle(16)
+				var fenetre: Control = view.fenetre_hote.find_child("MatchFenetreStatPanneau", true, false) if view.fenetre_ouverte() else null
+				check(fenetre != null, "%s %s : petite fenêtre du chiffre" % [str(taille), cle])
+				if fenetre == null: continue
+				check(bool(app.model.live.get("paused", false)), "%s %s : match en pause à l'ouverture" % [str(taille), cle])
+				var periodes := fenetre.find_child("MatchFenetreStatPeriodes", true, false) as Control
+				check(periodes != null, "%s %s : évolution par période" % [str(taille), cle])
+				var cadre := fenetre.get_global_rect().grow(1.0)
+				for n: Node in fenetre.find_children("*", "Control", true, false):
+					var c := n as Control
+					if c.is_visible_in_tree() and c.size.x >= 1.0 and not cadre.encloses(c.get_global_rect()):
+						check(false, "%s %s : %s hors de la fenêtre" % [cle, str(taille), c.name])
+						break
+				if variante == "E":
+					var cadran := fenetre.find_child("MatchFenetreStatCadran", true, false) as Control
+					var bulle: String = cadran._get_tooltip(Vector2(cadran.size.x * 0.75, cadran.size.y * 0.1)) if cadran != null else ""
+					check(bulle.begins_with("0′–10′ · "), "cadran : survol d'un secteur (« %s »)" % bulle)
+				await capture(("parts-%s-%s-%dx%d" % [variante, cle, taille.x, taille.y]) if not variante.is_empty() else ("stat-%s-%dx%d" % [cle, taille.x, taille.y]))
+				await echap()
+				check(not view.fenetre_ouverte(), "%s %s : Échap ferme la fenêtre" % [str(taille), cle])
+				check(surface() == view and view.regie != null, "%s %s : on reste dans le direct" % [str(taille), cle])
 	finir()
 
 func finir() -> void:
