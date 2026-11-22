@@ -291,6 +291,79 @@ function renommeur(equipes){
  return t=>String(t||'').replace(motif,a=>table.get(a));
 }
 
+// Évolution par période (petite fenêtre d'un chiffre du direct, 22/11/2026) : chaque chiffre du tableau par tranche de
+// PAS_PERIODE minutes, tiré du journal montré (rien de nouveau à enregistrer : chaque fait du journal porte sa minute,
+// et le journal est déjà dans la sauvegarde, anciennes comprises). Comptes = feuille de statistiques au bout de la
+// tranche moins celle du début (même source que le tableau) ; possession et occupation = parts des faits de la tranche.
+// La prolongation (au-delà de 80') reste dans la dernière tranche.
+const PAS_PERIODE=10,TRANCHES=8,FEUILLES_PERIODES=new Map();
+const CHAMPS_PERIODES=Object.freeze({metres:'metres',franchissements:'franchissements',plaquages:'plaquages',plaquages_manques:'plaquagesManques',
+ recuperations:'recuperations',en_avant:'enAvant',temps_de_jeu:'courses',pieds:'coupsDePied',passes:'passes',defenseurs_battus:'defenseursBattus',
+ offloads:'offloads',ballons_perdus:'ballonsPerdus',penalites:'penalitesConcedees'});
+function totauxPeriode(events,n,rencontre,lire,feuille){
+ const cle=rencontre+'|'+n+'|'+String(events[0]?.text||'');
+ if(!feuille&&n>0&&n<events.length&&FEUILLES_PERIODES.has(cle))return FEUILLES_PERIODES.get(cle);
+ const f=n<=0?null:feuille||feuilleStats.feuilleMontree(events,n,rencontre,lire);
+ const t=[0,1].map(s=>{const e=f?.equipes?.[s];const o={};
+  for(const [c,champ] of Object.entries(CHAMPS_PERIODES))o[c]=Number(e?.[champ])||0;
+  o.rucks=Number(e?.rucks)||0;
+  o.cartons=(Number(e?.cartonsJaunes)||0)+(Number(e?.cartonsRouges)||0);return o;});
+ // Bornes closes (tranche finie) : la feuille ne bouge plus, on la garde (une feuille par borne, quelques rencontres).
+ if(!feuille&&n>0&&n<events.length){FEUILLES_PERIODES.set(cle,t);while(FEUILLES_PERIODES.size>48)FEUILLES_PERIODES.delete(FEUILLES_PERIODES.keys().next().value)}
+ return t;
+}
+function periodes(vues,events,finIndice,rencontre,lire,feuille=null){
+ const jouees=vues.filter(l=>!l.bandeau&&l.kind!=='break'&&l.kind!=='end');
+ if(!jouees.length)return {pas:PAS_PERIODE,tranches:[]};
+ const tranche=l=>Math.min(TRANCHES-1,Math.floor(Math.max(0,l.minute)/PAS_PERIODE));
+ const derniere=tranche(jouees.at(-1));
+ // Indice du journal où commence chaque tranche (premier fait montré de minute ≥ début), puis la fin montrée.
+ const debuts=[];for(let k=0;k<=derniere+1;k++){const l=k>derniere?null:vues.find(v=>Math.max(0,v.minute)>=k*PAS_PERIODE);debuts.push(k===0?0:l?l.i:finIndice)}
+ debuts[derniere+1]=finIndice;
+ const cumuls=debuts.map((n,k)=>totauxPeriode(events,n,rencontre,lire,k===debuts.length-1?feuille:null));
+ const z=k=>{const avant=vues.filter(l=>l.i<debuts[k]);return zone22(avant).entrees||[0,0]};
+ const zones=debuts.map((_,k)=>z(k));
+ const tranches=[];
+ for(let k=0;k<=derniere;k++){
+  const ici=jouees.filter(l=>tranche(l)===k&&!SANS_IMAGE.has(l.kind));
+  const part=(a,b)=>a+b>=4?[Math.round(a/(a+b)*100),100-Math.round(a/(a+b)*100)]:null;
+  const tenus=[0,1].map(s=>ici.filter(l=>l.possession===s).length);
+  const occupes=[ici.filter(l=>l.x!==null&&l.x>50).length,ici.filter(l=>l.x!==null&&l.x<50).length];
+  const valeurs={possession:part(tenus[0],tenus[1]),occupation:part(occupes[0],occupes[1])};
+  for(const c of Object.keys(cumuls[0][0]))valeurs[c]=[0,1].map(s=>Math.max(0,cumuls[k+1][s][c]-cumuls[k][s][c]));
+  valeurs.zone22=[0,1].map(s=>Math.max(0,(zones[k+1][s]||0)-(zones[k][s]||0)));
+  valeurs.plaquages_reussis=[0,1].map(s=>{const t=valeurs.plaquages[s]+valeurs.plaquages_manques[s];return t?Math.round(valeurs.plaquages[s]/t*100):null});
+  // Mêlées et touches : comptes du moteur (l.stats) lus dans le journal de la tranche : chaque conquête disputée écrit
+  // « setpiece-win » (équipe qui lance) ou « setpiece-loss » (équipe qui vole) ; mêlée non disputée = gagnée.
+  const conquete={melees:[[0,0],[0,0]],touches:[[0,0],[0,0]]};
+  for(const l of jouees.filter(l=>tranche(l)===k)){
+   if(l.equipe===null)continue;
+   // Chaque lancer ou introduction est préparé (« lineout » / « scrum », setup : équipe qui lance) ; une faute le
+   // termine sans « setpiece-* » mais le moteur le compte. Gagné : « setpiece-win » de l'équipe qui lance.
+   if(l.kind==='setpiece-win')conquete[l.touche?'touches':'melees'][l.equipe][0]++;
+   else if((l.kind==='lineout'||l.kind==='scrum')&&l.type==='setup')conquete[l.kind==='lineout'?'touches':'melees'][l.equipe][1]++;
+   else if(l.kind==='scrum'&&/non disputée/.test(String(events[l.i]?.text||''))){const c=conquete.melees[l.equipe];c[0]++;c[1]++}
+  }
+  for(const c of ['melees','touches'])valeurs[c]=[0,1].map(s=>conquete[c][s][0]);
+  // Comptes des parts (numérateur, dénominateur par club) : la courbe cumulée refait la part depuis le coup d'envoi.
+  const parts={possession:[[tenus[0],tenus[0]+tenus[1]],[tenus[1],tenus[0]+tenus[1]]],occupation:[[occupes[0],occupes[0]+occupes[1]],[occupes[1],occupes[0]+occupes[1]]],
+   plaquages_reussis:[0,1].map(s=>[valeurs.plaquages[s],valeurs.plaquages[s]+valeurs.plaquages_manques[s]]),
+   melees:conquete.melees,touches:conquete.touches};
+  // `fin` : minute de fin de la tranche, ou dernière minute montrée pour la tranche en cours.
+  const fin=k===derniere?Math.max(k*PAS_PERIODE+1,Math.min((k+1)*PAS_PERIODE,jouees.at(-1).minute)):(k+1)*PAS_PERIODE;
+  tranches.push({de:k*PAS_PERIODE,a:(k+1)*PAS_PERIODE,fin,enCours:k===derniere,valeurs,parts});
+ }
+ // Minute par minute (courbe de possession / d'occupation) : faits de chaque camp, même source que les tranches.
+ const fin=Math.max(0,jouees.at(-1).minute),minutes={possession:[],occupation:[]};
+ for(let m=0;m<=fin;m++){minutes.possession.push([0,0]);minutes.occupation.push([0,0])}
+ for(const l of jouees){
+  if(SANS_IMAGE.has(l.kind))continue;const m=Math.min(fin,Math.max(0,l.minute));
+  if(l.possession===0||l.possession===1)minutes.possession[m][l.possession]++;
+  if(l.x!==null&&l.x!==50)minutes.occupation[m][l.x>50?0:1]++;
+ }
+ return {pas:PAS_PERIODE,tranches,minutes};
+}
+
 function releve(rencontre,n,valeurs,borne){
  let liste=RELEVES.get(rencontre);
  if(!liste){liste=[];RELEVES.set(rencontre,liste);while(RELEVES.size>4)RELEVES.delete(RELEVES.keys().next().value)}
@@ -372,6 +445,8 @@ function project(model,niveau,lire,options={}){
  // = somme des joueurs ; plaquages, mètres… réalistes (le journal seul en donnait 0 ou 1 par ailier).
  const feuille=feuilleStats.feuilleMontree(events,borne<lignes.length?lignes[borne].i:events.length,String(etat.rencontre||''),lire);
  feuilleStats.completerTableau(tableau,feuille);
+ let parPeriode;
+ try{parPeriode=periodes(vues,events,borne<lignes.length?lignes[borne].i:events.length,String(etat.rencontre||''),lire,feuille)}catch(error){parPeriode={pas:PAS_PERIODE,tranches:[]}}
  // Les chiffres ajoutés par la feuille (passes, rucks…) portent eux aussi la longueur de l'échantillon.
  for(const r of tableau)r.court=court;
  // Notes du direct : chiffres et apport de cette même feuille (match-notes.cjs, une seule source).
@@ -382,7 +457,7 @@ function project(model,niveau,lire,options={}){
   possession:derniere?.possession??(vues.length?null:etat.possession??null),zone:{x:Number.isFinite(derniere?.x)?derniere.x:50,kind:derniere?.kind||'message'},
   fil,traces,reperes,chiffres,elan,echantillon:{minutes:minuteVue,suffisant:!court,seuil:ECHANTILLON_MINUTES},cartons:(etat.cartons||[]).filter(c=>vues.some(l=>l.kind==='card'&&String(events[l.i].scene?.actor)===String(c.id))),
   borne,score:vues.length?vues.at(-1).scoreApres:[0,0],statsRows:passe?.statsRows||[],
-  tableau,domination:domination(vues),
+  tableau,periodes:parPeriode,domination:domination(vues),
   // Entrées dans les 22 adverses, points et secondes qui en découlent (faits montrés seulement).
   zone22:zone22(vues),notes:notesDuMatch(vues,events,etat.camp??-1,contexteNotes),adversaire:xvAdverse(vues,events,etat.camp??-1,etat.effectifAdverse,etat.xvAdverseActuel,contexteNotes),deroule:deroule(vues,events,lire,String(etat.rencontre||''),nommer),
   bilan:{tempsForts:bilan.nombre,action:bilan.dureeAction,rafales:bilan.rafales,rafalesSautees:bilan.rafalesSautees},tempsFort:null,arret:null,hommeDuMatch:null};
@@ -488,4 +563,4 @@ function habillerJournee(j,model){
   classement:j.classement.map(r=>({...r,...nom(r.clubId,r)}))};
 }
 
-module.exports=Object.freeze({NOTE_DEPART,NIVEAUX,LIBELLES,lecteur,project,borneEntracte,domination,chiffresRugby,notesDuMatch,xvAdverse,plaqueur,DEROULE_MAX,ECHANTILLON_MINUTES});
+module.exports=Object.freeze({NOTE_DEPART,NIVEAUX,LIBELLES,lecteur,project,borneEntracte,domination,chiffresRugby,periodes,PAS_PERIODE,notesDuMatch,xvAdverse,plaqueur,DEROULE_MAX,ECHANTILLON_MINUTES});
