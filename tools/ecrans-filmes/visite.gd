@@ -36,6 +36,8 @@ const EXTRAS := [
 	{"id": "tactique-bleus", "libelle": "Tactique · petite fenêtre des Bleus (maquette)", "type": "tactique_alertes", "fenetre": "LineupBleusNoticeLien"},
 	{"id": "tactique-nationale", "libelle": "Tactique · petite fenêtre des qualifications FFR (maquette)", "type": "tactique_alertes", "fenetre": "NationaleLicenceNoticeLien"},
 	{"id": "entrainement-groupes", "libelle": "Entraînement · onglet Groupes", "type": "entrainement_onglet", "onglet": 1},
+	{"id": "entrainement-mois", "libelle": "Entraînement · onglet Mois", "type": "entrainement_onglet", "onglet": 5},
+	{"id": "entrainement-mois-jour", "libelle": "Entraînement · Mois · petite fenêtre d'un jour", "type": "entrainement_onglet", "onglet": 5, "jour": true},
 	{"id": "salle-entrainement", "libelle": "Observer la préparation (salle d'entraînement)", "type": "salle_entrainement"},
 	{"id": "salle-entrainement-joueur", "libelle": "Observer la préparation · petite fenêtre d'un joueur", "type": "salle_entrainement", "joueur": true},
 	{"id": "fiche-joueur", "libelle": "Fiche joueur", "type": "joueur"},
@@ -537,6 +539,19 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			if entrainement == null: return {"statut": "echec", "note": "entraînement non ouvert"}
 			entrainement._open_tab(int(ecran.onglet))
 			await stabiliser()
+			if bool(ecran.get("jour", false)):
+				# Jour le plus chargé du mois (le plus de créneaux) : sa petite fenêtre.
+				var page := app.find_child("ImmersiveTraining", true, false)
+				var choix: Button = null
+				var plein := -1
+				for b: Node in page.find_children("TrainingMonthDayOpen_*", "Button", true, false):
+					var n: int = b.get_parent().get_child_count()
+					if n > plein:
+						plein = n
+						choix = b
+				if choix == null: return {"statut": "echec", "note": "aucun jour"}
+				choix.pressed.emit()
+				await stabiliser()
 		"salle_entrainement":
 			app._navigate("Préparation")
 			await stabiliser()

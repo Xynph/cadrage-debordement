@@ -166,19 +166,19 @@ func run() -> void:
 	check(avec_noms.size() == 3 and avec_noms[0].begins_with("Nom A") and avec_noms[2].contains("Nom B") and avec_noms[2].contains("Nom C"), "Barrage japonais : les noms viennent des données de la compétition (%s)" % str(avec_noms))
 	if identites != null: app.model.meta.competitionIdentities = identites
 	else: app.model.meta.erase("competitionIdentities")
-	# Grille mensuelle du Calendrier : la même rangée d'onglets que Classements, marqueur incliné du jour courant.
-	app.set_meta("calendar_table", false)
+	# Calendrier (liste des rencontres ; la grille du mois est dans Entraînement › Mois depuis le 22/11/2026) : la même
+	# rangée d'onglets que Classements, et le lien « Programme du mois ».
 	app._navigate("Calendrier")
 	await settle(10)
-	var tabs := app.find_child("CalendarCompetitionTabs", true, false) as Control
-	check(tabs != null and tabs.get_child_count() == 5, "Grille mensuelle : rangée d'onglets Classements · Phases finales · Calendrier · Statistiques · Rivalités")
-	var today_day := app.find_child("MonthDay_" + str(app.management_ui.get("calendar_reading", {}).get("today", "")), true, false)
-	if today_day != null: check(today_day.find_child("MonthTodayMarker", true, false) != null, "Jour courant : marqueur incliné")
-	var to_standings := tabs.find_child("Section_Classements", true, false) as Button if tabs != null else null
+	check(app.find_child("CalendarShowMonth", true, false) != null, "Calendrier : lien vers le programme du mois")
+	var to_standings := app.find_child("Section_Classements", true, false) as Button
 	if to_standings != null:
 		to_standings.pressed.emit()
 		await settle(10)
-		check(app.route == "Classements" and page() != null, "L'onglet Classements de la grille rouvre le classement")
+		check(app.route == "Classements" and page() != null, "L'onglet Classements du Calendrier rouvre le classement")
+	else:
+		app._navigate("Classements")
+		await settle(10)
 	# Un clic sur une ligne change d'écran (fiche du club), sans fenêtre.
 	rows = page().find_children("StandingsRow_*", "Button", true, false)
 	var autre: Button = null

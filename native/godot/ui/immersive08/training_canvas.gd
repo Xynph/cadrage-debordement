@@ -16,7 +16,8 @@ const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
 const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
 const Carte = preload("res://ui/carte_joueur_survol.gd")
 const Lignes = preload("res://ui/immersive08/training_semaine_lignes.gd")
-const TABS = ["Semaine", "Groupes", "Individuel", "Staff", "Fatigue"]
+const Mois = preload("res://ui/immersive08/training_mois.gd")
+const TABS = ["Semaine", "Groupes", "Individuel", "Staff", "Fatigue", "Mois"]
 const MODES = {"repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
 const INDIVIDUAL = {"collective":"Suivre le collectif", "repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
 const FAMILIES = [["PIL.", [0]], ["TAL.", [1]], ["2e L.", [2]], ["3e L.", [3]], ["CHAR.", [4, 5]], ["CEN.", [7]], ["3/4", [6, 8]]]
@@ -93,9 +94,10 @@ func _build() -> void:
 		fixture = location + " · " + G.club_name(opponent.get("away", {}) if is_home else home)
 	D.text(self, 30, 142, "Semaine %s  ·  %s" % [G.n(int(meta.get("week", 0)) + 1), fixture], 27, C.IVORY, 500, 785)
 	Lignes.entete(self, meta)
+	# Six onglets resserrés (Mois, 22/11/2026) : la rangée garde sa place à gauche du dossier et de la séance.
 	for i in TABS.size():
-		var tab := ClubUI.tab(self, Rect2(4 + i * 199, 169, 188, 58), TABS[i], i == active_tab, func(): _open_tab(i), "TrainingTab" + str(i))
-		tab.add_theme_font_size_override("font_size", C.font_px(30))
+		var tab := ClubUI.tab(self, Rect2(4 + i * 166, 169, 155, 58), TABS[i], i == active_tab, func(): _open_tab(i), "TrainingTab" + str(i))
+		tab.add_theme_font_size_override("font_size", C.font_px(27))
 		var shape := tab.get_theme_stylebox("normal")
 		tab.add_theme_stylebox_override("pressed", shape)
 		var hover := shape.duplicate() as StyleBoxTexture
@@ -119,6 +121,7 @@ func _build() -> void:
 		2: _individuals()
 		3: _staff_tab()
 		4: Fatigue.build(app, self, state)
+		5: Mois.construire(self)
 
 func _risk(p: Dictionary) -> float:
 	return maxf(float(p.get("physicalLoad", 0)), 100.0 - float(p.get("condition", 100)))
