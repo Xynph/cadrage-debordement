@@ -1926,7 +1926,7 @@ func ouvrir_fenetre_stat(rang: Dictionary) -> void:
 	var cle := str(rang.get("cle", ""))
 	var titre := str(rang.get("label", "")).get_slice(" (", 0)
 	var tranches := tranches_stat(direct, cle)
-	var L := 1240.0 if not tranches.is_empty() else 960.0
+	var L := 1480.0 if not tranches.is_empty() else 960.0
 	var fond := _ouvrir_fenetre(FENETRE_STAT, titre.to_upper(), L, 770 if not tranches.is_empty() else 400)
 	fond.set_meta("stat", cle)
 	var valeurs: Array = rang.get("valeurs", [0, 0]) if rang.get("valeurs") is Array else [0, 0]
@@ -1961,8 +1961,8 @@ func ouvrir_fenetre_stat(rang: Dictionary) -> void:
 	var y_bas := 346.0
 	if not tranches.is_empty():
 		var zone := Rect2(36, 352, L - 72, 340)
-		# Choix de Léo (22/11/2026) : taux de réussite en barres par tranche, comptes en courbes cumulées ; les parts
-		# entre les deux clubs (possession, occupation) restent à trancher (C|D).
+		# Choix de Léo (22/11/2026) : taux de réussite en barres par tranche, comptes en courbes cumulées, parts entre
+		# les deux clubs (possession, occupation) en anneaux.
 		var taux := (pourcent or rang.get("sur") is Array) and not cle in STATS_PARTS
 		var nos_valeurs: Array = []
 		for t: Dictionary in tranches:
@@ -1976,9 +1976,7 @@ func ouvrir_fenetre_stat(rang: Dictionary) -> void:
 			else:
 				nos_valeurs.append([v[nous], v[1 - nous]] if v is Array and (v as Array).size() == 2 and v[0] != null and v[1] != null else null)
 		nous_stat = nous
-		if cle in STATS_PARTS:
-			if OS.get_environment("CD_VARIANTE_VISUELLE") == "D": _anneaux_parts(fond, zone, tranches, nos_valeurs, teintes)
-			else: _bande_parts(fond, zone, tranches, nos_valeurs, teintes)
+		if cle in STATS_PARTS: _anneaux_parts(fond, zone, tranches, nos_valeurs, teintes)
 		elif taux: _barres_periodes(fond, zone, tranches, nos_valeurs, teintes, true)
 		else: _courbe_periodes(fond, zone, tranches, nos_valeurs, teintes, false)
 		y_bas = 708.0
@@ -2132,55 +2130,18 @@ func _courbe_periodes(fond: Control, zone: Rect2, tranches: Array, valeurs: Arra
 		var valeur := float(f[2])
 		D.text(cadre, p.x + 14, p.y + 9, ("%d%%" % roundi(valeur)) if pourcent else str(roundi(valeur)), 24, teintes[int(f[0])], 800, 84).name = "MatchFenetreStatFin%d" % int(f[0])
 
-## Parts entre les deux clubs (somme 100 %) : choix visuel encore ouvert (C|D sous CD_VARIANTE_VISUELLE).
+## Parts entre les deux clubs (somme 100 %) : anneaux par tranche (choix de Léo, 22/11/2026).
 const STATS_PARTS := ["possession", "occupation"]
 
-## Variante C : bande de domination, une colonne 100 % par tranche (nous en haut, eux en bas, aux couleurs des clubs),
-## colonnes serrées comme une courbe d'élan ; ligne des 50 %, tranche en cours atténuée, tranches à venir en creux.
-func _bande_parts(fond: Control, zone: Rect2, tranches: Array, valeurs: Array, teintes: Array[Color]) -> void:
-	var cadre := D.rect(fond, zone, Charte.PANNEAU_2, Charte.RAYON_CARTE)
-	cadre.name = "MatchFenetreStatPeriodes"
-	var gauche := 20.0
-	var pas := (zone.size.x - 2.0 * gauche) / 8.0
-	var haut := 52.0
-	var bas := zone.size.y - 50.0
-	var hauteur := bas - haut
-	D.text(cadre, gauche + 2 * pas, 30, "1re MI-TEMPS", 15, Charte.IVOIRE_3, 700, 2 * pas, HORIZONTAL_ALIGNMENT_CENTER).name = "MatchFenetreStatMT1"
-	D.text(cadre, gauche + 6 * pas, 30, "2e MI-TEMPS", 15, Charte.IVOIRE_3, 700, 2 * pas, HORIZONTAL_ALIGNMENT_CENTER).name = "MatchFenetreStatMT2"
-	for k in 8:
-		var x := gauche + k * pas + (10.0 if k >= 4 else 0.0) + 3.0
-		var l := pas - 6.0 - 5.0
-		D.text(cadre, x + l / 2.0, bas + 32, "%d′" % ((k + 1) * 10), 15, Charte.IVOIRE_3, 700, l, HORIZONTAL_ALIGNMENT_CENTER)
-		var v: Variant = valeurs[k] if k < valeurs.size() else null
-		if not v is Array:
-			D.rect(cadre, Rect2(x, haut, l, hauteur), Color.TRANSPARENT, Charte.RAYON_PETIT, Charte.PANNEAU_3).name = "MatchFenetreStatAVenir%d" % k
-			if k < valeurs.size(): D.text(cadre, x + l / 2.0, haut + hauteur / 2.0 + 8, "—", 22, Charte.IVOIRE_3, 700, l, HORIZONTAL_ALIGNMENT_CENTER)
-			continue
-		var en_cours := bool((tranches[k] as Dictionary).get("enCours", false))
-		var a := clampf(float(v[0]), 0.0, 100.0)
-		var h := hauteur * a / 100.0
-		for s in 2:
-			var y := haut if s == 0 else haut + h
-			var hh := h if s == 0 else hauteur - h
-			if hh < 1.0: continue
-			var teinte: Color = teintes[s]
-			var bloc := D.rect(cadre, Rect2(x, y, l, hh), Color(teinte, .55 if en_cours else 1.0), Charte.RAYON_PETIT)
-			bloc.name = "MatchFenetreStatPart%d_%d" % [k, s]
-			if hh >= 34.0:
-				var encre: Color = Charte.ENCRE if teinte.get_luminance() > 0.55 and not en_cours else Charte.IVOIRE
-				D.text(cadre, x + l / 2.0, y + (24.0 if s == 0 else hh - 12.0), "%d%%" % roundi(float(v[s])), 22, encre, 800, l, HORIZONTAL_ALIGNMENT_CENTER).name = "MatchFenetreStatChiffre%d_%d" % [k, s]
-	# Ligne des 50 % par-dessus les colonnes.
-	D.rect(cadre, Rect2(gauche, haut + hauteur / 2.0 - 1, zone.size.x - 2.0 * gauche + 10.0, 2), Color(Charte.NOIR_PANNEAU, .55)).name = "MatchFenetreStat50"
-
-## Variante D : un anneau par tranche (part de nous aux couleurs du club, le reste à l'adversaire), notre part au centre,
+## Parts : un anneau par tranche (part de nous aux couleurs du club, le reste à l'adversaire), notre part au centre,
 ## celle de l'adversaire dessous ; deux groupes de quatre, un par mi-temps.
 func _anneaux_parts(fond: Control, zone: Rect2, tranches: Array, valeurs: Array, teintes: Array[Color]) -> void:
 	var cadre := D.rect(fond, zone, Charte.PANNEAU_2, Charte.RAYON_CARTE)
 	cadre.name = "MatchFenetreStatPeriodes"
 	var gauche := 20.0
 	var pas := (zone.size.x - 2.0 * gauche - 20.0) / 8.0
-	var diametre := minf(pas - 18.0, 150.0)
-	var cy := 70.0 + diametre / 2.0
+	var diametre := minf(pas - 16.0, 170.0)
+	var cy := 62.0 + diametre / 2.0
 	D.text(cadre, gauche + 2 * pas, 30, "1re MI-TEMPS", 15, Charte.IVOIRE_3, 700, 2 * pas, HORIZONTAL_ALIGNMENT_CENTER).name = "MatchFenetreStatMT1"
 	D.text(cadre, gauche + 20.0 + 6 * pas, 30, "2e MI-TEMPS", 15, Charte.IVOIRE_3, 700, 2 * pas, HORIZONTAL_ALIGNMENT_CENTER).name = "MatchFenetreStatMT2"
 	D.rect(cadre, Rect2(gauche + 4 * pas + 9, 44, 2, zone.size.y - 70), Color(Charte.IVOIRE_3, .5)).name = "MatchFenetreStatMiTemps"
@@ -2197,9 +2158,9 @@ func _anneaux_parts(fond: Control, zone: Rect2, tranches: Array, valeurs: Array,
 		cadre.add_child(anneau)
 		D.place(anneau, Rect2(cx - diametre / 2.0, cy - diametre / 2.0, diametre, diametre))
 		var centre := ("%d%%" % roundi(float(v[0]))) if v is Array else "—"
-		D.text(cadre, cx, cy + 12, centre, 30 if v is Array else 24, Charte.IVOIRE if v is Array else Charte.IVOIRE_3, 800, diametre, HORIZONTAL_ALIGNMENT_CENTER).name = "MatchFenetreStatChiffre%d_0" % k
-		if v is Array: D.text(cadre, cx, cy + diametre / 2.0 + 34, "%d%%" % roundi(float(v[1])), 20, teintes[1], 800, pas, HORIZONTAL_ALIGNMENT_CENTER).name = "MatchFenetreStatChiffre%d_1" % k
-		D.text(cadre, cx, zone.size.y - 22, "%d′" % ((k + 1) * 10), 15, Charte.IVOIRE_3, 700, pas, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(cadre, cx, cy + 13, centre, 36 if v is Array else 26, Charte.IVOIRE if v is Array else Charte.IVOIRE_3, 800, diametre, HORIZONTAL_ALIGNMENT_CENTER).name = "MatchFenetreStatChiffre%d_0" % k
+		if v is Array: D.text(cadre, cx, cy + diametre / 2.0 + 34, "%d%%" % roundi(float(v[1])), 24, teintes[1], 800, pas, HORIZONTAL_ALIGNMENT_CENTER).name = "MatchFenetreStatChiffre%d_1" % k
+		D.text(cadre, cx, zone.size.y - 18, "%d′" % ((k + 1) * 10), 17, Charte.IVOIRE_3, 700, pas, HORIZONTAL_ALIGNMENT_CENTER)
 
 ## Anneau d'une tranche : arc de notre part (depuis midi, sens horaire) puis celui de l'adversaire ; creux à venir.
 class Anneau extends Control:

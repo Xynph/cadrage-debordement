@@ -1,7 +1,7 @@
 extends SceneTree
-## Planche « évolution d'un chiffre du direct » (choix visuel ouvert, 22/11/2026) : en 2e mi-temps, entre deux temps forts,
+## Évolution d'un chiffre du direct (choix de Léo, 22/11/2026) : en 2e mi-temps, entre deux temps forts,
 ## un chiffre de l'écran 2D ouvre sa petite fenêtre (match en pause), avec l'évolution par tranche de 10 minutes : parts
-## en variantes C (bande de domination) et D (anneaux), taux en barres, comptes en courbes, aux tailles de CD_PLANCHE_TAILLES (2560 × 1440 puis 1920 × 1080).
+## en anneaux, taux en barres, comptes en courbes, aux tailles de CD_PLANCHE_TAILLES (2560 × 1440 puis 1920 × 1080).
 ## Contrôles : tranches présentes, rien hors de la fenêtre, Échap ferme, on reste dans le direct.
 ## godot-planche-direct-stat-periodes.cjs prépare la carrière Monde.
 var app: Control
@@ -124,34 +124,31 @@ func run() -> void:
 		root.size = taille
 		root.content_scale_size = taille
 		await settle(40)
-		# Parts (choix ouvert) en variantes C et D ; taux de réussite (barres) et comptes (courbes) fixés par Léo.
-		for passe: Array in [["C", ["possession", "occupation"]], ["D", ["possession", "occupation"]], ["", ["plaquages_reussis", "melees", "penalites", "metres"]]]:
-			var variante: String = passe[0]
-			OS.set_environment("CD_VARIANTE_VISUELLE", variante)
-			for cle: String in passe[1]:
-				var bouton := premier(between, "MatchBetweenMirror_%s_*" % cle)
-				if bouton == null: bouton = premier(between, "MatchBetweenFigure_%s" % cle)
-				check(bouton != null, "%s : chiffre « %s » à l'écran" % [str(taille), cle])
-				if bouton == null: continue
-				bouton.pressed.emit()
-				await wait_command()
-				await settle(16)
-				var fenetre: Control = view.fenetre_hote.find_child("MatchFenetreStatPanneau", true, false) if view.fenetre_ouverte() else null
-				check(fenetre != null, "%s %s : petite fenêtre du chiffre" % [variante, cle])
-				if fenetre == null: continue
-				check(bool(app.model.live.get("paused", false)), "%s %s : match en pause à l'ouverture" % [variante, cle])
-				var periodes := fenetre.find_child("MatchFenetreStatPeriodes", true, false) as Control
-				check(periodes != null, "%s %s : évolution par période" % [variante, cle])
-				var cadre := fenetre.get_global_rect().grow(1.0)
-				for n: Node in fenetre.find_children("*", "Control", true, false):
-					var c := n as Control
-					if c.is_visible_in_tree() and c.size.x >= 1.0 and not cadre.encloses(c.get_global_rect()):
-						check(false, "%s %s %s : %s hors de la fenêtre" % [variante, cle, str(taille), c.name])
-						break
-				await capture(("parts-%s-%s-%dx%d" % [variante, cle, taille.x, taille.y]) if not variante.is_empty() else ("stat-%s-%dx%d" % [cle, taille.x, taille.y]))
-				await echap()
-				check(not view.fenetre_ouverte(), "%s %s : Échap ferme la fenêtre" % [variante, cle])
-				check(surface() == view and view.regie != null, "%s %s : on reste dans le direct" % [variante, cle])
+		# Parts en anneaux, taux en barres, comptes en courbes (choix de Léo, 22/11/2026).
+		for cle: String in ["possession", "occupation", "plaquages_reussis", "melees", "penalites", "metres"]:
+			var bouton := premier(between, "MatchBetweenMirror_%s_*" % cle)
+			if bouton == null: bouton = premier(between, "MatchBetweenFigure_%s" % cle)
+			check(bouton != null, "%s : chiffre « %s » à l'écran" % [str(taille), cle])
+			if bouton == null: continue
+			bouton.pressed.emit()
+			await wait_command()
+			await settle(16)
+			var fenetre: Control = view.fenetre_hote.find_child("MatchFenetreStatPanneau", true, false) if view.fenetre_ouverte() else null
+			check(fenetre != null, "%s %s : petite fenêtre du chiffre" % [str(taille), cle])
+			if fenetre == null: continue
+			check(bool(app.model.live.get("paused", false)), "%s %s : match en pause à l'ouverture" % [str(taille), cle])
+			var periodes := fenetre.find_child("MatchFenetreStatPeriodes", true, false) as Control
+			check(periodes != null, "%s %s : évolution par période" % [str(taille), cle])
+			var cadre := fenetre.get_global_rect().grow(1.0)
+			for n: Node in fenetre.find_children("*", "Control", true, false):
+				var c := n as Control
+				if c.is_visible_in_tree() and c.size.x >= 1.0 and not cadre.encloses(c.get_global_rect()):
+					check(false, "%s %s : %s hors de la fenêtre" % [cle, str(taille), c.name])
+					break
+			await capture("stat-%s-%dx%d" % [cle, taille.x, taille.y])
+			await echap()
+			check(not view.fenetre_ouverte(), "%s %s : Échap ferme la fenêtre" % [str(taille), cle])
+			check(surface() == view and view.regie != null, "%s %s : on reste dans le direct" % [str(taille), cle])
 	finir()
 
 func finir() -> void:
