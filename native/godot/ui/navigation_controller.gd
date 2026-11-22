@@ -106,7 +106,6 @@ func _reading_location(route: String) -> Dictionary:
 		"Sélections": return {"nation":app.management_ui.get("international", {}).get("navigation_id", ""), "section":app.management_ui.get("international_section", "")}
 		"Staff": return {"person":app.management_ui.get("staff", {}).get("navigation_id", "")}
 		"Classements": return {"division":app.table_division, "tab":app.management_ui.get("competition", {}).get("tab", "league")}
-		"Calendrier": return {"date":app.management_ui.get("calendar_reading", {}).get("selected", "")}
 		"Finances": return {"tab":app.management_ui.get("immersive08_finance_tab", "summary")}
 		"Recherche": return {"query":str(app.management_ui.get("search_query", ""))}
 	return {}
@@ -638,7 +637,8 @@ func entity_available(target: Dictionary) -> bool:
 		"staff":
 			return _allowed_route("Staff") and app.StaffViews.has_method("target_available") and app.StaffViews.target_available(app, id)
 		"club", "fixture", "competition", "date", "session":
-			var route := "Calendrier" if kind in ["date", "session"] else "Classements"
+			# Date ou séance : programme du mois (Entraînement › Mois) ; sélectionneur sans club : son calendrier.
+			var route := ("Calendrier" if app.Immersive.Selections.nation_only(app.model) else "Préparation") if kind in ["date", "session"] else "Classements"
 			return _allowed_route(route) and app.Immersive.Competition.has_method("target_available") and app.Immersive.Competition.target_available(app, kind, target.get("id"))
 		"finance":
 			return _allowed_route("Finances") and app.Immersive.FinanceCanvas.has_method("target_available") and app.Immersive.FinanceCanvas.target_available(app, target.get("id"))
@@ -654,10 +654,6 @@ func open_entity(target: Dictionary, source_window: Window = null) -> bool:
 	if str(target.get("kind", "")) == "prospect" or _blocked(source) or not entity_available(target): return false
 	# A repeated session keeps the original history entry and source snapshot.
 	# World owns both validation and the exact visible session context.
-	if source == null and str(target.get("kind", "")) == "session" and app.Immersive.Competition.session_context_matches(app, target.get("id")):
-		var focus := app.find_child(app.Immersive.Competition.session_focus_name(str(target.id)), true, false) as Control
-		if focus != null: focus.grab_focus()
-		return true
 	if source != null:
 		if str(source.get_meta("entity_kind", "")) == str(target.get("kind", "")) and str(source.get_meta("entity_id", "")) == str(target.get("id", "")): return true
 		var ancestor := _reader_ancestor(target, source)

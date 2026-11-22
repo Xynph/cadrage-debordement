@@ -196,10 +196,14 @@ static func _barre(page: Control, data: Dictionary) -> void:
 			page._open_tab(page.active_tab)) + 12
 	# Sélections : joueurs du club retenus (nombre, retour prévu) ; clic = disponibilités internationales.
 	var dispo := preload("res://ui/international_availability.gd")
-	var absents := int(dispo.data(page.app.model).get("absentCount", 0))
-	if absents > 0:
-		var retour := dispo._date(dispo.data(page.app.model).get("nextReturn"))
-		x += Pieces.pastille(page, x, HAUT + 6, "%d en sélection · retour %s" % [absents, retour], "flag", "TrainingMonthSelections", "", Charte.PERTE, Charte.PANNEAU_3, func(): dispo.open(page.app)) + 12
+	var etat_dispo: Dictionary = dispo.data(page.app.model)
+	if bool(etat_dispo.get("clubManaged", false)) or int(etat_dispo.get("absentCount", 0)) > 0:
+		var absents := int(etat_dispo.get("absentCount", 0))
+		var mot := "%d en sélection · retour %s" % [absents, dispo._date(etat_dispo.get("nextReturn"))] if absents > 0 else "0 absent"
+		x += Pieces.pastille(page, x, HAUT + 6, mot, "flag" if absents > 0 else "check", "TrainingMonthSelections", "", Charte.PERTE if absents > 0 else Charte.GAIN, Charte.PANNEAU_3, func(): dispo.open(page.app)) + 12
+		# Même nom que l'ancien lien du Calendrier : suivi international (Sélections › Disponibilités).
+		var lien := page.find_child("TrainingMonthSelectionsLien", true, false)
+		if lien != null: lien.name = "InternationalAvailabilityOpen"
 	var copie := str(page.state.get("modele_copie", ""))
 	var legendes := ["intensif", "technique", "tactique", "recuperation", "match"]
 	var largeurs := 0.0

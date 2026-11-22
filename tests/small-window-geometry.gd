@@ -57,7 +57,7 @@ func measure(label: String) -> Dictionary:
 		record.body_minimum = [app.body.get_combined_minimum_size().x,app.body.get_combined_minimum_size().y]
 		record.outer_scroll = maxf(0,app.body_scroll.get_v_scroll_bar().max_value-app.body_scroll.get_v_scroll_bar().page)
 	record.important = []
-	for id: String in ["CarnetCalendar","CalendarMonthGrid","CalendarWeekGrid","MonthDayDetail","CalendarUpcomingContext","ContextualInvitations","ContextualObserveTraining","ImmersiveInbox","CarnetPreparation","ImmersivePreparation","ImmersiveTraining","ImmersivePlaybook","ImmersiveCentre"]:
+	for id: String in ["CarnetCalendar","TrainingMonthGrid","ContextualInvitations","ContextualObserveTraining","ImmersiveInbox","CarnetPreparation","ImmersivePreparation","ImmersiveTraining","ImmersivePlaybook","ImmersiveCentre"]:
 		var item := app.find_child(id,true,false) as Control
 		if item != null:
 			record.important.append({"name":id,"rect":rect(item.get_global_rect()),"minimum":[item.get_combined_minimum_size().x,item.get_combined_minimum_size().y]})
@@ -104,16 +104,15 @@ func audit_interactions(label: String) -> void:
 	records.append({"resolution":[root.size.x,root.size.y],"label":label+" commandes","route":app.route,"examined":examined,"reserved":reserved,"inaccessible_bounds":findings})
 func check_reading(label: String) -> void:
 	var actions: Array[Control] = []
-	for id: String in ["MonthNext","MonthPrevious","MonthToday","CalendarOpenTraining","CalendarTemplate","CalendarApplyTemplate","ContextualObserveTraining","OfficeSquadAction","OfficeStandingsAction","OfficeMarketAction","OfficeCalendarAction"]:
+	for id: String in ["TrainingMonthNext","TrainingMonthPrev","CalendarShowMonth","ContextualObserveTraining","OfficeSquadAction","OfficeStandingsAction","OfficeMarketAction","OfficeCalendarAction"]:
 		var action := app.find_child(id,true,false) as Control
 		if action != null: actions.append(action)
-	for id: String in ["CalendarProgramScroll","CalendarDayDetailScroll","ContextualPageWorkspace","OfficeReadingScroll"]:
+	for id: String in ["ContextualPageWorkspace","OfficeReadingScroll"]:
 		var scroll := app.find_child(id,true,false) as ScrollContainer
 		if scroll == null: continue
 		var items := scroll.find_children("*","Control",true,false).filter(func(c: Control): return c.is_visible_in_tree() and useful(c))
 		if not items.is_empty(): actions.append(items[-1])
-	var fixed: Control = app.find_child("MonthToday",true,false)
-	if fixed == null: fixed = app.find_child("ContextualInvitations",true,false)
+	var fixed: Control = app.find_child("ContextualInvitations",true,false)
 	if fixed == null: fixed = app.find_child("ContextualObserveTraining",true,false)
 	# Le Bureau défile d'un seul tenant : son action principale suit la page, elle n'est plus un en-tête fixe.
 	var initial := fixed.get_global_rect() if fixed != null else Rect2()
@@ -232,11 +231,9 @@ func run() -> void:
 				await check_reading("Préparation entraînement")
 				await audit_interactions("Préparation entraînement")
 			if route == "Calendrier":
-				# Liste des rencontres depuis le 22/11/2026 (programme du mois dans Entraînement › Mois) : pas de vue semaine.
-				var month: Control = app.find_child("CarnetCalendar",true,false)
-				if month != null and month.has_method("_view_as"):
-					month._view_as("week"); await settle(); measure("Calendrier semaine")
-					month._view_as("month"); await settle()
+				# Liste des rencontres depuis le 22/11/2026 : le programme du mois est mesuré dans Entraînement › Mois.
+				load("res://ui/immersive08/training_mois.gd").ouvrir(app); await settle(); measure("Entraînement mois")
+				app._navigate("Calendrier"); await settle()
 			print("GEOMETRY ",resolution," ",route," scroll=",record.get("outer_scroll",0)," outside=",record.outside_unscrolled.size()," clips=",record.clips.size())
 		app._navigate("Bureau"); await settle()
 		if OS.get_environment("CD_GEOMETRY_SKIP_DIALOGS") != "1": await dialogs()

@@ -253,31 +253,17 @@ func fatigue() -> void:
 # ---- 7 : calendrier ------------------------------------------------------------------------------------------------
 
 func calendrier() -> void:
-	app._navigate("Calendrier")
+	# Programme du mois (Entraînement › Mois, qui remplace la grille du Calendrier depuis le 22/11/2026) : la grille
+	# tient entière dans la fenêtre, sans défilement.
+	load("res://ui/immersive08/training_mois.gd").ouvrir(app)
 	await settle(30)
-	var scroll := app.find_child("CalendarProgramScroll", true, false) as ScrollContainer
-	var panneau := app.find_child("CalendarUpcomingContext", true, false) as Control
-	check(scroll != null and panneau != null, "Calendrier : défilement et panneau « Prochains rendez-vous publiés »")
-	if scroll == null or panneau == null: return
-	# Le panneau est fixe sous le planning (hors du défilement) ou, à défaut, entier dans la zone défilante.
+	var grille := app.find_child("TrainingMonthGrid", true, false) as Control
+	check(grille != null, "Programme du mois : grille présente")
+	if grille == null: return
 	var fenetre := Rect2(Vector2.ZERO, Vector2(root.size))
-	var rect := panneau.get_global_rect()
-	check(fenetre.encloses(rect), "Panneau entier dans la fenêtre : %s pour %s" % [str(rect), str(fenetre)])
-	if scroll.is_ancestor_of(panneau):
-		scroll.scroll_vertical = 0
-		await settle(6)
-		check(panneau.get_global_rect().end.y <= scroll.get_global_rect().end.y + 1.0, "Panneau entier dans la zone défilante")
-	else:
-		check(rect.position.y >= scroll.get_global_rect().end.y - 1.0, "Panneau fixe sous le planning, sans recouvrement (haut %.0f, bas du planning %.0f)" % [rect.position.y, scroll.get_global_rect().end.y])
-	var barre := scroll.get_v_scroll_bar()
-	check(barre.max_value > barre.page or scroll.get_global_rect().size.y > 200.0, "Le planning garde une zone lisible (%.0f px)" % scroll.get_global_rect().size.y)
+	check(fenetre.grow(1).encloses(grille.get_global_rect()), "Grille entière dans la fenêtre : %s pour %s" % [str(grille.get_global_rect()), str(fenetre)])
+	check(app.find_children("TrainingMonthDay_*", "Panel", true, false).size() >= 28, "Un mois complet affiché")
 	await capture("calendrier-haut")
-	scroll.scroll_vertical = int(barre.max_value)
-	await capture("calendrier-bas")
-	scroll.scroll_vertical = 0
-	# Vue semaine : même exigence.
-	var semaine := app.find_child("CalendarViewWeek", true, false)
-	print("DIAG semaine : bouton=", semaine)
 
 func run() -> void:
 	create_timer(1200.0).timeout.connect(func():

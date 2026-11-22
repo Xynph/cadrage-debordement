@@ -1498,7 +1498,9 @@ static func _fit_status(status: Label, pixels: int, smallest: int) -> void:
 ## Date de la barre haute : le programme du mois (Entraînement › Mois), au mois du jour. Il remplace l'ancienne grille
 ## mensuelle du Calendrier (choix de Léo du 22/11/2026) ; la liste des rencontres reste dans Compétitions › Calendrier.
 static func _open_current_calendar(app: Control) -> void:
-	TrainingMois.ouvrir(app)
+	# Sélectionneur sans club : son calendrier international (Calendrier), pas d'entraînement de club.
+	if Selections.nation_only(app.model): app._navigate("Calendrier")
+	else: TrainingMois.ouvrir(app)
 
 static func _existing_page(app: Control, immersive_match: bool) -> void:
 	match app.route:

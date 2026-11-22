@@ -194,9 +194,8 @@ func check_competitions() -> void:
 	var prem: String = app.pack_manager.competition("prem", "career").name
 	app._navigate("Calendrier")
 	await settle()
-	var table := named("CalendarShowTable") as Button
-	check(table != null, "Tableau détaillé accessible depuis le mois")
-	if table != null: await press(table)
+	# Liste des rencontres ouverte d'emblée (le programme du mois est dans Entraînement › Mois depuis le 22/11/2026).
+	check(named("CalendarShowMonth") != null, "Programme du mois accessible depuis le Calendrier")
 	check(named("CalendarFixtureDate") != null and "/" in named("CalendarFixtureDate").text, "Date du calendrier mise en forme")
 	check(text_present(app, str(app.model.calendar[0].venue)), "Lieu de la rencontre issu du moteur")
 	# Toute la saison sur une page qui défile (décision de Léo, 20/11/2026) : plus de pagination du calendrier.

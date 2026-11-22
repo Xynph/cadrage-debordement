@@ -83,18 +83,10 @@ static func _target_session(owner_app: Control, id: Variant) -> Dictionary:
 	if selected.is_empty() or not preload("res://ui/immersive08/calendar_agenda.gd").valid_date(selected.get("date")): return {}
 	return selected
 
-static func session_focus_name(id: String) -> String:
-	return "CalendarSessionDetail_" + id.sha256_text()
-
-static func session_context_matches(owner_app: Control, id: Variant) -> bool:
-	var session := _target_session(owner_app, id)
-	if session.is_empty() or owner_app.route != "Calendrier" or owner_app.get_meta("calendar_table", false): return false
-	var reading: Dictionary = owner_app.management_ui.get("calendar_reading", {})
-	if reading.get("selected_session", "") != id or reading.get("selected", "") != session.date or reading.get("filter", "all") not in ["all", "training"]: return false
-	var program := owner_app.find_child("CarnetCalendar", true, false) as Control
-	if program == null or not program.is_visible_in_tree(): return false
-	var focus := program.find_child(session_focus_name(id), true, false) as Button
-	return focus != null and focus.is_visible_in_tree() and focus.get_meta("entity_kind", "") == "session" and focus.get_meta("entity_id", "") == id
+## Une séance s'ouvre dans le programme du mois (Entraînement › Mois) : aucun contexte de lecture du Calendrier à
+## retrouver (l'ancienne grille mensuelle est retirée depuis le 22/11/2026).
+static func session_context_matches(_owner_app: Control, _id: Variant) -> bool:
+	return false
 
 static func _target_club(owner_app: Control, id: String) -> Dictionary:
 	if id.is_empty(): return {}
@@ -153,6 +145,9 @@ static func open_target(owner_app: Control, kind: String, id: Variant) -> bool:
 	# Date ou séance : le programme du mois (Entraînement › Mois, qui remplace l'ancienne grille du Calendrier depuis le
 	# 22/11/2026), au mois de ce jour, avec la petite fenêtre du jour.
 	if kind in ["date", "session"]:
+		if load("res://ui/international_view.gd").nation_only(owner_app.model):
+			owner_app._navigate("Calendrier", false)
+			return true
 		var date := str(_target_session(owner_app, id).get("date", "")) if kind == "session" else str(id)
 		load("res://ui/immersive08/training_mois.gd").ouvrir(owner_app, date, true)
 		return true
