@@ -59,6 +59,29 @@ func run() -> void:
 	# 2. Même joueur sur fond gris uni (sans transparence).
 	var gris := R.detecter(joueur_en_pied(200, 300, Color8(128, 128, 128)))
 	check(gris.encloses(visage) and gris.size.x < 0.75, "Fond uni : même recadrage sur la tête %s" % gris)
+	# 2b. Bras levé collé à la tête, main au-dessus du crâne : le cadre reste sur la tête, pas sur le bras.
+	var leve := joueur_en_pied(200, 300, Color(0, 0, 0, 0))
+	leve.fill_rect(Rect2i(116, 14, 12, 80), PEAU)
+	ellipse(leve, Vector2(118, 10), Vector2(9, 9), PEAU)
+	var z_leve := R.detecter(leve)
+	check(z_leve.encloses(visage) and z_leve.size.x < 0.75, "Bras levé : buste sur la tête %s" % z_leve)
+	check(absf(z_leve.get_center().x - 0.5) < 0.08 and z_leve.position.y < 36.0 / 300 and z_leve.get_center().y < 0.3, "Bras levé : cadre centré sur la tête, pas sur la main %s" % z_leve)
+	# 2c. Affiche : fond rouge, nom en grosses lettres blanches à droite, joueur en demi-corps à gauche.
+	var affiche := Image.create(240, 300, false, Image.FORMAT_RGBA8)
+	affiche.fill(Color8(196, 50, 54))
+	# Lettres blanches bordées de rose (anticrénelage sur le rouge), lignes reliées par leur liseré : texte couleur peau.
+	for ligne in 4:
+		affiche.fill_rect(Rect2i(128, 12 + ligne * 14, 84, 12), Color8(226, 168, 160))
+		affiche.fill_rect(Rect2i(130, 14 + ligne * 14, 80, 8), Color8(250, 250, 250))
+		for barre in 8: affiche.fill_rect(Rect2i(132 + barre * 10, 14 + ligne * 14, 2, 8), Color8(226, 168, 160))
+	affiche.fill_rect(Rect2i(128, 12, 2, 54), Color8(226, 168, 160))
+	affiche.fill_rect(Rect2i(20, 170, 170, 130), Color8(25, 25, 30))
+	affiche.fill_rect(Rect2i(86, 140, 28, 34), PEAU)
+	ellipse(affiche, Vector2(100, 78), Vector2(36, 34), Color8(40, 28, 20))
+	ellipse(affiche, Vector2(100, 98), Vector2(30, 40), PEAU)
+	var z_affiche := R.detecter(affiche)
+	check(z_affiche.encloses(Rect2(70.0 / 240, 58.0 / 300, 60.0 / 240, 80.0 / 300)), "Affiche : le visage est dans le carré %s" % z_affiche)
+	check(z_affiche.size.x < 0.95 and z_affiche.get_center().x < 0.48 and z_affiche.position.y < 0.15, "Affiche : cadre sur le joueur, pas sur le texte %s" % z_affiche)
 	# 3. Portrait serré (visage déjà grand) : on garde presque toute l'image.
 	var serre := Image.create(200, 200, false, Image.FORMAT_RGBA8)
 	serre.fill(Color8(120, 120, 125))

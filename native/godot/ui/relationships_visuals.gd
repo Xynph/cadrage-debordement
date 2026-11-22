@@ -7,6 +7,7 @@ const Charte = preload("res://ui/charte.gd")
 const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
 const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 const G = preload("res://ui/carnet_skin.gd")
+const JaugeAnneau = preload("res://ui/jauge_anneau.gd")
 
 const LIBELLES := {"satisfaction": "satisf.", "respect": "satisf.", "moral collectif": "moral", "moral": "moral",
 	"confiance de direction": "conf.", "confiance": "conf.", "lien": "lien", "condition du leader": "cond. leader", "condition": "cond."}
@@ -139,48 +140,14 @@ static func personnalite(trait_nom: String, leadership: Variant, action: Callabl
 
 ## ---- Anneau de jauge -------------------------------------------------------------------------
 
-class Anneau extends Control:
-	var valeur := 0.0
-	var maximum := 100.0
-	var couleur := Color.WHITE
-	var epaisseur := 10.0
-	func _draw() -> void:
-		var rayon := minf(size.x, size.y) / 2.0 - epaisseur / 2.0
-		var centre := size / 2.0
-		draw_arc(centre, rayon, 0.0, TAU, 72, Color(couleur, .18), epaisseur, true)
-		var part := clampf(valeur / maxf(1.0, maximum), 0.0, 1.0)
-		if part > 0.0: draw_arc(centre, rayon, -PI / 2.0, -PI / 2.0 + TAU * part, 72, couleur, epaisseur, true)
-
-## Anneau chiffré : chiffre au centre, « / 100 » dessous, légende avec icône sous l'anneau.
-static func anneau(valeur: float, legende: String, icone: String, couleur: Color, diametre: int = 120, id: String = "", action: Callable = Callable()) -> Control:
-	var colonne := C.v(6)
-	var dessin := Anneau.new()
-	dessin.valeur = valeur
-	dessin.couleur = couleur
-	dessin.epaisseur = C.px(diametre * .09)
-	dessin.custom_minimum_size = Vector2(C.px(diametre), C.px(diametre))
-	dessin.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	var centre := CenterContainer.new()
-	centre.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	dessin.add_child(centre)
-	var chiffres := C.v(0)
-	var chiffre := C.label(str(int(valeur)), int(diametre * .3), Charte.IVOIRE, true, 800)
-	chiffre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	chiffres.add_child(chiffre)
-	var sur := C.label("/ 100", maxi(12, int(diametre * .11)), Charte.IVOIRE_2, true, 600)
-	sur.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	chiffres.add_child(sur)
-	centre.add_child(chiffres)
-	colonne.add_child(dessin)
-	var bas := C.h(6)
-	bas.alignment = BoxContainer.ALIGNMENT_CENTER
-	bas.add_child(C.icon(icone, 18, couleur))
-	bas.add_child(C.label(legende.to_upper(), 14, couleur, true, 700))
-	colonne.add_child(bas)
+## Anneau chiffré commun (JaugeAnneau) : chiffre au centre, « / 100 » dessous, légende avec icône sous l'anneau.
+## Cliquable quand `action` est valide (même destination qu'avant), sinon simple affichage.
+static func anneau(valeur: float, legende: String, icone: String, couleur: Color, id: String = "", action: Callable = Callable()) -> Control:
+	var jauge := JaugeAnneau.new(valeur, legende, couleur, 100.0, icone)
 	if not action.is_valid():
-		colonne.name = id
-		return colonne
-	var tuile := carte(colonne, action, id, "%s %d / 100" % [legende, int(valeur)], couleur)
+		jauge.name = id
+		return jauge
+	var tuile := carte(jauge, action, id, "%s %d / 100" % [legende, int(valeur)], couleur)
 	tuile.add_theme_stylebox_override("panel", C.box(Color.TRANSPARENT, Color.TRANSPARENT, Charte.RAYON_CARTE, 6))
 	return tuile
 

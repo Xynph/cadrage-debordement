@@ -3,15 +3,16 @@ extends RefCounted
 ##
 ## Les photos d'un pack (photos en pied, demi-corps, portraits serrés) sont affichées telles
 ## quelles dans des cases carrées : sur une photo en pied, le visage devient minuscule.
-## Ici, on cherche le visage sur une copie réduite de la photo (peau la plus haute au centre,
-## largeur de tête lue sur la silhouette) et on rend un portrait buste (tête dans le tiers haut, centrée). Sans visage
+## Ici, on cherche le visage sur une copie réduite de la photo (plaque de peau épaisse, haute et centrale :
+## pas une main levée, un bras collé à la tête, des avant-bras croisés ni le texte ou le fond rouge d'une affiche ;
+## largeur de tête lue sur la peau du visage et la silhouette) et on rend un portrait buste (tête dans le tiers haut, centrée). Sans visage
 ## trouvé : carré en haut au centre pour une photo en hauteur dont le sujet se détache, photo entière sinon.
 ## Rien n'est écrit dans le pack : le résultat (rectangle en fractions de l'image) est gardé en
 ## mémoire et dans le profil du joueur (`<profil>/recadrage-visages.json`, profil = CD_GODOT_DATA_DIR sinon
 ## le dossier de données du jeu, comme main.gd).
 ## Exemple : `RecadrageVisage.region(chemin, image)` → Rect2(0.31, 0.04, 0.38, 0.25).
 
-const VERSION := 2
+const VERSION := 3
 const CACHE_NAME := "recadrage-visages.json"
 ## Côté le plus long de la copie analysée (px) : de quoi voir un visage d'une dizaine de px sur une photo en pied.
 const ANALYSE := 160
@@ -107,7 +108,8 @@ static func detecter(source: Image) -> Rect2:
 		var lum := 0.299 * r + 0.587 * g + 0.114 * b
 		var cb := 128.0 - 0.168736 * r - 0.331264 * g + 0.5 * b
 		var cr := 128.0 + 0.5 * r - 0.418688 * g - 0.081312 * b
-		if cb >= 77.0 and cb <= 127.0 and cr >= 135.0 and cr <= 175.0 and lum > 35.0 and r > g and r > b: peau[i] = 1
+		# Rouge franc (fond d'affiche, maillot) et bordeaux écartés : la peau garde du vert (g ≥ 0,3 r) et peu de bleu.
+		if cb >= 77.0 and cb <= 127.0 and cr >= 135.0 and cr <= 175.0 and lum > 35.0 and r > g and r > b and g * 10 >= r * 3 and b * 20 <= g * 23: peau[i] = 1
 	# Fermeture légère : un pixel du sujet entouré d'au moins 3 pixels de peau devient peau.
 	var ferme := PackedByteArray(); ferme.resize(n)
 	for y in h:
@@ -123,15 +125,40 @@ static func detecter(source: Image) -> Rect2:
 					voisins += peau[yy * w + xx]
 			if voisins >= 3: ferme[i] = 1
 	peau = ferme
-	# Plaques de peau : on garde la plus haute, assez grande et proche du centre.
+	# Épaisseur de la peau (distance « échiquier » au bord) : un visage est plus épais qu'un bras levé, une main
+	# ou un trait de texte d'affiche.
+	var epaisseur := PackedInt32Array(); epaisseur.resize(n)
+	for y in h:
+		for x in w:
+			var i := y * w + x
+			if peau[i] == 0: continue
+			var m := 0
+			if x > 0 and y > 0:
+				m = mini(epaisseur[i - 1], mini(epaisseur[i - w], epaisseur[i - w - 1]))
+				if x < w - 1: m = mini(m, epaisseur[i - w + 1])
+			epaisseur[i] = m + 1
+	for y in range(h - 1, -1, -1):
+		for x in range(w - 1, -1, -1):
+			var i := y * w + x
+			if peau[i] == 0: continue
+			var m := 0
+			if x < w - 1 and y < h - 1:
+				m = mini(epaisseur[i + 1], mini(epaisseur[i + w], epaisseur[i + w + 1]))
+				if x > 0: m = mini(m, epaisseur[i + w - 1])
+			epaisseur[i] = mini(epaisseur[i], m + 1)
+	# Plaques de peau : la plus épaisse et la plus haute (visage plutôt que main levée, avant-bras croisés ou texte).
 	var etiquettes := PackedInt32Array(); etiquettes.resize(n); etiquettes.fill(-1)
 	var aire_min := maxf(6.0, n * 0.004)
 	var meilleure := -1
-	var haut_meilleure := h
-	var x0m := 0
-	var x1m := 0
+	var score_meilleur := 0.0
+	# À score presque égal (±10 %), la plaque la plus haute : visage barbu plutôt que cou.
+	var haut_choisi := h
+	var coeur_depart := -1
+	var epaisseur_visage := 0
 	var pile := PackedInt32Array()
 	var numero := 0
+	var bande0 := roundi(w * 0.15)
+	var bande1 := roundi(w * 0.85)
 	for depart in n:
 		if peau[depart] == 0 or etiquettes[depart] >= 0: continue
 		etiquettes[depart] = numero
@@ -139,39 +166,102 @@ static func detecter(source: Image) -> Rect2:
 		var aire := 0
 		var somme_x := 0
 		var miny := h
-		var minx := w
-		var maxx := 0
+		var plus_epais := 0
+		var meilleur_point := 0.0
+		var point := depart
 		while not pile.is_empty():
 			var i := pile[pile.size() - 1]
 			pile.remove_at(pile.size() - 1)
 			var cx := i % w
 			var cy := i / w
 			aire += 1; somme_x += cx
-			miny = mini(miny, cy); minx = mini(minx, cx); maxx = maxi(maxx, cx)
+			miny = mini(miny, cy)
+			# Point du visage : épais, haut et central, pris dans la bande centrale (un fond d'affiche ou une chemise éclairée
+			# collés au visage ne le déportent pas).
+			if cx >= bande0 and cx <= bande1 and epaisseur[i] >= 2:
+				var valeur := pow(epaisseur[i], 0.75) * maxf(0.05, 1.0 - 1.25 * cy / h) * (1.0 - absf(cx - w / 2.0) / w)
+				if valeur > meilleur_point or (valeur == meilleur_point and i < point):
+					meilleur_point = valeur
+					plus_epais = epaisseur[i]
+					point = i
 			for v: int in [i - 1 if cx > 0 else -1, i + 1 if cx < w - 1 else -1, i - w, i + w]:
 				if v < 0 or v >= n or peau[v] == 0 or etiquettes[v] >= 0: continue
 				etiquettes[v] = numero
 				pile.append(v)
 		var milieu := float(somme_x) / aire
-		if aire >= aire_min and milieu >= 0.22 * w and milieu <= 0.78 * w and miny < haut_meilleure:
+		var score := meilleur_point
+		if aire >= aire_min and plus_epais >= 2 and milieu >= 0.12 * w and milieu <= 0.88 * w and (score > score_meilleur * 1.1 or (score > score_meilleur * 0.9 and miny < haut_choisi)):
 			meilleure = numero
-			haut_meilleure = miny
-			x0m = minx
-			x1m = maxx
+			score_meilleur = score
+			haut_choisi = miny
+			coeur_depart = point
+			epaisseur_visage = plus_epais
 		numero += 1
+	var haut_meilleure := h
+	var x0m := w
+	var x1m := 0
+	if meilleure >= 0:
+		# Visage seul : cœur épais autour du point le plus épais, regonflé de son épaisseur ; un bras collé au visage,
+		# plus fin, reste dehors.
+		var seuil := maxi(1, ceili(epaisseur_visage * 0.55))
+		var coeur := PackedByteArray(); coeur.resize(n)
+		coeur[coeur_depart] = 1
+		pile.append(coeur_depart)
+		while not pile.is_empty():
+			var i := pile[pile.size() - 1]
+			pile.remove_at(pile.size() - 1)
+			var cx := i % w
+			for v: int in [i - 1 if cx > 0 else -1, i + 1 if cx < w - 1 else -1, i - w, i + w]:
+				if v < 0 or v >= n or coeur[v] == 1 or etiquettes[v] != meilleure or epaisseur[v] < seuil: continue
+				coeur[v] = 1
+				pile.append(v)
+		var rayon := epaisseur_visage * 2 + 2
+		var large := PackedByteArray(); large.resize(n)
+		for y in h:
+			for x in w:
+				if coeur[y * w + x] == 0: continue
+				for xx in range(maxi(0, x - rayon), mini(w, x + rayon + 1)): large[y * w + xx] = 1
+		var visage := PackedByteArray(); visage.resize(n)
+		for y in h:
+			for x in w:
+				var i := y * w + x
+				if etiquettes[i] != meilleure: continue
+				for yy in range(maxi(0, y - rayon), mini(h, y + rayon + 1)):
+					if large[yy * w + x] == 1:
+						visage[i] = 1
+						break
+				if visage[i] == 1:
+					haut_meilleure = mini(haut_meilleure, y)
+					x0m = mini(x0m, x)
+					x1m = maxi(x1m, x)
+				else:
+					etiquettes[i] = -2
+		# La suite ne lit plus que la peau du visage.
+		peau = visage
 	var cote := 0.0
 	var centre := Vector2.ZERO
 	if meilleure >= 0:
-		var y0 := haut_meilleure
-		var somme := 0
-		var compte := 0
-		for y in range(y0, mini(h, y0 + 3)):
-			for x in range(x0m, x1m + 1):
-				if etiquettes[y * w + x] == meilleure:
-					somme += x
-					compte += 1
-		var cxi := roundi(float(somme) / maxi(1, compte))
-		# Largeur de tête : d'après la peau des premières lignes…
+		# Axe du visage : le point le plus épais (joues) ; front = haut de la peau du visage dans cet axe.
+		var cxi := coeur_depart % w
+		# Front : on remonte l'axe du visage tant qu'il y a de la peau (petits trous permis : bouche, ombre du nez) ;
+		# les cheveux arrêtent la montée, donc une main posée au-dessus de la tête ne compte pas.
+		var y0 := coeur_depart / w
+		var demi := maxi(1, epaisseur_visage)
+		var trou := 0
+		var y_axe := y0
+		while y_axe > 0 and trou <= maxi(3, epaisseur_visage * 3 / 4):
+			y_axe -= 1
+			var trouve := false
+			for x in range(maxi(0, cxi - demi), mini(w, cxi + demi + 1)):
+				if peau[y_axe * w + x] == 1:
+					trouve = true
+					break
+			if trouve:
+				y0 = y_axe
+				trou = 0
+			else:
+				trou += 1
+		# Largeur de tête : d'après la peau des premières lignes du visage…
 		var largeur_peau := 0
 		for y in range(y0, mini(h, y0 + maxi(8, h / 12))):
 			var gauche := -1
@@ -191,11 +281,12 @@ static func detecter(source: Image) -> Rect2:
 			while b < w - 1 and fg[yf * w + b + 1] == 1: b += 1
 		var largeur := b - a + 1
 		var centre_x := (a + b + 1) / 2.0
-		if not silhouette_ok or largeur > 0.6 * w or largeur < largeur_peau:
-			largeur = maxi(largeur_peau, largeur if silhouette_ok and largeur <= 0.6 * w else 0)
+		if not silhouette_ok or largeur > 0.6 * w or largeur < largeur_peau or largeur > largeur_peau * 3.0:
+			largeur = maxi(largeur_peau, largeur if silhouette_ok and largeur <= 0.6 * w and largeur <= largeur_peau * 3.0 else 0)
 			centre_x = cxi + 0.5
 			silhouette_ok = false
-		largeur = maxi(largeur, 3)
+		# Visage à moitié dans l'ombre : la peau n'en montre qu'une moitié ; l'épaisseur donne un minimum.
+		largeur = maxi(largeur, maxi(3, roundi(epaisseur_visage * 2.4)))
 		# Centre horizontal : médiane des milieux de la peau du visage (ligne par ligne, du front au bas du visage),
 		# plus sûre que la silhouette quand les cheveux, un bras ou le fond la déportent.
 		var milieux: Array[float] = []
@@ -235,7 +326,10 @@ static func detecter(source: Image) -> Rect2:
 		# Buste : tête (crâne → menton ≈ 1,35 largeur) dans le tiers haut, un peu d'air au-dessus du crâne.
 		cote = largeur * BUSTE
 		centre = Vector2(centre_x, crane - AIR_CRANE * cote + cote / 2.0)
-	elif h > w * 1.15:
+		# « Visage » plus large que 40 % de la photo : chemise ou fond pris pour de la peau sous un éclairage chaud,
+		# ou portrait déjà serré ; on fait comme sans visage.
+		if largeur > 0.4 * w: meilleure = -1
+	if meilleure < 0 and h > w * 1.15:
 		# Pas de visage : carré en haut au centre (haut de la silhouette si elle se distingue).
 		var haut := -1
 		for y in h:
@@ -247,7 +341,7 @@ static func detecter(source: Image) -> Rect2:
 		if haut < 0: return Rect2(0, 0, 1, 1)
 		cote = w
 		centre = Vector2(w / 2.0, maxf(0.0, haut - w * 0.04) + w / 2.0)
-	else:
+	elif meilleure < 0:
 		return Rect2(0, 0, 1, 1)
 	cote = clampf(cote, mini(w, h) * 0.25, mini(w, h))
 	var coin := Vector2(clampf(centre.x - cote / 2.0, 0.0, w - cote), clampf(centre.y - cote / 2.0, 0.0, h - cote))
