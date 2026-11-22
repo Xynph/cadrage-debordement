@@ -26,6 +26,7 @@ const Observation = preload("res://ui/player_observation.gd")
 const Sort = preload("res://ui/recruitment_sort.gd")
 const Sales = preload("res://ui/player_sales_view.gd")
 const FicheCharge = preload("res://ui/immersive08/fiche_charge.gd")
+const FicheRoles = preload("res://ui/immersive08/fiche_roles.gd")
 
 ## Onglets : [index d'état, libellé]. L'index 1 (ancien onglet Attributs) n'existe plus : ses 36 attributs sont en
 ## première page ; un état resté sur 1 ouvre la Vue d'ensemble.
@@ -398,9 +399,18 @@ static func _attributs(card: Panel, app: Control, player: Dictionary, source: St
 		bouton.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	else:
 		D.text(card,1396,38,"36 ATTRIBUTS",17,Charte.IVOIRE_2,700,240,HORIZONTAL_ALIGNMENT_RIGHT)
+	var role: Array = [] if values.is_empty() else FicheRoles.role(str(FicheRoles.etat(app,player,values).role))
+	FicheRoles.bandes(card,Vector2(24,72),Vector2(1372,340),role)
 	Commune.grille_attributs(card,Vector2(24,72),Vector2(1372,340),values,"PlayerDetailedAttribute_")
+	FicheRoles.estomper(card,Vector2(24,72),Vector2(1372,340),"PlayerDetailedAttribute_",role)
 
 static func _postes(card: Panel, app: Control, player: Dictionary, source: String) -> void:
+	var valeurs_roles := Commune.valeurs(player,source)
+	if not valeurs_roles.is_empty():
+		_titre(card,"POSTES ET RÔLES")
+		FicheRoles.carte(card,app,player,valeurs_roles)
+		_courbe(card,app,player,source)
+		return
 	_titre(card,"POSTES","POSTE PRINCIPAL ET POLYVALENCES")
 	D.rect(card,Rect2(24,84,12,12),Charte.club_trait(app.accent),6)
 	D.text(card,46,98,Roster.primary_caption(player)+" (principal)",21,Charte.IVOIRE,600,700,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerPrimaryRole"
@@ -420,6 +430,9 @@ static func _postes(card: Panel, app: Control, player: Dictionary, source: Strin
 	field.tooltip_text = "Plein : poste principal · cerclé : autres postes maîtrisés"
 	card.add_child(field)
 	D.place(field,Rect2(1080,70,316,190))
+	_courbe(card,app,player,source)
+
+static func _courbe(card: Panel, app: Control, player: Dictionary, source: String) -> void:
 	if source == "market": return
 	# Courbe des notes match par match (notes enregistrées de la saison, la plus ancienne à gauche).
 	var notes := NotesMatch.joueur(app.model,str(player.id))
