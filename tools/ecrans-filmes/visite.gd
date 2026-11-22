@@ -69,6 +69,10 @@ const EXTRAS := [
 	{"id": "effectif-developpement", "libelle": "Effectif · onglet Développement", "type": "effectif_onglet", "onglet": 3},
 	## Forme récente (21/11/2026) : petite fenêtre du dernier match noté d’un joueur.
 	{"id": "effectif-forme-fenetre", "libelle": "Effectif · petite fenêtre d'un match de la forme récente", "type": "effectif_onglet", "onglet": 0, "ouvrir": "FormeMatch4"},
+	## Bandeau des filtres et restes des listes (21/11/2026) : courbe au survol, calendrier en tableau, « Entre clubs ».
+	{"id": "effectif-courbe", "libelle": "Effectif · mini-courbe au survol de la condition", "type": "effectif_onglet", "onglet": 0, "survol": "TotalTuileOuvrir_Condition"},
+	{"id": "classements-calendrier", "libelle": "Classements · onglet Calendrier (tableau)", "type": "classements_onglet", "onglet": "calendar"},
+	{"id": "recrutement-entre-clubs", "libelle": "Recrutement · sous-page Marché entre clubs", "type": "recrutement_sous", "page": "interclub"},
 	{"id": "finances-tresorerie", "libelle": "Finances · onglet Trésorerie (colonne de verdict)", "type": "finances_onglet", "onglet": "cash"},
 	{"id": "finances-salaires", "libelle": "Finances · onglet Salaires", "type": "finances_onglet", "onglet": "wages"},
 	{"id": "finances-budget", "libelle": "Finances · onglet Budget", "type": "finances_onglet", "onglet": "budget"},
@@ -449,6 +453,8 @@ func preparer_presse() -> void:
 ## Ouvre un écran hors direct. Renvoie {"statut": ok|redirige|indisponible|echec, "route", "note"}.
 func ouvrir(ecran: Dictionary) -> Dictionary:
 	fermer_fenetres()
+	# Bulle de survol montrée par programme pour l'écran précédent : rangée avant l'écran suivant.
+	load("res://ui/bulle_survol.gd").cacher(app)
 	# La salle d'entraînement couvre tout l'écran : refermée avant l'écran suivant.
 	if bool(app.contextual_director.get("training_open")) and str(ecran.type) != "salle_entrainement":
 		app.contextual_director.close_training()
@@ -585,6 +591,15 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				if valider == null or valider.disabled: return {"statut": "indisponible", "note": "offre non envoyable pour cette piste"}
 				valider.pressed.emit()
 				await stabiliser()
+		"recrutement_sous":
+			app.management_ui.erase("recrutement_page")
+			app._navigate("Recrutement")
+			await stabiliser()
+			if app.route != "Recrutement": return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
+			load("res://ui/immersive08/recruitment_pages.gd").ouvrir(app, str(ecran.page))
+			await stabiliser()
+			await stabiliser()
+			if app.find_child("RecrutementSubpage_" + str(ecran.page), true, false) == null: return {"statut": "echec", "note": "sous-page non ouverte"}
 		"classements_page":
 			# Sous-pages de Classements (décision de Léo du 19/11/2026 : plus de petite fenêtre) : une rencontre du calendrier du club, les archives.
 			app.management_ui.erase("competition_page")
@@ -706,6 +721,12 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				var cible := app.find_child(str(ecran.ouvrir), true, false) as Button
 				if cible == null: return {"statut": "echec", "note": "élément introuvable : " + str(ecran.ouvrir)}
 				cible.pressed.emit()
+				await stabiliser()
+			if ecran.has("survol"):
+				# Pas de souris sur le bureau séparé : la bulle du survol est montrée par programme (ui/bulle_survol.gd).
+				var ancre := app.find_child(str(ecran.survol), true, false) as Control
+				if ancre == null or not ancre.has_meta("bulle_fabrique"): return {"statut": "indisponible", "note": "pas de bulle sur " + str(ecran.survol)}
+				load("res://ui/bulle_survol.gd").montrer(ancre)
 				await stabiliser()
 			if ecran.has("ouvrir_prefixe"):
 				# Joueur le plus parlant : prolongation ouverte dont la demande s'écarte le plus du salaire actuel.

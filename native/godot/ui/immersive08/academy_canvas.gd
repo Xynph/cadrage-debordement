@@ -18,6 +18,7 @@ const Pages = preload("res://ui/immersive08/formation_pages.gd")
 const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
 const Identity = preload("res://ui/player_identity.gd")
 const Words = preload("res://ui/management_state.gd")
+const Bandeau = preload("res://ui/bandeau_filtres.gd")
 const TABS = ["Effectif", "Progression", "Passerelles", "Encadrement"]
 const GROUPES := {"u21":"U21", "u18":"U18", "academy":"Tous les Espoirs", "professional":"Jeunes professionnels"}
 const TRIS := {"decide":"À décider d’abord", "note":"Niveau", "potential":"Potentiel", "age":"Âge", "name":"Nom"}
@@ -282,6 +283,8 @@ func _filtered(group: String, avec_statut: bool) -> Array:
 		return true)
 
 func _filters(group: String) -> void:
+	# Bandeau des filtres (demande de Léo du 21/11/2026) : sous les onglets, détouré, à la largeur du tableau.
+	Bandeau.poser(self, Rect2(0, 196, WIDTH, 54))
 	var recherche := LineEdit.new()
 	recherche.name = "AcademySearch"
 	recherche.placeholder_text = "Chercher un jeune…"
@@ -297,7 +300,7 @@ func _filters(group: String) -> void:
 	focus.set_border_width_all(2)
 	recherche.add_theme_stylebox_override("focus", focus)
 	add_child(recherche)
-	D.place(recherche, Rect2(0, 204, 330, 38))
+	D.place(recherche, Rect2(Bandeau.MARGE, 204, 330, 38))
 	recherche.text_changed.connect(func(value: String):
 		state.search = value
 		state.search_focus = true
@@ -309,7 +312,7 @@ func _filters(group: String) -> void:
 		recherche.set_deferred("caret_column", recherche.text.length())
 	var base := _filtered(group, false)
 	var puces := [["", "Tous", base.size()], ["decide", "À décider", _compter(base, "decide")], ["pepite", "Pépites", _compter(base, "pepite")], ["blesse", "Blessés", _compter(base, "blesse")]]
-	var x := 346.0
+	var x := 346.0 + Bandeau.MARGE
 	for puce: Array in puces:
 		var choisie := str(state.get("status", "")) == str(puce[0])
 		var libelle := "%s  %d" % [puce[1], puce[2]]
@@ -342,7 +345,7 @@ func _filters(group: String) -> void:
 	for p: Dictionary in (professionals if group == "professional" else roster):
 		var poste := str(p.get("pos", ""))
 		if not poste.is_empty(): positions[poste] = poste
-	var droite := float(WIDTH)
+	var droite := float(WIDTH) - Bandeau.MARGE
 	droite -= 360
 	_picker(Rect2(droite, 204, 360, 38), "AcademyImmersiveSort", "Tri", TRIS, str(state.get("table_sort", "decide")), func(value): _sort_choice(str(value)))
 	droite -= 292
@@ -448,7 +451,7 @@ func _table(group: String) -> void:
 	panel.mouse_filter = Control.MOUSE_FILTER_PASS
 	var header := D.rect(panel, Rect2(0, 0, WIDTH, HEADER_H), Color.TRANSPARENT, 0)
 	header.name = "AcademyHeader"
-	D.line(panel, Vector2(0, HEADER_H - 1), Vector2(WIDTH, HEADER_H - 1), Charte.FILET)
+	Bandeau.peindre_entete(header)
 	for col: Dictionary in columns:
 		var key: String = col.tri
 		if key.is_empty():

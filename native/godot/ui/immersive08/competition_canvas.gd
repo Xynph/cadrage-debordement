@@ -19,6 +19,8 @@ const EquipeType = preload("res://ui/equipe_type_view.gd")
 const Zones = preload("res://ui/immersive08/standings_zones.gd")
 const Charte = preload("res://ui/charte.gd")
 const TenueClub = preload("res://ui/tenue_club.gd")
+const Bandeau = preload("res://ui/bandeau_filtres.gd")
+const Reperes = preload("res://ui/immersive08/reperes.gd")
 const WIDTH := 2248
 const LEFT := 1500
 const GAP := 24
@@ -652,6 +654,8 @@ func _classement() -> void:
 	var panel_h := rows_y + shown * ROW + 18 + footer + 18
 	var panel := _panel(self, Rect2(0, TOP, LEFT, panel_h), "CLASSEMENT", "", "StandingsTableFrame")
 	left_bottom = TOP + panel_h
+	# Bandeau des filtres (demande de Léo du 21/11/2026) : titre, division, poules et en-têtes dans un bandeau détouré.
+	Bandeau.poser(panel, Rect2(8, 4, LEFT - 16, rows_y - 6), 40.0)
 	_division_menu(panel, 250, 12, 540)
 	_result_legend(panel, LEFT - 24 - 450, 20)
 	if not pools.is_empty(): _pool_widget(panel, pools, selected_pool, 24, 76)
@@ -1284,6 +1288,8 @@ func _calendar() -> void:
 	var panel := _panel(self, Rect2(0, TOP, LEFT, 760), "TOUTE LA SAISON · CALENDRIER DU CLUB", "", "CalendarScroll")
 	left_bottom = TOP + 760
 	var selected := str(state.get("calendar_filter", "all"))
+	# Bandeau des filtres (demande de Léo du 21/11/2026) : pastilles de filtre et en-têtes dans un bandeau détouré.
+	Bandeau.poser(panel, Rect2(8, 54, LEFT - 16, 90), 36.0)
 	var x := 24
 	for spec: Array in [[170, "Tous les matchs", "all"], [120, "À jouer", "upcoming"], [120, "Résultats", "played"]]:
 		_filtre(panel, Rect2(x, 62, spec[0], 40), spec[1], selected == spec[2], func():
@@ -1294,7 +1300,7 @@ func _calendar() -> void:
 	var visible := fixtures.filter(func(fixture: Dictionary): return selected == "all" or bool(fixture.get("played", false)) == (selected == "played"))
 	D.text(panel, LEFT - 24, 88, P.plural(visible.size(), "rencontre", "rencontres"), 20, C.MUTED, 500, 240, HORIZONTAL_ALIGNMENT_RIGHT)
 	var period := "DATE / PHASE" if international else "JOURNÉE / PHASE"
-	for spec: Array in [[19, period, 230], [296, "ADVERSAIRE", 430], [720, "LIEU", 228], [954, "COMPÉTITION", 185], [LEFT - 157, "RÉSULTAT", 140]]:
+	for spec: Array in [[19, period, 230], [296, "ADVERSAIRE", 430], [650, "LIEU", 290], [954, "COMPÉTITION", 185], [LEFT - 157, "RÉSULTAT", 140]]:
 		D.text(panel, spec[0], 134, spec[1], 15, C.MUTED, 700, spec[2])
 	D.line(panel, Vector2(9, 142), Vector2(LEFT - 9, 142), Charte.FILET)
 	# Toute la saison sur une page qui défile (décision de Léo) : plus de pagination.
@@ -1405,19 +1411,20 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 		D.text(row, 16, middle + 11, _dated_phase(fixture), 16, C.MUTED, 500, 232)
 	var emblem_x := 250
 	_crest(row, opponent, Rect2(emblem_x, (line_height - 34) / 2.0, 34, 34))
-	D.text(row, emblem_x + 45, middle, G.club_name(opponent), 24, C.IVORY, 600, 400)
+	D.text(row, emblem_x + 45, middle, G.club_name(opponent), 24, C.IVORY, 600, 340)
 	_entity_area(row, Rect2(emblem_x, 0, 445, line_height), {"kind":"club", "id":str(opponent.get("id", ""))}, "CalendarOpponent_" + fid, "Ouvrir le club · " + G.club_name(opponent))
 	if not date.is_empty():
 		_entity_area(row, Rect2(12, 0, 232, line_height), {"kind":"date", "id":str(fixture.get("date", ""))}, "CalendarDate_" + fid, "Voir la date dans le calendrier · " + date)
-	var place_x := 720
+	var place_x := 650
 	var location_kind := _location_kind(fixture)
 	_icon(row, C.fixture_location_icon(location_kind), Rect2(place_x, (line_height - 18) / 2.0, 18, 18), C.MUTED)
 	var venue_parts := venue.split(" · ",false,1)
 	if venue_parts.size() == 2:
-		D.text(row,place_x+25,middle-7,venue_parts[0],21,C.IVORY,600,204)
-		D.text(row,place_x+25,middle+11,venue_parts[1],16,C.MUTED,500,204)
+		D.text(row,place_x+25,middle-7,venue_parts[0],_taille_dans(venue_parts[0], 262.0, 21, 600),C.IVORY,600,262)
+		D.text(row,place_x+25,middle+11,venue_parts[1],_taille_dans(venue_parts[1], 262.0, 16, 500),C.MUTED,500,262)
 	else:
-		D.text(row,place_x+25,middle,venue if not venue.is_empty() else _location(fixture),21,C.IVORY,500,204)
+		var lieu := venue if not venue.is_empty() else _location(fixture)
+		D.text(row,place_x+25,middle,lieu,_taille_dans(lieu, 262.0, 21, 500),C.IVORY,500,262)
 	D.text(row,954,middle,World.short_name(_competition_id(fixture),competition,app.model),21,C.MUTED,500,185)
 	_entity_area(row, Rect2(954,0,185,line_height), {"kind":"competition", "id":competition_id}, "CalendarCompetition_" + fid, "Voir le classement · " + competition)
 	var result_x := width - 157
@@ -1427,6 +1434,12 @@ func _calendar_row(parent: Node, fixture: Dictionary, y: float, width: float, co
 		_result_badge(row, Rect2(result_x, (line_height - 32) / 2.0, width - result_x - 14, 32), code, code + " " + score if code != "—" else score)
 	else:
 		_box_tag(row, Rect2(result_x, (line_height - 32) / 2.0, width - result_x - 14, 32), "À jouer", Charte.IVOIRE if current else Charte.IVOIRE_2)
+
+## Plus grande police (jusqu'à `depart`, au moins 15) qui fait tenir `texte` dans `largeur` : on réduit avant de couper par « … ».
+func _taille_dans(texte: String, largeur: float, depart: int, poids: int) -> int:
+	var taille := depart
+	while taille > 15 and Reperes.largeur(texte, taille, poids) > largeur: taille -= 1
+	return taille
 
 func _playoffs() -> void:
 	var panel := _panel(self, Rect2(0, TOP, LEFT, 760), "PHASES FINALES – " + _league_short(league).to_upper(), "trophy", "CompetitionPlayoffsPanel")
