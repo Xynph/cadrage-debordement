@@ -25,6 +25,7 @@ const Pages = preload("res://ui/immersive08/club_pages.gd")
 const Habillage = preload("res://ui/immersive08/recruitment_pages.gd")
 const Etat = preload("res://ui/management_state.gd")
 const StaffTable = preload("res://ui/staff_career_view.gd")
+const ConseilLettre = preload("res://ui/immersive08/conseil_lettre.gd")
 const KEY = "immersive08_club_tab"
 const GOALS = {"wins":"Victoires", "points":"Points", "rank":"Place au classement", "cash":"Trésorerie"}
 const GOAL_STATUS = {"pending":"À suivre", "met":"Atteint", "missed":"Manqué", "unverified":"Non vérifié"}
@@ -314,6 +315,15 @@ static func _conseil(panneau: Panel, app: Control, finance: Dictionary, board: D
 		Pastilles.poser_a_droite(panneau, Pastilles.pastille("1er bilan à venir", Pastilles.BLEU, "clock", "Le conseil rend son premier bilan après quelques journées.", 18, "ClubLastReview", func(): _open_strategy(app, 1)), largeur - 24, 14)
 	else:
 		Kit.texte(panneau, largeur - 24, 40, "dernier bilan après J%s" % G.n(dernier.round), Charte.IVOIRE_2, 400, 18, HORIZONTAL_ALIGNMENT_RIGHT).name = "ClubLastReview"
+	var variante := ConseilLettre.variante()
+	if variante != "":
+		if variante == "A": ConseilLettre.conseil_a(panneau, app, finance, board, largeur)
+		else: ConseilLettre.conseil_b(panneau, app, finance, largeur)
+		D.line(panneau, Vector2(24, 306), Vector2(largeur - 24, 306), Charte.FILET)
+		_objectif(panneau, app, board, 24, 322, 600)
+		if variante == "A": _bilans(panneau, app, historique, 664, 322, largeur - 664 - 24)
+		else: ConseilLettre.bilans_b(panneau, app, historique, 664, 322, largeur - 664 - 24)
+		return
 	Kit.etiquette(panneau, 24, 90, "Confiance du conseil", 500)
 	var valeur := G.n(confiance) if confiance != null else "—"
 	var chiffre := D.text(panneau, 24, 152, valeur, 66, Charte.IVOIRE, 800, 130)
@@ -545,6 +555,15 @@ static func _installations(panneau: Panel, app: Control, finance: Dictionary, st
 		academie_suite = "%s Crabos · %s Espoirs" % [G.n(suivi.get("crabos", {}).get("count", 0)), G.n(suivi.get("espoirs", {}).get("count", 0))]
 	rangees.append({"id": "ClubFacilityAcademy", "nom": "Académie", "niveau": academie_niveau, "segments": [3, int(academie)] if academie != null else [], "suite": academie_suite, "cout": "", "statut": "", "action": func(): app._navigate("Centre")})
 	rangees.append({"id": "ClubFacilityStadium", "nom": str(G.identity(app.model.club).get("stadium", "Le stade")), "niveau": G.n(fans.capacity) + " places" if fans.has("capacity") else "—", "segments": [], "suite": "Affluence prévue " + G.n(fans.expectedAttendance) if fans.has("expectedAttendance") else "Photo, ville et crédits", "cout": "", "statut": "", "action": func(): _tab(app, "territory", "ClubTab_overview")})
+	var variante := ConseilLettre.variante()
+	if variante == "B":
+		var etats: Array = []
+		for r: Dictionary in rangees: etats.append(ConseilLettre.etat_installation(str(r.id), app, finance, strategie))
+		ConseilLettre.installations_b(panneau, rangees, etats, largeur)
+		for enfant in panneau.get_children():
+			if enfant is Label and enfant.name != "CardTitle": enfant.visible = false
+			elif enfant is ColorRect: enfant.visible = false
+		return
 	for i in rangees.size():
 		var donnees: Dictionary = rangees[i]
 		var rangee := Button.new()
@@ -558,6 +577,7 @@ static func _installations(panneau: Panel, app: Control, finance: Dictionary, st
 		if i > 0: D.line(panneau, Vector2(18, 98 + i * 40), Vector2(largeur - 18, 98 + i * 40), Charte.FILET)
 		var nom := Kit.texte(rangee, 6, 27, str(donnees.nom), Charte.IVOIRE, 400, 19)
 		nom.add_theme_font_override("font", Kit.texte_gras())
+		if variante == "A": ConseilLettre.pastille_ligne(rangee, ConseilLettre.etat_installation(str(donnees.id), app, finance, strategie), 6 + minf(Kit.largeur(str(donnees.nom), 19), 250) + 14, str(donnees.id) + "Etat")
 		var segments: Array = donnees.segments
 		if segments.is_empty(): Kit.texte(rangee, 452, 27, str(donnees.niveau), Charte.IVOIRE, 320, 18)
 		else:
