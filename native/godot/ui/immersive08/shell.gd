@@ -1576,11 +1576,11 @@ const FONDS := {"Bureau":"fond-bureau", "Réception":"mail-finances", "Effectif"
 	"Travail du club":"fond-medical", "Finances":"fond-finances", "Calendrier":"fond-calendrier",
 	"Classements":"fond-classements", "Rivalités":"mail-rivalite", "Formation":"fond-jeunes", "Centre":"mail-jeunes",
 	"Suivi des jeunes":"chargement-08", "Presse":"fond-presse", "Sélections":"voyage-aeroport",
-	"Carrière":"titre-nouvelle-carriere"}
+	"Carrière":"titre-nouvelle-carriere", "Réglages":"fond-reglages", "Recherche":"fond-recherche"}
 ## Onglets qui changent de thème dans une même route : Entraînement (Préparation, onglet 2), Club › Infrastructures
 ## et Club › Histoire.
 const FOND_ENTRAINEMENT := "chargement-02"
-const FONDS_CLUB := {"infrastructure":"club-stade-niveau-3", "history":"fond-palmares"}
+const FONDS_CLUB := {"infrastructure":"club-stade-niveau-3", "history":"fond-palmares", "staff":"fond-staff"}
 
 static func fond_ecran(route: String, phase: String = "", ui: Dictionary = {}) -> String:
 	var id := str(FONDS.get(route, ""))
