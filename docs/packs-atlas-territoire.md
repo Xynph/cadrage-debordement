@@ -183,3 +183,41 @@ acceptées par l'édition à 116 clubs, championnats concordants (top14 → elit
 prod2 → accession, autres identiques). `tests/board-identity-pack.cjs` couvre
 le schéma, les refus, le nom de base, le remplacement et la conversion (noms
 inventés).
+
+## Talents : potentiels relevés et joueurs ajoutés (rubrique `talents`)
+
+Rubrique facultative d'un `pack.json` d'édition Monde (refusée hors Monde),
+lue à la création d'une carrière avec ce pack comme pack de création, par
+identifiants seulement, comme le niveau réel compilé
+(`native/engine/world-niveaux-v2.json`). Sans pack, ou avec un pack qui ne la
+porte pas, les effectifs restent exactement ceux du jeu de base.
+
+```json
+"talents": {
+  "potentials": { "world:prem:123": [6, 92] },
+  "added": [
+    { "id": "pack:ajout-001", "clubId": 39, "position": "Ailier", "birthYear": 2006,
+      "nation": "ENG", "statut": "jeune", "u20": 1, "potential": [8, 92] }
+  ]
+}
+```
+
+- `potentials` : `[hausse, plafond]` (hausse 0 à 10, plafond 40 à 99). Le
+  potentiel de départ calculé par le barème monte de `hausse` sans dépasser
+  `plafond`, jamais ne baisse ; la note actuelle ne bouge pas. La variation de
+  carrière s'applique ensuite, comme pour tous les joueurs.
+- `added` : joueurs créés dans l'effectif de départ de leur club (au plus 12 par
+  club, 300 en tout). Identifiant `pack:` + 1 à 40 caractères `[a-z0-9-]`,
+  poste du jeu (11 postes, « Demi d’ouverture » avec l'apostrophe ’), année de
+  naissance (âge = 2026 − année), nation en code à trois lettres facultative
+  (fiche du joueur), `statut` (`titulaire`, `rotation`, `reserviste`, `jeune`)
+  et `u20` (0 ou 1) qui entrent dans le barème comme pour un joueur de la base,
+  `potential` facultatif. Contrat de 2 à 3 saisons, salaire fixé par le barème
+  des salaires à la création.
+- Nom et portrait d'un joueur ajouté : rubrique `players` du même pack, avec
+  son identifiant. La sauvegarde garde un nom inventé (prénom et nom de deux
+  coéquipiers), le pack actif le présente.
+- Le manifeste installé porte `meta.talentsVersion: 1`, les compteurs
+  `talentPotentials` et `talentAdditions`, et la rubrique normalisée,
+  revalidée à chaque lecture. `tests/pack-talents.cjs` couvre la rubrique avec
+  un pack d'exemple fictif.

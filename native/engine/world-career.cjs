@@ -387,6 +387,35 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
   const partition=Object.fromEntries(IDS.map(id=>[id,REG.clubs.filter(c=>c.leagueId===id).map(c=>c.id)]));
   return baseFixtures(s,partition,REG.initialEurope).map(f=>({...f,week:weekOf(s,f.date)}));
  }
+ // Rubrique « talents » du pack de création (pack-talents.cjs), posée par worker.cjs le temps de start() :
+ // joueurs ajoutés à leur club de départ et potentiels relevés, par identifiants seulement. Absente : rien ne change.
+ const packTalents=()=>typeof nativePackTalents!=='undefined'&&nativePackTalents&&seniorCalibration?.calibrateAdded?nativePackTalents:null;
+ // Nom de base inventé (comme les joueurs de complément) : prénom et nom pris à deux coéquipiers, unique dans le monde ;
+ // le pack le présente sous le vrai nom.
+ function talentName(id,roster,taken){
+  const parts=roster.map(p=>String(p.name).trim().split(/\s+/)).filter(p=>p.length>1);
+  for(let k=0;k<60&&parts.length;k++){const name=parts[(seedHash(id)+k*7)%parts.length][0]+' '+parts[(seedHash(id+':nom')+k*13)%parts.length].at(-1);if(!taken.has(name))return name;}
+  for(let k=0;;k++){const name=FIRST[(seedHash(id)+k)%FIRST.length]+' '+LAST[(seedHash(id+':nom')+3*k)%LAST.length];if(!taken.has(name))return name;}
+ }
+ function addTalents(talents){
+  const taken=new Set(S.clubs.flatMap(c=>c.players.map(p=>p.name)));
+  for(const t of talents.added||[]){
+   const club=S.clubs[t.clubId];if(!club||club.players.some(p=>p.id===t.id))continue;
+   const index=POS.indexOf(t.position);if(index<0)continue;
+   const p={id:t.id,name:talentName(t.id,club.players,taken),pos:t.position,fam:FAMILIES[index],gameplayPosition:t.position,age:2026-t.birthYear,birthYear:t.birthYear,ageEstimated:false,
+    rating:60,condition:92+seedHash(t.id)%9,injury:0,salary:1400,contractEnd:2+seedHash(t.id+':contrat')%2,appearanceBankVersion:2};
+   if(t.nation)p.nationCode=t.nation;
+   // Note et potentiel : barème du championnat, avec le statut et le U20 donnés par le pack.
+   const potential=seniorCalibration.calibrateAdded(p,{clubId:club.id,leagueId:REG.clubs[club.id].leagueId,registry:REG},['aucune',t.statut,t.u20,'moyenne']);
+   ensureSkills(p);ensureDevelopment(p);p.dev.potential=potential;
+   taken.add(p.name);club.players.push(p);
+  }
+ }
+ // Potentiels relevés : hausse plafonnée du potentiel de départ, jamais de baisse ; la note ne bouge pas.
+ function raiseTalents(talents){
+  const raises=new Map([...Object.entries(talents.potentials||{}),...(talents.added||[]).filter(t=>t.potential).map(t=>[t.id,t.potential])]);
+  for(const club of S.clubs)for(const p of club.players){const r=raises.get(p.id);if(!r||!p.dev)continue;p.dev.potential=Math.max(p.dev.potential,Math.min(p.dev.potential+r[0],r[1],99),p.rating);}
+ }
  function start(id,dailyCalendar=false){
   check(playable.has(id),'club jouable invalide.');
   S={version:2,commonDatabase:copy(REG.marker),rosterFoundation:copy(CDRosterFoundation.marker),club:id,season:1,round:0,
@@ -401,6 +430,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
     if(term.endType==='minimum-season-end')player.contractEnd=Math.max(player.contractEnd,term.endSeason);
    }
   }
+  const talents=packTalents();if(talents)addTalents(talents);
   newSeason(S,true,dailyCalendar);setupOpposition();setupEconomy();
   if(typeof nativeProfessionalDepth!=='undefined')nativeProfessionalDepth.fill(S);
   S.aiRoster.academyAgingVersion=1;
@@ -409,6 +439,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
    // Barème V2 (nouvelles carrières) : niveau réel du joueur, de son club et de son championnat.
    for(const club of S.clubs)seniorCalibration.apply(club.players,SOURCES,{clubId:club.id,leagueId:REG.clubs[club.id].leagueId,registry:REG});
    seniorCalibration.settle?.(S.clubs.flatMap(club=>club.players));
+   if(talents)raiseTalents(talents);
    S.seniorCalibrationVersion=seniorCalibration.worldVersion??seniorCalibration.version;
   }
   club().players.forEach(ensureSatisfaction);v39Initialize();autoLineup();if(sheetErrors().length&&!(typeof nativeProfessionalDepth!=='undefined'&&nativeProfessionalDepth.playedClubExempt(S)))promoteCover();refreshMarket();setupManager();careerSetup();worldSetup();save();view='dashboard';entryScreen='game';
