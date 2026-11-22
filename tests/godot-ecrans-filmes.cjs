@@ -59,6 +59,21 @@ test('Écrans filmés : scripts PowerShell sans erreur de syntaxe (BOM pour Powe
   assert.equal(run.status, 0, run.stderr);
 });
 
+// 22/11 : godot-slot.ps1 pose CD_GODOT_PLACE avant d'appeler lui-même Invoke-GodotSurBureauCache ; la variable seule
+// faisait sauter le bureau séparé et la surveillance (jeu apparu sur l'écran de Léo). Seul le bureau réel du fil compte.
+test('Écrans filmés : CD_GODOT_PLACE seul ne fait jamais sauter le bureau séparé', { skip: process.platform !== 'win32' && 'Windows seulement' }, () => {
+  const script = path.join(racine, 'scripts/bureau-cache.ps1').replace(/'/g, "''");
+  const run = spawnSync('powershell', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', `. '${script}'; Write-Output ((Get-BureauDuFil) + '|' + (Test-BureauDejaCache))`], {
+    encoding: 'utf8', windowsHide: true, timeout: 60000, env: { ...process.env, CD_GODOT_PLACE: 'E:\\x\\godot-1.lock' },
+  });
+  assert.ifError(run.error);
+  assert.equal(run.status, 0, run.stderr);
+  const [bureau, dejaCache] = (run.stdout || '').trim().split('|');
+  assert.ok(bureau, run.stdout + run.stderr);
+  assert.equal(dejaCache, bureau === 'Default' ? 'False' : 'True', run.stdout);
+  assert.doesNotMatch(lire('scripts/bureau-cache.ps1'), /if \(\$env:CD_GODOT_PLACE\) \{\s*\$chrono/);
+});
+
 test('Écrans filmés : arguments, liste des écrans, nommage et débordements de l’outil Godot', { skip: !godot && 'Godot SDK required' }, () => {
   const run = spawnSync(godot, ['--headless', '--audio-driver', 'Dummy', '--path', path.join(racine, 'native/godot'), '--script', path.join(__dirname, 'godot-ecrans-filmes.gd')], {
     encoding: 'utf8', windowsHide: true, timeout: 120000,

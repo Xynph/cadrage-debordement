@@ -93,6 +93,11 @@ public static class BureauCache {
   public static void Fermer() { if (Job != IntPtr.Zero) { CloseHandle(Job); Job = IntPtr.Zero; } }
   public static int Code(IntPtr h) { uint c; GetExitCodeProcess(h, out c); return unchecked((int)c); }
   public static uint PremierPlan() { uint p; GetWindowThreadProcessId(GetForegroundWindow(), out p); return p; }
+  [DllImport("user32.dll")] static extern IntPtr GetThreadDesktop(uint tid);
+  [DllImport("kernel32.dll")] static extern uint GetCurrentThreadId();
+  [DllImport("user32.dll", CharSet=CharSet.Unicode)] static extern bool GetUserObjectInformationW(IntPtr h, int index, StringBuilder buf, int len, out int need);
+  // Nom du bureau Windows de ce fil (« Default » = bureau de l'utilisateur ; « GodotSlot1234 »… = bureau séparé).
+  public static string BureauDuFil() { var b = new StringBuilder(256); int n; return GetUserObjectInformationW(GetThreadDesktop(GetCurrentThreadId()), 2, b, 512, out n) ? b.ToString() : ""; }
   static string Nom(uint pid) { try { return System.Diagnostics.Process.GetProcessById((int)pid).ProcessName; } catch { return "?"; } }
 
   // Processus actuellement dans notre job (liste exacte tenue par Windows).
@@ -194,6 +199,14 @@ function Exit-PlaceGodot { param([string]$Place) if ($Place) { Remove-Item $Plac
 ## Argument de ligne de commande entre guillemets (chemins avec espaces).
 function ConvertTo-ArgumentCite { param([string]$Valeur) return '"' + $Valeur + '"' }
 
+## Nom du bureau Windows où tourne ce script (« Default » : celui de l'utilisateur).
+function Get-BureauDuFil { return [BureauCache]::BureauDuFil() }
+
+## Vrai seulement si ce script tourne DÉJÀ sur un bureau séparé (sous godot-slot.ps1, qui surveille et tue l'arbre).
+## La variable CD_GODOT_PLACE ne suffit jamais : godot-slot.ps1 la pose avant d'appeler lui-même
+## Invoke-GodotSurBureauCache depuis le bureau de l'utilisateur (le 22/11, le jeu est apparu sur l'écran de Léo).
+function Test-BureauDejaCache { $b = Get-BureauDuFil; return [bool]($b -and $b -ne 'Default') }
+
 ## Lance `-Godot` avec `-Arguments` (déjà cités) sur un bureau séparé nommé `<Prefixe><PID>`, dans un job,
 ## surveille le bureau de l'utilisateur toutes les 100 ms jusqu'à la fin du processus (ou -LimiteSecondes),
 ## écrit <Sortie>\surveillance.json et renvoie le bilan (dictionnaire ordonné).
@@ -206,16 +219,17 @@ function Invoke-GodotSurBureauCache {
     [int]$LimiteSecondes = 1500
   )
   $ligne = (ConvertTo-ArgumentCite $Godot) + ' ' + ($Arguments -join ' ')
-  # Déjà sous E:\Cadrage-Debordement	emp\godot-slot.ps1 (CD_GODOT_PLACE) : on est déjà sur un bureau séparé, dans un job
-  # qui interdit d'en créer un autre (« Accès refusé ») et qui surveille et tue l'arbre entier : lancer Godot directement.
-  if ($env:CD_GODOT_PLACE) {
+  # Déjà sur un bureau séparé (sous godot-slot.ps1) : le job du verrou interdit d'en créer un autre (« Accès refusé »)
+  # et surveille et tue l'arbre entier ; lancer Godot directement, il hérite de ce bureau. Sinon, toujours un bureau séparé.
+  $bureauActuel = Get-BureauDuFil
+  if (Test-BureauDejaCache) {
     $chrono = [Diagnostics.Stopwatch]::StartNew()
     $p = Start-Process -FilePath $Godot -ArgumentList $ligne.Substring((ConvertTo-ArgumentCite $Godot).Length + 1) -PassThru -WindowStyle Hidden
     $arret = $null
     if (-not $p.WaitForExit([int]([int64]$LimiteSecondes * 1000))) { try { $p.Kill() } catch {}; $arret = 'delai_depasse'; Write-Warning 'Délai dépassé : arrêt de Godot.' }
     $code = if ($arret) { -1 } else { $p.ExitCode }
     $surveillance = [ordered]@{
-      bureau = 'bureau du verrou godot-slot.ps1'; pid = $p.Id; code_sortie = $code; secondes = [Math]::Round($chrono.Elapsed.TotalSeconds, 1); arret_force = $arret
+      bureau = $bureauActuel; pid = $p.Id; code_sortie = $code; secondes = [Math]::Round($chrono.Elapsed.TotalSeconds, 1); arret_force = $arret
       echantillons_premier_plan = 0; premier_plan_godot = 0; fenetres_visibles_sur_le_bureau_utilisateur = 0
       protections = 'surveillance assurée par godot-slot.ps1 (bureau séparé, job)'; audio = 'Dummy'
     }
