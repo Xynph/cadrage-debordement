@@ -123,7 +123,7 @@ func rail() -> void:
 		check(active != null and active.has_meta("rail_actif") and active_style != null and active_style.bg_color.is_equal_approx(Charte.IVOIRE) and active_style.corner_radius_top_left * 2 >= int(active.size.y) and active.get_theme_color("font_color").is_equal_approx(Charte.PANNEAU) and active.find_child("RailIcon", true, false) != null, "Entrée « %s » marquée active (pilule crème, texte PANNEAU)" % caption)
 	check(app.route == "Presse" or app.route == "Sélections", "Presse s'ouvre depuis le rail, hors conférence")
 	app._navigate("Composition"); await settle()
-	check(await press("TacticsTab4") and app.route == "Préparation" and app.Immersive._is_training(app), "Tactique → onglet Entraînement")
+	check(await press("TacticsTab4") and app.route == "Composition" and int(app.management_ui.get("tactique_onglet", 0)) == 4 and named("TacticsTabTitle") != null, "Tactique → onglet Entraînement (même page)")
 	check((named("Nav_Tactique") as Button).has_meta("rail_actif"), "Entraînement garde Tactique active dans le rail")
 	app._navigate("Bureau"); await settle()
 	check(await press("ImmersiveClubHeader") and app.route == "Club", "En-tête du club : fiche du club (%s)" % app.route)

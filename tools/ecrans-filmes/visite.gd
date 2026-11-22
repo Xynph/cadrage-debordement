@@ -29,6 +29,12 @@ const HORS_CARRIERE := ["Accueil", "Création", "Packs"]
 const EXTRAS := [
 	{"id": "calendrier-semaine", "libelle": "Calendrier (semaine)", "type": "calendrier_semaine"},
 	{"id": "entrainement-semaine", "libelle": "Entraînement · onglet Semaine", "type": "entrainement_onglet", "onglet": 0},
+	{"id": "tactique-consignes", "libelle": "Tactique · onglet Consignes (depuis la Composition)", "type": "tactique_onglet", "onglet": 1},
+	{"id": "tactique-phases", "libelle": "Tactique · onglet Phases arrêtées (depuis la Composition)", "type": "tactique_onglet", "onglet": 2},
+	{"id": "tactique-entrainement", "libelle": "Tactique · onglet Entraînement (depuis la Composition)", "type": "tactique_onglet", "onglet": 4},
+	{"id": "tactique-alertes", "libelle": "Tactique · pastilles Bleus et Nationale (maquette)", "type": "tactique_alertes"},
+	{"id": "tactique-bleus", "libelle": "Tactique · petite fenêtre des Bleus (maquette)", "type": "tactique_alertes", "fenetre": "LineupBleusNoticeLien"},
+	{"id": "tactique-nationale", "libelle": "Tactique · petite fenêtre des qualifications FFR (maquette)", "type": "tactique_alertes", "fenetre": "NationaleLicenceNoticeLien"},
 	{"id": "entrainement-groupes", "libelle": "Entraînement · onglet Groupes", "type": "entrainement_onglet", "onglet": 1},
 	{"id": "salle-entrainement", "libelle": "Observer la préparation (salle d'entraînement)", "type": "salle_entrainement"},
 	{"id": "salle-entrainement-joueur", "libelle": "Observer la préparation · petite fenêtre d'un joueur", "type": "salle_entrainement", "joueur": true},
@@ -453,6 +459,7 @@ func preparer_presse() -> void:
 ## Ouvre un écran hors direct. Renvoie {"statut": ok|redirige|indisponible|echec, "route", "note"}.
 func ouvrir(ecran: Dictionary) -> Dictionary:
 	fermer_fenetres()
+	await retirer_maquette_tactique()
 	# Bulle de survol montrée par programme pour l'écran précédent : rangée avant l'écran suivant.
 	load("res://ui/bulle_survol.gd").cacher(app)
 	# La salle d'entraînement couvre tout l'écran : refermée avant l'écran suivant.
@@ -475,6 +482,37 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				app._navigate("Réception", false)
 				await stabiliser()
 			if app.route != route: return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
+		"tactique_onglet":
+			app._navigate("Composition")
+			await stabiliser()
+			var onglet_tactique := app.find_child("TacticsTab%d" % int(ecran.onglet), true, false) as Button
+			if onglet_tactique == null: return {"statut": "echec", "note": "onglet de la Tactique absent"}
+			onglet_tactique.pressed.emit()
+			await stabiliser()
+		"tactique_alertes":
+			# Maquette d'affichage (la carrière filmée n'a ni liste des 33 ni Nationale) : données posées sur la projection
+			# seulement, le temps de la capture ; le prochain retour du moteur les efface.
+			app._navigate("Composition")
+			await stabiliser()
+			var slots: Array = app.model.get("selection", {}).get("slots", [])
+			if slots.size() < 23: return {"statut": "indisponible", "note": "feuille incomplète"}
+			# Valeurs d'origine gardées : retirer_maquette_tactique() les remet avant l'écran suivant.
+			if not has_meta("maquette_tactique"):
+				set_meta("maquette_tactique", {"doublons": app.model.clubLife.get("doublons"), "nationale": app.model.selection.get("nationaleQualification")})
+			var titulaires := [str(slots[1].get("playerId", "")), str(slots[9].get("playerId", ""))]
+			app.model.clubLife["doublons"] = {"applies": true, "reposer": [{"playerId": titulaires[0]}, {"playerId": titulaires[1]}],
+				"changes": [{"slot": 1, "playerId": slots[15].get("playerId"), "sortant": titulaires[0], "entrantCondition": 94}, {"slot": 9, "playerId": slots[20].get("playerId"), "sortant": titulaires[1], "entrantCondition": 88}]}
+			var entrees: Array = []
+			for i in 23: entrees.append({"playerId": str(slots[i].get("playerId", "")), "code": ["A", "A", "B", "A", "C", null, "A", "B"][i % 8]})
+			app.model.selection["nationaleQualification"] = {"notice": {"title": "Qualifications FFR", "summary": "", "detail": "", "tone": "alert"},
+				"verified": {"A": 12, "B": 6, "C": 3}, "limits": {"bc": 8, "c": 2}, "unverified": 2, "entries": entrees}
+			app._render()
+			await stabiliser()
+			if ecran.has("fenetre"):
+				var lien := app.find_child(str(ecran.fenetre), true, false) as Button
+				if lien == null: return {"statut": "echec", "note": "pastille absente"}
+				lien.pressed.emit()
+				await stabiliser()
 		"entrainement_onglet":
 			app._navigate("Composition")
 			await stabiliser()
@@ -831,6 +869,17 @@ func surface() -> Control:
 
 ## Coup d'envoi comme le bouton du jeu, causeries passées comme le ferait un joueur (même logique que
 ## tools/match-filme/match_filme.gd). Renvoie "" si le direct est ouvert, sinon la raison.
+## Données de maquette des pastilles Bleus / Nationale (captures seulement) : remises à leur valeur d'origine.
+func retirer_maquette_tactique() -> void:
+	if not has_meta("maquette_tactique"): return
+	var origine: Dictionary = get_meta("maquette_tactique")
+	remove_meta("maquette_tactique")
+	for paire: Array in [[app.model.get("clubLife", {}), "doublons", origine.doublons], [app.model.get("selection", {}), "nationaleQualification", origine.nationale]]:
+		if paire[2] == null: (paire[0] as Dictionary).erase(paire[1])
+		else: paire[0][paire[1]] = paire[2]
+	app._render()
+	await stabiliser()
+
 func ouvrir_direct() -> String:
 	fermer_fenetres()
 	var limite := Time.get_ticks_msec() + 180000

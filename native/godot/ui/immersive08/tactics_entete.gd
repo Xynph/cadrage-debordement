@@ -352,9 +352,9 @@ static func _suite_feuille(app: Control, page: Control, gauche: float, rappels: 
 
 # --- Ligne des onglets : Plan et Défense --------------------------------------------------------------------------
 
-## Pastilles Plan (attaque) et Défense, à droite des onglets ; clic → onglet Consignes de la préparation.
+## Pastilles Plan (attaque) et Défense, à droite des onglets ; clic → onglet Consignes de la Tactique.
 static func plan(app: Control, page: Control, plan_: String, defense: String) -> void:
-	var ouvrir := func(): app.Immersive.open_preparation(app, 1)
+	var ouvrir := func(): load("res://ui/immersive08/tactics_onglets.gd").choisir_onglet(app, 1)
 	var y := 137.0
 	var l_def := Pieces.largeur_pastille("Défense · " + defense, "shield")
 	var l_plan := Pieces.largeur_pastille("Plan · " + plan_, "tactic")

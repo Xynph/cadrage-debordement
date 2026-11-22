@@ -160,7 +160,7 @@ func entete_visuel() -> void:
 	await settle(4)
 	# Clics : chaque pastille et écusson mène à sa destination.
 	var domicile := _contient_texte(named("TacticsFixturePlace"), "DOM.")
-	for paire: Array in [["TacticsFixtureHome", "Club" if domicile else "Fiche club"], ["TacticsFixtureAway", "Fiche club" if domicile else "Club"], ["TacticsFixtureCompetitionLien", "Classements"], ["TacticsFixtureDateLien", "Calendrier"], ["TacticsFixtureVenueLien", "Club" if domicile else "Fiche club"], ["TacticsPlanModify", "Préparation"], ["TacticsDefenseSummaryLien", "Préparation"]]:
+	for paire: Array in [["TacticsFixtureHome", "Club" if domicile else "Fiche club"], ["TacticsFixtureAway", "Fiche club" if domicile else "Club"], ["TacticsFixtureCompetitionLien", "Classements"], ["TacticsFixtureDateLien", "Calendrier"], ["TacticsFixtureVenueLien", "Club" if domicile else "Fiche club"], ["TacticsPlanModify", "Composition"], ["TacticsDefenseSummaryLien", "Composition"]]:
 		await composition()
 		var b := named(paire[0]) as Button
 		check(b != null, "Présent : " + str(paire[0]))
@@ -168,6 +168,8 @@ func entete_visuel() -> void:
 		b.pressed.emit()
 		await settle()
 		check(app.route == paire[1], "%s → %s (route : %s)" % [paire[0], paire[1], app.route])
+		# Plan et Défense : onglet Consignes de la même page.
+		if str(paire[0]) in ["TacticsPlanModify", "TacticsDefenseSummaryLien"]: check(int(app.management_ui.get("tactique_onglet", 0)) == 1, "%s → onglet Consignes" % paire[0])
 	for paire: Array in [["TacticsCountStartersLien", -1], ["TacticsCountBenchLien", 15], ["TacticsCountFrontRowLien", 0]]:
 		await composition()
 		app.selected_slot = 7
@@ -554,18 +556,24 @@ func run() -> void:
 		check(app.route == "Effectif" and app.get_meta("immersive08_full_player", false) and app.selected_player == id, "Clic sur le nom : fiche complète")
 
 	# 7. Onglets et liens : chacun change d'écran.
-	for paire: Array in [["TacticsTab1", "Préparation"], ["TacticsTab2", "Plan de jeu"], ["TacticsPlanModify", "Préparation"], ["TacticsOpponentFile", "Préparation"]]:
+	# Onglets Consignes, Phases arrêtées, Entraînement : même page, même en-tête (tactics_onglets.gd).
+	for paire: Array in [["TacticsTab1", 1], ["TacticsTab2", 2], ["TacticsTab4", 4], ["TacticsPlanModify", 1]]:
 		await composition()
-		var lien := named(paire[0]) as Button
-		check(lien != null, "Présent : " + str(paire[0]))
-		if lien == null: continue
-		lien.pressed.emit()
+		var bouton_onglet := named(paire[0]) as Button
+		check(bouton_onglet != null, "Présent : " + str(paire[0]))
+		if bouton_onglet == null: continue
+		bouton_onglet.pressed.emit()
 		await settle()
-		check(app.route == paire[1], "%s ouvre %s" % [paire[0], paire[1]])
+		check(app.route == "Composition" and int(app.management_ui.get("tactique_onglet", 0)) == paire[1] and named("TacticsTabTitle") != null and named("TacticsFixtureHome") != null, "%s ouvre l'onglet %d" % [paire[0], paire[1]])
+		var complet := named("TacticsTabOpenFull") as Button
+		check(complet != null, "Onglet %d : bouton vers l'écran complet" % paire[1])
+	app.management_ui.tactique_onglet = 0
 	await composition()
-	(named("TacticsTab4") as Button).pressed.emit()
-	await settle()
-	check(app.Immersive._is_training(app), "Onglet Entraînement")
+	var dossier := named("TacticsOpponentFile") as Button
+	if dossier != null:
+		dossier.pressed.emit()
+		await settle()
+		check(app.route == "Préparation", "TacticsOpponentFile ouvre Préparation")
 	await composition()
 	(named("BenchSort_name") as Button).pressed.emit()
 	await settle()
