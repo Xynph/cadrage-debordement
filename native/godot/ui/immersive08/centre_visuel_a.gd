@@ -59,7 +59,7 @@ static func carte_espoir(ctx: Dictionary, parent: Control, zone: Rect2, p: Dicti
 		var cible := float(p.get("target", 0))
 		var m := float(p.minutes)
 		V.jauge(c, Rect2(18, 216, zone.size.x - 172, 14), m / (cible if cible > 0 else 480.0), V.MINUTES)
-		var texte := "%s / %s" % [G.n(int(m)), G.n(int(cible))] if cible > 0 else "%s min" % G.n(int(m))
+		var texte := "%s / %s" % [_mille(m), _mille(cible)] if cible > 0 else "%s min" % _mille(m)
 		V.chiffre(c, zone.size.x - 18, 232, texte, 22, V.MINUTES, 128, HORIZONTAL_ALIGNMENT_RIGHT)
 	return c
 
@@ -76,6 +76,10 @@ static func tuile_reglage(parent: Control, zone: Rect2, titre: String, valeur: S
 	if actif and action.is_valid(): Pieces.rendre_cliquable(c, zone.size, action, id + "Lien", titre, "", Charte.RAYON_CARTE)
 	else: c.modulate = Color(1, 1, 1, .6)
 	return c
+
+## Nombre avec espace des milliers (« 32 911 »).
+static func _mille(n: Variant) -> String:
+	return G.euros(int(n)).replace(" €", "").replace("€", "").strip_edges()
 
 static func _libelle(options: Array, valeur: String) -> Array:
 	for o: Array in options:
@@ -405,12 +409,13 @@ static func _fenetre_prospect(ctx: Dictionary, id: String) -> void:
 	]
 	if str(p.union) != home: opts.append(["clearance", "Autorisation", "flag", V.COHESION, "", int(p.age) >= 18 and p.trial and not p.get("clearanceRecorded", false)])
 	opts.append(["recruit", "Proposer", "trophy", V.DEPENSE, G.euros(8000), int(p.scouted) >= 2 and p.trial and int(p.age) >= 16])
-	V.fenetre_choix(ctx, "CVAProspectFenetre", str(p.name), "search", opts, null, func(v: Variant):
-		match str(v):
-			"watch": V.envoyer(ctx, "academy_watch", {"playerId": id}, 500, "Observer")
-			"trial": V.envoyer(ctx, "academy_trial", {"playerId": id}, 1000, "Essai")
-			"clearance": V.envoyer(ctx, "academy_clearance", {"playerId": id})
-			"recruit": V.envoyer(ctx, "academy_feeder_recruit", {"playerId": id}, 8000, "Proposer le projet"))
+	V.fenetre_choix(ctx, "CVAProspectFenetre", str(p.name), "search", opts, null, func(v: Variant): _action_prospect(ctx, id, str(v)))
+
+static func _action_prospect(ctx: Dictionary, id: String, action: String) -> void:
+	if action == "watch": V.envoyer(ctx, "academy_watch", {"playerId": id}, 500, "Observer")
+	elif action == "trial": V.envoyer(ctx, "academy_trial", {"playerId": id}, 1000, "Essai")
+	elif action == "clearance": V.envoyer(ctx, "academy_clearance", {"playerId": id})
+	elif action == "recruit": V.envoyer(ctx, "academy_feeder_recruit", {"playerId": id}, 8000, "Proposer le projet")
 
 # --- Onglet Passerelle pro ------------------------------------------------------------------------------------------
 
@@ -517,7 +522,7 @@ static func _generations(ctx: Dictionary, zone: Rect2) -> void:
 		titre.add_theme_font_override("font", Charte.TITRE_FICHE)
 		var minutes := 0
 		for p: Dictionary in g.players: minutes += int(p.get("minutes", 0))
-		var faits := [[G.n(g.players.size()), "Joueurs", V.PROGRES], [G.n(g.get("graduates", 0)), "Promus", Charte.INTENSIF], [G.n(g.get("reputation", 0)), "Réputation", V.REPUTATION], [G.n(minutes), "Minutes", V.MINUTES]]
+		var faits := [[G.n(g.players.size()), "Joueurs", V.PROGRES], [G.n(g.get("graduates", 0)), "Promus", Charte.INTENSIF], [G.n(g.get("reputation", 0)), "Réputation", V.REPUTATION], [_mille(minutes), "Minutes", V.MINUTES]]
 		for k in faits.size():
 			var f: Array = faits[k]
 			var x := L - (faits.size() - k) * 250.0
