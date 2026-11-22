@@ -90,6 +90,7 @@ func run() -> void:
 	Warmup.reset()
 	Portrait.clear_cache()
 	G.textures.clear()
+	G.portrait_textures.clear()
 	var was_waiting: bool = app.waiting
 	app.waiting = true
 	Warmup.schedule(app)

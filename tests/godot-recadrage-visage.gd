@@ -1,0 +1,94 @@
+extends SceneTree
+## Photos de pack recadrées sur le visage dans les cases carrées (ui/recadrage_visage.gd) :
+## photo en pied → carré tête et épaules ; portrait serré presque entier ; image sans sujet entière ;
+## résultat gardé dans le profil ; visages composés du jeu de base non touchés.
+const G = preload("res://ui/game_skin.gd")
+const R = preload("res://ui/recadrage_visage.gd")
+var checks := 0
+var failures: Array[String] = []
+func _initialize() -> void: call_deferred("run")
+func check(value: bool, message: String) -> void:
+	checks += 1
+	if not value:
+		failures.append(message)
+		printerr("FAIL: " + message)
+
+const PEAU := Color8(224, 172, 140)
+
+func ellipse(image: Image, centre: Vector2, rayon: Vector2, couleur: Color) -> void:
+	for y in range(maxi(0, int(centre.y - rayon.y)), mini(image.get_height(), int(centre.y + rayon.y) + 1)):
+		for x in range(maxi(0, int(centre.x - rayon.x)), mini(image.get_width(), int(centre.x + rayon.x) + 1)):
+			if pow((x - centre.x) / rayon.x, 2) + pow((y - centre.y) / rayon.y, 2) <= 1.0: image.set_pixel(x, y, couleur)
+
+## Joueur en pied sur fond transparent : tête (cheveux, visage), cou, maillot, bras, jambes.
+func joueur_en_pied(w: int, h: int, fond: Color) -> Image:
+	var image := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	image.fill(fond)
+	var k := w / 200.0
+	image.fill_rect(Rect2i(Vector2i(Vector2(55, 88) * k), Vector2i(Vector2(90, 120) * k)), Color8(30, 70, 160))
+	image.fill_rect(Rect2i(Vector2i(Vector2(35, 95) * k), Vector2i(Vector2(20, 80) * k)), PEAU)
+	image.fill_rect(Rect2i(Vector2i(Vector2(145, 95) * k), Vector2i(Vector2(20, 80) * k)), PEAU)
+	image.fill_rect(Rect2i(Vector2i(Vector2(65, 208) * k), Vector2i(Vector2(70, 90) * k)), Color8(240, 240, 240))
+	image.fill_rect(Rect2i(Vector2i(Vector2(92, 72) * k), Vector2i(Vector2(16, 18) * k)), PEAU)
+	ellipse(image, Vector2(100, 46) * k, Vector2(19, 18) * k, Color8(40, 28, 20))
+	ellipse(image, Vector2(100, 56) * k, Vector2(16, 20) * k, PEAU)
+	return image
+
+func run() -> void:
+	var dossier := OS.get_environment("CD_GODOT_DATA_DIR")
+	if dossier.is_empty():
+		printerr("Profil temporaire CD_GODOT_DATA_DIR obligatoire.")
+		quit(2)
+		return
+	check(R.chemin_cache() == dossier.path_join("recadrage-visages.json"), "Cache dans le profil du joueur")
+	# 1. Photo en pied (fond transparent) : carré centré sur la tête, bien plus serré que la photo.
+	var pied := joueur_en_pied(400, 600, Color(0, 0, 0, 0))
+	var debut := Time.get_ticks_usec()
+	var zone := R.detecter(pied)
+	var ms := (Time.get_ticks_usec() - debut) / 1000.0
+	var visage := Rect2(84.0 / 200, 36.0 / 300, 32.0 / 200, 40.0 / 300)
+	check(zone.encloses(visage), "Photo en pied : le visage est dans le carré %s" % zone)
+	check(zone.size.x < 0.6 and absf(zone.get_center().x - 0.5) < 0.08, "Photo en pied : carré serré et centré sur la tête %s" % zone)
+	check(is_equal_approx(zone.size.x * 400, zone.size.y * 600), "Photo en pied : la zone est carrée")
+	check(zone.get_center().y < 0.3, "Photo en pied : carré en haut de l'image (tête), pas sur le corps")
+	# 2. Même joueur sur fond gris uni (sans transparence).
+	var gris := R.detecter(joueur_en_pied(200, 300, Color8(128, 128, 128)))
+	check(gris.encloses(visage) and gris.size.x < 0.6, "Fond uni : même recadrage sur la tête %s" % gris)
+	# 3. Portrait serré (visage déjà grand) : on garde presque toute l'image.
+	var serre := Image.create(200, 200, false, Image.FORMAT_RGBA8)
+	serre.fill(Color8(120, 120, 125))
+	serre.fill_rect(Rect2i(30, 150, 140, 50), Color8(20, 30, 60))
+	ellipse(serre, Vector2(100, 60), Vector2(48, 45), Color8(40, 28, 20))
+	ellipse(serre, Vector2(100, 92), Vector2(42, 55), PEAU)
+	var z_serre := R.detecter(serre)
+	check(z_serre.size.x > 0.85, "Portrait serré : presque toute l'image reste visible %s" % z_serre)
+	# 4. Image sans sujet (aplat) : photo entière, rien n'est rogné.
+	var aplat := Image.create(30, 40, false, Image.FORMAT_RGBA8)
+	aplat.fill(Color("c83c64"))
+	check(R.detecter(aplat) == Rect2(0, 0, 1, 1), "Aplat sans sujet : image entière")
+	# 5. Dans le jeu : portrait de pack recadré, résultat gardé dans le profil, puis relu.
+	var chemin := dossier.path_join("recadrage-pied.png")
+	check(pied.save_png(chemin) == OK, "Photo de pack écrite dans le profil de test")
+	var rect := G.portrait(0, 90, {"name": "Joueur Pied", "portraitPath": chemin})
+	check(rect.texture is AtlasTexture and (rect.texture as AtlasTexture).atlas == G.textures.get(chemin), "Case carrée : photo du pack recadrée, même photo décodée")
+	var region := (rect.texture as AtlasTexture).region if rect.texture is AtlasTexture else Rect2()
+	check(absf(region.size.x - region.size.y) <= 1.0 and region.size.x < 300, "Case carrée : région carrée tête et épaules %s" % region)
+	var autre := G.portrait(1, 40, {"name": "Joueur Pied", "portraitPath": chemin})
+	check(autre.texture == rect.texture, "Texture recadrée partagée entre les vues")
+	check(FileAccess.file_exists(R.chemin_cache()), "Recadrage gardé dans le profil")
+	var garde: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(R.chemin_cache()))
+	check(int(garde.get("version", 0)) == R.VERSION and garde.regions.size() == 1, "Cache du profil : une entrée par photo")
+	check(not FileAccess.file_exists(chemin.get_base_dir().path_join(".recadrage")), "Rien n'est écrit à côté des photos du pack")
+	var calcule: Rect2 = R.region(chemin, pied)
+	R._regions.clear()
+	R._charge = false
+	var relu: Rect2 = R.region(chemin, Image.create(8, 8, false, Image.FORMAT_RGBA8))
+	check(relu.position.distance_to(calcule.position) < 0.001 and relu.size.distance_to(calcule.size) < 0.001, "Relu depuis le profil (sans nouvelle analyse) : même recadrage %s / %s" % [relu, calcule])
+	# 6. Jeu de base : visage composé, aucune photo de pack, aucun recadrage.
+	var avant := G.portrait_textures.size()
+	var compose := G.portrait(2, 60, {"id": "base:1", "name": "Joueur Base", "age": 24, "appearanceBankVersion": 2})
+	check(compose.texture != null and G.portrait_textures.size() == avant, "Jeu de base : visage composé inchangé, rien à recadrer")
+	for node: Node in [rect, autre, compose]: node.free()
+	print("CD_RECADRAGE ", JSON.stringify({"pied": [snappedf(zone.position.x, 0.01), snappedf(zone.position.y, 0.01), snappedf(zone.size.x, 0.01)], "analyse_ms": snappedf(ms, 0.1)}))
+	print("RECADRAGE VISAGE : ", checks, " contrôles ; ", failures.size(), " échec(s)")
+	quit(0 if failures.is_empty() else 1)
