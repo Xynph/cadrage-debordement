@@ -287,7 +287,9 @@ static func _professionals(list: VBoxContainer, app: Control, data: Dictionary, 
 		for c: Dictionary in data.get("centers", []):
 			if c.get("clubId") == loan.to: host = str(c.name)
 		list.add_child(G.wrap("Prêt en cours · %s → %s" % [loan.name, host],15))
-	if data.loans.is_empty() and not world: list.add_child(G.wrap("Aucun prêt en cours. Les joueurs de la feuille de 23 doivent d’abord être retirés de la sélection.",15))
+	if data.loans.is_empty():
+		if world: list.add_child(G.metric(0, "prêts en cours"))
+		else: list.add_child(G.wrap("Aucun prêt en cours. Les joueurs de la feuille de 23 doivent d’abord être retirés de la sélection.",15))
 
 static func _history(list: VBoxContainer, data: Dictionary) -> void:
 	var world: bool = data.get("world", false)
