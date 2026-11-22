@@ -398,7 +398,7 @@ static func liste(ctx: Dictionary, zone: Rect2, haut_filtres: float, colonnes: A
 		entete.add_child(b)
 		var lt := R.largeur(str(col.t) + " ▼", 17, 700) + 26.0
 		var x0: float = col.x - 13.0 if a == HORIZONTAL_ALIGNMENT_LEFT else (col.x + col.w - lt + 13.0 if a == HORIZONTAL_ALIGNMENT_RIGHT else col.x + col.w / 2.0 - lt / 2.0)
-		D.place(b, C.reach_rect(Rect2(x0, 2, lt, 32)))
+		D.place(b, C.reach_rect(Rect2(x0, 1, lt, 34)))
 		entete.move_child(b, legende.get_index())
 		var actif: bool = tri is Array and (tri as Array).size() >= 2 and str(tri[0]) == k
 		Listes.styler_entete(b, legende, actif, actif and bool(tri[1]), str(col.t))

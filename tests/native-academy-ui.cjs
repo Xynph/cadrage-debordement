@@ -55,6 +55,9 @@ func tab(nom:String) -> void:
  var page:=named("CentreVisuel") as Control
  check(page!=null and str(page.get_meta("onglet",""))==nom,"Onglet "+nom+" ouvert au clavier")
 func run() -> void:
+ # Pages riches du Centre dès 1280 × 720 (sous ce seuil, la coque garde son repli compact commun).
+ root.size=Vector2i(1280,720)
+ if DisplayServer.get_name()!="headless":DisplayServer.window_set_size(root.size)
  app=load("res://main.tscn").instantiate()
  root.add_child(app)
  var until:=Time.get_ticks_msec()+120000
@@ -115,7 +118,7 @@ func run() -> void:
  quit(0 if failures.is_empty() else 1)
 ## L'action ne doit envoyer aucune commande au moteur (filtre local).
 func command_free(action:Callable) -> void:
- var attente_avant:=app.waiting
+ var attente_avant:bool=app.waiting
  await action.call()
  check(not app.waiting and not attente_avant,"Aucune requête envoyée par le filtre")
 `);
