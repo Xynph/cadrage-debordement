@@ -221,11 +221,14 @@ static func _ligne(app: Control, parent: Control, rang: int, person: Dictionary,
 	var note: Variant = null if non_qualifie else Selection.rating(app.model, person, slot)
 	var familiarite := -1 if non_qualifie else Selection.familiarite(app.model, person, slot)
 	Poste.poser(bouton, Rect2(colonnes.note[0], 8, colonnes.note[1], 18), note, familiarite, "TacticsCandidateRating", true, false, gris)
+	# Colonne Condition : barre + pourcentage tiennent dans la colonne (la barre rétrécit quand le tableau est étroit),
+	# jamais sur le statut qui suit.
+	var barre := clampf(float(colonnes.condition[1]) - 70.0, 30.0, 76.0)
 	if gris:
 		var v: Variant = person.get("condition")
-		Kit.texte(bouton, colonnes.condition[0] + 140, 23, ("%d %%" % roundi(float(v))) if v is int or v is float else "—", Charte.IVOIRE_3, 74, 18, HORIZONTAL_ALIGNMENT_RIGHT)
+		Kit.texte(bouton, colonnes.condition[0] + barre + 64, 23, ("%d %%" % roundi(float(v))) if v is int or v is float else "—", Charte.IVOIRE_3, 74, 18, HORIZONTAL_ALIGNMENT_RIGHT)
 	else:
-		Kit.condition(bouton, colonnes.condition[0], 23, person.get("condition"), 76)
+		Kit.condition(bouton, colonnes.condition[0], 23, person.get("condition"), barre)
 	var texte := Kit.texte(bouton, colonnes.status[0], 23, str(s.texte), s.couleur, colonnes.status[1])
 	texte.name = "TacticsCandidateStatus"
 	if s.couleur == Charte.D: texte.add_theme_font_override("font", Kit.texte_gras())

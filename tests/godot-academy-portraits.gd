@@ -114,9 +114,12 @@ func run() -> void:
 	check(Regen.describe(changed) == profile, "Nom et club ne modifient pas le visage")
 	var staff := {"id":"staff-conversion-probe","sourcePlayerId":source.id,"portraitRole":"staff","appearanceAge":source.age,"age":49}
 	if source.has("appearanceBankVersion"): staff.appearanceBankVersion = source.appearanceBankVersion
+	# Le visage affiché d’un joueur porte son identité d’apparence et sa carrure (portrait-looks) : une reconversion fidèle les reprend.
+	if source.has("appearanceId"): staff.appearanceId = source.appearanceId
+	if source.has("appearanceBuild"): staff.appearanceBuild = source.appearanceBuild
 	var future: Dictionary = Regen.describe(staff)
 	for key in profile:
-		if key not in ["maturity","referenceAge","ageBasis"]: check(future[key] == profile[key], "Contrat reconversion préserve " + str(key))
+		if key not in ["maturity","referenceAge","ageBasis"]: check(future.get(key) == profile[key], "Contrat reconversion préserve " + str(key))
 	finish()
 func finish() -> void:
 	print(JSON.stringify({"checks":checks,"failures":failures}))

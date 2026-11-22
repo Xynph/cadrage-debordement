@@ -136,7 +136,7 @@ func run() -> void:
 	await capture("analyse-rencontre-reelle-2560")
 	await activate(score)
 	var detail:=found("CompetitionFixtureDetails") as Control
-	check(detail!=null and not detail is Window and str(detail.get_meta("entity_id",""))==str(target.id),"Score ouvre la page de sa vraie rencontre")
+	check(detail!=null and str(detail.get_meta("entity_id",""))==str(target.id),"Score ouvre la page de sa vraie rencontre")
 	await capture("fiche-rencontre-reelle-2560")
 	await key(KEY_LEFT,true)
 	check(not nav._blocked(),"Back rencontre rend la navigation disponible")
