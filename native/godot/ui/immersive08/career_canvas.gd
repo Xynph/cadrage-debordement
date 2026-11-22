@@ -15,6 +15,12 @@ static func build(app: Control, canvas: Control) -> void:
 	canvas.name = "ImmersiveManagerCareer"
 	var data: Dictionary = app.model.get("clubLife",{}).get("managerCareer",{})
 	var tab := str(app.management_ui.get(KEY,"summary"))
+	# Planche du 22/11/2026 (« moins de tuiles, façon Effectif ») : variantes A/B de la Synthèse seulement.
+	var Variantes = load("res://ui/immersive08/career_variantes.gd")
+	var variante: String = Variantes.variante()
+	if tab == "summary" and not variante.is_empty():
+		Variantes.construire(app,canvas,data,variante)
+		return
 	_hero(app,canvas,data)
 	_tabs(app,canvas,tab)
 	match tab:
@@ -26,6 +32,11 @@ static func build(app: Control, canvas: Control) -> void:
 		_: _overview(app,canvas,data)
 
 static func _hero(app: Control, canvas: Control, data: Dictionary) -> void:
+	_bandeau_photo(app,canvas,data)
+	_metriques(app,canvas,data)
+
+## Bandeau photo du héros : blason, titre, club et ligue, mandat, crédit photo.
+static func _bandeau_photo(app: Control, canvas: Control, data: Dictionary) -> void:
 	var hero := D.panel(canvas,Rect2(0,0,2248,227),"","","","CareerHero")
 	hero.clip_contents = true
 	var picture := G.club_picture(app.model.club, "city", false)
@@ -47,6 +58,7 @@ static func _hero(app: Control, canvas: Control, data: Dictionary) -> void:
 		credit.tooltip_text = picture.tooltip_text
 		credit.accessibility_name = credit.tooltip_text.replace("\n", " · ")
 
+static func _metriques(app: Control, canvas: Control, data: Dictionary) -> void:
 	var metrics := [
 		["Places occupées","people","%s / %s" % [G.n(data.get("occupied","—")),G.n(data.get("capacity","—"))],C.IVORY],
 		["Places disponibles","shield",G.n(data.get("places","—")),C.MINT],
