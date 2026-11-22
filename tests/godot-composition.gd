@@ -311,6 +311,27 @@ func run() -> void:
 	# 4. Candidats : tri, filtre, non qualifié grisé avec sa raison, affectation réelle.
 	(named("LineupSlot10") as Button).pressed.emit()
 	await settle()
+	# 4 bis. Liste des candidats : le pourcentage de condition ne touche jamais le statut (2560 et 1920).
+	for taille in [Vector2i(2560, 1440), Vector2i(1920, 1080)]:
+		root.size = taille
+		await settle(6)
+		var rangs := 0
+		var colles: Array[String] = []
+		for ligne in named("TacticsCandidateRows").get_children():
+			var statut := ligne.find_child("TacticsCandidateStatus", true, false) as Label
+			if statut == null: continue
+			for enfant in ligne.get_children():
+				var pourcent := enfant as Label
+				if pourcent == null or not pourcent.text.ends_with("%"): continue
+				rangs += 1
+				var fonte := pourcent.get_theme_font("font")
+				var texte_l := fonte.get_string_size(pourcent.text, HORIZONTAL_ALIGNMENT_LEFT, -1, pourcent.get_theme_font_size("font_size")).x
+				var droite := pourcent.global_position.x + pourcent.size.x
+				if texte_l > pourcent.size.x + 1 or droite > statut.global_position.x - 8: colles.append("%s | %s" % [pourcent.text, statut.text])
+		check(rangs > 3 and colles.is_empty(), "%d : pourcentage de condition distinct du statut (%d lignes) : %s" % [taille.x, rangs, ", ".join(colles.slice(0, 4))])
+		await capture("composition-candidats-%d" % taille.x)
+	root.size = Vector2i(1920, 1080)
+	await settle(4)
 	(named("CandidateSort_condition") as Button).pressed.emit()
 	await settle()
 	check(app.management_ui.candidates_reading.key == "condition", "Tri des candidats par condition")

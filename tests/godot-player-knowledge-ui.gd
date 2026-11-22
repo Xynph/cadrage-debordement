@@ -79,13 +79,19 @@ func run() -> void:
 		check(potential.get_theme_color("font_color")==preload("res://ui/charte.gd").IVOIRE_2,"Potentiel en ivoire secondaire")
 	await capture("effectif-connaissance-modele-reel-1440")
 	var own: Dictionary=original.squad[0]
+	for candidate: Dictionary in original.squad:
+		if not preload("res://ui/immersive08/squad_canvas.gd").secondary_numbers(candidate).is_empty():
+			own=candidate;break
 	app.selected_player=str(own.id);app.set_meta("immersive08_full_player",true);app._render();await settle()
 	check(labels(app).any(func(label:Label):return label.text==G.potential_text(own)),"Fiche propre affiche la fourchette, pas le potentiel exact")
 	check(not labels(app).any(func(label:Label):return label.text=="NOTE AU POSTE"),"La note au poste reste réservée à la tactique")
 	var roles = preload("res://ui/immersive08/squad_canvas.gd")
 	var pitch: Control=app.find_child("PlayerRolePitch",true,false)
 	check(pitch.primary_numbers==roles.primary_numbers(own) and pitch.secondary_numbers==roles.secondary_numbers(own),"Terrain de la fiche : uniquement les vrais postes maîtrisés")
-	check(app.find_child("PlayerOtherRoles",true,false).text=="Autres : "+roles.secondary_caption(own),"Fiche et Effectif partagent les rôles abrégés")
+	var other: Label=app.find_child("PlayerOtherRoles",true,false)
+	var autres_noms: Array[String]=[]
+	for ligne: String in roles.secondary_tooltip(own,app.model).split("\n"):autres_noms.append(ligne.get_slice(" · ",1))
+	check(other!=null and other.text.replace("–","-")=="Autres postes : "+", ".join(autres_noms).replace("–","-"),"Fiche : postes secondaires en toutes lettres : "+(other.text if other!=null else "absent")+" / "+", ".join(autres_noms))
 	await capture("fiche-potentiel-modele-reel-1440")
 	app.set_meta("immersive08_full_player",false)
 	app._navigate("Recrutement");await settle()
@@ -96,17 +102,17 @@ func run() -> void:
 	page.state.player_id=str(target.id)
 	page.state.immersive_tab=1;app._render(false);await settle()
 	await capture("recrutement-inconnu-modele-reel-1440")
-	var button: Button=app.find_child("ObservePlayer_"+str(target.id).replace(":","_"),true,false)
+	var button: Button=app.find_child("ObserveRecruitment",true,false)
 	check(button!=null and button.visible and not button.disabled,"Action Observer issue de l’API réelle")
 	if button!=null:
 		button.pressed.emit();await settle()
-		var dialog: AcceptDialog=null
-		for child in app.get_children():
-			if child is AcceptDialog and child.visible and child!=app.file_dialog:dialog=child
-		check(dialog!=null and dialog.dialog_text.contains("5 000") and dialog.dialog_text.contains(G.n(target.scouting.workCycles)+" semaine"),"Confirmation : frais et délai réels")
+		var bloc: Control=app.find_child("ObservationConfirmation",true,false)
+		var phrase: Label=app.find_child("ObservationConfirmPhrase",true,false)
+		check(bloc!=null and phrase!=null and phrase.text.contains("5 000") and phrase.text.contains(G.n(target.scouting.workCycles)+" semaine"),"Confirmation en place : frais et délai réels")
 		check(FileAccess.get_sha256(profile)==before and app.bridge._next_id==commands,"Ouvrir l’observation ne change ni argent ni connaissance")
 		await capture("observation-confirmation-modele-reel-1440")
-		if dialog!=null:dialog.canceled.emit();dialog.queue_free();await settle()
+		var annuler: Button=app.find_child("ObservationConfirmationAnnuler",true,false)
+		if annuler!=null:annuler.pressed.emit();await settle()
 	check(FileAccess.get_sha256(profile)==before and app.bridge._next_id==commands,"Consultation et annulation sans mutation")
 	for scenario: String in ["missing","own","pending","unavailable","waiting","live"]:
 		var person: Dictionary=target.duplicate(true)

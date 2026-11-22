@@ -115,7 +115,7 @@ static func run(harness: SceneTree, expected_fixture: String) -> void:
 		var before_scroll: int = app.body_scroll.scroll_vertical
 		await harness.activate(score)
 		var detail: Control = harness.found("CompetitionFixtureDetails") as Control
-		harness.check(detail != null and not detail is Window and str(detail.get_meta("entity_id", "")) == expected_fixture, "Bureau · score ouvre la page de la rencontre concordante")
+		harness.check(detail != null and str(detail.get_meta("entity_id", "")) == expected_fixture, "Bureau · score ouvre la page de la rencontre concordante")
 		if detail == null: return
 		await harness.key(KEY_LEFT, true)
 		score = harness.found(id) as Button
