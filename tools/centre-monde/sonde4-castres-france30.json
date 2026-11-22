@@ -1,0 +1,52 @@
+{
+ "club": 9,
+ "variante": "france30",
+ "etapes": [
+  {
+   "label": "activation",
+   "ok": true
+  },
+  {
+   "label": "detection (35 000)",
+   "ok": true
+  },
+  {
+   "label": "mentorat (8 000)",
+   "ok": true
+  },
+  {
+   "label": "detection centre (1 200)",
+   "ok": true
+  },
+  {
+   "label": "installations",
+   "ok": true
+  },
+  {
+   "label": "promotion pro",
+   "ok": true
+  },
+  {
+   "label": "pret vers club hors France (id 30)",
+   "ok": false,
+   "erreur": "Formation : parcours invalide : v78to81"
+  },
+  {
+   "label": "32 matchs joues",
+   "saison": 2,
+   "ok": true,
+   "round": 3,
+   "espoirs": 3,
+   "accession": 3
+  }
+ ],
+ "centres": {
+  "total": 44,
+  "division": "elite",
+  "invites": 14,
+  "loanClubs": 115,
+  "loanClubsHors30": 86,
+  "recruitBudget": 96000,
+  "cash": 3700000
+ }
+}

@@ -1,0 +1,1211 @@
+{
+ "playable": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+  22,
+  23,
+  24,
+  25,
+  26,
+  27,
+  28,
+  29,
+  30,
+  31,
+  32,
+  33,
+  34,
+  35,
+  36,
+  37,
+  38,
+  39,
+  40,
+  41,
+  42,
+  43,
+  44,
+  45,
+  46,
+  47,
+  48,
+  49,
+  50,
+  51,
+  52,
+  53,
+  54,
+  55,
+  58,
+  59,
+  60,
+  61,
+  62,
+  63,
+  64,
+  65,
+  66,
+  67,
+  68,
+  69,
+  70,
+  71,
+  72,
+  73,
+  74,
+  75,
+  76,
+  77,
+  78,
+  79,
+  80,
+  81,
+  82,
+  83,
+  84,
+  85,
+  86,
+  87,
+  88,
+  89,
+  90,
+  91,
+  92,
+  93,
+  94,
+  95,
+  96,
+  97,
+  98,
+  99,
+  100,
+  101,
+  102,
+  103,
+  104,
+  105,
+  106,
+  107,
+  108,
+  109,
+  110,
+  111,
+  112,
+  113,
+  114,
+  115
+ ],
+ "leagueIds": [
+  "elite",
+  "accession",
+  "prem",
+  "urc",
+  "srp",
+  "jlo-d1",
+  "jlo-d2",
+  "nationale",
+  "champ"
+ ],
+ "limits": {
+  "maxMatches": 1600,
+  "saveBytes": 25165824,
+  "maxSaveNodes": 2600000,
+  "requestBytes": 52428800
+ },
+ "clubs": [
+  {
+   "id": 0,
+   "name": "Toulouse Capitole XV",
+   "cash": 7500000,
+   "league": "elite",
+   "division": "elite",
+   "country": "FR",
+   "players": 61,
+   "academy": 60
+  },
+  {
+   "id": 1,
+   "name": "Bordeaux Estuaire Rugby",
+   "cash": 6400000,
+   "league": "elite",
+   "division": "elite",
+   "country": "FR",
+   "players": 58,
+   "academy": 60
+  },
+  {
+   "id": 2,
+   "name": "La Rochelle Océan XV",
+   "cash": 5800000,
+   "league": "elite",
+   "division": "elite",
+   "country": "FR",
+   "players": 58,
+   "academy": 60
+  },
+  {
+   "id": 3,
+   "name": "Toulon Rade Rugby",
+   "cash": 5600000,
+   "league": "elite",
+   "division": "elite",
+   "country": "FR",
+   "players": 52,
+   "academy": 60
+  },
+  {
+   "id": 4,
+   "name": "Pau Béarn XV",
+   "cash": 4600000,
+   "league": "elite",
+   "division": "elite",
+   "country": "FR",
+   "players": 63,
+   "academy": 60
+  },
+  {
+   "id": 5,
+   "name": "Bayonne Nive Rugby",
+   "cash": 4300000,
+   "league": "elite",
+   "division": "elite",
+   "country": "FR",
+   "players": 56,
+   "academy": 60
+  },
+  {
+   "id": 6,
+   "name": "Clermont-Ferrand Volcans XV",
+   "cash": 4800000,
+   "league": "elite",
+   "division": "elite",
+   "country": "FR",
+   "players": 50,
+   "academy": 60
+  },
+  {
+   "id": 7,
+   "name": "Lyon Confluences XV",
+   "cash": 4500000,
+   "league": "elite",
+   "division": "elite",
+   "country": "FR",
+   "players": 56,
+   "academy": 60
+  },
+  {
+   "id": 8,
+   "name": "Montpellier Garrigues XV",
+   "cash": 4900000,
+   "league": "elite",
+   "division": "elite",
+   "country": "FR",
+   "players": 59,
+   "academy": 60
+  },
+  {
+   "id": 9,
+   "name": "Castres Tarn Rugby",
+   "cash": 3700000,
+   "league": "elite",
+   "division": "elite",
+   "country": "FR",
+   "players": 53,
+   "academy": 60
+  },
+  {
+   "id": 10,
+   "name": "Nanterre Ciel XV",
+   "cash": 5700000,
+   "league": "elite",
+   "division": "elite",
+   "country": "FR",
+   "players": 52,
+   "academy": 60
+  },
+  {
+   "id": 11,
+   "name": "Paris Deux-Rives XV",
+   "cash": 4600000,
+   "league": "elite",
+   "division": "elite",
+   "country": "FR",
+   "players": 62,
+   "academy": 60
+  },
+  {
+   "id": 12,
+   "name": "Perpignan Catalan XV",
+   "cash": 2800000,
+   "league": "elite",
+   "division": "elite",
+   "country": "FR",
+   "players": 51,
+   "academy": 60
+  },
+  {
+   "id": 13,
+   "name": "Vannes Morbihan XV",
+   "cash": 2500000,
+   "league": "elite",
+   "division": "elite",
+   "country": "FR",
+   "players": 61,
+   "academy": 60
+  },
+  {
+   "id": 14,
+   "name": "Béziers Orb XV",
+   "cash": 2800000,
+   "league": "accession",
+   "division": "accession",
+   "country": "FR",
+   "players": 47,
+   "academy": 60
+  },
+  {
+   "id": 15,
+   "name": "Biarritz Côte Basque XV",
+   "cash": 2500000,
+   "league": "accession",
+   "division": "accession",
+   "country": "FR",
+   "players": 51,
+   "academy": 60
+  },
+  {
+   "id": 16,
+   "name": "Brive Corrèze XV",
+   "cash": 3600000,
+   "league": "accession",
+   "division": "accession",
+   "country": "FR",
+   "players": 51,
+   "academy": 60
+  },
+  {
+   "id": 17,
+   "name": "Colomiers Colombe XV",
+   "cash": 2600000,
+   "league": "accession",
+   "division": "accession",
+   "country": "FR",
+   "players": 44,
+   "academy": 60
+  },
+  {
+   "id": 18,
+   "name": "Grenoble Alpes XV",
+   "cash": 3400000,
+   "league": "accession",
+   "division": "accession",
+   "country": "FR",
+   "players": 50,
+   "academy": 60
+  },
+  {
+   "id": 19,
+   "name": "Nice Riviera XV",
+   "cash": 2000000,
+   "league": "accession",
+   "division": "accession",
+   "country": "FR",
+   "players": 50,
+   "academy": 60
+  },
+  {
+   "id": 20,
+   "name": "Oyonnax Haut-Bugey XV",
+   "cash": 3000000,
+   "league": "accession",
+   "division": "accession",
+   "country": "FR",
+   "players": 52,
+   "academy": 60
+  },
+  {
+   "id": 21,
+   "name": "Aix Provence XV",
+   "cash": 3500000,
+   "league": "accession",
+   "division": "accession",
+   "country": "FR",
+   "players": 58,
+   "academy": 60
+  },
+  {
+   "id": 22,
+   "name": "Narbonne Aude XV",
+   "cash": 2100000,
+   "league": "accession",
+   "division": "accession",
+   "country": "FR",
+   "players": 48,
+   "academy": 60
+  },
+  {
+   "id": 23,
+   "name": "Agen Garonne XV",
+   "cash": 2800000,
+   "league": "accession",
+   "division": "accession",
+   "country": "FR",
+   "players": 45,
+   "academy": 60
+  },
+  {
+   "id": 24,
+   "name": "Angoulême Charente XV",
+   "cash": 2400000,
+   "league": "accession",
+   "division": "accession",
+   "country": "FR",
+   "players": 51,
+   "academy": 60
+  },
+  {
+   "id": 25,
+   "name": "Aurillac Cantal XV",
+   "cash": 2100000,
+   "league": "accession",
+   "division": "accession",
+   "country": "FR",
+   "players": 45,
+   "academy": 60
+  },
+  {
+   "id": 26,
+   "name": "Dax Adour XV",
+   "cash": 2200000,
+   "league": "accession",
+   "division": "accession",
+   "country": "FR",
+   "players": 40,
+   "academy": 60
+  },
+  {
+   "id": 27,
+   "name": "Montauban Tarn XV",
+   "cash": 2700000,
+   "league": "accession",
+   "division": "accession",
+   "country": "FR",
+   "players": 49,
+   "academy": 60
+  },
+  {
+   "id": 28,
+   "name": "Nevers Loire XV",
+   "cash": 2700000,
+   "league": "accession",
+   "division": "accession",
+   "country": "FR",
+   "players": 61,
+   "academy": 60
+  },
+  {
+   "id": 29,
+   "name": "Valence Romans Drôme XV",
+   "cash": 2300000,
+   "league": "accession",
+   "division": "accession",
+   "country": "FR",
+   "players": 40,
+   "academy": 60
+  },
+  {
+   "id": 30,
+   "name": "Bath Avon XV",
+   "cash": 4000000,
+   "league": "prem",
+   "country": "GB",
+   "players": 57,
+   "academy": 60
+  },
+  {
+   "id": 31,
+   "name": "Bristol Estuaire XV",
+   "cash": 4000000,
+   "league": "prem",
+   "country": "GB",
+   "players": 75,
+   "academy": 60
+  },
+  {
+   "id": 32,
+   "name": "Exeter Devon XV",
+   "cash": 4000000,
+   "league": "prem",
+   "country": "GB",
+   "players": 68,
+   "academy": 60
+  },
+  {
+   "id": 33,
+   "name": "Gloucester Severn XV",
+   "cash": 4000000,
+   "league": "prem",
+   "country": "GB",
+   "players": 67,
+   "academy": 60
+  },
+  {
+   "id": 34,
+   "name": "Twickenham Quarters XV",
+   "cash": 4000000,
+   "league": "prem",
+   "country": "GB",
+   "players": 75,
+   "academy": 60
+  },
+  {
+   "id": 35,
+   "name": "Leicester Soar Rugby",
+   "cash": 4000000,
+   "league": "prem",
+   "country": "GB",
+   "players": 59,
+   "academy": 60
+  },
+  {
+   "id": 36,
+   "name": "Newcastle Tyne XV",
+   "cash": 4000000,
+   "league": "prem",
+   "country": "GB",
+   "players": 48,
+   "academy": 60
+  },
+  {
+   "id": 37,
+   "name": "Northampton Nene XV",
+   "cash": 4000000,
+   "league": "prem",
+   "country": "GB",
+   "players": 60,
+   "academy": 60
+  },
+  {
+   "id": 38,
+   "name": "Manchester Irwell XV",
+   "cash": 4000000,
+   "league": "prem",
+   "country": "GB",
+   "players": 59,
+   "academy": 60
+  },
+  {
+   "id": 39,
+   "name": "Londres Nord XV",
+   "cash": 4000000,
+   "league": "prem",
+   "country": "GB",
+   "players": 68,
+   "academy": 60
+  },
+  {
+   "id": 40,
+   "name": "Dublin Liffey XV",
+   "cash": 4000000,
+   "league": "urc",
+   "country": "IE",
+   "players": 65,
+   "academy": 60
+  },
+  {
+   "id": 41,
+   "name": "Limerick Shannon XV",
+   "cash": 4000000,
+   "league": "urc",
+   "country": "IE",
+   "players": 61,
+   "academy": 60
+  },
+  {
+   "id": 42,
+   "name": "Belfast Lagan XV",
+   "cash": 4000000,
+   "league": "urc",
+   "country": "GB",
+   "players": 59,
+   "academy": 60
+  },
+  {
+   "id": 43,
+   "name": "Galway Connemara XV",
+   "cash": 4000000,
+   "league": "urc",
+   "country": "IE",
+   "players": 57,
+   "academy": 60
+  },
+  {
+   "id": 44,
+   "name": "Glasgow Clyde XV",
+   "cash": 4000000,
+   "league": "urc",
+   "country": "GB",
+   "players": 63,
+   "academy": 60
+  },
+  {
+   "id": 45,
+   "name": "Édimbourg Forth XV",
+   "cash": 4000000,
+   "league": "urc",
+   "country": "GB",
+   "players": 58,
+   "academy": 60
+  },
+  {
+   "id": 46,
+   "name": "Cardiff Taff XV",
+   "cash": 4000000,
+   "league": "urc",
+   "country": "GB",
+   "players": 41,
+   "academy": 60
+  },
+  {
+   "id": 47,
+   "name": "Newport Usk XV",
+   "cash": 4000000,
+   "league": "urc",
+   "country": "GB",
+   "players": 56,
+   "academy": 60
+  },
+  {
+   "id": 48,
+   "name": "Swansea Baie XV",
+   "cash": 4000000,
+   "league": "urc",
+   "country": "GB",
+   "players": 53,
+   "academy": 60
+  },
+  {
+   "id": 49,
+   "name": "Llanelli Cwm XV",
+   "cash": 4000000,
+   "league": "urc",
+   "country": "GB",
+   "players": 65,
+   "academy": 60
+  },
+  {
+   "id": 50,
+   "name": "Trévise Sile XV",
+   "cash": 4000000,
+   "league": "urc",
+   "country": "IT",
+   "players": 40,
+   "academy": 60
+  },
+  {
+   "id": 51,
+   "name": "Parme Émilie XV",
+   "cash": 4000000,
+   "league": "urc",
+   "country": "IT",
+   "players": 46,
+   "academy": 60
+  },
+  {
+   "id": 52,
+   "name": "Le Cap Table XV",
+   "cash": 4000000,
+   "league": "urc",
+   "country": "ZA",
+   "players": 53,
+   "academy": 60
+  },
+  {
+   "id": 53,
+   "name": "Pretoria Jacaranda XV",
+   "cash": 4000000,
+   "league": "urc",
+   "country": "ZA",
+   "players": 55,
+   "academy": 60
+  },
+  {
+   "id": 54,
+   "name": "Durban Océan XV",
+   "cash": 4000000,
+   "league": "urc",
+   "country": "ZA",
+   "players": 65,
+   "academy": 60
+  },
+  {
+   "id": 55,
+   "name": "Johannesburg Highveld XV",
+   "cash": 4000000,
+   "league": "urc",
+   "country": "ZA",
+   "players": 51,
+   "academy": 60
+  },
+  {
+   "id": 56,
+   "name": "Bloemfontein Orange XV",
+   "cash": 4000000,
+   "league": "guest",
+   "country": "ZA",
+   "players": 49,
+   "academy": 60
+  },
+  {
+   "id": 57,
+   "name": "Tbilissi Caucase XV",
+   "cash": 4000000,
+   "league": "guest",
+   "country": "GE",
+   "players": 42,
+   "academy": 60
+  },
+  {
+   "id": 58,
+   "name": "Havres de l’Aube XV",
+   "cash": 4000000,
+   "league": "srp",
+   "country": "NZ",
+   "players": 40,
+   "academy": 60
+  },
+  {
+   "id": 59,
+   "name": "Bastion Austral",
+   "cash": 4000000,
+   "league": "srp",
+   "country": "AU",
+   "players": 40,
+   "academy": 60
+  },
+  {
+   "id": 60,
+   "name": "Vallées de Basalte",
+   "cash": 4000000,
+   "league": "srp",
+   "country": "NZ",
+   "players": 40,
+   "academy": 60
+  },
+  {
+   "id": 61,
+   "name": "Gardiens du Détroit",
+   "cash": 4000000,
+   "league": "srp",
+   "country": "NZ",
+   "players": 40,
+   "academy": 60
+  },
+  {
+   "id": 62,
+   "name": "Pirogues du Lagon",
+   "cash": 4000000,
+   "league": "srp",
+   "country": "FJ",
+   "players": 40,
+   "academy": 60
+  },
+  {
+   "id": 63,
+   "name": "Crêtes Méridiennes",
+   "cash": 4000000,
+   "league": "srp",
+   "country": "NZ",
+   "players": 40,
+   "academy": 60
+  },
+  {
+   "id": 64,
+   "name": "Alizés du Cap",
+   "cash": 4000000,
+   "league": "srp",
+   "country": "NZ",
+   "players": 40,
+   "academy": 60
+  },
+  {
+   "id": 65,
+   "name": "Terrasses d’Ocre XV",
+   "cash": 4000000,
+   "league": "srp",
+   "country": "AU",
+   "players": 41,
+   "academy": 60
+  },
+  {
+   "id": 66,
+   "name": "Estuaires Boréals",
+   "cash": 4000000,
+   "league": "srp",
+   "country": "AU",
+   "players": 40,
+   "academy": 60
+  },
+  {
+   "id": 67,
+   "name": "Jetées d’Occident",
+   "cash": 4000000,
+   "league": "srp",
+   "country": "AU",
+   "players": 40,
+   "academy": 60
+  },
+  {
+   "id": 68,
+   "name": "Béliers de Setagaya",
+   "cash": 4200000,
+   "league": "jlo-d1",
+   "country": "JP",
+   "players": 54,
+   "academy": 60
+  },
+  {
+   "id": 69,
+   "name": "Forges de Tochigi",
+   "cash": 4200000,
+   "league": "jlo-d1",
+   "country": "JP",
+   "players": 54,
+   "academy": 60
+  },
+  {
+   "id": 70,
+   "name": "Acier de Kobe XV",
+   "cash": 4200000,
+   "league": "jlo-d1",
+   "country": "JP",
+   "players": 50,
+   "academy": 60
+  },
+  {
+   "id": 71,
+   "name": "Lances de la Baie",
+   "cash": 4200000,
+   "league": "jlo-d1",
+   "country": "JP",
+   "players": 63,
+   "academy": 60
+  },
+  {
+   "id": 72,
+   "name": "Sangliers de Sagami",
+   "cash": 4200000,
+   "league": "jlo-d1",
+   "country": "JP",
+   "players": 54,
+   "academy": 60
+  },
+  {
+   "id": 73,
+   "name": "Sentinelles de Saitama",
+   "cash": 4200000,
+   "league": "jlo-d1",
+   "country": "JP",
+   "players": 56,
+   "academy": 60
+  },
+  {
+   "id": 74,
+   "name": "Marées de Shizuoka",
+   "cash": 4200000,
+   "league": "jlo-d1",
+   "country": "JP",
+   "players": 56,
+   "academy": 60
+  },
+  {
+   "id": 75,
+   "name": "Fauves du Grand Tokyo",
+   "cash": 4200000,
+   "league": "jlo-d1",
+   "country": "JP",
+   "players": 50,
+   "academy": 60
+  },
+  {
+   "id": 76,
+   "name": "Loups du Musashi",
+   "cash": 4200000,
+   "league": "jlo-d1",
+   "country": "JP",
+   "players": 54,
+   "academy": 60
+  },
+  {
+   "id": 77,
+   "name": "Éclairs de Mikawa",
+   "cash": 4200000,
+   "league": "jlo-d1",
+   "country": "JP",
+   "players": 59,
+   "academy": 60
+  },
+  {
+   "id": 78,
+   "name": "Récifs d’Urayasu",
+   "cash": 4200000,
+   "league": "jlo-d1",
+   "country": "JP",
+   "players": 57,
+   "academy": 60
+  },
+  {
+   "id": 79,
+   "name": "Rapaces de Yokohama",
+   "cash": 4200000,
+   "league": "jlo-d1",
+   "country": "JP",
+   "players": 51,
+   "academy": 60
+  },
+  {
+   "id": 80,
+   "name": "Gardes du Tokatsu",
+   "cash": 3400000,
+   "league": "jlo-d2",
+   "country": "JP",
+   "players": 46,
+   "academy": 60
+  },
+  {
+   "id": 81,
+   "name": "Flèches du Hanazono",
+   "cash": 3400000,
+   "league": "jlo-d2",
+   "country": "JP",
+   "players": 53,
+   "academy": 60
+  },
+  {
+   "id": 82,
+   "name": "Requins de Koto",
+   "cash": 3400000,
+   "league": "jlo-d2",
+   "country": "JP",
+   "players": 61,
+   "academy": 60
+  },
+  {
+   "id": 83,
+   "name": "Tourbillons du Kyushu",
+   "cash": 3400000,
+   "league": "jlo-d2",
+   "country": "JP",
+   "players": 50,
+   "academy": 60
+  },
+  {
+   "id": 84,
+   "name": "Vents Rouges d’Osaka",
+   "cash": 3400000,
+   "league": "jlo-d2",
+   "country": "JP",
+   "players": 53,
+   "academy": 60
+  },
+  {
+   "id": 85,
+   "name": "Veilleurs de Sayama",
+   "cash": 3400000,
+   "league": "jlo-d2",
+   "country": "JP",
+   "players": 54,
+   "academy": 60
+  },
+  {
+   "id": 86,
+   "name": "Navettes d’Aichi",
+   "cash": 3400000,
+   "league": "jlo-d2",
+   "country": "JP",
+   "players": 54,
+   "academy": 60
+  },
+  {
+   "id": 87,
+   "name": "Ailes du Delta",
+   "cash": 3400000,
+   "league": "jlo-d2",
+   "country": "JP",
+   "players": 50,
+   "academy": 60
+  },
+  {
+   "id": 88,
+   "name": "Centaure Périgord XV",
+   "cash": 1000000,
+   "league": "nationale",
+   "country": "FR",
+   "players": 52,
+   "academy": 60
+  },
+  {
+   "id": 89,
+   "name": "Dauphins de Bourgoin",
+   "cash": 1100000,
+   "league": "nationale",
+   "country": "FR",
+   "players": 40,
+   "academy": 60
+  },
+  {
+   "id": 90,
+   "name": "Vienne Rhône Rugby",
+   "cash": 600000,
+   "league": "nationale",
+   "country": "FR",
+   "players": 47,
+   "academy": 60
+  },
+  {
+   "id": 91,
+   "name": "Marcq Métropole XV",
+   "cash": 400000,
+   "league": "nationale",
+   "country": "FR",
+   "players": 40,
+   "academy": 60
+  },
+  {
+   "id": 92,
+   "name": "Orléans Ligériens",
+   "cash": 500000,
+   "league": "nationale",
+   "country": "FR",
+   "players": 40,
+   "academy": 60
+  },
+  {
+   "id": 93,
+   "name": "Rennes Armorique XV",
+   "cash": 800000,
+   "league": "nationale",
+   "country": "FR",
+   "players": 40,
+   "academy": 60
+  },
+  {
+   "id": 94,
+   "name": "Rouen Seine Rugby",
+   "cash": 1100000,
+   "league": "nationale",
+   "country": "FR",
+   "players": 49,
+   "academy": 60
+  },
+  {
+   "id": 95,
+   "name": "Suresnes Belvédère XV",
+   "cash": 700000,
+   "league": "nationale",
+   "country": "FR",
+   "players": 48,
+   "academy": 60
+  },
+  {
+   "id": 96,
+   "name": "Massy Sud Rugby",
+   "cash": 1200000,
+   "league": "nationale",
+   "country": "FR",
+   "players": 49,
+   "academy": 60
+  },
+  {
+   "id": 97,
+   "name": "Albi Bastide XV",
+   "cash": 800000,
+   "league": "nationale",
+   "country": "FR",
+   "players": 50,
+   "academy": 60
+  },
+  {
+   "id": 98,
+   "name": "Mont-de-Marsan Landes XV",
+   "cash": 1100000,
+   "league": "nationale",
+   "country": "FR",
+   "players": 44,
+   "academy": 60
+  },
+  {
+   "id": 99,
+   "name": "Chambéry Massif XV",
+   "cash": 900000,
+   "league": "nationale",
+   "country": "FR",
+   "players": 51,
+   "academy": 60
+  },
+  {
+   "id": 100,
+   "name": "Bourg Bresse XV",
+   "cash": 900000,
+   "league": "nationale",
+   "country": "FR",
+   "players": 43,
+   "academy": 60
+  },
+  {
+   "id": 101,
+   "name": "Carcassonne Cité XV",
+   "cash": 1100000,
+   "league": "nationale",
+   "country": "FR",
+   "players": 51,
+   "academy": 60
+  },
+  {
+   "id": 102,
+   "name": "Alder Fen XV",
+   "cash": 3600000,
+   "league": "champ",
+   "country": "GB",
+   "players": 36,
+   "academy": 60
+  },
+  {
+   "id": 103,
+   "name": "Northmere Blues",
+   "cash": 3600000,
+   "league": "champ",
+   "country": "GB",
+   "players": 40,
+   "academy": 60
+  },
+  {
+   "id": 104,
+   "name": "Blackthorn Borough",
+   "cash": 3600000,
+   "league": "champ",
+   "country": "GB",
+   "players": 47,
+   "academy": 60
+  },
+  {
+   "id": 105,
+   "name": "Greycliff Ravens",
+   "cash": 3600000,
+   "league": "champ",
+   "country": "GB",
+   "players": 60,
+   "academy": 60
+  },
+  {
+   "id": 106,
+   "name": "Kingsey Forge",
+   "cash": 3600000,
+   "league": "champ",
+   "country": "GB",
+   "players": 47,
+   "academy": 60
+  },
+  {
+   "id": 107,
+   "name": "Penmar Tides",
+   "cash": 3600000,
+   "league": "champ",
+   "country": "GB",
+   "players": 40,
+   "academy": 60
+  },
+  {
+   "id": 108,
+   "name": "Midland Spires",
+   "cash": 3600000,
+   "league": "champ",
+   "country": "GB",
+   "players": 40,
+   "academy": 60
+  },
+  {
+   "id": 109,
+   "name": "Rosegate Knights",
+   "cash": 3600000,
+   "league": "champ",
+   "country": "GB",
+   "players": 40,
+   "academy": 60
+  },
+  {
+   "id": 110,
+   "name": "Westmoor Trail XV",
+   "cash": 3600000,
+   "league": "champ",
+   "country": "GB",
+   "players": 54,
+   "academy": 60
+  },
+  {
+   "id": 111,
+   "name": "Hawthorn College XV",
+   "cash": 3600000,
+   "league": "champ",
+   "country": "GB",
+   "players": 40,
+   "academy": 60
+  },
+  {
+   "id": 112,
+   "name": "Trentwood Archers",
+   "cash": 3600000,
+   "league": "champ",
+   "country": "GB",
+   "players": 40,
+   "academy": 60
+  },
+  {
+   "id": 113,
+   "name": "Meadowbridge Rovers",
+   "cash": 3600000,
+   "league": "champ",
+   "country": "GB",
+   "players": 60,
+   "academy": 60
+  },
+  {
+   "id": 114,
+   "name": "Forge Valley Titans",
+   "cash": 3600000,
+   "league": "champ",
+   "country": "GB",
+   "players": 55,
+   "academy": 60
+  },
+  {
+   "id": 115,
+   "name": "Severn Crown XV",
+   "cash": 3600000,
+   "league": "champ",
+   "country": "GB",
+   "players": 46,
+   "academy": 60
+  }
+ ]
+}

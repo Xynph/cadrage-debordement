@@ -1,0 +1,13 @@
+'use strict';
+const path=require('node:path');
+const {ouvrir,creer}=require(path.join(__dirname,'../../tests/helpers/carriere-monde.cjs'));
+const club=Number(process.argv[2]||102);
+const jeu=ouvrir({hebdomadaire:true,simulation:true,testVm:true});
+const t0=Date.now();
+const m=creer(jeu,club);
+console.log('creation ms',Date.now()-t0);
+const lire=s=>JSON.parse(jeu.bridge.vm.run('JSON.stringify('+s+')'));
+const ap=m.clubLife.academyPathways;
+console.log('projection',JSON.stringify({available:ap.available,baseAvailable:ap.baseAvailable,active:ap.active,activationAvailable:ap.activationAvailable,reason:ap.reason,players:ap.players?.length,cash:ap.cash,places:ap.places}));
+console.log(lire(`({clubs:S.clubs.length,ai:S.aiRoster?.academies?.length,dev:!!S.development,acad:S.development?.academy?.length,franceMode:!!S.franceMode,frozen:Object.isFrozen(CDWorldCareer),desc:Object.getOwnPropertyDescriptor(CDWorldCareer,'active')})`));
+jeu.fermer();
