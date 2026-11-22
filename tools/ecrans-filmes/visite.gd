@@ -99,6 +99,8 @@ const EXTRAS := [
 	{"id": "selections-disponibilites", "libelle": "Sélections · onglet Disponibilités", "type": "onglet_cle", "route": "Sélections", "cle": "international_section", "onglet": "availability", "repos": "callups"},
 	{"id": "vestiaire-entretiens-duos", "libelle": "Vestiaire · Entretiens et duos, bas de la colonne (duos)", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week", "defiler": "RelationshipPeopleScroll"},
 	{"id": "vestiaire-groupe", "libelle": "Vestiaire · petite fenêtre du groupe (portraits)", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week", "presser": "RelationshipAllPortraits"},
+	{"id": "discussion", "libelle": "Vestiaire · discussion avec un joueur (petite fenêtre)", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week", "presser": "DiscussionOuvrir", "joueur_forme": true},
+	{"id": "discussion-reponse", "libelle": "Vestiaire · discussion, réponse du joueur", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week", "presser": "DiscussionOuvrir", "presser_ensuite": "DiscussionPhrase_", "joueur_forme": true},
 	{"id": "carriere-mobilite", "libelle": "Carrière · onglet Mobilité et recrutement", "type": "onglet_cle", "route": "Carrière", "cle": "immersive08_career_tab", "onglet": "details", "repos": "summary"},
 	{"id": "vestiaire-historique", "libelle": "Vestiaire · onglet Engagements et historique", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "history", "repos": "week"},
 	## Onglets du Centre (parcours activés) : un écran par onglet ; Parcours avec le parcours individuel du premier Espoir ouvert.
@@ -825,10 +827,36 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				if colonne == null: return {"statut": "echec", "note": "colonne %s absente" % ecran.defiler}
 				colonne.scroll_vertical = int(colonne.get_v_scroll_bar().max_value)
 				await stabiliser()
+			# Discussion : le joueur suivi qui a le plus de notes de match (courbe de forme lisible).
+			if ecran.get("joueur_forme", false):
+				var meilleur := ""
+				var plus := -1
+				for p: Variant in app.model.get("clubLife", {}).get("relationships", {}).get("players", []):
+					var n: int = load("res://ui/notes_match.gd").forme(load("res://ui/notes_match.gd").joueur(app.model, str(p.get("id")))).size()
+					if n > plus: plus = n; meilleur = str(p.get("id"))
+				if not app.management_ui.has("relationships"): app.management_ui["relationships"] = {}
+				app.management_ui.relationships["playerId"] = meilleur
+				app._render()
+				await stabiliser()
 			if ecran.has("presser"):
 				var bouton := app.find_child(str(ecran.presser), true, false) as Button
 				if bouton == null: return {"statut": "echec", "note": "bouton %s absent" % ecran.presser}
 				bouton.pressed.emit()
+				await stabiliser()
+			# Discussion : CD_FILM_DISCUSSION_CHOIX (ecouter, rassurer, clarifier ; rassurer par défaut) choisit nos mots.
+			if ecran.has("presser_ensuite"):
+				var nom_suite := str(ecran.presser_ensuite)
+				if nom_suite.ends_with("_"):
+					var choix_film := OS.get_environment("CD_FILM_DISCUSSION_CHOIX")
+					if choix_film.is_empty():
+						var Discussion = load("res://ui/discussion_joueur.gd")
+						var etat_d: Variant = app.management_ui.get("discussion")
+						choix_film = Discussion.meilleur_choix(Discussion.donnees(app, str(etat_d.get("id", ""))).get("trait", "")) if etat_d is Dictionary else "ecouter"
+					nom_suite += choix_film
+				var suite := app.find_child(nom_suite, true, false) as Button
+				if suite == null: return {"statut": "echec", "note": "bouton %s absent" % nom_suite}
+				suite.pressed.emit()
+				await stabiliser()
 				await stabiliser()
 		"centre_onglet":
 			app.management_ui.immersive_centre = {"club": app.model.get("club", {}).get("id"), "tab": str(ecran.onglet), "scroll": {}}
@@ -949,6 +977,7 @@ func refermer(ecran: Dictionary) -> void:
 	if str(ecran.type) == "centre_onglet": app.management_ui.immersive_centre = {"club": app.model.get("club", {}).get("id"), "tab": "", "scroll": {}}
 	if str(ecran.type) == "onglet_cle":
 		if ecran.has("presser"): load("res://ui/petite_fenetre.gd").fermer_derniere(app.get_tree())
+		app.management_ui.erase("discussion")
 		app.management_ui[str(ecran.cle)] = str(ecran.repos)
 	if str(ecran.type) == "classements_onglet" and app.management_ui.get("competition") is Dictionary: app.management_ui.competition.tab = "league"
 	if str(ecran.type) == "formation_suivi": load("res://ui/immersive08/formation_pages.gd").oublier(app)

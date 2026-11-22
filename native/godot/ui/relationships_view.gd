@@ -269,7 +269,10 @@ static func _player(app: Control, parent: VBoxContainer, data: Dictionary, p: Di
 	chiffres.add_child(Pastilles.tuile(_number(p.get("minutes")), "min", Pastilles.TURQUOISE, Charte.PANNEAU_2, 28, "RelationshipTileMinutes", false, fiche))
 	cote.add_child(chiffres)
 	parent.add_child(scene)
-	for c: Dictionary in data.get("conversations", []):
+	# Planche « Discussion avec un joueur » (revue FM27, idée 23) : une carte « Discuter » ouvre la petite fenêtre.
+	var Discussion = load("res://ui/discussion_joueur.gd")
+	if not Discussion.variante().is_empty(): parent.add_child(Discussion.bouton(app, p))
+	for c: Dictionary in (data.get("conversations", []) if Discussion.variante().is_empty() else []):
 		parent.add_child(V.ligne_action(str(c.id), str(c.label), str(c.detail), func(): app._command("relationship_conversation", {"context":context, "playerId":p.id, "choice":c.id}), "Conversation_" + str(c.id), p.get("conversationAvailable", false)))
 	_promesses(app, parent, data, p, context)
 	# Nos derniers échanges : une ligne visuelle par souvenir (réponse en pastille, date, satisfaction avant → après).
