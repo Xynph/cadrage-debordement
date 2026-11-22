@@ -167,7 +167,7 @@ static func estomper(card: Control, origine: Vector2, dimension: Vector2, prefix
 			var chiffre := card.get_node_or_null(prefixe + cle) as Label
 			var zone := _ligne(origine, dimension, cle)
 			if garder.has(cle):
-				var pastille := D.rect(card, Rect2(zone.position.x - 4, zone.position.y + 9, 14, 14), garder[cle], 7)
+				var pastille := D.rect(card, Rect2(zone.position.x - 16, zone.position.y + 9, 12, 12), garder[cle], 7)
 				pastille.name = ("RoleCle_" if garder[cle] == CLE else "RoleUtile_") + cle
 				for enfant in card.get_children():
 					if enfant is Label and (enfant as Label).text == str(pair[1]): (enfant as Label).add_theme_color_override("font_color", garder[cle])
@@ -265,12 +265,12 @@ static func _carte_a(card: Control, app: Control, player: Dictionary, values: Di
 
 ## B : terrain cliquable à gauche (choix du poste), puis les rôles de ce poste en lignes avec leurs qualités en pastilles.
 static func _carte_b(card: Control, app: Control, player: Dictionary, values: Dictionary, e: Dictionary) -> void:
-	_terrain(card, app, player, values, Rect2(24, 64, 160, 214), int(e.numero))
+	_terrain(card, app, player, values, Rect2(24, 64, 150, 200), int(e.numero))
 	var numero := int(e.numero)
 	if numero <= 0: return
 	var famille: String = FAMILLE[numero - 1]
 	D.text(card, 214, 92, "%d · %s" % [numero, POSTE[famille].to_upper()], 24, Charte.CREME, 800, 500).name = "PlayerRolePoste"
-	_etoiles(card, Rect2(520, 74, 130, 22), Carte.etoiles_poste(player, numero), "PlayerRolePosteStars")
+	_etoiles(card, Rect2(380, 74, 130, 22), Carte.etoiles_poste(player, numero), "PlayerRolePosteStars")
 	var y := 108.0
 	for r: Array in roles_famille(famille):
 		var choisi: bool = r[0] == e.role
