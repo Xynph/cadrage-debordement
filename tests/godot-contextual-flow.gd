@@ -117,7 +117,7 @@ func locker_check(phase: String) -> void:
 			check(position_label.is_visible_in_tree() and card.get_global_rect().encloses(position_label.get_global_rect()), "Position is visibly contained in the actual player card")
 			var name_label: Label = card.find_child("ParticipantName", true, false)
 			check(str(card.get_meta("player_name", "")) == str(player.get("name", "")) and name_label != null and not name_label.text.is_empty(), "Card names the actual player")
-			check(name_label != null and position_label.get_global_rect().position.y > name_label.get_global_rect().position.y, "Actual position is displayed below the player name")
+			check(name_label != null and position_label.get_global_rect().position.x > name_label.get_global_rect().position.x, "Actual position is displayed next to the player name, in his row")
 		var portrait: TextureRect = card.find_child("ParticipantPortrait", true, false)
 		check(portrait != null and portrait.texture != null, "Actual participant has a visible portrait")
 		if portrait != null and not player.is_empty():
@@ -341,6 +341,14 @@ func run() -> void:
 	check(disabled_while_waiting, "Contextual decisions disabled while real worker is pending")
 	await wait_command("match_talk_decide")
 	check(talk().decision.choiceId == option.id and talk().decision.playerIds.size() == 1, "Real decision records offered choice and actual selected player")
+	# Ton cliqué : la ligne du joueur visé prend la couleur franche de sa réaction, le mot reste dans la pastille.
+	await process_frame
+	var reaction: Dictionary = director.view.reaction_of(talk().decision, talk().participants[0].id)
+	var ligne: Button = director.view.find_child("Participant_%d" % int(talk().participants[0].number), true, false)
+	var fond_ligne: StyleBoxFlat = ligne.get_theme_stylebox("normal") as StyleBoxFlat if ligne != null else null
+	var mot: Label = ligne.find_child("ParticipantReaction", true, false) if ligne != null else null
+	check(not reaction.is_empty() and fond_ligne != null and fond_ligne.bg_color.is_equal_approx(preload("res://ui/charte.gd").PANNEAU.lerp(director.view.couleur_reaction(reaction), .38)), "The addressed player's whole row takes his reaction colour")
+	check(mot != null and mot.text.contains(str(reaction.get("label", "?")).to_upper()), "The reaction word stays in the row's pill")
 	await capture("pre-decision")
 	director.view._continue()
 	await wait_command("match_talk_continue")

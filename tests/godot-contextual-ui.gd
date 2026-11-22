@@ -1,6 +1,7 @@
 extends SceneTree
 # Structural contract fixtures only. End-to-end worker coverage is contextual-flow.
 const Director = preload("res://ui/contextual/director.gd")
+const Charte = preload("res://ui/charte.gd")
 class Host extends Control:
 	var model: Dictionary = {}
 	var root_content: Control
@@ -181,16 +182,22 @@ func run() -> void:
 	await photographier("apres-1280x720")
 	await taille(Vector2i(1920,1080)); await photographier("apres-1920x1080")
 	await taille(Vector2i(1280,720))
-	var palette := preload("res://ui/contextual/match_tableau_widgets.gd")
-	# Réaction neutre : texte secondaire commun (jeton MUTED de game_skin.gd, repris par contextual/skin.gd).
-	var expected_colors := [palette.VERT, preload("res://ui/contextual/skin.gd").MUTED, palette.ALERTE]
+	# Après la parole : chaque ligne garde le mot de sa réaction dans une pastille et prend, ligne entière, la couleur
+	# franche de cette réaction (Galvanisé, Indifférent et Vexé : trois teintes distinctes).
 	var reaction_cards := 0
+	var teintes := {}
 	for card: Node in director.view.find_children("*", "Button", true, false):
 		if not card.has_meta("participant_id"): continue
 		var index: int = participants.map(func(p: Dictionary): return p.id).find(card.get_meta("participant_id"))
 		var shown: Label = card.find_child("ParticipantReaction", true, false)
-		if index >= 0 and shown != null and shown.text == states[index % 3][1] and shown.get_theme_color("font_color").is_equal_approx(expected_colors[index % 3]): reaction_cards += 1
-	check(reaction_cards == 23, "each player card shows his reaction label in the colour of its sign (%d/23)" % reaction_cards)
+		var reaction: Dictionary = reactions[index] if index >= 0 else {}
+		var attendu: Color = Charte.PANNEAU.lerp(director.view.couleur_reaction(reaction), .38)
+		var fond: StyleBoxFlat = (card as Button).get_theme_stylebox("normal") as StyleBoxFlat
+		if index >= 0 and shown != null and shown.text.contains(str(states[index % 3][1]).to_upper()) and fond != null and fond.bg_color.is_equal_approx(attendu):
+			reaction_cards += 1
+			teintes[states[index % 3][0]] = fond.bg_color
+	check(reaction_cards == 23, "each player row shows his reaction word and is tinted with its colour (%d/23)" % reaction_cards)
+	check(teintes.size() == 3 and not teintes.galvanise.is_equal_approx(teintes.vexe) and not teintes.galvanise.is_equal_approx(teintes.indifferent), "three reactions, three row colours")
 	var go_on: Button = director.view.find_child("TalkContinue", true, false)
 	check(go_on != null and go_on.custom_minimum_size.y >= 70 and go_on.get_theme_font_size("font_size") >= 24, "Continuer is a large primary button after the talk")
 	if go_on != null: check(Rect2(Vector2.ZERO, host.size).encloses(go_on.get_global_rect()), "Continuer stays on screen at 720p")
@@ -203,8 +210,8 @@ func run() -> void:
 	for role: Label in director.view.find_children("ParticipantPosition", "Label", true, false):
 		var card: Control = card_of(role)
 		check(Rect2(Vector2.ZERO, host.size).encloses(card.get_global_rect()), "reaction player card stays on screen at 720p")
-		for detail: Label in role.get_parent().get_children():
-			check(card.get_global_rect().encloses(detail.get_global_rect()), "name, position and reaction fit the same player card at 720p")
+		for detail: Control in role.get_parent().get_children():
+			check(card.get_global_rect().encloses(detail.get_global_rect()), "name, position and reaction fit the same player card at 720p " + str(detail.name) + " " + str(detail.get_global_rect()) + " in " + str(card.get_global_rect()))
 	host.model.clubLife.matchTalks.scene = null
 	check(not director.sync(), "empty context closes")
 	check(host.root_content.visible and host.coach.visible, "shell restored")

@@ -24,7 +24,7 @@ const Reperes = preload("res://ui/immersive08/reperes.gd")
 const Espoir = preload("res://ui/espoir_appel.gd")
 const RI = preload("res://ui/contextual/rooms/room_identity.gd")
 const Bilan = preload("res://ui/immersive08/avant_match_bilan.gd")
-const Feuille = preload("res://ui/immersive08/avant_match_feuille.gd")
+const FaceAFace = preload("res://ui/immersive08/avant_match_terrain.gd")
 const MOIS := ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
 const JOURS := ["DIM.", "LUN.", "MAR.", "MER.", "JEU.", "VEN.", "SAM."]
 ## Photo du tunnel selon la météo annoncée (forte pluie > pluie > vent > chaleur > sec ; sans annonce : neutre).
@@ -242,7 +242,7 @@ func refresh(model: Dictionary, play: Button) -> void:
 	var key := JSON.stringify([next, model.get("clubLife", {}).get("avantMatch"), selection.get("slots", []), selection.get("valid", false), selection.get("errors", []),
 		model.get("squad", []).map(func(p: Dictionary): return [p.get("id"), p.get("condition"), p.get("injury")]), model.get("meta", {}).get("calendarToday"),
 		page, play.text, play.disabled, play.tooltip_text, etat.mot, app.accent.to_html(), model.get("decisions", {}).get("delegation"),
-		model.clubSheet.get("id") if model.get("clubSheet") is Dictionary and not Feuille.variante().is_empty() else null])
+		model.clubSheet.get("id") if model.get("clubSheet") is Dictionary and FaceAFace.visible() else null, C.dense()])
 	if key == _key: return
 	_key = key
 	_page_ouverte = page
@@ -281,9 +281,9 @@ func _construire(model: Dictionary, next: Dictionary, play: Button, etat: Dictio
 		return
 	var cote := _cote(model, next)
 	colonne.add_child(_affiche(model, next, data, cote))
-	# Planche FM27 n° 7 (CD_VARIANTE_VISUELLE=A|B) : la feuille de match occupe l'espace libre sous l'affiche.
-	if not Feuille.variante().is_empty():
-		colonne.add_child(Feuille.section(self, app, model, next, cote))
+	# Les deux XV face à face sur un terrain, météo dessus, dans l'espace libre sous l'affiche (hors petite fenêtre).
+	if FaceAFace.visible():
+		colonne.add_child(FaceAFace.section(self, app, model, next, cote))
 	else:
 		var vide := Control.new()
 		vide.mouse_filter = Control.MOUSE_FILTER_IGNORE
