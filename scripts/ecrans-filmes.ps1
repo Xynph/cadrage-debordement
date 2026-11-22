@@ -20,7 +20,7 @@ Utilisation (PowerShell, depuis n'importe quel dossier) :
 
 Paramètres :
   -Sortie    dossier des images (créé ; défaut : %TEMP%\ecrans-filmes-<date>)
-  -Tailles   tailles LxH séparées par des virgules, 1280x720 au moins (défaut 1920x1080,1280x720)
+  -Tailles   tailles LxH séparées par des virgules, 800x450 au moins (défaut 1920x1080,1280x720)
   -Ecrans    écrans à filmer, séparés par des virgules (nom de fichier ou nom de l'écran, accents indifférents ;
              alias : transferts, classement, equipe, joueur, options) ; défaut : tous
   -Export    carrière exportée à reprendre (lue seulement, importée dans le profil jetable) : saute la préparation
