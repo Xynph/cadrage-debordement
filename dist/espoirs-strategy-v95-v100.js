@@ -1,6 +1,14 @@
 'use strict';
 (function(root){
  const REGIONS=['Atlantique','Bretagne','Centre','Sud-Ouest','Mediterranee','Alpes'];
+ // Carrière Monde (Centre d'un vrai club, 22/11/2026) : filières par grande zone du rugby ; « national » = l'union du club.
+ const WORLD_REGIONS=['France','Îles Britanniques','Europe','Afrique australe','Océanie','Japon'];
+ const ALL_REGIONS=REGIONS.concat(WORLD_REGIONS);
+ const ZONES={FR:'France',GB:'Îles Britanniques',IE:'Îles Britanniques',IT:'Europe',GE:'Europe',PT:'Europe',ZA:'Afrique australe',NZ:'Océanie',AU:'Océanie',FJ:'Océanie',JP:'Japon'};
+ const worldNet=s=>!!root.CDNativeAcademy?.worldTopology?.(s);
+ const homeUnionOf=s=>worldNet(s)?root.CDNativeAcademy.homeUnion(s):'FR';
+ const regionsOf=s=>worldNet(s)?WORLD_REGIONS:REGIONS;
+ const homeZone=s=>ZONES[homeUnionOf(s)]||'Europe';
  const IDENTITIES=['mouvement','puissance','defense','polyvalence'];
  const DECISIONS=['accompagner','pret','professionnel','patienter'];
  const safe=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -13,7 +21,7 @@
  const potential=p=>Number.isFinite(p?.dev?.potential)?p.dev.potential:(p?.potential??p?.rating??0);
  function valid(st){
   return !!st&&st.version===1&&Number.isInteger(st.season)&&st.season>0&&
-   REGIONS.includes(st.region)&&IDENTITIES.includes(st.identity)&&
+   ALL_REGIONS.includes(st.region)&&IDENTITIES.includes(st.identity)&&
    Number.isInteger(st.cohesion)&&st.cohesion>=0&&st.cohesion<=100&&
    Number.isInteger(st.reputation)&&st.reputation>=0&&st.reputation<=100&&
    Number.isInteger(st.scouts)&&st.scouts>=0&&st.scouts<=3&&
@@ -23,7 +31,7 @@
    Array.isArray(st.loads)&&st.loads.length<=35&&
    Array.isArray(st.ambitions)&&st.ambitions.length<=40&&
    Array.isArray(st.history)&&st.history.length<=15&&
-   st.candidates.every(x=>x&&typeof x.id==='string'&&REGIONS.includes(x.region)&&Number.isInteger(x.rating)&&Number.isInteger(x.potential))&&
+   st.candidates.every(x=>x&&typeof x.id==='string'&&ALL_REGIONS.includes(x.region)&&Number.isInteger(x.rating)&&Number.isInteger(x.potential))&&
    st.loads.every(x=>x&&typeof x.id==='string'&&['allegee','equilibree','intensive'].includes(x.load))&&
    st.ambitions.every(x=>x&&typeof x.id==='string'&&DECISIONS.includes(x.decision)&&Number.isInteger(x.season))&&
    st.history.every(x=>x&&Number.isInteger(x.season)&&Number.isInteger(x.reputation))&&
@@ -44,7 +52,7 @@
     history:old.history.slice(0,15)};
    evolveNetwork(network(s.v95to100,s),s);return s.v95to100;
   }
-  s.v95to100={version:1,season:s.season,region:'Atlantique',identity:'polyvalence',
+  s.v95to100={version:1,season:s.season,region:worldNet(s)?homeZone(s):'Atlantique',identity:'polyvalence',
    cohesion:55,reputation:45,scouts:0,meetings:0,candidates:[],recruits:[],loads:[],ambitions:[],history:[]};
   network(s.v95to100,s);return s.v95to100;
  }
@@ -67,28 +75,50 @@
   ['Cardiff Vallée','Pays de Galles','GB'],['Fiji Islands Youth','Fidji','FJ'],
   ['Cape Youth Rugby','Afrique du Sud','ZA'],['Rosario Club','Argentine','AR']
  ];
+ const WORLD_FEEDERS=[
+  ['Garonne Ovalie','France','FR'],['Val de Loire','France','FR'],['Massif Central','France','FR'],
+  ['Cardiff Vallée','Îles Britanniques','GB'],['Pennine Colts','Îles Britanniques','GB'],['Liffey Schools','Îles Britanniques','IE'],
+  ['Porto Académie','Europe','PT'],['Tbilissi Espoir','Europe','GE'],['Veneto Giovani','Europe','IT'],
+  ['Cape Youth Rugby','Afrique australe','ZA'],['Highveld Juniors','Afrique australe','ZA'],
+  ['Fiji Islands Youth','Océanie','FJ'],['Canterbury Plains Colts','Océanie','NZ'],['Queensland Coast Juniors','Océanie','AU'],
+  ['Kansai Gakuen','Japon','JP'],['Kanto Rugby School','Japon','JP']
+ ];
+ // Prénoms et noms des jeunes des filières mondiales, par union (les filières françaises gardent leurs listes).
+ const WORLD_NAMES={
+  GB:[['Oliver','Harry','Jack','Tom','Rhys','Owen','Callum','Finn'],['Evans','Hughes','Walker','Price','Morgan','Fraser','Bennett','Hall']],
+  IE:[['Conor','Cian','Darragh','Sean','Eoin','Oisin'],['Byrne','Murphy','Doyle','Kelly','Ryan','Walsh']],
+  ZA:[['Ruan','Pieter','Thabo','Siya','Johan','Lwazi'],['Botha','Nkosi','van der Merwe','Pretorius','Dlamini','Venter']],
+  NZ:[['Tane','Wiremu','Sam','Ngani','Caleb','Rieko'],['Taufa','Ngata','Smith','Parata','Mitchell','Tuhoe']],
+  AU:[['Lachlan','Josh','Tate','Will','Kurt','Max'],['Kelly','Nguyen','Robertson','Fraser','Gibson','Daley']],
+  FJ:[['Semi','Josua','Waisea','Viliame','Iosefo','Kalivati'],['Ravouvou','Tuilagi','Naivalu','Vatubua','Matanavou','Botia']],
+  JP:[['Haruto','Ren','Sota','Yuki','Kaito','Takumi'],['Sato','Tanaka','Watanabe','Yamamoto','Nakamura','Kobayashi']],
+  IT:[['Matteo','Lorenzo','Giacomo','Paolo','Marco','Luca'],['Rossi','Bianchi','Ferrari','Greco','Conti','Russo']],
+  GE:[['Giorgi','Luka','Davit','Nika','Lasha','Beka'],['Beridze','Kapanadze','Tsiklauri','Gelashvili','Lomidze','Japaridze']],
+  PT:[['Tomás','João','Rodrigo','Duarte','Martim','Afonso'],['Santos','Silva','Pereira','Marques','Lima','Costa']]
+ };
+ const nameFor=(union,seed,div)=>{const l=WORLD_NAMES[union];return l?l[0][seed%l[0].length]+' '+l[1][Math.floor(seed/div)%l[1].length]:firstnames[seed%firstnames.length]+' '+surnames[Math.floor(seed/div)%surnames.length];};
+ const recruitersOf=s=>worldNet(s)?[{name:'Recruteur national',zone:homeZone(s),skill:81},{name:'Recruteur régional',zone:homeZone(s),skill:75},{name:'Recruteur International',zone:'International',skill:72}]:
+  [{name:'Recruteur Nord',zone:'Bretagne',skill:75},{name:'Recruteur Sud',zone:'Sud-Ouest',skill:81},{name:'Recruteur International',zone:'International',skill:72}];
  const surnames=['Ferrandou','Bernard','Vergnolles','Le Goff','Robert','Santos','Morel','Silva','Laurent','Dumas','Tavita','Beridze'];
  const firstnames=['Eliott','Noam','Mael','Hugo','Mathis','Timo','Leo','Tane','Lucas','Pablo','Nino','Sami'];
  const fam=(s,p)=>s?.development?.academy?.find(q=>q.pos===p.pos)||s?.development?.academy?.[0];
  function network(st,s){
-  if(st.network){if(!Array.isArray(st.network.recruiters))st.network.recruiters=[{name:'Recruteur Nord',zone:'Bretagne',skill:75},{name:'Recruteur Sud',zone:'Sud-Ouest',skill:81},{name:'Recruteur International',zone:'International',skill:72}];return st.network;}
-  const feeders=FEEDERS.map((f,i)=>({id:'feeder-'+i,name:f[0]+' RC',region:f[1],union:f[2],relationship:0}));
+  if(st.network){if(!Array.isArray(st.network.recruiters))st.network.recruiters=recruitersOf(s);return st.network;}
+  const feeders=(worldNet(s)?WORLD_FEEDERS:FEEDERS).map((f,i)=>({id:'feeder-'+i,name:f[0]+' RC',region:f[1],union:f[2],relationship:0}));
   const players=[];
   for(let i=0;i<feeders.length;i++)for(let j=0;j<2;j++){
    const seed=hash('feeder:'+s.club+':'+i+':'+j),age=15+seed%5,rating=44+Math.floor(seed/7)%20;
    const native=youth(s),pos=native.length?native[(seed>>>4)%native.length].pos:'10';
    players.push({id:'feeder-youth-'+i+'-'+j,clubId:feeders[i].id,clubName:feeders[i].name,
     region:feeders[i].region,union:feeders[i].union,
-    name:firstnames[seed%firstnames.length]+' '+surnames[Math.floor(seed/13)%surnames.length],
+    name:nameFor(feeders[i].union,seed,13),
     pos,age,rating,potential:Math.min(94,rating+10+Math.floor(seed/31)%24),
     schooling:40+Math.floor(seed/77)%61,family:40+Math.floor(seed/107)%61,
     ambition:40+Math.floor(seed/167)%61,scouted:0,trial:false,offers:0,
     status:'available',originSeason:s.season,homeClub:feeders[i].id});
   }
   st.network={version:1,feeders,players,partners:[],history:[],credits:[],lastSeason:s.season,
-   recruiters:[{name:'Recruteur Nord',zone:'Bretagne',skill:75},
-    {name:'Recruteur Sud',zone:'Sud-Ouest',skill:81},
-    {name:'Recruteur International',zone:'International',skill:72}]};
+   recruiters:recruitersOf(s)};
   return st.network;
  }
  function evolveNetwork(n,s){
@@ -114,7 +144,7 @@
     const native=youth(s),pos=native.length?native[(seed>>>3)%native.length].pos:'10';
     n.players.push({id:'feeder-youth-'+i+'-season-'+year,clubId:base.id,clubName:base.name,
      region:base.region,union:base.union,
-     name:firstnames[seed%firstnames.length]+' '+surnames[Math.floor(seed/17)%surnames.length],
+     name:nameFor(base.union,seed,17),
      pos,age:15+Math.floor(seed/71)%3,rating:rate,potential:Math.min(94,rate+12+Math.floor(seed/29)%20),
      schooling:40+Math.floor(seed/37)%61,family:40+Math.floor(seed/67)%61,
      ambition:40+Math.floor(seed/89)%61,scouted:0,trial:false,offers:0,
@@ -127,7 +157,7 @@
  }
  function model(s,p,net){
   const feeder=net.feeders.find(x=>x.id===p.clubId);
-  const partner=net.partners.includes(p.clubId),local=feeder?.union==='FR';
+  const partner=net.partners.includes(p.clubId),local=feeder?.union===homeUnionOf(s);
   const reputation=Number.isInteger(s.v95to100?.reputation)?s.v95to100.reputation:45;
   const school=Math.round(45+(partner?20:0)+Math.max(0,50-p.schooling)*.1);
   const proximity=local?58+(partner?20:0):10;
@@ -144,7 +174,7 @@
   const st=ensure(s),n=st&&network(st,s),p=n?.players.find(x=>x.id===id);
   if(!st||!unlocked(s)||!p||p.status!=='available'||p.scouted>=3||!cost(s,500))return false;
   return transact(s,()=>{s.clubs[s.club].cash-=500;p.scouted++;
-   const scout=n.recruiters.find(r=>r.zone===p.region)||(p.union==='FR'?n.recruiters[1]:n.recruiters[2]);
+   const scout=n.recruiters.find(r=>r.zone===p.region)||(p.union===homeUnionOf(s)?n.recruiters[1]:n.recruiters[2]);
    p.lastReport={season:s.season,recruiter:scout.name,reliability:Math.min(95,scout.skill+p.scouted*4)};
    return true},save);
  }
@@ -160,7 +190,7 @@
  }
  function clearance(s,id,save){
   const st=ensure(s),n=st&&network(st,s),p=n?.players.find(x=>x.id===id);
-  if(!st||!unlocked(s)||!p||p.union==='FR'||p.age<18||!p.trial)return false;
+  if(!st||!unlocked(s)||!p||p.union===homeUnionOf(s)||p.age<18||!p.trial)return false;
   // A manager marks that clearance has been received in this fictional universe.
   return transact(s,()=>{p.clearanceRecorded=true;return true},save);
  }
@@ -170,7 +200,7 @@
   if(!st||!unlocked(s)||!p||p.status!=='available'||p.scouted<2||!p.trial||
      academy.length>=capacity||st.recruits.length>=5||!cost(s,8000)||academy.some(x=>x.id===id))return false;
   // Underage international recruitment is not simulated as an ordinary domestic transfer.
-  if(p.union!=='FR'&&(p.age<18||p.clearanceRecorded!==true))return false;
+  if(p.union!==homeUnionOf(s)&&(p.age<18||p.clearanceRecorded!==true))return false;
   const template=fam(s,p);
   if(!template?.dev||!Number.isInteger(template.fam))return false;
   const score=model(s,p,n);
@@ -223,7 +253,7 @@
  }
  function discover(s,region,save){
   const st=ensure(s),n=st&&network(st,s);
-  if(!st||!unlocked(s)||!REGIONS.includes(region)||st.scouts>=3||!cost(s,3000))return false;
+  if(!st||!unlocked(s)||!regionsOf(s).includes(region)||st.scouts>=3||!cost(s,3000))return false;
   return transact(s,()=>{
    s.clubs[s.club].cash-=3000;st.scouts++;st.region=region;
    const clubs=n.feeders.filter(x=>x.region===region);
@@ -320,7 +350,7 @@
    n.credits=n.credits.slice(-80);
    n.history=n.history.slice(-150);
    const graduates=(s.v77Promotions?.promotions||[]).length;
-   const completed=(root.CDNativeAcademy?.active(s)&&root.CDNativeAcademy.own(s).division==='accession'?s.v74Accession.results:s.v73Espoirs?.results||[]).filter(m=>Array.isArray(m.pair)&&m.pair.includes(root.CDNativeAcademy?.active(s)?root.CDNativeAcademy.own(s).slot:s.club)).length;
+   const completed=worldNet(s)?root.CDNativeAcademy.juniorResults(s,'C').length+root.CDNativeAcademy.juniorResults(s,'E').length:(root.CDNativeAcademy?.active(s)&&root.CDNativeAcademy.own(s).division==='accession'?s.v74Accession.results:s.v73Espoirs?.results||[]).filter(m=>Array.isArray(m.pair)&&m.pair.includes(root.CDNativeAcademy?.active(s)?root.CDNativeAcademy.own(s).slot:s.club)).length;
    const performance=completed>0?Math.min(5,Math.round(completed/5)):0;
    st.cohesion=clamp(st.cohesion+(fulfilled-broken)*2-Math.ceil(overloaded/4),0,100);
    st.reputation=clamp(st.reputation+graduates*3+performance+Math.floor((st.cohesion-50)/12)-broken*2,0,100);
@@ -383,7 +413,7 @@
   }
   return true;
  }
- const api={valid,ensure,network,model,watch,trial,partner,clearance,recruitFeeder,networkPanel,discover,recruit,meeting,load,ambition,identity,rankings,settle,panel,install};
+ const api={regions:regionsOf,homeUnion:homeUnionOf,valid,ensure,network,model,watch,trial,partner,clearance,recruitFeeder,networkPanel,discover,recruit,meeting,load,ambition,identity,rankings,settle,panel,install};
  root.CDEspoirsStrategyV95V100=api;
  if(typeof module==='object'&&module.exports)module.exports=api;
  if(!root.CDNativeHeadless&&typeof document!=='undefined')install(root);

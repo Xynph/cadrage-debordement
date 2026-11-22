@@ -41,7 +41,7 @@ catch{for(const k of Object.keys(s))delete s[k];Object.assign(s,before);return f
 function log(st,s,id,type,note){st.events.push({id,type,season:s.season,note:clean(note)});st.events=st.events.slice(-160)}
 function revelations(s){const st=ensure(s);if(!st)return [];
 return academy(s).filter(p=>p.age<=21&&typeof p.id==='string').map(p=>{
-const q=profile(st,p),minutes=Math.max(0,Number(s.v73Espoirs?.minutes?.[p.id])||0);
+const q=profile(st,p),minutes=Math.max(0,Number((root.CDNativeAcademy?.worldTopology?.(s)?root.CDNativeAcademy.minutes(s,p.id):s.v73Espoirs?.minutes?.[p.id]))||0);
 const growth=Math.round(p.rating-(q?.startRating??p.rating)),upside=Math.max(0,pot(p)-p.rating);
 const surprise=hash(s.season+':'+p.id+':revelation')%100;
 return {id:p.id,name:p.name,pos:p.pos,minutes,growth,upside,
@@ -75,7 +75,7 @@ st.promises.some(x=>x.id===id&&x.deadline>=s.season))return false;
 return atomic(s,()=>{const q=profile(st,p);if(!q)return false;
 q.morale=Math.max(0,Math.min(100,q.morale+(answer==='refuser'?-10:answer==='minutes'?4:8)));
 st.promises.push({id,answer,season:s.season,deadline:s.season+1,
-fulfilled:answer==='refuser',startMinutes:Number(s.v73Espoirs?.minutes?.[id]||0)});
+fulfilled:answer==='refuser',startMinutes:Number((root.CDNativeAcademy?.worldTopology?.(s)?root.CDNativeAcademy.minutes(s,id):s.v73Espoirs?.minutes?.[id])||0)});
 log(st,s,id,'entretien',answer);return true},save)}
 function tally(s){const st=ensure(s);if(!st)return [];
 const all=[...(s.v77Promotions?.promotions||[]),...(s.v77Promotions?.history||[]).flatMap(x=>x.promotions||[])];
@@ -100,7 +100,7 @@ q.trained+=gain;log(st,s,p.id,'bilan-specialisation',q.program+' +'+gain+' fatig
 q.baseline=p.rating}
 for(const promise of st.promises){if(promise.fulfilled||promise.deadline<s.season)continue;
 const promoted=pros(s).some(p=>p.id===promise.id),loaned=(s.v78to81?.loans||[]).some(x=>x.id===promise.id);
-const minutes=Number(s.v73Espoirs?.minutes?.[promise.id]||0)-promise.startMinutes;
+const minutes=Number((root.CDNativeAcademy?.worldTopology?.(s)?root.CDNativeAcademy.minutes(s,promise.id):s.v73Espoirs?.minutes?.[promise.id])||0)-promise.startMinutes;
 const achieved=promise.answer==='promouvoir'?promoted:promise.answer==='preter'?loaned:
 promise.answer==='minutes'?minutes>=320:true;
 promise.fulfilled=achieved;const q=st.profiles.find(x=>x.id===promise.id);

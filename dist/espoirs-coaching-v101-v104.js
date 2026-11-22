@@ -8,7 +8,7 @@
  const pro=s=>s?.clubs?.[s.club]?.players||[];
  const rating=p=>Number.isFinite(p?.rating)?p.rating:0;
  const potential=p=>Number.isFinite(p?.dev?.potential)?p.dev.potential:rating(p);
- const minutes=(s,id)=>Math.max(0,Number(s?.v73Espoirs?.minutes?.[id])||0);
+ const minutes=(s,id)=>Math.max(0,Number((root.CDNativeAcademy?.worldTopology?.(s)?root.CDNativeAcademy.minutes(s,id):s?.v73Espoirs?.minutes?.[id]))||0);
  const valid=st=>!!st&&st.version===1&&Number.isInteger(st.season)&&st.season>0&&
   Array.isArray(st.paths)&&st.paths.length<=35&&st.paths.every(p=>p&&typeof p.id==='string'&&
   STRATEGIES.includes(p.strategy)&&Number.isInteger(p.startRating)&&Number.isInteger(p.createdSeason))&&

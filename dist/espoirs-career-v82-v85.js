@@ -67,7 +67,7 @@
   const loans=report(s);
   let achieved=0;
   for(const entry of st.plans){
-   const p=academy(s).find(x=>x.id===entry.id),minutes=s.v73Espoirs?.minutes?.[entry.id]||0;
+   const p=academy(s).find(x=>x.id===entry.id),minutes=(root.CDNativeAcademy?.worldTopology?.(s)?root.CDNativeAcademy.minutes(s,entry.id):s.v73Espoirs?.minutes?.[entry.id])||0;
    const ok=!!p&&(entry.target==='minutes'?minutes>=480:
       entry.target==='progression'?p.rating>entry.startRating:
       minutes>=240&&p.condition>=65);

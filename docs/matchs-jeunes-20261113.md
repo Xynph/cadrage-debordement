@@ -2,7 +2,10 @@
 
 Module : `native/engine/youth-matches.cjs` (domaine natif `youthMatches`, API VM `CDYouthMatches`).
 Actif dès que la politique des centres 3 est en place (toutes les nouvelles carrières), hors ancien
-parcours Espoirs v73 activé à la main (il a ses propres rencontres).
+parcours Espoirs v73 activé à la main (il a ses propres rencontres). Les parcours du Centre de la carrière
+Monde (topologie « monde », 22/11/2026) s'appuient au contraire sur ces matchs : minutes, périodes (26 périodes
+de 14 jours depuis le 1er juillet), derniers résultats Espoirs et bilans de fin de saison en viennent, et le
+plan des rencontres juniors du club joué (équilibré, performance, développement, repos) règle sa rotation.
 
 ## Principe
 
