@@ -337,14 +337,17 @@ func roster_reading(resolution: Vector2i, player: Dictionary, annotation: String
 	var complete := rows.filter(func(row: Control): return roster_row_readable(row, roster))
 	var immersive := named("ImmersiveRosterTable") != null
 	if immersive and resolution.y >= 1080 and rows.size() >= 24:
-		# The family banner consumes a row at the initial offset. Expose the
-		# same first 24 players through the real continuous list, without
-		# lowering the required count or changing any control dimensions.
+		# Le bandeau des filtres (recherche, tuiles des totaux, pastilles de poste, en-têtes : choix de Léo du 21/11/2026)
+		# prend la hauteur de ~3 lignes : le tableau montre 21 lignes entières à 1080p et 1440p, plus les 24 d'avant.
+		# On fait défiler jusqu'à la 24e ligne et on exige entières toutes celles qui tiennent dans la zone visible.
+		var pas_haut := rect(rows[1]).position.y - rect(rows[0]).position.y
+		var tiennent := floori(rect(roster).size.y / maxf(1.0, pas_haut))
+		check(tiennent >= 20, "Au moins 20 lignes tiennent dans le tableau de l’Effectif " + str(resolution) + " · " + str(tiennent))
 		(roster as ScrollContainer).ensure_control_visible(rows[23])
 		await settle()
 		complete = rows.filter(func(row: Control): return roster_row_readable(row, roster))
-		for row: Control in rows.slice(0,24):
-			check(roster_row_readable(row,roster), "Les mêmes24 premières lignes de faits sont entières après défilement " + str(row.get_meta("player_id")))
+		for row: Control in rows.slice(maxi(0, 24 - tiennent), 24):
+			check(roster_row_readable(row,roster), "Les lignes visibles de l’Effectif sont entières après défilement " + str(row.get_meta("player_id")))
 	# Depuis la refonte de l'Effectif, un seul gabarit : le tableau continu, de 720p à 1440p (plus de repli compact).
 	check(immersive, "Gabarit attendu de l’Effectif (tableau continu) " + str(resolution))
 	check(roster != null and not rows.is_empty(), "Table d’effectif natif renseignée " + str(resolution))
@@ -353,7 +356,7 @@ func roster_reading(resolution: Vector2i, player: Dictionary, annotation: String
 	# de lignes entières (au plus la bannière de famille et une ligne coupée en moins), jamais moins de 12.
 	var pas := rect(rows[1]).position.y - rect(rows[0]).position.y if rows.size() > 1 else rect(rows[0]).size.y
 	var place := floori(rect(roster).size.y / maxf(1.0, pas))
-	var attendu := 24 if resolution.y >= 1080 else maxi(12, place - 2)
+	var attendu := maxi(12, place - 2)
 	check(rows.size() == app.model.squad.size() and complete.size() >= attendu, "Liste immersive complète et %d lignes de faits entières %s · reçu %d/%d" % [attendu,resolution,complete.size(),rows.size()])
 	for id in ["RosterScrollHint", "OpenComparison", "RosterSearch"]:
 		check(inside(named(id), app.body_scroll), "Colonne ou commande visible %s %s" % [id,resolution])
