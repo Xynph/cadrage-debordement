@@ -6,7 +6,10 @@
   const clone=x=>JSON.parse(JSON.stringify(x));
   const safe=x=>String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   const hash=x=>{let h=2166136261;for(const c of String(x)){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0};
+  const world=s=>!!root.CDNativeAcademy?.worldTopology?.(s);
+  const fee=(s,v,id)=>root.CDNativeAcademy?.fee?root.CDNativeAcademy.fee(s,v,id):v;
   const centers=s=>{
+    if(world(s))return s.nativeAcademy.centers.map(c=>({id:c.id,division:'monde',slot:c.clubId}));
     const m=move()?.ensure(s);if(!m)return [];
     return [...m.elite.map((id,slot)=>({id,division:'elite',slot})),...m.accession.map((id,slot)=>({id,division:'accession',slot}))];
   };
@@ -23,27 +26,28 @@
   function valid(st){
     return !!st&&st.version===1&&Number.isInteger(st.season)&&
       st.budgets&&typeof st.budgets==='object'&&!Array.isArray(st.budgets)&&
-      Object.values(st.budgets).every(v=>Number.isInteger(v)&&v>=0&&v<=200000)&&
+      Object.values(st.budgets).every(v=>Number.isInteger(v)&&v>=0&&v<=500000)&&
       typeof st.focus==='string'&&Array.isArray(st.scouted)&&Array.isArray(st.recruited)&&
       Array.isArray(st.history)&&st.history.length<=4&&
       st.scouted.length<=44&&st.recruited.length<=8;
   }
   function ensure(s){
-    if(!s||!Number.isInteger(s.season)||!move()?.ensure(s)||!elite()||!accession())return null;
+    if(!s||!Number.isInteger(s.season)||!world(s)&&(!move()?.ensure(s)||!elite()||!accession()))return null;
+    const budget=c=>world(s)?fee(s,initialBudget(c),c.slot):initialBudget(c);
     if(s.v76Scouting!==undefined){
       if(!valid(s.v76Scouting))return null;
       if(s.v76Scouting.season===s.season)return s.v76Scouting;
       if(s.v76Scouting.season>s.season)return null;
       const old=s.v76Scouting,ids=centers(s);
       const history=[{season:old.season,recruited:clone(old.recruited),spent:old.spent||0},...old.history].slice(0,4);
-      s.v76Scouting={version:1,season:s.season,budgets:Object.fromEntries(ids.map(c=>[c.id,initialBudget(c)])),
-        focus:ids.find(c=>c.id===old.focus)?.id||ids.find(c=>c.division==='accession')?.id||'',
+      s.v76Scouting={version:1,season:s.season,budgets:Object.fromEntries(ids.map(c=>[c.id,budget(c)])),
+        focus:ids.find(c=>c.id===old.focus)?.id||ids.find(c=>c.division===(world(s)?'monde':'accession')&&c.id!==own(s)?.id)?.id||'',
         scouted:[],recruited:[],spent:0,history};
       return s.v76Scouting;
     }
     const ids=centers(s),manager=own(s);
-    s.v76Scouting={version:1,season:s.season,budgets:Object.fromEntries(ids.map(c=>[c.id,initialBudget(c)])),
-      focus:ids.find(c=>c.division==='accession'&&c.id!==manager?.id)?.id||'',scouted:[],recruited:[],spent:0,history:[]};
+    s.v76Scouting={version:1,season:s.season,budgets:Object.fromEntries(ids.map(c=>[c.id,budget(c)])),
+      focus:ids.find(c=>c.division===(world(s)?'monde':'accession')&&c.id!==manager?.id)?.id||'',scouted:[],recruited:[],spent:0,history:[]};
     return s.v76Scouting;
   }
   function candidate(s,id){
@@ -70,13 +74,15 @@
     const potential=p.potential??p.dev?.potential??p.rating;
     const base=4500+Math.max(0,Math.round(potential)-50)*320+Math.max(0,Math.round(p.rating)-50)*180;
     const competition=hash(s.season+':'+c.id+':'+p.id)%4;
-    return {minimum:Math.round((base+competition*1800)/500)*500,competition};
+    const minimum=Math.round((base+competition*1800)/500)*500;
+    return {minimum:world(s)?fee(s,minimum):minimum,competition};
   }
+  const scoutCost=s=>world(s)?fee(s,1200):1200;
   function scout(s,id,save){
-    const st=ensure(s),c=candidate(s,id),manager=own(s);
-    if(!st||!c||!manager||s.live||s.phase==='ended'||st.scouted.includes(id)||st.scouted.length>=12||st.budgets[manager.id]<1200)return false;
+    const st=ensure(s),c=candidate(s,id),manager=own(s),cost=scoutCost(s);
+    if(!st||!c||!manager||s.live||s.phase==='ended'||st.scouted.includes(id)||st.scouted.length>=12||st.budgets[manager.id]<cost)return false;
     if(!available(s,c).length)return false;
-    const old=clone(st);st.budgets[manager.id]-=1200;st.spent+=1200;st.scouted.push(id);st.focus=id;
+    const old=clone(st);st.budgets[manager.id]-=cost;st.spent+=cost;st.scouted.push(id);st.focus=id;
     try{if(save&&save()===false)throw Error('save');return true}catch{s.v76Scouting=old;return false}
   }
   function focus(s,id,save){
@@ -176,7 +182,7 @@
     g.v76Recruit=(id,offer)=>{const ok=recruit(get(),id,offer,save);if(ok)g.render();return ok};
     return true;
   }
-  const api={centers,own,players,label,valid,ensure,available,price,scout,focus,recruit,panel,install};
+  const api={scoutCost,centers,own,players,label,valid,ensure,available,price,scout,focus,recruit,panel,install};
   root.CDEspoirsScoutingV76=api;
   if(typeof module==='object'&&module.exports)module.exports=api;
   if(!root.CDNativeHeadless&&typeof document!=='undefined')install(root);

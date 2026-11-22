@@ -1,13 +1,15 @@
 'use strict';
-(function(root){const price={scout:35000,mentor:8000};
+(function(root){const base={scout:35000,mentor:8000};
+// Carrière Monde : prix indexés sur les moyens du club (CDNativeAcademy.fee) ; ailleurs, prix historiques.
+const cost=(s,kind)=>base[kind]&&root.CDNativeAcademy?.fee?root.CDNativeAcademy.fee(s,base[kind]):base[kind];
 function state(s){return s.v72Youth||(s.v72Youth={version:1,scouts:[],mentors:[],promotions:[]})}
 function read(s){return s.v72Youth||{scouts:[],mentors:[],promotions:[]}}
 function ready(s){return s&&s.development&&s.economy&&!s.live&&!s.trained&&s.phase!=='ended'}
-function act(s,kind,id,focus,save){if(!ready(s)||!price[kind]||s.clubs[s.club].cash<price[kind])return false;
+function act(s,kind,id,focus,save){const price=cost(s,kind);if(!ready(s)||!price||s.clubs[s.club].cash<price)return false;
 const d=read(s),week=s.franceMode?.week??s.round;if(kind==='scout'&&d.scouts.some(x=>x.target===s.season+1))return false;
 if(kind==='mentor'&&(!s.development.academy.some(p=>p.id===id)||!['technique','mental','physique'].includes(focus)||d.mentors.some(x=>x.season===s.season&&x.week===(s.franceMode?.week??s.round))))return false;
 const cash=s.clubs[s.club].cash,had=!!s.v72Youth,old=JSON.stringify(s.v72Youth);
-s.clubs[s.club].cash-=price[kind];const v=state(s);
+s.clubs[s.club].cash-=price;const v=state(s);
 if(kind==='scout'){v.scouts.unshift({target:s.season+1,done:false});v.scouts=v.scouts.slice(0,15);}
 else v.mentors.unshift({id,focus,season:s.season,week:s.franceMode?.week??s.round,done:false});
 v.mentors=v.mentors.slice(0,80);try{if(save()===false)throw Error('save')}catch(e){s.clubs[s.club].cash=cash;if(had)s.v72Youth=JSON.parse(old);else delete s.v72Youth;return false}return true}
@@ -29,4 +31,4 @@ const begin=g.beginDevelopmentSeason;g.beginDevelopmentSeason=function(){const r
 const promote=g.promoteYouth;g.promoteYouth=function(id){const s=get(),p=s.development.academy.find(x=>x.id===id),result=promote.apply(this,arguments);if(result&&p){state(s).promotions.unshift({id,season:s.season,week:s.franceMode?.week??s.round});state(s).promotions=state(s).promotions.slice(0,80);save()}return result};
 g.v72Scout=()=>{const ok=act(get(),'scout',null,null,save);if(ok)g.render();return ok};
 g.v72Mentor=id=>{const x=typeof document!=='undefined'?document.getElementById('v72-'+id):null,ok=act(get(),'mentor',id,x?.value||'technique',save);if(ok)g.render();return ok};return true}
-const api={read,ready,act,training,intake,panel,install};if(typeof module==='object'&&module.exports)module.exports=api;root.CDYouthV72=api;if(!root.CDNativeHeadless&&typeof document!=='undefined')install(root)})(typeof globalThis==='object'?globalThis:this);
+const api={cost,read,ready,act,training,intake,panel,install};if(typeof module==='object'&&module.exports)module.exports=api;root.CDYouthV72=api;if(!root.CDNativeHeadless&&typeof document!=='undefined')install(root)})(typeof globalThis==='object'?globalThis:this);

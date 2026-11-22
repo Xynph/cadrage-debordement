@@ -58,8 +58,14 @@ test('Domaines monde : objectif de conseil semaine 46 et bureau archivé',()=>{
  h.run(`S.nativeStrategyOffices={version:1,clubs:{'31':{nativeBoardCalendar:{...S.nativeBoardCalendar,clubId:'club-31',objectives:S.nativeBoardCalendar.objectives.map(o=>({...o}))}}}};nativeSystems.validate(S);`);
  assert.throws(()=>h.run(`S.nativeStrategyOffices.clubs['31'].nativeBoardCalendar.objectives[0].deadline=47;nativeSystems.validate(S)`),/Objectif de direction invalide/);
 });
-test('Domaines monde : formation de base conservée, activationEspoirs refusée sans mutation',()=>{
- const h=world();h.run(`const academyWorld=(${require('../native/engine/academy.cjs').factory.toString()})();var academyModel=academyWorld.project()`);
- assert.equal(h.run('academyModel.available'),false);assert.equal(h.run('academyModel.baseAvailable'),true);assert.match(h.run('academyModel.reason'),/Espoirs|championnat/i);
- const before=h.run('JSON.stringify(S)');assert.throws(()=>h.run("academyWorld.execute('academy_activate',{context:{season:S.season,week:S.round,club:S.club},confirmed:true})"),/Espoirs|championnat/);assert.equal(h.run('JSON.stringify(S)'),before);assert.ok(h.run('S.development.academy.length')>0);
+// Temps 1 du Centre en Monde (22/11/2026) : parcours ouverts sur un centre par vrai club, championnat Espoirs fermé.
+test('Domaines monde : parcours du centre activés sur les 116 clubs, modules Espoirs fermés sans mutation',()=>{
+ const h=world();h.run(`var academyWorld=(${require('../native/engine/academy.cjs').factory.toString()})();var academyModel=academyWorld.project()`);
+ assert.equal(h.run('academyModel.available'),true);assert.equal(h.run('academyModel.active'),false);assert.equal(h.run('academyModel.world'),true);
+ h.run("academyWorld.execute('academy_activate',{season:S.season,week:S.round,club:S.club,confirmed:true});academyModel=academyWorld.project()");
+ assert.equal(h.run('S.nativeAcademy.topology'),'monde');assert.equal(h.run('S.nativeAcademy.centers.length'),116);assert.equal(h.run('S.nativeAcademy.centers.filter(c=>c.clubId===null).length'),0);
+ assert.equal(h.run("['v73Espoirs','v74Accession','v75Movement','v82to85','v95to100','v101to104'].filter(k=>S[k]!==undefined).length"),0);
+ assert.equal(h.run('academyModel.active'),true);assert.equal(h.run('academyModel.loanClubs.length')>=100,true);
+ const before=h.run('JSON.stringify(S)');assert.throws(()=>h.run("academyWorld.execute('academy_goal',{season:S.season,week:S.round,club:S.club,goal:'formation'})"),/fermé/);assert.equal(h.run('JSON.stringify(S)'),before);
+ assert.throws(()=>h.run("S.v73Espoirs={};academyWorld.validate(S)"),/fermé/);
 });
