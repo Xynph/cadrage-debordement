@@ -899,11 +899,13 @@ static func ordered_players(source: Array, reading: Dictionary, season: int) -> 
 func _players() -> Array:
 	# Les notes de match (clubLife.matchNotes) accompagnent chaque joueur pour le tri.
 	var source: Array = []
+	# Étoiles relatives : notre meilleur joueur au poste choisi = 5 étoiles.
+	var reference := Etoiles.reference_poste(app.model.get("squad", []), _poste) if _poste > 0 else -1.0
 	for player: Variant in app.model.get("squad",[]):
 		if player is Dictionary:
 			var copie: Dictionary = player.duplicate()
 			copie.matchNotes = Notes.joueur(app.model,str(player.get("id","")))
-			copie.etoilesPoste = Etoiles.etoiles(player, _poste)
+			copie.etoilesPoste = Etoiles.etoiles(player, _poste, reference)
 			source.append(copie)
 	source = Listes.filtrer_groupe(source, str(state.get("poste_groupe", "")))
 	return ordered_players(source,state,int(app.model.meta.get("season",1)))
@@ -1059,6 +1061,10 @@ func _statut(player: Dictionary) -> Dictionary:
 					var jour := str(sortie.returnDate)
 					retour = " · retour %s/%s" % [jour.substr(8, 2), jour.substr(5, 2)]
 			return {"t": "◇ En sélection" + retour, "c": C.IVORY}
+	return _statut_feuille(player)
+
+## Place sur la feuille de match : Titulaire, Remplaçant ou Hors groupe.
+func _statut_feuille(player: Dictionary) -> Dictionary:
 	var numero: Variant = player.get("shirtNumber")
 	var statut := str(player.get("status", ""))
 	if statut in ["Titulaire", "Remplaçant"]: return {"t": statut, "c": C.IVORY if statut == "Titulaire" else C.MUTED}
@@ -1194,13 +1200,10 @@ func _row(player:Dictionary,index:int) -> void:
 			"motif":
 				D.text(row,x,base,reason,19,C.IVORY,600,l,HORIZONTAL_ALIGNMENT_LEFT,true).name="RosterWatchReason"
 			"statut":
-				if statut.has("pastille"):
-					# Blessé : pastille croix + date de retour ; le motif complet dans l'infobulle.
-					var pastille_statut := R.pastille(row, x, base, str(statut.pastille), R.ROUGE, "", "RosterStatut", 21)
-					pastille_statut.tooltip_text = str(statut.t)
-				else:
-					var texte := D.text(row,x,base,str(statut.t),19,statut.c,600 if statut.c != C.MUTED else 500,l,HORIZONTAL_ALIGNMENT_LEFT,true)
-					texte.name = "RosterStatut"
+				# Place sur la feuille seulement ; blessé, suspendu et sélection sont des badges derrière le nom (22/11).
+				var feuille := _statut_feuille(player)
+				var texte := D.text(row,x,base,str(feuille.t),19,feuille.c,600 if feuille.c != C.MUTED else 500,l,HORIZONTAL_ALIGNMENT_LEFT,true)
+				texte.name = "RosterStatut"
 	var comparer_ligne := Button.new()
 	comparer_ligne.name = "RosterCompare_" + id.validate_node_name()
 	comparer_ligne.set_meta("player_id", id)
@@ -1290,7 +1293,16 @@ func _cellule_joueur(row: Control, player: Dictionary, index: int, h: float, bas
 		_pastille_en_vente(row, player, apres, base, h)
 		apres += R.largeur("En vente", 19) + 2.0 + 12.0 + 21.0 + 7.0 + 12.0 + 6.0
 	# Badges courts derrière le nom (Offre, Départ, Jeune), dans la largeur de la colonne JOUEUR.
-	Etoiles.poser_badges(app, row, player, apres, base, 548.0 - apres)
+	Etoiles.poser_badges(self, app, row, player, _indispo(player), apres, base, 548.0 - apres)
+
+## Indisponibilité pour les badges : {etat, t (infobulle complète), court (pastille)} ; vide si disponible.
+func _indispo(player: Dictionary) -> Dictionary:
+	var etat := str(U.indisponibilite(player))
+	if etat.is_empty(): return {}
+	var statut := _statut(player)
+	var court: String = str(statut.get("pastille", ""))
+	if court.is_empty(): court = "! Susp." if etat == "suspendu" else "◇ Sél."
+	return {"etat": etat, "t": str(statut.t), "court": court}
 
 ## Pastille « En vente » (bleu de la charte + pièces + mot) : le clic ouvre la fiche sur l'onglet Contrat (offres, retrait du marché).
 func _pastille_en_vente(row: Control, player: Dictionary, x: float, base: float, h: float) -> void:

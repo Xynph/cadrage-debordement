@@ -1,10 +1,10 @@
 extends RefCounted
 ## Effectif : « poste → étoiles » (revue FM27, idée 5, choix de Léo du 22/11/2026).
 ## Un clic sur un maillot du terrain XV (panneau de gauche) classe la liste par étoiles à ce poste : étoiles = capacité
-## au poste uniquement, sur l'échelle ABSOLUE commune (bareme_etoiles.gd, note au poste du moteur). Le poste choisi
+## au poste uniquement, RELATIVES à notre effectif (bareme_etoiles.gd : notre meilleur joueur au poste = 5). Le poste choisi
 ## s'affiche en titre au-dessus de la liste, ✕ revient au tri par poste. Badges de statut courts, colorés et
-## cliquables derrière le nom (Offre, Départ, Jeune = 21 ans et moins) ; blessé, suspendu et sélection restent dans
-## la colonne STATUT (la pastille Blessé ouvre la fenêtre blessure).
+## cliquables derrière le nom (Blessé → fenêtre blessure, Suspendu, Sélection, Offre, Départ, Jeune = 21 ans et moins) ;
+## la colonne STATUT ne garde que Titulaire, Remplaçant ou Hors groupe.
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Charte = preload("res://ui/charte.gd")
@@ -28,18 +28,31 @@ static func abrege(joueur: Dictionary) -> String:
 			if (v is int or v is float) and SIGLES.has(int(v)): return str(SIGLES[int(v)])
 	return ""
 
-## Étoiles (0 à 5, par demi) du joueur au poste `numero` : note au poste du moteur sur le barème absolu ; -1 si inconnue.
-static func etoiles(joueur: Dictionary, numero: int) -> float:
+## Note au poste `numero` (1-15) du moteur (positionRatings) ; -1 si inconnue (joueur non observé).
+static func note_poste(joueur: Dictionary, numero: int) -> float:
 	if numero < 1 or numero > 15: return -1.0
 	var notes: Variant = joueur.get("positionRatings")
 	if not notes is Dictionary: return -1.0
-	return Bareme.etoiles_sur_100((notes as Dictionary).get(str(numero)))
+	var v: Variant = (notes as Dictionary).get(str(numero))
+	return float(v) if Bareme.etoiles_sur_100(v) >= 0.0 else -1.0
 
-## Joueurs à 4 étoiles et plus au poste.
+## Repère du poste : meilleure note de notre effectif à ce poste (5 étoiles) ; -1 si personne n'est connu.
+static func reference_poste(joueurs: Array, numero: int) -> float:
+	var notes: Array = []
+	for p: Variant in joueurs:
+		if p is Dictionary: notes.append(note_poste(p, numero))
+	return Bareme.meilleure_note(notes)
+
+## Étoiles (0 à 5, par demi) du joueur au poste, RELATIVES à notre meilleur joueur à ce poste ; -1 si inconnues.
+static func etoiles(joueur: Dictionary, numero: int, reference: float) -> float:
+	return Bareme.etoiles_relatives(note_poste(joueur, numero), reference)
+
+## Joueurs à 4 étoiles et plus au poste (même repère que la liste).
 static func profondeur(joueurs: Array, numero: int) -> int:
+	var reference := reference_poste(joueurs, numero)
 	var n := 0
 	for p: Variant in joueurs:
-		if p is Dictionary and etoiles(p, numero) >= 4.0: n += 1
+		if p is Dictionary and etoiles(p, numero, reference) >= 4.0: n += 1
 	return n
 
 static func couleur_profondeur(n: int) -> Color:
@@ -50,9 +63,14 @@ static func couleur_profondeur(n: int) -> Color:
 
 # ---------------------------------------------------------------- badges de statut
 
-## Badges du joueur : [{id, t (infobulle), court, c, icone, cible}] ; cible = "contrat" ou "formation".
-static func badges(joueur: Dictionary) -> Array:
+## Badges du joueur : [{id, t (infobulle), court, c, icone, cible}]. `indispo` (de l'Effectif) : {etat, t, court} si
+## blessé, suspendu ou en sélection. Cible = "blessure", "fiche", "selections", "contrat" ou "formation".
+static func badges(joueur: Dictionary, indispo: Dictionary = {}) -> Array:
 	var sortie: Array = []
+	match str(indispo.get("etat", "")):
+		"blesse": sortie.append({"id": "Blesse", "t": str(indispo.t), "court": str(indispo.court), "c": R.ROUGE, "icone": "", "cible": "blessure"})
+		"suspendu": sortie.append({"id": "Suspendu", "t": str(indispo.t), "court": str(indispo.court), "c": R.ROUGE, "icone": "", "cible": "fiche"})
+		"selection": sortie.append({"id": "Selection", "t": str(indispo.t), "court": str(indispo.court), "c": R.BLEU, "icone": "", "cible": "selections"})
 	var vente: Variant = joueur.get("sale")
 	if vente is Dictionary:
 		if vente.get("pending") is Dictionary: sortie.append({"id": "Depart", "t": "Départ prévu", "court": "Départ", "c": R.ROUGE, "icone": "money", "cible": "contrat"})
@@ -62,24 +80,36 @@ static func badges(joueur: Dictionary) -> Array:
 		sortie.append({"id": "Jeune", "t": "Jeune · %d ans" % int(age), "court": "Jeune", "c": R.VERT, "icone": "", "cible": "formation"})
 	return sortie
 
-static func ouvrir_badge(app: Control, joueur: Dictionary, b: Dictionary) -> void:
-	if str(b.cible) == "formation":
-		app._navigate("Formation")
-		return
+## Blessé : petite fenêtre « blessure » quand elle existe (fenetre_blessure.gd), sinon la fiche.
+const FENETRE_BLESSURE := "res://ui/immersive08/fenetre_blessure.gd"
+
+static func ouvrir_badge(page: Control, app: Control, joueur: Dictionary, b: Dictionary, origine: Control) -> void:
 	var id := str(joueur.get("id", ""))
+	match str(b.cible):
+		"formation":
+			app._navigate("Formation")
+			return
+		"selections":
+			app._navigate("Sélections")
+			return
+		"blessure":
+			if ResourceLoader.exists(FENETRE_BLESSURE):
+				load(FENETRE_BLESSURE).ouvrir(page, app, id, origine)
+				return
 	app.selected_player = id
-	app.navigation_controller.open_entity({"kind": "player", "id": id, "section": "contract"})
+	app.navigation_controller.open_entity({"kind": "player", "id": id, "section": "contract" if b.cible == "contrat" else ""})
 
 ## Pose les badges en ligne à partir de x (unités du gabarit), sans dépasser `largeur_max`.
-static func poser_badges(app: Control, rangee: Control, joueur: Dictionary, x: float, base: float, largeur_max: float, taille := 18) -> void:
+static func poser_badges(page: Control, app: Control, rangee: Control, joueur: Dictionary, indispo: Dictionary, x: float, base: float, largeur_max: float, taille := 18) -> void:
 	var depart := x
-	for b: Dictionary in badges(joueur):
+	for b: Dictionary in badges(joueur, indispo):
 		var texte := str(b.court)
 		var l := 12.0 + (float(taille) + 9.0 if not str(b.icone).is_empty() else 0.0) + R.largeur(texte, taille) + 2.0 + 12.0
 		if x + l - depart > largeur_max: break
 		var fond := R.pastille(rangee, x, base, texte, b.c, str(b.icone), "RosterBadge_" + str(b.id), taille)
-		var bouton := R.cliquable(fond, ouvrir_badge.bind(app, joueur, b), "RosterBadgeOuvrir_" + str(b.id), str(b.t))
+		var bouton := R.cliquable(fond, ouvrir_badge.bind(page, app, joueur, b, rangee), "RosterBadgeOuvrir_" + str(b.id), str(b.t))
 		bouton.accessibility_name = str(b.t) + " · " + str(joueur.get("name", ""))
+		if b.cible == "blessure": bouton.add_to_group(&"ouvre_blessure")
 		x += l + 6.0
 
 # ---------------------------------------------------------------- titre du poste choisi

@@ -89,18 +89,23 @@ func etoiles_au_poste(xv: Dictionary) -> void:
 	var notes: Array = []
 	var par_id := {}
 	for p: Dictionary in app.model.squad: par_id[str(p.id)] = p
-	for ligne: Button in lignes: notes.append(Etoiles.etoiles(par_id.get(str(ligne.get_meta("player_id")), {}), numero))
+	var repere := Etoiles.reference_poste(app.model.squad, numero)
+	for ligne: Button in lignes: notes.append(Etoiles.etoiles(par_id.get(str(ligne.get_meta("player_id")), {}), numero, repere))
 	var connues: Array = notes.filter(func(v: float): return v >= 0.0)
 	var classe := true
 	for i in range(1, connues.size()): classe = classe and connues[i - 1] >= connues[i]
-	var meilleure := -1.0
-	for p: Dictionary in app.model.squad: meilleure = maxf(meilleure, Etoiles.etoiles(p, numero))
-	check(connues.size() >= 10 and classe and is_equal_approx(float(connues[0]), meilleure), "Liste classée par étoiles décroissantes (%s)" % str(connues.slice(0, 6)))
+	# Étoiles relatives à notre effectif : le meilleur joueur du groupe à ce poste a 5 étoiles, en tête de liste.
+
+	check(connues.size() >= 10 and classe and is_equal_approx(float(connues[0]), 5.0), "Liste classée par étoiles décroissantes, notre meilleur au poste à 5 (%s)" % str(connues.slice(0, 6)))
 	var premiere: Control = lignes[0] if not lignes.is_empty() else null
-	check(premiere != null and premiere.find_child("RosterEtoiles", true, false) != null, "Étoiles sur la ligne")
+	var dessin: Control = premiere.find_child("RosterEtoiles", true, false) if premiere != null else null
+	check(dessin != null and is_equal_approx(float(dessin.get_meta("etoiles", -1.0)), 5.0), "Étoiles dessinées sur la ligne : 5 pour notre meilleur (%s, %s)" % [str(dessin.get_meta("etoiles", -1.0)) if dessin != null else "—", str(dessin.get("valeur")) if dessin != null else "—"])
 	var toutes: Array = connues.duplicate()
 	toutes.sort()
-	check(toutes.size() > 0 and toutes[0] < toutes[-1], "Échelle absolue : des étoiles différentes d'un joueur à l'autre")
+	check(toutes.size() > 0 and toutes[0] < toutes[-1], "Des étoiles différentes d'un joueur à l'autre")
+	var pastille := found("EtoilesProfondeur")
+	check(pastille is Label and (pastille as Label).text.begins_with(str(Etoiles.profondeur(app.model.squad, numero)) + " "), "Pastille ★4+ = nombre de joueurs à 4 étoiles et plus")
+	check(connues.size() < app.model.squad.size() or Etoiles.profondeur(app.model.squad, numero) == connues.filter(func(v: float): return v >= 4.0).size(), "Pastille ★4+ cohérente avec les étoiles de la liste")
 	# Badge « Jeune » (21 ans et moins) derrière le nom -> Formation.
 	var jeune: Control = found("RosterBadgeOuvrir_Jeune")
 	var attendu: bool = app.model.squad.any(func(p: Dictionary): return (p.get("age") is int or p.get("age") is float) and int(p.age) <= 21)
@@ -115,11 +120,17 @@ func etoiles_au_poste(xv: Dictionary) -> void:
 	await montrer(found("SquadOpenPlayer_" + titulaire.validate_node_name()))
 	if await click_id("SquadOpenPlayer_" + titulaire.validate_node_name()):
 		check(app.selected_player == titulaire and found("CarnetSquad") == null, "Nom du titulaire -> sa fiche")
+		check(found("PlayerRolePitch") != null, "Fiche : terrain des postes (étoiles relatives au groupe)")
+		await capture("fiche")
 	await effectif()
 	# Souris hors de la liste : pas de carte joueur au survol sur la capture.
 	var loin := InputEventMouseMotion.new(); loin.position = Vector2(4, 1070); loin.global_position = loin.position
 	Input.parse_input_event(loin)
 	await settle(4)
+	# Liste en haut pour la capture (le retour de fiche garde le défilement).
+	var defile := found("SquadScroll") as ScrollContainer
+	if defile != null: defile.scroll_vertical = 0
+	await settle(2)
 	await capture("etoiles")
 	check(found("EtoilesTitrePoste") != null, "Choix du poste gardé au retour sur l'Effectif")
 	if await click_id("EtoilesEffacer"):
