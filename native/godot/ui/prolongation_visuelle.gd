@@ -10,7 +10,7 @@ const G = preload("res://ui/game_skin.gd")
 const Salary = preload("res://ui/salary_display.gd")
 const O = preload("res://ui/offre_visuelle.gd")
 const LARGEUR := O.LARGEUR
-const HAUTEUR := 660.0
+const HAUTEUR := 744.0
 
 static func construire(body: Control, ctx: Dictionary) -> Control:
 	var toile := Control.new()
@@ -27,8 +27,8 @@ static func construire(body: Control, ctx: Dictionary) -> Control:
 	for champ: SpinBox in [ctx.salary, ctx.years]:
 		if champ.get_parent() != null: champ.get_parent().remove_child(champ)
 		toile.add_child(champ)
-	D.place(ctx.salary, Rect2(1196, 232, 280, 50))
-	D.place(ctx.years, Rect2(1196, 427, 280, 50))
+	D.place(ctx.salary, Rect2(1196, 316, 280, 50))
+	D.place(ctx.years, Rect2(1196, 511, 280, 50))
 	var redessiner := func(): _dessiner(toile, dessin, ctx)
 	ctx.salary.value_changed.connect(func(_x: float): redessiner.call())
 	ctx.years.value_changed.connect(func(_x: float): redessiner.call())
@@ -41,9 +41,10 @@ static func _dessiner(toile: Control, dessin: Control, ctx: Dictionary) -> void:
 	var val := O.valeurs(ctx)
 	O._identite(toile, dessin, ctx, val)
 	_avant_apres(toile, dessin, val)
-	_regle(toile, dessin, ctx, val, Rect2(0, 170, LARGEUR, 180))
-	_frise(toile, dessin, ctx, val, Rect2(0, 365, LARGEUR, 185))
-	O._jeton(toile, dessin, val, Rect2(0, 565, LARGEUR, 95))
+	_role(toile, dessin, ctx, Rect2(0, 170, LARGEUR, 70))
+	_regle(toile, dessin, ctx, val, Rect2(0, 254, LARGEUR, 180))
+	_frise(toile, dessin, ctx, val, Rect2(0, 449, LARGEUR, 185))
+	O._jeton(toile, dessin, val, Rect2(0, 649, LARGEUR, 95))
 	O._marquer(toile)
 
 static func _fin_actuelle(val: Dictionary) -> String:
@@ -213,3 +214,25 @@ static func _fenetre_avant_apres(toile: Control, val: Dictionary) -> void:
 		[_fin_actuelle(val), "Fin actuelle", Charte.IVOIRE, "calendar"],
 		[str(val.fin), "Nouvelle fin", O.COULEUR_DUREE, "flag"],
 	], O.COULEUR_SALAIRE)
+
+# --- Rôle promis (planche « temps de jeu au contrat », idée FM 16) : fixé à la prolongation, envoyé avec l'offre ------
+
+static func _role(toile: Control, parent: Control, ctx: Dictionary, zone: Rect2) -> void:
+	var TJ = load("res://ui/immersive08/fiche_temps_jeu.gd")
+	if TJ.variante() not in ["A", "B"]: return
+	var tj: Dictionary = TJ.donnees(ctx.player)
+	if not ctx.has("role"): ctx["role"] = str(tj.get("role", "rotation"))
+	var cadre := D.rect(parent, zone, Charte.PANNEAU_2, Charte.RAYON_CARTE)
+	cadre.name = "ProlongationRole"
+	O._etiquette(cadre, 24, 44, "Rôle promis", 220)
+	var largeur := (zone.size.x - 260 - 24) / 4.0
+	for i in TJ.ROLES.size():
+		var r: String = TJ.ROLES[i]
+		var choisi := r == str(ctx.role)
+		var c: Color = TJ.couleur_role(r)
+		var p := D.rect(cadre, Rect2(250 + i * largeur, 10, largeur - 12, 50), c if choisi else Color(c, .12), Charte.RAYON_PILULE)
+		p.name = "ProlongationRole_" + r
+		TJ._t(p, 0, 33, str(TJ.LIBELLES[r]) + "  ·  " + str(TJ.SEUILS[r]), 18, Charte.NOIR_PANNEAU if choisi else c, 700, largeur - 12, HORIZONTAL_ALIGNMENT_CENTER)
+		Pieces.rendre_cliquable(p, Vector2(largeur - 12, 50), func():
+			ctx["role"] = r
+			_dessiner(toile, parent, ctx), "ProlongationRoleLien_" + r, str(TJ.LIBELLES[r]), "", Charte.RAYON_PILULE)

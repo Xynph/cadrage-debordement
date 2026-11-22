@@ -27,6 +27,7 @@ const Sort = preload("res://ui/recruitment_sort.gd")
 const Sales = preload("res://ui/player_sales_view.gd")
 const FicheCharge = preload("res://ui/immersive08/fiche_charge.gd")
 const FicheRoles = preload("res://ui/immersive08/fiche_roles.gd")
+const TempsJeu = preload("res://ui/immersive08/fiche_temps_jeu.gd")
 
 ## Onglets : [index d'état, libellé]. L'index 1 (ancien onglet Attributs) n'existe plus : ses 36 attributs sont en
 ## première page ; un état resté sur 1 ouvre la Vue d'ensemble.
@@ -124,6 +125,10 @@ static func build(app:Control,player:Dictionary,source:String="squad") -> Contro
 			_history(D.panel(page,Rect2(0,top+286,1670,420),"HISTORIQUE DES MATCHS","calendar","","PlayerMatchHistory"),app,player)
 			_health(D.panel(page,Rect2(1686,top,562,520),"DISPONIBILITÉ","heart"),app,player)
 			_selection(D.panel(page,Rect2(1686,top+536,562,270),"SÉLECTION","flag","","PlayerSelectionNotes"),app,player)
+		3 when TempsJeu.variante() == "A":
+			_contrat_temps_jeu_a(page,app,player,top)
+		3 when TempsJeu.variante() == "B":
+			_contrat_temps_jeu_b(page,app,player,top)
 		3:
 			_contract(D.panel(page,Rect2(0,top,850,270),"CONTRAT ET NÉGOCIATION","money"),app,player)
 			_sale(D.panel(page,Rect2(0,top+286,850,234),"MARCHÉ DES TRANSFERTS","money","","PlayerSalePanel"),app,player,850)
@@ -727,6 +732,22 @@ static func _selection(card:Panel,app:Control,player:Dictionary) -> void:
 		D.text(card,90,y+24,str(ligne.get("adversaire","")),19,C.IVORY,600,230)
 		D.text(card,324,y+24,str(ligne.get("competition","")),16,C.MUTED,500,130)
 		NotesMatch.pastille(card,Rect2(470,y+4,68,28),float(ligne.get("note",6.5)),0.6).name = "PlayerSelectionRow"+str(i)
+
+## Onglet Contrat, planche « temps de jeu au contrat » (CD_VARIANTE_VISUELLE=A|B, ui/immersive08/fiche_temps_jeu.gd).
+static func _contrat_temps_jeu_a(page:Control,app:Control,player:Dictionary,top:float) -> void:
+	var bas := HAUTEUR-50-top
+	TempsJeu.contrat(D.panel(page,Rect2(0,top,730,bas),"CONTRAT","money","","PlayerContractTerms"),app,player,730,64,84)
+	TempsJeu.primes(D.panel(page,Rect2(746,top,730,500),"PRIMES ET CLAUSES","trophy","","PlayerContractClauses"),app,player,730,64,84)
+	_sale(D.panel(page,Rect2(746,top+516,730,bas-516),"MARCHÉ DES TRANSFERTS","money","","PlayerSalePanel"),app,player,730)
+	TempsJeu.temps_a(D.panel(page,Rect2(1492,top,756,bas),"TEMPS DE JEU","calendar","","PlayerPlayingTime"),app,player,756)
+
+static func _contrat_temps_jeu_b(page:Control,app:Control,player:Dictionary,top:float) -> void:
+	var bas := HAUTEUR-50-top
+	TempsJeu.temps_b(D.panel(page,Rect2(0,top,2248,476),"TEMPS DE JEU PROMIS","calendar","","PlayerPlayingTime"),app,player,2248,476)
+	var y := top+492
+	TempsJeu.contrat(D.panel(page,Rect2(0,y,730,bas-492),"CONTRAT","money","","PlayerContractTerms"),app,player,730,46,66)
+	TempsJeu.primes(D.panel(page,Rect2(746,y,730,bas-492),"PRIMES ET CLAUSES","trophy","","PlayerContractClauses"),app,player,730,46,66)
+	_sale(D.panel(page,Rect2(1492,y,756,bas-492),"MARCHÉ DES TRANSFERTS","money","","PlayerSalePanel"),app,player,756)
 
 static func _contract(card:Panel,app:Control,player:Dictionary) -> void:
 	var renewal: Dictionary = player.get("renewal", {})

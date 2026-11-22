@@ -102,7 +102,7 @@ module.exports=function nativeGestion(command,p){
   return {coverage:{count,weeklySalary:coverSalary,totalWeeklySalary,message:`${count} renfort${count===1?'':'s'} signé${count===1?'':'s'}. Salaires supplémentaires de ${totalWeeklySalary.toLocaleString('fr-FR')} € par semaine. Feuille à 23 complète.`}};
  }
  if(command==='recruit'||command==='extend_contract'){
-  requireThat(p.confirmed===true,'Confirme le salaire, la durée et la prime avant cette offre.');requireThat(typeof p.playerId==='string'&&Number.isInteger(p.salary)&&p.salary>=(typeof budgetActif==='function'&&budgetActif()?budgetPlancherHebdo():1000)&&p.salary<=100000&&[1,2,3].includes(p.years),'Offre invalide.');
+  requireThat(p.confirmed===true,'Confirme le salaire, la durée et la prime avant cette offre.');requireThat(typeof p.playerId==='string'&&Number.isInteger(p.salary)&&p.salary>=(typeof budgetActif==='function'&&budgetActif()?budgetPlancherHebdo():1000)&&p.salary<=100000&&[1,2,3].includes(p.years)&&(p.role===undefined||['titulaire','rotation','espoir','appoint'].includes(p.role)),'Offre invalide.');
   const kind=command==='recruit'?'recruit':'renew',target=talkPlayer(p.playerId,kind);requireThat(target,'Joueur indisponible ou offre périmée.');
   // Calendrier du recrutement (calendrier-mutations.cjs) : joueurs sans club jusqu'au 31 décembre, deux supplémentaires en
   // janvier ; un joueur qui a signé un pré-contrat ailleurs ne se prolonge plus.
@@ -120,6 +120,8 @@ module.exports=function nativeGestion(command,p){
   if(kind==='recruit'&&talk.status==='signed'&&typeof budgetTransfertsDepenser==='function')budgetTransfertsDepenser(talk.fee);
   if(kind==='recruit'&&talk.status==='signed'&&typeof calendrierApresRecrue==='function')calendrierApresRecrue(p.playerId);
   if(kind==='renew'&&talk.status==='signed'&&typeof calendrierApresProlongation==='function')calendrierApresProlongation(p.playerId);
+  // Temps de jeu au contrat (planche FM 16) : rôle promis à la signature, lu par model.cjs (squad[].tempsJeu).
+  if(talk.status==='signed'&&['titulaire','rotation','espoir','appoint'].includes(p.role)){const signe=club().players.find(x=>x.id===p.playerId);if(signe)signe.roleContrat={role:p.role,saison:S.season};}
   // Le président reprend la main si l'achat fait passer la trésorerie sous la réserve (president-reprise.cjs),
   // sauf pour un achat dans l'enveloppe de transferts fixée par le conseil.
   if(kind==='recruit'&&talk.status==='signed'&&typeof repriseApresAchat==='function'&&!(typeof budgetTransfertsExempte==='function'&&budgetTransfertsExempte()))repriseApresAchat(club(),avant);

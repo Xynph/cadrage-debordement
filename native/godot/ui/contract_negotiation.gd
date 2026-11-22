@@ -200,7 +200,10 @@ static func open(app: Control, player: Dictionary, recruiting: bool, answer: Str
 	dialog.get_cancel_button().text = "FERMER" if blocked else "ANNULER"
 	dialog.confirmed.connect(func():
 		if blocked: return
-		app._command("recruit" if recruiting else "extend_contract",{"playerId":player.id,"salary":Salary.input_weekly(salary),"years":int(years.value),"confirmed":true})
+		var envoi := {"playerId":player.id,"salary":Salary.input_weekly(salary),"years":int(years.value),"confirmed":true}
+		# Rôle promis (planche « temps de jeu au contrat ») : choisi dans la prolongation, gardé par le moteur à la signature.
+		if ctx.has("role"): envoi["role"] = str(ctx.role)
+		app._command("recruit" if recruiting else "extend_contract",envoi)
 		dialog.queue_free())
 	dialog.canceled.connect(dialog.queue_free)
 	# Échap ferme d'abord la petite fenêtre ouverte dans l'offre, puis seulement l'offre elle-même.
