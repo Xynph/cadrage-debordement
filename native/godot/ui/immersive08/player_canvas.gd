@@ -26,6 +26,7 @@ const Observation = preload("res://ui/player_observation.gd")
 const Sort = preload("res://ui/recruitment_sort.gd")
 const Sales = preload("res://ui/player_sales_view.gd")
 const FicheCharge = preload("res://ui/immersive08/fiche_charge.gd")
+const FicheRoles = preload("res://ui/immersive08/fiche_roles.gd")
 
 ## Onglets : [index d'état, libellé]. L'index 1 (ancien onglet Attributs) n'existe plus : ses 36 attributs sont en
 ## première page ; un état resté sur 1 ouvre la Vue d'ensemble.
@@ -46,42 +47,6 @@ class ConditionDial extends Control:
 		draw_arc(size * .5, radius, -PI * .5, PI * 1.5, 64, C.LINE, width, true)
 		if condition > 0:
 			draw_arc(size * .5, radius, -PI * .5, -PI * .5 + TAU * condition / 100.0, 64, ink, width, true)
-
-class PositionPitch extends Control:
-	const MARKS = [Vector2(.25,.14), Vector2(.5,.14), Vector2(.75,.14), Vector2(.38,.27), Vector2(.62,.27),
-		Vector2(.25,.40), Vector2(.75,.40), Vector2(.5,.40), Vector2(.4,.53), Vector2(.6,.62),
-		Vector2(.12,.75), Vector2(.36,.75), Vector2(.64,.75), Vector2(.88,.75), Vector2(.5,.88)]
-	var primary_numbers: Array[int] = []
-	var secondary_numbers: Array[int] = []
-	var ink := Charte.CLUB_TRAIT
-
-	func _point(x: float, y: float) -> Vector2:
-		return Vector2(lerpf(.04,.96,x)*size.x,lerpf(.05,.95,y)*size.y)
-
-	func _draw() -> void:
-		var factor := minf(size.x/432.0, size.y/350.0)
-		var stroke := maxf(1.0,factor)
-		var outline := PackedVector2Array([_point(0,0),_point(1,0),_point(1,1),_point(0,1)])
-		draw_colored_polygon(outline,Charte.PANNEAU_2)
-		outline.append(outline[0])
-		draw_polyline(outline,Color(Charte.IVOIRE,.45),stroke,true)
-		for row in [.13,.5,.87]:
-			draw_line(_point(0,row),_point(1,row),Color(Charte.IVOIRE,.28),stroke,true)
-		for index in MARKS.size():
-			var mark: Vector2 = MARKS[index]
-			var center := _point(mark.x,mark.y)
-			var primary := index+1 in primary_numbers
-			if not primary and index+1 not in secondary_numbers:
-				draw_circle(center,maxf(2.0,6*factor),Color(Charte.IVOIRE,.5),true,-1,true)
-				continue
-			var radius := maxf(7.0, 17*factor)
-			if primary: draw_circle(center,radius,ink,true,-1,true)
-			else: draw_arc(center,radius,0,TAU,32,ink,stroke*1.5,true)
-			var number := str(index+1)
-			var font := C.font(700)
-			var font_size := maxi(10,roundi(18*factor))
-			var width := font.get_string_size(number,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size).x
-			draw_string(font,center+Vector2(-width/2.0,font_size*.36),number,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size,Charte.IVOIRE)
 
 ## Courbe des notes de match de la saison (notes enregistrées, 1 à 10), moyenne en pointillé.
 class NoteCurve extends Control:
@@ -398,28 +363,17 @@ static func _attributs(card: Panel, app: Control, player: Dictionary, source: St
 		bouton.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	else:
 		D.text(card,1396,38,"36 ATTRIBUTS",17,Charte.IVOIRE_2,700,240,HORIZONTAL_ALIGNMENT_RIGHT)
+	FicheRoles.bandes(card,Vector2(24,72),Vector2(1372,340),FicheRoles.role(str(FicheRoles.etat(app,player,values).role)))
 	Commune.grille_attributs(card,Vector2(24,72),Vector2(1372,340),values,"PlayerDetailedAttribute_")
 
+## Carte Postes et rôles : rôles des postes du joueur (étoiles = capacité au rôle), qualités du rôle choisi, terrain
+## des 15 postes coloré par étoiles au poste (fiche_roles.gd), puis courbe des notes de match.
 static func _postes(card: Panel, app: Control, player: Dictionary, source: String) -> void:
-	_titre(card,"POSTES","POSTE PRINCIPAL ET POLYVALENCES")
-	D.rect(card,Rect2(24,84,12,12),Charte.club_trait(app.accent),6)
-	D.text(card,46,98,Roster.primary_caption(player)+" (principal)",21,Charte.IVOIRE,600,700,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerPrimaryRole"
-	var autres := Roster.secondary_tooltip(player,app.model)
-	var y := 130.0
-	if autres != "—":
-		for ligne: String in autres.split("\n"):
-			D.rect(card,Rect2(24,y-14,12,12),Color.TRANSPARENT,6,Charte.club_trait(app.accent))
-			D.text(card,46,y,ligne.get_slice(" · ",1),21,Charte.IVOIRE,500,700,HORIZONTAL_ALIGNMENT_LEFT,true)
-			y += 32
-	var field := PositionPitch.new()
-	field.name = "PlayerRolePitch"
-	field.primary_numbers = Roster.primary_numbers(player)
-	field.secondary_numbers = Roster.secondary_numbers(player)
-	field.ink = Charte.club_trait(app.accent)
-	field.mouse_filter = Control.MOUSE_FILTER_PASS
-	field.tooltip_text = "Plein : poste principal · cerclé : autres postes maîtrisés"
-	card.add_child(field)
-	D.place(field,Rect2(1080,70,316,190))
+	_titre(card,"POSTES ET RÔLES")
+	FicheRoles.carte(card,app,player,Commune.valeurs(player,source))
+	_courbe(card,app,player,source)
+
+static func _courbe(card: Panel, app: Control, player: Dictionary, source: String) -> void:
 	if source == "market": return
 	# Courbe des notes match par match (notes enregistrées de la saison, la plus ancienne à gauche).
 	var notes := NotesMatch.joueur(app.model,str(player.id))
