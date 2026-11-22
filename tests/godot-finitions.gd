@@ -243,7 +243,8 @@ func fatigue() -> void:
 	while racine != null and not (racine is Panel or racine is PanelContainer): racine = racine.get_parent()
 	var carte := texts(racine) if racine != null else texts(app)
 	check(not carte.contains("Aucune alerte physique"), "Carte du groupe : pas d'« Aucune alerte physique » (%d sous 70 %%)" % nombre)
-	check(carte.contains("%d titulaire" % nombre) and carte.contains("sous 70 %"), "Carte du groupe : « %d titulaires du prochain match sous 70 %% » : %s" % [nombre, carte.replace("\n", " | ")])
+	# Pastille « ⚠ N < 70 % » depuis le lot « phrases à retirer » du 21/11/2026 (plus de phrase « N titulaires… »).
+	check(carte.contains("%d < 70 %%" % nombre), "Carte du groupe : pastille « %d < 70 %% » : %s" % [nombre, carte.replace("\n", " | ")])
 	await capture("bureau-etat-groupe")
 	# Sans alerte du moteur : l'ancien message revient seulement quand rien n'est à signaler.
 	var sans: Dictionary = app.model.duplicate(true)
