@@ -831,6 +831,8 @@ func _navigate(target: String, remember_ui: bool = true, keep_subview: bool = fa
 		management_ui.erase("fiche_joueur")
 		# Sous-page de la Composition (tireurs, espoir, renforts) : le menu rouvre l'écran lui-même.
 		management_ui.erase("composition_page")
+		# Onglet de la Tactique (Consignes, Phases arrêtées, Entraînement) : le menu rouvre la Composition.
+		management_ui.erase("tactique_onglet")
 		# Sous-page de Classements (rencontre, archives) : le menu rouvre l'écran lui-même.
 		management_ui.erase("competition_page")
 		# Sous-page du Recrutement (relève, entre clubs, offres, missions, négociation, rapport) : le menu rouvre l'écran lui-même.

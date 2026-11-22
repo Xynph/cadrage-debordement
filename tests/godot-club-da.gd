@@ -250,7 +250,7 @@ func links() -> void:
 		check(windows().is_empty(), "%s : aucune fenêtre ouverte" % id)
 	await overview()
 
-## Noms de joueurs : survol = mini-fiche, clic = fiche complète.
+## Noms de joueurs : survol = carte joueur (même composant que partout), clic = fiche complète.
 func names() -> void:
 	var noms: Array = app.root_content.find_children("Club*Link", "Button", true, false).filter(func(b: Node): return str(b.name) == "ClubLeaderLink")
 	noms.append_array(app.root_content.find_children("ClubAbsentName*", "Button", true, false))
@@ -258,12 +258,17 @@ func names() -> void:
 		check(node("ClubAbsentNone") != null, "Aucun absent : le dit")
 		return
 	var lien := noms[0] as Button
-	lien.mouse_entered.emit()
+	var Carte = load("res://ui/carte_joueur_survol.gd")
+	check(lien.has_meta("carte_joueur") and str(lien.get_meta("carte_joueur")) != "", "Survol du nom : carte joueur branchée")
+	check(lien.tooltip_text.is_empty(), "Nom : pas d'info-bulle système par-dessus la carte")
+	var carte := Carte.montrer(app, str(lien.get_meta("carte_joueur")), str(lien.get_meta("carte_source", "squad")), lien) as Control
 	await settle(4)
-	check(app.get_node_or_null("MiniFicheJoueur") != null, "Survol du nom : mini-fiche")
-	lien.mouse_exited.emit()
+	check(carte != null and carte.is_visible_in_tree() and Carte.actuelle(app) == carte, "Survol du nom : la carte joueur apparaît")
+	check(carte != null and Rect2(Vector2.ZERO, app.get_viewport_rect().size).encloses(carte.get_global_rect()), "Carte joueur entièrement dans l'écran")
+	check(windows().is_empty(), "Survol du nom : aucune fenêtre")
+	Carte.cacher(app)
 	await settle(3)
-	check(app.get_node_or_null("MiniFicheJoueur") == null, "La souris part : la mini-fiche disparaît")
+	check(Carte.actuelle(app) == null, "La souris part : la carte disparaît")
 	lien.pressed.emit()
 	await settle(10)
 	check(app.route == "Effectif", "Clic sur le nom : fiche joueur complète (%s)" % app.route)

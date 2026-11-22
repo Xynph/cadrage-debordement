@@ -10,7 +10,9 @@ function factory(){
  const copy=x=>JSON.parse(JSON.stringify(x));
  const object=x=>x!==null&&typeof x==='object'&&!Array.isArray(x),int=(n,a,b)=>Number.isSafeInteger(n)&&n>=a&&n<=b;
  const shape=(x,keys)=>object(x)&&Object.keys(x).length===keys.length&&Object.keys(x).every(k=>keys.includes(k));
- const appearanceShape=(x,keys)=>shape(x,x?.appearanceBankVersion===undefined?keys:[...keys,'appearanceBankVersion'])&&(x.appearanceBankVersion===undefined||x.appearanceBankVersion===1||x.appearanceBankVersion===2);
+ const appearanceShape=(x,keys)=>shape(x,[...keys,...(x?.appearanceBankVersion===undefined?[]:['appearanceBankVersion']),...(x?.appearanceBuild===undefined?[]:['appearanceBuild'])])&&(x.appearanceBankVersion===undefined||x.appearanceBankVersion===1||x.appearanceBankVersion===2)&&(x.appearanceBuild===undefined||(Number.isFinite(x.appearanceBuild)&&Math.abs(x.appearanceBuild)<=1));
+ // Visage d'un joueur reconverti : son identifiant, ou la variante que la projection des portraits (portrait-looks) lui donnait.
+ const sameFace=(appearanceId,playerId)=>appearanceId===playerId||(typeof appearanceId==='string'&&appearanceId.startsWith(playerId+':'));
  const check=(yes,message)=>{if(!yes)throw Error('Carrières du staff : '+message+'.');};
  const identity=x=>typeof x==='string'&&/^[A-Za-z0-9:._-]{1,240}$/.test(x);
  const text=x=>String(x).replace(/&/g,' et ').replace(/"/g,'“').replace(/`/g,"'").replace(/</g,'‹').replace(/>/g,'›').replace(/[\u0000-\u001f\u007f]/g,' ').slice(0,160);
@@ -41,11 +43,11 @@ function factory(){
   return 'support';
  }
  function event(s,kind,p,clubId=p.clubId){
-  s.staffCareer.history.push({season:s.season,kind,id:p.id,clubId,name:p.name,role:p.role,appearanceId:p.appearanceId,appearanceAge:p.appearanceAge,age:p.age,sourcePlayerId:p.sourcePlayerId,...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),amount:0});
+  s.staffCareer.history.push({season:s.season,kind,id:p.id,clubId,name:p.name,role:p.role,appearanceId:p.appearanceId,appearanceAge:p.appearanceAge,age:p.age,sourcePlayerId:p.sourcePlayerId,...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),...(p.appearanceBuild===undefined?{}:{appearanceBuild:p.appearanceBuild}),amount:0});
   s.staffCareer.history=s.staffCareer.history.slice(-512);
  }
- function person(s,{id,name:label,role,roleLabel=LABELS[role],sourceKind,sourceStaffId=null,sourcePlayerId=null,appearanceId=id,appearanceBankVersion=1,age,ageBasis='estimated',level,entrySeason=s.season,ageSeason=s.season,generation}){
-  return {id,name:text(label),role,roleLabel:text(roleLabel),sourceKind,sourceStaffId,sourcePlayerId,appearanceId,...(appearanceBankVersion===2?{appearanceBankVersion:2}:{}),age,appearanceAge:age,ageAtEntry:age,entrySeason,ageSeason,
+ function person(s,{id,name:label,role,roleLabel=LABELS[role],sourceKind,sourceStaffId=null,sourcePlayerId=null,appearanceId=id,appearanceBankVersion=1,appearanceBuild=null,age,ageBasis='estimated',level,entrySeason=s.season,ageSeason=s.season,generation}){
+  return {id,name:text(label),role,roleLabel:text(roleLabel),sourceKind,sourceStaffId,sourcePlayerId,appearanceId,...(appearanceBankVersion===2?{appearanceBankVersion:2}:{}),...(appearanceBuild===null?{}:{appearanceBuild}),age,appearanceAge:age,ageAtEntry:age,entrySeason,ageSeason,
    ageBasis,...(generation?{generation:copy(generation)}:{}),conversion:null,retireAge:68+hash(id+':retire')%13,level,salary:0,clubId:null,contractEnd:null};
  }
  function generated(s,role,key=null,clubId=null){
@@ -127,7 +129,8 @@ function factory(){
   if(p.age<28||!int(p.fam,0,8)||rating<60||(minutes<800&&rating<75)||hash(p.id+':reconversion')%3!==0){prune(s);return false;}
   const choices=p.fam<=3?['assistant','formation','scout']:CORE;
   const role=choices[hash(p.id+':staff-role')%choices.length];
-  const q=person(s,{id:'staff-career:player:'+p.id,name:p.name,role,sourceKind:'retired-player',sourcePlayerId:p.id,appearanceId:p.id,appearanceBankVersion:p.appearanceBankVersion??1,
+  const look=typeof nativePortraitLook==='function'?nativePortraitLook(p,typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(s)):null,face=look&&sameFace(look.appearanceId,p.id)?look:null;
+  const q=person(s,{id:'staff-career:player:'+p.id,name:p.name,role,sourceKind:'retired-player',sourcePlayerId:p.id,appearanceId:face?face.appearanceId:(typeof p.appearanceId==='string'&&sameFace(p.appearanceId,p.id)?p.appearanceId:p.id),appearanceBankVersion:face?face.bank:(p.appearanceBankVersion??1),appearanceBuild:face&&Number.isFinite(face.appearanceBuild)?face.appearanceBuild:null,
    age:p.age,ageBasis:'player-career',level:Math.max(40,Math.min(85,Math.round(rating*.6+(Number(p.skills?.mental)||rating)*.4))),entrySeason:s.season+1,ageSeason:s.season+1});
   q.conversion={retiredSeason:s.season,careerMinutes:minutes,family:p.fam,rating,mental:Number(p.skills?.mental)||rating,selection:'deterministic-third-v1'};
   // Conversion is a game opportunity, never a claim of a coaching/medical licence.
@@ -181,7 +184,7 @@ function factory(){
    check((p.clubId===null&&p.contractEnd===null)||(int(p.clubId,0,s.clubs.length-1)&&int(p.contractEnd,s.season,Math.min(9999,s.season+3))),'contrat invalide');
    check(identity(p.appearanceId),'apparence invalide');
    if(p.sourceKind==='retired-player'){
-    check(p.generation===undefined&&identity(p.sourcePlayerId)&&!players.has(p.sourcePlayerId)&&p.sourceStaffId===null&&p.id==='staff-career:player:'+p.sourcePlayerId&&p.appearanceId===p.sourcePlayerId&&p.ageBasis==='player-career'&&CORE.includes(p.role)&&(!completed(s)||p.roleLabel===LABELS[p.role]),'reconversion ou visage incohérent');players.add(p.sourcePlayerId);
+    check(p.generation===undefined&&identity(p.sourcePlayerId)&&!players.has(p.sourcePlayerId)&&p.sourceStaffId===null&&p.id==='staff-career:player:'+p.sourcePlayerId&&sameFace(p.appearanceId,p.sourcePlayerId)&&p.ageBasis==='player-career'&&CORE.includes(p.role)&&(!completed(s)||p.roleLabel===LABELS[p.role]),'reconversion ou visage incohérent');players.add(p.sourcePlayerId);
     const witness=p.conversion;check(shape(witness,['retiredSeason','careerMinutes','family','rating','mental','selection'])&&int(witness.retiredSeason,st.activatedSeason,s.season)&&p.entrySeason===witness.retiredSeason+1&&p.ageAtEntry>=28&&!activePlayerIds.has(p.sourcePlayerId)&&int(witness.careerMinutes,0,1000000)&&int(witness.family,0,8)&&p.role===(witness.family<=3?['assistant','formation','scout']:CORE)[hash(p.sourcePlayerId+':staff-role')%(witness.family<=3?3:CORE.length)]&&Number.isFinite(witness.rating)&&witness.rating>=60&&witness.rating<=99&&Number.isFinite(witness.mental)&&witness.mental>=0&&witness.mental<=100&&witness.selection==='deterministic-third-v1'&&(witness.careerMinutes>=800||witness.rating>=75)&&hash(p.sourcePlayerId+':reconversion')%3===0&&int(p.level,Math.max(40,Math.min(85,Math.round(witness.rating*.6+witness.mental*.4))),85),'preuve de reconversion incohérente');
    }else if(p.sourceKind==='reference'){
     // Saved names belong to the career: the current table of base names is not compared, nor is the name salt it gives a generated complement.
@@ -199,7 +202,7 @@ function factory(){
   }
   const expected=completed(s)?new Map(initialTeams(s,source).map(c=>{const counts=Object.fromEntries(ROLES.map(r=>[r,0]));for(const p of c.members)if(p.historical!==true)counts[completion.role(p.role)]++;return [c.id,counts];})):referenceRoleCounts;
   check(Array.isArray(st.targets)&&st.targets.length===s.clubs.length&&new Set(st.targets.map(t=>t.clubId)).size===st.targets.length&&st.targets.every(t=>shape(t,completed(s)?['clubId','roles','functions']:['clubId','roles'])&&int(t.clubId,0,s.clubs.length-1)&&shape(t.roles,ROLES)&&ROLES.every(r=>t.roles[r]===(completed(s)?expected.get(t.clubId)?.[r]:Math.max(CORE.includes(r)?1:0,expected.get(t.clubId)?.[r]||0)))&&(!completed(s)||shape(t.functions,Object.keys(completion.MINIMUM))&&Object.keys(completion.MINIMUM).every(k=>t.functions[k]===completion.MINIMUM[k]))),'objectifs de rôles invalides');
-  check(Array.isArray(st.history)&&st.history.length<=512&&st.history.every(e=>appearanceShape(e,['season','kind','id','clubId','name','role','appearanceId','appearanceAge','age','sourcePlayerId','amount'])&&int(e.season,st.activatedSeason,s.season)&&['reference-already-retired','player-conversion','retirement','voluntary-retirement','contract-ended','ai-renewal','ai-hire','hire','renew','release'].includes(e.kind)&&identity(e.id)&&name(e.name)&&ROLES.includes(e.role)&&identity(e.appearanceId)&&int(e.appearanceAge,18,300)&&int(e.age,18,300)&&(e.sourcePlayerId===null||(identity(e.sourcePlayerId)&&e.appearanceId===e.sourcePlayerId))&&(e.clubId===null||int(e.clubId,0,s.clubs.length-1))&&e.amount===0),'historique invalide');
+  check(Array.isArray(st.history)&&st.history.length<=512&&st.history.every(e=>appearanceShape(e,['season','kind','id','clubId','name','role','appearanceId','appearanceAge','age','sourcePlayerId','amount'])&&int(e.season,st.activatedSeason,s.season)&&['reference-already-retired','player-conversion','retirement','voluntary-retirement','contract-ended','ai-renewal','ai-hire','hire','renew','release'].includes(e.kind)&&identity(e.id)&&name(e.name)&&ROLES.includes(e.role)&&identity(e.appearanceId)&&int(e.appearanceAge,18,300)&&int(e.age,18,300)&&(e.sourcePlayerId===null||(identity(e.sourcePlayerId)&&sameFace(e.appearanceId,e.sourcePlayerId)))&&(e.clubId===null||int(e.clubId,0,s.clubs.length-1))&&e.amount===0),'historique invalide');
   check(Array.isArray(st.captured)&&st.captured.length<=1900&&new Set(st.captured.map(e=>e.playerId)).size===st.captured.length&&st.captured.every(e=>shape(e,['playerId','season'])&&identity(e.playerId)&&int(e.season,Math.max(st.activatedSeason,s.season-2),s.season)),'captures de retraite invalides');
   return true;
  }

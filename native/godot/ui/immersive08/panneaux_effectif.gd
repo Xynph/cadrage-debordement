@@ -84,6 +84,7 @@ static func _colonne(page: Control, app: Control, y: float, bas: float) -> void:
 		var h := ENTETE + (float(hauteurs[id]) * echelle if ouvert else 0.0)
 		var panneau := D.panel(page, Rect2(0, cy, LARGEUR, h), "", "", "", "PanneauEffectif_" + id)
 		panneau.clip_contents = true
+		Charte.ombre_derriere(panneau) # le panneau rogne son contenu : l'ombre passe à un calque frère
 		_entete(panneau, app, id, ouvert, func():
 			e[id] = not bool(e.get(id, true))
 			_changer(app, e), i == 0)
