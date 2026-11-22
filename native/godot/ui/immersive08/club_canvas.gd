@@ -1,7 +1,8 @@
 extends RefCounted
 ## Écran Club (choix de Léo du 19/11/2026 : maquette « 1 · Deux colonnes, le conseil à gauche », avec le tableau
 ## « ce qui a fait bouger la confiance » de la maquette 2). Vue d'ensemble : titre et onglets, bandeau du club, à gauche
-## le conseil (confiance, seuils, objectif, bilans) et les installations, à droite « À décider » et le vestiaire.
+## le conseil (note en lettre et domaines du bilan, objectif, bilans : conseil_lettre.gd, revue FM27 n° 8) et les
+## installations, à droite « À décider » et le vestiaire.
 ## Tout ce qui ressemble à un lien, une ligne ou un chiffre ouvre un écran ; aucune petite fenêtre (confirmations en place,
 ## actions longues du staff en sous-pages : club_pages.gd). Coordonnées en unités du gabarit (2248 de large), jetons de la charte.
 const EntityLink = preload("res://ui/entity_link.gd")
@@ -33,9 +34,6 @@ const W := 2248.0
 const TOP := 132.0
 const HAUT := 1244.0
 const TABS := [["overview", "Vue d’ensemble"], ["direction", "Direction"], ["infrastructure", "Infrastructures"], ["staff", "Staff"], ["history", "Histoire"]]
-## Seuils de la confiance du conseil (fiche UX 18, section 13) : Solide à partir de 70, Fragile de 40 à 69, Menacé en dessous.
-const SEUIL_SOLIDE := 70
-const SEUIL_FRAGILE := 40
 const LIGNE := 32.0
 
 ## Case dessinée de la charte : coche (ok), point d'exclamation (alerte), croix (menace), tiret (neutre). Le sens est
@@ -287,12 +285,6 @@ static func _hero(app: Control, page: Control, fans: Dictionary) -> void:
 	voir.add_theme_font_override("font", Kit.texte_gras())
 	voir.name = "ClubSeeStadium"
 
-static func _palier(valeur: Variant) -> Dictionary:
-	if not (valeur is int or valeur is float): return {}
-	if float(valeur) >= SEUIL_SOLIDE: return {"mot": "Solide", "rang": 1, "genre": "ok"}
-	if float(valeur) >= SEUIL_FRAGILE: return {"mot": "Fragile", "rang": 2, "genre": "alerte"}
-	return {"mot": "Menacé", "rang": 3, "genre": "croix"}
-
 static func _signe(valeur: int) -> String:
 	return "+%d" % valeur if valeur > 0 else ("−%d" % absi(valeur) if valeur < 0 else "0")
 
@@ -315,61 +307,11 @@ static func _conseil(panneau: Panel, app: Control, finance: Dictionary, board: D
 		Pastilles.poser_a_droite(panneau, Pastilles.pastille("1er bilan à venir", Pastilles.BLEU, "clock", "Le conseil rend son premier bilan après quelques journées.", 18, "ClubLastReview", func(): _open_strategy(app, 1)), largeur - 24, 14)
 	else:
 		Kit.texte(panneau, largeur - 24, 40, "dernier bilan après J%s" % G.n(dernier.round), Charte.IVOIRE_2, 400, 18, HORIZONTAL_ALIGNMENT_RIGHT).name = "ClubLastReview"
-	var variante := ConseilLettre.variante()
-	if variante != "":
-		if variante == "A": ConseilLettre.conseil_a(panneau, app, finance, board, largeur)
-		else: ConseilLettre.conseil_b(panneau, app, finance, largeur)
-		D.line(panneau, Vector2(24, 306), Vector2(largeur - 24, 306), Charte.FILET)
-		_objectif(panneau, app, board, 24, 322, 600)
-		if variante == "A": _bilans(panneau, app, historique, 664, 322, largeur - 664 - 24)
-		else: ConseilLettre.bilans_b(panneau, app, historique, 664, 322, largeur - 664 - 24)
-		return
-	Kit.etiquette(panneau, 24, 90, "Confiance du conseil", 500)
-	var valeur := G.n(confiance) if confiance != null else "—"
-	var chiffre := D.text(panneau, 24, 152, valeur, 66, Charte.IVOIRE, 800, 130)
-	chiffre.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
-	chiffre.name = "ClubTrustValue"
-	var largeur_chiffre := Charte.TITRE_EXTRA_ITALIQUE.get_string_size(valeur, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(66))).x / C.density
-	Kit.texte(panneau, 24 + largeur_chiffre + 10, 150, "/ 100", Charte.IVOIRE_2, 80, 24)
-	if not dernier.is_empty():
-		var delta := int(dernier.after) - int(dernier.previous)
-		var evolution := Kit.texte(panneau, largeur - 24, 150, "%s après J%s" % [_signe(delta), G.n(dernier.round)], Charte.IVOIRE, 400, 22, HORIZONTAL_ALIGNMENT_RIGHT)
-		evolution.add_theme_font_override("font", Kit.texte_gras())
-		evolution.name = "ClubTrustChange"
-	var palier := _palier(confiance)
-	if not palier.is_empty():
-		_coche(panneau, Rect2(24, 168, 30, 30), palier.genre)
-		var mot := Kit.titre(panneau, 64, 194, palier.mot, 30, 220)
-		mot.name = "ClubTrustWord"
-		Kit.texte(panneau, 64 + Charte.TITRE_GRAS_ITALIQUE.get_string_size(str(palier.mot).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(30))).x / C.density + 14, 194, "palier %d sur 3" % int(palier.rang), Charte.IVOIRE_2, 300, 18)
-	_barre_seuils(panneau, 24, 214, largeur - 48, confiance, palier)
+	# Note du conseil en lettre (revue FM27, idée n° 8, option B « carnet de notes » choisie par Léo le 22/11/2026).
+	ConseilLettre.conseil(panneau, app, finance, largeur)
 	D.line(panneau, Vector2(24, 306), Vector2(largeur - 24, 306), Charte.FILET)
 	_objectif(panneau, app, board, 24, 322, 600)
-	_bilans(panneau, app, historique, 664, 322, largeur - 664 - 24)
-
-## Trois segments à l'échelle de 0 à 100 : Menacé (0-39), Fragile (40-69), Solide (70-100). Remplissage ivoire-2, repère incliné
-## à la valeur ; chaque palier dit son nom et son seuil sous la barre (jamais la couleur seule).
-static func _barre_seuils(panneau: Control, x: float, y: float, largeur: float, confiance: Variant, palier: Dictionary) -> void:
-	var bornes := [[0, SEUIL_FRAGILE, "Menacé", "moins de %d" % SEUIL_FRAGILE, "croix", 3], [SEUIL_FRAGILE, SEUIL_SOLIDE, "Fragile", "de %d à %d" % [SEUIL_FRAGILE, SEUIL_SOLIDE - 1], "alerte", 2], [SEUIL_SOLIDE, 100, "Solide", "%d et plus" % SEUIL_SOLIDE, "ok", 1]]
-	var ecart := 6.0
-	var utile := largeur - ecart * 2.0
-	var cursor := x
-	var position_repere := -1.0
-	for borne: Array in bornes:
-		var part := utile * float(int(borne[1]) - int(borne[0])) / 100.0
-		D.rect(panneau, Rect2(cursor, y, part, 14), Charte.PANNEAU_3, 0)
-		if confiance != null and float(confiance) > float(borne[0]):
-			var rempli := clampf((float(confiance) - float(borne[0])) / float(int(borne[1]) - int(borne[0])), 0.0, 1.0)
-			D.rect(panneau, Rect2(cursor, y, part * rempli, 14), Charte.IVOIRE_2, 0)
-			if rempli < 1.0 or int(borne[1]) == 100: position_repere = cursor + part * rempli
-		var actif: bool = not palier.is_empty() and int(palier.rang) == int(borne[5])
-		var couleur: Color = Charte.IVOIRE if actif else Charte.IVOIRE_2
-		_coche(panneau, Rect2(cursor, y + 26, 20, 20), str(borne[4]), couleur)
-		var nom := Kit.texte(panneau, cursor + 28, y + 42, str(borne[2]), couleur, 200, 18)
-		nom.add_theme_font_override("font", Kit.texte_gras())
-		Kit.texte(panneau, cursor, y + 66, str(borne[3]), Charte.IVOIRE_2, 300, 17)
-		cursor += part + ecart
-	if position_repere >= 0.0: Kit.marqueur(panneau, Rect2(position_repere - 3, y - 7, 6, 28), Charte.IVOIRE)
+	ConseilLettre.bilans(panneau, app, historique, 664, 322, largeur - 664 - 24, _lier_bilan.bind(app))
 
 ## Objectif de la saison : l'objectif du club, puis le classement, les promesses publiques et les jalons du conseil ;
 ## chaque ligne ouvre le suivi des objectifs.
@@ -430,58 +372,18 @@ static func _objectif(panneau: Panel, app: Control, board: Dictionary, x: float,
 
 ## Ce qui a fait bouger la confiance : un bilan du conseil par ligne (journée, confiance après le bilan, évolution, résultat du match
 ## de la journée, cause). Une ligne ouvre le match quand il est connu, sinon les objectifs du conseil.
-static func _bilans(panneau: Panel, app: Control, historique: Array, x: float, y: float, largeur: float) -> void:
-	var bloc := Control.new()
-	bloc.name = "ClubTrustTable"
-	bloc.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panneau.add_child(bloc)
-	D.place(bloc, Rect2(x, y, largeur, 320))
-	Kit.etiquette(bloc, 0, 22, "Ce qui a fait bouger la confiance", largeur)
-	if historique.is_empty():
-		Kit.texte(bloc, 0, 96, "—", Charte.IVOIRE_2, largeur, 34).name = "ClubTrustTableEmpty"
+## Ligne d'un bilan du conseil : ovale du résultat de la journée et lien vers la fiche du match (sinon le suivi des objectifs).
+static func _lier_bilan(rangee: Button, bilan: Dictionary, app: Control) -> void:
+	var rencontre := _rencontre_du_bilan(app, bilan, int(app.model.get("meta", {}).get("season", 1)))
+	if rencontre.is_empty():
+		Kit.texte(rangee, 248, 25, "—", Charte.IVOIRE_3, 40, 18, HORIZONTAL_ALIGNMENT_CENTER)
 		return
-	var colonnes := [["J.", 8.0, 50.0, false], ["Conf.", 70.0, 62.0, true], ["Évol.", 142.0, 60.0, true], ["Rés.", 224.0, 70.0, false], ["Cause", 310.0, largeur - 310.0, false]]
-	for colonne: Array in colonnes:
-		Kit.etiquette(bloc, float(colonne[1]) + (float(colonne[2]) if colonne[3] else 0.0), 60, str(colonne[0]), float(colonne[2]), colonne[3])
-	D.line(bloc, Vector2(0, 70), Vector2(largeur, 70), Charte.FILET)
-	var saison := int(app.model.get("meta", {}).get("season", 1))
-	var club_id: Variant = app.model.club.id
-	for i in mini(7, historique.size()):
-		var bilan: Dictionary = historique[i]
-		var rencontre := _rencontre_du_bilan(app, bilan, saison)
-		var haut := 74.0 + i * LIGNE
-		var rangee := Button.new()
-		rangee.name = "ClubTrustRow%d" % i
-		Kit.styler_ligne(rangee, Color.TRANSPARENT)
-		bloc.add_child(rangee)
-		D.place(rangee, Rect2(0, haut, largeur, LIGNE))
-		# Charte : pas de bandes alternées, un filet entre deux lignes.
-		if i > 0: D.line(bloc, Vector2(0, haut), Vector2(largeur, haut), Charte.FILET)
-		var delta := int(bilan.after) - int(bilan.previous)
-		Kit.texte(rangee, 8, 22, "J%s" % G.n(bilan.round), Charte.IVOIRE_2, 50, 18)
-		var conf := Kit.texte(rangee, 132, 22, G.n(bilan.after), Charte.IVOIRE, 62, 18, HORIZONTAL_ALIGNMENT_RIGHT)
-		conf.add_theme_font_override("font", Kit.texte_gras())
-		Kit.texte(rangee, 202, 22, _signe(delta), Charte.IVOIRE_2, 60, 18, HORIZONTAL_ALIGNMENT_RIGHT)
-		var cause := "Bilan du conseil · résultats %s, finances %s, formation %s" % [G.n(bilan.get("results", "—")), G.n(bilan.get("finances", "—")), G.n(bilan.get("youth", "—"))]
-		var lettre := "—"
-		if not rencontre.is_empty():
-			var resume := _resume_rencontre(rencontre, club_id)
-			lettre = str(resume.lettre)
-			cause = str(resume.texte)
-		if lettre == "—": Kit.texte(rangee, 258, 22, "—", Charte.IVOIRE_3, 40, 18, HORIZONTAL_ALIGNMENT_CENTER)
-		else: _ovale_resultat(rangee, Rect2(232, 4, 52, 24), lettre)
-		Kit.texte(rangee, 310, 22, cause, Charte.IVOIRE, largeur - 316, 18).tooltip_text = cause
-		var cible: Dictionary = {}
-		if not rencontre.is_empty():
-			var office: Variant = load("res://ui/immersive08/office.gd")
-			cible = office.score_reading_target(app, rencontre)
-		var libelle := "Bilan du conseil, journée %s" % G.n(bilan.round)
-		if not cible.is_empty(): EntityLink.bind(rangee, app, cible, cause)
-		else:
-			rangee.accessibility_name = libelle
-			rangee.pressed.connect(func(): _open_strategy(app, 1))
-	var plus := Kit.lien(bloc, Rect2(0, 74 + 7 * LIGNE + 12, 0, 34), "Tous les bilans du conseil →", func(): _open_strategy(app, 1), "ClubTrustAll", 18)
-	plus.tooltip_text = ""
+	var resume := _resume_rencontre(rencontre, app.model.club.id)
+	_ovale_resultat(rangee, Rect2(222, 6, 52, 24), str(resume.lettre))
+	var cible: Dictionary = load("res://ui/immersive08/office.gd").score_reading_target(app, rencontre)
+	if cible.is_empty(): return
+	for connexion: Dictionary in rangee.pressed.get_connections(): rangee.pressed.disconnect(connexion.callable)
+	EntityLink.bind(rangee, app, cible, str(resume.texte))
 
 static func _rencontre_du_bilan(app: Control, bilan: Dictionary, saison: int) -> Dictionary:
 	if int(bilan.get("season", saison)) != saison: return {}
@@ -529,7 +431,7 @@ static func _segments(parent: Control, x: float, y: float, largeur: float, total
 
 static func _installations(panneau: Panel, app: Control, finance: Dictionary, strategie: Dictionary) -> void:
 	var largeur := panneau.size.x / C.density
-	for colonne: Array in [["Installation", 24.0, 400.0, false], ["Niveau", 470.0, 300.0, false], ["Prochaine amélioration", 800.0, 230.0, false], ["Coût", 1030.0, 130.0, true], ["Statut", 1194.0, 196.0, false]]:
+	for colonne: Array in [["Installation", 64.0, 260.0, false], ["État", 340.0, 200.0, false], ["Niveau", 560.0, 200.0, false], ["Prochaine amélioration", 790.0, 230.0, false], ["Coût", 1030.0, 130.0, true], ["Statut", 1194.0, 196.0, false]]:
 		Kit.etiquette(panneau, float(colonne[1]) + (float(colonne[2]) if colonne[3] else 0.0), 82, str(colonne[0]), float(colonne[2]), colonne[3])
 	D.line(panneau, Vector2(18, 92), Vector2(largeur - 18, 92), Charte.FILET)
 	var devis: Variant = finance.get("facility")
@@ -555,15 +457,6 @@ static func _installations(panneau: Panel, app: Control, finance: Dictionary, st
 		academie_suite = "%s Crabos · %s Espoirs" % [G.n(suivi.get("crabos", {}).get("count", 0)), G.n(suivi.get("espoirs", {}).get("count", 0))]
 	rangees.append({"id": "ClubFacilityAcademy", "nom": "Académie", "niveau": academie_niveau, "segments": [3, int(academie)] if academie != null else [], "suite": academie_suite, "cout": "", "statut": "", "action": func(): app._navigate("Centre")})
 	rangees.append({"id": "ClubFacilityStadium", "nom": str(G.identity(app.model.club).get("stadium", "Le stade")), "niveau": G.n(fans.capacity) + " places" if fans.has("capacity") else "—", "segments": [], "suite": "Affluence prévue " + G.n(fans.expectedAttendance) if fans.has("expectedAttendance") else "Photo, ville et crédits", "cout": "", "statut": "", "action": func(): _tab(app, "territory", "ClubTab_overview")})
-	var variante := ConseilLettre.variante()
-	if variante == "B":
-		var etats: Array = []
-		for r: Dictionary in rangees: etats.append(ConseilLettre.etat_installation(str(r.id), app, finance, strategie))
-		ConseilLettre.installations_b(panneau, rangees, etats, largeur)
-		for enfant in panneau.get_children():
-			if enfant is Label and enfant.name != "CardTitle": enfant.visible = false
-			elif enfant is ColorRect: enfant.visible = false
-		return
 	for i in rangees.size():
 		var donnees: Dictionary = rangees[i]
 		var rangee := Button.new()
@@ -575,15 +468,16 @@ static func _installations(panneau: Panel, app: Control, finance: Dictionary, st
 		D.place(rangee, Rect2(18, 98 + i * 40, largeur - 36, 40))
 		# Charte : pas de bandes alternées, un filet entre deux lignes.
 		if i > 0: D.line(panneau, Vector2(18, 98 + i * 40), Vector2(largeur - 18, 98 + i * 40), Charte.FILET)
-		var nom := Kit.texte(rangee, 6, 27, str(donnees.nom), Charte.IVOIRE, 400, 19)
+		var nom := Kit.texte(rangee, 46, 27, str(donnees.nom), Charte.IVOIRE, 266, 19)
 		nom.add_theme_font_override("font", Kit.texte_gras())
-		if variante == "A": ConseilLettre.pastille_ligne(rangee, ConseilLettre.etat_installation(str(donnees.id), app, finance, strategie), 6 + minf(Kit.largeur(str(donnees.nom), 19), 250) + 14, str(donnees.id) + "Etat")
+		ConseilLettre.picto_ligne(rangee, str(donnees.id), Rect2(6, 6, 28, 28))
+		ConseilLettre.pastille_ligne(rangee, ConseilLettre.etat_installation(str(donnees.id), app, finance, strategie), 322, str(donnees.id) + "Etat")
 		var segments: Array = donnees.segments
-		if segments.is_empty(): Kit.texte(rangee, 452, 27, str(donnees.niveau), Charte.IVOIRE, 320, 18)
+		if segments.is_empty(): Kit.texte(rangee, 542, 27, str(donnees.niveau), Charte.IVOIRE, 210, 18)
 		else:
-			_segments(rangee, 452, 15, 150, int(segments[0]), int(segments[1]))
-			Kit.texte(rangee, 770, 27, str(donnees.niveau), Charte.IVOIRE, 90, 18, HORIZONTAL_ALIGNMENT_RIGHT).name = "ClubFacilityLevel"
-		Kit.texte(rangee, 782, 27, str(donnees.suite), Charte.IVOIRE_2, 270, 18)
+			_segments(rangee, 542, 15, 120, int(segments[0]), int(segments[1]))
+			Kit.texte(rangee, 742, 27, str(donnees.niveau), Charte.IVOIRE, 70, 18, HORIZONTAL_ALIGNMENT_RIGHT).name = "ClubFacilityLevel"
+		Kit.texte(rangee, 772, 27, str(donnees.suite), Charte.IVOIRE_2, 230, 18)
 		if not str(donnees.cout).is_empty(): Kit.texte(rangee, 1142, 27, str(donnees.cout), Charte.IVOIRE, 130, 18, HORIZONTAL_ALIGNMENT_RIGHT)
 		if not str(donnees.statut).is_empty(): Kit.texte(rangee, 1176, 27, str(donnees.statut), Charte.IVOIRE_2, 190, 17)
 	var details := Kit.lien(panneau, Rect2(24, 270, 0, 34), "Projets et devis des installations →", func(): _tab(app, "infrastructure", "ClubTab_infrastructure"), "ClubFacilityDetails", 19)
