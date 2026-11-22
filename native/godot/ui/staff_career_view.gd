@@ -10,6 +10,7 @@ const Dialogs = preload("res://ui/decision_views.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const Kit = preload("res://ui/immersive08/tactics_kit.gd")
 const Charte = preload("res://ui/charte.gd")
+const PastillesClub = preload("res://ui/immersive08/pastilles_club.gd")
 const PAGE_SIZE := 20
 ## Colonnes du tableau (unités du gabarit) : libellé, largeur, aligné à droite.
 const COLONNES := [["Rôle", 330.0, false], ["Nom", 310.0, false], ["Âge", 64.0, true], ["Niveau", 84.0, true], ["Contrat", 200.0, true], ["€ / sem.", 130.0, true]]
@@ -257,9 +258,9 @@ static func build(app: Control, parent: Container, data: Dictionary) -> void:
 	var acces := rangee(18)
 	acces.name = "StaffAccess"
 	overview.add_child(acces)
-	var notice := texte("Seuls les contrats rémunérés sont imputés au budget du staff." if _salaire_visible(app) else str(data.get("notice", "")), 17, Charte.IVOIRE_2)
-	notice.name = "StaffNotice"
-	acces.add_child(notice)
+	# Plus de phrase d'aide : la règle du recruteur (niveau 70+, observation ciblée de 2 semaines à 1) tient en une pastille, le détail est en infobulle.
+	if not _salaire_visible(app):
+		acces.add_child(PastillesClub.pastille("Recruteur 70+ · observation 1 sem.", PastillesClub.TURQUOISE, "hourglass", str(data.get("notice", "")), 18, "StaffNotice"))
 	_mentoring(app, acces)
 	_employment(app, acces)
 	if int(reading.get("tab", 0)) != 1:

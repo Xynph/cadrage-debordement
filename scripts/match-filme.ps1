@@ -45,7 +45,7 @@ Paramètres :
   -SansPlanche     pas de planche-contact
   -Godot     exécutable Godot 4.7.2 (défaut : $env:CD_GODOT_EXE, la version fenêtre est préférée à _console)
   -Node      exécutable Node (défaut : $env:CD_NODE_EXECUTABLE, sinon node du PATH)
-  -AttenteGodot  secondes d'attente si un autre Godot tourne déjà (un seul Godot à la fois ; défaut 600)
+  -AttenteGodot  secondes d'attente d'une des 8 places Godot partagées (verrou commun, défaut 600)
 
 Code de sortie : 0 si des images non noires ont été produites et que le premier plan n'a jamais été pris.
 #>
@@ -101,8 +101,8 @@ try {
   }
   if ($GarderCarriere) { Copy-Item $Export (Join-Path $Sortie 'carriere.json') -Force }
 
-  # Un seul Godot à la fois : attendre que l'autre se termine.
-  Wait-GodotSeul -AttenteGodot $AttenteGodot
+  # Une des 8 places Godot partagées (verrou commun à tous les chantiers).
+  $place = Enter-PlaceGodot -Libelle 'match-filme' -AttenteGodot $AttenteGodot
 
   $env:CD_GODOT_DATA_DIR = $donnees
   $env:CD_NODE_EXECUTABLE = $Node
@@ -136,6 +136,7 @@ try {
   if ($code -ne 0 -or $images -eq 0 -or $noires -ge $images -or $volS -gt 0 -or $visibles -gt 0 -or $arret) { exit 1 }
   exit 0
 } finally {
+  Exit-PlaceGodot $place
   foreach ($nom in $anciens.Keys) { Set-Item -Path "env:$nom" -Value $anciens[$nom] -ErrorAction SilentlyContinue; if ($null -eq $anciens[$nom]) { Remove-Item "env:$nom" -ErrorAction SilentlyContinue } }
   Remove-Item -Recurse -Force $travail -ErrorAction SilentlyContinue
 }
