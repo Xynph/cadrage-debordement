@@ -537,7 +537,12 @@ static func _carte_forme(app: Control, page: Control) -> void:
 		D.text(pilule, lw / 2.0, 19, texte, 17, couleur, 700, lw, HORIZONTAL_ALIGNMENT_CENTER, true)
 		var court := Kit.casse(str(person.get("name", "")), true)
 		var nw := minf(150, Kit.largeur(court, 15) + 6)
-		Kit.nom(app, page, Rect2(centre.x - nw / 2.0, centre.y + 48, nw, 24), court, str(person.get("id", "")), "TacticsTabFormeNom%02d" % numero, Charte.IVOIRE, 15)
+		# Plaque sombre sous le nom : il ne se perd plus dans les lignes blanches du terrain.
+		var pw := nw + 16.0
+		var plaque := D.rect(page, Rect2(centre.x - pw / 2.0, centre.y + 49, pw, 24), Color(Charte.PANNEAU, .9), Charte.RAYON_PILULE)
+		plaque.name = "TacticsTabFormePlaque%02d" % numero
+		plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		Kit.nom(app, page, Rect2(centre.x - nw / 2.0, centre.y + 49, nw, 24), court, str(person.get("id", "")), "TacticsTabFormeNom%02d" % numero, Charte.IVOIRE, 15)
 
 # --- Alertes des sélections (ligne des onglets) ---------------------------------------------------------------
 
