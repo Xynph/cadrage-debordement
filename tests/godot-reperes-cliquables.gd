@@ -121,7 +121,8 @@ func run() -> void:
 	await essai("Effectif", "RosterGroupAvants", "filtre Avants", func(): return app.route == "Effectif" and str(app.management_ui.roster.family) == "Avants")
 	await essai("Effectif", "RosterSousTitreFond", "tous les joueurs", func(): return app.route == "Effectif" and str(app.management_ui.roster.family) == "Tous", false, "Avants")
 	await essai("Effectif", "RosterSaisonFond", "calendrier", func(): return app.route == "Calendrier")
-	await essai("Effectif", "RosterStatutFond", "fiche du joueur", func(): return fiche_ouverte() or app.route != "Effectif")
+	# Pastille Blessé : petite fenêtre « blessure » (silhouette, retour, jauges ; choix de Léo du 22/11/2026).
+	await essai("Effectif", "RosterStatutFond", "fenêtre blessure", func(): return app.find_child("FenetreBlessure", true, false) != null)
 	await essai("Effectif", "RosterContractEndFond", "contrat du joueur", func(): return fiche_ouverte() or app.route != "Effectif")
 	# Préparation
 	await essai("Préparation", "PreparationBriefingTitle_injuriesFond", "Effectif", func(): return app.route == "Effectif")

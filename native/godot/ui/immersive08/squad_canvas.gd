@@ -1173,6 +1173,9 @@ func _row(player:Dictionary,index:int) -> void:
 					# Blessé : pastille croix + date de retour ; le motif complet dans l'infobulle.
 					var pastille_statut := R.pastille(row, x, base, str(statut.pastille), R.ROUGE, "", "RosterStatut", 21)
 					pastille_statut.tooltip_text = str(statut.t)
+					# Clic = petite fenêtre « blessure » (silhouette, retour, jauges).
+					var bouton_blessure := R.cliquable(pastille_statut, func(): preload("res://ui/immersive08/fenetre_blessure.gd").ouvrir(self, app, id, row), "RosterBlessure_" + id.validate_node_name(), str(statut.t))
+					bouton_blessure.add_to_group(&"ouvre_blessure")
 				else:
 					var texte := D.text(row,x,base,str(statut.t),19,statut.c,600 if statut.c != C.MUTED else 500,l,HORIZONTAL_ALIGNMENT_LEFT,true)
 					texte.name = "RosterStatut"

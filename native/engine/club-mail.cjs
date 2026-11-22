@@ -93,7 +93,9 @@ function factory() {
   }
   // Risque de rechute (en %) d'un blessé : base des données tant qu'aucune réponse ne l'a modifié.
   const relapseRisk = p => clampN(Number.isFinite(p?.injuryRelapse) ? p.injuryRelapse : (Number(BL.rechute?.base) || 0), 0, 100);
-  const relapses = (p, s, d) => hash('rechute:' + p.id + ':' + (s.season ?? 0) + ':' + d) % 100 < relapseRisk(p);
+  // Fragilité du joueur (fragilite.cjs) : le risque de rechute est modulé comme les autres risques de blessure.
+  const relapseChance = p => clampN(Math.round(relapseRisk(p) * (typeof facteurFragilite === 'function' ? facteurFragilite(p) : 1)), 0, 100);
+  const relapses = (p, s, d) => hash('rechute:' + p.id + ':' + (s.season ?? 0) + ':' + d) % 100 < relapseChance(p);
   // Effets médicaux réellement applicables à ce joueur (rechute, date de retour) : la même source sert au texte
   // affiché et à l'application, pour qu'aucune conséquence affichée ne soit détachée de ce qui se passe.
   function medicalEffects(e, p) {
@@ -1152,7 +1154,7 @@ function factory() {
     }
     return true;
   }
-  return { project, validate, execute, observe, stops, installHooks, recevoir: (s, d) => receive(s, d), blessures: { typer: typeInjuries, type: injuryKind, risque: relapseRisk, effets: effectText, cause: causeText } };
+  return { project, validate, execute, observe, stops, installHooks, recevoir: (s, d) => receive(s, d), blessures: { typer: typeInjuries, type: injuryKind, risque: relapseRisk, rechute: relapseChance, effets: effectText, cause: causeText } };
 }
 
 module.exports = { files, commands, factory, prelude, DATA };
