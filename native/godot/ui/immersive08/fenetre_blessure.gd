@@ -11,7 +11,7 @@ const R = preload("res://ui/immersive08/reperes.gd")
 const Charte = preload("res://ui/charte.gd")
 const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
 const Panneaux = preload("res://ui/immersive08/panneaux_effectif.gd")
-const CORPS = preload("res://art/corps/corps-face-dos.svg")
+const CORPS = preload("res://art/corps/corps-rugbyman.svg")
 
 const NOM := "FenetreBlessure"
 const GRIS := Color("5d6866")
@@ -19,23 +19,21 @@ const LARGEUR := 1360.0
 const HAUTEUR := 830.0
 const LIGNE := 52.0
 
-## Zone touchée par type de blessure (données club-mail.json « blessures.types ») : point du corps vu de face dans le
-## dessin corps-face-dos.svg (750 × 768, côté droit du joueur à gauche), vue (F face, B dos, FB les deux), rayon.
+## Zone touchée par type de blessure (données club-mail.json « blessures.types ») : points dans le dessin
+## corps-rugbyman.svg (752 × 1584, vu de face) pour le côté droit du joueur (d, à gauche du dessin) et le gauche (g),
+## vue (F face, B dos, FB les deux), rayon. Vu de dos, le dessin est retourné : la droite du joueur passe à droite.
 const ZONES := {
-	"commotion": {"p": Vector2(167, 75), "vue": "FB", "r": 40.0, "mot": "Tête", "cote": false},
-	"cou": {"p": Vector2(167, 138), "vue": "FB", "r": 18.0, "mot": "Cou", "cote": false},
-	"epaule": {"p": Vector2(92, 178), "vue": "FB", "r": 26.0, "mot": "Épaule", "cote": true},
-	"cotes": {"p": Vector2(122, 275), "vue": "F", "r": 28.0, "mot": "Côtes", "cote": true},
-	"contusion": {"p": Vector2(125, 470), "vue": "F", "r": 32.0, "mot": "Cuisse", "cote": true},
-	"ischios": {"p": Vector2(127, 470), "vue": "B", "r": 32.0, "mot": "Ischios", "cote": true},
-	"genou": {"p": Vector2(122, 555), "vue": "F", "r": 22.0, "mot": "Genou", "cote": true},
-	"croises": {"p": Vector2(122, 555), "vue": "FB", "r": 24.0, "mot": "Genou", "cote": true},
-	"mollet": {"p": Vector2(125, 615), "vue": "B", "r": 26.0, "mot": "Mollet", "cote": true},
-	"cheville": {"p": Vector2(108, 700), "vue": "FB", "r": 16.0, "mot": "Cheville", "cote": true},
+	"commotion": {"d": Vector2(410, 85), "g": Vector2(410, 85), "vue": "FB", "r": 72.0, "mot": "Tête", "cote": false},
+	"cou": {"d": Vector2(405, 200), "g": Vector2(405, 200), "vue": "FB", "r": 38.0, "mot": "Cou", "cote": false},
+	"epaule": {"d": Vector2(215, 290), "g": Vector2(575, 290), "vue": "FB", "r": 55.0, "mot": "Épaule", "cote": true},
+	"cotes": {"d": Vector2(295, 500), "g": Vector2(495, 500), "vue": "F", "r": 55.0, "mot": "Côtes", "cote": true},
+	"contusion": {"d": Vector2(265, 900), "g": Vector2(485, 900), "vue": "F", "r": 68.0, "mot": "Cuisse", "cote": true},
+	"ischios": {"d": Vector2(265, 920), "g": Vector2(485, 920), "vue": "B", "r": 68.0, "mot": "Ischios", "cote": true},
+	"genou": {"d": Vector2(232, 1120), "g": Vector2(465, 1120), "vue": "F", "r": 44.0, "mot": "Genou", "cote": true},
+	"croises": {"d": Vector2(232, 1120), "g": Vector2(465, 1120), "vue": "FB", "r": 48.0, "mot": "Genou", "cote": true},
+	"mollet": {"d": Vector2(222, 1235), "g": Vector2(460, 1235), "vue": "B", "r": 50.0, "mot": "Mollet", "cote": true},
+	"cheville": {"d": Vector2(150, 1450), "g": Vector2(480, 1440), "vue": "FB", "r": 32.0, "mot": "Cheville", "cote": true},
 }
-## Découpe du dessin : face et dos, 320 × 768 chacun.
-const REGION_FACE := Rect2(7, 0, 320, 768)
-const REGION_DOS := Rect2(430, 0, 320, 768)
 const CAUSES := {"match": ["Match", "ball"], "entrainement": ["Entraînement", "train"], "rechute": ["Rechute", "renew"]}
 const PROTOCOLES := {"prudent": "Prudent", "standard": "Standard", "accelere": "Accéléré"}
 
@@ -251,39 +249,55 @@ static func _segments(parent: Control, rect: Rect2, valeur: float, couleur: Colo
 
 # ---------------------------------------------------------------- silhouette
 
-## Point de la zone dans la découpe face ou dos (pixels du dessin, origine de la découpe).
+## Point de la zone dans le dessin tel qu'affiché (dos : dessin retourné), ou (-1, -1) si la vue ne la montre pas.
 static func point_zone(type: String, droite: bool, vue: String) -> Vector2:
 	var zone: Dictionary = ZONES.get(type, {})
 	if zone.is_empty() or not str(zone.vue).contains(vue): return Vector2(-1, -1)
-	var p: Vector2 = zone.p
-	# Côté droit du joueur : à gauche vu de face ; côté gauche : symétrique autour du milieu de la face (x = 167).
-	var x_face := p.x if (droite or not bool(zone.cote)) else 334.0 - p.x
-	if vue == "F": return Vector2(x_face - REGION_FACE.position.x, p.y)
-	# Vu de dos, la droite du joueur passe à droite : symétrie autour du milieu du dos (x = 590).
-	return Vector2(757.0 - x_face - REGION_DOS.position.x, p.y)
+	var p: Vector2 = zone.d if droite else zone.g
+	return p if vue == "F" else Vector2(Silhouette.TAILLE.x - p.x, p.y)
 
 static func _silhouette(parent: Control, rect: Rect2, d: Dictionary, vue: String) -> void:
 	var s := Silhouette.new()
 	s.name = "FenetreBlessureSilhouette" + vue
 	s.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	s.region = REGION_FACE if vue == "F" else REGION_DOS
+	s.dos = vue == "B"
 	s.point = point_zone(d.type, bool(d.droite), vue)
 	s.rayon = float(ZONES.get(d.type, {}).get("r", 0.0))
 	parent.add_child(s)
 	D.place(s, rect)
 
-## Dessin du corps (art/corps/corps-face-dos.svg, une moitié) ajusté au cadre, et la zone touchée en halo rouge.
+## Silhouette de rugbyman (art/corps/corps-rugbyman.svg) ajustée au cadre, retournée pour le dos, quelques repères
+## (clavicules et ligne du torse de face ; colonne et omoplates de dos) et la zone touchée en halo rouge.
 class Silhouette extends Control:
-	var region := Rect2()
+	const TAILLE := Vector2(752, 1584)
+	const TRAIT := Color("7c8a85")
+	var dos := false
 	var point := Vector2(-1, -1)
 	var rayon := 0.0
 
 	func _draw() -> void:
-		var k := minf(size.x / region.size.x, size.y / region.size.y)
-		var o := (size - region.size * k) / 2.0
-		draw_texture_rect_region(CORPS, Rect2(o, region.size * k), region)
+		var k := minf(size.x / TAILLE.x, size.y / TAILLE.y)
+		var o := (size - TAILLE * k) / 2.0
+		var v := func(x: float, y: float) -> Vector2: return o + Vector2(x, y) * k
+		if dos:
+			draw_set_transform(Vector2(o.x * 2.0 + TAILLE.x * k, 0), 0.0, Vector2(-1, 1))
+			draw_texture_rect(CORPS, Rect2(o, TAILLE * k), false)
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		else:
+			draw_texture_rect(CORPS, Rect2(o, TAILLE * k), false)
+		var e := maxf(1.0, 5.0 * k)
+		if dos:
+			draw_line(v.call(395, 250), v.call(395, 740), TRAIT, e)
+			draw_arc(v.call(320, 400), 70 * k, PI * .15, PI * 1.05, 16, TRAIT, e)
+			draw_arc(v.call(470, 400), 70 * k, -PI * .05, PI * .85, 16, TRAIT, e)
+		else:
+			draw_line(v.call(300, 262), v.call(388, 280), TRAIT, e)
+			draw_line(v.call(490, 262), v.call(402, 280), TRAIT, e)
+			draw_line(v.call(395, 430), v.call(395, 720), TRAIT, e)
+			draw_arc(v.call(330, 390), 75 * k, PI * .1, PI * .9, 16, TRAIT, e)
+			draw_arc(v.call(460, 390), 75 * k, PI * .1, PI * .9, 16, TRAIT, e)
 		if point.x < 0: return
-		var c := o + point * k
+		var c: Vector2 = v.call(point.x, point.y)
 		var rouge := Color("d9634f")
 		for i in 6:
 			draw_circle(c, rayon * k * (1.0 + .3 * (5 - i)), Color(rouge, .08 + .06 * i))
