@@ -206,6 +206,22 @@ function Invoke-GodotSurBureauCache {
     [int]$LimiteSecondes = 1500
   )
   $ligne = (ConvertTo-ArgumentCite $Godot) + ' ' + ($Arguments -join ' ')
+  # Déjà sous E:\Cadrage-Debordement	emp\godot-slot.ps1 (CD_GODOT_PLACE) : on est déjà sur un bureau séparé, dans un job
+  # qui interdit d'en créer un autre (« Accès refusé ») et qui surveille et tue l'arbre entier : lancer Godot directement.
+  if ($env:CD_GODOT_PLACE) {
+    $chrono = [Diagnostics.Stopwatch]::StartNew()
+    $p = Start-Process -FilePath $Godot -ArgumentList $ligne.Substring((ConvertTo-ArgumentCite $Godot).Length + 1) -PassThru -WindowStyle Hidden
+    $arret = $null
+    if (-not $p.WaitForExit([int]([int64]$LimiteSecondes * 1000))) { try { $p.Kill() } catch {}; $arret = 'delai_depasse'; Write-Warning 'Délai dépassé : arrêt de Godot.' }
+    $code = if ($arret) { -1 } else { $p.ExitCode }
+    $surveillance = [ordered]@{
+      bureau = 'bureau du verrou godot-slot.ps1'; pid = $p.Id; code_sortie = $code; secondes = [Math]::Round($chrono.Elapsed.TotalSeconds, 1); arret_force = $arret
+      echantillons_premier_plan = 0; premier_plan_godot = 0; fenetres_visibles_sur_le_bureau_utilisateur = 0
+      protections = 'surveillance assurée par godot-slot.ps1 (bureau séparé, job)'; audio = 'Dummy'
+    }
+    $surveillance | ConvertTo-Json -Depth 4 | Set-Content -Encoding utf8 (Join-Path $Sortie 'surveillance.json')
+    return $surveillance
+  }
   $nomBureau = $Prefixe + $PID
   $bureau = [IntPtr]::Zero
   $processus = [IntPtr]::Zero

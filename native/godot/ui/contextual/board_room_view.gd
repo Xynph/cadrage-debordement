@@ -190,8 +190,8 @@ func _fenetre_match(m: Dictionary) -> void:
 
 func _anneaux(diametre: float) -> HBoxContainer:
 	var row := V.rangee(4)
-	row.add_child(V.anneau(model.get("meta",{}).get("trust"),"Confiance",Charte.CONFIANCE,"BoardRoomTrust",_fenetre_confiance,diametre))
-	row.add_child(V.anneau(_board().get("organizationScore"),"Organisation",Charte.REPOS,"BoardRoomOrganization",_fenetre_organisation,diametre))
+	row.add_child(V.anneau(model.get("meta",{}).get("trust"),"Confiance",Charte.CONFIANCE,"BoardRoomTrust",_fenetre_confiance,diametre,"shield"))
+	row.add_child(V.anneau(_board().get("organizationScore"),"Organisation",Charte.REPOS,"BoardRoomOrganization",_fenetre_organisation,diametre,"target"))
 	return row
 
 ## Cap du club, signaux de la direction, refus du serveur, avis local : pastilles.
@@ -296,7 +296,7 @@ func _draw_visuel() -> void:
 	_titre(frame)
 	var band := _panneau(frame,0,12 if _compacte else 16)
 	var top := V.rangee(12 if _compacte else 16);band.add_child(top)
-	top.add_child(_anneaux(100.0 if _compacte else 118.0))
+	top.add_child(_anneaux(110.0 if _compacte else 132.0))
 	var right_band := V.colonne(8 if _compacte else 10);right_band.size_flags_horizontal=Control.SIZE_EXPAND_FILL;right_band.size_flags_vertical=Control.SIZE_SHRINK_CENTER;top.add_child(right_band)
 	var tiles_row := V.rangee(8);tiles_row.add_child(_tuiles_moyens(5));tiles_row.add_child(_info_moyens());right_band.add_child(tiles_row)
 	var signals := _signaux();signals.add_child(_bilans());right_band.add_child(signals)
