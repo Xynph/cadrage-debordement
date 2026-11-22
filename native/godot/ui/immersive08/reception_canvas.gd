@@ -19,6 +19,7 @@ const Competition = preload("res://ui/immersive08/competition_canvas.gd")
 const Reading = preload("res://ui/immersive08/reception_reading.gd")
 const ClubMail = preload("res://ui/club_mail.gd")
 const Bandeau = preload("res://ui/bandeau_filtres.gd")
+const Messages = preload("res://ui/immersive08/reception_messages.gd")
 
 const CATEGORIES = ["Tous", "Staff", "Médical", "Direction", "Recrutement", "Compétitions"]
 const ICONS = {"Staff":"train", "Médical":"heart", "Direction":"shield", "Recrutement":"search", "Formation":"school", "Compétitions":"trophy", "Club":"mail", "Météo":"cloud"}
@@ -645,6 +646,7 @@ static func _list(card: Panel, app: Control, state: Dictionary, messages: Array,
 	rows.name = "InboxMessageRows"
 	C.fill(rows)
 	scroll.add_child(rows)
+	if Messages.variante() == "B": _entete_b(rows)
 	if messages.is_empty():
 		D.text(card,26,top+52,"Aucun message dans cette vue.",24,C.MUTED,600,LIST_WIDTH-52)
 		D.text(card,26,top+90,"Choisis un autre filtre.",19,C.MUTED,400,LIST_WIDTH-52,HORIZONTAL_ALIGNMENT_LEFT,true)
@@ -725,6 +727,9 @@ static func _deadline(app: Control, message: Dictionary, long: bool = false) -> 
 ## Une ligne de la liste, sur deux lignes : icône du service, « SERVICE · expéditeur », objet (gras si non lu),
 ## étiquette dorée « À FAIRE · échéance » si une action est attendue, point doré si non lu.
 static func _row(rows: Control, app: Control, state: Dictionary, message: Dictionary) -> void:
+	if not Messages.variante().is_empty():
+		_row_variante(rows, app, state, message)
+		return
 	var id := _row_id(message)
 	var selected: bool = message.id==state.selected
 	var mark: Dictionary = state.marks.get(message.id,{})
@@ -792,6 +797,102 @@ static func _row(rows: Control, app: Control, state: Dictionary, message: Dictio
 		tag.name = "InboxTodoTag"
 		D.text(tag,11,18,caption,15,tone,700,tag_width-14)
 		if reading.urgent: D.line(tag,Vector2(11,21),Vector2(tag_width-11,21),tone)
+
+## Planche « Messages à réponse » (CD_VARIANTE_VISUELLE) : pastille de catégorie colorée (clic = filtre), point de
+## la couleur de la catégorie et objet en gras si non lu, liseré et voile rouges quand une réponse est requise.
+## A : deux lignes (pastille + expéditeur, objet, étiquette) ; B : une ligne en colonnes (catégorie, objet, heure).
+static func _row_variante(rows: Control, app: Control, state: Dictionary, message: Dictionary) -> void:
+	var id := _row_id(message)
+	var b := Messages.variante() == "B"
+	var selected: bool = message.id == state.selected
+	var is_unread: bool = _any_unread(state.marks, message)
+	var reading := Reading.status(message, app.model)
+	var requise := Messages.attend(app, message)
+	var tagged: bool = reading.key == "todo" or reading.urgent
+	var width := LIST_WIDTH - 16
+	var height := Messages.LIGNE_B if b else (110.0 if tagged else 86.0)
+	var row := C.button("", func():
+		state.selected = message.id
+		state.press_opened = message.id if message.has("press_invitation") else ""
+		if state.folder != 1: _mark_members(state, message, "read", true)
+		_redraw(app, id), false, app.accent)
+	row.name = id
+	row.gui_input.connect(_message_key.bind(app, message.id))
+	row.custom_minimum_size = Vector2(width, height) * C.density
+	row.tooltip_text = message.text
+	row.set_meta("message_text", message.text)
+	row.set_meta("message_id", message.id)
+	row.set_meta("message_count", members(message).size())
+	row.accessibility_name = "%s%s · %s" % ["Non lu · " if is_unread else "", "Réponse requise" if requise else reading.label, message.get("subject", message.category)]
+	rows.add_child(row)
+	load("res://ui/survol_ligne.gd").appliquer(row, selected, Color(C.PANEL, 0), app.accent)
+	if requise:
+		D.rect(row, Rect2(0, 0, width, height), Color(Messages.ROUGE_BANDE, .10), 0).name = "InboxRowRequired"
+		D.rect(row, Rect2(0, 0, 4, height), Messages.ROUGE_BANDE, 0).name = "InboxRowRequiredRule"
+	D.rect(row, Rect2(0, height - 1, width, 1), Color(C.LINE, .35), 1).name = "RowRule"
+	var service := _service(message)
+	var teinte := Messages.couleur(service)
+	var filtre := func():
+		state.category = str(message.get("category", "Tous"))
+		if state.folder >= 2: state.folder = 0
+		state.activity_filter = "all"
+		state.scroll = 0
+		_redraw(app, "InboxSubject")
+	var hour := str(message.get("hour", ""))
+	var sujet := str(message.get("subject", _subject(message.text)))
+	var encre := C.IVORY if is_unread else Color(C.IVORY, .62)
+	if b:
+		if is_unread: D.rect(row, Rect2(12, height / 2 - 6, 12, 12), teinte, 6).name = "UnreadDot"
+		var pill := Messages.pastille(row, Rect2(32, (height - 30) / 2, 150, 30), service, SERVICE_ICONS.get(service, "home"), 16, filtre)
+		pill.tooltip_text = service + " · " + _sender(app, message)
+		var x := 196.0
+		if requise:
+			var marque := D.rect(row, Rect2(x, height / 2 - 12, 24, 24), Messages.ROUGE_BANDE, 12)
+			marque.name = "InboxRowRequiredMark"
+			D.text(marque, 12, 18, "!", 17, Charte_CREME(), 800, 24, HORIZONTAL_ALIGNMENT_CENTER)
+			x += 32
+		elif tagged:
+			var a_faire := D.rect(row, Rect2(x, height / 2 - 12, 24, 24), Color(C.GOLD, .22), 12)
+			a_faire.name = "InboxTodoTag"
+			D.text(a_faire, 12, 18, "•", 17, C.GOLD, 800, 24, HORIZONTAL_ALIGNMENT_CENTER)
+			x += 32
+		D.text(row, x, height / 2 + 8, sujet, 20, encre, 700 if is_unread else 500, width - x - 76)
+		if not hour.is_empty(): D.text(row, width - 14, height / 2 + 7, hour, 16, C.FAINT.lightened(.2), 500, 60, HORIZONTAL_ALIGNMENT_RIGHT, true).name = "InboxRowHour"
+		return
+	if is_unread: D.rect(row, Rect2(14, 22, 12, 12), teinte, 6).name = "UnreadDot"
+	var service_w := minf(Messages.largeur_pastille(service, 17), 220.0)
+	Messages.pastille(row, Rect2(36, 12, service_w, 30), service, SERVICE_ICONS.get(service, "home"), 17, filtre)
+	D.text(row, 36 + service_w + 12, 33, _sender(app, message), 17, C.MUTED, 500, width - service_w - 48 - 90)
+	if not hour.is_empty(): D.text(row, width - 18, 33, hour, 16, C.FAINT.lightened(.2), 500, 80, HORIZONTAL_ALIGNMENT_RIGHT, true).name = "InboxRowHour"
+	D.text(row, 36, 72, sujet, 21, encre, 700 if is_unread else 500, width - 56)
+	if tagged:
+		var due := _deadline(app, message)
+		var caption := ("RÉPONSE REQUISE" if requise else "! URGENT" if reading.urgent else "À FAIRE") + ("" if due.is_empty() else " · " + due.to_upper())
+		var tone: Color = Messages.ROUGE_BANDE if requise or reading.urgent else C.GOLD
+		var tag_width := minf(width - 56, C.font(700).get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(15))).x / C.density + 22 + (22 if requise else 0))
+		var tag := D.rect(row, Rect2(36, 80, tag_width, 24), Color(tone, .16), 6)
+		tag.name = "InboxTodoTag"
+		var tx := 10.0
+		if requise:
+			var alerte := C.icon("warning", C.px(16), tone)
+			tag.add_child(alerte)
+			D.place(alerte, Rect2(8, 4, 16, 16))
+			tx = 30.0
+		D.text(tag, tx, 18, caption, 15, tone, 700, tag_width - tx - 6)
+
+static func Charte_CREME() -> Color:
+	return C.Charte.CREME
+
+## B : en-tête de colonnes au-dessus de la liste (grammaire de l'Effectif).
+static func _entete_b(rows: Control) -> void:
+	var tete := Control.new()
+	tete.name = "InboxColumnsHeader"
+	tete.custom_minimum_size = Vector2(LIST_WIDTH - 16, 34) * C.density
+	tete.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rows.add_child(tete)
+	D.rect(tete, Rect2(0, 0, LIST_WIDTH - 16, 34), C.Charte.BANDEAU_ENTETE, 0)
+	for colonne: Array in [[40, "CATÉGORIE", HORIZONTAL_ALIGNMENT_LEFT], [196, "OBJET", HORIZONTAL_ALIGNMENT_LEFT], [LIST_WIDTH - 30, "REÇU", HORIZONTAL_ALIGNMENT_RIGHT]]:
+		D.text(tete, float(colonne[0]), 23, colonne[1], 14, C.Charte.IVOIRE_3, 700, 120, colonne[2])
 
 static func _height(state: Dictionary) -> float:
 	return clampf(float(state.get("page_height", PAGE.y)), MIN_HEIGHT, PAGE.y)
@@ -1145,10 +1246,16 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 	# Contenu puis, juste dessous, pièces liées, « TA RÉPONSE » et actions ; rappel Espace en bas du mail.
 	var hint_base := height - 22 - _context_bar()
 	var replies := _reply_layout(app, message, reading_width)
+	# Planche « Messages à réponse » : bande rouge en pied ; en B les réponses passent dans la bande.
+	var bande := Messages.hauteur_bande(app, message)
+	if bande > 0.0:
+		hint_base = height - bande + 8.0
+		if Messages.variante() == "B": replies = {}
+	var envoi_h := 0.0 if bande > 0.0 else _send_row_height()
 	var focused := message.has("press_invitation") or message.has("calendar_notice") or message.has("club_mail") or message.has("scene_invitation") or message.has("international_event")
 	var body_top := 106.0
 	var concerned := _concerned_layout(app, message, reading_width)
-	var footer := (34.0 + float(replies.height) + 18.0 + _send_row_height() if not replies.is_empty() else 0.0) + _h(46) + (float(concerned.height) + 14.0 if not concerned.is_empty() else 0.0)
+	var footer := (34.0 + float(replies.height) + 18.0 + envoi_h if not replies.is_empty() else 0.0) + _h(46) + (float(concerned.height) + 14.0 if not concerned.is_empty() else 0.0)
 	var probe := Panel.new()
 	var attachments := _attachments(probe,app,state,message,0,focused,false,reading_width)
 	if hint_base - 34 - footer - attachments - body_top < 200 and not focused:
@@ -1196,15 +1303,27 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 		D.text(bottom,PAD,y+20,"TA RÉPONSE",19,C.GOLD,700,400).name = "InboxReplyHeading"
 		_reply_cards(bottom, app, state, message, replies, y + 34)
 		y += 34 + float(replies.height) + 18
-		_send_row(bottom, app, state, message, replies, y)
-		y += _send_row_height()
+		if bande <= 0.0:
+			_send_row(bottom, app, state, message, replies, y)
+			y += _send_row_height()
 	_actions(bottom,app,state,message,int(y))
 	y += _h(46)
 	if not concerned.is_empty():
 		y += 14.0
 		_concerned_row(bottom, app, message, concerned, PAD, y, reading_width)
 		y += float(concerned.height)
-	_mail_context(card, app, message, when, height)
+	if bande > 0.0:
+		var mail_id := str(message.club_mail.id)
+		Messages.bande(card, app, state, message, _w, height, _deadline(app, message).to_upper(),
+			func(choix: String): _send_reply(app, state, mail_id, choix),
+			func(choix: String):
+				state.reply_pick[mail_id] = choix
+				_redraw(app, "InboxClubMailReply_" + choix),
+			func():
+				state.reply_pick.erase(mail_id)
+				_redraw(app, "InboxClubMailSend"),
+			_open_next.bind(app, str(message.get("id", ""))))
+	else: _mail_context(card, app, message, when, height)
 	D.place(bottom, Rect2(0, top, _w, y))
 	# Plus de rappel « Espace : message non lu suivant » : dans la coque commune, Espace = Continuer partout.
 	_settle_reading.call_deferred(scroll, bottom, (hint_base - 34) * C.density)

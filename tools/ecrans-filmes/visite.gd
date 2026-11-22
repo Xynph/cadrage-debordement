@@ -492,8 +492,25 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				var attend := ""
 				for courrier: Dictionary in load("res://ui/club_mail.gd").mails(app.model):
 					if load("res://ui/club_mail.gd").awaiting(app.model, courrier) and (courrier.get("reponses", []) as Array).size() >= 2: attend = str(courrier.id)
+				# CD_FILM_COURRIER_CATEGORIE (ex. « recrutement ») : préfère un courrier de cette catégorie du moteur.
+				var categorie_voulue := OS.get_environment("CD_FILM_COURRIER_CATEGORIE")
+				if not categorie_voulue.is_empty():
+					for courrier: Dictionary in load("res://ui/club_mail.gd").mails(app.model):
+						if str(courrier.get("categorie", "")) == categorie_voulue and load("res://ui/club_mail.gd").awaiting(app.model, courrier) and (courrier.get("reponses", []) as Array).size() >= 2: attend = str(courrier.id)
 				if attend.is_empty(): return {"statut": "indisponible", "note": "aucun courrier à réponses dans la carrière filmée"}
 				app._reset_reception(attend)
+				# CD_FILM_COURRIER_LUS=1 : les courriers d'avant-hier et plus anciens sont lus (contraste lus / non lus) ;
+				# CD_FILM_COURRIER_CHOIX=1 : la 2e réponse du courrier ouvert est choisie (bouton « Envoyer la réponse B »).
+				var reception_film: Dictionary = app.management_ui.get("reception", {})
+				if OS.get_environment("CD_FILM_COURRIER_LUS") == "1" and reception_film.has("marks"):
+					var boite = load("res://ui/immersive08/reception_canvas.gd")
+					var veille: String = boite._shift(boite._today(app), -1)
+					for courrier_lu: Dictionary in boite._messages(app):
+						var jour: String = boite._day(courrier_lu)
+						if courrier_lu.id == attend or jour.is_empty() or jour < veille: reception_film.marks[courrier_lu.id] = {"read": true}
+				if OS.get_environment("CD_FILM_COURRIER_CHOIX") == "1" and reception_film.has("reply_pick"):
+					for courrier_c: Dictionary in load("res://ui/club_mail.gd").mails(app.model):
+						if str(courrier_c.id) == attend: reception_film.reply_pick[attend] = str(courrier_c.reponses[1].get("id", ""))
 				app._navigate("Réception", false)
 				await stabiliser()
 			if app.route != route: return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
