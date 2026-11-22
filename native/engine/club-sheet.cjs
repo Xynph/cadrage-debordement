@@ -132,7 +132,9 @@ function factory(){
   // Le banc ne reprend jamais un joueur du XV type affiché à côté (cohérence de la fiche).
   const xvIds=new Set(slots.map(x=>x.id).filter(Boolean));
   const bench=[...parJoueur.entries()].filter(([id,j])=>j.b>0&&!xvIds.has(id)).sort((a,b)=>b[1].b-a[1].b||b[1].total-a[1].total||(a[0]<b[0]?-1:1)).slice(0,8).map(([id,j])=>({id,entries:j.b,starts:j.total}));
-  return {matches:n,source:n===0?'probable':completes===0?'feuilles':'mixte',completed:completes,slots,bench,probableBench:n===0?prob.bench.filter(id=>!xvIds.has(id)).slice(0,8):[]};
+  return {matches:n,source:n===0?'probable':completes===0?'feuilles':'mixte',completed:completes,slots,bench,probableBench:n===0?prob.bench.filter(id=>!xvIds.has(id)).slice(0,8):[],
+   // Composition automatique du prochain match (blessés et suspendus écartés) : changements par rapport au XV habituel.
+   nextLineup:prob.lineup.slice(0,15),nextBench:prob.bench.slice(0,8)};
  }
  function nomLigue(s,id){
   const reg=typeof CDWorldCareer!=='undefined'?CDWorldCareer.edition(s)?.registry?.leagues:null;

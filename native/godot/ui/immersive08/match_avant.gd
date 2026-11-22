@@ -24,6 +24,7 @@ const Reperes = preload("res://ui/immersive08/reperes.gd")
 const Espoir = preload("res://ui/espoir_appel.gd")
 const RI = preload("res://ui/contextual/rooms/room_identity.gd")
 const Bilan = preload("res://ui/immersive08/avant_match_bilan.gd")
+const Feuille = preload("res://ui/immersive08/avant_match_feuille.gd")
 const MOIS := ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
 const JOURS := ["DIM.", "LUN.", "MAR.", "MER.", "JEU.", "VEN.", "SAM."]
 ## Photo du tunnel selon la météo annoncée (forte pluie > pluie > vent > chaleur > sec ; sans annonce : neutre).
@@ -240,7 +241,8 @@ func refresh(model: Dictionary, play: Button) -> void:
 	var etat := _etat_feuille(model, play)
 	var key := JSON.stringify([next, model.get("clubLife", {}).get("avantMatch"), selection.get("slots", []), selection.get("valid", false), selection.get("errors", []),
 		model.get("squad", []).map(func(p: Dictionary): return [p.get("id"), p.get("condition"), p.get("injury")]), model.get("meta", {}).get("calendarToday"),
-		page, play.text, play.disabled, play.tooltip_text, etat.mot, app.accent.to_html(), model.get("decisions", {}).get("delegation")])
+		page, play.text, play.disabled, play.tooltip_text, etat.mot, app.accent.to_html(), model.get("decisions", {}).get("delegation"),
+		model.clubSheet.get("id") if model.get("clubSheet") is Dictionary and not Feuille.variante().is_empty() else null])
 	if key == _key: return
 	_key = key
 	_page_ouverte = page
@@ -279,10 +281,14 @@ func _construire(model: Dictionary, next: Dictionary, play: Button, etat: Dictio
 		return
 	var cote := _cote(model, next)
 	colonne.add_child(_affiche(model, next, data, cote))
-	var vide := Control.new()
-	vide.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vide.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	colonne.add_child(vide)
+	# Planche FM27 n° 7 (CD_VARIANTE_VISUELLE=A|B) : la feuille de match occupe l'espace libre sous l'affiche.
+	if not Feuille.variante().is_empty():
+		colonne.add_child(Feuille.section(self, app, model, next, cote))
+	else:
+		var vide := Control.new()
+		vide.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vide.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		colonne.add_child(vide)
 	colonne.add_child(_verifications(model, next, data, cote, etat))
 	colonne.add_child(_pied(false))
 	_donner_le_focus.call_deferred(page)
@@ -605,7 +611,7 @@ func _garde_ouverture(event: InputEvent) -> void:
 	if touche.keycode not in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]: return
 	if verrou_actif() or touche.echo: kickoff.accept_event()
 
-func _fin_verrou(bouton: Button) -> void:
+func _fin_verrou(bouton: Variant) -> void:
 	if is_instance_valid(_indice) and is_instance_valid(bouton) and bouton == kickoff: _indice.text = "Entrée"
 
 # ---- Affiche ----------------------------------------------------------------------------------------------------

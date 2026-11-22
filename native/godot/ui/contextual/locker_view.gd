@@ -114,6 +114,14 @@ func _draw() -> void:
 # --- Deux colonnes de cartes joueur, la causerie au centre, le banc en bas. ---
 
 func _layout(column: VBoxContainer, live: Dictionary, phase: String) -> void:
+	# Planche FM27 n° 7 (CD_VARIANTE_VISUELLE=A|B) : A = liste à la Effectif, B = le vestiaire par lignes.
+	var variante := OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper()
+	if variante == "A":
+		_layout_liste(column, live, phase)
+		return
+	if variante == "B":
+		_layout_lignes(column, live, phase)
+		return
 	var body := S.G.h(px(14))
 	S.G.fill(body, true)
 	column.add_child(body)
@@ -575,6 +583,8 @@ func _bilan_causerie(parent: VBoxContainer, decision: Dictionary) -> void:
 			counts[label] = 0
 			colors[label] = reaction_color(row)
 		counts[label] = int(counts[label]) + 1
+	if not order.is_empty() and not OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().is_empty():
+		parent.add_child(_barre_reactions(rows))
 	if not order.is_empty():
 		var summary := S.G.h(10)
 		summary.name = "TalkDecisionReactions"
@@ -850,3 +860,365 @@ static func _wrap_text(value: Variant, size: int, color: Color) -> Label:
 	var label := _text(value, size, color)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	return label
+
+# --- Planche FM27 n° 7 : réactions en pastilles colorées, liste à la Effectif (A) ou vestiaire par lignes (B). ---
+
+## État de réaction (moteur, PILOTAGE_ETATS) : couleur franche et symbole ; le mot reste toujours écrit.
+const REACTIONS := {"galvanise": [Color("3debb4"), "▲▲"], "motive": [Color("7fbf7a"), "▲"], "serein": [Color("5b9bd5"), "●"],
+	"indifferent": [Color("abb7b1"), "–"], "tendu": [Color("e0a04a"), "▼"], "vexe": [Color("d9634f"), "▼"], "relache": [Color("a88bd6"), "▼"]}
+const LIGNES := [["1re LIGNE", [1, 2, 3]], ["2e LIGNE", [4, 5]], ["3e LIGNE", [6, 7, 8]], ["CHARNIÈRE", [9, 10]],
+	["TROIS-QUARTS", [11, 12, 13, 14, 15]], ["BANC", [16, 17, 18, 19, 20, 21, 22, 23]]]
+
+static func couleur_reaction(reaction: Dictionary) -> Color:
+	var defaut: Array = [reaction_color(reaction), ""]
+	return REACTIONS.get(str(reaction.get("etat", "")), defaut)[0]
+
+## Pastille de réaction : fond teinté, symbole + mot en couleur franche ; « — » avant la parole.
+func _pastille_reaction(reaction: Dictionary, taille: int) -> Control:
+	var label := str(reaction.get("label", ""))
+	if label.is_empty():
+		var vide := _text("—", taille, Charte.IVOIRE_3)
+		vide.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		return vide
+	var teinte := couleur_reaction(reaction)
+	var p := PanelContainer.new()
+	p.name = "ParticipantReaction"
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	p.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	p.add_theme_stylebox_override("panel", Charte.style_pilule(Color(teinte, .2), Color.TRANSPARENT, px(8), px(2)))
+	var defaut: Array = [teinte, ""]
+	var symbole: String = REACTIONS.get(str(reaction.get("etat", "")), defaut)[1]
+	p.add_child(_text((symbole + "  " if not symbole.is_empty() else "") + label.to_upper(), taille, teinte, Charte.TITRE_GRAS))
+	return p
+
+## Barre empilée des réactions (une couleur par état, proportionnelle au nombre de joueurs).
+func _barre_reactions(rows: Array) -> Control:
+	var barre := HBoxContainer.new()
+	barre.name = "TalkReactionsBar"
+	barre.add_theme_constant_override("separation", 2)
+	barre.custom_minimum_size.y = px(10)
+	barre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var comptes := {}
+	for row: Variant in rows:
+		if row is Dictionary: comptes[str(row.get("etat", ""))] = int(comptes.get(str(row.get("etat", "")), 0)) + 1
+	for etat: String in REACTIONS:
+		if not comptes.has(etat): continue
+		var bloc := Panel.new()
+		bloc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bloc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		bloc.size_flags_stretch_ratio = float(comptes[etat])
+		bloc.add_theme_stylebox_override("panel", Charte.style_pilule(REACTIONS[etat][0], Color.TRANSPARENT, 0, 0))
+		barre.add_child(bloc)
+	return barre
+
+## Note : celle du match en cours (mi-temps), sinon la dernière note de match ; null si aucune.
+func _note_de(id: Variant) -> Variant:
+	var live: Dictionary = model.get("live", {}) if model.get("live") is Dictionary else {}
+	var direct: Dictionary = live.get("direct", {}) if live.get("direct") is Dictionary else {}
+	var notes: Variant = direct.get("notes", {})
+	if notes is Dictionary and notes.get(str(id)) is Dictionary and notes[str(id)].get("note") != null: return float(notes[str(id)].note)
+	var forme: Variant = load("res://ui/notes_match.gd").joueur(model, str(id)).get("forme", [])
+	if forme is Array and not forme.is_empty() and (forme[-1] is float or forme[-1] is int): return float(forme[-1])
+	return null
+
+func _pastille_note(id: Variant) -> Control:
+	var note: Variant = _note_de(id)
+	if note == null:
+		var vide := _text("—", px(13), Charte.IVOIRE_3)
+		vide.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		return vide
+	var p := PanelContainer.new()
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	p.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	p.add_theme_stylebox_override("panel", Charte.style_pilule(Charte.couleur_note(note), Color.TRANSPARENT, px(6), px(1)))
+	var l := _text(("%.1f" % float(note)).replace(".", ","), px(13), Charte.encre_note(note), Charte.TITRE_GRAS)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	p.add_child(l)
+	return p
+
+func _participants_par_numero() -> Dictionary:
+	var par := {}
+	for participant: Dictionary in scene.get("participants", []): par[int(participant.get("number", 0))] = participant
+	return par
+
+## Colonne de la parole commune aux deux variantes : météo, causerie (destinataires, six tons) ou bilan.
+func _colonne_parole(parent: Control, live: Dictionary, phase: String, largeur: int) -> void:
+	var colonne := S.G.v(px(8))
+	colonne.custom_minimum_size.x = largeur
+	parent.add_child(colonne)
+	if phase in ["pre", "half"] and not live.is_empty(): _meteo(colonne, live, phase)
+	_talk(colonne)
+	colonne.add_child(_air())
+
+# A : liste à la Effectif, une ligne par joueur (n°, visage, nom, poste, condition, moral, réaction, note).
+const COLONNES_A := [["", 26], ["N°", 34], ["", 36], ["JOUEUR", -1], ["POSTE", 104], ["COND.", 54], ["MORAL", 54], ["RÉACTION", 150], ["NOTE", 50]]  # largeurs en px de 720p
+
+func _layout_liste(column: VBoxContainer, live: Dictionary, phase: String) -> void:
+	var body := S.G.h(px(14))
+	S.G.fill(body, true)
+	column.add_child(body)
+	_colonne_parole(body, live, phase, px(420))
+	var liste := S.panel(body, px(10))
+	liste.name = "TalkList"
+	liste.add_theme_constant_override("separation", 0)
+	S.G.fill(liste.get_parent().get_parent(), true)
+	var tete := S.G.h(px(8))
+	tete.custom_minimum_size.y = px(22)
+	liste.add_child(tete)
+	for c: Array in COLONNES_A:
+		var l := _text(c[0], px(11), Charte.IVOIRE_3, Charte.TITRE_GRAS)
+		l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		if int(c[1]) > 0: l.custom_minimum_size.x = px(c[1])
+		else: S.G.fill(l)
+		tete.add_child(l)
+	var par := _participants_par_numero()
+	var groupes := [["AVANTS", range(1, 9)], ["ARRIÈRES", range(9, 16)], ["REMPLAÇANTS", range(16, 24)]]
+	var rang := 0
+	for g: Array in groupes:
+		var st := _text(str(g[0]), px(11), Charte.D, Charte.TITRE_GRAS)
+		st.custom_minimum_size.y = px(17)
+		st.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+		liste.add_child(st)
+		for n: int in g[1]:
+			if not par.has(n): continue
+			liste.add_child(_ligne_a(par[n], rang))
+			rang += 1
+
+func _fond_ligne(fond: Color, contour: Color = Color.TRANSPARENT) -> StyleBoxFlat:
+	var st := StyleBoxFlat.new()
+	st.bg_color = fond
+	st.draw_center = fond.a > 0
+	st.set_corner_radius_all(Charte.RAYON_PETIT)
+	if contour.a > 0:
+		st.border_color = contour
+		st.set_border_width_all(1)
+	return st
+
+func _ligne_a(participant: Dictionary, rang: int) -> Button:
+	var id: Variant = participant.get("id")
+	var player := S.person(model, id)
+	var decision: Dictionary = scene.get("decision", {}) if scene.get("decision") is Dictionary else {}
+	var reaction := reaction_of(decision, id)
+	var number := int(participant.get("number", 0))
+	var ligne := S.button("", func(): _on_player_pressed(id))
+	ligne.name = "Participant_%d" % number
+	ligne.set_meta("participant_id", id)
+	ligne.custom_minimum_size.y = px(21)
+	var in_audience: bool = audience in ["group", "players"] or participant.get("group") == audience
+	var targeted: bool = audience == "players" and id in selected_ids
+	if not decision.is_empty():
+		in_audience = id in decision.get("playerIds", [])
+		targeted = in_audience and str(decision.get("audience", "")) == "players"
+	var fond := Charte.SELECTION if targeted else (Charte.PANNEAU if rang % 2 == 0 else Charte.PANNEAU_2)
+	for etat in ["normal", "disabled"]: ligne.add_theme_stylebox_override(etat, _fond_ligne(fond))
+	for etat in ["hover", "pressed"]: ligne.add_theme_stylebox_override(etat, _fond_ligne(fond.lerp(Charte.CREME, .10)))
+	ligne.add_theme_stylebox_override("focus", _fond_ligne(Color.TRANSPARENT, Charte.CREME))
+	if not player.is_empty():
+		MiniFiche.lier(app, ligne, str(id), "squad")
+		ligne.mouse_entered.connect(_mini_fiche_devant)
+	if not in_audience: ligne.modulate = Color(1, 1, 1, .45)
+	var row := S.G.h(px(8))
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	S.full(row)
+	row.offset_left = px(4)
+	row.offset_right = -px(4)
+	ligne.add_child(row)
+	# Case à cocher (onglet Joueurs) : coche verte = visé.
+	var caseb := CenterContainer.new()
+	caseb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	caseb.custom_minimum_size = Vector2(px(26), px(14))
+	row.add_child(caseb)
+	if targeted:
+		caseb.add_child(_badge_vise(px(16)))
+	elif audience == "players" and decision.is_empty():
+		var vide := Panel.new()
+		vide.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		vide.custom_minimum_size = Vector2(px(14), px(14))
+		var st := StyleBoxFlat.new()
+		st.draw_center = false
+		st.border_color = Charte.IVOIRE_2
+		st.set_border_width_all(1)
+		st.set_corner_radius_all(3)
+		vide.add_theme_stylebox_override("panel", st)
+		caseb.add_child(vide)
+	var num := _text(str(number), px(17), S.TEXT, Charte.TITRE_FICHE)
+	num.custom_minimum_size.x = px(34)
+	num.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	num.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(num)
+	var cadre := CenterContainer.new()
+	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cadre.custom_minimum_size.x = px(36)
+	cadre.add_child(_portrait(player, px(19), true))
+	row.add_child(cadre)
+	var full_name := str(player.get("name", "Identité indisponible"))
+	var nom := _text(Nom.surname(full_name).to_upper() if not player.is_empty() else full_name, px(15), S.TEXT, Charte.TITRE_GRAS)
+	nom.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	nom.clip_text = true
+	S.G.fill(nom)
+	row.add_child(nom)
+	var poste_long := _position_label(participant, player)
+	var poste := _text(str(POSTES_COURTS.get(poste_long, poste_long)), px(12), S.MUTED)
+	poste.custom_minimum_size.x = px(104)
+	poste.clip_text = true
+	poste.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(poste)
+	var cond: Variant = player.get("condition")
+	var a_cond: bool = cond is int or cond is float
+	var c := _text("%d" % roundi(float(cond)) if a_cond else "—", px(15), Charte.couleur_attribut(float(cond)) if a_cond else Charte.IVOIRE_3, Charte.TITRE_GRAS)
+	c.custom_minimum_size.x = px(54)
+	c.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(c)
+	var moral: Variant = _player_morale(player)
+	var m := _text("%d" % roundi(float(moral)) if moral != null else "—", px(15), Charte.MORAL if moral != null else Charte.IVOIRE_3, Charte.TITRE_GRAS)
+	m.custom_minimum_size.x = px(54)
+	m.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(m)
+	var cellule := HBoxContainer.new()
+	cellule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cellule.custom_minimum_size.x = px(150)
+	cellule.add_child(_pastille_reaction(reaction, px(11)))
+	row.add_child(cellule)
+	var note := CenterContainer.new()
+	note.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	note.custom_minimum_size.x = px(50)
+	note.add_child(_pastille_note(id))
+	row.add_child(note)
+	ligne.tooltip_text = "%d · %s · %s" % [number, full_name, poste_long] + (" · " + str(reaction.label) if reaction.has("label") else "")
+	return ligne
+
+# B : le vestiaire par lignes ; clic sur le nom d'une ligne = parler à cette ligne (joueurs visés).
+func _layout_lignes(column: VBoxContainer, live: Dictionary, phase: String) -> void:
+	var body := S.G.h(px(14))
+	S.G.fill(body, true)
+	column.add_child(body)
+	var gauche := S.G.v(px(8))
+	S.G.fill(gauche, true)
+	body.add_child(gauche)
+	var par := _participants_par_numero()
+	var grille := GridContainer.new()
+	grille.name = "TalkLines"
+	grille.columns = 2
+	grille.add_theme_constant_override("h_separation", px(10))
+	grille.add_theme_constant_override("v_separation", px(8))
+	gauche.add_child(grille)
+	for i in 4: grille.add_child(_bande_ligne(LIGNES[i], par, false))
+	gauche.add_child(_bande_ligne(LIGNES[4], par, false))
+	gauche.add_child(_bande_ligne(LIGNES[5], par, true))
+	gauche.add_child(_air())
+	_colonne_parole(body, live, phase, px(400))
+
+func _bande_ligne(ligne_def: Array, par: Dictionary, compact: bool) -> Control:
+	var ids: Array = []
+	for n: int in ligne_def[1]:
+		if par.has(n): ids.append(par[n].get("id"))
+	var decision: Dictionary = scene.get("decision", {}) if scene.get("decision") is Dictionary else {}
+	var visee: bool = not ids.is_empty() and audience == "players" and ids.all(func(x): return x in selected_ids)
+	var cadre := PanelContainer.new()
+	cadre.name = "TalkLine_" + str(ligne_def[0]).validate_node_name()
+	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cadre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cadre.add_theme_stylebox_override("panel", Charte.style_panneau(Charte.SELECTION if visee else Color(Charte.PANNEAU, .92), px(Charte.RAYON_CARTE), px(8)))
+	var pile := S.G.v(px(5))
+	cadre.add_child(pile)
+	var tete := S.G.h(px(8))
+	pile.add_child(tete)
+	var bouton := S.button(str(ligne_def[0]) + "  ·  %d" % ids.size(), func(): _viser_ligne(ids), decision.is_empty())
+	bouton.name = "TalkLineTarget_" + str(ligne_def[0]).validate_node_name()
+	bouton.tooltip_text = "Parler à cette ligne"
+	bouton.add_theme_font_override("font", Charte.TITRE_GRAS)
+	bouton.add_theme_font_size_override("font_size", px(13))
+	bouton.custom_minimum_size.y = px(24)
+	tete.add_child(bouton)
+	tete.add_child(_hspace())
+	# Réactions de la ligne en petite barre empilée (après la parole).
+	var lignes_reac: Array = []
+	for id: Variant in ids:
+		var r := reaction_of(decision, id)
+		if not r.is_empty(): lignes_reac.append(r)
+	if not lignes_reac.is_empty():
+		var barre := _barre_reactions(lignes_reac)
+		barre.custom_minimum_size = Vector2(px(90), px(8))
+		barre.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		tete.add_child(barre)
+	var rangee := S.G.h(px(6))
+	pile.add_child(rangee)
+	for n: int in ligne_def[1]:
+		if par.has(n): rangee.add_child(_jeton(par[n], compact))
+	return cadre
+
+func _viser_ligne(ids: Array) -> void:
+	if app.waiting or scene.get("decision") is Dictionary: return
+	audience = "players"
+	var deja: bool = ids.all(func(x): return x in selected_ids)
+	for id: Variant in ids:
+		if deja: selected_ids.erase(id)
+		elif not id in selected_ids: selected_ids.append(id)
+	_draw()
+
+## Jeton d'un joueur : visage rond cerclé de la couleur de sa réaction (ou de sa condition avant la parole),
+## numéro et nom, pastille de réaction (après la parole) ou dernière note dessous.
+func _jeton(participant: Dictionary, compact: bool) -> Button:
+	var id: Variant = participant.get("id")
+	var player := S.person(model, id)
+	var decision: Dictionary = scene.get("decision", {}) if scene.get("decision") is Dictionary else {}
+	var reaction := reaction_of(decision, id)
+	var number := int(participant.get("number", 0))
+	var jeton := S.button("", func(): _on_player_pressed(id))
+	jeton.name = "Participant_%d" % number
+	jeton.set_meta("participant_id", id)
+	var targeted: bool = audience == "players" and id in selected_ids
+	var in_audience: bool = audience in ["group", "players"] or participant.get("group") == audience
+	if not decision.is_empty():
+		in_audience = id in decision.get("playerIds", [])
+		targeted = in_audience and str(decision.get("audience", "")) == "players"
+	var cond: Variant = player.get("condition")
+	var teinte := couleur_reaction(reaction) if not reaction.is_empty() else (Charte.couleur_attribut(float(cond)) if cond is int or cond is float else S.MUTED)
+	var fond := Charte.PANNEAU_2.lerp(teinte, .16 if not reaction.is_empty() else 0.0)
+	_skin_tile(jeton, fond, fond.lerp(Charte.CREME, .07))
+	if not player.is_empty():
+		MiniFiche.lier(app, jeton, str(id), "squad")
+		jeton.mouse_entered.connect(_mini_fiche_devant)
+	if not in_audience: jeton.modulate = Color(1, 1, 1, .45)
+	var largeur := px(92) if compact else px(104)
+	jeton.custom_minimum_size = Vector2(largeur, px(96) if compact else px(104))
+	S.G.fill(jeton)
+	var pile := S.G.v(px(2))
+	pile.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pile.alignment = BoxContainer.ALIGNMENT_CENTER
+	S.full(pile)
+	jeton.add_child(pile)
+	var visage := px(38) if compact else px(44)
+	var anneau := Panel.new()
+	anneau.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	anneau.custom_minimum_size = Vector2.ONE * (visage + px(6))
+	anneau.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	anneau.add_theme_stylebox_override("panel", Charte.style_pilule(teinte, Color.TRANSPARENT, 0, 0))
+	pile.add_child(anneau)
+	var portrait := _portrait(player, visage, true)
+	anneau.add_child(portrait)
+	portrait.position = Vector2.ONE * px(3)
+	portrait.size = Vector2.ONE * visage
+	var tete := S.G.h(px(4))
+	tete.alignment = BoxContainer.ALIGNMENT_CENTER
+	tete.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pile.add_child(tete)
+	tete.add_child(_text(str(number), px(14), S.TEXT, Charte.TITRE_FICHE))
+	var full_name := str(player.get("name", ""))
+	var nom := _text(Nom.surname(full_name).to_upper(), px(12), S.TEXT, Charte.TITRE_GRAS)
+	nom.clip_text = true
+	nom.custom_minimum_size.x = largeur - px(30)
+	tete.add_child(nom)
+	var bas := S.G.h(px(4))
+	bas.alignment = BoxContainer.ALIGNMENT_CENTER
+	bas.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pile.add_child(bas)
+	if not reaction.is_empty(): bas.add_child(_pastille_reaction(reaction, px(9)))
+	else: bas.add_child(_pastille_note(id))
+	if targeted:
+		var b := _badge_vise(px(16))
+		jeton.add_child(b)
+		b.position = Vector2(px(4), px(4))
+	jeton.tooltip_text = "%d · %s" % [number, full_name] + (" · " + str(reaction.label) if reaction.has("label") else "")
+	return jeton
