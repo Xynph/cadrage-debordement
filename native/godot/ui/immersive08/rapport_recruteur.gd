@@ -3,7 +3,8 @@ extends RefCounted
 ## Note en lettre (écart avec notre meilleur joueur au même poste), « Pour / Contre » en icônes, rang qu'aurait le joueur
 ## dans notre effectif au même poste (liste comparée façon Effectif), statut du transfert, indemnité et salaire demandé.
 ## Tout est lu dans le modèle (marché, effectif, rapports d'observation) : rien n'est inventé ; ce qui manque est absent.
-## Planche A/B (CD_VARIANTE_VISUELLE) : A = rapport en trois colonnes, B = liste comparée pleine largeur + bandeau d'avis.
+## Mise en page choisie par Léo (planche A/B du 22/11/2026, option A) : identité et avis en tête, puis trois colonnes
+## (qualités clés, pour / contre, notre effectif au poste).
 ## Coordonnées en unités du gabarit (2248 de large), jetons de la charte.
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
@@ -14,6 +15,7 @@ const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
 const K = preload("res://ui/player_knowledge_text.gd")
 const G = preload("res://ui/game_skin.gd")
 const Link = preload("res://ui/entity_link.gd")
+const Etoiles = preload("res://ui/bareme_etoiles.gd")
 
 const LARGEUR := 2248.0
 const HAUTEUR := 1000.0
@@ -36,9 +38,6 @@ const FAMILLE_QUALITES := {1: 1, 3: 1, 2: 2, 4: 4, 5: 4, 6: 6, 7: 6, 8: 8, 9: 9,
 ## Barème des lettres : [écart minimal avec notre n° 1 au poste, lettre, couleur].
 const LETTRES := [[4.0, "A+", Charte.ATTRIBUT_85], [0.0, "A", Charte.ATTRIBUT_75], [-4.0, "B+", Charte.ATTRIBUT_65],
 	[-8.0, "B", Charte.ATTRIBUT_55], [-12.0, "C+", Charte.ATTRIBUT_40], [-16.0, "C", Charte.ATTRIBUT_0], [-999.0, "D", Charte.PERTE]]
-
-static func variante() -> String:
-	return "B" if OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper() == "B" else "A"
 
 # --- Lecture des données ------------------------------------------------------------------------------------------------
 
@@ -134,7 +133,7 @@ static func lire(app: Control, p: Dictionary) -> Dictionary:
 		if float(ligne.note) > note: rang += 1
 	var meilleur := float(autres[0].note) if not autres.is_empty() else note
 	var ecart := note - meilleur if note >= 0 else -999.0
-	var l := lettre(ecart)
+	var l := lettre(ecart) if note >= 0 else ["?", Charte.IVOIRE_3]
 	var qualites: Array = []
 	var attributs: Variant = p.get("attributesV2")
 	if K.attributes_known(p) and attributs is Dictionary:
@@ -215,9 +214,8 @@ static func construire(app: Control, cadre: Control, titre: Label, courant: Dict
 		return
 	var r := lire(app, p)
 	titre.text = "RAPPORT DU RECRUTEUR"
-	cadre.set_meta("rapport", {"lettre": r.lettre, "rang": r.rang, "poste": r.numero, "variante": variante()})
-	if variante() == "B": _option_b(app, cadre, r)
-	else: _option_a(app, cadre, r)
+	cadre.set_meta("rapport", {"lettre": r.lettre, "rang": r.rang, "poste": r.numero, "pret": p.get("loan", {})})
+	_mise_en_page(app, cadre, r)
 
 ## Identité : visage, nom (fiche), poste, âge.
 static func _identite(app: Control, cadre: Control, r: Dictionary, x: float, y: float, cote: float) -> void:
@@ -271,19 +269,33 @@ static func _bareme(_app: Control, cadre: Control, r: Dictionary, origine: Contr
 	Pieces.tuile(fond, Rect2(244, 220, 200, 96), "%d / %d" % [r.rang, r.total], "rang au poste", Charte.IVOIRE, "BaremeRang", 34)
 	Pieces.tuile(fond, Rect2(460, 220, 200, 96), G.n(roundi(r.note)) if float(r.note) >= 0 else "—", "note au poste", Charte.couleur_attribut(r.note), "BaremeNote", 34)
 
-## Pastilles du transfert : statut (ouvert / raison), clic = offre au joueur ; rapport d'observation daté s'il existe.
+## Pastilles du transfert et du prêt : statut (ouvert / raison), clic = offre au joueur ; prêt possible ou non (le club
+## de la piste le prêterait-il ?), clic = fiche de la piste (l'offre au joueur ne propose pas de prêt entrant).
+const RAISONS_PRET := {"jeune": "Jeune : son club le laisserait partir en prêt", "hors-23": "Hors des 23 de son club", "cadre": "Cadre de son club : pas de prêt"}
+
 static func _transfert(app: Control, cadre: Control, r: Dictionary, x: float, y: float) -> float:
 	var p: Dictionary = r.piste
 	var id := str(p.get("id", ""))
 	var ouvert := bool(p.get("available", false))
 	var largeur := Pieces.pastille(cadre, x, y, "Transfert ouvert" if ouvert else "Transfert fermé", "check" if ouvert else "lock", "RapportRecruteurTransfert", str(p.get("reason", "")),
 		Pieces.VERT if ouvert else Pieces.ROUGE, Charte.PANNEAU_3, func(): load("res://ui/immersive08/recruitment_pages.gd").ouvrir(app, "negociation", {"player_id": id}))
+	var pret: Dictionary = p.get("loan", {}) if p.get("loan") is Dictionary else {}
+	if not pret.is_empty():
+		var possible := bool(pret.get("possible", false))
+		largeur += 12 + Pieces.pastille(cadre, x + largeur + 12, y, "Prêt possible" if possible else "Prêt non", "renew" if possible else "lock", "RapportRecruteurPret",
+			str(RAISONS_PRET.get(str(pret.get("reason", "")), "")), Pieces.VERT if possible else Pieces.ORANGE, Charte.PANNEAU_3,
+			func(): app.navigation_controller.open_entity({"kind": "market", "id": id}))
+	return largeur
+
+## Connaissance du recruteur : non observé, observé, bien connu ; clic = fiche de la piste (observer, actualiser).
+static func _connaissance(app: Control, cadre: Control, r: Dictionary, x: float, y: float) -> void:
+	var p: Dictionary = r.piste
+	var id := str(p.get("id", ""))
 	var stade := str(p.get("knowledge", {}).get("stage", "")) if p.get("knowledge") is Dictionary else ""
 	var mot := {"deep": "Bien connu", "observed": "Observé"}.get(stade, "Non observé") as String
 	var couleur: Color = {"deep": Pieces.VERT, "observed": Pieces.BLEU}.get(stade, Pieces.ORANGE)
-	largeur += 12 + Pieces.pastille(cadre, x + largeur + 12, y, mot, "search", "RapportRecruteurConnaissance", "", couleur, Charte.PANNEAU_3,
+	Pieces.pastille(cadre, x, y, mot, "search", "RapportRecruteurConnaissance", "", couleur, Charte.PANNEAU_3,
 		func(): app.navigation_controller.open_entity({"kind": "market", "id": id}))
-	return largeur
 
 ## Tuiles d'argent : indemnité, salaire demandé (clic = offre), potentiel.
 static func _tuiles(app: Control, cadre: Control, r: Dictionary, x: float, y: float, l: float, h: float, verticales: bool) -> void:
@@ -399,6 +411,11 @@ static func _liste(app: Control, cadre: Control, r: Dictionary, zone: Rect2, col
 		D.text(bouton, 116, base, Kit.casse(str(joueur.get("name", "—"))), 21, Charte.VERT_CLAIR if est_piste else Charte.IVOIRE, 700 if est_piste else 600, largeur_nom - 10, HORIZONTAL_ALIGNMENT_LEFT, true)
 		cx = x0 + 14 + 50 + 52 + largeur_nom - x0
 		for colonne: Array in colonnes:
+			if str(colonne[2]) == "etoiles":
+				var etoiles := Etoiles.etoiles_sur_100(ligne.note)
+				if etoiles >= 0.0: load("res://ui/carte_joueur_survol.gd").poser_etoiles(bouton, Rect2(cx, base - 22, float(colonne[1]) - 12, 22), etoiles, "RapportRecruteurEtoiles_%d" % i)
+				cx += float(colonne[1])
+				continue
 			var valeur: Array = _cellule(colonne, joueur, ligne, est_piste)
 			var t := D.text(bouton, cx, base + 1, str(valeur[0]), 22, valeur[1], 700, float(colonne[1]) - 10)
 			t.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
@@ -421,8 +438,7 @@ static func _col_note() -> Array: return ["NOTE", 90, "note", null]
 static func _col_age() -> Array: return ["ÂGE", 70, "age", null]
 static func _col_potentiel() -> Array: return ["POT.", 100, "potentiel", null]
 static func _col_salaire() -> Array: return ["SALAIRE", 120, "salaire", null]
-static func _col_ecart(note_piste: float) -> Array: return ["ÉCART", 90, "ecart", note_piste]
-static func _col_qualite(cle: String, nom: String) -> Array: return [nom.to_upper().substr(0, 9), 100, "qualite", cle]
+static func _col_etoiles() -> Array: return ["POSTE", 130, "etoiles", null]
 
 ## Valeur d'une cellule : [texte, couleur].
 static func _cellule(colonne: Array, j: Dictionary, l: Dictionary, p: bool) -> Array:
@@ -436,29 +452,18 @@ static func _cellule(colonne: Array, j: Dictionary, l: Dictionary, p: bool) -> A
 			return [K.text(j, "potential", not p), K.POTENTIAL_COLOR]
 		"salaire":
 			return [G.salary_amount(j.get("salary")), Pieces.BLEU]
-		"ecart":
-			var note_piste := float(colonne[3])
-			if p or note_piste < 0 or float(l.note) < 0: return ["", Charte.IVOIRE_3]
-			var e := roundi(note_piste - float(l.note))
-			if e > 0: return ["▲ %d" % e, Charte.GAIN]
-			if e < 0: return ["▼ %d" % -e, Charte.PERTE]
-			return ["=", Charte.IVOIRE_2]
-		"qualite":
-			var a: Variant = j.get("attributesV2")
-			var cle := str(colonne[3])
-			if not a is Dictionary or not _nombre(a.get(cle)) or (p and not K.attributes_known(j)): return ["—", Charte.IVOIRE_3]
-			return [G.n(a.get(cle)), Charte.couleur_attribut(a.get(cle))]
 	return ["", Charte.IVOIRE_3]
 
-# --- Option A : rapport en trois colonnes ------------------------------------------------------------------------------
+# --- Mise en page (option A de la planche) ------------------------------------------------------------------------
 
-static func _option_a(app: Control, cadre: Control, r: Dictionary) -> void:
+static func _mise_en_page(app: Control, cadre: Control, r: Dictionary) -> void:
 	_identite(app, cadre, r, 28, 24, 110)
 	_lettre(app, cadre, r, Rect2(760, 22, 124, 116), 78)
 	Kit.etiquette(cadre, 900, 58, "AVIS", 140)
 	var rang := D.text(cadre, 900, 104, "n° %d / %d" % [r.rang, r.total], 30, Charte.IVOIRE, 800, 200)
 	rang.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 	_transfert(app, cadre, r, 900, 116)
+	_connaissance(app, cadre, r, 160, 124)
 	_tuiles(app, cadre, r, 1310, 28, 220, 112, false)
 	D.line(cadre, Vector2(28, 172), Vector2(LARGEUR - 28, 172), Charte.FILET)
 	# Colonne 1 : qualités clés.
@@ -468,40 +473,4 @@ static func _option_a(app: Control, cadre: Control, r: Dictionary) -> void:
 	_raisons(cadre, 680, y + 30, 640, "CONTRE", "warning", Pieces.ROUGE, r.contre, "RapportRecruteurContre", 62, 4)
 	# Colonne 3 : rang chez nous.
 	Kit.etiquette(cadre, 1372, 216, "NOTRE EFFECTIF · " + str(r.poste).to_upper(), 840)
-	_liste(app, cadre, r, Rect2(1372, 236, 848, 740), [_col_note(), _col_potentiel(), _col_age(), _col_salaire()], 58, 12)
-
-# --- Option B : liste comparée pleine largeur + bandeau d'avis --------------------------------------------------------
-
-static func _option_b(app: Control, cadre: Control, r: Dictionary) -> void:
-	_identite(app, cadre, r, 28, 22, 96)
-	_lettre(app, cadre, r, Rect2(640, 18, 150, 132), 96)
-	# Pour / contre en pastilles sur deux rangées.
-	var x := 830.0
-	var vert := C.icon("check", 24, Pieces.VERT)
-	cadre.add_child(vert)
-	D.place(vert, Rect2(x, 28, 24, 24))
-	x += 36
-	for i in mini(r.pour.size(), 4):
-		var raison: Array = r.pour[i]
-		var texte := str(raison[1]) + ("  " + str(raison[2]) if not str(raison[2]).is_empty() else "")
-		if x + Pieces.largeur_pastille(texte, raison[0]) > 1700: break
-		x += 10 + Pieces.pastille(cadre, x, 22, texte, raison[0], "RapportRecruteurPour_%d" % i, "", Pieces.VERT, Charte.PANNEAU_3, raison[3])
-	x = 830.0
-	var rouge := C.icon("warning", 24, Pieces.ROUGE)
-	cadre.add_child(rouge)
-	D.place(rouge, Rect2(x, 80, 24, 24))
-	x += 36
-	for i in mini(r.contre.size(), 4):
-		var raison: Array = r.contre[i]
-		var texte := str(raison[1]) + ("  " + str(raison[2]) if not str(raison[2]).is_empty() else "")
-		if x + Pieces.largeur_pastille(texte, raison[0]) > 1700: break
-		x += 10 + Pieces.pastille(cadre, x, 74, texte, raison[0], "RapportRecruteurContre_%d" % i, "", Pieces.ROUGE, Charte.PANNEAU_3, raison[3])
-	_transfert(app, cadre, r, 866, 126)
-	# Tuiles en colonne à droite de la liste.
-	_tuiles(app, cadre, r, 1990, 196, 230, 112, true)
-	D.line(cadre, Vector2(28, 176), Vector2(LARGEUR - 28, 176), Charte.FILET)
-	Kit.etiquette(cadre, 28, 212, "NOTRE EFFECTIF · " + str(r.poste).to_upper() + " · RANG %d / %d" % [r.rang, r.total], 1200)
-	var colonnes: Array = [_col_note(), _col_ecart(r.note), _col_potentiel(), _col_age(), _col_salaire()]
-	var cles: Array = QUALITES.get(FAMILLE_QUALITES.get(r.numero, 0), [])
-	for i in mini(3, cles.size()): colonnes.append(_col_qualite(cles[i], str(NOMS_QUALITES.get(cles[i], cles[i]))))
-	_liste(app, cadre, r, Rect2(28, 232, 1936, 750), colonnes, 60, 12)
+	_liste(app, cadre, r, Rect2(1372, 236, 848, 740), [_col_note(), _col_etoiles(), _col_potentiel(), _col_age(), _col_salaire()], 58, 12)
