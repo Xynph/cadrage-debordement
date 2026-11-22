@@ -1,7 +1,7 @@
 'use strict';
-// Planche « Direct en tableau de bord » (revue FM27 de Léo, 22/11/2026) : la variante CD_VARIANTE_VISUELLE (A compositions en
-// terrain, B compositions en lignes) capturée en vrai match (2e mi-temps, 2560x1440 puis 1920x1080), match à vitesse maximale.
-// CD_PLANCHE_DIRECT_2D=<dossier> reçoit direct-tableau-<variante>-*.png. Jeu rendu : à lancer sur le bureau caché (godot-slot.ps1).
+// Direct en tableau de bord (revue FM27, option A de Léo du 22/11/2026) capturé en vrai match (2e mi-temps puis fin de match,
+// 2560x1440 et 1920x1080), match à vitesse maximale, causerie prononcée (moral). CD_PLANCHE_DIRECT_2D=<dossier> reçoit
+// direct-tableau-*.png. Jeu rendu : à lancer sur le bureau caché (godot-slot.ps1).
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path'), assert = require('node:assert/strict');
 const {spawnSync} = require('node:child_process');
 const godot = process.env.CD_GODOT_EXECUTABLE || process.env.CD_GODOT_EXE;

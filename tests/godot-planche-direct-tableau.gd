@@ -1,13 +1,13 @@
 extends SceneTree
-## Planche « Direct en tableau de bord » (revue FM27 de Léo, 22/11/2026) : la variante CD_VARIANTE_VISUELLE (A compositions
-## en terrain, B compositions en lignes) capturée en jeu, en 2e mi-temps,
-## entre deux temps forts, aux tailles de CD_PLANCHE_TAILLES (2560 × 1440, référence de Léo, puis 1920 × 1080) ; contrôle que rien ne déborde et
-## qu'un club du classement ouvre sa petite fenêtre. godot-planche-direct-2d.cjs prépare la carrière Monde.
+## Direct en tableau de bord (revue FM27, option A choisie par Léo le 22/11/2026) capturé en jeu, en 2e mi-temps, entre
+## deux temps forts, aux tailles de CD_PLANCHE_TAILLES (2560 × 1440, référence de Léo, puis 1920 × 1080) : les deux
+## compositions notées, les barres miroir, la courbe cumulée, le moral en direct sur Mon XV ; rien ne déborde, ni à la
+## 52e ni en fin de match (la colonne de gauche ne pousse plus Mon XV hors de l'écran) ; un joueur de la composition et
+## une barre ouvrent leur petite fenêtre. godot-planche-direct-tableau.cjs prépare la carrière Monde.
 var app: Control
 var checks := 0
 var failures: Array[String] = []
 var dossier := OS.get_environment("CD_PLANCHE_DIRECT_2D")
-var variante := OS.get_environment("CD_VARIANTE_VISUELLE")
 
 func _initialize() -> void: call_deferred("run")
 
@@ -140,8 +140,19 @@ func run() -> void:
 		var defile_chiffres := between.find_child("MatchBetweenFiguresScroll", true, false) as ScrollContainer
 		check(defile_chiffres != null and not defile_chiffres.get_v_scroll_bar().visible, "%s : chiffres clés sans ascenseur" % str(taille))
 		print("PLANCHE_DIRECT_TABLEAU %s : classement %d lignes, multiplex %d matchs" % [str(taille), lignes, between.multiplex_cartes.get_child_count()])
-		check(between.compos_fm.size() == 2, "%s : les deux compositions" % str(taille))
-		await capture("direct-tableau-%s-%dx%d" % [variante, taille.x, taille.y])
+		check(between.compos_fm.size() == 2 and between.compos_fm.all(func(c: Control): return c.is_visible_in_tree() and (c.get("joueurs") as Array).size() == 15), "%s : les deux compositions notées" % str(taille))
+		check(between.find_children("MatchBetweenMirrorBar_*", "Button", true, false).size() >= 7, "%s : chiffres en barres miroir" % str(taille))
+		check(between.cumul_fm != null and between.cumul_fm.is_visible_in_tree(), "%s : courbe cumulée" % str(taille))
+		check(not between.enjeu_pastille.visible and not between.temps_forts.visible, "%s : « si ça finit ainsi » et temps forts retirés" % str(taille))
+		var morals: Array = between.find_children("MatchBetweenPlayerMoraleWord", "Label", true, false).filter(func(n: Node): return (n as Control).is_visible_in_tree())
+		check(morals.size() == 15, "%s : moral en direct sur les 15 cartes (%d)" % [str(taille), morals.size()])
+		var bas_xv: float = between.find_child("MatchBetweenSquadBar", true, false).get_global_rect().end.y
+		check(bas_xv <= float(taille.y) + 0.5, "%s : Mon XV entière dans l'écran (bas %d)" % [str(taille), int(bas_xv)])
+		await capture("direct-tableau-%dx%d" % [taille.x, taille.y])
+	var moral_projete: Dictionary = (app.model.live.get("pilotage", {}) as Dictionary).get("moral", {})
+	var bouges: int = moral_projete.values().filter(func(m: Dictionary): return int(m.valeur) != int(m.depart)).size()
+	print("PLANCHE_DIRECT_TABLEAU moral : %d joueurs, %d ont bougé depuis le coup d'envoi, mots %s" % [moral_projete.size(), bouges, str(moral_projete.values().map(func(m: Dictionary): return m.label).slice(0, 6))])
+	check(bouges >= 3, "le moral bouge pendant le match (%d joueurs)" % bouges)
 	# Plein écran obligatoire : chaque type d'élément ouvre sa petite fenêtre par-dessus le match ; Échap la ferme et
 	# l'on reste dans le direct (2560 × 1440, référence de Léo).
 	root.size = Vector2i(2560, 1440)
@@ -155,14 +166,36 @@ func run() -> void:
 			if (n as Control).is_visible_in_tree(): return n
 		return null
 	var nous_camp := int(between._dernier[2].get("camp", 0)) if between._dernier.size() > 2 else 0
-	if variante == "A":
-		var compo: Control = premier.call(between, "MatchBetweenLineupPitch0")
-		await essayer("joueur de notre composition", "MatchFenetreJoueur", "direct-tableau-%s-fenetre-joueur-2560" % variante, func(): compo.choisi.emit("%d:9" % nous_camp), compo != null, view)
-	else:
-		var rangee: Button = premier.call(between, "MatchBetweenLineupRow0_10", "Button")
-		await essayer("ligne de notre composition", "MatchFenetreJoueur", "direct-tableau-%s-fenetre-joueur-2560" % variante, func(): rangee.pressed.emit(), rangee != null, view)
+	var compo: Control = premier.call(between, "MatchBetweenLineupPitch0")
+	await essayer("joueur de notre composition", "MatchFenetreJoueur", "direct-tableau-fenetre-joueur-2560", func(): compo.choisi.emit("%d:9" % nous_camp), compo != null, view)
 	var barre: Button = premier.call(between, "MatchBetweenMirrorBar_zone22", "Button")
-	await essayer("barre miroir", "MatchFenetreStat", "direct-tableau-%s-fenetre-stat-2560" % variante, func(): barre.pressed.emit(), barre != null, view)
+	await essayer("barre miroir", "MatchFenetreStat", "direct-tableau-fenetre-stat-2560", func(): barre.pressed.emit(), barre != null, view)
+	# Fin de match (75e) : la colonne de gauche (événements, bonus et son dilemme) ne pousse pas Mon XV hors de l'écran.
+	if OS.get_environment("CD_PLANCHE_FIN") != "0":
+		Engine.time_scale = 8.0
+		root.size = Vector2i(960, 540)
+		root.content_scale_size = root.size
+		await command("pause", {"paused": false})
+		var depart_fin := Time.get_ticks_msec()
+		while Time.get_ticks_msec() - depart_fin < 300000 and int(app.model.live.get("minute", 0)) < 75 and not app.model.live.get("finished", false): await settle(2)
+		Engine.time_scale = 1.0
+		for essai_fin in 20:
+			if app.model.live.get("finished", false): break
+			if not await until(func(): return surface() != null and vue_2d(surface()), 120000): break
+			if not app.model.live.get("paused", false): await command("pause", {"paused": true})
+			await settle(20)
+			if surface() != null and vue_2d(surface()): break
+			await command("pause", {"paused": false})
+			await settle(10)
+		var vue_fin := surface()
+		if vue_fin != null and vue_2d(vue_fin):
+			for taille: Vector2i in tailles:
+				root.size = taille
+				root.content_scale_size = taille
+				await settle(40)
+				var b: Control = vue_fin.regie.between
+				check(debordements(b).is_empty(), "%s, %d′ : rien ne déborde : %s" % [str(taille), int(app.model.live.get("minute", 0)), str(debordements(b).slice(0, 4))])
+				await capture("direct-tableau-fin-%dx%d" % [taille.x, taille.y])
 	# Le bandeau du score est commun au temps fort 3D : une capture en plein temps fort (match relancé).
 	if OS.get_environment("CD_PLANCHE_TEMPS_FORT") == "1":
 		if app.model.live.get("paused", false): await command("pause", {"paused": false})
