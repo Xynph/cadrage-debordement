@@ -137,6 +137,8 @@ domains.doublons=require('./doublons.cjs');
 domains.matchIncidents=require('./incidents-match.cjs');
 // Programme de la semaine jour par jour : séance collective, veille, match, récupération (native/engine/programme-semaine.cjs).
 domains.weekProgram=require('./programme-semaine.cjs');
+// Fragilité physique des joueurs : risque de blessure modulé de −25 % à +25 % (native/engine/fragilite.cjs).
+domains.fragilite=require('./fragilite.cjs');
 const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files,...domains.clubSheet.files,...domains.pressPromises.files,...domains.clubMail.files,...domains.multiplex.files,...domains.avantMatch.files,...domains.doublons.files,...domains.matchIncidents.files,...domains.weekProgram.files])]);
 const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands,...domains.clubMail.commands,...domains.multiplex.commands,...domains.avantMatch.commands,...domains.doublons.commands,...domains.matchIncidents.commands,...domains.weekProgram.commands]);
 if(new Set(allCommands).size!==allCommands.length)throw Error('Commandes natives de domaine en double.');

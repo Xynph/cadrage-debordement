@@ -34,14 +34,16 @@
     },
     "clubLife.clubSheet": {
       "ecrans": [
-        "Fiche club"
+        "Fiche club",
+        "Match"
       ],
       "lecteurs": [
         "ui/immersive08/club_sheet_canvas.gd",
+        "ui/immersive08/match_avant.gd",
         "ui/navigation_controller.gd",
         "ui/optimistic_decisions.gd"
       ],
-      "note": "clubs suivis : fiche d'un club ; la recherche (navigation_controller) relit le modèle à chaque frappe"
+      "note": "clubs suivis : fiche d'un club ; la recherche (navigation_controller) relit le modèle à chaque frappe ; face-à-face du club adverse (match_avant)"
     },
     "decisions.difficulty": {
       "ecrans": [

@@ -109,6 +109,9 @@ const EXTRAS := [
 	{"id": "centre-generations", "libelle": "Centre · onglet Générations", "type": "centre_onglet", "onglet": "Générations"},
 	{"id": "centre-bas", "libelle": "Centre · bas de l'onglet Centre (rencontres juniors, équipe 1re, réglages)", "type": "centre_onglet", "onglet": "Centre", "defiler_visuel": "CentreCompactDefile"},
 	{"id": "centre-parcours-fenetre", "libelle": "Centre · parcours individuel en petite fenêtre", "type": "centre_onglet", "onglet": "Parcours", "presser_visuel": "CentreVisuelJoueur0"},
+	## Causerie d'avant-match (coup d'envoi donné : à filmer en dernier, une taille par lancement).
+	{"id": "causerie", "libelle": "Vestiaire · causerie d'avant-match", "type": "causerie"},
+	{"id": "causerie-reactions", "libelle": "Vestiaire · causerie, réactions des joueurs", "type": "causerie", "reactions": true},
 ]
 ## Écrans du match en direct : le coup d'envoi est donné une fois, après tous les autres écrans.
 const EN_DIRECT := [
@@ -893,6 +896,26 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			app.navigation_controller.submit_search("a")
 			await stabiliser()
 			if app.route != "Recherche" or app.root_content.find_child("SearchResult0", true, false) == null: return {"statut": "echec", "note": "écran Recherche sans résultat"}
+		"causerie":
+			var limite_causerie := Time.get_ticks_msec() + 120000
+			var envoye := false
+			while Time.get_ticks_msec() < limite_causerie:
+				var scene_c: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+				if scene_c is Dictionary and app.contextual_director.kind == "locker" and not app.waiting: break
+				if not envoye and not app.waiting and scene_c == null and not app.model.get("live") is Dictionary:
+					envoye = true
+					app._command("begin_match", {})
+				for k in 5: await process_frame
+			var scene_v: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+			if not scene_v is Dictionary: return {"statut": "echec", "note": "causerie absente : " + str(app.last_error)}
+			if bool(ecran.get("reactions", false)) and not scene_v.get("decision") is Dictionary:
+				var options: Array = scene_v.get("options", [])
+				if options.is_empty(): return {"statut": "echec", "note": "aucune phrase de causerie"}
+				app._command("match_talk_decide", {"key": scene_v.key, "phase": scene_v.phase, "choiceId": options[2 if options.size() > 2 else 0].get("id"), "audience": "group", "playerIds": []})
+				var limite_d := Time.get_ticks_msec() + 60000
+				while Time.get_ticks_msec() < limite_d and not app.model.get("clubLife", {}).get("matchTalks", {}).get("scene", {}).get("decision") is Dictionary: await process_frame
+			await stabiliser()
+			await stabiliser()
 		"avant_bilan":
 			# Bilan de la dernière rencontre : pastille du bandeau → petite fenêtre.
 			app._navigate("Match")
@@ -1068,6 +1091,13 @@ func capturer(entree: Dictionary, o: Dictionary, taille: Vector2i) -> void:
 		print("ECRANS_FILMES retour de tuile : ", load("res://ui/retour_tuile.gd").simuler(self))
 		print("ECRANS_FILMES lignes : ", load("res://ui/survol_ligne.gd").simuler(self), " survolée(s), ", load("res://ui/survol_ligne.gd").simuler_appui(self), " enfoncée(s)")
 		await stabiliser()
+	# CD_FILM_BLESSURE=1 : ouvre la petite fenêtre « blessure » du premier blessé (pastille Blessé de l'écran).
+	if OS.get_environment("CD_FILM_BLESSURE") == "1":
+		var pastilles := get_nodes_in_group(&"ouvre_blessure")
+		print("ECRANS_FILMES blessure : ", pastilles.size(), " pastille(s)")
+		if not pastilles.is_empty() and pastilles[0] is BaseButton:
+			(pastilles[0] as BaseButton).pressed.emit()
+			await stabiliser()
 	if OS.get_environment("CD_FILM_AUDIT_TUILES") == "1":
 		for ligne in load("res://ui/retour_tuile.gd").auditer(self): print("AUDIT_TUILE ", entree.id, "|", ligne)
 	var prise: Dictionary = await image_stable()
