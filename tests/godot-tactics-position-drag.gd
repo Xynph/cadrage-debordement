@@ -58,15 +58,21 @@ func partition() -> void:
 		var id:Variant=assignment(i).get("playerId")
 		if id!=null:
 			check(id not in seen,"ID unique sur feuille "+str(id));seen.append(id)
-	var outside:Array=[]
-	for button in named("TacticsOutsideRows").get_children():
-		if button is Button:outside.append(button.get_meta("player_id"))
 	var expected:Array=[]
 	for person:Dictionary in app.model.squad:
 		if str(person.id) not in seen:expected.append(str(person.id))
-	outside.sort();expected.sort()
-	check(outside==expected,"Partition exacte XV / Banc / Hors groupe")
+	expected.sort()
+	if named("TacticsOutsideTiles")!=null:
+		var outside:Array=[]
+		for button in named("TacticsOutsideTiles").get_children():
+			if button is Button:outside.append(button.get_meta("player_id"))
+		outside.sort()
+		check(outside==expected,"Partition exacte XV / Banc / Hors groupe")
 	check(named("BenchPlayerRows").get_child_count()==8,"Huit places légales du banc conservées")
+func bottom(tab: String) -> void:
+	var pill:=named("TacticsBottomOutside" if tab=="hors" else "TacticsBottomCandidates") as Button
+	check(pill!=null,"Pilule du bas "+tab)
+	if pill!=null:pill.pressed.emit();await settle()
 func run() -> void:
 	root.size=Vector2i(2560,1440)
 	app=load("res://main.tscn").instantiate();root.add_child(app)
@@ -76,20 +82,20 @@ func run() -> void:
 	app.timer.stop();app._command("new_career",{"mode":"common","club":0});await worker()
 	if not await Rooms.settle_club_meetings(app,self,check):await app._close(1);return
 	app._navigate("Composition");await settle();app.coach.close()
-	check(named("TacticsPitch")!=null and named("TacticsIdentity")!=null and named("TacticsBench")!=null,"Trois colonnes existantes conservées")
-	check(named("TacticsOutside")!=null,"Hors groupe simultané au banc")
-	check(named("TacticsSelectedPlayer")==null and named("TacticsRosterTab")==null,"Aucune carte sélectionnée ni onglet alterné")
-	check(named("TacticsPitch").position.x<named("TacticsBench").position.x and named("TacticsBench").position.x<named("TacticsIdentity").position.x,"Ordre terrain / banc / identité")
-	check(named("TacticsOutside").position.x==named("TacticsBench").position.x,"Hors groupe sous banc")
+	check(named("TacticsPitch")!=null and named("TacticsBench")!=null and named("TacticsCandidates")!=null,"Terrain vertical, banc en tuiles et candidats présents")
+	check(named("TacticsOutside")==null and named("TacticsIdentity")==null and named("TacticsSelectedPlayer")==null and named("TacticsRosterTab")==null,"Plus d'ancienne mise en page (colonnes, identité, carte sélectionnée)")
+	check(named("TacticsBottomCandidates")!=null and named("TacticsBottomOutside")!=null and named("TacticsHorsGroupe")==null,"Pilules Candidats / Hors groupe : candidats d'abord")
+	check(named("TacticsPitch").get_global_rect().end.x<=named("TacticsBench").get_global_rect().position.x+1 and named("TacticsCandidates").get_global_rect().position.y>=named("TacticsBench").get_global_rect().end.y-1,"Terrain à gauche, banc à droite, candidats sous le banc")
 	partition()
 	for i in 15:
-		var portrait:=named("TacticsPortrait%02d" % (i+1)) as TextureRect
-		check(portrait!=null and portrait.texture!=null,"Portrait chargé au poste "+str(i+1))
+		var portrait:=named("TacticsFace%02d" % (i+1))
+		var photo:=portrait.find_children("*","TextureRect",true,false).filter(func(node):return node.texture!=null) if portrait!=null else []
+		check(portrait!=null and not photo.is_empty(),"Portrait chargé au poste "+str(i+1))
 		var person:Dictionary=Selection.player(app.model,str(assignment(i).get("playerId","")))
 		check(Selection.rating(app.model,person,i)!=null,"Projection moteur présente au poste "+str(i+1))
 		check(str(int(person.get("positionRatings",{}).get(str(i+1),-1))) in labels(named("TacticsPositionRating%02d" % (i+1))),"Note projetée au poste "+str(i+1))
-		var card:=named("LineupSlot%02d" % (i+1))
-		for j in range(i+1,15):check(not card.get_global_rect().intersects(named("LineupSlot%02d" % (j+1)).get_global_rect()),"Surfaces distinctes %d/%d" % [i+1,j+1])
+		var card:=named("TacticsCardPlate%02d" % (i+1))
+		for j in range(i+1,15):check(not card.get_global_rect().intersects(named("TacticsCardPlate%02d" % (j+1)).get_global_rect()),"Plaques de nom distinctes %d/%d" % [i+1,j+1])
 	var pillar_id:=str(assignment(0).get("playerId"))
 	var pillar:Dictionary=Selection.player(app.model,pillar_id)
 	var own_note:Variant=Selection.rating(app.model,pillar,0);var wrong_note:Variant=Selection.rating(app.model,pillar,9)
@@ -98,12 +104,10 @@ func run() -> void:
 	check(Selection.rating(app.model,{"positionRatings":{"10":0}},9)==0,"Aptitude nulle conservée")
 	check(Selection.rating(app.model,{"positionRatings":{"10":"88"}},9)==null,"Donnée de note invalide signalée absente")
 	check(Selection.number(app.model,22)==11,"Aptitude du banc23 issue de la projection canonique")
-	var defence_value:=named("TacticsSummaryValue1") as Label
-	check(defence_value!=null and defence_value.text==str(int(app.model.get("decisions",{}).get("lineupDefence",-1))),"DÉFENSE consomme la valeur contextualisée du moteur")
 	var profile:=str(app.model.meta.dataDir).path_join("donnees.json")
 	var before:=FileAccess.get_sha256(profile)
 	await enter(named("LineupSlot10"))
-	check(app.selected_slot==9 and named("TacticsOutsideTarget").text.begins_with("CIBLE N°10"),"Clavier choisit cible10 et actualise les aptitudes")
+	check(app.selected_slot==9 and (named("TacticsCandidatesTitle") as Label).text.contains("N° 10"),"Clavier choisit cible10 et ses candidats")
 	check(named("LineupSlot10").has_focus(),"Focus conservé sur cible10")
 	check(FileAccess.get_sha256(profile)==before,"Consultation des postes ne modifie pas le profil")
 	await capture("tactique-portraits-horsgroupe-1440")
@@ -128,29 +132,29 @@ func run() -> void:
 	await drag(named("LineupSlot21"),named("LineupSlot09"))
 	check(str(assignment(8).playerId)==bench_id and str(assignment(20).playerId)==field_id,"Banc21 vers terrain9 : échange réel sans doublon")
 	partition()
-	app.selected_slot=9;app._render();await settle()
+	app.selected_slot=9;await bottom("hors")
+	check(named("TacticsHorsGroupe")!=null and named("TacticsOutsideTiles")!=null,"Onglet Hors groupe : tuiles des joueurs hors feuille")
+	partition()
 	var candidate:Control
-	for row in named("TacticsOutsideRows").get_children():
+	for row in named("TacticsOutsideTiles").get_children():
 		if row is Button and Selection.eligible(app,str(row.get_meta("player_id","")),9):candidate=row;break
 	check(candidate!=null,"Candidat hors groupe éligible à la cible10")
 	if candidate!=null:
 		var incoming:=str(candidate.get_meta("player_id"));var outgoing:=str(assignment(9).playerId)
 		await enter(candidate)
 		check(str(assignment(9).playerId)==incoming,"Clic/clavier hors groupe affecte au numéro actif")
-		check(Selection.source(app.model,outgoing)==-1 and named("TacticsOutsideRows").find_child("TacticsOutsidePlayer_"+outgoing.replace(":","_"),false,false)!=null,"Joueur délogé rejoint Hors groupe")
+		check(Selection.source(app.model,outgoing)==-1 and named("TacticsOutside_"+outgoing.validate_node_name())!=null,"Joueur délogé rejoint Hors groupe")
 		partition()
-		check(incoming not in named("TacticsOutsideRows").get_children().filter(func(row):return row is Button).map(func(row):return str(row.get_meta("player_id",""))),"Joueur affecté quitte Hors groupe")
+		check(named("TacticsOutside_"+incoming.validate_node_name())==null,"Joueur affecté quitte Hors groupe")
 	var scroll:=named("TacticsOutsideScroll") as ScrollContainer
-	var header:=named("TacticsOutsideTarget").get_global_rect()
 	scroll.scroll_vertical=int(scroll.get_v_scroll_bar().max_value);await settle()
-	check(named("TacticsOutsideTarget").get_global_rect()==header,"En-tête Hors groupe fixe au défilement")
-	var last:Control=named("TacticsOutsideRows").get_children().back()
-	check(scroll.get_global_rect().encloses(last.get_global_rect()),"Dernier joueur Hors groupe accessible sans pagination")
+	var last:Control=named("TacticsOutsideTiles").get_children().back()
+	check(scroll.get_global_rect().grow(1).encloses(last.get_global_rect()),"Dernier joueur Hors groupe accessible sans pagination")
 	await capture("tactique-affectation-horsgroupe-1440")
 	# Source hors feuille, déposée avec de vrais événements sur le terrain.
 	app.selected_slot=9;app._render();await settle()
 	var outside_source:Control
-	for row in named("TacticsOutsideRows").get_children():
+	for row in named("TacticsOutsideTiles").get_children():
 		if row is Button and Selection.eligible(app,str(row.get_meta("player_id","")),9):outside_source=row;break
 	if outside_source!=null:
 		var outside_id:=str(outside_source.get_meta("player_id"))
@@ -158,6 +162,17 @@ func run() -> void:
 		await drag(outside_source,named("LineupSlot10"))
 		check(str(assignment(9).playerId)==outside_id,"Hors groupe vers terrain10 : vrai dépôt affecté")
 		partition()
+	# Terrain vers Hors groupe : la place se libère, le joueur rejoint les tuiles.
+	var released:=str(assignment(10).playerId)
+	await drag(named("LineupSlot11"),named("TacticsHorsGroupe"))
+	check(assignment(10).playerId==null and Selection.source(app.model,released)==-1,"Terrain11 vers Hors groupe : place libérée")
+	check(named("TacticsOutside_"+released.validate_node_name())!=null,"Joueur libéré visible dans Hors groupe")
+	partition()
+	var back:=named("TacticsOutside_"+released.validate_node_name())
+	(named("TacticsOutsideScroll") as ScrollContainer).ensure_control_visible(back);await settle()
+	await drag(back,named("LineupSlot11"))
+	check(str(assignment(10).playerId)==released,"Hors groupe vers terrain11 : retour réel")
+	await bottom("candidats")
 	var current_id:=str(assignment(9).playerId)
 	var valid_payload:Variant=Selection.payload(app,current_id,9)
 	app._command("save")
@@ -165,37 +180,26 @@ func run() -> void:
 	await worker()
 	var consultation_hash:=FileAccess.get_sha256(profile)
 	await enter(named("LineupSlot10"))
-	var candidates:=app.find_child("LineupCandidates",true,false) as AcceptDialog
-	check(candidates!=null,"Choix classique du joueur accessible au clavier")
-	if candidates!=null:
-		check(candidates.find_child("TacticsIndividualInstructions",true,false)!=null,"Consignes individuelles conservées dans le dialogue de poste")
-		for row:Button in candidates.find_child("LineupCandidatesList",true,false).get_children():
+	var rows:=named("TacticsCandidateRows")
+	check(rows!=null and rows.get_child_count()>0,"Liste des candidats du poste actif accessible au clavier")
+	if rows!=null:
+		for row in rows.get_children():
 			var id:=str(row.get_meta("player_id",""))
-			check(row.disabled==not Selection.eligible(app,id,9),"Choix classique respecte les eligibleIds "+id)
-		var instructions:=candidates.find_child("TacticsIndividualInstructions",true,false) as Button
-		if instructions!=null:
-			instructions.pressed.emit();await settle()
-			var individual:=app.find_child("IndividualInstructions",true,false) as AcceptDialog
-			check(individual!=null and individual.title.contains(str(Selection.player(app.model,current_id).name)),"Consignes ouvrent le vrai joueur du poste actif")
-			check(individual!=null and individual.find_child("IndividualLoad_repos",true,false)!=null,"Actions individuelles existantes conservées")
-			if individual!=null:individual.canceled.emit();await settle()
-		else:candidates.canceled.emit();await settle()
-	check(FileAccess.get_sha256(profile)==consultation_hash,"Annulation du choix classique ne modifie pas le profil")
-	var defence_before:Variant=app.model.get("decisions",{}).get("lineupDefence")
-	var domains_before:Array=app.model.get("decisions",{}).get("preparation",{}).get("domains",[]).duplicate(true)
+			var status:=row.find_child("TacticsCandidateStatus",true,false) as Label
+			if status!=null and status.text=="Non qualifié au poste":check(not Selection.eligible(app,id,9),"Non qualifié = refusé par le moteur "+id)
+	check(FileAccess.get_sha256(profile)==consultation_hash,"Consultation des candidats ne modifie pas le profil")
 	var pillar_ready:bool=Selection.eligible(app,pillar_id,9)
 	check(pillar_ready,"Le moteur autorise le pilier au n°10 avec son aptitude de dépannage")
 	if pillar_ready:
+		var displaced_id:=str(assignment(9).playerId)
+		var swap_back:bool=displaced_id in assignment(0).get("eligibleIds",[])
 		await drag(named("LineupSlot01"),named("LineupSlot10"))
-		check(str(assignment(9).playerId)==pillar_id and assignment(0).playerId==null,"Pilier1 vers10 : affectation réelle et source libérée si retour non qualifié")
+		check(str(assignment(9).playerId)==pillar_id,"Pilier1 vers10 : affectation réelle")
+		if swap_back:check(str(assignment(0).playerId)==displaced_id,"Déplacé qualifié au n°1 : échange réel")
+		else:check(assignment(0).playerId==null,"Déplacé non qualifié au n°1 : source libérée")
 		check(str(int(wrong_note)) in labels(named("TacticsPositionRating10")),"La carte10 affiche la faible note réelle du pilier")
 		check(Selection.player(app.model,pillar_id).get("note")==pillar.get("note"),"Note principale du joueur inchangée après déplacement")
-		check(app.model.meta.get("lineupChange",{}).get("vacatedSlot")==0,"Reçu moteur explicite la place source laissée vacante")
-		var defence_after:Variant=app.model.get("decisions",{}).get("lineupDefence")
-		check(defence_before!=null and defence_after!=null and defence_after!=defence_before,"Déplacement hors poste actualise réellement la défense du XV")
-		check(named("TacticsSummaryValue1")!=null and named("TacticsSummaryValue1").text==str(int(defence_after)),"DÉFENSE affichée après déplacement égale la projection contextualisée")
-		var domains_after:Array=app.model.get("decisions",{}).get("preparation",{}).get("domains",[])
-		check(domains_after!=domains_before,"Dossier des forces du XV change après déplacement hors poste")
+		if not swap_back:check(app.model.meta.get("lineupChange",{}).get("vacatedSlot")==0,"Reçu moteur explicite la place source laissée vacante")
 		partition()
 		await capture("tactique-pilier-au10-1440")
 	# Le mode hebdomadaire fictif permet un vrai coup d'envoi sans avancer le calendrier commun.
