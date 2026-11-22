@@ -17,6 +17,7 @@ const Identity = preload("res://ui/player_identity.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const Attributs = preload("res://ui/player_attributes.gd")
 const Base = preload("res://ui/immersive08/recruitment_comparison.gd")
+const Radar = preload("res://ui/immersive08/comparateur_radar.gd")
 const ROUTE := "Comparateur"
 const MAX := 3
 const LARGEUR := 2248.0
@@ -58,9 +59,11 @@ static func _construire(app: Control, page: Control) -> void:
 	var reserve: Array = Base.pool(app.model)
 	var propres: Array = app.model.get("squad", []).map(func(p: Dictionary): return str(p.get("id", "")))
 	var memoire: Array = app.management_ui.compare
-	var ids: Array = memoire.filter(func(id): return reserve.any(func(p: Dictionary): return str(p.get("id", "")) == str(id))).slice(0, MAX)
+	var variante: String = Radar.variante()
+	var maximum := 2 if not variante.is_empty() else MAX
+	var ids: Array = memoire.filter(func(id): return reserve.any(func(p: Dictionary): return str(p.get("id", "")) == str(id))).slice(0, maximum)
 	memoire.assign(ids)
-	var colonnes := clampi(ids.size() + 1, 2, MAX)
+	var colonnes := clampi(ids.size() + 1, 2, maximum)
 	var retour_lien := Kit.lien(page, Rect2(0, 4, 0, 38), _origine(app), func(): retour(app), "ComparateurRetour", 20)
 	retour_lien.accessibility_name = _origine(app) + " · Échap"
 	C.style_bouton_lien(retour_lien, 20)
@@ -68,17 +71,26 @@ static func _construire(app: Control, page: Control) -> void:
 	var titre := Kit.titre_page(page, 0, 98, "Comparateur", 56, 900)
 	titre.name = "ComparateurTitre"
 	Pieces.info(page, Pieces.largeur_titre("COMPARATEUR", 56) + 24.0, 64.0, "Jusqu’à trois joueurs côte à côte\n▲ : meilleure valeur de la ligne\nL’âge et le coût ne comptent pas comme un avantage", "ComparateurAide")
-	var x0 := 330.0
-	var largeur := (LARGEUR - x0 - 28.0 * (colonnes - 1)) / colonnes
+	var x0 := 330.0 if variante.is_empty() else 0.0
+	var ecart := 28.0 if variante.is_empty() else 100.0
+	var largeur := (LARGEUR - x0 - ecart * (colonnes - 1)) / colonnes
 	var joueurs: Array[Dictionary] = []
+	var xs: Array = []
 	for i in colonnes:
-		var x := x0 + i * (largeur + 28.0)
+		var x := x0 + i * (largeur + ecart)
+		xs.append(x)
 		var trouve: Dictionary = {}
 		var id := str(ids[i]) if i < ids.size() else ""
 		for p: Dictionary in reserve:
 			if str(p.get("id", "")) == id: trouve = Base.prepared(app, p, id in propres)
 		joueurs.append(trouve)
 		_entete(app, page, i, x, largeur, trouve, reserve, propres)
+	if not variante.is_empty():
+		# Planche FM27 n° 9 : comparaison en radar (deux joueurs, deux couleurs).
+		Radar.liseres(page, joueurs, xs, largeur, Y_DETAIL - 8)
+		if variante == "A": Radar.construire_a(app, page, joueurs, Y_DETAIL)
+		else: Radar.construire_b(app, page, joueurs, Y_DETAIL)
+		return
 	D.line(page, Vector2(0, Y_DETAIL - 6), Vector2(LARGEUR, Y_DETAIL - 6), Charte.FILET)
 	var defile := ScrollContainer.new()
 	defile.name = "ComparateurDetails"
