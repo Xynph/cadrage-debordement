@@ -19,7 +19,7 @@ extends SceneTree
 ## CD_GODOT_DATA_DIR est obligatoire (profil jetable) : l'outil refuse de tourner sur le profil réel.
 ## Le jeu normal n'est pas touché : ce script n'est chargé qu'avec --script.
 
-const TAILLE_MIN := Vector2i(1280, 720)
+const TAILLE_MIN := Vector2i(800, 450)
 const TAILLES_DEFAUT := "1920x1080,1280x720"
 ## Copie de ROUTES (tests/small-window-geometry.gd), utilisée si ce fichier n'est pas lisible ;
 ## tests/godot-ecrans-filmes.cjs vérifie que les deux listes restent identiques.
@@ -104,6 +104,7 @@ const EXTRAS := [
 	{"id": "centre-filieres", "libelle": "Centre · onglet Filières", "type": "centre_onglet", "onglet": "Filières"},
 	{"id": "centre-passerelle", "libelle": "Centre · onglet Passerelle pro", "type": "centre_onglet", "onglet": "Passerelle pro"},
 	{"id": "centre-generations", "libelle": "Centre · onglet Générations", "type": "centre_onglet", "onglet": "Générations"},
+	{"id": "centre-bas", "libelle": "Centre · bas de l'onglet Centre (rencontres juniors, équipe 1re, réglages)", "type": "centre_onglet", "onglet": "Centre", "defiler_visuel": "CentreCompactDefile"},
 	{"id": "centre-parcours-fenetre", "libelle": "Centre · parcours individuel en petite fenêtre", "type": "centre_onglet", "onglet": "Parcours", "presser_visuel": "CentreVisuelJoueur0"},
 ]
 ## Écrans du match en direct : le coup d'envoi est donné une fois, après tous les autres écrans.
@@ -816,8 +817,19 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			await stabiliser()
 			# Centre en pages façon Effectif (parcours actifs) : onglets dessinés, sans TabContainer.
 			var visuel := app.find_child("CentreVisuel", true, false)
+			# Affichage compact (sous 1280 × 720) : mêmes pages en conteneurs, page « CarnetAcademyPathways » portant l'onglet.
+			if visuel == null:
+				var compact := app.find_child("CarnetAcademyPathways", true, false)
+				if compact != null and compact.has_meta("onglet"): visuel = compact
 			if visuel != null:
 				if str(visuel.get_meta("onglet", "")) != str(ecran.onglet): return {"statut": "echec", "note": "onglet %s non ouvert" % ecran.onglet}
+				# Affichage compact : la page défile (le bas de l'onglet porte rencontres juniors et réglages).
+				if ecran.has("defiler_visuel"):
+					var colonne := app.find_child(str(ecran.defiler_visuel), true, false) as ScrollContainer
+					if colonne != null:
+						await stabiliser()
+						colonne.scroll_vertical = int(colonne.get_v_scroll_bar().max_value)
+						await stabiliser()
 				if ecran.has("presser_visuel"):
 					var cible := app.find_child(str(ecran.presser_visuel), true, false) as Button
 					if cible == null: return {"statut": "echec", "note": "bouton %s absent" % ecran.presser_visuel}

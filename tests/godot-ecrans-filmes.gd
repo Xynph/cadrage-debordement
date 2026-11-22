@@ -45,7 +45,7 @@ func run() -> void:
 	check(lu.options.planche == false and lu.options.direct == false, "Planche et direct désactivables")
 	var defauts: Dictionary = outil.lire_options(PackedStringArray(["--sortie", sortie, "--export", carriere])).options
 	check(defauts.tailles == [Vector2i(1920, 1080), Vector2i(1280, 720)] and defauts.ecrans.is_empty() and defauts.planche and defauts.direct and defauts.duree_max == 900.0, "Défauts : 1920x1080 et 1280x720, tous les écrans, planche, direct, 900 s")
-	var mauvais: Dictionary = outil.lire_options(PackedStringArray(["--tailles", "800x600", "--duree-max", "5", "--inconnu", "--sortie", "relatif"]))
+	var mauvais: Dictionary = outil.lire_options(PackedStringArray(["--tailles", "640x360", "--duree-max", "5", "--inconnu", "--sortie", "relatif"]))
 	check(mauvais.erreurs.size() >= 5, "Taille, durée, argument inconnu, sortie relative et export absent refusés : " + str(mauvais.erreurs))
 	check(not outil.lire_options(PackedStringArray(["--sortie"])).erreurs.is_empty(), "Valeur manquante refusée")
 
