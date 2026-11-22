@@ -616,7 +616,10 @@ static func fenetre_parcours(ctx: Dictionary, id: String) -> void:
 	for offre: Dictionary in data.get("offers", []):
 		if str(offre.id) == id and not offre.get("clubs", []).is_empty():
 			autres.append(["fideliser", "Fidéliser", ALERTE, euros(offre.fee), a and not offre.get("retained", false)])
-	reglage(fond, x2, y2, col, "Autres", autres, null, func(v: Variant): _autre(ctx, id, str(v)), "CVAutres")
+	y2 = reglage(fond, x2, y2, col, "Autres", autres, null, func(v: Variant): _autre(ctx, id, str(v)), "CVAutres")
+	# Les pastilles passent à la ligne dans les petites fenêtres : le panneau grandit pour garder la dernière rangée dedans.
+	var besoin := minf(1150.0, maxf(y, y2) + 34.0)
+	if besoin > H: D.place(fond, Rect2((2248.0 - L) / 2.0, maxf(40.0, (1230.0 - besoin) / 2.0 - 40.0), L, besoin))
 
 static func _autre(ctx: Dictionary, id: String, quoi: String) -> void:
 	if quoi == "u20":

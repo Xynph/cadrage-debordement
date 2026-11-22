@@ -155,11 +155,35 @@ func controler_actif(taille: Vector2i) -> void:
 				ligne.pressed.emit(); await poser(12)
 				var parcours := app.find_child("CentreVisuelParcours", true, false) as Control
 				verifier(parcours != null and parcours.is_visible_in_tree(), cle + " : parcours individuel en petite fenêtre")
+				if parcours != null: verifier_dans_cadre(parcours, cle)
+				if DisplayServer.get_name() != "headless" and not sortie.is_empty(): root.get_texture().get_image().save_png(sortie.path_join("centre-%s-fenetre.png" % cle))
 				verifier(load("res://ui/petite_fenetre.gd").fermer_derniere(self), cle + " : Échap ferme le parcours individuel")
 				await poser(6)
 		if DisplayServer.get_name() != "headless" and not sortie.is_empty():
 			verifier(root.get_texture().get_image().save_png(sortie.path_join("centre-%s-%s.png" % [cle, nom.validate_node_name()])) == OK, "capture %s %s" % [cle, nom])
 	mesures[cle] = mesure
+
+## Rien ne déborde du cadre de la petite fenêtre : chaque commande et chaque texte visibles tiennent dans le panneau,
+## et le panneau tient dans la fenêtre.
+func verifier_dans_cadre(calque: Control, cle: String) -> void:
+	var panneau := calque.find_child(calque.name + "Panneau", true, false) as Control
+	verifier(panneau != null, cle + " : panneau de la petite fenêtre")
+	if panneau == null: return
+	var fenetre := Rect2(Vector2.ZERO, Vector2(root.size))
+	verifier(fenetre.grow(1).encloses(panneau.get_global_rect()), "%s : petite fenêtre entière dans l'écran (%s pour %s)" % [cle, panneau.get_global_rect(), fenetre])
+	var cadre := panneau.get_global_rect().grow(1)
+	var dehors: Array[String] = []
+	for n: Node in panneau.find_children("*", "Control", true, false):
+		var c := n as Control
+		if not c.is_visible_in_tree() or c.size.x < 2 or c.size.y < 2: continue
+		if c is Label and (c as Label).text.strip_edges().is_empty(): continue
+		if not (c is BaseButton or c is Label): continue
+		var zone := c.get_global_rect()
+		if c is Label:
+			var l := c as Label
+			zone.size.x = minf(zone.size.x, l.get_theme_font("font").get_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, l.get_theme_font_size("font_size")).x)
+		if not cadre.encloses(zone): dehors.append("%s %s" % [c.name, c.get_global_rect()])
+	verifier(dehors.is_empty(), "%s : %d élément(s) hors du cadre %s de la petite fenêtre (%s)" % [cle, dehors.size(), panneau.get_global_rect(), ", ".join(dehors.slice(0, 12))])
 
 func activer() -> void:
 	app._navigate("Centre"); await poser(12)
