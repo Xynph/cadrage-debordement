@@ -295,6 +295,7 @@ func _onglet(area: Rect2, caption: String, selected: bool, callback: Callable, i
 	button.pressed.connect(callback)
 	add_child(button)
 	D.place(button, area)
+	load("res://ui/retour_tuile.gd").brancher(button, button, Charte.RAYON_PILULE)
 	return button
 
 func _header() -> void:
@@ -1063,7 +1064,9 @@ func _ta_place(y: float) -> float:
 		D.fit_title(D.text(tile, 14, 78, G.club_name(club), 16, C.MUTED, 500, tile_w - 20), tile_w - 20, 30, 2, 13)
 		D.text(tile, tile_w - 14, 40, "→", 24, C.MUTED, 700, 30, HORIZONTAL_ALIGNMENT_RIGHT)
 		var link := _entity_area(tile, Rect2(0, 0, tile_w, 84), {"kind":"club", "id":str(club.id)}, "CompetitionGapLink_%d" % i, "Ouvrir le club · " + G.club_name(club))
-		if link != null: link.tooltip_text = "Ouvrir le club · " + G.club_name(club)
+		if link != null:
+			link.tooltip_text = "Ouvrir le club · " + G.club_name(club)
+			load("res://ui/retour_tuile.gd").brancher(link, tile, C.px(Charte.RAYON_CARTE))
 	return y + 300
 
 ## Libellés du rendez-vous quand aucune rencontre du championnat n'est à venir (exempt, préparation, saison terminée).

@@ -15,8 +15,8 @@ static func relier(zone: Control, nom: String, destination: String, action: Call
 	zone.tooltip_text = bulle if zone.tooltip_text.is_empty() else zone.tooltip_text + "\n" + bulle
 	zone.accessibility_name = zone.tooltip_text
 	zone.set_meta("lien_destination", destination)
-	zone.mouse_entered.connect(func(): zone.modulate = Color(1.12, 1.12, 1.12))
-	zone.mouse_exited.connect(func(): zone.modulate = Color.WHITE)
+	# Survol et appui : retour commun des tuiles cliquables (ui/retour_tuile.gd).
+	load("res://ui/retour_tuile.gd").brancher(zone, zone, Charte.RAYON_PETIT)
 	zone.focus_entered.connect(func(): zone.queue_redraw())
 	zone.focus_exited.connect(func(): zone.queue_redraw())
 	zone.draw.connect(func():

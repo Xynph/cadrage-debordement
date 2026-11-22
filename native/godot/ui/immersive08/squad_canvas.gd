@@ -295,6 +295,7 @@ func _tuile(zone: Rect2, d: Dictionary) -> void:
 	tuile.add_theme_stylebox_override("focus", _plat(Color.TRANSPARENT, Charte.IVOIRE, 2, 16))
 	add_child(tuile)
 	D.place(tuile, zone)
+	load("res://ui/retour_tuile.gd").brancher(tuile, tuile, C.px(16))
 	D.text(tuile, 16, 28, d.cap, 17, C.MUTED, 700, zone.size.x - 28)
 	var valeur := _italique(D.text(tuile, 16, 72, d.val, 48, C.IVORY, 800, 200), false)
 	valeur.name = "EffectifTuileValeur"

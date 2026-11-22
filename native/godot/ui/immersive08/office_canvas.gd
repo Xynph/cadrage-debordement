@@ -121,6 +121,9 @@ static func _zone(parent: Control, rectangle: Rect2, caption: String, action: Ca
 	var focus := bouton.get_theme_stylebox("focus") as StyleBoxFlat
 	focus.set_corner_radius_all(0)
 	bouton.pressed.connect(action)
+	# Survol et appui : retour commun des tuiles cliquables (ui/retour_tuile.gd) ; les priorités gardent leur barre
+	# d'urgence à gauche (pas de liseré du club par-dessus) et se lisent comme des lignes (jamais d'ombre).
+	load("res://ui/retour_tuile.gd").brancher(bouton, bouton, 0.0, true, marge_gauche <= 0.0, marge_gauche <= 0.0)
 	return bouton
 
 static func _crest(parent: Node, club: Dictionary, rectangle: Rect2) -> void:

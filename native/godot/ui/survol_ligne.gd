@@ -30,17 +30,17 @@ static var simulation_rang := -1
 var ligne: Control
 var choisi := false
 var survole := false
+## Ligne enfoncée (bouton tenu) : bande plus claire et filet sombre en haut, comme l'appui d'une tuile. Jamais d'ombre.
+var appuye := false
 var accent := Charte.IVOIRE
 var rayon := float(Charte.RAYON_PETIT)
 ## Décalage du liseré en pixels (Classements : laisse la bande de zone des places 1 à 6 visible à sa gauche).
 var decalage := 0.0
 
-## Couleur du club rendue lisible sur le fond sombre (un bleu nuit ou un bordeaux deviendraient invisibles).
+## Couleur du club rendue lisible sur le fond sombre (un bleu nuit ou un bordeaux deviendraient invisibles) : même
+## règle que le retour commun des tuiles (ui/retour_tuile.gd).
 static func accent_lisible(couleur: Color) -> Color:
-	if couleur.a <= 0.0: return Charte.IVOIRE
-	# Même teinte, plus lumineuse : la couleur du club reste reconnaissable (jamais délavée vers le blanc).
-	if couleur.s < 0.12: return Charte.IVOIRE
-	return Color.from_hsv(couleur.h, clampf(couleur.s, 0.55, 0.85), maxf(couleur.v, 0.88))
+	return load("res://ui/retour_tuile.gd").accent_lisible(couleur)
 
 static func echelle(noeud: CanvasItem) -> float:
 	var vue := noeud.get_viewport_rect().size if noeud.is_inside_tree() else Vector2(1920, 1080)
@@ -96,12 +96,18 @@ static func appliquer(bouton: Button, est_choisie: bool = false, fond: Color = C
 		fond_ligne.add_to_group(GROUPE)
 		bouton.mouse_entered.connect(fond_ligne._entree)
 		bouton.mouse_exited.connect(fond_ligne._sortie)
+		bouton.button_down.connect(fond_ligne._appui.bind(true))
+		bouton.button_up.connect(fond_ligne._appui.bind(false))
 	fond_ligne.choisi = est_choisie
 	fond_ligne.accent = couleur_club
 	fond_ligne.rayon = r
 	fond_ligne.decalage = decal
 	fond_ligne.queue_redraw()
 	return fond_ligne
+
+func _appui(valeur: bool) -> void:
+	appuye = valeur
+	queue_redraw()
 
 func _entree() -> void:
 	_marquer(true)
@@ -139,7 +145,30 @@ func rang() -> int:
 
 func _draw() -> void:
 	rayer(self, Rect2(Vector2.ZERO, size), rang(), echelle(self), rayon)
-	dessiner(self, Rect2(Vector2.ZERO, size), survole, accent, echelle(self), rayon, decalage)
+	dessiner(self, Rect2(Vector2.ZERO, size), survole or appuye, accent, echelle(self), rayon, decalage)
+	if appuye:
+		var k := echelle(self)
+		draw_style_box(_boite(Color(Charte.IVOIRE, 0.08), rayon * k), Rect2(Vector2.ZERO, size))
+		draw_rect(Rect2(rayon * k, 0, maxf(0.0, size.x - rayon * k * 2.0), maxf(2.0, roundf(2.0 * k))), Color(0, 0, 0, 0.4))
+
+## Captures du retour commun : la 6e ligne visible de chaque liste est montrée enfoncée (bouton tenu).
+static func simuler_appui(arbre: SceneTree) -> int:
+	var listes := {}
+	var vue := arbre.root.get_visible_rect()
+	for fond_ligne in arbre.get_nodes_in_group(GROUPE):
+		if not (fond_ligne is Control) or not fond_ligne.is_visible_in_tree() or fond_ligne.ligne == null: continue
+		if not vue.encloses(fond_ligne.ligne.get_global_rect()): continue
+		var cle = fond_ligne.ligne.get_parent().get_instance_id()
+		if not listes.has(cle): listes[cle] = []
+		listes[cle].append(fond_ligne)
+	var touchees := 0
+	for cle in listes:
+		var liste: Array = listes[cle]
+		if liste.size() < 7: continue
+		liste.sort_custom(func(a, b): return a.ligne.global_position.y < b.ligne.global_position.y)
+		liste[5]._appui(true)
+		touchees += 1
+	return touchees
 
 ## Captures et suites : simule le survol d'une ligne visible (la 3e) dans chaque liste. Renvoie le nombre de listes
 ## touchées.

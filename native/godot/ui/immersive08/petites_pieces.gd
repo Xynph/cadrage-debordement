@@ -65,6 +65,8 @@ static func rendre_cliquable(cadre: Control, taille: Vector2, action: Callable, 
 	bouton.pressed.connect(action)
 	cadre.add_child(bouton)
 	D.place(bouton, Rect2(Vector2.ZERO, taille))
+	# Survol et appui : retour commun des tuiles cliquables (ui/retour_tuile.gd).
+	load("res://ui/retour_tuile.gd").brancher(bouton, cadre, survol.corner_radius_top_left)
 	return bouton
 
 ## Largeur (unités) d'une pastille portant ce mot.

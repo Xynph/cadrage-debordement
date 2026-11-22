@@ -90,4 +90,6 @@ static func cliquable(cible: Control, action: Callable, id: String, aide: String
 	cible.add_child(bouton)
 	bouton.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bouton.pressed.connect(action)
+	# Survol et appui : retour commun des tuiles cliquables (ui/retour_tuile.gd).
+	load("res://ui/retour_tuile.gd").brancher(bouton, cible, rayon)
 	return bouton
