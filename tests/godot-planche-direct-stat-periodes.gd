@@ -134,7 +134,7 @@ func run() -> void:
 		for passe: Array in [["G", ["possession"]], ["F", ["occupation"]], ["", ["plaquages_reussis", "penalites"]]]:
 			var variante: String = passe[0]
 			for cle: String in passe[1]:
-				var bouton := premier(between, "MatchBetweenMirror_%s_*" % cle)
+				var bouton := premier(between, "MatchBetweenMirrorBar_%s" % cle)
 				if bouton == null: bouton = premier(between, "MatchBetweenFigure_%s" % cle)
 				check(bouton != null, "%s : chiffre « %s » à l'écran" % [str(taille), cle])
 				if bouton == null: continue

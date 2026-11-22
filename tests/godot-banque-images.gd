@@ -173,7 +173,7 @@ func lot7() -> void:
 	verifier(BanqueImages.tribune(80) == "tribune-pleine-jour" and BanqueImages.tribune(50) == "tribune-moitie" and BanqueImages.tribune(10) == "tribune-vide" and BanqueImages.tribune(null) == "", "tribunes")
 	for id in ["titre-principal", "titre-nouvelle-carriere", "trophee-coupe-haute", "voyage-aeroport"]:
 		verifier(BanqueImages.texture(id) != null, "image %s" % id)
-	verifier(preload("res://ui/immersive08/month_calendar.gd") != null and preload("res://ui/immersive08/player_canvas.gd") != null and preload("res://ui/immersive08/entry_canvas.gd") != null, "écrans chargés")
+	verifier(preload("res://ui/immersive08/training_mois.gd") != null and preload("res://ui/immersive08/player_canvas.gd") != null and preload("res://ui/immersive08/entry_canvas.gd") != null, "écrans chargés")
 
 func lot8() -> void:
 	verifier(BanqueImages.version_neutre("action-essai") == "action-essai-neutre" and BanqueImages.version_neutre("match-tunnel") == "match-tunnel-neutre" and BanqueImages.version_neutre("fond-bureau") == "", "versions neutres")
