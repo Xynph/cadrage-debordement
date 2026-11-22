@@ -60,6 +60,7 @@ const EXTRAS := [
 	{"id": "classements-stats", "libelle": "Classements · onglet Statistiques", "type": "classements_onglet", "onglet": "stats"},
 	{"id": "formation-suivi", "libelle": "Formation · sous-page Suivi des jeunes", "type": "formation_suivi"},
 	{"id": "options", "libelle": "Options", "type": "options"},
+	{"id": "recherche", "libelle": "Recherche (résultats de la barre haute)", "type": "recherche"},
 	{"id": "creation-options", "libelle": "Création · étape 2 Carrière (options)", "type": "creation_options"},
 	{"id": "avant-match-delegation", "libelle": "Avant-match · sous-page Déléguer le match", "type": "avant_delegation"},
 	{"id": "avant-match-bilan", "libelle": "Avant-match · petite fenêtre de la dernière rencontre", "type": "avant_bilan"},
@@ -825,6 +826,13 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			app.settings()
 			await stabiliser()
 			if app.route != "Réglages" or app.root_content.find_child("PreferencesPage", true, false) == null: return {"statut": "echec", "note": "écran Réglages non ouvert"}
+		"recherche":
+			app._navigate("Bureau")
+			await stabiliser()
+			# Comme Ctrl+K puis Entrée dans la barre haute : résultats de la requête « a » dans la coque.
+			app.navigation_controller.submit_search("a")
+			await stabiliser()
+			if app.route != "Recherche" or app.root_content.find_child("SearchResult0", true, false) == null: return {"statut": "echec", "note": "écran Recherche sans résultat"}
 		"avant_bilan":
 			# Bilan de la dernière rencontre : pastille du bandeau → petite fenêtre.
 			app._navigate("Match")
