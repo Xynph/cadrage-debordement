@@ -66,6 +66,7 @@ const EXTRAS := [
 	{"id": "creation-options", "libelle": "Création · étape 2 Carrière (options)", "type": "creation_options"},
 	{"id": "avant-match-delegation", "libelle": "Avant-match · sous-page Déléguer le match", "type": "avant_delegation"},
 	{"id": "avant-match-bilan", "libelle": "Avant-match · petite fenêtre de la dernière rencontre", "type": "avant_bilan"},
+	{"id": "compte-rendu", "libelle": "Réception · article du dernier match (carte du compte rendu)", "type": "reception_article"},
 	{"id": "preparation-bas", "libelle": "Préparation · leur XV probable (bas de page)", "type": "preparation_bas"},
 	{"id": "preparation-consignes", "libelle": "Préparation · onglet Consignes", "type": "preparation_onglet", "onglet": 1},
 	{"id": "preparation-conseils", "libelle": "Préparation · conseils détaillés (sous-page)", "type": "preparation_sous", "sous": "conseils"},
@@ -497,6 +498,21 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				app._navigate("Réception", false)
 				await stabiliser()
 			if app.route != route: return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
+		"reception_article":
+			var article := ""
+			for courrier: Dictionary in load("res://ui/club_mail.gd").mails(app.model):
+				if str(courrier.get("type", "")) == "article": article = str(courrier.id); break
+			if article.is_empty(): return {"statut": "indisponible", "note": "aucun article de match dans la carrière filmée"}
+			app._reset_reception(article)
+			app._navigate("Réception", false)
+			await stabiliser()
+			var carte_cr := app.find_child("CompteRenduCarte", true, false) as Control
+			if carte_cr == null: return {"statut": "echec", "note": "carte du compte rendu absente"}
+			# La carte entière à l'écran : la lecture défile jusqu'à elle (le titre du journal passe au-dessus).
+			var lecture := app.find_child("InboxReadingScroll", true, false) as ScrollContainer
+			if lecture != null:
+				lecture.scroll_vertical = int(carte_cr.global_position.y - lecture.global_position.y) + lecture.scroll_vertical - 12
+				await stabiliser()
 		"tactique_onglet":
 			app._navigate("Composition")
 			await stabiliser()
