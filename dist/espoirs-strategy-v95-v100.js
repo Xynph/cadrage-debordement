@@ -63,6 +63,8 @@
  }
  function unlocked(s){return !!s&&!s.live&&s.phase!=='ended'}
  function cost(s,amount){return Number.isFinite(s?.clubs?.[s.club]?.cash)&&s.clubs[s.club].cash>=amount}
+ // Carrière Monde : prix indexés sur les moyens du club (CDNativeAcademy.fee) ; ailleurs, prix historiques.
+ const price=(s,v)=>root.CDNativeAcademy?.fee?root.CDNativeAcademy.fee(s,v):v;
 
  // This fictional feeder network is distinct from LNR clubs and official calendars.
  const FEEDERS=[
@@ -172,21 +174,21 @@
  }
  function watch(s,id,save){
   const st=ensure(s),n=st&&network(st,s),p=n?.players.find(x=>x.id===id);
-  if(!st||!unlocked(s)||!p||p.status!=='available'||p.scouted>=3||!cost(s,500))return false;
-  return transact(s,()=>{s.clubs[s.club].cash-=500;p.scouted++;
+  if(!st||!unlocked(s)||!p||p.status!=='available'||p.scouted>=3||!cost(s,price(s,500)))return false;
+  return transact(s,()=>{s.clubs[s.club].cash-=price(s,500);p.scouted++;
    const scout=n.recruiters.find(r=>r.zone===p.region)||(p.union===homeUnionOf(s)?n.recruiters[1]:n.recruiters[2]);
    p.lastReport={season:s.season,recruiter:scout.name,reliability:Math.min(95,scout.skill+p.scouted*4)};
    return true},save);
  }
  function trial(s,id,save){
   const st=ensure(s),n=st&&network(st,s),p=n?.players.find(x=>x.id===id);
-  if(!st||!unlocked(s)||!p||p.status!=='available'||p.scouted<1||p.trial||!cost(s,1000))return false;
-  return transact(s,()=>{s.clubs[s.club].cash-=1000;p.trial=true;return true},save);
+  if(!st||!unlocked(s)||!p||p.status!=='available'||p.scouted<1||p.trial||!cost(s,price(s,1000)))return false;
+  return transact(s,()=>{s.clubs[s.club].cash-=price(s,1000);p.trial=true;return true},save);
  }
  function partner(s,clubId,save){
   const st=ensure(s),n=st&&network(st,s),c=n?.feeders.find(x=>x.id===clubId);
-  if(!st||!unlocked(s)||!c||n.partners.includes(clubId)||n.partners.length>=8||!cost(s,2000))return false;
-  return transact(s,()=>{s.clubs[s.club].cash-=2000;n.partners.push(clubId);c.relationship++;return true},save);
+  if(!st||!unlocked(s)||!c||n.partners.includes(clubId)||n.partners.length>=8||!cost(s,price(s,2000)))return false;
+  return transact(s,()=>{s.clubs[s.club].cash-=price(s,2000);n.partners.push(clubId);c.relationship++;return true},save);
  }
  function clearance(s,id,save){
   const st=ensure(s),n=st&&network(st,s),p=n?.players.find(x=>x.id===id);
@@ -198,7 +200,7 @@
   const st=ensure(s),n=st&&network(st,s),p=n?.players.find(x=>x.id===id),academy=youth(s);
   const capacity=[1,2,3].includes(s.academyGroupPolicy)?75:35;
   if(!st||!unlocked(s)||!p||p.status!=='available'||p.scouted<2||!p.trial||
-     academy.length>=capacity||st.recruits.length>=5||!cost(s,8000)||academy.some(x=>x.id===id))return false;
+     academy.length>=capacity||st.recruits.length>=5||!cost(s,price(s,8000))||academy.some(x=>x.id===id))return false;
   // Underage international recruitment is not simulated as an ordinary domestic transfer.
   if(p.union!==homeUnionOf(s)&&(p.age<18||p.clearanceRecorded!==true))return false;
   const template=fam(s,p);
@@ -217,7 +219,7 @@
    newPlayer.trainingOrigin={clubId:p.clubId,clubName:p.clubName,union:p.union,region:p.region,
      joinedSeason:s.season,history:[{season:s.season,club:p.clubId,phase:'amateur'},
        {season:s.season,club:s.club,phase:'academy'}]};
-   academy.push(newPlayer);s.clubs[s.club].cash-=8000;
+   academy.push(newPlayer);s.clubs[s.club].cash-=price(s,8000);
    p.status='recruited';st.recruits.push({id:p.id,name:p.name,season:s.season,origin:p.clubId});
    n.history.push({id:p.id,season:s.season,action:'recruited',club:p.clubId});
    return true;
@@ -253,9 +255,9 @@
  }
  function discover(s,region,save){
   const st=ensure(s),n=st&&network(st,s);
-  if(!st||!unlocked(s)||!regionsOf(s).includes(region)||st.scouts>=3||!cost(s,3000))return false;
+  if(!st||!unlocked(s)||!regionsOf(s).includes(region)||st.scouts>=3||!cost(s,price(s,3000)))return false;
   return transact(s,()=>{
-   s.clubs[s.club].cash-=3000;st.scouts++;st.region=region;
+   s.clubs[s.club].cash-=price(s,3000);st.scouts++;st.region=region;
    const clubs=n.feeders.filter(x=>x.region===region);
    const pool=n.players.filter(x=>clubs.some(c=>c.id===x.clubId)&&x.status==='available');
    for(const p of pool.slice(0,3))p.scouted=Math.max(1,p.scouted);
@@ -265,8 +267,8 @@
  function recruit(s,id,save){return recruitFeeder(s,id,save)}
  function meeting(s,save){
   const st=ensure(s);
-  if(!st||!unlocked(s)||st.meetings>=3||!cost(s,2000))return false;
-  return transact(s,()=>{s.clubs[s.club].cash-=2000;st.meetings++;st.cohesion=clamp(st.cohesion+9,0,100);return true},save);
+  if(!st||!unlocked(s)||st.meetings>=3||!cost(s,price(s,2000)))return false;
+  return transact(s,()=>{s.clubs[s.club].cash-=price(s,2000);st.meetings++;st.cohesion=clamp(st.cohesion+9,0,100);return true},save);
  }
  function load(s,id,value,save){
   const st=ensure(s),p=youth(s).find(x=>x.id===id);
