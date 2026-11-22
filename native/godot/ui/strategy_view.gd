@@ -13,6 +13,7 @@ const Tuile = preload("res://ui/tuile_choix.gd")
 const LienZone = preload("res://ui/lien_zone.gd")
 const Visuel = preload("res://ui/strategy_visuals.gd")
 const JaugeAnneau = preload("res://ui/jauge_anneau.gd")
+const Supporters = preload("res://ui/supporters_camembert.gd")
 
 const PRIX := {"accessible":"Accessible", "equilibree":"Équilibrée", "premium":"Premium"}
 const STATUTS := {"pending":["À suivre", "clock", Charte.GRIS_VERT], "met":["Atteint", "check", Charte.V], "missed":["Manqué", "warning", Charte.D], "unverified":["Non vérifiable", "info", Charte.GRIS_VERT]}
@@ -202,8 +203,17 @@ static func _board(app: Control, page: Container, data: Dictionary, locked: bool
 		Visuel.tuile_offre(cards, {"video":"video", "medical":"croix", "logistique":"camion"}.get(project.id, "settings"), project.label, G.euros(project.cost), "paiement unique", _choice(app, "club_board_project", {"kind":project.id}, locked or project.used or short, "Financer %s pour %s ?" % [project.label, G.euros(project.cost)], "Choisir", "Déjà engagé" if project.used else "Trésorerie insuffisante" if short else ""), state)
 	var objectives := G.panel(page)
 	var empty := "Fixe un premier jalon. Les objectifs servent au suivi du projet ; la confiance du président dépend du bilan du club."
-	objectives.add_child(Tuile.titre_bloc("Les rendez-vous du conseil", "Objectifs suivis depuis les résultats de ta carrière." + ("\n\n" + empty if b.objectives.is_empty() else "")))
-	for goal: Dictionary in b.objectives:
+	var plan: Array = b.get("plan", [])
+	if plan.is_empty(): objectives.add_child(Tuile.titre_bloc("Les rendez-vous du conseil", "Objectifs suivis depuis les résultats de ta carrière." + ("\n\n" + empty if b.objectives.is_empty() else "")))
+	else:
+		objectives.add_child(Tuile.titre_bloc("Plan sur 5 ans", "Saison en cours : jalons du conseil. Saisons suivantes : projection vers l’objectif du club."))
+		if Supporters.variante() == "B": Supporters.plan_b(app, objectives, plan)
+		else: Supporters.plan_a(app, objectives, plan)
+		# Plan des dirigeants en tête de l'onglet (planche FM27 n° 15).
+		var racine: Node = objectives
+		while racine.get_parent() != page: racine = racine.get_parent()
+		page.move_child(racine, 0)
+	for goal: Dictionary in ([] if not plan.is_empty() else b.objectives):
 		var line := G.h(12)
 		objectives.add_child(line)
 		var text := C.label(_goal_label(goal), 22, Charte.IVOIRE, true, 600)
@@ -239,6 +249,10 @@ static func _board(app: Control, page: Container, data: Dictionary, locked: bool
 
 static func _fans(app: Control, page: Container, data: Dictionary, locked: bool) -> void:
 	var f: Dictionary = data.fans
+	var profil: Dictionary = f.get("supporters", {})
+	if not profil.is_empty():
+		if Supporters.variante() == "B": Supporters.supporters_b(app, page, profil, func(): _public(app, f))
+		else: Supporters.supporters_a(app, page, profil, func(): _public(app, f))
 	G.photo_note(page, app.model.club, "Le territoire", "Une ville derrière toi", "city", 140)
 	var card := G.panel(page)
 	card.add_child(Tuile.titre_bloc("Une ville derrière toi", "L’accueil et l’ancrage local se construisent toute la saison.\n\n" + Copy.notice("strategy", f.notice)))

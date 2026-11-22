@@ -60,7 +60,7 @@ function factory(){
    :nativeClubBudget.leviers({...common,objectif:'tresorerie',solde:f.baseForecast+HOME_GATE*homeLeft()});
   return f;
  }
- function project(){
+ function projectBase(){
   if(!S)return null;const s=previewState(),b=CDSportingDirectorV105V110.ensure(s),f=CDFanExperienceV111V116.ensure(s),quote=worldActive()?worldFacilityQuote(S.club):null;
   const budget=careerIntegrated()?S.careerManagement:null,remaining=Math.max(0,weeks(S)-week(S)),wage=own(S).players.reduce((n,p)=>n+p.salary,0),sponsor=budget?.sponsor?.season===S.season?CAREER_SPONSORS[budget.sponsor.key]:null;
   const weeklyIncome=160000+(sponsor?.weekly||0),weeklyCosts=wage+(budget?.academyInvestment||0)+(worldActive()?worldUpkeep(worldClub(S.club).facilities):0);
@@ -98,6 +98,53 @@ function factory(){
   const order=members.slice().sort((x,y)=>force(y)-force(x)||x-y),rank=order.indexOf(s.club)+1,top=/Top (\d+)/.exec(String(s.clubs[s.club]?.goal||''));
   const target=Math.max(1,Math.min(top?+top[1]:rank<=Math.ceil(n/3)?rank-1:rank,Math.min(safe,n-1)));
   s.nativeBoardCalendar=CDBoardCalendar.objective(b,{id:'pres:'+s.season+':'+s.club+':rank',type:'rank',target,deadline:fin,weight:2});return true;
+ }
+ // Supporters en camembert (revue FM27, idée n° 15) : lecture dérivée, sans état sauvegardé ni effet sur le match.
+ // Types : part de la foule prévue, tirée des abonnés, du prix, de la campagne, de l'accueil et des actions de proximité.
+ // Attentes : une par type (importance 1-4 selon la part), réaction sur 100 lue dans les résultats, le classement visé,
+ // le prix, la formation et les actions de la saison ; null tant qu'il n'y a pas de quoi juger (« En attente »).
+ // Plan des dirigeants : saison en cours = jalons réels ; quatre saisons suivantes = projection de l'objectif de
+ // classement vers l'objectif du club (« Top N »), trésorerie positive et un jeune du centre lancé par saison.
+ function supporters(fans,board){
+  const c=own(S),st=S.v111to116||{},cur=x=>x&&x.season===S.season,camp=cur(st.campaign)?st.campaign.kind:null,serv=cur(st.service)?st.service.kind:null;
+  const comm=(st.community||[]).filter(cur).map(x=>x.kind),price=fans.policy,crowd=Math.max(1,fans.expectedAttendance||0,fans.subscribers||0);
+  const raw={abonnes:Math.max(12,Math.min(45,Math.round(100*(fans.subscribers||0)/crowd))),familles:14+(camp==='familiale'?10:0)+(price==='accessible'?6:price==='premium'?-6:0)+(comm.includes('ecoles')?4:0),
+   amateurs:9+(camp==='locale'?7:0)+(comm.includes('associations')?4:0)+(comm.includes('portesOuvertes')?3:0),connectes:8+(camp==='numerique'?9:0),partenaires:4+(serv==='premium'?6:serv==='confort'?3:0)+(price==='premium'?3:0)};
+  const used=Object.values(raw).reduce((n,x)=>n+x,0);raw.occasionnels=Math.max(6,100-used);
+  const total=Object.values(raw).reduce((n,x)=>n+x,0),ids=Object.keys(raw),share={};let left=100;
+  ids.forEach((id,i)=>{share[id]=i===ids.length-1?left:Math.round(100*raw[id]/total);left-=share[id];});
+  const labels={abonnes:'Abonnés fidèles',familles:'Familles',amateurs:'Clubs amateurs et écoles de rugby',connectes:'Jeunes connectés',partenaires:'Partenaires et loges',occasionnels:'Occasionnels'};
+  const segments=ids.map(id=>({id,label:labels[id],share:share[id],count:Math.round(crowd*share[id]/100)})).sort((a,b)=>b.share-a.share);
+  const m=metrics(),played=(c.won||0)+(c.drawn||0)+(c.lost||0),rankGoal=(board.objectives||[]).find(o=>o.type==='rank'),promotions=S.careerManagement?.promotions;
+  const clamp=(x)=>Math.max(0,Math.min(100,Math.round(x)));
+  const reactions={abonnes:played<3?null:clamp(50+((c.won||0)-(c.lost||0))*6),
+   occasionnels:!rankGoal||played<3||!(m.rank>0)?null:m.rank<=rankGoal.target-2?90:m.rank<=rankGoal.target?75:m.rank<=rankGoal.target+2?50:30,
+   familles:price==='accessible'?90:price==='premium'?35:65,amateurs:clamp(45+20*comm.length+(camp==='locale'?15:0)),
+   connectes:camp==='numerique'?85:null,partenaires:serv==='premium'?88:serv==='confort'?72:fans.demand>=80?60:45};
+  const wishes={abonnes:['Gagner à domicile','resultats'],occasionnels:[rankGoal?'Classement ≤ '+rankGoal.target:'Viser le haut du tableau','classement'],familles:['Des billets abordables','prix'],
+   amateurs:['Un club proche de sa ville','proximite'],connectes:['Le club sur les réseaux','image'],partenaires:['Un accueil de qualité','accueil']};
+  if(typeof promotions==='number'){wishes.amateurs=['Des jeunes du centre en équipe première','formation'];reactions.amateurs=promotions>0?clamp(50+promotions*20):null;}
+  const expectations=segments.map((g,i)=>({id:g.id,label:wishes[g.id][0],kind:wishes[g.id][1],segment:g.id,importance:Math.max(g.share>=25?4:g.share>=15?3:g.share>=9?2:1,{resultats:3,classement:3}[wishes[g.id][1]]||1),reaction:reactions[g.id]}));
+  const known=expectations.filter(e=>e.reaction!==null),mood=known.length?Math.round(known.reduce((n,e)=>n+e.reaction*e.importance,0)/known.reduce((n,e)=>n+e.importance,0)):null;
+  return {segments,expectations,mood,crowd};
+ }
+ function boardPlan(board){
+  const c=own(S),rankGoal=(board.objectives||[]).find(o=>o.type==='rank'),top=/Top (\d+)/.exec(String(c.goal||'')),plan=[];
+  const now=(board.objectives||[]).map(o=>({label:o.type,target:o.target,deadline:o.deadline,importance:o.id&&o.id.startsWith('pres:')?4:2,status:o.status}));
+  now.push({label:'cash',target:0,importance:3,status:c.cash>=0?'pending':'missed'});
+  plan.push({season:S.season,current:true,objectives:now});
+  const start=rankGoal?rankGoal.target:null,end=start===null?null:Math.max(1,Math.min(start,top?+top[1]:Math.max(1,start-3)));
+  for(let k=1;k<=4;k++){const list=[];
+   if(start!==null)list.push({label:'rank',target:Math.round(start+(end-start)*k/4),importance:4,status:'future'});
+   list.push({label:'cash',target:0,importance:3,status:'future'});
+   list.push({label:'youth',target:1,importance:k>=2?3:2,status:'future'});
+   plan.push({season:S.season+k,current:false,objectives:list});}
+  return plan;
+ }
+ function project(){
+  const out=projectBase();if(!out)return out;
+  try{out.fans.supporters=supporters(out.fans,out.board);out.board.plan=boardPlan(out.board);}catch(e){}
+  return out;
  }
  let installed=false;
  function installHooks(){if(installed)return;installed=true;
