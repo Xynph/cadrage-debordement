@@ -439,6 +439,12 @@ static func _entrainement(app: Control, page: Control) -> void:
 	var gauche := Vertical.DROITE
 	var largeur := 2248.0 - gauche
 	_carte_forme(app, page)
+	# Variantes visuelles A/B à l'essai (CD_VARIANTE_VISUELLE) : seule la colonne de droite change.
+	var Variantes = load("res://ui/immersive08/tactics_entrainement_variantes.gd")
+	var variante: String = Variantes.variante()
+	if not variante.is_empty():
+		Variantes.construire(app, page, variante, tuiles, surveilles)
+		return
 	# Tuiles de chiffres (clic → onglet Fatigue de l'entraînement ou Vestiaire).
 	_titre_bloc(page, gauche, HAUT, "Le groupe", Charte.CONDITION)
 	var tw := (largeur - 3 * 16) / 4.0
