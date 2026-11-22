@@ -11,7 +11,11 @@ const R = preload("res://ui/immersive08/reperes.gd")
 const Charte = preload("res://ui/charte.gd")
 const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
 const Panneaux = preload("res://ui/immersive08/panneaux_effectif.gd")
-const CORPS = preload("res://art/corps/corps-rugbyman.svg")
+## Silhouette : deux dessins (face, dos) dans art/corps (licences dans art/corps/CREDITS.md). CD_CORPS_DIR (dossier
+## avec face.png et dos.png) et CD_CORPS_POINTS (jeu de points) servent aux planches de comparaison.
+const CORPS_FACE := "res://art/corps/corps-face.png"
+const CORPS_DOS := "res://art/corps/corps-dos.png"
+const JEU_POINTS := "traits"
 
 const NOM := "FenetreBlessure"
 const GRIS := Color("5d6866")
@@ -19,20 +23,40 @@ const LARGEUR := 1360.0
 const HAUTEUR := 830.0
 const LIGNE := 52.0
 
-## Zone touchée par type de blessure (données club-mail.json « blessures.types ») : points dans le dessin
-## corps-rugbyman.svg (752 × 1584, vu de face) pour le côté droit du joueur (d, à gauche du dessin) et le gauche (g),
-## vue (F face, B dos, FB les deux), rayon. Vu de dos, le dessin est retourné : la droite du joueur passe à droite.
+## Zone touchée par type de blessure (données club-mail.json « blessures.types ») : vue (F face, B dos), rayon (part
+## de la hauteur du dessin), libellé court.
 const ZONES := {
-	"commotion": {"d": Vector2(410, 85), "g": Vector2(410, 85), "vue": "FB", "r": 72.0, "mot": "Tête", "cote": false},
-	"cou": {"d": Vector2(405, 200), "g": Vector2(405, 200), "vue": "FB", "r": 38.0, "mot": "Cou", "cote": false},
-	"epaule": {"d": Vector2(215, 290), "g": Vector2(575, 290), "vue": "FB", "r": 55.0, "mot": "Épaule", "cote": true},
-	"cotes": {"d": Vector2(295, 500), "g": Vector2(495, 500), "vue": "F", "r": 55.0, "mot": "Côtes", "cote": true},
-	"contusion": {"d": Vector2(265, 900), "g": Vector2(485, 900), "vue": "F", "r": 68.0, "mot": "Cuisse", "cote": true},
-	"ischios": {"d": Vector2(265, 920), "g": Vector2(485, 920), "vue": "B", "r": 68.0, "mot": "Ischios", "cote": true},
-	"genou": {"d": Vector2(232, 1120), "g": Vector2(465, 1120), "vue": "F", "r": 44.0, "mot": "Genou", "cote": true},
-	"croises": {"d": Vector2(232, 1120), "g": Vector2(465, 1120), "vue": "FB", "r": 48.0, "mot": "Genou", "cote": true},
-	"mollet": {"d": Vector2(222, 1235), "g": Vector2(460, 1235), "vue": "B", "r": 50.0, "mot": "Mollet", "cote": true},
-	"cheville": {"d": Vector2(150, 1450), "g": Vector2(480, 1440), "vue": "FB", "r": 32.0, "mot": "Cheville", "cote": true},
+	"commotion": {"vue": "FB", "r": .05, "mot": "Tête", "cote": false},
+	"cou": {"vue": "FB", "r": .03, "mot": "Cou", "cote": false},
+	"epaule": {"vue": "FB", "r": .045, "mot": "Épaule", "cote": true},
+	"cotes": {"vue": "F", "r": .05, "mot": "Côtes", "cote": true},
+	"contusion": {"vue": "F", "r": .06, "mot": "Cuisse", "cote": true},
+	"ischios": {"vue": "B", "r": .06, "mot": "Ischios", "cote": true},
+	"genou": {"vue": "F", "r": .035, "mot": "Genou", "cote": true},
+	"croises": {"vue": "FB", "r": .04, "mot": "Genou", "cote": true},
+	"mollet": {"vue": "B", "r": .045, "mot": "Mollet", "cote": true},
+	"cheville": {"vue": "FB", "r": .025, "mot": "Cheville", "cote": true},
+}
+## Points des zones, en parts de la largeur et de la hauteur de chaque dessin : [côté droit du joueur, côté gauche].
+## De face, la droite du joueur est à gauche du dessin ; de dos, à droite. « traits » : Human Muscle System (j4p4n) ;
+## « volumes » : écorché face / dos de GDJ.
+const POINTS := {
+	"traits": {
+		"F": {"commotion": [Vector2(.43, .07), Vector2(.43, .07)], "cou": [Vector2(.45, .17), Vector2(.45, .17)], "epaule": [Vector2(.25, .22), Vector2(.74, .22)],
+			"cotes": [Vector2(.33, .33), Vector2(.62, .33)], "contusion": [Vector2(.36, .60), Vector2(.65, .60)], "genou": [Vector2(.38, .76), Vector2(.65, .76)],
+			"croises": [Vector2(.38, .76), Vector2(.65, .76)], "cheville": [Vector2(.45, .94), Vector2(.70, .94)]},
+		"B": {"commotion": [Vector2(.60, .07), Vector2(.60, .07)], "cou": [Vector2(.57, .15), Vector2(.57, .15)], "epaule": [Vector2(.75, .22), Vector2(.27, .22)],
+			"ischios": [Vector2(.60, .61), Vector2(.38, .61)], "croises": [Vector2(.58, .72), Vector2(.38, .72)], "mollet": [Vector2(.57, .80), Vector2(.37, .80)],
+			"cheville": [Vector2(.55, .93), Vector2(.33, .93)]},
+	},
+	"volumes": {
+		"F": {"commotion": [Vector2(.53, .08), Vector2(.53, .08)], "cou": [Vector2(.53, .16), Vector2(.53, .16)], "epaule": [Vector2(.33, .20), Vector2(.73, .21)],
+			"cotes": [Vector2(.40, .33), Vector2(.66, .33)], "contusion": [Vector2(.35, .60), Vector2(.62, .60)], "genou": [Vector2(.33, .72), Vector2(.58, .72)],
+			"croises": [Vector2(.33, .72), Vector2(.58, .72)], "cheville": [Vector2(.27, .93), Vector2(.55, .93)]},
+		"B": {"commotion": [Vector2(.40, .06), Vector2(.40, .06)], "cou": [Vector2(.41, .15), Vector2(.41, .15)], "epaule": [Vector2(.62, .22), Vector2(.25, .22)],
+			"ischios": [Vector2(.53, .60), Vector2(.30, .60)], "croises": [Vector2(.52, .72), Vector2(.31, .72)], "mollet": [Vector2(.53, .80), Vector2(.30, .80)],
+			"cheville": [Vector2(.55, .93), Vector2(.33, .93)]},
+	},
 }
 const CAUSES := {"match": ["Match", "ball"], "entrainement": ["Entraînement", "train"], "rechute": ["Rechute", "renew"]}
 const PROTOCOLES := {"prudent": "Prudent", "standard": "Standard", "accelere": "Accéléré"}
@@ -249,56 +273,59 @@ static func _segments(parent: Control, rect: Rect2, valeur: float, couleur: Colo
 
 # ---------------------------------------------------------------- silhouette
 
-## Point de la zone dans le dessin tel qu'affiché (dos : dessin retourné), ou (-1, -1) si la vue ne la montre pas.
+static var _textures := {}
+
+## Dessin face (« F ») ou dos (« B ») : celui du jeu, ou celui de CD_CORPS_DIR (planches de comparaison).
+static func texture(vue: String) -> Texture2D:
+	var dossier := OS.get_environment("CD_CORPS_DIR")
+	var cle := dossier + vue
+	if _textures.has(cle): return _textures[cle]
+	var tex: Texture2D = null
+	if not dossier.is_empty():
+		var image := Image.load_from_file(dossier.path_join("face.png" if vue == "F" else "dos.png"))
+		if image != null: tex = ImageTexture.create_from_image(image)
+	if tex == null: tex = load(CORPS_FACE if vue == "F" else CORPS_DOS)
+	_textures[cle] = tex
+	return tex
+
+static func jeu_points() -> String:
+	var jeu := OS.get_environment("CD_CORPS_POINTS")
+	return jeu if POINTS.has(jeu) else JEU_POINTS
+
+## Point de la zone en parts du dessin (0-1), ou (-1, -1) si la vue ne la montre pas.
 static func point_zone(type: String, droite: bool, vue: String) -> Vector2:
 	var zone: Dictionary = ZONES.get(type, {})
 	if zone.is_empty() or not str(zone.vue).contains(vue): return Vector2(-1, -1)
-	var p: Vector2 = zone.d if droite else zone.g
-	return p if vue == "F" else Vector2(Silhouette.TAILLE.x - p.x, p.y)
+	var paire: Array = POINTS[jeu_points()][vue].get(type, [])
+	if paire.is_empty(): return Vector2(-1, -1)
+	return paire[0] if droite or not bool(zone.cote) else paire[1]
 
 static func _silhouette(parent: Control, rect: Rect2, d: Dictionary, vue: String) -> void:
 	var s := Silhouette.new()
 	s.name = "FenetreBlessureSilhouette" + vue
 	s.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	s.dos = vue == "B"
+	s.dessin = texture(vue)
 	s.point = point_zone(d.type, bool(d.droite), vue)
 	s.rayon = float(ZONES.get(d.type, {}).get("r", 0.0))
 	parent.add_child(s)
 	D.place(s, rect)
 
-## Silhouette de rugbyman (art/corps/corps-rugbyman.svg) ajustée au cadre, retournée pour le dos, quelques repères
-## (clavicules et ligne du torse de face ; colonne et omoplates de dos) et la zone touchée en halo rouge.
+## Dessin du corps (face ou dos) ajusté au cadre, et la zone touchée en halo rouge.
 class Silhouette extends Control:
-	const TAILLE := Vector2(752, 1584)
-	const TRAIT := Color("7c8a85")
-	var dos := false
+	var dessin: Texture2D
 	var point := Vector2(-1, -1)
 	var rayon := 0.0
 
 	func _draw() -> void:
-		var k := minf(size.x / TAILLE.x, size.y / TAILLE.y)
-		var o := (size - TAILLE * k) / 2.0
-		var v := func(x: float, y: float) -> Vector2: return o + Vector2(x, y) * k
-		if dos:
-			draw_set_transform(Vector2(o.x * 2.0 + TAILLE.x * k, 0), 0.0, Vector2(-1, 1))
-			draw_texture_rect(CORPS, Rect2(o, TAILLE * k), false)
-			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-		else:
-			draw_texture_rect(CORPS, Rect2(o, TAILLE * k), false)
-		var e := maxf(1.0, 5.0 * k)
-		if dos:
-			draw_line(v.call(395, 250), v.call(395, 740), TRAIT, e)
-			draw_arc(v.call(320, 400), 70 * k, PI * .15, PI * 1.05, 16, TRAIT, e)
-			draw_arc(v.call(470, 400), 70 * k, -PI * .05, PI * .85, 16, TRAIT, e)
-		else:
-			draw_line(v.call(300, 262), v.call(388, 280), TRAIT, e)
-			draw_line(v.call(490, 262), v.call(402, 280), TRAIT, e)
-			draw_line(v.call(395, 430), v.call(395, 720), TRAIT, e)
-			draw_arc(v.call(330, 390), 75 * k, PI * .1, PI * .9, 16, TRAIT, e)
-			draw_arc(v.call(460, 390), 75 * k, PI * .1, PI * .9, 16, TRAIT, e)
+		if dessin == null: return
+		var taille := Vector2(dessin.get_size())
+		var k := minf(size.x / taille.x, size.y / taille.y)
+		var o := (size - taille * k) / 2.0
+		draw_texture_rect(dessin, Rect2(o, taille * k), false)
 		if point.x < 0: return
-		var c: Vector2 = v.call(point.x, point.y)
+		var c := o + point * taille * k
+		var r := rayon * taille.y * k
 		var rouge := Color("d9634f")
 		for i in 6:
-			draw_circle(c, rayon * k * (1.0 + .3 * (5 - i)), Color(rouge, .08 + .06 * i))
-		draw_circle(c, rayon * k * .45, rouge)
+			draw_circle(c, r * (1.0 + .3 * (5 - i)), Color(rouge, .08 + .06 * i))
+		draw_circle(c, r * .45, rouge)

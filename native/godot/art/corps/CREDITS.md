@@ -1,6 +1,6 @@
 # Silhouette du corps (fenêtre blessure)
 
-- `corps-rugbyman.svg` : « Muscular Men Silhouette », GDJ, Openclipart, CC0 1.0 (domaine public),
-  https://openclipart.org/detail/307710/muscular-men-silhouette (dérivé d'une image Pixabay selon la page).
-  Modifications : seule la silhouette de droite (debout, bras le long du corps) est gardée, recadrée et teintée (#56635f).
-  Vue de dos = même silhouette retournée ; repères (clavicules, colonne, omoplates) dessinés par le jeu.
+Provisoire (choix de Léo en cours sur planche) :
+- `corps-face.png`, `corps-dos.png` : d'après « Human Muscle System », j4p4n, Openclipart, CC0 1.0 (domaine public),
+  https://openclipart.org/detail/326556/human-muscle-system — face et dos découpés, traits recolorés en crème,
+  corps rempli en gris sombre.
