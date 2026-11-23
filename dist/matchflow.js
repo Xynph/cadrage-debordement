@@ -64,7 +64,7 @@ function flowBeforeRestart(l,kind,cause,at){
  if(l.flow.advantage&&!l.flow.resolvingAward){
   if(advantageReal(l,at))clearAdvantage(l);else{returnAdvantage(l);return false}
  }
- if(l.minute>=periodBoundary(l)&&!(l.flow.resolvingAward&&kind==='scrum'&&cause==='knock-on')&&cause!=='penalty-touch'&&!['start','second-half'].includes(cause)){endFlowPeriod(l);return false}
+ if(l.minute>=periodBoundary(l)&&!(l.flow.resolvingAward&&kind==='scrum'&&cause==='knock-on')&&cause!=='penalty-touch'&&cause!=='penalty-scrum'&&!['start','second-half'].includes(cause)){endFlowPeriod(l);return false}
  l.flow.ballDead=false;return true;
 }
 function flowScored(l,side){
@@ -155,7 +155,8 @@ function annoncePenaliteSirene(l,side,choix){
  const abbr=S.clubs[l.pair[side]].abbr,diff=l.score[side]-l.score[1-side],moment=finPeriodeMoment(l),decisive=periodeDecisive(l);
  const pause=moment==='mi-temps'?'avant la pause':'avant le changement de camp';
  let suite;
- if(choix==='main')suite=`${abbr} la joue vite à la main, dernière action${decisive?'':' '+pause}`;
+ if(choix==='melee')suite=`${abbr} choisit la mêlée, dernière action${decisive?'':' '+pause}`;
+ else if(choix==='main')suite=`${abbr} la joue vite à la main, dernière action${decisive?'':' '+pause}`;
  else if(choix==='touche')suite=`${abbr} joue la pénaltouche, dernière action${!decisive?' '+pause:diff<0?' : il faut un essai':''}`;
  else{
   const bd=typeof nativeMatchBonus!=='undefined'?nativeMatchBonus.regleDuMatch(l)?.defensif?.ecart:null;
@@ -318,7 +319,7 @@ function playQuickTap(l,side){
  tacticalCount(l,side,'carries');
  const edge=teamEdge(l,side,'attack'),defence=effectiveDefence(l,opp);
  // Défense mal replacée : l'écart entre la vivacité du demi et l'organisation adverse.
- const surprise=clamp(((tapper?skill(tapper,'speed',true):60)-unit(l,opp,'mental'))*.004,-.06,.08)+(defence==='pression'?.02:defence==='prudente'?-.03:0);
+ const surprise=clamp(((tapper?skill(tapper,'speed',true):60)-unit(l,opp,'mental'))*.004,-.06,.08)+(defence==='pression'?.02:defence==='prudente'?-.03:0)+(typeof combiSurpriseJeuVite==='function'?combiSurpriseJeuVite(l,side):0);
  const lose=(why)=>{
   l.quickTapLog?.push({side,minute:l.minute,issue:why});
   if(why==='en-avant')return handFault(l,side);
