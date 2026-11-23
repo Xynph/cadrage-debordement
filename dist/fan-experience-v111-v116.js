@@ -11,13 +11,15 @@
   const integer=(x,a,b)=>Number.isInteger(x)&&x>=a&&x<=b;
   const present=x=>x&&typeof x==='object'&&!Array.isArray(x);
   function valid(st){
-    return present(st)&&st.version===1&&integer(st.season,1,10000)&&integer(st.sentiment,0,100)&&
+    // Humeur unique des supporters (23/11/2026, choix de Léo) : l'ancien « sentiment » sauvegardé n'est plus lu ;
+    // toléré dans une ancienne sauvegarde (retiré par ensure), comme l'ancien `sentiment` d'un bilan de saison.
+    return present(st)&&st.version===1&&integer(st.season,1,10000)&&(st.sentiment===undefined||integer(st.sentiment,0,100))&&
       has(PRICES,st.price)&&integer(st.subscribers,0,100000)&&
       (st.campaign===null||(present(st.campaign)&&has(CAMPAIGNS,st.campaign.kind)&&integer(st.campaign.season,1,10000)))&&
       (st.service===null||(present(st.service)&&has(SERVICES,st.service.kind)&&integer(st.service.season,1,10000)))&&
       Array.isArray(st.community)&&st.community.length<=2&&st.community.every(x=>present(x)&&has(EVENTS,x.kind)&&integer(x.season,1,10000))&&
       Array.isArray(st.ledger)&&st.ledger.length<=26&&st.ledger.every(x=>present(x)&&integer(x.round,1,26)&&integer(x.attendance,0,100000)&&integer(x.revenue,0,10000000))&&
-      Array.isArray(st.history)&&st.history.length<=12&&st.history.every(x=>present(x)&&integer(x.season,1,10000)&&integer(x.sentiment,0,100)&&integer(x.totalAttendance,0,2600000))&&
+      Array.isArray(st.history)&&st.history.length<=12&&st.history.every(x=>present(x)&&integer(x.season,1,10000)&&(integer(x.humeur,0,100)||integer(x.sentiment,0,100))&&integer(x.totalAttendance,0,2600000))&&
       integer(st.commercialCash,0,10000000);
   }
   function club(s){return s?.clubs?.[s.club]}
@@ -28,7 +30,7 @@
   // Abonnés de départ : déterministes (aucun hasard, aucune horloge), tirés de la capacité du stade et de la
   // popularité du club (`base`, 60 à 86 dans le monde). Petit club : environ 25 % de la capacité ; gros club :
   // environ 75 % ; écart propre au club de +/-3 points (hachage de son identité). Valeur d'affichage et socle
-  // des renouvellements : elle n'entre dans aucune recette (la prévision de billetterie ne lit que le moral).
+  // des renouvellements : elle n'entre dans aucune recette (la prévision de billetterie lit l'humeur des supporters).
   function initialSubscribers(s){
     const c=club(s),seats=capacity(s),base=Number.isFinite(Number(c?.base))?Number(c.base):70;
     const t=clamp((base-60)/26,0,1);
@@ -42,12 +44,15 @@
     if(s.v111to116!==undefined){
       const st=s.v111to116;
       if(!valid(st)||st.season>s.season)return null;
+      // Une seule humeur (23/11/2026) : l'ancien sentiment disparaît ; les bilans passés gardent leur chiffre sous `humeur`.
+      if(st.sentiment!==undefined)delete st.sentiment;
+      for(const h of st.history)if(h.humeur===undefined&&h.sentiment!==undefined){h.humeur=h.sentiment;delete h.sentiment;}
       // Sauvegarde antérieure : état jamais touché (0 abonné, rien joué ni acheté) -> socle initial.
       // (Recalculé tant que rien n'a été joué ni acheté : la capacité du stade a pu être renseignée depuis.)
       if(st.campaign===null&&!st.ledger.length&&!st.history.length&&st.season===s.season)st.subscribers=initialSubscribers(s);
       return st;
     }
-    s.v111to116={version:1,season:s.season,sentiment:50,price:'equilibree',subscribers:initialSubscribers(s),
+    s.v111to116={version:1,season:s.season,price:'equilibree',subscribers:initialSubscribers(s),
       campaign:null,service:null,community:[],ledger:[],history:[],commercialCash:0};
     return s.v111to116;
   }
@@ -63,14 +68,16 @@
     }
   }
   const ready=s=>{const st=ensure(s);return st&&st.season===s.season&&open(s)?st:null};
-  function forecast(s){
+  // humeur : humeur des supporters sur 100 (club-strategy.cjs, profil des tribunes) ; inconnue = 50, neutre.
+  function forecast(s,humeur){
     const st=ensure(s);if(!st)return null;
+    const mood=Number.isFinite(humeur)?clamp(humeur,0,100):50;
     const seats=capacity(s);
     const price=PRICES[st.price];
     const campaign=st.campaign?.season===s.season?CAMPAIGNS[st.campaign.kind].boost:0;
     const service=st.service?.season===s.season?SERVICES[st.service.kind].bonus:0;
     const discount=st.price==='accessible'?10:st.price==='premium'?-15:0;
-    const demand=clamp(Math.round(35+st.sentiment*0.5+campaign+service+discount),15,98);
+    const demand=clamp(Math.round(35+mood*0.5+campaign+service+discount),15,98);
     const expectedAttendance=Math.min(seats,Math.round(seats*demand/100));
     const expectedTicketRevenue=expectedAttendance*price;
     return {capacity:seats,price,demand,expectedAttendance,expectedTicketRevenue,
@@ -97,8 +104,8 @@
     if(!st||!cfg||st.community.length>=2||st.community.some(e=>e.kind===kind)||
        !Number.isFinite(c.cash)||c.cash<cfg.cost)return false;
     return transact(s,()=>{
-      c.cash-=cfg.cost;st.community.push({kind,season:s.season,cost:cfg.cost});
-      st.sentiment=clamp(st.sentiment+cfg.gain,0,100);return true;
+      // L'action compte dans la réaction des clubs amateurs et écoles de rugby (humeur, club-strategy.cjs).
+      c.cash-=cfg.cost;st.community.push({kind,season:s.season,cost:cfg.cost});return true;
     },save);
   }
   // V115: one matchday-service configuration per season, no engine effects.
@@ -115,24 +122,23 @@
     const st=ready(s),c=club(s),seats=capacity(s);
     if(!st||!integer(round,1,26)||!integer(attendance,0,seats)||
        st.ledger.some(x=>x.round===round)||st.ledger.length>=26||!Number.isFinite(c.cash))return false;
-    const projected=forecast(s);
     return transact(s,()=>{
       const revenue=attendance*PRICES[st.price];
       c.cash+=revenue;st.commercialCash=clamp(st.commercialCash+revenue,0,10000000);
       st.ledger.push({round,attendance,revenue,price:st.price});
-      st.sentiment=clamp(st.sentiment+(attendance>=projected.expectedAttendance?2:-1),0,100);
       return true;
     },save);
   }
   // V116: one idempotent yearly review with bounded archive and no match/calendar edits.
-  function closeSeason(s,save){
+  // humeur : humeur des supporters à la clôture (club-strategy.cjs) ; inconnue = 50.
+  function closeSeason(s,save,humeur){
     const st=ensure(s);
     if(!st||st.season!==s.season||s.phase!=='ended'||st.history.some(h=>h.season===s.season))return false;
     return transact(s,()=>{
       const attendance=st.ledger.reduce((n,e)=>n+e.attendance,0);
       const revenue=st.ledger.reduce((n,e)=>n+e.revenue,0);
-      const satisfaction=st.sentiment;
-      st.history=[{season:s.season,sentiment:satisfaction,subscribers:st.subscribers,
+      const mood=Number.isFinite(humeur)?clamp(Math.round(humeur),0,100):50;
+      st.history=[{season:s.season,humeur:mood,subscribers:st.subscribers,
         rounds:st.ledger.length,totalAttendance:attendance,totalRevenue:revenue,
         price:st.price,community:st.community.length},...st.history].slice(0,12);
       return true;
@@ -173,10 +179,10 @@
         locked||st.service?.season===s.season)).join(' ')+
       '<p>La saisie des affluences fictives par créneau (1–26) reste accessible via API record ; '+
       'pas de simulation de match ni de prétention à des statistiques officielles.</p>'+
-      '<h3>V116 · Fidélité et bilans</h3><p>Satisfaction : '+st.sentiment+'/100 · recettes de saison '+
+      '<h3>V116 · Fidélité et bilans</h3><p>Recettes de saison '+
       st.ledger.reduce((n,x)=>n+x.revenue,0)+' € fictifs</p><ul>'+
       st.history.map(h=>'<li>'+(typeof libelleSaison==='function'?libelleSaison:String)(h.season)+' · '+h.totalAttendance+' spectateurs simulés · '+
-        h.totalRevenue+' € · satisfaction '+h.sentiment+'/100</li>').join('')+
+        h.totalRevenue+' € · humeur '+(h.humeur??h.sentiment)+'/100</li>').join('')+
       '</ul></section>';
   }
   function install(g){

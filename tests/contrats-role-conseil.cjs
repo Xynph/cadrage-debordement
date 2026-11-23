@@ -116,11 +116,13 @@ test('Carrière Monde : rôle et conseil envoyés à l’écran, rôles enregist
     const cible = model.squad.find(p => p.renewal?.available);
     assert.ok(cible, 'un joueur à prolonger');
     assert.equal(jeu.brut('extend_contract', { playerId: cible.id, salary: Math.min(100000, Math.ceil(cible.renewal.salary * 1.4 / 100) * 100), years: cible.renewal.minYears, confirmed: true, role: 'capitaine' }).error, 'Offre invalide.');
-    const r = jeu.brut('extend_contract', { playerId: cible.id, salary: Math.min(100000, Math.ceil(cible.renewal.salary * 1.4 / 100) * 100), years: cible.renewal.minYears, confirmed: true, role: 'espoir' });
+    // Espoir seulement à 21 ans et moins (temps de jeu promis, idée 16).
+    const promis = cible.age <= 21 ? 'espoir' : 'rotation';
+    const r = jeu.brut('extend_contract', { playerId: cible.id, salary: Math.min(100000, Math.ceil(cible.renewal.salary * 1.4 / 100) * 100), years: cible.renewal.minYears, confirmed: true, role: promis });
     assert.equal(r.ok, true, r.error);
     const apres = r.model.squad.find(p => p.id === cible.id);
     assert.ok(apres.contractEnd > cible.contractEnd, 'contrat prolongé');
-    assert.deepEqual(apres.roleContrat, { role: 'espoir', deduit: false, saison: model.meta.season });
-    assert.deepEqual(lire(`S.clubs[S.club].players.find(p=>p.id===${JSON.stringify(cible.id)}).roleContrat`), { role: 'espoir', saison: model.meta.season, fin: apres.contractEnd, club: lire('S.club') });
+    assert.deepEqual(apres.roleContrat, { role: promis, deduit: false, saison: model.meta.season });
+    assert.deepEqual(lire(`S.clubs[S.club].players.find(p=>p.id===${JSON.stringify(cible.id)}).roleContrat`), { role: promis, saison: model.meta.season, fin: apres.contractEnd, club: lire('S.club') });
   } finally { jeu.fermer(); }
 });

@@ -61,9 +61,9 @@ func contracts(host: Host) -> void:
 			var report := {"frame":rect_data(frame),"frame_overflow":overflow(frame,bounds),"resolution":[resolution.x,resolution.y],"recruiting":recruiting,"dialog":rect_data(dialog_rect),"overflow":overflow(dialog_rect,bounds),"controls":[]}
 			if report.frame_overflow.max()>1: failures.append("dialog frame "+str(resolution)+" "+str(recruiting))
 			if report.overflow.max()>0: failures.append("dialog "+str(resolution)+" "+str(recruiting))
-			# Offre au joueur : récapitulatif, prochaine étape et reprise de la contre-offre sont le jeton, la pastille d'étape et
-			# la pastille de contre-offre (les anciennes lignes restent construites mais masquées).
-			for id in ["OfferSalary","OfferYears","OffreContreOffreLien","OffreJetonLien","OffreEtapeLien","ok","cancel"]:
+			# Négociation avec l'agent (idée 18) : prime dans sa ligne du contrat, prochaine étape et reprise de la contre-offre en
+			# pastilles (les anciennes lignes restent construites mais masquées). Devis sans rôles : contrat ouvert d'office.
+			for id in ["OfferSalary","OfferYears","OffreContreOffreLien","NegoLignePrimeLien","OffreEtapeLien","ok","cancel"]:
 				var control: Control = dialog.get_ok_button() if id=="ok" else (dialog.get_cancel_button() if id=="cancel" else dialog.find_child(id,true,false))
 				var scroll := control.get_parent()
 				while scroll != dialog and not scroll is ScrollContainer: scroll=scroll.get_parent()
@@ -85,12 +85,12 @@ func contracts(host: Host) -> void:
 			if is_instance_valid(dialog): dialog.queue_free()
 			await settle()
 
-## Prolongation (choix B de Léo, 21/11/2026) : cartes aujourd'hui → prolongé, pastilles « vs actuel » et « +N saison », chiffres
-## de la règle, de la frise et du jeton ; chacun ouvre sa petite fenêtre visuelle, qu'Échap referme sans fermer l'offre.
-## Toile entière dans la fenêtre, cibles d'au moins 24 px, pas de bande vide sous la prime.
+## Prolongation (négociation avec l'agent, choix A de Léo du 23/11/2026) : budgets, lignes du contrat et agent ; chaque
+## chiffre ouvre sa petite fenêtre visuelle, qu'Échap referme sans fermer l'offre. Toile entière dans la fenêtre, cibles
+## d'au moins 24 px, pas de bande vide sous la toile.
 func prolongation_pieces(dialog: ConfirmationDialog, resolution: Vector2i) -> void:
 	var cle := " " + str(resolution)
-	for id in ["ProlongationAvant","ProlongationApres","ProlongationRegleActuel","ProlongationFriseActuel_1","OffreFriseSaison_1","OffreRegleCurseur"]:
+	for id in ["NegoIdentite","NegoMasse","NegoTransferts","NegoLigneSalaire","NegoLigneDuree","NegoLignePrime","NegoAgent","NegoBulle_0"]:
 		if dialog.find_child(id,true,false)==null: failures.append("prolongation piece "+id+cle)
 	var toile := dialog.find_child("OffreVisuelle",true,false) as Control
 	if toile==null: failures.append("prolongation toile"+cle);return
@@ -103,10 +103,9 @@ func prolongation_pieces(dialog: ConfirmationDialog, resolution: Vector2i) -> vo
 	if haut_boutons-bas_toile>48*C.density: failures.append("prolongation bande vide %.0f px%s" % [haut_boutons-bas_toile,cle])
 	if toile.get_global_rect().end.x>dialog.size.x+1: failures.append("prolongation toile tronquée"+cle)
 	if scroll is ScrollContainer and toile.get_global_rect().end.y>(scroll as ScrollContainer).get_global_rect().end.y+1: failures.append("prolongation toile coupée en bas"+cle)
-	var attendus := {"ProlongationAvantLien":"ProlongationFenetreAvantApres","ProlongationApresLien":"ProlongationFenetreAvantApres",
-		"ProlongationHausseLien":"ProlongationFenetreAvantApres","ProlongationGainLien":"ProlongationFenetreAvantApres",
-		"OffreRegleEcartZoneLien":"OffreFenetreSalaire","OffreFriseFinZoneLien":"OffreFenetreDuree","OffreJetonLien":"OffreFenetreBudget",
-		"OffreEtapeLien":"OffreFenetreDiscussion","OffreDemandeLien":"OffreFenetreSalaire"}
+	var attendus := {"NegoLigneSalaireLien":"OffreFenetreSalaire","NegoLigneDureeLien":"OffreFenetreDuree","NegoLignePrimeLien":"OffreFenetreBudget",
+		"OffreEtapeLien":"OffreFenetreDiscussion","NegoAgentLien":"OffreFenetreDiscussion","NegoMasseLien":"NegoFenetreMasse",
+		"NegoTransfertsLien":"OffreFenetreBudget","NegoTuileEcartLien":"OffreFenetreSalaire","NegoTuileFinLien":"OffreFenetreDuree"}
 	for lien: String in attendus:
 		var bouton := dialog.find_child(lien,true,false) as Button
 		if bouton==null or not bouton.is_visible_in_tree(): failures.append("prolongation "+lien+" absent"+cle);continue
@@ -114,22 +113,11 @@ func prolongation_pieces(dialog: ConfirmationDialog, resolution: Vector2i) -> vo
 		bouton.pressed.emit();await settle()
 		var calque := dialog.find_child("OffrePetiteFenetre",true,false)
 		if calque==null or calque.find_child(attendus[lien],true,false)==null: failures.append("prolongation "+lien+" -> "+attendus[lien]+cle);continue
-		if attendus[lien]=="ProlongationFenetreAvantApres" and calque.find_children("ProlongationFenetreAvantApresTuile_*","Panel",true,false).size()!=5:
-			failures.append("prolongation fenetre ancien -> nouveau : 5 tuiles"+cle)
 		var escape := InputEventKey.new();escape.keycode=KEY_ESCAPE;escape.pressed=true;root.push_input(escape,true)
 		escape=escape.duplicate();escape.pressed=false;root.push_input(escape,true)
 		await settle()
 		if dialog.find_child("OffrePetiteFenetre",true,false)!=null: failures.append("prolongation Échap ne ferme pas la petite fenêtre de "+lien+cle)
 		if not is_instance_valid(dialog) or not dialog.visible: failures.append("prolongation Échap ferme l'offre ("+lien+")"+cle);return
-	var annees := dialog.find_child("OfferYears",true,false) as SpinBox
-	var avant := annees.value
-	var cible := int(annees.min_value) if annees.value!=annees.min_value else int(annees.max_value)
-	var segment := dialog.find_child("OffreFriseClic_%d" % cible,true,false) as Button
-	if segment==null: failures.append("prolongation frise saison %d%s" % [cible,cle])
-	else:
-		segment.pressed.emit();await settle()
-		if int(annees.value)!=cible: failures.append("prolongation frise règle la durée"+cle)
-		annees.value=avant;await settle()
 	# Sans petite fenêtre, Échap ferme l'offre.
 	var fin := InputEventKey.new();fin.keycode=KEY_ESCAPE;fin.pressed=true;root.push_input(fin,true)
 	await settle()
@@ -265,7 +253,7 @@ func open_contract_resize(host: Host) -> void:
 		if dialog.get_instance_id()!=dialog_id or salary.get_instance_id()!=salary_id or years.get_instance_id()!=years_id: failures.append("open contract controls recreated during resize")
 		if int(salary.value)!=expected_value or int(years.value)!=3 or edit.text!=expected_text: failures.append("salary draft or duration lost during resize "+str(resolution))
 		if not edit.has_focus(): failures.append("salary keyboard focus lost during resize "+str(resolution))
-		await measure_shared(dialog,"open-contract-resize",["OfferSalary","OfferYears","OffreContreOffreLien","OffreJetonLien","OffreEtapeLien"],false)
+		await measure_shared(dialog,"open-contract-resize",["OfferSalary","OfferYears","OffreContreOffreLien","NegoLignePrimeLien","OffreEtapeLien"],false)
 		state["geometry"]=shared_reports.back()
 		resize_report.stages.append(state)
 		if resolution.x==1280:

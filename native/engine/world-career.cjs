@@ -482,11 +482,14 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
  function simulate(f,watch=null){const full=()=>{const pair=[f.homeId,f.awayId];for(const id of pair)CDFranceCareer.ensureAISheet(S.clubs[id]);const l=createRugbyMatch(pair,null,true);if(typeof initPilotageIA==='function')initPilotageIA(l,f);for(let n=0;!l.finished;n++){check(n<=600,'limite de simulation atteinte.');l.paused=false;advanceRugby(l);if(watch)watch(l);}applyMatchInjuries(l);return result(l);};const play=()=>typeof CDLeagueDetail!=='undefined'?CDLeagueDetail.play(S,f,full):full();return !watch&&typeof CDMultiplex!=='undefined'?CDMultiplex.official(S,f,play):play();}
  // Affluence de chaque rencontre (compte rendu du match, idée FM n°19) : spectateurs au stade du club qui reçoit
  // (club-budget.cjs, spectateurs), tirée avant que le résultat n'entre dans sa forme ; terrain neutre : non comptée.
+ // Le club du manager : public relevé ou baissé par l'humeur de ses supporters (choix de Léo du 23/11/2026).
  const affluenceMatch=(s,f)=>{
   if(f.neutral||typeof nativeClubBudget==='undefined'||typeof nativeClubBudget.spectateurs!=='function')return {};
   const c=s.clubs[f.homeId],n=nativeClubBudget.spectateurs({capacite:Number.isFinite(c?.stadiumCapacity)?c.stadiumCapacity:stadiumCapacity(f.homeId)??12000,
    resultats:Array.isArray(c?.form)?c.form.slice(-5):[],cle:f.homeId+'|'+s.season+'|'+f.id,phase:f.phase||'league',
-   accueil:typeof investAccueil==='function'&&typeof nativeClubInvestments!=='undefined'?nativeClubInvestments.facteurAccueil(investAccueil(f.homeId)):1});
+   accueil:typeof investAccueil==='function'&&typeof nativeClubInvestments!=='undefined'?nativeClubInvestments.facteurAccueil(investAccueil(f.homeId)):1,
+   // Humeur des supporters (club-strategy.cjs) : seulement quand le club du manager reçoit.
+   humeur:f.homeId===s.club&&typeof budgetHumeur==='function'?budgetHumeur():null});
   return Number.isInteger(n)?{affluence:n}:{};
  };
  const fixtureEntry=(s,f,r)=>({...r,fixtureId:f.id,competitionId:f.competitionId,leagueId:f.competitionId,season:s.season,round:s.round,competitionRound:f.round,week:s.round,date:f.date,phase:f.phase,poolId:f.poolId??null,neutral:f.neutral,...affluenceMatch(s,f)});

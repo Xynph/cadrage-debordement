@@ -39,6 +39,7 @@
       "tests/ci-modes-monde.cjs": 4,
       "tests/ci-sharding.cjs": 4,
       "tests/club-ecran-monde.cjs": 55,
+      "tests/club-mail-delegation.cjs": 20,
       "tests/club-mail-enseignements.cjs": 103,
       "tests/club-mail-jalons.cjs": 22,
       "tests/club-mail-tour-lundi-plein.cjs": 61,
