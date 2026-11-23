@@ -121,6 +121,8 @@ const EXTRAS := [
 	{"id": "strategie-public", "libelle": "Club › Direction · petite fenêtre Le public", "type": "strategie_onglet", "onglet": 2, "zone": "DirectionLien_Humeur"},
 	{"id": "club-infrastructures", "libelle": "Club · onglet Infrastructures", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "infrastructure", "repos": "overview"},
 	{"id": "club-histoire", "libelle": "Club · onglet Histoire", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "history", "repos": "overview"},
+	## Staff par service (23/11/2026) : un poste en plus visé (même commande que le clic « + ») dans chaque service qui a un membre en surnombre.
+	{"id": "staff-services-renfort", "libelle": "Staff par service · postes en plus visés", "type": "staff_services"},
 	{"id": "vestiaire-entretiens", "libelle": "Vestiaire · onglet Entretiens et duos", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week"},
 	{"id": "selections-offres", "libelle": "Sélections · onglet Offres", "type": "onglet_cle", "route": "Sélections", "cle": "international_section", "onglet": "offers", "repos": "callups"},
 	{"id": "selections-disponibilites", "libelle": "Sélections · onglet Disponibilités", "type": "onglet_cle", "route": "Sélections", "cle": "international_section", "onglet": "availability", "repos": "callups"},
@@ -844,6 +846,18 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			suivi.pressed.emit()
 			await stabiliser()
 			if app.find_child("FormationRetour", true, false) == null: return {"statut": "echec", "note": "la sous-page ne s'est pas ouverte"}
+		"staff_services":
+			var services: Array = app.model.get("clubLife", {}).get("staffServices", {}).get("services", [])
+			if services.is_empty(): return {"statut": "indisponible", "note": "staff par service absent"}
+			for s: Dictionary in services:
+				if (s.get("surnombre", []) as Array).is_empty() or int(s.get("cible", 0)) > 0: continue
+				app._command("staff_services_target", {"service": str(s.id), "cible": 1})
+				while app.waiting: await process_frame
+			app.management_ui.erase("staff_services_vue")
+			app.StaffViews.reading(app).navigation_id = ""
+			app._navigate("Staff")
+			await stabiliser()
+			if app.find_child("StaffService_coaching", true, false) == null: return {"statut": "echec", "note": "vue par service absente"}
 		"calendrier_semaine":
 			app._navigate("Calendrier")
 			await stabiliser()

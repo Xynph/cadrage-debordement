@@ -141,6 +141,8 @@ domains.weekProgram=require('./programme-semaine.cjs');
 domains.fragilite=require('./fragilite.cjs');
 // Familiarité au poste (0-20 par maillot) : efficacité au poste, progression par match et entraînement, oubli (native/engine/familiarite-poste.cjs).
 domains.familiarite=require('./familiarite-poste.cjs');
+// Staff par service : postes visés au-delà du minimum (bonus et salaire), avis des dirigeants (native/engine/staff-services.cjs).
+domains.staffServices=require('./staff-services.cjs');
 // Relevé mensuel des qualités (12 mois glissants, courbe de l'onglet Développement) : native/engine/releve-qualites.cjs.
 domains.releveQualites=require('./releve-qualites.cjs');
 // Rôle promis au contrat (titulaire, rotation, espoir, appoint), enregistré à la signature (native/engine/role-contrat.cjs).
@@ -154,6 +156,6 @@ domains.agentsJoueurs=require('./agents-joueurs.cjs');
 // Discussion avec l'agent : ton (demande, propositions) et relation gardée (native/engine/ton-agent.cjs).
 domains.tonAgent=require('./ton-agent.cjs');
 const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files,...domains.clubSheet.files,...domains.pressPromises.files,...domains.clubMail.files,...domains.multiplex.files,...domains.avantMatch.files,...domains.doublons.files,...domains.matchIncidents.files,...domains.weekProgram.files])]);
-const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands,...domains.clubMail.commands,...domains.multiplex.commands,...domains.avantMatch.commands,...domains.doublons.commands,...domains.matchIncidents.commands,...domains.weekProgram.commands,...domains.familiarite.commands,...domains.tonAgent.commands]);
+const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands,...domains.clubMail.commands,...domains.multiplex.commands,...domains.avantMatch.commands,...domains.doublons.commands,...domains.matchIncidents.commands,...domains.weekProgram.commands,...domains.familiarite.commands,...domains.tonAgent.commands,...domains.staffServices.commands]);
 if(new Set(allCommands).size!==allCommands.length)throw Error('Commandes natives de domaine en double.');
 module.exports={files:allFiles,commands:allCommands,bootstrap};
