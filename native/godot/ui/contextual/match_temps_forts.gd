@@ -301,7 +301,7 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	between.joueur_choisi.connect(func(poste: int): view.ouvrir_equipe("composition", poste))
 	between.score_joue.connect(_score_joue)
 	between.consigne_bonus.connect(appliquer_consigne_bonus)
-	# Planche FM27 n° 33 : petite fenêtre des consignes, le match continue derrière (pas de pause).
+	# Petite fenêtre des consignes (idée FM27 n° 33) : le match continue derrière, changements au prochain arrêt.
 	between.consignes_demandees.connect(func(): if view.has_method("ouvrir_fenetre_consignes"): view.ouvrir_fenetre_consignes(envoyer_consigne))
 	# « Pourquoi » d'après-match : l'action d'une raison ouvre l'écran de son levier.
 	between.levier_choisi.connect(func(route: String): app._navigate(route))

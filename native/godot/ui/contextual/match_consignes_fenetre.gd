@@ -1,12 +1,14 @@
 extends RefCounted
-## Petite fenêtre des consignes pendant le match (planche FM27 n° 33, revue de Léo du 22/11/2026, sous
-## CD_VARIANTE_VISUELLE A|B). Le match continue derrière : la fenêtre ne met pas en pause, et un clic sur un cran
-## l'applique tout de suite (`set_consignes`, sans bouton Confirmer). Seulement les consignes en direct du moteur
-## (`live.pilotage.axes` sans pause) ; les plans de jeu (pause du match) restent dans la fenêtre Équipe.
-## A : familles en liste à gauche (façon Effectif), trois cartes illustrées du cran à droite.
-## B : les trois crans en lignes au-dessus (effets en colonnes + / −, grand croquis), rangée de cartes illustrées en bas.
-## Effets : ordres de grandeur du moteur (dist/match-pilotage.js), rédigés en mots courts ; bilans, avis du staff et
-## consignes adverses : projection du moteur, rien n'est calculé ici.
+## Petite fenêtre des consignes pendant le match (idée FM27 n° 33, choix de Léo du 23/11/2026 : la planche B).
+## Le match continue derrière : la fenêtre ne met jamais en pause. Les 11 consignes en direct ET le plan de jeu
+## (attaque, système de défense, pénalités) : un clic sur un cran le choisit et le met dans la file du prochain arrêt de
+## jeu du moteur (`set_consignes` → native/engine/match-arrets.cjs), sans bouton Confirmer ; « ⧗ PROCHAIN ARRÊT »
+## signale le cran qui attend. Un clic sur le cran en place retire la demande.
+## Haut : les crans de la consigne vue en lignes (colonnes Pour / Contre), grand croquis du cran à droite, bilan du
+## moteur dessous ; bas : rangée de cartes illustrées, une par consigne.
+## Pour / Contre : l'avis du staff EN TENDANCE (`pilotage.avisCrans`, dist/match-pilotage.js) : ▲▲ net, ▲ léger, ? il
+## ne sait pas ; sa justesse dépend de sa compétence, jamais de chiffre (principe d'incertitude). Bilans, avis du staff
+## et consignes adverses : projection du moteur, rien n'est calculé ici.
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
@@ -18,27 +20,21 @@ const LARGEUR := 1720.0
 const HAUTEUR := 1010.0
 ## Une couleur franche par famille.
 const FAMILLES := {"attaque": Color("e0a04a"), "defense": Color("5b9bd5"), "conquete": Color("a88bd6"), "adversaire": Color("4fb3a9")}
-## Effets d'un cran : [signe, mots]. Signe 1 vert, -1 rouge, 0 neutre. Ordres de grandeur du moteur.
-const EFFETS := {
-	"piedJeu": {"moins": [[1, "Ballon gardé"], [-1, "Jeu au pied ×0,55"], [-1, "Moins de territoire"]], "normal": [[0, "Équilibre"]], "plus": [[1, "Jeu au pied ×1,55"], [1, "Territoire"], [-1, "Ballons rendus"]]},
-	"rythme": {"lent": [[1, "Moins d’en-avant"], [1, "Moins d’usure"], [-1, "Avancée −2 %"]], "normal": [[0, "Équilibre"]], "rapide": [[1, "Avancée +2 %"], [-1, "En-avant"], [-1, "Usure des deux XV"]]},
-	"relance": {"degager": [[1, "Pied ×1,4 chez nous"], [-1, "Ballon rendu"]], "selon": [[0, "Au choix du 10"]], "relancer": [[1, "Ballon à la main"], [-1, "Pied ×0,6 chez nous"], [-1, "Ballons perdus"]]},
-	"finDeMatch": {"montre": [[1, "Ballon gardé"], [-1, "Pied ×0,6"], [0, "Dès 70′"]], "normal": [[0, "Sans effet"]], "tout": [[1, "Prise de risque"], [-1, "Ballons perdus"], [0, "Dès 70′"]]},
-	"rucks": {"prudente": [[1, "Fautes ×0,85"], [-1, "Moins d’arrachés"]], "normale": [[0, "Équilibre"]], "agressive": [[1, "Ballons arrachés"], [-1, "Fautes ×1,22"], [-1, "Selon l’arbitre"]]},
-	"discipline": {"stricte": [[1, "Fautes ×0,78"], [-1, "Défense moins mordante"]], "normale": [[0, "Équilibre"]], "limite": [[1, "Défense mordante"], [-1, "Fautes ×1,2"], [-1, "Cartons"]]},
-	"touche": {"sure": [[1, "Touche +6 pts"], [-1, "Plateforme moyenne"]], "normale": [[0, "Équilibre"]], "risquee": [[1, "Plateforme idéale"], [-1, "Touche −6 pts"]]},
-	"maul": {"jamais": [[1, "Ballon vite sorti"], [-1, "Essai porté −8 %"]], "selon": [[0, "Au choix du pack"]], "souvent": [[1, "Essai porté +7 %"], [-1, "Jeu prévisible"]]},
-	"melee": {"vite": [[1, "Sifflets ×0,65"], [1, "Plateforme"]], "normale": [[0, "Équilibre"]], "pousser": [[1, "Pénalités si pack fort"], [-1, "Sifflets ×1,5"]]},
-	"coupsEnvoi": {"longs": [[1, "Distance ×1,45"], [-1, "Récupération −7 %"]], "normaux": [[0, "Équilibre"]], "courts": [[1, "Récupération +12 %"], [-1, "Distance ×0,6"]]},
-	"cible": {"aucune": [[0, "Sans effet"]], "aile": [[1, "Mètres sur leur aile"], [-1, "Adaptation 20-30′"]], "ouvreur": [[1, "Ballons perdus chez eux"], [-1, "Adaptation 20-30′"]]}}
+## Fiabilité de la lecture du staff (un mot, jamais son niveau).
+const FIABILITE := {"fiable": ["Staff fiable", Color("7fbf7a")], "correct": ["Staff correct", Color("b9c2b4")], "approximatif": ["Staff approximatif", Color("e0a04a")]}
+## Libellés courts des cartes de la rangée (14 cartes).
+const COURTS := {"planAttaque": "Plan de jeu", "systemeDefense": "Défense", "coupsEnvoi": "Coups d’envoi", "finDeMatch": "Fin de match"}
 
-## Consignes en direct du moteur (sans les plans de jeu qui demandent la pause), dans l'ordre des familles.
+## Toutes les consignes réglables en direct (plan de jeu compris), dans l'ordre des familles.
 static func axes_directs(p: Dictionary) -> Array:
-	return Pilotage.axes(p).filter(func(a: Variant) -> bool: return a is Dictionary and not bool(a.get("pause", false)) and EFFETS.has(str(a.get("id", ""))))
+	return Pilotage.axes(p).filter(func(a: Variant) -> bool: return a is Dictionary and a.get("options") is Array and (a.get("options") as Array).size() > 0)
 
 static func neutre(axe: Dictionary) -> String:
 	var options: Array = axe.get("options", []) if axe.get("options") is Array else []
-	if str(axe.get("id", "")) == "cible": return "aucune"
+	match str(axe.get("id", "")):
+		"cible": return "aucune"
+		"planAttaque", "systemeDefense": return "equilibre"
+		"penalites": return "auto"
 	return str((options[1] as Dictionary).get("id", "")) if options.size() > 1 and options[1] is Dictionary else ""
 
 static func libelle_cran(axe: Dictionary, valeur: String) -> String:
@@ -58,6 +54,22 @@ static func staff_propose(p: Dictionary, axe: String) -> String:
 		if x is Dictionary and str(x.get("axe", "")) == axe: return str(x.get("valeur", ""))
 	return ""
 
+## Cran demandé pour cet axe et pas encore appliqué (file du prochain arrêt de jeu), "" sinon.
+static func en_attente(p: Dictionary, axe: String) -> String:
+	var a: Variant = p.get("arrets")
+	var file: Variant = a.get("file") if a is Dictionary else null
+	for e: Variant in file if file is Array else []:
+		if e is Dictionary and str(e.get("type", "")) == "consigne" and str(e.get("axe", "")) == axe: return str(e.get("valeur", ""))
+	return ""
+
+## Avis du staff sur un cran : {pour: [{mot, force}], contre: […], neutre: [mot]} ({} sans avis).
+static func avis(p: Dictionary, axe: String, valeur: String) -> Dictionary:
+	var a: Variant = p.get("avisCrans")
+	var axes: Variant = a.get("axes") if a is Dictionary else null
+	var crans: Variant = axes.get(axe) if axes is Dictionary else null
+	var r: Variant = crans.get(valeur) if crans is Dictionary else null
+	return r if r is Dictionary else {}
+
 ## Morceaux du bilan du moteur depuis le changement (« 2 pénalités », « 1 ballon arraché ») et sa minute.
 static func bilan(p: Dictionary, axe: String) -> Dictionary:
 	for b: Variant in p.get("bilans", []) if p.get("bilans") is Array else []:
@@ -67,9 +79,20 @@ static func bilan(p: Dictionary, axe: String) -> Dictionary:
 			return {"depuis": b.get("depuis"), "morceaux": Array(morceaux)}
 	return {}
 
+## Empreinte de ce que montre la fenêtre : la veille la redessine quand le moteur y change quelque chose.
+static func signature(p: Dictionary, minute: int) -> String:
+	var a: Variant = p.get("arrets")
+	var file: Array = []
+	for e: Variant in a.get("file", []) if a is Dictionary and a.get("file") is Array else []:
+		if e is Dictionary and str(e.get("type", "")) == "consigne": file.append([e.get("axe"), e.get("valeur")])
+	var staff: Variant = p.get("staff")
+	var adv: Variant = p.get("adversaire")
+	return JSON.stringify([minute, p.get("consignes"), axes_directs(p).map(func(x: Dictionary): return x.get("valeur")), file, p.get("bilans"),
+		staff.get("propositions") if staff is Dictionary else null, adv.get("consignes") if adv is Dictionary else null])
+
 ## Construit le contenu dans `fond` (panneau de la petite fenêtre, unités du gabarit). `choisir(axe)` change l'axe
-## montré ; `envoyer(axe, valeur)` applique un cran.
-static func construire(fond: Control, p: Dictionary, variante: String, axe_vu: String, choisir: Callable, envoyer: Callable, minute: int) -> void:
+## montré ; `envoyer(axe, valeur)` demande un cran (file du prochain arrêt).
+static func construire(fond: Control, p: Dictionary, axe_vu: String, choisir: Callable, envoyer: Callable, minute: int) -> void:
 	var axes := axes_directs(p)
 	if axes.is_empty():
 		D.text(fond, 40, 140, "—", 40, Charte.IVOIRE_3)
@@ -77,90 +100,20 @@ static func construire(fond: Control, p: Dictionary, variante: String, axe_vu: S
 	var axe: Dictionary = axes[0]
 	for a: Variant in axes:
 		if str((a as Dictionary).get("id", "")) == axe_vu: axe = a
-	# Minute du match : le match continue derrière.
+	# Minute du match (il continue derrière) et fiabilité de la lecture du staff.
 	var x_min := LARGEUR - 230.0
 	Pieces.pastille(fond, x_min, 26, "%d′ · en jeu" % minute, "clock", "MatchFenetreConsignesMinute", "", Charte.GAIN, Charte.PANNEAU_3)
-	if variante == "B": _variante_b(fond, p, axes, axe, choisir, envoyer)
-	else: _variante_a(fond, p, axes, axe, choisir, envoyer)
+	var fiab: Variant = (p.get("avisCrans") as Dictionary).get("fiabilite") if p.get("avisCrans") is Dictionary else null
+	if fiab != null and FIABILITE.has(str(fiab)):
+		var f: Array = FIABILITE[str(fiab)]
+		var lf := Pieces.largeur_pastille(str(f[0]), "people")
+		Pieces.pastille(fond, x_min - 12.0 - lf, 26, str(f[0]), "people", "MatchFenetreConsignesFiabilite", "Avis du staff en tendance", f[1], Charte.PANNEAU_3)
+	_haut(fond, p, axe, envoyer)
+	_rangee(fond, p, axes, axe, choisir)
 
-# --- Option A : familles en liste à gauche, trois cartes illustrées à droite ------------------------------------
+# --- Haut : les crans de la consigne vue en lignes, grand croquis, bilan ------------------------------------------
 
-static func _variante_a(fond: Control, p: Dictionary, axes: Array, axe: Dictionary, choisir: Callable, envoyer: Callable) -> void:
-	var y := 84.0
-	var groupe := ""
-	var L := 520.0
-	for a_v: Variant in axes:
-		var a: Dictionary = a_v
-		var g := str(a.get("groupe", ""))
-		var teinte: Color = FAMILLES.get(g, Charte.IVOIRE)
-		if g != groupe:
-			groupe = g
-			D.rect(fond, Rect2(28, y + 10, 6, 22), teinte, 3)
-			var titre := D.text(fond, 44, y + 30, libelle_groupe(p, g).to_upper(), 18, teinte, 800, 300)
-			titre.add_theme_font_override("font", Charte.TITRE_EXTRA)
-			y += 40.0
-		var id := str(a.get("id", ""))
-		var vu := id == str(axe.get("id", ""))
-		var ligne := D.rect(fond, Rect2(28, y, L, 60), Charte.SELECTION if vu else Color.TRANSPARENT, Charte.RAYON_PETIT)
-		ligne.name = "MatchFenetreConsignesAxe_" + id
-		if vu: D.rect(ligne, Rect2(0, 0, 5, 60), teinte, 2)
-		var croquis := Croquis.new()
-		croquis.axe = id
-		croquis.valeur = Pilotage.cran(p, a)
-		croquis.mini = true
-		ligne.add_child(croquis)
-		D.place(croquis, Rect2(14, 8, 66, 44))
-		D.text(ligne, 96, 39, str(a.get("label", "")), 22, Charte.IVOIRE, 700, 220)
-		var cran := Pilotage.cran(p, a)
-		var actif := cran != neutre(a)
-		var mot := libelle_cran(a, cran)
-		var largeur := Pieces.largeur_pastille(mot)
-		Pieces.pastille(ligne, L - 14 - largeur, 13, mot, "", "MatchFenetreConsignesCran_" + id, "", Charte.DORE if actif else Charte.IVOIRE_2, Charte.PANNEAU_3)
-		if staff_propose(p, id) != "" and staff_propose(p, id) != cran:
-			D.rect(ligne, Rect2(L - 26 - largeur, 22, 10, 10), Charte.GAIN, 5).tooltip_text = "Avis du staff"
-		Pieces.rendre_cliquable(ligne, Vector2(L, 60), func(): choisir.call(id), "MatchFenetreConsignesAxeLien_" + id, str(a.get("label", "")), "", Charte.RAYON_PETIT)
-		y += 62.0
-	# Droite : l'axe choisi.
-	var x0 := 580.0
-	var W := LARGEUR - x0 - 28.0
-	var id := str(axe.get("id", ""))
-	var teinte: Color = FAMILLES.get(str(axe.get("groupe", "")), Charte.IVOIRE)
-	var titre := D.text(fond, x0, 128, str(axe.get("label", "")).to_upper(), 44, Charte.IVOIRE, 800, 560)
-	titre.add_theme_font_override("font", Charte.TITRE_FICHE)
-	titre.name = "MatchFenetreConsignesTitreAxe"
-	var px := x0 + 560.0
-	px += Pieces.pastille(fond, px, 94, libelle_groupe(p, str(axe.get("groupe", ""))), "", "MatchFenetreConsignesFamille", "", teinte, Charte.PANNEAU_3) + 10.0
-	_pastille_adverse(fond, p, axe, px, 94)
-	var options: Array = axe.get("options", []) if axe.get("options") is Array else []
-	var cran := Pilotage.cran(p, axe)
-	var propose := staff_propose(p, id)
-	var lc := (W - 2 * 20.0) / 3.0
-	for k in options.size():
-		var o: Dictionary = options[k]
-		var v := str(o.get("id", ""))
-		var en_place := v == cran
-		var xc := x0 + k * (lc + 20.0)
-		var carte := D.rect(fond, Rect2(xc, 160, lc, 560), Charte.PANNEAU_2.lerp(teinte, .10) if en_place else Charte.PANNEAU_2, Charte.RAYON_CARTE, Charte.DORE if en_place else Color.TRANSPARENT)
-		carte.name = "MatchFenetreConsignesCarte_%s" % v
-		var dessin := Croquis.new()
-		dessin.axe = id
-		dessin.valeur = v
-		carte.add_child(dessin)
-		D.place(dessin, Rect2(14, 14, lc - 28, 230))
-		var nom := D.text(carte, 22, 300, str(o.get("label", "")).to_upper(), 34, Charte.DORE if en_place else Charte.IVOIRE, 800, lc - 44)
-		nom.add_theme_font_override("font", Charte.TITRE_EXTRA)
-		var py := 324.0
-		if en_place: py += Pieces.pastille(carte, 22, py, "En place", "check", "MatchFenetreConsignesEnPlace", "", Charte.DORE, Charte.PANNEAU_3) * 0.0 + 46.0
-		if propose == v and not en_place: py += Pieces.pastille(carte, 22, py, "Le staff", "people", "MatchFenetreConsignesStaff_" + v, "", Charte.GAIN, Charte.PANNEAU_3) * 0.0 + 46.0
-		_lignes_effets(carte, EFFETS.get(id, {}).get(v, []), 22, py + 8, lc - 44)
-		Pieces.rendre_cliquable(carte, Vector2(lc, 560), func(): envoyer.call(id, v), "MatchFenetreConsignesChoix_" + v, str(o.get("label", "")), "", Charte.RAYON_CARTE)
-	# Bas : bilan du moteur depuis le changement, puis les avis du staff (un clic les applique).
-	_bandeau_bilan(fond, p, axe, x0, 748, W)
-	_avis_staff(fond, p, x0, 850, W, envoyer, choisir)
-
-# --- Option B : crans en lignes + grand croquis au-dessus, rangée de cartes illustrées en bas --------------------
-
-static func _variante_b(fond: Control, p: Dictionary, axes: Array, axe: Dictionary, choisir: Callable, envoyer: Callable) -> void:
+static func _haut(fond: Control, p: Dictionary, axe: Dictionary, envoyer: Callable) -> void:
 	var id := str(axe.get("id", ""))
 	var teinte: Color = FAMILLES.get(str(axe.get("groupe", "")), Charte.IVOIRE)
 	var x0 := 28.0
@@ -176,39 +129,59 @@ static func _variante_b(fond: Control, p: Dictionary, axes: Array, axe: Dictiona
 		D.text(fond, x0 + float(entete[1]), 170, entete[0], 15, Charte.IVOIRE_3, 700, 200)
 	var options: Array = axe.get("options", []) if axe.get("options") is Array else []
 	var cran := Pilotage.cran(p, axe)
+	var attente := en_attente(p, id)
 	var propose := staff_propose(p, id)
+	var n := maxi(1, options.size())
+	var ecart := 10.0
+	var h := minf(132.0, (500.0 - (n - 1) * ecart) / float(n))
 	var y := 184.0
 	for o_v: Variant in options:
 		var o: Dictionary = o_v
 		var v := str(o.get("id", ""))
 		var en_place := v == cran
-		var ligne := D.rect(fond, Rect2(x0, y, Lg, 132), Charte.SELECTION if en_place else Charte.PANNEAU_2, Charte.RAYON_PETIT)
+		var voulu := v == attente
+		var ligne := D.rect(fond, Rect2(x0, y, Lg, h), Charte.SELECTION if en_place else (Charte.PANNEAU_3 if voulu else Charte.PANNEAU_2), Charte.RAYON_PETIT, Charte.DORE if voulu else Color.TRANSPARENT)
 		ligne.name = "MatchFenetreConsignesLigne_" + v
-		if en_place: D.rect(ligne, Rect2(0, 0, 6, 132), Charte.DORE, 3)
-		# Rond du choix (plein = en place).
-		D.rect(ligne, Rect2(24, 48, 30, 30), Charte.DORE if en_place else Color.TRANSPARENT, Charte.RAYON_PILULE, Charte.DORE if en_place else Charte.IVOIRE_3)
-		var nom := D.text(ligne, 70, 62, str(o.get("label", "")).to_upper(), 34, Charte.DORE if en_place else Charte.IVOIRE, 800, 290)
+		if en_place: D.rect(ligne, Rect2(0, 0, 6, h), Charte.DORE, 3)
+		# Rond du choix : plein = en place, cerclé d'or = demandé pour le prochain arrêt.
+		D.rect(ligne, Rect2(24, h / 2.0 - 27.0, 30, 30), Charte.DORE if en_place else Color.TRANSPARENT, Charte.RAYON_PILULE, Charte.DORE if en_place or voulu else Charte.IVOIRE_3)
+		var nom := D.text(ligne, 70, h / 2.0 - 2.0, str(o.get("label", "")).to_upper(), 34 if h >= 120.0 else 30, Charte.DORE if en_place or voulu else Charte.IVOIRE, 800, 290)
 		nom.add_theme_font_override("font", Charte.TITRE_EXTRA)
-		if en_place: Pieces.pastille(ligne, 70, 80, "En place", "check", "MatchFenetreConsignesEnPlace", "", Charte.DORE, Charte.PANNEAU_3)
-		elif propose == v: Pieces.pastille(ligne, 70, 80, "Le staff", "people", "MatchFenetreConsignesStaff_" + v, "", Charte.GAIN, Charte.PANNEAU_3)
-		var effets: Array = EFFETS.get(id, {}).get(v, [])
-		_lignes_effets(ligne, effets.filter(func(e: Array) -> bool: return int(e[0]) >= 0), 380, 22, 290)
-		_lignes_effets(ligne, effets.filter(func(e: Array) -> bool: return int(e[0]) < 0), 690, 22, 290)
-		Pieces.rendre_cliquable(ligne, Vector2(Lg, 132), func(): envoyer.call(id, v), "MatchFenetreConsignesChoix_" + v, str(o.get("label", "")), "", Charte.RAYON_PETIT)
-		y += 142.0
-	# Grand croquis du cran en place, bilan dessous.
+		var yp := h / 2.0 + 10.0
+		if voulu: _attente(ligne, 70, yp, "MatchFenetreConsignesAttente")
+		elif en_place: Pieces.pastille(ligne, 70, yp, "En place", "check", "MatchFenetreConsignesEnPlace", "", Charte.DORE, Charte.PANNEAU_3)
+		elif propose == v: Pieces.pastille(ligne, 70, yp, "Le staff", "people", "MatchFenetreConsignesStaff_" + v, "", Charte.GAIN, Charte.PANNEAU_3)
+		var r := avis(p, id, v)
+		var pour: Array = (r.get("pour", []) as Array).duplicate() if r.get("pour") is Array else []
+		for m: Variant in r.get("neutre", []) if r.get("neutre") is Array else []: pour.append({"mot": str(m), "neutre": true})
+		var contre: Array = r.get("contre", []) if r.get("contre") is Array else []
+		var lignes := maxi(maxi(pour.size(), contre.size()), 1)
+		var yl := maxf(8.0, (h - lignes * 34.0) / 2.0)
+		_lignes_effets(ligne, pour, 1, 380, yl, 290)
+		_lignes_effets(ligne, contre, -1, 690, yl, 290)
+		# Un clic demande ce cran ; sur le cran en place, il retire la demande en attente.
+		var action := func():
+			if v != attente and (v != cran or not attente.is_empty()): envoyer.call(id, v)
+		Pieces.rendre_cliquable(ligne, Vector2(Lg, h), action, "MatchFenetreConsignesChoix_" + v, str(o.get("label", "")), "", Charte.RAYON_PETIT)
+		y += h + ecart
+	# Grand croquis du cran voulu (en attente, sinon en place), bilan dessous.
+	var montre := attente if not attente.is_empty() else cran
 	var xd := x0 + Lg + 24.0
 	var Wd := LARGEUR - xd - 28.0
 	var cadre := D.rect(fond, Rect2(xd, 150, Wd, 410), Charte.PANNEAU_2, Charte.RAYON_CARTE)
 	cadre.name = "MatchFenetreConsignesTerrain"
 	var dessin := Croquis.new()
 	dessin.axe = id
-	dessin.valeur = cran
+	dessin.valeur = montre
 	cadre.add_child(dessin)
 	D.place(dessin, Rect2(18, 18, Wd - 44, 328))
-	D.text(cadre, 22, 388, libelle_cran(axe, cran).to_upper(), 26, Charte.DORE, 800, Wd - 44).add_theme_font_override("font", Charte.TITRE_EXTRA)
+	D.text(cadre, 22, 388, ("⧗ " if not attente.is_empty() else "") + libelle_cran(axe, montre).to_upper(), 26, Charte.DORE, 800, Wd - 44).add_theme_font_override("font", Charte.TITRE_EXTRA)
 	_bandeau_bilan(fond, p, axe, xd, 576, Wd)
-	# Rangée de cartes illustrées : une par consigne, la famille en liseré, le cran en place dessous.
+
+# --- Bas : rangée de cartes illustrées, une par consigne ---------------------------------------------------------
+
+static func _rangee(fond: Control, p: Dictionary, axes: Array, axe: Dictionary, choisir: Callable) -> void:
+	var id := str(axe.get("id", ""))
 	var n := axes.size()
 	var ecart := 8.0
 	var lc := (LARGEUR - 56.0 - (n - 1) * ecart) / float(n)
@@ -222,33 +195,55 @@ static func _variante_b(fond: Control, p: Dictionary, axes: Array, axe: Dictiona
 		var carte := D.rect(fond, Rect2(xc, yb, lc, 270), Charte.PANNEAU_3 if vu else Charte.PANNEAU_2, Charte.RAYON_CARTE, t if vu else Color.TRANSPARENT)
 		carte.name = "MatchFenetreConsignesCarteAxe_" + ida
 		D.rect(carte, Rect2(0, 0, lc, 8), t, 4)
-		var titre_c := D.text(carte, lc / 2.0, 44, str(a.get("label", "")).to_upper(), 18, t, 800, lc - 16, HORIZONTAL_ALIGNMENT_CENTER)
+		var titre_c := D.text(carte, lc / 2.0, 44, str(COURTS.get(ida, a.get("label", ""))).to_upper(), 17, t, 800, lc - 12, HORIZONTAL_ALIGNMENT_CENTER)
 		titre_c.add_theme_font_override("font", Charte.TITRE_EXTRA)
+		var attente := en_attente(p, ida)
+		var v := attente if not attente.is_empty() else Pilotage.cran(p, a)
 		var c := Croquis.new()
 		c.axe = ida
-		c.valeur = Pilotage.cran(p, a)
+		c.valeur = v
 		c.mini = true
 		carte.add_child(c)
-		D.place(c, Rect2(10, 60, lc - 20, 130))
-		var v := Pilotage.cran(p, a)
-		var actif := v != neutre(a)
-		D.text(carte, lc / 2.0, 236, libelle_cran(a, v), 21, Charte.DORE if actif else Charte.IVOIRE_2, 700, lc - 16, HORIZONTAL_ALIGNMENT_CENTER)
+		D.place(c, Rect2(8, 60, lc - 16, 130))
+		var actif := v != neutre(a) or not attente.is_empty()
+		# Cran en place (ou demandé) : deux lignes au plus, coupées aux mots (« Chercher la pénaltouche »).
+		var mot := D.text(carte, lc / 2.0, 222, libelle_cran(a, v), 19, Charte.DORE if actif else Charte.IVOIRE_2, 700, lc - 12, HORIZONTAL_ALIGNMENT_CENTER)
+		mot.name = "MatchFenetreConsignesCarteCran_" + ida
+		mot.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		mot.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+		mot.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		D.place(mot, Rect2(6, 198, lc - 12, 64))
+		if not attente.is_empty():
+			var badge := D.rect(carte, Rect2(14, 66, 44, 22), Charte.DORE, Charte.RAYON_PILULE)
+			badge.name = "MatchFenetreConsignesCarteAttente_" + ida
+			D.text(badge, 22, 17, "⧗", 15, Charte.ENCRE, 800, 44, HORIZONTAL_ALIGNMENT_CENTER)
 		if staff_propose(p, ida) != "" and staff_propose(p, ida) != v:
 			D.rect(carte, Rect2(lc - 22, 18, 12, 12), Charte.GAIN, 6).tooltip_text = "Avis du staff"
 		Pieces.rendre_cliquable(carte, Vector2(lc, 270), func(): choisir.call(ida), "MatchFenetreConsignesAxeLien_" + ida, str(a.get("label", "")), "", Charte.RAYON_CARTE)
 
 # --- Pièces communes ---------------------------------------------------------------------------------------------
 
-## Lignes + / − : signe en rond coloré, mots courts.
-static func _lignes_effets(parent: Control, effets: Array, x: float, y: float, largeur: float) -> void:
+## Lignes de tendance : flèches colorées (▲▲ net, ▲ léger, ? le staff ne sait pas) puis un mot court, jamais de chiffre.
+static func _lignes_effets(parent: Control, effets: Array, sens: int, x: float, y: float, largeur: float) -> void:
 	for e_v: Variant in effets:
-		var e: Array = e_v
-		var s := int(e[0])
-		var teinte: Color = Charte.GAIN if s > 0 else (Charte.PERTE if s < 0 else Charte.IVOIRE_3)
-		var rond := D.rect(parent, Rect2(x, y, 28, 28), Color(teinte, .22), Charte.RAYON_PILULE)
-		D.text(rond, 14, 22, "+" if s > 0 else ("−" if s < 0 else "="), 22, teinte, 800, 28, HORIZONTAL_ALIGNMENT_CENTER)
-		D.text(parent, x + 38, y + 22, str(e[1]), 21, Charte.IVOIRE if s != 0 else Charte.IVOIRE_2, 600, largeur - 38)
-		y += 36.0
+		if not e_v is Dictionary: continue
+		var e: Dictionary = e_v
+		var neutre_ := bool(e.get("neutre", false))
+		var force := int(e.get("force", 1))
+		var teinte: Color = Charte.IVOIRE_3 if neutre_ or force == 0 else (Charte.GAIN if sens > 0 else Charte.PERTE)
+		var signe := "=" if neutre_ else ("?" if force == 0 else ("▲" if sens > 0 else "▼").repeat(clampi(force, 1, 2)))
+		var pastille := D.rect(parent, Rect2(x, y, 46, 28), Color(teinte, .2), Charte.RAYON_PILULE)
+		pastille.name = "Tendance_%s_%d" % ["neutre" if neutre_ else ("pour" if sens > 0 else "contre"), force]
+		D.text(pastille, 23, 21, signe, 16, teinte, 800, 46, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(parent, x + 56, y + 22, str(e.get("mot", "")), 21, Charte.IVOIRE if not neutre_ and force > 0 else Charte.IVOIRE_2, 600, largeur - 56)
+		y += 34.0
+
+## Pastille dorée « ⧗ PROCHAIN ARRÊT » (même pièce que la fenêtre d'un joueur en match).
+static func _attente(parent: Control, x: float, y: float, nom: String) -> void:
+	var w := 178.0
+	var cadre := D.rect(parent, Rect2(x, y, w, 30), Charte.DORE, Charte.RAYON_PILULE)
+	cadre.name = nom
+	D.text(cadre, w / 2.0, 21, "⧗ PROCHAIN ARRÊT", 14, Charte.ENCRE, 800, w, HORIZONTAL_ALIGNMENT_CENTER).add_theme_font_override("font", Charte.TITRE_EXTRA)
 
 ## Pastille de la consigne adverse sur cet axe (ce que son jeu laisse voir), seulement si elle n'est pas neutre.
 static func _pastille_adverse(fond: Control, p: Dictionary, axe: Dictionary, x: float, y: float) -> void:
@@ -258,7 +253,7 @@ static func _pastille_adverse(fond: Control, p: Dictionary, axe: Dictionary, x: 
 	if v.is_empty() or v == neutre(axe): return
 	Pieces.pastille(fond, x, y, "Eux : " + libelle_cran(axe, v), "shield", "MatchFenetreConsignesAdverse", "", Charte.DORE, Charte.PANNEAU_3)
 
-## Bilan depuis le changement : « depuis 41′ » puis un chiffre par morceau, en tuiles.
+## Bilan depuis le changement : « depuis 41′ » puis un chiffre par morceau, en tuiles (ce qui s'est passé, après coup).
 static func _bandeau_bilan(fond: Control, p: Dictionary, axe: Dictionary, x: float, y: float, largeur: float) -> void:
 	var b := bilan(p, str(axe.get("id", "")))
 	if b.is_empty():
@@ -275,27 +270,6 @@ static func _bandeau_bilan(fond: Control, p: Dictionary, axe: Dictionary, x: flo
 		var reste := m.substr(chiffre.length()).strip_edges()
 		var mauvais := (reste.contains("pénalité") and not reste.contains("adverse")) or (reste.contains("perdu") and not reste.contains("chez eux")) or reste.contains("carton") or reste.contains("encaissé")
 		Pieces.tuile(fond, Rect2(x + (i + 1) * (l + 12.0), y, l, 90), chiffre, reste, Charte.PERTE if mauvais and chiffre != "0" else Charte.GAIN, "MatchFenetreConsignesBilan%d" % i, 34)
-
-## Avis du staff en attente (projection `staff.propositions`) : une pastille par proposition, un clic l'applique.
-static func _avis_staff(fond: Control, p: Dictionary, x: float, y: float, largeur: float, envoyer: Callable, choisir: Callable) -> void:
-	var staff: Dictionary = p.get("staff", {}) if p.get("staff") is Dictionary else {}
-	var props: Array = staff.get("propositions", []) if staff.get("propositions") is Array else []
-	var titre := D.text(fond, x, y + 26, "LE STAFF", 18, Charte.GAIN, 800, 160)
-	titre.add_theme_font_override("font", Charte.TITRE_EXTRA)
-	var px := x + 120.0
-	if props.is_empty():
-		D.text(fond, px, y + 26, "—", 20, Charte.IVOIRE_3, 600, 100)
-		return
-	for x_v: Variant in props:
-		if not x_v is Dictionary: continue
-		var prop: Dictionary = x_v
-		var axe := str(prop.get("axe", ""))
-		var valeur := str(prop.get("valeur", ""))
-		var mot := "%s → %s" % [str(prop.get("label", "")), str(prop.get("valeurLabel", ""))]
-		if px + Pieces.largeur_pastille(mot, "people") > x + largeur: break
-		px += Pieces.pastille(fond, px, y, mot, "people", "MatchFenetreConsignesAvis_" + axe, "", Charte.GAIN, Charte.PANNEAU_3, func():
-			choisir.call(axe)
-			envoyer.call(axe, valeur)) + 10.0
 
 ## Croquis rugby d'une consigne : petit terrain vu de dessus (nous attaquons vers la droite), nos joueurs en vert
 ## clair, les leurs en doré, le ballon en crème, flèches du geste. `mini` : vignette (moins de traits).
@@ -491,3 +465,52 @@ class Croquis extends Control:
 		elif valeur == "ouvreur":
 			draw_arc(P(0.62, 0.5), size.y * 0.1, 0, TAU, 24, Charte.PERTE, maxf(1.5, size.y * 0.012))
 			for y: float in [0.31, 0.5, 0.69]: fleche(Vector2(0.42, y), Vector2(0.58, 0.5 + (y - 0.5) * 0.3), Charte.GAIN)
+
+	# Plan de jeu : passes au large, pick and go, chandelles d'occupation ou jeu varié.
+	func _planAttaque() -> void:
+		for k in 5: joueur(0.7, 0.12 + k * 0.19, EUX)
+		if valeur == "large":
+			for k in 5: joueur(0.3 + k * 0.05, 0.3 + k * 0.13, NOUS)
+			ballon(0.3, 0.3)
+			fleche(Vector2(0.31, 0.32), Vector2(0.48, 0.82), FLECHE, false, 0.06)
+			fleche(Vector2(0.52, 0.86), Vector2(0.86, 0.9), Charte.GAIN)
+		elif valeur == "conquete":
+			for k in 6: joueur(0.42 + (k % 2) * 0.04, 0.4 + int(k / 2.0) * 0.1, NOUS)
+			ballon(0.47, 0.5)
+			fleche(Vector2(0.5, 0.5), Vector2(0.62, 0.5), Charte.DORE)
+		elif valeur == "occupation":
+			for k in 3: joueur(0.25 + k * 0.05, 0.4 + k * 0.1, NOUS)
+			ballon(0.25, 0.4)
+			fleche(Vector2(0.27, 0.4), Vector2(0.9, 0.35), FLECHE, true, -0.3)
+		else:
+			for k in 4: joueur(0.32 + k * 0.05, 0.35 + k * 0.1, NOUS)
+			ballon(0.32, 0.35)
+			fleche(Vector2(0.33, 0.37), Vector2(0.45, 0.62))
+			fleche(Vector2(0.46, 0.64), Vector2(0.62, 0.66), Color(FLECHE, .6))
+
+	# Système de défense : la ligne monte vite (pression), glisse vers l'aile (prudente) ou avance d'un bloc.
+	func _systemeDefense() -> void:
+		joueur(0.3, 0.5, EUX)
+		ballon(0.31, 0.53)
+		for k in 3: joueur(0.24, 0.25 + k * 0.25, EUX)
+		for k in 5:
+			var y := 0.12 + k * 0.19
+			joueur(0.55, y, NOUS)
+			if valeur == "pression": fleche(Vector2(0.54, y), Vector2(0.4, y), Charte.PERTE)
+			elif valeur == "prudente": fleche(Vector2(0.56, y), Vector2(0.6, minf(0.92, y + 0.14)), Charte.GAIN, false, 0.04)
+			else: fleche(Vector2(0.54, y), Vector2(0.47, y))
+
+	# Pénalités : poteaux (pied), touche près de leur ligne, jeu rapide à la main, ou choix du capitaine.
+	func _penalites() -> void:
+		var e := maxf(1.5, size.y * (0.012 if not mini else 0.03))
+		draw_line(P(0.94, 0.4), P(0.94, 0.6), FLECHE, e * 1.5)
+		draw_line(P(0.94, 0.5), P(0.99, 0.5), FLECHE, e)
+		joueur(0.6, 0.5, NOUS)
+		ballon(0.6, 0.5)
+		for k in 3: joueur(0.7, 0.3 + k * 0.2, EUX)
+		if valeur == "points": fleche(Vector2(0.62, 0.5), Vector2(0.93, 0.5), Charte.GAIN, true, -0.15)
+		elif valeur == "touch": fleche(Vector2(0.62, 0.48), Vector2(0.86, 0.04), Charte.DORE, true, -0.1)
+		elif valeur == "main": fleche(Vector2(0.62, 0.52), Vector2(0.8, 0.72), Charte.GAIN)
+		else:
+			fleche(Vector2(0.62, 0.5), Vector2(0.9, 0.5), Color(FLECHE, .5), true, -0.15)
+			fleche(Vector2(0.62, 0.48), Vector2(0.84, 0.06), Color(FLECHE, .5), true, -0.1)

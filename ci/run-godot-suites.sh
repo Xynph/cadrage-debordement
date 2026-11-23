@@ -58,6 +58,8 @@ declare -A suite_limits=(
   [tests/godot-planche-direct-tableau.cjs]=1200
   # Fenêtre d'un joueur en match (idée 32) : carrière Monde jusqu au jour du match, puis le match jusqu à la 50e à vitesse max.
   [tests/godot-menu-joueur-match.cjs]=1200
+  # Consignes en petite fenêtre (idée 33) : même préparation, match jusqu'à la 52e à vitesse max, 2 tailles.
+  [tests/godot-consignes-match.cjs]=1200
   [tests/godot-immersive08.cjs]=600
   # Panneaux de l'Effectif : une carrière Monde préparée jusqu'au jour de match (~60 s en local) puis le vrai jeu (~25 s).
   [tests/godot-panneaux-effectif.cjs]=600

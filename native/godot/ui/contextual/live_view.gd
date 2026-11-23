@@ -1846,32 +1846,49 @@ func fermer_fenetre() -> void:
 			if fermer is Callable and (fermer as Callable).is_valid(): (fermer as Callable).call()
 			return
 
-# --- Planche FM27 n° 33 : consignes en petite fenêtre, le match continue derrière ---------------------------------
+# --- Idée FM27 n° 33 : consignes en petite fenêtre, le match continue derrière ------------------------------------
 
 const ConsignesFenetre = preload("res://ui/contextual/match_consignes_fenetre.gd")
-## Axe montré, crans envoyés pas encore confirmés par le moteur, et l'envoi de la régie.
+## Axe montré et l'envoi de la régie (`set_consignes` : file du prochain arrêt de jeu).
 var consignes_axe := ""
-var consignes_envois: Dictionary = {}
 var _consignes_envoyer: Callable
 
-## Ouvre la petite fenêtre des consignes (sans pause) ; `envoyer(axe, valeur)` applique un cran.
+## Ouvre la petite fenêtre des consignes (sans pause) ; `envoyer(axe, valeur)` demande un cran, qui part au
+## prochain arrêt de jeu. Une veille la redessine quand le moteur change ce qu'elle montre (arrêt de jeu, bilan…).
 func ouvrir_fenetre_consignes(envoyer: Callable = Callable()) -> void:
 	if envoyer.is_valid(): _consignes_envoyer = envoyer
 	var p: Dictionary = Pilotage.pilotage(_live())
-	Pilotage.confirmer(p, consignes_envois)
-	var vue := Pilotage.avec_envois(p, consignes_envois)
 	var fond := _ouvrir_fenetre(ConsignesFenetre.NOM, "CONSIGNES", ConsignesFenetre.LARGEUR, ConsignesFenetre.HAUTEUR, false)
 	var choisir := func(axe: String):
 		consignes_axe = axe
 		ouvrir_fenetre_consignes()
-	var appliquer := func(axe: String, valeur: String):
+	var demander := func(axe: String, valeur: String):
 		consignes_axe = axe
-		if Pilotage.cran(vue, {"id": axe}) != valeur:
-			consignes_envois[axe] = valeur
-			if _consignes_envoyer.is_valid(): _consignes_envoyer.call(axe, valeur)
-			else: app._command(Pilotage.COMMANDE, Pilotage.charge(axe, valeur))
+		if _consignes_envoyer.is_valid(): _consignes_envoyer.call(axe, valeur)
+		else: app._command(Pilotage.COMMANDE, Pilotage.charge(axe, valeur))
+		_suivre_consignes()
+	var minute := int(_live().get("minute", 0))
+	ConsignesFenetre.construire(fond, p, consignes_axe, choisir, demander, minute)
+	var veille := Timer.new()
+	veille.name = "MatchFenetreConsignesVeille"
+	veille.wait_time = 0.4
+	veille.autostart = true
+	veille.ignore_time_scale = true
+	fond.add_child(veille)
+	var empreinte := ConsignesFenetre.signature(p, minute)
+	veille.timeout.connect(func():
+		if bool(app.waiting): return
+		if ConsignesFenetre.signature(Pilotage.pilotage(_live()), int(_live().get("minute", 0))) != empreinte: ouvrir_fenetre_consignes())
+
+## Redessine la fenêtre des consignes dès que la réponse du moteur est là.
+func _suivre_consignes() -> void:
+	var attendre := func(rappel: Callable) -> void:
+		if not is_instance_valid(self) or not fenetre_ouverte() or fenetre_hote.find_child(ConsignesFenetre.NOM, true, false) == null: return
+		if bool(app.waiting):
+			get_tree().process_frame.connect(rappel.bind(rappel), CONNECT_ONE_SHOT)
+			return
 		ouvrir_fenetre_consignes()
-	ConsignesFenetre.construire(fond, vue, OS.get_environment("CD_VARIANTE_VISUELLE"), consignes_axe, choisir, appliquer, int(_live().get("minute", 0)))
+	get_tree().process_frame.connect(attendre.bind(attendre), CONNECT_ONE_SHOT)
 
 # --- Petites fenêtres de l'écran 2D : fait, chiffre, match du multiplex -----------------------------------------
 
