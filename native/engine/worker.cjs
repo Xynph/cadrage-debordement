@@ -1334,6 +1334,8 @@ function createBridge(options={}){
      if(!stateVersions.untouched(command,payload).includes('clubs'))run("nativeSystems.domain('roleContrat').observe();");
      // Clause libératoire payée par un club géré (clauses-contrat.cjs) : période des mutations, une semaine tirée, rare.
      if(advancesCareer)run("nativeSystems.domain('clausesContrat').observe();");
+     // Historique des blessures et tests de reprise d'avant-match (tests-physiques.cjs) : avant le courrier du médecin.
+     run("nativeSystems.domain('testsPhysiques').observe();");
      run("nativeSystems.domain('clubMail').observe(nativeCommand);");
      // Réglage « Conférences ordinaires : envoyer l'adjoint » (press.cjs) : la conférence ordinaire qui vient de
      // s'ouvrir est tenue par Gabi dans la même commande, avant la sauvegarde ; « Jour suivant » et « Continuer »

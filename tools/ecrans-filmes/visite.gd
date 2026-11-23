@@ -81,7 +81,9 @@ const EXTRAS := [
 	{"id": "creation-options", "libelle": "Création · étape 2 Carrière (options)", "type": "creation_options"},
 	{"id": "avant-match-delegation", "libelle": "Avant-match · sous-page Déléguer le match", "type": "avant_delegation"},
 	{"id": "avant-match-bilan", "libelle": "Avant-match · petite fenêtre de la dernière rencontre", "type": "avant_bilan"},
-	{"id": "avant-match-tests", "libelle": "Avant-match · tests physiques (planche FM27 n° 36)", "type": "avant_tests"},
+	{"id": "avant-match-tests", "libelle": "Avant-match · tests physiques des joueurs revenus de blessure", "type": "avant_tests"},
+	{"id": "fiche-blessures", "libelle": "Fiche joueur · onglet Blessures (joueur testé avant le match)", "type": "fiche_blessures"},
+	{"id": "message-medecin", "libelle": "Réception · tests de reprise du médecin", "type": "reception_tests"},
 	{"id": "compte-rendu", "libelle": "Réception · article du dernier match (carte du compte rendu)", "type": "reception_article"},
 	{"id": "analyste-match", "libelle": "Réception · message « Analyse vidéo » du dernier match", "type": "reception_analyse"},
 	{"id": "analyste-match-domination", "libelle": "Réception · analyse vidéo, petite fenêtre de la domination", "type": "reception_analyse", "verdict": "domination"},
@@ -1219,6 +1221,21 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			if ouvre_tests == null: return {"statut": "indisponible", "note": "lien des tests physiques absent"}
 			ouvre_tests.pressed.emit()
 			await stabiliser()
+		"fiche_blessures":
+			var testes: Array = load("res://ui/immersive08/tests_physiques.gd").lignes(app.model)
+			if testes.is_empty(): return {"statut": "indisponible", "note": "aucun joueur testé dans la carrière filmée"}
+			load("res://ui/immersive08/tests_physiques.gd").ouvrir_fiche(app, str(testes[0].j.get("id", "")))
+			await stabiliser()
+			if app.find_child("PlayerInjuryHistory", true, false) == null: return {"statut": "echec", "note": "onglet Blessures absent"}
+		"reception_tests":
+			var tests_id := ""
+			for courrier: Dictionary in load("res://ui/club_mail.gd").mails(app.model):
+				if str(courrier.get("type", "")) == "tests_reprise" and str(courrier.id).trim_prefix("mail-").to_int() > tests_id.trim_prefix("mail-").to_int(): tests_id = str(courrier.id)
+			if tests_id.is_empty(): return {"statut": "indisponible", "note": "aucun message des tests de reprise"}
+			app._reset_reception(tests_id)
+			app._navigate("Réception", false)
+			await stabiliser()
+			if app.find_child("TestsPhysiquesMail", true, false) == null: return {"statut": "echec", "note": "liste des tests absente du message"}
 		"avant_bilan":
 			# Bilan de la dernière rencontre : pastille du bandeau → petite fenêtre.
 			app._navigate("Match")
