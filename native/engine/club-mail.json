@@ -4,7 +4,7 @@
   "cadence": {
     "_doc": "maxParJour : mails reçus au plus le même jour (suites comprises) ; nature de chaque type (décision de Léo, 18/11/2026) : « action » (une réponse est attendue : arrêt de « Continuer » à lui seul), « info » (rangé dans l'arrêt d'info du jour, un seul par jour), « routine » (n'arrête jamais à lui seul : rangé dans l'arrêt veille, lendemain ou info du jour s'il y en a un) ; semaine : plafond par catégorie et par semaine (lundi-dimanche) ; boite : mails conservés ; delaiReponse : jours avant qu'une demande sans réponse soit classée ; memoire : jours pendant lesquels un même sujet n'est pas réécrit.",
     "maxParJour": 3,
-    "semaine": { "infirmerie": 3, "vestiaire": 3, "staff": 4, "recrutement": 2, "presse": 2, "direction": 2, "competition": 4, "formation": 2, "moments": 2, "contrats": 10, "meteo": 2, "commotion": 6, "transferts": 6 },
+    "semaine": { "infirmerie": 3, "vestiaire": 3, "staff": 4, "recrutement": 2, "presse": 2, "direction": 2, "competition": 4, "formation": 2, "moments": 2, "contrats": 10, "meteo": 2, "commotion": 6, "transferts": 6, "analyse": 2 },
     "boite": 160,
     "projection": 80,
     "delaiReponse": 7,
@@ -23,7 +23,8 @@
     "contrats": { "label": "Contrats", "ecran": "contrats" },
     "meteo": { "label": "Météo", "ecran": "Composition" },
     "commotion": { "label": "Médical", "ecran": "infirmerie" },
-    "transferts": { "label": "Transferts", "ecran": "ventes" }
+    "transferts": { "label": "Transferts", "ecran": "ventes" },
+    "analyse": { "label": "Analyse vidéo", "ecran": "Préparation" }
   },
   "mercato": {
     "_doc": "Courriers du mercato (docs/gdd/calendrier-mutations.md § 3 ter) : échos hors période des mutations (routine), point hebdomadaire, ouverture et dernière semaine pendant la période (vente-joueurs.json, fenetres). Faits du Monde lus dans S.calendrierMutations.mercato.semaines (types listés) ; echos.lignes, point.* : lignes au plus par section avant « et N autres » ; memoire : faits déjà annoncés gardés (ni répétés, ni redonnés en courrier individuel) ; titres : en-têtes de section, {arrivee} = lendemain de la fin de période.",
@@ -807,6 +808,16 @@
       "formulations": [
         { "sujet": "État de la pelouse avant {adversaire}", "corps": "Pour demain contre {adversaire} : la pelouse est {pelouse}. À prendre en compte dans ta composition." },
         { "sujet": "La pelouse pour demain", "corps": "Petit point terrain avant {adversaire} : {pelouse}." }
+      ],
+      "reponses": []
+    },
+    "analyse_video": {
+      "_doc": "Rapport de l'analyste vidéo après le match (revue FM27, idée 28 ; choix de Léo du 23/11/2026) : son propre message, jusqu'à trois jours après la rencontre. Le contenu est visuel (Réception, ui/immersive08/analyste_match.gd : verdicts, occasions, domination, joueurs, conquête), lu dans le dernier rapport de match ; le corps ne garde que le score.",
+      "categorie": "analyse", "declencheur": "analyse_video", "priorite": 50, "nature": "routine", "ecran": "Préparation",
+      "expediteur": "L'analyste vidéo",
+      "formulations": [
+        { "sujet": "Analyse vidéo : {adversaire}", "corps": "{score} face à {adversaire}." },
+        { "sujet": "Vidéo du match contre {adversaire}", "corps": "{score} contre {adversaire}." }
       ],
       "reponses": []
     },

@@ -2,8 +2,9 @@ extends SceneTree
 ## Conférence de presse rapide dans le vrai jeu (Godot réel + worker réel, carrière Monde au 13 juillet 2026).
 ## Calendrier de presse façon FM (18/11/2026) : aucune conférence à la création de la carrière.
 ## 1. Grand moment (la rentrée, ouverte le lundi de la semaine du 1er match, atteinte par « Continuer ») : 4 questions,
-##    tons et effets visibles, adjoint refusé ; un clic par question (la suivante s'affiche d'elle-même), « Publier »,
-##    bilan des trois conséquences, « Continuer ».
+##    chacune sur un vrai joueur de l'effectif ; tons visibles mais AUCUN effet avant de répondre (choix de Léo du
+##    23/11/2026) ; petites fenêtres du joueur et du journaliste ; adjoint refusé ; un clic par question dit la réponse
+##    (la suivante s'affiche, la réaction se découvre en flèches), la dernière publie ; bilan en flèches, « Continuer ».
 ## 2. Conférence ordinaire : l'après-match du 1er match (3 questions au plus, salle de presse ouverte par le jeu dès le
 ##    résultat), cinq tons aux conséquences différentes, réglage « Envoyer l'adjoint », « Envoyer mon adjoint » d'un
 ##    clic, bilan, « Continuer » qui ramène en Réception.
@@ -98,33 +99,50 @@ func run() -> void:
 	var questions: Array = conference.get("questions", [])
 	check(questions.size() == 4, "Grand moment : 4 questions (%d)" % questions.size())
 	if not await open_room(): return finish()
-	var moment := node("PressMoment")
-	check(moment != null and moment.find_children("*", "Label", true, false).any(func(l: Label): return l.text.begins_with("GRAND MOMENT")), "Bandeau « Grand moment » visible")
-	var delegate := node("PressDelegate") as Button
-	check(delegate != null and delegate.disabled, "Grand moment : l'adjoint n'est pas proposé")
-	check(node("PressDelegateReason") != null and str(node("PressDelegateReason").text).contains("en personne"), "Raison affichée : présence attendue")
-	check(node("PressMicrophone") != null, "Micro aux couleurs du média")
+	check(node("PressMoment") != null, "Pastille « grand moment » visible")
+	check(node("PressDelegate") == null, "Grand moment : l'adjoint n'est pas proposé")
+	check(node("PressDelegateReason") != null, "Pastille « En personne » affichée")
+	check(questions.all(func(q: Dictionary): return q.get("player") is Dictionary and not str(q.player.get("name", "")).is_empty()), "Chaque question vise un vrai joueur de l'effectif")
+	var ids := {}
+	for q: Dictionary in questions: ids[str(q.get("player", {}).get("id", ""))] = true
+	check(ids.size() == questions.size(), "Un joueur différent par question")
 	var first: Dictionary = questions[0]
+	check(node("PressPlayerName") != null and str(node("PressPlayerName").text) == str(first.player.name), "Carte du joueur concerné")
+	check(str((node("PressQuestion") as Label).text) == str(first.question), "Question du moteur dans la bulle")
 	for answer: Dictionary in first.answers:
-		var card := node("PressAnswer_%s_%s" % [first.id, answer.id]) as Button
-		check(card != null and card.text == str(answer.text), "Texte exact de la réponse " + str(answer.id))
-		if card == null: continue
-		var tone := card.find_child("PressTone", true, false)
-		var effects := card.find_child("PressEffects", true, false) as RichTextLabel
-		check(tone != null and effects != null and effects.get_parsed_text().contains("Moral") and effects.get_parsed_text().contains("Relation"), "Ton et effets visibles sur la carte " + str(answer.id))
+		var card := node("PressAnswerCard_%s" % answer.id)
+		check(node("PressAnswer_%s_%s" % [first.id, answer.id]) is Button, "Réponse cliquable " + str(answer.id))
+		check(card != null and card.find_children("*", "Label", true, false).any(func(l: Label): return l.text == str(answer.text)), "Texte exact de la réponse " + str(answer.id))
+		check(card != null and card.find_child("PressAnswerTone_" + str(answer.id), true, false) != null, "Pastille de ton " + str(answer.id))
+		check(card != null and _fleches(card) == 0, "Aucun effet montré avant de répondre " + str(answer.id))
+	check(_fleches(view()) == 0, "Aucune flèche avant la première réponse")
+	# Petites fenêtres : joueur puis journaliste (✕ et Échap ferment).
+	await click("PressPlayerOpen")
+	check(node("PressPlayerWindow") != null and node("PressPlayerWindowForm") != null and node("PressPlayerWindowMorale") != null and node("PressPlayerWindowTrust") != null, "Fenêtre du joueur : forme, moral, confiance")
+	await capture("presse-fenetre-joueur")
+	await click("PressPlayerWindowFermer")
+	await settle(3)
+	check(node("PressPlayerWindow") == null or node("PressPlayerWindow").is_queued_for_deletion(), "✕ ferme la fenêtre du joueur")
+	await click("PressJournalistOpen")
+	check(node("PressJournalistWindow") != null and node("PressJournalistWindowRelation") != null, "Fenêtre du journaliste : relation")
+	check(load("res://ui/petite_fenetre.gd").fermer_derniere(self), "Échap ferme la fenêtre du journaliste")
+	await settle(3)
 	await capture("presse-apres-grand-moment")
 	var clicks := 0
 	for index in questions.size():
 		var shown: Dictionary = questions[view().question_index]
 		check(view().question_index == index, "Question %d affichée d'elle-même" % (index + 1))
 		if await click("PressAnswer_%s_%s" % [shown.id, "r1"]): clicks += 1
-	check(view().choices.size() == questions.size(), "Toutes les réponses en un clic chacune")
-	if await click("PressPublish"): clicks += 1
+		if index == 0:
+			check(node("PressReaction") != null and node("PressReaction").find_children("PressReaction_*", "", true, false).size() == 5, "Réaction de la 1re réponse : cinq flèches")
+			check(node("PressAnswer_%s_r0" % shown.id) == null, "Une réponse dite ne se reprend pas")
+			await capture("presse-reaction")
+	check(press().get("lastOutcome", {}).get("players", []).size() >= 1, "La dernière réponse publie ; moral des joueurs visés touché")
 	await settle(8)
-	check(node("PressOutcomeHeadline") != null, "Bilan : moral, relation presse, confiance")
+	check(node("PressOutcomeHeadline") != null and _fleches(node("PressOutcomeHeadline")) >= 4, "Bilan en flèches")
 	await capture("presse-apres-bilan")
 	if await click("PressReturn"): clicks += 1
-	check(clicks == questions.size() + 2, "Parcours complet en %d clics (questions + publier + continuer)" % clicks)
+	check(clicks == questions.size() + 1, "Parcours complet en %d clics (questions + continuer)" % clicks)
 	print("CD_PRESSE grand moment : ", clicks, " clics pour ", questions.size(), " questions")
 	# 2. Conférence ordinaire : l'après-match du 1er match, ouvert dès la validation du résultat.
 	var played: bool = await Flow.play_to_result(app, self, check)
@@ -142,14 +160,12 @@ func run() -> void:
 	check(view() != null, "Après-match : la salle de presse s'ouvre d'elle-même")
 	if view() == null: return finish()
 	await capture("presse-apres-ordinaire")
-	# Dilemmes : les cinq tons n'affichent pas les mêmes conséquences, et aucun n'est meilleur sur tous les axes.
+	# Dilemmes : les cinq tons n'ont pas les mêmes conséquences, et aucun n'est meilleur sur tous les axes.
 	var shown_q: Dictionary = questions[view().question_index]
 	var rows := {}
 	for answer: Dictionary in shown_q.get("answers", []):
-		var card := node("PressAnswer_%s_%s" % [shown_q.id, answer.id]) as Button
-		check(card != null, "Réponse affichée dans la salle : " + str(answer.id))
-		var effects := card.find_child("PressEffects", true, false) as RichTextLabel if card != null else null
-		rows[str(answer.tone)] = effects.get_parsed_text() if effects != null else ""
+		check(node("PressAnswer_%s_%s" % [shown_q.id, answer.id]) != null, "Réponse affichée dans la salle : " + str(answer.id))
+		rows[str(answer.tone)] = JSON.stringify(answer.get("effects", {}))
 	check(rows.size() == 5 and _distinct(rows.values()), "Cinq tons, cinq profils d'effets différents")
 	var best := 0
 	for answer: Dictionary in shown_q.get("answers", []):
@@ -186,6 +202,11 @@ func run() -> void:
 	check(app.route == "Réception", "Retour en Réception après l'après-match")
 	check(view() == null, "Aucune salle de presse restée ouverte")
 	finish()
+
+## Flèches de réaction (conference_presse.gd, classe Fleche) sous un nœud.
+func _fleches(n: Node) -> int:
+	if n == null: return 0
+	return n.find_children("*", "Control", true, false).filter(func(c: Node): return "sens" in c and "couleur" in c).size()
 
 func _distinct(values: Array) -> bool:
 	var seen := {}
