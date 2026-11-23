@@ -18,7 +18,8 @@ const Entete = preload("res://ui/immersive08/tactics_entete.gd")
 const Vertical = preload("res://ui/immersive08/tactics_vertical.gd")
 const Selection = preload("res://ui/immersive08/tactics_selection.gd")
 const Consignes = preload("res://ui/immersive08/preparation_consignes.gd")
-const Rules = preload("res://ui/playbook_view.gd")
+const Combinaisons = preload("res://ui/immersive08/tactics_combinaisons_vues.gd")
+const Combi = preload("res://ui/immersive08/tactics_combinaisons.gd")
 const Watch = preload("res://ui/management_state.gd")
 const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
 
@@ -27,10 +28,7 @@ const ATTAQUE := Pieces.BLEU
 const DEFENSE := Pieces.VIOLET
 const HAUT := 196.0
 const BAS := 1298.0
-const ICONES_PHASE := {"scrum": "people", "lineout": "flag", "kickoff": "ball"}
-const COULEURS_PHASE := {"scrum": Pieces.ORANGE, "lineout": Pieces.TURQUOISE, "kickoff": Pieces.BLEU}
 ## Zones de chute des renvois (mètres depuis la médiane).
-const PORTEES := {"normal": Vector2(10, 22), "court": Vector2(10, 14), "long": Vector2(25, 35)}
 
 static func actuel(app: Control) -> int:
 	var onglet := int(app.management_ui.get("tactique_onglet", 0))
@@ -67,9 +65,18 @@ static func _entete(app: Control, page: Control, onglet: int) -> void:
 			x += _pastille(page, x, y, "Zones · %d/4" % locales, "flag", "TacticsTabZones", Pieces.VERT if locales > 0 else Charte.IVOIRE_2, func(): _ouvrir_carnet(app, 0)) + 10
 			Entete.bouton(page, 2248, "Préparation du match", "tactic", func(): app.Immersive.open_preparation(app, 0), "TacticsTabOpenFull")
 		2:
-			for phase: Dictionary in _carnet(app).get("setPieces", []):
-				var cle := str(phase.get("key", ""))
-				x += _pastille(page, x, y, "%s · %s" % [str(phase.get("label", "")), _libelle(phase.get("options", []), phase.get("selected"))], ICONES_PHASE.get(cle, "flag"), "TacticsTabPhase_" + cle, COULEURS_PHASE.get(cle, Charte.IVOIRE)) + 10
+			# Combinaison d'attaque active de chaque phase ; un clic ouvre la phase.
+			var toutes: Variant = _carnet(app).get("combinaisons", {})
+			for p: Array in Combi.PHASES:
+				var d: Dictionary = toutes.get("%s_attaque" % p[0], {}) if toutes is Dictionary else {}
+				var l: Array = d.get("liste", [])
+				if l.is_empty(): continue
+				var actif := str(l[clampi(int(d.get("active", 0)), 0, l.size() - 1)].get("nom", ""))
+				var phase := str(p[0])
+				x += _pastille(page, x, y, "%s · %s" % [str(p[1]), actif], str(p[2]), "TacticsTabPhase_" + phase, p[3], func():
+					Combi.etat(app).phase = phase
+					Combi.etat(app).scenario = "attaque"
+					app._render()) + 10
 			Entete.bouton(page, 2248, "Carnet de jeu", "tactic", func(): _ouvrir_carnet(app, 1), "TacticsTabOpenFull")
 		4:
 			var meta: Dictionary = app.model.get("meta", {})
@@ -161,14 +168,6 @@ static func _effets_intention(cote: String, id: String) -> Array:
 	for e: Array in Consignes.EFFETS.get(cote, {}).get(id, []):
 		var signe := "▲ " if e[1] == "haut" else "▼ " if e[1] == "bas" else "= "
 		rendu.append([signe + str(e[0]), e[2]])
-	return rendu
-
-static func _effets_phase(cle: String, id: String) -> Array:
-	var rendu: Array = []
-	for e: Array in load("res://ui/immersive08/playbook_canvas.gd").EFFETS.get(cle, {}).get(id, []):
-		var signe := str(e[2])
-		var couleur: Color = Pieces.VERT if signe == "+" else Pieces.ROUGE if signe == "−" else Charte.IVOIRE_2
-		rendu.append([("▲ " if signe == "+" else "▼ " if signe == "−" else "= ") + str(e[1]), couleur])
 	return rendu
 
 static func _transparent(noeud: Node) -> void:
@@ -285,141 +284,9 @@ static func _zones_verticales(app: Control, page: Control) -> void:
 
 # --- Phases arrêtées -------------------------------------------------------------------------------------------------
 
+## Combinaisons de touche, mêlée, pénalité et renvoi (tactics_combinaisons_vues.gd), branchées au match.
 static func _phases(app: Control, page: Control) -> void:
-	var carnet := _carnet(app)
-	var phases: Array = carnet.get("setPieces", [])
-	var actif := bool(carnet.get("available", false)) and not bool(app.get("waiting"))
-	_terrain_phases(app, page, phases)
-	var gauche := Vertical.DROITE
-	var w := (2248.0 - gauche - 2 * 20) / 3.0
-	for i in phases.size():
-		_colonne_phase(app, page, Rect2(gauche + i * (w + 20), HAUT - 4, w, BAS - HAUT + 4), phases[i], actif)
-
-## Colonne d'une phase : titre (icône, Anton), puis une carte par choix (croquis, nom, pastilles d'effet).
-static func _colonne_phase(app: Control, page: Control, zone: Rect2, phase: Dictionary, actif: bool) -> void:
-	var cle := str(phase.get("key", ""))
-	var couleur: Color = COULEURS_PHASE.get(cle, Charte.IVOIRE)
-	_titre_bloc(page, zone.position.x, zone.position.y, str(phase.get("label", "")), couleur, zone.size.x - 20)
-	var options: Array = phase.get("options", [])
-	var choisie := str(phase.get("selected", ""))
-	var haut := zone.position.y + 48
-	var h := minf(250.0, (zone.end.y - haut - 16 * 3) / 4.0)
-	for n in options.size():
-		var option: Dictionary = options[n]
-		var id := str(option.get("id", ""))
-		var choisi := id == choisie
-		var rect := Rect2(zone.position.x, haut + n * (h + 16), zone.size.x, h)
-		var carte := _carte(page, rect, "TacticsTabPhase_%s_%s" % [cle, id], choisi, couleur, actif, func(): Rules._choose(app, cle, id), "%s\n%s" % [str(option.get("label", "")), str(option.get("description", ""))])
-		var cote := h - 24
-		var croquis := Croquis.new()
-		croquis.name = "Croquis_%s_%s" % [cle, id]
-		croquis.cle = cle
-		croquis.id = id
-		croquis.accent = couleur
-		carte.add_child(croquis)
-		D.place(croquis, Rect2(12, 12, minf(cote * 1.25, zone.size.x * .42), cote))
-		var x := 12 + minf(cote * 1.25, zone.size.x * .42) + 16
-		var titre := Kit.titre(carte, x, 46, str(option.get("label", "")), 26, zone.size.x - x - 20)
-		titre.add_theme_font_override("font", Charte.TITRE_FICHE)
-		titre.add_theme_color_override("font_color", couleur if choisi else Charte.IVOIRE)
-		_effets(carte, x, 66, zone.size.x - x - 14, _effets_phase(cle, id), "Effet_%s_%s_" % [cle, id])
-		if choisi: Consignes.coche(carte, zone.size.x - 14, h - 48)
-		_transparent(carte)
-
-## Repères des phases sur la pelouse verticale (mêlée, touche, zone de chute du renvoi choisi).
-static func _terrain_phases(app: Control, page: Control, phases: Array) -> void:
-	var t := Kit.titre(page, 0, Vertical.BANDEAU.position.y + 32, "SUR LE TERRAIN", 28, 360)
-	t.add_theme_font_override("font", Charte.TITRE_FICHE)
-	t.name = "TacticsTabPitchTitle"
-	_pelouse(page)
-	var choix := {}
-	for phase: Dictionary in phases: choix[str(phase.get("key", ""))] = [str(phase.get("label", "")), _libelle(phase.get("options", []), phase.get("selected")), str(phase.get("selected", ""))]
-	# Renvoi : depuis la médiane vers l'en-but adverse (en haut), zone de chute du choix en clair.
-	if choix.has("kickoff"):
-		var portee: Vector2 = PORTEES.get(choix.kickoff[2], PORTEES.normal)
-		var a := _point(4, 55.0 - portee.y)
-		var b := _point(Vertical.LARGEUR - 4, 55.0 - portee.x)
-		D.rect(page, Rect2(a, b - a), Color(COULEURS_PHASE.kickoff, .35), Charte.RAYON_PETIT, COULEURS_PHASE.kickoff).mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_repere(page, _point(Vertical.LARGEUR / 2.0, 55.0 - (portee.x + portee.y) / 2.0), choix.kickoff, "kickoff")
-	if choix.has("scrum"): _repere(page, _point(Vertical.LARGEUR * .4, 72), choix.scrum, "scrum")
-	if choix.has("lineout"): _repere(page, _point(Vertical.LARGEUR * .26, 92), choix.lineout, "lineout")
-
-static func _repere(page: Control, centre: Vector2, choix: Array, cle: String) -> void:
-	var couleur: Color = COULEURS_PHASE.get(cle, Charte.IVOIRE)
-	var texte := "%s · %s" % [str(choix[0]).to_upper(), str(choix[1])]
-	var w := Kit.largeur(texte, 20) + 64
-	var plaque := D.rect(page, Rect2(centre.x - w / 2.0, centre.y - 24, w, 48), Color(Charte.PANNEAU, .92), Charte.RAYON_PILULE, couleur)
-	plaque.name = "TacticsTabRepere_" + cle
-	plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var icone := C.icon(ICONES_PHASE.get(cle, "flag"), 24, couleur)
-	plaque.add_child(icone)
-	D.place(icone, Rect2(16, 12, 24, 24))
-	Kit.texte(plaque, 48, 32, texte, couleur, w - 56, 20)
-
-## Croquis d'une phase arrêtée sur un carré de pelouse : mêlée (deux paquets), touche (alignement et lancer), renvoi
-## (demi-terrain, zone de chute).
-class Croquis extends Control:
-	var cle := "scrum"
-	var id := ""
-	var accent := Color.WHITE
-
-	func _fleche(a: Vector2, b: Vector2, couleur: Color, e: float) -> void:
-		draw_line(a, b, couleur, e, true)
-		var d := (b - a).normalized()
-		var n := Vector2(-d.y, d.x)
-		var t := e * 3.0
-		draw_colored_polygon(PackedVector2Array([b + d * t * .6, b - d * t + n * t * .8, b - d * t - n * t * .8]), couleur)
-
-	func _draw() -> void:
-		var w := size.x
-		var h := size.y
-		draw_rect(Rect2(Vector2.ZERO, size), Charte.VERT_FRANC)
-		var craie := Color(1, 1, 1, .35)
-		var e := maxf(1.0, h * .012)
-		var r := h * .05
-		var nous := Charte.IVOIRE
-		var eux := Color(Pieces.ORANGE, .9)
-		var epais := maxf(2.0, h * .03)
-		match cle:
-			"scrum":
-				draw_line(Vector2(w * .5, h * .1), Vector2(w * .5, h * .9), craie, e)
-				for p in [Vector2(.42, .38), Vector2(.42, .5), Vector2(.42, .62), Vector2(.33, .42), Vector2(.33, .58), Vector2(.25, .36), Vector2(.25, .5), Vector2(.25, .64)]:
-					draw_circle(Vector2(w * p.x, h * p.y), r, nous)
-				for p in [Vector2(.58, .38), Vector2(.58, .5), Vector2(.58, .62), Vector2(.67, .42), Vector2(.67, .58), Vector2(.75, .36), Vector2(.75, .5), Vector2(.75, .64)]:
-					draw_circle(Vector2(w * p.x, h * p.y), r, eux)
-				match id:
-					"pousser": _fleche(Vector2(w * .2, h * .84), Vector2(w * .72, h * .84), accent, epais * 1.4)
-					"securiser": _fleche(Vector2(w * .3, h * .5), Vector2(w * .1, h * .82), accent, epais)
-					_: _fleche(Vector2(w * .28, h * .84), Vector2(w * .5, h * .84), accent, epais)
-			"lineout":
-				draw_line(Vector2(w * .08, h * .05), Vector2(w * .08, h * .95), Color(1, 1, 1, .8), e * 1.5)
-				draw_circle(Vector2(w * .04, h * .5), r, nous)
-				var cible := {"courte": .26, "fond": .86, "maul": .4}.get(id, .55) as float
-				for k in 6:
-					draw_circle(Vector2(w * (.2 + k * .13), h * .42), r, nous)
-					draw_circle(Vector2(w * (.2 + k * .13), h * .6), r, eux)
-				var arc := PackedVector2Array()
-				for k in 11:
-					var t := k / 10.0
-					arc.append(Vector2(lerpf(w * .06, w * cible, t), h * .42 - sin(t * PI) * h * .3))
-				for k in 10: draw_line(arc[k], arc[k + 1], accent, epais, true)
-				draw_circle(arc[10], r * 1.3, accent)
-				if id == "maul": _fleche(Vector2(w * .4, h * .78), Vector2(w * .75, h * .78), accent, epais * 1.4)
-			_:
-				# Renvoi : médiane à gauche, ligne des 10 m en tirets, zone de chute du choix.
-				var metre := w / 40.0
-				draw_line(Vector2(0, 0), Vector2(0, h), Color(1, 1, 1, .8), e * 2)
-				draw_dashed_line(Vector2(10 * metre, 0), Vector2(10 * metre, h), Color(1, 1, 1, .5), e, maxf(3.0, h * .05))
-				draw_line(Vector2(22 * metre, 0), Vector2(22 * metre, h), craie, e)
-				var portee: Vector2 = PORTEES.get(id, Vector2(10, 22))
-				draw_rect(Rect2(portee.x * metre, h * .12, (portee.y - portee.x) * metre, h * .76), Color(accent, .5))
-				draw_circle(Vector2(w * .02, h * .5), r, nous)
-				var vol := PackedVector2Array()
-				for k in 11:
-					var t := k / 10.0
-					vol.append(Vector2(lerpf(w * .03, (portee.x + portee.y) / 2.0 * metre, t), h * .5 - sin(t * PI) * h * .32))
-				for k in 10:
-					if k % 2 == 0: draw_line(vol[k], vol[k + 1], Charte.IVOIRE, epais, true)
+	Combinaisons.build(app, page)
 
 # --- Entraînement ----------------------------------------------------------------------------------------------------
 

@@ -9,7 +9,7 @@ const U = preload("res://ui/management_state.gd")
 
 ## Catégorie du moteur -> rubrique de la Réception (filtres, icônes et couleurs). Rubriques renommées par Léo le
 ## 23/11/2026 : Recrutement → Transferts, Direction → Conseil (les écrans du jeu gardent leur nom).
-const CATEGORY := {"infirmerie":"Médical", "commotion":"Médical", "vestiaire":"Staff", "staff":"Staff", "recrutement":"Transferts", "presse":"Club", "direction":"Conseil", "contrats":"Conseil", "competition":"Compétitions", "formation":"Formation", "moments":"Club", "meteo":"Météo", "transferts":"Transferts"}
+const CATEGORY := {"infirmerie":"Médical", "commotion":"Médical", "vestiaire":"Staff", "staff":"Staff", "recrutement":"Transferts", "presse":"Club", "direction":"Conseil", "contrats":"Conseil", "competition":"Compétitions", "formation":"Formation", "moments":"Club", "meteo":"Météo", "transferts":"Transferts", "analyse":"Staff"}
 ## Écrans que le courrier et les arrêts peuvent ouvrir (routes de main.gd) ; « infirmerie », « contrats » et
 ## « fiche » sont des vues préparées (Effectif filtré, fiche d'un joueur).
 const ROUTES := ["Composition", "Effectif", "Classements", "Recrutement", "Préparation", "Vestiaire", "Presse", "Club", "Finances", "Formation", "Calendrier", "Réception", "Bureau"]

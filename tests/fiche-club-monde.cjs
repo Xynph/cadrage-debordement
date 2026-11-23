@@ -69,6 +69,57 @@ test('XV le plus fréquent : feuilles connues, déterministe, format compact val
   delete globalThis.S;
 });
 
+test('Dernier XV aligné : quinze jetons par club, relu sur l’effectif actuel, validé', () => {
+  globalThis.S = fauxMonde();
+  const d = domaine.factory();
+  const base = Array.from({ length: 15 }, (_, k) => 'c0:j' + k);
+  d.enregistrer(match(S, base));
+  const autre = base.map((id, k) => k === 9 ? 'c0:j25' : k === 14 ? 'x:etranger' : id);
+  d.enregistrer(match(S, autre));
+  const dernier = d.dernierXV(S, S.clubs[0]);
+  assert.equal(dernier.length, 15);
+  assert.equal(dernier[9], 'c0:j25', 'le dernier match l’emporte');
+  assert.equal(dernier[14], null, 'joueur hors club : maillot vide');
+  assert.equal(d.validate(S), true);
+  S.clubSheet.derniers[0] = 'abc.def';
+  assert.throws(() => d.validate(S), /derniers XV invalides/);
+  delete globalThis.S;
+});
+
+test('Points forts / faibles : chaque indicateur comparé à la moyenne du championnat', () => {
+  // Six clubs d'un même championnat ; le club 0 marque beaucoup, encaisse peu, perd ses touches et concède des pénalités.
+  const clubs = Array.from({ length: 6 }, (_, id) => ({ id, name: 'Club ' + id, players: [] }));
+  const stats = (lineouts, lineoutsWon, penalties) => ({ lineouts, lineoutsWon, scrums: 10, scrumsWon: 9, penalties });
+  const history = [];
+  for (let k = 0; k < 10; k++) {
+    const a = k % 6, b = (k + 1 + (k % 2)) % 6;
+    const zero = a === 0 || b === 0, side0 = b === 0 ? 1 : 0;
+    const tries = zero ? (side0 === 0 ? [6, 1] : [1, 6]) : [3, 3];
+    const st = zero ? (side0 === 0 ? [stats(12, 8, 14), stats(12, 11, 9)] : [stats(12, 11, 9), stats(12, 8, 14)]) : [stats(12, 11, 9), stats(12, 11, 9)];
+    const essais = [];
+    for (let s = 0; s < 2; s++) for (let t = 0; t < tries[s]; t++) essais.push([zero && s === side0 ? 70 : 20 + t, s, zero && s === side0 ? 'b' : 'j', 30]);
+    history.push({ pair: [a, b], score: [tries[0] * 5, tries[1] * 5], tries, stats: st, essais, season: 1 });
+  }
+  globalThis.S = { season: 1, club: 5, clubs, history, worldMode: { leagues: { elite: { members: [0, 1, 2, 3, 4, 5] } } } };
+  const d = domaine.factory();
+  const f = d.forcesAdverses(S, 0);
+  assert.ok(f && f.saison === 'en cours', 'saison en cours');
+  const par = Object.fromEntries(f.points.map(p => [p.cle, p]));
+  assert.equal(par.essais?.fort, true, 'attaque au-dessus de la moyenne');
+  assert.equal(par.encaisses?.fort, true, 'défense meilleure que la moyenne');
+  assert.equal(par.touches?.fort, false, 'touche sous la moyenne');
+  assert.equal(par.penalites?.fort, false, 'plus de pénalités que la moyenne');
+  assert.equal(par.porte?.fort, true, 'ballon porté au-dessus de la moyenne');
+  assert.equal(par.fin?.fort, true, 'finit fort');
+  assert.equal(par.melees, undefined, 'mêlée dans la moyenne : ni fort ni faible');
+  assert.ok(f.moyenne.matchs > f.club.matchs, 'moyenne sur tout le championnat');
+  for (const p of f.points) assert.ok(Number.isFinite(p.valeur) && Number.isFinite(p.ligue) && p.force >= 1, p.cle);
+  // Pas assez de matchs : saison passée, sinon rien.
+  S.history = history.filter(r => !r.pair.includes(0)).concat(history.filter(r => r.pair.includes(0)).slice(0, 1));
+  assert.equal(d.forcesAdverses(S, 0), null, 'un seul match : rien');
+  delete globalThis.S;
+});
+
 test('Fiche club en carrière Monde : feuilles réelles, XV type recalculé, lecture seule, ancienne sauvegarde, clubs suivis', () => {
   const M = require('./helpers/carriere-monde.cjs');
   const jeu = M.ouvrir({ hebdomadaire: true, testVm: true });
@@ -110,6 +161,14 @@ test('Fiche club en carrière Monde : feuilles réelles, XV type recalculé, lec
       assert.equal(fiche.xv.slots[i].source, 'feuilles');
     }
     assert.equal(fiche.squad.length, fiche.squadSize);
+    // Points forts / faibles (idée FM27 n° 29) : comparés à la moyenne du championnat, dernier XV = dernière feuille.
+    assert.ok(fiche.forces && fiche.forces.moyenne.matchs > fiche.forces.club.matchs, 'forces : moyenne du championnat');
+    for (const p of fiche.forces.points) assert.equal(p.fort, p.cle === 'encaisses' || p.cle === 'penalites' || p.cle.endsWith('Contre') ? p.valeur < p.ligue : p.valeur > p.ligue, 'sens du point ' + p.cle);
+    const derniere = feuilles.filter(([club]) => club === adverse).pop()[1].slice(0, 15).map(id => id && membres.has(id) ? id : null);
+    assert.deepEqual(fiche.rapport.dernier, derniere, 'dernier XV aligné');
+    assert.equal(fiche.rapport.probable.length, 15, 'XV probable');
+    assert.ok(['conquete', 'large', 'occupation', 'equilibre'].includes(fiche.coachStyle), 'style de l’entraîneur');
+    assert.equal(jeu.bridge.vm.run('nativeSystems.domain("clubSheet").validate(S)'), true, 'état valide avec les derniers XV');
     assert.ok(fiche.squad.every(p => p.rating === null || p.knowledge?.owned), 'niveau des joueurs adverses masqué selon la connaissance');
     // Votre club : niveau exact connu.
     const mien = jeu.brut('club_sheet', { club: 0 }).model.clubSheet;
