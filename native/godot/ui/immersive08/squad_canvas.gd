@@ -416,8 +416,8 @@ func _onglets() -> void:
 	var vestiaire := _lien(self, Rect2(droite - 170, Y_ONGLETS, 170, 44), "Vestiaire →", func(): app._navigate("Vestiaire"), "RosterOpenLocker", Charte.IVOIRE, 19.0, HORIZONTAL_ALIGNMENT_CENTER, true)
 	vestiaire.tooltip_text = "Ouvrir le vestiaire"
 	droite -= 186.0
-	var texte := "Comparer %d/3 →" % app.management_ui.compare.size()
-	var largeur_comparer := _largeur("Comparer 3/3 →", 19) + 36.0
+	var texte := "Comparer %d/2 →" % app.management_ui.compare.size()
+	var largeur_comparer := _largeur("Comparer 2/2 →", 19) + 36.0
 	compare = _lien(self, Rect2(droite - largeur_comparer, Y_ONGLETS, largeur_comparer, 44), texte, func(): app.SquadViews.comparison(app), "OpenComparison", Charte.IVOIRE, 19.0, HORIZONTAL_ALIGNMENT_CENTER, true)
 	droite -= largeur_comparer + 16.0
 	# « Ctrl Tab » (onglet suivant) est dans l'aide « ? » du pied du tableau (21/11).
@@ -946,7 +946,7 @@ func _refresh(reveal: bool) -> void:
 	state.visible_player=app.selected_player
 	count.text="%d / %d joueurs" % [players.size(),app.model.get("squad",[]).size()]
 	_totaux(players)
-	if compare != null: compare.text="Comparer %d/3 →" % app.management_ui.compare.size()
+	if compare != null: compare.text="Comparer %d/2 →" % app.management_ui.compare.size()
 	# Construction progressive : les lignes visibles sont créées tout de suite, le reste sur les
 	# images suivantes (60 lignes d'un coup coûtaient plus de 100 ms avant la première image).
 	_generation += 1
@@ -1231,9 +1231,9 @@ func _basculer_comparaison(id: String) -> void:
 	var memo: Array = app.management_ui.compare
 	if id in memo: memo.erase(id)
 	else:
-		if memo.size() >= 3: memo.remove_at(0)
+		if memo.size() >= 2: memo.remove_at(0)
 		memo.append(id)
-	if compare != null: compare.text = "Comparer %d/3 →" % memo.size()
+	if compare != null: compare.text = "Comparer %d/2 →" % memo.size()
 	for ligne: Node in rows.get_children():
 		var pid := str(ligne.get_meta("player_id", ""))
 		var b := ligne.get_node_or_null("RosterCompare_" + pid.validate_node_name()) as Button
@@ -1248,7 +1248,7 @@ func _echeance(player: Dictionary) -> String:
 func _repere_comparaison(id: String) -> String:
 	var memo: Array = app.management_ui.compare
 	var rang := memo.find(id)
-	return "" if rang < 0 else ["A", "B", "C"][rang]
+	return "" if rang < 0 else ["A", "B"][rang]
 
 ## Portrait, drapeau, nom (souligné au survol) et « i » : le nom ouvre la fiche, le survol montre la carte joueur.
 func _cellule_joueur(row: Control, player: Dictionary, index: int, h: float, base: float) -> void:

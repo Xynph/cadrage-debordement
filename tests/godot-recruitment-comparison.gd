@@ -94,15 +94,19 @@ func run() -> void:
 		check(app.management_ui.compare.size() == 2 and str(app.management_ui.compare[0]) == chosen_a and str(app.management_ui.compare[1]) != chosen_a, "Deux vrais candidats distincts")
 		right = app.find_child("ComparateurJoueur1",true,false)
 		check(right != null and str(right.get_item_metadata(right.selected)) == str(app.management_ui.compare[1]), "Joueur B lié à son identifiant")
-		var rating: Label = app.find_child("Synthese_niveau_0",true,false)
+		var rating: Label = app.find_child("RadarSynthese0_Niveau",true,false)
 		check(rating != null and rating.get_theme_font_size("font_size") >= 12, "Synthèse lisible (≥ 12 px) " + str(dimensions))
 		if dimensions == Vector2i(2560,1440):
 			check(right.get_theme_font_size("font_size") == 19, "Sélecteur dense de 19 px en 1440p")
-			check(rating.get_theme_font_size("font_size") == 22, "Données denses de 22 px en 1440p")
-		var details := app.find_child("ComparateurDetails",true,false) as ScrollContainer
-		check(details != null and details.get_global_rect().size.y > 300 and details.scroll_vertical == 0, "Le haut du comparateur reste visible " + str(dimensions))
-		check(app.find_children("Attribut_*_0","Label",true,false).size() == 36, "Les 36 attributs sont consultables par familles")
-		check(app.find_children("ComparateurSection*","Label",true,false).size() == 5, "Synthèse et quatre familles d'attributs")
+			check(rating.get_theme_font_size("font_size") == 26, "Données de 26 px en 1440p")
+		var dessin := app.find_child("RadarDessin",true,false) as Control
+		check(dessin != null and dessin.get_global_rect().end.y <= root.size.y, "Radar entier dans l'écran " + str(dimensions))
+		check(app.find_children("RadarAxe?","Button",true,false).size() == 8, "Huit axes du radar")
+		var axe := app.find_child("RadarAxe7",true,false) as Button
+		if axe != null: axe.pressed.emit(); await settle()
+		check(app.find_children("RadarFenetreLigne_*_1","Label",true,false).size() == 6, "Conquête : six qualités en barres miroir (%d)" % app.find_children("RadarFenetreLigne_*_1","Label",true,false).size())
+		var croix := app.find_child("RadarAxeFenetreFermer",true,false) as Button
+		if croix != null: croix.pressed.emit(); await settle()
 		if DisplayServer.get_name() != "headless":
 			await RenderingServer.frame_post_draw
 			check(root.get_texture().get_image().save_png(output.path_join("comparateur-%d.png" % dimensions.x)) == OK, "Capture comparateur")

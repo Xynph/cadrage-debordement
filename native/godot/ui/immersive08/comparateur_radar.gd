@@ -1,12 +1,11 @@
 extends RefCounted
-## Comparateur en radar (idée FM27 n° 9, planche A/B du 22/11/2026, `CD_VARIANTE_VISUELLE=A|B`) : deux joueurs, un
+## Comparateur en radar (idée FM27 n° 9, option A choisie par Léo le 23/11/2026) : deux joueurs, un
 ## radar à 8 axes rugby en deux couleurs (turquoise ● pour le premier, orange ■ pour le second : la forme du repère
 ## double toujours la couleur). Chaque axe est la moyenne d'attributs existants du moteur (attributesV2, 36 clés,
 ## chacune dans un seul axe), rien de nouveau n'est calculé par le moteur.
-## A « Radar au centre » : grand radar entre deux colonnes de synthèse ; clic sur un axe = petite fenêtre visuelle
-##   des attributs de l'axe en barres miroir.
-## B « Lignes miroir » : radar plus petit à gauche, à droite une ligne par axe (barres miroir, écart ▲) ; clic sur une
-##   ligne (ou sur l'axe du radar) = la ligne s'ouvre sur ses attributs et l'axe s'éclaire sur le radar.
+## Grand radar entre deux colonnes de synthèse (note au poste principal chiffrée sur 100, jamais d'étoiles : décision
+## de Léo du 23/11/2026) ; clic sur un axe ou sur le point fort / faible = petite fenêtre visuelle des attributs de
+## l'axe en barres miroir.
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
@@ -34,10 +33,6 @@ const MARQUES := ["●", "■"]
 ## Échelle du radar : 30 au centre, 100 au bord (les notes du moteur vivent entre 30 et 95).
 const BAS := 30.0
 
-static func variante() -> String:
-	var v := OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper()
-	return v if v in ["A", "B"] else ""
-
 static func libelle(cle: String) -> String:
 	for groupe: Array in Attributs.GROUPS:
 		for paire: Array in groupe[1]:
@@ -64,6 +59,14 @@ static func axes(joueur: Dictionary) -> Array:
 	var sortie: Array = []
 	for i in AXES.size(): sortie.append(axe(joueur, i))
 	return sortie
+
+## Note du moteur au poste principal du joueur (positionRatings, sur 100) ; null si inconnue (joueur non observé).
+static func note_poste(joueur: Dictionary) -> Variant:
+	var postes: Variant = joueur.get("primaryPositions")
+	var notes: Variant = joueur.get("positionRatings")
+	if not postes is Array or (postes as Array).is_empty() or not notes is Dictionary: return null
+	var v: Variant = (notes as Dictionary).get(str(int((postes as Array)[0])))
+	return float(v) if Base.numeric(v) else null
 
 static func _texte(v: Variant) -> String:
 	return str(int(v)) if v != null else "?"
@@ -132,9 +135,7 @@ static func liseres(page: Control, joueurs: Array, xs: Array, largeur: float, y:
 		bande.name = "RadarLisere" + str(i)
 		D.text(page, float(xs[i]) + largeur - 4, y - 12, MARQUES[i], 26, COULEURS[i], 800, 40, HORIZONTAL_ALIGNMENT_RIGHT)
 
-# ---------------------------------------------------------------- Option A
-
-static func construire_a(app: Control, page: Control, joueurs: Array, y0: float) -> void:
+static func construire(app: Control, page: Control, joueurs: Array, y0: float) -> void:
 	var centre := Vector2(1124, y0 + 470)
 	var rayon := 318.0
 	radar(page, centre, rayon, _series(joueurs), -1, "RadarDessin")
@@ -205,6 +206,9 @@ static func _colonne_synthese(app: Control, page: Control, joueurs: Array, k: in
 	lignes.append(["Potentiel", G.potential_text(joueur), Base.value(joueur, "potential"), Base.value(autre, "potential") if not autre.is_empty() else null, true])
 	var forme: Variant = Commune.condition(joueur)
 	lignes.append(["Condition", "%d %%" % roundi(float(forme)) if forme != null else "—", forme, Commune.condition(autre) if not autre.is_empty() else null, true])
+	var poste: Variant = note_poste(joueur)
+	var poste_autre: Variant = note_poste(autre) if not autre.is_empty() else null
+	lignes.append(["Au poste", _texte(poste), poste, poste_autre, true])
 	lignes.append(["Âge", G.n(joueur.get("age", "—")) + " ans", null, null, false])
 	lignes.append(["Contrat", Commune.echeance(app, joueur), null, null, false])
 	var valeurs := axes(joueur)
@@ -222,9 +226,13 @@ static func _colonne_synthese(app: Control, page: Control, joueurs: Array, k: in
 		if str(ligne[0]) == "Condition" and Base.numeric(ligne[2]): couleur = Charte.CONDITION
 		D.text(panneau, zone.size.x - marge if droite else marge, y + 34, str(ligne[0]), 19, Charte.IVOIRE_2, 500, 200, HORIZONTAL_ALIGNMENT_RIGHT if droite else HORIZONTAL_ALIGNMENT_LEFT, true)
 		var valeur := D.text(panneau, marge if droite else zone.size.x - marge, y + 36, (("▲ " if mieux else "") + str(ligne[1])) if droite else (str(ligne[1]) + (" ▲" if mieux else "")), 26, couleur, 800, zone.size.x - 2 * marge - 210, HORIZONTAL_ALIGNMENT_LEFT if droite else HORIZONTAL_ALIGNMENT_RIGHT)
-		valeur.name = "RadarSynthese%d_%s" % [k, str(ligne[0])]
+		valeur.name = "RadarSynthese%d_%s" % [k, str(ligne[0]).replace(" ", "")]
 		if droite: valeur.position.x = C.px(marge)
 		valeur.add_theme_font_override("font", C.EXTRA_BOLD)
+		if str(ligne[0]) == "Au poste":
+			# Emplacement réservé au futur mot de familiarité au poste (système en préparation) : vide pour l'instant.
+			var familiarite := D.text(panneau, zone.size.x - marge - 96 if droite else marge + 96, y + 34, "", 19, Charte.IVOIRE_2, 600, 160, HORIZONTAL_ALIGNMENT_RIGHT if droite else HORIZONTAL_ALIGNMENT_LEFT, true)
+			familiarite.name = "RadarFamiliarite%d" % k
 		y += 60.0
 	y += 26.0
 	for paire: Array in [["Point fort", meilleur, Charte.GAIN, "▲"], ["Point faible", faible, Charte.PERTE, "▼"]]:
@@ -282,123 +290,3 @@ static func _ligne_miroir(parent: Control, zone: Rect2, titre: String, a: Varian
 	var vb := D.text(parent, milieu + 110 + demi + 14, zone.position.y + 38, _texte(b) + (" ▲" if gagnant == 1 else ""), 26, Charte.couleur_attribut(b) if b != null else Charte.IVOIRE_3, 800, 120)
 	vb.add_theme_font_override("font", C.EXTRA_BOLD)
 	vb.name = nom + "_1"
-
-# ---------------------------------------------------------------- Option B
-
-static func construire_b(app: Control, page: Control, joueurs: Array, y0: float) -> void:
-	var choisi := int(app.management_ui.get("radar_axe", -2))
-	if choisi == -2:
-		# Par défaut : l'axe où l'écart est le plus grand.
-		var ecart := -1.0
-		choisi = 0
-		for i in AXES.size():
-			var a: Variant = axe(joueurs[0], i) if joueurs.size() > 0 else null
-			var b: Variant = axe(joueurs[1], i) if joueurs.size() > 1 else null
-			if a != null and b != null and absf(float(a) - float(b)) > ecart:
-				ecart = absf(float(a) - float(b))
-				choisi = i
-	var centre := Vector2(372, y0 + 420)
-	var rayon := 262.0
-	radar(page, centre, rayon, _series(joueurs), choisi, "RadarDessin")
-	for i in AXES.size():
-		var d := _direction(i)
-		var ancre := centre + d * (rayon + 40.0)
-		var largeur := 170.0
-		var x := ancre.x - largeur / 2.0
-		var aligne := HORIZONTAL_ALIGNMENT_CENTER
-		if d.x > .3:
-			x = ancre.x - 14.0
-			aligne = HORIZONTAL_ALIGNMENT_LEFT
-		elif d.x < -.3:
-			x = ancre.x - largeur + 14.0
-			aligne = HORIZONTAL_ALIGNMENT_RIGHT
-		x = clampf(x, 0.0, 800.0 - largeur)
-		var lien := Kit.lien(page, Rect2(x, ancre.y - 22, largeur, 44), str(AXES[i][0]), func(): _choisir_axe(app, i), "RadarAxe" + str(i), 21)
-		lien.alignment = aligne
-		if i == choisi: lien.add_theme_font_override("font", C.EXTRA_BOLD)
-		lien.add_theme_color_override("font_color", Charte.IVOIRE if i == choisi else Charte.IVOIRE_2)
-	# Tableau des axes, grammaire de l'Effectif.
-	var x0 := 820.0
-	var largeur_t := 2248.0 - x0
-	var milieu := x0 + 760.0
-	var demi := 270.0
-	var y := y0 + 18.0
-	var entete := D.rect(page, Rect2(x0, y, largeur_t, 46), Charte.BANDEAU_ENTETE, Charte.RAYON_PETIT)
-	entete.name = "RadarTableauEntete"
-	D.text(page, x0 + 20, y + 31, "AXE", 17, Charte.IVOIRE_3, 700, 200)
-	for k in mini(2, joueurs.size()):
-		if (joueurs[k] as Dictionary).is_empty(): continue
-		var nom := Kit.casse(str(joueurs[k].get("name", "")), true)
-		if k == 0: D.text(page, milieu - 36, y + 31, MARQUES[0] + "  " + nom, 19, COULEURS[0], 800, 400, HORIZONTAL_ALIGNMENT_RIGHT)
-		else: D.text(page, milieu + 36, y + 31, nom + "  " + MARQUES[1], 19, COULEURS[1], 800, 400)
-	D.text(page, 2248 - 24, y + 31, "ÉCART", 17, Charte.IVOIRE_3, 700, 160, HORIZONTAL_ALIGNMENT_RIGHT)
-	y += 54.0
-	for i in AXES.size():
-		var a: Variant = axe(joueurs[0], i) if joueurs.size() > 0 else null
-		var b: Variant = axe(joueurs[1], i) if joueurs.size() > 1 else null
-		var ouvert := i == choisi
-		var ligne := Button.new()
-		ligne.name = "RadarLigne" + str(i)
-		ligne.accessibility_name = str(AXES[i][0])
-		Kit.styler_ligne(ligne, Charte.NOIR_PANNEAU if i % 2 == 0 else Charte.ARDOISE, ouvert, Charte.SELECTION)
-		page.add_child(ligne)
-		D.place(ligne, Rect2(x0, y, largeur_t, 58))
-		ligne.pressed.connect(func(): _choisir_axe(app, -1 if ouvert else i))
-		var titre := D.text(ligne, 20, 38, ("▾  " if ouvert else "▸  ") + str(AXES[i][0]).to_upper(), 24, Charte.IVOIRE, 800, 300)
-		titre.add_theme_font_override("font", C.EXTRA_BOLD)
-		_barres(ligne, milieu - x0, demi, 58, 18, a, b, 30, "RadarLigne%d" % i)
-		_ecart(ligne, largeur_t - 24, 40, a, b, 26)
-		for n: Node in ligne.get_children(): if n is Control: (n as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
-		y += 62.0
-		if not ouvert: continue
-		for cle: String in AXES[i][1]:
-			var sa: Variant = attribut(joueurs[0], cle) if joueurs.size() > 0 else null
-			var sb: Variant = attribut(joueurs[1], cle) if joueurs.size() > 1 else null
-			var sous := Control.new()
-			sous.name = "RadarSousLigne_" + cle
-			sous.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			page.add_child(sous)
-			D.place(sous, Rect2(x0, y, largeur_t, 42))
-			D.rect(sous, Rect2(0, 0, largeur_t, 40), Color(Charte.SELECTION, .45), Charte.RAYON_PETIT)
-			D.text(sous, 64, 28, libelle(cle), 19, Charte.IVOIRE_2, 500, 320, HORIZONTAL_ALIGNMENT_LEFT, true)
-			_barres(sous, milieu - x0, demi, 40, 10, sa, sb, 22, "RadarSous_" + cle)
-			_ecart(sous, largeur_t - 24, 29, sa, sb, 21)
-			y += 44.0
-		y += 8.0
-
-static func _choisir_axe(app: Control, i: int) -> void:
-	app.management_ui["radar_axe"] = i
-	app._render(false)
-
-## Barres miroir d'une ligne du tableau B : valeur colorée au barème, barre aux couleurs du joueur.
-static func _barres(parent: Control, milieu: float, demi: float, h: float, hb: float, a: Variant, b: Variant, taille: int, nom: String) -> void:
-	var gagnant := _meilleur(a, b)
-	var yb := h / 2.0 - hb / 2.0
-	var ecart := 70.0
-	D.rect(parent, Rect2(milieu - ecart - demi, yb, demi, hb), Charte.PANNEAU_3, 4)
-	D.rect(parent, Rect2(milieu + ecart, yb, demi, hb), Charte.PANNEAU_3, 4)
-	if a != null:
-		var la := demi * clampf((float(a) - BAS) / (100.0 - BAS), .02, 1.0)
-		D.rect(parent, Rect2(milieu - ecart - la, yb, la, hb), Color(COULEURS[0], 1.0 if gagnant != 1 else .5), 4)
-	if b != null:
-		var lb := demi * clampf((float(b) - BAS) / (100.0 - BAS), .02, 1.0)
-		D.rect(parent, Rect2(milieu + ecart, yb, lb, hb), Color(COULEURS[1], 1.0 if gagnant != 0 else .5), 4)
-	var base := h / 2.0 + taille * .38
-	var va := D.text(parent, milieu - 8, base, _texte(a), taille, Charte.couleur_attribut(a) if a != null else Charte.IVOIRE_3, 800, ecart - 16, HORIZONTAL_ALIGNMENT_RIGHT)
-	va.add_theme_font_override("font", C.EXTRA_BOLD)
-	va.name = nom + "_0"
-	var vb := D.text(parent, milieu + 8, base, _texte(b), taille, Charte.couleur_attribut(b) if b != null else Charte.IVOIRE_3, 800, ecart - 16)
-	vb.add_theme_font_override("font", C.EXTRA_BOLD)
-	vb.name = nom + "_1"
-
-## Colonne « Écart » : ▲ n au gagnant, à sa couleur et avec son repère (●/■) ; « = » à égalité.
-static func _ecart(parent: Control, x: float, base: float, a: Variant, b: Variant, taille: int) -> void:
-	if a == null or b == null:
-		D.text(parent, x, base, "?", taille, Charte.IVOIRE_3, 700, 160, HORIZONTAL_ALIGNMENT_RIGHT)
-		return
-	var gagnant := _meilleur(a, b)
-	if gagnant < 0:
-		D.text(parent, x, base, "=", taille, Charte.IVOIRE_2, 700, 160, HORIZONTAL_ALIGNMENT_RIGHT)
-		return
-	var e := D.text(parent, x, base, "%s ▲ %d" % [MARQUES[gagnant], int(absf(float(a) - float(b)))], taille, COULEURS[gagnant], 800, 160, HORIZONTAL_ALIGNMENT_RIGHT)
-	e.add_theme_font_override("font", C.EXTRA_BOLD)

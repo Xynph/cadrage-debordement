@@ -43,7 +43,7 @@ const EXTRAS := [
 	{"id": "fiche-joueur", "libelle": "Fiche joueur", "type": "joueur"},
 	{"id": "mini-fiche", "libelle": "Mini-fiche au survol (Effectif)", "type": "mini_fiche"},
 	{"id": "equilibre-postes", "libelle": "Équilibre par poste (infobulle Aptes)", "type": "equilibre_postes"},
-	{"id": "comparateur", "libelle": "Comparateur (trois joueurs)", "type": "comparateur"},
+	{"id": "comparateur", "libelle": "Comparateur (deux joueurs)", "type": "comparateur"},
 	{"id": "radar", "libelle": "Comparateur en radar (deux joueurs du même poste)", "type": "comparateur_radar"},
 	{"id": "radar-axe", "libelle": "Comparateur en radar · clic sur un axe", "type": "comparateur_radar", "axe": 6},
 	{"id": "salle-conseil", "libelle": "Salle du conseil", "type": "salle_conseil"},
@@ -748,7 +748,7 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 		"comparateur":
 			var effectif_cmp: Array = app.model.get("squad", [])
 			if effectif_cmp.size() < 3: return {"statut": "indisponible", "note": "effectif trop court"}
-			app.management_ui.compare = [ident(effectif_cmp[0].get("id")), ident(effectif_cmp[1].get("id")), ident(effectif_cmp[2].get("id"))]
+			app.management_ui.compare = [ident(effectif_cmp[0].get("id")), ident(effectif_cmp[1].get("id"))]
 			app._navigate("Effectif")
 			await stabiliser()
 			load("res://ui/immersive08/comparateur_canvas.gd").ouvrir(app)
