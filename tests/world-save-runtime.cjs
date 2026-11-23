@@ -62,7 +62,9 @@ if(require.main===module)test('Sauvegarde mondiale réelle : profil étranger et
  assert.equal(path.dirname(scratch),tempRoot);assert.match(path.basename(scratch),/^cd-world-save-runtime-[a-z0-9]+$/i);
  let bridge,serial=0;
  try{
-  bridge=createBridge({dataDir:path.join(scratch,'prem'),seed:827381,now:1794178800000});
+  // Le contexte du match en cours n'est écrit que par les anciennes sauvegardes : depuis #836 une carrière actuelle est enregistrée
+  // avant le coup d'envoi (sans s.live). matchResume:false rétablit l'ancien comportement pour vérifier leur import.
+  bridge=createBridge({dataDir:path.join(scratch,'prem'),seed:827381,now:1794178800000,matchResume:false});
   const handle=(command,payload={})=>bridge.handle({id:++serial,command,payload});
   let model=settleClubMeetings(accepted(handle,'new_career',{mode:'world',club:30}),(command,payload)=>accepted(handle,command,payload));
   const original=exportText(handle),originalDoc=JSON.parse(original);

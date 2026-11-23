@@ -1546,6 +1546,11 @@ func terrain2d(view: Control) -> void:
 		view._input(echap)
 		await settle(4)
 		check(not view.fenetre_ouverte() and between.is_visible_in_tree() and surface() == view, "Échap referme la fenêtre et revient à l'entracte, le match continue d'exister")
+		# Fermer la petite fenêtre relance le match : l'entracte reprendrait son compte à rebours pendant les mises en page qui suivent.
+		# Le test remet le match en pause, comme le fait le joueur avec la commande du jeu.
+		await until(func(): return not app.waiting, 30000)
+		if not bool(app.model.live.get("paused", false)): await command("pause", {"paused": true})
+		await settle(4)
 	var menu: MenuButton = view.find_child("MatchBetweenMore", true, false)
 	check(menu != null and menu.get_popup().get_item_text(0) == "Statistiques", "Tous les chiffres du moteur restent dans le tiroir Statistiques (menu Plus)")
 	# 1280×720 ne compte pas pour cet écran (décision de Léo du 21/11/2026) : 1920×1080 et 2560×1440 (sa référence).
