@@ -160,7 +160,8 @@ func run() -> void:
 	for index in questions.size():
 		# Un clic par question : la suivante s'affiche d'elle-même (conférence rapide).
 		await activate("PressAnswer_"+str(questions[index].id)+"_r4")
-	await activate("PressPublish"); await wait_worker()
+	# La dernière réponse publie d'elle-même (aucun bouton Publier, Léo 23/11/2026).
+	await wait_worker()
 	check(app.model.clubLife.clubMeetings.scene.completed, "Publication réelle termine la décision avant de continuer")
 	await activate("PressReturn"); await wait_worker()
 	check(not app.contextual_director.active() or app.contextual_director.kind!="press", "Continuer acquitte et ferme la salle de presse")
