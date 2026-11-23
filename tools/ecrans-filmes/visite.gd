@@ -36,6 +36,7 @@ const EXTRAS := [
 	{"id": "tactique-bleus", "libelle": "Tactique · petite fenêtre des Bleus (maquette)", "type": "tactique_alertes", "fenetre": "LineupBleusNoticeLien"},
 	{"id": "tactique-nationale", "libelle": "Tactique · petite fenêtre des qualifications FFR (maquette)", "type": "tactique_alertes", "fenetre": "NationaleLicenceNoticeLien"},
 	{"id": "entrainement-groupes", "libelle": "Entraînement · onglet Groupes", "type": "entrainement_onglet", "onglet": 1},
+	{"id": "entrainement-individuel", "libelle": "Entraînement · onglet Individuel", "type": "entrainement_onglet", "onglet": 2},
 	{"id": "entrainement-mois", "libelle": "Entraînement · onglet Mois", "type": "entrainement_onglet", "onglet": 5},
 	{"id": "entrainement-mois-jour", "libelle": "Entraînement · Mois · petite fenêtre d'un jour", "type": "entrainement_onglet", "onglet": 5, "jour": true},
 	{"id": "salle-entrainement", "libelle": "Observer la préparation (salle d'entraînement)", "type": "salle_entrainement"},
@@ -117,6 +118,8 @@ const EXTRAS := [
 	{"id": "selections-disponibilites", "libelle": "Sélections · onglet Disponibilités", "type": "onglet_cle", "route": "Sélections", "cle": "international_section", "onglet": "availability", "repos": "callups"},
 	{"id": "vestiaire-entretiens-duos", "libelle": "Vestiaire · Entretiens et duos, bas de la colonne (duos)", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week", "defiler": "RelationshipPeopleScroll"},
 	{"id": "vestiaire-groupe", "libelle": "Vestiaire · petite fenêtre du groupe (portraits)", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week", "presser": "RelationshipAllPortraits"},
+	{"id": "discussion", "libelle": "Vestiaire · discussion avec un joueur (petite fenêtre)", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week", "presser": "DiscussionOuvrir", "joueur_forme": true},
+	{"id": "discussion-reponse", "libelle": "Vestiaire · discussion en trois tours", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week", "presser": "DiscussionOuvrir", "presser_ensuite": "DiscussionPhrase_", "tours": 3, "joueur_forme": true},
 	{"id": "carriere-mobilite", "libelle": "Carrière · onglet Mobilité et recrutement", "type": "onglet_cle", "route": "Carrière", "cle": "immersive08_career_tab", "onglet": "details", "repos": "summary"},
 	{"id": "vestiaire-historique", "libelle": "Vestiaire · onglet Engagements et historique", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "history", "repos": "week"},
 	## Onglets du Centre (parcours activés) : un écran par onglet ; Parcours avec le parcours individuel du premier Espoir ouvert.
@@ -1022,11 +1025,37 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				if colonne == null: return {"statut": "echec", "note": "colonne %s absente" % ecran.defiler}
 				colonne.scroll_vertical = int(colonne.get_v_scroll_bar().max_value)
 				await stabiliser()
+			# Discussion : le joueur suivi qui a le plus de notes de match (courbe de forme lisible).
+			if ecran.get("joueur_forme", false):
+				var meilleur := ""
+				var plus := -1
+				for p: Variant in app.model.get("clubLife", {}).get("relationships", {}).get("players", []):
+					var n: int = load("res://ui/notes_match.gd").forme(load("res://ui/notes_match.gd").joueur(app.model, str(p.get("id")))).size()
+					if n > plus: plus = n; meilleur = str(p.get("id"))
+				if not app.management_ui.has("relationships"): app.management_ui["relationships"] = {}
+				app.management_ui.relationships["playerId"] = meilleur
+				app._render()
+				await stabiliser()
 			if ecran.has("presser"):
 				var bouton := app.find_child(str(ecran.presser), true, false) as Button
 				if bouton == null: return {"statut": "echec", "note": "bouton %s absent" % ecran.presser}
 				bouton.pressed.emit()
 				await stabiliser()
+			# Discussion : « tours » clics successifs ; CD_FILM_DISCUSSION_CHOIX (rangs des phrases, ex. « 0,1,0 » ; 0 par
+			# défaut) choisit nos mots à chaque tour.
+			if ecran.has("presser_ensuite"):
+				var nom_suite := str(ecran.presser_ensuite)
+				var rangs := OS.get_environment("CD_FILM_DISCUSSION_CHOIX").split(",", false)
+				for tour in int(ecran.get("tours", 1)):
+					var suite: Button = null
+					if nom_suite.ends_with("_"):
+						var candidats := app.find_children(nom_suite + "*", "Button", true, false).filter(func(x): return not (x as Button).disabled)
+						var rang := clampi(int(rangs[tour]) if tour < rangs.size() else 0, 0, maxi(0, candidats.size() - 1))
+						if not candidats.is_empty(): suite = candidats[rang] as Button
+					else: suite = app.find_child(nom_suite, true, false) as Button
+					if suite == null: return {"statut": "echec", "note": "bouton %s absent (tour %d)" % [nom_suite, tour + 1]}
+					suite.pressed.emit()
+					for i in 6: await stabiliser()
 		"centre_onglet":
 			app.management_ui.immersive_centre = {"club": app.model.get("club", {}).get("id"), "tab": str(ecran.onglet), "scroll": {}}
 			app._navigate("Centre")
@@ -1153,6 +1182,7 @@ func refermer(ecran: Dictionary) -> void:
 	if str(ecran.type) == "centre_onglet": app.management_ui.immersive_centre = {"club": app.model.get("club", {}).get("id"), "tab": "", "scroll": {}}
 	if str(ecran.type) == "onglet_cle":
 		if ecran.has("presser"): load("res://ui/petite_fenetre.gd").fermer_derniere(app.get_tree())
+		app.management_ui.erase("discussion")
 		app.management_ui[str(ecran.cle)] = str(ecran.repos)
 	if str(ecran.type) == "classements_onglet" and app.management_ui.get("competition") is Dictionary: app.management_ui.competition.tab = "league"
 	if str(ecran.type) == "formation_suivi": load("res://ui/immersive08/formation_pages.gd").oublier(app)

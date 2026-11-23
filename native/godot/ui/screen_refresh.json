@@ -70,6 +70,7 @@
         "ui/contract_review.gd",
         "ui/delegation_dialog.gd",
         "ui/immersive08/avant_match_pages.gd",
+        "ui/immersive08/intensite_auto.gd",
         "ui/immersive08/match_avant.gd",
         "ui/immersive08/match_canvas.gd",
         "ui/immersive08/press_canvas.gd",

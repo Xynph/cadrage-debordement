@@ -200,7 +200,7 @@ function factory(){
  }
  function project(){
   if(!S)return null;
-  const engine={outcome:physicalTrainingOutcome,collectiveDecision:staffTrainingDecision,trainingReceipt:staffTrainingReceipt};
+  const engine={outcome:physicalTrainingOutcome,collectiveDecision:staffTrainingDecision,trainingReceipt:staffTrainingReceipt,...(typeof intensiteAutoPour==='function'?{autoMode:intensiteAutoPour}:{})};
   const session=CDTrainingPlansV67.session(S,engine);
   const plans=session.status==='applied'?[]:Object.entries(CDTrainingPlansV67.PLANS).map(([key,p])=>{const preview=copy(CDTrainingPlansV67.preview(S,key,engine));for(const row of preview.players)delete row.name;return {...copy(p),...preview};});
   const dossier=!S.live&&S.phase!=='ended'?matchDossier():null;

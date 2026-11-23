@@ -8,7 +8,7 @@
  const PLANS=Object.freeze({
   proteger:{label:'Protéger le XV',detail:'Titulaires : récupération. Remplaçants aptes : séance normale.'},
   relever:{label:'Faire progresser la relève',detail:'Jeunes aptes et frais : intensif. Titulaires fatigués : récupération.'},
-  equilibrer:{label:'Équilibrer les charges',detail:'Repos si charge ou condition critique. Les autres suivent le mode collectif.'}
+  equilibrer:{label:'Équilibrer les charges',detail:'Repos si charge ou condition critique. Les autres restent en Auto (intensité selon leur forme).'}
  });
  const escape=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  function allowed(s){return !!s&&Array.isArray(s.clubs?.[s.club]?.players)&&Array.isArray(s.lineup)&&!s.live&&!s.trained&&s.phase==='league';}
@@ -35,7 +35,8 @@
    : 'Ce plan configure le mode collectif normal.'};
   const players=s.clubs[s.club].players.map(p=>{
    const planned=mode(p,key,starters.has(p.id));
-   const effectiveMode=planned==='collective'?collective.mode:planned;
+   // « collective » = Auto : séance prévue ajustée d'un cran par la règle de sa forme (engine.autoMode, dist/development.js).
+   const effectiveMode=planned==='collective'?(typeof engine.autoMode==='function'?engine.autoMode(p,collective.mode):collective.mode):planned;
    const projected=engine.outcome(p,effectiveMode);
    return {id:p.id,name:p.name,plan:planned,effectiveMode,current:p.condition,
     condition:projected.condition,fatigue:projected.fatigue,
