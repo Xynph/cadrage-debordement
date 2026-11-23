@@ -64,7 +64,7 @@ state.morale=Math.max(0,Math.min(100,state.morale+fx.morale*mod));
 moraleDelta+=fx.morale*mod;trustDelta-=fx.pressure*mod;
 }
 s.pressConference={version:1,history:questions.reduce((hist,q,i)=>{const next=bank.appendHistory(hist,q,s.season,weekOf(s),selected[i],s.club);if(slot)next[next.length-1].slot=slot;return next;},snapshot(s).history)};
-s.pressRelations=state;s.morale=Math.max(0,Math.min(100,(s.morale??50)+moraleDelta));s.trust=Math.max(0,Math.min(100,(s.trust??50)+trustDelta));
+s.pressRelations=state;s.morale=Math.max(0,Math.min(100,(s.morale??50)+moraleDelta));s.trust=Math.max(0,Math.min(100,(s.trust??50)+Math.max(-4,Math.min(1,trustDelta))));/* 22/11/2026 : les mots pèsent peu sur la confiance du conseil (+1 au plus, −4 au plus par conférence), ce sont les bilans qui la font. */
 validate(s);if(typeof save==='function')save();if(typeof lastSaveError!=='undefined'&&lastSaveError)throw Error('Échec sauvegarde');
 if(typeof render==='function')render();return true;
 }catch(error){const old=JSON.parse(original);for(const k of ['pressConference','pressRelations','pressPeople','morale','trust']){if(Object.prototype.hasOwnProperty.call(old,k))s[k]=old[k];else delete s[k];}throw error;}

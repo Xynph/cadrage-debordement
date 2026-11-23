@@ -1,6 +1,7 @@
 extends SceneTree
 const ContextualFlow = preload("helpers/contextual_flow.gd")
 const Fatigue = preload("res://ui/immersive08/fatigue_overview.gd")
+const IntensiteAuto = preload("res://ui/immersive08/intensite_auto.gd")
 const Watch = preload("res://ui/management_state.gd")
 var app: Control
 var checks := 0
@@ -226,15 +227,14 @@ func run() -> void:
 			var expected: Array = Fatigue.overview(app.model, "Tout l’effectif", key, descending).rows
 			check(rows[0].get_meta("player_id") == expected[0].player.id, "Ordre réellement rendu après tri fatigue")
 	await press("TrainingTab2")
-	await scrolling_case("TrainingIndividualsScroll", "TrainingIndividual_*", "Button", "TrainingIndividualSort_name")
-	for key in ["name", "pos", "condition", "physicalLoad", "loadPlan"]:
-		for descending in [false, true]:
-			await press("TrainingIndividualSort_" + key)
-			var header := app.find_child("TrainingIndividualSort_" + key, true, false) as Button
-			check(header.text.ends_with("↓" if descending else "↑"), "Flèche du tri individuel : " + key)
-			var rows := app.find_children("TrainingIndividual_*", "Button", true, false)
-			var expected := Fatigue.sorted_players(app.model.squad, key, descending)
-			check(rows[0].get_meta("player_id") == expected[0].id, "Ordre réellement rendu après tri individuel")
+	# Onglet Individuel = intensité auto par forme (ui/immersive08/intensite_auto.gd) : tri par en-tête cliquable.
+	await scrolling_case("IntensiteDefile", "IntensiteLigne_*", "Control", "IntensiteTri_nom")
+	for key in ["nom", "forme", "charge", "fragilite", "risque"]:
+		await press("IntensiteTri_" + key)
+		check(app.management_ui.immersive_training.get("intensite_tri") == key, "Tri individuel retenu : " + key)
+		var rows := app.find_children("IntensiteLigne_*", "Control", true, false)
+		var expected: Array = IntensiteAuto._trier(app, app.model.squad, key)
+		check(rows[0].get_meta("player_id") == expected[0].id, "Ordre réellement rendu après tri individuel")
 	await press("TrainingTab4")
 	check(app.bridge._next_id == requests and FileAccess.get_sha256(filename) == unchanged, "Tous les tris des deux tableaux : aucune commande ni écriture sportive")
 	var row_id := "FatigueAdjust_" + Fatigue.identifier(str(player.id))

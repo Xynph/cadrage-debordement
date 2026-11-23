@@ -102,7 +102,7 @@ function freeSessions(first, last) {
  return sessions;
 }
 
-function preparation(model, state, today, anchors) {
+function preparation(model, state, today, anchors, chosen = null) {
  const stored = activeState(model,state);
  const saved = state?.season === seasonOf(model) ? state : null;
  const anchorByFixture = anchorIndex(anchors);
@@ -122,6 +122,7 @@ function preparation(model, state, today, anchors) {
   const previous = fixtures[index-1];
   if (previous) freeSessions(previous.anchor,fixture.anchor).forEach(add);
   const programme = fixture.override?.template ?? defaultProgramme(fixture,previous,model);
+  if (chosen) chosen[fixture.id] = programme;
   programmes[programme].slots.forEach((slot,slotIndex)=>{
    const [offset] = slot;
    const date = dayOffset(fixture.anchor,offset);
@@ -143,17 +144,89 @@ function preparation(model, state, today, anchors) {
   .map(session=>({...session,completed:today !== null && session.date < today}));
 }
 
+// Effets des séances sur la semaine (22/11/2026, Entraînement › Mois, choix de Léo) : chaque séance du programme
+// jour par jour agit sur la semaine simulée du club. Effet par séance (points de fatigue, de condition, % de progression
+// des avants / des arrières, % d'organisation collective), en écart à une semaine de référence (REFERENCE) : une semaine
+// au niveau de la référence laisse la semaine simulée d'avant (seule charge hebdomadaire) intacte.
+// La charge choisie dans l'onglet Semaine (repos / normale / intensive) garde son rôle : l'intensité de la semaine ;
+// le programme en règle le contenu, sans compter deux fois le même effet.
+const EFFETS = Object.freeze({
+ strength:{fatigue:3,condition:-1,avants:4,arrieres:2,cohesion:0},
+ speed:{fatigue:1,condition:0,avants:1,arrieres:3,cohesion:0},
+ team:{fatigue:2,condition:-1,avants:4,arrieres:0,cohesion:0},
+ skills:{fatigue:1,condition:0,avants:2,arrieres:3,cohesion:0},
+ kicking:{fatigue:1,condition:0,avants:0,arrieres:3,cohesion:0},
+ tactics:{fatigue:0,condition:0,avants:0,arrieres:0,cohesion:2},
+ video:{fatigue:-1,condition:1,avants:0,arrieres:0,cohesion:2},
+ recovery:{fatigue:-4,condition:3,avants:0,arrieres:0,cohesion:0}
+});
+const AXES = ['fatigue','condition','avants','arrieres','cohesion'];
+const BORNES = Object.freeze({fatigue:8,condition:5,avants:12,arrieres:12,cohesion:6});
+// Semaine de référence = la semaine moyenne du programme proposé par le staff sur une saison Monde (sonde du 22/11/2026,
+// scripts/sonde-programme-entrainement.cjs) : sur une saison au programme par défaut, la simulation reste en moyenne
+// celle d'avant. Une semaine type standard en reste à un ou deux points (avec la séance de force du lundi : +1 de
+// fatigue, +2 % de progression ; sans elle, quand la récupération d'après-match tombe le lundi : -2 de fatigue, +1 de
+// condition, -2 % pour les avants).
+const REFERENCE = Object.freeze({fatigue:2,condition:2,avants:9,arrieres:9,cohesion:4});
+
+function weekStart(date) {
+ const weekday = new Date(Date.parse(date)).getUTCDay();
+ return dayOffset(date,-((weekday+6)%7));
+}
+
+// Semaine (lundi → dimanche) qui contient `today` : séances comptées par famille et effets bornés, écart à la semaine
+// standard (zéro pour une semaine sans séance). null sans date du jour.
+function weekEffects(sessions, today) {
+ if (!isDate(today)) return null;
+ const lundi = weekStart(today), dimanche = dayOffset(lundi,6);
+ const counts = Object.fromEntries(Object.keys(EFFETS).map(kind=>[kind,0]));
+ for (const session of sessions ?? []) {
+  if (!isRecord(session) || !isDate(session.date) || session.date < lundi || session.date > dimanche) continue;
+  if (owns(counts,session.kind)) counts[session.kind]++;
+ }
+ return {weekStart:lundi,counts,effects:effectsOf(counts)};
+}
+
+// Effets bornés d'une semaine comptée par famille, en écart à la semaine standard. Semaine sans aucune séance au
+// programme (avant-saison, trêve sans plan) : zéro, la semaine simulée reste celle d'avant.
+function effectsOf(counts) {
+ const planned = Object.values(counts).some(Boolean);
+ const effects = {};
+ for (const axe of AXES) {
+  if (!planned) { effects[axe] = 0; continue; }
+  const total = Object.entries(counts).reduce((n,[kind,count])=>n+(EFFETS[kind]?.[axe] ?? 0)*count,0);
+  effects[axe] = Math.max(-BORNES[axe],Math.min(BORNES[axe],total-REFERENCE[axe]));
+ }
+ return effects;
+}
+
+function weeksEffects(sessions) {
+ const starts = new Set((sessions ?? []).filter(session=>isRecord(session) && isDate(session.date)).map(session=>weekStart(session.date)));
+ return Object.fromEntries([...starts].sort().map(start=>[start,weekEffects(sessions,start).effects]));
+}
+
 function project(model, state, date, {anchors = []} = {}) {
  const today = dateOf(model,date);
  const stored = activeState(model,state);
  const appliedTemplates = Object.fromEntries(fixturesOf(model)
   .filter(fixture=>!fixture.played && owns(stored,fixture.id))
   .map(fixture=>[fixture.id,stored[fixture.id].template]));
+ // Modèle de semaine en vigueur pour chaque rencontre (choisi ou proposé par le staff) : vue Mois de l'entraînement.
+ const programmeByFixture = {};
+ const sessions = today ? preparation(model,state,today,anchors,programmeByFixture) : [];
  return {
   today,
-  sessions:today ? preparation(model,state,today,anchors) : [],
+  sessions,
+  week:weekEffects(sessions,today),
   appliedTemplates,
-  templates:Object.entries(programmes).map(([id,{label}])=>({id,label}))
+  programmeByFixture,
+  // Effets de chaque semaine du programme (lundi → effets) et de chaque semaine type (séances J-x… J+1) : lisibles
+  // dans Entraînement › Mois avant de choisir.
+  weeks:weeksEffects(sessions),
+  sessionEffects:EFFETS,
+  templates:Object.entries(programmes).map(([id,{label,slots}])=>({id,label,
+   slots:slots.map(([offset,kind,name])=>({offset,kind,label:name})),
+   effects:effectsOf(Object.fromEntries(Object.keys(EFFETS).map(kind=>[kind,slots.filter(slot=>slot[1]===kind).length])))}))
  };
 }
 
@@ -265,4 +338,4 @@ function validateState(state) {
  }
 }
 
-module.exports = {project,applyTemplate,reschedule,keepSchedule,validateState};
+module.exports = {project,applyTemplate,reschedule,keepSchedule,validateState,weekEffects,EFFETS};

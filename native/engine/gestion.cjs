@@ -84,6 +84,9 @@ module.exports=function nativeGestion(command,p){
   requireThat(S.live&&S.live.paused&&!S.live.finished&&!presentationPending(S.live),'Mets le match en pause pour changer la consigne sur pénalité.');
   setPenaltyPolicy(p.policy);return;
  }
+ // Règle « Auto » d'un niveau de forme (0 = < 60 % … 4 = ≥ 90 %) : repos, normal ou intense (dist/development.js).
+ if(command==='set_intensite_auto'){requireThat(setIntensiteAuto(p.niveau,p.mode),'Règle indisponible : match en cours, niveau ou intensité inconnus.');return;}
+ if(command==='appliquer_avis_kine'){requireThat(appliquerAvisKine()>=0,'Charge indisponible : séance appliquée ou match en cours.');return;}
  if(command==='set_player_load'){requireThat(setPhysicalTraining(p.playerId,p.mode),'Charge indisponible : séance appliquée, joueur absent ou match en cours.');return;}
  if(command==='promote_cover'){
   requireThat(p.confirmed===true,'Confirme le salaire hebdomadaire de chaque renfort.');

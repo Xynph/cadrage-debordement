@@ -47,8 +47,10 @@ function staged(w, {condition=70, delegated=true, highLoad=false}={}) {
   return { model, starter, exception };
 }
 
-for (const [condition, expectedMode, expectedCondition, expectedLoad] of [[70,'repos',99,10],[75,'normal',93,20]]) {
-  test(`délégation sous/au seuil ${condition} : la proposition rejoint la séance ${expectedMode}`, t => {
+// Joueurs en Auto (clé « collective ») : intensité de la règle de leur forme (70 et 75 % → Normal par défaut), quelle
+// que soit la séance collective choisie par le préparateur délégué (repos sous 75 %, normal au-dessus).
+for (const [condition, expectedMode, autoMode, expectedCondition, expectedLoad] of [[70,'repos','normal',88,20],[75,'normal','normal',93,20]]) {
+  test(`délégation sous/au seuil ${condition} : séance ${expectedMode}, joueurs en Auto selon leur forme (${autoMode})`, t => {
     const w = worker(t);
     const {model, starter, exception} = staged(w, {condition,highLoad:true});
     const saved = w.read();
@@ -56,14 +58,15 @@ for (const [condition, expectedMode, expectedCondition, expectedLoad] of [[70,'r
     const predicted = option.players.find(p=>p.id===starter);
     assert.equal(predicted.plan,'collective');
     assert.deepEqual([predicted.condition,predicted.fatigue],[expectedCondition,expectedLoad]);
-    assert.equal(predicted.effectiveMode,expectedMode);
+    assert.equal(predicted.effectiveMode,autoMode);
     assert.equal(option.collective.mode,expectedMode);
     assert.match(option.collective.reason,condition<75?/sous 75 %/u:/au moins 75 %/u);
     const resting = option.players.find(p=>p.id===exception);
     assert.equal(resting.plan,'repos');
     assert.equal(resting.effectiveMode,'repos');
     assert.equal(option.counts.collective,option.players.length-1);
-    assert.equal(option.effectiveCounts[expectedMode],expectedMode==='repos'?option.players.length:option.players.length-1);
+    assert.equal(option.effectiveCounts[autoMode],option.players.length-1);
+    assert.equal(option.effectiveCounts.repos,1);
     w.call('snapshot');assert.deepEqual(w.read(),saved,'la prévision est en lecture seule');
     const context = support(model).context;
     w.call('training_plan',{context,plan:'equilibrer'});

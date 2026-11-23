@@ -134,7 +134,7 @@ function factory() {
   const injuryLabel = key => BL.types?.[key]?.libelle || 'Blessure';
   const EFFECTS = ['moral', 'confiance', 'supporters', 'medias', 'pression', 'satisfaction', 'fatigue', 'condition', 'plan', 'entrainement', 'focus', 'promesse', 'promouvoir', 'caisse', 'suite', 'appel', 'contratDS', 'pret', 'consigneDS', 'orientation', 'a2r', 'reprise', 'rechute', 'retour', 'doublon', 'repos_liste', 'specialiste'];
   const ORIENTATION_LABELS = { equilibre: 'répartition proposée', installations: 'priorité aux installations', staff: 'priorité au staff', accueil: 'priorité à l’accueil' };
-  const PLAN_LABELS = { repos: 'repos', normal: 'charge allégée', intense: 'charge intense', collective: 'séance collective' };
+  const PLAN_LABELS = { repos: 'repos', normal: 'charge allégée', intense: 'charge intense', collective: 'auto' };
   const MODE_LABELS = { repos: 'récupération', normal: 'normal', intense: 'intense' };
   const FOCUS_LABELS = { aucune: 'aucune', conquete: 'conquête', defence: 'défense', pied: 'jeu au pied' };
 

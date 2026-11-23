@@ -214,19 +214,20 @@ func fatigue_chart_return() -> void:
 	await activate(named("FatigueFilter4"))
 	check(not app.management_ui.immersive_training.has("fatigue_load_bin"), "Tout l’effectif retire le filtre graphique")
 	await activate(named("TrainingTab2"))
-	var individual_rows: Array = app.find_children("TrainingIndividual_*", "Button", true, false)
+	# Onglet Individuel = intensité auto par forme : nom → fiche, zone d'intensité → petite fenêtre du joueur.
+	var individual_rows: Array = app.find_children("IntensiteLigne_*", "Control", true, false)
 	check(not individual_rows.is_empty(), "Lignes du travail individuel réellement rendues")
 	if individual_rows.is_empty(): return
 	var player_id := str(individual_rows[0].get_meta("player_id", ""))
-	var individual_scroll := named("TrainingIndividualsScroll") as ScrollContainer
-	var profile_link := named("TrainingOpenPlayer_" + player_id.replace(":", "_")) as Control
+	var individual_scroll := named("IntensiteDefile") as ScrollContainer
+	var profile_link := named("IntensiteFiche_" + player_id.replace(":", "_")) as Control
 	if individual_scroll != null and profile_link != null: individual_scroll.ensure_control_visible(profile_link); await settle()
 	await click_link(profile_link)
-	check(app.route == "Effectif" and app.selected_player == player_id and named("TrainingIndividualDialog") == null, "Nom du travail individuel ouvre la fiche sans ouvrir le réglage")
+	check(app.route == "Effectif" and app.selected_player == player_id and named("IntensiteJoueurFenetre") == null, "Nom du travail individuel ouvre la fiche sans ouvrir le réglage")
 	await back()
-	var row := named("TrainingIndividual_" + player_id.replace(":", "_")) as Control
+	var row := named("IntensiteJoueur_" + player_id.replace(":", "_")) as Control
 	await activate(row)
-	check(named("TrainingIndividualDialog") != null, "Activation de la ligne métier garde son dialogue de réglage distinct")
+	check(named("IntensiteJoueurFenetre") != null, "Activation de l'intensité ouvre la petite fenêtre du joueur")
 	app._clear_dialogs(); await settle()
 func setup_career() -> bool:
 	if group == "report":

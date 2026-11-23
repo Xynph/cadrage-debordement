@@ -35,9 +35,15 @@ assert.ok(run('S.development.academy[0].rating+S.development.academy[0].dev.xp')
 assert.equal(run('careerSetAcademyInvestment(12000)'),true);
 assert.ok(valid(run));
 run('club().played=5;club().won=3;club().lost=2;S.round=4');
+assert.equal(run('careerBoardWeekReview()'),false,'bilan tous les 3 matchs');
+run('club().played=6;club().won=4;club().drawn=0;club().lost=2;S.round=5');
+const trustBeforeBoard=run('S.trust');
 assert.equal(run('careerBoardWeekReview()'),true);
 assert.equal(run('S.careerManagement.boardHistory.length'),1);
-assert.ok(Math.abs(run('S.trust')-70)<=2);
+const board=run('S.careerManagement.boardHistory[0]');
+assert.equal(board.results,70,'4 victoires sur 6 : note des résultats 70');
+assert.ok(Math.abs(run('S.trust')-trustBeforeBoard)<=15,'bilan borné à 15 points');
+assert.ok(Math.abs(run('S.trust')-board.score)<=Math.abs(trustBeforeBoard-board.score),'le bilan rapproche la confiance de la note du club');
 assert.equal(run('careerBoardWeekReview()'),false);
 assert.ok(valid(run));
 const actualTraining=context(),training=actualTraining.run;

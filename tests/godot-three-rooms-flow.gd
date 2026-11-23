@@ -406,6 +406,8 @@ func priorities_and_context() -> void:
 	await ask("import",{"text":fixture_text("baseline")})
 	check(meeting().is_empty() and not director.active(),"Import restores exactly the saved completed meetings without an old ghost room")
 	# Current-match priority is tested with a real pending pre-match scene.
+	# Joueurs en Auto : intensité de la règle de leur forme (Intensif à ≥ 90 % par défaut) ; séance sans intensif ici.
+	await ask("set_intensite_auto",{"niveau":4,"mode":"repos"})
 	await ask("train",{"mode":"repos"})
 	check(meeting().is_empty(),"Completed same-context meeting receipts are not re-created by training")
 	if not await prepare_match_day(): return

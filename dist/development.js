@@ -2,12 +2,30 @@
 
 // V27 : charge physique fictive, distincte de la condition instantanée.
 // Modèle : 0..100 ; la récupération ne modifie que la condition, déjà utilisée par skill/fitScore.
-const PHYSICAL_PLANS={collective:'Suivre le collectif',repos:'Récupération',normal:'Normale',intense:'Intensive'};
+// Plan « collective » = « Auto » (revue FM27, idée 13, choix de Léo du 23/11/2026 ; la clé reste « collective » dans les
+// sauvegardes : un ancien « Suivre le collectif » se lit donc « Auto » sans conversion). Un joueur en Auto prend l'intensité
+// de la règle de son niveau de forme (S.intensiteAuto, 5 modes, du plus bas au plus haut niveau) ; seuils de condition :
+// < 60 / 60 / 70 / 80 / 90 %. Sans règle sauvegardée : Repos, Repos, Normal, Normal, Intensif.
+const PHYSICAL_PLANS={collective:'Auto',repos:'Récupération',normal:'Normale',intense:'Intensive'};
+const INTENSITE_AUTO_SEUILS=[60,70,80,90];
+const INTENSITE_AUTO_DEFAUT=['repos','repos','normal','normal','intense'];
+const INTENSITE_AUTO_MODES=['repos','normal','intense'];
+function intensiteAutoValide(r){return Array.isArray(r)&&r.length===5&&r.every(m=>INTENSITE_AUTO_MODES.includes(m))}
+function intensiteAutoRegle(){return intensiteAutoValide(S?.intensiteAuto)?S.intensiteAuto.slice():INTENSITE_AUTO_DEFAUT.slice()}
+function niveauForme(p){const c=Number(p?.condition);return Number.isFinite(c)?INTENSITE_AUTO_SEUILS.filter(seuil=>c>=seuil).length:0}
+function intensiteAutoPour(p){return intensiteAutoRegle()[niveauForme(p)]}
+// Règle d'un niveau de forme : sauvegardée tout de suite, appliquée à la prochaine séance (même déjà jouée cette semaine).
+function setIntensiteAuto(niveau,mode){if(!S||S.live||!Number.isInteger(niveau)||niveau<0||niveau>4||!INTENSITE_AUTO_MODES.includes(mode))return false;const regle=intensiteAutoRegle();regle[niveau]=mode;S.intensiteAuto=regle;save();render();return true}
+// Avis du kiné (même base que la règle des clubs de l'ordinateur : fatigue ≥ 55 ou condition < 60 → repos ; intensif pour un
+// joueur frais, affûté et solide). « Appliquer à tous » : chaque joueur valide dont l'intensité diffère de l'avis le reçoit
+// (retour en Auto quand la règle de sa forme donne déjà l'avis). Rend le nombre de joueurs changés, −1 si indisponible.
+function avisKine(p){const charge=physicalLoadValue(p),c=Number(p.condition)||0;if(p.injury>0||charge>=55||c<60)return 'repos';if(charge<25&&c>=85&&(typeof valeurFragilite==='function'?valeurFragilite(p):50)<60)return 'intense';return 'normal'}
+function appliquerAvisKine(){if(!S||S.live||S.trained||S.phase==='ended')return -1;let n=0;for(const p of club().players){if(p.injury>0)continue;const avis=avisKine(p);if(physicalModeFor(p,S.club)===avis)continue;ensurePhysicalLoad(p).plan=intensiteAutoPour(p)===avis?'collective':avis;n++}save();render();return n}
 function physicalState(p){return p.physicalLoad&&p.physicalLoad.version===1?p.physicalLoad:{version:1,fatigue:0,plan:'collective'}}
 function ensurePhysicalLoad(p){if(!p.physicalLoad)p.physicalLoad={version:1,fatigue:0,plan:'collective'};return p.physicalLoad}
 function physicalLoadValue(p){return physicalState(p).fatigue}
 function physicalPlan(p){return physicalState(p).plan}
-function physicalModeFor(p,ci){if(p.injury)return 'repos';if(ci!==S.club)return physicalLoadValue(p)>=55||p.condition<60?'repos':'normal';const selected=physicalPlan(p);return selected==='collective'?S.training:selected}
+function physicalModeFor(p,ci){if(p.injury)return 'repos';if(ci!==S.club)return physicalLoadValue(p)>=55||p.condition<60?'repos':'normal';const selected=physicalPlan(p);return selected==='collective'?intensiteAutoPour(p):selected}
 function physicalTrainingOutcome(p,mode){const injured=!!p.injury,selected=injured?'repos':mode,current=physicalLoadValue(p);const fatigue=clamp(current+(selected==='repos'?-20:selected==='normal'?-10:6),0,100);const base=injured?15:selected==='repos'?30:selected==='normal'?20:8;const reduction=Math.min(10,Math.floor(fatigue/10));return {fatigue,condition:clamp(p.condition+Math.max(0,base-reduction),injured?0:20,100)}}
 function applyPhysicalTraining(p,mode){const next=physicalTrainingOutcome(p,mode),state=ensurePhysicalLoad(p);state.fatigue=next.fatigue;p.condition=next.condition;return next}
 function setPhysicalTraining(id,plan){if(!S||S.live||S.trained||S.phase==='ended'||!Object.prototype.hasOwnProperty.call(PHYSICAL_PLANS,plan))return false;const p=player(id);if(!p)return false;ensurePhysicalLoad(p).plan=plan;save();render();return true}

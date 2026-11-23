@@ -37,12 +37,16 @@ const EXTRAS := [
 	{"id": "tactique-nationale", "libelle": "Tactique · petite fenêtre des qualifications FFR (maquette)", "type": "tactique_alertes", "fenetre": "NationaleLicenceNoticeLien"},
 	{"id": "entrainement-groupes", "libelle": "Entraînement · onglet Groupes", "type": "entrainement_onglet", "onglet": 1},
 	{"id": "entrainement-individuel", "libelle": "Entraînement · onglet Individuel", "type": "entrainement_onglet", "onglet": 2},
+	{"id": "entrainement-mois", "libelle": "Entraînement · onglet Mois", "type": "entrainement_onglet", "onglet": 5},
+	{"id": "entrainement-mois-jour", "libelle": "Entraînement · Mois · petite fenêtre d'un jour", "type": "entrainement_onglet", "onglet": 5, "jour": true},
 	{"id": "salle-entrainement", "libelle": "Observer la préparation (salle d'entraînement)", "type": "salle_entrainement"},
 	{"id": "salle-entrainement-joueur", "libelle": "Observer la préparation · petite fenêtre d'un joueur", "type": "salle_entrainement", "joueur": true},
 	{"id": "fiche-joueur", "libelle": "Fiche joueur", "type": "joueur"},
 	{"id": "mini-fiche", "libelle": "Mini-fiche au survol (Effectif)", "type": "mini_fiche"},
 	{"id": "equilibre-postes", "libelle": "Équilibre par poste (infobulle Aptes)", "type": "equilibre_postes"},
-	{"id": "comparateur", "libelle": "Comparateur (trois joueurs)", "type": "comparateur"},
+	{"id": "comparateur", "libelle": "Comparateur (deux joueurs)", "type": "comparateur"},
+	{"id": "radar", "libelle": "Comparateur en radar (deux joueurs du même poste)", "type": "comparateur_radar"},
+	{"id": "radar-axe", "libelle": "Comparateur en radar · clic sur un axe", "type": "comparateur_radar", "axe": 6},
 	{"id": "salle-conseil", "libelle": "Salle du conseil", "type": "salle_conseil"},
 	{"id": "salle-conseil-fenetre", "libelle": "Salle du conseil · petite fenêtre", "type": "salle_conseil", "fenetre": true},
 	{"id": "salle-conseil-match", "libelle": "Salle du conseil · fenêtre d'un match", "type": "salle_conseil", "ballon": true},
@@ -538,6 +542,19 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			if entrainement == null: return {"statut": "echec", "note": "entraînement non ouvert"}
 			entrainement._open_tab(int(ecran.onglet))
 			await stabiliser()
+			if bool(ecran.get("jour", false)):
+				# Jour le plus chargé du mois (le plus de créneaux) : sa petite fenêtre.
+				var page := app.find_child("ImmersiveTraining", true, false)
+				var choix: Button = null
+				var plein := -1
+				for b: Node in page.find_children("TrainingMonthDayOpen_*", "Button", true, false):
+					var n: int = b.get_parent().get_child_count()
+					if n > plein:
+						plein = n
+						choix = b
+				if choix == null: return {"statut": "echec", "note": "aucun jour"}
+				choix.pressed.emit()
+				await stabiliser()
 		"salle_entrainement":
 			app._navigate("Préparation")
 			await stabiliser()
@@ -732,12 +749,33 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 		"comparateur":
 			var effectif_cmp: Array = app.model.get("squad", [])
 			if effectif_cmp.size() < 3: return {"statut": "indisponible", "note": "effectif trop court"}
-			app.management_ui.compare = [ident(effectif_cmp[0].get("id")), ident(effectif_cmp[1].get("id")), ident(effectif_cmp[2].get("id"))]
+			app.management_ui.compare = [ident(effectif_cmp[0].get("id")), ident(effectif_cmp[1].get("id"))]
 			app._navigate("Effectif")
 			await stabiliser()
 			load("res://ui/immersive08/comparateur_canvas.gd").ouvrir(app)
 			await stabiliser()
 			if app.route != "Comparateur": return {"statut": "echec", "note": "comparateur non ouvert"}
+		"comparateur_radar":
+			var effectif_r: Array = app.model.get("squad", [])
+			if effectif_r.size() < 2: return {"statut": "indisponible", "note": "effectif trop court"}
+			var premier_r: Dictionary = effectif_r[0]
+			var second_r: Dictionary = effectif_r[1]
+			for p: Dictionary in effectif_r.slice(1):
+				if str(p.get("pos", "")) == str(premier_r.get("pos", "")):
+					second_r = p
+					break
+			app.management_ui.compare = [ident(premier_r.get("id")), ident(second_r.get("id"))]
+			app.management_ui.erase("radar_axe")
+			app._navigate("Effectif")
+			await stabiliser()
+			load("res://ui/immersive08/comparateur_canvas.gd").ouvrir(app)
+			await stabiliser()
+			if app.route != "Comparateur": return {"statut": "echec", "note": "comparateur non ouvert"}
+			if ecran.has("axe"):
+				var axe_r := app.root_content.find_child("RadarAxe" + str(ecran.axe), true, false) as BaseButton
+				if axe_r == null: return {"statut": "echec", "note": "axe du radar absent"}
+				axe_r.pressed.emit()
+				await stabiliser()
 		"club":
 			var id := club_adverse()
 			if id.is_empty(): return {"statut": "indisponible", "note": "aucun club adverse connu"}
@@ -1077,12 +1115,13 @@ func capturer(entree: Dictionary, o: Dictionary, taille: Vector2i) -> void:
 		print("ECRANS_FILMES retour de tuile : ", load("res://ui/retour_tuile.gd").simuler(self))
 		print("ECRANS_FILMES lignes : ", load("res://ui/survol_ligne.gd").simuler(self), " survolée(s), ", load("res://ui/survol_ligne.gd").simuler_appui(self), " enfoncée(s)")
 		await stabiliser()
-	# CD_FILM_BLESSURE=1 : ouvre la petite fenêtre « blessure » du premier blessé (pastille Blessé de l'écran).
-	if OS.get_environment("CD_FILM_BLESSURE") == "1":
-		var pastilles := get_nodes_in_group(&"ouvre_blessure")
+	# CD_FILM_BLESSURE=n : ouvre la petite fenêtre « blessure » du n-ième blessé (pastille Blessé de l'écran, 1 = premier).
+	if OS.get_environment("CD_FILM_BLESSURE").is_valid_int() and int(OS.get_environment("CD_FILM_BLESSURE")) >= 1:
+		var pastilles := get_nodes_in_group(&"ouvre_blessure").filter(func(b: Node) -> bool: return b is BaseButton and (b as Control).is_visible_in_tree())
+		var rang := mini(int(OS.get_environment("CD_FILM_BLESSURE")), pastilles.size()) - 1
 		print("ECRANS_FILMES blessure : ", pastilles.size(), " pastille(s)")
-		if not pastilles.is_empty() and pastilles[0] is BaseButton:
-			(pastilles[0] as BaseButton).pressed.emit()
+		if rang >= 0:
+			(pastilles[rang] as BaseButton).pressed.emit()
 			await stabiliser()
 	if OS.get_environment("CD_FILM_AUDIT_TUILES") == "1":
 		for ligne in load("res://ui/retour_tuile.gd").auditer(self): print("AUDIT_TUILE ", entree.id, "|", ligne)

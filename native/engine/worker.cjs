@@ -82,7 +82,7 @@ const LEGACY_PURGE_NOTICE='Les carrières des anciens modes de jeu ont été ret
 const CAREER_STATE_KEYS=['bdt-v1','bdt-backup-v1','bdt-before-import','bdt-recovery-invalid'];
 const CAREER_SIDE_KEYS=['bdt-backup-development','bdt-backup-economy','bdt-matchday-pending','bdt-exported-at'];
 const PRESS_PROGRESSION=new Set(['advance_day','begin_match','finish_round','next_season','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation']);
-const COMMANDS=new Set([...SYSTEM_COMMANDS,'population_enable','academy_groups_preview','academy_groups_enable','competition_editor_preview','epcr_preview','club_sheet','set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','advance_day','finish_round','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation','save','import','export','shutdown','set_lineup','set_tactics','set_penalty_policy','set_consignes','appliquer_staff','set_role_direct','cri','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover','sale_list','sale_answer','precontract_offer','recover_profile','pack_inspect','pack_install','pack_select','advance_until_event']);
+const COMMANDS=new Set([...SYSTEM_COMMANDS,'population_enable','academy_groups_preview','academy_groups_enable','competition_editor_preview','epcr_preview','club_sheet','set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','advance_day','finish_round','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation','save','import','export','shutdown','set_lineup','set_tactics','set_penalty_policy','set_consignes','appliquer_staff','set_role_direct','cri','set_player_load','set_intensite_auto','appliquer_avis_kine','recruit','extend_contract','next_season','substitute','promote_cover','sale_list','sale_answer','precontract_offer','recover_profile','pack_inspect','pack_install','pack_select','advance_until_event']);
 COMMANDS.add('observe_player');
 // Rallonge demandée au conseil (budget-transferts.cjs) : contrôleur dans gestion.cjs.
 COMMANDS.add('transfer_budget_extension');
@@ -378,6 +378,7 @@ function createBridge(options={}){
   const edition=mode=>{if(mode==='common')return legacyDatabase.id;const e=worldEditions.forMode(mode);if(!e)throw Error('Édition de pack invalide.');return e.id;};
   const currentEdition=()=>run("CDWorldCareer.edition(S)?.mode||'common'");
   function projectCalendar(model, operation){
+   ctx.nativeProgrammeEffets=null;
    if(!model.club)return;
    const {fixtures,today,simulatedDates}=calendarContext(model);
    const stored=calendarState();
@@ -403,6 +404,10 @@ function createBridge(options={}){
     ...(fixtures===model.calendar ? {} : {fixtures}),simulatedDates
    };
    model.calendarMail=calendarMail.project(mail);
+   // Effets des séances de la semaine en cours (calendar-planning.cjs weekEffects) : lus par trainWeek dans la VM
+   // (programme-semaine.cjs) pour le club du manager, seulement pour cette saison et cette semaine.
+   const semaine=model.calendarPlanning.week;
+   ctx.nativeProgrammeEffets=semaine&&!simulatedDates?JSON.parse(JSON.stringify({...semaine,season:model.meta?.season,round:model.meta?.week})):null;
    if(operation&&(JSON.stringify(mail)!==JSON.stringify(stored.mail)||JSON.stringify(planning)!==JSON.stringify(stored.planning))){
     validateCalendarState({planning,mail});
     ctx.nativeCalendarState=JSON.parse(JSON.stringify({planning,mail}));
@@ -1230,7 +1235,7 @@ function createBridge(options={}){
       if(options.dailyCalendar)run('nativeEnableDailyCalendar()');
      }
      let extra=ctx.nativeKnowledgeReceipt??null;if(SYSTEM_COMMANDS.has(command)){ctx.nativeCommand=command;extra=run('nativeSystems.execute(nativeCommand,nativePayload)');}
-     else if(['set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','set_lineup','set_tactics','set_penalty_policy','set_consignes','appliquer_staff','set_role_direct','cri','set_player_load','recruit','extend_contract','transfer_budget_extension','next_season','substitute','promote_cover','sale_list','sale_answer','precontract_offer'].includes(command)){ctx.nativeCommand=command;extra=run('nativeGestion(nativeCommand,nativePayload)');}
+     else if(['set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','set_lineup','set_tactics','set_penalty_policy','set_consignes','appliquer_staff','set_role_direct','cri','set_player_load','set_intensite_auto','appliquer_avis_kine','recruit','extend_contract','transfer_budget_extension','next_season','substitute','promote_cover','sale_list','sale_answer','precontract_offer'].includes(command)){ctx.nativeCommand=command;extra=run('nativeGestion(nativeCommand,nativePayload)');}
      if(command==='new_career'){
       run('CDNativeAcademyGroups.start(S)');
       ctx.nativeCreationVariation={version:1,seed:priorSeed,varyCurrent:payload.varyCurrent??true};
@@ -1276,6 +1281,9 @@ function createBridge(options={}){
      run("nativeSystems.domain('doublons').observe();");
      // Fragilité des joueurs créés (fragilite.cjs) : tirée à la création, posée aussi sur les anciennes carrières.
      run("nativeSystems.domain('fragilite').observe();");
+     // Règle « Auto » par forme (dist/development.js) : posée à la création et sur les anciennes carrières (clé toujours
+     // présente : les lectures mémorisées de la projection restent valides d'une commande à l'autre).
+     run("if(S&&typeof intensiteAutoValide==='function'&&!intensiteAutoValide(S.intensiteAuto))S.intensiteAuto=INTENSITE_AUTO_DEFAUT.slice();");
      run("nativeSystems.domain('clubMail').observe(nativeCommand);");
      // Réglage « Conférences ordinaires : envoyer l'adjoint » (press.cjs) : la conférence ordinaire qui vient de
      // s'ouvrir est tenue par Gabi dans la même commande, avant la sauvegarde ; « Jour suivant » et « Continuer »

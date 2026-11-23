@@ -29,13 +29,13 @@ const UNTOUCHED = Object.freeze({
   club_preview: NONE, start_challenges: NONE, academy_groups_preview: NONE, interclub_negotiate: NONE, save: NONE,
   // Réglages, consignes, rendez-vous, causeries : sections légères seulement.
   set_tactics: NONE, set_penalty_policy: NONE, set_consignes: NONE, appliquer_staff: NONE, set_role_direct: NONE, cri: NONE, set_collective_focus: NONE, set_opponent_level: NONE,
-  set_delegation: NONE, press_policy: NONE, club_follow: NONE, set_lineup: NONE, auto_lineup: NONE,
+  set_intensite_auto: NONE, set_delegation: NONE, press_policy: NONE, club_follow: NONE, set_lineup: NONE, auto_lineup: NONE,
   club_meeting_ack: NONE, club_meeting_continue: NONE, pause: NONE, match_talk_decide: NONE, match_incident_choice: NONE,
   manager_recruitment_watch: NONE, regen_shortlist: NONE,
   // Rallonge du conseil (budget-transferts.cjs) : budgetTransferts, confiance et nouvelles (sections légères).
   transfer_budget_extension: NONE,
   // Décisions sur les joueurs du club : la section des clubs est relue.
-  set_player_load: except('clubs'), set_development_focus: except('clubs'), training_plan: except('clubs'),
+  set_player_load: except('clubs'), appliquer_avis_kine: except('clubs'), set_development_focus: except('clubs'), training_plan: except('clubs'),
   staff_meeting: except('clubs'), relationship_conversation: except('clubs'), observe_player: except('clubs'),
   scout_mission: except('clubs'), extend_contract: except('clubs'), press_conference: except('clubs'),
   recruit: except('clubs', 'aiRoster', 'potentialEvolution'), league_detail_set: except('worldMode'),
@@ -56,12 +56,12 @@ function untouched(command, payload) {
 // du manager dans `clubs` (S.clubs[S.club], S.club inchangé). Les autres clubs (~13,8 Mo) ne sont alors pas
 // resérialisés ; le club du manager l'est, joueur par joueur et champ par champ (voir SOURCE, parties de la section des
 // clubs). Vérifié en mode vérification (les autres clubs sont relus et comparés).
-const OWN_CLUB = Object.freeze(new Set(['set_player_load', 'set_development_focus', 'training_plan', 'extend_contract', 'staff_meeting', 'observe_player', 'club_mail_reply']));
+const OWN_CLUB = Object.freeze(new Set(['set_player_load', 'appliquer_avis_kine', 'set_development_focus', 'training_plan', 'extend_contract', 'staff_meeting', 'observe_player', 'club_mail_reply']));
 const ownClubOnly = command => OWN_CLUB.has(command);
 
 // Commandes sans effet sur la note et les qualités des joueurs, même si elles touchent la section des clubs (consigne de
 // charge, axe de progression : appliqués à la prochaine séance).
-const PLAYERS_STABLE = Object.freeze(new Set(['set_player_load', 'set_development_focus']));
+const PLAYERS_STABLE = Object.freeze(new Set(['set_player_load', 'appliquer_avis_kine', 'set_development_focus']));
 
 // Commande sans effet sur aucune section lourde (clubs et centres compris), ou déclarée sans effet sur les qualités : la
 // note et les qualités des joueurs ne bougent pas ; la complétion des attributs détaillés n'a pas à relever leurs

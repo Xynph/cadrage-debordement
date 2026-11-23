@@ -1,7 +1,9 @@
 'use strict';
 // Programme de la semaine, jour par jour (21/11/2026, panneaux de l'Effectif et écran Entraînement › Semaine).
 // Le moteur simule UNE séance collective par semaine (trainWeek : charge S.training repos/normal/intense, préparation
-// spécifique S.collectiveFocus) ; elle tombe d'elle-même en fin de semaine si le manager ne l'a pas lancée. Ce domaine
+// spécifique S.collectiveFocus) ; elle tombe d'elle-même en fin de semaine si le manager ne l'a pas lancée. Depuis le
+// 22/11/2026, les séances du programme jour par jour de la semaine (calendar-planning.cjs, Entraînement › Mois) en
+// règlent le contenu : écarts de fatigue, condition, progression et organisation collective (hooks plus bas). Ce domaine
 // place cette séance et les jours du calendrier réel dans la semaine du calendrier journalier (lundi → dimanche),
 // en lecture seule et sans tirage (même état → même programme) :
 //  - match : jour de la rencontre du club (CDWorldCareer.userFixture) ;
@@ -62,7 +64,55 @@ function factory(){
  }
  function validate(){return true;}
  function execute(){throw Error('Programme de la semaine : aucune commande.');}
- function installHooks(){return true;}
+ // Effets des séances du programme jour par jour (calendar-planning.cjs weekEffects, posés par le worker dans
+ // `nativeProgrammeEffets` à chaque projection) sur la semaine simulée du club du manager : fatigue et condition après la
+ // séance collective, progression des avants / arrières (part d'XP de la séance), organisation collective du match.
+ // Écart à la semaine standard : une semaine standard laisse la simulation exactement comme avant. Sans programme
+ // de la semaine (autre saison, autre semaine, calendrier simulé), rien ne change.
+ const g=globalThis;let installed=false;
+ function effets(s){
+  const e=g.nativeProgrammeEffets;
+  if(!s||!e||g.nativeProgrammeDesactive===true||e.season!==s.season||e.round!==s.round||!e.effects)return null;
+  return e.effects;
+ }
+ const borne=(v,a,b)=>Math.max(a,Math.min(b,v));
+ function installHooks(){
+  if(installed||typeof g.trainWeek!=='function')return true;installed=true;
+  const train=g.trainWeek;
+  g.trainWeek=function(){
+   const s=state(),e=effets(s),avant=s?.trained;
+   if(!e||avant||!s.clubs?.[s.club])return train.apply(this,arguments);
+   const joueurs=s.clubs[s.club].players.filter(p=>!p.injury),ids=new Set(joueurs.map(p=>p.id));
+   const dev=g.developmentTraining;
+   if(typeof dev==='function'&&(e.avants||e.arrieres)){
+    g.developmentTraining=function(p,mode,ci){
+     if(ci!==s.club||!ids.has(p?.id))return dev.apply(this,arguments);
+     const facteur=1+(p.fam<=3?e.avants:e.arrieres)/100,grow=g.growPlayer;
+     g.growPlayer=function(q,xp,...reste){return grow.call(this,q,q===p&&Number.isFinite(xp)?xp*facteur:xp,...reste);};
+     try{return dev.apply(this,arguments);}finally{g.growPlayer=grow;}
+    };
+   }
+   let ret;
+   try{ret=train.apply(this,arguments);}finally{g.developmentTraining=dev;}
+   if(s.trained&&(e.fatigue||e.condition))for(const p of joueurs){
+    if(p.injury)continue;
+    const charge=typeof g.ensurePhysicalLoad==='function'?g.ensurePhysicalLoad(p):null;
+    if(charge&&e.fatigue)charge.fatigue=borne(charge.fatigue+e.fatigue,0,100);
+    if(e.condition)p.condition=borne(p.condition+e.condition,20,100);
+   }
+   return ret;
+  };
+  // Organisation collective (vidéo, mise en place) : puissance de la préparation collective du club au match.
+  if(typeof g.collectiveStrength==='function'){
+   const force=g.collectiveStrength;
+   g.collectiveStrength=function(l,side){
+    const v=force.apply(this,arguments),s=state(),e=effets(s);
+    if(!e||!e.cohesion||!Number.isFinite(v)||l?.pair?.[side]!==s.club)return v;
+    return Math.round(borne(v*(1+e.cohesion/100),.55,1)*100)/100;
+   };
+  }
+  return true;
+ }
  return {project,validate,execute,installHooks,programme};
 }
 module.exports={files,commands,factory};

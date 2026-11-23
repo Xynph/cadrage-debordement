@@ -65,9 +65,9 @@ func run() -> void:
 	for nom in ["CentreAideDetection", "CentreAideMentoring", "CentreAideJunior", "CentreAidePlaces"]: aide(centre, "Info_" + nom, "Centre")
 	# Comparateur
 	var effectif: Array = app.model.get("squad", [])
-	check(effectif.size() >= 3, "Effectif d'au moins trois joueurs")
-	if effectif.size() >= 3:
-		app.management_ui.compare = [str(effectif[0].get("id")), str(effectif[1].get("id")), str(effectif[2].get("id"))]
+	check(effectif.size() >= 2, "Effectif d'au moins deux joueurs")
+	if effectif.size() >= 2:
+		app.management_ui.compare = [str(effectif[0].get("id")), str(effectif[1].get("id"))]
 		app._navigate("Effectif"); await settle(8)
 		load("res://ui/immersive08/comparateur_canvas.gd").ouvrir(app); await settle(10)
 		check(app.route == "Comparateur", "Comparateur ouvert")
