@@ -443,7 +443,7 @@ static func _profile(app:Control,parent:VBoxContainer,p:Dictionary) -> void:
 	contracts.add_child(G.label("CHARGE INDIVIDUELLE",13,G.MUTED))
 	var load_plan:=OptionButton.new()
 	var modes:Array=["collective","repos","normal","intense"]
-	for text in ["Suivre le collectif","Récupération individuelle","Charge normale","Charge intense"]:load_plan.add_item(text)
+	for text in ["Auto","Récupération individuelle","Charge normale","Charge intense"]:load_plan.add_item(text)
 	load_plan.name="PlayerLoad"
 	load_plan.select(maxi(0,modes.find(p.get("loadPlan","collective"))))
 	var load_reason := player_load_unavailable_reason(app)
@@ -535,7 +535,7 @@ static func _profile_overview(parent:VBoxContainer,p:Dictionary,notes:Array,app:
 	_profile_fact(condition,"ProfileConditionValue","Condition",G.n(p.get("condition",0))+"%")
 	_profile_fact(condition,"ProfileLoadValue","Charge",G.n(p.get("physicalLoad",0)))
 	_profile_fact(condition,"ProfileStatusValue","Sélection",str(p.get("status","—")))
-	var plans:Dictionary={"collective":"Collectif","repos":"Récupération","normal":"Normale","intense":"Intense"}
+	var plans:Dictionary={"collective":"Auto","repos":"Récupération","normal":"Normale","intense":"Intense"}
 	_profile_fact(condition,"ProfilePlanValue","Charge prévue",str(plans.get(p.get("loadPlan","collective"),"—")))
 	var contract_tile:=_profile_tile(right,"Contract","Contrat courant")
 	var term:=G.wrap("Fin de contrat : "+G.contract_year(p.get("contractEnd")),12,G.INK)

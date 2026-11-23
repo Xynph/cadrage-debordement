@@ -60,11 +60,15 @@ function factory(){
    :nativeClubBudget.leviers({...common,objectif:'tresorerie',solde:f.baseForecast+HOME_GATE*homeLeft()});
   return f;
  }
- function project(){
+ function projectBase(){
   if(!S)return null;const s=previewState(),b=CDSportingDirectorV105V110.ensure(s),f=CDFanExperienceV111V116.ensure(s),quote=worldActive()?worldFacilityQuote(S.club):null;
+  // Humeur unique des supporters (profil des tribunes) : elle règle la demande, donc l'affluence prévue.
+  let t=null;try{t=tribunes(s,f);}catch(e){t=null;}
+  const fc=CDFanExperienceV111V116.forecast(s,t?t.mood:null),crowd=Math.max(1,fc.expectedAttendance||0,f.subscribers||0);
+  const tribunesVue=t?{segments:t.segments.map(g=>({...g,count:Math.round(crowd*g.share/100)})),expectations:t.expectations,mood:t.mood,crowd}:null;
   const budget=careerIntegrated()?S.careerManagement:null,remaining=Math.max(0,weeks(S)-week(S)),wage=own(S).players.reduce((n,p)=>n+p.salary,0),sponsor=budget?.sponsor?.season===S.season?CAREER_SPONSORS[budget.sponsor.key]:null;
   const weeklyIncome=160000+(sponsor?.weekly||0),weeklyCosts=wage+(budget?.academyInvestment||0)+(worldActive()?worldUpkeep(worldClub(S.club).facilities):0);
-  return {context:context(),available:!S.live&&S.phase!=='ended',finance:withLevers({cash:own(S).cash,weeklyWages:wage,weeksPerSeason:weeks(S),remainingWeeks:remaining,academyInvestment:budget?.academyInvestment||0,academySpent:budget?.academySpent||0,weeklyIncome,weeklyCosts,baseForecast:own(S).cash+(weeklyIncome-weeklyCosts)*remaining,notice:'Projection des engagements connus, hors billetterie aléatoire, primes et transferts futurs. Montants de jeu fictifs.',...(typeof budgetFinance==='function'&&budgetFinance(budget?.academyInvestment||0,sponsor?.weekly||0,worldActive()?worldUpkeep(worldClub(S.club).facilities):0)||{}),investissements:typeof investResume==='function'?investResume():null,facility:quote?{...quote,level:worldClub(S.club).facilities,used:S.worldManagement.upgrades.some(x=>x.season===S.season&&x.id===S.club)}:null,boardHistory:copy(budget?.boardHistory||[])},sponsor?.weekly||0,budget?.academyInvestment||0,worldActive()?worldUpkeep(worldClub(S.club).facilities):0,wage),sponsors:Object.entries(CAREER_SPONSORS).map(([id,t])=>({id,...t,selected:budget?.sponsor?.key===id,available:!S.live&&S.phase==='league'&&S.round<=4&&!budget?.sponsor})),board:{priority:b.priority,organizationScore:b.confidence,missions:copy(b.missions),projects:copy(b.projects),risks:copy(b.risks),history:copy(b.history),readiness:CDSportingDirectorV105V110.readiness(s),projectOptions:Object.entries(projects).map(([id,c])=>({id,...c,used:b.projects.some(p=>p.kind===id)})),objectives:S.nativeBoardCalendar?copy(S.nativeBoardCalendar.objectives):[],metrics:metrics(),notice:'Le score d’organisation suit les projets et missions. Seul le bilan moteur modifie la confiance du président ; ces projets ne donnent pas de bonus de match.'},fans:{...CDFanExperienceV111V116.forecast(s),sentiment:f.sentiment,subscribers:f.subscribers,policy:f.price,prices:Object.entries(prices).map(([id,price])=>({id,price})),campaigns:Object.entries(campaigns).map(([id,c])=>({id,...c,used:!!f.campaign})),community:Object.entries(community).map(([id,c])=>({id,...c,used:f.community.some(e=>e.kind===id)||f.community.length>=2})),services:Object.entries(services).map(([id,c])=>({id,...c,used:!!f.service})),history:copy(f.history),notice:'Prévisions fictives : aucune recette de billetterie supplémentaire encaissée. Les matchs conservent leur recette moteur unique.'}};
+  return {context:context(),available:!S.live&&S.phase!=='ended',finance:withLevers({cash:own(S).cash,weeklyWages:wage,weeksPerSeason:weeks(S),remainingWeeks:remaining,academyInvestment:budget?.academyInvestment||0,academySpent:budget?.academySpent||0,weeklyIncome,weeklyCosts,baseForecast:own(S).cash+(weeklyIncome-weeklyCosts)*remaining,notice:'Projection des engagements connus, hors billetterie aléatoire, primes et transferts futurs. Montants de jeu fictifs.',...(typeof budgetFinance==='function'&&budgetFinance(budget?.academyInvestment||0,sponsor?.weekly||0,worldActive()?worldUpkeep(worldClub(S.club).facilities):0)||{}),investissements:typeof investResume==='function'?investResume():null,facility:quote?{...quote,level:worldClub(S.club).facilities,used:S.worldManagement.upgrades.some(x=>x.season===S.season&&x.id===S.club)}:null,boardHistory:copy(budget?.boardHistory||[])},sponsor?.weekly||0,budget?.academyInvestment||0,worldActive()?worldUpkeep(worldClub(S.club).facilities):0,wage),sponsors:Object.entries(CAREER_SPONSORS).map(([id,t])=>({id,...t,selected:budget?.sponsor?.key===id,available:!S.live&&S.phase==='league'&&S.round<=4&&!budget?.sponsor})),board:{priority:b.priority,organizationScore:b.confidence,missions:copy(b.missions),projects:copy(b.projects),risks:copy(b.risks),history:copy(b.history),readiness:CDSportingDirectorV105V110.readiness(s),projectOptions:Object.entries(projects).map(([id,c])=>({id,...c,used:b.projects.some(p=>p.kind===id)})),objectives:S.nativeBoardCalendar?copy(S.nativeBoardCalendar.objectives):[],metrics:metrics(),notice:'Le score d’organisation suit les projets et missions. Seul le bilan moteur modifie la confiance du président ; ces projets ne donnent pas de bonus de match.'},fans:{...fc,humeur:t?t.mood:null,humeurPublic:Math.round(100*(facteurHumeur(t?t.mood:null)-1)),...(tribunesVue?{supporters:tribunesVue}:{}),subscribers:f.subscribers,policy:f.price,prices:Object.entries(prices).map(([id,price])=>({id,price})),campaigns:Object.entries(campaigns).map(([id,c])=>({id,...c,used:!!f.campaign})),community:Object.entries(community).map(([id,c])=>({id,...c,used:f.community.some(e=>e.kind===id)||f.community.length>=2})),services:Object.entries(services).map(([id,c])=>({id,...c,used:!!f.service})),history:copy(f.history),notice:'Prévisions fictives : aucune recette de billetterie supplémentaire encaissée. Les matchs conservent leur recette moteur unique.'}};
  }
  function receipt(label,before){const delta=own(S).cash-before;if(delta){S.ledger.unshift({title:label,amount:delta});S.ledger=S.ledger.slice(0,100);}}
  function execute(command,p){
@@ -99,12 +103,67 @@ function factory(){
   const target=Math.max(1,Math.min(top?+top[1]:rank<=Math.ceil(n/3)?rank-1:rank,Math.min(safe,n-1)));
   s.nativeBoardCalendar=CDBoardCalendar.objective(b,{id:'pres:'+s.season+':'+s.club+':rank',type:'rank',target,deadline:fin,weight:2});return true;
  }
+ // Supporters (revue FM27, idée n° 15, option B choisie par Léo le 23/11/2026) : profil des tribunes et HUMEUR UNIQUE
+ // des supporters (l'ancien « sentiment » sauvegardé est supprimé, fan-experience-v111-v116.js).
+ // Groupes : part de la foule tirée des abonnés, du prix, de la campagne, de l'accueil et des actions de proximité, sur
+ // l'affluence de base (humeur neutre) pour ne pas tourner en rond. Attentes : une par groupe (importance 1-4 selon la
+ // part), réaction sur 100 lue dans les résultats, le classement visé, le prix, la formation et les actions de la
+ // saison ; null tant qu'il n'y a pas de quoi juger (« En attente »). Humeur = moyenne des réactions pondérée par
+ // l'importance. Effets réels : affluence des matchs à domicile et billetterie (club-budget.cjs, facteurHumeur),
+ // demande prévue (forecast) et bilan du conseil (career-integration.js, poids 10 %).
+ const facteurHumeur=h=>typeof nativeClubBudget!=='undefined'&&typeof nativeClubBudget.facteurHumeur==='function'?nativeClubBudget.facteurHumeur(h):1;
+ function tribunes(s,f){
+  if(!f)return null;
+  const c=own(S),st=f,cur=x=>x&&x.season===S.season,camp=cur(st.campaign)?st.campaign.kind:null,serv=cur(st.service)?st.service.kind:null;
+  const comm=(st.community||[]).filter(cur).map(x=>x.kind),price=f.price,base=CDFanExperienceV111V116.forecast(s),crowd=Math.max(1,base.expectedAttendance||0,f.subscribers||0);
+  const raw={abonnes:Math.max(12,Math.min(45,Math.round(100*(f.subscribers||0)/crowd))),familles:14+(camp==='familiale'?10:0)+(price==='accessible'?6:price==='premium'?-6:0)+(comm.includes('ecoles')?4:0),
+   amateurs:9+(camp==='locale'?7:0)+(comm.includes('associations')?4:0)+(comm.includes('portesOuvertes')?3:0),connectes:8+(camp==='numerique'?9:0),partenaires:4+(serv==='premium'?6:serv==='confort'?3:0)+(price==='premium'?3:0)};
+  const used=Object.values(raw).reduce((n,x)=>n+x,0);raw.occasionnels=Math.max(6,100-used);
+  const total=Object.values(raw).reduce((n,x)=>n+x,0),ids=Object.keys(raw),share={};let left=100;
+  ids.forEach((id,i)=>{share[id]=i===ids.length-1?left:Math.round(100*raw[id]/total);left-=share[id];});
+  const labels={abonnes:'Abonnés fidèles',familles:'Familles',amateurs:'Clubs amateurs et écoles de rugby',connectes:'Jeunes connectés',partenaires:'Partenaires et loges',occasionnels:'Occasionnels'};
+  const segments=ids.map(id=>({id,label:labels[id],share:share[id]})).sort((a,b)=>b.share-a.share);
+  const m=metrics(),played=(c.won||0)+(c.drawn||0)+(c.lost||0),rankGoal=(S.nativeBoardCalendar?.objectives||[]).find(o=>o.type==='rank'),promotions=S.careerManagement?.promotions;
+  const clamp=(x)=>Math.max(0,Math.min(100,Math.round(x)));
+  const reactions={abonnes:played<3?null:clamp(50+((c.won||0)-(c.lost||0))*6),
+   occasionnels:!rankGoal||played<3||!(m.rank>0)?null:m.rank<=rankGoal.target-2?90:m.rank<=rankGoal.target?75:m.rank<=rankGoal.target+2?50:30,
+   familles:price==='accessible'?90:price==='premium'?35:65,amateurs:clamp(45+20*comm.length+(camp==='locale'?15:0)),
+   connectes:camp==='numerique'?85:null,partenaires:serv==='premium'?88:serv==='confort'?72:45};
+  const wishes={abonnes:['Gagner à domicile','resultats'],occasionnels:[rankGoal?'Classement ≤ '+rankGoal.target:'Viser le haut du tableau','classement'],familles:['Des billets abordables','prix'],
+   amateurs:['Un club proche de sa ville','proximite'],connectes:['Le club sur les réseaux','image'],partenaires:['Un accueil de qualité','accueil']};
+  if(typeof promotions==='number'){wishes.amateurs=['Des jeunes du centre en équipe première','formation'];reactions.amateurs=promotions>0?clamp(50+promotions*20):null;}
+  const expectations=segments.map(g=>({id:g.id,label:wishes[g.id][0],kind:wishes[g.id][1],segment:g.id,importance:Math.max(g.share>=25?4:g.share>=15?3:g.share>=9?2:1,{resultats:3,classement:3}[wishes[g.id][1]]||1),reaction:reactions[g.id]}));
+  const known=expectations.filter(e=>e.reaction!==null),mood=known.length?Math.round(known.reduce((n,e)=>n+e.reaction*e.importance,0)/known.reduce((n,e)=>n+e.importance,0)):null;
+  return {segments,expectations,mood};
+ }
+ // Humeur des supporters du club géré (0-100, null sans carrière) : lue par le moteur (affluence, billetterie, conseil).
+ function humeur(){
+  try{if(!S||!S.clubs?.[S.club])return null;const s=previewState(),t=tribunes(s,CDFanExperienceV111V116.ensure(s));return t&&Number.isFinite(t.mood)?t.mood:null;}catch(e){return null;}
+ }
+ function boardPlan(board){
+  const c=own(S),rankGoal=(board.objectives||[]).find(o=>o.type==='rank'),top=/Top (\d+)/.exec(String(c.goal||'')),plan=[];
+  const now=(board.objectives||[]).map(o=>({label:o.type,target:o.target,deadline:o.deadline,importance:o.id&&o.id.startsWith('pres:')?4:2,status:o.status}));
+  now.push({label:'cash',target:0,importance:3,status:c.cash>=0?'pending':'missed'});
+  plan.push({season:S.season,current:true,objectives:now});
+  const start=rankGoal?rankGoal.target:null,end=start===null?null:Math.max(1,Math.min(start,top?+top[1]:Math.max(1,start-3)));
+  for(let k=1;k<=4;k++){const list=[];
+   if(start!==null)list.push({label:'rank',target:Math.round(start+(end-start)*k/4),importance:4,status:'future'});
+   list.push({label:'cash',target:0,importance:3,status:'future'});
+   list.push({label:'youth',target:1,importance:k>=2?3:2,status:'future'});
+   plan.push({season:S.season+k,current:false,objectives:list});}
+  return plan;
+ }
+ function project(){
+  const out=projectBase();if(!out)return out;
+  try{out.board.plan=boardPlan(out.board);}catch(e){}
+  return out;
+ }
  let installed=false;
  function installHooks(){if(installed)return;installed=true;
   const previousMobility=managerMobilityOnSeasonStart;managerMobilityOnSeasonStart=function(){const fields=['v105to110','v111to116','nativeBoardCalendar'],oldClub=S?.club,office={};if(S)for(const key of fields)if(S[key]!==undefined)office[key]=copy(S[key]);const result=previousMobility.apply(this,arguments);if(S&&S.club!==oldClub){if(!S.nativeStrategyOffices)S.nativeStrategyOffices={version:1,clubs:{}};S.nativeStrategyOffices.clubs[oldClub]=office;const restored=S.nativeStrategyOffices.clubs[S.club]||{};for(const key of fields){delete S[key];if(restored[key]!==undefined)S[key]=copy(restored[key]);}if(S.v105to110)CDSportingDirectorV105V110.rotate(S);if(S.v111to116)CDFanExperienceV111V116.rotate(S,()=>true);if(S.nativeBoardCalendar&&S.nativeBoardCalendar.season!==S.season)S.nativeBoardCalendar=CDBoardCalendar.create('club-'+S.club,S.season);}return result;};
-  const previousFinish=finishRound;finishRound=function(){const oldSeason=S?.season,oldWeek=S?week(S):null,result=previousFinish.apply(this,arguments);if(S&&S.season===oldSeason&&week(S)!==oldWeek&&S.nativeBoardCalendar){const r=CDBoardCalendar.review(S.nativeBoardCalendar,{week:week(S),metrics:metrics()});S.nativeBoardCalendar=r.state;S.nativeBoardCalendar.meetings=S.nativeBoardCalendar.meetings.slice(-40);S.nativeBoardCalendar.history=S.nativeBoardCalendar.history.slice(-40);}if(S?.phase==='ended'){if(S.v105to110&&!S.v105to110.history.some(h=>h.season===S.season))CDSportingDirectorV105V110.closeSeason(S,()=>true);if(S.v111to116&&!S.v111to116.history.some(h=>h.season===S.season))CDFanExperienceV111V116.closeSeason(S,()=>true);}return result;};
+  const previousFinish=finishRound;finishRound=function(){const oldSeason=S?.season,oldWeek=S?week(S):null,result=previousFinish.apply(this,arguments);if(S&&S.season===oldSeason&&week(S)!==oldWeek&&S.nativeBoardCalendar){const r=CDBoardCalendar.review(S.nativeBoardCalendar,{week:week(S),metrics:metrics()});S.nativeBoardCalendar=r.state;S.nativeBoardCalendar.meetings=S.nativeBoardCalendar.meetings.slice(-40);S.nativeBoardCalendar.history=S.nativeBoardCalendar.history.slice(-40);}if(S?.phase==='ended'){if(S.v105to110&&!S.v105to110.history.some(h=>h.season===S.season))CDSportingDirectorV105V110.closeSeason(S,()=>true);if(S.v111to116&&!S.v111to116.history.some(h=>h.season===S.season))CDFanExperienceV111V116.closeSeason(S,()=>true,humeur());}return result;};
   const previousAdvance=advanceSeason;advanceSeason=function(){const oldSeason=S?.season;if(S?.phase==='ended'&&!S.live&&S.nativeBoardCalendar&&!S.nativeBoardReports?.some(r=>r.season===S.season&&r.clubId===S.club))S.nativeBoardReports=[...(S.nativeBoardReports||[]),{season:S.season,clubId:S.club,objectives:copy(S.nativeBoardCalendar.objectives)}].slice(-15);const result=previousAdvance.apply(this,arguments);if(S&&S.season!==oldSeason){if(S.v105to110)CDSportingDirectorV105V110.rotate(S);if(S.v111to116)CDFanExperienceV111V116.rotate(S,()=>true);if(S.nativeBoardCalendar)S.nativeBoardCalendar=CDBoardCalendar.create('club-'+S.club,S.season);presidentObjective();}return result;};
  }
- return {project,validate,execute,installHooks,presidentObjective};
+ return {project,validate,execute,installHooks,presidentObjective,humeur};
 }
 module.exports={files,commands,factory};

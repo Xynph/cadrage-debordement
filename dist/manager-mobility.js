@@ -114,7 +114,7 @@ function validateManagerMobility(s){
  for(const a of m.archives){
   saveCheck(saveObject(a)&&saveInt(a.clubId,0,maxClub)&&!keys.has(a.clubId)&&saveInt(a.season,m.enabledSeason,s.season)&&CAREER_ACADEMY_LEVELS.includes(a.academyInvestment)&&saveArray(a.ledger,100)&&saveArray(a.boardHistory,24));keys.add(a.clubId);
   for(const x of a.ledger)saveCheck(saveObject(x)&&typeof x.title==='string'&&saveNumber(x.amount));
-  for(const x of a.boardHistory)saveCheck(saveObject(x)&&saveInt(x.season,1,s.season)&&saveInt(x.round,0,maxRound)&&['previous','after','results','finances','youth','score'].every(k=>saveInt(x[k],0,100)));
+  for(const x of a.boardHistory)saveCheck(saveObject(x)&&saveInt(x.season,1,s.season)&&saveInt(x.round,0,maxRound)&&['previous','after','results','finances','youth','score'].every(k=>saveInt(x[k],0,100))&&(x.supporters===undefined||saveInt(x.supporters,0,100)));
  }
 }
 function managerMobilityPanel(){

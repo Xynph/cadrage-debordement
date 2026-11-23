@@ -47,6 +47,18 @@ func current_target(id: String) -> Dictionary:
 	for player: Dictionary in app.model.market:
 		if str(player.id)==id:return player
 	return {}
+## Négociation avec l'agent (idée 18) : rôle promis obligatoire ; on promet le rôle attendu (sa demande reste celle du
+## devis), sinon le premier proposé.
+func promise() -> void:
+	var cible: Button = null
+	for role in ["titulaire","rotation","espoir","appoint"]:
+		var carte := app.find_child("NegoRoleCarte_"+role,true,false)
+		var lien := app.find_child("NegoRole_"+role,true,false) as Button
+		if lien == null: continue
+		if cible == null: cible = lien
+		if carte != null and carte.find_child("NegoRoleAttendu",true,false) != null: cible = lien;break
+	check(cible != null,"Rôle promis disponible")
+	if cible != null: cible.pressed.emit();await settle()
 func check_salary_input(input: SpinBox,unit: String) -> void:
 	var number := input.get_line_edit().text.trim_suffix(input.suffix).strip_edges().replace(" ","")
 	check(number.is_valid_int(),"Vrai formulaire sans décimales "+unit+" : "+input.get_line_edit().text)
@@ -90,6 +102,7 @@ func run() -> void:
 	for unit in Salary.PERIODS:
 		await choose_unit(unit)
 		app.SquadViews.contract(app,target,true);await settle()
+		await promise()
 		var offer := app.find_child("ContractOffer",true,false) as ConfirmationDialog
 		var wage := offer.find_child("OfferSalary",true,false) as SpinBox
 		check_salary_input(wage,unit)
@@ -99,6 +112,7 @@ func run() -> void:
 		check(FileAccess.get_sha256(profile)==before,"Annuler formulaire ne modifie pas carrière "+unit)
 	await choose_unit("monthly")
 	app.SquadViews.contract(app,target,true);await settle()
+	await promise()
 	var dialog := app.find_child("ContractOffer",true,false) as ConfirmationDialog
 	var input := dialog.find_child("OfferSalary",true,false) as SpinBox
 	check(Salary.input_weekly(input)==int(target.salary),"Montant moteur exact sans édition en mensuel")
@@ -120,6 +134,7 @@ func run() -> void:
 	check(found,"Commande persistée conserve1000euros HEBDO, pas4333euros")
 	await choose_unit("annual")
 	app.SquadViews.contract(app,current_target(id),true);await settle()
+	await promise()
 	dialog=app.find_child("ContractOffer",true,false)
 	input=dialog.find_child("OfferSalary",true,false)
 	Salary.set_input_weekly(input,100000)

@@ -430,13 +430,15 @@ func immersive_profile(player: Dictionary, resolution: Vector2i) -> void:
 	for value in [G.n(player.appearances), G.n(player.minutes)]:
 		check(value in performances, "Performances fidèles " + value)
 	check("NOTE AU POSTE" not in performances,"La note au poste reste réservée à la tactique")
+	# Condition et charge : carte Disponibilité des Performances (l'onglet Contrat montre le temps de jeu promis, idée 16).
+	check(G.n(player.condition) + " %" in performances and G.n(player.physicalLoad) in performances, "Condition et charge exactes dans Performances")
+	check(inside(named("PlayerLoad"), app.body_scroll), "Charge individuelle visible dans Performances")
 	await keyboard(named("FullPlayerTab3"), "contrat du joueur")
 	var contract := labels(named("ImmersivePlayerFull"))
-	check(G.salary(player.salary) in contract and "Fin de contrat : " + G.contract_year(player.get("contractEnd")) in contract, "Salaire et échéance exacts dans Contrat")
-	check(G.n(player.condition) + " %" in contract and G.n(player.physicalLoad) in contract, "Condition et charge exactes dans Contrat")
+	check(G.salary(player.salary) in contract and G.contract_year(player.get("contractEnd")) in contract, "Salaire et échéance exacts dans Contrat")
+	check(inside(named("PlayerPlayingTime"), app.body_scroll), "Temps de jeu promis visible dans Contrat")
 	var renewal := named("OfferRenewal") as Button
 	check(inside(renewal, app.body_scroll) and renewal.disabled == not bool(player.renewal.available), "Offre de prolongation visible et disponibilité exacte")
-	check(inside(named("PlayerLoad"), app.body_scroll), "Charge individuelle visible dans Contrat")
 	await keyboard(named("FullPlayerTab4"), "développement du joueur")
 	# Joueur de l'effectif : progression par qualité (courbe 12 mois du relevé mensuel, 36 qualités à cocher).
 	var development := labels(named("ProgressionCourbeCarte"))
@@ -619,7 +621,7 @@ func immersive_drafts(player: Dictionary, annotation: String) -> void:
 	var ligne: Array = roster_rows(named("SquadScroll")).filter(func(r: Node): return str(r.get_meta("player_id")) == str(player.id))
 	if not ligne.is_empty(): (named("SquadScroll") as ScrollContainer).ensure_control_visible(ligne[0])
 	await keyboard(ligne[0] as BaseButton if not ligne.is_empty() else null, "ouvrir le dossier du joueur annoté")
-	await keyboard(named("FullPlayerTab3"), "ouvrir son Contrat")
+	await keyboard(named("FullPlayerTab2"), "ouvrir ses Performances (carte Disponibilité)")
 	await keyboard(named("PlayerLoad"), "ouvrir le réglage de charge")
 	# La charge individuelle est une sous-page de la fiche (jamais une fenêtre) : les quatre vrais choix, puis retour.
 	check(named("IndividualInstructions") != null and named("FicheChargePage") != null, "Le bouton Charge ouvre les vrais choix")

@@ -24,6 +24,13 @@ func command(id: String,payload: Dictionary={}) -> void:
 	check(accepted,"Commande publique acceptée : "+id)
 	if not accepted:return
 	await response(id)
+## Négociation avec l'agent (idée 18) : un rôle promis est obligatoire avant le contrat ; un clic sur sa carte le promet.
+func promettre() -> void:
+	for role in ["rotation","titulaire","espoir","appoint"]:
+		for carte: Button in app.find_children("NegoRole_"+role,"Button",true,false):
+			if carte.is_visible_in_tree():
+				carte.pressed.emit();await settle()
+				return
 func button(id: String) -> Button:
 	for item: Button in app.find_children(id,"Button",true,false):
 		if item.is_visible_in_tree() and not item.disabled:return item
@@ -206,6 +213,7 @@ func run() -> void:
 			# d'où une contre-offre légitime selon le joueur tiré.
 			var years:=app.find_child("OfferYears",true,false) as SpinBox
 			check(years!=null and years.value>=years.min_value,"Durée du contrat proposée")
+			await promettre()
 			contract.get_ok_button().pressed.emit();await response("recruit")
 			if str(app.model.meta.get("negotiation",{}).get("status",""))=="counter":
 				# Contre-offre légitime (salaire de réserve propre à chaque joueur) : le manager rouvre l'offre, saisit le
@@ -220,6 +228,7 @@ func run() -> void:
 				check(again!=null,"Piste rouverte après la contre-offre")
 				if again!=null:
 					await press(again)
+					await promettre()
 					var salary_field: SpinBox=null
 					var years_field: SpinBox=null
 					for item: SpinBox in app.find_children("OfferSalary","SpinBox",true,false):
@@ -231,13 +240,10 @@ func run() -> void:
 						load("res://ui/salary_display.gd").set_input_weekly(salary_field,float(asked.salary))
 						years_field.value=float(asked.years)
 						await settle()
-					# Offre en fenêtre (détection ouverte) ou en page « Offre au joueur » (envoi en deux temps).
+					# Offre en fenêtre (détection ouverte) ou en page « Offre au joueur » (signature en un clic).
 					var send:=button("RecrutementPageValider")
 					if send!=null:
-						send.pressed.emit();await settle()
-						var ok:=button("ContractSignatureConfirmationOk")
-						check(ok!=null,"Confirmation en place de l'offre")
-						if ok!=null:ok.pressed.emit();await response("recruit contre-offre")
+						send.pressed.emit();await response("recruit contre-offre")
 					else:
 						var shown: Array=app.find_children("ContractOffer*","ConfirmationDialog",true,false).filter(func(d):return d.visible)
 						check(shown.size()==1,"Offre rouverte en fenêtre")
@@ -333,16 +339,16 @@ func counter_on_page() -> void:
 		var offer:=player_button("RegenScoutOffer",str(person.id))
 		if offer==null:continue
 		offer.pressed.emit();await settle()
+		await promettre()
 		var salary:=app.find_child("OfferSalary",true,false) as SpinBox
 		var years:=app.find_child("OfferYears",true,false) as SpinBox
 		if salary==null or years==null:continue
 		load("res://ui/salary_display.gd").set_input_weekly(salary,float(salary.min_value));years.value=years.min_value;await settle()
 		var send:=button("RecrutementPageValider")
 		if send==null:continue
-		send.pressed.emit();await settle()
-		var ok:=button("ContractSignatureConfirmationOk")
-		if ok==null:continue
-		ok.pressed.emit();await response("offre depuis la relève")
+		await create_timer(.3).timeout
+		if send.disabled:continue
+		send.pressed.emit();await response("offre depuis la relève")
 		await settle()
 		if str(app.model.meta.get("negotiation",{}).get("status",""))=="counter":
 			seen_counter=true
