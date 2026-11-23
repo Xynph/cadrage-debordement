@@ -1399,6 +1399,9 @@ static func _clipping(app: Control, message: Dictionary, mail: Dictionary, width
 	# Compte rendu du match en carte (idée FM n°19, choix de Léo du 23/11) : sur l'article du dernier match seulement.
 	var carte_match: Control = CompteRendu.carte(app, mail, width - 68.0)
 	if carte_match != null: column.add_child(carte_match)
+	# Planche « Rapport d'analyste après match » (revue FM27, idée 28) : sous la carte, sous CD_VARIANTE_VISUELLE seulement.
+	var analyse: Control = load("res://ui/immersive08/analyste_match.gd").bloc(app, carte_match, width - 68.0)
+	if analyse != null: column.add_child(analyse)
 	var paragraphs: Array[String] = []
 	for part in str(mail.get("corps", "")).replace("\r", "").split("\n"):
 		if not part.strip_edges().is_empty(): paragraphs.append(part.strip_edges())

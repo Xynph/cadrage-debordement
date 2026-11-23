@@ -77,6 +77,8 @@ const EXTRAS := [
 	{"id": "avant-match-delegation", "libelle": "Avant-match · sous-page Déléguer le match", "type": "avant_delegation"},
 	{"id": "avant-match-bilan", "libelle": "Avant-match · petite fenêtre de la dernière rencontre", "type": "avant_bilan"},
 	{"id": "compte-rendu", "libelle": "Réception · article du dernier match (carte du compte rendu)", "type": "reception_article"},
+	{"id": "analyste-match", "libelle": "Réception · analyse vidéo du dernier match (planche FM27 n° 28)", "type": "reception_article", "analyste": ""},
+	{"id": "analyste-match-detail", "libelle": "Réception · analyse vidéo, détail joueurs (planche FM27 n° 28)", "type": "reception_article", "analyste": "joueurs"},
 	{"id": "preparation-bas", "libelle": "Préparation · leur XV probable (bas de page)", "type": "preparation_bas"},
 	{"id": "preparation-consignes", "libelle": "Préparation · onglet Consignes", "type": "preparation_onglet", "onglet": 1},
 	{"id": "preparation-conseils", "libelle": "Préparation · conseils détaillés (sous-page)", "type": "preparation_sous", "sous": "conseils"},
@@ -551,6 +553,19 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			if lecture != null:
 				lecture.scroll_vertical = int(carte_cr.global_position.y - lecture.global_position.y) + lecture.scroll_vertical - 12
 				await stabiliser()
+			if ecran.has("analyste"):
+				var analyse := app.find_child("AnalysteMatch", true, false) as Control
+				if analyse == null: return {"statut": "echec", "note": "analyse vidéo absente (CD_VARIANTE_VISUELLE ?)"}
+				if lecture != null:
+					lecture.scroll_vertical = int(analyse.global_position.y - lecture.global_position.y) + lecture.scroll_vertical - 12
+					await stabiliser()
+				var detail := str(ecran.analyste)
+				if not detail.is_empty():
+					var bouton := app.find_child("AnalysteOuvrir_" + detail, true, false) as Button
+					if bouton == null: bouton = app.find_child("AnalysteOngletLien_" + detail, true, false) as Button
+					if bouton == null: return {"statut": "echec", "note": "donnée clé absente"}
+					bouton.pressed.emit()
+					await stabiliser()
 		"tactique_onglet":
 			app._navigate("Composition")
 			await stabiliser()
