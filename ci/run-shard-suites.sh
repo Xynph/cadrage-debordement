@@ -200,6 +200,8 @@ budget() {
     tests/integration-cloud-complete.cjs) echo 900s ;;
     # Presse/recrutement06 en carrière Monde, 172 s seul en local et 180 s dépassé en CI (Suites 5/7) ; 420 s, assertions inchangées.
     tests/native-press-followups06-worker.cjs) echo 420s ;;
+    # Recherche ciblée (carrière Monde, recrutement) : 83 s en local, 180 s dépassées sur le runner (PR #1201, Suites 1/10) ; budget ≈ 5 fois, assertions inchangées.
+    tests/recherche-ciblee.cjs) echo 420s ;;
     # Lot 01 (Monde), paquet 3 : deux carrières Monde jouées minute par minute (essai-visible, ~20 min sous charge locale) ; carnet : 358 s.
     tests/match-essai-visible.cjs|tests/native-coach-notes06-worker.cjs) echo 900s ;;
     tests/native-player-knowledge-capacity.cjs) echo 300s ;;

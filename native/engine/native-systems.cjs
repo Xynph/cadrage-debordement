@@ -19,7 +19,7 @@ function bootstrap(){
   const domains={${definitions}},owners=new Map(),memo=new Map(),memoStats={};
   // Domaines mémorisables : projections coûteuses relues sans changement entre deux décisions (marché entre clubs,
   // carrière du manager, staff…), sans état transitoire ni dépendance au déroulé d'une commande.
-  const MEMO_DOMAINS=new Set(['interclubMarket','managerCareer','regenScouting','clubSupport','staffCareer','coachNotebook','youthDevelopment','staffMentoring','clubWorld','performanceAnalysis','staffEmployment','press']);
+  const MEMO_DOMAINS=new Set(['interclubMarket','managerCareer','regenScouting','clubSupport','staffCareer','coachNotebook','youthDevelopment','staffMentoring','clubWorld','performanceAnalysis','staffEmployment','press','rechercheCiblee']);
   // Réglage hors de S dont dépend une projection mémorisée (d.memoKey, ex. presse obligatoire) : un autre réglage périme la mémoire.
   const extraOf=d=>typeof d.memoKey==='function'?String(d.memoKey()):'';
   ${Object.entries(domains).map(([key,d])=>d.commands.map(c=>`owners.set(${JSON.stringify(c)},domains[${JSON.stringify(key)}]);`).join('')).join('')}
@@ -151,6 +151,8 @@ domains.roleContrat=require('./role-contrat.cjs');
 domains.discussionJoueur=require('./discussion-joueur.cjs');
 // Offre guidée : prime à la signature négociable, clause libératoire, clauses payées par les clubs gérés (native/engine/clauses-contrat.cjs).
 domains.clausesContrat=require('./clauses-contrat.cjs');
+// Recherche ciblée du recruteur (maillot, rôle, critères, priorité, recruteurs) : native/engine/recherche-ciblee.cjs.
+domains.rechercheCiblee=require('./recherche-ciblee.cjs');
 // Agents de joueurs nommés : annuaire tiré par la graine, un agent par joueur (native/engine/agents-joueurs.cjs).
 domains.agentsJoueurs=require('./agents-joueurs.cjs');
 // Discussion avec l'agent : ton (demande, propositions) et relation gardée (native/engine/ton-agent.cjs).
