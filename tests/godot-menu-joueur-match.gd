@@ -210,7 +210,6 @@ func run() -> void:
 		check(entrant_label, "l'entrant garde son vrai numéro (%d) sur la carte" % numero)
 		check(int(live().get("numeros", {}).get(entrant, 0)) == numero, "numéro gardé par le moteur")
 		var nom_tuile := "MatchBetweenPlayer%d" % (int(choix.slot) + 1)
-		check(await until(func(): return la_carte(between, nom_tuile) != null and str(la_carte(between, nom_tuile).get_meta("player_id", "")) == entrant, 60000), "Mon XV : l'entrant prend la carte du poste")
 		# Capture sur l'écran 2D posé (pas pendant le fondu vers un temps fort 3D).
 		await until(func(): return vue_2d(view) and not app.waiting, 60000)
 		await settle(20)
@@ -226,8 +225,12 @@ func run() -> void:
 			var medaille: Node = t.find_child("MatchBetweenFaceNumber", true, false) if t != null else null
 			for l: Node in (medaille.find_children("*", "Label", true, false) if medaille != null else []): texte = (l as Label).text
 			return texte
-		# Runner lent : la carte du poste peut rester cachée le temps d'un temps fort 3D, on laisse le match avancer pour le passer.
+		# Runner lent : la carte du poste peut rester cachée le temps d'un temps fort 3D, on laisse le match avancer pour le passer
+		# (en CI, 60 s à vitesse 1 n'ont pas suffi : la carte n'était pas encore visible, puis portait bien l'entrant).
 		Engine.time_scale = 4.0
+		var entrant_sur_carte := func() -> bool: return la_carte(between, nom_tuile) != null and str(la_carte(between, nom_tuile).get_meta("player_id", "")) == entrant
+		if not await until_vivant(entrant_sur_carte, 120000): print("MENU_JOUEUR carte du poste sans l'entrant : ", etat_direct(view))
+		check(entrant_sur_carte.call(), "Mon XV : l'entrant prend la carte du poste")
 		await until(func(): return lire_numero.call() == str(numero), 90000)
 		Engine.time_scale = 1.0
 		chiffre = lire_numero.call()
