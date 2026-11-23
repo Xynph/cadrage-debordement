@@ -165,6 +165,15 @@ func run() -> void:
 	check(flag != null and flag.texture != null, "Bandeau : drapeau du pays chargé")
 	var heading := full.find_child("ProfilePlayerName", true, false) as Label
 	check(heading != null and heading.text == str(target.name).to_upper(), "Bandeau : nom du joueur")
+	# Agent nommé (retour de Léo du 23/11/2026) : « Agent : <nom> » dans le bandeau, clic = sa petite fenêtre.
+	var agent_lien := full.find_child("PlayerAgentLink", true, false) as Button
+	check(agent_lien != null and agent_lien.text.begins_with("Agent : ") and agent_lien.text.length() > 9, "Bandeau : « Agent : <nom> » cliquable")
+	if agent_lien != null:
+		agent_lien.pressed.emit()
+		await settle(4)
+		check(app.find_child("FenetreAgentJoueur", true, false) != null and app.find_child("FenetreAgentClientVise", true, false) != null and windows(app).is_empty(), "Clic sur l'agent : petite fenêtre (Control), joueur surligné")
+		preload("res://ui/petite_fenetre.gd").fermer_derniere(self)
+		await settle(4)
 	check(windows(app).is_empty(), "Fiche complète : aucune fenêtre")
 
 	# Apprendre un poste (choix de Léo du 23/11/2026) : clic = petite fenêtre des postes, un clic sur un poste l'applique

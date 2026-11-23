@@ -91,6 +91,8 @@ budget() {
     # Règles japonaises (une carrière Monde partagée, six cas) : 81 à 102 s en CI sur 4 runs verts (mesures CD_CPU_PROFILE) ;
     # la limite par défaut de 180 s a déjà été frôlée sous charge ; budget ≈ 3 fois.
     tests/japan-match.cjs) echo 300s ;;
+    # Intensité automatique (coup d'envoi, trois carrières Monde) : 47 s en local, 106 s sur le runner (PR #1200) et 180 s dépassées sur la PR #1192 (suite non touchée, runner plus lent) ; budget ≈ 3 fois.
+    tests/intensite-auto.cjs) echo 420s ;;
     # Continuer jusqu'au prochain événement et retouches de cohérence : carrières Monde, plus de 180 s sur le runner (délai dépassé en CI sur main, Suites 6/7 et 7/7, après #720 et #722) ; assertions inchangées.
     tests/continuer-evenement-monde.cjs|tests/retouches-coherence.cjs) echo 600s ;;
     # Dilemmes de presse (#727) : carrière Monde, 146 s sur le runner sur main (shard 7) et délai de 180 s dépassé sur la PR #730 (shard 4, même code) ; budget ≈ 3 fois.
@@ -117,7 +119,10 @@ budget() {
     tests/match-rating-curve.cjs) echo 900s ;;
     # Outil Monde en fin de saison (#1058) : saison 1 entière validée par le moteur, puis premier match de la saison 2 ;
     # 117 s en local, 180 s dépassées en CI (Suites 6/10). Budget ≈ 3,5 fois.
-    tests/carriere-monde-fin-de-saison.cjs) echo 420s ;;
+    # 23/11/2026 : 214 s en local sous charge et 420 s dépassées en CI (PR #1199, Suites 6/10, suite et moteur non touchés) ; budget ≈ 4 fois.
+    tests/carriere-monde-fin-de-saison.cjs) echo 900s ;;
+    # Analyste vidéo : carrière Monde, 107 s en local sous charge et 180 s dépassées en CI (PR #1199, suite non touchée) ; budget ≈ 4 fois.
+    tests/analyste-video.cjs) echo 480s ;;
     # Audit des flux financiers migré en carrière Monde : 13 semaines tracées + contre-épreuve dans un second worker,
     # 85 s en local (20/11/2026) ; budget ≈ 5 fois, comme les autres carrières Monde sans poids mesuré.
     tests/world-finance-flow-audit.cjs) echo 420s ;;
@@ -195,6 +200,8 @@ budget() {
     tests/integration-cloud-complete.cjs) echo 900s ;;
     # Presse/recrutement06 en carrière Monde, 172 s seul en local et 180 s dépassé en CI (Suites 5/7) ; 420 s, assertions inchangées.
     tests/native-press-followups06-worker.cjs) echo 420s ;;
+    # Recherche ciblée (carrière Monde, recrutement) : 83 s en local, 180 s dépassées sur le runner (PR #1201, Suites 1/10) ; budget ≈ 5 fois, assertions inchangées.
+    tests/recherche-ciblee.cjs) echo 420s ;;
     # Lot 01 (Monde), paquet 3 : deux carrières Monde jouées minute par minute (essai-visible, ~20 min sous charge locale) ; carnet : 358 s.
     tests/match-essai-visible.cjs|tests/native-coach-notes06-worker.cjs) echo 900s ;;
     tests/native-player-knowledge-capacity.cjs) echo 300s ;;

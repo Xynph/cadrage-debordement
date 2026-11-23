@@ -41,7 +41,7 @@ function factory(){
  const vide=s=>({version:VERSION,season:s.season,clubs:{},followed:[]});
  function etat(s){
   if(!obj(s.clubSheet))s.clubSheet=vide(s);
-  if(s.clubSheet.season!==s.season){s.clubSheet.season=s.season;s.clubSheet.clubs={};}
+  if(s.clubSheet.season!==s.season){s.clubSheet.season=s.season;s.clubSheet.clubs={};delete s.clubSheet.derniers;}
   return s.clubSheet;
  }
  // Chaîne -> {n, joueurs:Map(jeton -> {m:[15 compteurs], b})}.
@@ -88,6 +88,9 @@ function factory(){
    for(const id of new Set((sh.used||[]).map(String)))if(!titulaires.has(id)&&membres.has(id)&&(Number(sh.minutes?.[id])||0)>0)fiche(id).b++;
    const texte=encoder(d);
    if(texte.length<=MAX_TEXT)st.clubs[club.id]=texte;
+   // Dernier XV aligné (petit terrain du rapport adverse, idée FM27 n° 29) : quinze jetons, vide = maillot hors club.
+   if(!obj(st.derniers))st.derniers={};
+   st.derniers[club.id]=Array.from({length:15},(_,i)=>initial[i]??null).map(id=>id&&membres.has(id)?jeton(id):'').join('.');
   }
   return true;
  }
@@ -159,7 +162,71 @@ function factory(){
   }
   const {n,parJoueur}=compteurs(s,club),maillots=[];
   for(let i=0;i<15;i++)maillots.push([...parJoueur.entries()].filter(([,j])=>j.m[i]>0).sort((a,b)=>b[1].m[i]-a[1].m[i]||b[1].total-a[1].total||(a[0]<b[0]?-1:1)).slice(0,3).map(([pid,j])=>({id:pid,starts:j.m[i]})));
-  return {matches:historique.length,detailed:detailles,sheets:n,essais,maillots};
+  return {matches:historique.length,detailed:detailles,sheets:n,essais,maillots,dernier:dernierXV(s,club),probable:probable(club).lineup.slice(0,15)};
+ }
+ // Points forts / faibles de l'adversaire (idée FM27 n° 29, choix de Léo du 23/11/2026) : chaque indicateur du club
+ // comparé à la moyenne de son championnat, sur les matchs joués (`S.history`). Saison en cours ; saison passée tant
+ // que le club n'a pas joué FORCES.minMatchs rencontres. Moyenne = tous les matchs entre membres du championnat
+ // (chaque camp compte pour une équipe-match) ; club hors championnat : tous les matchs de la saison.
+ //  - essais marqués / encaissés par match : fort ou faible à ±20 % de la moyenne ;
+ //  - touches et mêlées gagnées (%) : ±4 points ; pénalités concédées par match : ±15 % ;
+ //  - part des essais (marqués, encaissés) venus du ballon porté, marqués après la 60e, partis de plus de 50 m :
+ //    10 points au-dessus de la moyenne, sur 4 essais détaillés au moins.
+ const FORCES=Object.freeze({minMatchs:2,minEssais:4,relatif:.2,discipline:.15,conquete:4,part:10});
+ function cumul(){return {m:0,essais:0,contre:0,t:0,tg:0,mel:0,melg:0,pen:0,penM:0,pour:{n:0,b:0,fin:0,loin:0},subis:{n:0,b:0,fin:0}};}
+ function cumuler(c,r,side){
+  c.m++;
+  if(Array.isArray(r.tries)){c.essais+=Number(r.tries[side])||0;c.contre+=Number(r.tries[1-side])||0;}
+  const st=Array.isArray(r.stats)&&obj(r.stats[side])?r.stats[side]:{},n=x=>Number.isFinite(x)&&x>=0;
+  if(n(st.lineouts)&&n(st.lineoutsWon)&&st.lineoutsWon<=st.lineouts){c.t+=st.lineouts;c.tg+=st.lineoutsWon;}
+  if(n(st.scrums)&&n(st.scrumsWon)&&st.scrumsWon<=st.scrums){c.mel+=st.scrums;c.melg+=st.scrumsWon;}
+  if(n(st.penalties)){c.pen+=st.penalties;c.penM++;}
+  if(Array.isArray(r.essais))for(const e of r.essais){
+   if(!Array.isArray(e)||e.length<4)continue;
+   const k=e[1]===side?c.pour:c.subis;k.n++;if(e[2]==='b')k.b++;if(Number(e[0])>=60)k.fin++;if(k===c.pour&&Number(e[3])>50)k.loin++;
+  }
+ }
+ const arrondi=x=>x===null||!Number.isFinite(x)?null:Math.round(x*10)/10;
+ function taux(c){
+  const part=(k,x)=>k.n>=FORCES.minEssais?arrondi(100*x/k.n):null;
+  return {matchs:c.m,essais:c.m?arrondi(c.essais/c.m):null,encaisses:c.m?arrondi(c.contre/c.m):null,
+   touches:c.t?arrondi(100*c.tg/c.t):null,melees:c.mel?arrondi(100*c.melg/c.mel):null,penalites:c.penM?arrondi(c.pen/c.penM):null,
+   porte:part(c.pour,c.pour.b),fin:part(c.pour,c.pour.fin),loin:part(c.pour,c.pour.loin),porteContre:part(c.subis,c.subis.b),finContre:part(c.subis,c.subis.fin),
+   detailles:c.pour.n,detaillesContre:c.subis.n};
+ }
+ // [clé, sens (+1 : plus = mieux, -1 : moins = mieux), mesure (relatif / points), seuil, seulement fort / faible].
+ const INDICATEURS=Object.freeze([['essais',1,'relatif',FORCES.relatif],['encaisses',-1,'relatif',FORCES.relatif],['touches',1,'points',FORCES.conquete],['melees',1,'points',FORCES.conquete],
+  ['penalites',-1,'relatif',FORCES.discipline],['porte',1,'points',FORCES.part,'fort'],['fin',1,'points',FORCES.part,'fort'],['loin',1,'points',FORCES.part,'fort'],['porteContre',-1,'points',FORCES.part,'faible'],['finContre',-1,'points',FORCES.part,'faible']]);
+ function forcesAdverses(s,clubId){
+  const lg=ligueDe(s,clubId),membres=lg?new Set(s.worldMode.leagues[lg].members||[]):null;
+  const valide=r=>Array.isArray(r?.pair)&&r.pair.length===2&&Array.isArray(r.score);
+  for(const saison of [s.season,s.season-1]){
+   if(!(saison>=1))break;
+   const lignes=(s.history||[]).filter(r=>valide(r)&&(r.season===undefined?saison===s.season:r.season===saison));
+   const club=cumul();
+   for(const r of lignes)if(r.pair.includes(clubId))cumuler(club,r,r.pair.indexOf(clubId));
+   if(club.m<FORCES.minMatchs)continue;
+   const ligue=cumul();
+   for(const r of lignes)if(!membres||r.pair.every(id=>membres.has(id)))for(let side=0;side<2;side++)cumuler(ligue,r,side);
+   const eux=taux(club),moy=taux(ligue),points=[];
+   for(const [cle,sens,mesure,seuil,seul] of INDICATEURS){
+    const v=eux[cle],m=moy[cle];if(v===null||m===null||(mesure==='relatif'&&m<=0))continue;
+    const ecart=mesure==='relatif'?(v/m-1)/seuil:(v-m)/seuil,signe=ecart*sens;
+    if(Math.abs(ecart)<1)continue;
+    const fort=signe>0;if(seul&&(seul==='fort')!==fort)continue;
+    points.push({cle,fort,valeur:v,ligue:m,force:Math.round(Math.abs(ecart)*100)/100});
+   }
+   points.sort((a,b)=>b.force-a.force||(a.cle<b.cle?-1:1));
+   return {saison:saison===s.season?'en cours':'passée',ligue:lg?nomLigue(s,lg)||lg:null,club:eux,moyenne:moy,points};
+  }
+  return null;
+ }
+ // XV du dernier match (jetons enregistrés à la fin du match) et XV probable (composition automatique) : 15 identifiants.
+ function dernierXV(s,club){
+  const texte=s.clubSheet?.season===s.season?s.clubSheet?.derniers?.[club.id]:null;if(typeof texte!=='string')return null;
+  const par=new Map(),vus=new Map();
+  for(const p of club.players){const tk=jeton(p.id);vus.set(tk,(vus.get(tk)||0)+1);par.set(tk,String(p.id));}
+  return texte.split('.').slice(0,15).map(tk=>tk&&vus.get(tk)===1?par.get(tk):null);
  }
  function sheet(clubId){
   const s=state();check(s,'aucune carrière');
@@ -203,7 +270,10 @@ function factory(){
    leagueId:lg,leagueName:lg?nomLigue(s,lg):null,
    // Santé financière (club-finance-health.cjs) : étiquette, propriétaire, résultats des trois dernières saisons.
    finances:typeof santeFiche==='function'&&typeof budgetActif==='function'&&budgetActif()?santeFiche(clubId):null,
-   coach:d?.coach?.name||null,president:d?.president?.name||null,director:d?.director?.name||null,strategy:d?.strategy||null,
+   coach:d?.coach?.name||null,coachId:d?.coach?.id??null,
+   // Style de jeu de l'entraîneur (identité du club dans le moteur de match : conquete, large, occupation, equilibre).
+   coachStyle:typeof managerStyle==='function'?managerStyle(clubId):null,
+   president:d?.president?.name||null,director:d?.director?.name||null,strategy:d?.strategy||null,
    wageBill:club.players.reduce((a,p)=>a+(Number(p.salary)||0),0),squadSize:club.players.length,
    averageAge:club.players.length?Math.round(club.players.reduce((a,p)=>a+(Number(p.age)||0),0)/club.players.length*10)/10:null,
    table:{points:club.points??0,played:club.played??0,won:club.won??0,drawn:club.drawn??0,lost:club.lost??0,pf:club.pf??0,pa:club.pa??0,bonus:club.bonus??0,form:Array.isArray(club.form)?club.form.slice(-5):[]},
@@ -221,6 +291,7 @@ function factory(){
    squad,
    xv:xvType(s,club),
    rapport:rapportAdverse(s,club,historique),
+   forces:forcesAdverses(s,clubId),
   };
  }
  function execute(command,payload){
@@ -240,6 +311,10 @@ function factory(){
   check(st.followed.length<=MAX_FOLLOW&&new Set(st.followed).size===st.followed.length&&st.followed.every(id=>int(id,0,s.clubs.length-1)),'clubs suivis invalides');
   for(const [k,v] of Object.entries(st.clubs)){
    check(/^\d{1,4}$/.test(k)&&Number(k)<s.clubs.length&&typeof v==='string'&&v.length<=MAX_TEXT&&/^\d{1,4}\|([0-9a-z]{1,7}:(\d{1,2}x\d{1,4}|b\d{1,4})(\.(\d{1,2}x\d{1,4}|b\d{1,4}))*( |$))*$/.test(v),'feuilles du club invalides');
+  }
+  if(st.derniers!==undefined){
+   check(obj(st.derniers),'derniers XV invalides');
+   for(const [k,v] of Object.entries(st.derniers))check(/^\d{1,4}$/.test(k)&&Number(k)<s.clubs.length&&typeof v==='string'&&/^([0-9a-z]{0,7}\.){14}[0-9a-z]{0,7}$/.test(v),'derniers XV invalides');
   }
   return true;
  }
@@ -268,11 +343,11 @@ function factory(){
    Object.assign(wrapped,original);wrapped.__clubSheet=true;finishRound=wrapped;
   }
   if(typeof advanceSeason==='function'&&!advanceSeason.__clubSheet){
-   const original=advanceSeason,wrapped=function(){const result=original.apply(this,arguments);const s=state();if(s?.clubSheet&&s.clubSheet.season!==s.season){s.clubSheet.season=s.season;s.clubSheet.clubs={};}return result;};
+   const original=advanceSeason,wrapped=function(){const result=original.apply(this,arguments);const s=state();if(s?.clubSheet&&s.clubSheet.season!==s.season){s.clubSheet.season=s.season;s.clubSheet.clubs={};delete s.clubSheet.derniers;}return result;};
    Object.assign(wrapped,original);wrapped.__clubSheet=true;advanceSeason=wrapped;
   }
   return true;
  }
- return {project,validate,execute,installHooks,sheet,enregistrer,jeton,decoder,encoder,xvFrequent,compteurs,xvType};
+ return {project,validate,execute,installHooks,sheet,enregistrer,jeton,decoder,encoder,xvFrequent,compteurs,xvType,forcesAdverses,dernierXV,FORCES};
 }
 module.exports={files,commands,factory};

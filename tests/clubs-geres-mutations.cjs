@@ -66,6 +66,11 @@ test('Monde : accord entre clubs gérés payé à l’accord, président à la c
     assert.equal(x.apresS, x.cs + x.montant, 'le vendeur encaisse à l’accord');
     assert.equal(x.ici, true, 'le joueur reste à son club jusqu’à la bascule');
     assert.ok(x.plan && x.plan.etat === 'en_cours', 'le président intervient à la conclusion');
+    // Page « Dans le monde » (idée FM27 n° 30) : le transfert entre clubs adverses est gardé et projeté (carte « Dernière minute »).
+    const garde = lire('S.mondeTransferts[0]');
+    assert.deepEqual([garde.type, garde.playerId, garde.vendeurId, garde.acheteurId, garde.montant], ['accord', x.p, x.s, x.b, x.montant], 'transfert du monde gardé');
+    const vu = jeu.call('snapshot').monde.transferts[0];
+    assert.equal(vu.playerId, x.p, 'transfert du monde projeté pour la page « Dans le monde »');
     // Échéance du président : ses ventes deviennent des accords payés tout de suite, joueurs au 1er juillet.
     const v = lire(`(()=>{const b=S.clubs[${x.b}],plan=S.presidentReprise.clubs[${x.b}];plan.echeance=CDWorldCareer.calendarToday(S);const avant=b.cash;repriseSemaine();
       const ventes=S.calendrierMutations.accordsIA.filter(a=>a.vendeurId===${x.b}&&a.saison===S.season);
@@ -82,6 +87,7 @@ test('Monde : accord entre clubs gérés payé à l’accord, président à la c
     assert.equal(r.arrive, true, 'accord honoré malgré l’effectif plein');
     assert.ok(r.n <= r.cap, 'revenu à sa capacité : ' + r.n + '/' + r.cap);
     assert.ok(r.fil.some(t => t.includes(' pour revenir à ' + r.cap + ' joueurs après ses arrivées.')), 'libérations écrites');
+    assert.ok(lire('S.mondeTransferts').some(t => t.playerId === x.p), 'transfert du monde toujours gardé après la bascule');
   } finally { jeu.fermer(); }
 });
 test('Monde : tours des clubs gérés, accords différés, pré-contrats, rumeurs, temps forts, bascule', { timeout: 900000 }, () => {

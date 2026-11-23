@@ -219,7 +219,7 @@ const EFFETS := {
 		"long": [["flag", "Territoire", "+"], ["ball", "Récupération", "−"]],
 	},
 }
-const PORTEES := {"court": Vector2(10, 14), "long": Vector2(25, 35)}
+const PORTEES := {"court": Vector2(10, 14), "long": Vector2(18, 26)}
 
 ## Demi-terrain du renvoi : ligne médiane à gauche, ligne des 10 m, zone de chute du choix en clair.
 class Portee extends Control:

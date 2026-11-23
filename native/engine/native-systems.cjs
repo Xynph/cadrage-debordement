@@ -19,7 +19,7 @@ function bootstrap(){
   const domains={${definitions}},owners=new Map(),memo=new Map(),memoStats={};
   // Domaines mémorisables : projections coûteuses relues sans changement entre deux décisions (marché entre clubs,
   // carrière du manager, staff…), sans état transitoire ni dépendance au déroulé d'une commande.
-  const MEMO_DOMAINS=new Set(['interclubMarket','managerCareer','regenScouting','clubSupport','staffCareer','coachNotebook','youthDevelopment','staffMentoring','clubWorld','performanceAnalysis','staffEmployment','press']);
+  const MEMO_DOMAINS=new Set(['interclubMarket','managerCareer','regenScouting','clubSupport','staffCareer','coachNotebook','youthDevelopment','staffMentoring','clubWorld','performanceAnalysis','staffEmployment','press','rechercheCiblee']);
   // Réglage hors de S dont dépend une projection mémorisée (d.memoKey, ex. presse obligatoire) : un autre réglage périme la mémoire.
   const extraOf=d=>typeof d.memoKey==='function'?String(d.memoKey()):'';
   ${Object.entries(domains).map(([key,d])=>d.commands.map(c=>`owners.set(${JSON.stringify(c)},domains[${JSON.stringify(key)}]);`).join('')).join('')}
@@ -141,6 +141,8 @@ domains.weekProgram=require('./programme-semaine.cjs');
 domains.fragilite=require('./fragilite.cjs');
 // Familiarité au poste (0-20 par maillot) : efficacité au poste, progression par match et entraînement, oubli (native/engine/familiarite-poste.cjs).
 domains.familiarite=require('./familiarite-poste.cjs');
+// Staff par service : postes visés au-delà du minimum (bonus et salaire), avis des dirigeants (native/engine/staff-services.cjs).
+domains.staffServices=require('./staff-services.cjs');
 // Relevé mensuel des qualités (12 mois glissants, courbe de l'onglet Développement) : native/engine/releve-qualites.cjs.
 domains.releveQualites=require('./releve-qualites.cjs');
 // Rôle promis au contrat (titulaire, rotation, espoir, appoint), enregistré à la signature (native/engine/role-contrat.cjs).
@@ -149,7 +151,13 @@ domains.roleContrat=require('./role-contrat.cjs');
 domains.discussionJoueur=require('./discussion-joueur.cjs');
 // Offre guidée : prime à la signature négociable, clause libératoire, clauses payées par les clubs gérés (native/engine/clauses-contrat.cjs).
 domains.clausesContrat=require('./clauses-contrat.cjs');
+// Recherche ciblée du recruteur (maillot, rôle, critères, priorité, recruteurs) : native/engine/recherche-ciblee.cjs.
+domains.rechercheCiblee=require('./recherche-ciblee.cjs');
+// Agents de joueurs nommés : annuaire tiré par la graine, un agent par joueur (native/engine/agents-joueurs.cjs).
+domains.agentsJoueurs=require('./agents-joueurs.cjs');
+// Discussion avec l'agent : ton (demande, propositions) et relation gardée (native/engine/ton-agent.cjs).
+domains.tonAgent=require('./ton-agent.cjs');
 const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files,...domains.clubSheet.files,...domains.pressPromises.files,...domains.clubMail.files,...domains.multiplex.files,...domains.avantMatch.files,...domains.doublons.files,...domains.matchIncidents.files,...domains.weekProgram.files])]);
-const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands,...domains.clubMail.commands,...domains.multiplex.commands,...domains.avantMatch.commands,...domains.doublons.commands,...domains.matchIncidents.commands,...domains.weekProgram.commands,...domains.familiarite.commands]);
+const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands,...domains.clubMail.commands,...domains.multiplex.commands,...domains.avantMatch.commands,...domains.doublons.commands,...domains.matchIncidents.commands,...domains.weekProgram.commands,...domains.familiarite.commands,...domains.tonAgent.commands,...domains.staffServices.commands]);
 if(new Set(allCommands).size!==allCommands.length)throw Error('Commandes natives de domaine en double.');
 module.exports={files:allFiles,commands:allCommands,bootstrap};

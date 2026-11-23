@@ -342,6 +342,33 @@ function createBridge(options={}){
    const nativeConfirmMatchResult=(${confirmMatchResult.toString()});`);
   // Match en temps forts (mode de base ; repli CD_MATCH_TEMPS_FORTS=0) : lecture seule du match en cours.
   run(`const nativeMatchDirect=(${matchDirect.lecteur.toString()})();`);
+  // Rapport de l'analyste vidéo après le match (match-direct.cjs analyseVideo) : calculé hors de la VM sur le journal du
+  // match terminé (lecture seule, aucun tirage), gardé dans `S.lastReport.analyse` à la clôture de la journée
+  // (captureReport) ; avant la clôture, lu sur le direct terminé (decisions.cjs). Contrôlé à chaque validation.
+  ctx.nativeAnalyseVideoHote=texte=>JSON.stringify(matchDirect.analyseVideo(JSON.parse(texte)));
+  run(`const nativeAnalyseVideo=(()=>{
+    let cle=null,valeur=null;
+    const calculer=l=>{
+     if(!l||!l.finished||!Array.isArray(l.events)||!l.events.length)return null;
+     const k=String(l.pair)+'|'+String(l.score)+'|'+l.events.length;
+     if(k!==cle){try{valeur=JSON.parse(nativeAnalyseVideoHote(JSON.stringify(l.events)));}catch(e){valeur=null;}cle=k;}
+     return valeur?JSON.parse(JSON.stringify(valeur)):null;
+    };
+    const entier=(n,a,b)=>Number.isInteger(n)&&n>=a&&n<=b;
+    const paire=(x,max)=>Array.isArray(x)&&x.length===2&&x.every(n=>entier(n,0,max));
+    const valider=a=>{
+     const ok=a&&typeof a==='object'&&!Array.isArray(a)&&a.version===${matchDirect.ANALYSE_VERSION}
+      &&Array.isArray(a.domination)&&a.domination.length<=120&&a.domination.every(n=>entier(n,-100,100))
+      &&(a.miTemps===null||entier(a.miTemps,0,120))&&a.zone22&&paire(a.zone22.entrees,200)&&paire(a.zone22.points,400)&&paire(a.zone22.secondes,7200)
+      &&Array.isArray(a.occasions)&&a.occasions.length<=200&&a.occasions.every(o=>Array.isArray(o)&&o.length===2&&entier(o[0],0,120)&&(o[1]===0||o[1]===1));
+     if(!ok)throw Error('Rapport de l’analyste vidéo invalide.');
+    };
+    return {calculer,valider};
+   })();
+   const nativeCaptureReportSansAnalyse=captureReport;
+   captureReport=function(){const l=S.live;nativeCaptureReportSansAnalyse();if(l&&S.lastReport&&String(S.lastReport.pair)===String(l.pair)){const a=nativeAnalyseVideo.calculer(l);if(a)S.lastReport.analyse=a;}};
+   const nativeValidateAnalyse=validateCareer;
+   validateCareer=state=>{const result=nativeValidateAnalyse(state);if(state?.lastReport&&state.lastReport.analyse!==undefined)nativeAnalyseVideo.valider(state.lastReport.analyse);return result;};`);
   // Dilemme du bonus en fin de match (match-bonus.cjs) : barème lu dans les classements, décision des clubs IA.
   run(`const nativeMatchBonus=(${matchBonus.factory.toString()})();nativeMatchBonus.installHooks();`);
   let matchHighlights=options.matchHighlights??null;
@@ -1294,6 +1321,9 @@ function createBridge(options={}){
      run("nativeSystems.domain('fragilite').observe();");
      // Familiarité au poste (familiarite-poste.cjs) : valeur de départ posée sur les joueurs créés et les anciennes carrières.
      run("nativeSystems.domain('familiarite').observe();");
+     // Agents de joueurs nommés (agents-joueurs.cjs) : annuaire posé à la création et sur les anciennes carrières, relation
+     // et caractère de l'agent repris des anciennes sauvegardes (S.tonAgent version 1 → 2).
+     run("nativeSystems.domain('agentsJoueurs').observe();");
      // Règle « Auto » par forme (dist/development.js) : posée à la création et sur les anciennes carrières (clé toujours
      // présente : les lectures mémorisées de la projection restent valides d'une commande à l'autre).
      run("if(S&&typeof intensiteAutoValide==='function'&&!intensiteAutoValide(S.intensiteAuto))S.intensiteAuto=INTENSITE_AUTO_DEFAUT.slice();");
