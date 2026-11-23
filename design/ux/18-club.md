@@ -187,7 +187,7 @@ Club (rail)
 | Vestiaire (moral, disponibles, leader) | vestiaire | semaine | entiers | « — » |
 | Installations (niveau, devis) | club | à l'amélioration | n/10 | « — » |
 | Staff (rôle, âge, contrat) | staff | semaine, contrats | liste | « Poste vacant » |
-| Supporters (sentiment, abonnés) | club | semaine | 0-100 ; entier | masqué |
+| Supporters (humeur des tribunes, abonnés) | club | semaine | 0-100 ; entier | masqué |
 | Trésorerie, budget | `finance.cash`, `finance.wage` | semaine | euros | « — » |
 
 L'écran ne modifie rien. Événements : améliorer l'installation, prolonger, libérer, présenter une demande (voir `decision_feedback.gd` : `club_facility_upgrade`, `extend_contract`, etc.).

@@ -7,8 +7,9 @@ extends RefCounted
 ## recruteur : fiche du joueur ; courrier : le mail en Réception).
 const U = preload("res://ui/management_state.gd")
 
-## Catégorie du moteur -> rubrique de la Réception (filtres, icônes et couleurs existants).
-const CATEGORY := {"infirmerie":"Médical", "commotion":"Médical", "vestiaire":"Staff", "staff":"Staff", "recrutement":"Recrutement", "presse":"Club", "direction":"Direction", "contrats":"Direction", "competition":"Compétitions", "formation":"Formation", "moments":"Club", "meteo":"Météo", "transferts":"Recrutement"}
+## Catégorie du moteur -> rubrique de la Réception (filtres, icônes et couleurs). Rubriques renommées par Léo le
+## 23/11/2026 : Recrutement → Transferts, Direction → Conseil (les écrans du jeu gardent leur nom).
+const CATEGORY := {"infirmerie":"Médical", "commotion":"Médical", "vestiaire":"Staff", "staff":"Staff", "recrutement":"Transferts", "presse":"Club", "direction":"Conseil", "contrats":"Conseil", "competition":"Compétitions", "formation":"Formation", "moments":"Club", "meteo":"Météo", "transferts":"Transferts"}
 ## Écrans que le courrier et les arrêts peuvent ouvrir (routes de main.gd) ; « infirmerie », « contrats » et
 ## « fiche » sont des vues préparées (Effectif filtré, fiche d'un joueur).
 const ROUTES := ["Composition", "Effectif", "Classements", "Recrutement", "Préparation", "Vestiaire", "Presse", "Club", "Finances", "Formation", "Calendrier", "Réception", "Bureau"]
@@ -32,6 +33,23 @@ static func answer(model: Dictionary, mail: Dictionary) -> String:
 	if answers is Dictionary and answers.has(mail.get("id", "")): return str(answers[mail.id])
 	return str(mail.get("choice", "")) if mail.get("choice") is String else ""
 
+## Choix « Déléguer » (moteur : club-mail.cjs, adjoint) : Gabi répond à ta place avec une des réponses du mail.
+const DELEGUER := "deleguer"
+
+## Vrai si Gabi a répondu à ce mail (délégation), y compris quand c'est affiché avant la réponse du moteur.
+static func delegated(model: Dictionary, mail: Dictionary) -> bool:
+	var marks: Variant = model.get("clubLife", {}).get("clubMail", {}).get("delegues")
+	return mail.get("delegue", false) == true or (marks is Dictionary and marks.get(mail.get("id", ""), false) == true)
+
+## Réponse retenue sous forme {id, libelle, genre} ({} sans réponse) : celle du moteur, ou celle affichée dès le clic.
+static func chosen_option(model: Dictionary, mail: Dictionary) -> Dictionary:
+	var chosen := answer(model, mail)
+	if chosen.is_empty(): return {}
+	if mail.get("reponse") is Dictionary and str(mail.reponse.get("id", "")) == chosen: return mail.reponse
+	for option: Dictionary in mail.get("reponses", []):
+		if str(option.get("id", "")) == chosen: return option
+	return {"id":chosen, "libelle":chosen, "genre":"neutre"}
+
 ## Vrai si le mail attend encore une réponse du manager.
 static func awaiting(model: Dictionary, mail: Dictionary) -> bool:
 	return str(mail.get("status", "")) == "nouveau" and answer(model, mail).is_empty() and not (mail.get("reponses", []) as Array).is_empty()
@@ -41,12 +59,9 @@ static func messages(model: Dictionary) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for mail: Dictionary in mails(model):
 		var text := str(mail.get("corps", "")) + "\n\n— " + str(mail.get("expediteur", ""))
-		var chosen := answer(model, mail)
+		var chosen := chosen_option(model, mail)
 		if not chosen.is_empty():
-			var label := chosen
-			for option: Dictionary in mail.get("reponses", []):
-				if option.get("id") == chosen: label = str(option.get("libelle", chosen))
-			text += "\n\nTa réponse : " + label + (("\n" + str(mail.resultat)) if mail.get("resultat") is String else "")
+			text += ("\n\nGabi a répondu : " if delegated(model, mail) else "\n\nTa réponse : ") + str(chosen.get("libelle", "")) + (("\n" + str(mail.resultat)) if mail.get("resultat") is String else "")
 		elif str(mail.get("status", "")) == "classe": text += "\n\nSans réponse de ta part, le dossier a été classé."
 		result.append({"id":str(mail.id), "subject":str(mail.get("sujet", "")), "text":text, "category":CATEGORY.get(str(mail.get("categorie", "")), "Club"),
 			"route":route_of(str(mail.get("ecran", ""))), "position":100000 + int(str(mail.id).trim_prefix("mail-")), "club_mail":mail})
@@ -110,7 +125,8 @@ static func stop_route(app: Control, stop: Dictionary) -> String:
 	if ecran.is_empty(): return ""
 	return prepare(app, ecran, str(stop.get("joueur", "")), true)
 
-## Réponse du manager : commande du moteur (affichée tout de suite, annulée si le moteur la refuse).
+## Réponse du manager (ou DELEGUER : Gabi répond) : commande du moteur envoyée dès le clic, sans confirmation
+## (règle de Léo du 23/11/2026), affichée tout de suite et annulée si le moteur la refuse.
 static func reply(app: Control, mail_id: String, choice: String) -> bool:
 	return app._command("club_mail_reply", {"id":mail_id, "choice":choice})
 

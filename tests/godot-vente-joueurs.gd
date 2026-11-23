@@ -150,17 +150,30 @@ func executer() -> void:
 	verifier(panneau != null and panneau.is_visible_in_tree(), "carte Marché des transferts sur la fiche")
 	if panneau != null:
 		verifier(texte(panneau, "PlayerSaleStatus").begins_with("Offre reçue"), "état de vente : " + texte(panneau, "PlayerSaleStatus"))
-		verifier(texte(panneau, "PlayerSaleToggle") == "Retirer du marché", "bouton : " + texte(panneau, "PlayerSaleToggle"))
+		verifier(texte(panneau, "PlayerSaleToggle") == "Liste des transferts", "bouton : " + texte(panneau, "PlayerSaleToggle"))
 		verifier(texte(panneau, "PlayerSaleOffers").begins_with("Offres reçues"), "accès aux offres depuis la fiche")
 		sans_chevauchement(panneau, ["PlayerSaleStatus", "PlayerSaleReason", "PlayerSaleToggle", "PlayerSaleOffers"], "fiche")
 		textes_lisibles(panneau, "fiche · marché")
+		# Disponibilité (idée 18) : petite fenêtre avec la phrase de l'agent ; liste des transferts cochée, prêt avec sa raison.
+		(noeud(panneau, "PlayerSaleToggle") as Button).pressed.emit(); await poser(6)
+		var dispo := noeud(app, "NegoDispo") as Control
+		verifier(dispo != null and dispo.is_visible_in_tree(), "Disponibilité : petite fenêtre ouverte")
+		if dispo != null:
+			verifier(noeud(dispo, "NegoDispoPhraseTexte") != null and texte(dispo, "NegoDispoPhraseTexte") == "Il sait qu’il est sur le marché.", "Disponibilité : phrase de l'agent (" + texte(dispo, "NegoDispoPhraseTexte") + ")")
+			for cle in ["garde", "liste", "pret"]: verifier(noeud(dispo, "NegoDispoChoix_" + cle) != null, "Disponibilité : ligne " + cle)
+			verifier(noeud(noeud(dispo, "NegoDispoChoix_liste"), "NegoDispoActif") != null, "Disponibilité : liste des transferts cochée")
+			verifier(noeud(dispo, "NegoDispoChoixLien_garde") != null and noeud(dispo, "NegoDispoChoixLien_liste") == null, "Disponibilité : « Pas disponible » cliquable, choix actuel sans clic")
+			verifier(noeud(dispo, "NegoDispoConfirmer") == null, "Disponibilité : clic = appliqué, pas de bouton Confirmer")
+			await capturer("vente-disponibilite.png")
+			verifier(load("res://ui/petite_fenetre.gd").fermer_derniere(self), "Disponibilité : Échap ferme la petite fenêtre")
+			await poser(4)
 	await capturer("vente-fiche.png")
 	app.selected_player = str(attendu.recrue)
 	app._render(); await poser(16)
 	panneau = noeud(app, "PlayerSalePanel") as Control
 	if panneau != null:
 		verifier(texte(panneau, "PlayerSaleReason") == str(attendu.raisonRecrue), "raison de blocage en clair : " + texte(panneau, "PlayerSaleReason"))
-		verifier((noeud(panneau, "PlayerSaleToggle") as Button).disabled, "« Proposer aux autres clubs » grisé pour une recrue")
+		verifier((noeud(panneau, "PlayerSaleToggle") as Button).disabled, "« Disponibilité » grisé pour une recrue (ni vente ni prêt)")
 		sans_chevauchement(panneau, ["PlayerSaleStatus", "PlayerSaleReason", "PlayerSaleToggle", "PlayerSaleOffers"], "fiche recrue")
 	app.selected_player = str(attendu.enAttente)
 	app._render(); await poser(16)
@@ -200,7 +213,7 @@ func executer() -> void:
 		if etat != null:
 			verifier(texte(etat, "PlayerSaleStatus").begins_with("Offre reçue"), "Effectif → fiche : " + texte(etat, "PlayerSaleStatus"))
 			var bascule := noeud(etat, "PlayerSaleToggle") as Button
-			verifier(bascule != null and bascule.is_visible_in_tree() and not bascule.disabled and bascule.text == "Retirer du marché", "Effectif → fiche : bouton retirer")
+			verifier(bascule != null and bascule.is_visible_in_tree() and not bascule.disabled and bascule.text == "Liste des transferts", "Effectif → fiche : bouton Disponibilité")
 			var offres := noeud(etat, "PlayerSaleOffers") as Button
 			verifier(offres != null and offres.is_visible_in_tree() and not offres.disabled, "Effectif → fiche : accès aux offres")
 			textes_lisibles(etat, "Effectif → fiche · marché")

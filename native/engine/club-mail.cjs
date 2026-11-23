@@ -7,7 +7,8 @@
 //  - Recevoir un mail ne change rien au monde. La génération lit l'état et n'écrit que la boîte (S.clubMail) ; le
 //    choix d'une formulation ou d'une variante vient d'une empreinte (date, club, type, sujet), jamais du flux de
 //    hasard du moteur.
-//  - Seule la réponse du manager a un effet : commande `club_mail_reply` {id, choice}, une décision comme les autres,
+//  - Seule la réponse du manager a un effet : commande `club_mail_reply` {id, choice}, une décision comme les autres
+//    (choix « deleguer » : l'adjoint Gabi répond à sa place, voir adjoint()),
 //    notée au journal d'actions (#762) et rejouée à l'identique. Les effets passent par les mécaniques existantes
 //    (moral, confiance de la direction, relations presse, satisfaction, promesse de temps de jeu, charge physique,
 //    séance collective, préparation collective, promotion d'un jeune, trésorerie) et restent mesurés.
@@ -514,7 +515,11 @@ function factory() {
     },
     affluence(F, t) {
       const g = F.playedOn(F.yesterday); if (!g || !g.result.home) return [];
-      const fans = F.s.pressRelations?.fanTrust ?? 50, band = fans >= 60 ? 'plein' : fans >= 40 ? 'moyen' : 'faible';
+      // Tribunes décrites d'après le public réel du match (affluence / capacité) ; sans chiffre, l'humeur des supporters.
+      const cap = Number(F.club.stadiumCapacity) || 0, vu = (F.hist || []).find(r => r.fixtureId === g.fixture.id)?.affluence;
+      let band;
+      if (Number.isFinite(vu) && cap > 0) band = vu / cap >= 0.85 ? 'plein' : vu / cap >= 0.6 ? 'moyen' : 'faible';
+      else { let h = null; try { h = nativeSystems.domain('clubStrategy').humeur(); } catch (e) { h = null; } const fans = Number.isFinite(h) ? h : 50; band = fans >= 60 ? 'plein' : fans >= 40 ? 'moyen' : 'faible'; }
       return [{ key: g.fixture.id, club: g.result.opp, vars: { adversaire: F.name(g.result.opp), capacite: euros(Number(F.club.stadiumCapacity) || 0), ambiance: pick(t.variantes?.[band], g.fixture.id) } }];
     },
     sponsor(F) {
@@ -981,8 +986,94 @@ function factory() {
   function nature(type) { const t = TYPES[type] || {}, n = t.nature; return n === 'action' || n === 'info' || n === 'routine' ? n : t.arret ? 'action' : 'routine'; }
   function rang(type) { return ({ action: 3, info: 2, routine: 1 })[nature(type)] * 1000 - Math.min(999, TYPES[type]?.priorite ?? 99); }
 
+  // ------------------------------------------------------------------ délégation à l'adjoint (Léo, 23/11/2026)
+  // « Déléguer » (choix `deleguer` de `club_mail_reply`) : Gabi répond à la place du manager avec une des réponses du
+  // mail. Choix déterministe (aucun tirage, rejoué à l'identique par le journal) parmi les réponses possibles
+  // aujourd'hui qui n'ouvrent pas un écran : chaque réponse est notée selon ses effets et le contexte (moral du groupe,
+  // confiance de la direction, trésorerie, charge, satisfaction et rechute du joueur, fatigue de l'effectif). Gabi est
+  // prudent : pas de dépense qui pèse sur la caisse, pas de promesse ni de décision de structure (vente, appel, A2R,
+  // contrats, promotion, consignes) quand une réponse plus sage existe. À égalité, la première réponse du type.
+  // Aucune réponse possible hors écran (commotion : l'infirmerie décide) : pas de délégation.
+  const DELEGUER = 'deleguer';
+  const fatigueJoueur = p => Number(p?.physicalLoad?.fatigue) || 0;
+  function contexteAdjoint(s, m) {
+    const club = s.clubs[s.club], p = m.player ? club.players.find(x => x.id === m.player) || null : null;
+    const charges = club.players.map(fatigueJoueur);
+    return { p, moral: s.morale ?? 70, confiance: s.trust ?? 50, caisse: Math.max(0, club.cash ?? 0),
+      fatigue: p ? fatigueJoueur(p) : 0, effectif: charges.length ? charges.reduce((a, b) => a + b, 0) / charges.length : 0,
+      satisfaction: p?.satisfaction?.score ?? 65, focus: s.collectiveFocus ?? null };
+  }
+  // Note d'une réponse pour l'adjoint (plus haute = préférée).
+  function noteAdjoint(x, r) {
+    const e = r.effets || {};
+    let n = 0;
+    const cout = euros => euros / 4000 + 30 * euros / Math.max(x.caisse, 1000);
+    if (Number.isFinite(e.moral)) n += e.moral * (x.moral < 55 ? 4.5 : 3);
+    if (Number.isFinite(e.confiance)) n += e.confiance * (x.confiance < 40 ? 4 : 2);
+    if (Number.isFinite(e.supporters)) n += e.supporters * 1.5;
+    if (Number.isFinite(e.medias)) n += e.medias;
+    if (Number.isFinite(e.pression)) n -= e.pression * 1.5;
+    if (Number.isFinite(e.satisfaction)) n += e.satisfaction * (x.satisfaction < 50 ? 1.5 : 1);
+    if (Number.isFinite(e.fatigue)) n -= e.fatigue * (x.fatigue >= 60 ? 0.6 : 0.25);
+    if (Number.isFinite(e.condition)) n += e.condition * 0.3;
+    const med = medicalEffects(e, x.p);
+    if (med.rechute) n -= (med.rechute.after - med.rechute.before) * 0.5;
+    if (med.retour) n -= med.retour.delta * 2;
+    // Charge individuelle : besoin de repos selon la fatigue du joueur ; jamais de pleine charge pour un joueur qui
+    // relève de blessure (risque de rechute en cours).
+    const besoin = (x.fatigue - 45) / 10;
+    if (e.plan === 'repos') n += 2 * besoin - 0.5;
+    if (e.plan === 'normal') n += Math.max(0.5, 0.5 + besoin * 0.5);
+    if (e.plan === 'collective' || e.plan === 'intense') n -= 2 + Math.max(0, besoin) + (Number(x.p?.injuryRelapse) > 0 ? 2 : 0);
+    // Séance collective selon la fatigue moyenne de l'effectif.
+    if (e.entrainement === 'repos') n += (x.effectif - 35) / 5;
+    if (e.entrainement === 'intense') n += (25 - x.effectif) / 5 - 1;
+    if (e.focus) n += e.focus === x.focus ? 0 : 0.5;
+    if (Number.isFinite(e.caisse) && e.caisse < 0) n -= cout(-e.caisse);
+    if (Number.isFinite(e.caisse) && e.caisse > 0) n += e.caisse / 4000 * (x.caisse < 200000 ? 2 : 1);
+    if (e.appel) { const sx = TYPES.discipline?.seuils || {}; n -= cout((sx.frais || 1500) + (sx.alourdie || 7500) / 2); }
+    if (e.suite && !e.appel) n += 1;
+    if (e.promesse) n += x.satisfaction < 45 ? 2 : -2;
+    if (e.promouvoir) n -= 1;
+    if (e.pret === 'vendre') n -= 6;
+    if (e.contratDS) n -= 3;
+    if (e.consigneDS) n -= 3;
+    if (e.a2r === 'appel') n -= 3;
+    if (e.repos_liste === 'ignorer') n -= 3;
+    return Math.round(n * 1000);
+  }
+  // Réponse que Gabi donnerait aujourd'hui (objet de club-mail.json) ou null ; `dispo(r)` : vrai si possible.
+  function adjoint(s, m, dispo = r => !unavailable(s, m, r)) {
+    if (!s || !m || m.status !== 'nouveau') return null;
+    const options = (TYPES[m.type]?.reponses || []).filter(r => !r.ouvrir && dispo(r));
+    if (!options.length) return null;
+    const x = contexteAdjoint(s, m);
+    let best = null, top = -Infinity;
+    for (const r of options) { const n = noteAdjoint(x, r); if (n > top) { top = n; best = r; } }
+    return best;
+  }
+  // Famille d'une réponse pour l'interface (couleur et pictogramme) : effet favorable dominant, sinon coût, attente,
+  // refus ou rien. Ordre : écran, soin, effort, jeu, promesse, direction, compétition, argent, presse, groupe.
+  function genre(r) {
+    const e = r.effets || {}, pos = k => Number.isFinite(e[k]) && e[k] > 0;
+    if (r.ouvrir) return 'ecran';
+    if (e.specialiste || e.plan === 'repos' || e.plan === 'normal' || e.entrainement === 'repos' || (Number.isFinite(e.fatigue) && e.fatigue < 0) || (Number.isFinite(e.rechute) && e.rechute < 0)) return 'soin';
+    if (e.entrainement === 'intense' || e.plan === 'collective' || e.plan === 'intense' || pos('fatigue') || pos('rechute')) return 'effort';
+    if (e.focus) return 'jeu';
+    if (e.promesse) return 'promesse';
+    if (e.orientation || e.a2r || e.reprise || e.pret || e.contratDS || e.consigneDS || e.promouvoir || pos('confiance') || (Number.isFinite(e.pression) && e.pression < 0)) return 'direction';
+    if (e.doublon || e.repos_liste) return 'competition';
+    if (pos('caisse')) return 'argent';
+    if (pos('medias') || pos('supporters')) return 'presse';
+    if (pos('moral') || pos('satisfaction') || pos('condition')) return 'groupe';
+    if ((Number.isFinite(e.caisse) && e.caisse < 0) || e.appel) return 'argent';
+    if (e.suite) return 'attente';
+    if (['moral', 'satisfaction', 'medias', 'supporters', 'confiance'].some(k => Number.isFinite(e[k]) && e[k] < 0)) return 'refus';
+    return 'neutre';
+  }
+
   function project() {
-    if (typeof S === 'undefined' || !S || !obj(S.clubMail)) return { mails: [], reponses: {}, attente: 0, blessures: Object.fromEntries(Object.entries(BL.types || {}).map(([k, t]) => [k, t.libelle])) };
+    if (typeof S === 'undefined' || !S || !obj(S.clubMail)) return { mails: [], reponses: {}, delegues: {}, attente: 0, blessures: Object.fromEntries(Object.entries(BL.types || {}).map(([k, t]) => [k, t.libelle])) };
     const st = S.clubMail, list = st.mails.slice(-(C.projection ?? 80)).reverse();
     const reponses = {};
     for (const m of st.mails) if (m.choice) reponses[m.id] = m.choice;
@@ -990,11 +1081,19 @@ function factory() {
       mails: list.map(m => {
         const t = TYPES[m.type] || {}, r = render(m), cat = D.categories?.[t.categorie] || {};
         const chosen = (t.reponses || []).find(x => x.id === m.choice);
-        return { id: m.id, type: m.type, date: m.date, categorie: t.categorie || 'moments', categorieLabel: cat.label || 'Club', expediteur: r.expediteur, sujet: r.sujet, corps: r.corps,
+        const mail = { id: m.id, type: m.type, date: m.date, categorie: t.categorie || 'moments', categorieLabel: cat.label || 'Club', expediteur: r.expediteur, sujet: r.sujet, corps: r.corps,
           arret: nature(m.type) === 'action', nature: nature(m.type), importance: rang(m.type), ecran: t.ecran || cat.ecran || 'Bureau', joueur: m.player, club: m.club ?? null, status: m.status, choice: m.choice, resultat: chosen ? (m.verdict ? chosen.resultat + ' ' + m.verdict : chosen.resultat) : null,
-          reponses: m.status === 'nouveau' ? (t.reponses || []).map(x => { const raison = unavailable(S, m, x); return { id: x.id, libelle: x.libelle, effets: effectText(x.effets || {}, m.player ? S.clubs[S.club]?.players?.find(y => y.id === m.player) : null, todayOf(S) || m.date), disponible: !raison, raison, ouvrir: !!x.ouvrir }; }) : [] };
+          reponses: [], delegue: m.delegue === true, reponse: chosen ? { id: chosen.id, libelle: chosen.libelle, genre: genre(chosen) } : null };
+        if (m.status !== 'nouveau') return mail;
+        const raisons = {};
+        mail.reponses = (t.reponses || []).map(x => { const raison = raisons[x.id] = unavailable(S, m, x); return { id: x.id, libelle: x.libelle, effets: effectText(x.effets || {}, m.player ? S.clubs[S.club]?.players?.find(y => y.id === m.player) : null, todayOf(S) || m.date), disponible: !raison, raison, ouvrir: !!x.ouvrir, genre: genre(x) }; });
+        // Réponse que Gabi donnerait s'il recevait la délégation (null : pas de délégation possible).
+        mail.adjoint = adjoint(S, m, x => !raisons[x.id])?.id ?? null;
+        return mail;
       }),
       reponses, attente: st.mails.filter(m => m.status === 'nouveau').length,
+      // Mails auxquels Gabi a répondu (délégation) : affichage « Gabi a répondu », retouché dès le clic par l'interface.
+      delegues: Object.fromEntries(st.mails.filter(m => m.delegue === true).map(m => [m.id, true])),
       blessures: Object.fromEntries(Object.entries(BL.types || {}).map(([k, t]) => [k, t.libelle])),
     };
   }
@@ -1069,15 +1168,18 @@ function factory() {
     const st = S.clubMail, m = obj(st) ? st.mails.find(x => x.id === payload.id) : null;
     check(!!m, 'ce mail n’existe plus');
     check(m.status === 'nouveau', m.status === 'repondu' ? 'tu as déjà répondu à ce mail' : 'ce mail n’appelle plus de réponse');
-    const r = (TYPES[m.type]?.reponses || []).find(x => x.id === payload.choice);
-    check(!!r, 'réponse inconnue');
+    // « deleguer » : Gabi choisit à la place du manager (adjoint) ; jamais une réponse qui ouvre un écran.
+    const delegue = payload.choice === DELEGUER;
+    const r = delegue ? adjoint(S, m) : (TYPES[m.type]?.reponses || []).find(x => x.id === payload.choice);
+    check(!!r, delegue ? 'Gabi ne peut pas répondre à ta place à ce mail' : 'réponse inconnue');
     const reason = unavailable(S, m, r);
     check(!reason, reason.replace(/\.$/, ''));
     apply(S, m, r);
     m.status = 'repondu';
     m.choice = r.id;
+    if (delegue) m.delegue = true;
     validate(S);
-    return { clubMailReply: { id: m.id, choice: r.id, resultat: m.verdict ? r.resultat + ' ' + m.verdict : r.resultat, ouvrir: !!r.ouvrir, ecran: r.ecran || TYPES[m.type].ecran || null, joueur: m.player } };
+    return { clubMailReply: { id: m.id, choice: r.id, delegue, resultat: m.verdict ? r.resultat + ' ' + m.verdict : r.resultat, ouvrir: !delegue && !!r.ouvrir, ecran: r.ecran || TYPES[m.type].ecran || null, joueur: m.player } };
   }
 
   // Après chaque commande : une réception par jour de calendrier (carrière Monde journalière, saison ouverte).
@@ -1102,6 +1204,7 @@ function factory() {
       check(obj(m) && /^mail-\d{1,9}$/.test(m.id) && !ids.has(m.id) && Number(m.id.slice(5)) <= st.seq && TYPES[m.type] !== undefined && date(m.date) && int(m.f, 0, 20) && obj(m.vars) && (m.player === null || text(m.player, 180)) && STATUS.includes(m.status), 'mail invalide');
       check(m.status === 'repondu' ? (TYPES[m.type].reponses || []).some(x => x.id === m.choice) : m.choice === null, 'réponse enregistrée invalide');
       check(m.verdict === undefined || text(m.verdict, 200), 'verdict invalide');
+      check(m.delegue === undefined || (m.delegue === true && m.status === 'repondu'), 'délégation invalide');
       check(m.club === undefined || int(m.club, 0, 1e9) || text(m.club, 40), 'club du mail invalide');
       for (const v of Object.values(m.vars)) check(typeof v === 'number' ? Number.isFinite(v) : text(v, 400), 'variable invalide');
       ids.add(m.id);
@@ -1154,7 +1257,7 @@ function factory() {
     }
     return true;
   }
-  return { project, validate, execute, observe, stops, installHooks, recevoir: (s, d) => receive(s, d), blessures: { typer: typeInjuries, type: injuryKind, risque: relapseRisk, rechute: relapseChance, effets: effectText, cause: causeText } };
+  return { project, validate, execute, observe, stops, installHooks, recevoir: (s, d) => receive(s, d), adjoint: (s, id) => adjoint(s, s?.clubMail?.mails?.find(m => m.id === id))?.id ?? null, genre, blessures: { typer: typeInjuries, type: injuryKind, risque: relapseRisk, rechute: relapseChance, effets: effectText, cause: causeText } };
 }
 
 module.exports = { files, commands, factory, prelude, DATA };
