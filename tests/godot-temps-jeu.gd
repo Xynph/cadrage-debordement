@@ -16,6 +16,7 @@ class FakeApp extends Control:
 	var management_ui := {"immersive_player_tab": 3}
 	var rendus := 0
 	var waiting := false
+	var navigation_controller: Object = null
 	func _live() -> Dictionary: return {}
 	func render() -> void: rendus += 1
 	func _render(_complet: bool = true) -> void: rendus += 1
@@ -121,7 +122,7 @@ func run() -> void:
 	years.min_value = 2
 	years.max_value = 3
 	years.value = 2
-	var ctx := {"app": app, "player": player, "quote": player.renewal, "salary": salary, "years": years, "first_season": 1, "negotiation": {}, "phase": {}, "reuse": Button.new(), "prolongation": true}
+	var ctx := {"app": app, "player": player, "quote": player.renewal, "salary": salary, "years": years, "first_season": 1, "negotiation": {}, "phase": {"action": "Proposer", "blocked": false, "progress": ""}, "reuse": Button.new(), "prolongation": true}
 	Prolongation.construire(body, ctx)
 	await settle()
 	check(str(ctx.get("role", "")) == "rotation", "Rôle proposé : celui de la hiérarchie (rotation)")

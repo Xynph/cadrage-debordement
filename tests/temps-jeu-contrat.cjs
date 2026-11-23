@@ -51,6 +51,10 @@ test('Salaire : +5 % par cran au-dessus du rôle attendu, −4 % par cran en des
     assert.equal(R.avec(j[2], 'appoint', () => R.demande(10500, j[2], 'renew')), 10000, 'plancher = salaire actuel (10 000)');
     assert.equal(R.avec(j[2], 'rotation', () => R.demande(12345, j[2], 'renew')), 12345, 'rôle attendu : demande inchangée');
     assert.equal(R.demande(12000, j[2], 'renew'), 12000, 'offre terminée');
+    // Petits salaires : une promesse au-dessus de sa place coûte au moins 100 €.
+    assert.equal(R.avec(j[2], 'titulaire', () => R.demande(600, j[2], 'recruit')), 700, '600 € × 1,05 = 630 → 700');
+    assert.equal(R.avec(j[5], 'titulaire', () => R.demande(600, j[5], 'recruit')), 700, '600 € × 1,15 = 690 → 700');
+    assert.equal(R.avec(j[2], 'appoint', () => R.demande(600, j[2], 'recruit')), 600, '600 € × 0,92 = 552 → 600');
   });
 });
 

@@ -24,8 +24,8 @@
 //  - Seuils : Titulaire 50 min de moyenne, Rotation 20 min de moyenne, Espoir au moins 1 match joué sur 4, Appoint sans
 //    exigence. Jugé dès 3 matchs comptés : atteint = content, au moins 60 % du seuil = attentif, sinon mécontent.
 //  - Salaire demandé : le rôle « attendu » est celui que la hiérarchie lui donne (deduire) ; promettre plus coûte +5 % par
-//    cran (titulaire > rotation > espoir > appoint), promettre moins rapporte −4 % par cran ; en prolongation, jamais sous
-//    le salaire actuel. Le minimum accepté (reservationWage) suit, puisqu'il part de la demande.
+//    cran (titulaire > rotation > espoir > appoint), au moins 100 € de plus ; promettre moins rapporte −4 % par cran ; en
+//    prolongation, jamais sous le salaire actuel. Le minimum accepté (reservationWage) suit, puisqu'il part de la demande.
 //  - Acceptation : un joueur ambitieux (ambition cachée ≥ 70, nativePotentialEvolution.traits) refuse Appoint ; Espoir
 //    seulement à 21 ans et moins.
 // Fonctions globales de la VM : roleContratJoueur(p), roleContratPoser(p, role, deduit), roleContratDeduire(p),
@@ -108,7 +108,9 @@ function factory(){
  function demande(base,p,kind){
   if(!enCours||!p||p.id!==enCours.id||!Number.isFinite(base))return base;
   const k=facteur(p,enCours.role);if(k===1)return base;
-  const v=Math.round(base*k/100)*100;
+  // Arrondi à la centaine comme les autres demandes ; une promesse au-dessus de sa place coûte au moins 100 € (petits
+  // salaires : +5 % de 600 € s'effacerait à l'arrondi).
+  const v=k>1?Math.max(Math.round(base*k/100)*100,Math.round(base/100)*100+100):Math.round(base*k/100)*100;
   return kind==='renew'&&Number.isFinite(p.salary)?Math.max(p.salary,v):v;
  }
  // Les quatre rôles d'une offre : salaire demandé et refus éventuel ; `attendu` = rôle sans supplément.
