@@ -314,7 +314,7 @@
       "intervalle": 20,
       "formulations": [
         { "sujet": "Proposition : {joueur}", "corps": "Bonjour coach. Je représente {joueur}, {poste} de {age} ans. Il cherche un projet ambitieux et ton club l'intéresse.\n\nNote actuelle {note}, {parcours}. Salaire visé autour de {salaire} € par semaine, discutable selon la durée.\n\nTu peux ouvrir les discussions tout de suite, demander un rapport à ton recruteur (1 500 €), ou décliner : je comprendrai." },
-        { "sujet": "Un {poste} disponible", "corps": "Je me permets de t'écrire : mon joueur {joueur} ({age} ans, {poste}) serait prêt à rejoindre ton effectif.\n\nIl a vu que ton équipe était {classement} et il pense pouvoir apporter de la profondeur. Prétentions : environ {salaire} € par semaine.\n\nSi tu veux un avis indépendant, ton recruteur peut aller le voir jouer. Sinon, sa fiche est prête." },
+        { "sujet": "Un {poste} disponible", "corps": "Je me permets de t'écrire : mon client {joueur} ({age} ans, {poste}) serait prêt à rejoindre ton effectif.\n\nIl a vu que ton équipe était {classement} et il pense pouvoir apporter de la profondeur. Prétentions : environ {salaire} € par semaine.\n\nSi tu veux un avis indépendant, ton recruteur peut aller le voir jouer. Sinon, sa fiche est prête." },
         { "sujet": "{joueur} pour ton club ?", "corps": "Coach, une opportunité : {joueur}, {poste} de {age} ans, note {note}, libre de s'engager.\n\nD'autres clubs sont sur le coup, mais il préfère un projet où il jouera. Salaire visé : {salaire} € par semaine.\n\nTu ouvres les discussions, tu demandes un rapport, ou tu passes ton tour ?" }
       ],
       "reponses": [
