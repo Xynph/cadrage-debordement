@@ -148,7 +148,7 @@ func _draw() -> void:
 		if not stage.is_empty():
 			facts_scroll.add_child(S.label("Suivi : " + str({"blesse":"indisponibilité", "reprise":"reprise à organiser", "progressif":"reprise progressive", "termine":"suivi terminé"}.get(stage, stage)), 14))
 		var mode := str(player.get("loadPlan", "collective"))
-		facts_scroll.add_child(S.wrap("Prochaine charge : " + str({"collective":"suivre le collectif", "repos":"récupération", "normal":"normale", "intense":"intensive"}.get(mode, "non renseignée")), 14))
+		facts_scroll.add_child(S.wrap("Prochaine charge : " + str({"collective":"auto", "repos":"récupération", "normal":"normale", "intense":"intensive"}.get(mode, "non renseignée")), 14))
 	var doctor := _doctor()
 	facts_scroll.add_child(S.G.separator())
 	if doctor.is_empty():
@@ -198,7 +198,7 @@ func _draw() -> void:
 		list.add_child(S.wrap("Un joueur indisponible reste au repos pendant la séance.", 13))
 	else:
 		list.add_child(S.wrap("Adapter uniquement la charge prévue pour la prochaine séance. Aucun effet physique immédiat.", 15, S.TEXT))
-		for pair in [["repos", "PRÉVOIR UNE RÉCUPÉRATION"], ["collective", "SUIVRE LE COLLECTIF"]]:
+		for pair in [["repos", "PRÉVOIR UNE RÉCUPÉRATION"], ["collective", "AUTO"]]:
 			var mode: String = pair[0]
 			var button := S.button(pair[1], func(): _set_load(mode), _editable())
 			button.name = "MedicalLoad_" + mode
