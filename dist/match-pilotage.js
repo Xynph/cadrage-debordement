@@ -287,6 +287,8 @@ function pilotageSkillMod(p,k){
  }
  const d=PILOTAGE_CACHE.mods.get(p.id);
  let n=d?d.tous+(d[k]||0):0;
+ // Moral en match : l'écart à son départ, ±2 points au plus.
+ const m=l.pilotage.moral?.joueurs?.[p.id];if(m)n+=moralEffet(m.v,m.depart);
  if(cri&&l.minute<cri.jusqua&&PILOTAGE_CACHE.ids.has(p.id)){
   const c=CRIS[cri.id];
   if(c.apaise&&d&&d.tous<0)n=0;
@@ -592,9 +594,66 @@ function pilotageApresMinute(l){
  if(!adv.causeries?.half&&miTempsPassee(l))causerieAdverse(l,'half',contexteDuBanc(l,u,'half'),'moteur');
  pilotageAdversaire(l);
 }
+// --- Moral individuel en match (revue FM27 de Léo, 22/11/2026) ---
+// Échelle 0-100 par joueur. Départ : la réaction à la causerie (état ci-dessus), 50 sans causerie ; une causerie de
+// mi-temps décale le départ. Les faits du match le font bouger (lisible, modéré), puis il revient doucement vers son
+// départ (4 % de l'écart par minute). Effet sur le jeu : seulement l'écart au départ, ±1 point d'attribut par 10 points
+// de moral, borné à ±2 (l'état de causerie garde son propre effet, déjà compté).
+const MORAL_DEPART={galvanise:72,motive:64,serein:60,indifferent:50,tendu:40,vexe:36,relache:44};
+const MORAL_FAITS={essaiMarque:8,essaiEquipe:3,essaiEncaisse:-3,butReussi:2,butManque:-3,percee:3,battu:-3,enAvant:-3,grattage:3,carton:-12,cartonEquipe:-2,entree:4,scoreMene:1,scoreSubi:-1,retour:.04,ecart:8};
+const MORAL_PALIERS=[[78,'gonfle','Gonflé à bloc'],[62,'confiant','Confiant'],[42,'concentre','Concentré'],[28,'inquiet','Inquiet'],[0,'abattu','Abattu']];
+function moralPalier(v){return MORAL_PALIERS.find(x=>v>=x[0])||MORAL_PALIERS[MORAL_PALIERS.length-1]}
+function moralEffet(v,depart){return Math.max(-2,Math.min(2,Math.round((v-depart)/10)))}
+function moralDepart(l,id){return MORAL_DEPART[l.pilotage.etats?.[id]?.etat]??50}
+function moralFiche(l,id){
+ const M=l.pilotage.moral,d=moralDepart(l,id);let f=M.joueurs[id];
+ if(!f)f=M.joueurs[id]={v:d,depart:d,repere:d};
+ // Nouvelle causerie (mi-temps) : le départ change, le moral suit du même écart.
+ else if(f.depart!==d){f.v=Math.max(0,Math.min(100,f.v+d-f.depart));f.depart=d}
+ return f;
+}
+function moralBouge(l,id,delta){if(id==null||!delta)return;const f=moralFiche(l,id);f.v=Math.max(0,Math.min(100,f.v+delta))}
+function pilotageMoral(l){
+ if(!pilotageActif(l)||!l.sheets)return;
+ const p=l.pilotage,F=MORAL_FAITS;
+ const premier=!p.moral;
+ const M=p.moral||(p.moral={joueurs:{},ev:0,jaunes:[{},{}],sur:[[],[]],minute:-1});
+ const sur=[0,1].map(s=>activePlayers(l,s).map(x=>x.id));
+ // Entrées en jeu : un remplaçant arrive avec l'envie d'en découdre.
+ for(const s of [0,1]){for(const id of sur[s]){moralFiche(l,id);if(!premier&&!M.sur[s].includes(id)&&!(l.sheets[s].cards||[]).some(c=>c.id===id))moralBouge(l,id,F.entree)}M.sur[s]=sur[s]}
+ const equipe=(s,delta,sauf)=>{for(const id of sur[s])if(id!==sauf)moralBouge(l,id,delta)};
+ const events=l.events||[];
+ for(let i=premier?events.length:M.ev;i<events.length;i++){
+  const e=events[i],sc=e?.scene;if(!sc)continue;const s=sc.team;
+  if(e.type==='try'&&(s===0||s===1)){moralBouge(l,sc.actor,F.essaiMarque);equipe(s,F.essaiEquipe,sc.actor);equipe(1-s,F.essaiEncaisse)}
+  else if(sc.kind==='goal')moralBouge(l,sc.actor,F.butReussi);
+  else if(sc.kind==='miss')moralBouge(l,sc.actor,F.butManque);
+  else if(sc.kind==='hand-fault')moralBouge(l,sc.actor,F.enAvant);
+  else if(sc.kind==='turnover')moralBouge(l,sc.actor,F.grattage);
+  else if(sc.kind==='carry'&&sc.from&&sc.to&&Math.abs(sc.to.x-sc.from.x)>=15){moralBouge(l,sc.actor,F.percee);moralBouge(l,sc.tackler,F.battu)}
+ }
+ M.ev=events.length;
+ // Cartons : le joueur sanctionné, et un peu toute son équipe.
+ for(const s of [0,1]){const n=l.sheets[s].yellowCounts||{};for(const [id,c] of Object.entries(n)){if(c>(M.jaunes[s][id]||0)&&!premier){moralBouge(l,id,F.carton);equipe(s,F.cartonEquipe,id)}M.jaunes[s][id]=c}}
+ const minute=Math.floor(l.minute||0);
+ if(minute!==M.minute){
+  // Score et temps : en 2e mi-temps, toutes les 5 minutes, l'équipe qui mène nettement prend confiance, l'autre doute.
+  if(minute>=40&&minute%5===0)for(const s of [0,1]){const ecart=(l.score?.[s]||0)-(l.score?.[1-s]||0);if(ecart>=F.ecart)equipe(s,F.scoreMene);else if(ecart<=-F.ecart)equipe(s,F.scoreSubi)}
+  // Retour doux vers le départ ; repère de tendance toutes les 5 minutes.
+  for(const f of Object.values(M.joueurs)){f.v=Math.round((f.v+(f.depart-f.v)*F.retour)*10)/10;if(minute%5===0)f.repere=f.v}
+  M.minute=minute;
+ }
+}
+function pilotageMoralProjection(l){
+ const M=l.pilotage?.moral;if(!M)return {};
+ const u=l.userSide,ids=new Set([...(l.sheets[u].on||[]),...(l.sheets[u].bench||[])]),r={};
+ for(const [id,f] of Object.entries(M.joueurs)){if(!ids.has(id))continue;const [,cle,label]=moralPalier(f.v);
+  r[id]={valeur:Math.round(f.v),depart:f.depart,cle,label,tendance:f.v-f.repere>=3?1:f.v-f.repere<=-3?-1:0,effet:moralEffet(f.v,f.depart)}}
+ return r;
+}
 function pilotageMinute(l,moteur){
  const avant=PILOTAGE_EN_COURS;PILOTAGE_EN_COURS=l||null;
- try{const r=moteur(l);if(l)pilotageApresMinute(l);return r}
+ try{const r=moteur(l);if(l){pilotageMoral(l);pilotageApresMinute(l)}return r}
  finally{PILOTAGE_EN_COURS=avant}
 }
 // Branché sur la minute du moteur (rugby.js, chargé avant ce fichier).
@@ -643,6 +702,7 @@ function pilotageProjection(l){
    .sort((a,b)=>CONSIGNES_GROUPES.findIndex(g=>g[0]===a.groupe)-CONSIGNES_GROUPES.findIndex(g=>g[0]===b.groupe)),
   bilans:Object.keys(CONSIGNES).map(a=>pilotageBilan(l,a)).filter(Boolean),
   joueurs,
+  moral:pilotageMoralProjection(l),
   journal:p.journal.slice(-8),
   cris:pilotageCrisProjection(l),
   // Avis du staff en attente (bouton « Appliquer ces consignes ») et rôles en direct (onglet Rôles).
@@ -655,4 +715,4 @@ function pilotageProjection(l){
    causeries:Object.fromEntries(Object.entries(p.adversaire?.causeries||{}).map(([ph,t])=>[ph,{ton:t,label:TONS_LABELS[t]||t}]))}
  };
 }
-if(typeof module!=='undefined'&&module.exports)module.exports={ARBITRES,arbitreDuMatch,arbitreResume,CONSIGNES,CONSIGNES_GROUPES,CONSIGNES_PLAN,CRIS,TONS_CAUSERIE,TONS_LABELS,PILOTAGE_ETATS};
+if(typeof module!=='undefined'&&module.exports)module.exports={MORAL_DEPART,MORAL_FAITS,MORAL_PALIERS,moralEffet,ARBITRES,arbitreDuMatch,arbitreResume,CONSIGNES,CONSIGNES_GROUPES,CONSIGNES_PLAN,CRIS,TONS_CAUSERIE,TONS_LABELS,PILOTAGE_ETATS};

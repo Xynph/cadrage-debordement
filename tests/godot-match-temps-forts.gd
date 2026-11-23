@@ -157,7 +157,7 @@ func layout(view: Control, size: Vector2i) -> void:
 	var figure: Label = between.chiffres.get_child(0).find_children("*", "Label", true, false)[0]
 	check(is_equal_approx(between._densite, density) and figure.get_theme_font_size("font_size") == between.fpx(18), label + " : chiffres à l'échelle (%d points)" % figure.get_theme_font_size("font_size"))
 	# L'état du jeu s'écrit en entier : sa taille baisse s'il le faut, jamais sous 12 px.
-	check(figure.get_theme_font_size("font_size") >= 12 and between.etat.get_theme_font_size("font_size") >= 12 and between.etat.get_theme_font_size("font_size") <= between.fpx(22), label + " : texte lisible")
+	check(figure.get_theme_font_size("font_size") >= 12 and between.etat.get_theme_font_size("font_size") >= 12 and between.etat.get_theme_font_size("font_size") <= between.fpx(36), label + " : texte lisible (phrase de jeu en grand)")
 	# Les commandes communes sont dans la bande sous le score (la même qu'en 3D).
 	var bande: Control = view.get("bande_temps_forts")
 	# Écran 13 (20/11/2026) : la bande est sur la rangée du score, à sa droite (maquettes 13 et 14).
@@ -173,12 +173,12 @@ func layout(view: Control, size: Vector2i) -> void:
 	# les événements à gauche, Mon XV en barre basse.
 	var colonne_xv: Control = between.tuile_principale
 	var column: Control = between.find_child("MatchBetweenColumn", true, false)
-	var miroir0: Control = between.find_child("MatchBetweenMirror0", true, false)
-	var miroir1: Control = between.find_child("MatchBetweenMirror1", true, false)
+	var miroir0: Control = between.find_child("MatchBetweenLineup0", true, false)
+	var miroir1: Control = between.find_child("MatchBetweenLineup1", true, false)
 	var bandeau: Control = between.bandeau
 	var tuile_terrain: Control = between.find_child("MatchBetweenPitchTile", true, false)
-	check(pitch.size.x >= size.x * 0.22 and pitch.size.y >= size.y * 0.25 and pitch.size.x > column.size.x and pitch.size.x > miroir0.size.x, label + " : terrain 2D en grand au centre (%s)" % str(pitch.size))
-	check(column.get_global_rect().end.x <= miroir0.get_global_rect().position.x + 1.0 and miroir0.get_global_rect().end.x <= pitch.get_global_rect().position.x and miroir1.get_global_rect().position.x >= pitch.get_global_rect().end.x and colonne_xv.get_global_rect().position.y >= pitch.get_global_rect().end.y, label + " : événements à gauche, chiffres en miroir autour du terrain, Mon XV en bas")
+	check(pitch.size.x >= size.x * 0.2 and pitch.size.y >= size.y * 0.16 and pitch.size.x > column.size.x and pitch.size.x > miroir0.size.x, label + " : terrain 2D en grand au centre (%s)" % str(pitch.size))
+	check(column.get_global_rect().end.x <= miroir0.get_global_rect().position.x + 1.0 and miroir0.get_global_rect().end.x <= pitch.get_global_rect().position.x and miroir1.get_global_rect().position.x >= pitch.get_global_rect().end.x and colonne_xv.get_global_rect().position.y >= pitch.get_global_rect().end.y, label + " : événements à gauche, compositions autour du terrain, Mon XV en bas")
 	check(bandeau.is_visible_in_tree() and tuile_terrain != null and tuile_terrain.is_ancestor_of(bandeau) and not pitch.is_ancestor_of(bandeau)
 		and bandeau.get_global_rect().end.y <= pitch.get_global_rect().position.y + 0.5 and not bandeau.get_global_rect().intersects(pitch.get_global_rect()),
 		label + " : dernier fait au-dessus du terrain, sans chevauchement (%s / %s)" % [str(bandeau.get_global_rect()), str(pitch.get_global_rect())])
@@ -188,8 +188,8 @@ func layout(view: Control, size: Vector2i) -> void:
 	check(str(between.chiffres.get_child(0).name) == "MatchBetweenFigure_possession", label + " : la possession en tête des chiffres clés")
 	check((between.chiffres.find_child("MatchBetweenFigure_zone22", false, false) != null) == (direct_vu.get("zone22") is Dictionary), label + " : entrées dans les 22 montrées seulement avec leur donnée")
 	# Domination sous le terrain et ses chiffres en miroir ; Gabi en tête de la colonne de gauche.
-	var frise: Control = between.find_child("MatchBetweenMomentumTile", true, false)
-	check(frise != null and frise.size.x >= tuile_terrain.size.x and frise.get_global_rect().position.y >= pitch.get_global_rect().end.y, label + " : domination sous le terrain")
+	var frise: Control = between.domination
+	check(frise != null and frise.is_visible_in_tree() and tuile_terrain.is_ancestor_of(frise) and frise.get_global_rect().position.y >= pitch.get_global_rect().end.y, label + " : domination sous le terrain")
 	check(not between.adjoint_cadre.visible or (between.adjoint_cadre.get_global_rect().end.x <= pitch.get_global_rect().position.x and between.adjoint_cadre.get_global_rect().end.y <= column.get_global_rect().position.y + 1.0), label + " : carte de Gabi en tête de la colonne de gauche (%s)" % str(between.adjoint_cadre.get_global_rect()))
 	for row: Control in between.chiffres.get_children():
 		for cell: Label in row.find_children("*", "Label", true, false):
@@ -1633,13 +1633,17 @@ func pilotage_test(lineup: Array) -> Dictionary:
 	var consignes := {}
 	for axe: Dictionary in axes: consignes[axe.id] = axe.valeur
 	var joueurs := {}
+	var moral := {}
 	var etats := [["galvanise", "Galvanisé"], ["indifferent", "Indifférent"], ["vexe", "Vexé"]]
+	var morals := [["gonfle", "Gonflé à bloc", 82, 1], ["concentre", "Concentré", 50, 0], ["abattu", "Abattu", 22, -1]]
 	for k in mini(3, lineup.size()):
-		if lineup[k] is Dictionary: joueurs[str(lineup[k].id)] = {"etat": etats[k][0], "label": etats[k][1], "phase": "pre", "confiance": 50}
+		if not lineup[k] is Dictionary: continue
+		joueurs[str(lineup[k].id)] = {"etat": etats[k][0], "label": etats[k][1], "phase": "pre", "confiance": 50}
+		moral[str(lineup[k].id)] = {"cle": morals[k][0], "label": morals[k][1], "valeur": morals[k][2], "depart": 50, "tendance": morals[k][3], "effet": 0}
 	return {"arbitre": {"id": "castaing", "nom": "Julien Castaing", "pays": "FR", "rucks": 4, "melee": 3, "horsJeu": 3, "cartons": 2, "resume": "Pointilleux sur les rucks, laisse vivre les cartons."},
 		"consignes": consignes, "axes": axes,
 		"bilans": [{"axe": "rucks", "valeur": "agressive", "depuis": 52, "texte": "Rucks « Contester » depuis 52′ : 3 pénalités, 2 ballons arrachés."}],
-		"joueurs": joueurs, "journal": [{"minute": 55, "auteur": "staff", "texte": "Le staff passe « Rythme » sur « Accélérer »."}]}
+		"joueurs": joueurs, "moral": moral, "journal": [{"minute": 55, "auteur": "staff", "texte": "Le staff passe « Rythme » sur « Accélérer »."}]}
 
 ## Pilotage injecté : les faits marquants restent à l'écran (pas de tuile Consignes), les états des joueurs
 ## apparaissent dans Mon XV, et l'écran tient en 720p et 1440p ; sans pilotage, rien ne change.
@@ -1653,19 +1657,17 @@ func consignes_fictives(view: Control, direct: Dictionary) -> void:
 	await settle(4)
 	check(between.fil.is_visible_in_tree() and between.fil.get_child_count() >= 1, "Pilotage : les faits marquants restent à l'écran")
 	check(between.find_child("MatchBetweenConsignes", true, false) == null and between.find_children("Consigne_*", "BoxContainer", true, false).is_empty(), "Pilotage : aucune consigne sur l'écran 2D (elles sont dans la fenêtre Équipe)")
-	# Mon XV : l'état après la causerie, coloré selon son sens.
+	# Mon XV : le moral en direct (moteur), mot + couleur + flèche de tendance (revue FM27, 22/11/2026).
 	between.choisir_vue_xv("tableau")
 	await settle(2)
 	var cases: Array = between.xv.get_children().filter(func(n: Node): return n is Button and str(n.name).begins_with("MatchBetweenPlayer"))
-	var attendus := [["Galvanisé", W.VERT], ["Indifférent", Between.DOUX], ["Vexé", W.ALERTE]]
+	var attendus := [["Gonflé à bloc ▲", Between.teinte_moral("gonfle")], ["Concentré", Between.teinte_moral("concentre")], ["Abattu ▼", Between.teinte_moral("abattu")]]
 	for k in mini(3, cases.size()):
 		if not lineup[k] is Dictionary: continue
-		var etat: Label = (cases[k] as Node).find_child("MatchBetweenPlayerState", true, false)
-		check(etat != null and etat.text == attendus[k][0] and etat.get_theme_color("font_color").is_equal_approx(attendus[k][1]) and etat.get_theme_font_size("font_size") >= 12, "Mon XV : état « %s » du %d" % [attendus[k][0], k + 1])
-	check((cases[4] as Node).find_child("MatchBetweenPlayerState", true, false) == null, "Mon XV : pas d'état sans causerie reçue")
-	var ligne_xv: Node = between.xv.find_child("MatchBetweenPlayer3", true, false)
-	var etat_xv: Label = ligne_xv.find_child("MatchBetweenPlayerState", true, false) if ligne_xv != null else null
-	check(etat_xv != null and etat_xv.text == "Vexé", "Mon XV (Tableau) : état du 3")
+		var mot: Label = (cases[k] as Node).find_child("MatchBetweenPlayerMoraleWord", true, false)
+		check(mot != null and mot.is_visible_in_tree() and mot.text == attendus[k][0] and mot.get_theme_color("font_color").is_equal_approx(attendus[k][1]) and mot.get_theme_font_size("font_size") >= 12, "Mon XV : moral « %s » du %d (%s)" % [attendus[k][0], k + 1, mot.text if mot != null else "absent"])
+	var sans: Node = (cases[4] as Node).find_child("MatchBetweenPlayerMorale", true, false)
+	check(sans == null or not (sans as Control).visible, "Mon XV : pas de moral sans donnée du moteur")
 	# Mise en page avec le pilotage (rien ne doit être coupé en 720p comme en 1440p).
 	await layout(view, Vector2i(1920, 1080))
 	await layout(view, Vector2i(2560, 1440))

@@ -1,6 +1,5 @@
 # Silhouette du corps (fenêtre blessure)
 
-Provisoire (choix de Léo en cours sur planche) :
-- `corps-face.png`, `corps-dos.png` : d'après « Human Muscle System », j4p4n, Openclipart, CC0 1.0 (domaine public),
-  https://openclipart.org/detail/326556/human-muscle-system — face et dos découpés, traits recolorés en crème,
-  corps rempli en gris sombre.
+- `corps-face.png`, `corps-dos.png` : Image : Léo (générée avec Codex), fournie le 23/11/2026.
+  Modifications : fond blanc rendu transparent (sans liseré clair), face et dos découpés en deux images, gris
+  légèrement assombri pour le panneau sombre.

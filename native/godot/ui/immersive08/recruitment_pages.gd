@@ -16,8 +16,8 @@ const Charte = preload("res://ui/charte.gd")
 const Kit = preload("res://ui/immersive08/tactics_kit.gd")
 const EnPlace = preload("res://ui/confirmation_en_place.gd")
 const HOTE := "RecrutementHote"
-const PAGES := ["releve", "interclub", "offres", "missions", "negociation", "rapport", "dossier"]
-const TITRES := {"releve":"Repérer la relève", "interclub":"Marché entre clubs", "offres":"Offres reçues", "missions":"Besoins, missions et rapports", "negociation":"Offre au joueur", "rapport":"Rapport d’observation", "dossier":"Dossier"}
+const PAGES := ["releve", "interclub", "offres", "missions", "negociation", "rapport", "dossier", "recruteur"]
+const TITRES := {"releve":"Repérer la relève", "interclub":"Marché entre clubs", "offres":"Offres reçues", "missions":"Besoins, missions et rapports", "negociation":"Offre au joueur", "rapport":"Rapport d’observation", "dossier":"Dossier", "recruteur":"Rapport du recruteur"}
 const LARGEUR := 1560.0
 
 ## Sous-page demandée (sinon "").
@@ -67,10 +67,12 @@ static func ouvrir_dossier(app: Control, source: String, id: String) -> bool:
 ## Clé d'historique d'une sous-page (une étape Précédent / Suivant par page et par dossier) et son inverse.
 static func cle(courant: Dictionary) -> String:
 	var kind := str(courant.get("kind", ""))
+	if kind == "recruteur": return "recruteur|" + str(courant.get("player_id", ""))
 	if kind != "dossier": return kind
 	return "dossier|%s|%s|%s" % [str(courant.get("source", "")), str(courant.get("id", "")), str(courant.get("retour", ""))]
 
 static func depuis_cle(valeur: String) -> Dictionary:
+	if valeur.begins_with("recruteur|"): return {"kind": "recruteur", "player_id": valeur.substr(10)}
 	if not valeur.begins_with("dossier|"): return {"kind": valeur}
 	var morceaux := valeur.split("|")
 	return {"kind": "dossier", "source": morceaux[1] if morceaux.size() > 1 else "", "id": morceaux[2] if morceaux.size() > 2 else "", "retour": morceaux[3] if morceaux.size() > 3 else "releve"}
@@ -103,6 +105,9 @@ static func build(app: Control, page: Control, kind: String) -> void:
 	cadre.clip_contents = true
 	if kind == "dossier":
 		_dossier(app, cadre, titre, courant)
+		return
+	if kind == "recruteur":
+		load("res://ui/immersive08/rapport_recruteur.gd").construire(app, cadre, titre, courant)
 		return
 	var hote := _hote(app, kind)
 	if hote == null:

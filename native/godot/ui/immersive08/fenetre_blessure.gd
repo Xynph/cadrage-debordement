@@ -4,18 +4,16 @@ extends RefCounted
 ## charge en match, charge à l'entraînement, fragilité, risque de blessure au prochain match, risque de rechute).
 ## Ouverte par un clic sur la pastille Blessé (Effectif, salle médicale). Cadre commun fenetre_visuelle.gd : Échap, ✕
 ## et clic à côté la ferment. Données lues telles que le moteur les envoie (`app.model.squad` : fragilite,
-## risqueBlessure, rechute ; `clubLife.clubSupport.medical` : protocole). Silhouette : art/corps (CC0, voir CREDITS.md).
+## risqueBlessure, rechute ; `clubLife.clubSupport.medical` : protocole). Silhouette : art/corps (image de Léo, voir CREDITS.md).
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const R = preload("res://ui/immersive08/reperes.gd")
 const Charte = preload("res://ui/charte.gd")
 const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
 const Panneaux = preload("res://ui/immersive08/panneaux_effectif.gd")
-## Silhouette : deux dessins (face, dos) dans art/corps (licences dans art/corps/CREDITS.md). CD_CORPS_DIR (dossier
-## avec face.png et dos.png) et CD_CORPS_POINTS (jeu de points) servent aux planches de comparaison.
-const CORPS_FACE := "res://art/corps/corps-face.png"
-const CORPS_DOS := "res://art/corps/corps-dos.png"
-const JEU_POINTS := "traits"
+## Silhouette : corps musclé de face et de dos (image de Léo, art/corps/CREDITS.md), fond transparent.
+const CORPS_FACE = preload("res://art/corps/corps-face.png")
+const CORPS_DOS = preload("res://art/corps/corps-dos.png")
 
 const NOM := "FenetreBlessure"
 const GRIS := Color("5d6866")
@@ -38,25 +36,14 @@ const ZONES := {
 	"cheville": {"vue": "FB", "r": .025, "mot": "Cheville", "cote": true},
 }
 ## Points des zones, en parts de la largeur et de la hauteur de chaque dessin : [côté droit du joueur, côté gauche].
-## De face, la droite du joueur est à gauche du dessin ; de dos, à droite. « traits » : Human Muscle System (j4p4n) ;
-## « volumes » : écorché face / dos de GDJ.
+## De face, la droite du joueur est à gauche de l'image ; de dos, à droite.
 const POINTS := {
-	"traits": {
-		"F": {"commotion": [Vector2(.43, .07), Vector2(.43, .07)], "cou": [Vector2(.45, .17), Vector2(.45, .17)], "epaule": [Vector2(.25, .22), Vector2(.74, .22)],
-			"cotes": [Vector2(.33, .33), Vector2(.62, .33)], "contusion": [Vector2(.36, .60), Vector2(.65, .60)], "genou": [Vector2(.38, .76), Vector2(.65, .76)],
-			"croises": [Vector2(.38, .76), Vector2(.65, .76)], "cheville": [Vector2(.45, .94), Vector2(.70, .94)]},
-		"B": {"commotion": [Vector2(.60, .07), Vector2(.60, .07)], "cou": [Vector2(.57, .15), Vector2(.57, .15)], "epaule": [Vector2(.75, .22), Vector2(.27, .22)],
-			"ischios": [Vector2(.60, .61), Vector2(.38, .61)], "croises": [Vector2(.58, .72), Vector2(.38, .72)], "mollet": [Vector2(.57, .80), Vector2(.37, .80)],
-			"cheville": [Vector2(.55, .93), Vector2(.33, .93)]},
-	},
-	"volumes": {
-		"F": {"commotion": [Vector2(.53, .08), Vector2(.53, .08)], "cou": [Vector2(.53, .16), Vector2(.53, .16)], "epaule": [Vector2(.33, .20), Vector2(.73, .21)],
-			"cotes": [Vector2(.40, .33), Vector2(.66, .33)], "contusion": [Vector2(.35, .60), Vector2(.62, .60)], "genou": [Vector2(.33, .72), Vector2(.58, .72)],
-			"croises": [Vector2(.33, .72), Vector2(.58, .72)], "cheville": [Vector2(.27, .93), Vector2(.55, .93)]},
-		"B": {"commotion": [Vector2(.40, .06), Vector2(.40, .06)], "cou": [Vector2(.41, .15), Vector2(.41, .15)], "epaule": [Vector2(.62, .22), Vector2(.25, .22)],
-			"ischios": [Vector2(.53, .60), Vector2(.30, .60)], "croises": [Vector2(.52, .72), Vector2(.31, .72)], "mollet": [Vector2(.53, .80), Vector2(.30, .80)],
-			"cheville": [Vector2(.55, .93), Vector2(.33, .93)]},
-	},
+	"F": {"commotion": [Vector2(.50, .06), Vector2(.50, .06)], "cou": [Vector2(.50, .13), Vector2(.50, .13)], "epaule": [Vector2(.25, .22), Vector2(.76, .22)],
+		"cotes": [Vector2(.36, .33), Vector2(.64, .33)], "contusion": [Vector2(.38, .58), Vector2(.63, .58)], "genou": [Vector2(.36, .70), Vector2(.65, .70)],
+		"croises": [Vector2(.36, .70), Vector2(.65, .70)], "cheville": [Vector2(.33, .92), Vector2(.68, .92)]},
+	"B": {"commotion": [Vector2(.50, .05), Vector2(.50, .05)], "cou": [Vector2(.50, .12), Vector2(.50, .12)], "epaule": [Vector2(.75, .22), Vector2(.25, .22)],
+		"ischios": [Vector2(.65, .60), Vector2(.36, .60)], "croises": [Vector2(.64, .70), Vector2(.36, .70)], "mollet": [Vector2(.66, .78), Vector2(.33, .78)],
+		"cheville": [Vector2(.65, .93), Vector2(.36, .93)]},
 }
 const CAUSES := {"match": ["Match", "ball"], "entrainement": ["Entraînement", "train"], "rechute": ["Rechute", "renew"]}
 const PROTOCOLES := {"prudent": "Prudent", "standard": "Standard", "accelere": "Accéléré"}
@@ -273,30 +260,15 @@ static func _segments(parent: Control, rect: Rect2, valeur: float, couleur: Colo
 
 # ---------------------------------------------------------------- silhouette
 
-static var _textures := {}
-
-## Dessin face (« F ») ou dos (« B ») : celui du jeu, ou celui de CD_CORPS_DIR (planches de comparaison).
+## Dessin face (« F ») ou dos (« B »).
 static func texture(vue: String) -> Texture2D:
-	var dossier := OS.get_environment("CD_CORPS_DIR")
-	var cle := dossier + vue
-	if _textures.has(cle): return _textures[cle]
-	var tex: Texture2D = null
-	if not dossier.is_empty():
-		var image := Image.load_from_file(dossier.path_join("face.png" if vue == "F" else "dos.png"))
-		if image != null: tex = ImageTexture.create_from_image(image)
-	if tex == null: tex = load(CORPS_FACE if vue == "F" else CORPS_DOS)
-	_textures[cle] = tex
-	return tex
-
-static func jeu_points() -> String:
-	var jeu := OS.get_environment("CD_CORPS_POINTS")
-	return jeu if POINTS.has(jeu) else JEU_POINTS
+	return CORPS_FACE if vue == "F" else CORPS_DOS
 
 ## Point de la zone en parts du dessin (0-1), ou (-1, -1) si la vue ne la montre pas.
 static func point_zone(type: String, droite: bool, vue: String) -> Vector2:
 	var zone: Dictionary = ZONES.get(type, {})
 	if zone.is_empty() or not str(zone.vue).contains(vue): return Vector2(-1, -1)
-	var paire: Array = POINTS[jeu_points()][vue].get(type, [])
+	var paire: Array = POINTS[vue].get(type, [])
 	if paire.is_empty(): return Vector2(-1, -1)
 	return paire[0] if droite or not bool(zone.cote) else paire[1]
 

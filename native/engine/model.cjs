@@ -42,6 +42,19 @@ module.exports=function nativeModel(){
  const calendrierFerme=typeof calendrierRefusRecrue==='function'?calendrierRefusRecrue():'';
  // Forme récente (5 dernières notes de match, adversaire et score : match-notes.cjs), null sans match noté.
  const formeRecente=id=>typeof CDMatchNotes!=='undefined'&&CDMatchNotes&&typeof CDMatchNotes.formeJoueur==='function'?CDMatchNotes.formeJoueur(id):null;
+ // Prêt d'une piste du marché (rapport du recruteur, 22/11/2026) : son club le prêterait s'il a 23 ans ou moins
+ // (« jeune ») ou s'il n'entre pas dans les 23 meilleures notes de son club (« hors des 23 ») ; sinon il compte
+ // dans le groupe de son club (« cadre »). Piste sans club identifié : seul l'âge compte. Information seulement :
+ // aucune commande de prêt entrant n'existe dans l'offre au joueur.
+ const pretPiste=p=>{
+  if(Number.isFinite(p.age)&&p.age<=23)return {possible:true,reason:'jeune'};
+  const ci=p.population?.clubId,c=Number.isInteger(ci)?S.clubs[ci]:null;
+  if(c&&Array.isArray(c.players)&&Number.isFinite(p.rating)){
+   const meilleurs=c.players.filter(x=>x.id!==p.id&&Number.isFinite(x.rating)&&x.rating>p.rating).length;
+   if(meilleurs>=23)return {possible:true,reason:'hors-23'};
+  }
+  return {possible:false,reason:'cadre'};
+ };
  const market=S.market.map(source=>{
   const p=JSON.parse(JSON.stringify(source));
   const negotiation=currentNegotiation(p.id,'recruit'),maxYears=Math.min(3,careerContractYears(p));
@@ -51,7 +64,7 @@ module.exports=function nativeModel(){
   const reason=S.live?'Match en cours':calendrierFerme?calendrierFerme:places<=0?'Effectif complet':cash<p.price?'Trésorerie insuffisante':horsBudget?horsBudget:maxYears<1?'Retraite prévue':withdrawn?withdrawnReason:'';
   const available=!S.live&&!calendrierFerme&&places>0&&cash>=p.price&&!horsBudget&&maxYears>=1&&!withdrawn;
   return {...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),...(p.appearanceId===undefined?{}:{appearanceId:p.appearanceId}),id:p.id,name:p.name,pos:p.pos,age:p.age,rating:p.rating,...nativePlayerAttributes(p),
-   salary:askingWage(p,'recruit'),fee,minYears:1,maxYears,available,reason,...(negotiation?{negotiation}:{}),...(quotaBadge(p)?{quota:quotaBadge(p)}:{}),...(formeRecente(p.id)?{formeRecente:formeRecente(p.id)}:{})};
+   salary:askingWage(p,'recruit'),fee,minYears:1,maxYears,available,reason,loan:pretPiste(p),...(negotiation?{negotiation}:{}),...(quotaBadge(p)?{quota:quotaBadge(p)}:{}),...(formeRecente(p.id)?{formeRecente:formeRecente(p.id)}:{})};
  });
  const pair=nextMatch(),l=S.live;
  // Météo vue par le manager : libellé, conseil du staff (sans la phrase du vent, composée par l'écran avec
