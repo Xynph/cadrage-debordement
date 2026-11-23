@@ -34,6 +34,8 @@ const UNTOUCHED = Object.freeze({
   manager_recruitment_watch: NONE, regen_shortlist: NONE,
   // Rallonge du conseil (budget-transferts.cjs) : budgetTransferts, confiance et nouvelles (sections légères).
   transfer_budget_extension: NONE,
+  // Séance d'un jour remplacée (calendar-planning.cjs swapSession) : planning des entraînements (section légère).
+  calendar_session: NONE,
   // Décisions sur les joueurs du club : la section des clubs est relue.
   set_player_load: except('clubs'), set_development_focus: except('clubs'), training_plan: except('clubs'),
   // Poste à apprendre (familiarite-poste.cjs) : un champ du joueur du club, appliqué aux prochaines séances.

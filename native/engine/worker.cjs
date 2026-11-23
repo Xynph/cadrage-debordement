@@ -93,6 +93,8 @@ COMMANDS.add('restore_checkpoint');
 COMMANDS.add('remove_checkpoint');
 COMMANDS.add('calendar_template');
 COMMANDS.add('calendar_mail_decide');
+// Remplacer une seule séance d'un jour (Entraînement › Mois, fiche de séance ; calendar-planning.cjs swapSession).
+COMMANDS.add('calendar_session');
 const NATIONAL_COMMANDS=['national_take_job','national_leave_job','national_play_match'];
 NATIONAL_COMMANDS.forEach(command=>COMMANDS.add(command));
 const NATIONAL_ONLY_COMMANDS=new Set(['new_career','import','save','advance_day','next_season',...NATIONAL_COMMANDS]);
@@ -390,6 +392,9 @@ function createBridge(options={}){
    if(operation?.command==='calendar_template'){
     if(!today||model.live)throw Error('La planification est indisponible.');
     planning=calendarPlanning.applyTemplate(planningModel,planning,operation.payload,today,{anchors:calendarMail.anchors(mail)});
+   }else if(operation?.command==='calendar_session'){
+    if(!today||model.live)throw Error('La planification est indisponible.');
+    planning=calendarPlanning.swapSession(planningModel,planning,operation.payload,today,{anchors:calendarMail.anchors(mail),trained:model.meta?.trained===true});
    }else if(operation?.command==='calendar_mail_decide'){
     if(!today||simulatedDates||model.live)throw Error('La planification est indisponible.');
     const anchors=calendarMail.anchors(mail);

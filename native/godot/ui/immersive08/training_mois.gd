@@ -8,7 +8,8 @@ extends RefCounted
 ##  - semaine type : modèle de chaque match (`calendarPlanning.programmeByFixture`) ; « Coller » et le choix d'une carte
 ##    = commande `calendar_template` ;
 ##  - effets de la semaine (`calendarPlanning.weeks`, `sessionEffects`, `templates[].effects`) : écart à la semaine type
-##    standard sur la fatigue, la condition, la progression des avants / arrières et l'organisation collective ; ils
+##    standard sur la fatigue, la condition, la progression des avants / arrières, l'organisation collective, le risque
+##    de blessure et le moral ; une séance d'un jour se remplace d'un clic (fiche de séance, seance_effets.gd) ; ils
 ##    agissent sur la semaine simulée du club (calendar-planning.cjs weekEffects, programme-semaine.cjs) ;
 ##  - charge : intensité de la semaine choisie dans l'onglet Semaine (`meta.training`).
 ## Coordonnées en unités du gabarit (toile 2248 × 1230). `page` : la toile de l'entraînement (training_canvas.gd).
@@ -59,6 +60,8 @@ const EFFETS := {
 	"avants": ["AV", Charte.CONFIANCE, "", "%", "Progression des avants"],
 	"arrieres": ["AR", Charte.CONFIANCE, "", "%", "Progression des arrières"],
 	"cohesion": ["", Charte.MORAL, "tactic", "%", "Organisation collective"],
+	"blessure": ["", Charte.PERTE, "warning", "", "Risque de blessure"],
+	"moral": ["", Charte.MORAL, "people", "", "Moral du groupe"],
 }
 const CHARGES := {"repos": ["Repos", Charte.REPOS], "normal": ["Normale", Charte.NORMAL], "intense": ["Intensive", Charte.INTENSIF]}
 const HAUT := 250.0
@@ -101,9 +104,6 @@ static func _donnees(page: Control) -> Dictionary:
 		if not Agenda.valid_date(date): continue
 		if not seances.has(date): seances[date] = []
 		seances[date].append(s)
-	# Planche « Séance avec ses effets » (revue FM27, idée 25) : séances remplacées à la main.
-	var Seance = load("res://ui/immersive08/seance_effets.gd")
-	if not Seance.variante().is_empty(): Seance.appliquer_choix(page, seances)
 	var modeles := {}
 	for t: Variant in planning.get("templates", []):
 		if t is Dictionary: modeles[str(t.get("id", ""))] = t
@@ -177,6 +177,8 @@ static func construire(page: Control) -> void:
 	var jour := str(page.state.get("jour_ouvert", ""))
 	page.state.erase("jour_ouvert")
 	if Agenda.valid_date(jour): _fenetre_jour(page, data, jour)
+	# Fiche de séance ouverte (séance remplacée d'un clic) : elle reste ouverte après la réponse du moteur.
+	if page.state.get("seance_cible") is Dictionary: load("res://ui/immersive08/seance_effets.gd").rendre(page)
 
 ## Barre du mois : ◀ ▶ MOIS ANNÉE, aujourd'hui, semaine copiée, légende des familles (icône + mot, cliquable).
 static func _barre(page: Control, data: Dictionary) -> void:
@@ -292,7 +294,7 @@ static func _colonne_semaine(page: Control, data: Dictionary, panneau: Control, 
 static func _effets(parent: Control, at: Vector2, effets: Dictionary, prefixe: String, largeur_max: float) -> float:
 	var x := at.x
 	var aucun := true
-	for cle: String in ["fatigue", "condition", "avants", "arrieres", "cohesion"]:
+	for cle: String in ["fatigue", "condition", "avants", "arrieres", "cohesion", "blessure", "moral"]:
 		var v := int(effets.get(cle, 0))
 		if v == 0: continue
 		aucun = false
@@ -526,11 +528,11 @@ static func _fenetre_jour(page: Control, data: Dictionary, date: String) -> void
 		D.text(carte, 92, 68, sous, 18, couleur, 600, 300)
 		var effets: Variant = data.par_seance.get(str(s.get("kind", "")))
 		if effets is Dictionary: _effets(carte, Vector2(420, 29), effets, "TrainingMonthDayEffect%d_" % k, 410)
+		# Clic = fiche de la séance (idée FM27 n° 25) : effets en jauges, la remplacer d'un clic.
 		var Seance = load("res://ui/immersive08/seance_effets.gd")
-		if not Seance.variante().is_empty():
-			var rang: int = Array(data.seances.get(date, [])).find(s)
-			var jour := date
-			Pieces.rendre_cliquable(carte, Vector2(840, 84), func(): Seance.ouvrir(page, jour, rang), "TrainingMonthDaySessionOpen%d" % k, str(s.get("label", "")), "", Charte.RAYON_CARTE)
+		var jour := date
+		var id: String = Seance.source(s)
+		Pieces.rendre_cliquable(carte, Vector2(840, 84), func(): Seance.ouvrir(page, jour, id), "TrainingMonthDaySessionOpen%d" % k, str(s.get("label", "")), "", Charte.RAYON_CARTE)
 
 ## Une famille sur le mois : un jour par case avec le nombre de séances de la famille (couleur), clic = le jour.
 static func _fenetre_famille(page: Control, data: Dictionary, famille: String) -> void:
