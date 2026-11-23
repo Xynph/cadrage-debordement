@@ -295,8 +295,8 @@ function guichet({ spectateurs: n, abonnes, prix, finale = false }) {
 }
 // Billetterie d'une saison type (budget voté) : abonnements + guichet d'un match moyen (forme neutre, tirage médian,
 // politique équilibrée) à chaque réception de saison régulière.
-function billetterieAnnuelle({ capacite, abonnes, prix, receptions }) {
-  const n = spectateurs({ capacite, resultats: ['V', 'D'], alea: 0.5, abonnes }), matchs = Math.max(0, receptions);
+function billetterieAnnuelle({ capacite, abonnes, prix, receptions, demande = 1 }) {
+  const n = spectateurs({ capacite, resultats: ['V', 'D'], alea: 0.5, abonnes, demande }), matchs = Math.max(0, receptions);
   return rond(Math.max(0, abonnes) * prix * REMISE_ABONNEMENT * matchs + guichet({ spectateurs: n, abonnes, prix }).recette * matchs);
 }
 // Abonnements de la saison, versés chaque semaine : abonnés × billet × 70 % × réceptions de saison régulière / semaines.
@@ -311,14 +311,17 @@ const facteurHumeur = humeur => Number.isFinite(humeur) ? 1 + HUMEUR_PUBLIC * (M
 // affiche : grosse affiche (derby, club plus fort) : 30 % de demande en plus, jusqu'au stade plein.
 // abonnes : abonnés du club : les présents (85 %) occupent leurs places, le prix du billet ne joue que sur le reste du public,
 // qui remplit les places restantes au même taux (0 : tout le stade est au guichet, comme avant).
-function spectateurs({ capacite, resultats, cle = '', accueil = 1, phase = 'league', humeur = null, politique = null, alea = null, affiche = false, abonnes = 0 }) {
+// demande : appétit du public occasionnel du club (division et réputation, league-economy.cjs, public) : multiplie le
+// remplissage des places hors abonnés (pas en phase finale, où le stade est plein).
+function spectateurs({ capacite, resultats, cle = '', accueil = 1, phase = 'league', humeur = null, politique = null, alea = null, affiche = false, abonnes = 0, demande = 1 }) {
   if (!Number.isFinite(capacite) || capacite <= 0) return null;
   const a = affluence(forme(resultats), Number.isFinite(alea) ? alea : unite('affluence|' + cle)) * (Number.isFinite(accueil) && accueil > 0 ? accueil : 1);
   // L'humeur multiplie le public comme la billetterie (±10 % au plus), dans les mêmes bornes de remplissage ; le prix du
   // billet l'élargit ou le réduit ensuite, sans jamais dépasser la capacité. Phase finale : stade plein quel que soit le prix.
   const taux = phase !== 'league' && phase !== 'pool' ? 0.97 : Math.min(1, Math.min(affiche ? 1 : 0.95, Math.max(0.35, (0.5 + 0.45 * (a - 0.78) / 0.44) * facteurHumeur(humeur) * (affiche ? 1.3 : 1))) * facteurPrix(rapportPrix(politique), affiche));
   const presents = Math.min(capacite, Math.round(Math.max(0, Number.isFinite(abonnes) ? abonnes : 0) * PRESENCE_ABONNES));
-  return Math.round((presents + (capacite - presents) * taux) / 10) * 10;
+  const part = phase !== 'league' && phase !== 'pool' ? taux : Math.min(1, taux * (Number.isFinite(demande) && demande > 0 ? demande : 1));
+  return Math.round((presents + (capacite - presents) * part) / 10) * 10;
 }
 
 // Ce qu'un club géré par le jeu ajuste dans son fonctionnement, sur l'année : il réduit
@@ -760,6 +763,11 @@ function budgetRepere(){
 // Staff de chaque club (carrière Monde) : membres sous contrat avec le club, hors anciens membres historiques ; le club du
 // manager ne repaie pas ceux que l'emploi rémunéré (staff-employment.cjs) paie déjà. Une fois par semaine.
 let budgetStaffMemo=null;
+// Identifiants des membres du club du manager payés par Staff par service (projection services[].enPlus), sinon vide.
+function budgetStaffPostesEnPlus(){
+ try{const d=typeof nativeSystems!=='undefined'?nativeSystems.domain('staffServices'):null,v=d&&typeof d.project==='function'?d.project():null;
+  return new Set((Array.isArray(v?.services)?v.services:[]).flatMap(x=>Array.isArray(x?.enPlus)?x.enPlus:[]));}catch(e){return new Set();}
+}
 function budgetStaff(c){
  if(budgetFrance()||!Array.isArray(S.staffCareer?.people))return null;
  const cle=S.season+'|'+budgetSemaineNo()+'|'+S.staffCareer.people.length,m=budgetStaffMemo;
@@ -767,6 +775,9 @@ function budgetStaff(c){
  let gens=budgetStaffMemo.parClub.get(c.id)||[];
  if(!gens.length)return null;
  if(c.id===S.club&&Array.isArray(S.staffEmployment?.contracts)){const payes=new Set(S.staffEmployment.contracts.filter(k=>k&&k.clubId===c.id&&k.endSeason>=S.season).map(k=>k.staffId));if(payes.size)gens=gens.filter(p=>!payes.has(p.id));}
+ // Staff par service (PR #1192, postes en plus) : les membres tenant un poste en plus y sont payés au forfait du service
+ // (« Salaires du staff · postes en plus ») ; ils ne sont pas payés une seconde fois ici. Lu sur sa projection publique.
+ if(c.id===S.club&&S.staffServices){const ids=budgetStaffPostesEnPlus();if(ids.size)gens=gens.filter(p=>!ids.has(p.id));}
  const r=nativeClubBudget.masseStaff(gens,budgetLigue(c.id),Number.isFinite(S.clubBudget?.clubs?.[c.id]?.base)?S.clubBudget.clubs[c.id].base:c.base);
  return r.membres?{annuel:r.annuel,reference:r.reference}:null;
 }
@@ -785,7 +796,7 @@ function budgetBilletterieClub(c){
  const division=CDWorldCareer.leagueId(S,c.id);if(!nativeClubBudget.DIVISIONS[division])return null;
  const receptions=budgetReceptions(c.id);if(!receptions)return null;
  const capacite=budgetCapacite(c);
- return nativeClubBudget.billetterieAnnuelle({capacite,abonnes:nativeClubBudget.abonnesEstimes(capacite,c.base,String(c.abbr??c.name??c.id)),prix:budgetPrixReference(c).base,receptions});
+ return nativeClubBudget.billetterieAnnuelle({capacite,abonnes:nativeClubBudget.abonnesEstimes(capacite,c.base,String(c.abbr??c.name??c.id)),prix:budgetPrixReference(c).base,receptions,demande:budgetDemande(c)});
 }
 const budgetPolitique=c=>c.id===S.club&&S.v111to116&&typeof S.v111to116.price==='string'?S.v111to116.price:'equilibree';
 const budgetCapacite=c=>Number.isInteger(c.stadiumCapacity)&&c.stadiumCapacity>0?c.stadiumCapacity:typeof CDWorldStadiumCapacities!=='undefined'&&Number.isInteger(CDWorldStadiumCapacities[c.id])?CDWorldStadiumCapacities[c.id]:12000;
@@ -797,7 +808,7 @@ const budgetAccueil=id=>typeof investAccueil==='function'?nativeClubInvestments.
 const budgetBilletterieEtat=()=>{const b=S.billetterie;return b&&b.version===1?b:null;};
 // Prix de référence de la division : billet, abonnement (billet × 70 % × réceptions), grosse affiche (billet × 1,5).
 // Prix « juste » de chaque club (précision de Léo du 23/11/2026) : celui de sa division, surtout ajusté à sa réputation (rang de
-// sa base dans la division : × 0,75 pour le plus modeste à × 1,3 pour le plus réputé). L'affluence réagit au prix autour de
+// sa base dans la division, 0 à 1, budgetReputation : prix × 0,75 pour le plus modeste à × 1,3 pour le plus réputé). L'affluence réagit au prix autour de
 // cette référence, le conseil du staff tend vers elle ; elle n'est jamais affichée.
 let budgetReputationMemo=null;
 function budgetReputation(c){
@@ -805,10 +816,14 @@ function budgetReputation(c){
  if(!m||m.etat!==S||m.saison!==S.season){budgetReputationMemo={etat:S,saison:S.season,parDivision:new Map()};}
  const memo=budgetReputationMemo.parDivision;
  if(!memo.has(d)){const bases=S.clubs.filter(x=>budgetLigue(x.id)===d).map(x=>x.base).filter(Number.isFinite);memo.set(d,bases.length?[Math.min(...bases),Math.max(...bases)]:[c.base,c.base]);}
- const [min,max]=memo.get(d);return 0.75+0.55*(max>min?Math.max(0,Math.min(1,(c.base-min)/(max-min))):0.5);
+ const [min,max]=memo.get(d);return max>min?Math.max(0,Math.min(1,(c.base-min)/(max-min))):0.5;
 }
+// Facteur de prix d'un club : × 0,75 (le plus modeste de sa division) à × 1,3 (le plus réputé).
+const budgetFacteurReputation=c=>0.75+0.55*budgetReputation(c);
+// Appétit du public occasionnel : celui de la division (league-economy.cjs, public), × 0,8 à × 1,2 selon la réputation.
+const budgetDemande=c=>(nativeLeagueEconomy.CHAMPIONNATS[budgetLigue(c.id)]?.public??1)*(0.8+0.4*budgetReputation(c));
 function budgetPrixReference(c){
- const billet=Math.max(1,Math.round(nativeClubBudget.prixBillet(budgetLigue(c.id),'equilibree')*budgetReputation(c)));
+ const billet=Math.max(1,Math.round(nativeClubBudget.prixBillet(budgetLigue(c.id),'equilibree')*budgetFacteurReputation(c)));
  return {base:billet,abonnement:Math.round(billet*nativeClubBudget.REMISE_ABONNEMENT*Math.max(1,budgetReceptions(c.id))),affiche:Math.round(billet*1.5)};
 }
 // Membre du staff qui tient la billetterie (le club n'a pas de directeur financier) : le meilleur de l'encadrement du club
@@ -817,7 +832,10 @@ function budgetResponsable(c){
  const gens=(S.staffCareer?.people||[]).flat().filter(p=>p&&p.clubId===c.id&&p.historical!==true);
  if(!gens.length)return null;
  const parNiveau=(x,y)=>(y.level||0)-(x.level||0)||(x.id<y.id?-1:1),encadrement=gens.filter(p=>p.role==='support').sort(parNiveau);
- const p=encadrement[0]||gens.sort(parNiveau)[0];return {id:p.id,nom:p.name,niveau:Number.isFinite(p.level)?p.level:55};
+ const p=encadrement[0]||gens.sort(parNiveau)[0];
+ // Fiche réduite pour le portrait de l'écran (mêmes champs que l'annuaire du staff).
+ const fiche=Object.fromEntries(['id','name','role','roleLabel','age','appearanceId','appearanceAge','appearanceBankVersion','portraitStatus','identityStatus','sourceKind','level'].filter(k=>p[k]!==undefined).map(k=>[k,p[k]]));
+ return {id:p.id,nom:p.name,niveau:Number.isFinite(p.level)?p.level:55,fiche};
 }
 // Grosse affiche : phase finale, derby, ou adversaire nettement plus fort (base + 5) ou parmi les grands (base 80 et plus).
 function budgetAffiche(c,f){
@@ -840,7 +858,7 @@ function budgetAbonnes(c,capacite=budgetCapacite(c),prixAbonnement=null){
 function budgetSpectateurs(c,f,{alea=null,resultats=null,prix=null,affiche=null,abonnes=null,saison=null,humeur}={}){
  const capacite=budgetCapacite(c),grosse=affiche??budgetAffiche(c,f),ref=budgetPrixReference(c).base;saison=saison??budgetPrixSaison(c);
  const n=nativeClubBudget.spectateurs({capacite,resultats:resultats??(Array.isArray(c.form)?c.form.slice(-5):[]),cle:c.id+'|'+S.season+'|'+(f?.id??f?.fixtureId??''),phase:f?.phase||'league',
-  accueil:budgetAccueil(c.id),humeur:humeur!==undefined?humeur:c.id===S.club?budgetHumeur():null,politique:(prix??(grosse?saison.affiche:saison.base))/ref,alea,affiche:grosse,abonnes:abonnes??budgetAbonnes(c,capacite,saison.abonnement)});
+  accueil:budgetAccueil(c.id),humeur:humeur!==undefined?humeur:c.id===S.club?budgetHumeur():null,politique:(prix??(grosse?saison.affiche:saison.base))/ref,alea,affiche:grosse,abonnes:abonnes??budgetAbonnes(c,capacite,saison.abonnement),demande:budgetDemande(c)});
  return n;
 }
 // Spectateurs de la rencontre f (world-career.cjs, affluenceMatch).
@@ -866,7 +884,7 @@ function budgetConseils(c){
  const cle=S.season+'|'+budgetSemaineNo()+'|'+S.history.length+'|'+c.id+'|'+r.id+'|'+JSON.stringify(budgetBilletterieEtat()),m=budgetConseilsMemo;
  if(m&&m.etat===S&&m.cle===cle)return m.valeur;
  const o=budgetPrixOptimaux(c);
- budgetConseilsMemo={etat:S,cle,valeur:{par:{name:r.nom,level:r.niveau},base:nativeClubBudget.conseilPrix(o.base,r.niveau,S.season+'|base|'+r.id),
+ budgetConseilsMemo={etat:S,cle,valeur:{par:{name:r.nom,level:r.niveau,person:r.fiche},base:nativeClubBudget.conseilPrix(o.base,r.niveau,S.season+'|base|'+r.id),
   abonnement:nativeClubBudget.conseilPrix(o.abonnement,r.niveau,S.season+'|abonnement|'+r.id),affiche:nativeClubBudget.conseilPrix(o.affiche,r.niveau,S.season+'|affiche|'+r.id)}};
  return budgetConseilsMemo.valeur;
 }
@@ -902,7 +920,15 @@ function budgetBilletterieVue(){
  const spectateurs=Math.min(capacite,nativeClubBudget.estimationStaff(g.spectateurs,niveau,'public|'+cle)),recette=nativeClubBudget.estimationStaff(g.recette,niveau,'recette|'+cle,100);
  const aboEstimes=Math.min(capacite,nativeClubBudget.estimationStaff(abonnes,niveau,'abonnes|'+cle));
  const conseils=budgetConseils(c),adverse=f?S.clubs[f.homeId===c.id?f.awayId:f.homeId]:null;
- return {capacity:capacite,price:prix,prices:{base:saison.base,abonnement:saison.abonnement,affiche:saison.affiche},
+ // Tendance de chaque prix, autour du prix juste du club (jamais affiché) : -2 à +2 sur le public (billet, grosse affiche)
+ // ou sur les abonnés (abonnement) ; aucun chiffre.
+ const tendance=f=>f>=1.12?2:f>=1.03?1:f>0.97?0:f>0.88?-1:-2,rAbo=saison.abonnement/ref.abonnement;
+ const trends={base:tendance(nativeClubBudget.facteurPrix(saison.base/ref.base)),affiche:tendance(nativeClubBudget.facteurPrix(saison.affiche/ref.base,true)/nativeClubBudget.facteurPrix(ref.affiche/ref.base,true)),abonnement:tendance(Math.max(0.4,Math.min(1.3,rAbo<=1?rAbo**-0.5:rAbo**-2)))};
+ // Pistes des curseurs : autour du prix de la division (pas du club), pour ne rien dévoiler du prix juste.
+ const div=nativeClubBudget.prixBillet(budgetLigue(c.id),'equilibree'),aboDiv=Math.round(div*nativeClubBudget.REMISE_ABONNEMENT*Math.max(1,budgetReceptions(c.id)));
+ const ranges={base:{min:Math.max(1,Math.round(div*.4)),max:Math.round(div*2.5),step:1},affiche:{min:Math.max(1,Math.round(div*.6)),max:Math.round(div*4),step:1},abonnement:{min:Math.max(5,Math.round(aboDiv*.4/5)*5),max:Math.round(aboDiv*2.5/5)*5,step:5}};
+ const presents=Math.min(spectateurs,Math.round(aboEstimes*nativeClubBudget.PRESENCE_ABONNES));
+ return {capacity:capacite,trends,ranges,subscribersPresent:presents,ticketsSold:Math.max(0,spectateurs-presents),price:prix,prices:{base:saison.base,abonnement:saison.abonnement,affiche:saison.affiche},
   advice:conseils?{base:conseils.base,abonnement:conseils.abonnement,affiche:conseils.affiche}:null,estimatedBy:conseils?conseils.par:null,delegated:b?.delegue===true,
   expectedAttendance:spectateurs,expectedTicketRevenue:recette,expectedSubscribers:aboEstimes,demand:Math.round(100*spectateurs/capacite),
   bigMatch:affiche,fixtureId:f?.id??null,opponent:adverse?adverse.name:null,fixtureWeek:f?.week??null};

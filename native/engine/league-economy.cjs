@@ -40,27 +40,32 @@
 //              socle des autres clubs est de 1,4 M€ en moyenne (1,4 à 1,7) : environ 0,6 M€ de plus la première saison.
 //              La règle au-delà d'une saison n'est pas publiée : la deuxième saison (0,3 M€) est une estimation de jeu,
 //              pour une aide dégressive qui laisse le temps aux contrats de l'élite d'arriver à échéance.
-// billet     : prix moyen du billet d'un match de saison régulière (politique « équilibrée »), en euros. Réglé pour que la
-//              billetterie réelle (spectateurs × prix, abonnés compris ; club-budget.cjs, guichet) d'un club moyen de la
-//              division, à forme neutre, retrouve la part « billetterie » de ses recettes (choix de Léo du 23/11/2026).
+// billet     : prix du billet d'un club moyen de la division pour un match de saison régulière, en euros ; chaque club
+//              l'ajuste à sa réputation (× 0,75 à × 1,3 ; club-budget.cjs, budgetPrixReference). Ordres de grandeur réels
+//              (23/11/2026) : Pro D2 10 à 25 €, Top 14 20 à 60 €, abonnement = billet × 70 % × réceptions (Pro D2 ≈ 120 à
+//              300 €, Top 14 ≈ 200 à 700 €), grosse affiche = billet × 1,5.
+// public     : appétit du public occasionnel (places hors abonnés) : 1 en Top 14 et en Premiership (stades pleins à 85 %),
+//              0,3 en Pro D2 et en Nationale (remplissage moyen ≈ 45 à 50 %, abonnés compris) ; × 0,8 à × 1,2 selon la
+//              réputation du club. Avec ces réglages, la billetterie réelle d'une saison vaut 0,6 à 1,4 fois l'ancienne part
+//              « billetterie » des recettes ; c'est elle qui compte dans les recettes prévues du club (club-budget.cjs, recettes).
 // reputation : attrait sportif aux yeux des joueurs, 100 pour le championnat de référence.
 // pays       : zone du championnat, pour les joueurs qui tiennent à rester chez eux.
 // source     : 'relevé' quand le chiffre vient d'une publication, 'estimation' sinon
 //              (détail et liens dans docs/salaires-par-niveau-20261111.md).
 const parts = (partenaires, ligue, billetterie, boutique, divers) => Object.freeze({ partenaires, ligue, billetterie, boutique, divers });
 const CHAMPIONNATS = Object.freeze({
-  elite: Object.freeze({ libelle: 'Première division française', pays: 'france', reputation: 100, billet: 28, masse: 9.9e6, recettes: 33e6, bas: 0.7, haut: 1.5, ...parts(0.45, 0.19, 0.16, 0.08, 0.12), plafond: 10.7e6, ratio: true, espoir: 'elite', source: 'relevé' }),
-  prem: Object.freeze({ libelle: 'Première division anglaise', pays: 'angleterre', reputation: 92, billet: 45, masse: 6.9e6, recettes: 23e6, bas: 0.75, haut: 1.35, ...parts(0.36, 0.24, 0.22, 0.08, 0.10), plafond: 7.5e6, ratio: false, espoir: 'elite', source: 'plafond relevé, masse et recettes estimées' }),
-  urc: Object.freeze({ libelle: 'Championnat celte, italien et sud-africain', pays: 'celte', reputation: 90, billet: 20, masse: 5.4e6, recettes: 18e6, bas: 0.5, haut: 1.9, ...parts(0.30, 0.40, 0.18, 0.05, 0.07), plafond: null, ratio: false, espoir: 'elite', source: 'estimation à partir de trois repères' }),
-  srp: Object.freeze({ libelle: 'Championnat du Pacifique', pays: 'pacifique', reputation: 86, billet: 6, masse: 2.3e6, recettes: 7.6e6, bas: 0.8, haut: 1.25, ...parts(0.28, 0.45, 0.15, 0.05, 0.07), plafond: 2.6e6, ratio: false, espoir: 'accession', source: 'plafond et salaire moyen relevés, recettes estimées' }),
-  'jlo-d1': Object.freeze({ libelle: 'Première division japonaise', pays: 'japon', reputation: 78, billet: 15, masse: 6.0e6, recettes: 20e6, bas: 0.7, haut: 1.5, ...parts(0.70, 0.08, 0.10, 0.04, 0.08), plafond: null, ratio: false, espoir: 'accession', source: 'estimation' }),
-  accession: Object.freeze({ libelle: 'Deuxième division française', pays: 'france', reputation: 70, billet: 7, masse: 3.2e6, recettes: 10.7e6, bas: 0.62, haut: 1.55, ...parts(0.48, 0.22, 0.08, 0.04, 0.18), plafond: null, ratio: true, encadrement: true, reserve: Object.freeze({ min: 0.2, ecart: 0.1 }),
+  elite: Object.freeze({ libelle: 'Première division française', pays: 'france', reputation: 100, billet: 32, public: 1, masse: 9.9e6, recettes: 33e6, bas: 0.7, haut: 1.5, ...parts(0.45, 0.19, 0.16, 0.08, 0.12), plafond: 10.7e6, ratio: true, espoir: 'elite', source: 'relevé' }),
+  prem: Object.freeze({ libelle: 'Première division anglaise', pays: 'angleterre', reputation: 92, billet: 40, public: 1, masse: 6.9e6, recettes: 23e6, bas: 0.75, haut: 1.35, ...parts(0.36, 0.24, 0.22, 0.08, 0.10), plafond: 7.5e6, ratio: false, espoir: 'elite', source: 'plafond relevé, masse et recettes estimées' }),
+  urc: Object.freeze({ libelle: 'Championnat celte, italien et sud-africain', pays: 'celte', reputation: 90, billet: 25, public: 0.7, masse: 5.4e6, recettes: 18e6, bas: 0.5, haut: 1.9, ...parts(0.30, 0.40, 0.18, 0.05, 0.07), plafond: null, ratio: false, espoir: 'elite', source: 'estimation à partir de trois repères' }),
+  srp: Object.freeze({ libelle: 'Championnat du Pacifique', pays: 'pacifique', reputation: 86, billet: 13, public: 0.3, masse: 2.3e6, recettes: 7.6e6, bas: 0.8, haut: 1.25, ...parts(0.28, 0.45, 0.15, 0.05, 0.07), plafond: 2.6e6, ratio: false, espoir: 'accession', source: 'plafond et salaire moyen relevés, recettes estimées' }),
+  'jlo-d1': Object.freeze({ libelle: 'Première division japonaise', pays: 'japon', reputation: 78, billet: 20, public: 0.6, masse: 6.0e6, recettes: 20e6, bas: 0.7, haut: 1.5, ...parts(0.70, 0.08, 0.10, 0.04, 0.08), plafond: null, ratio: false, espoir: 'accession', source: 'estimation' }),
+  accession: Object.freeze({ libelle: 'Deuxième division française', pays: 'france', reputation: 70, billet: 15, public: 0.3, masse: 3.2e6, recettes: 10.7e6, bas: 0.62, haut: 1.55, ...parts(0.48, 0.22, 0.08, 0.04, 0.18), plafond: null, ratio: true, encadrement: true, reserve: Object.freeze({ min: 0.2, ecart: 0.1 }),
     gestion: Object.freeze({ association: Object.freeze({ min: 0.02, ecart: 0.04 }), entreprise: Object.freeze({ min: 0, ecart: 0.6 }), mecene: Object.freeze({ min: 0.8, ecart: 0.2 }) }),
     engagementMax: 0.02, aideRelegue: Object.freeze({ depuis: 'elite', montants: Object.freeze([600000, 300000]) }), espoir: 'accession', source: 'relevé' }),
-  guest: Object.freeze({ libelle: 'Clubs invités', pays: 'autre', reputation: 70, billet: 20, masse: 4.0e6, recettes: 13e6, bas: 0.9, haut: 1.1, ...parts(0.40, 0.25, 0.18, 0.06, 0.11), plafond: null, ratio: false, espoir: 'accession', source: 'estimation' }),
-  'jlo-d2': Object.freeze({ libelle: 'Deuxième division japonaise', pays: 'japon', reputation: 52, billet: 12, masse: 2.0e6, recettes: 6.6e6, bas: 0.7, haut: 1.4, ...parts(0.72, 0.06, 0.08, 0.04, 0.10), plafond: null, ratio: false, espoir: 'accession', source: 'estimation' }),
-  nationale: Object.freeze({ libelle: 'Troisième division française', pays: 'france', reputation: 50, billet: 7, masse: 1.4e6, recettes: 4.6e6, bas: 0.6, haut: 1.6, ...parts(0.50, 0.10, 0.08, 0.04, 0.28), plafond: null, ratio: true, encadrement: true, reserve: Object.freeze({ min: 0.3, ecart: 0.15 }), prudence: 0.025, espoir: 'accession', source: 'relevé (A2R 2022-2023), niveaux 2026-2027 estimés' }),
-  champ: Object.freeze({ libelle: 'Deuxième division anglaise', pays: 'angleterre', reputation: 48, billet: 15, masse: 1.1e6, recettes: 3.6e6, bas: 0.7, haut: 1.5, ...parts(0.50, 0.06, 0.18, 0.10, 0.16), plafond: null, ratio: false, espoir: 'accession', source: 'salaire moyen relevé, recettes estimées' }),
+  guest: Object.freeze({ libelle: 'Clubs invités', pays: 'autre', reputation: 70, billet: 25, public: 0.7, masse: 4.0e6, recettes: 13e6, bas: 0.9, haut: 1.1, ...parts(0.40, 0.25, 0.18, 0.06, 0.11), plafond: null, ratio: false, espoir: 'accession', source: 'estimation' }),
+  'jlo-d2': Object.freeze({ libelle: 'Deuxième division japonaise', pays: 'japon', reputation: 52, billet: 14, public: 0.4, masse: 2.0e6, recettes: 6.6e6, bas: 0.7, haut: 1.4, ...parts(0.72, 0.06, 0.08, 0.04, 0.10), plafond: null, ratio: false, espoir: 'accession', source: 'estimation' }),
+  nationale: Object.freeze({ libelle: 'Troisième division française', pays: 'france', reputation: 50, billet: 10, public: 0.3, masse: 1.4e6, recettes: 4.6e6, bas: 0.6, haut: 1.6, ...parts(0.50, 0.10, 0.08, 0.04, 0.28), plafond: null, ratio: true, encadrement: true, reserve: Object.freeze({ min: 0.3, ecart: 0.15 }), prudence: 0.025, espoir: 'accession', source: 'relevé (A2R 2022-2023), niveaux 2026-2027 estimés' }),
+  champ: Object.freeze({ libelle: 'Deuxième division anglaise', pays: 'angleterre', reputation: 48, billet: 18, public: 0.5, masse: 1.1e6, recettes: 3.6e6, bas: 0.7, haut: 1.5, ...parts(0.50, 0.06, 0.18, 0.10, 0.16), plafond: null, ratio: false, espoir: 'accession', source: 'salaire moyen relevé, recettes estimées' }),
 });
 // Seuls ces deux championnats gardent les salaires bruts de la règle : elle a été réglée sur eux.
 const REFERENCES = Object.freeze(['elite', 'accession']);

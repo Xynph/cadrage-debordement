@@ -9,10 +9,10 @@ const B = require('../native/engine/club-budget.cjs');
 const { ouvrir, creer, jusquAuMatch, jouerLeMatch, jusquALaSemaineSuivante } = require('./helpers/carriere-monde.cjs');
 
 // 1. Prix du billet : division et politique ; plus cher = moins de monde, jamais plus que la capacité.
-assert.equal(B.prixBillet('accession', 'equilibree'), 7);
+assert.equal(B.prixBillet('accession', 'equilibree'), 15);
 assert.ok(B.prixBillet('elite', 'equilibree') > B.prixBillet('accession', 'equilibree'), 'Top 14 plus cher que Pro D2');
-assert.ok(B.prixBillet('accession', 'accessible') < 7 && B.prixBillet('accession', 'premium') > 7);
-assert.equal(B.prixBillet('accession', 'inconnue'), 7, 'politique inconnue = équilibrée');
+assert.ok(B.prixBillet('accession', 'accessible') < 15 && B.prixBillet('accession', 'premium') > 15);
+assert.equal(B.prixBillet('accession', 'inconnue'), 15, 'politique inconnue = équilibrée');
 const match = (politique, resultats = ['V', 'D']) => B.spectateurs({ capacite: 12000, resultats, cle: 'x', alea: 0.5, politique });
 assert.equal(match('equilibree'), B.spectateurs({ capacite: 12000, resultats: ['V', 'D'], cle: 'x', alea: 0.5 }), 'équilibrée = public d’avant');
 assert.ok(match('accessible') > match('equilibree') && match('premium') < match('equilibree'), 'le prix pèse sur l’affluence');
@@ -63,17 +63,17 @@ try {
   let model = creer(jeu, 29);
   const run = src => jeu.bridge.vm.run(src);
   const vue0 = JSON.parse(run('JSON.stringify(budgetBilletterieVue())'));
-  assert.ok(vue0.expectedAttendance <= vue0.capacity && vue0.price >= 5 && vue0.price <= 10 && vue0.prices.abonnement > 8, JSON.stringify(vue0));
+  assert.ok(vue0.expectedAttendance <= vue0.capacity && vue0.price >= 11 && vue0.price <= 20 && vue0.prices.abonnement > 8, JSON.stringify(vue0));
   // Trois prix de la saison fixés par le manager : billet plus cher = moins de monde (estimation du staff) ; abonnement moins
   // cher = plus d'abonnés.
   const prix = (kind, valeur) => { model = jeu.call('club_ticket_price', { context: model.clubLife.clubStrategy.context, kind, prix: valeur }); return model.clubLife.clubStrategy.fans; };
-  const cher = prix('base', 14);
-  assert.equal(cher.ticketing.prices.base, 14);
-  assert.ok(cher.expectedAttendance < vue0.expectedAttendance, 'billet à 14 € : ' + cher.expectedAttendance + ' < ' + vue0.expectedAttendance);
+  const cher = prix('base', vue0.prices.base + 10);
+  assert.equal(cher.ticketing.prices.base, vue0.prices.base + 10);
+  assert.ok(cher.expectedAttendance < vue0.expectedAttendance, 'billet plus cher : ' + cher.expectedAttendance + ' < ' + vue0.expectedAttendance);
   const aboBas = JSON.parse(run('budgetAbonnes(club(),undefined,40)')), aboHaut = JSON.parse(run('budgetAbonnes(club(),undefined,160)'));
   assert.ok(aboBas > aboHaut, 'abonnement moins cher, plus d’abonnés : ' + aboBas + ' / ' + aboHaut);
   prix('abonnement', 90); prix('affiche', 15);
-  assert.deepEqual(model.clubLife.clubStrategy.fans.ticketing.prices, { base: 14, abonnement: 90, affiche: 15 });
+  assert.deepEqual(model.clubLife.clubStrategy.fans.ticketing.prices, { base: vue0.prices.base + 10, abonnement: 90, affiche: 15 });
   assert.throws(() => jeu.call('club_ticket_price', { context: model.clubLife.clubStrategy.context, kind: 'base', prix: 0 }));
   // Conseils du responsable de la billetterie : présents, jamais égaux au meilleur prix ; délégation = ses conseils appliqués.
   const t = model.clubLife.clubStrategy.fans.ticketing, optimaux = JSON.parse(run('JSON.stringify(budgetPrixOptimaux(club()))'));
@@ -81,7 +81,7 @@ try {
   for (const k of ['base', 'abonnement', 'affiche']) assert.notEqual(t.advice[k], optimaux[k], 'conseil jamais exact : ' + k);
   model = jeu.call('club_ticket_delegate', { context: model.clubLife.clubStrategy.context, delegue: true });
   assert.deepEqual(model.clubLife.clubStrategy.fans.ticketing.prices, model.clubLife.clubStrategy.fans.ticketing.advice, 'délégué : les conseils deviennent les prix');
-  prix('base', 8);
+  prix('base', vue0.prices.base);
   assert.equal(model.clubLife.clubStrategy.fans.ticketing.delegated, false, 'un prix fixé à la main reprend la billetterie');
   prix('abonnement', vue0.prices.abonnement); prix('affiche', vue0.prices.affiche);
   // Jusqu'au premier match à domicile : la recette encaissée est celle du public réel ; l'estimation de la veille en est
@@ -110,5 +110,11 @@ try {
   const staffHebdo = JSON.parse(run('JSON.stringify(budgetStaff(club()))'));
   const paye = -JSON.parse(run(`JSON.stringify(S.ledger.find(e=>e.title.endsWith(" · ${B.LIBELLE_STAFF}")).amount)`));
   assert.equal(paye, Math.round(staffHebdo.annuel / run('wageForecastWeeks()') / 100) * 100, 'staff payé chaque semaine');
+  // Staff par service (PR #1192) : un membre tenant un poste en plus est payé au forfait du service, pas une seconde fois ici.
+  const doublon = JSON.parse(run(`(()=>{const avant=budgetStaff(club()),gens=S.staffCareer.people.flat().filter(p=>p&&p.clubId===S.club&&p.historical!==true),cible=gens[0];
+   const d=nativeSystems.domain;nativeSystems.domain=id=>id==='staffServices'?{project:()=>({services:[{enPlus:[cible.id]}]})}:d(id);S.staffServices={};
+   try{budgetStaffMemo=null;const apres=budgetStaff(club());return JSON.stringify({avant:avant.annuel,apres:apres.annuel,salaire:nativeClubBudget.salaireStaff(cible,budgetLigue(S.club))});}
+   finally{nativeSystems.domain=d;delete S.staffServices;budgetStaffMemo=null;}})()`));
+  assert.equal(doublon.avant - doublon.apres, doublon.salaire, 'poste en plus : un seul salaire ' + JSON.stringify(doublon));
   console.log('billetterie-staff-reels PASS : billet ' + vue0.price + ' €, abonnement ' + vue0.prices.abonnement + ' €, grosse affiche ' + vue0.prices.affiche + ' €, ' + vue0.expectedAttendance + ' spectateurs estimés, recette estimée ' + vue0.expectedTicketRevenue + ' €, staff ' + staffHebdo.annuel + ' €/an');
 } finally { jeu.fermer(); }

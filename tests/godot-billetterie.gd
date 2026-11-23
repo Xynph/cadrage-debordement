@@ -64,14 +64,17 @@ func executer() -> void:
 	await onglet_supporters()
 	for kind in ["base", "abonnement", "affiche"]:
 		verifier(trouver("Billetterie_" + kind) != null and trouver("BilletPlus_" + kind) != null and trouver("BilletMoins_" + kind) != null, "ligne " + kind)
-		verifier(trouver("BilletConseil_" + kind) != null, "conseil du staff : " + kind)
-	verifier(trouver("BilletterieConfier") != null, "Confier la billetterie au staff")
+		verifier(trouver("BilletPiste_" + kind) != null and int(trouver("BilletPiste_" + kind).get("conseil")) > 0, "piste et repère du conseil : " + kind)
+		var prix_l := trouver("BilletPrix_" + kind) as Label
+		verifier(prix_l != null and prix_l.get_theme_font_size("font_size") >= 18, "prix en gros : " + kind)
+	verifier(trouver("BilletterieConfier") is Button and trouver("BilletterieResponsable") != null, "carte du responsable et bascule « Billetterie confiée »")
+	verifier(trouver("BilletterieStade") != null, "stade rempli en tête")
 	verifier(trouver("FansPrice_equilibree") == null, "plus de préréglages à la place des trois prix")
 	var lien := trouver("DirectionLien_Affluence")
 	var textes := ""
 	if lien != null:
 		for l in lien.find_children("*", "Label", true, false): textes += (l as Label).text + " "
-	verifier(textes.contains("≈") and textes.contains("ESTIMÉE"), "affluence estimée, jamais exacte : " + textes)
+	verifier(textes.contains("≈") and textes.contains("ESTIM"), "affluence estimée, jamais exacte : " + textes)
 	# Un clic sur « + » : le billet monte d'un euro, appliqué tout de suite.
 	var avant := int(t.get("prices", {}).get("base", 0))
 	(trouver("BilletPlus_base") as Button).pressed.emit()
@@ -81,6 +84,12 @@ func executer() -> void:
 	await onglet_supporters()
 	var prix := trouver("BilletPrix_base") as Label
 	verifier(prix != null and prix.text.contains(str(apres)), "prix affiché : " + (prix.text if prix != null else "absent"))
+	# Un clic sur le repère du conseil (piste de l'abonnement) : le conseil devient le prix.
+	var conseil_abo := int(app.model.clubLife.clubStrategy.fans.ticketing.advice.abonnement)
+	(trouver("BilletPiste_abonnement")).call("cliquer_conseil")
+	await poser(4); await attendre_moteur()
+	verifier(int(app.model.clubLife.clubStrategy.fans.ticketing.prices.abonnement) == conseil_abo, "repère du conseil appliqué : %d" % conseil_abo)
+	await onglet_supporters()
 	# Confier au staff : les trois prix deviennent ses conseils.
 	(trouver("BilletterieConfier") as Button).pressed.emit()
 	await poser(4); await attendre_moteur()

@@ -16,10 +16,9 @@ const LienZone = preload("res://ui/lien_zone.gd")
 const Visuel = preload("res://ui/strategy_visuals.gd")
 const JaugeAnneau = preload("res://ui/jauge_anneau.gd")
 const Supporters = preload("res://ui/supporters_camembert.gd")
+const Billetterie = preload("res://ui/billetterie_vue.gd")
 
 const PRIX := {"accessible":"Accessible", "equilibree":"Équilibrée", "premium":"Premium"}
-## Trois prix de la saison (choix de Léo du 23/11/2026) : clé, libellé, pas des pilules − / +.
-const LIGNES_PRIX := [["base", "Billet", 1], ["abonnement", "Abonnement saison", 5], ["affiche", "Grosse affiche", 1]]
 const STATUTS := {"pending":["À suivre", "clock", Charte.GRIS_VERT], "met":["Atteint", "check", Charte.V], "missed":["Manqué", "warning", Charte.D], "unverified":["Non vérifiable", "info", Charte.GRIS_VERT]}
 
 static func _send(app: Control, command: String, payload: Dictionary, confirmation: String = "") -> void:
@@ -257,26 +256,29 @@ static func _fans(app: Control, page: Container, data: Dictionary, locked: bool)
 	G.photo_note(page, app.model.club, "Le territoire", "Une ville derrière toi", "city", 140)
 	var card := G.panel(page)
 	card.name = "SupportersBilletterie"
-	card.add_child(Tuile.titre_bloc("Billetterie", "L’humeur des supporters fait varier le public de chaque match à domicile.\n\n" + Copy.notice("strategy", f.notice)))
-	# Trois cellules de même largeur sur toute la carte, contenu centré : espacement régulier, milieux alignés.
-	var metrics := G.h(0)
-	card.add_child(metrics)
-	var cell := func() -> CenterContainer:
-		var box := CenterContainer.new()
-		box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		box.size_flags_stretch_ratio = 1.0
-		metrics.add_child(box)
-		Tuile.proteger(box)
-		return box
 	var open := func(): _public(app, f)
-	# Billetterie réelle : l'affluence est une estimation du staff, jamais un chiffre exact (règle de Léo du 23/11/2026).
-	var estime := f.has("ticketing")
-	LienZone.relier(Visuel.chiffre_picto(cell.call(), "people", ("≈ " if estime else "") + G.n(f.expectedAttendance), "AFFLUENCE ESTIMÉE" if estime else "AFFLUENCE PRÉVUE"), "DirectionLien_Affluence", "Le public", open)
-	LienZone.relier(Visuel.chiffre_picto(cell.call(), "heart", _pourcent(int(f.get("humeurPublic", 0))), "PUBLIC · HUMEUR"), "DirectionLien_Humeur", "Le public", open)
-	LienZone.relier(Visuel.chiffre_picto(cell.call(), "star", ("≈ " + G.n(f.ticketing.get("expectedSubscribers", f.subscribers))) if estime else G.n(f.subscribers), "ABONNÉS"), "DirectionLien_Abonnes", "Le public", open)
-	if estime:
-		_billetterie(app, card, f.ticketing, locked)
+	# Billetterie réelle (choix de Léo du 23/11/2026) : stade rempli, trois prix au curseur, responsable de la billetterie
+	# (billetterie_vue.gd) ; estimations ≈ seulement. Sans budget de saison : l'ancienne politique de prix.
+	if f.has("ticketing"):
+		card.add_child(Tuile.titre_bloc("Billetterie"))
+		Billetterie.construire(card, f, locked, func(commande: String, donnees: Dictionary): _send(app, commande, donnees), open)
 	else:
+		card.add_child(Tuile.titre_bloc("Billetterie", "L’humeur des supporters fait varier le public de chaque match à domicile.
+
+" + Copy.notice("strategy", f.notice)))
+		# Trois cellules de même largeur sur toute la carte, contenu centré : espacement régulier, milieux alignés.
+		var metrics := G.h(0)
+		card.add_child(metrics)
+		var cell := func() -> CenterContainer:
+			var box := CenterContainer.new()
+			box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			box.size_flags_stretch_ratio = 1.0
+			metrics.add_child(box)
+			Tuile.proteger(box)
+			return box
+		LienZone.relier(Visuel.chiffre_picto(cell.call(), "people", G.n(f.expectedAttendance), "AFFLUENCE PRÉVUE"), "DirectionLien_Affluence", "Le public", open)
+		LienZone.relier(Visuel.chiffre_picto(cell.call(), "heart", _pourcent(int(f.get("humeurPublic", 0))), "PUBLIC · HUMEUR"), "DirectionLien_Humeur", "Le public", open)
+		LienZone.relier(Visuel.chiffre_picto(cell.call(), "star", G.n(f.subscribers), "ABONNÉS"), "DirectionLien_Abonnes", "Le public", open)
 		var price_row := G.h(10)
 		card.add_child(price_row)
 		for price: Dictionary in f.prices:
@@ -294,43 +296,6 @@ static func _fans(app: Control, page: Container, data: Dictionary, locked: bool)
 			var state: Control = Tuile.pastille("Déjà engagé", Charte.V, "check") if option.used else _short(app, "DirectionLien_%s_%s" % [category.key, option.id]) if short else null
 			# Clic = appliqué (règle de Léo du 23/11/2026) : ni confirmation ni bouton Valider.
 			Visuel.tuile_offre(cards, category.icon, option.label, G.euros(option.cost), "", _choice(app, category.command, {"key":option.id, "confirmed":true}, locked or option.used or short, "", "Choisir", "Déjà engagé" if option.used else "Trésorerie insuffisante" if short else ""), state)
-
-## Billetterie de la saison : billet, abonnement et grosse affiche, chacun en − / prix / + et le conseil du responsable de la
-## billetterie (un clic l'applique) ; puis « Confier à … » : le staff fixe lui-même les trois prix (clic = appliqué).
-static func _billetterie(app: Control, card: Control, t: Dictionary, locked: bool) -> void:
-	var prix: Dictionary = t.get("prices", {})
-	var conseils: Variant = t.get("advice")
-	var staff: Variant = t.get("estimatedBy")
-	var delegue := bool(t.get("delegated", false))
-	for ligne: Array in LIGNES_PRIX:
-		var kind: String = ligne[0]
-		var pas: int = ligne[2]
-		var valeur := int(prix.get(kind, 0))
-		var row := G.h(10)
-		row.name = "Billetterie_" + kind
-		card.add_child(row)
-		var nom := G.label(ligne[1], 18, Charte.IVOIRE)
-		nom.custom_minimum_size.x = 230
-		nom.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		row.add_child(nom)
-		row.add_child(Tuile.pilule("−", "BilletMoins_" + kind, not locked and valeur > pas, "", func(): _send(app, "club_ticket_price", {"kind": kind, "prix": valeur - pas})))
-		var montant := G.label(G.euros(valeur), 20, Charte.IVOIRE, true)
-		montant.name = "BilletPrix_" + kind
-		montant.custom_minimum_size.x = 120
-		montant.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		montant.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		row.add_child(montant)
-		row.add_child(Tuile.pilule("+", "BilletPlus_" + kind, not locked, "", func(): _send(app, "club_ticket_price", {"kind": kind, "prix": valeur + pas})))
-		if conseils is Dictionary:
-			var conseil := int(conseils.get(kind, valeur))
-			row.add_child(Tuile.pilule("Conseil · %s" % G.euros(conseil), "BilletConseil_" + kind, not locked and conseil != valeur, "", func(): _send(app, "club_ticket_price", {"kind": kind, "prix": conseil})))
-	if staff is Dictionary:
-		var bas := G.h(10)
-		card.add_child(bas)
-		var confier := _toggle("Confier à %s · %d" % [str(staff.get("name", "")), int(staff.get("level", 0))], func(): _send(app, "club_ticket_delegate", {"delegue": not delegue}), delegue)
-		confier.name = "BilletterieConfier"
-		confier.disabled = locked
-		bas.add_child(confier)
 
 ## Saison lisible d'une entrée d'historique (saison, sinon semaine).
 static func _when(entry: Dictionary) -> String:
