@@ -76,6 +76,7 @@ const EXTRAS := [
 	{"id": "classements-archives", "libelle": "Classements · sous-page des archives des saisons", "type": "classements_page", "page": "archives"},
 	{"id": "classements-phases", "libelle": "Classements · onglet Phases finales", "type": "classements_onglet", "onglet": "playoffs"},
 	{"id": "classements-stats", "libelle": "Classements · onglet Statistiques", "type": "classements_onglet", "onglet": "stats"},
+	{"id": "dans-le-monde", "libelle": "Compétitions · Dans le monde", "type": "classements_onglet", "onglet": "monde"},
 	{"id": "formation-suivi", "libelle": "Formation · sous-page Suivi des jeunes", "type": "formation_suivi"},
 	{"id": "options", "libelle": "Options", "type": "options"},
 	{"id": "recherche", "libelle": "Recherche (résultats de la barre haute)", "type": "recherche"},
