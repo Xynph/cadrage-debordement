@@ -1849,6 +1849,7 @@ func fermer_fenetre() -> void:
 # --- Idée FM27 n° 33 : consignes en petite fenêtre, le match continue derrière ------------------------------------
 
 const ConsignesFenetre = preload("res://ui/contextual/match_consignes_fenetre.gd")
+const JoueurFenetre = preload("res://ui/contextual/match_menu_joueur.gd")
 ## Axe montré et l'envoi de la régie (`set_consignes` : file du prochain arrêt de jeu).
 var consignes_axe := ""
 var _consignes_envoyer: Callable
@@ -1858,7 +1859,9 @@ var _consignes_envoyer: Callable
 func ouvrir_fenetre_consignes(envoyer: Callable = Callable()) -> void:
 	if envoyer.is_valid(): _consignes_envoyer = envoyer
 	var p: Dictionary = Pilotage.pilotage(_live())
-	var fond := _ouvrir_fenetre(ConsignesFenetre.NOM, "CONSIGNES", ConsignesFenetre.LARGEUR, ConsignesFenetre.HAUTEUR, false)
+	var fond := _ouvrir_fenetre(ConsignesFenetre.NOM, "", ConsignesFenetre.LARGEUR, ConsignesFenetre.HAUTEUR, false)
+	# Même cadre que la fenêtre d'un joueur (ardoise claire, idée 32).
+	JoueurFenetre.habiller(fond, ConsignesFenetre.NOM)
 	var choisir := func(axe: String):
 		consignes_axe = axe
 		ouvrir_fenetre_consignes()

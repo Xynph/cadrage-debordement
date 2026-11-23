@@ -152,7 +152,10 @@ func run() -> void:
 		await settle(30)
 		view.ouvrir_fenetre_consignes()
 		await settle(12)
-		check(debordements(fenetre()).is_empty(), "%s : rien de coupé ni hors écran %s" % [str(taille), str(debordements(fenetre()))])
+		check(debordements(fenetre()).is_empty(), "%s : rien de coupé %s" % [str(taille), str(debordements(fenetre()))])
+		var panneau := view.fenetre_hote.find_child("MatchFenetreConsignesPanneau", true, false) as Control
+		check(panneau != null and Rect2(Vector2.ZERO, Vector2(root.size)).encloses(panneau.get_global_rect()), "%s : fenêtre entière à l'écran %s" % [str(taille), str(panneau.get_global_rect()) if panneau != null else "?"])
+		check(panneau != null and panneau.get_global_rect().size.x < root.size.x * 0.8, "%s : petite fenêtre, comme celle d'un joueur" % str(taille))
 		await capture("final-plan-de-jeu-%dx%d" % [taille.x, taille.y])
 	view.consignes_axe = "piedJeu"
 	view.ouvrir_fenetre_consignes()
