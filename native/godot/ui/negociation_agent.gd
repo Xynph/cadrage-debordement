@@ -102,7 +102,7 @@ static func donnees(ctx: Dictionary) -> Dictionary:
 	var finance: Dictionary = app.model.get("finance", {})
 	var saison: Variant = finance.get("budget")
 	var d := val.duplicate()
-	d.merge({"id":str(ctx.player.get("id", "")), "contre":contre, "retrait":retrait, "cible":cible, "tentatives":load("res://ui/contract_negotiation.gd").tentatives(ctx.quote), "essais":load("res://ui/contract_negotiation.gd").essais(ctx.quote),
+	d.merge({"id":str(ctx.player.get("id", "")), "contre":contre, "retrait":retrait, "cible":cible, "tentatives":load("res://ui/contract_negotiation.gd").tentatives(ctx.quote),
 		"contre_annees":int(negociation.get("years", 0)), "salaire":etat_salaire, "duree":etat_duree, "prime":etat_prime,
 		"attendu":attendu, "choisi":choisi, "role":etat_role, "requis":role_requis(ctx), "masse":masse, "ajout":ajout, "apres":masse + ajout,
 		"semaines":int(paie.weeks), "saison":saison if saison is Dictionary else {}, "guidee":offre_guidee(ctx),
@@ -156,7 +156,13 @@ static func bulles(d: Dictionary, quote: Dictionary) -> Array:
 	liste.append(["Il demande %s." % G.salary(d.demande), Charte.IVOIRE, true])
 	if int(d.min) != int(d.max): liste.append(["%d à %d saisons." % [int(d.min), int(d.max)], Charte.IVOIRE, true])
 	else: liste.append(["%d saison." % int(d.min), Charte.IVOIRE, true])
-	if d.contre: liste.append(["Pas sous %s." % G.salary(d.cible), Pieces.ORANGE, true])
+	if d.contre:
+		liste.append(["Pas sous %s." % G.salary(d.cible), Pieces.ORANGE, true])
+		# Agent d'une recrue : sa réplique se durcit avec son humeur (seul indice de sa patience cachée).
+		var agent: Variant = quote.get("agent")
+		if agent is Dictionary:
+			var h: Array = load("res://ui/discussion_agent.gd").HUMEURS.get(str(agent.get("humeur", "calme")), [])
+			if not h.is_empty(): liste.append([str(h[3]), h[1], true])
 	liste.append([G.salary(d.propose) + " · %d an%s" % [int(d.annees), "s" if int(d.annees) > 1 else ""], Pieces.BLEU, false])
 	if str(d.salaire) == "ok" and str(d.prime) == "ok": liste.append(["Marché conclu si tu signes.", Pieces.VERT, true])
 	elif str(d.salaire) != "ok": liste.append(["Trop bas.", couleur_etat(str(d.salaire)), true])
@@ -282,8 +288,8 @@ static func _identite(toile: Control, parent: Node, ctx: Dictionary, zone: Rect2
 	nom.name = "OffreNom"
 	D.fit_title(nom, largeur, 60, 2, 18)
 	D.text(parent, x, zone.position.y + 82, "%s · %s ans" % [str(joueur.get("pos", "—")), G.n(joueur.get("age", "—"))], 17, Charte.IVOIRE_2, 600, largeur, HORIZONTAL_ALIGNMENT_LEFT, true).name = "OffreDetail"
-	var tentative := mini(int(d.essais), int(d.tentatives) + 1)
-	Pieces.pastille(parent, x, zone.position.y + 100, "Discussion close" if d.retrait else "Proposition %d/%d" % [tentative, int(d.essais)], "lock" if d.retrait else "renew", "OffreEtape", "",
+	var tentative := int(d.tentatives) + 1
+	Pieces.pastille(parent, x, zone.position.y + 100, "Discussion close" if d.retrait else "Proposition %d" % tentative, "lock" if d.retrait else "renew", "OffreEtape", "",
 		Pieces.ROUGE if d.retrait else Pieces.BLEU, Charte.PANNEAU_3, func(): Offre._fenetre_discussion(toile, ctx, d))
 	var role_actuel := Role.role(joueur) if ctx.get("prolongation", false) else ""
 	if not role_actuel.is_empty():
@@ -456,29 +462,30 @@ static func _agent(toile: Control, parent: Control, ctx: Dictionary, d: Dictiona
 		if by > 620: break
 		by += _bulle(droite, 20, by, 368, str(b[0]), b[1], bool(b[2]), "NegoBulle_%d" % i)
 		i += 1
-	# Relation avec l'agent (idée 24) : cran et pastilles d'effet sur la négociation.
-	_relation_agent(droite, ctx.quote)
-	# Compteur des propositions en bas de la colonne : une pastille par proposition (1 à 5, ton et relation).
+	# Agent d'une recrue (idée 24) : relation (cran), caractère (« ? » tant qu'inconnu) et humeur ; sa patience reste cachée.
+	if ctx.quote.get("agent") is Dictionary:
+		_relation_agent(droite, ctx.quote)
+		return
+	# Prolongation : trois propositions, une pastille par proposition en bas de la colonne.
 	_titre(droite, 20, 790, "Propositions", Charte.IVOIRE_2, 16, 160)
-	var pas := 64.0 if int(d.essais) <= 3 else 48.0 if int(d.essais) == 4 else 38.0
-	for n in int(d.essais):
+	for n in 3:
 		var faite := n < int(d.tentatives)
 		var couleur := Pieces.ROUGE if d.retrait else Pieces.ORANGE if faite else Charte.IVOIRE_3
-		D.rect(droite, Rect2(196 + n * pas, 766, pas - 12, 34), Charte.PANNEAU_3.lerp(couleur, .3 if faite else 0.0), Charte.RAYON_PILULE, couleur).name = "NegoPropo_%d" % (n + 1)
-		D.text(droite, 196 + n * pas + (pas - 12) / 2.0, 790, str(n + 1), 18, couleur if faite else Charte.IVOIRE_2, 700, 40, HORIZONTAL_ALIGNMENT_CENTER)
+		D.rect(droite, Rect2(196 + n * 64, 766, 52, 34), Charte.PANNEAU_3.lerp(couleur, .3 if faite else 0.0), Charte.RAYON_PILULE, couleur).name = "NegoPropo_%d" % (n + 1)
+		D.text(droite, 196 + n * 64 + 26, 790, str(n + 1), 18, couleur if faite else Charte.IVOIRE_2, 700, 40, HORIZONTAL_ALIGNMENT_CENTER)
 
-## Relation avec l'agent au-dessus du compteur : cran (mot + valeur) puis pastilles d'effet (discussion_agent.gd).
+## Agent d'une recrue en bas de la colonne : relation (mot du cran), caractère et humeur (discussion_agent.gd), sans chiffre.
 static func _relation_agent(droite: Control, quote: Dictionary) -> void:
-	var a: Variant = quote.get("agent")
-	if not a is Dictionary: return
+	var a: Dictionary = quote.get("agent")
 	var Agent: Variant = load("res://ui/discussion_agent.gd")
 	var Pastilles: Variant = load("res://ui/immersive08/pastilles_club.gd")
-	var valeur := int(a.get("relation", 0))
-	var cran: Array = Agent.RELATIONS[Agent.cran(valeur)]
+	var cran: Array = Agent.RELATIONS[clampi(int(a.get("cran", 2)), 0, 4)]
+	var humeur := "rompu" if str((quote.get("negotiation", {}) if quote.get("negotiation") is Dictionary else {}).get("status", "")) == "withdrawn" else str(a.get("humeur", "calme"))
 	D.line(droite, Vector2(20, 664), Vector2(388, 664), Charte.FILET)
-	var mot := "%s %s" % [str(cran[0]), ("%+d" % valeur).replace("-", "−") if valeur != 0 else "0"]
-	Pastilles.poser(droite, Pastilles.pastille(mot, cran[1], "heart", "Relation avec l’agent", 16, "NegoRelationAgent"), 20, 676)
-	Pastilles.poser(droite, Agent.effets_relation(a.get("effet", {}) if a.get("effet") is Dictionary else {}, "Nego", 14), 20, 716)
+	Pastilles.poser(droite, Pastilles.pastille(str(cran[0]), cran[1], "heart", "Relation avec l’agent", 16, "NegoRelationAgent"), 20, 680)
+	Pastilles.poser(droite, Agent.caractere(str(a.get("caractere", "")), "Nego", 16), 20, 724)
+	_titre(droite, 20, 790, "Humeur", Charte.IVOIRE_2, 16, 160)
+	Pastilles.poser(droite, Agent.humeur(humeur, "Nego", 16), 196, 766)
 
 ## Ligne du contrat (grammaire de l'Effectif) : liseré et fond verts quand l'agent accepte.
 static func _ligne(parent: Node, zone: Rect2, libelle: String, etat: String, id: String) -> Panel:

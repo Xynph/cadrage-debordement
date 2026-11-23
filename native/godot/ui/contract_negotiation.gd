@@ -15,10 +15,9 @@ static func money(value: Variant) -> String:
 static func signed_money(value: int) -> String:
 	return ("+" if value >= 0 else "−") + G.salary(absi(value))
 
-## Propositions avant la rupture : 3, ou selon le ton donné à l'agent et la relation (ton-agent.cjs, idée 24) : 1 à 5.
-static func essais(quote: Dictionary) -> int:
-	var agent: Variant = quote.get("agent")
-	return clampi(int(agent.get("essais", 3)), 1, 5) if agent is Dictionary else 3
+## Sur combien de propositions : « /3 » pour une prolongation ; rien pour l'agent d'une recrue (patience cachée, idée 24).
+static func sur(quote: Dictionary) -> String:
+	return "" if quote.get("agent") is Dictionary else "/3"
 
 ## Propositions déjà faites cette journée : vrai compte du moteur (au-delà de 3), sinon attempts.
 static func tentatives(quote: Dictionary) -> int:
@@ -29,15 +28,15 @@ static func tentatives(quote: Dictionary) -> int:
 
 static func state_text(quote: Dictionary) -> Dictionary:
 	var negotiation: Dictionary = quote.get("negotiation", {})
-	var n := essais(quote)
-	const MOTS := {1: "Une", 2: "Deux", 3: "Trois", 4: "Quatre", 5: "Cinq"}
+	var n := sur(quote)
 	var status := str(negotiation.get("status", ""))
 	if status == "withdrawn":
-		return {"title":"RETRAIT POUR CETTE JOURNÉE", "progress":("%s propositions refusées · discussion close" if n > 1 else "%s proposition refusée · discussion close") % MOTS[n], "action":"Reprise à la prochaine journée", "blocked":true}
+		return {"title":"RETRAIT POUR CETTE JOURNÉE", "progress":("L’agent a coupé court" if n.is_empty() else "Trois propositions refusées") + " · discussion close", "action":"Reprise à la prochaine journée", "blocked":true}
 	if status == "counter":
 		var attempts := tentatives(quote)
-		return {"title":"CONTRE-OFFRE REÇUE", "progress":"Proposition %d/%d enregistrée" % [attempts, n], "action":"Proposition %d/%d" % [mini(n, attempts+1), n], "blocked":false}
-	return {"title":"PRÉPARER UNE PROPOSITION", "progress":"Prochaine proposition · 1/%d" % n, "action":"Proposition 1/%d" % n, "blocked":false}
+		var prochaine := attempts + 1 if n.is_empty() else mini(3, attempts + 1)
+		return {"title":"CONTRE-OFFRE REÇUE", "progress":"Proposition %d%s enregistrée" % [attempts, n], "action":"Proposition %d%s" % [prochaine, n], "blocked":false}
+	return {"title":"PRÉPARER UNE PROPOSITION", "progress":"Prochaine proposition · 1%s" % n, "action":"Proposition 1%s" % n, "blocked":false}
 
 static func _card(parent: Node, title: String, id: String, tint: Color) -> VBoxContainer:
 	var card := PanelContainer.new()
@@ -131,7 +130,7 @@ static func open(app: Control, player: Dictionary, recruiting: bool, answer: Str
 	var counter_text := C.wrap("Aucune contre-offre en cours.",20,C.IVORY,true,700)
 	counter_text.name = "ContractCurrentNegotiation"
 	if negotiation.get("status") == "counter":
-		counter_text.text = "%s\n%d saison(s) · Proposition %d/%d" % [G.salary(negotiation.get("salary")), int(negotiation.get("years",1)),tentatives(quote), essais(quote)]
+		counter_text.text = "%s\n%d saison(s) · Proposition %d%s" % [G.salary(negotiation.get("salary")), int(negotiation.get("years",1)),tentatives(quote), sur(quote)]
 	elif phase.blocked:
 		counter_text.text = "Discussion close.\n" + str(quote.get("reason","Négociation close jusqu’à la prochaine journée."))
 	counter.add_child(counter_text)

@@ -6,8 +6,8 @@ extends SceneTree
 ## - clic sur une ligne de la liste comparée → fiche (la piste ou notre joueur) ;
 ## - tuiles : indemnité et salaire → offre au joueur, note et potentiel → fiche de la piste ;
 ## - pastilles : transfert (offre au joueur), prêt possible / non (lu dans le moteur, clic = fiche).
-## - pastille « Parler à l'agent » → fenêtre de discussion (idée 24) : ton À tout prix (moteur : demande +6 %, 4
-##   propositions, relation +2), question sur le rôle, « Je vous fais une offre » → offre au joueur avec 4 propositions.
+## - pastille « Parler à l'agent » → fenêtre de discussion (idée 24) : rien de chiffré, ton À tout prix (moteur), question
+##   sur le rôle (caractère de l'agent découvert), « Je vous fais une offre » → offre au joueur avec l'humeur de l'agent.
 ## Imprime une ligne RAPPORT_RECRUTEUR {checks, failures}. Captures : CD_RAPPORT_RECRUTEUR_CAPTURES=<dossier>.
 const Flow = preload("helpers/contextual_flow.gd")
 const Pages = preload("res://ui/immersive08/recruitment_pages.gd")
@@ -197,16 +197,21 @@ func presser(nom: String) -> bool:
 	await settle(10)
 	return true
 
-## Discussion avec l'agent : trois tons, le ton choisi passe par le moteur, puis question et offre.
+## Discussion avec l'agent : trois tons, le ton choisi passe par le moteur, puis question (caractère découvert) et offre.
+## Rien de chiffré à l'écran : ni effet du ton ou de la relation, ni nombre de propositions (patience cachée).
 func agent() -> void:
 	await ouvrir_rapport()
 	var avant := int(piste().get("salary", 0))
-	check(int(piste().get("agent", {}).get("essais", 0)) == 3 and str(piste().get("agent", {}).get("ton", "x")).is_empty(), "Agent : sans ton, 3 propositions")
+	var a0: Dictionary = piste().get("agent", {})
+	check(str(a0.get("ton", "x")).is_empty() and not a0.has("essais") and not a0.has("relation") and not a0.has("effet"), "Agent : sans ton, aucun chiffre projeté (%s)" % JSON.stringify(a0))
 	check(await presser("RapportAgentOuvrirLien") and trouver("DiscussionAgent") != null, "Pastille « Parler à l'agent » → fenêtre")
 	for ton in ["tout_prix", "enthousiaste", "curieux"]: check(trouver("AgentTon_" + ton) != null, "Ton proposé : " + ton)
 	check(trouver("AgentRapportLigne") != null and trouver("AgentRapportLettre") != null, "Rapport du recruteur à gauche")
-	check(trouver("AgentRelationValeur") != null and trouver("AgentFamiliarite") != null and trouver("AgentNotePoste") != null, "Relation, familiarité, note au poste")
-	check(texte("AgentEffetRelationNeutre") == "Sans effet", "Relation neutre : pastille sans effet")
+	check(trouver("AgentRelationCran_2") != null and trouver("AgentFamiliarite") != null and trouver("AgentNotePoste") != null, "Relation en crans, familiarité, note au poste")
+	check(trouver("AgentRelationValeur") == null and trouver("AgentEffetRelationNeutre") == null and trouver("AgentPropositions") == null, "Ni valeur de relation, ni effet, ni ronds de propositions")
+	var observe := str(piste().get("knowledge", {}).get("stage", "")) in ["observed", "deep"]
+	check(observe or texte("AgentCaractere") == "?", "Caractère inconnu : « ? » (%s)" % texte("AgentCaractere"))
+	check(trouver("AgentHumeur") != null, "Pastille d'humeur")
 	var b := trouver("AgentTon_tout_prix") as Button
 	check(b != null and not b.disabled, "Ton cliquable")
 	if b == null: return
@@ -214,17 +219,21 @@ func agent() -> void:
 	await wait_engine()
 	await settle(10)
 	var a: Dictionary = piste().get("agent", {})
-	check(str(a.get("ton", "")) == "tout_prix" and int(a.get("essais", 0)) == 4 and int(a.get("relation", 0)) == 2, "Moteur : ton à tout prix (%s)" % JSON.stringify(a))
-	check(int(piste().get("salary", 0)) > avant, "Demande relevée (%d → %d)" % [avant, int(piste().get("salary", 0))])
-	check(trouver("DiscussionAgent") != null and trouver("AgentBulleDemande") != null and trouver("AgentEffets") != null, "Fenêtre rouverte : réponse chiffrée de l'agent")
-	# Relation +2 (Bonne) : elle pèse aussi (demande −2 %, minimum −2 %), pastilles sous la relation.
-	check(a.get("effet") is Dictionary and int(a.effet.get("demande", 0)) == -2 and int(a.effet.get("seuil", 0)) == -2 and int(a.effet.get("essais", 9)) == 0, "Moteur : effet de la relation Bonne (%s)" % JSON.stringify(a.get("effet")))
-	check(texte("AgentEffetRelationDemande") == "Demande −2 %" and texte("AgentEffetRelationSeuil") == "Minimum −2 %" and trouver("AgentEffetRelationEssais") == null, "Pastilles d'effet sous la relation (%s / %s)" % [texte("AgentEffetRelationDemande"), texte("AgentEffetRelationSeuil")])
-	check(await presser("AgentQuestion_role") and trouver("AgentBulleReponse") != null, "Deuxième tour : rôle attendu")
+	check(str(a.get("ton", "")) == "tout_prix" and int(a.get("cran", 0)) == 3 and not a.has("essais"), "Moteur : ton à tout prix, relation Bonne (%s)" % JSON.stringify(a))
+	# Le ton fait pencher la demande sans garantie chiffrée (arrondis, plancher) : jamais plus basse après « À tout prix ».
+	check(int(piste().get("salary", 0)) >= avant, "Demande pas baissée (%d → %d)" % [avant, int(piste().get("salary", 0))])
+	check(trouver("DiscussionAgent") != null and trouver("AgentBulleDemande") != null and trouver("AgentEffets") == null, "Fenêtre rouverte : réponse de l'agent, sans pastille d'effet")
+	check(await presser("AgentQuestion_role"), "Deuxième tour : rôle attendu")
+	await wait_engine()
+	await settle(10)
+	check(trouver("AgentBulleReponse") != null, "Réponse sur le rôle")
+	var mot := texte("AgentCaractere")
+	check(not mot.is_empty() and mot != "?" and str(piste().get("agent", {}).get("caractere", "")) == mot, "Caractère découvert au 2e tour : %s" % mot)
 	check(await presser("AgentFaireOffre") and page_kind() == "negociation", "Troisième tour : offre au joueur (%s)" % page_kind())
 	await settle(10)
-	check(trouver("NegoPropo_4") != null and trouver("NegoPropo_5") == null, "Offre : quatre propositions")
-	check(texte("NegoRelationAgent") == "Bonne +2" and texte("NegoEffetRelationDemande") == "Demande −2 %", "Offre : relation et effet (%s · %s)" % [texte("NegoRelationAgent"), texte("NegoEffetRelationDemande")])
+	check(trouver("NegoPropo_1") == null and trouver("NegoHumeur") != null, "Offre : humeur de l'agent, plus de ronds numérotés")
+	check(texte("NegoRelationAgent") == "Bonne" and texte("NegoCaractere") == mot and trouver("NegoEffetRelationDemande") == null, "Offre : relation sans chiffre, caractère (%s · %s)" % [texte("NegoRelationAgent"), texte("NegoCaractere")])
+	check(texte("OffreEtapeTexte") == "Proposition 1", "Offre : étape sans total (%s)" % texte("OffreEtapeTexte"))
 
 ## Texte du premier Label sous un nœud (pastilles).
 func texte(nom: String) -> String:

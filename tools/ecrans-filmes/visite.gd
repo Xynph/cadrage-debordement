@@ -108,7 +108,7 @@ const EXTRAS := [
 	{"id": "recrutement-rapport-recruteur", "libelle": "Recrutement · Rapport du recruteur", "type": "recrutement_sous", "page": "recruteur"},
 	{"id": "agent-discussion", "libelle": "Recrutement · discussion avec l'agent", "type": "recrutement_sous", "page": "recruteur", "presser": "RapportAgentOuvrirLien"},
 	{"id": "agent-ton", "libelle": "Recrutement · discussion avec l'agent, ton à tout prix puis rôle attendu", "type": "recrutement_sous", "page": "recruteur", "presser": "RapportAgentOuvrirLien", "puis": ["AgentTon_tout_prix", "AgentQuestion_role"]},
-	{"id": "agent-offre", "libelle": "Recrutement · offre après la discussion avec l'agent (relation et effets)", "type": "recrutement_sous", "page": "recruteur", "presser": "RapportAgentOuvrirLien", "puis": ["AgentTon_tout_prix", "AgentQuestion_role", "AgentFaireOffre"]},
+	{"id": "agent-offre", "libelle": "Recrutement · offre après la discussion avec l'agent (relation, caractère, humeur)", "type": "recrutement_sous", "page": "recruteur", "presser": "RapportAgentOuvrirLien", "puis": ["AgentTon_tout_prix", "AgentQuestion_role", "AgentFaireOffre"]},
 	{"id": "finances-tresorerie", "libelle": "Finances · onglet Trésorerie (colonne de verdict)", "type": "finances_onglet", "onglet": "cash"},
 	{"id": "finances-salaires", "libelle": "Finances · onglet Salaires", "type": "finances_onglet", "onglet": "wages"},
 	{"id": "finances-budget", "libelle": "Finances · onglet Budget", "type": "finances_onglet", "onglet": "budget"},

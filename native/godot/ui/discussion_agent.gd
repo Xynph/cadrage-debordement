@@ -4,12 +4,12 @@ extends RefCounted
 ## l'agent ») et la piste choisie du Recrutement (« Parler à l'agent → »). L'agent n'a pas de nom.
 ##  - Gauche : le joueur (visage, nom, poste, âge), le rapport du recruteur (lettre, note au poste /100 colorée,
 ##    familiarité au poste, rang chez nous, Pour / Contre en icônes vertes / rouges), la relation avec l'agent (5 crans,
-##    valeur gardée d'une journée à l'autre), la demande de la journée et le nombre de propositions.
+##    sans chiffre), son caractère (« ? » tant qu'il n'est pas découvert), son humeur et la demande de la journée.
 ##  - Droite : l'échelle de la relation, le fil en trois tours (le ton ; une question sur le rôle attendu ou la durée ;
 ##    faire une offre ou en rester là). Un clic sur une phrase la dit tout de suite : aucun bouton Valider.
-## Ton (moteur native/engine/ton-agent.cjs, commande agent_ton, projection market[].agent) : À tout prix demande +6 %,
-## 4 propositions, relation +2 ; Enthousiaste demande inchangée, 3, +1 ; Curieux −3 %, 2, −1. Un ton par piste et par
-## journée, avant la première proposition.
+## Ton (moteur native/engine/ton-agent.cjs, commandes agent_ton / agent_question, projection market[].agent) : il fait
+## pencher demande et patience EN MOYENNE (avec la relation, le caractère caché et le hasard) ; aucun effet chiffré n'est
+## montré. Un ton par piste et par journée, avant la première proposition. La question du 2e tour découvre le caractère.
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Charte = preload("res://ui/charte.gd")
@@ -27,11 +27,16 @@ const Link = preload("res://ui/entity_link.gd")
 const NOM := "DiscussionAgent"
 const CLE := "agent_tons"
 const ORDRE := ["tout_prix", "enthousiaste", "curieux"]
-## Tons : mot, nos mots, couleur, icône, écart de demande (%), propositions, relation (mêmes règles que le moteur).
+## Tons : mot, nos mots, couleur, icône (effets cachés, dans le moteur).
 const TONS := {
-	"tout_prix": {"mot": "À tout prix", "phrase": "On le veut, quoi qu’il en coûte.", "couleur": Pastilles.ORANGE, "icone": "target", "ecart": 6, "essais": 4, "relation": 2},
-	"enthousiaste": {"mot": "Enthousiaste", "phrase": "Il nous plaît beaucoup.", "couleur": Pastilles.VERT, "icone": "star", "ecart": 0, "essais": 3, "relation": 1},
-	"curieux": {"mot": "Curieux", "phrase": "On se renseigne, sans plus.", "couleur": Pastilles.BLEU, "icone": "search", "ecart": -3, "essais": 2, "relation": -1}}
+	"tout_prix": {"mot": "À tout prix", "phrase": "On le veut, quoi qu’il en coûte.", "couleur": Pastilles.ORANGE, "icone": "target"},
+	"enthousiaste": {"mot": "Enthousiaste", "phrase": "Il nous plaît beaucoup.", "couleur": Pastilles.VERT, "icone": "star"},
+	"curieux": {"mot": "Curieux", "phrase": "On se renseigne, sans plus.", "couleur": Pastilles.BLEU, "icone": "search"}}
+## Humeur de l'agent (moteur : selon sa patience cachée, brouillée) : mot, couleur, icône, réplique.
+const HUMEURS := {"calme": ["Calme", Pastilles.VERT, "check", "On peut encore en parler."],
+	"agace": ["Agacé", Pastilles.ORANGE, "info", "Mon client commence à s’impatienter."],
+	"tendu": ["Tendu", Pastilles.ROUGE, "warning", "Ne me faites pas perdre mon temps."],
+	"rompu": ["Parti", Pastilles.ROUGE, "lock", "On arrête là pour aujourd’hui."]}
 ## Relation avec l'agent : 5 crans (moteur : Froide ≤ −6 < Distante ≤ −2 < Neutre < 2 ≤ Bonne < 6 ≤ Proche).
 const RELATIONS := [["Froide", Pastilles.ROUGE, "warning"], ["Distante", Pastilles.ORANGE, "info"], ["Neutre", Charte.IVOIRE_2, "people"],
 	["Bonne", Pastilles.BLEU, "check"], ["Proche", Pastilles.VERT, "heart"]]
@@ -72,7 +77,8 @@ static func donnees(app: Control, id: String) -> Dictionary:
 	if not ton.is_empty(): e.erase("envoi")
 	var roles: Variant = p.get("roles")
 	return {"p": p, "id": id, "r": load("res://ui/immersive08/rapport_recruteur.gd").lire(app, p), "ton": ton, "e": e,
-		"essais": int(a.get("essais", 3)), "faites": int(a.get("faites", 0)), "effet": a.get("effet", {}) if a.get("effet") is Dictionary else {}, "relation": int(a.get("relation", 0)), "avant": int(a.get("avant", a.get("relation", 0))),
+		"faites": int(a.get("faites", 0)), "cran": clampi(int(a.get("cran", 2)), 0, 4), "avant": clampi(int(a.get("avant", a.get("cran", 2))), 0, 4),
+		"caractere": str(a.get("caractere", "")), "humeur": str(a.get("humeur", "calme")) if HUMEURS.has(str(a.get("humeur", ""))) else "calme",
 		"libre": bool(a.get("libre", false)) and not e.has("envoi"), "ouvert": bool(p.get("available", false)),
 		"salaire": int(p.get("salary", 0)) if p.get("salary") is int or p.get("salary") is float else 0,
 		"attendu": str(roles.get("attendu", "")) if roles is Dictionary else "", "max": int(p.get("maxYears", 1)),
@@ -98,9 +104,12 @@ static func _choisir_ton(app: Control, page: Control, d: Dictionary, ton: String
 	_redessiner(app, page, d.id)
 	app._command("agent_ton", {"playerId": d.id, "ton": ton})
 
+## Question du 2e tour : l'agent se dévoile (le moteur découvre son caractère), la page revient avec la fenêtre rouverte.
 static func _demander(app: Control, page: Control, d: Dictionary, q: String) -> void:
 	d.e["question"] = q
+	_pages().etat(app)["agent"] = true
 	_redessiner(app, page, d.id)
+	app._command("agent_question", {"playerId": d.id})
 
 static func _conclure(app: Control, page: Control, d: Dictionary) -> void:
 	d.e["fin"] = true
@@ -124,14 +133,14 @@ static func _dessiner(app: Control, page: Control, id: String) -> void:
 	if d.is_empty(): return
 	FenetreDiscussion.ouvrir(page, {"nom": NOM, "titre": "Agent de " + Kit.casse(str(d.p.get("name", "—"))), "icone": "people", "prefixe": "Agent",
 		"gauche": func(f: Control, zone: Rect2): _gauche(app, page, f, zone, d),
-		"echelle": {"paliers": RELATIONS, "avant": cran(int(d.avant)), "apres": cran(int(d.relation))},
+		"echelle": {"paliers": RELATIONS, "avant": int(d.avant), "apres": int(d.cran)},
 		"visage": func() -> Control: return _visage(52),
 		"fil": _fil(d), "choix": _choix(app, page, d)})
 
 # --- Fil et choix ------------------------------------------------------------------------------------------------------
 
 static func accueil(d: Dictionary) -> String:
-	match cran(int(d.avant)):
+	match int(d.avant):
 		0: return "Encore vous. Faites vite."
 		1: return "%s ? J’écoute." % str(d.prenom)
 		3: return "Content de vous entendre. %s ?" % str(d.prenom)
@@ -160,7 +169,7 @@ static func _fil(d: Dictionary) -> Array:
 		var t: Dictionary = TONS[ton]
 		fil.append({"qui": "moi", "id": "AgentBulleTon", "texte": str(t.phrase), "couleur": t.couleur})
 		if not str(d.ton).is_empty():
-			fil.append({"qui": "lui", "id": "AgentBulleDemande", "texte": reponse_ton(d), "couleur": Pastilles.BLEU, "effet": _effets(str(d.ton))})
+			fil.append({"qui": "lui", "id": "AgentBulleDemande", "texte": reponse_ton(d), "couleur": Pastilles.BLEU})
 	elif not bool(d.libre):
 		# Négociation déjà commencée cette journée sans ton : plus de ton possible.
 		fil.append({"qui": "repere", "id": "AgentNegoEnCours", "controle": Pastilles.pastille("Négociation en cours", Pastilles.ORANGE, "renew", "Proposition déjà faite cette journée", 16, "AgentNegoEnCoursPastille")})
@@ -175,24 +184,6 @@ static func _fil(d: Dictionary) -> Array:
 		fil.append({"qui": "lui", "id": "AgentBulleAuRevoir", "texte": "Ne tardez pas trop.", "couleur": Pastilles.BLEU})
 	return fil
 
-## Effets d'un ton en pastilles : demande, propositions, relation.
-static func _effets(ton: String) -> Control:
-	var t: Dictionary = TONS[ton]
-	var ligne := C.h(8)
-	ligne.name = "AgentEffets"
-	var ecart := int(t.ecart)
-	ligne.add_child(Pastilles.pastille(("Demande %+d %%" % ecart).replace("-", "−") if ecart != 0 else "Demande =", Pastilles.ROUGE if ecart > 0 else Pastilles.VERT if ecart < 0 else Charte.IVOIRE_2, "money", "Demande de salaire", 15, "AgentEffetDemande"))
-	var n := int(t.essais)
-	ligne.add_child(Pastilles.pastille("%d propositions" % n, Pastilles.VERT if n > 3 else Pastilles.ROUGE if n < 3 else Charte.IVOIRE_2, "renew", "Propositions avant la rupture", 15, "AgentEffetEssais"))
-	var rel := int(t.relation)
-	ligne.add_child(Pastilles.pastille(("Relation %+d" % rel).replace("-", "−"), Pastilles.VERT if rel > 0 else Pastilles.ROUGE, "heart", "Relation avec l’agent", 15, "AgentEffetRelation"))
-	return ligne
-
-static func _bulle_ton(cle: String) -> String:
-	var t: Dictionary = TONS[cle]
-	var ecart := int(t.ecart)
-	return ("Demande %+d %%" % ecart if ecart != 0 else "Demande =").replace("-", "−") + " · %d propositions · " % int(t.essais) + ("Relation %+d" % int(t.relation)).replace("-", "−")
-
 static func _choix(app: Control, page: Control, d: Dictionary) -> Array:
 	var e: Dictionary = d.e
 	if bool(e.get("fin", false)): return []
@@ -202,7 +193,7 @@ static func _choix(app: Control, page: Control, d: Dictionary) -> Array:
 			var t: Dictionary = TONS[cle]
 			var ton := cle
 			choix.append({"id": "AgentTon_" + cle, "texte": "%s · « %s »" % [str(t.mot).to_upper(), str(t.phrase)], "icone": t.icone, "couleur": t.couleur,
-				"bulle": _bulle_ton(cle), "action": func(): _choisir_ton(app, page, d, ton), "actif": bool(d.libre), "choisi": str(e.get("envoi", "")) == cle})
+				"bulle": str(t.mot), "action": func(): _choisir_ton(app, page, d, ton), "actif": bool(d.libre), "choisi": str(e.get("envoi", "")) == cle})
 		return choix
 	if not str(d.ton).is_empty() and str(e.get("question", "")).is_empty():
 		for q: String in ["role", "duree"]:
@@ -291,23 +282,34 @@ static func _gauche(app: Control, page: Control, f: Control, zone: Rect2, d: Dic
 	var demi := (l - 16) / 2.0
 	_raisons(f, x0, y, demi, "Pour", "check", Pastilles.VERT, r.pour, "AgentPour")
 	_raisons(f, x0 + demi + 16, y, demi, "Contre", "warning", Pastilles.ROUGE, r.contre, "AgentContre")
-	# Relation avec l'agent : 5 crans, mot, valeur, pastilles d'effet ; puis demande et propositions de la journée.
+	# Relation avec l'agent : 5 crans (sans chiffre ni effet) ; puis demande du jour, caractère (« ? ») et humeur.
 	y = zone.end.y - 226
-	_section(f, x0, y, "Relation avec l’agent", "heart", RELATIONS[cran(int(d.relation))][1])
+	_section(f, x0, y, "Relation avec l’agent", "heart", RELATIONS[int(d.cran)][1])
 	_relation(f, Rect2(x0, y + 16, l, 64), d)
-	Pastilles.poser(f, effets_relation(d.effet, "Agent"), x0, y + 70)
-	y += 148
+	y += 104
 	var dx := x0
-	var ecart := (0 if str(d.ton).is_empty() else int(TONS[d.ton].ecart)) + int(d.effet.get("demande", 0))
-	dx += Pastilles.poser(f, Pastilles.tuile(G.salary(int(d.salaire)), "demande", Pastilles.ROUGE if ecart > 0 else Pastilles.VERT if ecart < 0 else Pastilles.BLEU, Charte.PANNEAU_3, 26, "AgentDemande", true, _offre(app, page, str(d.id))), dx, y) + 32
-	var essais := int(d.essais)
-	var faites := int(d.faites)
-	Pastilles.poser(f, _propositions(essais, faites), dx, y + 4)
+	Kit.etiquette(f, dx, y, "Demande", 200)
+	Kit.etiquette(f, dx + 260, y, "Caractère", 200)
+	Kit.etiquette(f, dx + 260 + 330, y, "Humeur", 200)
+	y += 12
+	dx += Pastilles.poser(f, Pastilles.tuile(G.salary(int(d.salaire)), "demande", Pastilles.BLEU, Charte.PANNEAU_3, 26, "AgentDemande", true, _offre(app, page, str(d.id))), dx, y)
+	Pastilles.poser(f, caractere(str(d.caractere), "Agent", 18), x0 + 260, y + 6)
+	Pastilles.poser(f, humeur(str(d.humeur), "Agent", 18), x0 + 260 + 330, y + 6)
+
+## Caractère de l'agent : le mot une fois découvert, « ? » sinon (jamais ses effets).
+static func caractere(mot: String, prefixe: String, taille := 16) -> Control:
+	var connu := not mot.is_empty()
+	return Pastilles.pastille(mot if connu else "?", Pastilles.VIOLET if connu else Charte.IVOIRE_2, "people" if connu else "search", "Caractère de l’agent", taille, prefixe + "Caractere")
+
+## Humeur de l'agent : mot, couleur et icône (aucun chiffre).
+static func humeur(cle: String, prefixe: String, taille := 16) -> Control:
+	var h: Array = HUMEURS.get(cle, HUMEURS.calme)
+	return Pastilles.pastille(str(h[0]), h[1], str(h[2]), "Humeur de l’agent", taille, prefixe + "Humeur")
 
 static func _relation(f: Control, zone: Rect2, d: Dictionary) -> void:
-	var n := cran(int(d.relation))
+	var n := int(d.cran)
 	var ecart := 8.0
-	var lc := (zone.size.x - 150 - ecart * 4) / 5.0
+	var lc := (zone.size.x - ecart * 4) / 5.0
 	for i in 5:
 		var a: Array = RELATIONS[i]
 		var actif := i == n
@@ -316,52 +318,6 @@ static func _relation(f: Control, zone: Rect2, d: Dictionary) -> void:
 		case_.tooltip_text = str(a[0])
 		case_.mouse_filter = Control.MOUSE_FILTER_PASS
 		D.text(case_, lc * .5, 30, str(a[0]), 17, Charte.ENCRE if actif else Color(a[1], .8), 700, lc - 6, HORIZONTAL_ALIGNMENT_CENTER).mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var valeur := int(d.relation)
-	var chiffre := D.text(f, zone.end.x, zone.position.y + 36, ("%+d" % valeur).replace("-", "−") if valeur != 0 else "0", 34, RELATIONS[n][1], 800, 130, HORIZONTAL_ALIGNMENT_RIGHT)
-	chiffre.name = "AgentRelationValeur"
-	chiffre.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
-	chiffre.tooltip_text = "Relation avec l’agent (−10 à +10)"
-	chiffre.mouse_filter = Control.MOUSE_FILTER_PASS
-
-## Effet de la relation sur la négociation (moteur : market[].agent.effet) : demande, propositions, minimum accepté.
-## Neutre : une pastille « Sans effet ». Couleur : vert si ça nous aide, rouge sinon.
-static func effets_relation(effet: Dictionary, prefixe: String, taille := 15) -> Control:
-	var ligne := C.h(8)
-	ligne.name = prefixe + "EffetsRelation"
-	var demande := int(effet.get("demande", 0))
-	var essais := int(effet.get("essais", 0))
-	var seuil := int(effet.get("seuil", 0))
-	if demande == 0 and essais == 0 and seuil == 0:
-		ligne.add_child(Pastilles.pastille("Sans effet", Charte.IVOIRE_2, "people", "Relation sans effet sur la négociation", taille, prefixe + "EffetRelationNeutre"))
-		return ligne
-	if demande != 0:
-		ligne.add_child(Pastilles.pastille(("Demande %+d %%" % demande).replace("-", "−"), Pastilles.ROUGE if demande > 0 else Pastilles.VERT, "money", "Demande de salaire", taille, prefixe + "EffetRelationDemande"))
-	if essais != 0:
-		ligne.add_child(Pastilles.pastille(("%+d proposition" % essais).replace("-", "−"), Pastilles.VERT if essais > 0 else Pastilles.ROUGE, "renew", "Propositions avant la rupture", taille, prefixe + "EffetRelationEssais"))
-	if seuil != 0:
-		ligne.add_child(Pastilles.pastille(("Minimum %+d %%" % seuil).replace("-", "−"), Pastilles.ROUGE if seuil > 0 else Pastilles.VERT, "check", "Salaire minimum accepté", taille, prefixe + "EffetRelationSeuil"))
-	return ligne
-
-## Propositions de la journée : une pastille par essai (faites en orange).
-static func _propositions(essais: int, faites: int) -> Control:
-	var ligne := C.h(6)
-	ligne.name = "AgentPropositions"
-	ligne.tooltip_text = "Propositions avant la rupture"
-	ligne.mouse_filter = Control.MOUSE_FILTER_PASS
-	ligne.add_child(C.icon("renew", 22, Charte.IVOIRE_2))
-	for i in essais:
-		var faite := i < faites
-		var rond := PanelContainer.new()
-		rond.name = "AgentProposition_%d" % (i + 1)
-		rond.add_theme_stylebox_override("panel", C.box(Charte.PANNEAU_3.lerp(Pastilles.ORANGE, .45) if faite else Charte.PANNEAU_3, Pastilles.ORANGE if faite else Charte.FILET, Charte.RAYON_PILULE, 0))
-		rond.custom_minimum_size = Vector2(C.px(40), C.px(36))
-		rond.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var chiffre := C.label(str(i + 1), 18, Pastilles.ORANGE if faite else Charte.IVOIRE, true, 700)
-		chiffre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		chiffre.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		rond.add_child(chiffre)
-		ligne.add_child(rond)
-	return ligne
 
 ## Lignes Pour / Contre : icône teintée + mot + chiffre ; ligne cliquable (action du rapport).
 static func _raisons(parent: Control, x: float, y: float, l: float, titre: String, icone: String, couleur: Color, raisons: Array, id: String, max_lignes := 4, pas := 50.0) -> void:

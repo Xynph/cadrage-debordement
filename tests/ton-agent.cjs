@@ -1,53 +1,113 @@
 'use strict';
-// Discussion avec l'agent (revue FM27, idée 24 ; choix de Léo du 23/11/2026) : le ton donné à l'agent d'une piste règle la
-// demande (+6 % / = / −3 %) et le nombre de propositions de la journée (4 / 3 / 2) ; la relation avec l'agent est gardée
-// (+2 / +1 / −1) et pèse aussi : Proche −5 % / +1 proposition / minimum −4 % ; Bonne −2 % / minimum −2 % ; Distante +3 % /
-// minimum +2 % ; Froide +6 % / −1 proposition / minimum +5 %. Issue : accord +1, offre ridicule −1 (une fois par journée),
-// rupture −1. native/engine/ton-agent.cjs, commande agent_ton, projection market[].agent.
+// Discussion avec l'agent (revue FM27, idée 24 ; retouche « incertitude » du 23/11/2026) : ton, relation et caractère caché
+// font pencher demande, patience et minimum accepté EN MOYENNE, avec un hasard de la journée tiré par la graine du monde.
+// Rien de chiffré dans la projection ; le caractère se découvre (2e tour, négociation terminée, joueur observé).
+// native/engine/ton-agent.cjs, commandes agent_ton / agent_question, projection market[].agent.
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const K = require('../native/engine/ton-agent.cjs');
 
-test('Règles pures : tons et crans de relation', () => {
+const N = 400;
+const ids = Array.from({ length: N }, (_, i) => 'piste-' + i);
+const moyenne = xs => xs.reduce((a, b) => a + b, 0) / xs.length;
+function avecS(S, fn) {
+  const avant = globalThis.S;
+  globalThis.S = S;
+  try { return fn(); } finally { if (avant === undefined) delete globalThis.S; else globalThis.S = avant; }
+}
+const monde = (seed = 7) => ({ season: 1, careerVariation: { seed }, economy: { week: 3, talks: {} }, market: ids.map(id => ({ id })), tonAgent: { version: 1, tons: {}, relations: {} } });
+
+test('Règles pures : tons, crans, caractères, sauvegarde', () => {
   assert.deepEqual(Object.keys(K.TONS), ['tout_prix', 'enthousiaste', 'curieux']);
-  assert.deepEqual(Object.values(K.TONS).map(t => [t.ecart, t.essais, t.relation]), [[6, 4, 2], [0, 3, 1], [-3, 2, -1]]);
+  assert.deepEqual(Object.keys(K.CARACTERES), ['gourmand', 'presse', 'fidele', 'poker', 'arrangeant']);
+  assert.deepEqual(Object.values(K.CARACTERES).map(c => c.mot), ['Gourmand', 'Pressé', 'Fidèle à son joueur', 'Joueur de poker', 'Arrangeant']);
   assert.deepEqual([-10, -6, -5, -2, -1, 0, 1, 2, 5, 6, 10].map(K.cran), [0, 0, 1, 1, 2, 2, 2, 3, 3, 4, 4]);
-  assert.deepEqual(K.EFFETS.map(e => [e.demande, e.essais, e.seuil]), [[6, -1, 5], [3, 0, 2], [0, 0, 0], [-2, 0, -2], [-5, 1, -4]]);
-  assert.equal(K.etatValide({ version: 1, tons: {}, relations: { a: 3 } }), true);
-  assert.equal(K.etatValide({ version: 1, tons: {}, relations: {}, jours: { a: { saison: 1, semaine: 2, n: 4, vexe: true } } }), true);
+  assert.equal(K.etatValide({ version: 1, tons: {}, relations: { a: 3 }, agents: { a: { car: 'poker', connu: false } } }), true);
+  assert.equal(K.etatValide({ version: 1, tons: {}, relations: {}, agents: { a: { car: 'menteur', connu: false } } }), false);
   assert.equal(K.etatValide({ version: 1, tons: {}, relations: {}, jours: { a: { saison: 1, semaine: 2, n: 6, vexe: false } } }), false);
-  assert.equal(K.etatValide({ version: 1, tons: { a: { ton: 'fou', saison: 1, semaine: 1 } }, relations: {} }), false);
   assert.equal(K.etatValide({ version: 1, tons: {}, relations: { a: 11 } }), false);
 });
 
-test('Effet de chaque cran, cumul avec le ton, bornes', () => {
-  const avant = globalThis.S;
-  try {
-    const S = globalThis.S = { season: 1, economy: { week: 3, talks: {} }, market: [{ id: 'x' }], tonAgent: { version: 1, tons: {}, relations: {} } };
+test('Tendances moyennes sur 400 agents : le ton et la relation penchent sans garantir', () => {
+  const S = monde();
+  avecS(S, () => {
     const k = K.factory();
-    const p = { id: 'x' };
-    const mesure = r => { S.tonAgent.relations.x = r; return [k.demande(10000, p, 'recruit'), k.essais('x'), k.seuil(10000, p, 'recruit')]; };
-    // Sans ton : Froide, Distante, Neutre, Bonne, Proche.
-    assert.deepEqual([-8, -3, 0, 3, 8].map(mesure), [[10600, 2, 10500], [10300, 3, 10200], [10000, 3, 10000], [9800, 3, 9800], [9500, 4, 9600]]);
-    // Prolongation et renouvellement non touchés.
-    assert.equal(k.demande(10000, p, 'renew'), 10000);
-    assert.equal(k.seuil(10000, p, 'renew'), 10000);
-    // Cumul avec le ton (écarts additionnés, propositions bornées 1..5).
-    S.tonAgent.tons.x = { ton: 'tout_prix', saison: 1, semaine: 3 };
-    assert.deepEqual(mesure(10), [10100, 5, 9600], 'Proche + À tout prix : +6 −5 %, 5 propositions');
-    assert.deepEqual(mesure(-10), [11200, 3, 10500], 'Froide + À tout prix : +12 %, 3 propositions');
-    S.tonAgent.tons.x = { ton: 'curieux', saison: 1, semaine: 3 };
-    assert.deepEqual(mesure(-10), [10300, 1, 10500], 'Froide + Curieux : 1 proposition au minimum');
-    assert.deepEqual(mesure(6), [9200, 3, 9600], 'Proche + Curieux : −8 %, 3 propositions');
-    // Ton d'une autre journée : seule la relation compte.
+    const mesurer = (ton, rel) => {
+      S.tonAgent.tons = {}; S.tonAgent.relations = {};
+      for (const id of ids) {
+        if (ton) S.tonAgent.tons[id] = { ton, saison: 1, semaine: 3 };
+        if (rel) S.tonAgent.relations[id] = rel;
+      }
+      return { d: ids.map(id => k.ecartDemande(id)), s: ids.map(id => k.ecartSeuil(id)), p: ids.map(id => k.patience(id)) };
+    };
+    const tp = mesurer('tout_prix'), en = mesurer('enthousiaste'), cu = mesurer('curieux'), sans = mesurer('');
+    // Demande : À tout prix > Enthousiaste > Curieux en moyenne, mais les plages se chevauchent.
+    assert.ok(moyenne(tp.d) > moyenne(en.d) + 4 && moyenne(en.d) > moyenne(cu.d) + 2, `demande moyenne ${moyenne(tp.d)} / ${moyenne(en.d)} / ${moyenne(cu.d)}`);
+    assert.ok(Math.min(...tp.d) < Math.max(...cu.d), 'un Curieux peut payer plus cher qu’un À tout prix');
+    for (const x of [...tp.d, ...cu.d]) assert.ok(x >= -12 && x <= 19, 'écart de demande borné : ' + x);
+    // Patience : 2 à 5, la même tendance, et un agent neutre peut rompre après 2 comme après 5.
+    for (const x of [...tp.p, ...cu.p, ...sans.p, ...mesurer('curieux', -8).p]) assert.ok(x >= 2 && x <= 5);
+    assert.ok(moyenne(tp.p) > moyenne(en.p) && moyenne(en.p) > moyenne(cu.p), `patience moyenne ${moyenne(tp.p)} / ${moyenne(en.p)} / ${moyenne(cu.p)}`);
+    assert.ok(sans.p.includes(2) && sans.p.includes(5) && sans.p.includes(3), 'patience sans ton : 2 à 5 possibles');
+    // Relation : Proche aide, Froide gêne (demande, minimum, patience).
+    const proche = mesurer('', 8), froide = mesurer('', -8);
+    assert.ok(moyenne(proche.d) < moyenne(sans.d) - 3 && moyenne(froide.d) > moyenne(sans.d) + 4);
+    assert.ok(moyenne(proche.s) < moyenne(sans.s) - 2 && moyenne(froide.s) > moyenne(sans.s) + 3);
+    assert.ok(moyenne(proche.p) > moyenne(froide.p) + 1.2, `patience Proche ${moyenne(proche.p)} / Froide ${moyenne(froide.p)}`);
+    for (const x of [...proche.s, ...froide.s]) assert.ok(x >= -12 && x <= 11, 'minimum borné : ' + x);
+    // Les cinq caractères sont tirés, chacun au moins 10 % du temps.
+    const parCar = {};
+    for (const id of ids) parCar[k.caractere(id)] = (parCar[k.caractere(id)] || 0) + 1;
+    assert.deepEqual(Object.keys(parCar).sort(), Object.keys(K.CARACTERES).sort());
+    for (const n of Object.values(parCar)) assert.ok(n >= N * .1, JSON.stringify(parCar));
+    // Même graine : mêmes tirages ; autre graine ou autre journée : tirages différents.
+    const avant = ids.map(id => [k.caractere(id), k.ecartDemande(id), k.patience(id)]);
+    assert.deepEqual(ids.map(id => [k.caractere(id), k.ecartDemande(id), k.patience(id)]), avant);
     S.economy.week = 4;
-    assert.deepEqual(mesure(-3), [10300, 3, 10200]);
-    const v = k.vue('x');
-    assert.deepEqual([v.ton, v.essais, v.cran, v.effet, v.faites], ['', 3, 1, { demande: 3, essais: 0, seuil: 2 }, 0]);
-  } finally { if (avant === undefined) delete globalThis.S; else globalThis.S = avant; }
+    assert.notDeepEqual(ids.map(id => k.ecartDemande(id)), avant.map(x => x[1]), 'autre journée, autre hasard');
+    assert.deepEqual(ids.map(id => k.caractere(id)), avant.map(x => x[0]), 'le caractère ne change pas d’une journée à l’autre');
+    S.careerVariation.seed = 8;
+    assert.notDeepEqual(ids.map(id => k.caractere(id)), avant.map(x => x[0]), 'autre monde, autres caractères');
+  });
 });
 
-test('Carrière Monde : ton, relation qui pèse, issue qui la fait évoluer', { timeout: 600000 }, () => {
+test('Projection sans chiffres, humeur qui se tend, caractère gardé', () => {
+  const S = monde();
+  avecS(S, () => {
+    const k = K.factory();
+    const v = k.vue('piste-1');
+    assert.deepEqual(Object.keys(v).sort(), ['avant', 'caractere', 'cran', 'faites', 'humeur', 'libre', 'ton']);
+    assert.equal(v.caractere, '', 'caractère inconnu au départ');
+    assert.ok(['calme', 'agace', 'tendu'].includes(v.humeur));
+    // Humeur : suit la patience restante (au plus un cran plus tendue, une fois sur trois) ; « tendu » à la dernière.
+    const rang = { calme: 0, agace: 1, tendu: 2 };
+    let brouillees = 0, total = 0;
+    for (const id of ids.slice(0, 120)) {
+      const max = k.patience(id);
+      S.economy.talks['1:3:recruit:' + id] = { status: 'counter', attempts: 1 };
+      for (let n = 0; n < max; n++) {
+        S.tonAgent.jours = { [id]: { saison: 1, semaine: 3, n, vexe: false } };
+        const h = rang[k.humeur(id)], reste = max - n, base = reste >= 3 ? 0 : reste === 2 ? 1 : 2;
+        assert.ok(h === base || h === base + 1, `${id} : humeur ${h}, base ${base}`);
+        if (base < 2) { total++; if (h > base) brouillees++; }
+        if (n === max - 1) assert.equal(h, 2, 'dernière proposition : tendu');
+      }
+    }
+    assert.ok(brouillees > total * .15 && brouillees < total * .5, `humeur brouillée ${brouillees}/${total}`);
+    // Caractère : la sauvegarde prime sur le tirage ; le mot ne sort qu'une fois découvert.
+    S.tonAgent.agents = { 'piste-2': { car: 'poker', connu: false } };
+    assert.equal(k.caractere('piste-2'), 'poker');
+    assert.equal(k.vue('piste-2').caractere, '');
+    S.tonAgent.agents['piste-2'].connu = true;
+    assert.equal(k.vue('piste-2').caractere, 'Joueur de poker');
+    // Joueur observé par le recruteur : caractère découvert.
+    S.playerKnowledge = { version: 1, records: [[['piste-3', 'observed']]] };
+    assert.notEqual(k.vue('piste-3').caractere, '');
+    assert.equal(k.etatValide(S.tonAgent), true);
+  });
+});
+
+test('Carrière Monde : ton, découverte, patience cachée, relation selon l’issue', { timeout: 600000 }, () => {
   const { ouvrir, creer } = require('./helpers/carriere-monde.cjs');
   const jeu = ouvrir({ testVm: true, hebdomadaire: true, simulation: true });
   const lire = code => JSON.parse(jeu.bridge.vm.run('JSON.stringify(' + code + ')'));
@@ -56,92 +116,69 @@ test('Carrière Monde : ton, relation qui pèse, issue qui la fait évoluer', { 
     const plancher = lire("typeof budgetActif==='function'&&budgetActif()?budgetPlancherHebdo():1000");
     const pistes = model.market.filter(p => p.available && p.agent && p.salary >= plancher * 3)
       .sort((a, b) => b.salary - a.salary || (a.id < b.id ? -1 : 1));
-    assert.ok(pistes.length >= 5, 'cinq pistes chères disponibles');
-    for (const p of pistes) assert.deepEqual([p.agent.ton, p.agent.essais, p.agent.relation, p.agent.cran, p.agent.faites, p.agent.libre], ['', 3, 0, 2, 0, true]);
-    const [a, b, c, d, e] = pistes;
-    // Offre ridicule (moins de 70 % de la demande).
+    assert.ok(pistes.length >= 4, 'quatre pistes chères disponibles');
+    for (const p of pistes) {
+      assert.deepEqual([p.agent.ton, p.agent.cran, p.agent.faites, p.agent.libre], ['', 2, 0, true]);
+      for (const cle of ['essais', 'ecart', 'effet', 'relation', 'patience']) assert.equal(p.agent[cle], undefined, 'pas de chiffre : ' + cle);
+    }
+    const [a, b, c, d] = pistes;
     const offrir = id => jeu.brut('recruit', { playerId: id, salary: plancher, years: 1, confirmed: true });
     const piste = (m, id) => m.market.find(p => p.id === id);
     const relations = () => lire('S.tonAgent.relations');
-    const poser = (id, r) => jeu.bridge.vm.run(`S.tonAgent=S.tonAgent||{version:1,tons:{},relations:{}};S.tonAgent.relations[${JSON.stringify(id)}]=${r};`);
+    const agents = () => lire('S.tonAgent.agents||{}');
 
-    // À tout prix : relation 0 → +2 (Bonne) : demande +6 −2 = +4 %, quatre propositions.
+    // À tout prix : relation +2 (Bonne), caractère gardé mais pas encore découvert (sauf joueur déjà observé).
     let r = jeu.brut('agent_ton', { playerId: a.id, ton: 'tout_prix' });
     assert.equal(r.ok, true, r.error);
     let vu = piste(r.model, a.id);
-    assert.equal(vu.salary, Math.round(a.salary * 1.04 / 10) * 10, 'demande +4 %');
-    assert.deepEqual([vu.agent.ton, vu.agent.essais, vu.agent.ecart, vu.agent.relation, vu.agent.avant, vu.agent.cran, vu.agent.libre], ['tout_prix', 4, 6, 2, 0, 3, false]);
-    assert.deepEqual(vu.agent.effet, { demande: -2, essais: 0, seuil: -2 });
+    assert.deepEqual([vu.agent.ton, vu.agent.cran, vu.agent.avant, vu.agent.libre], ['tout_prix', 3, 2, false]);
+    assert.ok(agents()[a.id], 'caractère gardé dans la sauvegarde');
+    const observe = a.knowledge?.stage === 'observed' || a.knowledge?.stage === 'deep';
+    if (!observe) assert.equal(vu.agent.caractere, '', 'caractère encore inconnu');
     assert.match(jeu.brut('agent_ton', { playerId: a.id, ton: 'curieux' }).error, /déjà/);
-    for (let n = 1; n <= 3; n++) {
-      r = offrir(a.id);
-      assert.equal(r.ok, true, r.error);
-      assert.equal(r.model.meta.negotiation.status, 'counter', 'proposition ' + n + ' : ' + JSON.stringify(r.model.meta.negotiation));
-      assert.match(r.model.meta.negotiation.message, new RegExp(n + '/4\\.$'));
-      assert.equal(piste(r.model, a.id).agent.faites, n);
-    }
-    assert.equal(relations()[a.id], 1, 'offre ridicule : −1 une seule fois dans la journée');
-    r = offrir(a.id);
-    assert.equal(r.model.meta.negotiation.status, 'withdrawn', '4e proposition refusée : rupture');
-    assert.match(r.model.meta.negotiation.message, /quatre propositions/);
-    assert.equal(offrir(a.id).ok, false, 'plus de 5e proposition');
-    assert.equal(relations()[a.id], 0, 'rupture : −1');
-
-    // Curieux : relation −1 (Neutre), deux propositions ; ridicule −1 puis rupture −1.
-    r = jeu.brut('agent_ton', { playerId: b.id, ton: 'curieux' });
-    vu = piste(r.model, b.id);
-    assert.equal(vu.salary, Math.round(b.salary * .97 / 10) * 10, 'demande −3 %');
-    assert.deepEqual([vu.agent.essais, vu.agent.relation, vu.agent.cran], [2, -1, 2]);
-    r = offrir(b.id);
-    assert.match(r.model.meta.negotiation.message, /1\/2\.$/);
-    r = offrir(b.id);
-    assert.equal(r.model.meta.negotiation.status, 'withdrawn');
-    assert.equal(relations()[b.id], -3);
-
-    // Proche (+8) + À tout prix (+10) : cinq propositions, demande +1 %.
-    poser(c.id, 8);
-    r = jeu.brut('agent_ton', { playerId: c.id, ton: 'tout_prix' });
-    vu = piste(r.model, c.id);
-    assert.equal(vu.salary, Math.round(c.salary * 1.01 / 10) * 10, 'demande +6 −5 %');
-    assert.deepEqual([vu.agent.essais, vu.agent.relation, vu.agent.cran], [5, 10, 4]);
-    for (let n = 1; n <= 4; n++) {
-      r = offrir(c.id);
-      assert.equal(r.model.meta.negotiation.status, 'counter', 'proposition ' + n);
-      assert.match(r.model.meta.negotiation.message, new RegExp(n + '/5\\.$'));
-    }
-    r = offrir(c.id);
-    assert.equal(r.model.meta.negotiation.status, 'withdrawn', '5e refusée');
-    assert.match(r.model.meta.negotiation.message, /cinq propositions/);
-    assert.equal(offrir(c.id).ok, false);
-    assert.equal(relations()[c.id], 8);
-
-    // Froide (−8) + Curieux (−9) : une seule proposition.
-    poser(d.id, -8);
-    r = jeu.brut('agent_ton', { playerId: d.id, ton: 'curieux' });
-    vu = piste(r.model, d.id);
-    assert.equal(vu.salary, Math.round(d.salary * 1.03 / 10) * 10, 'demande −3 +6 %');
-    assert.deepEqual([vu.agent.essais, vu.agent.cran], [1, 0]);
-    r = offrir(d.id);
-    assert.equal(r.model.meta.negotiation.status, 'withdrawn', 'une proposition refusée : rupture');
-    assert.match(r.model.meta.negotiation.message, /^La proposition a échoué/);
-    assert.equal(relations()[d.id], -10, 'bornée à −10');
-
-    // Proche, sans ton : minimum accepté −4 % ; accord au minimum : relation +1.
-    const minimum = () => lire(`reservationWage(S.market.find(p=>p.id===${JSON.stringify(e.id)}),'recruit',1)`);
-    const neutre = minimum();
-    poser(e.id, 7);
-    const proche = minimum();
-    assert.ok(proche < neutre * .95, `minimum Proche ${proche} < 95 % de ${neutre}`);
-    r = jeu.brut('recruit', { playerId: e.id, salary: proche, years: 1, confirmed: true });
+    // Deuxième tour : le caractère se découvre (le mot seulement).
+    r = jeu.brut('agent_question', { playerId: a.id });
     assert.equal(r.ok, true, r.error);
-    assert.equal(relations()[e.id], 8, 'accord : +1');
+    vu = piste(r.model, a.id);
+    assert.ok(Object.values(require('../native/engine/ton-agent.cjs').CARACTERES).some(x => x.mot === vu.agent.caractere), 'caractère découvert : ' + vu.agent.caractere);
 
-    // Négociation commencée : plus de ton pour cette journée ; relation gardée dans la sauvegarde.
-    const f = pistes[5];
-    if (f) {
-      assert.equal(offrir(f.id).ok, true);
-      assert.match(jeu.brut('agent_ton', { playerId: f.id, ton: 'enthousiaste' }).error, /commencée/);
-    }
+    // Offres ridicules jusqu'à la rupture : entre 2 et 5 propositions, réplique sans « n/3 », humeur qui ne se calme pas.
+    const rompre = id => {
+      let n = 0, res;
+      do {
+        res = offrir(id); n++;
+        assert.equal(res.ok, true, res.error);
+        assert.doesNotMatch(String(res.model.meta.negotiation.message), /\d\/\d/, 'aucun compteur dans la réplique');
+      } while (res.model.meta.negotiation.status === 'counter' && n < 6);
+      assert.equal(res.model.meta.negotiation.status, 'withdrawn', 'rupture');
+      assert.ok(n >= 2 && n <= 5, 'patience entre 2 et 5 : ' + n);
+      assert.equal(piste(res.model, id).agent.humeur, 'rompu');
+      assert.equal(offrir(id).ok, false, 'plus de proposition après la rupture');
+      return n;
+    };
+    const na = rompre(a.id);
+    assert.equal(relations()[a.id], 0, 'ridicule −1 (une fois) puis rupture −1 : ' + na + ' propositions');
+
+    // Curieux : relation −1 ; après la rupture le caractère est découvert ; relation −3.
+    r = jeu.brut('agent_ton', { playerId: b.id, ton: 'curieux' });
+    assert.equal(piste(r.model, b.id).agent.cran, 2);
+    rompre(b.id);
+    assert.equal(relations()[b.id], -3);
+    assert.equal(agents()[b.id].connu, true, 'négociation terminée : caractère découvert');
+
+    // Proche : accord au minimum accepté (relation +1, caractère découvert).
+    jeu.bridge.vm.run(`S.tonAgent.relations[${JSON.stringify(c.id)}]=7;`);
+    const minimum = lire(`reservationWage(S.market.find(p=>p.id===${JSON.stringify(c.id)}),'recruit',1)`);
+    r = jeu.brut('recruit', { playerId: c.id, salary: minimum, years: 1, confirmed: true });
+    assert.equal(r.ok, true, r.error);
+    assert.equal(relations()[c.id], 8, 'accord : +1');
+    assert.equal(agents()[c.id].connu, true);
+
+    // Négociation commencée : plus de ton ; sauvegarde valide.
+    assert.equal(offrir(d.id).ok, true);
+    assert.equal(agents()[d.id].connu, true, 'première proposition : caractère connu pour toujours');
+    assert.notEqual(lire(`tonAgentVue(${JSON.stringify(d.id)}).caractere`), '', 'mot du caractère projeté');
+    assert.match(jeu.brut('agent_ton', { playerId: d.id, ton: 'enthousiaste' }).error, /commencée/);
     assert.equal(lire('(validateCareer(S),true)'), true);
   } finally { jeu.fermer(); }
 });
