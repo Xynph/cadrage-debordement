@@ -125,7 +125,8 @@ func run() -> void:
 	var nom_joueur: Button = premier.call(between.xv, "MatchBetweenPlayerName_*", "Button")
 	await essayer("nom d'un joueur", "MatchFenetreJoueur", "direct-2d-fenetre-joueur-nom-2560", func(): nom_joueur.pressed.emit(), nom_joueur != null, view)
 	var carte: Button = premier.call(between.xv, "MatchBetweenPlayer1", "Button")
-	await essayer("carte d'un joueur", "MatchFenetreJoueur", "direct-2d-fenetre-joueur-carte-2560", func(): carte.pressed.emit(), carte != null, view)
+	# Carte de Mon XV : la fenêtre du joueur en match (idée 32 : mini-fiche, poste, rôle, consignes).
+	await essayer("carte d'un joueur", "MatchMenuJoueur", "direct-2d-fenetre-joueur-carte-2560", func(): carte.pressed.emit(), carte != null, view)
 	var banc: Button = premier.call(between.banc, "MatchBetweenBench16", "Button")
 	await essayer("remplaçant du banc", "MatchFenetreJoueur", "", func(): banc.pressed.emit(), banc != null, view)
 	var ligne: Control = premier.call(between.classement_lignes, "MatchBetweenLiveRow*", "PanelContainer")

@@ -1776,12 +1776,13 @@ func ouvrir_fenetre_joueur(id: String) -> void:
 		Pieces.tuile(fond, Rect2(254 + i * (largeur + 12.0), 264, largeur, 100), valeur, ["essais", "plaquages", "mètres"][i], Charte.IVOIRE, "MatchFenetreJoueur" + cle.capitalize(), 42)
 
 ## Ouvre le calque d'une petite fenêtre du direct et rend son panneau (unités du gabarit 2248 × 1230, centré).
-## Une fenêtre déjà ouverte est remplacée. Le match se met en pause (sauf sous la fenêtre Équipe, qui tient la pause).
-func _ouvrir_fenetre(nom: String, titre: String, largeur: float, hauteur: float, suspendre: bool = true) -> Panel:
+## Une fenêtre déjà ouverte est remplacée. Le match se met en pause (sauf sous la fenêtre Équipe, qui tient la pause),
+## sauf `pause` faux : le match continue derrière (fenêtre d'un joueur, idée 32).
+func _ouvrir_fenetre(nom: String, titre: String, largeur: float, hauteur: float, pause: bool = true) -> Panel:
 	_mini_fiche().cacher(app)
 	if drawer.visible: _fermer_tiroir()
 	_retirer_fenetre()
-	if suspendre and not (is_instance_valid(equipe) and equipe.visible): _suspendre()
+	if pause and not (is_instance_valid(equipe) and equipe.visible): _suspendre()
 	var hote := Control.new()
 	hote.name = "MatchFenetre"
 	hote.mouse_filter = Control.MOUSE_FILTER_STOP
