@@ -215,6 +215,10 @@ func _build() -> void:
 	if _sous_page(): return
 	_header()
 	left_bottom = TOP + 760.0
+	# Planche « Dans le monde » (revue FM27, idée 30) : onglet de plus, sous CD_VARIANTE_VISUELLE seulement.
+	if mode == "monde":
+		content_bottom = load("res://ui/immersive08/dans_le_monde.gd").construire(self)
+		return
 	match mode:
 		"calendar": _calendar()
 		"playoffs": _playoffs()
@@ -315,6 +319,8 @@ func _header() -> void:
 		_onglet(Rect2(x, 78, spec[0], 52), spec[1], mode == spec[2], func(): _switch(str(spec[2])), spec[3])
 		x += int(spec[0]) + 4
 	_onglet(Rect2(x, 78, 230, 52), "Rivalités", false, func(): app._navigate("Rivalités"), "Section_Rivalités")
+	if not load("res://ui/immersive08/dans_le_monde.gd").variante().is_empty():
+		_onglet(Rect2(x + 234, 78, 280, 52), "Dans le monde", mode == "monde", func(): _switch("monde"), "CompetitionMonde")
 	var archives := _lien(self, Rect2(WIDTH - 340, 86, 340, 40), "Archives des saisons →", func(): Club.season_archives(app), "OpenArchives", 20, false, HORIZONTAL_ALIGNMENT_RIGHT)
 	archives.tooltip_text = "Les saisons passées : champions, montées, descentes"
 	if EquipeType.disponible(app.model):
