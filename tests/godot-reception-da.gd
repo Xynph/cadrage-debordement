@@ -4,7 +4,7 @@ extends SceneTree
 ## - aucun aplat doré hors Continuer dans la liste et la lettre ; un symbole accompagne chaque sujet ;
 ## - noms de joueurs et de clubs cités = liens (mini-fiche au survol d'un joueur) ; aucun lien mort ;
 ## - le filtre « Sujet » est un menu déroulant ; plus de panneau fixe « Concerné » ;
-## - un clic sur une réponse la choisit, « Envoyer la réponse » la confirme, « Annuler » la retire ;
+## - un clic sur une réponse l'envoie tout de suite (règle de Léo du 23/11/2026 : aucun bouton de confirmation) ;
 ## - rien de ce qui est cliquable n'ouvre une petite fenêtre (Window, AcceptDialog, PopupPanel…).
 ## Imprime une ligne RECEPTION_DA {checks, failures}. Captures (rendu graphique) : CD_RECEPTION_DA_CAPTURES=<dossier>.
 const Flow = preload("helpers/contextual_flow.gd")
@@ -144,33 +144,28 @@ func paper_and_colors() -> void:
 			if gold_on(item as Control): golds.append(str(item.name))
 	check(golds.is_empty(), "Aucun aplat doré hors Continuer : " + str(golds))
 	var rows := node("InboxMessageRows").get_children().filter(func(n: Node) -> bool: return n.has_meta("message_id"))
-	var with_symbol := rows.filter(func(r: Node) -> bool: return r.find_child("SenderIcon", true, false) != null)
-	check(not rows.is_empty() and with_symbol.size() == rows.size(), "Chaque sujet a son symbole à côté du mot (%d/%d)" % [with_symbol.size(), rows.size()])
+	var with_symbol := rows.filter(func(r: Node) -> bool: return r.find_child("InboxCategoryPill", true, false) != null)
+	check(not rows.is_empty() and with_symbol.size() == rows.size(), "Chaque sujet a sa pastille (symbole + mot) (%d/%d)" % [with_symbol.size(), rows.size()])
 	check(node("InboxSubject") is OptionButton, "Le filtre « Sujet » est un menu déroulant")
 	check(node("InboxConcerne") == null, "Plus de panneau fixe « Concerné » à droite")
 	check(windows().is_empty(), "Aucune petite fenêtre ouverte sur l'écran")
 
-## Choisir, confirmer, annuler.
+## Un clic sur une réponse l'envoie : plus de bouton « Envoyer », ni « Annuler » (règle de Léo du 23/11/2026).
 func reply_flow(mail: Dictionary) -> void:
 	var option: Dictionary = (mail.reponses as Array).filter(func(r: Dictionary) -> bool: return r.disponible)[0]
-	var send := node("InboxClubMailSend") as Button
-	check(send != null and send.disabled, "« Envoyer » attend un choix")
-	var card := node("InboxClubMailReply_" + str(option.id)) as Button
-	check(card != null, "Carte de réponse présente")
-	if card == null: return
-	card.pressed.emit()
+	check(node("InboxClubMailSend") == null and node("InboxClubMailCancel") == null, "Ni « Envoyer » ni « Annuler » : le clic suffit")
+	var tile := node("InboxClubMailReply_" + str(option.id)) as Button
+	check(tile != null and not tile.disabled, "Tuile de réponse présente")
+	check(node("InboxClubMailDelegate") is Button, "Tuile « Déléguer à Gabi » présente")
+	if tile == null: return
+	var fond := tile.get_theme_stylebox("normal") as StyleBoxFlat
+	check(fond != null and not close(fond.bg_color, Charte.OR), "Tuile de réponse : voile de sa couleur, pas d'aplat doré")
+	tile.pressed.emit()
+	await process_frame
+	check(str(app.model.get("clubLife", {}).get("clubMail", {}).get("reponses", {}).get(str(mail.id), "")) == str(option.id), "Le clic envoie la réponse, sans confirmation")
+	await wait_engine()
 	await settle()
-	send = node("InboxClubMailSend") as Button
-	check(send != null and not send.disabled and send.text.begins_with("Envoyer la réponse"), "Le choix active « Envoyer la réponse X »")
-	var fond_envoi := send.get_theme_stylebox("normal") as StyleBoxFlat
-	check(fond_envoi != null and not close(fond_envoi.bg_color, Charte.OR) and fond_envoi.corner_radius_top_left >= 999, "« Envoyer la réponse » : pilule à contour, pas d'aplat doré (Continuer le porte)")
-	check(node("InboxClubMailCancel") != null, "« Annuler » proposé")
-	node("InboxClubMailCancel").pressed.emit()
-	await settle()
-	send = node("InboxClubMailSend") as Button
-	check(send != null and send.disabled, "« Annuler » retire le choix")
-	check(str(app.model.get("clubLife", {}).get("clubMail", {}).get("reponses", {}).get(str(mail.id), "")).is_empty(), "Rien n'est parti sans confirmation")
-	check(windows().is_empty(), "Aucune petite fenêtre après le choix d'une réponse")
+	check(windows().is_empty(), "Aucune petite fenêtre après la réponse")
 
 ## Le nom du joueur lié ouvre sa fiche (écran), jamais une fenêtre.
 func links_open_screens() -> void:
@@ -184,9 +179,14 @@ func links_open_screens() -> void:
 	source.id = "qa-joueur-lie"
 	source.categorie = "moments" # jamais une coupure de presse : on veut une lettre
 	source.erase("reponses")
+	# Courrier d'information neuf (le courrier copié peut avoir reçu sa réponse dans reply_flow).
+	for cle in ["reponse", "adjoint", "delegue", "resultat"]: source.erase(cle)
+	source.status = "info"
+	source.choice = null
 	source.joueur = str(star.id)
 	source.erase("club")
 	source.corps = "Coach, %s a besoin de te parler." % star.name
+	source.sujet = "Entretien demandé par %s" % star.name # sujet propre : jamais réuni « ×2 » avec le courrier copié
 	(box.mails as Array).append(source)
 	var holder: Dictionary = source
 	app._reset_reception(str(holder.id))
@@ -195,9 +195,9 @@ func links_open_screens() -> void:
 	var link := node("InboxConcernedName") as Button
 	check(link != null and link.has_meta("mini_fiche_joueur"), "Joueur lié : nom en lien avec mini-fiche (%s, mail %s, route %s)" % [str(node("InboxConcernedName")), str(holder.get("id")), app.route])
 	if link == null: return
-	check(link.text == str(star.name), "Le lien porte le nom du joueur lié")
+	check(link.text == str(star.name), "Le lien porte le nom du joueur lié (%s / %s)" % [link.text, str(star.name)])
 	var body := node("InboxMessageText") as RichTextLabel
-	check(body != null, "Lettre ouverte (texte riche)")
+	check(body != null, "Lettre ouverte (texte riche) : " + str(node("InboxMessageText")))
 	if body != null and body.get_parsed_text().contains(str(star.name)): check(body.text.contains("[url=player:" + str(star.id) + "]"), "Le nom cité dans la lettre est aussi un lien")
 	link.pressed.emit()
 	await settle(10)

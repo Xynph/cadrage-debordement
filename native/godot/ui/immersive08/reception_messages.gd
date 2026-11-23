@@ -1,32 +1,46 @@
 extends RefCounted
-## Planche FM27 n° 20 « Messages à réponse » (CD_VARIANTE_VISUELLE=A|B ; sans variable : Réception inchangée).
+## Messages à réponse (idée FM27 n° 20, choix de Léo du 23/11/2026 : A avec des réponses visuelles comme B).
 ## Catégorie de chaque courrier en pastille de couleur franche (clic = filtre de la liste), non lus en gras avec un point
-## de la couleur de la catégorie, et bande rouge « RÉPONSE REQUISE » au bas d'un courrier du club qui attend une décision.
-## A : liste à deux lignes, cartes de réponse gardées dans le courrier, bande fine en pied (Déléguer / Annuler / Envoyer).
-## B : liste en colonnes sur une ligne (façon Effectif), réponses rangées en lignes DANS la bande rouge.
+## de la couleur de la catégorie, et bande rouge « RÉPONSE REQUISE » au bas d'un courrier du club qui attend une
+## décision : une tuile par réponse propre au mail (pictogramme + couleur franche de sa famille, libellé, effets en
+## chiffres colorés) plus « Déléguer » (Gabi répond à ta place). Un clic sur une tuile ENVOIE la réponse : aucun bouton
+## de confirmation (règle de Léo du 23/11/2026). Une fois répondu, la bande dit la réponse donnée, par toi ou par Gabi.
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Charte = preload("res://ui/charte.gd")
 const ClubMail = preload("res://ui/club_mail.gd")
 
 ## Couleur franche par catégorie (jetons de la charte) ; le mot et l'icône accompagnent toujours la couleur.
-const COULEURS := {"Médical":Charte.PERTE, "Staff":Charte.INTENSIF, "Direction":Charte.CONFIANCE, "Recrutement":Charte.MORAL,
+const COULEURS := {"Médical":Charte.PERTE, "Staff":Charte.INTENSIF, "Conseil":Charte.CONFIANCE, "Transferts":Charte.MORAL,
 	"Formation":Charte.REPOS, "Compétitions":Charte.CONDITION, "Presse":Color("d4e35c"), "Sélections":Charte.CREME,
 	"Calendrier":Charte.CONDITION, "Invitation":Charte.CONFIANCE, "Club":Charte.GRIS_VERT, "Météo":Color("8fc6e8")}
+## Famille d'une réponse (moteur : club-mail.cjs, genre) -> [couleur franche, pictogramme] ; pictogramme "" = ✕ écrit.
+const GENRES := {
+	"ecran":[Color("5aa9e6"), "arrow"], "soin":[Charte.REPOS, "heart"], "effort":[Charte.INTENSIF, "train"],
+	"jeu":[Charte.CONDITION, "tactic"], "promesse":[Color("f28fb1"), "star"], "direction":[Charte.CONFIANCE, "shield"],
+	"competition":[Color("8fc6e8"), "trophy"], "argent":[Color("e8c547"), "money"], "presse":[Color("d4e35c"), "globe"],
+	"groupe":[Charte.MORAL, "people"], "attente":[Color("b9a6e0"), "hourglass"], "refus":[Charte.PERTE, ""],
+	"neutre":[Charte.GRIS_VERT, "check"]}
+## Tuile « Déléguer » : Gabi, l'adjoint, en crème (couleur à part des familles de réponses).
+const GABI := Charte.CREME
 const ROUGE_BANDE := Color("d9634f")
-const LIGNE_B := 58.0
-const LIGNE_REPONSE_B := 50.0
-
-static func variante() -> String:
-	var v := OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper()
-	return v if v in ["A", "B"] else ""
+const TUILE_H := 96.0
+const GAP := 14.0
+const FAITE_H := 84.0
 
 static func couleur(service: String) -> Color:
 	return COULEURS.get(service, Charte.GRIS_VERT)
 
+static func genre(nom: String) -> Array:
+	return GENRES.get(nom, GENRES.neutre)
+
 ## Le courrier attend une décision du manager (courrier du club avec réponses).
 static func attend(app: Control, message: Dictionary) -> bool:
 	return message.has("club_mail") and ClubMail.awaiting(app.model, message.club_mail) and not (message.club_mail.get("reponses", []) as Array).is_empty()
+
+## Le courrier du club a reçu sa réponse (du manager ou de Gabi).
+static func repondu(app: Control, message: Dictionary) -> bool:
+	return message.has("club_mail") and not ClubMail.answer(app.model, message.club_mail).is_empty()
 
 ## Pastille de catégorie : voile + icône + mot, de la couleur de la catégorie ; clic = filtre de la liste sur ce sujet.
 static func pastille(parent: Control, rect: Rect2, service: String, icone: String, taille: int, action: Callable) -> Button:
@@ -54,115 +68,180 @@ static func pastille(parent: Control, rect: Rect2, service: String, icone: Strin
 static func largeur_pastille(service: String, taille: int) -> float:
 	return C.font(700).get_string_size(service.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, taille - 2).x + taille + 26.0
 
-## Hauteur de la bande rouge en pied du courrier ouvert (0 sans variante ou sans décision attendue).
+## Hauteur de la bande en pied du courrier ouvert : réponse requise (selon la tuile la plus haute), réponse donnée,
+## ou 0.
 static func hauteur_bande(app: Control, message: Dictionary) -> float:
-	if variante().is_empty() or not attend(app, message): return 0.0
-	if variante() == "A": return 74.0
-	var n := (message.club_mail.get("reponses", []) as Array).size()
-	return 64.0 + n * (LIGNE_REPONSE_B + 6.0) + 70.0
+	if attend(app, message): return 64.0 + _hauteur_tuiles(message) + 22.0
+	if repondu(app, message): return FAITE_H
+	return 0.0
 
-## Bande « RÉPONSE REQUISE ». `envoyer(choix)` envoie la réponse ; `choisir(choix)` la sélectionne (B) ; `annuler`.
-static func bande(card: Panel, app: Control, state: Dictionary, message: Dictionary, largeur: float, bas: float, echeance: String, envoyer: Callable, choisir: Callable, annuler: Callable, suivant: Callable) -> void:
+## Bande en pied du courrier : « RÉPONSE REQUISE » et ses tuiles (`envoyer(id)` dès le clic ; « deleguer » pour
+## Gabi), ou la réponse donnée. `suivant` : courrier suivant non lu. `requise` : la réponse est attendue (À FAIRE) ;
+## sinon (routine, comme la météo) la bande reste sobre, sans rouge.
+static func bande(card: Panel, app: Control, message: Dictionary, largeur: float, bas: float, echeance: String, requise: bool, envoyer: Callable, suivant: Callable) -> void:
 	var h := hauteur_bande(app, message)
-	var mail: Dictionary = message.club_mail
-	var options: Array = mail.get("reponses", [])
-	var choisi := str(state.reply_pick.get(str(mail.id), ""))
-	var lettre := ""
-	for i in options.size():
-		if str(options[i].get("id", "")) == choisi and options[i].get("disponible", false): lettre = char(65 + i)
+	if h <= 0.0: return
+	var ouverte := attend(app, message)
 	var zone := Panel.new()
-	zone.name = "InboxReplyBand"
-	var fond := C.box(Color("3a1d1a"), Color.TRANSPARENT, 0, 0)
+	zone.name = "InboxReplyBand" if ouverte else "InboxReplyDone"
+	var fond := C.box(Color("3a1d1a") if ouverte and requise else C.PANEL.darkened(.25), Color.TRANSPARENT, 0, 0)
 	Charte.sans_ombre(fond)
 	zone.add_theme_stylebox_override("panel", fond)
 	card.add_child(zone)
 	D.place(zone, Rect2(0, bas - h, largeur, h))
-	D.rect(zone, Rect2(0, 0, largeur, 4), ROUGE_BANDE, 0).name = "InboxReplyBandRule"
-	# En-tête de la bande : ⚠ + RÉPONSE REQUISE (Anton) + échéance.
-	var haut := 46.0 if variante() == "B" else h / 2.0 + 14.0
-	var alerte := C.icon("warning", C.px(30), ROUGE_BANDE)
-	zone.add_child(alerte)
-	D.place(alerte, Rect2(40, haut - 26, 30, 30))
-	var titre := D.text(zone, 82, haut, "RÉPONSE REQUISE", 28, Charte.CREME, 700, 320)
+	var suite := D.button(zone, Rect2(largeur - 40 - 54, (38.0 if ouverte else h / 2.0) - 24, 54, 48), "", suivant, false, "arrow", true, app.accent, "InboxReplyBandNext")
+	suite.tooltip_text = "Courrier suivant non lu"
+	C.style_bouton_lien(suite, 19)
+	if ouverte: _requise(zone, app, message, largeur, echeance, requise, envoyer)
+	else: _faite(zone, app, message, largeur, h)
+
+## Largeur d'une tuile : les réponses du mail et « Déléguer » se partagent la largeur de la bande.
+static func _largeur_tuile(message: Dictionary, largeur: float = -1.0) -> float:
+	if largeur < 0.0: largeur = load("res://ui/immersive08/reception_canvas.gd").DETAIL_WIDTH
+	var n := (message.club_mail.get("reponses", []) as Array).size() + 1
+	return (largeur - 80.0 - GAP * (n - 1)) / n
+
+## Effets affichés sur la tuile d'une réponse : [symbole, texte, couleur] ; indisponible : la raison seule.
+static func _effets(option: Dictionary) -> Array:
+	if not option.get("disponible", false): return [["×", str(option.get("raison", "Indisponible")), C.FAINT]]
+	# Sans effet chiffré : rien sous le libellé (pas de phrase « sans effet »).
+	if str(option.get("effets", "")).strip_edges().is_empty(): return []
+	var lignes: Array = load("res://ui/immersive08/reception_canvas.gd").consequences(str(option.get("effets", "")))
+	return lignes.slice(0, 4)
+
+## Lignes du contenu d'une tuile : [lignes du libellé, lignes de chaque effet…] (retour à la ligne, jamais d'ellipse).
+static func _contenu(libelle: String, effets: Array, largeur: float) -> Array:
+	var R = load("res://ui/immersive08/reception_canvas.gd")
+	# Mêmes polices que les étiquettes : libellé en gras (C.font(700)), effets en texte courant (C.BODY) ; marge de 4.
+	var result: Array = [R.wrapped_lines(libelle, 19, largeur - 4.0, C.font(700))]
+	for effet: Array in effets: result.append(R.wrapped_lines("%s %s" % [effet[0], effet[1]], 16, largeur - 4.0, C.BODY))
+	return result
+
+## Hauteur d'une ligne (unités de mise en page) : celle de la police réelle, qui ne descend jamais sous 12 px (petite
+## fenêtre : le texte grossit par rapport au gabarit).
+static func _ligne_titre() -> float:
+	return C.font(700).get_height(maxi(12, C.px(19))) / C.density + 3.0
+
+static func _ligne_effet() -> float:
+	return C.BODY.get_height(maxi(12, C.px(16))) / C.density + 2.0
+
+static func _hauteur_contenu(lignes: Array) -> float:
+	var total := _ligne_titre() * int(lignes[0])
+	for i in range(1, lignes.size()): total += _ligne_effet() * int(lignes[i]) + 2.0
+	return total + (6.0 if lignes.size() > 1 else 0.0)
+
+## Hauteur commune des tuiles : la plus haute, jamais sous TUILE_H.
+static func _hauteur_tuiles(message: Dictionary) -> float:
+	var w := _largeur_tuile(message) - 96.0
+	var h := TUILE_H
+	for option: Dictionary in message.club_mail.get("reponses", []):
+		h = maxf(h, _hauteur_contenu(_contenu(str(option.get("libelle", "")), _effets(option), w)) + 24.0)
+	return h
+
+## Réponse requise : ⚠ + RÉPONSE REQUISE (Anton) + échéance, puis une tuile par réponse et la tuile « Déléguer ».
+static func _requise(zone: Panel, app: Control, message: Dictionary, largeur: float, echeance: String, requise: bool, envoyer: Callable) -> void:
+	var accent := ROUGE_BANDE if requise else Charte.GRIS_VERT
+	D.rect(zone, Rect2(0, 0, largeur, 4), accent, 0).name = "InboxReplyBandRule"
+	var x_titre := 40.0
+	if requise:
+		var alerte := C.icon("warning", C.px(30), ROUGE_BANDE)
+		zone.add_child(alerte)
+		D.place(alerte, Rect2(40, 16, 30, 30))
+		x_titre = 82.0
+	var legende := "RÉPONSE REQUISE" if requise else "TA RÉPONSE"
+	var titre := D.text(zone, x_titre, 42, legende, 28, Charte.CREME, 700, 320)
 	titre.add_theme_font_override("font", Charte.TITRE_FICHE)
 	titre.name = "InboxReplyBandTitle"
 	if not echeance.is_empty():
-		var x_e := 82.0 + Charte.TITRE_FICHE.get_string_size("RÉPONSE REQUISE", HORIZONTAL_ALIGNMENT_LEFT, -1, 28).x + 22.0
-		D.text(zone, x_e, haut - 2, echeance, 19, Color(ROUGE_BANDE, 1).lightened(.25), 700, 260).name = "InboxReplyBandDue"
-	if variante() == "B": _lignes_b(zone, app, state, message, largeur, choisi, choisir)
-	# Commandes : Déléguer (l'adjoint répond à ta place), Annuler le choix, Envoyer ; « suivant non lu » en icône.
-	var y := h - 62.0 if variante() == "B" else (h - 48.0) / 2.0
-	var x := largeur - 40.0
-	var suite := D.button(zone, Rect2(x - 54, y, 54, 48), "", suivant, false, "arrow", true, app.accent, "InboxReplyBandNext")
-	suite.tooltip_text = "Courrier suivant non lu"
-	C.style_bouton_lien(suite, 19)
-	x -= 54 + 14
-	var envoi := D.button(zone, Rect2(x - 300, y, 300, 48), ("Envoyer la réponse " + lettre) if not lettre.is_empty() else "Choisis une réponse", envoyer.bind(choisi), false, "", false, app.accent, "InboxClubMailSend")
-	envoi.disabled = lettre.is_empty() or app.waiting
-	C.style_bouton_contour(envoi, 21)
-	if not envoi.disabled:
-		for etat in ["normal", "hover", "focus"]:
-			var plein := C.box(Charte.CREME if etat != "hover" else Charte.CREME.darkened(.08), Color.TRANSPARENT, Charte.RAYON_PILULE, 18)
-			plein.content_margin_top = 0
-			plein.content_margin_bottom = 0
-			Charte.sans_ombre(plein)
-			envoi.add_theme_stylebox_override(etat, plein)
-		for cle in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color"]: envoi.add_theme_color_override(cle, Charte.PANNEAU)
-	envoi.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	x -= 300 + 14
-	if not lettre.is_empty():
-		var retour := D.button(zone, Rect2(x - 150, y, 150, 48), "Annuler", annuler, false, "", true, app.accent, "InboxClubMailCancel")
-		C.style_bouton_lien(retour, 19)
-		retour.alignment = HORIZONTAL_ALIGNMENT_CENTER
-		x -= 150 + 14
-	var delegue := _premiere_disponible(options)
-	var deleguer := D.button(zone, Rect2(x - 260, y, 260, 48), "Déléguer à Gabi", envoyer.bind(delegue), false, "people", true, app.accent, "InboxClubMailDelegate")
-	deleguer.disabled = delegue.is_empty() or app.waiting
-	deleguer.tooltip_text = "Gabi répond à ta place"
-	C.style_bouton_contour(deleguer, 19)
-	deleguer.alignment = HORIZONTAL_ALIGNMENT_CENTER
-
-static func _premiere_disponible(options: Array) -> String:
+		var x_e := x_titre + Charte.TITRE_FICHE.get_string_size(legende, HORIZONTAL_ALIGNMENT_LEFT, -1, 28).x + 22.0
+		D.text(zone, x_e, 40, echeance, 19, accent.lightened(.25), 700, 300).name = "InboxReplyBandDue"
+	var mail: Dictionary = message.club_mail
+	var options: Array = mail.get("reponses", [])
+	var adjoint: Variant = mail.get("adjoint")
+	var w := _largeur_tuile(message, largeur)
+	var h := _hauteur_tuiles(message)
+	var x := 40.0
 	for option: Dictionary in options:
-		if option.get("disponible", false): return str(option.get("id", ""))
-	return ""
-
-## B : chaque réponse = une ligne (lettre, libellé, conséquences en chiffres colorés) ; clic = choisir.
-static func _lignes_b(zone: Panel, app: Control, state: Dictionary, message: Dictionary, largeur: float, choisi: String, choisir: Callable) -> void:
-	var Reception = load("res://ui/immersive08/reception_canvas.gd")
-	var options: Array = message.club_mail.get("reponses", [])
-	var y := 66.0
-	for i in options.size():
-		var option: Dictionary = options[i]
-		var id := str(option.get("id", ""))
+		var famille := genre(str(option.get("genre", "neutre")))
 		var dispo: bool = option.get("disponible", false)
-		var pris := id == choisi and dispo
-		var ligne := C.button("", choisir.bind(id), false, app.accent)
-		ligne.name = "InboxClubMailReply_" + id
-		ligne.set_meta("option_id", id)
-		ligne.custom_minimum_size = Vector2.ZERO
-		for etat in ["normal", "hover", "pressed", "focus", "disabled"]:
-			var teinte := Color(Charte.CREME, .14) if pris else (Color(Charte.CREME, .07) if etat == "hover" else Color(0, 0, 0, .22))
-			var s := C.box(teinte, Charte.CREME if pris else Color.TRANSPARENT, Charte.RAYON_PETIT, 0)
-			Charte.sans_ombre(s)
-			ligne.add_theme_stylebox_override(etat, s)
-		ligne.disabled = app.waiting or not dispo
-		ligne.tooltip_text = str(option.get("libelle", "")) + "\n" + str(option.get("effets", ""))
-		zone.add_child(ligne)
-		D.place(ligne, Rect2(40, y, largeur - 80, LIGNE_REPONSE_B))
-		var rond := D.rect(ligne, Rect2(12, 9, 32, 32), Charte.CREME if pris else Color(Charte.CREME, .12), 16)
-		D.text(rond, 16, 23, "✓" if pris else char(65 + i), 18, Charte.PANNEAU if pris else Charte.CREME, 700, 32, HORIZONTAL_ALIGNMENT_CENTER)
-		var libelle := str(option.get("libelle", ""))
-		D.text(ligne, 60, 33, libelle, 21, Charte.CREME if dispo else Charte.IVOIRE_3, 700, 560).name = "InboxReplyLabel"
-		var x := 640.0
-		var effets: Array = Reception.consequences(str(option.get("effets", "")))
-		if not dispo: effets = [["×", str(option.get("raison", "Indisponible")), Charte.IVOIRE_3]] + effets
-		for effet: Array in effets.slice(0, 4):
-			var texte := "%s %s" % [effet[0], effet[1]]
-			var w := minf(C.font(600).get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x + 24.0, largeur - 80 - x - 16)
-			if w < 60: break
-			var puce := D.rect(ligne, Rect2(x, 11, w, 28), Color(effet[2], .16), Charte.RAYON_PETIT)
-			puce.name = "InboxReplyEffect"
-			D.text(puce, 12, 20, texte, 17, effet[2], 600, w - 18)
-			x += w + 10
-		y += LIGNE_REPONSE_B + 6.0
+		var id := str(option.get("id", ""))
+		var tuile := _tuile(zone, app, Rect2(x, 64, w, h), "InboxClubMailReply_" + id, str(option.get("libelle", "")), famille[0], famille[1], _effets(option), dispo, envoyer.bind(id))
+		tuile.set_meta("option_id", id)
+		tuile.set_meta("genre", str(option.get("genre", "neutre")))
+		var detail := str(option.get("effets", ""))
+		tuile.tooltip_text = str(option.get("libelle", "")) + ("\n" + detail if not detail.is_empty() else "") + ("" if dispo else "\n" + str(option.get("raison", "")))
+		x += w + GAP
+	var sans_gabi := [] if adjoint is String else [["×", "Ta décision", C.FAINT]]
+	var gabi := _tuile(zone, app, Rect2(x, 64, w, h), "InboxClubMailDelegate", "Déléguer à Gabi", GABI, "people", sans_gabi, adjoint is String, envoyer.bind(ClubMail.DELEGUER))
+	gabi.tooltip_text = "Gabi répond à ta place" if adjoint is String else "Gabi te laisse décider"
+
+## Tuile de réponse : carré de couleur franche avec le pictogramme, libellé entier, effets en couleurs (un par ligne).
+static func _tuile(zone: Panel, app: Control, rect: Rect2, nom: String, libelle: String, teinte: Color, icone: String, effets: Array, actif: bool, action: Callable) -> Button:
+	var tuile := Button.new()
+	tuile.name = nom
+	tuile.focus_mode = Control.FOCUS_ALL
+	tuile.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	for etat in ["normal", "hover", "pressed", "focus", "disabled"]:
+		var voile := .08 if etat == "disabled" else .32 if etat in ["hover", "pressed"] else .18
+		var s := C.box(Color(teinte if etat != "disabled" else Charte.GRIS_VERT, voile), teinte if etat in ["hover", "focus"] else Color.TRANSPARENT, Charte.RAYON_PETIT, 0)
+		Charte.sans_ombre(s)
+		tuile.add_theme_stylebox_override(etat, s)
+	tuile.disabled = not actif or app.waiting
+	tuile.pressed.connect(action)
+	tuile.accessibility_name = libelle
+	zone.add_child(tuile)
+	D.place(tuile, rect)
+	var encre := teinte if actif else Color(Charte.GRIS_VERT, .5)
+	var carre := D.rect(tuile, Rect2(12, (rect.size.y - 60) / 2.0, 60, 60), encre, Charte.RAYON_PETIT)
+	carre.name = "InboxReplyIcon"
+	carre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if icone.is_empty():
+		D.text(carre, 30, 44, "✕", 34, Charte.ENCRE, 800, 60, HORIZONTAL_ALIGNMENT_CENTER).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	else:
+		var picto := C.icon(icone, C.px(34), Charte.ENCRE)
+		carre.add_child(picto)
+		D.place(picto, Rect2(13, 13, 34, 34))
+	# Libellé et effets entiers (retour à la ligne, jamais d'ellipse), centrés dans la hauteur de la tuile.
+	var largeur := rect.size.x - 96.0
+	var lignes := _contenu(libelle, effets, largeur)
+	var y := maxf(8.0, (rect.size.y - _hauteur_contenu(lignes)) / 2.0)
+	var titre := C.wrap(libelle, 19, Charte.CREME if actif else Charte.IVOIRE_3, true, 700)
+	titre.name = "InboxReplyLabel"
+	titre.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+	titre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tuile.add_child(titre)
+	D.place(titre, Rect2(84, y, largeur, _ligne_titre() * int(lignes[0]) + 2))
+	y += _ligne_titre() * int(lignes[0]) + 6.0
+	# Effets en chiffres colorés (▲ favorable, ▼ défavorable, = neutre), un par ligne.
+	for i in effets.size():
+		var effet: Array = effets[i]
+		var etiquette := C.wrap("%s %s" % [effet[0], effet[1]], 16, effet[2] if actif or effet[0] == "×" else C.FAINT, false, 600)
+		etiquette.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+		etiquette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		tuile.add_child(etiquette)
+		etiquette.name = "InboxReplyEffect" # après add_child : InboxReplyEffect, InboxReplyEffect2…
+		D.place(etiquette, Rect2(84, y, largeur, _ligne_effet() * int(lignes[i + 1]) + 2))
+		y += _ligne_effet() * int(lignes[i + 1]) + 2.0
+	return tuile
+
+## Réponse donnée : carré de la famille de la réponse, « TA RÉPONSE » ou « GABI A RÉPONDU », libellé.
+static func _faite(zone: Panel, app: Control, message: Dictionary, largeur: float, h: float) -> void:
+	var mail: Dictionary = message.club_mail
+	var choix := ClubMail.chosen_option(app.model, mail)
+	var famille := genre(str(choix.get("genre", "neutre")))
+	var gabi := ClubMail.delegated(app.model, mail)
+	D.rect(zone, Rect2(0, 0, largeur, 4), famille[0], 0).name = "InboxReplyDoneRule"
+	var carre := D.rect(zone, Rect2(40, (h - 52) / 2.0, 52, 52), famille[0], Charte.RAYON_PETIT)
+	carre.name = "InboxReplyIcon"
+	if str(famille[1]).is_empty(): D.text(carre, 26, 38, "✕", 30, Charte.ENCRE, 800, 52, HORIZONTAL_ALIGNMENT_CENTER)
+	else:
+		var picto := C.icon(famille[1], C.px(30), Charte.ENCRE)
+		carre.add_child(picto)
+		D.place(picto, Rect2(11, 11, 30, 30))
+	var qui := D.text(zone, 110, h / 2.0 - 8, "GABI A RÉPONDU" if gabi else "TA RÉPONSE", 15, GABI if gabi else C.MUTED, 700, 300)
+	qui.name = "InboxReplyDoneWho"
+	if gabi:
+		var badge := C.icon("people", C.px(18), GABI)
+		zone.add_child(badge)
+		D.place(badge, Rect2(110 + C.font(700).get_string_size("GABI A RÉPONDU", HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x + 10, h / 2.0 - 24, 18, 18))
+	D.text(zone, 110, h / 2.0 + 22, str(choix.get("libelle", "")), 22, Charte.CREME, 700, largeur - 110 - 120).name = "InboxReplyDoneLabel"

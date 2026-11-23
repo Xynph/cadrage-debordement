@@ -63,6 +63,7 @@ func run() -> void:
 	await Flow.settle_club_meetings(app, self, check)
 	check(app.model.get("club") is Dictionary, "Carrière Monde créée")
 	await reply_and_open()
+	await delegate_to_gabi()
 	await info_stops()
 	print("COURRIER ", JSON.stringify({"checks": checks, "failures": failures}))
 	quit(0 if failures.is_empty() else 1)
@@ -105,14 +106,10 @@ func reply_and_open() -> void:
 	check(reply != null and not reply.disabled, "Bouton de réponse « " + str(option.libelle) + " »")
 	if reply == null: return
 	check(not str(reply.tooltip_text).is_empty(), "Conséquences annoncées en info-bulle")
+	check(button("InboxClubMailSend") == null, "Aucun bouton « Envoyer » : le clic suffit (règle de Léo du 23/11/2026)")
 	reply.pressed.emit()
-	await settle()
-	var send := button("InboxClubMailSend")
-	check(send != null and not send.disabled and str(app.model.get("clubLife", {}).get("clubMail", {}).get("reponses", {}).get(str(mail.id), "")).is_empty(), "Un clic choisit la réponse : rien ne part avant « Envoyer la réponse »")
-	if send == null: return
-	send.pressed.emit()
 	await process_frame
-	check(str(app.model.get("clubLife", {}).get("clubMail", {}).get("reponses", {}).get(str(mail.id), "")) == str(option.id), "Réponse affichée dès le clic")
+	check(str(app.model.get("clubLife", {}).get("clubMail", {}).get("reponses", {}).get(str(mail.id), "")) == str(option.id), "Un clic envoie la réponse, affichée dès le clic")
 	await wait_engine()
 	var receipt: Variant = app.model.get("meta", {}).get("clubMailReply")
 	check(receipt is Dictionary and receipt.get("choice") == option.id, "Réponse confirmée par le moteur")
@@ -120,6 +117,8 @@ func reply_and_open() -> void:
 		app._navigate("Réception", false)
 		await settle()
 	check(button("InboxClubMailReply_" + str(option.id)) == null, "Plus de réponse proposée une fois répondu")
+	var done: Node = app.root_content.find_child("InboxReplyDone", true, false)
+	check(done != null and done.find_child("InboxReplyDoneWho", true, false) != null and (done.find_child("InboxReplyDoneWho", true, false) as Label).text == "TA RÉPONSE", "Bande de la réponse donnée : « TA RÉPONSE »")
 	var open := button("InboxClubMailOpen")
 	check(open != null and str(open.text).begins_with("Ouvrir"), "Bouton vers l’écran concerné")
 	if open == null: return
@@ -127,6 +126,46 @@ func reply_and_open() -> void:
 	open.pressed.emit()
 	await settle()
 	if str(mail.ecran) != "fiche": check(app.route == expected, "Écran concerné ouvert : " + expected + " (actuel : " + app.route + ")")
+
+## « Déléguer à Gabi » (choix de Léo du 23/11/2026) : un clic, Gabi répond à ta place avec une des réponses du mail
+## (celle que le moteur annonce dans `adjoint`), affichée dès le clic, confirmée par le moteur, puis « GABI A RÉPONDU ».
+func delegate_to_gabi() -> void:
+	var mail: Dictionary = {}
+	for day in 4:
+		for item: Dictionary in ClubMail.mails(app.model):
+			if ClubMail.awaiting(app.model, item) and item.get("adjoint") is String: mail = item
+		if not mail.is_empty(): break
+		await command("advance_day", {"fromDate": app.model.meta.calendarToday})
+		await Flow.settle_club_meetings(app, self, check)
+	check(not mail.is_empty(), "Un mail du club que Gabi peut traiter")
+	if mail.is_empty(): return
+	app._reset_reception(str(mail.id))
+	app._navigate("Réception", false)
+	await settle()
+	var delegate := button("InboxClubMailDelegate")
+	check(delegate != null and not delegate.disabled, "Tuile « Déléguer à Gabi »")
+	if delegate == null: return
+	var expected := str(mail.adjoint)
+	delegate.pressed.emit()
+	await process_frame
+	var box: Dictionary = app.model.get("clubLife", {}).get("clubMail", {})
+	check(str(box.get("reponses", {}).get(str(mail.id), "")) == expected and box.get("delegues", {}).get(str(mail.id), false) == true, "Réponse de Gabi affichée dès le clic : " + expected)
+	await wait_engine()
+	var receipt: Variant = app.model.get("meta", {}).get("clubMailReply")
+	check(receipt is Dictionary and receipt.get("choice") == expected and receipt.get("delegue") == true, "Le moteur applique la réponse de Gabi")
+	if app.route != "Réception":
+		app._navigate("Réception", false)
+		await settle()
+	var who := app.root_content.find_child("InboxReplyDoneWho", true, false) as Label
+	check(who != null and who.text == "GABI A RÉPONDU", "Bande « GABI A RÉPONDU »")
+	var label := app.root_content.find_child("InboxReplyDoneLabel", true, false) as Label
+	var libelle := ""
+	for option: Dictionary in mail.reponses:
+		if str(option.id) == expected: libelle = str(option.libelle)
+	check(label != null and label.text == libelle, "Réponse de Gabi écrite : " + libelle)
+	var row: Node = app.root_content.find_child("InboxClubMail_" + str(mail.id).replace("-", "_"), true, false)
+	check(row != null and str(row.get_meta("message_text", "")).contains("Gabi a répondu : " + libelle), "La lettre dit ce que Gabi a répondu")
+	check(button("InboxClubMailDelegate") == null, "Plus de délégation une fois répondu")
 
 ## Non-régression (18/11) : « Lésion des ischio-jambiers » coupé dans le tableau de l'infirmerie et le panneau « Concerné ».
 ## Aux deux résolutions, aucun libellé de blessure n'est coupé : retour à la ligne actif, ni clip ni ellipse, taille minimale ≤ taille allouée.
@@ -264,7 +303,7 @@ func reception_layout(mail: Dictionary, size: Vector2i) -> void:
 		check(filter != null and l.encloses(filter.get_global_rect()), "Filtre en tête de liste · " + name + " · " + tag)
 		if filter != null: filter_row.append(filter)
 	for filter in filter_row: check(absf(filter.get_global_rect().position.y - filter_row[0].get_global_rect().position.y) < 2.0, "Filtres sur une seule rangée · " + str(filter.name) + " · " + tag)
-	var filter_buttons: Array = list.find_children("Inbox*", "Button", true, false).filter(func(b: Button) -> bool: return str(b.name).begins_with("InboxFolder") or str(b.name).begins_with("InboxActivity_") or str(b.name).begins_with("InboxCategory"))
+	var filter_buttons: Array = list.find_children("Inbox*", "Button", true, false).filter(func(b: Button) -> bool: return str(b.name).begins_with("InboxFolder") or str(b.name).begins_with("InboxActivity_") or (str(b.name).begins_with("InboxCategory") and str(b.name) != "InboxCategoryPill"))
 	check(filter_buttons.size() == 3, "Trois boutons de filtre (Tous · Non lus · À faire), pas davantage · " + tag + " (" + str(filter_buttons.size()) + ")")
 	check(node("InboxSort") == null and list.find_child("InboxMarkAllRead", true, false) == null, "Pas de tri ni de « Tout marquer comme lu » dans la liste (le lien est en haut à droite de l'écran) · " + tag)
 	check(node("InboxMarkAllRead") != null, "Lien « Tout marquer comme lu → » présent en haut à droite · " + tag)
@@ -291,11 +330,13 @@ func reception_layout(mail: Dictionary, size: Vector2i) -> void:
 		check(d.encloses(reply.get_global_rect()), "Réponse dans le mail · " + str(reply.name) + " · " + tag)
 		check(reply.size.x >= reply.get_theme_font("font").get_string_size(reply.text, HORIZONTAL_ALIGNMENT_LEFT, -1, reply.get_theme_font_size("font_size")).x * .98, "Libellé de réponse entier · " + reply.text + " · " + tag)
 		check(reply.size.y >= 24.0, "Bouton de réponse lisible (%.0f px) · %s" % [reply.size.y, tag])
-	# Pas de vide : les actions sont collées sous le contenu (texte, pièces liées) et le pied tient dans la carte.
-	if not actions.is_empty():
+	# Pas de vide : les actions sont collées sous le contenu (texte, pièces liées) et le pied tient dans la carte. La bande
+	# « RÉPONSE REQUISE » est posée au bas du mail (choix de Léo du 23/11/2026) : hors de ce contrôle.
+	var pied: Array = actions.filter(func(b: Button) -> bool: return not str(b.get_path()).contains("InboxReplyBand"))
+	if not pied.is_empty():
 		var first_top := 100000.0
 		var last_bottom := 0.0
-		for action: Button in actions:
+		for action: Button in pied:
 			first_top = minf(first_top, action.get_global_rect().position.y)
 			last_bottom = maxf(last_bottom, action.get_global_rect().end.y)
 		var content_bottom := d.position.y
@@ -330,7 +371,7 @@ func reception_layout(mail: Dictionary, size: Vector2i) -> void:
 	for row: Button in rows():
 		var message: Array = Reception._messages(app).filter(func(item: Dictionary) -> bool: return str(item.id) == str(row.get_meta("message_id")))
 		if message.is_empty(): continue
-		if row.find_child("SenderIcon", true, false) != null: icons += 1
+		if row.find_child("InboxCategoryPill", true, false) != null: icons += 1
 		else:
 			portraits += 1
 			check(not Reception._sender_player(app, message[0]).is_empty(), "Portrait réservé à une personne identifiée · " + str(row.name) + " · " + tag)
@@ -519,7 +560,7 @@ func direction_a(mail: Dictionary) -> void:
 	var reply := node("InboxClubMailReply_dementir")
 	var effects: Array = [] if reply == null else reply.find_children("InboxReplyEffect*", "Label", true, false).map(func(l: Label) -> String: return l.text)
 	check(effects.has("▲ Supporters +2") and effects.has("▼ Moral −1"), "Conséquences de la réponse : " + str(effects))
-	check(node("InboxReplyHeading") != null and node("InboxSpaceHint") == null, "« TA RÉPONSE », sans rappel Espace (Espace = Continuer dans toute la coque)")
+	check(node("InboxReplyBandTitle") != null and node("InboxSpaceHint") == null, "Bande « RÉPONSE REQUISE », sans rappel Espace (Espace = Continuer dans toute la coque)")
 	check(Reception.consequences("Pression +2")[0][0] == "▼" and Reception.consequences("Coût 1 000 €")[0][0] == "▼" and Reception.consequences("Charge individuelle : allégée")[0][0] == "=" and Reception.consequences("")[0][1] == "Sans effet chiffré", "Sens des conséquences (pression, coût, neutre)")
 	check(Reception.consequences("Risque de rechute +15 (27 %)")[0][0] == "▲" and Reception.consequences("Risque de rechute +15 (27 %)")[0][2] == C.ALERT and Reception.consequences("Risque de rechute −8 (4 %)")[0][0] == "▼" and Reception.consequences("Retour avancé au 04/10")[0][0] == "▲" and Reception.consequences("Retour retardé au 18/10")[0][0] == "▼", "Sens des conséquences médicales (rechute, retour)")
 	if not capture_dir.is_empty() and DisplayServer.get_name() != "headless":
