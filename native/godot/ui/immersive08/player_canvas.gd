@@ -743,7 +743,7 @@ static func _contrat_temps_jeu(page:Control,app:Control,player:Dictionary,top:fl
 	TempsJeu.temps(D.panel(page,Rect2(1492,top,756,bas),"TEMPS DE JEU","calendar","","PlayerPlayingTime"),app,player,756)
 
 ## Marché des transferts (vente-joueurs.cjs, `squad[].sale`) : état de vente, raison d'un blocage écrite en clair,
-## « Proposer aux autres clubs » / « Retirer du marché » (commande sale_list) et accès aux offres reçues.
+## Disponibilité (petite fenêtre : liste des transferts, prêt) et accès aux offres reçues.
 static func _sale(card:Panel,app:Control,player:Dictionary,width:float) -> void:
 	var sale: Dictionary = player.get("sale",{}) if player.get("sale") is Dictionary else {}
 	var pending: bool = sale.get("pending") is Dictionary
@@ -763,9 +763,12 @@ static func _sale(card:Panel,app:Control,player:Dictionary,width:float) -> void:
 	elif not blocked.is_empty() and not pending:
 		D.text(card,24,142,blocked,26,C.ALERT,500,width-48).name = "PlayerSaleReason"
 	var half := (width-60)/2.0
-	var toggle := D.button(card,Rect2(24,162,half,52),"Retirer du marché" if listed else "Proposer aux autres clubs",func(): (preload("res://ui/negociation_agent.gd").ouvrir_disponibilite(card.get_parent(),app,player) if not preload("res://ui/negociation_agent.gd").variante().is_empty() else Sales.toggle(app,player)),not listed,"money",false,app.accent,"PlayerSaleToggle")
+	# Disponibilité (idée FM 18, choix de Léo du 23/11/2026) : petite fenêtre avec la phrase de l'agent, liste des transferts
+	# ou prêt, qui remplace le bouton « Proposer aux autres clubs ».
+	var Nego := preload("res://ui/negociation_agent.gd")
+	var toggle := D.button(card,Rect2(24,162,half,52),Nego.libelle_disponibilite(player),func(): Nego.ouvrir_disponibilite(card.get_parent(),app,player),not listed,"money",false,app.accent,"PlayerSaleToggle")
 	toggle.add_theme_font_size_override("font_size",maxi(14,C.px(28)))
-	toggle.disabled = pending or (not listed and not blocked.is_empty()) or not app._live().is_empty()
+	toggle.disabled = not Nego.disponibilite_possible(app,player) or not app._live().is_empty()
 	if toggle.disabled: toggle.tooltip_text = blocked if not blocked.is_empty() else status
 	var offers := D.button(card,Rect2(36+half,162,half,52),Sales.caption(app.model),func(): Sales.open(app),false,"arrow",false,app.accent,"PlayerSaleOffers")
 	offers.add_theme_font_size_override("font_size",maxi(14,C.px(28)))

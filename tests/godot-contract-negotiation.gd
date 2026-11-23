@@ -63,17 +63,23 @@ func discussion_tile(dialog: ConfirmationDialog, index: int) -> String:
 	if close != null:
 		close.pressed.emit();await settle()
 	return text
-## Envoi : page = deux temps (« Envoyer l'offre » puis « Confirmer » en place) ; fenêtre = validation.
+## Rôle promis (négociation avec l'agent, idée 18) : obligatoire avant le contrat ; un clic sur la carte le promet.
+func promise(dialog: ConfirmationDialog) -> void:
+	for role in ["rotation","titulaire","espoir","appoint"]:
+		var card := shown(dialog,"NegoRole_"+role) as Button
+		if card != null:
+			card.pressed.emit();await settle()
+			return
+	check(false,"Un rôle promis au moins est proposé")
+## Envoi : page = un seul clic (« Signer si accord », règle du 23/11) ; fenêtre = validation.
 func send(dialog: ConfirmationDialog) -> void:
 	if offer_page() == null:
 		dialog.confirmed.emit();return
 	var valider := shown(dialog,"RecrutementPageValider") as Button
-	check(valider != null and not valider.disabled,"Envoyer l'offre disponible")
+	check(valider != null and not valider.disabled,"Signer si accord disponible")
 	if valider == null: return
 	valider.pressed.emit();await settle()
-	var ok := app.find_child("ContractSignatureConfirmationOk",true,false) as Button
-	check(ok != null and ok.is_visible_in_tree(),"Confirmation en place avant l'envoi")
-	if ok != null: ok.pressed.emit()
+	check(app.find_child("ContractSignatureConfirmationOk",true,false) == null,"Signature en un clic, sans confirmation en place")
 func cancel(dialog: ConfirmationDialog) -> void:
 	var page_cancel := shown(dialog,"RecrutementPageAnnuler") as Button
 	if page_cancel != null: page_cancel.pressed.emit()
@@ -87,6 +93,7 @@ func capture(name: String) -> void:
 	check(image.save_png(output.path_join(name+".png"))==OK,"Capture "+name)
 func low_offer(id: String, recruiting: bool) -> void:
 	var dialog: ConfirmationDialog = await open(id,recruiting)
+	await promise(dialog)
 	var salary := part(dialog,"OfferSalary") as SpinBox
 	var years := part(dialog,"OfferYears") as SpinBox
 	salary.value=1000
@@ -115,6 +122,14 @@ func run() -> void:
 	var count: int=app.model.squad.size()
 	var dialog: ConfirmationDialog=await open(id,true)
 	var page := offer_page()
+	# Rôle promis obligatoire : contrat masqué et signature grisée tant qu'aucun rôle n'est promis.
+	var signer := shown(dialog,"RecrutementPageValider") as Button
+	check(shown(dialog,"OfferSalary") == null and shown(dialog,"NegoRole_rotation") != null and part(dialog,"NegoLigneSalaire").get_meta("etat","") == "attente","Rôle promis obligatoire avant le contrat")
+	await settle();await create_timer(.3).timeout
+	signer = shown(dialog,"RecrutementPageValider") as Button
+	check(signer != null and signer.disabled,"Signature grisée sans rôle promis")
+	await promise(dialog)
+	check(part(dialog,"NegoLigneSalaire").get_meta("etat","") != "attente" and shown(dialog,"NegoRoleChoisi") != null,"Rôle promis : contrat ouvert")
 	var salary := part(dialog,"OfferSalary") as SpinBox
 	var years := part(dialog,"OfferYears") as SpinBox
 	var viewport := Rect2(Vector2.ZERO,root.get_visible_rect().size)
@@ -128,17 +143,12 @@ func run() -> void:
 	salary=part(dialog,"OfferSalary");years=part(dialog,"OfferYears")
 	salary.value=1000;years.value=years.min_value
 	await settle()
-	# Récapitulatif visuel figé (acquisition, ajout hebdomadaire) : premier temps de l'envoi, rien n'est transmis.
+	# Budgets de l'offre (masse salariale, budget de transferts) : lecture seule, rien n'est transmis.
 	var requests: int=app.bridge._next_id
+	await create_timer(.3).timeout
 	var valider := shown(dialog,"RecrutementPageValider") as Button
-	check(valider != null and not valider.disabled,"Envoyer l'offre disponible")
-	if valider != null:
-		valider.pressed.emit();await settle()
-	var recap := app.find_child("OffreRecap",true,false) as Control
-	check(recap != null and recap.is_visible_in_tree() and app.find_child("ContractSignatureConfirmationOk",true,false) != null,"Récapitulatif acquisition et ajout hebdomadaire")
-	var no := app.find_child("ContractSignatureConfirmationAnnuler",true,false) as Button
-	if no != null:
-		no.pressed.emit();await settle()
+	check(valider != null and not valider.disabled,"Signer si accord disponible une fois le rôle promis")
+	check(shown(dialog,"NegoMasse") != null and shown(dialog,"NegoTransferts") != null and shown(dialog,"NegoBulle_0") != null,"Budgets à gauche, bulles de l'agent à droite")
 	check(app.bridge._next_id==requests and FileAccess.get_sha256(profile)==before and app.model.finance.cash==cash,"Saisie et lecture ne débitent ni écrivent")
 	await capture("contrat-recrutement-initial-1440")
 	var escape := InputEventKey.new();escape.keycode=KEY_ESCAPE;escape.pressed=true;root.push_input(escape,true)
@@ -153,6 +163,7 @@ func run() -> void:
 	var counter: Dictionary=current(id,true).negotiation.duplicate(true)
 	var counter_disk := FileAccess.get_sha256(profile)
 	dialog=await open(id,true)
+	check(shown(dialog,"NegoRoleChoisi") != null and shown(dialog,"OfferSalary") != null,"Contre-offre : le rôle promis reste promis")
 	var counter_chip := shown(dialog,"OffreContreOffreTexte") as Label
 	check(counter_chip != null and counter_chip.text.contains(Salary.amount(counter.salary)),"Contre-offre retrouvée après snapshot")
 	check(int(counter.attempts)==1,"Numéro réellement enregistré")

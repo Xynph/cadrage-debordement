@@ -136,6 +136,9 @@ static func build(app: Control, page: Control, kind: String) -> void:
 		# Offre au joueur : « Envoyer l'offre » ouvre une confirmation EN PLACE (récapitulatif + « Confirmer »), jamais un engagement
 		# en un seul clic ; les autres vues ont leur propre confirmation en place.
 		var deux_temps := kind == "negociation"
+		# Négociation avec l'agent (idée 18, règle du 23/11 « un clic applique ») : la signature part en un seul clic.
+		var toile_offre := zone.find_child("OffreVisuelle", true, false) as Control
+		if deux_temps and toile_offre != null and bool(toile_offre.get_meta("signature_directe", false)): deux_temps = false
 		var libelle := "Envoyer l’offre" if deux_temps else str(ok.text)
 		var valider := Kit.bouton_ivoire(cadre, Rect2(pied.position.x, pied.position.y, 560, 46), libelle, func(): _valider(app, cadre, zone, ok, deux_temps), "RecrutementPageValider")
 		valider.disabled = ok.disabled
