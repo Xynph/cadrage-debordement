@@ -16,6 +16,7 @@ module.exports = function createNativePlayerAttributes() {
   const valid = value => Number.isFinite(value) && value >= 20 && value <= 97;
   const positionOf = player => player.gameplayPosition || player.pos;
   const effectiveSkills = player => skills.map(key => skill(player, key));
+  const etalement = () => typeof nativeInSeasonDevelopment !== 'undefined' && typeof nativeInSeasonDevelopment.verse === 'function';
 
   function referenceFor(position) {
     if (profiles.has(position)) return profiles.get(position);
@@ -89,6 +90,7 @@ module.exports = function createNativePlayerAttributes() {
   function before(state, liveOnly, stable = false) {
     const previous = new Map();
     if (!state) return previous;
+    if (etalement()) nativeInSeasonDevelopment.releve();
     for (const players of populations(state, liveOnly)) {
       for (const player of players) {
         if (player.nativeAttributesV1 === undefined || previous.has(player.id)) continue;
@@ -111,11 +113,15 @@ module.exports = function createNativePlayerAttributes() {
       if (moved) throw Error('Commande déclarée sans effet sur les joueurs : progression constatée (' + player.id + ').');
       return previous.packed;
     }
+    // Jeune du centre (progression étalée, in-season-development.cjs) : la part de son réservoir versée pendant la
+    // commande est déjà dans ses qualités (une à une) ; elle est retranchée de l'écart des compétences.
+    const verse = etalement() ? nativeInSeasonDevelopment.verse(player) : 0;
+    const packed = verse ? player.nativeAttributesV1 : previous.packed;
     const ratingDelta = player.rating - previous.rating;
-    const deltas = effectiveSkills(player).map((value, index) => value - previous.skills[index]);
-    if (!ratingDelta && deltas.every(delta => delta === 0)) return previous.packed;
+    const deltas = effectiveSkills(player).map((value, index) => value - previous.skills[index] - verse);
+    if (!ratingDelta && deltas.every(delta => delta === 0)) return packed;
     const reference = referenceFor(positionOf(player));
-    return pack(unpack(previous.packed).map(
+    return pack(unpack(packed).map(
       (value, index) => shifted(value, reference.influences[index], deltas, ratingDelta)
     ));
   }

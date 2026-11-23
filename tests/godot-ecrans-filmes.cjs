@@ -21,10 +21,11 @@ const routesDe = (texte, nom) => {
 test('Écrans filmés : la préparation refuse un export relatif et lit club, graine et matchs', () => {
   const { lireOptions } = require('../tools/ecrans-filmes/preparer-carriere.cjs');
   const sortie = path.resolve('/tmp/ecrans/carriere.json');
-  assert.deepEqual(lireOptions([sortie, '--club', '7', '--graine', '11', '--matchs', '0']), { sortie, club: 7, graine: 11, matchs: 0 });
-  assert.deepEqual(lireOptions([sortie]), { sortie, club: 102, graine: 4242, matchs: 1 });
+  assert.deepEqual(lireOptions([sortie, '--club', '7', '--graine', '11', '--matchs', '0']), { sortie, club: 7, graine: 11, matchs: 0, reprises: 0 });
+  assert.deepEqual(lireOptions([sortie]), { sortie, club: 102, graine: 4242, matchs: 1, reprises: 0 });
   assert.throws(() => lireOptions(['relatif.json']), /absolu/);
   assert.throws(() => lireOptions([sortie, '--matchs', 'deux']), /entier/);
+  assert.deepEqual(lireOptions([sortie, '--reprises', '3']).reprises, 3);
   assert.throws(() => lireOptions([sortie, 'en-trop.json']), /inconnu/);
 });
 

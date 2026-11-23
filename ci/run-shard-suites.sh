@@ -111,6 +111,8 @@ budget() {
     tests/compte-rendu-monde.cjs) echo 600s ;;
     # Humeur des supporters : carrière Monde jouée jusqu'au premier bilan du conseil (3 matchs), 49 s en local (23/11/2026).
     tests/supporters-humeur.cjs) echo 400s ;;
+    # Avis du conseil sur le jeu : carrière Monde hebdomadaire jusqu'au premier bilan avec la note du jeu, export et import d'une ancienne sauvegarde (94 s en local, 23/11/2026).
+    tests/conseil-jeu.cjs) echo 600s ;;
     # Délégation de la composition au staff : trois carrières Monde hebdomadaires (10 journées déléguées, feuille gardée jusqu'à l'alerte de fatigue, refus), ~5 min en local sous charge.
     tests/delegue-composition-staff.cjs) echo 900s ;;
     # Courbe de niveau (lot 0 notes réalistes) : carrière Monde, 720 matchs complets et 4 000 résultats rapides, 69 s seul en local, 112 s en CI (PR #712, poids 129 = mesure +15 %).
@@ -200,6 +202,8 @@ budget() {
     tests/integration-cloud-complete.cjs) echo 900s ;;
     # Presse/recrutement06 en carrière Monde, 172 s seul en local et 180 s dépassé en CI (Suites 5/7) ; 420 s, assertions inchangées.
     tests/native-press-followups06-worker.cjs) echo 420s ;;
+    # Programme d'entraînement (séance remplacée, effets) : 51 s en local, 180 s dépassées sur le runner (PR #1200, Suites 7/10) ; intensité automatique : 179,9 s sur 180 au ras du cap. Budget ≈ 2-3 fois, assertions inchangées.
+    tests/programme-entrainement.cjs|tests/intensite-auto.cjs) echo 420s ;;
     # Recherche ciblée (carrière Monde, recrutement) : 83 s en local, 180 s dépassées sur le runner (PR #1201, Suites 1/10) ; budget ≈ 5 fois, assertions inchangées.
     tests/recherche-ciblee.cjs) echo 420s ;;
     # Lot 01 (Monde), paquet 3 : deux carrières Monde jouées minute par minute (essai-visible, ~20 min sous charge locale) ; carnet : 358 s.

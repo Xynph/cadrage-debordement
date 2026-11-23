@@ -27,7 +27,7 @@ test('Compte rendu : affluence de chaque match, essais détaillés avec marqueur
         if (r.neutral) { assert.equal('affluence' in r, false, 'terrain neutre sans affluence (' + r.fixtureId + ')'); continue; }
         const cap = capacites[r.pair[0]];
         assert.ok(Number.isInteger(r.affluence), 'affluence entière (' + r.fixtureId + ')');
-        assert.ok(r.affluence >= Math.floor(cap * .35) - 10 && r.affluence <= Math.ceil(cap * .97) + 10, 'affluence ' + r.affluence + ' / capacité ' + cap);
+        assert.ok(r.affluence >= Math.floor(cap * .25) - 10 && r.affluence <= cap, 'affluence ' + r.affluence + ' / capacité ' + cap);
       }
       assert.ok(new Set(historique.map(r => r.affluence)).size > 3, 'affluences variées');
 

@@ -485,11 +485,15 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
  // Le club du manager : public relevé ou baissé par l'humeur de ses supporters (choix de Léo du 23/11/2026).
  const affluenceMatch=(s,f)=>{
   if(f.neutral||typeof nativeClubBudget==='undefined'||typeof nativeClubBudget.spectateurs!=='function')return {};
+  // Billetterie réelle (club-budget.cjs) : prix de la saison (billet ou grosse affiche) et abonnés présents ; c'est aussi
+  // le public sur lequel la recette du match est encaissée.
+  if(s===S&&typeof budgetSpectateursMatch==='function'&&typeof budgetActif==='function'&&budgetActif()&&!budgetFrance()){const n=budgetSpectateursMatch(s.clubs[f.homeId],f);if(Number.isInteger(n))return {affluence:n};}
   const c=s.clubs[f.homeId],n=nativeClubBudget.spectateurs({capacite:Number.isFinite(c?.stadiumCapacity)?c.stadiumCapacity:stadiumCapacity(f.homeId)??12000,
    resultats:Array.isArray(c?.form)?c.form.slice(-5):[],cle:f.homeId+'|'+s.season+'|'+f.id,phase:f.phase||'league',
    accueil:typeof investAccueil==='function'&&typeof nativeClubInvestments!=='undefined'?nativeClubInvestments.facteurAccueil(investAccueil(f.homeId)):1,
    // Humeur des supporters (club-strategy.cjs) : seulement quand le club du manager reçoit.
-   humeur:f.homeId===s.club&&typeof budgetHumeur==='function'?budgetHumeur():null});
+   humeur:f.homeId===s.club&&typeof budgetHumeur==='function'?budgetHumeur():null,
+   });
   return Number.isInteger(n)?{affluence:n}:{};
  };
  const fixtureEntry=(s,f,r)=>({...r,fixtureId:f.id,competitionId:f.competitionId,leagueId:f.competitionId,season:s.season,round:s.round,competitionRound:f.round,week:s.round,date:f.date,phase:f.phase,poolId:f.poolId??null,neutral:f.neutral,...affluenceMatch(s,f)});

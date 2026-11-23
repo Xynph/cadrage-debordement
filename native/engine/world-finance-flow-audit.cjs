@@ -32,7 +32,7 @@ const FLOWS = Object.freeze({
 function billingReplay(capture, {extraWeeklyWages = 0} = {}) {
   const args = {...capture.args, masseHebdo: capture.args.masseHebdo + extraWeeklyWages};
   const ecritures = budget.semaine(args);
-  const ecart = budget.recettesImprevues(ecritures, {forces:args.forces, clubId:args.clubId, receptions:args.receptions, accueil:args.accueil});
+  const ecart = budget.recettesImprevues(ecritures, {forces:args.forces, clubId:args.clubId, receptions:args.receptions, accueil:args.accueil, billets:args.billets});
   const frais = budget.fraisDeMatch(capture.compte, ecart, budget.deficitPrevu(args.forces, args.clubId, args.masseHebdo * 52));
   if (frais.montant > 0) ecritures.push({title:args.libelle + ' · ' + budget.LIBELLE_FRAIS_MATCH, amount:-frais.montant});
   // Investissements des excédents (club-investments.cjs) : une ligne par chantier, même total, selon la

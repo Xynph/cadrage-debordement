@@ -22,9 +22,12 @@ const ELOGE := 65
 const CRITIQUE := 45
 ## Domaines et poids du bilan du moteur (dist/career-integration.js, CAREER_BOARD_WEIGHTS_FANS : l'humeur des
 ## supporters compte pour 10 %, choix de Léo du 23/11/2026).
-const DOMAINES := [["results", "Résultats", 60], ["finances", "Finances", 20], ["youth", "Formation", 10], ["supporters", "Supporters", 10]]
-## Hauteur d'une ligne de domaine (quatre lignes tiennent avant le filet de la Vue d'ensemble, y = 306).
-const LIGNE_DOMAINE := 50.0
+## Notre jeu (avis du conseil sur notre style, revue FM27 n° 31, choix de Léo du 23/11/2026) : 15 %, résultats 50 %,
+## finances 15 % (CAREER_BOARD_WEIGHTS_FANS_JEU) ; absent des bilans d'avant.
+const DOMAINES := [["results", "Résultats", 50], ["finances", "Finances", 15], ["youth", "Formation", 10], ["supporters", "Supporters", 10], ["jeu", "Notre jeu", 15]]
+const COURTS := {"results": "Résultats", "finances": "Finances", "youth": "Jeunes", "supporters": "Public", "jeu": "Jeu"}
+## Hauteur d'une ligne de domaine (cinq lignes tiennent avant le filet de la Vue d'ensemble, y = 306).
+const LIGNE_DOMAINE := 40.0
 
 static func lettre(valeur: Variant) -> String:
 	if not (valeur is int or valeur is float): return "—"
@@ -64,6 +67,12 @@ static func _vers_jalons(app: Control) -> void:
 static func _vers_supporters(app: Control) -> void:
 	app.management_ui.immersive08_strategy_tab = 2
 	app._navigate("Stratégie")
+
+## Domaine Notre jeu : Club › Notre jeu.
+static func _vers_jeu(app: Control) -> void:
+	app.management_ui.erase("club_page")
+	app.management_ui["immersive08_club_tab"] = "jeu"
+	app._navigate("Club")
 
 # --- Formes ------------------------------------------------------------------------------------------------------------
 
@@ -177,18 +186,18 @@ static func conseil(panneau: Control, app: Control, finance: Dictionary, largeur
 	for c: Array in cols: Kit.etiquette(panneau, x0 + float(c[1]) + (float(c[2]) if c[3] else 0.0), 84, str(c[0]), float(c[2]), c[3])
 	D.line(panneau, Vector2(x0, 94), Vector2(x0 + tl, 94), Charte.FILET)
 	var dernier: Dictionary = historique[0] if not historique.is_empty() else {}
-	var actions := {"results": func(): app._navigate("Classements"), "finances": func(): app._navigate("Finances"), "youth": func(): app._navigate("Centre"), "supporters": func(): _vers_supporters(app)}
+	var actions := {"results": func(): app._navigate("Classements"), "finances": func(): app._navigate("Finances"), "youth": func(): app._navigate("Centre"), "supporters": func(): _vers_supporters(app), "jeu": func(): _vers_jeu(app)}
 	for i in DOMAINES.size():
 		var dom: Array = DOMAINES[i]
 		var haut := 98.0 + i * LIGNE_DOMAINE
 		if i > 0: D.line(panneau, Vector2(x0, haut), Vector2(x0 + tl, haut), Charte.FILET)
 		var rangee := _ligne(panneau, Rect2(x0, haut, tl, LIGNE_DOMAINE), "ConseilDomaine_" + str(dom[0]), str(dom[1]), actions[dom[0]])
-		var nom := Kit.texte(rangee, 0, 32, str(dom[1]), Charte.IVOIRE, 200, 21)
+		var nom := Kit.texte(rangee, 0, 27, str(dom[1]), Charte.IVOIRE, 200, 21)
 		nom.add_theme_font_override("font", Kit.texte_gras())
-		Kit.texte(rangee, 300, 32, "%d %%" % int(dom[2]), Charte.IVOIRE_2, 90, 19, HORIZONTAL_ALIGNMENT_RIGHT)
+		Kit.texte(rangee, 300, 27, "%d %%" % int(dom[2]), Charte.IVOIRE_2, 90, 19, HORIZONTAL_ALIGNMENT_RIGHT)
 		var note: Variant = dernier.get(dom[0])
-		if note != null: disque(rangee, Rect2(338, 7, 64, 36), note, 25)
-		else: Kit.texte(rangee, 370, 32, "—", Charte.IVOIRE_3, 64, 20, HORIZONTAL_ALIGNMENT_CENTER)
+		if note != null: disque(rangee, Rect2(338, 5, 60, 30), note, 22)
+		else: Kit.texte(rangee, 370, 27, "—", Charte.IVOIRE_3, 64, 20, HORIZONTAL_ALIGNMENT_CENTER)
 		var valeurs: Array = []
 		for j in range(mini(8, historique.size()) - 1, -1, -1):
 			if historique[j].has(dom[0]): valeurs.append(historique[j].get(dom[0], 0))
@@ -196,9 +205,9 @@ static func conseil(panneau: Control, app: Control, finance: Dictionary, largeur
 		courbe.valeurs = valeurs
 		courbe.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		rangee.add_child(courbe)
-		D.place(courbe, Rect2(450, 6, tl - 620, 38))
-		Kit.texte(rangee, tl - 60, 32, G.n(note) if note != null else "—", Charte.IVOIRE, 80, 20, HORIZONTAL_ALIGNMENT_RIGHT)
-		fleche(rangee, Rect2(tl - 34, 13, 24, 24), avis(note))
+		D.place(courbe, Rect2(450, 5, tl - 620, 30))
+		Kit.texte(rangee, tl - 60, 27, G.n(note) if note != null else "—", Charte.IVOIRE, 80, 20, HORIZONTAL_ALIGNMENT_RIGHT)
+		fleche(rangee, Rect2(tl - 34, 9, 22, 22), avis(note))
 
 ## Bilans en lignes : journée, lettre, évolution, résultat du match (`lier` : ovale et lien vers la fiche du match), puis
 ## flèche et lettre par domaine. Une ligne sans match ouvre le suivi des objectifs.
@@ -215,8 +224,9 @@ static func bilans(panneau: Control, app: Control, historique: Array, x: float, 
 	var depart := 300.0
 	var part := (largeur - depart) / float(DOMAINES.size())
 	var cols := [["J.", 8.0], ["Note", 70.0], ["Évol.", 150.0], ["Rés.", 226.0]]
-	for k in DOMAINES.size(): cols.append([str(DOMAINES[k][1]), depart + k * part])
-	for c: Array in cols: Kit.etiquette(bloc, float(c[1]), 60, str(c[0]), 160)
+	# Intitulés courts : cinq domaines tiennent dans la colonne des bilans.
+	for k in DOMAINES.size(): cols.append([str(COURTS.get(DOMAINES[k][0], DOMAINES[k][1])), depart + k * part])
+	for c: Array in cols: Kit.etiquette(bloc, float(c[1]), 60, str(c[0]), minf(160.0, part - 4.0))
 	D.line(bloc, Vector2(0, 70), Vector2(largeur, 70), Charte.FILET)
 	for i in mini(5, historique.size()):
 		var b: Dictionary = historique[i]
