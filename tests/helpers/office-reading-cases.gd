@@ -82,7 +82,7 @@ static func run(harness: SceneTree, expected_fixture: String) -> void:
 		await harness.reveal(date_link)
 		var before_scroll: int = app.body_scroll.scroll_vertical
 		await harness.activate(date_link)
-		harness.check(app.route == "Calendrier" and app.management_ui.calendar_reading.selected == fixture.date, "Bureau · Entrée ouvre le calendrier au jour annoncé")
+		harness.check(app.route == "Préparation" and int(app.management_ui.get("immersive_training", {}).get("tab", -1)) == 5 and str(app.management_ui.immersive_training.get("mois", "")) == str(fixture.date).substr(0, 7), "Bureau · Entrée ouvre le programme du mois au jour annoncé")
 		await harness.key(KEY_LEFT, true)
 		date_link = harness.found(date_name) as Button
 		harness.check(app.route == "Bureau" and date_link != null and date_link.has_focus() and app.body_scroll.scroll_vertical == before_scroll, "Bureau · Back de calendrier conserve date source, focus et scroll")

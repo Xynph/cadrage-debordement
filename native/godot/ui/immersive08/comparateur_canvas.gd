@@ -1,10 +1,11 @@
 extends RefCounted
 ## Écran pleine page « Comparateur » (décision de Léo du 19/11/2026 : jamais de petite fenêtre) : remplace l'ancienne
-## fenêtre « Comparer deux joueurs » de l'Effectif, du Recrutement et de la fiche joueur. Deux à trois colonnes, un
-## sélecteur de joueur par colonne (« Choisir un joueur » tant qu'il reste de la place), synthèse puis les 36 attributs
-## côte à côte colorés au barème, la meilleure valeur de chaque ligne en gras avec ▲ (jamais la couleur seule).
+## fenêtre « Comparer deux joueurs » de l'Effectif, du Recrutement et de la fiche joueur. Deux colonnes (choix de Léo
+## du 23/11/2026 : plus de troisième joueur), un sélecteur de joueur par colonne (« Choisir un joueur » tant qu'il reste
+## de la place), puis le radar à 8 axes (comparateur_radar.gd) : synthèse de chaque joueur de part et d'autre, clic sur
+## un axe = ses qualités en barres miroir dans une petite fenêtre visuelle.
 ## Échap, « ← Retour » et Précédent ramènent à l'écran d'origine (étape d'historique de la route « Comparateur »).
-## Lecture seule : la mémoire des joueurs est `management_ui.compare` (3 maximum), partagée avec l'Effectif.
+## Lecture seule : la mémoire des joueurs est `management_ui.compare` (2 maximum), partagée avec l'Effectif.
 ## Exemple : `Comparateur.ouvrir(app, "world:champ:…")`.
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
@@ -12,17 +13,16 @@ const G = preload("res://ui/game_skin.gd")
 const Charte = preload("res://ui/charte.gd")
 const Kit = preload("res://ui/immersive08/tactics_kit.gd")
 const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
-const Commune = preload("res://ui/immersive08/fiche_commune.gd")
 const Identity = preload("res://ui/player_identity.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
-const Attributs = preload("res://ui/player_attributes.gd")
 const Base = preload("res://ui/immersive08/recruitment_comparison.gd")
+const Radar = preload("res://ui/immersive08/comparateur_radar.gd")
 const ROUTE := "Comparateur"
-const MAX := 3
+const MAX := 2
 const LARGEUR := 2248.0
 const Y_DETAIL := 300.0
 
-## Ouvre le comparateur ; `ajouter` rejoint la mémoire (le plus ancien cède la place s'il y en a déjà trois).
+## Ouvre le comparateur ; `ajouter` rejoint la mémoire (le plus ancien cède la place s'il y en a déjà deux).
 static func ouvrir(app: Control, ajouter: String = "") -> void:
 	var memoire: Array = app.management_ui.compare
 	if not ajouter.is_empty() and not ajouter in memoire:
@@ -58,112 +58,34 @@ static func _construire(app: Control, page: Control) -> void:
 	var reserve: Array = Base.pool(app.model)
 	var propres: Array = app.model.get("squad", []).map(func(p: Dictionary): return str(p.get("id", "")))
 	var memoire: Array = app.management_ui.compare
-	var ids: Array = memoire.filter(func(id): return reserve.any(func(p: Dictionary): return str(p.get("id", "")) == str(id))).slice(0, MAX)
+	var maximum := MAX
+	var ids: Array = memoire.filter(func(id): return reserve.any(func(p: Dictionary): return str(p.get("id", "")) == str(id))).slice(0, maximum)
 	memoire.assign(ids)
-	var colonnes := clampi(ids.size() + 1, 2, MAX)
+	var colonnes := clampi(ids.size() + 1, 2, maximum)
 	var retour_lien := Kit.lien(page, Rect2(0, 4, 0, 38), _origine(app), func(): retour(app), "ComparateurRetour", 20)
 	retour_lien.accessibility_name = _origine(app) + " · Échap"
 	C.style_bouton_lien(retour_lien, 20)
 	Kit.touche(page, retour_lien.size.x / C.density + 10, 32, "Échap")
 	var titre := Kit.titre_page(page, 0, 98, "Comparateur", 56, 900)
 	titre.name = "ComparateurTitre"
-	Pieces.info(page, Pieces.largeur_titre("COMPARATEUR", 56) + 24.0, 64.0, "Jusqu’à trois joueurs côte à côte\n▲ : meilleure valeur de la ligne\nL’âge et le coût ne comptent pas comme un avantage", "ComparateurAide")
-	var x0 := 330.0
-	var largeur := (LARGEUR - x0 - 28.0 * (colonnes - 1)) / colonnes
+	Pieces.info(page, Pieces.largeur_titre("COMPARATEUR", 56) + 24.0, 64.0, "Deux joueurs côte à côte\n▲ : meilleure valeur\nClic sur un axe : ses qualités", "ComparateurAide")
+	var x0 := 0.0
+	var ecart := 100.0
+	var largeur := (LARGEUR - x0 - ecart * (colonnes - 1)) / colonnes
 	var joueurs: Array[Dictionary] = []
+	var xs: Array = []
 	for i in colonnes:
-		var x := x0 + i * (largeur + 28.0)
+		var x := x0 + i * (largeur + ecart)
+		xs.append(x)
 		var trouve: Dictionary = {}
 		var id := str(ids[i]) if i < ids.size() else ""
 		for p: Dictionary in reserve:
 			if str(p.get("id", "")) == id: trouve = Base.prepared(app, p, id in propres)
 		joueurs.append(trouve)
 		_entete(app, page, i, x, largeur, trouve, reserve, propres)
-	D.line(page, Vector2(0, Y_DETAIL - 6), Vector2(LARGEUR, Y_DETAIL - 6), Charte.FILET)
-	var defile := ScrollContainer.new()
-	defile.name = "ComparateurDetails"
-	defile.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	defile.follow_focus = true
-	page.add_child(defile)
-	D.place(defile, Rect2(0, Y_DETAIL, LARGEUR, 1244 - Y_DETAIL - 8))
-	var contenu := Control.new()
-	contenu.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	defile.add_child(contenu)
-	var etat := {"y": 0.0, "rang": 0, "n": 0}
-	var pas := 36.0
-	var ligne := func(titre_ligne: String, valeurs: Array, textes: Array, cle_meilleure: bool, nom: String) -> void:
-		var y: float = etat.y
-		D.line(contenu, Vector2(0, y + pas - 1), Vector2(LARGEUR, y + pas - 1), Color(Charte.FILET, .6))
-		D.text(contenu, 16, y + 25, titre_ligne, 19, C.MUTED, 500, x0 - 30, HORIZONTAL_ALIGNMENT_LEFT, true)
-		var meilleure := -INF
-		var compte := 0
-		for v: Variant in valeurs:
-			if Base.numeric(v) and float(v) > meilleure: meilleure = float(v)
-		for v: Variant in valeurs:
-			if Base.numeric(v) and float(v) == meilleure: compte += 1
-		for i in colonnes:
-			if joueurs[i].is_empty(): continue
-			var v: Variant = valeurs[i]
-			var gagnant: bool = cle_meilleure and Base.numeric(v) and float(v) == meilleure and compte == 1 and joueurs.filter(func(p): return not p.is_empty()).size() > 1
-			var couleur: Color = Charte.couleur_attribut(v) if nom.begins_with("Attribut") else C.IVORY
-			var etiquette := D.text(contenu, x0 + i * (largeur + 28.0) + largeur - 40, y + 26, str(textes[i]) + (" ▲" if gagnant else ""), 22, couleur, 700, largeur - 60, HORIZONTAL_ALIGNMENT_RIGHT)
-			etiquette.name = nom + "_" + str(i)
-			if gagnant: etiquette.add_theme_font_override("font", C.EXTRA_BOLD)
-		etat.y = y + pas
-		etat.rang = int(etat.rang) + 1
-	var section := func(titre_section: String) -> void:
-		var y: float = float(etat.y) + 14.0
-		var t := Kit.titre(contenu, 16, y + 24, titre_section, 24, 900)
-		t.name = "ComparateurSection" + str(etat.n)
-		etat.n = int(etat.n) + 1
-		D.line(contenu, Vector2(0, y + 34), Vector2(LARGEUR, y + 34), Charte.FILET)
-		etat.y = y + 44.0
-		etat.rang = 0
-	section.call("Synthèse")
-	var proprietaire := func(i: int) -> bool: return bool(joueurs[i].get("__own", false)) if not joueurs[i].is_empty() else false
-	var vals: Array = []
-	var txts: Array = []
-	for i in colonnes:
-		var p: Dictionary = joueurs[i]
-		vals.append(Base.value(p, "rating") if not p.is_empty() else null)
-		txts.append(G.rating_text(p, proprietaire.call(i)) if not p.is_empty() else "")
-	ligne.call("Niveau", vals, txts, true, "Synthese_niveau")
-	vals = []; txts = []
-	for i in colonnes:
-		var p: Dictionary = joueurs[i]
-		vals.append(Base.value(p, "potential") if not p.is_empty() else null)
-		txts.append(G.potential_text(p) if not p.is_empty() else "")
-	ligne.call("Potentiel", vals, txts, true, "Synthese_potentiel")
-	vals = []; txts = []
-	for i in colonnes:
-		var p: Dictionary = joueurs[i]
-		var forme: Variant = Commune.condition(p) if not p.is_empty() else null
-		vals.append(forme)
-		txts.append("%d %%" % roundi(float(forme)) if forme != null else "—")
-	ligne.call("Condition", vals, txts, true, "Synthese_condition")
-	vals = []; txts = []
-	for i in colonnes:
-		var p: Dictionary = joueurs[i]
-		vals.append(null)
-		txts.append(G.n(p.get("age", "—")) + " ans" if not p.is_empty() and p.has("age") else "—")
-	ligne.call("Âge", vals, txts, false, "Synthese_age")
-	vals = []; txts = []
-	for i in colonnes:
-		var p: Dictionary = joueurs[i]
-		vals.append(null)
-		txts.append(Commune.echeance(app, p) if not p.is_empty() else "")
-	ligne.call("Fin de contrat", vals, txts, false, "Synthese_contrat")
-	for groupe: Array in Attributs.GROUPS:
-		section.call(str(groupe[0]))
-		for paire: Array in groupe[1]:
-			vals = []; txts = []
-			for i in colonnes:
-				var p: Dictionary = joueurs[i]
-				var v: Variant = Base.value(p, "attribute:" + str(paire[0])) if not p.is_empty() else null
-				vals.append(v)
-				txts.append(Attributs.caption(v))
-			ligne.call(str(paire[1]), vals, txts, true, "Attribut_" + str(paire[0]))
-	contenu.custom_minimum_size = Vector2(C.px(LARGEUR), C.px(float(etat.y) + 20.0))
+	# Comparaison en radar (idée FM27 n° 9, option A retenue par Léo le 23/11/2026).
+	Radar.liseres(page, joueurs, xs, largeur, Y_DETAIL - 8)
+	Radar.construire(app, page, joueurs, Y_DETAIL)
 
 static func _entete(app: Control, page: Control, i: int, x: float, largeur: float, joueur: Dictionary, reserve: Array, propres: Array) -> void:
 	var choix := OptionButton.new()

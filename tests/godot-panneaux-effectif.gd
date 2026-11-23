@@ -74,6 +74,75 @@ func appliquer_taille() -> void:
 	await create_timer(0.5).timeout
 	print("PANNEAUX taille rendue ", root.get_texture().get_size())
 
+## Maillot du terrain XV -> liste classée par étoiles à ce poste (barème absolu, note au poste du moteur), maillot marqué,
+## titre du poste ; badge « Jeune » -> Formation ; nom du titulaire -> sa fiche ; ✕ -> retour au tri par poste.
+func etoiles_au_poste(xv: Dictionary) -> void:
+	const Etoiles = preload("res://ui/immersive08/liste_etoiles.gd")
+	var numero := 10 if xv.has(10) else (int(xv.keys()[0]) if not xv.is_empty() else 0)
+	if numero == 0 or not await click_id("PanneauJoueur_%d" % numero): return
+	check(app.route == "Effectif" and found("CarnetSquad") != null, "N° %d : on reste sur l'Effectif" % numero)
+	check(int(app.management_ui.roster.get("etoiles_poste", 0)) == numero and str(app.management_ui.roster.sort) == "Étoiles", "N° %d -> tri par étoiles au poste" % numero)
+	check(found("PanneauChoisi_%d" % numero) != null, "Maillot %d marqué sur le terrain" % numero)
+	var titre: Label = found("EtoilesTitrePoste") as Label
+	check(titre != null and titre.text.contains(Etoiles.nom_poste(numero).to_upper()), "Titre du poste au-dessus de la liste")
+	var lignes: Array = found("ImmersiveRosterRows").get_children().filter(func(n: Node): return n is Button and n.has_meta("player_id"))
+	var notes: Array = []
+	var par_id := {}
+	for p: Dictionary in app.model.squad: par_id[str(p.id)] = p
+	var repere := Etoiles.reference_poste(app.model.squad, numero)
+	for ligne: Button in lignes: notes.append(Etoiles.etoiles(par_id.get(str(ligne.get_meta("player_id")), {}), numero, repere))
+	var connues: Array = notes.filter(func(v: float): return v >= 0.0)
+	var classe := true
+	for i in range(1, connues.size()): classe = classe and connues[i - 1] >= connues[i]
+	# Étoiles relatives à notre effectif : le meilleur joueur du groupe à ce poste a 5 étoiles, en tête de liste.
+
+	check(connues.size() >= 10 and classe and is_equal_approx(float(connues[0]), 5.0), "Liste classée par étoiles décroissantes, notre meilleur au poste à 5 (%s)" % str(connues.slice(0, 6)))
+	var premiere: Control = lignes[0] if not lignes.is_empty() else null
+	var dessin: Control = premiere.find_child("RosterEtoiles", true, false) if premiere != null else null
+	check(dessin != null and is_equal_approx(float(dessin.get_meta("etoiles", -1.0)), 5.0), "Étoiles dessinées sur la ligne : 5 pour notre meilleur (%s, %s)" % [str(dessin.get_meta("etoiles", -1.0)) if dessin != null else "—", str(dessin.get("valeur")) if dessin != null else "—"])
+	var toutes: Array = connues.duplicate()
+	toutes.sort()
+	check(toutes.size() > 0 and toutes[0] < toutes[-1], "Des étoiles différentes d'un joueur à l'autre")
+	var pastille := found("EtoilesProfondeur")
+	check(pastille is Label and (pastille as Label).text.begins_with(str(Etoiles.profondeur(app.model.squad, numero)) + " "), "Pastille ★4+ = nombre de joueurs à 4 étoiles et plus")
+	check(connues.size() < app.model.squad.size() or Etoiles.profondeur(app.model.squad, numero) == connues.filter(func(v: float): return v >= 4.0).size(), "Pastille ★4+ cohérente avec les étoiles de la liste")
+	# Badge « Jeune » (21 ans et moins) derrière le nom -> Formation.
+	var jeune: Control = found("RosterBadgeOuvrir_Jeune")
+	var attendu: bool = app.model.squad.any(func(p: Dictionary): return (p.get("age") is int or p.get("age") is float) and int(p.age) <= 21)
+	check(not attendu or jeune != null, "Badge Jeune présent")
+	if jeune != null:
+		await montrer(jeune)
+		await click(jeune.get_global_rect().get_center())
+		check(app.route != "Effectif", "Badge Jeune -> Formation (%s)" % app.route)
+		await effectif()
+	# La fiche du titulaire reste ouverte par son nom dans la liste.
+	var titulaire := str(xv[numero].id)
+	await montrer(found("SquadOpenPlayer_" + titulaire.validate_node_name()))
+	if await click_id("SquadOpenPlayer_" + titulaire.validate_node_name()):
+		check(app.selected_player == titulaire and found("CarnetSquad") == null, "Nom du titulaire -> sa fiche")
+		check(found("PlayerRolePitch") != null, "Fiche : terrain des postes (étoiles relatives au groupe)")
+		await capture("fiche")
+	await effectif()
+	# Souris hors de la liste : pas de carte joueur au survol sur la capture.
+	var loin := InputEventMouseMotion.new(); loin.position = Vector2(4, 1070); loin.global_position = loin.position
+	Input.parse_input_event(loin)
+	await settle(4)
+	# Liste en haut pour la capture (le retour de fiche garde le défilement).
+	var defile := found("SquadScroll") as ScrollContainer
+	if defile != null: defile.scroll_vertical = 0
+	await settle(2)
+	await capture("etoiles")
+	check(found("EtoilesTitrePoste") != null, "Choix du poste gardé au retour sur l'Effectif")
+	if await click_id("EtoilesEffacer"):
+		check(int(app.management_ui.roster.get("etoiles_poste", 0)) == 0 and str(app.management_ui.roster.sort) == "Poste" and found("EtoilesTitrePoste") == null and found("PanneauChoisi_%d" % numero) == null, "✕ -> retour au tri par poste")
+
+## Fait défiler la liste de l'Effectif jusqu'au contrôle (ligne hors de la zone visible).
+func montrer(control: Control) -> void:
+	var defile := found("SquadScroll") as ScrollContainer
+	if control == null or defile == null: return
+	defile.ensure_control_visible(control)
+	await settle(4)
+
 func finish() -> void:
 	print("PANNEAUX EFFECTIF : ", checks, " contrôles ; ", failures.size(), " échec(s)")
 	if app != null: app.bridge.stop()
@@ -128,8 +197,7 @@ func run() -> void:
 	var xv: Dictionary = Panneaux._xv(app)
 	var numero: int = xv.keys()[0] if not xv.is_empty() else 0
 	check(numero > 0, "Feuille de match : numéros du XV")
-	if numero > 0 and await click_id("PanneauJoueur_%d" % numero):
-		check(app.selected_player == str(xv[numero].id) and found("CarnetSquad") == null, "N° %d -> fiche du joueur" % numero)
+	await etoiles_au_poste(xv)
 	await effectif()
 	if await click_id("PanneauEcran_xv"): check(app.route == "Composition", "Flèche XV -> Composition")
 

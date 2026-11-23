@@ -10,7 +10,7 @@ const crypto=require('node:crypto'),fs=require('node:fs'),os=require('node:os'),
   if(process.env.CD_GEOMETRY_SEED_PROFILE)fs.cpSync(process.env.CD_GEOMETRY_SEED_PROFILE,profile,{recursive:true});
   const script=process.env.CD_GEOMETRY_SCRIPT||'small-window-geometry.gd';
   assert.match(script,/^small-window-geometry[-\w]*\.gd$/);
-  const files=['tests/small-window-geometry.cjs','tests/small-window-geometry.gd','tests/'+script,'native/godot/ui/contextual/director.gd','native/godot/ui/immersive08/month_calendar.gd','native/godot/ui/immersive08/office.gd','native/godot/ui/immersive08/dialogs.gd','native/godot/ui/contract_negotiation.gd','native/godot/ui/profile_safety_view.gd'];
+  const files=['tests/small-window-geometry.cjs','tests/small-window-geometry.gd','tests/'+script,'native/godot/ui/contextual/director.gd','native/godot/ui/immersive08/training_mois.gd','native/godot/ui/immersive08/office.gd','native/godot/ui/immersive08/dialogs.gd','native/godot/ui/contract_negotiation.gd','native/godot/ui/profile_safety_view.gd'];
   const manifest=()=>Object.fromEntries([...new Set(files)].map(file=>[file,crypto.createHash('sha256').update(fs.readFileSync(path.resolve(__dirname,'..',file))).digest('hex')]));
   const before=manifest();fs.writeFileSync(path.join(output,'source-manifest.json'),JSON.stringify(before,null,2));
   const args=['-w','600','/tmp/rg27-godot-sdk.lock','timeout',process.env.CD_GEOMETRY_TIMEOUT||'360',godot,'--flush-stdout','--display-driver','x11','--rendering-method','gl_compatibility','--windowed','--resolution','1920x1080','--audio-driver','Dummy','--max-fps','60','--path','native/godot','--log-file',path.join(output,'engine.log'),'--script',path.resolve(__dirname,script)];
