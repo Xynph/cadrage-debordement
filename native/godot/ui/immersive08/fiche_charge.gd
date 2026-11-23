@@ -9,8 +9,9 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
 const Charte = preload("res://ui/charte.gd")
 const Kit = preload("res://ui/immersive08/tactics_kit.gd")
+const IntensiteAuto = preload("res://ui/immersive08/intensite_auto.gd")
 ## [mode du moteur, libellé, effet].
-const MODES := [["collective", "Suivre le collectif", "La charge de l’équipe, sans réglage particulier."],
+const MODES := [["collective", "Auto", "L’intensité de la règle de sa forme (onglet Individuel de l’Entraînement)."],
 	["repos", "Récupération", "Charge allégée pour retrouver de la fraîcheur."],
 	["normal", "Charge normale", "La séance complète, sans travail supplémentaire."],
 	["intense", "Travail intense", "Plus de progression, plus de fatigue."]]
@@ -56,7 +57,10 @@ static func build(app: Control, page: Control, player: Dictionary) -> void:
 		D.place(ligne, Rect2(20, 116 + i * 56, 1260, 52))
 		D.line(ligne, Vector2(0, 51), Vector2(1260, 51), Charte.FILET)
 		if choisi: Kit.marqueur(ligne, Rect2(6, 8, 4, 36))
-		D.text(ligne, 22, 33, str(mode[1]), 20, Charte.IVOIRE, 700, 340, HORIZONTAL_ALIGNMENT_LEFT, true).add_theme_font_override("font", Kit.texte_gras())
+		var libelle := str(mode[1])
+		# Auto : l’intensité que donne la règle de sa forme (blessé : repos).
+		if mode[0] == "collective": libelle += "  →  " + str(IntensiteAuto.NOMS_MODE.get(IntensiteAuto.intensite(app, player.merged({"loadPlan":"collective", "loadMode":""}, true)), ""))
+		D.text(ligne, 22, 33, libelle, 20, Charte.IVOIRE, 700, 340, HORIZONTAL_ALIGNMENT_LEFT, true).add_theme_font_override("font", Kit.texte_gras())
 		ligne.tooltip_text = str(mode[2])
 		Kit.texte(ligne, 1240, 33, "actuel" if choisi else "Choisir →", Charte.IVOIRE if choisi else Charte.IVOIRE, 160, 18, HORIZONTAL_ALIGNMENT_RIGHT)
 		ligne.disabled = not raison.is_empty()

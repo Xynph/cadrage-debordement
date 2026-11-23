@@ -324,7 +324,7 @@ func _detail(command: String, payload: Dictionary, model: Dictionary) -> String:
 		"staff_meeting": return _label(support.get("meeting",{}).get("options",[]),payload.get("plan"))
 		"training_plan": return _label(support.get("training",{}).get("plans",[]),payload.get("plan"))
 		"strategic_briefing": return _label(support.get("briefing",{}).get("plans",[]),payload.get("plan"))
-		"set_player_load": return str(_person(model,str(payload.get("playerId",""))).get("name","")) + " · " + str({"repos":"Repos","normal":"Charge normale","intense":"Charge intense"}.get(str(payload.get("mode","")),""))
+		"set_player_load": return str(_person(model,str(payload.get("playerId",""))).get("name","")) + " · " + str({"collective":"Auto","repos":"Repos","normal":"Charge normale","intense":"Charge intense"}.get(str(payload.get("mode","")),""))
 		"set_development_focus":
 			var development: Dictionary = model.get("decisions",{}).get("development",{})
 			for group in [development.get("academy",[]),development.get("professionals",[])]:

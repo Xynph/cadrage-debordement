@@ -28,6 +28,7 @@ static func build(app: Control, canvas: Control) -> void:
 			var detail := Relations.build(app)
 			U.place_detail(canvas, Rect2(0,439,2248,805), detail)
 			Legacy.apply(detail,U.GREEN)
+			load("res://ui/discussion_joueur.gd").reprendre(app,canvas)
 		"history": _history(app,canvas,data)
 		_: _overview(app,canvas,data)
 
