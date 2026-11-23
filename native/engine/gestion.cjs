@@ -118,7 +118,11 @@ module.exports=function nativeGestion(command,p){
   // Budget de transferts (budget-transferts.cjs) : la prime d'une recrue entre dans l'enveloppe ; une prolongation, jamais.
   const horsBudget=kind==='recruit'&&typeof budgetTransfertsRefus==='function'?budgetTransfertsRefus(contractFee(target,kind)):null;requireThat(!horsBudget,horsBudget);
   const avant=club().cash;
-  requireThat(negotiateContract(p.playerId,kind,p.salary,p.years),'Offre refusée : durée, joueur ou négociation indisponible.');
+  // Rôle promis (role-contrat.cjs, idée 16) : Espoir à 21 ans et moins, Appoint refusé par un ambitieux ; le rôle règle la
+   // demande de salaire pendant la négociation (+5 % par cran au-dessus du rôle attendu, −4 % par cran en dessous).
+   const refusRole=p.role&&typeof roleContratRefus==='function'?roleContratRefus(target,p.role):'';requireThat(!refusRole,refusRole);
+   const negocier=()=>negotiateContract(p.playerId,kind,p.salary,p.years);
+   requireThat(p.role&&typeof roleContratAvec==='function'?roleContratAvec(target,p.role,negocier):negocier(),'Offre refusée : durée, joueur ou négociation indisponible.');
   const key=talkKey(p.playerId,kind),talk=S.economy.talks[key];
   if(talk.status==='ready')requireThat(confirmContract(key),'Signature devenue indisponible.');
   if(kind==='recruit'&&talk.status==='signed'&&typeof budgetTransfertsDepenser==='function')budgetTransfertsDepenser(talk.fee);
