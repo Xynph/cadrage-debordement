@@ -364,6 +364,12 @@ function factory() {
       return [{ key: F.d, vars: { mode: MODE_LABELS[F.s.training] || String(F.s.training || 'normal'), condition: Math.round(F.mean(F.players.filter(p => !(p.injury > 0)).map(conditionOf))) } }];
     },
     // Lendemain d'un match du club : trois enseignements tirés des vraies statistiques, axe de semaine proposé.
+    // Rapport de l'analyste vidéo (revue FM27, idée 28) : le dernier match du club, jusqu'à trois jours après.
+    analyse_video(F) {
+      const last = F.season[F.season.length - 1];
+      if (!last?.date || last.date < shift(F.d, -3) || last.date >= F.d) return [];
+      return [{ key: last.fixtureId || last.date, club: last.opp, vars: { adversaire: F.name(last.opp), score: last.us + '-' + last.them } }];
+    },
     bilan_match(F) {
       const last = F.season[F.season.length - 1];
       // Après la clôture du match (réponse possible), au plus trois jours après la rencontre.
