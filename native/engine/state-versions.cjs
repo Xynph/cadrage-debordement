@@ -29,6 +29,8 @@ const UNTOUCHED = Object.freeze({
   club_preview: NONE, start_challenges: NONE, academy_groups_preview: NONE, interclub_negotiate: NONE, save: NONE,
   // Réglages, consignes, rendez-vous, causeries : sections légères seulement.
   set_tactics: NONE, set_penalty_policy: NONE, set_consignes: NONE, appliquer_staff: NONE, set_role_direct: NONE, cri: NONE, set_collective_focus: NONE, set_opponent_level: NONE,
+  // Postes visés du staff par service (staff-services.cjs) : S.staffServices seulement.
+  staff_services_target: NONE,
   set_delegation: NONE, press_policy: NONE, club_follow: NONE, set_lineup: NONE, auto_lineup: NONE,
   club_meeting_ack: NONE, club_meeting_continue: NONE, pause: NONE, match_talk_decide: NONE, match_incident_choice: NONE,
   manager_recruitment_watch: NONE, regen_shortlist: NONE,

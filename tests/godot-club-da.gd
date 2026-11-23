@@ -10,6 +10,7 @@ extends SceneTree
 const Flow = preload("helpers/contextual_flow.gd")
 const Charte = preload("res://ui/charte.gd")
 const Pages = preload("res://ui/immersive08/club_pages.gd")
+const FenetreVisuelle = preload("res://ui/immersive08/fenetre_visuelle.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -93,6 +94,7 @@ func run() -> void:
 	await confirmation_en_place()
 	await staff_pages()
 	await staff_tab()
+	await staff_services()
 	await overview()
 	shot("club-1920x1080")
 	root.size = Vector2i(1280, 720)
@@ -104,6 +106,8 @@ func run() -> void:
 
 func staff_open() -> void:
 	app.management_ui.erase("club_page")
+	# Tableau habituel (« Tout le staff ») ; la vue par service a sa propre suite (staff_services).
+	app.management_ui["staff_services_vue"] = "tous"
 	app.StaffViews.reading(app).navigation_id = ""
 	app._navigate("Staff")
 	await settle(12)
@@ -183,6 +187,86 @@ func staff_tab() -> void:
 		await settle(4)
 		check(int(app.bridge._next_id) == commandes, "Staff : Annuler n'envoie rien")
 	app.StaffViews.reading(app).tab = 0
+
+## Staff par service (revue FM27 n° 22, choix A de Léo) : vue par défaut de l'onglet, quatre colonnes du moteur
+## (postes occupés / visés, silhouettes, avis des dirigeants), rangée « En plus » réglée d'un clic (− / +) sans
+## confirmation, bonus et salaire suivis à l'écran, « Tout le staff » rend le tableau, silhouette = fiche du membre.
+func staff_services() -> void:
+	app.management_ui.erase("club_page")
+	app.management_ui.erase("staff_services_vue")
+	app.StaffViews.reading(app).navigation_id = ""
+	app._navigate("Staff")
+	await settle(12)
+	var projection: Dictionary = app.model.get("clubLife", {}).get("staffServices", {})
+	check(projection.get("available", false) == true, "Staff par service : projection du moteur")
+	check(node("CarnetStaff") == null, "Staff : la vue par service remplace le tableau par défaut")
+	for id in ["coaching", "fitness", "medical", "club"]:
+		check(node("StaffService_" + id) != null, "Staff par service : colonne " + id)
+		check(node("StaffAvis_" + id) != null, "Staff par service : avis des dirigeants " + id)
+		check(node("StaffBonus_" + id) != null and node("StaffSalaire_" + id) != null, "Staff par service : bonus et salaire " + id)
+		check(node("StaffCible_%s_plus" % id) is Button and node("StaffCible_%s_moins" % id) is Button, "Staff par service : − / + " + id)
+	for id in ["StaffAffectations", "StaffResponsabilites", "StaffContratsServices", "StaffSalaireTotal"]: check(node(id) != null, "Staff par service : " + id)
+	check(windows().is_empty(), "Staff par service : aucune fenêtre")
+	var pleins := 0
+	for control in node("ImmersiveClub").find_children("*", "Button", true, false):
+		if gold_on(control as Control, false): pleins += 1
+	check(pleins == 0, "Staff par service : aucun or au repos (%d)" % pleins)
+	# Service avec un membre en surnombre : « + » applique tout de suite (aucune confirmation).
+	var choisi := ""
+	for s: Dictionary in projection.get("services", []):
+		if choisi.is_empty() and not (s.get("surnombre", []) as Array).is_empty(): choisi = str(s.id)
+	check(not choisi.is_empty(), "Staff par service : un membre en surnombre au départ")
+	if not choisi.is_empty():
+		var plus := node("StaffCible_%s_plus" % choisi) as Button
+		var compte_avant := (node("StaffServiceCompte_" + choisi) as Label).text
+		plus.pressed.emit()
+		await wait_engine()
+		check(node("ClubConfirmation") == null and windows().is_empty(), "« + » : appliqué sans confirmation")
+		var apres: Dictionary = {}
+		for s: Dictionary in app.model.get("clubLife", {}).get("staffServices", {}).get("services", []):
+			if str(s.id) == choisi: apres = s
+		check(int(apres.get("cible", 0)) == 1 and (apres.get("enPlus", []) as Array).size() == 1, "« + » : un poste en plus tenu (%s)" % JSON.stringify(apres.get("cible")))
+		var bonus := node("StaffBonus_" + choisi) as Label
+		check(bonus != null and (bonus.text.begins_with("+") or bonus.text.begins_with("−")), "Bonus non nul affiché : %s" % (bonus.text if bonus else "?"))
+		var salaire := node("StaffSalaire_" + choisi) as Label
+		check(salaire != null and salaire.text.begins_with("−"), "Salaire du poste affiché : %s" % (salaire.text if salaire else "?"))
+		var compte := node("StaffServiceCompte_" + choisi) as Label
+		check(compte != null and compte.text != compte_avant, "Compte occupés / visés suivi : %s → %s" % [compte_avant, compte.text if compte else "?"])
+		check(node("StaffEnPlusSilhouette_%s_0" % choisi) != null, "Silhouette du poste en plus")
+		shot("club-staff-services-1920x1080")
+		var moins := node("StaffCible_%s_moins" % choisi) as Button
+		check(moins != null and not moins.disabled, "« − » disponible")
+		if moins != null: moins.pressed.emit()
+		await wait_engine()
+		for s: Dictionary in app.model.get("clubLife", {}).get("staffServices", {}).get("services", []):
+			if str(s.id) == choisi: check(int(s.cible) == 0, "« − » : retour au minimum")
+		check((node("StaffCible_%s_moins" % choisi) as Button).disabled, "« − » grisé au minimum")
+	# Silhouette d'un membre : sa fiche.
+	var silhouette := node("StaffSilhouette_assistant_0") as Button
+	check(silhouette != null, "Silhouette de l'adjoint")
+	if silhouette != null:
+		silhouette.pressed.emit()
+		await settle(10)
+		check(node("StaffProfile") != null, "Silhouette : fiche du membre")
+		app.StaffViews.reading(app).navigation_id = ""
+		app._navigate("Staff")
+		await settle(10)
+	# Colonne : petite fenêtre visuelle du service.
+	var ouvrir := node("StaffServiceOuvrir_medical") as Button
+	if ouvrir != null:
+		ouvrir.pressed.emit()
+		await settle(6)
+		check(node("StaffFenetreService") != null, "Petite fenêtre du service médical")
+		FenetreVisuelle.fermer(node("ImmersiveClub"), "StaffFenetreService")
+		await settle(4)
+	# « Tout le staff » : le tableau ; « Par service » : retour.
+	(node("StaffVue_tous") as Button).pressed.emit()
+	await settle(10)
+	check(node("CarnetStaff") != null and node("StaffService_coaching") == null, "« Tout le staff » : tableau habituel")
+	(node("StaffVue_services") as Button).pressed.emit()
+	await settle(10)
+	check(node("StaffService_coaching") != null, "« Par service » : retour aux colonnes")
+	app.management_ui["staff_services_vue"] = "tous"
 
 func finish() -> void:
 	print("CLUB_DA ", JSON.stringify({"checks": checks, "failures": failures}))

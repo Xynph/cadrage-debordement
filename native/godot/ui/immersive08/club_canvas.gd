@@ -793,7 +793,7 @@ static func _staff_contrats(card: Control, app: Control) -> void:
 		valeur.add_theme_font_override("font", Kit.texte_gras())
 
 static func _staff_detail(app: Control, canvas: Control) -> void:
-	# Revue FM27 n° 22 (planche A/B) : vue « par service » sous CD_VARIANTE_VISUELLE.
+	# Revue FM27 n° 22 (choix A de Léo) : vue « par service » par défaut ; « Tout le staff » rend ce tableau.
 	if StaffServices.actif(app):
 		StaffServices.build(app, canvas)
 		return

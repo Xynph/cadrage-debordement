@@ -876,7 +876,8 @@ const FAMILIES = [
 		["Classements","StandingsRows","13-competitions"],
 		["Calendrier","CarnetCalendar","14-calendrier"],
 		["Formation","AcademyImmersiveRows","15-formation"],
-		["Staff","CarnetStaff","16-staff"],
+		# Staff : vue par service par défaut (23/11/2026), tableau sous « Tout le staff » ; la page du Club les porte.
+		["Staff","ImmersiveClub","16-staff"],
 		["Travail du club","CarnetSupport","17-travail-du-club"],
 		["Stratégie","CarnetStrategie","18-strategie"],
 		["Préparation","ImmersivePreparation","20-preparation"],
