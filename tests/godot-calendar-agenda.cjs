@@ -1,5 +1,4 @@
 'use strict';
-process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const assert = require('node:assert/strict');
 const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
@@ -7,7 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { test } = require('node:test');
 const godot = process.env.CD_GODOT_EXECUTABLE;
-test('Calendrier : semaine/mois, filtres, absences publiées et retour clavier sans mutation', {
+test('Programme du mois : navigation, absences publiées et retours sans mutation', {
   skip: !godot && 'SDK Godot requis',
 }, () => {
   const output = process.env.CD_CALENDAR_AGENDA_OUTPUT || fs.mkdtempSync(path.join(os.tmpdir(), 'oval-calendar-agenda-'));

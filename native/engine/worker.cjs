@@ -378,6 +378,7 @@ function createBridge(options={}){
   const edition=mode=>{if(mode==='common')return legacyDatabase.id;const e=worldEditions.forMode(mode);if(!e)throw Error('Édition de pack invalide.');return e.id;};
   const currentEdition=()=>run("CDWorldCareer.edition(S)?.mode||'common'");
   function projectCalendar(model, operation){
+   ctx.nativeProgrammeEffets=null;
    if(!model.club)return;
    const {fixtures,today,simulatedDates}=calendarContext(model);
    const stored=calendarState();
@@ -403,6 +404,10 @@ function createBridge(options={}){
     ...(fixtures===model.calendar ? {} : {fixtures}),simulatedDates
    };
    model.calendarMail=calendarMail.project(mail);
+   // Effets des séances de la semaine en cours (calendar-planning.cjs weekEffects) : lus par trainWeek dans la VM
+   // (programme-semaine.cjs) pour le club du manager, seulement pour cette saison et cette semaine.
+   const semaine=model.calendarPlanning.week;
+   ctx.nativeProgrammeEffets=semaine&&!simulatedDates?JSON.parse(JSON.stringify({...semaine,season:model.meta?.season,round:model.meta?.week})):null;
    if(operation&&(JSON.stringify(mail)!==JSON.stringify(stored.mail)||JSON.stringify(planning)!==JSON.stringify(stored.planning))){
     validateCalendarState({planning,mail});
     ctx.nativeCalendarState=JSON.parse(JSON.stringify({planning,mail}));
@@ -1276,6 +1281,8 @@ function createBridge(options={}){
      run("nativeSystems.domain('doublons').observe();");
      // Fragilité des joueurs créés (fragilite.cjs) : tirée à la création, posée aussi sur les anciennes carrières.
      run("nativeSystems.domain('fragilite').observe();");
+     // Familiarité au poste (familiarite-poste.cjs) : valeur de départ posée sur les joueurs créés et les anciennes carrières.
+     run("nativeSystems.domain('familiarite').observe();");
      run("nativeSystems.domain('clubMail').observe(nativeCommand);");
      // Réglage « Conférences ordinaires : envoyer l'adjoint » (press.cjs) : la conférence ordinaire qui vient de
      // s'ouvrir est tenue par Gabi dans la même commande, avant la sauvegarde ; « Jour suivant » et « Continuer »

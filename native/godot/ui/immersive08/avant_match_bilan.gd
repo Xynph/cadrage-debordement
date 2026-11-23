@@ -1,10 +1,10 @@
 extends RefCounted
 ## « Dernière rencontre » sur l'avant-match (option B choisie par Léo le 21/11/2026) : une pastille « résultat ·
-## écusson adverse · score » dans le bandeau haut ouvre la petite fenêtre visuelle du bilan complet (cadre
-## fenetre_visuelle.gd) : score et écussons, tes choix (pastilles icône + mot → Plan de jeu), les phases par plan et
-## les faits (tuiles chiffres), zone du club adverse → sa fiche. Aucune phrase : les notes du staff deviennent des
-## pastilles. Données : `decisions.report` du modèle natif (native/engine/decisions.cjs), remis à zéro à chaque
-## nouvelle saison : sans match joué, pas de pastille.
+## écusson adverse · score » dans le bandeau haut ouvre une petite fenêtre visuelle (cadre fenetre_visuelle.gd).
+## Depuis le 23/11/2026 (idée FM n°19, choix de Léo) elle montre la carte du compte rendu en version réduite
+## (compte_rendu_carte.gd : bandeau du score, frise 0-80' des essais, stats en barres miroir, marqueurs), puis tes
+## choix (pastilles icône + mot → Plan de jeu) ; zone du club adverse → sa fiche. Données : `decisions.report` du
+## modèle natif (native/engine/decisions.cjs), remis à zéro à chaque nouvelle saison : sans match joué, pas de pastille.
 
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
@@ -15,7 +15,7 @@ const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
 
 const FENETRE := "MatchBilanFenetre"
 const LARGEUR := 1560.0
-const HAUTEUR := 820.0
+const HAUT_CARTE := 88.0
 
 ## Le bilan de la dernière rencontre du club (vide sans match joué ou si le compte rendu est incomplet).
 static func rapport(model: Dictionary) -> Dictionary:
@@ -61,27 +61,6 @@ static func _plan(model: Dictionary, cle: String, id: Variant) -> String:
 
 static func _n(value: Variant) -> int:
 	return roundi(float(value)) if value is int or value is float else 0
-
-## Faits marquants : les règles des notes du staff (debriefNotes), en pastilles [texte, couleur, icône].
-static func faits_marquants(report: Dictionary) -> Array:
-	var faits: Array = []
-	var cote := _cote(report)
-	var stats: Variant = report.get("tacticalStats")
-	if not stats is Array or stats.size() != 2 or not stats[cote] is Dictionary: return faits
-	var own: Dictionary = stats[cote]
-	var porteurs := _n(own.get("carries"))
-	var avances := _n(own.get("advances"))
-	var penalites := _n(report.get("stats", [{}, {}])[cote].get("penalties")) if report.get("stats") is Array and report.stats.size() == 2 and report.stats[cote] is Dictionary else 0
-	if porteurs < 5: faits.append(["Peu de ballons", R.ORANGE, "info"])
-	else:
-		var taux := roundi(100.0 * avances / porteurs)
-		faits.append(["%d %% d'avancée" % taux, R.ROUGE if taux < 40 else R.VERT, "warning" if taux < 40 else "check"])
-	if str(report.get("weather", "")) == "Pluie" and _n(own.get("handErrors")) >= 3: faits.append(["Pluie · %d en-avant" % _n(own.get("handErrors")), R.ORANGE, "cloud"])
-	var pression: Variant = report.get("plans", {}).get("defence", {}).get("pression") if report.get("plans") is Dictionary else null
-	if pression is Dictionary and _n(pression.get("phases")) > 0 and penalites >= 4: faits.append(["Montée · %d pénalités" % penalites, R.ROUGE, "shield"])
-	elif penalites >= 4: faits.append(["%d pénalités" % penalites, R.ROUGE, "warning"])
-	else: faits.append(["%d pénalité%s" % [penalites, "s" if penalites > 1 else ""], R.VERT if penalites <= 2 else R.ORANGE, "shield"])
-	return faits
 
 static func _M(value: float) -> int:
 	return roundi(value * C.density / 0.75)
@@ -137,7 +116,7 @@ static func pastille_bandeau(avant: Control, model: Dictionary) -> Control:
 		bouton.add_theme_stylebox_override(etat, s)
 	return cadre
 
-# ---- Petite fenêtre du bilan complet -------------------------------------------------------------------------------
+# ---- Petite fenêtre : carte du compte rendu (réduite) et tes choix -------------------------------------------------
 
 static func ouvrir(avant: Control, model: Dictionary) -> void:
 	var report := rapport(model)
@@ -145,44 +124,32 @@ static func ouvrir(avant: Control, model: Dictionary) -> void:
 	var scene: Control = avant.find_child("MatchStage", true, false)
 	if scene == null: scene = avant
 	var declencheur := avant.find_child("MatchLastMatchOpen", true, false) as Control
-	var fond := Fenetre.ouvrir(scene, FENETRE, "DERNIÈRE RENCONTRE", "calendar", LARGEUR, HAUTEUR, func(): if is_instance_valid(declencheur): declencheur.grab_focus())
+	var carte: Control = load("res://ui/immersive08/compte_rendu_carte.gd").carte_rapport(avant.app, LARGEUR - 80.0)
+	var h_carte: float = float(carte.get_meta("hauteur", 520.0)) if carte != null else 0.0
+	var hauteur := HAUT_CARTE + h_carte + 110.0
+	var fond := Fenetre.ouvrir(scene, FENETRE, "DERNIÈRE RENCONTRE", "calendar", LARGEUR, hauteur, func(): if is_instance_valid(declencheur): declencheur.grab_focus())
 	# Hors coque : le calque et son voile couvrent tout l'écran, le panneau est centré.
 	var calque := fond.get_parent() as Control
 	calque.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var voile := calque.find_child(FENETRE + "Voile", false, false) as Control
 	if voile != null: voile.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	fond.position = ((scene.size - fond.size) / 2.0).floor()
-	_contenu(fond, avant, model, report)
+	_contenu(fond, avant, model, report, carte, h_carte)
 
-static func _contenu(fond: Control, avant: Control, model: Dictionary, report: Dictionary) -> void:
+static func _contenu(fond: Control, avant: Control, model: Dictionary, report: Dictionary, carte: Control, h_carte: float) -> void:
 	var cote := _cote(report)
 	var app: Control = avant.app
-	# Bandeau du score : écussons, noms, score, résultat.
-	var milieu := LARGEUR / 2.0
-	for i in 2:
-		var club := _club(model, report.teams[i])
-		var e := G.crest(club, C.px(96))
-		e.name = "BilanEcusson%d" % i
-		fond.add_child(e)
-		D.place(e, Rect2(70.0 if i == 0 else LARGEUR - 166.0, 98, 96, 96))
-		var nom := D.text(fond, 186.0 if i == 0 else LARGEUR - 186.0, 158, G.club_name(club).to_upper(), 30, Charte.IVOIRE if i == cote else Charte.IVOIRE_2, 800, 430, HORIZONTAL_ALIGNMENT_LEFT if i == 0 else HORIZONTAL_ALIGNMENT_RIGHT)
-		nom.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
-		if i != cote:
-			var zone := D.rect(fond, Rect2(LARGEUR - 640.0, 92, 580, 110), Color.TRANSPARENT, 12)
-			R.cliquable(zone, func(): _vers(avant, func(): avant._ouvrir_club(club)), "BilanClubAdverse", "Fiche du club adverse")
-	var score := D.text(fond, milieu, 168, _score_texte(report), 80, Charte.IVOIRE, 800, 360, HORIZONTAL_ALIGNMENT_CENTER)
-	score.name = "BilanScoreValeur"
-	score.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
-	var res := resultat(report)
-	var mot_res: String = {"V": "Victoire", "N": "Nul", "D": "Défaite"}[res]
-	var couleur_res: Color = R.VERT if res == "V" else R.ROUGE if res == "D" else R.BLEU
-	var w_res := R.largeur(mot_res, 20) + 12 + 22 + 7 + 14
-	R.pastille(fond, milieu - w_res / 2.0, 226, mot_res, couleur_res, "trophy" if res == "V" else "flag", "BilanResultat", 20)
-	if report.get("weather") is String and not str(report.weather).is_empty():
-		R.pastille(fond, milieu + w_res / 2.0 + 12, 226, str(report.weather), R.BLEU, "cloud", "BilanMeteo", 20)
-	D.line(fond, Vector2(40, 262), Vector2(LARGEUR - 40, 262), Charte.FILET)
+	if carte != null:
+		fond.add_child(carte)
+		D.place(carte, Rect2(40, HAUT_CARTE, LARGEUR - 80.0, h_carte))
+		# Zone du club adverse (écusson et nom dans le bandeau de la carte) → sa fiche, la fenêtre se ferme.
+		var club := _club(model, report.teams[1 - cote])
+		var demi := (LARGEUR - 80.0) / 2.0
+		var zone := D.rect(fond, Rect2(40.0 + (demi + 200.0 if cote == 0 else 0.0), HAUT_CARTE, demi - 200.0, 112), Color.TRANSPARENT, 12)
+		R.cliquable(zone, func(): _vers(avant, func(): avant._ouvrir_club(club)), "BilanClubAdverse", "Fiche du club adverse")
 	# Tes choix : plan au coup d'envoi, conseil du staff suivi ou non (clic : le plan de jeu).
-	_titre(fond, 60, 312, "TES CHOIX", "BilanTitreChoix")
+	var y := HAUT_CARTE + h_carte + 58.0
+	_titre(fond, 60, y, "TES CHOIX", "BilanTitreChoix")
 	var prep: Variant = report.get("preparation")
 	var x := 250.0
 	if prep is Dictionary:
@@ -193,56 +160,11 @@ static func _contenu(fond: Control, avant: Control, model: Dictionary, report: D
 		var suivi := str(prep.get("attack")) == str(prep.get("recommendedAttack")) and str(prep.get("defence")) == str(prep.get("recommendedDefence"))
 		choix.append(["Conseil du staff suivi" if suivi else "Staff : %s · %s" % [_plan(model, "attacks", prep.get("recommendedAttack")), _plan(model, "defenses", prep.get("recommendedDefence"))], R.VERT if suivi else R.ORANGE, "check" if suivi else "people", "BilanChoixStaff"])
 		for c: Array in choix:
-			var p := R.pastille(fond, x, 312, str(c[0]), c[1], str(c[2]), str(c[3]), 20)
+			var p := R.pastille(fond, x, y, str(c[0]), c[1], str(c[2]), str(c[3]), 20)
 			R.cliquable(p, func(): _vers(avant, func(): app._navigate("Plan de jeu")), str(c[3]) + "Lien", "Plan de jeu")
 			x += p.size.x / C.density + 12.0
 	else:
-		R.pastille(fond, x, 312, "Plan non conservé", Charte.IVOIRE_2, "info", "BilanChoixAbsent", 20)
-	# Phases jouées par plan (attaque bleu, défense violet).
-	var plans: Variant = report.get("plans")
-	var tuiles: Array = []
-	if plans is Dictionary:
-		for id: Variant in plans.get("attack", {}):
-			var u: Variant = plans.attack[id]
-			if u is Dictionary and _n(u.get("phases")) > 0: tuiles.append([str(_n(u.phases)), _plan(model, "attacks", id), R.BLEU])
-		for id: Variant in plans.get("defence", {}):
-			var u: Variant = plans.defence[id]
-			if u is Dictionary and _n(u.get("phases")) > 0: tuiles.append([str(_n(u.phases)), _plan(model, "defenses", id), R.VIOLET])
-	tuiles = tuiles.slice(0, 4)
-	if not tuiles.is_empty():
-		D.text(fond, 60, 372, "PHASES PAR PLAN", 17, Charte.IVOIRE_2, 700, 300)
-		var w := (LARGEUR - 120 - 16.0 * 3) / 4.0
-		for i in tuiles.size():
-			R.tuile(fond, Rect2(60 + i * (w + 16), 386, w, 84), tuiles[i][0], tuiles[i][1], tuiles[i][2], "BilanPlan%d" % i, 40)
-	D.line(fond, Vector2(40, 500), Vector2(LARGEUR - 40, 500), Charte.FILET)
-	# Les faits : pastilles des faits marquants, puis les chiffres des deux camps.
-	_titre(fond, 60, 550, "LES FAITS", "BilanTitreFaits")
-	x = 250.0
-	var n := 0
-	for fait: Array in faits_marquants(report):
-		var p := R.pastille(fond, x, 550, str(fait[0]), fait[1], str(fait[2]), "BilanFait%d" % n, 20)
-		x += p.size.x / C.density + 12.0
-		n += 1
-	var stats: Variant = report.get("tacticalStats")
-	if stats is Array and stats.size() == 2 and stats[cote] is Dictionary and stats[1 - cote] is Dictionary:
-		var own: Dictionary = stats[cote]
-		var opp: Dictionary = stats[1 - cote]
-		var penalites := _n(report.stats[cote].get("penalties")) if report.get("stats") is Array and report.stats.size() == 2 and report.stats[cote] is Dictionary else 0
-		var chiffres := [
-			["%d/%d" % [_n(own.get("advances")), _n(own.get("carries"))], "Progressions", R.VERT],
-			[str(_n(own.get("metres"))), "Mètres portés", R.VERT],
-			[str(_n(own.get("kicks"))), "Pied en jeu", R.BLEU],
-			[str(_n(own.get("handErrors"))), "Fautes de main", R.ROUGE if _n(own.get("handErrors")) >= 3 else R.ORANGE],
-			["%d/%d" % [_n(opp.get("advances")), _n(opp.get("carries"))], "Leurs progressions", R.ROUGE],
-			[str(_n(opp.get("metres"))), "Mètres concédés", R.ROUGE],
-			[str(penalites), "Pénalités concédées", R.ROUGE if penalites >= 4 else R.ORANGE],
-			[str(_n(opp.get("handErrors"))), "Leurs fautes de main", R.VERT],
-		]
-		var w := (LARGEUR - 120 - 16.0 * 3) / 4.0
-		for i in chiffres.size():
-			var ligne := i / 4
-			var colonne := i % 4
-			R.tuile(fond, Rect2(60 + colonne * (w + 16), 586 + ligne * 104, w, 88), chiffres[i][0], chiffres[i][1], chiffres[i][2], "BilanChiffre%d" % i, 40)
+		R.pastille(fond, x, y, "Plan non conservé", Charte.IVOIRE_2, "info", "BilanChoixAbsent", 20)
 
 static func _titre(fond: Control, x: float, baseline: float, texte: String, id: String) -> void:
 	var t := D.text(fond, x, baseline + 4, texte, 26, Charte.IVOIRE, 800, 180)
