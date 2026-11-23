@@ -91,6 +91,8 @@ budget() {
     # Règles japonaises (une carrière Monde partagée, six cas) : 81 à 102 s en CI sur 4 runs verts (mesures CD_CPU_PROFILE) ;
     # la limite par défaut de 180 s a déjà été frôlée sous charge ; budget ≈ 3 fois.
     tests/japan-match.cjs) echo 300s ;;
+    # Intensité automatique (coup d'envoi, trois carrières Monde) : 47 s en local, 106 s sur le runner (PR #1200) et 180 s dépassées sur la PR #1192 (suite non touchée, runner plus lent) ; budget ≈ 3 fois.
+    tests/intensite-auto.cjs) echo 420s ;;
     # Continuer jusqu'au prochain événement et retouches de cohérence : carrières Monde, plus de 180 s sur le runner (délai dépassé en CI sur main, Suites 6/7 et 7/7, après #720 et #722) ; assertions inchangées.
     tests/continuer-evenement-monde.cjs|tests/retouches-coherence.cjs) echo 600s ;;
     # Dilemmes de presse (#727) : carrière Monde, 146 s sur le runner sur main (shard 7) et délai de 180 s dépassé sur la PR #730 (shard 4, même code) ; budget ≈ 3 fois.
