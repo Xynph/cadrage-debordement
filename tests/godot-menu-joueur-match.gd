@@ -39,6 +39,23 @@ func until(condition: Callable, limit_ms: int) -> bool:
 	while not condition.call() and Time.get_ticks_msec() < deadline: await process_frame
 	return condition.call()
 
+## Attend une condition en laissant le match avancer : une scène de causerie ou une pause (runner lent, minute différente
+## de celle du poste rapide) ne doit pas figer l'attente jusqu'à la limite.
+func until_vivant(condition: Callable, limit_ms: int) -> bool:
+	var deadline := Time.get_ticks_msec() + limit_ms
+	while not condition.call() and Time.get_ticks_msec() < deadline:
+		if not app.waiting:
+			var scene: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
+			if scene is Dictionary: await command("match_talk_continue", {"key": scene.key, "phase": scene.phase, "skip": true})
+			elif live().get("paused", false) and not live().get("finished", false): await command("pause", {"paused": false})
+		await process_frame
+	return condition.call()
+
+## État du direct pour le journal (un rouge en ligne se lit sans rejouer le match).
+func etat_direct(view: Control) -> String:
+	var couvert: bool = view.regie.between.couvert.call() if view.regie != null and view.regie.between.couvert.is_valid() else false
+	return "minute %d, fini %s, pause %s, file %d, fenêtre %s, couvert %s, étape %s, attente %s" % [int(live().get("minute", 0)), str(live().get("finished", false)), str(live().get("paused", false)), file().size(), str(view.fenetre_ouverte()), str(couvert), str(view.regie.etat) if view.regie != null else "?", str(app.waiting)]
+
 func capture(nom: String) -> void:
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png(dossier.path_join(nom + ".png"))
@@ -150,8 +167,11 @@ func run() -> void:
 	await capture_tailles(view, id)
 	# La file part au prochain arrêt de jeu : le match tourne, on attend qu'elle soit vide.
 	Engine.time_scale = 8.0
-	check(await until(func(): return file().is_empty(), 180000), "la file se vide au prochain arrêt de jeu")
+	var t0 := Time.get_ticks_msec()
+	var m0 := int(live().get("minute", 0))
+	check(await until_vivant(func(): return file().is_empty(), 180000), "la file se vide au prochain arrêt de jeu")
 	Engine.time_scale = 1.0
+	print("MENU_JOUEUR file des consignes vidée : minute %d -> %d en %d s" % [m0, int(live().get("minute", 0)), (Time.get_ticks_msec() - t0) / 1000])
 	var a2: Dictionary = live().get("pilotage", {}).get("arrets", {})
 	check((a2.get("consignes", {}).get(id, []) as Array).has("pied"), "consigne appliquée par le moteur")
 	if view.fenetre_ouverte(): view.fermer_fenetre()
@@ -169,11 +189,17 @@ func run() -> void:
 		var en_attente := not file().is_empty()
 		if en_attente:
 			await settle(20)
-			check(not between.find_children("MatchMenuJoueurAttenteBadge", "", true, false).is_empty(), "badge ⧗ sur la carte du sortant")
+			# Le moteur peut avoir trouvé un arrêt de jeu pendant ces images : le badge n'a alors plus lieu d'être.
+			check(file().is_empty() or not between.find_children("MatchMenuJoueurAttenteBadge", "", true, false).is_empty(), "badge ⧗ sur la carte du sortant")
 		Engine.time_scale = 8.0
-		check(await until(func(): return file().is_empty(), 180000), "le remplacement part au prochain arrêt")
+		t0 = Time.get_ticks_msec()
+		m0 = int(live().get("minute", 0))
+		print("MENU_JOUEUR remplacement demandé : ", etat_direct(view))
+		check(await until_vivant(func(): return file().is_empty(), 180000), "le remplacement part au prochain arrêt")
+		print("MENU_JOUEUR remplacement attendu : ", etat_direct(view))
+		print("MENU_JOUEUR remplacement parti : minute %d -> %d en %d s (fini %s, pause %s, file %d, fenêtre %s)" % [m0, int(live().get("minute", 0)), (Time.get_ticks_msec() - t0) / 1000, str(live().get("finished", false)), str(live().get("paused", false)), file().size(), str(view.fenetre_ouverte())])
 		Engine.time_scale = 4.0
-		check(await until(func(): return between.find_child("MatchChangementCarte", true, false) != null, 120000), "carte sortant / entrant affichée quand le direct montre le changement")
+		check(await until_vivant(func(): return between.find_child("MatchChangementCarte", true, false) != null, 120000), "carte sortant / entrant affichée quand le direct montre le changement")
 		Engine.time_scale = 1.0
 		var carte_ch := between.find_child("MatchChangementCarte", true, false) as Control
 		check(carte_ch != null and between.terrain.find_child("MatchChangementCarte", true, false) == null, "carte hors du terrain 2D")
