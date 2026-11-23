@@ -6,6 +6,8 @@ extends SceneTree
 ## - clic sur une ligne de la liste comparée → fiche (la piste ou notre joueur) ;
 ## - tuiles : indemnité et salaire → offre au joueur, note et potentiel → fiche de la piste ;
 ## - pastilles : transfert (offre au joueur), prêt possible / non (lu dans le moteur, clic = fiche).
+## - pastille « Parler à l'agent » → fenêtre de discussion (idée 24) : ton À tout prix (moteur : demande +6 %, 4
+##   propositions, relation +2), question sur le rôle, « Je vous fais une offre » → offre au joueur avec 4 propositions.
 ## Imprime une ligne RAPPORT_RECRUTEUR {checks, failures}. Captures : CD_RAPPORT_RECRUTEUR_CAPTURES=<dossier>.
 const Flow = preload("helpers/contextual_flow.gd")
 const Pages = preload("res://ui/immersive08/recruitment_pages.gd")
@@ -84,6 +86,7 @@ func run() -> void:
 	await bareme()
 	await lignes()
 	await tuiles_et_pastilles()
+	await agent()
 	await ouvrir_rapport()
 	shot("rapport-recruteur-1920x1080")
 	finish()
@@ -182,3 +185,38 @@ func tuiles_et_pastilles() -> void:
 	var attendu := "Prêt possible" if bool(piste().get("loan", {}).get("possible", false)) else "Prêt non"
 	check(pret != null and pret.text == attendu, "Pastille du prêt : « %s »" % attendu)
 	check(await press("RapportRecruteurTransfertLien") and page_kind() == "negociation", "Pastille transfert → offre au joueur")
+
+func trouver(nom: String) -> Control:
+	var n := node(nom)
+	return n if n != null else root.find_child(nom, true, false) as Control
+
+func presser(nom: String) -> bool:
+	var b := trouver(nom) as Button
+	if b == null or b.disabled: return false
+	b.pressed.emit()
+	await settle(10)
+	return true
+
+## Discussion avec l'agent : trois tons, le ton choisi passe par le moteur, puis question et offre.
+func agent() -> void:
+	await ouvrir_rapport()
+	var avant := int(piste().get("salary", 0))
+	check(int(piste().get("agent", {}).get("essais", 0)) == 3 and str(piste().get("agent", {}).get("ton", "x")).is_empty(), "Agent : sans ton, 3 propositions")
+	check(await presser("RapportAgentOuvrirLien") and trouver("DiscussionAgent") != null, "Pastille « Parler à l'agent » → fenêtre")
+	for ton in ["tout_prix", "enthousiaste", "curieux"]: check(trouver("AgentTon_" + ton) != null, "Ton proposé : " + ton)
+	check(trouver("AgentRapportLigne") != null and trouver("AgentRapportLettre") != null, "Rapport du recruteur à gauche")
+	check(trouver("AgentRelationValeur") != null and trouver("AgentFamiliarite") != null and trouver("AgentNotePoste") != null, "Relation, familiarité, note au poste")
+	var b := trouver("AgentTon_tout_prix") as Button
+	check(b != null and not b.disabled, "Ton cliquable")
+	if b == null: return
+	b.pressed.emit()
+	await wait_engine()
+	await settle(10)
+	var a: Dictionary = piste().get("agent", {})
+	check(str(a.get("ton", "")) == "tout_prix" and int(a.get("essais", 0)) == 4 and int(a.get("relation", 0)) == 2, "Moteur : ton à tout prix (%s)" % JSON.stringify(a))
+	check(int(piste().get("salary", 0)) > avant, "Demande relevée (%d → %d)" % [avant, int(piste().get("salary", 0))])
+	check(trouver("DiscussionAgent") != null and trouver("AgentBulleDemande") != null and trouver("AgentEffets") != null, "Fenêtre rouverte : réponse chiffrée de l'agent")
+	check(await presser("AgentQuestion_role") and trouver("AgentBulleReponse") != null, "Deuxième tour : rôle attendu")
+	check(await presser("AgentFaireOffre") and page_kind() == "negociation", "Troisième tour : offre au joueur (%s)" % page_kind())
+	await settle(10)
+	check(trouver("NegoPropo_4") != null, "Offre : quatre propositions")

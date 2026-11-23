@@ -157,12 +157,15 @@ static func _fenetre_duree(toile: Control, val: Dictionary) -> void:
 		["%d à %d ans" % [int(val.min), int(val.max)] if int(val.min) != int(val.max) else "%d an" % int(val.min), "Accepté par le joueur", Pieces.VERT, "people"],
 	], COULEUR_DUREE)
 
+static func _essais(ctx: Dictionary) -> int:
+	return load("res://ui/contract_negotiation.gd").essais(ctx.get("quote", {}) if ctx.get("quote") is Dictionary else {})
+
 static func _fenetre_discussion(toile: Control, ctx: Dictionary, val: Dictionary) -> void:
 	var negociation: Dictionary = ctx.negotiation
 	var contre := str(negociation.get("status", "")) == "counter"
 	var tentatives := int(negociation.get("attempts", 0))
 	_fenetre(toile, "OffreFenetreDiscussion", "La discussion", [
-		["%d / 3" % mini(3, tentatives + 1), "Proposition", COULEUR_SALAIRE, "renew"],
+		["%d / %d" % [mini(_essais(ctx), tentatives + 1), _essais(ctx)], "Proposition", COULEUR_SALAIRE, "renew"],
 		[G.salary(negociation.get("salary")) if contre else "—", "Contre-offre", Pieces.ORANGE, "mail"],
 		[G.salary(val.demande), "Demande", Pieces.VERT, "money"],
 	], COULEUR_SALAIRE)

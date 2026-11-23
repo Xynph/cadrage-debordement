@@ -102,7 +102,7 @@ static func donnees(ctx: Dictionary) -> Dictionary:
 	var finance: Dictionary = app.model.get("finance", {})
 	var saison: Variant = finance.get("budget")
 	var d := val.duplicate()
-	d.merge({"id":str(ctx.player.get("id", "")), "contre":contre, "retrait":retrait, "cible":cible, "tentatives":int(negociation.get("attempts", 0)),
+	d.merge({"id":str(ctx.player.get("id", "")), "contre":contre, "retrait":retrait, "cible":cible, "tentatives":int(negociation.get("attempts", 0)), "essais":load("res://ui/contract_negotiation.gd").essais(ctx.quote),
 		"contre_annees":int(negociation.get("years", 0)), "salaire":etat_salaire, "duree":etat_duree, "prime":etat_prime,
 		"attendu":attendu, "choisi":choisi, "role":etat_role, "requis":role_requis(ctx), "masse":masse, "ajout":ajout, "apres":masse + ajout,
 		"semaines":int(paie.weeks), "saison":saison if saison is Dictionary else {}, "guidee":offre_guidee(ctx),
@@ -282,8 +282,8 @@ static func _identite(toile: Control, parent: Node, ctx: Dictionary, zone: Rect2
 	nom.name = "OffreNom"
 	D.fit_title(nom, largeur, 60, 2, 18)
 	D.text(parent, x, zone.position.y + 82, "%s · %s ans" % [str(joueur.get("pos", "—")), G.n(joueur.get("age", "—"))], 17, Charte.IVOIRE_2, 600, largeur, HORIZONTAL_ALIGNMENT_LEFT, true).name = "OffreDetail"
-	var tentative := mini(3, int(d.tentatives) + 1)
-	Pieces.pastille(parent, x, zone.position.y + 100, "Discussion close" if d.retrait else "Proposition %d/3" % tentative, "lock" if d.retrait else "renew", "OffreEtape", "",
+	var tentative := mini(int(d.essais), int(d.tentatives) + 1)
+	Pieces.pastille(parent, x, zone.position.y + 100, "Discussion close" if d.retrait else "Proposition %d/%d" % [tentative, int(d.essais)], "lock" if d.retrait else "renew", "OffreEtape", "",
 		Pieces.ROUGE if d.retrait else Pieces.BLEU, Charte.PANNEAU_3, func(): Offre._fenetre_discussion(toile, ctx, d))
 	var role_actuel := Role.role(joueur) if ctx.get("prolongation", false) else ""
 	if not role_actuel.is_empty():
@@ -458,11 +458,13 @@ static func _agent(toile: Control, parent: Control, ctx: Dictionary, d: Dictiona
 		i += 1
 	# Compteur des propositions en bas de la colonne : trois pastilles.
 	_titre(droite, 20, 790, "Propositions", Charte.IVOIRE_2, 16, 160)
-	for n in 3:
+	# Ton donné à l'agent (idée 24) : 4, 3 ou 2 pastilles.
+	var pas := 64.0 if int(d.essais) <= 3 else 48.0
+	for n in int(d.essais):
 		var faite := n < int(d.tentatives)
 		var couleur := Pieces.ROUGE if d.retrait else Pieces.ORANGE if faite else Charte.IVOIRE_3
-		D.rect(droite, Rect2(196 + n * 64, 766, 52, 34), Charte.PANNEAU_3.lerp(couleur, .3 if faite else 0.0), Charte.RAYON_PILULE, couleur).name = "NegoPropo_%d" % (n + 1)
-		D.text(droite, 196 + n * 64 + 26, 790, str(n + 1), 18, couleur if faite else Charte.IVOIRE_2, 700, 40, HORIZONTAL_ALIGNMENT_CENTER)
+		D.rect(droite, Rect2(196 + n * pas, 766, pas - 12, 34), Charte.PANNEAU_3.lerp(couleur, .3 if faite else 0.0), Charte.RAYON_PILULE, couleur).name = "NegoPropo_%d" % (n + 1)
+		D.text(droite, 196 + n * pas + (pas - 12) / 2.0, 790, str(n + 1), 18, couleur if faite else Charte.IVOIRE_2, 700, 40, HORIZONTAL_ALIGNMENT_CENTER)
 
 ## Ligne du contrat (grammaire de l'Effectif) : liseré et fond verts quand l'agent accepte.
 static func _ligne(parent: Node, zone: Rect2, libelle: String, etat: String, id: String) -> Panel:

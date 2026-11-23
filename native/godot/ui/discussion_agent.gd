@@ -1,403 +1,374 @@
 extends RefCounted
-## Discussion avec l'agent d'une piste du marché (revue FM27, idée 24) : petite fenêtre ouverte depuis le Rapport du
-## recruteur (pastille « Agent ») ou la piste choisie (« Parler à l'agent → »). Planche A/B sous CD_VARIANTE_VISUELLE ;
-## sans variable, rien ne change à l'écran.
-##  A « face à face » : bandeau de l'agent (bulle, relation en 5 crans), rapport du recruteur à gauche (lettre, tuiles,
-##    Pour / Contre en icônes vertes / rouges), les trois tons en cartes à droite avec leurs effets en pastilles.
-##  B « tableau des tons » : jauge de relation en tête, les trois tons en lignes façon Effectif (écart de demande, salaire,
-##    propositions, relation chiffrés), rapport en pastilles vertes / rouges, fil de bulles à droite.
-## Le moteur n'a pas d'agent : « Agent de <joueur> », sans nom ni visage inventés (même convention que l'idée 18).
-## Données lues : piste du marché (salaire demandé, transfert, discussion en cours) et rapport du recruteur
-## (rapport_recruteur.gd : lettre, rang au poste, Pour / Contre). Le ton et ses effets (écart de demande, nombre de
-## propositions, relation) sont une proposition d'ajout moteur : ici, affichage seul, gardé dans management_ui.
+## Discussion avec l'agent d'une piste du marché (revue FM27, idée 24, choix de Léo du 23/11/2026) : même fenêtre que la
+## discussion avec un joueur (fenetre_discussion.gd). Ouverte depuis le Rapport du recruteur (pastille « Parler à
+## l'agent ») et la piste choisie du Recrutement (« Parler à l'agent → »). L'agent n'a pas de nom.
+##  - Gauche : le joueur (visage, nom, poste, âge), le rapport du recruteur (lettre, note au poste /100 colorée,
+##    familiarité au poste, rang chez nous, Pour / Contre en icônes vertes / rouges), la relation avec l'agent (5 crans,
+##    valeur gardée d'une journée à l'autre), la demande de la journée et le nombre de propositions.
+##  - Droite : l'échelle de la relation, le fil en trois tours (le ton ; une question sur le rôle attendu ou la durée ;
+##    faire une offre ou en rester là). Un clic sur une phrase la dit tout de suite : aucun bouton Valider.
+## Ton (moteur native/engine/ton-agent.cjs, commande agent_ton, projection market[].agent) : À tout prix demande +6 %,
+## 4 propositions, relation +2 ; Enthousiaste demande inchangée, 3, +1 ; Curieux −3 %, 2, −1. Un ton par piste et par
+## journée, avant la première proposition.
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Charte = preload("res://ui/charte.gd")
 const Kit = preload("res://ui/immersive08/tactics_kit.gd")
 const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
+const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
 const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
+const FenetreDiscussion = preload("res://ui/fenetre_discussion.gd")
+const Familiarite = preload("res://ui/familiarite_poste.gd")
+const Role = preload("res://ui/role_contrat.gd")
 const G = preload("res://ui/game_skin.gd")
-const K = preload("res://ui/player_knowledge_text.gd")
+const CarteSurvol = preload("res://ui/carte_joueur_survol.gd")
 const Link = preload("res://ui/entity_link.gd")
 
 const NOM := "DiscussionAgent"
 const CLE := "agent_tons"
-## Tons : mot, nos mots, couleur, icône, écart de demande (%), propositions avant rupture, relation (crans).
 const ORDRE := ["tout_prix", "enthousiaste", "curieux"]
+## Tons : mot, nos mots, couleur, icône, écart de demande (%), propositions, relation (mêmes règles que le moteur).
 const TONS := {
-	"tout_prix": {"mot": "À tout prix", "phrase": "On le veut, quoi qu’il en coûte.", "couleur": Pieces.ORANGE, "icone": "target", "ecart": 6, "essais": 4, "relation": 2},
-	"enthousiaste": {"mot": "Enthousiaste", "phrase": "Il nous plaît beaucoup.", "couleur": Pieces.VERT, "icone": "star", "ecart": 0, "essais": 3, "relation": 1},
-	"curieux": {"mot": "Curieux", "phrase": "On se renseigne, sans plus.", "couleur": Pieces.BLEU, "icone": "search", "ecart": -3, "essais": 2, "relation": -1}}
-## Relation avec l'agent : 5 crans.
-const RELATIONS := [["Froide", Pieces.ROUGE], ["Distante", Pieces.ORANGE], ["Neutre", Charte.IVOIRE_2], ["Bonne", Pieces.BLEU], ["Proche", Pieces.VERT]]
+	"tout_prix": {"mot": "À tout prix", "phrase": "On le veut, quoi qu’il en coûte.", "couleur": Pastilles.ORANGE, "icone": "target", "ecart": 6, "essais": 4, "relation": 2},
+	"enthousiaste": {"mot": "Enthousiaste", "phrase": "Il nous plaît beaucoup.", "couleur": Pastilles.VERT, "icone": "star", "ecart": 0, "essais": 3, "relation": 1},
+	"curieux": {"mot": "Curieux", "phrase": "On se renseigne, sans plus.", "couleur": Pastilles.BLEU, "icone": "search", "ecart": -3, "essais": 2, "relation": -1}}
+## Relation avec l'agent : 5 crans (moteur : Froide ≤ −6 < Distante ≤ −2 < Neutre < 2 ≤ Bonne < 6 ≤ Proche).
+const RELATIONS := [["Froide", Pastilles.ROUGE, "warning"], ["Distante", Pastilles.ORANGE, "info"], ["Neutre", Charte.IVOIRE_2, "people"],
+	["Bonne", Pastilles.BLEU, "check"], ["Proche", Pastilles.VERT, "heart"]]
+## Deuxième tour : nos questions.
+const QUESTIONS := {"role": {"texte": "Quel rôle il attend chez nous ?", "icone": "flag", "couleur": Pastilles.VIOLET},
+	"duree": {"texte": "Il signerait pour combien de saisons ?", "icone": "calendar", "couleur": Pastilles.TURQUOISE}}
 
-static func variante() -> String:
-	var v := OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper()
-	return v if v in ["A", "B"] else ""
+static func cran(r: int) -> int:
+	return 0 if r <= -6 else 1 if r <= -2 else 2 if r < 2 else 3 if r < 6 else 4
 
-static func _etat(app: Control) -> Dictionary:
-	var valeur: Variant = app.management_ui.get(CLE)
-	if not valeur is Dictionary:
-		valeur = {}
-		app.management_ui[CLE] = valeur
-	return valeur
+# --- État de l'écran (deuxième et troisième tours, phrase envoyée) --------------------------------------------------------
+
+static func _etat(app: Control, id: String) -> Dictionary:
+	var tout: Variant = app.management_ui.get(CLE)
+	if not tout is Dictionary:
+		tout = {}
+		app.management_ui[CLE] = tout
+	var semaine := "%s:%s" % [str(app.model.get("meta", {}).get("roundLabel", "")), str(app.model.get("meta", {}).get("week", 0))]
+	var e: Variant = tout.get(id)
+	if not (e is Dictionary and str(e.get("semaine", "")) == semaine):
+		e = {"semaine": semaine}
+		tout[id] = e
+	return e
 
 # --- Données -----------------------------------------------------------------------------------------------------------
 
-static func donnees(app: Control, p: Dictionary) -> Dictionary:
-	var r: Dictionary = load("res://ui/immersive08/rapport_recruteur.gd").lire(app, p)
-	var id := str(p.get("id", ""))
-	var ton := str(_etat(app).get(id, ""))
-	var nego: Dictionary = p.get("negotiation", {}) if p.get("negotiation") is Dictionary else {}
-	# Relation de départ lue dans la discussion en cours : contre-offre = distante, rupture = froide, accord = bonne.
-	var depart := {"counter": 1, "withdrawn": 0, "ready": 3, "signed": 4}.get(str(nego.get("status", "")), 2) as int
-	var niveau := clampi(depart + (int(TONS[ton].relation) if TONS.has(ton) else 0), 0, 4)
-	var salaire := float(p.get("salary", 0)) if K.number(p.get("salary")) else 0.0
-	return {"p": p, "id": id, "r": r, "ton": ton, "depart": depart, "niveau": niveau, "salaire": salaire,
-		"ouvert": bool(p.get("available", false)), "prenom": Kit.casse(str(p.get("name", "—")), true)}
+static func _piste(app: Control, id: String) -> Dictionary:
+	for p: Variant in app.model.get("market", []):
+		if p is Dictionary and str(p.get("id", "")) == id: return p
+	return {}
 
-static func demande(d: Dictionary, ton: String) -> int:
-	var ecart := int(TONS[ton].ecart) if TONS.has(ton) else 0
-	return int(roundf(float(d.salaire) * (1.0 + ecart / 100.0) / 10.0) * 10.0)
-
-## Répliques de l'agent (courtes, chiffrées).
-static func accueil(d: Dictionary) -> String:
-	return "Tu voulais me parler de %s ?" % str(d.prenom)
-
-static func reponse(d: Dictionary) -> String:
-	if not bool(d.ouvert): return "Son club ne le laissera pas partir."
-	match str(d.ton):
-		"tout_prix": return "Alors ce sera %s, pas moins" % G.salary(demande(d, d.ton))
-		"enthousiaste": return "Il sera ravi. On part sur %s" % G.salary(demande(d, d.ton))
-		"curieux": return "%s, d’autres clubs appellent." % G.salary(demande(d, d.ton))
-	return accueil(d)
+static func donnees(app: Control, id: String) -> Dictionary:
+	var p := _piste(app, id)
+	if p.is_empty(): return {}
+	var a: Dictionary = p.get("agent", {}) if p.get("agent") is Dictionary else {}
+	var e := _etat(app, id)
+	var ton := str(a.get("ton", ""))
+	if not ton.is_empty(): e.erase("envoi")
+	var roles: Variant = p.get("roles")
+	return {"p": p, "id": id, "r": load("res://ui/immersive08/rapport_recruteur.gd").lire(app, p), "ton": ton, "e": e,
+		"essais": int(a.get("essais", 3)), "relation": int(a.get("relation", 0)), "avant": int(a.get("avant", a.get("relation", 0))),
+		"libre": bool(a.get("libre", false)) and not e.has("envoi"), "ouvert": bool(p.get("available", false)),
+		"salaire": int(p.get("salary", 0)) if p.get("salary") is int or p.get("salary") is float else 0,
+		"attendu": str(roles.get("attendu", "")) if roles is Dictionary else "", "max": int(p.get("maxYears", 1)),
+		"nego": p.get("negotiation", {}) if p.get("negotiation") is Dictionary else {}, "prenom": Kit.casse(str(p.get("name", "—")), true)}
 
 # --- Ouverture ---------------------------------------------------------------------------------------------------------
 
-## Ouvre (ou redessine) la fenêtre sur `page` (toile 2248 × 1230 de la sous-page du recrutement).
+## Ouvre (ou redessine) la fenêtre sur `page` (toile du Rapport du recruteur).
 static func ouvrir(app: Control, page: Control, p: Dictionary) -> void:
 	if p.is_empty() or page == null: return
-	var d := donnees(app, p)
-	if variante() == "B": _dessiner_b(app, page, d)
-	else: _dessiner_a(app, page, d)
+	_dessiner(app, page, str(p.get("id", "")))
 
-static func _choisir(app: Control, page: Control, p: Dictionary, ton: String) -> void:
-	_etat(app)[str(p.get("id", ""))] = ton
-	ouvrir(app, page, p)
-	var cible := page.find_child("AgentTon_" + ton, true, false) as Control
-	if cible != null: cible.grab_focus.call_deferred()
+static func _redessiner(app: Control, page: Control, id: String) -> void:
+	if is_instance_valid(page): _dessiner(app, page, id)
 
-static func _offre(app: Control, id: String) -> Callable:
-	return func(): load("res://ui/immersive08/recruitment_pages.gd").ouvrir(app, "negociation", {"player_id": id})
+static func _pages() -> Variant:
+	return load("res://ui/immersive08/recruitment_pages.gd")
 
-static func _fiche(app: Control, id: String) -> Callable:
-	return func(): app.navigation_controller.open_entity({"kind": "market", "id": id})
+## Ton : la phrase s'affiche aussitôt, le moteur enregistre le ton, la page revient avec la fenêtre rouverte.
+static func _choisir_ton(app: Control, page: Control, d: Dictionary, ton: String) -> void:
+	d.e["envoi"] = ton
+	_pages().etat(app)["agent"] = true
+	_redessiner(app, page, d.id)
+	app._command("agent_ton", {"playerId": d.id, "ton": ton})
 
-## Lettre du rapport : clic = referme la fenêtre sur le Rapport du recruteur (ouvert derrière).
-static func _rapport(app: Control, page: Control, id: String) -> Callable:
+static func _demander(app: Control, page: Control, d: Dictionary, q: String) -> void:
+	d.e["question"] = q
+	_redessiner(app, page, d.id)
+
+static func _conclure(app: Control, page: Control, d: Dictionary) -> void:
+	d.e["fin"] = true
+	_redessiner(app, page, d.id)
+
+static func _offre(app: Control, page: Control, id: String) -> Callable:
 	return func():
 		Fenetre.fermer(page, NOM)
-		var pages: Variant = load("res://ui/immersive08/recruitment_pages.gd")
-		if str(pages.etat(app).get("kind", "")) != "recruteur": pages.ouvrir(app, "recruteur", {"player_id": id})
+		_pages().ouvrir(app, "negociation", {"player_id": id})
 
-# --- Pièces communes ---------------------------------------------------------------------------------------------------
+static func _fiche(app: Control, page: Control, id: String) -> Callable:
+	return func():
+		Fenetre.fermer(page, NOM)
+		app.navigation_controller.open_entity({"kind": "market", "id": id})
 
-## Visage de l'agent : rond neutre, silhouette (le moteur n'a pas d'agent, aucun visage inventé).
-static func _agent(parent: Control, zone: Rect2, couleur: Color) -> void:
-	var rond := D.rect(parent, zone, Charte.PANNEAU_3.lerp(couleur, .18), Charte.RAYON_PILULE)
-	rond.name = "AgentSilhouette"
-	rond.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var image := C.icon("people", int(zone.size.x * .5), couleur)
-	rond.add_child(image)
-	D.place(image, Rect2(zone.size.x * .25, zone.size.y * .25, zone.size.x * .5, zone.size.y * .5))
+static func _fermer(page: Control) -> Callable:
+	return func(): Fenetre.fermer(page, NOM)
 
-## Nom de la piste : bouton (fiche) + carte au survol.
-static func _nom(app: Control, parent: Control, d: Dictionary, zone: Rect2, taille: int) -> void:
-	var nom := Link.styled_button(parent, zone, Kit.casse(str(d.p.get("name", "—"))), taille, Charte.IVOIRE, "AgentJoueurNom")
-	nom.add_theme_font_override("font", Charte.TITRE_FICHE)
-	nom.pressed.connect(_fiche(app, d.id))
-	load("res://ui/carte_joueur_survol.gd").lier(app, nom, str(d.id), "market")
+static func _dessiner(app: Control, page: Control, id: String) -> void:
+	var d := donnees(app, id)
+	if d.is_empty(): return
+	FenetreDiscussion.ouvrir(page, {"nom": NOM, "titre": "Agent de " + Kit.casse(str(d.p.get("name", "—"))), "icone": "people", "prefixe": "Agent",
+		"gauche": func(f: Control, zone: Rect2): _gauche(app, page, f, zone, d),
+		"echelle": {"paliers": RELATIONS, "avant": cran(int(d.avant)), "apres": cran(int(d.relation))},
+		"visage": func() -> Control: return _visage(52),
+		"fil": _fil(d), "choix": _choix(app, page, d)})
 
-## Bulle : pilule teintée, texte sur une ligne. `droite` : x est le bord droit. Renvoie la largeur.
-static func _bulle(parent: Control, x: float, y: float, texte: String, couleur: Color, id: String, droite := false, largeur_max := 640.0, taille := 22) -> float:
-	var largeur := minf(Kit.largeur(texte, taille) + 48.0, largeur_max)
-	var gauche := x - largeur if droite else x
-	var fond := D.rect(parent, Rect2(gauche, y, largeur, 52), Charte.PANNEAU_3.lerp(couleur, .30), Charte.RAYON_CARTE)
-	fond.name = id
-	fond.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var mot := D.text(fond, 24, 34, texte, taille, Charte.IVOIRE, 600, largeur - 40, HORIZONTAL_ALIGNMENT_LEFT, true)
-	mot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# Queue de la bulle : petit carré du côté de l'orateur.
-	var queue := D.rect(parent, Rect2((gauche + largeur - 22) if droite else (gauche + 8), y + 40, 14, 14), Charte.PANNEAU_3.lerp(couleur, .30), 2)
-	queue.rotation_degrees = 45
-	queue.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	parent.move_child(queue, fond.get_index())
-	return largeur
+# --- Fil et choix ------------------------------------------------------------------------------------------------------
 
-## Relation en 5 crans (le cran de départ marqué d'un liseré quand le ton l'a fait bouger).
-static func _crans(parent: Control, x: float, y: float, d: Dictionary, largeur_cran := 62.0, hauteur := 16.0) -> void:
-	var niveau := int(d.niveau)
-	var couleur: Color = RELATIONS[niveau][1]
-	for i in 5:
-		var plein := i <= niveau
-		var cran := D.rect(parent, Rect2(x + i * (largeur_cran + 6), y, largeur_cran, hauteur), couleur if plein else Charte.PANNEAU_3, Charte.RAYON_PILULE,
-			Charte.IVOIRE_2 if i == int(d.depart) and int(d.depart) != niveau else Color.TRANSPARENT)
-		cran.name = "AgentRelationCran_%d" % i
-		cran.mouse_filter = Control.MOUSE_FILTER_IGNORE
+static func accueil(d: Dictionary) -> String:
+	match cran(int(d.avant)):
+		0: return "Encore vous. Faites vite."
+		1: return "%s ? J’écoute." % str(d.prenom)
+		3: return "Content de vous entendre. %s ?" % str(d.prenom)
+		4: return "Toujours un plaisir. On parle de %s ?" % str(d.prenom)
+	return "Vous vouliez me parler de %s ?" % str(d.prenom)
 
-static func _relation_mot(parent: Control, x: float, base: float, d: Dictionary, taille := 26) -> void:
-	var niveau := int(d.niveau)
-	var mot := D.text(parent, x, base, str(RELATIONS[niveau][0]).to_upper(), taille, RELATIONS[niveau][1], 800, 220)
-	mot.name = "AgentRelationMot"
-	mot.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
-	var ecart := niveau - int(d.depart)
-	if ecart != 0:
-		var fleche := D.text(parent, x + Kit.largeur(str(RELATIONS[niveau][0]).to_upper(), taille) + 16, base, ("▲ %d" if ecart > 0 else "▼ %d") % absi(ecart), 22, Pieces.VERT if ecart > 0 else Pieces.ROUGE, 800, 80)
-		fleche.name = "AgentRelationEcart"
+static func reponse_ton(d: Dictionary) -> String:
+	var montant := G.salary(int(d.salaire))
+	match str(d.ton):
+		"tout_prix": return "Alors ce sera %s, pas moins." % montant
+		"enthousiaste": return "Il sera ravi. On part sur %s." % montant
+		"curieux": return "%s. D’autres clubs appellent." % montant
+	return ""
 
-## Effets d'un ton en pastilles : écart de demande, propositions, relation. Renvoie la largeur posée.
-static func _effets(parent: Control, x: float, y: float, ton: String, id: String) -> float:
+static func reponse_question(d: Dictionary, q: String) -> String:
+	if q == "role":
+		return "Il se voit %s." % Role.libelle(str(d.attendu)).to_lower() if not str(d.attendu).is_empty() else "Il veut jouer, c’est tout."
+	var n := clampi(int(d.max), 1, 3)
+	return "Une saison, pas plus." if n == 1 else "Jusqu’à %d saisons." % n
+
+static func _fil(d: Dictionary) -> Array:
+	var fil: Array = [{"qui": "lui", "id": "AgentBulleAccueil", "texte": accueil(d), "couleur": Pastilles.BLEU}]
+	var e: Dictionary = d.e
+	var ton := str(d.ton) if not str(d.ton).is_empty() else str(e.get("envoi", ""))
+	if not ton.is_empty():
+		var t: Dictionary = TONS[ton]
+		fil.append({"qui": "moi", "id": "AgentBulleTon", "texte": str(t.phrase), "couleur": t.couleur})
+		if not str(d.ton).is_empty():
+			fil.append({"qui": "lui", "id": "AgentBulleDemande", "texte": reponse_ton(d), "couleur": Pastilles.BLEU, "effet": _effets(str(d.ton))})
+	elif not bool(d.libre):
+		# Négociation déjà commencée cette journée sans ton : plus de ton possible.
+		fil.append({"qui": "repere", "id": "AgentNegoEnCours", "controle": Pastilles.pastille("Négociation en cours", Pastilles.ORANGE, "renew", "Proposition déjà faite cette journée", 16, "AgentNegoEnCoursPastille")})
+	var q := str(e.get("question", ""))
+	if not q.is_empty() and not str(d.ton).is_empty():
+		var question: Dictionary = QUESTIONS[q]
+		fil.append({"qui": "moi", "id": "AgentBulleQuestion", "texte": str(question.texte), "couleur": question.couleur})
+		var effet: Control = Role.pastille(str(d.attendu), 15) if q == "role" and not str(d.attendu).is_empty() else null
+		fil.append({"qui": "lui", "id": "AgentBulleReponse", "texte": reponse_question(d, q), "couleur": Pastilles.BLEU, "effet": effet})
+	if bool(e.get("fin", false)):
+		fil.append({"qui": "moi", "id": "AgentBulleFin", "texte": "On en reste là pour l’instant.", "couleur": Charte.IVOIRE_2})
+		fil.append({"qui": "lui", "id": "AgentBulleAuRevoir", "texte": "Ne tardez pas trop.", "couleur": Pastilles.BLEU})
+	return fil
+
+## Effets d'un ton en pastilles : demande, propositions, relation.
+static func _effets(ton: String) -> Control:
 	var t: Dictionary = TONS[ton]
+	var ligne := C.h(8)
+	ligne.name = "AgentEffets"
 	var ecart := int(t.ecart)
-	var cx := x
-	cx += Pieces.pastille(parent, cx, y, ("Demande %+d %%" % ecart) if ecart != 0 else "Demande =", "money", id + "Demande", "", Pieces.ROUGE if ecart > 0 else Pieces.VERT if ecart < 0 else Charte.IVOIRE_2) + 8
-	cx += Pieces.pastille(parent, cx, y, "%d essais" % int(t.essais), "renew", id + "Essais", "", Pieces.VERT if int(t.essais) > 3 else Pieces.ROUGE if int(t.essais) < 3 else Charte.IVOIRE_2) + 8
-	cx += Pieces.pastille(parent, cx, y, "Relation %+d" % int(t.relation), "heart", id + "Relation", "", Pieces.VERT if int(t.relation) > 0 else Pieces.ROUGE)
-	return cx - x
+	ligne.add_child(Pastilles.pastille(("Demande %+d %%" % ecart).replace("-", "−") if ecart != 0 else "Demande =", Pastilles.ROUGE if ecart > 0 else Pastilles.VERT if ecart < 0 else Charte.IVOIRE_2, "money", "Demande de salaire", 15, "AgentEffetDemande"))
+	var n := int(t.essais)
+	ligne.add_child(Pastilles.pastille("%d propositions" % n, Pastilles.VERT if n > 3 else Pastilles.ROUGE if n < 3 else Charte.IVOIRE_2, "renew", "Propositions avant la rupture", 15, "AgentEffetEssais"))
+	var rel := int(t.relation)
+	ligne.add_child(Pastilles.pastille(("Relation %+d" % rel).replace("-", "−"), Pastilles.VERT if rel > 0 else Pastilles.ROUGE, "heart", "Relation avec l’agent", 15, "AgentEffetRelation"))
+	return ligne
+
+static func _bulle_ton(cle: String) -> String:
+	var t: Dictionary = TONS[cle]
+	var ecart := int(t.ecart)
+	return ("Demande %+d %%" % ecart if ecart != 0 else "Demande =").replace("-", "−") + " · %d propositions · " % int(t.essais) + ("Relation %+d" % int(t.relation)).replace("-", "−")
+
+static func _choix(app: Control, page: Control, d: Dictionary) -> Array:
+	var e: Dictionary = d.e
+	if bool(e.get("fin", false)): return []
+	var choix: Array = []
+	if str(d.ton).is_empty() and (bool(d.libre) or e.has("envoi")):
+		for cle: String in ORDRE:
+			var t: Dictionary = TONS[cle]
+			var ton := cle
+			choix.append({"id": "AgentTon_" + cle, "texte": "%s · « %s »" % [str(t.mot).to_upper(), str(t.phrase)], "icone": t.icone, "couleur": t.couleur,
+				"bulle": _bulle_ton(cle), "action": func(): _choisir_ton(app, page, d, ton), "actif": bool(d.libre), "choisi": str(e.get("envoi", "")) == cle})
+		return choix
+	if not str(d.ton).is_empty() and str(e.get("question", "")).is_empty():
+		for q: String in ["role", "duree"]:
+			var question: Dictionary = QUESTIONS[q]
+			var cle_q := q
+			choix.append({"id": "AgentQuestion_" + q, "texte": str(question.texte), "icone": question.icone, "couleur": question.couleur,
+				"action": func(): _demander(app, page, d, cle_q)})
+		return choix
+	var bulle := "Faire une offre" if d.ouvert else str(d.p.get("reason", "Transfert fermé"))
+	choix.append({"id": "AgentFaireOffre", "texte": "Je vous fais une offre.", "icone": "money", "couleur": Pastilles.VERT, "bulle": bulle,
+		"action": _offre(app, page, str(d.id)), "actif": bool(d.ouvert)})
+	choix.append({"id": "AgentEnResterLa", "texte": "On en reste là pour l’instant.", "icone": "clock", "couleur": Charte.IVOIRE_2,
+		"action": func(): _conclure(app, page, d)})
+	return choix
+
+# --- Gauche : joueur, rapport du recruteur, relation ----------------------------------------------------------------------
+
+static func _visage(cote: float) -> Control:
+	var fond := PanelContainer.new()
+	fond.add_theme_stylebox_override("panel", C.box(Charte.PANNEAU_3.lerp(Pastilles.BLEU, .22), Color.TRANSPARENT, int(cote * .5), 0))
+	fond.custom_minimum_size = Vector2(C.px(cote), C.px(cote))
+	fond.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var image := C.icon("people", int(cote * .55), Pastilles.BLEU)
+	image.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	image.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	fond.add_child(image)
+	return fond
+
+static func _section(parent: Control, x: float, base: float, texte: String, icone: String, couleur: Color) -> void:
+	var image := C.icon(icone, 22, couleur)
+	parent.add_child(image)
+	D.place(image, Rect2(x, base - 20, 22, 22))
+	D.text(parent, x + 32, base, texte.to_upper(), 20, Charte.IVOIRE_2, 700, 480)
+
+static func _gauche(app: Control, page: Control, f: Control, zone: Rect2, d: Dictionary) -> void:
+	var x0 := zone.position.x + 20
+	var l := zone.size.x - 40
+	var y := zone.position.y + 20
+	var fiche := _fiche(app, page, str(d.id))
+	# Joueur : visage, nom (fiche + carte au survol), poste, âge, transfert.
+	var cadre := D.rect(f, Rect2(x0, y, 120, 120), Charte.PANNEAU_3, Charte.RAYON_CARTE)
+	cadre.clip_contents = true
+	var visage: Control = load("res://ui/carnet_skin.gd").portrait(0, int(120 * C.density), d.p)
+	visage.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cadre.add_child(visage)
+	visage.position = Vector2.ZERO
+	visage.size = Vector2(120, 120) * C.density
+	var lien := Pieces.rendre_cliquable(cadre, Vector2(120, 120), fiche, "AgentPortrait", str(d.p.get("name", "")), "", Charte.RAYON_CARTE)
+	CarteSurvol.lier(app, lien, str(d.id), "market")
+	var xn := x0 + 140
+	var nom := Link.styled_button(f, Rect2(xn, y + 4, l - 140, 48), Kit.casse(str(d.p.get("name", "—"))), 34, Charte.IVOIRE, "AgentJoueurNom")
+	nom.add_theme_font_override("font", Charte.TITRE_FICHE)
+	nom.pressed.connect(fiche)
+	CarteSurvol.lier(app, nom, str(d.id), "market")
+	var x := xn
+	x += Pastilles.poser(f, Pastilles.pastille(str(d.r.poste), Charte.IVOIRE_2, "people", "Poste", 18, "AgentPoste", fiche), x, y + 62) + 10
+	x += Pastilles.poser(f, Pastilles.pastille("%s ans" % G.n(d.p.get("age", "—")), Charte.IVOIRE_2, "calendar", "Âge", 18, "AgentAge", fiche), x, y + 62) + 10
+	Pastilles.poser(f, Pastilles.pastille("Transfert ouvert" if d.ouvert else "Transfert fermé", Pastilles.VERT if d.ouvert else Pastilles.ROUGE, "check" if d.ouvert else "lock",
+		"" if d.ouvert else str(d.p.get("reason", "")), 18, "AgentTransfert", _offre(app, page, str(d.id)) if d.ouvert else Callable()), x, y + 62)
+	# Rapport du recruteur : une ligne façon Effectif (lettre, note au poste, familiarité, rang chez nous).
+	y += 160
+	_section(f, x0, y, "Rapport du recruteur", "search", Pastilles.BLEU)
+	y += 14
+	var r: Dictionary = d.r
+	var ligne := Button.new()
+	ligne.name = "AgentRapportLigne"
+	ligne.accessibility_name = "Rapport du recruteur"
+	Kit.styler_ligne(ligne, Charte.PANNEAU_3)
+	f.add_child(ligne)
+	D.place(ligne, Rect2(x0, y, l, 92))
+	ligne.pressed.connect(_fermer(page))
+	var lettre := D.text(ligne, 50, 70, str(r.lettre), 64, r.couleur, 800, 100, HORIZONTAL_ALIGNMENT_CENTER)
+	lettre.add_theme_font_override("font", Charte.TITRE_FICHE)
+	lettre.name = "AgentRapportLettre"
+	Kit.etiquette(ligne, 120, 30, "Note au poste", 160)
+	Familiarite.poser_note(ligne, 120, 76, float(r.note), 38, 70, "AgentNotePoste").add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
+	Kit.etiquette(ligne, 300, 30, "Familiarité", 200)
+	Familiarite.poser(ligne, 300, 72, Familiarite.niveau(r.piste, int(r.numero)), 22, "AgentFamiliarite")
+	Kit.etiquette(ligne, 540, 30, "Rang chez nous", 200)
+	var rang := D.text(ligne, 540, 76, "%d / %d" % [int(r.rang), int(r.total)], 36, Pastilles.VERT if int(r.rang) == 1 else Charte.IVOIRE, 800, 190)
+	rang.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
+	for enfant in ligne.get_children():
+		if enfant is Control: (enfant as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Pour / Contre : deux colonnes de lignes, icônes vertes / rouges.
+	y += 112
+	var demi := (l - 16) / 2.0
+	_raisons(f, x0, y, demi, "Pour", "check", Pastilles.VERT, r.pour, "AgentPour")
+	_raisons(f, x0 + demi + 16, y, demi, "Contre", "warning", Pastilles.ROUGE, r.contre, "AgentContre")
+	# Relation avec l'agent : 5 crans, mot, valeur ; puis demande et propositions de la journée.
+	y = zone.end.y - 190
+	_section(f, x0, y, "Relation avec l’agent", "heart", RELATIONS[cran(int(d.relation))][1])
+	_relation(f, Rect2(x0, y + 16, l, 64), d)
+	y += 112
+	var dx := x0
+	var ecart := 0 if str(d.ton).is_empty() else int(TONS[d.ton].ecart)
+	dx += Pastilles.poser(f, Pastilles.tuile(G.salary(int(d.salaire)), "demande", Pastilles.ROUGE if ecart > 0 else Pastilles.VERT if ecart < 0 else Pastilles.BLEU, Charte.PANNEAU_3, 26, "AgentDemande", true, _offre(app, page, str(d.id))), dx, y) + 32
+	var essais := int(d.essais)
+	var faites := int(d.nego.get("attempts", 0))
+	Pastilles.poser(f, _propositions(essais, faites), dx, y + 4)
+
+static func _relation(f: Control, zone: Rect2, d: Dictionary) -> void:
+	var n := cran(int(d.relation))
+	var ecart := 8.0
+	var lc := (zone.size.x - 150 - ecart * 4) / 5.0
+	for i in 5:
+		var a: Array = RELATIONS[i]
+		var actif := i == n
+		var case_ := D.rect(f, Rect2(zone.position.x + i * (lc + ecart), zone.position.y, lc, 44), Color(a[1], .88 if actif else (.30 if i < n else .10)), Charte.RAYON_PETIT)
+		case_.name = "AgentRelationCran_%d" % i
+		case_.tooltip_text = str(a[0])
+		case_.mouse_filter = Control.MOUSE_FILTER_PASS
+		D.text(case_, lc * .5, 30, str(a[0]), 17, Charte.ENCRE if actif else Color(a[1], .8), 700, lc - 6, HORIZONTAL_ALIGNMENT_CENTER).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var valeur := int(d.relation)
+	var chiffre := D.text(f, zone.end.x, zone.position.y + 36, ("%+d" % valeur).replace("-", "−") if valeur != 0 else "0", 34, RELATIONS[n][1], 800, 130, HORIZONTAL_ALIGNMENT_RIGHT)
+	chiffre.name = "AgentRelationValeur"
+	chiffre.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
+	chiffre.tooltip_text = "Relation avec l’agent (−10 à +10)"
+	chiffre.mouse_filter = Control.MOUSE_FILTER_PASS
+
+## Propositions de la journée : une pastille par essai (faites en orange).
+static func _propositions(essais: int, faites: int) -> Control:
+	var ligne := C.h(6)
+	ligne.name = "AgentPropositions"
+	ligne.tooltip_text = "Propositions avant la rupture"
+	ligne.mouse_filter = Control.MOUSE_FILTER_PASS
+	ligne.add_child(C.icon("renew", 22, Charte.IVOIRE_2))
+	for i in essais:
+		var faite := i < faites
+		var rond := PanelContainer.new()
+		rond.name = "AgentProposition_%d" % (i + 1)
+		rond.add_theme_stylebox_override("panel", C.box(Charte.PANNEAU_3.lerp(Pastilles.ORANGE, .45) if faite else Charte.PANNEAU_3, Pastilles.ORANGE if faite else Charte.FILET, Charte.RAYON_PILULE, 0))
+		rond.custom_minimum_size = Vector2(C.px(40), C.px(36))
+		rond.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var chiffre := C.label(str(i + 1), 18, Pastilles.ORANGE if faite else Charte.IVOIRE, true, 700)
+		chiffre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		chiffre.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		rond.add_child(chiffre)
+		ligne.add_child(rond)
+	return ligne
 
 ## Lignes Pour / Contre : icône teintée + mot + chiffre ; ligne cliquable (action du rapport).
-static func _raisons(parent: Control, x: float, y: float, l: float, titre: String, icone: String, couleur: Color, raisons: Array, id: String, max_lignes := 4, pas := 50.0) -> float:
-	var tete := C.icon(icone, 24, couleur)
+static func _raisons(parent: Control, x: float, y: float, l: float, titre: String, icone: String, couleur: Color, raisons: Array, id: String, max_lignes := 4, pas := 50.0) -> void:
+	var tete := C.icon(icone, 22, couleur)
 	parent.add_child(tete)
-	D.place(tete, Rect2(x, y, 24, 24))
-	var t := D.text(parent, x + 34, y + 21, "%s · %d" % [titre, raisons.size()], 22, couleur, 800, l - 40)
+	D.place(tete, Rect2(x, y, 22, 22))
+	var t := D.text(parent, x + 32, y + 20, "%s · %d" % [titre.to_upper(), raisons.size()], 20, couleur, 800, l - 40)
 	t.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
-	var ly := y + 38
+	var ly := y + 34
 	for i in mini(raisons.size(), max_lignes):
 		var raison: Array = raisons[i]
 		var ligne := Button.new()
 		ligne.name = "%s_%d" % [id, i]
 		ligne.accessibility_name = "%s %s" % [raison[1], raison[2]]
-		Kit.styler_ligne(ligne, Charte.PANNEAU_2 if i % 2 == 0 else Charte.PANNEAU)
+		Kit.styler_ligne(ligne, Charte.PANNEAU_3 if i % 2 == 0 else Charte.PANNEAU)
 		parent.add_child(ligne)
 		D.place(ligne, Rect2(x, ly, l, pas - 6))
 		if (raison[3] as Callable).is_valid(): ligne.pressed.connect(raison[3])
-		var image := C.icon(str(raison[0]), 22, couleur)
+		var image := C.icon(str(raison[0]), 20, couleur)
 		ligne.add_child(image)
-		D.place(image, Rect2(12, (pas - 6 - 22) / 2.0, 22, 22))
-		D.text(ligne, 46, (pas - 6) / 2.0 + 8, str(raison[1]), 20, Charte.IVOIRE, 600, l - 150).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		D.place(image, Rect2(10, (pas - 6 - 20) / 2.0, 20, 20))
+		D.text(ligne, 40, (pas - 6) / 2.0 + 7, str(raison[1]), 18, Charte.IVOIRE, 600, l - 120, HORIZONTAL_ALIGNMENT_LEFT, true).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		if not str(raison[2]).is_empty():
-			var chiffre := D.text(ligne, l - 14, (pas - 6) / 2.0 + 9, str(raison[2]), 22, couleur, 800, 110, HORIZONTAL_ALIGNMENT_RIGHT)
+			var chiffre := D.text(ligne, l - 12, (pas - 6) / 2.0 + 8, str(raison[2]), 20, couleur, 800, 80, HORIZONTAL_ALIGNMENT_RIGHT)
 			chiffre.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 			chiffre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		for enfant in ligne.get_children():
+			if enfant is Control: (enfant as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		ly += pas
-	if raisons.size() > max_lignes: Kit.texte(parent, x + 12, ly + 20, "+%d" % (raisons.size() - max_lignes), Charte.IVOIRE_3, 80, 18)
-	return ly
-
-## Lettre du recruteur : carré coloré cliquable.
-static func _lettre(app: Control, page: Control, parent: Control, d: Dictionary, zone: Rect2, taille: int) -> void:
-	var r: Dictionary = d.r
-	var couleur: Color = r.couleur
-	var bouton := Button.new()
-	bouton.name = "AgentRapportLettre"
-	bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	bouton.accessibility_name = "Avis du recruteur " + str(r.lettre)
-	for etat in ["normal", "pressed", "focus"]: bouton.add_theme_stylebox_override(etat, C.box(Charte.PANNEAU_2.lerp(couleur, .22), Color.TRANSPARENT, Charte.RAYON_CARTE, 0))
-	bouton.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3.lerp(couleur, .32), Color.TRANSPARENT, Charte.RAYON_CARTE, 0))
-	parent.add_child(bouton)
-	D.place(bouton, zone)
-	var texte := D.text(bouton, zone.size.x / 2.0, zone.size.y * .5 + taille * .36, str(r.lettre), taille, couleur, 800, zone.size.x, HORIZONTAL_ALIGNMENT_CENTER)
-	texte.add_theme_font_override("font", Charte.TITRE_FICHE)
-	texte.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bouton.pressed.connect(_rapport(app, page, d.id))
-
-static func _note_texte(r: Dictionary) -> String:
-	return G.n(roundi(float(r.note))) if float(r.note) >= 0 else "—"
-
-# --- Option A : face à face ---------------------------------------------------------------------------------------------
-
-static func _dessiner_a(app: Control, page: Control, d: Dictionary) -> void:
-	const L := 1560.0
-	const H := 900.0
-	var f := Fenetre.ouvrir(page, NOM, "Discussion avec l’agent", "people", L, H)
-	var r: Dictionary = d.r
-	var ton := str(d.ton)
-	var couleur_ton: Color = TONS[ton].couleur if TONS.has(ton) else Pieces.BLEU
-	# Bandeau de l'agent.
-	var bandeau := D.rect(f, Rect2(28, 84, L - 56, 184), Charte.PANNEAU_2, Charte.RAYON_CARTE)
-	bandeau.name = "AgentBandeau"
-	bandeau.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_agent(f, Rect2(50, 104, 140, 140), couleur_ton)
-	var portrait: Control = load("res://ui/carnet_skin.gd").portrait(0, int(64 * C.density), d.p)
-	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	f.add_child(portrait)
-	D.place(portrait, Rect2(146, 186, 64, 64))
-	Kit.etiquette(f, 232, 124, "Agent de", 300)
-	_nom(app, f, d, Rect2(228, 130, 520, 48), 32)
-	Kit.texte(f, 232, 200, "%s · %s ans" % [r.poste, G.n(d.p.get("age", "—"))], Charte.IVOIRE_2, 400, 18)
-	_bulle(f, 232, 214, reponse(d), couleur_ton if not ton.is_empty() else Pieces.BLEU, "AgentBulle", false, 760)
-	Kit.etiquette(f, L - 420, 124, "Relation", 360)
-	_crans(f, L - 420, 140, d)
-	_relation_mot(f, L - 420, 194, d)
-	# Rapport du recruteur (colonne gauche).
-	Kit.etiquette(f, 28, 306, "Rapport du recruteur", 600)
-	_lettre(app, page, f, d, Rect2(28, 322, 124, 116), 72)
-	var id := str(d.id)
-	Pieces.tuile(f, Rect2(166, 322, 170, 116), _note_texte(r), "Note au poste", Charte.couleur_attribut(r.note), "AgentTuileNote", 36, "", "rating", false, _fiche(app, id))
-	Pieces.tuile(f, Rect2(348, 322, 170, 116), "%d / %d" % [r.rang, r.total], "Rang chez nous", Charte.IVOIRE, "AgentTuileRang", 36, "", "people", false, _rapport(app, page, id))
-	Pieces.tuile(f, Rect2(530, 322, 170, 116), K.potential_text(d.p), "Potentiel", K.POTENTIAL_COLOR, "AgentTuilePotentiel", 36, "", "renew", false, _fiche(app, id))
-	var montant := demande(d, ton)
-	Pieces.tuile(f, Rect2(712, 322, 188, 116), G.salary_amount(montant), "Demande " + G.salary_period(true), Pieces.ROUGE if montant > d.salaire else Pieces.VERT if montant < d.salaire else Pieces.BLEU, "AgentTuileDemande", 36, "", "money", true, _offre(app, id))
-	_raisons(f, 28, 466, 430, "POUR", "check", Pieces.VERT, r.pour, "AgentPour")
-	_raisons(f, 470, 466, 430, "CONTRE", "warning", Pieces.ROUGE, r.contre, "AgentContre")
-	# Les trois tons (colonne droite).
-	Kit.etiquette(f, 936, 306, "Ton", 400)
-	var y := 322.0
-	for cle: String in ORDRE:
-		var t: Dictionary = TONS[cle]
-		var choisi := cle == ton
-		var ligne := Button.new()
-		ligne.name = "AgentTon_" + cle
-		ligne.accessibility_name = str(t.mot)
-		Kit.styler_ligne(ligne, Charte.PANNEAU_2, choisi, Charte.PANNEAU_3.lerp(t.couleur, .22))
-		f.add_child(ligne)
-		D.place(ligne, Rect2(936, y, L - 28 - 936, 136))
-		ligne.pressed.connect(func(): _choisir(app, page, d.p, cle))
-		if choisi: Kit.marqueur(ligne, Rect2(0, 10, 6, 116), t.couleur)
-		var image := C.icon(str(t.icone), 28, t.couleur)
-		ligne.add_child(image)
-		D.place(image, Rect2(24, 20, 28, 28))
-		var mot := D.text(ligne, 64, 44, str(t.mot).to_upper(), 28, t.couleur, 800, 300)
-		mot.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
-		D.text(ligne, 64, 78, "« %s »" % t.phrase, 19, Charte.IVOIRE if choisi else Charte.IVOIRE_2, 600, L - 28 - 936 - 90, HORIZONTAL_ALIGNMENT_LEFT, true)
-		_effets(ligne, 64, 90, cle, "AgentEffet_" + cle + "_")
-		for enfant in ligne.get_children():
-			if enfant is Control: (enfant as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
-		y += 148
-	# Transfert et offre.
-	var rx := 28.0
-	rx += Pieces.pastille(f, rx, H - 66, "Transfert ouvert" if d.ouvert else "Transfert fermé", "check" if d.ouvert else "lock", "AgentTransfert", "", Pieces.VERT if d.ouvert else Pieces.ROUGE, Charte.PANNEAU_3, _offre(app, id)) + 10
-	Pieces.pastille(f, rx, H - 66, "Rapport complet", "search", "AgentRapportComplet", "", Charte.IVOIRE_2, Charte.PANNEAU_3, _rapport(app, page, id))
-	var offre := Kit.bouton_ivoire(f, Rect2(L - 28 - 360, H - 74, 360, 50), "Faire une offre", _offre(app, id), "AgentFaireOffre")
-	offre.disabled = not bool(d.ouvert)
-
-# --- Option B : tableau des tons ----------------------------------------------------------------------------------------
-
-static func _dessiner_b(app: Control, page: Control, d: Dictionary) -> void:
-	const L := 1760.0
-	const H := 960.0
-	var f := Fenetre.ouvrir(page, NOM, "Discussion avec l’agent", "people", L, H)
-	var r: Dictionary = d.r
-	var ton := str(d.ton)
-	var id := str(d.id)
-	# En-tête : visage du joueur, agent, jauge de relation.
-	var portrait: Control = load("res://ui/carnet_skin.gd").portrait(0, int(96 * C.density), d.p)
-	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	f.add_child(portrait)
-	D.place(portrait, Rect2(28, 84, 96, 96))
-	_agent(f, Rect2(96, 140, 48, 48), Pieces.BLEU)
-	Kit.etiquette(f, 160, 104, "Agent de", 300)
-	_nom(app, f, d, Rect2(156, 108, 560, 46), 30)
-	Kit.texte(f, 160, 178, "%s · %s ans · %s" % [r.poste, G.n(d.p.get("age", "—")), G.salary(d.salaire)], Charte.IVOIRE_2, 560, 18)
-	var gx := L - 28 - 5 * 158.0
-	Kit.etiquette(f, gx, 100, "Relation avec l’agent", 500)
-	for i in 5:
-		var actif := i == int(d.niveau)
-		var couleur: Color = RELATIONS[i][1]
-		var cran := D.rect(f, Rect2(gx + i * 158, 112, 152, 52), Charte.PANNEAU_3.lerp(couleur, .55 if actif else .10), Charte.RAYON_PETIT,
-			Charte.IVOIRE_2 if i == int(d.depart) and int(d.depart) != int(d.niveau) else Color.TRANSPARENT)
-		cran.name = "AgentRelationCran_%d" % i
-		cran.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var mot := D.text(cran, 76, 34, str(RELATIONS[i][0]), 20, Charte.IVOIRE if actif else couleur, 800 if actif else 600, 148, HORIZONTAL_ALIGNMENT_CENTER)
-		mot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var ecart_rel := int(d.niveau) - int(d.depart)
-	if ecart_rel != 0:
-		var fl := D.text(f, gx + int(d.niveau) * 158 + 76, 190, ("▲ %d" if ecart_rel > 0 else "▼ %d") % absi(ecart_rel), 20, Pieces.VERT if ecart_rel > 0 else Pieces.ROUGE, 800, 80, HORIZONTAL_ALIGNMENT_CENTER)
-		fl.name = "AgentRelationEcart"
-	# Tableau des tons (façon Effectif).
-	var colonnes := [["TON", 300], ["NOS MOTS", 0], ["DEMANDE", 140], ["SALAIRE", 200], ["ESSAIS", 130], ["RELATION", 160]]
-	var fixe := 0.0
-	for c: Array in colonnes: fixe += float(c[1])
-	var largeur_tab := L - 56
-	var y := 222.0
-	D.rect(f, Rect2(28, y, largeur_tab, 34), Charte.BANDEAU_ENTETE, Charte.RAYON_PETIT)
-	var cx := 28.0 + 20
-	for c: Array in colonnes:
-		var lc := float(c[1]) if float(c[1]) > 0 else largeur_tab - 20 - fixe
-		D.text(f, cx, y + 23, str(c[0]), 15, Charte.IVOIRE_3, 700, lc - 8)
-		cx += lc
-	y += 40
-	for i in ORDRE.size():
-		var cle: String = ORDRE[i]
-		var t: Dictionary = TONS[cle]
-		var choisi := cle == ton
-		var ligne := Button.new()
-		ligne.name = "AgentTon_" + cle
-		ligne.accessibility_name = str(t.mot)
-		Kit.styler_ligne(ligne, Charte.PANNEAU_2 if i % 2 == 0 else Charte.PANNEAU, choisi, Charte.PANNEAU_3.lerp(t.couleur, .22))
-		f.add_child(ligne)
-		D.place(ligne, Rect2(28, y, largeur_tab, 62))
-		ligne.pressed.connect(func(): _choisir(app, page, d.p, cle))
-		Kit.marqueur(ligne, Rect2(0, 8, 6, 46), t.couleur if choisi else Charte.PANNEAU_3.lerp(t.couleur, .5))
-		var image := C.icon(str(t.icone), 26, t.couleur)
-		ligne.add_child(image)
-		D.place(image, Rect2(20, 18, 26, 26))
-		var mot := D.text(ligne, 58, 41, str(t.mot).to_upper(), 26, t.couleur, 800, 240)
-		mot.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
-		var lx := 20.0 + 300
-		var lm := largeur_tab - 20 - fixe
-		D.text(ligne, lx, 39, "« %s »" % t.phrase, 19, Charte.IVOIRE if choisi else Charte.IVOIRE_2, 600, lm - 16, HORIZONTAL_ALIGNMENT_LEFT, true)
-		lx += lm
-		var ecart := int(t.ecart)
-		var c_ecart: Color = Pieces.ROUGE if ecart > 0 else Pieces.VERT if ecart < 0 else Charte.IVOIRE_2
-		var valeurs := [[("%+d %%" % ecart) if ecart != 0 else "=", c_ecart, 140], [G.salary_amount(demande(d, cle)), Pieces.BLEU, 200],
-			[str(int(t.essais)), Pieces.VERT if int(t.essais) > 3 else Pieces.ROUGE if int(t.essais) < 3 else Charte.IVOIRE_2, 130],
-			["%+d" % int(t.relation), Pieces.VERT if int(t.relation) > 0 else Pieces.ROUGE, 160]]
-		for v: Array in valeurs:
-			var chiffre := D.text(ligne, lx, 42, str(v[0]), 26, v[1], 800, float(v[2]) - 10)
-			chiffre.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
-			lx += float(v[2])
-		for enfant in ligne.get_children():
-			if enfant is Control: (enfant as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
-		y += 66
-	# Rapport du recruteur en pastilles (gauche).
-	var by := y + 30
-	Kit.etiquette(f, 28, by, "Rapport du recruteur", 600)
-	_lettre(app, page, f, d, Rect2(28, by + 16, 112, 104), 66)
-	var rang := D.text(f, 160, by + 60, "n° %d / %d" % [r.rang, r.total], 30, Charte.IVOIRE, 800, 220)
-	rang.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
-	Kit.texte(f, 160, by + 92, "%s · note %s" % [str(r.poste), _note_texte(r)], Charte.IVOIRE_2, 520, 18)
-	var py := _pastilles(f, 28, by + 140, 820, r.pour, Pieces.VERT, "AgentPour", 6)
-	_pastilles(f, 28, py + 8, 820, r.contre, Pieces.ROUGE, "AgentContre", 4)
-	# Fil de la discussion (droite).
-	var fx := 900.0
-	var fl_ := L - 28 - fx
-	var fil := D.rect(f, Rect2(fx, by - 10, fl_, H - 96 - by), Charte.PANNEAU_2, Charte.RAYON_CARTE)
-	fil.name = "AgentFil"
-	fil.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var ty := by + 14
-	_bulle(f, fx + 24, ty, accueil(d), Pieces.BLEU, "AgentBulleAccueil", false, fl_ - 120)
-	if not ton.is_empty():
-		ty += 78
-		_bulle(f, fx + fl_ - 24, ty, str(TONS[ton].phrase), TONS[ton].couleur, "AgentBulleNous", true, fl_ - 120)
-		ty += 78
-		_bulle(f, fx + 24, ty, reponse(d), Pieces.BLEU, "AgentBulle", false, fl_ - 120)
-	# Bas : transfert, offre.
-	Pieces.pastille(f, 28, H - 66, "Transfert ouvert" if d.ouvert else "Transfert fermé", "check" if d.ouvert else "lock", "AgentTransfert", "", Pieces.VERT if d.ouvert else Pieces.ROUGE, Charte.PANNEAU_3, _offre(app, id))
-	var offre := Kit.bouton_ivoire(f, Rect2(L - 28 - 360, H - 74, 360, 50), "Faire une offre", _offre(app, id), "AgentFaireOffre")
-	offre.disabled = not bool(d.ouvert)
-
-## Raisons en pastilles (icône + mot + chiffre), à la suite, retour à la ligne. Renvoie le bas posé.
-static func _pastilles(parent: Control, x: float, y: float, l: float, raisons: Array, couleur: Color, id: String, max_n: int) -> float:
-	var cx := x
-	var cy := y
-	for i in mini(raisons.size(), max_n):
-		var raison: Array = raisons[i]
-		var texte := str(raison[1]) + ((" " + str(raison[2])) if not str(raison[2]).is_empty() else "")
-		var w := Pieces.largeur_pastille(texte, str(raison[0]))
-		if cx + w > x + l and cx > x:
-			cx = x
-			cy += 42
-		cx += Pieces.pastille(parent, cx, cy, texte, str(raison[0]), "%s_%d" % [id, i], "", couleur, Charte.PANNEAU_3, raison[3]) + 8
-	if raisons.size() > max_n: Kit.texte(parent, cx + 4, cy + 24, "+%d" % (raisons.size() - max_n), Charte.IVOIRE_3, 60, 18)
-	return cy + 42
+	if raisons.size() > max_lignes: Kit.texte(parent, x + 10, ly + 18, "+%d" % (raisons.size() - max_lignes), Charte.IVOIRE_3, 80, 16)
