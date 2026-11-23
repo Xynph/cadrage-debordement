@@ -16,6 +16,7 @@ const LienZone = preload("res://ui/lien_zone.gd")
 const Visuel = preload("res://ui/strategy_visuals.gd")
 const JaugeAnneau = preload("res://ui/jauge_anneau.gd")
 const Supporters = preload("res://ui/supporters_camembert.gd")
+const Billetterie = preload("res://ui/billetterie_vue.gd")
 
 const PRIX := {"accessible":"Accessible", "equilibree":"Équilibrée", "premium":"Premium"}
 const STATUTS := {"pending":["À suivre", "clock", Charte.GRIS_VERT], "met":["Atteint", "check", Charte.V], "missed":["Manqué", "warning", Charte.D], "unverified":["Non vérifiable", "info", Charte.GRIS_VERT]}
@@ -255,28 +256,36 @@ static func _fans(app: Control, page: Container, data: Dictionary, locked: bool)
 	G.photo_note(page, app.model.club, "Le territoire", "Une ville derrière toi", "city", 140)
 	var card := G.panel(page)
 	card.name = "SupportersBilletterie"
-	card.add_child(Tuile.titre_bloc("Billetterie", "L’humeur des supporters fait varier le public de chaque match à domicile.\n\n" + Copy.notice("strategy", f.notice)))
-	# Trois cellules de même largeur sur toute la carte, contenu centré : espacement régulier, milieux alignés.
-	var metrics := G.h(0)
-	card.add_child(metrics)
-	var cell := func() -> CenterContainer:
-		var box := CenterContainer.new()
-		box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		box.size_flags_stretch_ratio = 1.0
-		metrics.add_child(box)
-		Tuile.proteger(box)
-		return box
 	var open := func(): _public(app, f)
-	LienZone.relier(Visuel.chiffre_picto(cell.call(), "people", G.n(f.expectedAttendance), "AFFLUENCE PRÉVUE"), "DirectionLien_Affluence", "Le public", open)
-	LienZone.relier(Visuel.chiffre_picto(cell.call(), "heart", _pourcent(int(f.get("humeurPublic", 0))), "PUBLIC · HUMEUR"), "DirectionLien_Humeur", "Le public", open)
-	LienZone.relier(Visuel.chiffre_picto(cell.call(), "star", G.n(f.subscribers), "ABONNÉS"), "DirectionLien_Abonnes", "Le public", open)
-	var price_row := G.h(10)
-	card.add_child(price_row)
-	for price: Dictionary in f.prices:
-		var button := _toggle("%s · %s" % [PRIX.get(price.id, str(price.id).capitalize()), G.euros(price.price)], func(): _send(app, "club_fans_price", {"key":price.id}), f.policy == price.id)
-		button.name = "FansPrice_" + str(price.id)
-		button.disabled = locked
-		price_row.add_child(button)
+	# Billetterie réelle (choix de Léo du 23/11/2026) : stade rempli, trois prix au curseur, responsable de la billetterie
+	# (billetterie_vue.gd) ; estimations ≈ seulement. Sans budget de saison : l'ancienne politique de prix.
+	if f.has("ticketing"):
+		card.add_child(Tuile.titre_bloc("Billetterie"))
+		Billetterie.construire(card, f, locked, func(commande: String, donnees: Dictionary): _send(app, commande, donnees), open)
+	else:
+		card.add_child(Tuile.titre_bloc("Billetterie", "L’humeur des supporters fait varier le public de chaque match à domicile.
+
+" + Copy.notice("strategy", f.notice)))
+		# Trois cellules de même largeur sur toute la carte, contenu centré : espacement régulier, milieux alignés.
+		var metrics := G.h(0)
+		card.add_child(metrics)
+		var cell := func() -> CenterContainer:
+			var box := CenterContainer.new()
+			box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			box.size_flags_stretch_ratio = 1.0
+			metrics.add_child(box)
+			Tuile.proteger(box)
+			return box
+		LienZone.relier(Visuel.chiffre_picto(cell.call(), "people", G.n(f.expectedAttendance), "AFFLUENCE PRÉVUE"), "DirectionLien_Affluence", "Le public", open)
+		LienZone.relier(Visuel.chiffre_picto(cell.call(), "heart", _pourcent(int(f.get("humeurPublic", 0))), "PUBLIC · HUMEUR"), "DirectionLien_Humeur", "Le public", open)
+		LienZone.relier(Visuel.chiffre_picto(cell.call(), "star", G.n(f.subscribers), "ABONNÉS"), "DirectionLien_Abonnes", "Le public", open)
+		var price_row := G.h(10)
+		card.add_child(price_row)
+		for price: Dictionary in f.prices:
+			var button := _toggle("%s · %s" % [PRIX.get(price.id, str(price.id).capitalize()), G.euros(price.price)], func(): _send(app, "club_fans_price", {"key":price.id}), f.policy == price.id)
+			button.name = "FansPrice_" + str(price.id)
+			button.disabled = locked
+			price_row.add_child(button)
 	for category: Dictionary in [{"title":"Faire venir","key":"campaigns","command":"club_fans_campaign","icon":"people"},{"title":"Tisser des liens","key":"community","command":"club_fans_community","icon":"heart"},{"title":"Accueillir au stade","key":"services","command":"club_fans_service","icon":"home"}]:
 		var actions := G.panel(page)
 		actions.add_child(Tuile.titre_bloc(category.title, "Dépenses prévues, sans nouvelle recette automatique."))
@@ -307,12 +316,19 @@ static func _public(app: Control, f: Dictionary) -> void:
 	var ring := JaugeAnneau.new(float(humeur) if humeur != null else 0.0, "Humeur", ton[1], 100.0, "heart")
 	ring.name = "PublicHumeur"
 	var capacity: Variant = f.get("capacity")
-	var first: Array = [ring, Visuel.tuile_chiffre("heart", _pourcent(int(f.get("humeurPublic", 0))), "Public · humeur"), Visuel.tuile_chiffre("people", G.n(f.expectedAttendance) + ("" if capacity == null else " / " + G.n(capacity)), "Affluence prévue" + ("" if capacity == null else " / places"))]
+	var estime := f.has("ticketing")
+	var first: Array = [ring, Visuel.tuile_chiffre("heart", _pourcent(int(f.get("humeurPublic", 0))), "Public · humeur"), Visuel.tuile_chiffre("people", ("≈ " if estime else "") + G.n(f.expectedAttendance) + ("" if capacity == null else " / " + G.n(capacity)), ("Affluence estimée" if estime else "Affluence prévue") + ("" if capacity == null else " / places"))]
 	if f.has("demand"): first.append(Visuel.tuile_chiffre("target", "%d %%" % int(f.demand), "Demande"))
 	var second: Array = []
-	if f.has("price"): second.append(Visuel.tuile_chiffre("money", G.euros(f.price), "Billet · " + str(PRIX.get(f.policy, f.policy))))
-	if f.has("expectedTicketRevenue"): second.append(Visuel.tuile_chiffre("money", G.euros(f.expectedTicketRevenue), "Recette prévue par match"))
-	second.append(Visuel.tuile_chiffre("star", G.n(f.subscribers), "Abonnés"))
+	if estime:
+		var t: Dictionary = f.ticketing
+		second.append(Visuel.tuile_chiffre("money", G.euros(f.price), "Grosse affiche" if t.get("bigMatch", false) else "Billet"))
+		second.append(Visuel.tuile_chiffre("money", "≈ " + G.euros(f.expectedTicketRevenue), "Recette estimée · prochain match"))
+		second.append(Visuel.tuile_chiffre("star", "≈ " + G.n(t.get("expectedSubscribers", f.subscribers)), "Abonnés"))
+	else:
+		if f.has("price"): second.append(Visuel.tuile_chiffre("money", G.euros(f.price), "Billet · " + str(PRIX.get(f.policy, f.policy))))
+		if f.has("expectedTicketRevenue"): second.append(Visuel.tuile_chiffre("money", G.euros(f.expectedTicketRevenue), "Recette prévue par match"))
+		second.append(Visuel.tuile_chiffre("star", G.n(f.subscribers), "Abonnés"))
 	var blocks: Array = [Visuel.rangee(first), Visuel.rangee(second)]
 	var history: Array = f.get("history", [])
 	if not history.is_empty():

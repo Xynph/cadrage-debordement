@@ -136,7 +136,10 @@ budget() {
     # Pont natif en carrière Monde (#828) : deux workers jumeaux, un match délégué, exports de ~20 Mo, sept workers successifs ; 151 s en local avec Godot, 180 s dépassées en CI.
     tests/godot-engine.cjs) echo 600s ;;
     # Pilotage du match (#912) : carrière Monde + 11 séries de 160 matchs rejoués, 125-150 s en local ; 180 s dépassées en CI.
-    tests/match-pilotage.cjs) echo 480s ;;
+    # Arrêts de jeu (PR #1216) : carrière Monde + séries de matchs, 86 s en local, 180 s dépassées en CI (Suites 9/10) ; budget ≈ 5 fois.
+    tests/match-arrets.cjs) echo 480s ;;
+    # 23/11/2026 : 323 s en local sur main, 352 s avec les arrêts de jeu (PR #1216) ; 480 s dépassées en CI (Suites 1/10) ; budget ≈ 2,5 fois.
+    tests/match-pilotage.cjs) echo 900s ;;
     # Cris à un joueur et permutation des ailes (idée FM27 n° 34) : carrière Monde + 5 séries de 300 matchs, ~150 s en local.
     tests/match-cris-joueur.cjs) echo 480s ;;
     # Dilemmes rugby (#925, 18/11/2026) : la presse rapide en carrière Monde passe de 149 à 172 s en local (commotions, doublons, relâchement
@@ -202,6 +205,8 @@ budget() {
     tests/integration-cloud-complete.cjs) echo 900s ;;
     # Presse/recrutement06 en carrière Monde, 172 s seul en local et 180 s dépassé en CI (Suites 5/7) ; 420 s, assertions inchangées.
     tests/native-press-followups06-worker.cjs) echo 420s ;;
+    # Programme d'entraînement (séance remplacée, effets) : 51 s en local, 180 s dépassées sur le runner (PR #1200, Suites 7/10) ; intensité automatique : 179,9 s sur 180 au ras du cap. Budget ≈ 2-3 fois, assertions inchangées.
+    tests/programme-entrainement.cjs|tests/intensite-auto.cjs) echo 420s ;;
     # Recherche ciblée (carrière Monde, recrutement) : 83 s en local, 180 s dépassées sur le runner (PR #1201, Suites 1/10) ; budget ≈ 5 fois, assertions inchangées.
     tests/recherche-ciblee.cjs) echo 420s ;;
     # Lot 01 (Monde), paquet 3 : deux carrières Monde jouées minute par minute (essai-visible, ~20 min sous charge locale) ; carnet : 358 s.
