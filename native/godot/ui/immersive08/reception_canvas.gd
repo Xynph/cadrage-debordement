@@ -19,6 +19,7 @@ const Competition = preload("res://ui/immersive08/competition_canvas.gd")
 const Reading = preload("res://ui/immersive08/reception_reading.gd")
 const ClubMail = preload("res://ui/club_mail.gd")
 const Bandeau = preload("res://ui/bandeau_filtres.gd")
+const CompteRendu = preload("res://ui/immersive08/compte_rendu_carte.gd")
 
 const CATEGORIES = ["Tous", "Staff", "Médical", "Direction", "Recrutement", "Compétitions"]
 const ICONS = {"Staff":"train", "Médical":"heart", "Direction":"shield", "Recrutement":"search", "Formation":"school", "Compétitions":"trophy", "Club":"mail", "Météo":"cloud"}
@@ -1377,6 +1378,9 @@ static func _clipping(app: Control, message: Dictionary, mail: Dictionary, width
 	var headline := C.wrap(str(mail.get("sujet", message.get("subject", ""))), 54, ink, true, 800)
 	headline.name = "InboxPressHeadline"
 	column.add_child(headline)
+	# Compte rendu du match en carte (idée FM n°19, choix de Léo du 23/11) : sur l'article du dernier match seulement.
+	var carte_match: Control = CompteRendu.carte(app, mail, width - 68.0)
+	if carte_match != null: column.add_child(carte_match)
 	var paragraphs: Array[String] = []
 	for part in str(mail.get("corps", "")).replace("\r", "").split("\n"):
 		if not part.strip_edges().is_empty(): paragraphs.append(part.strip_edges())
