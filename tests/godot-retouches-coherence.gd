@@ -200,46 +200,34 @@ func finances() -> void:
 # ---- 6 : calendrier ---------------------------------------------------------------------------------------------
 
 func calendrier() -> void:
-	app._navigate("Calendrier")
+	# Programme du mois (Entraînement › Mois, qui remplace la grille du Calendrier depuis le 22/11/2026).
+	load("res://ui/immersive08/training_mois.gd").ouvrir(app)
 	await settle(24)
-	var cal := app.find_child("CarnetCalendar", true, false)
-	check(cal != null, "Calendrier présent")
-	var marqueurs := app.find_children("CalendarAbsence_*", "PanelContainer", true, false)
-	var legendes := 0
-	var debuts := 0
-	for marqueur: Node in marqueurs:
-		if marqueur.get_meta("period_start", false): debuts += 1
-		for child: Node in marqueur.find_children("*", "Label", true, false):
-			if str(child.text).contains("en sélection"): legendes += 1
-		# Bande pleine et fine, sans bordure : jamais un champ vide encadré.
-		var bande := marqueur.find_child("AbsenceBand", true, false)
-		check(bande is ColorRect and bande.custom_minimum_size.y >= 3 and bande.custom_minimum_size.y <= 4, "Absence : bande pleine de 3-4 px")
-		check(not (marqueur as PanelContainer).get_theme_stylebox("panel") is StyleBoxFlat, "Absence : marqueur sans cadre")
+	var grille := app.find_child("TrainingMonthGrid", true, false)
+	check(grille != null, "Programme du mois présent")
+	# Sélections : une pastille drapeau + nombre par jour, détail en infobulle (jamais un champ encadré vide).
+	var marqueurs := app.find_children("TrainingMonthAbsence_*", "Panel", true, false)
 	if marqueurs.is_empty():
 		print("INFO : aucune absence dans le mois courant (pas de marqueur à mesurer)")
-	else:
-		check(legendes == debuts, "Une seule légende par période (%d légendes, %d débuts)" % [legendes, debuts])
-		check(legendes < marqueurs.size() or marqueurs.size() == 1, "Moins de légendes que de jours d'absence : %d pour %d jours" % [legendes, marqueurs.size()])
-		check(legendes <= 6, "Pas plus d'une légende par semaine affichée (%d)" % legendes)
-		var jour: Control = null
-		for node: Node in app.find_children("MonthDay_*", "Button", true, false):
-			if (node as Button).tooltip_text.contains("en sélection"): jour = node; break
-		check(jour != null, "Détail des convocations au survol de la case du jour")
-	# Bandeau d'un mois sans rencontre : « prochain match dans N jours (adversaire) ».
-	var banniere: String = cal._next_match_banner() if cal != null else ""
-	check(banniere.contains("prochain match") and (banniere.contains("dans ") or banniere.contains("demain") or banniere.contains("aujourd’hui")) and banniere.contains("("), "Bandeau sans rencontre : « %s »" % banniere)
-	check(not banniere.begins_with("Aucune rencontre programmée"), "Bandeau : plus de « Aucune rencontre programmée » sec")
-	# Mois sans match réel : on avance jusqu'à un mois vide du calendrier de la carrière.
+	for marqueur: Node in marqueurs:
+		check((marqueur as Control).tooltip_text.begins_with("Sélection"), "Absence : détail au survol de la pastille")
+	# Mois sans rencontre : la pastille annonce la prochaine (« dans N j · adversaire »), jamais « aucune rencontre ».
+	var etat: Dictionary = app.management_ui.immersive_training
+	var dates: Array = []
+	for f: Variant in app.model.get("calendarPlanning", {}).get("fixtures", app.model.get("calendar", [])):
+		if f is Dictionary: dates.append(str(f.get("date", "")))
 	var vide := ""
 	for mois in ["2026-07", "2026-08", "2026-12", "2027-07", "2027-08"]:
-		if cal != null and not (cal.fixtures as Array).any(func(f: Dictionary): return str(f.get("date", "")).begins_with(mois)): vide = mois; break
-	if not vide.is_empty() and cal != null:
-		cal.month = vide
-		cal.selected = vide + "-15"
-		cal._refresh()
+		if not dates.any(func(d: String): return d.begins_with(mois)) and mois >= str(app.model.get("calendarPlanning", {}).get("today", "")).substr(0, 7): vide = mois; break
+	if not vide.is_empty():
+		etat.mois = vide
+		app.find_child("ImmersiveTraining", true, false)._open_tab(5)
 		await settle(10)
-		var entete := texts(cal)
-		check(entete.contains("prochain match") or entete.contains("Prochain match"), "Mois vide (%s) : le bandeau annonce le prochain match" % vide)
+		var pastille := app.find_child("TrainingMonthNextMatch", true, false)
+		check(pastille != null, "Mois vide (%s) : la pastille annonce le prochain match" % vide)
+		if pastille != null:
+			var mot := str((pastille.find_child("TrainingMonthNextMatchTexte", true, false) as Label).text)
+			check(mot.begins_with("Prochain match") and (mot.contains("dans ") or mot.contains("demain") or mot.contains("aujourd’hui")), "Pastille du prochain match : « %s »" % mot)
 	await capture("calendrier")
 
 # ---- 4 : délégation à 22 ----------------------------------------------------------------------------------------

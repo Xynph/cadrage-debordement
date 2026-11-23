@@ -59,6 +59,8 @@ declare -A suite_limits=(
   [tests/godot-immersive08.cjs]=600
   # Panneaux de l'Effectif : une carrière Monde préparée jusqu'au jour de match (~60 s en local) puis le vrai jeu (~25 s).
   [tests/godot-panneaux-effectif.cjs]=600
+  # Planificateur : carrière Monde créée côté Node (sans match), puis le vrai jeu (~30 s).
+  [tests/godot-planificateur.cjs]=600
   # Avant-match « Dernière rencontre » : carrière Monde jusqu'au 1er match, match délégué, match suivant, 3 tailles.
   [tests/godot-avant-match-bilan.cjs]=900
   # Notes de match : préparation Node de la carrière Monde (~68 jours jusqu'au premier match, 3 matchs), puis Godot.

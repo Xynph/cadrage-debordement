@@ -36,12 +36,19 @@ const EXTRAS := [
 	{"id": "tactique-bleus", "libelle": "Tactique · petite fenêtre des Bleus (maquette)", "type": "tactique_alertes", "fenetre": "LineupBleusNoticeLien"},
 	{"id": "tactique-nationale", "libelle": "Tactique · petite fenêtre des qualifications FFR (maquette)", "type": "tactique_alertes", "fenetre": "NationaleLicenceNoticeLien"},
 	{"id": "entrainement-groupes", "libelle": "Entraînement · onglet Groupes", "type": "entrainement_onglet", "onglet": 1},
+	{"id": "entrainement-mois", "libelle": "Entraînement · onglet Mois", "type": "entrainement_onglet", "onglet": 5},
+	{"id": "entrainement-mois-jour", "libelle": "Entraînement · Mois · petite fenêtre d'un jour", "type": "entrainement_onglet", "onglet": 5, "jour": true},
 	{"id": "salle-entrainement", "libelle": "Observer la préparation (salle d'entraînement)", "type": "salle_entrainement"},
 	{"id": "salle-entrainement-joueur", "libelle": "Observer la préparation · petite fenêtre d'un joueur", "type": "salle_entrainement", "joueur": true},
 	{"id": "fiche-joueur", "libelle": "Fiche joueur", "type": "joueur"},
+	## Apprendre un poste (23/11/2026) : fiche du même joueur avec une cible choisie, puis la petite fenêtre des postes.
+	{"id": "fiche-joueur-apprendre", "libelle": "Fiche joueur · Apprendre un poste (cible choisie)", "type": "joueur", "apprendre": true},
+	{"id": "fiche-joueur-apprendre-fenetre", "libelle": "Fiche joueur · Apprendre un poste (petite fenêtre)", "type": "joueur", "apprendre": true, "ouvrir": "PlayerLearnPosition"},
 	{"id": "mini-fiche", "libelle": "Mini-fiche au survol (Effectif)", "type": "mini_fiche"},
 	{"id": "equilibre-postes", "libelle": "Équilibre par poste (infobulle Aptes)", "type": "equilibre_postes"},
-	{"id": "comparateur", "libelle": "Comparateur (trois joueurs)", "type": "comparateur"},
+	{"id": "comparateur", "libelle": "Comparateur (deux joueurs)", "type": "comparateur"},
+	{"id": "radar", "libelle": "Comparateur en radar (deux joueurs du même poste)", "type": "comparateur_radar"},
+	{"id": "radar-axe", "libelle": "Comparateur en radar · clic sur un axe", "type": "comparateur_radar", "axe": 6},
 	{"id": "salle-conseil", "libelle": "Salle du conseil", "type": "salle_conseil"},
 	{"id": "salle-conseil-fenetre", "libelle": "Salle du conseil · petite fenêtre", "type": "salle_conseil", "fenetre": true},
 	{"id": "salle-conseil-match", "libelle": "Salle du conseil · fenêtre d'un match", "type": "salle_conseil", "ballon": true},
@@ -54,6 +61,7 @@ const EXTRAS := [
 	{"id": "v2-recrutement-offre-fenetre", "libelle": "Recrutement : petite fenêtre du salaire sur l'offre", "type": "recrutement_etape", "etape": "offre_fenetre"},
 	{"id": "v2-recrutement-observation", "libelle": "Recrutement : confirmation en place de l'observation", "type": "recrutement_etape", "etape": "observation"},
 	{"id": "fiche-club", "libelle": "Fiche d'un club adverse", "type": "club"},
+	{"id": "fiche-club-rapport", "libelle": "Fiche d'un club adverse · onglet Rapport", "type": "club", "onglet": 4},
 	{"id": "classements-rencontre", "libelle": "Classements · sous-page d'une rencontre", "type": "classements_page", "page": "rencontre"},
 	{"id": "classements-archives", "libelle": "Classements · sous-page des archives des saisons", "type": "classements_page", "page": "archives"},
 	{"id": "classements-phases", "libelle": "Classements · onglet Phases finales", "type": "classements_onglet", "onglet": "playoffs"},
@@ -64,16 +72,21 @@ const EXTRAS := [
 	{"id": "creation-options", "libelle": "Création · étape 2 Carrière (options)", "type": "creation_options"},
 	{"id": "avant-match-delegation", "libelle": "Avant-match · sous-page Déléguer le match", "type": "avant_delegation"},
 	{"id": "avant-match-bilan", "libelle": "Avant-match · petite fenêtre de la dernière rencontre", "type": "avant_bilan"},
+	{"id": "compte-rendu", "libelle": "Réception · article du dernier match (carte du compte rendu)", "type": "reception_article"},
 	{"id": "preparation-bas", "libelle": "Préparation · leur XV probable (bas de page)", "type": "preparation_bas"},
 	{"id": "preparation-consignes", "libelle": "Préparation · onglet Consignes", "type": "preparation_onglet", "onglet": 1},
 	{"id": "preparation-conseils", "libelle": "Préparation · conseils détaillés (sous-page)", "type": "preparation_sous", "sous": "conseils"},
 	{"id": "preparation-reperes", "libelle": "Préparation · tous les repères (sous-page)", "type": "preparation_sous", "sous": "reperes"},
+	{"id": "preparation-adversaire", "libelle": "Préparation · rapport adverse (sous-page)", "type": "preparation_sous", "sous": "adversaire"},
 	{"id": "effectif-contrats", "libelle": "Effectif · onglet Contrats", "type": "effectif_onglet", "onglet": 2},
 	{"id": "contrats-prolongation", "libelle": "Effectif · Contrats · prolongation d'un joueur", "type": "effectif_onglet", "onglet": 2, "ouvrir_prefixe": "ContractRenew_"},
 	{"id": "contrats-prolongation-fenetre", "libelle": "Effectif · Contrats · petite fenêtre de la prolongation", "type": "effectif_onglet", "onglet": 2, "ouvrir_prefixe": "ContractRenew_", "puis": ["ProlongationApresLien"]},
 	{"id": "contrats-fenetre-echeance", "libelle": "Effectif · Contrats · petite fenêtre des échéances", "type": "effectif_onglet", "onglet": 2, "ouvrir": "ContractReviewStatEnding"},
 	{"id": "effectif-condition", "libelle": "Effectif · onglet Condition", "type": "effectif_onglet", "onglet": 1},
+	{"id": "effectif-poste", "libelle": "Effectif · liste classée au poste 12 (clic sur le maillot du XV)", "type": "effectif_onglet", "onglet": 0, "poste_xv": 12},
 	{"id": "effectif-developpement", "libelle": "Effectif · onglet Développement", "type": "effectif_onglet", "onglet": 3},
+	{"id": "planificateur", "libelle": "Effectif · Planificateur", "type": "effectif_onglet", "onglet": 4},
+	{"id": "planificateur-prochaine", "libelle": "Effectif · Planificateur · saison prochaine", "type": "effectif_onglet", "onglet": 4, "ouvrir": "PlanSaisonOuvrir1"},
 	## Forme récente (21/11/2026) : petite fenêtre du dernier match noté d’un joueur.
 	{"id": "effectif-forme-fenetre", "libelle": "Effectif · petite fenêtre d'un match de la forme récente", "type": "effectif_onglet", "onglet": 0, "ouvrir": "FormeMatch4"},
 	## Bandeau des filtres et restes des listes (21/11/2026) : courbe au survol, calendrier en tableau, « Entre clubs ».
@@ -495,6 +508,21 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				app._navigate("Réception", false)
 				await stabiliser()
 			if app.route != route: return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
+		"reception_article":
+			var article := ""
+			for courrier: Dictionary in load("res://ui/club_mail.gd").mails(app.model):
+				if str(courrier.get("type", "")) == "article": article = str(courrier.id); break
+			if article.is_empty(): return {"statut": "indisponible", "note": "aucun article de match dans la carrière filmée"}
+			app._reset_reception(article)
+			app._navigate("Réception", false)
+			await stabiliser()
+			var carte_cr := app.find_child("CompteRenduCarte", true, false) as Control
+			if carte_cr == null: return {"statut": "echec", "note": "carte du compte rendu absente"}
+			# La carte entière à l'écran : la lecture défile jusqu'à elle (le titre du journal passe au-dessus).
+			var lecture := app.find_child("InboxReadingScroll", true, false) as ScrollContainer
+			if lecture != null:
+				lecture.scroll_vertical = int(carte_cr.global_position.y - lecture.global_position.y) + lecture.scroll_vertical - 12
+				await stabiliser()
 		"tactique_onglet":
 			app._navigate("Composition")
 			await stabiliser()
@@ -537,6 +565,19 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			if entrainement == null: return {"statut": "echec", "note": "entraînement non ouvert"}
 			entrainement._open_tab(int(ecran.onglet))
 			await stabiliser()
+			if bool(ecran.get("jour", false)):
+				# Jour le plus chargé du mois (le plus de créneaux) : sa petite fenêtre.
+				var page := app.find_child("ImmersiveTraining", true, false)
+				var choix: Button = null
+				var plein := -1
+				for b: Node in page.find_children("TrainingMonthDayOpen_*", "Button", true, false):
+					var n: int = b.get_parent().get_child_count()
+					if n > plein:
+						plein = n
+						choix = b
+				if choix == null: return {"statut": "echec", "note": "aucun jour"}
+				choix.pressed.emit()
+				await stabiliser()
 		"salle_entrainement":
 			app._navigate("Préparation")
 			await stabiliser()
@@ -695,6 +736,21 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			var ouvert: bool = app.navigation_controller.open_entity({"kind": "player", "id": ident(effectif[0].get("id"))})
 			await stabiliser()
 			if not ouvert or app.route != "Effectif" or not bool(app.get_meta("immersive08_full_player", false)): return {"statut": "echec", "note": "fiche joueur non ouverte"}
+			if ecran.get("apprendre", false):
+				# Cible d'apprentissage : premier poste hors 1re ligne qu'il peut apprendre (même commande que le clic).
+				var postes: Array = load("res://ui/immersive08/fiche_roles.gd").postes_a_apprendre(effectif[0])
+				var cible := 0
+				for n: int in postes:
+					if n > 3: cible = n; break
+				if cible > 0 and int(effectif[0].get("positionLearning", 0) if effectif[0].get("positionLearning") != null else 0) != cible:
+					app._command("set_position_learning", {"playerId": str(effectif[0].get("id", "")), "numero": cible})
+					while app.waiting: await process_frame
+					await stabiliser()
+				if ecran.has("ouvrir"):
+					var bouton := app.find_child(str(ecran.ouvrir), true, false) as Button
+					if bouton == null: return {"statut": "echec", "note": "élément introuvable : " + str(ecran.ouvrir)}
+					bouton.pressed.emit()
+					await stabiliser()
 		"mini_fiche":
 			# Le bureau séparé n'a pas de souris : la mini-fiche est affichée par programme sur le nom d'un joueur
 			# (même appel que le survol, ui/immersive08/mini_fiche.gd).
@@ -731,18 +787,44 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 		"comparateur":
 			var effectif_cmp: Array = app.model.get("squad", [])
 			if effectif_cmp.size() < 3: return {"statut": "indisponible", "note": "effectif trop court"}
-			app.management_ui.compare = [ident(effectif_cmp[0].get("id")), ident(effectif_cmp[1].get("id")), ident(effectif_cmp[2].get("id"))]
+			app.management_ui.compare = [ident(effectif_cmp[0].get("id")), ident(effectif_cmp[1].get("id"))]
 			app._navigate("Effectif")
 			await stabiliser()
 			load("res://ui/immersive08/comparateur_canvas.gd").ouvrir(app)
 			await stabiliser()
 			if app.route != "Comparateur": return {"statut": "echec", "note": "comparateur non ouvert"}
+		"comparateur_radar":
+			var effectif_r: Array = app.model.get("squad", [])
+			if effectif_r.size() < 2: return {"statut": "indisponible", "note": "effectif trop court"}
+			var premier_r: Dictionary = effectif_r[0]
+			var second_r: Dictionary = effectif_r[1]
+			for p: Dictionary in effectif_r.slice(1):
+				if str(p.get("pos", "")) == str(premier_r.get("pos", "")):
+					second_r = p
+					break
+			app.management_ui.compare = [ident(premier_r.get("id")), ident(second_r.get("id"))]
+			app.management_ui.erase("radar_axe")
+			app._navigate("Effectif")
+			await stabiliser()
+			load("res://ui/immersive08/comparateur_canvas.gd").ouvrir(app)
+			await stabiliser()
+			if app.route != "Comparateur": return {"statut": "echec", "note": "comparateur non ouvert"}
+			if ecran.has("axe"):
+				var axe_r := app.root_content.find_child("RadarAxe" + str(ecran.axe), true, false) as BaseButton
+				if axe_r == null: return {"statut": "echec", "note": "axe du radar absent"}
+				axe_r.pressed.emit()
+				await stabiliser()
 		"club":
 			var id := club_adverse()
 			if id.is_empty(): return {"statut": "indisponible", "note": "aucun club adverse connu"}
 			var ouvert: bool = app.navigation_controller.open_entity({"kind": "club", "id": id})
 			await stabiliser()
 			if not ouvert: return {"statut": "echec", "note": "fiche du club %s non ouverte" % id}
+			if ecran.has("onglet"):
+				var onglet := app.root_content.find_child("ClubSheetTab%d" % int(ecran.onglet), true, false) as BaseButton
+				if onglet == null: return {"statut": "echec", "note": "onglet %d de la fiche du club absent" % int(ecran.onglet)}
+				onglet.pressed.emit()
+				await stabiliser()
 		"preparation_bas":
 			app._navigate("Préparation")
 			await stabiliser()
@@ -766,6 +848,12 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			await stabiliser()
 		"effectif_onglet":
 			app.management_ui.roster.immersive_tab = int(ecran.onglet)
+			# Poste choisi sur le terrain XV (même état qu'un clic sur le maillot, sans bascule d'une taille à l'autre).
+			if ecran.has("poste_xv"):
+				app.management_ui.roster.etoiles_poste = int(ecran.poste_xv)
+				app.management_ui.roster.sort = "Note au poste"
+				app.management_ui.roster.descending = true
+				app.roster_sort = "Note au poste"
 			app._navigate("Effectif")
 			await stabiliser()
 			if ecran.has("ouvrir"):
@@ -929,7 +1017,14 @@ func refermer(ecran: Dictionary) -> void:
 	if str(ecran.type) == "creation_options":
 		app.management_ui.erase("creation_step")
 		app.management_ui.erase("creation_selection")
-	if str(ecran.type) == "effectif_onglet": app.management_ui.roster.immersive_tab = 0
+	if str(ecran.type) == "effectif_onglet":
+		app.management_ui.roster.immersive_tab = 0
+		app.management_ui.roster.erase("plan_saison")
+	if ecran.has("poste_xv"):
+		app.management_ui.roster.etoiles_poste = 0
+		app.management_ui.roster.sort = "Poste"
+		app.management_ui.roster.descending = false
+		app.roster_sort = "Poste"
 	if str(ecran.type) == "finances_onglet": app.management_ui["immersive08_finance_tab"] = "summary"
 	if str(ecran.type) == "centre_onglet": app.management_ui.immersive_centre = {"club": app.model.get("club", {}).get("id"), "tab": "", "scroll": {}}
 	if str(ecran.type) == "onglet_cle":
@@ -1076,12 +1171,13 @@ func capturer(entree: Dictionary, o: Dictionary, taille: Vector2i) -> void:
 		print("ECRANS_FILMES retour de tuile : ", load("res://ui/retour_tuile.gd").simuler(self))
 		print("ECRANS_FILMES lignes : ", load("res://ui/survol_ligne.gd").simuler(self), " survolée(s), ", load("res://ui/survol_ligne.gd").simuler_appui(self), " enfoncée(s)")
 		await stabiliser()
-	# CD_FILM_BLESSURE=1 : ouvre la petite fenêtre « blessure » du premier blessé (pastille Blessé de l'écran).
-	if OS.get_environment("CD_FILM_BLESSURE") == "1":
-		var pastilles := get_nodes_in_group(&"ouvre_blessure")
+	# CD_FILM_BLESSURE=n : ouvre la petite fenêtre « blessure » du n-ième blessé (pastille Blessé de l'écran, 1 = premier).
+	if OS.get_environment("CD_FILM_BLESSURE").is_valid_int() and int(OS.get_environment("CD_FILM_BLESSURE")) >= 1:
+		var pastilles := get_nodes_in_group(&"ouvre_blessure").filter(func(b: Node) -> bool: return b is BaseButton and (b as Control).is_visible_in_tree())
+		var rang := mini(int(OS.get_environment("CD_FILM_BLESSURE")), pastilles.size()) - 1
 		print("ECRANS_FILMES blessure : ", pastilles.size(), " pastille(s)")
-		if not pastilles.is_empty() and pastilles[0] is BaseButton:
-			(pastilles[0] as BaseButton).pressed.emit()
+		if rang >= 0:
+			(pastilles[rang] as BaseButton).pressed.emit()
 			await stabiliser()
 	if OS.get_environment("CD_FILM_AUDIT_TUILES") == "1":
 		for ligne in load("res://ui/retour_tuile.gd").auditer(self): print("AUDIT_TUILE ", entree.id, "|", ligne)

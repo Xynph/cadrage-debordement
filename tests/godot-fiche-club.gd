@@ -136,7 +136,7 @@ func executer() -> void:
 	verifier(page.find_child("ClubSheetCrest", true, false) != null, "écusson")
 	var nom := page.find_child("ClubSheetName", true, false) as Label
 	verifier(nom != null and not nom.text.is_empty(), "nom du club")
-	for i in 4: verifier(page.find_child("ClubSheetTab%d" % i, true, false) != null, "onglet %d présent" % i)
+	for i in 5: verifier(page.find_child("ClubSheetTab%d" % i, true, false) != null, "onglet %d présent" % i)
 	for action in ["ClubSheetFollow", "ClubSheetCalendar", "ClubSheetCompare", "ClubSheetRecruit"]: verifier(page.find_child(action, true, false) != null, "action " + action)
 	verifier(page.find_child("ClubSheetSeason", true, false) != null and page.find_child("ClubSheetHeadToHead", true, false) != null, "vue d'ensemble : saison et confrontations")
 	verifier(page.find_child("ClubSheetPalmaresVide", true, false) != null or page.find_child("ClubSheetPalmaresDetail", true, false) != null, "vue d'ensemble : palmarès connu ou état vide en langage de club")
@@ -193,6 +193,7 @@ func executer() -> void:
 	verifier(page.find_child("ClubSheetBoard0", true, false) != null, "statistiques : meilleurs marqueurs")
 	chevauchements(page, "stats")
 	await capture("fiche-club-stats")
+	await rapport()
 	# 2. Votre club dans le classement : écran « Club » (décision de Léo).
 	app._navigate("Classements"); await poser(30)
 	lien_mien = await trouver_mien(own)
@@ -229,6 +230,57 @@ func executer() -> void:
 	await attendre_moteur()
 	verifier(app.route == ClubSheet.ROUTE, "retour arrière vers la fiche (route %s)" % app.route)
 	fin()
+
+## Onglet « Rapport » (idée n° 10 de la revue FM27) : XV habituel en maillots colorés par fréquence, bandes d'où partent
+## les essais, essais par tranche de 10 min ; chiffres = données du moteur ; un maillot ouvre une petite fenêtre.
+func rapport() -> void:
+	var page := await onglet(4)
+	if page == null: return
+	var donnees: Dictionary = ClubSheet.cached(app, int(app.management_ui.club_sheet.id))
+	var r: Dictionary = donnees.get("rapport", {})
+	var essais: Array = r.get("essais", [])
+	verifier(int(r.get("detailed", 0)) >= 1 and essais.size() >= 1, "rapport : matchs joués détaillés (%d essais)" % essais.size())
+	for id in ["RapportAdverseXV", "RapportAdverseZones", "RapportAdverseTemps", "RapportAdverseBandePour", "RapportAdverseBandeContre"]:
+		verifier(page.find_child(id, true, false) != null, "rapport : " + id)
+	var maillots := page.find_children("RapportAdverseMaillot*", "Button", true, false)
+	verifier(maillots.size() == 15, "rapport : quinze maillots cliquables (%d)" % maillots.size())
+	verifier(page.find_children("RapportAdverseTranche*", "Button", true, false).size() == 8, "rapport : huit tranches de 10 min")
+	verifier(page.find_children("RapportAdverseZone*", "Button", true, false).size() == 8, "rapport : quatre zones marqués + quatre encaissés")
+	var pour := essais.filter(func(e: Dictionary): return bool(e.get("for", false))).size()
+	for paire: Array in [["RapportAdversePour", pour], ["RapportAdverseContre", essais.size() - pour], ["RapportAdverseMatchs", int(r.get("sheets", 0))]]:
+		var tuile := page.find_child(str(paire[0]), true, false)
+		var textes: Array = tuile.find_children("*", "Label", true, false).map(func(l: Node): return (l as Label).text) if tuile else []
+		verifier(textes.has(str(paire[1])), "rapport : tuile %s = %d (%s)" % [paire[0], paire[1], str(textes)])
+	# Couleur de chaque maillot = fréquence du titulaire (vert ≥ 75 %, citron ≥ 50 %, orange ≥ 30 %, gris), jamais d'étoile.
+	var Rapport = load("res://ui/immersive08/preparation_adversaire.gd")
+	var feuilles := maxf(1.0, float(r.get("sheets", 0)))
+	var choix: Array = r.get("maillots", [])
+	for numero in range(1, 16):
+		var rond := page.find_child("RapportAdverseRond%d" % numero, true, false) as Panel
+		var attendu: Color = Rapport.teinte_part(float(choix[numero - 1][0].get("starts", 0)) / feuilles) if numero - 1 < choix.size() and not (choix[numero - 1] as Array).is_empty() else Color.TRANSPARENT
+		var style := rond.get_theme_stylebox("panel") as StyleBoxFlat if rond else null
+		verifier(style != null and (attendu == Color.TRANSPARENT or style.bg_color.is_equal_approx(attendu)), "rapport : couleur du maillot %d" % numero)
+	verifier(page.find_children("*Etoile*", "", true, false).is_empty() and page.find_children("*Star*", "", true, false).is_empty(), "rapport : aucune étoile de poste")
+	chevauchements(page, "rapport")
+	await capture("fiche-club-rapport")
+	(maillots[0] as Button).pressed.emit()
+	await poser(6)
+	var fenetre := page.find_child("RapportAdverseFenetre", true, false)
+	verifier(fenetre != null and page.find_children("RapportAdverseMaillotJoueur*", "", true, false).size() >= 1, "rapport : un maillot ouvre la petite fenêtre de ses titulaires")
+	var echap := InputEventKey.new()
+	echap.keycode = KEY_ESCAPE
+	echap.pressed = true
+	Input.parse_input_event(echap)
+	await poser(6)
+	verifier(page.find_child("RapportAdverseFenetre", true, false) == null or (page.find_child("RapportAdverseFenetre", true, false) as Node).is_queued_for_deletion(), "rapport : Échap ferme la petite fenêtre")
+	var tranche := page.find_children("RapportAdverseTranche*", "Button", true, false)
+	if not tranche.is_empty():
+		(tranche[0] as Button).pressed.emit()
+		await poser(6)
+		verifier(page.find_child("RapportAdverseFenetre", true, false) != null, "rapport : une tranche ouvre la liste de ses essais")
+		Input.parse_input_event(echap)
+		await poser(6)
+	mesures.rapport_essais = essais.size()
 
 # Petite fenêtre : le classement est l'ancienne page paginée ; la ligne de votre club peut être sur une autre page.
 func trouver_mien(own: int) -> BaseButton:
