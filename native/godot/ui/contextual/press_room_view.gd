@@ -92,6 +92,11 @@ func _render_ui() -> void:
 	publish_button = null
 	question_label = null
 	_draft_status = null
+	# Planche « Conférence de presse » (revue FM27, idée 27) : une question à la fois, réponses par ton, un clic = réponse.
+	var Fm = load("res://ui/immersive08/conference_presse.gd")
+	if not Fm.variante().is_empty() and _available():
+		Fm.construire(self)
+		return
 	var column := S.frame(ui, 20)
 	var context: Dictionary = data.get("context", {})
 	var top := S.G.h(16)

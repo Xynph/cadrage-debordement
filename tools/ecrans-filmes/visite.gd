@@ -53,6 +53,8 @@ const EXTRAS := [
 	{"id": "salle-conseil-fenetre", "libelle": "Salle du conseil · petite fenêtre", "type": "salle_conseil", "fenetre": true},
 	{"id": "salle-conseil-match", "libelle": "Salle du conseil · fenêtre d'un match", "type": "salle_conseil", "ballon": true},
 	{"id": "presse-ouverte", "libelle": "Presse : conférence avec questions ouvertes", "type": "presse_ouverte"},
+	{"id": "presse-conference-fm", "libelle": "Presse : conférence une question à la fois (planche FM27 n° 27)", "type": "presse_ouverte", "fm": true},
+	{"id": "presse-conference-fm-suite", "libelle": "Presse : conférence après une réponse (planche FM27 n° 27)", "type": "presse_ouverte", "fm": true, "repondre": true},
 	{"id": "presse-conference", "libelle": "Presse : Conférence", "type": "presse_onglet", "onglet": 1},
 	{"id": "presse-historique", "libelle": "Presse : Historique", "type": "presse_onglet", "onglet": 2},
 	{"id": "presse-portraits", "libelle": "Presse : Portraits", "type": "presse_onglet", "onglet": 3},
@@ -639,6 +641,18 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			app.set_meta("press_mail_origin", conference.invitationId)
 			canvas._select(1)
 			await stabiliser()
+			if ecran.get("fm", false):
+				# Salle de presse (vue contextuelle) : la conférence s'y tient, une question à la fois.
+				app.contextual_director.sync()
+				await stabiliser()
+				if app.contextual_director.kind != "press": return {"statut": "indisponible", "note": "salle de presse non ouverte (%s)" % app.contextual_director.kind}
+				await stabiliser()
+				if app.find_child("PressQuestionBubble", true, false) == null: return {"statut": "echec", "note": "conférence FM absente"}
+				if ecran.get("repondre", false):
+					var reponses := app.find_children("PressAnswerPick_*", "Button", true, false)
+					if reponses.is_empty(): return {"statut": "echec", "note": "aucune réponse"}
+					(reponses[0] as Button).pressed.emit()
+					await stabiliser()
 		"strategie_onglet":
 			app.management_ui.immersive08_strategy_tab = int(ecran.onglet)
 			app._navigate("Stratégie")
