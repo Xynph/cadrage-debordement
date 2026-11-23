@@ -2587,6 +2587,9 @@ func _tuile_joueur(poste: int, joueur: Dictionary, info: Dictionary) -> Button:
 	var app_carte: Object = _app()
 	if app_carte is Control: CarteSurvol.lier(app_carte, case, str(info.id), "squad", func(): return _direct_carte(str(info.id)))
 	_remplir_carte_haute(case, poste, joueur, info)
+	# Planche « menu sur un joueur » (C / D) : changement en attente du prochain arrêt de jeu.
+	var attente: Dictionary = get_meta("menu_joueur_attente", {})
+	if attente.has(id_joueur): load("res://ui/contextual/match_menu_joueur.gd").badge_attente(case, attente[id_joueur])
 	return case
 
 ## Note du match en pastille à la couleur de son palier, chiffre écrit (jamais la couleur seule).

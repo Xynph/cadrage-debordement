@@ -149,6 +149,10 @@ func run() -> void:
 		finir()
 		return
 	var nom_carte := str(carte.name)
+	if variante in ["C", "D"]:
+		await planche_cd(view, between, nom_carte, tailles)
+		finir()
+		return
 	for taille: Vector2i in tailles:
 		root.size = taille
 		root.content_scale_size = taille
@@ -213,6 +217,52 @@ func run() -> void:
 			check(between.terrain.find_child("MatchChangementCarte", false, false) != null, "%s : carte sortie / entrée sur le terrain" % str(taille))
 			await capture("changement-%s-%dx%d" % [variante, taille.x, taille.y])
 	finir()
+
+## Options C et D (entre A et B, choix de Léo du 23/11) dans le même match : carte claire avec mini-fiche, clic sur un
+## remplaçant = changement EN ATTENTE du prochain arrêt (aucun changement tout de suite), badge sur la carte de Mon XV et
+## carte « prochain arrêt » sur le terrain.
+func planche_cd(view: Control, between: Control, nom_carte: String, tailles: Array[Vector2i]) -> void:
+	for taille: Vector2i in tailles:
+		for v: String in ["C", "D"]:
+			OS.set_environment("CD_VARIANTE_VISUELLE", v)
+			view.set_meta("menu_joueur_attente", {})
+			between.set_meta("menu_joueur_attente", {})
+			var ancienne: Node = between.terrain.find_child("MatchChangementCarte", false, false)
+			if ancienne != null:
+				ancienne.name = "MatchChangementCarteAncienne"
+				ancienne.queue_free()
+			for b: Node in between.find_children("MatchMenuJoueurAttenteBadge", "", true, false): b.queue_free()
+			root.size = taille
+			root.content_scale_size = taille
+			await settle(40)
+			var carte := la_carte(between, nom_carte)
+			trace("clic carte %s %s" % [v, str(taille)])
+			carte.pressed.emit()
+			await wait_command()
+			await settle(16)
+			check(view.fenetre_ouverte() and view.fenetre_hote.find_child("MatchMenuJoueurPortrait", true, false) != null, "%s %s : la carte claire avec la mini-fiche s'ouvre" % [v, str(taille)])
+			var avant: Array = app.model.live.get("lineup", []).map(func(j: Variant) -> String: return str(j.get("id", "")) if j is Dictionary else "")
+			var premier: Button = null
+			for n: Node in view.fenetre_hote.find_children("MatchMenuJoueurRemplacant*Lien", "Button", true, false):
+				if (n.get_parent() as Control).modulate.a > .9:
+					premier = n
+					break
+			check(premier != null, "%s %s : un remplaçant autorisé" % [v, str(taille)])
+			if premier == null: continue
+			premier.pressed.emit()
+			await settle(24)
+			var apres: Array = app.model.live.get("lineup", []).map(func(j: Variant) -> String: return str(j.get("id", "")) if j is Dictionary else "")
+			check(apres == avant, "%s %s : le changement attend le prochain arrêt" % [v, str(taille)])
+			check(view.fenetre_ouverte() and view.fenetre_hote.find_child("MatchMenuJoueurAttente", true, false) != null, "%s %s : bandeau « prochain arrêt » dans la carte" % [v, str(taille)])
+			var ecran := Rect2(Vector2.ZERO, Vector2(root.size)).grow(1.0)
+			for p: Node in view.fenetre_hote.find_children("MatchMenuJoueur*", "Panel", true, false):
+				if (p as Control).is_visible_in_tree() and not ecran.encloses((p as Control).get_global_rect()): failures.append("%s %s : %s hors écran" % [v, str(taille), p.name])
+			await capture("menu-joueur-%s-%dx%d" % [v, taille.x, taille.y])
+			view.fermer_fenetre()
+			await settle(24)
+			check(between.terrain.find_child("MatchChangementCarte", false, false) != null, "%s %s : carte « prochain arrêt » sur le terrain" % [v, str(taille)])
+			check(not between.find_children("MatchMenuJoueurAttenteBadge", "", true, false).is_empty(), "%s %s : badge ⧗ sur la carte de Mon XV" % [v, str(taille)])
+			await capture("attente-%s-%dx%d" % [v, taille.x, taille.y])
 
 ## La carte de Mon XV est reconstruite au changement de taille : on la retrouve par son nom.
 func la_carte(between: Control, nom: String) -> Button:

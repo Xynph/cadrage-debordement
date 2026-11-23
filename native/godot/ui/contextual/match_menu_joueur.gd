@@ -18,6 +18,7 @@ const Familiarite = preload("res://ui/familiarite_poste.gd")
 const Roles = preload("res://ui/immersive08/fiche_roles.gd")
 const Commune = preload("res://ui/immersive08/fiche_commune.gd")
 const Tableau = preload("res://ui/contextual/match_tableau_widgets.gd")
+const Identity = preload("res://ui/player_identity.gd")
 
 const NOM := "MatchMenuJoueur"
 const POSTES := ["Pilier G", "Talonneur", "Pilier D", "2e ligne", "2e ligne", "3e ligne", "3e ligne", "Numéro 8",
@@ -33,7 +34,7 @@ const PLACES := [Vector2(.22, .90), Vector2(.5, .90), Vector2(.78, .90), Vector2
 
 static func variante() -> String:
 	var v := OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper()
-	return v if v in ["A", "B"] else ""
+	return v if v in ["A", "B", "C", "D"] else ""
 
 static func teinte_moral(cle: String) -> Color:
 	match cle:
@@ -168,8 +169,10 @@ static func ouvrir(view: Control, id: String, ancre: Control) -> void:
 	var d := donnees(view, id)
 	if d.is_empty(): return
 	view.set_meta("menu_joueur_ancre", ancre)
-	if variante() == "B": _ouvrir_b(view, d)
-	else: _ouvrir_a(view, d, ancre)
+	match variante():
+		"B": _ouvrir_b(view, d)
+		"C", "D": _ouvrir_c(view, d)
+		_: _ouvrir_a(view, d, ancre)
 
 # --- Pièces communes -------------------------------------------------------------------------------------------------
 
@@ -451,19 +454,428 @@ static func _petit_terrain(parent: Control, zone: Rect2, joueur: Dictionary, num
 		rond.mouse_filter = Control.MOUSE_FILTER_PASS
 		D.text(rond, r, r + 7, str(n), 18, Charte.ENCRE, 800, 2 * r, HORIZONTAL_ALIGNMENT_CENTER)
 
+# --- Options C / D : entre A et B (choix de Léo du 23/11/2026) ----------------------------------------------------------
+## Une carte CLAIRE qui se détache du direct : mini-fiche du joueur à gauche (portrait, origine, mensurations, état dans
+## le match, attributs du rôle, responsabilités), poste au milieu (terrain des 15 postes en familiarité, rôle au poste,
+## consignes individuelles), « Remplacer par » à droite en lignes triables (condition, moral, familiarité, note au poste).
+## Un clic sur un remplaçant le met EN ATTENTE : le changement se fera au prochain arrêt de jeu (re-clic = annuler).
+## C : papier crème, encre sombre. D : ardoise claire, texte crème.
+
+## Consignes individuelles proposées (écran seulement pour la planche : le moteur ne les lit pas encore).
+const CONSIGNES := {
+	"avant": ["Porter davantage", "Gratter au sol", "Plaquer bas", "Rester au regroupement"],
+	"demi": ["Jouer au pied", "Accélérer le jeu", "Faire jouer les avants", "Chercher l'intervalle"],
+	"ouvreur": ["Jouer au pied", "Jouer à plat", "Attaquer la ligne", "Occuper le terrain"],
+	"trois": ["Chercher l'intervalle", "Rester sur l'aile", "Monter vite", "Jouer au pied"],
+	"arriere": ["Relancer", "Jouer au pied", "S'intercaler", "Rester en couverture"]}
+
+static func _pal() -> Dictionary:
+	if variante() == "C":
+		return {"fond": Charte.CREME, "case": Charte.PAPIER_CLAIR, "choisi": Charte.PAPIER_PRESSE, "filet": Charte.FILET_PAPIER,
+			"encre": Charte.ENCRE, "encre2": Charte.ENCRE_2, "encre3": Color("6c726b"), "accent": Charte.D_PAPIER,
+			"rail": Color(Charte.ENCRE, .13), "bord": Color(Charte.ENCRE, .25), "fonce": .22, "mot_couleur": false}
+	return {"fond": Color("3a4947"), "case": Color("445350"), "choisi": Color("2f5a46"), "filet": Color(Charte.CREME, .16),
+		"encre": Charte.CREME, "encre2": Charte.GRIS_VERT, "encre3": Color("a7b0aa"), "accent": Charte.DORE,
+		"rail": Color(Charte.CREME, .18), "bord": Color(Charte.CREME, .40), "fonce": 0.0, "mot_couleur": true}
+
+static func _surtitre(parent: Control, x: float, base: float, texte: String, p: Dictionary, largeur: float = 300.0) -> Label:
+	return D.text(parent, x, base, texte.to_upper(), 15, p.encre3, 800, largeur)
+
+static func _deco(parent: Control, zone: Rect2, couleur: Color, rayon: int = 0) -> Panel:
+	var r := D.rect(parent, zone, couleur, rayon)
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return r
+
+## Pastille pleine : fond de couleur franche, chiffre ou mot à l'encre (lisible sur papier comme sur ardoise).
+static func _plein(parent: Control, zone: Rect2, texte: String, fond: Color, taille: int, nom: String, encre: Color = Charte.ENCRE) -> Panel:
+	var c := D.rect(parent, zone, fond, Charte.RAYON_PETIT)
+	c.name = nom
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var l := D.text(c, zone.size.x / 2.0, zone.size.y / 2.0 + float(taille) * .36, texte, taille, encre, 800, zone.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+	l.add_theme_font_override("font", Charte.TITRE_EXTRA)
+	return c
+
+static func _note_c(parent: Control, zone: Rect2, note: float, taille: int, nom: String, p: Dictionary) -> Panel:
+	if note < 0.0: return _plein(parent, zone, "?", p.rail, taille, nom, p.encre2)
+	return _plein(parent, zone, str(roundi(note)), Charte.couleur_attribut(note), taille, nom)
+
+## Familiarité : barres de signal 5 crans (+ mot en petit). Renvoie la largeur posée.
+static func _familiarite_c(parent: Control, x: float, base: float, n: int, taille: int, nom: String, p: Dictionary, mot := true) -> float:
+	var h := float(taille) * 1.05
+	var cran := maxf(4.0, roundf(h * .26))
+	var ecart := maxf(2.0, roundf(cran * .45))
+	var boite := Control.new()
+	boite.name = nom
+	boite.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(boite)
+	var l := 5.0 * cran + 4.0 * ecart
+	D.place(boite, Rect2(x, base + 2.0 - h, l, h))
+	var t := Familiarite.couleur(n).darkened(float(p.fonce))
+	for i in 5:
+		var hh := h * (.36 + .16 * float(i))
+		_deco(boite, Rect2(float(i) * (cran + ecart), h - hh, cran, hh), t if n >= 0 and i <= n else p.rail, 2)
+	if not mot: return l
+	var petit := maxi(13, taille - 3)
+	D.text(parent, x + l + 8.0, base, Familiarite.mot(n), petit, t if p.mot_couleur else p.encre2, 800, 110).name = nom + "Mot"
+	return l + 8.0 + 110.0
+
+## Zone cliquable (fond, contour facultatif, survol à l'encre de la carte).
+static func _clic(parent: Control, zone: Rect2, nom: String, action: Callable, fond: Color, p: Dictionary, contour: Color = Color.TRANSPARENT, rayon: int = Charte.RAYON_PETIT) -> Panel:
+	var cadre := D.rect(parent, zone, fond, rayon, contour)
+	cadre.name = nom
+	var b := Button.new()
+	b.name = nom + "Lien"
+	b.flat = true
+	b.focus_mode = Control.FOCUS_ALL
+	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	var survol := StyleBoxFlat.new()
+	survol.bg_color = Color(p.encre, .08)
+	survol.set_corner_radius_all(maxi(3, C.px(rayon)) if rayon < Charte.RAYON_PILULE else 999)
+	var focus := StyleBoxFlat.new()
+	focus.bg_color = Color.TRANSPARENT
+	focus.border_color = p.accent
+	focus.set_border_width_all(2)
+	focus.set_corner_radius_all(survol.corner_radius_top_left)
+	b.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+	b.add_theme_stylebox_override("hover", survol)
+	b.add_theme_stylebox_override("pressed", survol)
+	b.add_theme_stylebox_override("focus", focus)
+	b.accessibility_name = nom
+	b.pressed.connect(action)
+	cadre.add_child(b)
+	D.place(b, Rect2(Vector2.ZERO, zone.size))
+	return cadre
+
+## Pilule à bascule (consigne, responsabilité) : pleine dorée quand elle est prise. Renvoie sa largeur.
+static func _pilule(parent: Control, x: float, y: float, texte: String, actif: bool, nom: String, action: Callable, p: Dictionary) -> float:
+	var w := _largeur_pilule(texte)
+	var cadre := _clic(parent, Rect2(x, y, w, 38), nom, action, Charte.DORE if actif else p.case, p, Color.TRANSPARENT if actif else p.filet, Charte.RAYON_PILULE)
+	D.text(cadre, w / 2.0, 26, texte, 17, Charte.ENCRE if actif else p.encre, 700, w, HORIZONTAL_ALIGNMENT_CENTER)
+	return w
+
+static func _largeur_pilule(texte: String) -> float:
+	return C.font(700).get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, C.font_px(17)).x / C.density + 36.0
+
+## Pose des pilules en lignes dans `largeur` ; renvoie le bas.
+static func _pilules(parent: Control, x: float, y: float, largeur: float, elements: Array, p: Dictionary) -> float:
+	var xx := x
+	var yy := y
+	for e: Array in elements:
+		var w := _largeur_pilule(str(e[0]))
+		if xx > x and xx + w > x + largeur:
+			xx = x
+			yy += 46.0
+		xx += _pilule(parent, xx, yy, str(e[0]), bool(e[1]), str(e[2]), e[3], p) + 10.0
+	return yy + 38.0
+
+static func _famille_consignes(numero: int) -> String:
+	if numero <= 8: return "avant"
+	match numero:
+		9: return "demi"
+		10: return "ouvreur"
+		15: return "arriere"
+	return "trois"
+
+static func choisir_consigne(view: Control, d: Dictionary, consigne: String) -> void:
+	var toutes: Dictionary = view.get_meta("menu_joueur_consignes", {})
+	var siennes: Array = toutes.get(str(d.id), [])
+	if consigne in siennes: siennes.erase(consigne)
+	else: siennes.append(consigne)
+	toutes[str(d.id)] = siennes
+	view.set_meta("menu_joueur_consignes", toutes)
+	_plus_tard(view, str(d.id))
+
+## Clic sur un remplaçant (C / D) : il est mis en attente du prochain arrêt de jeu, sans confirmation ; re-clic = annuler.
+static func mettre_en_attente(view: Control, d: Dictionary, entrant: Dictionary) -> void:
+	if not bool(entrant.get("permis", true)): return
+	var attente: Dictionary = view.get_meta("menu_joueur_attente", {})
+	var cle := str(d.id)
+	if attente.has(cle) and str(attente[cle].id) == str(entrant.id): attente.erase(cle)
+	else: attente[cle] = {"id": str(entrant.id), "numero": int(entrant.numero), "nom": str(entrant.nom), "note_poste": float(entrant.note_poste), "energie": float(entrant.energie)}
+	view.set_meta("menu_joueur_attente", attente)
+	var between: Variant = view.regie.between if view.get("regie") != null and view.regie != null else null
+	if between != null:
+		between.set_meta("menu_joueur_attente", attente)
+		for n: Node in between.find_children("MatchBetweenPlayer*", "Button", true, false):
+			var id_carte := str(n.get_meta("player_id", ""))
+			var ancien := n.find_child("MatchMenuJoueurAttenteBadge", false, false)
+			if ancien != null:
+				ancien.name = "MatchMenuJoueurAttenteBadgeAncien"
+				ancien.queue_free()
+			# Seulement la carte elle-même (MatchBetweenPlayer<n>), pas les boutons posés dedans.
+			if attente.has(id_carte) and str(n.name).trim_prefix("MatchBetweenPlayer").is_valid_int(): badge_attente(n as Control, attente[id_carte])
+		if attente.has(cle):
+			carte_changement(between.terrain, {"numero": int(d.numero), "nom": str(d.joueur.get("name", "")), "note": float(d.note), "energie": float(d.energie)},
+				{"numero": int(d.numero), "nom": str(entrant.nom), "note_poste": float(entrant.note_poste), "energie": float(entrant.energie)}, true)
+		else:
+			var carte: Node = between.terrain.find_child("MatchChangementCarte", false, false)
+			if carte != null: carte.queue_free()
+	_plus_tard(view, cle)
+
+## Pastille dorée « ⧗ 21 » en haut à droite de la carte de Mon XV d'un joueur qui sortira au prochain arrêt.
+static func badge_attente(carte: Control, entrant: Dictionary) -> void:
+	if carte.find_child("MatchMenuJoueurAttenteBadge", false, false) != null: return
+	var badge := PanelContainer.new()
+	badge.name = "MatchMenuJoueurAttenteBadge"
+	var st := StyleBoxFlat.new()
+	st.bg_color = Charte.DORE
+	st.set_corner_radius_all(C.px(Charte.RAYON_PETIT))
+	st.content_margin_left = C.px(7)
+	st.content_margin_right = C.px(7)
+	badge.add_theme_stylebox_override("panel", st)
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	badge.tooltip_text = "Prochain arrêt · " + str(entrant.get("nom", ""))
+	var l := C.label("⧗ %d" % int(entrant.get("numero", 0)), 17, Charte.ENCRE, true, 800)
+	l.add_theme_font_override("font", Charte.TITRE_EXTRA)
+	badge.add_child(l)
+	carte.add_child(badge)
+	var placer := func():
+		if not is_instance_valid(badge) or not is_instance_valid(carte): return
+		badge.reset_size()
+		badge.position = Vector2(carte.size.x - badge.size.x - C.px(5), C.px(5))
+	placer.call_deferred()
+	carte.resized.connect(placer)
+
+static func _ouvrir_c(view: Control, d: Dictionary) -> void:
+	var p := _pal()
+	var j: Dictionary = d.joueur
+	var numero := int(d.numero)
+	var liste: Array = d.remplacants
+	var largeur := 1800.0
+	var hauteur := maxf(790.0, 134.0 + liste.size() * 64.0 + 120.0)
+	var fond: Panel = view._ouvrir_fenetre(NOM, "", largeur, hauteur)
+	var style := Charte.style_panneau(p.fond, Charte.RAYON_PANNEAU)
+	style.border_color = p.bord
+	style.set_border_width_all(maxi(1, C.px(2)))
+	style.shadow_color = Color(0, 0, 0, .65)
+	style.shadow_size = maxi(8, C.px(36))
+	fond.add_theme_stylebox_override("panel", style)
+	var croix := fond.find_child(NOM + "Fermer", false, false) as Button
+	if croix != null:
+		croix.add_theme_color_override("font_color", p.encre2)
+		croix.add_theme_color_override("font_hover_color", p.encre)
+	var attente: Dictionary = view.get_meta("menu_joueur_attente", {})
+	var en_attente: Dictionary = attente.get(str(d.id), {})
+	# ---- Colonne 1 : la mini-fiche du joueur.
+	var x1 := 28.0
+	var w1 := 500.0
+	var cadre := D.rect(fond, Rect2(x1, 28, 156, 156), p.case, Charte.RAYON_CARTE)
+	cadre.name = "MatchMenuJoueurPortrait"
+	cadre.clip_contents = true
+	var image: TextureRect = S.G.portrait_lazy(int(j.get("portraitIndex", 0)), C.px(156), j)
+	image.tooltip_text = ""
+	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	image.custom_minimum_size = Vector2.ZERO
+	cadre.add_child(image)
+	D.place(image, Rect2(0, 0, 156, 156))
+	var maillot := D.rect(fond, Rect2(x1 + 8, 140, 48, 38), Charte.VERT_FRANC, Charte.RAYON_PETIT)
+	D.text(maillot, 24, 29, str(numero), 26, Charte.CREME, 800, 48, HORIZONTAL_ALIGNMENT_CENTER).add_theme_font_override("font", Charte.TITRE_EXTRA)
+	var tx := x1 + 156.0 + 22.0
+	var tw := x1 + w1 - tx
+	var nom := D.text(fond, tx, 68, str(j.get("name", "—")).to_upper(), 34, p.encre, 800, tw)
+	nom.add_theme_font_override("font", Charte.TITRE_FICHE)
+	nom.name = "MatchMenuJoueurNom"
+	D.text(fond, tx, 102, "%s  ·  n° %d" % [POSTES[numero - 1], numero], 20, p.encre2, 700, tw)
+	var facts: Dictionary = j.get("playerFacts", {}) if j.get("playerFacts") is Dictionary else {}
+	var ox := tx
+	var drapeau: Texture2D = Identity.flag_texture(str(facts.get("flagCode", ""))) if facts.get("flagCode") is String else null
+	if drapeau != null:
+		var fl := TextureRect.new()
+		fl.texture = drapeau
+		fl.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		fl.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		fl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fond.add_child(fl)
+		D.place(fl, Rect2(ox, 120, 30, 20))
+		ox += 40.0
+	var origine: Array[String] = []
+	if facts.get("nationality") is String and not str(facts.nationality).is_empty(): origine.append(str(facts.nationality))
+	if j.get("age") is int or j.get("age") is float: origine.append("%d ans" % int(j.age))
+	D.text(fond, ox, 138, "  ·  ".join(origine), 20, p.encre, 700, x1 + w1 - ox).name = "MatchMenuJoueurOrigine"
+	var corps: Array[String] = []
+	if facts.get("heightCm") is int or facts.get("heightCm") is float: corps.append(("%.2f m" % (float(facts.heightCm) / 100.0)).replace(".", ","))
+	if facts.get("weightKg") is int or facts.get("weightKg") is float: corps.append("%d kg" % int(facts.weightKg))
+	D.text(fond, tx, 172, "  ·  ".join(corps), 20, p.encre2, 700, tw).name = "MatchMenuJoueurGabarit"
+	# État dans le match : note, énergie, moral.
+	var lt := (w1 - 24.0) / 3.0
+	for k in 3:
+		var tuile := D.rect(fond, Rect2(x1 + k * (lt + 12.0), 206, lt, 84), p.case, Charte.RAYON_CARTE)
+		tuile.name = ["MatchMenuJoueurNoteMatch", "MatchMenuJoueurEnergie", "MatchMenuJoueurMoral"][k]
+		_surtitre(tuile, 14, 26, ["Note du match", "Énergie", "Moral"][k], p, lt - 20)
+		match k:
+			0:
+				var nm := float(d.note)
+				if d.note_connue: _plein(tuile, Rect2(14, 38, 72, 36), ("%.1f" % nm).replace(".", ","), Charte.couleur_note(nm), 22, "Note", Charte.encre_note(nm))
+				else: _plein(tuile, Rect2(14, 38, 72, 36), "—", p.rail, 22, "Note", p.encre2)
+			1:
+				var e := float(d.energie)
+				var te := teinte_energie(e).darkened(float(p.fonce))
+				D.rect(tuile, Rect2(14, 52, lt - 96, 10), p.rail, 5)
+				D.rect(tuile, Rect2(14, 52, maxf(6.0, (lt - 96) * e / 100.0), 10), te, 5)
+				D.text(tuile, lt - 14, 66, "%d %%" % roundi(e), 22, p.encre, 800, 62, HORIZONTAL_ALIGNMENT_RIGHT)
+			2: _plein(tuile, Rect2(14, 38, lt - 28, 36), str(d.moral.label), teinte_moral(str(d.moral.cle)), 18, "Etat")
+	# Attributs du rôle choisi : les 4 clés puis les 4 utiles, valeur en pastille colorée.
+	var r := Roles.role(str(d.role))
+	var valeurs: Dictionary = Commune.valeurs(j, "squad")
+	_surtitre(fond, x1, 322, "Clés du rôle", p, 240)
+	_surtitre(fond, x1 + 256, 322, "Utiles", p, 240)
+	if r.size() >= 5:
+		for k in 2:
+			for i in 4:
+				var cle := str(r[3 + k][i])
+				var v: Variant = valeurs.get(cle)
+				var ligne := D.rect(fond, Rect2(x1 + k * 256.0, 334 + i * 44.0, 244, 40), p.case if i % 2 == 0 else Color.TRANSPARENT, Charte.RAYON_PETIT)
+				ligne.name = "MatchMenuJoueurAttribut_" + cle
+				D.text(ligne, 12, 27, Roles.libelle(cle), 17, p.encre if k == 0 else p.encre2, 700 if k == 0 else 600, 170)
+				if v is int or v is float: _plein(ligne, Rect2(244 - 54, 4, 48, 32), str(roundi(float(v))), Charte.couleur_attribut(float(v)), 19, "Valeur")
+	# Responsabilités en direct (vraies commandes du moteur).
+	_surtitre(fond, x1, 538, "En charge", p)
+	var resp: Array = []
+	for rr: Dictionary in d.responsabilites:
+		var rc := rr
+		resp.append([str(rr.nom), bool(rr.charge), "Resp_" + str(rr.id), func(): choisir_responsabilite(view, d, rc)])
+	_pilules(fond, x1, 552, w1, resp, p)
+	D.rect(fond, Rect2(x1 + w1 + 14, 28, 2, hauteur - 56), p.filet)
+	# ---- Colonne 2 : le poste.
+	var x2 := x1 + w1 + 30.0
+	var w2 := 400.0
+	_surtitre(fond, x2, 50, "Au poste · " + POSTES[numero - 1], p, 300)
+	_familiarite_c(fond, x2, 88, int(d.familiarite), 22, "MatchMenuJoueurFamiliarite", p)
+	_note_c(fond, Rect2(x2 + w2 - 72, 54, 72, 42), float(d.note_poste), 28, "MatchMenuJoueurNotePoste", p)
+	_petit_terrain_c(fond, Rect2(x2, 110, w2, 336), j, numero, p)
+	_surtitre(fond, x2, 476, "Rôle", p)
+	var y := 488.0
+	for ro: Dictionary in d.roles:
+		var actif: bool = ro.id == d.role
+		var rid := str(ro.id)
+		var l := _clic(fond, Rect2(x2, y, w2, 42), "MatchMenuJoueurRole_" + rid, func(): choisir_role(view, d, rid), p.choisi if actif else Color.TRANSPARENT, p)
+		if actif: _deco(l, Rect2(0, 7, 5, 28), p.accent, 2)
+		D.text(l, 18, 29, str(ro.nom), 19, p.encre if actif else p.encre2, 800 if actif else 600, w2 - 90)
+		_note_c(l, Rect2(w2 - 58, 5, 52, 32), float(ro.note), 20, "Note", p)
+		y += 46.0
+	_surtitre(fond, x2, y + 30, "Consignes", p)
+	var siennes: Array = view.get_meta("menu_joueur_consignes", {}).get(str(d.id), [])
+	var cons: Array = []
+	for c: String in CONSIGNES[_famille_consignes(numero)]:
+		var cc := c
+		cons.append([c, c in siennes, "Consigne_" + c.validate_node_name(), func(): choisir_consigne(view, d, cc)])
+	_pilules(fond, x2, y + 42, w2, cons, p)
+	D.rect(fond, Rect2(x2 + w2 + 14, 28, 2, hauteur - 56), p.filet)
+	# ---- Colonne 3 : remplacer par.
+	var x3 := x2 + w2 + 30.0
+	var w3 := largeur - x3 - 28.0
+	D.text(fond, x3, 64, "⇄  REMPLACER PAR", 28, p.accent, 800, 400).add_theme_font_override("font", Charte.TITRE_EXTRA)
+	if int(d.restants) >= 0: _plein(fond, Rect2(x3 + w3 - 140, 34, 72, 38), "%d" % int(d.restants), p.case, 22, "MatchMenuJoueurRestants", p.encre)
+	var colonnes := {"cond": 352.0, "moral": 472.0, "poste": 594.0, "note": w3 - 62.0}
+	var tri := str(view.get_meta("menu_joueur_tri", "note"))
+	var entete := D.rect(fond, Rect2(x3, 90, w3, 38), p.case, Charte.RAYON_PETIT)
+	entete.name = "MatchMenuJoueurEntetes"
+	for t: Array in [[colonnes.cond, "CONDITION", "energie", 110.0], [colonnes.moral, "MORAL", "moral", 110.0], [colonnes.poste, "AU POSTE", "familiarite", 120.0], [colonnes.note - 6.0, "NOTE", "note", 66.0]]:
+		var cle := str(t[2])
+		var tt := _clic(entete, Rect2(float(t[0]), 0, float(t[3]), 38), "Tri_" + str(t[1]).validate_node_name(), func(): _trier(view, cle, str(d.id)), Color.TRANSPARENT, p)
+		D.text(tt, 0, 26, str(t[1]) + (" ▼" if cle == tri else ""), 14, p.accent if cle == tri else p.encre2, 800, float(t[3]))
+	var zone := Control.new()
+	zone.name = "MatchMenuJoueurRemplacants"
+	zone.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fond.add_child(zone)
+	D.place(zone, Rect2(x3, 134, w3, liste.size() * 64.0))
+	for i in liste.size():
+		var rp: Dictionary = liste[i]
+		var choisi := not en_attente.is_empty() and str(en_attente.id) == str(rp.id)
+		var fl := Color(Charte.DORE, .30) if choisi else (Color(p.encre, .035) if i % 2 == 1 else Color.TRANSPARENT)
+		var ligne := _clic(zone, Rect2(0, i * 64.0, w3, 60), "MatchMenuJoueurRemplacant%d" % int(rp.numero), func(): mettre_en_attente(view, d, rp), fl, p, Charte.DORE if choisi else Color.TRANSPARENT)
+		ligne.modulate.a = 1.0 if rp.permis else .38
+		_visage(ligne, rp.joueur, Rect2(10, 8, 44, 44))
+		for v: Node in ligne.get_children():
+			if v is Control and not v is Button: (v as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		D.text(ligne, 64, 38, "⧗" if choisi else str(int(rp.numero)), 18, p.accent if choisi else p.encre2, 800, 32)
+		D.text(ligne, 100, 38, Tableau_nom(str(rp.nom)), 19, p.encre, 800, 156)
+		D.text(ligne, 264, 38, _poste_court(rp.joueur), 16, p.encre2, 700, 70)
+		var e := float(rp.energie)
+		_deco(ligne, Rect2(colonnes.cond, 26, 56, 8), p.rail, 4)
+		_deco(ligne, Rect2(colonnes.cond, 26, maxf(4.0, 56.0 * e / 100.0), 8), teinte_energie(e).darkened(float(p.fonce)), 4)
+		D.text(ligne, colonnes.cond + 62, 38, "%d %%" % roundi(e), 17, p.encre, 700, 50)
+		_plein(ligne, Rect2(colonnes.moral, 13, 110, 34), str(rp.moral.label), teinte_moral(str(rp.moral.cle)), 16, "Moral")
+		_familiarite_c(ligne, colonnes.poste, 38, int(rp.familiarite), 18, "Familiarite", p)
+		_note_c(ligne, Rect2(colonnes.note, 12, 54, 36), float(rp.note_poste), 22, "NotePoste", p)
+	# Changement en attente : bandeau doré au pied de la liste, ✕ pour annuler.
+	if not en_attente.is_empty():
+		var by := 134.0 + liste.size() * 64.0 + 16.0
+		var bande := D.rect(fond, Rect2(x3, by, w3, 78), Charte.DORE, Charte.RAYON_CARTE)
+		bande.name = "MatchMenuJoueurAttente"
+		D.text(bande, 18, 52, "⧗", 34, Charte.ENCRE, 800, 40)
+		D.text(bande, 64, 31, "PROCHAIN ARRÊT", 15, Charte.OR_ENCRE, 800, 300)
+		var txt := "%d  %s   ⇄   %d  %s" % [numero, Tableau_nom(str(j.get("name", ""))), int(en_attente.numero), Tableau_nom(str(en_attente.nom))]
+		D.text(bande, 64, 62, txt, 22, Charte.ENCRE, 800, w3 - 150).add_theme_font_override("font", Charte.TITRE_EXTRA)
+		var rp_attente: Dictionary = {}
+		for rp: Dictionary in liste:
+			if str(rp.id) == str(en_attente.id): rp_attente = rp
+		var annuler_action := func():
+			if not rp_attente.is_empty(): mettre_en_attente(view, d, rp_attente)
+		var annuler := _clic(bande, Rect2(w3 - 64, 15, 48, 48), "MatchMenuJoueurAttenteAnnuler", annuler_action, Color(Charte.ENCRE, .10), {"encre": Charte.ENCRE, "accent": Charte.ENCRE}, Color.TRANSPARENT, Charte.RAYON_PILULE)
+		D.text(annuler, 24, 34,"✕", 22, Charte.ENCRE, 800, 48, HORIZONTAL_ALIGNMENT_CENTER)
+	view.director._refresh_controls()
+
+## Petit terrain des 15 postes (C / D) : disques numérotés à la couleur de la familiarité, poste du moment cerclé.
+static func _petit_terrain_c(parent: Control, zone: Rect2, joueur: Dictionary, numero: int, p: Dictionary) -> void:
+	var pelouse := D.rect(parent, zone, Color("2f6b3a"), Charte.RAYON_CARTE)
+	pelouse.name = "MatchMenuJoueurTerrain"
+	var bandes := 6
+	for k in bandes:
+		if k % 2 == 1: D.rect(pelouse, Rect2(0, zone.size.y * k / bandes, zone.size.x, zone.size.y / bandes), Color("357541"))
+	D.line(pelouse, Vector2(0, zone.size.y * .5), Vector2(zone.size.x, zone.size.y * .5), Color(Charte.CREME, .45), 2)
+	for k in [0.22, 0.78]: D.line(pelouse, Vector2(0, zone.size.y * k), Vector2(zone.size.x, zone.size.y * k), Color(Charte.CREME, .25), 2)
+	var r := minf(zone.size.x, zone.size.y) * 0.078
+	for n in range(1, 16):
+		var pos: Vector2 = PLACES[n - 1] * zone.size
+		var niveau := Familiarite.niveau(joueur, n)
+		if n == numero:
+			var anneau := D.rect(pelouse, Rect2(pos.x - r - 6, pos.y - r - 6, 2 * r + 12, 2 * r + 12), Color.TRANSPARENT, Charte.RAYON_PILULE, Charte.CREME)
+			anneau.get_theme_stylebox("panel").set_border_width_all(maxi(2, C.px(4)))
+		var rond := D.rect(pelouse, Rect2(pos.x - r, pos.y - r, 2 * r, 2 * r), Familiarite.couleur(niveau), Charte.RAYON_PILULE, Color(Charte.ENCRE, .35))
+		rond.name = "Poste%d" % n
+		rond.tooltip_text = "%d · %s · %s" % [n, POSTES[n - 1], Familiarite.mot(niveau)]
+		rond.mouse_filter = Control.MOUSE_FILTER_PASS
+		D.text(rond, r, r + 7, str(n), 19, Charte.ENCRE, 800, 2 * r, HORIZONTAL_ALIGNMENT_CENTER)
+
 # --- Carte sortie / entrée sur le terrain ------------------------------------------------------------------------------
 
 ## Deux cartes maillot sur le terrain du direct : sortant en rouge (↓), entrant en vert (↑). A : côte à côte en haut
 ## du terrain ; B : bandeau bas. Elles restent quelques secondes.
-static func carte_changement(terrain: Control, sortant: Dictionary, entrant: Dictionary) -> void:
+static func carte_changement(terrain: Control, sortant: Dictionary, entrant: Dictionary, attente: bool = false) -> void:
 	if terrain == null or not is_instance_valid(terrain): return
 	var ancienne := terrain.find_child("MatchChangementCarte", false, false)
-	if ancienne != null: ancienne.queue_free()
+	if ancienne != null:
+		ancienne.name = "MatchChangementCarteAncienne"
+		ancienne.queue_free()
 	var boite := HBoxContainer.new()
-	boite.name = "MatchChangementCarte"
 	boite.add_theme_constant_override("separation", C.px(14))
 	boite.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	terrain.add_child(boite)
+	# En attente (C / D) : bandeau doré « ⧗ prochain arrêt » au-dessus des deux cartes, qui restent jusqu'au changement.
+	var racine: Control = boite
+	if attente:
+		var pile := VBoxContainer.new()
+		pile.add_theme_constant_override("separation", C.px(6))
+		pile.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var tete := PanelContainer.new()
+		var st := StyleBoxFlat.new()
+		st.bg_color = Charte.DORE
+		st.set_corner_radius_all(C.px(Charte.RAYON_PETIT))
+		st.content_margin_left = C.px(14)
+		st.content_margin_right = C.px(14)
+		tete.add_theme_stylebox_override("panel", st)
+		tete.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var lt := C.label("⧗  PROCHAIN ARRÊT", 22, Charte.ENCRE, true, 800)
+		lt.add_theme_font_override("font", Charte.TITRE_EXTRA)
+		lt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		tete.add_child(lt)
+		pile.add_child(tete)
+		pile.add_child(boite)
+		racine = pile
+	racine.name = "MatchChangementCarte"
+	terrain.add_child(racine)
 	var b := variante() == "B"
 	for k in 2:
 		var p: Dictionary = sortant if k == 0 else entrant
@@ -510,20 +922,23 @@ static func carte_changement(terrain: Control, sortant: Dictionary, entrant: Dic
 			fleche.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			fleche.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			boite.add_child(fleche)
-	boite.reset_size()
+	racine.reset_size()
 	var placer := func():
-		if not is_instance_valid(boite): return
-		boite.reset_size()
-		var sz := boite.get_combined_minimum_size()
-		boite.size = sz
+		if not is_instance_valid(racine): return
+		racine.reset_size()
+		var sz := racine.get_combined_minimum_size()
+		racine.size = sz
 		# Le terrain du direct est petit : la carte se réduit pour tenir dedans.
 		var k := minf(1.0, minf(terrain.size.x * 0.92 / maxf(1.0, sz.x), terrain.size.y * (0.5 if b else 0.86) / maxf(1.0, sz.y)))
-		boite.scale = Vector2(k, k)
-		boite.position = Vector2((terrain.size.x - sz.x * k) / 2.0, terrain.size.y - sz.y * k - C.px(10) if b else (terrain.size.y - sz.y * k) / 2.0)
+		racine.scale = Vector2(k, k)
+		racine.position = Vector2((terrain.size.x - sz.x * k) / 2.0, terrain.size.y - sz.y * k - C.px(10) if b else (terrain.size.y - sz.y * k) / 2.0)
 	placer.call_deferred()
 	terrain.resized.connect(placer)
+	racine.tree_exiting.connect(func():
+		if is_instance_valid(terrain) and terrain.resized.is_connected(placer): terrain.resized.disconnect(placer))
+	if attente: return
 	terrain.get_tree().create_timer(float(OS.get_environment("CD_CARTE_CHANGEMENT_S")) if OS.get_environment("CD_CARTE_CHANGEMENT_S").is_valid_float() else 6.0, true, false, true).timeout.connect(func():
-		if is_instance_valid(boite): boite.queue_free())
+		if is_instance_valid(racine): racine.queue_free())
 
 ## Rouvre le menu à l'image suivante (après une commande ou un choix).
 static func _plus_tard(view: Control, id: String) -> void:
