@@ -17,6 +17,7 @@ const SurvolLigne = preload("res://ui/survol_ligne.gd")
 const Savoir = preload("res://ui/player_knowledge_text.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const ClubSheet = preload("res://ui/immersive08/club_sheet_canvas.gd")
+const RapportAdverse = preload("res://ui/immersive08/preparation_adversaire.gd")
 const R = preload("res://ui/immersive08/reperes.gd")
 const Consignes = preload("res://ui/immersive08/preparation_consignes.gd")
 const TABS = ["Dossier", "Consignes", "Entrainement"]
@@ -565,6 +566,7 @@ func _dossier() -> float:
 		"reperes": return _sous_reperes(section)
 		"conseils": return _sous_conseils(section)
 		"xv": return _sous_xv(section)
+		"adversaire": return RapportAdverse.construire(self, section)
 		"planning", "reprise": return _sous_externe(section, str(state.get("sub", "")))
 	var opponent := _opponent()
 	var haut := 0.0
@@ -988,6 +990,7 @@ func _xv_bande(section: Control, rectangle: Rect2, adversaire: Dictionary) -> fl
 	var panneau := _panneau(section, Rect2(rectangle.position, Vector2(rectangle.size.x, hauteur)), "Leur XV probable", "PreparationTheirXI")
 	var tableau := "Tableau détaillé · remarques de %s" % str(adjoint.get("name", "")) if not adjoint.is_empty() else "Tableau détaillé · remarques du staff"
 	_bouton(panneau, Rect2(rectangle.size.x - 20 - 760, 6, 760, 44), tableau, func(): _ouvrir_sous("xv"), "lien", "arrow", "PreparationTheirXIAll")
+	_bouton(panneau, Rect2(420, 6, 420, 44), "Rapport adverse", func(): _ouvrir_sous("adversaire"), "lien", "arrow", "PreparationRapportAdverseLien")
 	_marque(panneau, rectangle.size.x - 20 - 760 - 200, 28, 14, "losange", Charte.IVOIRE)
 	_texte(panneau, rectangle.size.x - 20 - 760 - 178, 34, "à surveiller", 16, Charte.IVOIRE_2, 170)
 	var largeur := 135.0
