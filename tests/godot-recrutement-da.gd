@@ -104,6 +104,7 @@ func run() -> void:
 	await needs_and_sort()
 	await listes()
 	await subpages()
+	await recherche_ciblee()
 	await dossier_page()
 	await observation_confirmation()
 	await offer_page()
@@ -275,6 +276,57 @@ func subpages() -> void:
 		check(node("RecrutementSubpageTitle") != null and node("RecrutementAdopte") != null and node("RecrutementAdopte").get_child_count() > 0, "« %s » : contenu dans la page" % acces[1])
 		# Le lien de retour est aussi la cible d'Échap (raccourcis_clavier.gd).
 		await back_to_list()
+
+## Recherche ciblée (idée FM27 n° 26, option B) : une page en petite fenêtre ; liste = joueurs déjà observés seulement ;
+## chaque clic s'applique ; « Envoyer le recruteur · 5 000 € » débite et lance la recherche (pastille « en cours »).
+func recherche_ciblee() -> void:
+	app._navigate("Recrutement", false)
+	await settle(10)
+	var ouvert := await press("RechercheCibleeOuvrir")
+	check(ouvert, "Lien « Recherche ciblée » cliquable")
+	var fenetre := app.find_child("RechercheCibleeFenetre", true, false)
+	check(fenetre != null, "Recherche ciblée : petite fenêtre ouverte")
+	if fenetre == null: return
+	var donnees: Dictionary = app.model.get("clubLife", {}).get("rechercheCiblee", {})
+	var observes := {}
+	for x: Dictionary in donnees.get("connus", []):
+		check(str(x.get("suivi", "")) in ["observed", "deep"], "Liste : joueur observé seulement")
+		observes[str(x.id)] = true
+	var lignes: Array = fenetre.find_children("RecherchePisteOuvrir_*", "Button", true, false)
+	check(lignes.size() <= observes.size(), "Liste : aucune ligne sans joueur observé (%d / %d)" % [lignes.size(), observes.size()])
+	check(fenetre.find_children("*", "Label", true, false).filter(func(l: Label) -> bool: return l.text == "?" or l.text.contains("★")).is_empty(), "Ni « ? » ni étoile dans la recherche")
+	var bouton := app.find_child("RechercheLancer", true, false) as Button
+	check(bouton != null and bouton.disabled, "Envoi impossible tant qu'aucun poste n'est choisi")
+	var poste := app.find_child("RecherchePosteChoisir_8", true, false) as Button
+	check(poste != null, "Poste cliquable sur le terrain")
+	if poste == null: return
+	poste.pressed.emit(); await settle(6)
+	var etat: Dictionary = app.management_ui.recherche_ciblee
+	check(int(etat.poste) == 8, "Clic sur un poste : choisi tout de suite")
+	var role := app.find_child("RechercheRoleChoisir_1", true, false) as Button
+	check(role != null, "Rôles du poste en pastilles")
+	if role != null: role.pressed.emit(); await settle(6)
+	check(not str(etat.role).is_empty(), "Clic sur un rôle : appliqué tout de suite")
+	var prio := app.find_child("RecherchePrioriteChoisir_prioritaire", true, false) as Button
+	if prio != null: prio.pressed.emit(); await settle(6)
+	check(str(etat.priorite) == "prioritaire", "Clic sur une priorité : appliquée tout de suite")
+	await command("export")
+	var avant: Dictionary = JSON.parse_string(app.model.meta.exportText).state
+	var caisse := float(avant.clubs[int(avant.club)].cash)
+	bouton = app.find_child("RechercheLancer", true, false) as Button
+	check(bouton != null and not bouton.disabled and bouton.text.contains("5 000"), "Envoyer le recruteur · 5 000 € (%s · %s)" % [bouton.text if bouton != null else "absent", JSON.stringify(app.model.get("clubLife", {}).get("rechercheCiblee", {}).get("disponible"))])
+	if bouton == null or bouton.disabled: return
+	bouton.pressed.emit()
+	await wait_engine()
+	await command("export")
+	var apres: Dictionary = JSON.parse_string(app.model.meta.exportText).state
+	check(is_equal_approx(caisse - float(apres.clubs[int(apres.club)].cash), 5000.0), "5 000 € débités à l'envoi")
+	var mission: Dictionary = (apres.manager.missions as Array).back()
+	check(mission.get("cible") is Dictionary and int(mission.cible.position) == 12 and str(mission.cible.priority) == "prioritaire" and str(mission.cible.role) == str(etat.role), "Critères envoyés au moteur (poste, rôle, priorité)")
+	check(app.find_child("RechercheCibleeFenetre", true, false) != null, "Recherche restée ouverte après l'envoi")
+	check(app.find_child("RechercheEnCours_0", true, false) != null, "Recherche en cours affichée")
+	load("res://ui/immersive08/fenetre_visuelle.gd").fermer(app, "RechercheCibleeFenetre")
+	await settle(6)
 
 ## Approcher : l'offre est un écran (valider en ivoire plein, annuler en lien), rien ne s'ouvre en fenêtre.
 func offer_page() -> void:

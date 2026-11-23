@@ -96,8 +96,7 @@ const EXTRAS := [
 	{"id": "classements-calendrier", "libelle": "Classements · onglet Calendrier (tableau)", "type": "classements_onglet", "onglet": "calendar"},
 	{"id": "recrutement-entre-clubs", "libelle": "Recrutement · sous-page Marché entre clubs", "type": "recrutement_sous", "page": "interclub"},
 	{"id": "recrutement-entre-clubs-offre", "libelle": "Recrutement · Marché entre clubs, offre guidée par le recruteur", "type": "recrutement_sous", "page": "interclub", "offre": true},
-	{"id": "recherche-ciblee", "libelle": "Recrutement · recherche ciblée, poste et rôle (planche FM27 n° 26)", "type": "recherche_ciblee", "etape": 1},
-	{"id": "recherche-ciblee-criteres", "libelle": "Recrutement · recherche ciblée, critères (planche FM27 n° 26)", "type": "recherche_ciblee", "etape": 2},
+	{"id": "recherche-ciblee", "libelle": "Recrutement · recherche ciblée (poste, rôle, critères, joueurs observés)", "type": "recherche_ciblee"},
 	{"id": "recrutement-rapport-recruteur", "libelle": "Recrutement · Rapport du recruteur", "type": "recrutement_sous", "page": "recruteur"},
 	{"id": "finances-tresorerie", "libelle": "Finances · onglet Trésorerie (colonne de verdict)", "type": "finances_onglet", "onglet": "cash"},
 	{"id": "finances-salaires", "libelle": "Finances · onglet Salaires", "type": "finances_onglet", "onglet": "wages"},
@@ -696,10 +695,8 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			var Recherche = load("res://ui/immersive08/recherche_ciblee.gd")
 			var etat_r: Dictionary = Recherche._etat(app)
 			etat_r.poste = 8
-			etat_r.etape = int(ecran.etape)
-			if int(ecran.etape) == 2:
-				etat_r.role = str(load("res://ui/immersive08/fiche_roles.gd").roles_famille(Recherche._famille_role(etat_r))[0][0])
-				etat_r.note = 60
+			etat_r.role = str(load("res://ui/immersive08/fiche_roles.gd").roles_famille(Recherche._famille_role(etat_r))[0][0])
+			etat_r.note = 0
 			var bouton_r := app.find_child("RechercheCibleeOuvrir", true, false) as Button
 			if bouton_r == null: return {"statut": "echec", "note": "lien Recherche ciblée absent"}
 			bouton_r.pressed.emit()
