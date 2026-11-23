@@ -15,14 +15,15 @@
   return {met,gap,remaining:met?0:Math.abs(gap)};
  }
  // supporters (facultatif, 23/11/2026) : humeur des supporters sur 100, comptée avec weights.supporters.
- function boardConfidence({current,results,finances,youth,supporters,weights={results:.55,finances:.3,youth:.15},pull=.3}){
-  const fans=weights&&weights.supporters!==undefined;
-  if(!between(current,0,100)||![results,finances,youth].every(n=>between(n,0,100))||(fans&&!between(supporters,0,100))||
+ // jeu (facultatif, 23/11/2026, revue FM27 n° 31) : note du conseil sur notre jeu sur 100, comptée avec weights.jeu.
+ function boardConfidence({current,results,finances,youth,supporters,jeu,weights={results:.55,finances:.3,youth:.15},pull=.3}){
+  const fans=weights&&weights.supporters!==undefined,style=weights&&weights.jeu!==undefined;
+  if(!between(current,0,100)||![results,finances,youth].every(n=>between(n,0,100))||(fans&&!between(supporters,0,100))||(style&&!between(jeu,0,100))||
    !weights||Object.values(weights).some(n=>!between(n,0,1))||
    !['results','finances','youth'].every(k=>valid(weights[k]))||
-   Math.abs(weights.results+weights.finances+weights.youth+(fans?weights.supporters:0)-1)>1e-8||!between(pull,0,1))
+   Math.abs(weights.results+weights.finances+weights.youth+(fans?weights.supporters:0)+(style?weights.jeu:0)-1)>1e-8||!between(pull,0,1))
    throw new RangeError('Évaluation du conseil invalide');
-  const score=results*weights.results+finances*weights.finances+youth*weights.youth+(fans?supporters*weights.supporters:0);
+  const score=results*weights.results+finances*weights.finances+youth*weights.youth+(fans?supporters*weights.supporters:0)+(style?jeu*weights.jeu:0);
   const next=Math.max(0,Math.min(100,Math.round(current*(1-pull)+score*pull)));
   return {next,change:next-current,score,warning:next<35};
  }

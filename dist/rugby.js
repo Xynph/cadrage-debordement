@@ -116,9 +116,18 @@ function revisedSubPanel(l){
  }).join('')}<button class="small" onclick="rugbyUseBench()" ${!l.paused||l.finished?'disabled':''}>Confier les changements au staff</button></div>`;
 }
 
+// Entrées dans les 22 m adverses (revue FM27, idée n° 31, 23/11/2026) : après chaque action, le camp qui a le ballon
+// dans les 22 m adverses (terrain 0-100 vu du camp 0 : 22 m adverses = 78 et plus pour le camp 0, 22 et moins pour le
+// camp 1) compte une entrée, une seule tant que ce camp y reste avec le ballon. Sans tirage : le hasard du match ne bouge pas.
+// Champ facultatif des statistiques (stats[i].entries22) : les matchs d'avant ne l'ont pas.
+function compterEntree22(l){const side=l.possession;if((side!==0&&side!==1)||!l.stats?.[side])return;const dedans=side===0?l.territory>=78:l.territory<=22,avant=l.dans22;l.dans22=dedans?side:-1;if(dedans&&avant!==side)l.stats[side].entries22=(l.stats[side].entries22||0)+1}
+// Jeunes de moins de 23 ans dans le XV de départ de chaque camp (stats[i].jeunes, champ facultatif comme entries22).
+function jeunesTitulaires(l){try{l.pair.forEach((ci,s)=>{const club=S.clubs[ci],ids=new Set((l.sheets?.[s]?.initial||[]).filter(Boolean));if(!club||!ids.size)return;l.stats[s].jeunes=club.players.filter(p=>ids.has(p.id)&&Number.isFinite(p.age)&&p.age<=23).length})}catch(e){}}
 function makeStats(){return{possession:0,territory:0,scrums:0,scrumsWon:0,lineouts:0,lineoutsWon:0,penalties:0,yellows:0,conversions:0,conversionAttempts:0,goalAttempts:0,goals:0}}
 function createRugbyMatch(pair,legacy=null,automated=false,preparation=null){if(typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S))for(const ci of pair)CDFranceCareer.ensureAISheet(S.clubs[ci]);const userSide=automated?-1:pair.indexOf(S.club);const sheets=pair.map((ci,s)=>{let c=S.clubs[ci],sel=ci===S.club?buildSheet(c,S.lineup,S.reserves):buildSheet(c);return{on:sel.lineup,bench:sel.bench,initial:[...sel.lineup],used:[...sel.lineup.filter(Boolean)],minutes:{},cards:[],yellowCounts:{},sentOff:[],subs:0}});
 const l={engine:2,pair:[...pair],minute:0,score:[0,0],tries:[0,0],events:[],finished:false,paused:false,halftime:false,userSide,sheets,stats:[makeStats(),makeStats()],tactics:pair.map(ci=>ci===S.club?S.tactic:['equilibre','large','conquete','occupation'][rand(0,3)]),weather:['Sec','Sec','Pluie','Vent'][rand(0,3)],possession:rand(0,1),territory:50,subs:[],pending:null};
+// Avis du conseil sur notre jeu (revue FM27, idée n° 31) : jeunes de moins de 23 ans dans chaque XV de départ, sans tirage.
+jeunesTitulaires(l);
 // Météo annoncée la veille (carrière Monde) : reprise telle quelle. Le tirage du ciel ci-dessus reste fait pour ne pas décaler les suivants.
 const meteoFixee=!legacy?meteoAnnonceePour(pair):null;if(meteoFixee)l.weather=meteoFixee.weather;
 if(typeof CDFranceCompetition!=='undefined'&&CDFranceCompetition.active(S)){l.franceContext=CDFranceCareer.context(pair);if(!l.franceContext)throw Error('Rencontre hors du calendrier France.');}
@@ -321,7 +330,7 @@ function advanceRugby(l){if(l.finished||l.paused)return;if(!Array.isArray(l.essa
 commotionProtocol()?.minute(l);matchIncidents()?.minute(l);
 if(chronoRules(l)){chronoMinute(l);return}const observation=beginPlanObservation(l);const side=l.possession,opp=1-side;l.stats[side].possession++;l.stats[0].territory+=l.territory;l.stats[1].territory+=100-l.territory;if(flowRules(l))advanceFlowPlay(l);else if(restartRules(l)){if(l.minute===41)performKickRestart(l,'kickoff',1-l.firstKickoff,'second-half',l.firstKickoff);advanceCausalPlay(l)}else{const roll=Math.random();let penaltyProb=clamp(.12+(70-unit(l,opp,'discipline'))*.002,.06,.23)*derbyFouls(l);
 if(roll<penaltyProb)awardPenalty(l,side);else if(roll<penaltyProb+.12)contestSetPiece(l,side,'scrum');else if(roll<penaltyProb+.24)contestSetPiece(l,side,'lineout');else{const t=l.tactics[side],dir=side===0?1:-1;if(t==='occupation'&&Math.random()<.5){let gain=clamp(12+(unit(l,side,'kick',p=>p.fam>=4)-60)*.5+rand(-8,10)-(l.weather==='Vent'?9:0),3,38);l.territory=clamp(l.territory+dir*gain,5,95);addEvent(l,`${S.clubs[l.pair[side]].abbr} gagne ${Math.round(gain)} mètres au pied.`);changePossession(l)}else{let edge=teamEdge(l,side,'attack'),success=Math.random()<clamp(.49+edge,.18,.84);if(success){l.territory=clamp(l.territory+dir*rand(12,25),1,99);let danger=side===0?l.territory>74:l.territory<26;if(danger&&Math.random()<clamp(.36+edge,.16,.75))scoreTry(l,side,'open');else if(l.minute%8===0)addEvent(l,`${S.clubs[l.pair[side]].abbr} enchaîne les temps de jeu ${danger?'dans les 22 mètres':'et franchit la ligne d’avantage'}.`)}else{changePossession(l);addEvent(l,`${S.clubs[l.pair[opp]].abbr} récupère le ballon ${l.weather==='Pluie'?'sur une faute de main':'après une séquence défensive'}.`,'turnover')}}}}
-finishPlanObservation(l,observation);if(!flowRules(l)){if(l.minute===40&&!l.halftime){l.halftime=true;l.paused=true;addEvent(l,'Mi-temps. Analyse les statistiques et ajuste tes consignes.','break')}if(l.minute>=80)finishRugbyMatch(l)}}
+finishPlanObservation(l,observation);compterEntree22(l);if(!flowRules(l)){if(l.minute===40&&!l.halftime){l.halftime=true;l.paused=true;addEvent(l,'Mi-temps. Analyse les statistiques et ajuste tes consignes.','break')}if(l.minute>=80)finishRugbyMatch(l)}}
 function rugbyBegin(reducedBench=false){
  if(S.live||S.phase==='ended')return;
  const reduced=reducedBench===true&&typeof CDNationaleReducedBench!=='undefined'?CDNationaleReducedBench:null;

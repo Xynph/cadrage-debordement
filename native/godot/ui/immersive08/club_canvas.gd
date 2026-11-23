@@ -27,6 +27,7 @@ const Habillage = preload("res://ui/immersive08/recruitment_pages.gd")
 const Etat = preload("res://ui/management_state.gd")
 const StaffTable = preload("res://ui/staff_career_view.gd")
 const ConseilLettre = preload("res://ui/immersive08/conseil_lettre.gd")
+const ConseilJeu = preload("res://ui/immersive08/conseil_jeu.gd")
 const StaffServices = preload("res://ui/immersive08/staff_services.gd")
 const KEY = "immersive08_club_tab"
 const GOALS = {"wins":"Victoires", "points":"Points", "rank":"Place au classement", "cash":"Trésorerie"}
@@ -34,7 +35,8 @@ const GOAL_STATUS = {"pending":"À suivre", "met":"Atteint", "missed":"Manqué",
 const W := 2248.0
 const TOP := 132.0
 const HAUT := 1244.0
-const TABS := [["overview", "Vue d’ensemble"], ["direction", "Direction"], ["infrastructure", "Infrastructures"], ["staff", "Staff"], ["history", "Histoire"]]
+## « Notre jeu » : avis du conseil sur notre style (revue FM27 n° 31, conseil_jeu.gd).
+const TABS := [["overview", "Vue d’ensemble"], ["jeu", "Notre jeu"], ["direction", "Direction"], ["infrastructure", "Infrastructures"], ["staff", "Staff"], ["history", "Histoire"]]
 const LIGNE := 32.0
 
 ## Case dessinée de la charte : coche (ok), point d'exclamation (alerte), croix (menace), tiret (neutre). Le sens est
@@ -113,6 +115,7 @@ static func build(app: Control, canvas: Control) -> void:
 					"infrastructure": _infrastructure_detail(app, corps)
 					"history": _history(app, corps)
 					"territory": _territory(app, corps)
+					"jeu": ConseilJeu.build(app, corps)
 					_: _overview(app, canvas)
 	# Confirmations d'argent EN PLACE (main.gd les route ici) : bloc posé en haut de la page, jamais une fenêtre.
 	var hote := VBoxContainer.new()
@@ -161,9 +164,10 @@ static func _header(app: Control, canvas: Control, tab: String) -> void:
 	var sous := Kit.texte(canvas, 150, 46, _sous_titre(app), Charte.IVOIRE_2, 1900, 19)
 	sous.name = "ClubSubtitle"
 	var x := 0.0
-	for i in TABS.size():
-		var key: String = TABS[i][0]
-		var libelle: String = str(TABS[i][1])
+	var onglets: Array = TABS
+	for i in onglets.size():
+		var key: String = onglets[i][0]
+		var libelle: String = str(onglets[i][1])
 		var choisi := key == tab or (key == "overview" and tab == "territory")
 		var id := "ClubTab_" + key
 		var largeur := C.DISPLAY.get_string_size(libelle, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(22))).x / C.density + 44
@@ -186,8 +190,8 @@ static func _header(app: Control, canvas: Control, tab: String) -> void:
 		bouton.pressed.connect(func(): _tab(app, key, id))
 		bouton.gui_input.connect(func(evenement: InputEvent):
 			if evenement is InputEventKey and evenement.pressed and not evenement.echo and evenement.keycode in [KEY_LEFT, KEY_RIGHT]:
-				var cible := clampi(i + (1 if evenement.keycode == KEY_RIGHT else -1), 0, TABS.size() - 1)
-				if cible != i: _tab(app, TABS[cible][0], "ClubTab_" + str(TABS[cible][0]))
+				var cible := clampi(i + (1 if evenement.keycode == KEY_RIGHT else -1), 0, onglets.size() - 1)
+				if cible != i: _tab(app, onglets[cible][0], "ClubTab_" + str(onglets[cible][0]))
 				bouton.accept_event())
 		canvas.add_child(bouton)
 		D.place(bouton, Rect2(x, 70, largeur, 46))
