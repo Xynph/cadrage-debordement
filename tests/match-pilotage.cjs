@@ -66,6 +66,25 @@ try {
   assert.equal(m.live.pilotage.axes.find(a => a.id === 'planAttaque').valeur, 'large');
   m = jeu.call('set_consignes', { axe: 'planAttaque', valeur: 'equilibre' });
   for (let i = 0; i < 30 && m.live.pilotage.arrets.file.length; i++) m = jeu.call('tick');
+  // Avis du staff sur chaque cran (fenêtre des consignes, idée 33) : tendances sans aucun chiffre, pour chaque axe
+  // et chaque cran, lecture figée pour le match ; un staff plus faible se trompe plus souvent d'intensité.
+  const avis = m.live.pilotage.avisCrans;
+  assert.ok(['fiable', 'correct', 'approximatif'].includes(avis.fiabilite), avis.fiabilite);
+  for (const a of m.live.pilotage.axes) for (const o of a.options) {
+    const r = avis.axes[a.id]?.[o.id];
+    assert.ok(r && r.pour.length + r.contre.length + r.neutre.length > 0, 'avis du staff : ' + a.id + ' / ' + o.id);
+    for (const e of [...r.pour, ...r.contre]) assert.ok([0, 1, 2].includes(e.force) && e.mot && !/\d/.test(e.mot), JSON.stringify(e));
+  }
+  assert.deepEqual(jeu.call('tick').live.pilotage.avisCrans, avis, 'lecture du staff stable pendant le match');
+  // Lecture du staff au niveau `lv` : fiabilité et nombre d'effets lus à une autre intensité que la vraie.
+  const lecture = lv => JSON.parse(vm.run(`(()=>{const n=niveauStaff;niveauStaff=()=>${lv};try{const r=pilotageAvisCrans(S.live);let ecarts=0;
+    for(const [a,c] of Object.entries(CONSIGNES_TENDANCES))for(const [v,e] of Object.entries(c)){const vrais=e.filter(x=>x[0]).map(x=>({sens:x[0],mot:x[2],force:typeof x[1]==='string'?tendanceContexte(S.live,x[1]):x[1]}));
+     for(const x of vrais){const lu=r.axes[a][v][x.sens>0?'pour':'contre'].find(y=>y.mot===x.mot);if(lu.force!==x.force)ecarts++;}}
+    return JSON.stringify({fiabilite:r.fiabilite,ecarts})}finally{niveauStaff=n}})()`));
+  const forces = lecture, ecarts = lv => lecture(lv).ecarts;
+  assert.equal(forces(95).fiabilite, 'fiable');
+  assert.equal(forces(40).fiabilite, 'approximatif');
+  assert.ok(ecarts(40) > ecarts(90), 'staff faible : plus d’erreurs de lecture (' + ecarts(40) + ' contre ' + ecarts(90) + ')');
   // Cris de la touche : sans pause, effet sur les joueurs présents, usure si on répète ; projection pour la fenêtre Équipe.
   const pc = m.live.pilotage;
   assert.deepEqual(pc.cris.options.map(o => o.id), ['encourager', 'exiger', 'calmer', 'defense', 'toutDonner']);

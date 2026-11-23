@@ -755,6 +755,60 @@ function pilotageBilan(l,axe){
  }[axe]||[];
  return {axe,valeur:v,depuis:l.pilotage.depuis[axe],texte:`${CONSIGNES[axe].label} « ${consigneLabel(axe,v)} » depuis ${l.pilotage.depuis[axe]}′ : ${morceaux.join(', ')}.`};
 }
+// Avis du staff sur chaque cran (idée FM27 n° 33, fenêtre des consignes en direct ; choix de Léo du 23/11/2026) :
+// pour / contre de chaque cran EN TENDANCE, jamais chiffrés (principe d'incertitude). `force` : 2 net, 1 léger,
+// 0 le staff ne sait pas. Ce que le staff lit dépend de sa compétence (`niveauStaff`) : il peut grossir, minimiser ou
+// ne pas voir un effet ; la lecture est figée pour le match (hachage, aucun tirage) et tient compte de l'arbitre et de
+// la météo. Mots courts, ordres de grandeur des effets réels ci-dessus et de tactical-plans.js.
+const CONSIGNES_TENDANCES={
+ piedJeu:{moins:[[1,1,'Ballon gardé'],[-1,2,'Moins de jeu au pied'],[-1,1,'Moins de territoire']],normal:[[0,0,'Équilibre']],plus:[[1,2,'Jeu au pied'],[1,1,'Territoire'],[-1,1,'Ballons rendus']]},
+ rythme:{lent:[[1,1,'Moins d’en-avant'],[1,1,'Moins d’usure'],[-1,1,'Moins d’avancée']],normal:[[0,0,'Équilibre']],rapide:[[1,1,'Plus d’avancée'],[-1,1,'En-avant'],[-1,1,'Usure des deux XV']]},
+ relance:{degager:[[1,2,'Jeu au pied chez nous'],[-1,1,'Ballon rendu']],selon:[[0,0,'Au choix du 10']],relancer:[[1,1,'Ballon à la main'],[-1,2,'Moins de pied chez nous'],[-1,1,'Ballons perdus']]},
+ finDeMatch:{montre:[[1,2,'Ballon gardé'],[-1,1,'Moins de jeu au pied'],[0,0,'Dès 70′']],normal:[[0,0,'Sans effet']],tout:[[1,1,'Prise de risque'],[-1,2,'Ballons perdus'],[0,0,'Dès 70′']]},
+ rucks:{prudente:[[1,1,'Moins de fautes'],[-1,1,'Moins d’arrachés']],normale:[[0,0,'Équilibre']],agressive:[[1,2,'Ballons arrachés'],[-1,'arbitre-rucks','Fautes']]},
+ discipline:{stricte:[[1,2,'Moins de fautes'],[-1,1,'Défense moins mordante']],normale:[[0,0,'Équilibre']],limite:[[1,1,'Défense mordante'],[-1,2,'Fautes'],[-1,'arbitre-cartons','Cartons']]},
+ touche:{sure:[[1,2,'Touche gagnée'],[-1,1,'Plateforme moyenne']],normale:[[0,0,'Équilibre']],risquee:[[1,1,'Plateforme idéale'],[-1,2,'Touches perdues']]},
+ maul:{jamais:[[1,1,'Ballon vite sorti'],[-1,2,'Moins d’essais portés']],selon:[[0,0,'Au choix du pack']],souvent:[[1,2,'Essais portés'],[-1,1,'Jeu prévisible']]},
+ melee:{vite:[[1,2,'Moins de sifflets'],[1,1,'Plateforme']],normale:[[0,0,'Équilibre']],pousser:[[1,1,'Pénalités si pack fort'],[-1,'arbitre-melee','Coups de sifflet']]},
+ coupsEnvoi:{longs:[[1,2,'Distance'],[-1,1,'Moins de récupérés']],normaux:[[0,0,'Équilibre']],courts:[[1,2,'Ballons récupérés'],[-1,1,'Moins de distance']]},
+ cible:{aucune:[[0,0,'Sans effet']],aile:[[1,1,'Mètres sur leur aile'],[-1,1,'Ils s’adaptent']],ouvreur:[[1,1,'Ballons perdus chez eux'],[-1,1,'Plaquages en retard'],[-1,1,'Ils s’adaptent']]},
+ planAttaque:{equilibre:[[0,0,'Jeu varié']],large:[[1,2,'Gains plus longs'],[-1,1,'Fatigue'],[-1,'pluie-large','Fautes de main']],conquete:[[1,1,'Moins de fautes de main'],[1,1,'Pénaltouche'],[-1,1,'Gains plus courts']],occupation:[[1,2,'Territoire'],[1,1,'Moins d’usure'],[-1,1,'Ballons rendus'],[-1,'vent-occupation','Selon le vent']]},
+ systemeDefense:{equilibre:[[0,0,'Compromis']],pression:[[1,2,'Erreurs provoquées'],[-1,1,'Fatigue'],[-1,1,'Grands gains concédés'],[-1,1,'Pénalités']],prudente:[[1,1,'Profondeur protégée'],[1,1,'Moins de pénalités'],[-1,1,'Premiers mètres cédés']]},
+ penalites:{auto:[[0,0,'Au choix du capitaine']],points:[[1,2,'Points au pied'],[-1,1,'Moins d’occasions d’essai']],touch:[[1,1,'Ballon porté'],[-1,1,'Points laissés']],main:[[1,1,'Jeu rapide'],[-1,1,'Ballons perdus']]}
+};
+// Force qui dépend du contexte du match : l'arbitre et la météo durcissent un effet.
+function tendanceContexte(l,cle){
+ const a=l.pilotage.arbitre||{};
+ if(cle==='arbitre-rucks')return a.rucks>=4?2:1;
+ if(cle==='arbitre-cartons')return a.cartons>=4?2:1;
+ if(cle==='arbitre-melee')return a.melee>=4?2:1;
+ if(cle==='pluie-large')return l.weather==='Pluie'?2:1;
+ if(cle==='vent-occupation')return l.weather==='Vent'?2:1;
+ return 1;
+}
+// Fiabilité affichée de la lecture du staff (un mot, jamais son niveau chiffré).
+function avisFiabilite(lv){return lv>=75?'fiable':lv>=60?'correct':'approximatif'}
+function pilotageAvisCrans(l){
+ if(!pilotageActif(l))return null;
+ const lv=niveauStaff(),erreur=Math.max(.04,Math.min(.42,(95-lv)/110)),graine='avis|'+(l.worldContext?.id||'match')+'|'+(l.pair||[]).join('-')+'|';
+ const axes={};
+ for(const [axe,crans] of Object.entries(CONSIGNES_TENDANCES)){
+  axes[axe]={};
+  for(const [v,effets] of Object.entries(crans)){
+   const r={pour:[],contre:[],neutre:[]};
+   for(const [sens,f,mot] of effets){
+    if(!sens){r.neutre.push(mot);continue;}
+    let force=typeof f==='string'?tendanceContexte(l,f):f;
+    // Lecture du staff : plus il est compétent, moins il se trompe d'intensité ou passe à côté.
+    const h=pilotageHash(graine+axe+'|'+v+'|'+mot)/4294967296;
+    if(h<erreur)force=force===2?1:(h<erreur/3?0:2);
+    (sens>0?r.pour:r.contre).push({mot,force});
+   }
+   axes[axe][v]=r;
+  }
+ }
+ return {fiabilite:avisFiabilite(lv),axes};
+}
 function pilotageProjection(l){
  if(!pilotageActif(l))return null;
  const p=l.pilotage,joueurs={};
@@ -779,6 +833,8 @@ function pilotageProjection(l){
   roles:typeof playerRolesLive==='function'?playerRolesLive(l):null,
   // File « prochain arrêt de jeu », rôles du poste et consignes individuelles (native/engine/match-arrets.cjs).
   ...(typeof CDMatchArrets!=='undefined'?{arrets:CDMatchArrets.projection(l)}:{}),
+  // Avis du staff sur chaque cran, en tendance (fenêtre des consignes en direct).
+  avisCrans:pilotageAvisCrans(l),
   ...(()=>{const prev=pilotagePrevision(l);return {fatigue:[...prev].sort((a,b)=>a.prevue-b.prevue).slice(0,4),conseilChangement:pilotageConseilChangement(l,prev)}})(),
   // Banc adverse : consignes en cours (ce que son jeu laisse voir), derniers changements, tons de ses causeries.
   adversaire:{consignes:{...CONSIGNES_NEUTRES,...(p.consignesAdverses||{})},derniers:(p.adversaire?.derniers||[]).slice(-5).map(x=>({...x})),
