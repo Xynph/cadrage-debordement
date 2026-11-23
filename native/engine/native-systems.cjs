@@ -155,7 +155,9 @@ domains.clausesContrat=require('./clauses-contrat.cjs');
 domains.agentsJoueurs=require('./agents-joueurs.cjs');
 // Discussion avec l'agent : ton (demande, propositions) et relation gardée (native/engine/ton-agent.cjs).
 domains.tonAgent=require('./ton-agent.cjs');
+// File « prochain arrêt de jeu », rôles du poste et consignes individuelles en direct (native/engine/match-arrets.cjs).
+domains.matchArrets=require('./match-arrets.cjs');
 const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files,...domains.clubSheet.files,...domains.pressPromises.files,...domains.clubMail.files,...domains.multiplex.files,...domains.avantMatch.files,...domains.doublons.files,...domains.matchIncidents.files,...domains.weekProgram.files])]);
-const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands,...domains.clubMail.commands,...domains.multiplex.commands,...domains.avantMatch.commands,...domains.doublons.commands,...domains.matchIncidents.commands,...domains.weekProgram.commands,...domains.familiarite.commands,...domains.tonAgent.commands,...domains.staffServices.commands]);
+const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands,...domains.clubMail.commands,...domains.multiplex.commands,...domains.avantMatch.commands,...domains.doublons.commands,...domains.matchIncidents.commands,...domains.weekProgram.commands,...domains.familiarite.commands,...domains.tonAgent.commands,...domains.staffServices.commands,...domains.matchArrets.commands]);
 if(new Set(allCommands).size!==allCommands.length)throw Error('Commandes natives de domaine en double.');
 module.exports={files:allFiles,commands:allCommands,bootstrap};

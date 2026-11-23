@@ -1,13 +1,14 @@
 'use strict';
-// Planche « menu sur un joueur en match » (idée FM27 n° 32) sous CD_VARIANTE_VISUELLE=A|B : menu ouvert depuis la bande
-// Mon XV, changement fait d'un clic, carte sortie / entrée sur le terrain ; vrai match à vitesse maximale, 2560x1440 et
-// 1920x1080. CD_PLANCHE_DIRECT_2D=<dossier> reçoit menu-joueur-*.png. Jeu rendu : à lancer sous godot-slot.ps1.
+// Fenêtre d'un joueur en match (idée FM27 n° 32) : clic sur une carte de Mon XV, rôle et consignes au prochain arrêt de
+// jeu sans pause, remplacement de la fenêtre Équipe avec carte sortant / entrant hors du terrain 2D et vrai numéro ;
+// vrai match à vitesse maximale. CD_PLANCHE_DIRECT_2D=<dossier> reçoit final-1920.png, final-2560.png et
+// final-remplacement-1920.png. Jeu rendu : à lancer sous godot-slot.ps1 (jeu invisible).
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path'), assert = require('node:assert/strict');
 const {spawnSync} = require('node:child_process');
 const godot = process.env.CD_GODOT_EXECUTABLE || process.env.CD_GODOT_EXE;
-if (!godot || !fs.existsSync(godot)) { console.log('SKIP godot-planche-menu-joueur : SDK Godot absent (CD_GODOT_EXECUTABLE/CD_GODOT_EXE).'); process.exit(0); }
+if (!godot || !fs.existsSync(godot)) { console.log('SKIP godot-menu-joueur-match : SDK Godot absent (CD_GODOT_EXECUTABLE/CD_GODOT_EXE).'); process.exit(0); }
 const {createBridge} = require('../native/engine/worker.cjs'), {settleClubMeetings} = require('./helpers/club-meetings.cjs');
-const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-planche-menu-joueur-'));
+const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-menu-joueur-match-'));
 {
   // Carrière Monde arrêtée le jour du match (même préparation que godot-match-grands-moments.cjs).
   const dataDir = fs.mkdtempSync(path.join(directory, 'carriere-'));
@@ -28,11 +29,11 @@ let echecs = 0;
   fs.copyFileSync(path.join(directory, 'monde.json'), path.join(dossier, 'monde.json'));
   const env = {...process.env, CD_GODOT_SELF_TEST: '0', CD_NODE_EXECUTABLE: process.env.CD_NODE_EXECUTABLE || process.execPath, CD_GODOT_DATA_DIR: path.join(process.env.CD_PLANCHE_PROFIL || directory, 'jeu', 'PrototypeGodot'),
     CD_PLANCHE_DIRECT_2D: dossier, CD_MATCH_TEMPS_FORTS: '1', CD_MATCH_TEMPS_FORTS_HORLOGE: 'eclair', CD_MATCH_TEMPS_FORTS_VITESSE: '8', CD_MATCH_TEMPS_FORTS_NIVEAU: 'cles', CD_GODOT_SEED: '3', CD_CARTE_CHANGEMENT_S: '120'};
-  for (const name of ['CD_MATCH_GESTES', 'CD_MATCH_CHOREGRAPHE', 'CD_MATCH_TEMPS_FORTS_ENTRACTE', 'CD_MATCH_SORTIE']) delete env[name];
-  const result = spawnSync(godot, ['--audio-driver', 'Dummy', '--max-fps', '60', '--path', path.resolve(__dirname, '../native/godot'), '--script', path.resolve(__dirname, 'godot-planche-menu-joueur.gd')],
+  for (const name of ['CD_MATCH_GESTES', 'CD_MATCH_CHOREGRAPHE', 'CD_MATCH_TEMPS_FORTS_ENTRACTE', 'CD_MATCH_SORTIE', 'CD_VARIANTE_VISUELLE']) delete env[name];
+  const result = spawnSync(godot, ['--audio-driver', 'Dummy', '--max-fps', '60', '--path', path.resolve(__dirname, '../native/godot'), '--script', path.resolve(__dirname, 'godot-menu-joueur-match.gd')],
     {env, encoding: 'utf8', windowsHide: true, timeout: 900000});
   const output = (result.stdout || '') + (result.stderr || '');
-  console.log(output.split(/\r?\n/).filter(l => /PLANCHE_MENU_JOUEUR|ECHEC|SCRIPT ERROR|Parse Error|ERROR:|^  - /.test(l)).join('\n'));
+  console.log(output.split(/\r?\n/).filter(l => /MENU_JOUEUR|ECHEC|SCRIPT ERROR|Parse Error|ERROR:|^  - /.test(l)).join('\n'));
   fs.rmSync(path.join(dossier, 'monde.json'), {force: true});
   if (result.status !== 0 || /SCRIPT ERROR/.test(output)) echecs++;
 }

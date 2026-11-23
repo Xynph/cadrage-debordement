@@ -48,6 +48,11 @@ func demander(commande: String, payload := {}) -> void:
 func live() -> Dictionary:
 	return app.model.get("live") if app.model.get("live") is Dictionary else {}
 
+## Changement en attente du prochain arrêt de jeu (live.pilotage.arrets.file, match-arrets.cjs).
+func en_file(cle: String) -> bool:
+	var a: Variant = live().get("pilotage", {}).get("arrets")
+	return a is Dictionary and (a.get("file", []) as Array).any(func(e: Variant) -> bool: return e is Dictionary and str(e.get("cle", "")) == cle)
+
 func talk() -> Dictionary:
 	var v: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
 	return v if v is Dictionary else {}
@@ -504,13 +509,14 @@ func executer() -> void:
 		if tuile != null: tuile.pressed.emit()
 		verifier(app.last_command == "substitute", "clic sur le remplaçant : commande substitute")
 		await attendre("substitute")
-		rapport.remplacement = {"slot": slot, "outId": sortant, "inId": entrant, "apres": str(live().lineup[slot].id)}
-		verifier(str(live().lineup[slot].id) == entrant, "le moteur a fait entrer %s au poste %d" % [entrant, slot + 1])
-		verifier(not live().get("reserves", []).any(func(r: Variant) -> bool: return r is Dictionary and str(r.id) == entrant), "le remplaçant a quitté le banc")
+		# Match du manager : le changement attend le prochain arrêt de jeu (file du moteur), sauf ballon déjà mort.
+		var attente := en_file("remplacement:%d" % slot)
+		rapport.remplacement = {"slot": slot, "outId": sortant, "inId": entrant, "apres": str(live().lineup[slot].id), "enAttente": attente}
+		verifier(attente or str(live().lineup[slot].id) == entrant, "le moteur met %s en attente du prochain arrêt au poste %d" % [entrant, slot + 1])
 		await poser(4)
 		var statut: Label = fenetre.find_child("TeamStatus", true, false)
 		rapport.statut = statut.text if statut != null else ""
-		verifier(statut != null and statut.text.contains("entre à la place"), "message du changement : « %s »" % rapport.statut)
+		verifier(statut != null and statut.text.contains("entre à la place") and (not attente or statut.text.contains("prochain arrêt")), "message du changement : « %s »" % rapport.statut)
 	# Onglet Consignes : un cran envoie set_consignes, le moteur le garde.
 	(fenetre.find_child("TeamTabConsignes", true, false) as Button).pressed.emit()
 	await poser(4)
@@ -521,10 +527,10 @@ func executer() -> void:
 		cran.pressed.emit()
 		verifier(app.last_command == "set_consignes", "clic sur un cran : set_consignes")
 		await attendre("set_consignes")
-		verifier(str(live().get("pilotage", {}).get("consignes", {}).get("rythme", "")) == "rapide", "consigne Rythme gardée par le moteur")
+		verifier(en_file("consigne:rythme") or str(live().get("pilotage", {}).get("consignes", {}).get("rythme", "")) == "rapide", "consigne Rythme gardée par le moteur (au prochain arrêt)")
 		await poser(4)
 		var ligne: Control = fenetre.find_child("Consigne_rythme", true, false)
-		verifier(ligne != null and bool(ligne.get_meta("modifie", false)), "ligne Rythme relevée (cran non neutre)")
+		verifier(ligne != null and (en_file("consigne:rythme") or bool(ligne.get_meta("modifie", false))), "ligne Rythme relevée (cran non neutre, ou en attente du prochain arrêt)")
 	# Plan de jeu (axe « match en pause ») : la même commande, match arrêté.
 	var plan: Dictionary = {}
 	for axe: Variant in live().get("pilotage", {}).get("axes", []):
@@ -542,7 +548,7 @@ func executer() -> void:
 			for axe: Variant in live().get("pilotage", {}).get("axes", []):
 				if axe is Dictionary and str(axe.get("id", "")) == "planAttaque": apres = str(axe.get("valeur", ""))
 			rapport.plan = [str(plan.get("valeur", "")), autre, apres, str(app.last_error)]
-			verifier(apres == autre, "plan de jeu gardé par le moteur (%s)" % str(rapport.plan))
+			verifier(apres == autre or en_file("consigne:planAttaque"), "plan de jeu gardé par le moteur, au prochain arrêt (%s)" % str(rapport.plan))
 	# Cris de la touche : le bouton envoie `cri`.
 	fenetre.choisir_onglet("composition")
 	fenetre.update_frame(modele_enrichi())
@@ -611,7 +617,7 @@ func executer() -> void:
 			var apres: String = ""
 			for r: Variant in live().get("pilotage", {}).get("roles", {}).get("roles", []):
 				if r is Dictionary and str(r.get("id", "")) == "buteur" and r.get("enJeu") is Dictionary: apres = str(r.enJeu.id)
-			verifier(apres == choix, "le moteur garde le nouveau buteur (%s → %s)" % [choix, apres])
+			verifier(apres == choix or en_file("responsabilite:buteur"), "le moteur garde le nouveau buteur, au prochain arrêt (%s → %s)" % [choix, apres])
 	# Mise en page : trois tailles, trois onglets ; captures en 1080p et 720p.
 	for t: Vector2i in [Vector2i(1920, 1080), Vector2i(1280, 720), Vector2i(2560, 1440)]:
 		await taille(t.x, t.y)
