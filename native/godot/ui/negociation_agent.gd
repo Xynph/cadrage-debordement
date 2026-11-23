@@ -122,10 +122,17 @@ static func icone_etat(etat: String) -> String:
 
 ## Écart de prix d'un rôle par rapport à sa place dans la hiérarchie (« +5 % », « −4 % », "" sans écart).
 static func ecart_role(d: Dictionary, quote: Dictionary, role: String) -> String:
-	var info: Dictionary = roles_offre(quote).get(role, {})
-	var base := float(d.base)
+	var roles := roles_offre(quote)
+	var info: Dictionary = roles.get(role, {})
+	# Écart compté depuis la demande du rôle attendu (sa place dans la hiérarchie), comme le moteur.
+	var repere: Variant = roles.get(str(d.attendu), {}).get("salary")
+	var base := float(repere) if repere is int or repere is float else float(d.base)
 	if base <= 0 or not (info.get("salary") is int or info.get("salary") is float): return ""
-	var pct := roundi((float(info.salary) - base) / base * 100.0)
+	# Montants comparés tels qu'affichés (arrondis à la centaine) : pas de « +2 % » entre deux demandes affichées égales.
+	var affiche := roundf(float(info.salary) / 100.0) * 100.0
+	base = roundf(base / 100.0) * 100.0
+	if base <= 0: return ""
+	var pct := roundi((affiche - base) / base * 100.0)
 	return "" if pct == 0 else ("+%d %%" % pct if pct > 0 else "−%d %%" % absi(pct))
 
 ## Bulles de l'agent (réponses courtes, chiffrées) : [texte, couleur, agent?].
@@ -570,10 +577,10 @@ static func disponibilite_possible(app: Control, joueur: Dictionary) -> bool:
 	if sale.get("pending") is Dictionary: return false
 	return bool(sale.get("listed", false)) or str(sale.get("blocked", "")).is_empty() or str(pret(app, joueur).motif).is_empty()
 
-## Libellé du bouton de la fiche : « Disponibilité · <état> ».
+## Libellé du bouton de la fiche : « Disponibilité », ou « Liste des transferts » quand il y est.
 static func libelle_disponibilite(joueur: Dictionary) -> String:
 	var sale: Dictionary = joueur.get("sale", {}) if joueur.get("sale") is Dictionary else {}
-	return "Disponibilité · " + ("Liste des transferts" if bool(sale.get("listed", false)) else "Pas disponible")
+	return "Liste des transferts" if bool(sale.get("listed", false)) else "Disponibilité"
 
 ## Fenêtre « Disponibilité » : phrase de l'agent, trois lignes ; `vue` "clubs" montre les clubs d'accueil du prêt.
 static func ouvrir_disponibilite(page: Control, app: Control, joueur: Dictionary, vue: String = "") -> void:
@@ -600,7 +607,7 @@ static func ouvrir_disponibilite(page: Control, app: Control, joueur: Dictionary
 		return
 	var lignes := [
 		["garde", "Pas disponible", "lock", Charte.IVOIRE, not liste, ""],
-		["liste", "Liste des transferts", "money", Pieces.ORANGE, liste, "" if liste else bloque],
+		["liste", "Liste des transferts", "money", Pieces.ORANGE, liste, "" if liste or bloque.is_empty() else "Bloqué"],
 		["pret", "Prêt", "bus", Offre.COULEUR_PRIME, false, str(prets.motif)],
 	]
 	var y := 196.0

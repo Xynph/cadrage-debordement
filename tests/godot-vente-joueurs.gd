@@ -150,7 +150,7 @@ func executer() -> void:
 	verifier(panneau != null and panneau.is_visible_in_tree(), "carte Marché des transferts sur la fiche")
 	if panneau != null:
 		verifier(texte(panneau, "PlayerSaleStatus").begins_with("Offre reçue"), "état de vente : " + texte(panneau, "PlayerSaleStatus"))
-		verifier(texte(panneau, "PlayerSaleToggle") == "Disponibilité · Liste des transferts", "bouton : " + texte(panneau, "PlayerSaleToggle"))
+		verifier(texte(panneau, "PlayerSaleToggle") == "Liste des transferts", "bouton : " + texte(panneau, "PlayerSaleToggle"))
 		verifier(texte(panneau, "PlayerSaleOffers").begins_with("Offres reçues"), "accès aux offres depuis la fiche")
 		sans_chevauchement(panneau, ["PlayerSaleStatus", "PlayerSaleReason", "PlayerSaleToggle", "PlayerSaleOffers"], "fiche")
 		textes_lisibles(panneau, "fiche · marché")
@@ -213,7 +213,7 @@ func executer() -> void:
 		if etat != null:
 			verifier(texte(etat, "PlayerSaleStatus").begins_with("Offre reçue"), "Effectif → fiche : " + texte(etat, "PlayerSaleStatus"))
 			var bascule := noeud(etat, "PlayerSaleToggle") as Button
-			verifier(bascule != null and bascule.is_visible_in_tree() and not bascule.disabled and bascule.text == "Disponibilité · Liste des transferts", "Effectif → fiche : bouton Disponibilité")
+			verifier(bascule != null and bascule.is_visible_in_tree() and not bascule.disabled and bascule.text == "Liste des transferts", "Effectif → fiche : bouton Disponibilité")
 			var offres := noeud(etat, "PlayerSaleOffers") as Button
 			verifier(offres != null and offres.is_visible_in_tree() and not offres.disabled, "Effectif → fiche : accès aux offres")
 			textes_lisibles(etat, "Effectif → fiche · marché")
