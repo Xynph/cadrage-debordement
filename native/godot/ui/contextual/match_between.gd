@@ -1146,18 +1146,16 @@ func _commandes() -> void:
 ## Menu déroulant à la charte : carte `PANNEAU` opaque rayon 12, sans ombre ni cadre ; survol en case
 ## `PANNEAU_3` rayon 6 ; texte crème (grisé pour un choix indisponible).
 func _habiller_menu(menu: PopupMenu) -> void:
-	var fond := _case(Color(PANNEAU, 1.0), Charte.RAYON_CARTE)
-	fond.shadow_size = 0
-	fond.set_content_margin_all(px(8))
-	menu.add_theme_stylebox_override("panel", fond)
-	menu.add_theme_stylebox_override("hover", _case(SURVOL))
+	# Ardoise claire (teinte D) des petites fenêtres du direct (Léo, 23/11) ; survol en case plus claire.
+	menu.add_theme_stylebox_override("panel", MenuJoueur.style_ardoise(px(8), false))
+	menu.add_theme_stylebox_override("hover", _case(MenuJoueur.PAL.case))
 	var filet := StyleBoxLine.new()
-	filet.color = TRAIT
+	filet.color = MenuJoueur.PAL.filet
 	filet.thickness = 1
 	for cle in ["separator", "labeled_separator_left", "labeled_separator_right"]: menu.add_theme_stylebox_override(cle, filet)
 	for cle in ["font_color", "font_hover_color", "font_accelerator_color"]: menu.add_theme_color_override(cle, IVOIRE)
-	menu.add_theme_color_override("font_disabled_color", FAIBLE)
-	menu.add_theme_color_override("font_separator_color", DOUX)
+	menu.add_theme_color_override("font_disabled_color", MenuJoueur.PAL.encre3)
+	menu.add_theme_color_override("font_separator_color", MenuJoueur.PAL.encre2)
 	menu.add_theme_constant_override("v_separation", px(10))
 	menu.transparent_bg = true
 

@@ -548,7 +548,8 @@ func _rafraichir() -> void:
 func _fond() -> void:
 	var fond := ColorRect.new()
 	fond.name = "TeamBackdrop"
-	fond.color = C.BG
+	# Ardoise claire (teinte D), comme toutes les fenêtres du direct (Léo, 23/11).
+	fond.color = MenuJoueur.PAL.fond
 	fond.mouse_filter = Control.MOUSE_FILTER_STOP
 	S.full(fond)
 	add_child(fond)
@@ -1706,26 +1707,20 @@ func _plan_de_jeu(colonne: VBoxContainer) -> void:
 		bloc.add_child(choix)
 		rangee.add_child(bloc)
 
-## Menu déroulant d'un choix (exception permise) habillé à la charte : fond PANNEAU à plat, angles droits, sans ombre
-## ni cadre ; ligne survolée sur PANNEAU_3 marquée d'un filet gauche ivoire ; textes ivoire.
+## Menu déroulant d'un choix (exception permise) en ardoise claire (teinte D) des fenêtres du direct, sans ombre ;
+## ligne survolée en case plus claire marquée d'un filet gauche ivoire ; textes ivoire.
 func _habiller_menu(menu: PopupMenu) -> void:
-	var fond := StyleBoxFlat.new()
-	fond.bg_color = Charte.PANNEAU
-	fond.set_corner_radius_all(0)
-	fond.set_border_width_all(0)
-	fond.shadow_size = 0
-	fond.set_content_margin_all(px(6))
-	menu.add_theme_stylebox_override("panel", fond)
+	menu.add_theme_stylebox_override("panel", MenuJoueur.style_ardoise(px(6), false))
 	var survol := StyleBoxFlat.new()
-	survol.bg_color = Charte.PANNEAU_3
+	survol.bg_color = MenuJoueur.PAL.case
 	survol.set_corner_radius_all(0)
 	survol.shadow_size = 0
 	survol.border_color = Charte.IVOIRE
 	survol.border_width_left = maxi(1, px(3))
 	menu.add_theme_stylebox_override("hover", survol)
 	for cle: String in ["font_color", "font_hover_color", "font_accelerator_color"]: menu.add_theme_color_override(cle, Charte.IVOIRE)
-	menu.add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)
-	menu.add_theme_color_override("font_separator_color", Charte.IVOIRE_2)
+	menu.add_theme_color_override("font_disabled_color", MenuJoueur.PAL.encre3)
+	menu.add_theme_color_override("font_separator_color", MenuJoueur.PAL.encre2)
 	menu.add_theme_font_override("font", C.font(700))
 	menu.add_theme_font_size_override("font_size", fs(16))
 	menu.set_meta("habille", true)

@@ -11,6 +11,9 @@ extends Node
 const Charte = preload("res://ui/charte.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
+## Ardoise claire (teinte D) commune aux petites fenêtres du direct : fenêtre d'un joueur, consignes, cris à un joueur.
+const MenuJoueur = preload("res://ui/contextual/match_menu_joueur.gd")
+const PAL: Dictionary = MenuJoueur.PAL
 
 const NOM := "MatchFmBanc"
 
@@ -264,9 +267,8 @@ func _remplir_joueurs() -> void:
 		e.queue_free()
 	var panneau := PanelContainer.new()
 	panneau.name = "FmBancMenuPanneau"
-	var st := Charte.style_panneau(Charte.PANNEAU, 12, px(16))
-	st.border_color = Color(1, 1, 1, 0.22)
-	st.set_border_width_all(1)
+	# Même cadre que la fenêtre d'un joueur (match_menu_joueur.gd) : fond ardoise claire, liseré, ombre portée.
+	var st := MenuJoueur.style_ardoise(px(16))
 	panneau.add_theme_stylebox_override("panel", st)
 	panneau.mouse_filter = Control.MOUSE_FILTER_STOP
 	_menu.add_child(panneau)
@@ -275,7 +277,7 @@ func _remplir_joueurs() -> void:
 	panneau.add_child(col)
 	var tete := HBoxContainer.new()
 	col.add_child(tete)
-	tete.add_child(_texte("CRIS À UN JOUEUR", 26, Charte.IVOIRE, true))
+	tete.add_child(_texte("CRIS À UN JOUEUR", 26, PAL.encre, true))
 	tete.add_child(_vide())
 	for c: Array in CRIS_JOUEUR:
 		var entete := _icone(str(c[2]), c[3], 26)
@@ -288,7 +290,8 @@ func _remplir_joueurs() -> void:
 	fermer.text = "✕"
 	fermer.focus_mode = Control.FOCUS_ALL
 	fermer.add_theme_font_size_override("font_size", between.fpx(24))
-	fermer.add_theme_color_override("font_color", Charte.IVOIRE_2)
+	fermer.add_theme_color_override("font_color", PAL.encre2)
+	fermer.add_theme_color_override("font_hover_color", PAL.encre)
 	fermer.pressed.connect(fermer_joueurs)
 	tete.add_child(fermer)
 	_liste_joueurs(col)
@@ -345,11 +348,11 @@ func _liste_joueurs(col: VBoxContainer) -> void:
 		ligne.add_theme_constant_override("separation", px(10))
 		ligne.custom_minimum_size.y = px(44)
 		liste.add_child(ligne)
-		var num := _texte(str(n), 20, Charte.IVOIRE_2, true)
+		var num := _texte(str(n), 20, PAL.encre2, true)
 		num.custom_minimum_size.x = px(30)
 		num.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		ligne.add_child(num)
-		var nom := _texte(str(j.get("name", "")), 20, Charte.IVOIRE)
+		var nom := _texte(str(j.get("name", "")), 20, PAL.encre)
 		nom.custom_minimum_size.x = px(230)
 		nom.clip_text = true
 		nom.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -397,11 +400,11 @@ func _reaction(vu: Dictionary) -> Control:
 	h.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	if vu.is_empty(): return h
 	var sens := int(vu.get("sens", 0))
-	var couleur: Color = Charte.GAIN if sens > 0 else Charte.PERTE if sens < 0 else Charte.IVOIRE_3
+	var couleur: Color = Charte.GAIN if sens > 0 else Charte.PERTE if sens < 0 else PAL.encre3
 	var fleche := _texte("▲" if sens > 0 else "▼" if sens < 0 else "—", 20, couleur)
 	fleche.name = "FmCriReaction"
 	h.add_child(fleche)
-	var minute := _texte("%d′" % int(vu.get("minute", 0)), 15, Charte.IVOIRE_2 if bool(vu.get("enCours", false)) else Charte.IVOIRE_3)
+	var minute := _texte("%d′" % int(vu.get("minute", 0)), 15, PAL.encre if bool(vu.get("enCours", false)) else PAL.encre3)
 	minute.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	h.add_child(minute)
 	return h

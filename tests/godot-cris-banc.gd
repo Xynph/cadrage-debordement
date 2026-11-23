@@ -149,6 +149,8 @@ func run() -> void:
 		bravo.pressed.emit()
 		await wait_command()
 	await capture_tailles(between)
+	# Toutes les petites fenêtres de l'écran 2D en ardoise claire (teinte D), captures en 1920.
+	await fenetres(view, between)
 	# Fenêtre refermée (✕) ; permuter les ailes : attente du prochain arrêt (« ⧗ »), puis nos ailiers échangés.
 	var fermer := bouton(between, "FmBancMenuFermer")
 	if fermer != null: fermer.pressed.emit()
@@ -195,6 +197,62 @@ func capture_tailles(between: Control) -> void:
 		check(rond != null and bool(rond.get_meta("ouvert", false)), "%s : rond « À un joueur » allumé tant que la liste est ouverte" % str(t))
 		await capture("final-%d" % t.x)
 	await taille(Vector2i(1920, 1080))
+
+## Chaque petite fenêtre de l'écran 2D (et la fenêtre Équipe, le menu Plus) : ouverte, fond ardoise claire, capture.
+func fenetres(view: Control, between: Control) -> void:
+	var ardoise: Color = load("res://ui/contextual/match_menu_joueur.gd").PAL.fond
+	if bouton(between, "FmBancMenuFermer") != null: bouton(between, "FmBancMenuFermer").pressed.emit()
+	await settle(10)
+	var clic := InputEventMouseButton.new()
+	clic.button_index = MOUSE_BUTTON_LEFT
+	clic.pressed = true
+	var premier := func(racine: Node, motif: String, classe: String = "Control") -> Control:
+		for n: Node in racine.find_children(motif, classe, true, false):
+			if (n as Control).is_visible_in_tree(): return n
+		return null
+	var cas := [
+		["joueur", "MatchFenetreJoueur", func(): (premier.call(between, "MatchBetweenPlayerName_*", "Button") as Button).pressed.emit()],
+		["joueur-carte", "MatchMenuJoueur", func(): (premier.call(between, "MatchBetweenPlayer1", "Button") as Button).pressed.emit()],
+		["club", "MatchFenetreClub", func(): (premier.call(between.classement_lignes, "MatchBetweenLiveRow*", "PanelContainer") as Control).gui_input.emit(clic)],
+		["match", "MatchFenetreMatch", func(): (premier.call(between.multiplex_cartes, "MatchBetweenMultiplexMatch*", "PanelContainer") as Control).gui_input.emit(clic)],
+		["stat", "MatchFenetreStat", func(): (premier.call(between, "MatchBetweenMirrorBar_possession", "Button") as Button).pressed.emit()],
+		["fait", "MatchFenetreFait", func():
+			var f: Control = premier.call(between, "MatchBetweenEvent*", "PanelContainer")
+			if f == null: f = premier.call(between, "MatchBetweenHighlight*", "PanelContainer")
+			f.gui_input.emit(clic)],
+	]
+	for c: Array in cas:
+		c[2].call()
+		await wait_command()
+		await settle(14)
+		var en_ardoise := false
+		if view.fenetre_ouverte() and view.fenetre_hote.find_child(str(c[1]) + "*", true, false) != null:
+			for n: Node in view.fenetre_hote.find_children("*", "Panel", true, false):
+				var st: StyleBox = (n as Panel).get_theme_stylebox("panel")
+				if st is StyleBoxFlat and (st as StyleBoxFlat).bg_color.is_equal_approx(ardoise): en_ardoise = true
+		check(en_ardoise, "fenêtre %s ouverte, en ardoise claire" % str(c[0]))
+		await capture("final-fenetres-%s-1920" % str(c[0]))
+		load("res://ui/petite_fenetre.gd").fermer_derniere(self)
+		await settle(12)
+		check(not view.fenetre_ouverte(), "fenêtre %s refermée" % str(c[0]))
+	# Menu Plus (déroulant) et fenêtre Équipe.
+	var plus: MenuButton = between.plus
+	plus.show_popup()
+	await settle(12)
+	var st_plus: StyleBox = plus.get_popup().get_theme_stylebox("panel")
+	check(st_plus is StyleBoxFlat and (st_plus as StyleBoxFlat).bg_color.is_equal_approx(ardoise), "menu Plus en ardoise claire")
+	await capture("final-fenetres-plus-1920")
+	plus.get_popup().hide()
+	await settle(8)
+	view.ouvrir_equipe("composition")
+	await settle(30)
+	var fond_equipe := view.equipe.find_child("TeamBackdrop", true, false) as ColorRect if is_instance_valid(view.equipe) else null
+	check(fond_equipe != null and fond_equipe.color.is_equal_approx(ardoise), "fenêtre Équipe en ardoise claire")
+	await capture("final-fenetres-equipe-1920")
+	if is_instance_valid(view.equipe) and view.equipe.visible: view.equipe.fermer(false)
+	await settle(20)
+	if not live().get("paused", false): await command("pause", {"paused": true})
+	await until(func(): return surface() != null and vue_2d(surface()), 30000)
 
 func finir() -> void:
 	print("CRIS_BANC %d controles, %d echec" % [checks, failures.size()])
