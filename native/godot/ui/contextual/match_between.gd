@@ -232,6 +232,8 @@ var fiche_match: Control
 ## Dans le vrai direct (match_temps_forts.gd) : le nom d'un joueur ouvre sa petite fenêtre par-dessus le match
 ## (live_view.gd, plein écran obligatoire) au lieu de la sous-page ; vide hors du direct (tests de l'entracte seul).
 var fiche_vers: Callable = Callable()
+## Planche « menu sur un joueur en match » (CD_VARIANTE_VISUELLE=A|B) : la carte de Mon XV ouvre le menu du joueur.
+var menu_vers: Callable = Callable()
 var _fiche_id := ""
 ## Lignes du classement en direct : notre voisinage (± 3 places) et le haut du tableau.
 const CLASSEMENT_LIGNES := 9
@@ -2563,7 +2565,7 @@ func _tuile_joueur(poste: int, joueur: Dictionary, info: Dictionary) -> Button:
 	case.focus_mode = Control.FOCUS_ALL
 	case.set_meta("contextual_enabled", true)
 	var id_joueur := str(info.id)
-	case.pressed.connect(func(): ouvrir_fiche(id_joueur))
+	case.pressed.connect(func(): menu_vers.call(id_joueur, case) if menu_vers.is_valid() else ouvrir_fiche(id_joueur))
 	var condition := float(info.energie)
 	var alerte := str(info.alerte)
 	var grave := alerte in ["épuisé", "blessé"]

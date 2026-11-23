@@ -280,6 +280,8 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	between.couvert = func() -> bool: return (is_instance_valid(view.get("equipe")) and view.equipe.visible) or (view.has_method("fenetre_ouverte") and view.fenetre_ouverte())
 	# Nom d'un joueur de l'entracte : sa petite fenêtre par-dessus le match (jamais une page qui remplace la vue).
 	if view.has_method("ouvrir_joueur"): between.fiche_vers = view.ouvrir_joueur
+	var MenuJoueur = load("res://ui/contextual/match_menu_joueur.gd")
+	if not MenuJoueur.variante().is_empty(): between.menu_vers = func(id: String, ancre: Control): MenuJoueur.ouvrir(view, id, ancre)
 	# Repère de la domination, dernier fait, chiffre clé : le journal ou les statistiques ouverts à la bonne ligne.
 	# Plein écran obligatoire (Léo, 21/11/2026) : un fait, un chiffre ou un match du multiplex cliqué ouvre sa petite
 	# fenêtre par-dessus le match ; le journal et les statistiques s'ouvrent depuis elle (tiroirs du direct).
