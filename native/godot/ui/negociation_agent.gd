@@ -171,8 +171,6 @@ static func construire(body: Control, ctx: Dictionary) -> Control:
 	toile.name = "OffreVisuelle"
 	toile.custom_minimum_size = Vector2(LARGEUR, HAUTEUR) * C.density
 	toile.mouse_filter = Control.MOUSE_FILTER_PASS
-	# Signature en un clic (règle du 23/11) : la page Recrutement n'ajoute pas de confirmation en place.
-	toile.set_meta("signature_directe", true)
 	body.add_child(toile)
 	body.move_child(toile, 0)
 	var dessin := Control.new()
