@@ -4,8 +4,9 @@ extends RefCounted
 ## gris en dessous) ; à droite, les bandes du terrain d'où partent les essais marqués / encaissés (profondeur du
 ## départ de l'action) et les essais par tranche de 10 minutes. Données réelles de la fiche du club
 ## (club-sheet.cjs `rapport`) : essais de l'historique (minute, origine, profondeur) et feuilles de match.
-## Deux entrées : la sous-page « Rapport adverse » de la Préparation (`construire`) et l'onglet « Rapport » de la
-## fiche du club (`onglet_club`). Tout chiffre de zone / tranche / maillot ouvre une petite fenêtre visuelle
+## Deux entrées : la sous-page « Rapport adverse » de la Préparation (`construire`, avec en tête les points forts /
+## faibles de l'idée 29, adversaire_forces.gd) et l'onglet « Rapport » de la fiche du club (`onglet_club`).
+## Le petit terrain montre au choix (un clic sur la pastille) le XV habituel, celui du dernier match ou le XV probable. Tout chiffre de zone / tranche / maillot ouvre une petite fenêtre visuelle
 ## (Échap, ✕, clic à côté la ferment).
 ## `page` : un canevas de Préparation (preparation_canvas.gd), dont on réutilise les aides de dessin ;
 ## `hote` : le nœud plein écran qui reçoit les petites fenêtres.
@@ -51,16 +52,14 @@ static func construire(page, section: Control) -> float:
 	var x := 600.0
 	page._crest(section, adversaire, Rect2(x, 4, 44, 44))
 	Link.name_link(page.app, section, C.reach_rect(Rect2(x + 54, 6, 520, 42)), "club", str(club_id), G.club_name(adversaire).to_upper(), 24, Charte.IVOIRE, "RapportAdverseClub")
-	# Planche « Points forts / faibles » (revue FM27, idée 29) : en tête, sous CD_VARIANTE_VISUELLE seulement ; le rapport dessous.
+	# Points forts / faibles et hommes clés (revue FM27, idée 29) en tête ; le rapport dessous.
 	var forces: float = load("res://ui/immersive08/adversaire_forces.gd").construire(page, section, donnees)
-	if forces > 0.0:
-		var bas := Control.new()
-		bas.name = "RapportAdverseBas"
-		bas.mouse_filter = Control.MOUSE_FILTER_PASS
-		section.add_child(bas)
-		D.place(bas, Rect2(0, 66.0 + forces, 2248, 946))
-		return 66.0 + forces + _dessiner(etat, bas, 880.0, 0.0)
-	return _dessiner(etat, section, 880.0, 66.0)
+	var bas := Control.new()
+	bas.name = "RapportAdverseBas"
+	bas.mouse_filter = Control.MOUSE_FILTER_PASS
+	section.add_child(bas)
+	D.place(bas, Rect2(0, 66.0 + forces, 2248, 946))
+	return 66.0 + forces + _dessiner(etat, bas, 880.0, 0.0)
 
 ## Onglet « Rapport » de la fiche du club (club_sheet_canvas.gd) : `zone` = l'espace de l'onglet (2248 × `hauteur`),
 ## `hote` = la fiche, qui reçoit les petites fenêtres. Les aides de dessin sont celles de la Préparation, portées par
@@ -84,6 +83,23 @@ static func _etat(page, hote: Control, club_id: int, donnees: Dictionary) -> Dic
 	return {"page": page, "hote": hote, "club_id": club_id, "effectif": effectif, "rapport": rapport,
 		"essais": rapport.get("essais", []), "matchs": int(rapport.get("sheets", 0))}
 
+## XV montré sur le petit terrain : habituel (titularisations), dernier match, probable (composition automatique).
+const MODES_XV := [["habituel", "Habituel"], ["dernier", "Dernier match"], ["probable", "Probable"]]
+static var mode_xv := "habituel"
+
+## Joueur au maillot `index` selon le mode, et ses titularisations à ce maillot : [id, titularisations] ou [] (vide).
+static func _au_maillot(etat: Dictionary, index: int, mode: String) -> Array:
+	var maillots: Array = etat.rapport.get("maillots", [])
+	var choix: Array = maillots[index] if index < maillots.size() and maillots[index] is Array else []
+	if mode == "habituel":
+		return [str(choix[0].get("id", "")), int(choix[0].get("starts", 0))] if not choix.is_empty() else []
+	var liste: Variant = etat.rapport.get(mode)
+	if not liste is Array or index >= liste.size() or liste[index] == null: return []
+	var id := str(liste[index])
+	for c: Dictionary in choix:
+		if str(c.get("id", "")) == id: return [id, int(c.get("starts", 0))]
+	return [id, 0]
+
 ## En-tête (tuiles matchs / marqués / encaissés à droite), puis le terrain du XV à gauche, les essais à droite.
 ## `hauteur` : hauteur de la colonne des essais (sous les tuiles) ; `haut_xv` : haut du terrain du XV (66 sous le retour
 ## et le nom du club dans la Préparation, 0 dans la fiche du club où l'en-tête est déjà là).
@@ -97,8 +113,15 @@ static func _dessiner(etat: Dictionary, section: Control, hauteur: float, haut_x
 		R.tuile(section, Rect2(droite, 0, 200, 52), str(tuile[0]), str(tuile[1]), tuile[2], str(tuile[3]), 32)
 		droite -= 12.0
 	var haut_terrain := 66.0 + hauteur - haut_xv
-	var terrain: Panel = page._panneau(section, Rect2(0, haut_xv, LARGEUR_XV, haut_terrain), "XV habituel", "RapportAdverseXV", "%d feuilles" % int(etat.matchs))
-	_terrain_xv(etat, terrain, Rect2(24, 64, LARGEUR_XV - 48, haut_terrain - 126))
+	var terrain: Panel = page._panneau(section, Rect2(0, haut_xv, LARGEUR_XV, haut_terrain), "Leur XV", "RapportAdverseXV")
+	var pelouse := Control.new()
+	pelouse.name = "RapportAdverseXVPelouse"
+	pelouse.mouse_filter = Control.MOUSE_FILTER_PASS
+	terrain.add_child(pelouse)
+	D.place(pelouse, Rect2(0, 0, LARGEUR_XV, haut_terrain))
+	var zone_xv := Rect2(24, 64, LARGEUR_XV - 48, haut_terrain - 126)
+	_modes_xv(etat, terrain, pelouse, zone_xv)
+	_terrain_xv(etat, pelouse, zone_xv)
 	_legende(terrain, Vector2(24, haut_terrain - 28))
 	var x := LARGEUR_XV + 16.0
 	var large := 2248.0 - x
@@ -112,6 +135,33 @@ static func _dessiner(etat: Dictionary, section: Control, hauteur: float, haut_x
 	_miroir(etat, temps, Rect2(24, 60, large - 48, haut_temps - 76))
 	return 66.0 + hauteur
 
+## Pastilles du mode du petit terrain (en-tête du panneau) : un clic change le XV montré, sans autre bouton.
+static func _modes_xv(etat: Dictionary, terrain: Panel, pelouse: Control, zone_xv: Rect2) -> void:
+	var ancien := terrain.get_node_or_null("RapportAdverseXVModes")
+	if ancien != null:
+		ancien.name = "RapportAdverseXVModesAncien"
+		ancien.queue_free()
+	var barre := Control.new()
+	barre.name = "RapportAdverseXVModes"
+	barre.mouse_filter = Control.MOUSE_FILTER_PASS
+	terrain.add_child(barre)
+	D.place(barre, Rect2(0, 0, LARGEUR_XV, 60))
+	var x := LARGEUR_XV - 20.0
+	for i in range(MODES_XV.size() - 1, -1, -1):
+		var mode: String = MODES_XV[i][0]
+		var texte: String = MODES_XV[i][1]
+		x -= R.largeur(texte, 17) + 26.0
+		var actif := mode == mode_xv
+		var pa := R.pastille(barre, x, 38, texte, R.BLEU if actif else Charte.IVOIRE_3, "", "RapportAdverseXVMode_" + mode, 17)
+		R.cliquable(pa, func():
+			mode_xv = mode
+			for enfant in pelouse.get_children():
+				pelouse.remove_child(enfant)
+				enfant.queue_free()
+			_modes_xv(etat, terrain, pelouse, zone_xv)
+			_terrain_xv(etat, pelouse, zone_xv), "RapportAdverseXVModeLien_" + mode, texte)
+		x -= 8.0
+
 ## Légende des fréquences : une pastille de couleur et son seuil, rien d'autre.
 static func _legende(panneau: Panel, origine: Vector2) -> void:
 	var x := origine.x
@@ -124,7 +174,7 @@ static func _legende(panneau: Panel, origine: Vector2) -> void:
 
 ## Les 15 maillots sur un terrain (attaque vers le haut) : numéro dans un rond coloré par la fréquence du titulaire,
 ## nom et titularisations / feuilles dessous. Clic = petite fenêtre des titulaires du maillot.
-static func _terrain_xv(etat: Dictionary, panneau: Panel, rectangle: Rect2) -> void:
+static func _terrain_xv(etat: Dictionary, panneau: Control, rectangle: Rect2) -> void:
 	var page = etat.page
 	var pelouse := D.rect(panneau, rectangle, Charte.PELOUSE, Charte.RAYON_CARTE)
 	pelouse.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -135,12 +185,11 @@ static func _terrain_xv(etat: Dictionary, panneau: Panel, rectangle: Rect2) -> v
 	for repere: float in [.06, .22, .5, .78, .94]:
 		var yy := rectangle.position.y + rectangle.size.y * repere
 		D.line(panneau, Vector2(rectangle.position.x, yy), Vector2(rectangle.position.x + rectangle.size.x, yy), Color(Charte.IVOIRE, .45 if repere in [.06, .5, .94] else .22), 2)
-	var maillots: Array = etat.rapport.get("maillots", [])
 	for numero: int in PLACES.keys():
 		var place: Vector2 = PLACES[numero]
 		var centre := rectangle.position + Vector2(rectangle.size.x * place.x, rectangle.size.y * place.y)
-		var choix: Array = maillots[numero - 1] if numero - 1 < maillots.size() else []
-		var titul := int(choix[0].get("starts", 0)) if not choix.is_empty() else 0
+		var choix: Array = _au_maillot(etat, numero - 1, mode_xv)
+		var titul := int(choix[1]) if not choix.is_empty() else 0
 		var part := float(titul) / maxf(1.0, float(etat.matchs))
 		var teinte := teinte_part(part) if not choix.is_empty() else Charte.IVOIRE_3
 		var demi := ROND / 2.0
@@ -150,7 +199,7 @@ static func _terrain_xv(etat: Dictionary, panneau: Panel, rectangle: Rect2) -> v
 		var num := D.text(panneau, centre.x, centre.y + 9, str(numero), 24, Charte.ENCRE, 800, ROND, HORIZONTAL_ALIGNMENT_CENTER)
 		num.add_theme_font_override("font", Charte.TITRE_FICHE)
 		num.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var joueur: Dictionary = etat.effectif.get(str(choix[0].get("id", "")), {}) if not choix.is_empty() else {}
+		var joueur: Dictionary = etat.effectif.get(str(choix[0]), {}) if not choix.is_empty() else {}
 		var nom := _nom_court(str(joueur.get("name", "—"))) if not joueur.is_empty() else "—"
 		var plaque := D.rect(panneau, Rect2(centre.x - PLAQUE.x / 2.0, centre.y + demi + 2, PLAQUE.x, PLAQUE.y), Color(Charte.PANNEAU, .9), Charte.RAYON_PETIT)
 		plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
