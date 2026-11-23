@@ -16,6 +16,8 @@ assert.deepEqual(value('apt.project(prop).primaryPositions'),value('apt.project(
 assert.deepEqual(value('apt.project(fixture(POS[1],1,excellent)).secondaryPositions'),[],'strong hooker qualities do not automatically create back-row mastery');
 assert.equal(value('apt.project(prop).positionRatings[1]'),value('roleNote(prop)'));
 assert.ok(value('apt.project(prop).positionRatings[10]')<30,'prop emergency fly-half strongly penalised');
+assert.deepEqual(value('apt.project(prop).positionFamiliarityLevels'),[4,0,0,1,1,1,1,1,0,0,0,0,0,0,0],'familiarity levels: Naturel at 1, unqualified front row blocked, Dépanne in the pack, Inadapté among the backs');
+assert.deepEqual(value('apt.project(prop).positionFamiliarity'),[20,0,0,7,7,7,7,7,2,2,2,2,2,2,2],'starting familiarity values');
 assert.equal(value('apt.project(centre).positionRatings[1]'),0,'qualities never qualify a centre for front row');
 assert.ok(value('apt.project(centre).secondaryPositions').some(n=>[11,14].includes(n)),'centre masters wing');
 assert.ok(value('apt.project(lock).secondaryPositions').includes(8),'lock masters back row');
@@ -25,7 +27,7 @@ h.run('for(let i=0;i<30;i++)apt.project(prop)');
 assert.equal(h.run('JSON.stringify(prop)'),before);assert.equal(h.seed(),seed);
 const main=value('apt.project(centre)');h.run('centre.condition=15;centre.injury=40');assert.deepEqual(value('apt.project(centre)'),main);
 h.run('delete prop.skills');const missing=h.run('JSON.stringify(prop)');h.run('apt.project(prop)');assert.equal(h.run('JSON.stringify(prop)'),missing,'missing skills read on private copy');
-console.log('Positional aptitude API: 12 checks passed');
+console.log('Positional aptitude API: 14 checks passed');
 // Aptitudes durables : l'état du moment en match (causerie, pilotageSkillMod) n'entre pas dans les postes calculés,
 // sinon le résultat dépend du moment du premier calcul et un match rejoué depuis une sauvegarde diverge.
 // Deuxième ligne limite (plaquage 48) : galvanisé (+4), il « maîtrisait » la troisième ligne.
@@ -37,9 +39,11 @@ h.run('apt.installHooks()');
 assert.equal(value('slotEligible(prop,9)'),true,'emergency prop at flyhalf is legal');
 assert.equal(value('slotEligible(centre,0)'),false,'centre never qualifies at loosehead');
 assert.equal(value('benchEligible(lock,4)'),true,'lock may cover back row');
-assert.ok(value('fitScore(prop,5)')<30,'contextual fitness uses severe flyhalf penalty');
+// Familiarité au poste (familiarite-poste.cjs, 23/11/2026) : pilier à l'ouverture = Inadapté, 60 % de sa note de rôle.
+assert.ok(Math.abs(value('apt.efficiency(prop,9)')-.60)<.02,'contextual fitness uses the Inadapté flyhalf efficiency (60 %)');
+assert.ok(value('fitScore(prop,5)')<value('fitScore(prop,0)')*.75,'emergency flyhalf prop clearly below his own position');
 h.run(`const members=[fixture(POS[0],0,excellent),fixture(POS[1],1,excellent),fixture(POS[2],0,excellent),fixture(POS[3],2,excellent),fixture(POS[5],3,excellent),fixture(POS[8],4,excellent),fixture(POS[9],5,excellent),fixture(POS[10],6,excellent),fixture(POS[11],7,excellent),fixture(POS[14],8,excellent)]; const fakeClub={players:members}; const fakeLive={pair:[0,0],sheets:[{on:[...Array(9).fill(null),members[0].id],cards:[]}]}; S={clubs:[fakeClub]};`);
-assert.ok(value("unit(fakeLive,0,'pass')")<30,'active flyhalf prop actually loses passing efficiency');
+assert.ok(value("unit(fakeLive,0,'pass')")<80*.62,'active flyhalf prop actually loses passing efficiency (Inadapté : 60 %)');
 assert.equal(value("unit(fakeLive,0,'pass',p=>p.fam===5)"),value("unit(fakeLive,0,'pass')"),'collective filter sees actual flyhalf role');
 console.log('Positional eligibility and live units: 6 checks passed');
 h.run(`const changed=fixture(POS[11],7,{...excellent});const first=apt.project(changed);changed.skills.speed=20;const slower=apt.project(changed);`);

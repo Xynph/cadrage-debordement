@@ -59,7 +59,7 @@ const Y_POSTES := Y_FILTRES + 122.0
 const DY_RANGEES := 118.0
 var _dy := 0.0
 var _bandeau_totaux: Control
-## Poste (1-15) dont la liste montre les étoiles, choisi d'un clic sur un maillot du terrain XV ; 0 = aucun.
+## Poste (1-15) dont la liste montre la note au poste et la familiarité, choisi d'un clic sur un maillot du terrain XV ; 0 = aucun.
 var _poste := 0
 
 static func build(owner_app: Control) -> Control:
@@ -80,6 +80,8 @@ func _build() -> void:
 	state.sort = app.roster_sort
 	if state.sort == "Note":
 		state.sort = "Niveau"; state.descending = true; app.roster_sort = "Niveau"
+	elif state.sort == "Étoiles":
+		state.sort = "Note au poste"; app.roster_sort = "Note au poste"
 	_entete_page()
 	_onglets()
 	if int(state.get("immersive_tab", 0)) == 2:
@@ -698,7 +700,7 @@ func _colonnes(vue: int, etroit: bool, surveillance: bool) -> Array:
 				for j in range(i + 1, colonnes.size()):
 					if colonnes[j].k == "cond": cond = j; break
 				var extra := 110.0 if cond > 0 else 0.0
-				colonnes[i] = (colonnes[i] as Dictionary).merged({"k": "etoiles", "t": "%s %d" % [Etoiles.nom_poste(_poste).to_upper(), _poste], "s": "Étoiles", "w": float(colonnes[i].w) + extra}, true)
+				colonnes[i] = (colonnes[i] as Dictionary).merged({"k": "etoiles", "t": "%s %d" % [Etoiles.nom_poste(_poste).to_upper(), _poste], "s": "Note au poste", "w": float(colonnes[i].w) + extra}, true)
 				if extra > 0.0:
 					for j in range(i + 1, cond + 1):
 						colonnes[j] = (colonnes[j] as Dictionary).merged({"x": float(colonnes[j].x) + extra}, true)
@@ -844,7 +846,7 @@ static func _compare_secondary(left: Array, right: Array) -> int:
 	return -1 if left.size() < right.size() else 1
 
 static func sort_value(player: Dictionary, key: String) -> Variant:
-	if key == "Étoiles":
+	if key == "Note au poste":
 		# Note au poste choisi, puis familiarité, puis niveau ; inconnues en dernier.
 		var e := float(player.get("notePoste", -1.0))
 		if e < 0.0: return null
@@ -922,7 +924,7 @@ func _players() -> Array:
 
 
 func _toggle_sort(key: String) -> void:
-	state.descending = not state.descending if state.sort == key else key in ["Niveau","Potentiel","Condition","Fatigue","Minutes","Moyenne","Forme","Étoiles"]
+	state.descending = not state.descending if state.sort == key else key in ["Niveau","Potentiel","Condition","Fatigue","Minutes","Moyenne","Forme","Note au poste"]
 	state.sort = key
 	app.roster_sort = key
 	state.scroll = 0
@@ -1147,7 +1149,7 @@ func _row(player:Dictionary,index:int) -> void:
 				poste.tooltip_text = "Poste principal · %s · %s" % ["·".join(principaux),primary_caption(player)] if not principaux.is_empty() else primary_caption(player)
 				if not secondary_numbers(player).is_empty(): poste.tooltip_text += "\nAutres postes · " + secondary_tooltip(player,app.model).replace("\n"," ; ")
 			"etoiles":
-				# Note au poste (sur 100, barème des attributs) puis familiarité au poste (A pastille, B barres).
+				# Note au poste (sur 100, barème des attributs) puis familiarité au poste (barres 5 crans + mot).
 				var note := Familiarite.poser_note(row, x, base, float(player.get("notePoste", -1.0)), 22, 36, "RosterNotePoste")
 				note.tooltip_text = "Note au poste · %s" % Etoiles.nom_poste(_poste)
 				var fam := int(player.get("familiarite", -1))
@@ -1387,14 +1389,14 @@ func _choisir_groupe(id: String) -> void:
 	state.focus = "PostePastille_" + (id if not id.is_empty() else "tous")
 	app._render(false)
 
-## Poste des étoiles (clic sur un maillot du terrain XV ; 0 = ✕) : la liste se classe par étoiles à ce poste ; sans
+## Poste choisi (clic sur un maillot du terrain XV ; 0 = ✕) : la liste se classe par note au poste ; sans
 ## poste, retour au tri par poste.
 func choisir_etoiles(numero: int) -> void:
 	state.etoiles_poste = numero
 	state.scroll = 0
 	if numero > 0:
-		state.sort = "Étoiles"; state.descending = true; app.roster_sort = "Étoiles"
-	elif str(state.sort) == "Étoiles":
+		state.sort = "Note au poste"; state.descending = true; app.roster_sort = "Note au poste"
+	elif str(state.sort) == "Note au poste":
 		state.sort = "Poste"; state.descending = false; app.roster_sort = "Poste"
 	state.focus = ("PanneauJoueur_%d" % numero) if numero > 0 else ""
 	app._render(false)
@@ -1405,7 +1407,7 @@ func poste_etoiles() -> int:
 func _rangees_listes() -> void:
 	var joueurs: Array = app.model.get("squad", [])
 	Listes.pastilles_postes(self, Vector2(_x0 + Bandeau.MARGE, Y_POSTES), Listes.compter_groupes(joueurs), joueurs.size(), str(state.get("poste_groupe", "")), _choisir_groupe)
-	# Poste choisi sur le terrain XV : titre, nombre de joueurs à 4 étoiles et plus, ✕ (au bout de la rangée).
+	# Poste choisi sur le terrain XV : titre, nombre de Naturels et de Confirmés, ✕ (au bout de la rangée).
 	Etoiles.titre_poste(self, _x0 + _lt - Bandeau.MARGE, Y_POSTES, joueurs, _poste, choisir_etoiles)
 	_bandeau_totaux = Control.new()
 	_bandeau_totaux.name = "RosterTuilesTotaux"

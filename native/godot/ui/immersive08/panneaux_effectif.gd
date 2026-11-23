@@ -195,7 +195,7 @@ static func _marque_rail(fond: Control, app: Control, id: String, l: float) -> v
 # ---------------------------------------------------------------- contenus
 
 ## Mini-terrain : les quinze numéros de la feuille, pastille teintée par la condition ; clic sur un maillot = la liste
-## de l'Effectif se classe par étoiles à ce poste (re-clic : retour) ; clic sur la pelouse = Composition.
+## de l'Effectif se classe par note au poste (re-clic : retour) ; clic sur la pelouse = Composition.
 static func _terrain(parent: Control, page: Control, app: Control, zone: Rect2) -> void:
 	var cote := minf(zone.size.x, (zone.size.y - 30) / 0.86)
 	var terrain := Rect2(zone.position.x + (zone.size.x - cote) / 2.0, zone.position.y + 6, cote, minf(zone.size.y - 36, cote * 0.86))
@@ -211,7 +211,7 @@ static func _terrain(parent: Control, page: Control, app: Control, zone: Rect2) 
 		var c: Vector2 = terrain.position + Vector2(PLACES[n].x * terrain.size.x, PLACES[n].y * terrain.size.y)
 		var j: Dictionary = xv.get(n, {})
 		var rect := Rect2(c - Vector2(d, d) / 2.0, Vector2(d, d))
-		# Maillot choisi pour les étoiles de la liste : anneau crème autour du rond.
+		# Maillot choisi pour la liste (note au poste) : anneau crème autour du rond.
 		var choisi: bool = page.has_method("poste_etoiles") and int(page.poste_etoiles()) == n
 		if choisi:
 			var anneau := D.rect(parent, rect.grow(5), Color.TRANSPARENT, 99, Charte.IVOIRE)
@@ -226,7 +226,7 @@ static func _terrain(parent: Control, page: Control, app: Control, zone: Rect2) 
 		var rond := D.rect(parent, rect, _teinte_condition(j), 99)
 		rond.name = "PanneauRond_%d" % n
 		D.text(rond, d / 2.0, d / 2.0 + 7, str(n), 20, Charte.NUIT, 800, d, HORIZONTAL_ALIGNMENT_CENTER)
-		# Clic = la liste se classe par étoiles à ce poste (choix de Léo du 22/11/2026) ; la fiche du titulaire reste
+		# Clic = la liste se classe par note au poste (choix de Léo du 22/11/2026) ; la fiche du titulaire reste
 		# ouverte par son nom dans la liste. Re-clic sur le maillot choisi = retour au tri par poste.
 		var id := str(j.get("id", ""))
 		var aide := "%s · %d %% · %s" % [str(j.get("name", "")), int(j.get("condition", 0)), Etoiles.nom_poste(n)]

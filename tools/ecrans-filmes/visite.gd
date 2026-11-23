@@ -808,9 +808,9 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			# Poste choisi sur le terrain XV (même état qu'un clic sur le maillot, sans bascule d'une taille à l'autre).
 			if ecran.has("poste_xv"):
 				app.management_ui.roster.etoiles_poste = int(ecran.poste_xv)
-				app.management_ui.roster.sort = "Étoiles"
+				app.management_ui.roster.sort = "Note au poste"
 				app.management_ui.roster.descending = true
-				app.roster_sort = "Étoiles"
+				app.roster_sort = "Note au poste"
 			app._navigate("Effectif")
 			await stabiliser()
 			if ecran.has("ouvrir"):

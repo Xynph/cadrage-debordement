@@ -27,10 +27,19 @@ module.exports=function positionAptitudes(){
   if(cached&&cached.qv===v&&sameItems(cached.qa,a)&&sameItems(cached.qb,b))return cached.qualifierKey;
   return [a?.join('|'),b?.join('|'),v].join(';');
  }
+ // Familiarité au poste (familiarite-poste.cjs, installée par nativeSystems : CDFamiliarite). Sans elle (harnais
+ // isolé), les niveaux de départ déduits des postes s'appliquent, avec les mêmes efficacités.
+ const FAMILIARITY_MULT=[.60,.76,.88,.96,1],FAMILIARITY_START=[2,7,12,16,20];
+ const familiarity=()=>typeof CDFamiliarite!=='undefined'&&CDFamiliarite?CDFamiliarite:null;
+ const familiarityKey=p=>{const r=p?.familiarite;return r&&typeof r.d==='string'?r.k||r.d:'';};
+ function familiarityLevels(p,structure){const c=familiarity();return c?c.niveaux(p,structure):structure.slice();}
+ function familiarityValues(p,structure){const c=familiarity();return c?c.valeurs(p,structure):structure.map(s=>s<0?0:FAMILIARITY_START[s]);}
+ function familiarityMultipliers(){const c=familiarity();return c?c.RULES.MULT:FAMILIARITY_MULT;}
  function derive(p){
-  if(!p)return {primaryPosition:null,primaryPositions:[],secondaryPositions:[],positionRatings:{},qualifiedFrontRowPositions:[]};
+  if(!p)return {primaryPosition:null,primaryPositions:[],secondaryPositions:[],positionRatings:{},qualifiedFrontRowPositions:[],_familyNotes:[],_structure:Array(15).fill(-1),_levels:Array(15).fill(-1)};
   const cached=playerCache.get(p),qualifierKey=qualifiers(p,cached);
-  if(cached&&cached.id===p.id&&cached.name===p.name&&cached.rating===p.rating&&cached.skillBase===p.skillBase&&cached.pos===p.pos&&cached.fam===p.fam&&cached.qualifierKey===qualifierKey){
+  const famK=familiarityKey(p);
+  if(cached&&cached.id===p.id&&cached.name===p.name&&cached.rating===p.rating&&cached.skillBase===p.skillBase&&cached.pos===p.pos&&cached.fam===p.fam&&cached.qualifierKey===qualifierKey&&cached.famK===famK){
    // Boucle simple (et non keys.every avec fermeture) : derive est appelée des milliers de fois par feuille.
    const sk=p.skills,spec=p.dev?.specialization?.version===1?p.dev.specialization.bonuses:null;let same=true;for(let i=0;i<keys.length;i++){const k=keys[i];if(cached.skills[i]!==sk?.[k]||cached.bonuses[i]!==(spec?(spec[k]||0):0)){same=false;break;}}
    if(same)return cached.result;
@@ -47,8 +56,11 @@ module.exports=function positionAptitudes(){
   const qualities=keys.map(quality);
   const front=[0,1,2].filter(i=>baseSlot(p,i)).map(i=>i+1);
   const key=[p.id,p.pos,p.fam,p.rating,p.skillBase,...qualities,...front].join('|');
-  let result=cache.get(key);
-  if(!result){
+  // Base des postes (qualités et qualifications seulement) : postes principaux, notes de rôle par famille et structure
+  // de départ de la familiarité ; mise en cache par qualités. Les notes au poste dépendent en plus des niveaux de
+  // familiarité du joueur (familiarite-poste.cjs), d'où un second cache par niveaux.
+  let base=cache.get(key);
+  if(!base){
    const found=POS.indexOf(p.pos),primary=found>=0?found+1:FAMILIES.indexOf(p.fam)+1;
    // A main role can cover two shirts. These are not secondary roles;
    // prop sides still come exclusively from existing front-row qualifications.
@@ -58,30 +70,45 @@ module.exports=function positionAptitudes(){
    const candidates=(adjacent[p.fam]||[]).filter(f=>{
     const value=familyNotes[f];return value>=Math.max(55,main*.90)&&critical[f].every(k=>quality(k)>=Math.max(50,main*.72));
    }).sort((a,b)=>familyNotes[b]-familyNotes[a]||(adjacent[p.fam].indexOf(a)-adjacent[p.fam].indexOf(b)));
-   const mastered=candidates[0],ratings={},secondary=[];
+   const mastered=candidates[0];
+   // Structure de départ (niveaux de familiarité 0 Inadapté … 4 Naturel ; -1 : 1re ligne non qualifiée, bloquée) :
+   // Naturel au poste principal, Confirmé dans sa famille, dans la famille voisine maîtrisée ou en 1re ligne qualifiée,
+   // Correct en famille voisine, Dépanne dans sa ligne (avants ou trois-quarts), Inadapté dans l'autre ligne.
+   const structure=[];
    for(let i=0;i<15;i++){
-    const f=FAMILIES[i],natural=f===p.fam;
-    let n;
-    if(i<3)n=front.includes(i+1)?Math.min(main,familyNotes[f]):0;
-    else if(natural)n=main;
-    else if(f===mastered)n=Math.max(1,Math.min(main-3,raw[i]-4));
-    else {
-     const close=(adjacent[p.fam]||[]).includes(f),sameUnit=(p.fam<=3)===(f<=3);
-     n=Math.max(5,Math.min(main-8,Math.round(raw[i]*(close?.64:sameUnit?.49:.32))));
-    }
-    ratings[i+1]=n;
-    if(!primaryPositions.includes(i+1)&&(i<3?front.includes(i+1):natural||f===mastered))secondary.push(i+1);
+    const f=FAMILIES[i],n=i+1;
+    if(i<3)structure.push(front.includes(n)?(primaryPositions.includes(n)?4:3):-1);
+    else if(primaryPositions.includes(n))structure.push(4);
+    else if(f===p.fam||f===mastered)structure.push(3);
+    else structure.push((adjacent[p.fam]||[]).includes(f)?2:(p.fam<=3)===(f<=3)?1:0);
+   }
+   base={primary,primaryPositions,main,familyNotes,raw,front,structure,rated:new Map()};
+   if(cache.size>=32768)cache.delete(cache.keys().next().value);cache.set(key,base);
+  }
+  // Niveaux effectifs (familiarité enregistrée) puis notes au poste : note de rôle du poste, plafonnée à sa note au
+  // poste principal (des qualités atypiques ne font pas d'un pilier un arrière de premier plan), × efficacité du niveau
+  // (100 / 96 / 88 / 76 / 60 %) ; 0 en 1re ligne non qualifiée.
+  const levels=familiarityLevels(p,base.structure),levelKey=levels.join(',');
+  let result=base.rated.get(levelKey);
+  if(!result){
+   const mult=familiarityMultipliers(),ratings={},secondary=[];
+   for(let i=0;i<15;i++){
+    const l=levels[i];
+    ratings[i+1]=l<0?0:l===4&&FAMILIES[i]===p.fam?base.main:Math.max(1,Math.round(Math.min(base.raw[i],base.main)*mult[l]));
+    if(!base.primaryPositions.includes(i+1)&&l>=3)secondary.push(i+1);
    }
    secondary.sort((a,b)=>ratings[b]-ratings[a]||a-b);
-   result={primaryPosition:primary,primaryPositions,secondaryPositions:secondary,positionRatings:ratings,qualifiedFrontRowPositions:front,_familyNotes:familyNotes};
-   if(cache.size>=32768)cache.delete(cache.keys().next().value);cache.set(key,result);
+   result={primaryPosition:base.primary,primaryPositions:base.primaryPositions,secondaryPositions:secondary,positionRatings:ratings,qualifiedFrontRowPositions:base.front,_familyNotes:base.familyNotes,_structure:base.structure,_levels:levels};
+   if(base.rated.size>=64)base.rated.delete(base.rated.keys().next().value);base.rated.set(levelKey,result);
   }
-  playerCache.set(p,{id:p.id,name:p.name,rating:p.rating,skillBase:p.skillBase,pos:p.pos,fam:p.fam,qualifierKey,...qualifierSource,skills:keys.map(k=>p.skills?.[k]),bonuses:keys.map(k=>focusedBonus(p,k)),result});
+  playerCache.set(p,{id:p.id,name:p.name,rating:p.rating,skillBase:p.skillBase,pos:p.pos,fam:p.fam,qualifierKey,famK,...qualifierSource,skills:keys.map(k=>p.skills?.[k]),bonuses:keys.map(k=>focusedBonus(p,k)),result});
   return result;
  }
  function project(p){
-  const {_familyNotes,...result}=derive(p);
-  return {...result,primaryPositions:result.primaryPositions.slice(),secondaryPositions:result.secondaryPositions.slice(),positionRatings:{...result.positionRatings},qualifiedFrontRowPositions:result.qualifiedFrontRowPositions.slice()};
+  const {_familyNotes,_structure,_levels,...result}=derive(p);
+  // Familiarité au poste envoyée à l'écran (15 maillots) : valeur 0-20 et niveau 0 Inadapté … 4 Naturel.
+  return {...result,primaryPositions:result.primaryPositions.slice(),secondaryPositions:result.secondaryPositions.slice(),positionRatings:{...result.positionRatings},qualifiedFrontRowPositions:result.qualifiedFrontRowPositions.slice(),
+   positionFamiliarity:familiarityValues(p,_structure),positionFamiliarityLevels:_levels.map(l=>Math.max(0,l))};
  }
 
  function rating(p,slot){return derive(p).positionRatings[positionNumber(slot)]??0;}
@@ -457,5 +484,7 @@ module.exports=function positionAptitudes(){
   const changes=CDJiff.advise(S,team.id,slots,{pool:availablePool(team),rating,eligible,missing:Math.min(missing,4)});
   return {kind:st.kind,label:st.label,target:st.target,need:st.need,current,sheet,doublon:twice,average:st.average,sheets:st.sheets,remaining:st.remaining,outOfReach:st.outOfReach,missing,changes};
  }
- return Object.freeze({project,positionNumber,rating,efficiency,contextualSkill,installHooks,fatigueAdvice,quotaAdvice});
+ // Structure de départ de la familiarité (15 niveaux, -1 : 1re ligne non qualifiée), lue par familiarite-poste.cjs.
+ function structure(p){return derive(p)._structure.slice();}
+ return Object.freeze({project,structure,positionNumber,rating,efficiency,contextualSkill,installHooks,fatigueAdvice,quotaAdvice});
 };
