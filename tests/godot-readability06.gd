@@ -440,10 +440,15 @@ func immersive_profile(player: Dictionary, resolution: Vector2i) -> void:
 	var renewal := named("OfferRenewal") as Button
 	check(inside(renewal, app.body_scroll) and renewal.disabled == not bool(player.renewal.available), "Offre de prolongation visible et disponibilité exacte")
 	await keyboard(named("FullPlayerTab4"), "développement du joueur")
-	# Le suivi individuel est dans l'onglet (plus de fenêtre « Progression ») : niveau, potentiel et bilan de la saison.
-	var development := labels(named("PlayerDevelopmentCard"))
-	check(inside(named("PlayerDevelopmentCard"), app.body_scroll) and ("NIVEAU ACTUEL  " + G.rating_text(player,true)) in development and ("POTENTIEL  " + G.potential_text(player)) in development, "Suivi du développement lisible dans la fiche")
-	check(inside(named("PlayerDevelopmentSummary"), app.body_scroll), "Bilan de développement visible")
+	# Joueur de l'effectif : progression par qualité (courbe 12 mois du relevé mensuel, 36 qualités à cocher).
+	var development := labels(named("ProgressionCourbeCarte"))
+	check(inside(named("ProgressionCourbeCarte"), app.body_scroll) and G.n(player.rating) in development and G.potential_text(player) in development, "Niveau et potentiel lisibles dans Développement")
+	check(inside(named("ProgressionCourbe"), app.body_scroll), "Courbe des 12 mois visible")
+	var coches: Array = named("ProgressionGrille").find_children("ProgressionCoche_*", "Button", true, false) if named("ProgressionGrille") != null else []
+	check(coches.size() == 36, "Les 36 qualités à cocher")
+	for attribute: String in player.attributesV2:
+		var note := named("ProgressionNote_" + attribute) as Label
+		check(note != null and note.text == G.n(roundi(float(player.attributesV2[attribute]))), "Note de la qualité issue du moteur " + attribute)
 	await keyboard(named("FullPlayerTab5"), "repères du joueur")
 	var sources := labels(named("ImmersivePlayerFull"))
 	var position: Dictionary = player.rosterProfile.position
