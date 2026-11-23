@@ -502,6 +502,16 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 					for courrier: Dictionary in load("res://ui/club_mail.gd").mails(app.model):
 						if str(courrier.get("categorie", "")) == categorie_voulue and load("res://ui/club_mail.gd").awaiting(app.model, courrier) and (courrier.get("reponses", []) as Array).size() >= 2: attend = str(courrier.id)
 				if attend.is_empty(): return {"statut": "indisponible", "note": "aucun courrier à réponses dans la carrière filmée"}
+				# CD_FILM_COURRIER_GABI=1 : un autre courrier en attente est confié à Gabi (une seule fois pour toutes les tailles),
+				# pour montrer dans la liste une ligne répondue (« ✓ GABI A RÉPONDU »).
+				if OS.get_environment("CD_FILM_COURRIER_GABI") == "1" and not app.has_meta("film_courrier_gabi"):
+					app.set_meta("film_courrier_gabi", true)
+					var confie := ""
+					for courrier_g: Dictionary in load("res://ui/club_mail.gd").mails(app.model):
+						if str(courrier_g.id) != attend and load("res://ui/club_mail.gd").awaiting(app.model, courrier_g) and courrier_g.get("adjoint") is String: confie = str(courrier_g.id)
+					if not confie.is_empty():
+						app._command("club_mail_reply", {"id": confie, "choice": "deleguer"})
+						await stabiliser()
 				app._reset_reception(attend)
 				# CD_FILM_COURRIER_LUS=1 : les courriers d'avant-hier et plus anciens sont lus (contraste lus / non lus).
 				var reception_film: Dictionary = app.management_ui.get("reception", {})

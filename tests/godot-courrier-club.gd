@@ -107,6 +107,15 @@ func reply_and_open() -> void:
 	if reply == null: return
 	check(not str(reply.tooltip_text).is_empty(), "Conséquences annoncées en info-bulle")
 	check(button("InboxClubMailSend") == null, "Aucun bouton « Envoyer » : le clic suffit (règle de Léo du 23/11/2026)")
+	# Tuiles « remplies » (retouche de Léo du 23/11) : libellé à la taille du corps du message, effets et icône grands.
+	var tile_label := reply.find_child("InboxReplyLabel", true, false) as Label
+	check(tile_label != null and tile_label.get_theme_font_size("font_size") >= maxi(12, roundi(24 * C.density)), "Libellé de tuile à la taille du corps (%s px)" % (str(tile_label.get_theme_font_size("font_size")) if tile_label != null else "?"))
+	for effect: Node in reply.find_children("InboxReplyEffect*", "Label", true, false): check((effect as Label).get_theme_font_size("font_size") >= maxi(12, roundi(20 * C.density)), "Effet de tuile lisible : " + (effect as Label).text)
+	var tile_icon := reply.find_child("InboxReplyIcon", true, false) as Control
+	check(tile_icon != null and tile_icon.size.y >= 70.0 * C.density, "Icône de tuile grande")
+	var todo_before := int(button("InboxActivity_todo").text.get_slice(" ", 2)) if button("InboxActivity_todo") != null else -1
+	var awaited: bool = Reception.Reading.status(Reception._messages(app).filter(func(m: Dictionary) -> bool: return str(m.id) == str(mail.id))[0], app.model).key == "todo"
+	if awaited: check(row.find_child("InboxRowRequired", true, false) != null and row.find_child("InboxTodoTag", true, false) != null, "Avant la réponse : liseré rouge et « RÉPONSE REQUISE » dans la liste")
 	reply.pressed.emit()
 	await process_frame
 	check(str(app.model.get("clubLife", {}).get("clubMail", {}).get("reponses", {}).get(str(mail.id), "")) == str(option.id), "Un clic envoie la réponse, affichée dès le clic")
@@ -117,6 +126,11 @@ func reply_and_open() -> void:
 		app._navigate("Réception", false)
 		await settle()
 	check(button("InboxClubMailReply_" + str(option.id)) == null, "Plus de réponse proposée une fois répondu")
+	# Répondu : la ligne redevient normale (ni rouge ni « RÉPONSE REQUISE »), marque sobre « ✓ RÉPONDU », compteur À faire à jour.
+	answered_row(mail, "✓ RÉPONDU")
+	var todo_after: Array = Reception._messages(app).filter(func(m: Dictionary) -> bool: return Reception.Reading.status(m, app.model).key == "todo").map(func(m: Dictionary) -> String: return str(m.id))
+	check(not todo_after.has(str(mail.id)), "Répondu : le courrier sort des « À faire »")
+	if awaited and button("InboxActivity_todo") != null: check(button("InboxActivity_todo").text == "À faire %d" % todo_after.size(), "Compteur « À faire » mis à jour après la réponse (avant %d, après %s)" % [todo_before, button("InboxActivity_todo").text])
 	var done: Node = app.root_content.find_child("InboxReplyDone", true, false)
 	check(done != null and done.find_child("InboxReplyDoneWho", true, false) != null and (done.find_child("InboxReplyDoneWho", true, false) as Label).text == "TA RÉPONSE", "Bande de la réponse donnée : « TA RÉPONSE »")
 	var open := button("InboxClubMailOpen")
@@ -166,6 +180,17 @@ func delegate_to_gabi() -> void:
 	var row: Node = app.root_content.find_child("InboxClubMail_" + str(mail.id).replace("-", "_"), true, false)
 	check(row != null and str(row.get_meta("message_text", "")).contains("Gabi a répondu : " + libelle), "La lettre dit ce que Gabi a répondu")
 	check(button("InboxClubMailDelegate") == null, "Plus de délégation une fois répondu")
+	answered_row(mail, "✓ GABI A RÉPONDU")
+
+## Ligne d'un courrier répondu : sans liseré rouge ni « RÉPONSE REQUISE », avec la marque sobre attendue.
+func answered_row(mail: Dictionary, mark: String) -> void:
+	var line: Node = app.root_content.find_child("InboxClubMail_" + str(mail.id).replace("-", "_"), true, false)
+	check(line != null, "Courrier répondu toujours dans la liste")
+	if line == null: return
+	check(line.find_child("InboxRowRequired", true, false) == null and line.find_child("InboxRowRequiredRule", true, false) == null and line.find_child("InboxTodoTag", true, false) == null, "Répondu : plus de rouge ni d'étiquette « RÉPONSE REQUISE »")
+	var tag: Node = line.find_child("InboxRowAnswered", true, false)
+	var texts: Array = [] if tag == null else tag.find_children("*", "Label", true, false).map(func(l: Label) -> String: return l.text)
+	check(texts.has(mark), "Marque sobre « %s » : %s" % [mark, str(texts)])
 
 ## Non-régression (18/11) : « Lésion des ischio-jambiers » coupé dans le tableau de l'infirmerie et le panneau « Concerné ».
 ## Aux deux résolutions, aucun libellé de blessure n'est coupé : retour à la ligne actif, ni clip ni ellipse, taille minimale ≤ taille allouée.

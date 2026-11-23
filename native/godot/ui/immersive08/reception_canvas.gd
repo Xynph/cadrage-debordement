@@ -737,8 +737,10 @@ static func _row(rows: Control, app: Control, state: Dictionary, message: Dictio
 	var reading := Reading.status(message, app.model)
 	var tagged: bool = reading.key == "todo" or reading.urgent
 	var requise := tagged and Messages.attend(app, message)
+	# Répondu (par toi ou par Gabi) : ligne normale, sans rouge, avec une marque sobre « ✓ RÉPONDU ».
+	var repondu := not tagged and Messages.repondu(app, message)
 	var width := LIST_WIDTH - 16
-	var height := 110.0 if tagged else 86.0
+	var height := 110.0 if tagged or repondu else 86.0
 	var row := C.button("", func():
 		state.selected = message.id
 		state.press_opened = message.id if message.has("press_invitation") else ""
@@ -800,6 +802,12 @@ static func _row(rows: Control, app: Control, state: Dictionary, message: Dictio
 			D.place(alerte, Rect2(8, 4, 16, 16))
 			tx = 30.0
 		D.text(tag, tx, 18, caption, 15, tone, 700, tag_width - tx - 6)
+	elif repondu:
+		var marque := "✓ GABI A RÉPONDU" if ClubMail.delegated(app.model, message.club_mail) else "✓ RÉPONDU"
+		var marque_w := C.font(700).get_string_size(marque, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(15))).x / C.density + 22
+		var fait := D.rect(row, Rect2(36, 80, marque_w, 24), Color(C.Charte.GRIS_VERT, .12), 6)
+		fait.name = "InboxRowAnswered"
+		D.text(fait, 10, 18, marque, 15, C.Charte.GRIS_VERT, 700, marque_w - 14)
 
 static func _height(state: Dictionary) -> float:
 	return clampf(float(state.get("page_height", PAGE.y)), MIN_HEIGHT, PAGE.y)

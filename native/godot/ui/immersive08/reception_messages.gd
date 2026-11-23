@@ -24,9 +24,17 @@ const GENRES := {
 ## Tuile « Déléguer » : Gabi, l'adjoint, en crème (couleur à part des familles de réponses).
 const GABI := Charte.CREME
 const ROUGE_BANDE := Color("d9634f")
-const TUILE_H := 96.0
+## Tuiles « remplies » (retouche de Léo du 23/11) : libellé à la taille du corps du message, effets lisibles, grande icône.
+const TUILE_H := 124.0
+const TAILLE_TITRE := 24
+const TAILLE_EFFET := 20
+const CARRE := 76.0
+const ICONE := 46
+## Début du texte dans la tuile (après le carré de l'icône) et marge droite.
+const TEXTE_X := 14.0 + CARRE + 16.0
+const MARGE_D := 14.0
 const GAP := 14.0
-const FAITE_H := 84.0
+const FAITE_H := 100.0
 
 static func couleur(service: String) -> Color:
 	return COULEURS.get(service, Charte.GRIS_VERT)
@@ -113,17 +121,17 @@ static func _effets(option: Dictionary) -> Array:
 static func _contenu(libelle: String, effets: Array, largeur: float) -> Array:
 	var R = load("res://ui/immersive08/reception_canvas.gd")
 	# Mêmes polices que les étiquettes : libellé en gras (C.font(700)), effets en texte courant (C.BODY) ; marge de 4.
-	var result: Array = [R.wrapped_lines(libelle, 19, largeur - 4.0, C.font(700))]
-	for effet: Array in effets: result.append(R.wrapped_lines("%s %s" % [effet[0], effet[1]], 16, largeur - 4.0, C.BODY))
+	var result: Array = [R.wrapped_lines(libelle, TAILLE_TITRE, largeur - 4.0, C.font(700))]
+	for effet: Array in effets: result.append(R.wrapped_lines("%s %s" % [effet[0], effet[1]], TAILLE_EFFET, largeur - 4.0, C.BODY))
 	return result
 
 ## Hauteur d'une ligne (unités de mise en page) : celle de la police réelle, qui ne descend jamais sous 12 px (petite
 ## fenêtre : le texte grossit par rapport au gabarit).
 static func _ligne_titre() -> float:
-	return C.font(700).get_height(maxi(12, C.px(19))) / C.density + 3.0
+	return C.font(700).get_height(maxi(12, C.px(TAILLE_TITRE))) / C.density + 3.0
 
 static func _ligne_effet() -> float:
-	return C.BODY.get_height(maxi(12, C.px(16))) / C.density + 2.0
+	return C.BODY.get_height(maxi(12, C.px(TAILLE_EFFET))) / C.density + 2.0
 
 static func _hauteur_contenu(lignes: Array) -> float:
 	var total := _ligne_titre() * int(lignes[0])
@@ -132,10 +140,10 @@ static func _hauteur_contenu(lignes: Array) -> float:
 
 ## Hauteur commune des tuiles : la plus haute, jamais sous TUILE_H.
 static func _hauteur_tuiles(message: Dictionary) -> float:
-	var w := _largeur_tuile(message) - 96.0
+	var w := _largeur_tuile(message) - TEXTE_X - MARGE_D
 	var h := TUILE_H
 	for option: Dictionary in message.club_mail.get("reponses", []):
-		h = maxf(h, _hauteur_contenu(_contenu(str(option.get("libelle", "")), _effets(option), w)) + 24.0)
+		h = maxf(h, _hauteur_contenu(_contenu(str(option.get("libelle", "")), _effets(option), w)) + 32.0)
 	return h
 
 ## Réponse requise : ⚠ + RÉPONSE REQUISE (Anton) + échéance, puis une tuile par réponse et la tuile « Déléguer ».
@@ -192,35 +200,35 @@ static func _tuile(zone: Panel, app: Control, rect: Rect2, nom: String, libelle:
 	zone.add_child(tuile)
 	D.place(tuile, rect)
 	var encre := teinte if actif else Color(Charte.GRIS_VERT, .5)
-	var carre := D.rect(tuile, Rect2(12, (rect.size.y - 60) / 2.0, 60, 60), encre, Charte.RAYON_PETIT)
+	var carre := D.rect(tuile, Rect2(14, (rect.size.y - CARRE) / 2.0, CARRE, CARRE), encre, Charte.RAYON_PETIT)
 	carre.name = "InboxReplyIcon"
 	carre.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if icone.is_empty():
-		D.text(carre, 30, 44, "✕", 34, Charte.ENCRE, 800, 60, HORIZONTAL_ALIGNMENT_CENTER).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		D.text(carre, CARRE / 2.0, CARRE * .72, "✕", ICONE, Charte.ENCRE, 800, CARRE, HORIZONTAL_ALIGNMENT_CENTER).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	else:
-		var picto := C.icon(icone, C.px(34), Charte.ENCRE)
+		var picto := C.icon(icone, C.px(ICONE), Charte.ENCRE)
 		carre.add_child(picto)
-		D.place(picto, Rect2(13, 13, 34, 34))
+		D.place(picto, Rect2((CARRE - ICONE) / 2.0, (CARRE - ICONE) / 2.0, ICONE, ICONE))
 	# Libellé et effets entiers (retour à la ligne, jamais d'ellipse), centrés dans la hauteur de la tuile.
-	var largeur := rect.size.x - 96.0
+	var largeur := rect.size.x - TEXTE_X - MARGE_D
 	var lignes := _contenu(libelle, effets, largeur)
 	var y := maxf(8.0, (rect.size.y - _hauteur_contenu(lignes)) / 2.0)
-	var titre := C.wrap(libelle, 19, Charte.CREME if actif else Charte.IVOIRE_3, true, 700)
+	var titre := C.wrap(libelle, TAILLE_TITRE, Charte.CREME if actif else Charte.IVOIRE_3, true, 700)
 	titre.name = "InboxReplyLabel"
 	titre.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 	titre.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	tuile.add_child(titre)
-	D.place(titre, Rect2(84, y, largeur, _ligne_titre() * int(lignes[0]) + 2))
+	D.place(titre, Rect2(TEXTE_X, y, largeur, _ligne_titre() * int(lignes[0]) + 2))
 	y += _ligne_titre() * int(lignes[0]) + 6.0
 	# Effets en chiffres colorés (▲ favorable, ▼ défavorable, = neutre), un par ligne.
 	for i in effets.size():
 		var effet: Array = effets[i]
-		var etiquette := C.wrap("%s %s" % [effet[0], effet[1]], 16, effet[2] if actif or effet[0] == "×" else C.FAINT, false, 600)
+		var etiquette := C.wrap("%s %s" % [effet[0], effet[1]], TAILLE_EFFET, effet[2] if actif or effet[0] == "×" else C.FAINT, false, 600)
 		etiquette.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 		etiquette.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		tuile.add_child(etiquette)
 		etiquette.name = "InboxReplyEffect" # après add_child : InboxReplyEffect, InboxReplyEffect2…
-		D.place(etiquette, Rect2(84, y, largeur, _ligne_effet() * int(lignes[i + 1]) + 2))
+		D.place(etiquette, Rect2(TEXTE_X, y, largeur, _ligne_effet() * int(lignes[i + 1]) + 2))
 		y += _ligne_effet() * int(lignes[i + 1]) + 2.0
 	return tuile
 
@@ -231,17 +239,17 @@ static func _faite(zone: Panel, app: Control, message: Dictionary, largeur: floa
 	var famille := genre(str(choix.get("genre", "neutre")))
 	var gabi := ClubMail.delegated(app.model, mail)
 	D.rect(zone, Rect2(0, 0, largeur, 4), famille[0], 0).name = "InboxReplyDoneRule"
-	var carre := D.rect(zone, Rect2(40, (h - 52) / 2.0, 52, 52), famille[0], Charte.RAYON_PETIT)
+	var carre := D.rect(zone, Rect2(40, (h - 64) / 2.0, 64, 64), famille[0], Charte.RAYON_PETIT)
 	carre.name = "InboxReplyIcon"
-	if str(famille[1]).is_empty(): D.text(carre, 26, 38, "✕", 30, Charte.ENCRE, 800, 52, HORIZONTAL_ALIGNMENT_CENTER)
+	if str(famille[1]).is_empty(): D.text(carre, 32, 47, "✕", 38, Charte.ENCRE, 800, 64, HORIZONTAL_ALIGNMENT_CENTER)
 	else:
-		var picto := C.icon(famille[1], C.px(30), Charte.ENCRE)
+		var picto := C.icon(famille[1], C.px(38), Charte.ENCRE)
 		carre.add_child(picto)
-		D.place(picto, Rect2(11, 11, 30, 30))
-	var qui := D.text(zone, 110, h / 2.0 - 8, "GABI A RÉPONDU" if gabi else "TA RÉPONSE", 15, GABI if gabi else C.MUTED, 700, 300)
+		D.place(picto, Rect2(13, 13, 38, 38))
+	var qui := D.text(zone, 124, h / 2.0 - 10, "GABI A RÉPONDU" if gabi else "TA RÉPONSE", 17, GABI if gabi else C.MUTED, 700, 320)
 	qui.name = "InboxReplyDoneWho"
 	if gabi:
-		var badge := C.icon("people", C.px(18), GABI)
+		var badge := C.icon("people", C.px(20), GABI)
 		zone.add_child(badge)
-		D.place(badge, Rect2(110 + C.font(700).get_string_size("GABI A RÉPONDU", HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x + 10, h / 2.0 - 24, 18, 18))
-	D.text(zone, 110, h / 2.0 + 22, str(choix.get("libelle", "")), 22, Charte.CREME, 700, largeur - 110 - 120).name = "InboxReplyDoneLabel"
+		D.place(badge, Rect2(124 + C.font(700).get_string_size("GABI A RÉPONDU", HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x + 10, h / 2.0 - 28, 20, 20))
+	D.text(zone, 124, h / 2.0 + 24, str(choix.get("libelle", "")), 24, Charte.CREME, 700, largeur - 124 - 120).name = "InboxReplyDoneLabel"
