@@ -482,10 +482,10 @@ static func _relation_agent(droite: Control, quote: Dictionary) -> void:
 	var cran: Array = Agent.RELATIONS[clampi(int(a.get("cran", 2)), 0, 4)]
 	var humeur := "rompu" if str((quote.get("negotiation", {}) if quote.get("negotiation") is Dictionary else {}).get("status", "")) == "withdrawn" else str(a.get("humeur", "calme"))
 	D.line(droite, Vector2(20, 664), Vector2(388, 664), Charte.FILET)
-	Pastilles.poser(droite, Pastilles.pastille(str(cran[0]), cran[1], "heart", "Relation avec l’agent", 16, "NegoRelationAgent"), 20, 680)
-	Pastilles.poser(droite, Agent.caractere(str(a.get("caractere", "")), "Nego", 16), 20, 724)
-	_titre(droite, 20, 790, "Humeur", Charte.IVOIRE_2, 16, 160)
-	Pastilles.poser(droite, Agent.humeur(humeur, "Nego", 16), 196, 766)
+	Pastilles.poser(droite, Pastilles.pastille(str(cran[0]), cran[1], "heart", "Relation avec l’agent", 28, "NegoRelationAgent"), 20, 674)
+	Pastilles.poser(droite, Agent.caractere(str(a.get("caractere", "")), "Nego", 28), 20, 724)
+	_titre(droite, 20, 806, "Humeur", Charte.IVOIRE_2, 16, 160)
+	Pastilles.poser(droite, Agent.humeur(humeur, "Nego", 28), 150, 780)
 
 ## Ligne du contrat (grammaire de l'Effectif) : liseré et fond verts quand l'agent accepte.
 static func _ligne(parent: Node, zone: Rect2, libelle: String, etat: String, id: String) -> Panel:

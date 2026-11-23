@@ -70,7 +70,7 @@ func piste() -> Dictionary:
 	return {}
 
 func run() -> void:
-	root.size = Vector2i(1920, 1080)
+	root.size = Vector2i(2560, 1440) if OS.get_environment("CD_RAPPORT_RECRUTEUR_RESOLUTION") == "2560" else Vector2i(1920, 1080)
 	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
 	app = load("res://main.tscn").instantiate()
 	root.add_child(app)
@@ -212,6 +212,8 @@ func agent() -> void:
 	var observe := str(piste().get("knowledge", {}).get("stage", "")) in ["observed", "deep"]
 	check(observe or texte("AgentCaractere") == "?", "Caractère inconnu : « ? » (%s)" % texte("AgentCaractere"))
 	check(trouver("AgentHumeur") != null, "Pastille d'humeur")
+	await settle(10)
+	shot("final-pastilles-%d" % root.size.x)
 	var b := trouver("AgentTon_tout_prix") as Button
 	check(b != null and not b.disabled, "Ton cliquable")
 	if b == null: return
@@ -233,6 +235,7 @@ func agent() -> void:
 	await settle(10)
 	check(trouver("NegoPropo_1") == null and trouver("NegoHumeur") != null, "Offre : humeur de l'agent, plus de ronds numérotés")
 	check(texte("NegoRelationAgent") == "Bonne" and texte("NegoCaractere") == mot and trouver("NegoEffetRelationDemande") == null, "Offre : relation sans chiffre, caractère (%s · %s)" % [texte("NegoRelationAgent"), texte("NegoCaractere")])
+	shot("final-offre-agent-%d" % root.size.x)
 	check(texte("OffreEtapeTexte") == "Proposition 1", "Offre : étape sans total (%s)" % texte("OffreEtapeTexte"))
 
 ## Texte du premier Label sous un nœud (pastilles).

@@ -69,12 +69,13 @@ static func _echelle(f: Control, e: Dictionary, prefixe: String) -> void:
 		var a: Array = paliers[i]
 		var actif := i == apres
 		var ancien := i == avant and avant != apres
-		var fond := D.rect(echelle, Rect2(i * (case_l + ecart), 0, case_l, ECHELLE_H), Color(a[1], .9 if actif else (.32 if ancien else .12)), Charte.RAYON_PETIT)
+		var fond := D.rect(echelle, Rect2(i * (case_l + ecart), 0, case_l, ECHELLE_H), Color(a[1], 1.0) if actif else Color(a[1], .22 if ancien else .07), Charte.RAYON_PETIT, Color(a[1]).lightened(.55) if actif else Color.TRANSPARENT)
+		if actif: (fond.get_theme_stylebox("panel") as StyleBoxFlat).set_border_width_all(4)
 		fond.name = prefixe + "Palier%d" % i
 		fond.tooltip_text = str(a[0])
 		fond.mouse_filter = Control.MOUSE_FILTER_PASS
-		var teinte: Color = Charte.ENCRE if actif else (a[1] if ancien else Color(a[1], .7))
-		D.text(fond, case_l * .5, 33, str(a[0]), 19, teinte, 700, case_l - 8, HORIZONTAL_ALIGNMENT_CENTER)
+		var teinte: Color = Charte.ENCRE if actif else (a[1] if ancien else Color(a[1], .55))
+		D.text(fond, case_l * .5, 33, str(a[0]), 23 if actif else 19, teinte, 800 if actif else 500, case_l - 8, HORIZONTAL_ALIGNMENT_CENTER)
 	if avant != apres:
 		var a0 := avant * (case_l + ecart) + case_l * .5
 		var a1 := apres * (case_l + ecart) + case_l * .5

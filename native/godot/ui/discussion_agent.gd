@@ -283,18 +283,18 @@ static func _gauche(app: Control, page: Control, f: Control, zone: Rect2, d: Dic
 	_raisons(f, x0, y, demi, "Pour", "check", Pastilles.VERT, r.pour, "AgentPour")
 	_raisons(f, x0 + demi + 16, y, demi, "Contre", "warning", Pastilles.ROUGE, r.contre, "AgentContre")
 	# Relation avec l'agent : 5 crans (sans chiffre ni effet) ; puis demande du jour, caractère (« ? ») et humeur.
-	y = zone.end.y - 226
+	y = zone.end.y - 296
 	_section(f, x0, y, "Relation avec l’agent", "heart", RELATIONS[int(d.cran)][1])
 	_relation(f, Rect2(x0, y + 16, l, 64), d)
 	y += 104
-	var dx := x0
-	Kit.etiquette(f, dx, y, "Demande", 200)
-	Kit.etiquette(f, dx + 260, y, "Caractère", 200)
-	Kit.etiquette(f, dx + 260 + 330, y, "Humeur", 200)
+	Kit.etiquette(f, x0, y, "Demande", 200)
+	Kit.etiquette(f, x0 + 280, y, "Humeur", 200)
 	y += 12
-	dx += Pastilles.poser(f, Pastilles.tuile(G.salary(int(d.salaire)), "demande", Pastilles.BLEU, Charte.PANNEAU_3, 26, "AgentDemande", true, _offre(app, page, str(d.id))), dx, y)
-	Pastilles.poser(f, caractere(str(d.caractere), "Agent", 18), x0 + 260, y + 6)
-	Pastilles.poser(f, humeur(str(d.humeur), "Agent", 18), x0 + 260 + 330, y + 6)
+	Pastilles.poser(f, Pastilles.tuile(G.salary(int(d.salaire)), "demande", Pastilles.BLEU, Charte.PANNEAU_3, 26, "AgentDemande", true, _offre(app, page, str(d.id))), x0, y)
+	Pastilles.poser(f, humeur(str(d.humeur), "Agent", 34), x0 + 280, y + 2)
+	y += 78
+	Kit.etiquette(f, x0, y, "Caractère", 200)
+	Pastilles.poser(f, caractere(str(d.caractere), "Agent", 34), x0, y + 12)
 
 ## Caractère de l'agent : le mot une fois découvert, « ? » sinon (jamais ses effets).
 static func caractere(mot: String, prefixe: String, taille := 16) -> Control:
@@ -313,11 +313,12 @@ static func _relation(f: Control, zone: Rect2, d: Dictionary) -> void:
 	for i in 5:
 		var a: Array = RELATIONS[i]
 		var actif := i == n
-		var case_ := D.rect(f, Rect2(zone.position.x + i * (lc + ecart), zone.position.y, lc, 44), Color(a[1], .88 if actif else (.30 if i < n else .10)), Charte.RAYON_PETIT)
+		var case_ := D.rect(f, Rect2(zone.position.x + i * (lc + ecart), zone.position.y, lc, 48), Color(a[1], 1.0) if actif else Color(a[1], .07), Charte.RAYON_PETIT, Color(a[1]).lightened(.55) if actif else Color.TRANSPARENT)
+		if actif: (case_.get_theme_stylebox("panel") as StyleBoxFlat).set_border_width_all(4)
 		case_.name = "AgentRelationCran_%d" % i
 		case_.tooltip_text = str(a[0])
 		case_.mouse_filter = Control.MOUSE_FILTER_PASS
-		D.text(case_, lc * .5, 30, str(a[0]), 17, Charte.ENCRE if actif else Color(a[1], .8), 700, lc - 6, HORIZONTAL_ALIGNMENT_CENTER).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		D.text(case_, lc * .5, 33, str(a[0]), 22 if actif else 18, Charte.ENCRE if actif else Color(a[1], .55), 800 if actif else 500, lc - 6, HORIZONTAL_ALIGNMENT_CENTER).mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 ## Lignes Pour / Contre : icône teintée + mot + chiffre ; ligne cliquable (action du rapport).
 static func _raisons(parent: Control, x: float, y: float, l: float, titre: String, icone: String, couleur: Color, raisons: Array, id: String, max_lignes := 4, pas := 50.0) -> void:
