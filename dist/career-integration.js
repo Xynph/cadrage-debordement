@@ -80,6 +80,9 @@ function careerRecruitSigning(p,t){
  return true;
 }
 const CAREER_BOARD_EVERY=3,CAREER_BOARD_WEIGHTS=Object.freeze({results:.7,finances:.2,youth:.1});
+// Avec l'humeur des supporters (moteur natif, club-strategy.cjs ; choix de Léo du 23/11/2026) : 10 % pris aux résultats.
+const CAREER_BOARD_WEIGHTS_FANS=Object.freeze({results:.6,finances:.2,youth:.1,supporters:.1});
+function careerBoardFans(){try{const d=typeof nativeSystems!=='undefined'?nativeSystems.domain('clubStrategy'):null,h=d&&typeof d.humeur==='function'?d.humeur():null;return Number.isFinite(h)?clamp(Math.round(h),0,100):null;}catch(e){return null;}}
 function careerBoardWeekReview(){
  // Bilan tous les 3 matchs (22/11/2026, choix de Léo : la note du conseil colle aux résultats) : la note des résultats
  // suit le taux de victoires (nul = demi-victoire), le bilan tire la confiance aux 7/10 vers la note du club (±15 au plus).
@@ -89,14 +92,15 @@ function careerBoardWeekReview(){
  const result=clamp(Math.round(120*(team.won+team.drawn/2)/team.played-10),0,100);
  const finance=team.cash<0?5:team.cash<750000?50:team.cash<2500000?70:90;
  const youth=clamp(50+c.promotions*20,0,100);
- const target=CDBoardPlanning.boardConfidence({current:past,results:result,finances:finance,youth,weights:CAREER_BOARD_WEIGHTS,pull:.7});
+ const fans=careerBoardFans();
+ const target=CDBoardPlanning.boardConfidence({current:past,results:result,finances:finance,youth,...(fans===null?{weights:CAREER_BOARD_WEIGHTS}:{supporters:fans,weights:CAREER_BOARD_WEIGHTS_FANS}),pull:.7});
  const delta=clamp(target.change,-15,15);
  S.trust=clamp(past+delta,0,100);
  c.boardHistory.unshift({season:S.season,round:S.round,previous:past,after:S.trust,
-  results:result,finances:finance,youth,score:Math.round(target.score)});
+  results:result,finances:finance,youth,...(fans===null?{}:{supporters:fans}),score:Math.round(target.score)});
  c.boardHistory=c.boardHistory.slice(0,24);
  c.lastBoardRound=S.round;
- news('Bilan de direction : '+(delta>=0?'+':'')+delta+' confiance (résultats 70 %, finances 20 %, formation 10 %).');
+ news('Bilan de direction : '+(delta>=0?'+':'')+delta+' confiance ('+(fans===null?'résultats 70 %, finances 20 %, formation 10 %':'résultats 60 %, finances 20 %, formation 10 %, supporters 10 %')+').');
  return true;
 }
 function careerRecordChampion(id){

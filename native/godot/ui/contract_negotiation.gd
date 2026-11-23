@@ -6,7 +6,7 @@ const U = preload("res://ui/management_state.gd")
 const G = preload("res://ui/game_skin.gd")
 const Salary = preload("res://ui/salary_display.gd")
 const Budget = preload("res://ui/transfer_budget.gd")
-const Prolongation = preload("res://ui/prolongation_visuelle.gd")
+const Nego = preload("res://ui/negociation_agent.gd")
 const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 
 static func money(value: Variant) -> String:
@@ -61,8 +61,8 @@ static func open(app: Control, player: Dictionary, recruiting: bool, answer: Str
 	var dialog := ConfirmationDialog.new()
 	dialog.name = "ContractOffer"
 	var taille := Vector2i(1540,860)
-	# Prolongation (choix B de Léo, 21/11/2026) : fenêtre à la hauteur de la toile, sans bande vide sous la prime.
-	if not recruiting: taille = Vector2i(roundi(1500 * C.density) + 70, roundi((Prolongation.HAUTEUR + 100) * C.density))
+	# Prolongation : fenêtre à la hauteur de la toile de la négociation.
+	if not recruiting: taille = Vector2i(roundi(Nego.LARGEUR * C.density) + 70, roundi((Nego.HAUTEUR + 100) * C.density))
 	app._prepare_dialog(dialog,taille.x)
 	dialog.title = "Offre à " + str(player.name)
 	dialog.dialog_text = ""
@@ -185,29 +185,28 @@ static func open(app: Control, player: Dictionary, recruiting: bool, answer: Str
 		share.mouse_filter = Control.MOUSE_FILTER_STOP
 		share.tooltip_text = "La prime à la signature est prélevée sur ce budget ; le salaire n’y entre pas."
 		body.add_child(share)
-	# Offre au joueur (choix de Léo du 21/11/2026) : règle demande / proposition, frise des saisons, jeton de prime.
-	# Les blocs ci-dessus restent construits (mêmes nœuds, mêmes champs) mais masqués.
-	# Prolongation (choix B de Léo, 21/11/2026) : ancien contrat mis en regard du nouveau.
+	# Les blocs ci-dessus restent construits (mêmes nœuds, mêmes champs) mais masqués : la toile de la négociation les remplace.
 	for ancien: Variant in [identity, status, progress, columns, summary_panel, action, body.get_node_or_null("ContractTransferBudget")]:
 		if ancien != null: (ancien as Control).visible = false
 	var ctx := {"app":app, "player":player, "quote":quote, "salary":salary, "years":years, "first_season":first_season,
 		"negotiation":negotiation, "phase":phase, "reuse":reuse, "prolongation":not recruiting}
-	if recruiting: preload("res://ui/offre_visuelle.gd").construire(body, ctx)
-	else: Prolongation.construire(body, ctx)
-	dialog.get_ok_button().text = "AUTORISER LA SIGNATURE SI ACCORD"
+	# Négociation avec l'agent (idée FM 18, choix A de Léo du 23/11/2026) : budgets / promesses puis contrat / bulles de
+	# l'agent, au recrutement comme à la prolongation. Rôle promis obligatoire : la signature reste grisée sans lui.
+	var ok_bouton := dialog.get_ok_button()
+	ctx["maj_signature"] = func(manquant: bool): if is_instance_valid(ok_bouton): ok_bouton.disabled = blocked or manquant
+	Nego.construire(body, ctx)
+	dialog.get_ok_button().text = "SIGNER SI ACCORD"
 	dialog.get_ok_button().tooltip_text = "Envoie ces conditions. Si le joueur accepte, le contrat est signé et la prime est débitée ; sinon, seule la discussion est enregistrée. Annuler ne transmet aucune proposition."
-	dialog.get_ok_button().disabled = blocked
+	dialog.get_ok_button().disabled = blocked or Nego.role_manquant(ctx)
 	dialog.get_cancel_button().text = "FERMER" if blocked else "ANNULER"
 	dialog.confirmed.connect(func():
-		if blocked: return
-		var offre := {"playerId":player.id,"salary":Salary.input_weekly(salary),"years":int(years.value),"confirmed":true}
-		# Rôle promis (temps de jeu au contrat, idée 16) : choisi dans la prolongation, gardé par le moteur à la signature.
-		if ctx.has("role"): offre["role"] = str(ctx.role)
-		# Offre guidée : prime à la signature et clause libératoire choisies (recrutement).
-		if recruiting: offre.merge(preload("res://ui/offre_guidee.gd").charge(ctx, int(years.value)))
-		# Rôle promis (temps de jeu au contrat, idée 16) : choisi dans la prolongation, gardé par le moteur à la signature.
-		if ctx.has("role"): offre["role"] = str(ctx.role)
-		app._command("recruit" if recruiting else "extend_contract",offre)
+		if blocked or Nego.role_manquant(ctx): return
+		var envoi := {"playerId":player.id,"salary":Salary.input_weekly(salary),"years":int(years.value),"confirmed":true}
+		# Rôle promis (idées 16 et 18) : choisi dans l'offre, gardé par le moteur à la signature.
+		if ctx.has("role"): envoi["role"] = str(ctx.role)
+		# Offre guidée (idée 17) : prime à la signature et clause libératoire choisies dans les lignes du contrat (recrutement).
+		if recruiting: envoi.merge(preload("res://ui/offre_guidee.gd").charge(ctx, int(years.value)))
+		app._command("recruit" if recruiting else "extend_contract",envoi)
 		dialog.queue_free())
 	dialog.canceled.connect(dialog.queue_free)
 	# Échap ferme d'abord la petite fenêtre ouverte dans l'offre, puis seulement l'offre elle-même.

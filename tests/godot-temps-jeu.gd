@@ -1,11 +1,11 @@
 extends SceneTree
 ## Fiche joueur › Contrat : temps de jeu promis (revue FM27, idée 16, choix A de Léo du 23/11/2026), sur un modèle factice.
 ## Colonne Temps de jeu : rôle promis (mot + couleur commune ui/role_contrat.gd), exigence en chiffres, mesure (moyenne /
-## seuil, matchs joués pour un Espoir), humeur, 10 pastilles (tenu / manqué / absent), liste des matchs. Prolongation : ligne
-## « Rôle promis » avec la demande de chaque rôle ; un clic l'applique (pas de bouton Valider), la proposition suit la
-## demande ; rôle refusé barré, sans clic. Plus de variante CD_VARIANTE_VISUELLE.
+## seuil, matchs joués pour un Espoir), humeur, 10 pastilles (tenu / manqué / absent), liste des matchs. Prolongation
+## (négociation avec l'agent, idée 18) : cartes « Rôle promis » avec la demande de chaque rôle, rôle OBLIGATOIRE avant le
+## contrat ; un clic l'applique (pas de bouton Valider), la proposition suit la demande ; rôle refusé barré, sans clic. Plus de variante CD_VARIANTE_VISUELLE.
 const TempsJeu = preload("res://ui/immersive08/fiche_temps_jeu.gd")
-const Prolongation = preload("res://ui/prolongation_visuelle.gd")
+const Nego = preload("res://ui/negociation_agent.gd")
 const Offre = preload("res://ui/offre_visuelle.gd")
 const Role = preload("res://ui/role_contrat.gd")
 const Salary = preload("res://ui/salary_display.gd")
@@ -111,7 +111,7 @@ func run() -> void:
 	for l in temps.find_children("*", "Label", true, false): valeurs.append((l as Label).text)
 	check("Rotation · 20′ de moyenne" in valeurs, "Primes : « Rotation · 20′ de moyenne » (%s)" % [valeurs])
 	contrat.queue_free()
-	# Prolongation : ligne Rôle promis, demande de chaque rôle, clic = appliqué.
+	# Prolongation (négociation avec l'agent) : cartes Rôle promis, demande de chaque rôle, clic = appliqué.
 	var body := VBoxContainer.new()
 	app.add_child(body)
 	var salary := SpinBox.new()
@@ -123,22 +123,24 @@ func run() -> void:
 	years.max_value = 3
 	years.value = 2
 	var ctx := {"app": app, "player": player, "quote": player.renewal, "salary": salary, "years": years, "first_season": 1, "negotiation": {}, "phase": {"action": "Proposer", "blocked": false, "progress": ""}, "reuse": Button.new(), "prolongation": true}
-	Prolongation.construire(body, ctx)
+	Nego.construire(body, ctx)
 	await settle()
-	check(str(ctx.get("role", "")) == "rotation", "Rôle proposé : celui de la hiérarchie (rotation)")
+	check(str(ctx.get("role", "")).is_empty() and Nego.role_manquant(ctx), "Aucun rôle promis d'office : il est obligatoire")
+	check(not salary.visible and (body.find_child("NegoLigneSalaire", true, false) as Control).get_meta("etat", "") == "attente", "Contrat fermé tant qu'aucun rôle n'est promis")
+	check(body.find_child("NegoRoleAttendu", true, false) != null and body.find_child("NegoRoleCarte_rotation", true, false).find_child("NegoRoleAttendu", true, false) != null, "Rôle attendu marqué (rotation)")
 	check(Offre.valeurs(ctx).demande == 6200, "Demande : celle de la rotation")
-	check(body.find_child("ProlongationRoleLien_titulaire", true, false) is Button, "Titulaire cliquable")
-	check(body.find_child("ProlongationRoleLien_espoir", true, false) == null, "Espoir refusé : pas de clic")
-	var bulle := body.find_child("ProlongationRole_espoir", true, false) as Control
+	check(body.find_child("NegoRole_titulaire", true, false) is Button, "Titulaire cliquable")
+	check(body.find_child("NegoRole_espoir", true, false) == null, "Espoir refusé : pas de clic")
+	var bulle := body.find_child("NegoRoleCarte_espoir", true, false) as Control
 	check(bulle != null and bulle.tooltip_text.contains("21 ans"), "Espoir refusé : raison en infobulle")
-	(body.find_child("ProlongationRoleLien_titulaire", true, false) as Button).pressed.emit()
+	(body.find_child("NegoRole_titulaire", true, false) as Button).pressed.emit()
 	await settle()
-	check(str(ctx.role) == "titulaire", "Clic sur Titulaire : appliqué sans confirmation")
+	check(str(ctx.role) == "titulaire" and salary.visible and not Nego.role_manquant(ctx), "Clic sur Titulaire : appliqué sans confirmation, contrat ouvert")
 	check(Salary.input_weekly(salary) == 6500 and Offre.valeurs(ctx).demande == 6500, "Proposition et demande suivent le titulaire (6 500)")
 	# Proposition modifiée à la main : un autre rôle ne l'écrase plus.
 	Salary.set_input_weekly(salary, 7000)
 	await settle()
-	(body.find_child("ProlongationRoleLien_appoint", true, false) as Button).pressed.emit()
+	(body.find_child("NegoRole_appoint", true, false) as Button).pressed.emit()
 	await settle()
 	check(str(ctx.role) == "appoint" and Salary.input_weekly(salary) == 7000 and Offre.valeurs(ctx).demande == 6000, "Proposition gardée, demande de l'appoint")
 	body.queue_free()
