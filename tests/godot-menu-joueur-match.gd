@@ -200,7 +200,10 @@ func run() -> void:
 			var medaille: Node = t.find_child("MatchBetweenFaceNumber", true, false) if t != null else null
 			for l: Node in (medaille.find_children("*", "Label", true, false) if medaille != null else []): texte = (l as Label).text
 			return texte
-		await until(func(): return lire_numero.call() == str(numero), 30000)
+		# Runner lent : la carte du poste peut rester cachée le temps d'un temps fort 3D, on laisse le match avancer pour le passer.
+		Engine.time_scale = 4.0
+		await until(func(): return lire_numero.call() == str(numero), 90000)
+		Engine.time_scale = 1.0
 		chiffre = lire_numero.call()
 		check(chiffre == str(numero), "Mon XV : l'entrant porte le n° %d (vu : %s)" % [numero, chiffre])
 	finir()
