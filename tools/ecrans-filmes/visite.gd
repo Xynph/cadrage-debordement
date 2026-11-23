@@ -58,6 +58,7 @@ const EXTRAS := [
 	{"id": "v2-recrutement-offre-fenetre", "libelle": "Recrutement : petite fenêtre du salaire sur l'offre", "type": "recrutement_etape", "etape": "offre_fenetre"},
 	{"id": "v2-recrutement-observation", "libelle": "Recrutement : confirmation en place de l'observation", "type": "recrutement_etape", "etape": "observation"},
 	{"id": "fiche-club", "libelle": "Fiche d'un club adverse", "type": "club"},
+	{"id": "fiche-club-rapport", "libelle": "Fiche d'un club adverse · onglet Rapport", "type": "club", "onglet": 4},
 	{"id": "classements-rencontre", "libelle": "Classements · sous-page d'une rencontre", "type": "classements_page", "page": "rencontre"},
 	{"id": "classements-archives", "libelle": "Classements · sous-page des archives des saisons", "type": "classements_page", "page": "archives"},
 	{"id": "classements-phases", "libelle": "Classements · onglet Phases finales", "type": "classements_onglet", "onglet": "playoffs"},
@@ -72,6 +73,7 @@ const EXTRAS := [
 	{"id": "preparation-consignes", "libelle": "Préparation · onglet Consignes", "type": "preparation_onglet", "onglet": 1},
 	{"id": "preparation-conseils", "libelle": "Préparation · conseils détaillés (sous-page)", "type": "preparation_sous", "sous": "conseils"},
 	{"id": "preparation-reperes", "libelle": "Préparation · tous les repères (sous-page)", "type": "preparation_sous", "sous": "reperes"},
+	{"id": "preparation-adversaire", "libelle": "Préparation · rapport adverse (sous-page)", "type": "preparation_sous", "sous": "adversaire"},
 	{"id": "effectif-contrats", "libelle": "Effectif · onglet Contrats", "type": "effectif_onglet", "onglet": 2},
 	{"id": "contrats-prolongation", "libelle": "Effectif · Contrats · prolongation d'un joueur", "type": "effectif_onglet", "onglet": 2, "ouvrir_prefixe": "ContractRenew_"},
 	{"id": "contrats-prolongation-fenetre", "libelle": "Effectif · Contrats · petite fenêtre de la prolongation", "type": "effectif_onglet", "onglet": 2, "ouvrir_prefixe": "ContractRenew_", "puis": ["ProlongationApresLien"]},
@@ -781,6 +783,11 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			var ouvert: bool = app.navigation_controller.open_entity({"kind": "club", "id": id})
 			await stabiliser()
 			if not ouvert: return {"statut": "echec", "note": "fiche du club %s non ouverte" % id}
+			if ecran.has("onglet"):
+				var onglet := app.root_content.find_child("ClubSheetTab%d" % int(ecran.onglet), true, false) as BaseButton
+				if onglet == null: return {"statut": "echec", "note": "onglet %d de la fiche du club absent" % int(ecran.onglet)}
+				onglet.pressed.emit()
+				await stabiliser()
 		"preparation_bas":
 			app._navigate("Préparation")
 			await stabiliser()
