@@ -1,6 +1,6 @@
 'use strict';
 // Agents de joueurs nommés (retour de Léo du 23/11/2026) : chaque joueur de 18 ans et plus a un agent nommé, avec son
-// agence ; quelques grandes agences ont beaucoup de clients, la plupart des agents en ont de 1 à 5. Annuaire tiré par la
+// agence ; la plus grosse agence compte ≈ 100-150 joueurs, aucun agent n’en suit plus de 30, la plupart des agents en ont de 1 à 8. Annuaire tiré par la
 // graine du monde et gardé dans la sauvegarde ; relation et caractère sont ceux de l'agent (partagés par ses clients) ;
 // les anciennes sauvegardes (relation et caractère par joueur) sont converties.
 // native/engine/agents-joueurs.cjs, native/engine/ton-agent.cjs.
@@ -55,13 +55,22 @@ test('Carrière Monde : répartition, projection, relation partagée, migration 
       for(const p of [...S.clubs.flatMap(c=>c.players),...S.market]){n++;const a=agentJoueurId(p.id,p.age);if(p.age<18){jeunes++;if(a)sans=-1e9;continue;}if(!ids.has(a))sans++;}return {n,sans,jeunes};})()`);
     assert.ok(bilan.n > 5000, 'monde complet : ' + bilan.n);
     assert.equal(bilan.sans, 0, 'joueurs sans agent');
-    // Répartition : quelques grandes agences, beaucoup d'agents avec 1 à 5 clients.
+    // Répartition réaliste : plusieurs agents par agence, plus grosse agence 100-150 clients, aucun agent au-delà de 30,
+    // la plupart des agents à 1-8 clients, aucun agent sans client, quelques indépendants.
     const r = lire('agentsJoueursRepartition()');
-    const petits = r.tailles.filter(k => k >= 1 && k <= 5).length, agences = Object.values(r.parAgence).sort((a, b) => b - a);
+    const petits = r.tailles.filter(k => k >= 1 && k <= 8).length, agences = Object.values(r.parAgence).sort((a, b) => b - a);
     assert.ok(r.agents >= 600 && r.agents <= 1600, 'nombre d’agents : ' + r.agents);
-    assert.ok(petits >= r.agents * .6, `agents à 1-5 clients : ${petits}/${r.agents}`);
-    assert.ok(agences[0] >= 250 && agences[4] >= 150 && agences[5] < 120, 'cinq grandes agences : ' + agences.slice(0, 7));
-    assert.ok(Math.max(...r.tailles) >= 40, 'un agent de grande agence gère beaucoup de joueurs');
+    assert.ok(Math.min(...r.tailles) >= 1, 'aucun agent sans client');
+    assert.ok(petits >= r.agents * .7, `agents à 1-8 clients : ${petits}/${r.agents}`);
+    assert.ok(Math.max(...r.tailles) <= 30, 'agent le plus chargé : ' + Math.max(...r.tailles));
+    assert.ok(agences[0] >= 100 && agences[0] <= 150, 'plus grosse agence : ' + agences[0]);
+    assert.ok(agences.length < r.agents * .6, 'plusieurs agents par agence : ' + agences.length + ' agences / ' + r.agents);
+    const rangs = lire('S.agentsJoueurs.agents.map(a=>a.rang)');
+    assert.ok(rangs.filter(x => x === 'independant').length >= 20 && rangs.filter(x => x === 'independant').length < r.agents * .3, 'quelques indépendants');
+    // Nouveaux joueurs (jeunes promus, recrues) : affectés dans les mêmes bornes.
+    const apres = lire(`(()=>{const c={};for(const p of [...S.clubs.flatMap(c=>c.players),...S.market]){const a=agentJoueurId(p.id,p.age);if(a)c[a]=(c[a]||0)+1;}
+      for(let i=0;i<300;i++){const a=agentJoueurId('nouveau-'+i,20);c[a]=(c[a]||0)+1;}return Math.max(...Object.values(c));})()`);
+    assert.ok(apres <= 30, 'agent le plus chargé avec 300 nouveaux joueurs : ' + apres);
     // Projection : agents de l'effectif et du marché, nom, agence, clients (sans note), relation en cran.
     const vue = model.clubLife.agentsJoueurs;
     for (const p of [...model.squad, ...model.market].filter(p => p.age >= 18)) assert.ok(vue.agents[vue.joueurs[p.id]], 'agent projeté pour ' + p.id);
@@ -72,11 +81,11 @@ test('Carrière Monde : répartition, projection, relation partagée, migration 
     assert.equal(model.market[0].agent.nom, fiche.nom, 'même agent dans la discussion');
 
     // Relation partagée : deux pistes du même agent ; le ton donné pour l'une compte pour l'autre.
-    const parAgent = {};
-    for (const p of model.market.filter(p => p.available && p.agent?.libre)) (parAgent[p.agent.agent] ||= []).push(p);
-    const paire = Object.values(parAgent).find(l => l.length >= 2);
-    assert.ok(paire, 'deux pistes du même agent sur le marché');
-    const [x, y] = paire;
+    // Les agents ont peu de clients : le temps de ces deux pistes, l'annuaire n'a qu'un agent (celui de la première piste).
+    const libres = model.market.filter(p => p.available && p.agent?.libre);
+    assert.ok(libres.length >= 2, 'deux pistes libres sur le marché');
+    const x = libres[0], y = libres[1];
+    jeu.bridge.vm.run(`globalThis.__dir=S.agentsJoueurs;S.agentsJoueurs={...S.agentsJoueurs,agents:[S.agentsJoueurs.agents.find(a=>a.id===${JSON.stringify(x.agent.agent)})]};`);
     let res = jeu.brut('agent_ton', { playerId: x.id, ton: 'tout_prix' });
     assert.equal(res.ok, true, res.error);
     const vy = res.model.market.find(p => p.id === y.id).agent;
@@ -85,11 +94,14 @@ test('Carrière Monde : répartition, projection, relation partagée, migration 
     res = jeu.brut('agent_question', { playerId: x.id });
     assert.equal(res.ok, true, res.error);
     assert.notEqual(res.model.market.find(p => p.id === y.id).agent.caractere, '', 'caractère découvert pour tous ses clients');
+    jeu.bridge.vm.run('S.agentsJoueurs=globalThis.__dir;delete globalThis.__dir;');
 
     // Migration : ancienne sauvegarde (version 1, relation et caractère par joueur) → par agent.
-    const ag = x.agent.agent, carAvant = lire(`agentJoueur(${JSON.stringify(ag)}).car`);
+    // Deux clients du même agent (ligne de sa fiche) portent les anciennes relations.
+    const [p1, p2] = lire(`(()=>{const g={};for(const c of S.clubs)for(const p of c.players){const a=agentJoueurId(p.id,p.age);if(a)(g[a]||=[]).push(p.id);}return Object.values(g).find(l=>l.length>=2).slice(0,2);})()`);
+    const ag = lire(`agentJoueurId(${JSON.stringify(p1)})`), carAvant = lire(`agentJoueur(${JSON.stringify(ag)}).car`);
     const autre = ['gourmand', 'presse', 'fidele', 'poker', 'arrangeant'].find(c => c !== carAvant);
-    jeu.bridge.vm.run(`S.tonAgent={version:1,tons:{},relations:{${JSON.stringify(x.id)}:4,${JSON.stringify(y.id)}:3},agents:{${JSON.stringify(y.id)}:{car:${JSON.stringify(autre)},connu:true}}};delete S.agentsJoueurs;`);
+    jeu.bridge.vm.run(`S.tonAgent={version:1,tons:{},relations:{${JSON.stringify(p1)}:4,${JSON.stringify(p2)}:3},agents:{${JSON.stringify(p2)}:{car:${JSON.stringify(autre)},connu:true}}};delete S.agentsJoueurs;`);
     assert.equal(lire('(validateCareer(S),true)'), true, 'ancienne sauvegarde valide');
     res = jeu.brut('agent_question', { playerId: model.market.find(p => p.agent.agent !== ag).id });
     assert.equal(res.ok, true, res.error);
@@ -98,7 +110,27 @@ test('Carrière Monde : répartition, projection, relation partagée, migration 
     assert.equal(t.relations[ag], 7, 'relations des deux clients additionnées pour l’agent');
     assert.equal(t.connus[ag], true, 'découverte gardée');
     assert.equal(lire(`agentJoueur(${JSON.stringify(ag)}).car`), autre, 'caractère gardé repris par l’agent');
-    assert.equal(res.model.market.find(p => p.id === y.id).agent.cran, 4, 'Proche pour ses deux clients');
+    assert.equal(lire(`tonAgentRelationCran(${JSON.stringify(ag)})`), 4, 'Proche pour ses deux clients');
+    // Annuaire de la version précédente de la branche (35 / 20 / 45 %, ids différents) : refait, l'agent d'origine encore
+    // présent garde relation, caractère et découverte ; les autres sont oubliés.
+    const noms = lire('S.agentsJoueurs.agents.map(a=>a.nom)');
+    const nomX = lire(`agentJoueur(${JSON.stringify(ag)}).nom`), autre2 = ['gourmand', 'presse', 'fidele', 'poker', 'arrangeant'].find(c => c !== lire(`agentJoueur(${JSON.stringify(ag)}).car`));
+    jeu.bridge.vm.run(`(()=>{const e=S.agentsJoueurs;S.agentsJoueurs={version:1,graine:e.graine,agents:e.agents.map((a,i)=>({...a,id:'ag-'+(5000+i),rang:a.rang==='independant'?'petite':a.rang,car:a.nom===${JSON.stringify(nomX)}?${JSON.stringify(autre2)}:a.car}))};
+      const ancien=S.agentsJoueurs.agents.find(a=>a.nom===${JSON.stringify(nomX)}).id;
+      S.tonAgent={version:2,tons:{},relations:{[ancien]:5,'ag-9999':3},connus:{[ancien]:true}};})()`);
+    assert.equal(lire('(validateCareer(S),true)'), true, 'sauvegarde de la version précédente valide');
+    res = jeu.brut('agent_question', { playerId: model.market.find(p => p.agent.agent !== ag).id });
+    assert.equal(res.ok, true, res.error);
+    assert.equal(lire('S.agentsJoueurs.version'), 2, 'annuaire refait');
+    const nouveau = lire(`S.agentsJoueurs.agents.find(a=>a.nom===${JSON.stringify(nomX)})`);
+    assert.ok(nouveau && /^ag-[0-9]{1,4}$/.test(nouveau.id) && Number(nouveau.id.slice(3)) < 5000, 'agent d’origine retrouvé');
+    assert.equal(nouveau.car, autre2, 'caractère gardé');
+    const t2 = lire('S.tonAgent');
+    assert.equal(t2.relations[nouveau.id], 5, 'relation gardée');
+    assert.equal(t2.connus[nouveau.id], true, 'découverte gardée');
+    assert.equal(Object.keys(t2.relations).length, 1, 'agent disparu oublié');
+    const r2 = lire('agentsJoueursRepartition()');
+    assert.ok(Math.max(...r2.tailles) <= 30 && Math.min(...r2.tailles) >= 1, 'répartition recalée');
     // Sauvegarde : annuaire refait à l'identique (graine), carrière valide après un aller-retour JSON.
     assert.equal(lire('S.agentsJoueurs.agents.length'), r.agents);
     assert.equal(lire('(validateCareer(JSON.parse(JSON.stringify(S))),true)'), true);

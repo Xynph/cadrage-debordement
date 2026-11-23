@@ -24,7 +24,7 @@ const NOM := "FenetreAgentJoueur"
 const RELATIONS := [["Froide", Pastilles.ROUGE, "warning"], ["Distante", Pastilles.ORANGE, "info"], ["Neutre", Charte.IVOIRE_2, "people"],
 	["Bonne", Pastilles.BLEU, "check"], ["Proche", Pastilles.VERT, "heart"]]
 ## Rang de l'agence : couleur franche par rang.
-const RANGS := {"grande": Pastilles.VIOLET, "moyenne": Pastilles.TURQUOISE, "petite": Pastilles.BLEU}
+const RANGS := {"grande": Pastilles.VIOLET, "moyenne": Pastilles.TURQUOISE, "petite": Pastilles.BLEU, "independant": Pastilles.BLEU}
 const LIGNE_H := 46.0
 const LIGNES_MAX := 9
 
