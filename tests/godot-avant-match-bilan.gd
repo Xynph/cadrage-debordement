@@ -3,6 +3,8 @@ extends SceneTree
 ## - début de saison (aucun match joué) : pas de pastille du dernier match dans le bandeau ;
 ## - après un match : pastille « résultat · écusson adverse · score » dans le bandeau, sans chevauchement en 2560×1440,
 ##   1920×1080 et 1280×720 ; un clic (souris) ouvre la petite fenêtre du bilan, entière à l'écran ;
+## - la fenêtre montre la carte du compte rendu en version réduite (idée FM n°19, 23/11/2026) : bandeau du score,
+##   frise 0-80' avec un repère par essai marqué, stats, marqueurs ; pas la colonne « le match » de l'article ;
 ## - Échap (sans menu de la carrière), ✕ et clic à côté la ferment ;
 ## - « tes choix » → Plan de jeu ; zone du club adverse → sa fiche.
 ## Imprime une ligne AVANT_MATCH_BILAN {checks, failures, destinations}. Captures si CD_BILAN_CAPTURES (hors headless).
@@ -153,8 +155,13 @@ func run() -> void:
 		if panneau != null:
 			for c: Control in panneau.find_children("Bilan*", "Control", true, false):
 				if c.is_visible_in_tree() and c.size.x > 0: check(rect(panneau).grow(1).encloses(rect(c)), "%s : %s dans la fenêtre %s" % [nom, c.name, rect(c)])
-		for id in ["BilanScoreValeur", "BilanResultat", "BilanTitreChoix", "BilanChoixAttaque", "BilanChoixDefense", "BilanChoixStaff", "BilanTitreFaits", "BilanFait0", "BilanChiffre0", "BilanChiffre7", "BilanClubAdverse"]:
+		for id in ["CompteRenduCarte", "CompteRenduScore", "CompteRenduResultat", "CompteRenduFrise", "CompteRenduMiTemps", "CompteRenduStat0", "BilanTitreChoix", "BilanChoixAttaque", "BilanChoixDefense", "BilanChoixStaff", "BilanClubAdverse"]:
 			check(app.find_child(id, true, false) != null, "%s : fenêtre · %s" % [nom, id])
+		check(app.find_child("CompteRenduLieu", true, false) == null and app.find_child("CompteRenduHdm", true, false) == null, "%s : carte réduite (sans la colonne du match)" % nom)
+		var essais_marques: int = (report.get("essais", []) as Array).size()
+		check(essais_marques == app.find_children("CompteRenduFriseEssai*", "", true, false).size(), "%s : un repère par essai sur la frise (%d)" % [nom, essais_marques])
+		var carte := app.find_child("CompteRenduCarte", true, false) as Control
+		if carte != null and panneau != null: check(rect(panneau).grow(1).encloses(rect(carte)), "%s : carte entière dans la fenêtre %s / %s" % [nom, rect(carte), rect(panneau)])
 		await capture("fenetre-%s" % nom)
 		# Fermetures : Échap (sans menu de la carrière), ✕, clic à côté.
 		await touche(KEY_ESCAPE)
@@ -202,7 +209,71 @@ func run() -> void:
 			var fiche_id := str(int(fiche.get("id", -1))) if fiche is Dictionary else ""
 			check(fiche_id == adverse_id, "Fiche du bon club : %s / %s" % [fiche_id, adverse_id])
 			destinations.append("BilanClubAdverse [fenêtre] -> %s" % app.route)
+	await article_compte_rendu(report)
+	await essai_apres_mi_temps(report)
 	finish()
+
+## Essais juste avant et juste après la 40e (les deux camps) : aucune étiquette de la frise ne couvre « MT ».
+func essai_apres_mi_temps(report: Dictionary) -> void:
+	var origine: Array = (report.get("essais", []) as Array).duplicate(true)
+	var essais := origine.duplicate(true)
+	for e: Array in [[39, 0], [40, 1], [41, 1], [41, 0], [42, 1]]:
+		essais.append({"minute": e[0], "side": e[1], "id": null, "name": "Mathéo ESSAI-MT", "origin": "j", "zone": 30})
+	essais.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a.minute) < int(b.minute))
+	app.model.decisions.report.essais = essais
+	for t: Vector2i in [Vector2i(2560, 1440), Vector2i(1920, 1080)]:
+		await taille(t)
+		var avant := await avant_match()
+		if avant == null or not await ouvrir_bilan("essai après 40'"): continue
+		var mt := app.find_child("CompteRenduMiTemps", true, false) as Control
+		check(mt != null, "%dx%d : « MT » sur la frise" % [t.x, t.y])
+		if mt == null: continue
+		var etiquettes: Array = app.find_children("CompteRenduFriseEtiquette*", "", true, false)
+		check(etiquettes.size() == essais.size(), "%dx%d : une étiquette par essai (%d)" % [t.x, t.y, etiquettes.size()])
+		for i in etiquettes.size():
+			check(not rect(etiquettes[i]).grow(-1).intersects(rect(mt)), "%dx%d : %s ne couvre pas « MT » %s / %s" % [t.x, t.y, etiquettes[i].name, rect(etiquettes[i]), rect(mt)])
+			for j in range(i + 1, etiquettes.size()):
+				check(not rect(etiquettes[i]).grow(-1).intersects(rect(etiquettes[j]).grow(-1)), "%dx%d : %s et %s sans chevauchement" % [t.x, t.y, etiquettes[i].name, etiquettes[j].name])
+		await capture("fenetre-mt-%dx%d" % [t.x, t.y])
+		await touche(KEY_ESCAPE)
+	app.model.decisions.report.essais = origine
+	destinations.append("Frise : essais autour de la 40e sans recouvrir « MT »")
+
+## Réception : l'article du dernier match porte la carte complète (frise, le match avec le public, stats, marqueurs).
+func article_compte_rendu(report: Dictionary) -> void:
+	var article := ""
+	for courrier: Dictionary in load("res://ui/club_mail.gd").mails(app.model):
+		if str(courrier.get("type", "")) == "article": article = str(courrier.id); break
+	if article.is_empty():
+		destinations.append("Réception : aucun article de match (carte non vérifiée)")
+		return
+	for t: Vector2i in [Vector2i(2560, 1440), Vector2i(1920, 1080)]:
+		await taille(t)
+		app._reset_reception(article)
+		app._navigate("Réception", false)
+		await settle(12)
+		var carte := app.find_child("CompteRenduCarte", true, false) as Control
+		check(carte != null, "%dx%d : article du match · carte du compte rendu" % [t.x, t.y])
+		if carte == null: continue
+		for id in ["CompteRenduFrise", "CompteRenduMiTemps", "CompteRenduLieu", "CompteRenduStat0", "CompteRenduResultat"]:
+			check(carte.find_child(id, true, false) != null, "%dx%d : article · %s" % [t.x, t.y, id])
+		if report.get("affluence") is float or report.get("affluence") is int:
+			var public := carte.find_child("CompteRenduAffluenceValeur", true, false) as Label
+			check(public != null and public.text.replace(" ", "") == str(int(report.affluence)), "%dx%d : public %s" % [t.x, t.y, public.text if public != null else "absent"])
+		else: check(false, "Affluence du dernier match absente du compte rendu")
+		check(carte.find_children("CompteRenduFriseEssai*", "", true, false).size() == (report.get("essais", []) as Array).size(), "%dx%d : un repère par essai sur la frise" % [t.x, t.y])
+		for camp in 2:
+			var etiquettes: Array = carte.find_children("CompteRenduFriseEtiquette%d_*" % camp, "", true, false)
+			for i in etiquettes.size():
+				check(rect(carte).grow(1).encloses(rect(etiquettes[i])), "%dx%d : étiquette %s dans la carte" % [t.x, t.y, etiquettes[i].name])
+				for j in range(i + 1, etiquettes.size()):
+					check(not rect(etiquettes[i]).grow(-1).intersects(rect(etiquettes[j]).grow(-1)), "%dx%d : étiquettes %s et %s sans chevauchement" % [t.x, t.y, etiquettes[i].name, etiquettes[j].name])
+		var lecture := app.find_child("InboxReadingScroll", true, false) as ScrollContainer
+		if lecture != null:
+			lecture.scroll_vertical = int(carte.global_position.y - lecture.global_position.y) + lecture.scroll_vertical - 12
+			await settle(6)
+		await capture("article-%dx%d" % [t.x, t.y])
+	destinations.append("Réception : article du dernier match -> carte du compte rendu")
 
 func finish() -> void:
 	print("AVANT_MATCH_BILAN " + JSON.stringify({"checks": checks, "failures": failures, "destinations": destinations}))

@@ -84,6 +84,9 @@ module.exports=function nativeGestion(command,p){
   requireThat(S.live&&S.live.paused&&!S.live.finished&&!presentationPending(S.live),'Mets le match en pause pour changer la consigne sur pénalité.');
   setPenaltyPolicy(p.policy);return;
  }
+ // Règle « Auto » d'un niveau de forme (0 = < 60 % … 4 = ≥ 90 %) : repos, normal ou intense (dist/development.js).
+ if(command==='set_intensite_auto'){requireThat(setIntensiteAuto(p.niveau,p.mode),'Règle indisponible : match en cours, niveau ou intensité inconnus.');return;}
+ if(command==='appliquer_avis_kine'){requireThat(appliquerAvisKine()>=0,'Charge indisponible : séance appliquée ou match en cours.');return;}
  if(command==='set_player_load'){requireThat(setPhysicalTraining(p.playerId,p.mode),'Charge indisponible : séance appliquée, joueur absent ou match en cours.');return;}
  if(command==='promote_cover'){
   requireThat(p.confirmed===true,'Confirme le salaire hebdomadaire de chaque renfort.');
@@ -102,28 +105,41 @@ module.exports=function nativeGestion(command,p){
   return {coverage:{count,weeklySalary:coverSalary,totalWeeklySalary,message:`${count} renfort${count===1?'':'s'} signé${count===1?'':'s'}. Salaires supplémentaires de ${totalWeeklySalary.toLocaleString('fr-FR')} € par semaine. Feuille à 23 complète.`}};
  }
  if(command==='recruit'||command==='extend_contract'){
-  requireThat(p.confirmed===true,'Confirme le salaire, la durée et la prime avant cette offre.');requireThat(typeof p.playerId==='string'&&Number.isInteger(p.salary)&&p.salary>=(typeof budgetActif==='function'&&budgetActif()?budgetPlancherHebdo():1000)&&p.salary<=100000&&[1,2,3].includes(p.years),'Offre invalide.');
+  requireThat(p.confirmed===true,'Confirme le salaire, la durée et la prime avant cette offre.');requireThat(typeof p.playerId==='string'&&Number.isInteger(p.salary)&&p.salary>=(typeof budgetActif==='function'&&budgetActif()?budgetPlancherHebdo():1000)&&p.salary<=100000&&[1,2,3].includes(p.years)&&(p.role===undefined||['titulaire','rotation','espoir','appoint'].includes(p.role))&&(p.prime===undefined||Number.isSafeInteger(p.prime))&&(p.clause===undefined||['sans','haute','moyenne','basse'].includes(p.clause)),'Offre invalide.');
   const kind=command==='recruit'?'recruit':'renew',target=talkPlayer(p.playerId,kind);requireThat(target,'Joueur indisponible ou offre périmée.');
   // Calendrier du recrutement (calendrier-mutations.cjs) : joueurs sans club jusqu'au 31 décembre, deux supplémentaires en
   // janvier ; un joueur qui a signé un pré-contrat ailleurs ne se prolonge plus.
   const ferme=kind==='recruit'&&typeof calendrierRefusRecrue==='function'?calendrierRefusRecrue():'';requireThat(!ferme,ferme);
   const parti=kind==='renew'&&typeof preContratRefusProlongation==='function'?preContratRefusProlongation(p.playerId):'';requireThat(!parti,parti);
+  // Offre guidée (clauses-contrat.cjs) : prime en plus et clause libératoire, actives pour ce joueur le temps de la commande
+  // (salaire minimum accepté abaissé, prime payée augmentée) ; la clause est posée sur le joueur à la signature.
+  const extras=typeof clausesPreparer==='function'?clausesPreparer(target,kind,p):null;
+  try{
   requireThat(club().cash>=contractFee(target,kind),'Trésorerie insuffisante pour la prime.');requireThat(kind!=='recruit'||professionalPlaces()>0,'Effectif complet.');
   // Contrôle de gestion (a2r.cjs) : une recrue que l'A2R n'homologue pas n'est même pas proposée.
   const a2r=kind==='recruit'&&typeof a2rRefusRecrue==='function'?a2rRefusRecrue(p.salary):'';requireThat(!a2r,a2r);
   // Budget de transferts (budget-transferts.cjs) : la prime d'une recrue entre dans l'enveloppe ; une prolongation, jamais.
   const horsBudget=kind==='recruit'&&typeof budgetTransfertsRefus==='function'?budgetTransfertsRefus(contractFee(target,kind)):null;requireThat(!horsBudget,horsBudget);
   const avant=club().cash;
-  requireThat(negotiateContract(p.playerId,kind,p.salary,p.years),'Offre refusée : durée, joueur ou négociation indisponible.');
+  // Rôle promis (role-contrat.cjs, idée 16) : Espoir à 21 ans et moins, Appoint refusé par un ambitieux ; le rôle règle la
+   // demande de salaire pendant la négociation (+5 % par cran au-dessus du rôle attendu, −4 % par cran en dessous).
+   const refusRole=p.role&&typeof roleContratRefus==='function'?roleContratRefus(target,p.role):'';requireThat(!refusRole,refusRole);
+   const negocier=()=>negotiateContract(p.playerId,kind,p.salary,p.years);
+   requireThat(p.role&&typeof roleContratAvec==='function'?roleContratAvec(target,p.role,negocier):negocier(),'Offre refusée : durée, joueur ou négociation indisponible.');
   const key=talkKey(p.playerId,kind),talk=S.economy.talks[key];
   if(talk.status==='ready')requireThat(confirmContract(key),'Signature devenue indisponible.');
   if(kind==='recruit'&&talk.status==='signed'&&typeof budgetTransfertsDepenser==='function')budgetTransfertsDepenser(talk.fee);
   if(kind==='recruit'&&talk.status==='signed'&&typeof calendrierApresRecrue==='function')calendrierApresRecrue(p.playerId);
   if(kind==='renew'&&talk.status==='signed'&&typeof calendrierApresProlongation==='function')calendrierApresProlongation(p.playerId);
+  // Rôle promis au contrat (role-contrat.cjs) : champ facultatif `role` ; sans lui, le rôle est déduit de la hiérarchie
+  // à la fin de la commande (observe, worker.cjs).
+  if(talk.status==='signed'&&p.role&&typeof roleContratPoser==='function'){const signe=club().players.find(x=>x.id===p.playerId);if(signe)roleContratPoser(signe,p.role,false);}
+  if(talk.status==='signed'&&extras&&typeof clausesPoser==='function'){const signe=club().players.find(x=>x.id===p.playerId);if(signe)clausesPoser(signe,extras);}
   // Le président reprend la main si l'achat fait passer la trésorerie sous la réserve (president-reprise.cjs),
   // sauf pour un achat dans l'enveloppe de transferts fixée par le conseil.
   if(kind==='recruit'&&talk.status==='signed'&&typeof repriseApresAchat==='function'&&!(typeof budgetTransfertsExempte==='function'&&budgetTransfertsExempte()))repriseApresAchat(club(),avant);
-  return {negotiation:{playerId:p.playerId,status:talk.status,message:talk.status==='signed'?'Contrat signé.':talk.message,fee:talk.fee,salary:talk.acceptedSalary,years:talk.years}};
+  return {negotiation:{playerId:p.playerId,status:talk.status,message:talk.status==='signed'?'Contrat signé.':talk.message,fee:talk.fee,salary:talk.acceptedSalary,years:talk.years,...(extras?{clause:extras.niveau,clauseMontant:extras.montant}:{})}};
+  }finally{if(extras)clausesFin();}
  }
  // Rallonge demandée au conseil (budget-transferts.cjs, R3 bis) : {amount, confirmed:true} ; réponse dans meta.transferBudgetExtension.
  if(command==='transfer_budget_extension'){requireThat(typeof budgetTransfertsRallonge==='function','Budget de transferts indisponible.');return {transferBudgetExtension:budgetTransfertsRallonge(p)};}

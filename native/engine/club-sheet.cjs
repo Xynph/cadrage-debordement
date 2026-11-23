@@ -147,6 +147,20 @@ function factory(){
   return {fixtureId:r.fixtureId??null,date:r.date??null,competitionId:r.competitionId??null,phase:r.phase??null,home:side===0&&!r.neutral,neutral:!!r.neutral,
    opponent:r.pair[1-side],for:pour,against:contre,outcome:pour>contre?'V':pour<contre?'D':'N',tries:Array.isArray(r.tries)?[r.tries[side],r.tries[1-side]]:null};
  }
+ // Rapport sur l'adversaire : essais marqués / encaissés de la saison (minute, origine j = jeu courant,
+ // b = ballon porté, m = mêlée, profondeur du départ de l'action en mètres de la ligne d'essai), lus dans
+ // l'historique (`essais`, rencontres jouées avec le moteur complet) ; titulaires par maillot (trois premiers).
+ function rapportAdverse(s,club,historique){
+  const id=club.id,essais=[];let detailles=0;
+  for(const r of historique){
+   if(!Array.isArray(r.essais))continue;detailles++;
+   const side=r.pair.indexOf(id);
+   for(const e of r.essais)if(Array.isArray(e)&&e.length>=4)essais.push({minute:e[0],for:e[1]===side,origin:e[2],depth:e[3],opponent:r.pair[1-side],fixtureId:r.fixtureId??null,date:r.date??null,score:[r.score?.[side]??0,r.score?.[1-side]??0]});
+  }
+  const {n,parJoueur}=compteurs(s,club),maillots=[];
+  for(let i=0;i<15;i++)maillots.push([...parJoueur.entries()].filter(([,j])=>j.m[i]>0).sort((a,b)=>b[1].m[i]-a[1].m[i]||b[1].total-a[1].total||(a[0]<b[0]?-1:1)).slice(0,3).map(([pid,j])=>({id:pid,starts:j.m[i]})));
+  return {matches:historique.length,detailed:detailles,sheets:n,essais,maillots};
+ }
  function sheet(clubId){
   const s=state();check(s,'aucune carrière');
   check(int(clubId,0,s.clubs.length-1),'club inconnu');
@@ -206,6 +220,7 @@ function factory(){
    headToHead:bilan,
    squad,
    xv:xvType(s,club),
+   rapport:rapportAdverse(s,club,historique),
   };
  }
  function execute(command,payload){

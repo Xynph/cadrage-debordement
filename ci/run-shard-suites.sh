@@ -95,12 +95,20 @@ budget() {
     tests/continuer-evenement-monde.cjs|tests/retouches-coherence.cjs) echo 600s ;;
     # Dilemmes de presse (#727) : carrière Monde, 146 s sur le runner sur main (shard 7) et délai de 180 s dépassé sur la PR #730 (shard 4, même code) ; budget ≈ 3 fois.
     tests/presse-dilemmes-monde.cjs) echo 420s ;;
+    # Noms de compétitions du pack dans les textes générés : carrière Monde, 64 s en local mais 181 s sur le runner (délai de 180 s dépassé sur la PR #1191, suite non touchée) ; budget ≈ 3 fois.
+    tests/pack-noms-competitions-textes.cjs) echo 420s ;;
     # Presse rapide (#928) : carrière Monde, 192 s en local sur main (19/11) et délai de 180 s dépassé dans le train 20261118-2307 ; budget ≈ 2 fois.
     tests/presse-rapide-monde.cjs) echo 420s ;;
     # Homme du match par poste : carrière Monde hebdomadaire jusqu'à 150 matchs notés, 135 s en local sous charge.
     tests/homme-du-match-postes.cjs) echo 600s ;;
     # Fiche club : carrière Monde hebdomadaire, 3 journées (293 s en local sous forte charge).
     tests/fiche-club-monde.cjs) echo 600s ;;
+    # Rapport adverse : carrière Monde hebdomadaire, 3 + 1 journées et deux réouvertures (65 s en local, 23/11/2026).
+    tests/rapport-adverse-monde.cjs) echo 600s ;;
+    # Compte rendu en carte : carrière Monde hebdomadaire, 3 + 1 journées et deux réouvertures (67 s en local, 23/11/2026).
+    tests/compte-rendu-monde.cjs) echo 600s ;;
+    # Humeur des supporters : carrière Monde jouée jusqu'au premier bilan du conseil (3 matchs), 49 s en local (23/11/2026).
+    tests/supporters-humeur.cjs) echo 400s ;;
     # Délégation de la composition au staff : trois carrières Monde hebdomadaires (10 journées déléguées, feuille gardée jusqu'à l'alerte de fatigue, refus), ~5 min en local sous charge.
     tests/delegue-composition-staff.cjs) echo 900s ;;
     # Courbe de niveau (lot 0 notes réalistes) : carrière Monde, 720 matchs complets et 4 000 résultats rapides, 69 s seul en local, 112 s en CI (PR #712, poids 129 = mesure +15 %).

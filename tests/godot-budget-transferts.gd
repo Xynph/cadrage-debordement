@@ -128,7 +128,14 @@ func executer() -> void:
 					var rouvert := app.find_child("ContractOffer", true, false) as ConfirmationDialog
 					verifier(rouvert != null and not is_instance_valid(dialogue), "devis rouvert après la réponse du conseil")
 					verifier(texte("ContractTransferBudgetAnswer").begins_with("Le conseil accorde une rallonge de " + G.euros(montant)), "réponse du conseil : « %s »" % texte("ContractTransferBudgetAnswer"))
-					if rouvert != null: verifier(not rouvert.get_ok_button().disabled, "offre possible après la rallonge accordée")
+					# Négociation avec l'agent (idée 18) : la signature attend un rôle promis ; un clic sur une carte le promet.
+					for role in ["rotation", "titulaire", "espoir", "appoint"]:
+						var carte := app.find_child("NegoRole_" + role, true, false) as Button
+						if carte != null:
+							carte.pressed.emit()
+							break
+					await poser(4)
+					if rouvert != null: verifier(not rouvert.get_ok_button().disabled, "offre possible après la rallonge accordée (rôle promis)")
 					var apres: Variant = app.model.get("finance", {}).get("transferBudget")
 					verifier(apres is Dictionary and int(apres.get("rallonge", 0)) == montant, "rallonge inscrite au budget : " + str(apres))
 					await capturer("budget-rallonge-accordee.png")

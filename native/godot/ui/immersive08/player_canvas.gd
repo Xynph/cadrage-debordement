@@ -27,6 +27,8 @@ const Sort = preload("res://ui/recruitment_sort.gd")
 const Sales = preload("res://ui/player_sales_view.gd")
 const FicheCharge = preload("res://ui/immersive08/fiche_charge.gd")
 const FicheRoles = preload("res://ui/immersive08/fiche_roles.gd")
+const TempsJeu = preload("res://ui/immersive08/fiche_temps_jeu.gd")
+const Progression = preload("res://ui/immersive08/progression_fiche.gd")
 
 ## Onglets : [index d'état, libellé]. L'index 1 (ancien onglet Attributs) n'existe plus : ses 36 attributs sont en
 ## première page ; un état resté sur 1 ouvre la Vue d'ensemble.
@@ -125,10 +127,10 @@ static func build(app:Control,player:Dictionary,source:String="squad") -> Contro
 			_health(D.panel(page,Rect2(1686,top,562,520),"DISPONIBILITÉ","heart"),app,player)
 			_selection(D.panel(page,Rect2(1686,top+536,562,270),"SÉLECTION","flag","","PlayerSelectionNotes"),app,player)
 		3:
-			_contract(D.panel(page,Rect2(0,top,850,270),"CONTRAT ET NÉGOCIATION","money"),app,player)
-			_sale(D.panel(page,Rect2(0,top+286,850,234),"MARCHÉ DES TRANSFERTS","money","","PlayerSalePanel"),app,player,850)
-			_health(D.panel(page,Rect2(866,top,562,520),"CHARGE INDIVIDUELLE","heart"),app,player)
-			D.photo(page,"hospitality",Rect2(1444,top,804,520))
+			_contrat_temps_jeu(page,app,player,top)
+		4 when source=="squad" and not Progression.valeurs(player).is_empty():
+			# Progression par qualité (idée FM27 n° 14) : courbe 12 mois du relevé mensuel, grille des 36 qualités à cocher.
+			Progression.construire(page,app,player,top)
 		4:
 			_development(D.panel(page,Rect2(0,top,1670,560),"DÉVELOPPEMENT ET PROGRESSION","school","","PlayerDevelopmentCard"),app,player,source)
 			var poste := BanqueImages.poste(str(player.get("pos", "")))
@@ -366,12 +368,19 @@ static func _attributs(card: Panel, app: Control, player: Dictionary, source: St
 	FicheRoles.bandes(card,Vector2(24,72),Vector2(1372,340),FicheRoles.role(str(FicheRoles.etat(app,player,values).role)))
 	Commune.grille_attributs(card,Vector2(24,72),Vector2(1372,340),values,"PlayerDetailedAttribute_")
 
-## Carte Postes et rôles : rôles des postes du joueur (étoiles = capacité au rôle), qualités du rôle choisi, terrain
-## des 15 postes coloré par étoiles au poste (fiche_roles.gd), puis courbe des notes de match.
+## Carte Postes et rôles : rôles des postes du joueur (note du rôle + familiarité au poste), qualités du rôle choisi,
+## terrain des 15 postes coloré par familiarité (fiche_roles.gd), puis courbe des notes de match.
 static func _postes(card: Panel, app: Control, player: Dictionary, source: String) -> void:
 	_titre(card,"POSTES ET RÔLES")
 	FicheRoles.carte(card,app,player,Commune.valeurs(player,source))
+	# Apprendre un poste (23/11/2026) : joueurs de notre effectif seulement, à droite du titre.
+	if source != "market" and _dans_effectif(app,str(player.get("id",""))): FicheRoles.apprendre(card,app,player,card.size.x/C.density-24)
 	_courbe(card,app,player,source)
+
+static func _dans_effectif(app: Control, id: String) -> bool:
+	for p: Variant in app.model.get("squad",[]):
+		if p is Dictionary and str(p.get("id","")) == id: return true
+	return false
 
 static func _courbe(card: Panel, app: Control, player: Dictionary, source: String) -> void:
 	if source == "market": return
@@ -728,27 +737,17 @@ static func _selection(card:Panel,app:Control,player:Dictionary) -> void:
 		D.text(card,324,y+24,str(ligne.get("competition","")),16,C.MUTED,500,130)
 		NotesMatch.pastille(card,Rect2(470,y+4,68,28),float(ligne.get("note",6.5)),0.6).name = "PlayerSelectionRow"+str(i)
 
-static func _contract(card:Panel,app:Control,player:Dictionary) -> void:
-	var renewal: Dictionary = player.get("renewal", {})
-	var reason := str(renewal.get("reason", ""))
-	D.text(card,24,113,G.salary(player.get("salary",0)),40,C.IVORY,700,515)
-	D.text(card,24,151,"Fin de contrat : " + G.contract_year(player.get("contractEnd")),27,C.MUTED,500,515)
-	# État de vente en version courte (« Départ prévu », « Offre reçue », « En vente ») : la phrase complète tient dans la
-	# carte Marché des transferts et dans l'info-bulle, pas dans les 515 unités de cette ligne.
-	var sale_status := Sales.status(player)
-	var sale_short := Sales.short(player)
-	# Parti libre sous pré-contrat : état court (« A signé à … : départ le 1er juillet »), la raison complète en info-bulle.
-	var pre: Dictionary = player.get("preContract",{}) if player.get("preContract") is Dictionary else {}
-	var shown := str(pre.get("short","")) if not reason.is_empty() and str(pre.get("state","")) == "signe" and not str(pre.get("short","")).is_empty() else reason
-	var line := D.text(card,24,183,shown if not reason.is_empty() else sale_short if not sale_short.is_empty() else "Contrat du joueur",19,C.ALERT if not reason.is_empty() else C.GOLD if not sale_short.is_empty() else C.MUTED,400,515,HORIZONTAL_ALIGNMENT_LEFT,true)
-	if reason.is_empty() and not sale_status.is_empty(): line.tooltip_text = sale_status
-	elif not reason.is_empty(): line.tooltip_text = reason
-	var offer:=Kit.bouton_ivoire(card,Rect2(24,206,514,44),"Proposer une prolongation",func():app.SquadViews.contract(app,player,false),"OfferRenewal")
-	offer.disabled=not renewal.get("available",false) or not app._live().is_empty()
-	if not reason.is_empty(): offer.tooltip_text = reason
+## Onglet Contrat (temps de jeu promis, choix A de Léo du 23/11/2026, ui/immersive08/fiche_temps_jeu.gd) : contrat,
+## primes et clauses + marché, temps de jeu.
+static func _contrat_temps_jeu(page:Control,app:Control,player:Dictionary,top:float) -> void:
+	var bas := HAUTEUR-50-top
+	TempsJeu.contrat(D.panel(page,Rect2(0,top,730,bas),"CONTRAT","money","","PlayerContractTerms"),app,player,730,64,84)
+	TempsJeu.primes(D.panel(page,Rect2(746,top,730,500),"PRIMES ET CLAUSES","trophy","","PlayerContractClauses"),app,player,730,64,84)
+	_sale(D.panel(page,Rect2(746,top+516,730,bas-516),"MARCHÉ DES TRANSFERTS","money","","PlayerSalePanel"),app,player,730)
+	TempsJeu.temps(D.panel(page,Rect2(1492,top,756,bas),"TEMPS DE JEU","calendar","","PlayerPlayingTime"),app,player,756)
 
 ## Marché des transferts (vente-joueurs.cjs, `squad[].sale`) : état de vente, raison d'un blocage écrite en clair,
-## « Proposer aux autres clubs » / « Retirer du marché » (commande sale_list) et accès aux offres reçues.
+## Disponibilité (petite fenêtre : liste des transferts, prêt) et accès aux offres reçues.
 static func _sale(card:Panel,app:Control,player:Dictionary,width:float) -> void:
 	var sale: Dictionary = player.get("sale",{}) if player.get("sale") is Dictionary else {}
 	var pending: bool = sale.get("pending") is Dictionary
@@ -768,9 +767,12 @@ static func _sale(card:Panel,app:Control,player:Dictionary,width:float) -> void:
 	elif not blocked.is_empty() and not pending:
 		D.text(card,24,142,blocked,26,C.ALERT,500,width-48).name = "PlayerSaleReason"
 	var half := (width-60)/2.0
-	var toggle := D.button(card,Rect2(24,162,half,52),"Retirer du marché" if listed else "Proposer aux autres clubs",func(): Sales.toggle(app,player),not listed,"money",false,app.accent,"PlayerSaleToggle")
+	# Disponibilité (idée FM 18, choix de Léo du 23/11/2026) : petite fenêtre avec la phrase de l'agent, liste des transferts
+	# ou prêt, qui remplace le bouton « Proposer aux autres clubs ».
+	var Nego := preload("res://ui/negociation_agent.gd")
+	var toggle := D.button(card,Rect2(24,162,half,52),Nego.libelle_disponibilite(player),func(): Nego.ouvrir_disponibilite(card.get_parent(),app,player),not listed,"money",false,app.accent,"PlayerSaleToggle")
 	toggle.add_theme_font_size_override("font_size",maxi(14,C.px(28)))
-	toggle.disabled = pending or (not listed and not blocked.is_empty()) or not app._live().is_empty()
+	toggle.disabled = not Nego.disponibilite_possible(app,player) or not app._live().is_empty()
 	if toggle.disabled: toggle.tooltip_text = blocked if not blocked.is_empty() else status
 	var offers := D.button(card,Rect2(36+half,162,half,52),Sales.caption(app.model),func(): Sales.open(app),false,"arrow",false,app.accent,"PlayerSaleOffers")
 	offers.add_theme_font_size_override("font_size",maxi(14,C.px(28)))
