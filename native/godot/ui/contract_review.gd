@@ -8,6 +8,7 @@ const G = preload("res://ui/game_skin.gd")
 const Sales = preload("res://ui/player_sales_view.gd")
 const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 const Bandeau = preload("res://ui/bandeau_filtres.gd")
+const Role = preload("res://ui/role_contrat.gd")
 const STATUS_OPTIONS := ["Tous","Prolongation accessible","Discussion en cours","Échanges clos","Sans contrat renseigné"]
 var app: Control
 var state: Dictionary
@@ -22,7 +23,7 @@ var _precision_choice: OptionButton
 var _headers: Dictionary = {}
 ## Colonnes du tableau : [clé, largeur minimale, poids]. Les poids donnent la place aux noms et aux statuts (1920 : plus aucun texte coupé) ; le tableau
 ## se partage la largeur du panneau au lieu de la dépasser (1920, 1280, échelle d'interface 90-130 %).
-const COLS := [["name", 126, 300], ["pos", 76, 140], ["rating", 40, 60], ["potential", 62, 80], ["age", 34, 50], ["contractEnd", 56, 115], ["salary", 62, 150], ["minutes", 34, 60], ["status", 62, 130], ["renewal", 44, 80], ["actions", 150, 215]]
+const COLS := [["name", 126, 250], ["pos", 60, 100], ["rating", 40, 50], ["age", 34, 45], ["salary", 62, 105], ["share", 90, 130], ["playtime", 150, 200], ["contractEnd", 152, 170], ["conseil", 140, 175], ["actions", 96, 80]]
 const COL_GAP := 4
 ## Couleurs franches par sens (jamais seules : chaque couleur accompagne un chiffre, une icône ou un mot).
 const ORANGE := Color("e0a04a")
@@ -34,22 +35,17 @@ const ROUGE := Color("d9534a")
 const LARGEUR_DEUX_COLONNES := 1500.0
 var _columns: BoxContainer
 var _fenetre: Control
-const SORT_KEYS := ["name","pos","rating","potential","age","contractEnd","salary","minutes","status","renewal","share","playtime","conseil"]
+const SORT_KEYS := ["name","pos","rating","age","salary","share","playtime","contractEnd","conseil"]
 
-## ---- Contrats en un coup d'œil (planche A/B, CD_VARIANTE_VISUELLE=A|B ; sans variable : écran inchangé) ----
+## ---- Contrats en un coup d'œil (revue FM27, idée 12, option A retenue par Léo le 23/11/2026) ----
+## Compteurs d'échéance en haut (filtres), une ligne par joueur : part de la masse salariale, rôle promis au contrat et
+## temps de jeu, échéance colorée, conseil du staff (calculé par le moteur toute l'année).
 ## Tranches d'échéance : mois restants jusqu'au 30 juin de la dernière saison du contrat.
 const TRANCHES := [["0-6", "0-6 mois", Color("d9534a")], ["6-12", "6-12 mois", Color("e0a04a")], ["1-2", "1-2 ans", Color("d4e35c")], ["2+", "2 ans +", Color("7fbf7a")]]
-## Conseils du staff (règle du directeur sportif, prolongations-staff.cjs, appliquée toute l'année) : id → [mot, icône, couleur].
+## Conseils du staff (moteur : squad[].conseilStaff, prolongations-staff.cjs) : id → [mot, icône, couleur].
 const CONSEILS := {"prolonger": ["Prolonger", "renew", Color("7fbf7a")], "partir": ["Laisser partir", "arrow", Color("d9534a")], "vendre": ["Vendre", "money", Color("e0a04a")], "garder": ["Garder", "check", Color("5b9bd5")], "vente": ["Vente en cours", "mail", Color("a88bd6")], "aucun": ["—", "info", Color("abb7b1")]}
 const CONSEIL_ORDRE := ["prolonger", "partir", "vendre", "vente", "garder", "aucun"]
-var _variante := ""
-var _cols: Array = COLS
 var _ctx: Dictionary = {}
-static var _ctx_tri: Dictionary = {}
-
-static func variante() -> String:
-	var v := OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper()
-	return v if v in ["A", "B"] else ""
 
 ## Mois restants jusqu'au 30 juin de l'année de fin (−1 : échéance inconnue).
 static func mois_restants(player: Dictionary, today: String) -> float:
@@ -74,34 +70,17 @@ static func tranche_couleur(id: String) -> Color:
 		if t[0] == id: return t[2]
 	return Charte.GRIS_VERT
 
+## Repères communs aux lignes : masse salariale totale, minutes de l'homme le plus utilisé, date du jour, effectif.
 static func contexte(model: Dictionary) -> Dictionary:
 	var squad: Array = model.get("squad", [])
-	var notes: Array = []
 	var total := 0.0
 	var ref := 1.0
-	var restants: Dictionary = {}
-	var season := int(model.get("meta", {}).get("season", 1))
 	for p: Dictionary in squad:
-		notes.append(float(p.get("rating", 0)))
 		var w: Variant = p.get("salary")
 		if w is int or w is float: total += float(w)
 		ref = maxf(ref, float(p.get("minutes", 0)))
-		if horizon(p) > season:
-			var pos := position_caption(p)
-			restants[pos] = int(restants.get(pos, 0)) + 1
-	notes.sort()
-	notes.reverse()
-	var top := notes.slice(0, mini(23, notes.size()))
-	var base := 0.0
-	for n: float in top: base += n
-	base = base / maxf(1.0, float(top.size()))
-	var promesses: Dictionary = {}
-	var rel: Variant = model.get("clubLife", {}).get("relationships", {}) if model.get("clubLife") is Dictionary else {}
-	if rel is Dictionary:
-		for r: Variant in rel.get("players", []):
-			if r is Dictionary and r.get("promise") is Dictionary: promesses[str(r.get("id", ""))] = r.promise
 	var meta: Dictionary = model.get("meta", {})
-	return {"base": base, "total": total, "ref": ref, "season": season, "today": str(meta.get("calendarToday", meta.get("date", ""))), "restants": restants, "n": squad.size(), "promesses": promesses}
+	return {"total": total, "ref": ref, "season": int(meta.get("season", 1)), "today": str(meta.get("calendarToday", meta.get("date", ""))), "n": squad.size()}
 
 static func part_masse(player: Dictionary, ctx: Dictionary) -> float:
 	var w: Variant = player.get("salary")
@@ -111,29 +90,11 @@ static func part_masse(player: Dictionary, ctx: Dictionary) -> float:
 static func temps_de_jeu(player: Dictionary, ctx: Dictionary) -> float:
 	return clampf(float(player.get("minutes", 0)) / maxf(1.0, float(ctx.get("ref", 1))), 0.0, 1.0)
 
-static func role_jeu(part: float) -> Array:
-	if part >= 0.6: return ["Titulaire", Color("7fbf7a")]
-	if part >= 0.3: return ["Rotation", Color("5b9bd5")]
-	if part > 0.0: return ["Appoint", Color("e0a04a")]
-	return ["Non utilisé", Charte.GRIS_VERT]
-
-static func conseil(player: Dictionary, ctx: Dictionary) -> String:
-	if not Sales.short(player).is_empty(): return "vente"
-	var end := horizon(player)
-	if end < 0: return "aucun"
-	var note := float(player.get("rating", 0))
-	var pot := float(player.get("potential", note)) if player.get("potential") is int or player.get("potential") is float else note
-	var age := int(player.get("age", 26))
-	var v := note
-	if age <= 23: v += minf(3.0, maxf(0.0, pot - note) * 0.3)
-	if age >= 33: v -= 3.0
-	var base := float(ctx.get("base", 70))
-	if end <= int(ctx.get("season", 1)):
-		var profondeur := int(ctx.get("restants", {}).get(position_caption(player), 0))
-		return "prolonger" if v >= base - 6 or (profondeur < 2 and v >= base - 12) else "partir"
-	if mois_restants(player, str(ctx.get("today", ""))) < 24 and age <= 24 and pot - note >= 6: return "prolonger"
-	if age >= 30 and v < base - 8 and part_masse(player, ctx) > 1.2 / maxf(1.0, float(ctx.get("n", 1))): return "vendre"
-	return "garder"
+## Conseil du staff envoyé par le moteur ("aucun" sans contrat professionnel ou hors mode Monde).
+static func conseil(player: Dictionary) -> String:
+	var c: Variant = player.get("conseilStaff")
+	var id := str(c.get("conseil", "")) if c is Dictionary else ""
+	return id if CONSEILS.has(id) else "aucun"
 
 static func build(owner_app: Control) -> Control:
 	var view: Control = load("res://ui/contract_review.gd").new()
@@ -186,9 +147,8 @@ static func filtered(players: Array, filters: Dictionary) -> Array:
 		if not query.is_empty() and not U.fold(str(player.get("name", "")) + " " + position_caption(player) + " " + position_text(player) + " " + str(player.get("pos", ""))).contains(query): continue
 		var ctx: Dictionary = filters.get("ctx", {})
 		if not str(filters.get("tranche", "")).is_empty() and tranche(mois_restants(player, str(ctx.get("today", "")))) != str(filters.tranche): continue
-		if not str(filters.get("conseil", "")).is_empty() and conseil(player, ctx) != str(filters.conseil): continue
+		if not str(filters.get("conseil", "")).is_empty() and conseil(player) != str(filters.conseil): continue
 		result.append(player)
-	_ctx_tri = filters.get("ctx", {})
 	var sort_key := str(filters.get("sort", "contractEnd"))
 	if not sort_key in SORT_KEYS: sort_key = "contractEnd"
 	var descending := bool(filters.get("descending", false))
@@ -211,7 +171,7 @@ static func sort_value(player: Dictionary, key: String, live: bool = false) -> V
 	if key == "contractEnd": return horizon(player) if horizon(player) >= 0 else null
 	if key == "share": key = "salary"
 	if key == "playtime": key = "minutes"
-	if key == "conseil": return CONSEIL_ORDRE.find(conseil(player, _ctx_tri))
+	if key == "conseil": return CONSEIL_ORDRE.find(conseil(player))
 	if key == "renewal": return renewal_reason(player, live) if player.get("renewal") is Dictionary and not player.renewal.is_empty() else null
 	var value: Variant = player.get(key)
 	if key in ["rating","potential","age","salary","minutes"]:
@@ -536,7 +496,7 @@ func _select_text(choice: OptionButton, value: String, first: String) -> void:
 		if choice.get_item_text(index) == value: choice.select(index)
 
 func _fit(control: Control, key: String) -> Control:
-	for column: Array in _cols:
+	for column: Array in COLS:
 		if column[0] == key:
 			control.custom_minimum_size.x = column[1]
 			control.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -594,12 +554,9 @@ func _build() -> void:
 	if not app.management_ui.roster.has("contract_review"):
 		app.management_ui.roster.contract_review = {"season":0,"status":"Tous","precision":"Toutes","position":"Tous","search":"","scroll":0,"focus":""}
 	state = app.management_ui.roster.contract_review
-	_variante = variante()
 	_ctx = contexte(app.model)
 	if not state.has("tranche"): state.tranche = ""
 	if not state.has("conseil"): state.conseil = ""
-	if _variante == "A": _cols = COLS_A
-	elif _variante == "B": _cols = COLS_B
 	if not state.has("sort"): state.sort = "contractEnd"
 	if not state.has("descending"): state.descending = false
 	var delegation: Variant = app.model.get("decisions", {}).get("delegation") if app.model.get("decisions") is Dictionary else null
@@ -609,9 +566,6 @@ func _build() -> void:
 	top.add_theme_constant_override("separation", 10)
 	add_child(top)
 	var squad: Array = app.model.get("squad", [])
-	var current := int(app.model.get("meta", {}).get("season", 1))
-	var ending := squad.filter(func(player): return horizon(player) >= 0 and horizon(player) <= current).size()
-	var renewals := squad.filter(func(player): return player.get("renewal", {}).get("available", false) and app._live().is_empty()).size()
 	var known_wage := 0.0
 	var unknown_wage := 0
 	for player: Dictionary in squad:
@@ -619,30 +573,8 @@ func _build() -> void:
 		if wage is int or wage is float: known_wage += float(wage)
 		else: unknown_wage += 1
 	var wage_note := " · %d ?" % unknown_wage if unknown_wage > 0 else ""
-	# Vraies tuiles chiffre (comme le haut de l'Effectif) : icône teintée, gros chiffre coloré, légende courte, léger fond teinté.
-	if not _variante.is_empty(): _haut_variante(top, known_wage)
-	for metric in ([] if not _variante.is_empty() else [["%d / %d" % [ending, squad.size()], "fin ≤ %s" % G.contract_year(current), "Échéances en %s ou avant : %d joueurs sur %d" % [G.contract_year(current), ending, squad.size()], "", ORANGE, "hourglass", "ContractReviewStatEnding", func(): _ouvrir_fenetre("Fin ≤ %s" % G.contract_year(current), {"season": current, "status": "Tous", "precision": "Toutes"}, ORANGE, "ContractReviewStatEnding")], ["%d" % renewals, "prolongeables", "Prolongations accessibles : %d joueurs" % renewals, "", VERT, "renew", "ContractReviewStatRenewable", func(): _ouvrir_fenetre("Prolongeables", {"season": 0, "status": "Prolongation accessible", "precision": "Toutes"}, VERT, "ContractReviewStatRenewable")], [G.salary_amount(known_wage), "salaires " + G.salary_period(true) + wage_note, "Salaires actuels projetés · " + G.salary_period() + " : ouvrir Finances, salaires", "ContractReviewWage", BLEU, "money", "ContractReviewStatWages", func(): _open_wages()]]):
-		var line := HBoxContainer.new()
-		line.add_theme_constant_override("separation", 14)
-		var glyph := C.icon(str(metric[5]), 34, metric[4])
-		glyph.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		line.add_child(glyph)
-		var texts := VBoxContainer.new()
-		texts.add_theme_constant_override("separation", 0)
-		texts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		line.add_child(texts)
-		var value := _label(str(metric[0]), 34, metric[4])
-		value.autowrap_mode = TextServer.AUTOWRAP_OFF
-		if not str(metric[3]).is_empty(): value.name = str(metric[3])
-		texts.add_child(value)
-		var legend := _label(str(metric[1]), 16, C.MUTED)
-		legend.autowrap_mode = TextServer.AUTOWRAP_OFF
-		legend.clip_text = true
-		legend.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		texts.add_child(legend)
-		var stat := _link_button(str(metric[6]), line, Charte.PANNEAU.lerp(metric[4], 0.10), str(metric[2]), metric[7], Charte.RAYON_CARTE, 14)
-		stat.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		top.add_child(stat)
+	# Compteurs d'échéance (0-6 mois / 6-12 / 1-2 ans / 2 ans +), filtres du tableau, puis la masse salariale (Finances).
+	_haut(top, known_wage, wage_note)
 	var filters := HBoxContainer.new()
 	filters.add_theme_constant_override("separation", 8)
 	# Bandeau des filtres (demande de Léo du 21/11/2026) : panneau teinté détouré, distinct des lignes de contrats.
@@ -707,9 +639,7 @@ func _build() -> void:
 	var inset := Control.new()
 	inset.custom_minimum_size.x = 8
 	header.add_child(inset)
-	var entetes: Array = [["JOUEUR",0,"name"],["POSTE",0,"pos"],["NIV.",0,"rating"],["POT.",0,"potential"],["ÂGE",0,"age"],["FIN",0,"contractEnd"],["SALAIRE " + G.salary_period(true).to_upper(),0,"salary"],["MIN.",0,"minutes"],["STATUT",0,"status"],["PROLONG.",0,"renewal"],["CONSULTER",0,""]]
-	if _variante == "A": entetes = [["JOUEUR",0,"name"],["POSTE",0,"pos"],["NIV.",0,"rating"],["ÂGE",0,"age"],["SALAIRE " + G.salary_period(true).to_upper(),0,"salary"],["% MASSE",0,"share"],["TEMPS DE JEU",0,"playtime"],["ÉCHÉANCE",0,"contractEnd"],["CONSEIL DU STAFF",0,"conseil"],["",0,""]]
-	elif _variante == "B": entetes = [["CONSEIL",0,"conseil"],["JOUEUR",0,"name"],["POSTE",0,"pos"],["NIV.",0,"rating"],["ÂGE",0,"age"],["SALAIRE · PART DE LA MASSE",0,"share"],["TEMPS DE JEU",0,"playtime"],["FIN",0,"contractEnd"]]
+	var entetes: Array = [["JOUEUR",0,"name"],["POSTE",0,"pos"],["NIV.",0,"rating"],["ÂGE",0,"age"],["SALAIRE " + G.salary_period(true).to_upper(),0,"salary"],["% MASSE",0,"share"],["RÔLE · TEMPS DE JEU",0,"playtime"],["ÉCHÉANCE",0,"contractEnd"],["CONSEIL DU STAFF",0,"conseil"],["",0,""]]
 	for column in entetes:
 		if str(column[2]).is_empty():
 			header.add_child(_fit(_cell(column[0], 0, C.MUTED, 16), "actions"))
@@ -724,7 +654,7 @@ func _build() -> void:
 		for mode in ["normal","hover","pressed"]:
 			sort.add_theme_stylebox_override(mode, C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0))
 		sort.set_meta("caption", str(column[0]))
-		sort.set_meta("tip", {"rating": "NIVEAU", "potential": "POTENTIEL", "contractEnd": "FIN DE CONTRAT", "renewal": "PROLONGATION"}.get(key, str(column[0])))
+		sort.set_meta("tip", {"rating": "NIVEAU", "contractEnd": "FIN DE CONTRAT", "share": "PART DE LA MASSE SALARIALE", "playtime": "TEMPS DE JEU", "conseil": "CONSEIL DU STAFF"}.get(key, str(column[0])))
 		header.add_child(sort)
 		_headers[key] = sort
 	var outset := Control.new()
@@ -754,10 +684,6 @@ func _build() -> void:
 	_rows.add_theme_constant_override("separation", 2)
 	_scroll.add_child(_rows)
 	_scroll.get_v_scroll_bar().value_changed.connect(func(value): state.scroll = value)
-	if _variante == "B":
-		_refresh()
-		call_deferred("_restore_focus")
-		return
 	var sidebar := _panel(columns)
 	sidebar.get_parent().size_flags_stretch_ratio = 1.0
 	sidebar.get_parent().custom_minimum_size.x = 440
@@ -829,8 +755,7 @@ func _sort(key: String) -> void:
 
 func _refresh() -> void:
 	for node in _rows.get_children(): _rows.remove_child(node); node.queue_free()
-	if _coverage != null:
-		for node in _coverage.get_children(): _coverage.remove_child(node); node.queue_free()
+	for node in _coverage.get_children(): _coverage.remove_child(node); node.queue_free()
 	var filters := state.duplicate(true)
 	filters.live = not app._live().is_empty()
 	filters.ctx = _ctx
@@ -843,15 +768,7 @@ func _refresh() -> void:
 		sort.tooltip_text = "Trier par " + str(sort.get_meta("tip")) + (" · ordre décroissant" if selected and state.descending else " · ordre croissant" if selected else "")
 		sort.accessibility_name = sort.tooltip_text
 	if players.is_empty(): _rows.add_child(_label("Aucun joueur ne correspond. Modifie les filtres ou réinitialise la recherche.", 18, C.MUTED))
-	if _variante == "A":
-		for player: Dictionary in players: _row_a(player)
-	elif _variante == "B":
-		_rows_b(players)
-	else:
-		for player: Dictionary in players: _row(player)
-	if _coverage == null:
-		_scroll.set_deferred("scroll_vertical", int(state.scroll))
-		return
+	for player: Dictionary in players: _row(player)
 	var year := int(state.season) if int(state.season) > 0 else int(app.model.get("meta", {}).get("season", 1))
 	_coverage.add_child(_label("Échéances par année", 19))
 	var horizons: Dictionary = {}
@@ -918,7 +835,8 @@ func _reading_cell(content: Control, player: Dictionary, prefix: String, section
 	link.accessibility_name = ("Consulter le contrat · " if section == "contract" else "Consulter la fiche · ") + str(player.get("name", "Joueur"))
 	link.tooltip_text = link.accessibility_name
 	link.pressed.connect(func(): _open_profile(player_id, section, control_id))
-	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Tout le contenu (pastille, barre, textes) laisse passer la souris au lien.
+	_ignore_mouse(content)
 	link.add_child(content)
 	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	return link
@@ -944,87 +862,6 @@ func _bar(parent: Node, caption: String, value: int, total: int, color: Color, i
 	progress.add_theme_stylebox_override("fill", C.box(color, Color.TRANSPARENT, 2, 0))
 	row.add_child(progress)
 	row.add_child(_cell(str(value), 40, color, 18))
-
-func _row(player: Dictionary) -> void:
-	var panel := PanelContainer.new()
-	panel.name = action_id("ContractRow", str(player.id))
-	panel.set_meta("player_id", str(player.id))
-	panel.custom_minimum_size.y = 34
-	var style := C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0)
-	style.content_margin_left = 8
-	style.content_margin_right = 8
-	panel.add_theme_stylebox_override("panel", style)
-	# Rayure une ligne sur deux et survol de ligne communs à toutes les listes (ui/survol_ligne.gd).
-	load("res://ui/survol_ligne.gd").poser(panel).rang_fixe = _rows.get_child_count()
-	_rows.add_child(panel)
-	var line := HBoxContainer.new()
-	line.add_theme_constant_override("separation", COL_GAP)
-	panel.add_child(line)
-	var identity := HBoxContainer.new()
-	identity.add_theme_constant_override("separation", 6)
-	_fit(identity, "name")
-	line.add_child(identity)
-	var portrait: Control = G.portrait(int(player.get("portraitIndex", 0)), 30, player)
-	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	identity.add_child(_reading_cell(portrait, player, "ContractPortraitLink"))
-	identity.add_child(_fit(_reading_cell(_cell(str(player.get("name", "Joueur")), 0, C.IVORY, 18), player, "ContractNameLink"), "name"))
-	identity.get_child(1).custom_minimum_size.x = 60
-	var ending := horizon(player)
-	var year := int(app.model.get("meta", {}).get("season", 1))
-	var position := _fit(_cell(position_text(player), 0, C.MUTED, 16), "pos")
-	position.name = action_id("ContractPosition", str(player.id))
-	position.tooltip_text = "Poste principal · " + position_caption(player)
-	line.add_child(position)
-	var level := _fit(_cell(G.rating_text(player,true), 0, C.MINT, 16), "rating")
-	level.name = action_id("ContractLevel", str(player.id))
-	level.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	level.tooltip_text = "Niveau global projeté / 100, identique à la fiche du joueur."
-	line.add_child(level)
-	var potential := _fit(_cell(G.potential_text(player), 0, Color("ffb454"), 16), "potential")
-	potential.name = action_id("ContractPotential", str(player.id))
-	potential.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	potential.tooltip_text = "Potentiel / 100. Ce plafond n’est pas garanti."
-	line.add_child(potential)
-	line.add_child(_fit(_cell(G.n(player.age) if player.get("age") != null else "—", 0, C.MUTED, 16), "age"))
-	line.add_child(_fit(_reading_cell(_cell(G.contract_year(ending) if ending >= 0 else "Non renseignée", 0, C.GOLD if ending >= 0 and ending <= year else C.MINT if ending > year else C.MUTED, 16), player, "ContractEndLink", "contract"), "contractEnd"))
-	var salary: Variant = player.get("salary")
-	var salary_cell := _cell(G.salary_amount(salary) if salary is int or salary is float else "Non fourni", 0, C.IVORY, 16)
-	salary_cell.name = action_id("ContractSalary",str(player.id))
-	line.add_child(_fit(_reading_cell(salary_cell, player, "ContractSalaryLink", "contract"), "salary"))
-	line.add_child(_fit(_cell(G.n(player.minutes) if player.get("minutes") != null else "—", 0, C.MUTED, 16), "minutes"))
-	# Vente (vente-joueurs.cjs) : « En vente », « Offre reçue » ou « Départ prévu » remplace le statut ; détail en infobulle.
-	var sale_short := sale_caption(player)
-	var status_cell := _cell(sale_short if not sale_short.is_empty() else str(player.get("status", "—")), 0, C.GOLD if not sale_short.is_empty() else C.MUTED, 16)
-	if not sale_short.is_empty():
-		status_cell.name = action_id("ContractSale", str(player.id))
-		status_cell.tooltip_text = Sales.status(player)
-	line.add_child(_fit(status_cell, "status"))
-	# Colonne PROLONGATION : icône seule (la forme porte le sens, pas la couleur) ; le motif exact est en infobulle.
-	var can_renew: bool = app._live().is_empty() and renewal_short(player, false) == "Accessible"
-	var renewal_icon := C.icon("renew" if can_renew else "lock", 24, VERT if can_renew else Charte.GRIS_VERT)
-	var renewal_cell := _reading_cell(renewal_icon, player, "ContractRenewal", "contract")
-	renewal_cell.tooltip_text = renewal_reason(player, not app._live().is_empty())
-	renewal_cell.accessibility_name = "Prolongation · " + renewal_cell.tooltip_text
-	renewal_cell.set_meta("renewal_short", renewal_short(player, not app._live().is_empty()))
-	line.add_child(_fit(renewal_cell, "renewal"))
-	var actions := HBoxContainer.new()
-	_fit(actions, "actions")
-	actions.add_theme_constant_override("separation", 6)
-	line.add_child(actions)
-	var id := str(player.id)
-	var profile := _button("Fiche", action_id("ContractProfile", id), func(): _open_profile(id))
-	profile.set_meta("player_id", id)
-	profile.set_meta("entity_kind", "player")
-	profile.set_meta("entity_id", id)
-	_compact(profile, 1.0)
-	actions.add_child(profile)
-	var discussion: Dictionary = player.get("renewal", {}).get("negotiation", {})
-	var quote := _button("Discussion" if not discussion.is_empty() else "Prolonger", action_id("ContractRenew", id), func(): _open_quote(id))
-	quote.set_meta("player_id", id)
-	_compact(quote, 1.6)
-	quote.disabled = not app._live().is_empty() or (not bool(player.get("renewal", {}).get("available", false)) and discussion.is_empty())
-	quote.tooltip_text = renewal_reason(player, not app._live().is_empty())
-	actions.add_child(quote)
 
 ## Bouton d'action de ligne : largeur partagée, texte coupé plutôt que débordant, police de table.
 func _compact(button: Button, ratio: float) -> void:
@@ -1068,9 +905,7 @@ func _restore_focus() -> void:
 	var control := find_child(str(state.get("focus", "")), true, false) as Control
 	if control != null and control.is_visible_in_tree(): control.grab_focus()
 
-## ---- Variantes A/B « Contrats en un coup d'œil » ----
-const COLS_A := [["name", 126, 250], ["pos", 60, 100], ["rating", 40, 50], ["age", 34, 45], ["salary", 62, 105], ["share", 90, 130], ["playtime", 130, 190], ["contractEnd", 120, 165], ["conseil", 140, 185], ["actions", 70, 80]]
-const COLS_B := [["conseil", 150, 180], ["name", 126, 250], ["pos", 60, 100], ["rating", 40, 50], ["age", 34, 45], ["share", 170, 270], ["playtime", 160, 220], ["contractEnd", 120, 160]]
+## ---- Lignes et compteurs de « Contrats en un coup d'œil » ----
 
 static func duree_texte(mois: float) -> String:
 	if mois < 0: return "?"
@@ -1083,6 +918,7 @@ static func duree_texte(mois: float) -> String:
 static func pourcent(part: float) -> String:
 	return "—" if part < 0 else ("%.1f %%" % (part * 100.0)).replace(".", ",")
 
+## Compteur ou pastille de filtre : un clic filtre le tableau, un second clic retire le filtre.
 func _basculer(cle: String, valeur: String) -> void:
 	state[cle] = "" if str(state.get(cle, "")) == valeur else valeur
 	state.scroll = 0
@@ -1090,127 +926,70 @@ func _basculer(cle: String, valeur: String) -> void:
 	app._render(false)
 
 func _compter() -> Dictionary:
-	var out := {"tranches": {}, "masse": {}, "conseils": {}}
+	var out := {"tranches": {}, "conseils": {}}
 	for p: Dictionary in app.model.get("squad", []):
 		var t := tranche(mois_restants(p, str(_ctx.today)))
 		out.tranches[t] = int(out.tranches.get(t, 0)) + 1
-		var w: Variant = p.get("salary")
-		if w is int or w is float: out.masse[t] = float(out.masse.get(t, 0.0)) + float(w)
-		var c := conseil(p, _ctx)
+		var c := conseil(p)
 		out.conseils[c] = int(out.conseils.get(c, 0)) + 1
 	return out
 
-func _haut_variante(top: HBoxContainer, known_wage: float) -> void:
+## Haut de l'onglet : quatre compteurs d'échéance (filtres) et la masse salariale (Finances).
+func _haut(top: HBoxContainer, known_wage: float, wage_note: String = "") -> void:
 	var n := _compter()
-	if _variante == "A":
-		for t: Array in TRANCHES:
-			var id := str(t[0])
-			var couleur: Color = t[2]
-			var nombre := int(n.tranches.get(id, 0))
-			var choisi := str(state.tranche) == id
-			var ligne := HBoxContainer.new()
-			ligne.add_theme_constant_override("separation", 14)
-			var rond := C.icon("hourglass", 34, couleur if nombre > 0 else Charte.GRIS_VERT)
-			rond.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			ligne.add_child(rond)
-			var textes := VBoxContainer.new()
-			textes.add_theme_constant_override("separation", 0)
-			ligne.add_child(textes)
-			var chiffre := _label(str(nombre), 34, couleur if nombre > 0 else Charte.GRIS_VERT)
-			chiffre.autowrap_mode = TextServer.AUTOWRAP_OFF
-			textes.add_child(chiffre)
-			var legende := _label(str(t[1]), 16, C.IVORY if choisi else C.MUTED)
-			legende.autowrap_mode = TextServer.AUTOWRAP_OFF
-			textes.add_child(legende)
-			var tuile := _link_button("ContractTranche_" + id.replace("+", "p"), ligne, Charte.PANNEAU.lerp(couleur, 0.26 if choisi else 0.10), "Finit dans %s : %d" % [t[1], nombre], func(): _basculer("tranche", id), Charte.RAYON_CARTE, 14)
-			if choisi: tuile.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU.lerp(couleur, 0.26), couleur, Charte.RAYON_CARTE, 14))
-			tuile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			top.add_child(tuile)
-		var ligne_m := HBoxContainer.new()
-		ligne_m.add_theme_constant_override("separation", 14)
-		ligne_m.add_child(C.icon("money", 34, BLEU))
-		var tm := VBoxContainer.new()
-		tm.add_theme_constant_override("separation", 0)
-		ligne_m.add_child(tm)
-		var vm := _label(G.salary_amount(known_wage), 34, BLEU)
-		vm.autowrap_mode = TextServer.AUTOWRAP_OFF
-		tm.add_child(vm)
-		var lm := _label("masse " + G.salary_period(true), 16, C.MUTED)
-		lm.autowrap_mode = TextServer.AUTOWRAP_OFF
-		tm.add_child(lm)
-		var masse := _link_button("ContractReviewStatWages", ligne_m, Charte.PANNEAU.lerp(BLEU, 0.10), "Masse salariale : Finances", func(): _open_wages(), Charte.RAYON_CARTE, 14)
-		masse.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		masse.size_flags_stretch_ratio = 1.2
-		top.add_child(masse)
-		return
-	# B : frise de la masse salariale par échéance + pastilles des conseils du staff.
-	var cadre := PanelContainer.new()
-	cadre.name = "ContractFrise"
-	cadre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cadre.add_theme_stylebox_override("panel", C.box(Charte.PANNEAU, Color.TRANSPARENT, Charte.RAYON_CARTE, 14))
-	top.add_child(cadre)
-	var boite := VBoxContainer.new()
-	boite.add_theme_constant_override("separation", 10)
-	cadre.add_child(boite)
-	var tete := HBoxContainer.new()
-	tete.add_theme_constant_override("separation", 12)
-	boite.add_child(tete)
-	var titre := _label("MASSE SALARIALE", 20, C.MUTED)
-	titre.autowrap_mode = TextServer.AUTOWRAP_OFF
-	titre.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	tete.add_child(titre)
-	var lien_masse := _chip_button("ContractReviewStatWages", "money", BLEU, G.salary_amount(known_wage) + " " + G.salary_period(true), "Masse salariale : Finances", func(): _open_wages())
-	tete.add_child(lien_masse)
-	var vide := Control.new()
-	vide.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	tete.add_child(vide)
-	for id: String in ["prolonger", "partir", "vendre", "vente", "garder"]:
-		var nombre := int(n.conseils.get(id, 0))
-		if nombre == 0 and id == "vente": continue
-		var def: Array = CONSEILS[id]
-		var choisi := str(state.conseil) == id
-		var pastille := _chip_button("ContractConseilFiltre_" + id, str(def[1]), def[2], "%s  %d" % [def[0], nombre], "%s : %d" % [def[0], nombre], func(): _basculer("conseil", id))
-		var fond: Color = Charte.PANNEAU_3.lerp(def[2], 0.30 if choisi else 0.14)
-		pastille.add_theme_stylebox_override("normal", C.box(fond, def[2] if choisi else Color.TRANSPARENT, Charte.RAYON_PILULE, 6))
-		(pastille.get_meta("label") as Label).add_theme_font_size_override("font_size", 18)
-		tete.add_child(pastille)
-	var barre := HBoxContainer.new()
-	barre.name = "ContractFriseBarre"
-	barre.add_theme_constant_override("separation", 4)
-	boite.add_child(barre)
-	var total := maxf(1.0, float(_ctx.total))
 	for t: Array in TRANCHES:
 		var id := str(t[0])
 		var couleur: Color = t[2]
-		var somme := float(n.masse.get(id, 0.0))
 		var nombre := int(n.tranches.get(id, 0))
 		var choisi := str(state.tranche) == id
-		var contenu := HBoxContainer.new()
-		contenu.add_theme_constant_override("separation", 10)
-		contenu.alignment = BoxContainer.ALIGNMENT_CENTER
-		var a := _label(str(t[1]).to_upper(), 18, Charte.NUIT)
-		a.autowrap_mode = TextServer.AUTOWRAP_OFF
-		a.add_theme_font_override("font", C.BOLD)
-		contenu.add_child(a)
-		var b := _label("%d · %s" % [nombre, pourcent(somme / total)], 18, Charte.NUIT)
-		b.autowrap_mode = TextServer.AUTOWRAP_OFF
-		contenu.add_child(b)
-		var teinte := couleur if choisi or str(state.tranche).is_empty() else couleur.darkened(0.45)
-		var seg := _link_button("ContractTranche_" + id.replace("+", "p"), contenu, teinte, "Finit dans %s : %d · %s de la masse" % [t[1], nombre, pourcent(somme / total)], func(): _basculer("tranche", id), Charte.RAYON_PETIT, 8)
-		seg.custom_minimum_size = Vector2(170, 52)
-		seg.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		seg.size_flags_stretch_ratio = maxf(0.12, somme / total)
-		barre.add_child(seg)
+		var ligne := HBoxContainer.new()
+		ligne.add_theme_constant_override("separation", 14)
+		var rond := C.icon("hourglass", 34, couleur if nombre > 0 else Charte.GRIS_VERT)
+		rond.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		ligne.add_child(rond)
+		var textes := VBoxContainer.new()
+		textes.add_theme_constant_override("separation", 0)
+		ligne.add_child(textes)
+		var chiffre := _label(str(nombre), 34, couleur if nombre > 0 else Charte.GRIS_VERT)
+		chiffre.name = "ContractTrancheNombre_" + id.replace("+", "p")
+		chiffre.autowrap_mode = TextServer.AUTOWRAP_OFF
+		textes.add_child(chiffre)
+		var legende := _label(str(t[1]), 16, C.IVORY if choisi else C.MUTED)
+		legende.autowrap_mode = TextServer.AUTOWRAP_OFF
+		textes.add_child(legende)
+		var tuile := _link_button("ContractTranche_" + id.replace("+", "p"), ligne, Charte.PANNEAU.lerp(couleur, 0.26 if choisi else 0.10), "Finit dans %s : %d" % [t[1], nombre], func(): _basculer("tranche", id), Charte.RAYON_CARTE, 14)
+		if choisi: tuile.add_theme_stylebox_override("normal", C.box(Charte.PANNEAU.lerp(couleur, 0.26), couleur, Charte.RAYON_CARTE, 14))
+		tuile.set_meta("choisi", choisi)
+		tuile.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		top.add_child(tuile)
+	var ligne_m := HBoxContainer.new()
+	ligne_m.add_theme_constant_override("separation", 14)
+	ligne_m.add_child(C.icon("money", 34, BLEU))
+	var tm := VBoxContainer.new()
+	tm.add_theme_constant_override("separation", 0)
+	ligne_m.add_child(tm)
+	var vm := _label(G.salary_amount(known_wage), 34, BLEU)
+	vm.name = "ContractReviewWage"
+	vm.autowrap_mode = TextServer.AUTOWRAP_OFF
+	tm.add_child(vm)
+	var lm := _label("masse " + G.salary_period(true) + wage_note, 16, C.MUTED)
+	lm.autowrap_mode = TextServer.AUTOWRAP_OFF
+	tm.add_child(lm)
+	var masse := _link_button("ContractReviewStatWages", ligne_m, Charte.PANNEAU.lerp(BLEU, 0.10), "Masse salariale : Finances", func(): _open_wages(), Charte.RAYON_CARTE, 14)
+	masse.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	masse.size_flags_stretch_ratio = 1.2
+	top.add_child(masse)
 
 func _ligne_vide(player: Dictionary) -> HBoxContainer:
 	var panel := PanelContainer.new()
 	panel.name = action_id("ContractRow", str(player.id))
 	panel.set_meta("player_id", str(player.id))
-	panel.custom_minimum_size.y = 44 if _variante == "B" else 40
+	panel.custom_minimum_size.y = 40
 	var style := C.box(Color.TRANSPARENT, Color.TRANSPARENT, 0, 0)
 	style.content_margin_left = 8
 	style.content_margin_right = 8
 	panel.add_theme_stylebox_override("panel", style)
+	# Rayure une ligne sur deux et survol de ligne communs à toutes les listes (ui/survol_ligne.gd).
 	load("res://ui/survol_ligne.gd").poser(panel).rang_fixe = _rows.get_child_count()
 	_rows.add_child(panel)
 	var line := HBoxContainer.new()
@@ -1229,18 +1008,21 @@ func _identite(line: HBoxContainer, player: Dictionary) -> void:
 	identity.add_child(_fit(_reading_cell(_cell(str(player.get("name", "Joueur")), 0, C.IVORY, 18), player, "ContractNameLink"), "name"))
 	identity.get_child(1).custom_minimum_size.x = 60
 
-func _cellule_conseil(player: Dictionary, fort: bool) -> Control:
-	var id := conseil(player, _ctx)
+## Conseil du staff : pastille icône + mot ; un clic agit (prolongation, offres) ou ouvre l'onglet Contrat de la fiche.
+func _cellule_conseil(player: Dictionary) -> Control:
+	var id := conseil(player)
 	var def: Array = CONSEILS[id]
 	var ligne := HBoxContainer.new()
 	ligne.add_theme_constant_override("separation", 6)
-	ligne.add_child(C.icon(str(def[1]), 18, Charte.NUIT if fort else def[2]))
-	var mot := _label(str(def[0]), 16, Charte.NUIT if fort else def[2])
+	ligne.add_child(C.icon(str(def[1]), 18, def[2]))
+	var mot := _label(str(def[0]), 16, def[2])
 	mot.autowrap_mode = TextServer.AUTOWRAP_OFF
-	if fort: mot.add_theme_font_override("font", C.BOLD)
 	ligne.add_child(mot)
 	var pid := str(player.id)
-	var bouton := _link_button(action_id("ContractConseil", pid), ligne, def[2] if fort else Charte.PANNEAU_3.lerp(def[2], 0.16), "Conseil du staff : " + str(def[0]), func(): _agir_conseil(pid, id), Charte.RAYON_PILULE, 5)
+	var c: Variant = player.get("conseilStaff")
+	var bouton := _link_button(action_id("ContractConseil", pid), ligne, Charte.PANNEAU_3.lerp(def[2], 0.16), "Conseil du staff : " + str(def[0]), func(): _agir_conseil(pid, id), Charte.RAYON_PILULE, 5)
+	bouton.set_meta("conseil", id)
+	if c is Dictionary: bouton.set_meta("raison", str(c.get("raison", "")))
 	bouton.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	bouton.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var cadre := HBoxContainer.new()
@@ -1258,16 +1040,11 @@ func _agir_conseil(pid: String, id: String) -> void:
 		"vente", "vendre": Pages.ouvrir(app, "offres")
 		_: _open_profile(pid, "contract", action_id("ContractConseil", pid))
 
-func _cellule_masse(player: Dictionary, avec_salaire: bool) -> Control:
+## Part de la masse salariale : barre bleue + pourcentage ; un clic ouvre Finances (salaires).
+func _cellule_masse(player: Dictionary) -> Control:
 	var part := part_masse(player, _ctx)
 	var ligne := HBoxContainer.new()
 	ligne.add_theme_constant_override("separation", 8)
-	if avec_salaire:
-		var s := _label(G.salary_amount(player.get("salary")), 16, C.IVORY)
-		s.autowrap_mode = TextServer.AUTOWRAP_OFF
-		s.custom_minimum_size.x = 84
-		s.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		ligne.add_child(s)
 	var plafond := maxf(0.01, 3.0 / maxf(1.0, float(_ctx.n)))
 	var barre := ProgressBar.new()
 	barre.custom_minimum_size = Vector2(40, 10)
@@ -1289,47 +1066,33 @@ func _cellule_masse(player: Dictionary, avec_salaire: bool) -> Control:
 	_fit(lien, "share")
 	return lien
 
-func _cellule_jeu(player: Dictionary, cases: bool) -> Control:
+## Rôle promis au contrat (pastille commune ui/role_contrat.gd) + temps de jeu réel en barre de la couleur du rôle.
+func _cellule_jeu(player: Dictionary) -> Control:
 	var part := temps_de_jeu(player, _ctx)
-	var role := role_jeu(part)
+	var role := Role.role(player)
 	var ligne := HBoxContainer.new()
-	ligne.add_theme_constant_override("separation", 6)
-	if cases:
-		var pleines := int(roundf(part * 10.0))
-		for i in 10:
-			var c := ColorRect.new()
-			c.custom_minimum_size = Vector2(9, 16)
-			c.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			c.color = role[1] if i < pleines else Charte.PANNEAU_3
-			ligne.add_child(c)
-	else:
-		var barre := ProgressBar.new()
-		barre.custom_minimum_size = Vector2(46, 10)
-		barre.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		barre.max_value = 1.0
-		barre.value = part
-		barre.show_percentage = false
-		barre.add_theme_stylebox_override("background", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 3, 0))
-		barre.add_theme_stylebox_override("fill", C.box(role[1], Color.TRANSPARENT, 3, 0))
-		ligne.add_child(barre)
-	var mot := _label(str(role[0]), 16, role[1])
-	mot.autowrap_mode = TextServer.AUTOWRAP_OFF
-	mot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	ligne.add_child(mot)
-	var promesse: Variant = _ctx.promesses.get(str(player.id))
-	if promesse is Dictionary:
-		var p := _label("◆ promis", 14, Color("a88bd6"))
-		p.autowrap_mode = TextServer.AUTOWRAP_OFF
-		ligne.add_child(p)
+	ligne.add_theme_constant_override("separation", 8)
+	if not role.is_empty(): ligne.add_child(Role.pastille(role, 16))
+	var barre := ProgressBar.new()
+	barre.custom_minimum_size = Vector2(40, 10)
+	barre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	barre.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	barre.max_value = 1.0
+	barre.value = part
+	barre.show_percentage = false
+	barre.add_theme_stylebox_override("background", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, 3, 0))
+	barre.add_theme_stylebox_override("fill", C.box(Role.couleur(role) if not role.is_empty() else Charte.GRIS_VERT, Color.TRANSPARENT, 3, 0))
+	ligne.add_child(barre)
 	var lien := _reading_cell(ligne, player, "ContractPlaytime")
-	lien.tooltip_text = "%s · %d min · %d matchs" % [role[0], int(player.get("minutes", 0)), int(player.get("appearances", 0))]
+	lien.tooltip_text = "%s%s · %d min · %d matchs" % [Role.libelle(role) if not role.is_empty() else "Sans contrat", " promis" if Role.promis(player) else "", int(player.get("minutes", 0)), int(player.get("appearances", 0))]
+	lien.set_meta("role", role)
 	_fit(lien, "playtime")
 	return lien
 
-func _cellule_echeance(player: Dictionary, avec_mois: bool) -> Control:
+## Échéance : pastille colorée par tranche (année de fin + durée restante) ; un clic ouvre l'onglet Contrat de la fiche.
+func _cellule_echeance(player: Dictionary) -> Control:
 	var mois := mois_restants(player, str(_ctx.today))
-	var t := tranche(mois)
-	var couleur := tranche_couleur(t)
+	var couleur := tranche_couleur(tranche(mois))
 	var ligne := HBoxContainer.new()
 	ligne.add_theme_constant_override("separation", 6)
 	if horizon(player) < 0:
@@ -1342,88 +1105,44 @@ func _cellule_echeance(player: Dictionary, avec_mois: bool) -> Control:
 		interieur.add_theme_constant_override("separation", 5)
 		fond.add_child(interieur)
 		interieur.add_child(C.icon("hourglass", 16, couleur))
-		var txt := _label(("juin " if not avec_mois else "") + G.contract_year(horizon(player)) + (" · " + duree_texte(mois) if avec_mois else ""), 16, couleur)
+		var txt := _label(G.contract_year(horizon(player)) + " · " + duree_texte(mois), 16, couleur)
 		txt.autowrap_mode = TextServer.AUTOWRAP_OFF
 		interieur.add_child(txt)
 		ligne.add_child(fond)
-		if not avec_mois:
-			var m := _label(duree_texte(mois), 15, C.MUTED)
-			m.autowrap_mode = TextServer.AUTOWRAP_OFF
-			m.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			ligne.add_child(m)
 	var lien := _reading_cell(ligne, player, "ContractEndLink", "contract")
 	_fit(lien, "contractEnd")
 	return lien
 
-func _row_a(player: Dictionary) -> void:
+func _row(player: Dictionary) -> void:
 	var line := _ligne_vide(player)
 	_identite(line, player)
-	line.add_child(_fit(_cell(position_text(player), 0, C.MUTED, 16), "pos"))
+	var id := str(player.id)
+	var position := _fit(_cell(position_text(player), 0, C.MUTED, 16), "pos")
+	position.name = action_id("ContractPosition", id)
+	position.tooltip_text = "Poste principal · " + position_caption(player)
+	line.add_child(position)
 	var level := _fit(_cell(G.rating_text(player, true), 0, C.MINT, 16), "rating")
+	level.name = action_id("ContractLevel", id)
 	level.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	level.tooltip_text = "Niveau global projeté / 100, identique à la fiche du joueur."
 	line.add_child(level)
 	line.add_child(_fit(_cell(G.n(player.age) if player.get("age") != null else "—", 0, C.MUTED, 16), "age"))
-	var salary_cell := _cell(G.salary_amount(player.get("salary")), 0, C.IVORY, 16)
+	var salary: Variant = player.get("salary")
+	var salary_cell := _cell(G.salary_amount(salary) if salary is int or salary is float else "Non fourni", 0, C.IVORY, 16)
+	salary_cell.name = action_id("ContractSalary", id)
 	line.add_child(_fit(_reading_cell(salary_cell, player, "ContractSalaryLink", "contract"), "salary"))
-	line.add_child(_cellule_masse(player, false))
-	line.add_child(_cellule_jeu(player, false))
-	line.add_child(_cellule_echeance(player, true))
-	line.add_child(_cellule_conseil(player, false))
-	var id := str(player.id)
-	var profile := _button("Fiche", action_id("ContractProfile", id), func(): _open_profile(id))
-	_compact(profile, 1.0)
+	line.add_child(_cellule_masse(player))
+	line.add_child(_cellule_jeu(player))
+	line.add_child(_cellule_echeance(player))
+	line.add_child(_cellule_conseil(player))
+	# Prolonger (ou reprendre la discussion) : l'action de l'ancienne colonne PROLONG., motif exact en infobulle.
 	var actions := HBoxContainer.new()
 	_fit(actions, "actions")
-	actions.add_child(profile)
 	line.add_child(actions)
-
-func _rows_b(players: Array) -> void:
-	var groupes: Dictionary = {}
-	for p: Dictionary in players:
-		var t := tranche(mois_restants(p, str(_ctx.today)))
-		if not groupes.has(t): groupes[t] = []
-		groupes[t].append(p)
-	var total := maxf(1.0, float(_ctx.total))
-	for t: Array in TRANCHES + [["", "Non renseignée", Charte.GRIS_VERT]]:
-		var id := str(t[0])
-		if not groupes.has(id): continue
-		var liste: Array = groupes[id]
-		var somme := 0.0
-		for p: Dictionary in liste:
-			var w: Variant = p.get("salary")
-			if w is int or w is float: somme += float(w)
-		var couleur: Color = t[2]
-		var tete := HBoxContainer.new()
-		tete.add_theme_constant_override("separation", 14)
-		tete.add_child(C.icon("hourglass", 20, couleur))
-		var a := _label(str(t[1]).to_upper(), 20, couleur)
-		a.add_theme_font_override("font", C.BOLD)
-		a.autowrap_mode = TextServer.AUTOWRAP_OFF
-		tete.add_child(a)
-		var b := _label("%d" % liste.size(), 20, C.IVORY)
-		b.autowrap_mode = TextServer.AUTOWRAP_OFF
-		tete.add_child(b)
-		var c := _label(pourcent(somme / total) + " de la masse", 16, BLEU)
-		c.autowrap_mode = TextServer.AUTOWRAP_OFF
-		c.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		tete.add_child(c)
-		var bande := _link_button("ContractGroupe_" + (id.replace("+", "p") if not id.is_empty() else "inconnu"), tete, Charte.PANNEAU.lerp(couleur, 0.16), "%s : %d" % [t[1], liste.size()], func(): _groupe(id), Charte.RAYON_PETIT, 6)
-		bande.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		_rows.add_child(bande)
-		for p: Dictionary in liste: _row_b(p)
-
-func _row_b(player: Dictionary) -> void:
-	var line := _ligne_vide(player)
-	line.add_child(_cellule_conseil(player, true))
-	_identite(line, player)
-	line.add_child(_fit(_cell(position_text(player), 0, C.MUTED, 16), "pos"))
-	var level := _fit(_cell(G.rating_text(player, true), 0, C.MINT, 16), "rating")
-	level.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	line.add_child(level)
-	line.add_child(_fit(_cell(G.n(player.age) if player.get("age") != null else "—", 0, C.MUTED, 16), "age"))
-	line.add_child(_cellule_masse(player, true))
-	line.add_child(_cellule_jeu(player, true))
-	line.add_child(_cellule_echeance(player, false))
-
-func _groupe(id: String) -> void:
-	if not id.is_empty(): _basculer("tranche", id)
+	var discussion: Dictionary = player.get("renewal", {}).get("negotiation", {})
+	var quote := _button("Discussion" if not discussion.is_empty() else "Prolonger", action_id("ContractRenew", id), func(): _open_quote(id))
+	quote.set_meta("player_id", id)
+	_compact(quote, 1.0)
+	quote.disabled = not app._live().is_empty() or (not bool(player.get("renewal", {}).get("available", false)) and discussion.is_empty())
+	quote.tooltip_text = renewal_reason(player, not app._live().is_empty())
+	actions.add_child(quote)

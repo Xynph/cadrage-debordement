@@ -1281,6 +1281,9 @@ function createBridge(options={}){
      run("nativeSystems.domain('doublons').observe();");
      // Fragilité des joueurs créés (fragilite.cjs) : tirée à la création, posée aussi sur les anciennes carrières.
      run("nativeSystems.domain('fragilite').observe();");
+     // Rôle promis au contrat (role-contrat.cjs) : enregistré pour chaque nouveau contrat du club et, au premier passage,
+     // pour les contrats des anciennes carrières ; jamais après une commande déclarée sans effet sur les joueurs.
+     if(!stateVersions.untouched(command,payload).includes('clubs'))run("nativeSystems.domain('roleContrat').observe();");
      run("nativeSystems.domain('clubMail').observe(nativeCommand);");
      // Réglage « Conférences ordinaires : envoyer l'adjoint » (press.cjs) : la conférence ordinaire qui vient de
      // s'ouvrir est tenue par Gabi dans la même commande, avant la sauvegarde ; « Jour suivant » et « Continuer »
