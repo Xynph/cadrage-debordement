@@ -33,6 +33,10 @@ func open(id: String, recruiting: bool) -> ConfirmationDialog:
 	app.SquadViews.contract(app,current(id,recruiting),recruiting)
 	await settle()
 	var dialog := app.find_child("ContractOffer",true,false) as ConfirmationDialog
+	# Page « Offre au joueur » : la fenêtre adoptée par la page (une offre rouverte après une contre-offre peut porter un
+	# autre nom de nœud tant que l'ancienne n'est pas libérée).
+	var hote := app.get_node_or_null("RecrutementHote")
+	if recruiting and hote != null and hote.get_meta("fenetre", null) is ConfirmationDialog: dialog = hote.get_meta("fenetre")
 	if recruiting:
 		var state: Variant = app.management_ui.get("recrutement_page")
 		check(dialog != null and not dialog.visible and offer_page() != null and state is Dictionary and state.get("kind") == "negociation" and str(state.get("player_id","")) == id,"Écran commun raccordé : recrutement (Offre au joueur)")

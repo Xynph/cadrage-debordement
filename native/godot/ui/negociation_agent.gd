@@ -81,6 +81,9 @@ static func donnees(ctx: Dictionary) -> Dictionary:
 	var contre := str(negociation.get("status", "")) == "counter"
 	var retrait := bool(ctx.phase.get("blocked", false))
 	var cible := int(negociation.get("salary", val.demande)) if contre else int(val.demande)
+	# Offre guidée : la clause libératoire et la prime en plus abaissent ce qu'il demande (même calcul que le moteur).
+	if not contre and offre_guidee(ctx):
+		cible -= Guidee.baisse(ctx, int(val.demande), int(val.annees), str(Guidee.extras(ctx).clause), Guidee.prime_en_plus(ctx, int(val.annees)))
 	var propose := int(val.propose)
 	var etat_salaire := "ok" if propose >= cible else "proche" if float(propose) >= .9 * cible else "loin"
 	var etat_duree := "ok"
@@ -176,7 +179,10 @@ static func construire(body: Control, ctx: Dictionary) -> Control:
 	if not ctx.has("role"):
 		var repris := _role_repris(ctx)
 		if not repris.is_empty(): ctx["role"] = repris
-	var redessiner := func(): _dessiner(toile, dessin, ctx)
+	# ctx est rangé sur la toile ; les fonctions rangées dans ctx ne capturent que des nœuds (jamais ctx lui-même : un
+	# dictionnaire qui se contient par une fonction ne serait jamais libéré).
+	toile.set_meta("ctx", ctx)
+	var redessiner := func(): if is_instance_valid(toile): _dessiner(toile, dessin, toile.get_meta("ctx"))
 	ctx["redessiner"] = redessiner
 	ctx.salary.value_changed.connect(func(_x: float): redessiner.call())
 	ctx.years.value_changed.connect(func(_x: float): redessiner.call())
@@ -190,7 +196,7 @@ static func _dessiner(toile: Control, dessin: Control, ctx: Dictionary) -> void:
 	_colonnes(toile, dessin, ctx, d)
 	Offre._marquer(toile)
 	var maj: Variant = ctx.get("maj_signature")
-	if maj is Callable and (maj as Callable).is_valid(): (maj as Callable).call()
+	if maj is Callable and (maj as Callable).is_valid(): (maj as Callable).call(role_manquant(ctx))
 
 ## Clic sur un rôle : promis tout de suite ; la proposition suit la demande du rôle si elle y était.
 static func choisir_role(ctx: Dictionary, role: String) -> void:
@@ -365,8 +371,25 @@ static func _centre(toile: Control, parent: Control, ctx: Dictionary, d: Diction
 	D.place(ctx.years, Rect2(416 + 12 + 400, float(y_champs.NegoLigneDuree) + hauteur - 54, 220, 46))
 	ctx.salary.visible = not manque
 	ctx.years.visible = not manque
-	# Écart et fin de contrat : deux tuiles chiffre sous les lignes, s'il reste la place.
-	if not manque and y + 84 <= 760:
+	# Conseils du recruteur (offre guidée) posés sur les lignes Salaire et Durée : un clic les applique.
+	if guidee and not cs.is_empty():
+		var l_salaire := centre.get_node_or_null("NegoLigneSalaire") as Control
+		var l_duree := centre.get_node_or_null("NegoLigneDuree") as Control
+		if l_salaire != null:
+			Pieces.pastille(l_salaire, 84 + Pieces.largeur_titre(("Salaire " + G.salary_period(true)).to_upper(), 18), 10, "Conseil " + G.salary_amount(cs.ouverture), "search", "NegoConseilSalaire", "", Pieces.ORANGE, Charte.PANNEAU_3,
+				func(): Guidee.appliquer(ctx, int(cs.ouverture), 0))
+		if l_duree != null and int(cs.duree) != int(d.annees):
+			Pieces.pastille(l_duree, 84 + Pieces.largeur_titre("DURÉE", 18), 10, "Conseil %d an%s" % [int(cs.duree), "s" if int(cs.duree) > 1 else ""], "search", "NegoConseilDuree", "", Pieces.ORANGE, Charte.PANNEAU_3,
+				func(): Guidee.appliquer(ctx, 0, int(cs.duree)))
+	# Sous les lignes, s'il reste la place : coût immédiat / par saison / total (offre guidée), sinon écart et fin de contrat.
+	if not manque and y + 84 <= 760 and guidee:
+		var c := Guidee.couts(d)
+		var fenetre_total := func(): Offre._fenetre(toile, "NegoFenetreCout", "Coût total", [[G.euros(c.immediat), "Prime", Offre.COULEUR_PRIME, "money"],
+			[G.euros(c.saison), "Salaire / saison", Pieces.BLEU, "calendar"], ["× %d" % int(c.annees), "Saisons", Offre.COULEUR_DUREE, "flag"], [G.euros(c.total), "Total", Charte.IVOIRE, "shield"]], Pieces.BLEU)
+		Pieces.tuile(centre, Rect2(24, y + 10, 196, 84), Guidee.court(int(c.immediat)), "immédiat", Offre.COULEUR_PRIME, "NegoCoutImmediat", 28, "", "money", true, func(): Offre._fenetre_budget(toile, d))
+		Pieces.tuile(centre, Rect2(232, y + 10, 196, 84), Guidee.court(int(c.saison)), "par saison", Pieces.BLEU, "NegoCoutSaison", 28, "", "calendar", true, fenetre_total)
+		Pieces.tuile(centre, Rect2(440, y + 10, 196, 84), Guidee.court(int(c.total)), "total · %d saison%s" % [int(c.annees), "s" if int(c.annees) > 1 else ""], Charte.IVOIRE, "NegoCoutTotal", 28, "", "shield", true, fenetre_total)
+	elif not manque and y + 84 <= 760:
 		var ecart := roundi(float(int(d.propose) - int(d.cible)) / 100.0) * 100
 		Pieces.tuile(centre, Rect2(24, y + 10, 300, 84), ("+" if ecart > 0 else "−" if ecart < 0 else "") + G.salary_amount(absi(ecart)), "écart avec l’agent", couleur_etat(str(d.salaire)), "NegoTuileEcart", 30, "", icone_etat(str(d.salaire)), true, func(): Offre._fenetre_salaire(toile, d))
 		Pieces.tuile(centre, Rect2(336, y + 10, 300, 84), str(d.fin), "fin du contrat", Offre.COULEUR_DUREE, "NegoTuileFin", 30, "", "calendar", true, func(): Offre._fenetre_duree(toile, d))

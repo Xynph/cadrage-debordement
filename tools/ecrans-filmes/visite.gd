@@ -57,10 +57,9 @@ const EXTRAS := [
 	{"id": "presse-historique", "libelle": "Presse : Historique", "type": "presse_onglet", "onglet": 2},
 	{"id": "presse-portraits", "libelle": "Presse : Portraits", "type": "presse_onglet", "onglet": 3},
 	{"id": "v2-recrutement-offre", "libelle": "Recrutement : écran Offre au joueur", "type": "recrutement_etape", "etape": "offre"},
-	{"id": "v2-recrutement-confirmation", "libelle": "Recrutement : confirmation en place de l'offre", "type": "recrutement_etape", "etape": "offre_confirmation"},
-	{"id": "v2-recrutement-offre-fenetre", "libelle": "Recrutement : petite fenêtre du salaire sur l'offre", "type": "recrutement_etape", "etape": "offre_fenetre"},
-	{"id": "negociation-promesses", "libelle": "Négociation avec l'agent : promesses (CD_VARIANTE_VISUELLE)", "type": "recrutement_etape", "etape": "offre"},
-	{"id": "negociation-contrat", "libelle": "Négociation avec l'agent : contrat après une contre-offre", "type": "recrutement_etape", "etape": "offre_contre", "puis": ["NegoRole_rotation", "NegoEtapeContrat"]},
+	{"id": "v2-recrutement-offre-fenetre", "libelle": "Recrutement : petite fenêtre du salaire sur l'offre", "type": "recrutement_etape", "etape": "offre_fenetre", "puis": ["NegoRole_rotation"]},
+	{"id": "negociation-promesses", "libelle": "Négociation avec l'agent : rôle promis à choisir", "type": "recrutement_etape", "etape": "offre"},
+	{"id": "negociation-contrat", "libelle": "Négociation avec l'agent : contrat après une contre-offre", "type": "recrutement_etape", "etape": "offre_contre"},
 	{"id": "negociation-disponibilite", "libelle": "Fiche joueur : petite fenêtre Disponibilité", "type": "joueur", "onglet": 3, "presser": "PlayerSaleToggle"},
 	{"id": "v2-recrutement-observation", "libelle": "Recrutement : confirmation en place de l'observation", "type": "recrutement_etape", "etape": "observation"},
 	{"id": "fiche-club", "libelle": "Fiche d'un club adverse", "type": "club"},
@@ -83,7 +82,7 @@ const EXTRAS := [
 	{"id": "preparation-adversaire", "libelle": "Préparation · rapport adverse (sous-page)", "type": "preparation_sous", "sous": "adversaire"},
 	{"id": "effectif-contrats", "libelle": "Effectif · onglet Contrats", "type": "effectif_onglet", "onglet": 2},
 	{"id": "contrats-prolongation", "libelle": "Effectif · Contrats · prolongation d'un joueur", "type": "effectif_onglet", "onglet": 2, "ouvrir_prefixe": "ContractRenew_"},
-	{"id": "contrats-prolongation-fenetre", "libelle": "Effectif · Contrats · petite fenêtre de la prolongation", "type": "effectif_onglet", "onglet": 2, "ouvrir_prefixe": "ContractRenew_", "puis": ["ProlongationApresLien"]},
+	{"id": "contrats-prolongation-fenetre", "libelle": "Effectif · Contrats · petite fenêtre de la prolongation", "type": "effectif_onglet", "onglet": 2, "ouvrir_prefixe": "ContractRenew_", "puis": ["NegoRole_rotation", "NegoLigneSalaireLien"]},
 	{"id": "contrats-fenetre-echeance", "libelle": "Effectif · Contrats · petite fenêtre des échéances", "type": "effectif_onglet", "onglet": 2, "ouvrir_prefixe": "ContractReviewBar_"},
 	{"id": "effectif-condition", "libelle": "Effectif · onglet Condition", "type": "effectif_onglet", "onglet": 1},
 	{"id": "effectif-poste", "libelle": "Effectif · liste classée au poste 12 (clic sur le maillot du XV)", "type": "effectif_onglet", "onglet": 0, "poste_xv": 12},
@@ -677,7 +676,14 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			cible.pressed.emit()
 			await stabiliser()
 			if etape == "offre_contre":
-				# Proposition basse envoyée au moteur, puis l'offre rouverte : l'agent a répondu par une contre-offre.
+				# Proposition basse envoyée au moteur (rôle promis d'abord, obligatoire), puis l'offre rouverte : l'agent a
+				# répondu par une contre-offre ; le rôle promis reste promis.
+				for role in ["rotation", "titulaire", "espoir", "appoint"]:
+					var carte := app.find_child("NegoRole_" + role, true, false) as Button
+					if carte != null:
+						carte.pressed.emit()
+						break
+				await stabiliser()
 				var champ := app.find_child("OfferSalary", true, false) as SpinBox
 				var envoi := app.find_child("RecrutementPageValider", true, false) as Button
 				if champ == null or envoi == null or envoi.disabled: return {"statut": "indisponible", "note": "offre non envoyable"}
@@ -700,16 +706,11 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 					bouton.pressed.emit()
 					await stabiliser()
 			if etape == "offre_fenetre":
-				var salaire := app.find_child("OffreRegleEcartZoneLien", true, false) as Button
+				var salaire := app.find_child("NegoLigneSalaireLien", true, false) as Button
 				if salaire == null: return {"statut": "echec", "note": "chiffre du salaire absent de l'offre"}
 				salaire.pressed.emit()
 				await stabiliser()
 				if app.find_child("OffreFenetreSalaire", true, false) == null: return {"statut": "echec", "note": "petite fenêtre du salaire non ouverte"}
-			if etape == "offre_confirmation":
-				var valider := app.find_child("RecrutementPageValider", true, false) as Button
-				if valider == null or valider.disabled: return {"statut": "indisponible", "note": "offre non envoyable pour cette piste"}
-				valider.pressed.emit()
-				await stabiliser()
 		"recrutement_sous":
 			app.management_ui.erase("recrutement_page")
 			app._navigate("Recrutement")

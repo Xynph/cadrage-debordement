@@ -193,7 +193,7 @@ static func open(app: Control, player: Dictionary, recruiting: bool, answer: Str
 	# Négociation avec l'agent (idée FM 18, choix A de Léo du 23/11/2026) : budgets / promesses puis contrat / bulles de
 	# l'agent, au recrutement comme à la prolongation. Rôle promis obligatoire : la signature reste grisée sans lui.
 	var ok_bouton := dialog.get_ok_button()
-	ctx["maj_signature"] = func(): if is_instance_valid(ok_bouton): ok_bouton.disabled = blocked or Nego.role_manquant(ctx)
+	ctx["maj_signature"] = func(manquant: bool): if is_instance_valid(ok_bouton): ok_bouton.disabled = blocked or manquant
 	Nego.construire(body, ctx)
 	dialog.get_ok_button().text = "SIGNER SI ACCORD"
 	dialog.get_ok_button().tooltip_text = "Envoie ces conditions. Si le joueur accepte, le contrat est signé et la prime est débitée ; sinon, seule la discussion est enregistrée. Annuler ne transmet aucune proposition."
