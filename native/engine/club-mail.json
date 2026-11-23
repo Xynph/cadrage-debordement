@@ -4,7 +4,7 @@
   "cadence": {
     "_doc": "maxParJour : mails reçus au plus le même jour (suites comprises) ; nature de chaque type (décision de Léo, 18/11/2026) : « action » (une réponse est attendue : arrêt de « Continuer » à lui seul), « info » (rangé dans l'arrêt d'info du jour, un seul par jour), « routine » (n'arrête jamais à lui seul : rangé dans l'arrêt veille, lendemain ou info du jour s'il y en a un) ; semaine : plafond par catégorie et par semaine (lundi-dimanche) ; boite : mails conservés ; delaiReponse : jours avant qu'une demande sans réponse soit classée ; memoire : jours pendant lesquels un même sujet n'est pas réécrit.",
     "maxParJour": 3,
-    "semaine": { "infirmerie": 3, "vestiaire": 3, "staff": 4, "recrutement": 2, "presse": 2, "direction": 2, "competition": 4, "formation": 2, "moments": 2, "contrats": 10, "meteo": 2, "commotion": 6, "transferts": 6, "analyse": 2 },
+    "semaine": { "infirmerie": 3, "vestiaire": 3, "staff": 4, "recrutement": 2, "presse": 2, "direction": 2, "competition": 4, "formation": 2, "moments": 2, "contrats": 10, "meteo": 2, "commotion": 6, "transferts": 6, "analyse": 2, "tests": 2 },
     "boite": 160,
     "projection": 80,
     "delaiReponse": 7,
@@ -24,7 +24,8 @@
     "meteo": { "label": "Météo", "ecran": "Composition" },
     "commotion": { "label": "Médical", "ecran": "infirmerie" },
     "transferts": { "label": "Transferts", "ecran": "ventes" },
-    "analyse": { "label": "Analyse vidéo", "ecran": "Préparation" }
+    "analyse": { "label": "Analyse vidéo", "ecran": "Préparation" },
+    "tests": { "label": "Médical", "ecran": "tests" }
   },
   "mercato": {
     "_doc": "Courriers du mercato (docs/gdd/calendrier-mutations.md § 3 ter) : échos hors période des mutations (routine), point hebdomadaire, ouverture et dernière semaine pendant la période (vente-joueurs.json, fenetres). Faits du Monde lus dans S.calendrierMutations.mercato.semaines (types listés) ; echos.lignes, point.* : lignes au plus par section avant « et N autres » ; memoire : faits déjà annoncés gardés (ni répétés, ni redonnés en courrier individuel) ; titres : en-têtes de section, {arrivee} = lendemain de la fin de période.",
@@ -92,6 +93,15 @@
         { "id": "recuperation", "libelle": "Séance de récupération cette semaine", "effets": { "entrainement": "repos" }, "resultat": "La séance collective de la semaine passe en récupération." },
         { "id": "programme", "libelle": "Garder le programme prévu", "effets": {}, "resultat": "Le programme de la semaine ne change pas." }
       ]
+    },
+    "tests_reprise": {
+      "categorie": "tests", "declencheur": "tests_reprise", "priorite": 12, "nature": "info", "ecran": "tests",
+      "expediteur": "Le médecin du club",
+      "formulations": [
+        {"sujet": "Tests de reprise avant {adversaire}", "corps": "Coach, j'ai fait passer les tests physiques aux joueurs qui reviennent de blessure, avant le match du {match} contre {adversaire}.\n\n{liste}\n\nLes minutes, c'est mon estimation. Au-delà, le risque de blessure grimpe."},
+        {"sujet": "Retours de blessure : mes conseils pour {adversaire}", "corps": "Point médical avant {adversaire} ({match}) : les revenants sont passés aux tests ce matin.\n\n{liste}\n\nJe ne lis pas dans leurs muscles : prends ces minutes comme un repère. Plus tu les dépasses, plus tu prends de risques."}
+      ],
+      "reponses": []
     },
     "retour_blesse": {
       "categorie": "infirmerie", "declencheur": "retour_blesse", "priorite": 30, "nature": "routine", "ecran": "infirmerie",

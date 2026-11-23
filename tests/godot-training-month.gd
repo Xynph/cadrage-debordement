@@ -1,9 +1,11 @@
 extends SceneTree
 ## Entraînement › Mois (22/11/2026) : grille du mois à trois créneaux par jour, petite fenêtre d'un jour (séances et
 ## effets), semaine type (quatre cartes, choix appliqué par le moteur), copier / coller, liens venus du Calendrier et de
-## la date de la barre haute ; l'onglet Semaine reste en place.
+## la date de la barre haute ; fiche de séance (une séance remplacée d'un clic par le moteur) ; l'onglet Semaine reste
+## en place.
 const ContextualFlow = preload("helpers/contextual_flow.gd")
 const Mois = preload("res://ui/immersive08/training_mois.gd")
+const Agenda = preload("res://ui/immersive08/calendar_agenda.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -119,6 +121,41 @@ func run() -> void:
 		var ensuite:=0
 		for v in planning().get("programmeByFixture",{}).values(): if v==cible: ensuite+=1
 		check(ensuite==comptes+1,"Coller applique la semaine type copiée à une autre semaine")
+	# Fiche de séance (idée FM27 n° 25) : clic sur une séance d'un jour à venir (hors semaine en cours) -> fiche avec
+	# jauges (risque de blessure et moral compris) ; un clic dans la liste remplace la séance par le moteur, sans bouton
+	# Confirmer, et la fiche reste ouverte sur la nouvelle séance.
+	var today:=str(planning().get("today",""))
+	var lundi_courant:=str(planning().get("week",{}).get("weekStart",""))
+	var jour_futur:=""
+	for s: Variant in planning().get("sessions",[]):
+		if s is Dictionary and str(s.date)>today and Agenda.week(str(s.date))[0]!=lundi_courant and found("TrainingMonthDayOpen_"+str(s.date))!=null:
+			jour_futur=str(s.date); break
+	check(not jour_futur.is_empty(),"Un jour à venir avec séances dans la grille")
+	if not jour_futur.is_empty() and await press("TrainingMonthDayOpen_"+jour_futur):
+		var ouvertures:=app.find_children("TrainingMonthDaySessionOpen*","Button",true,false)
+		check(ouvertures.size()>0,"Carte de séance cliquable dans la petite fenêtre du jour")
+		if ouvertures.size()>0:
+			(ouvertures[0] as Button).pressed.emit(); await settle()
+			check(found("TrainingSessionWindow")!=null,"Clic sur une séance -> fiche de séance")
+			for axe in ["cohesion","fatigue","condition","avants","arrieres","blessure","moral"]:
+				check(found("TrainingSessionGauge_"+axe)!=null,"Jauge · "+axe)
+			check(found("TrainingSessionInPlace")!=null,"Séance en place marquée dans la liste")
+			check(app.find_children("TrainingSessionFamilyOpen_*","Button",true,false).size()==4,"Familles en onglets")
+			check(found("TrainingSessionConfirm")==null,"Aucun bouton Confirmer")
+			var id:=str(page().state.get("seance_cible",{}).get("id",""))
+			var picks:=app.find_children("TrainingSessionPick*","Button",true,false)
+			check(not id.is_empty() and picks.size()>0,"Séances au choix cliquables")
+			if picks.size()>0:
+				(picks[0] as Button).pressed.emit()
+				await wait_worker()
+				check(app.bridge.last_response_ok,"Séance remplacée par le moteur")
+				var remplacee:={}
+				for s: Variant in planning().get("sessions",[]):
+					if s is Dictionary and str(s.get("sourceId",""))==id: remplacee=s
+				check(bool(remplacee.get("swapped",false)),"Programme : la séance du jour est remplacée")
+				check(found("TrainingSessionWindow")!=null and found("TrainingSessionChanged")!=null,"Fiche toujours ouverte, séance marquée « Changée »")
+				await escape()
+				check(found("TrainingSessionWindow")==null and tab()==Mois.ONGLET,"Échap ferme la fiche de séance")
 	# Barre de charge -> onglet Semaine, intact.
 	var charge:=app.find_children("TrainingMonthCharge*","Button",true,false)
 	check(charge.size()>0,"Barre de charge cliquable")

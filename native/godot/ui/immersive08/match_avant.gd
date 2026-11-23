@@ -25,6 +25,7 @@ const Espoir = preload("res://ui/espoir_appel.gd")
 const RI = preload("res://ui/contextual/rooms/room_identity.gd")
 const Bilan = preload("res://ui/immersive08/avant_match_bilan.gd")
 const FaceAFace = preload("res://ui/immersive08/avant_match_terrain.gd")
+const Tests = preload("res://ui/immersive08/tests_physiques.gd")
 const MOIS := ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
 const JOURS := ["DIM.", "LUN.", "MAR.", "MER.", "JEU.", "VEN.", "SAM."]
 ## Photo du tunnel selon la météo annoncée (forte pluie > pluie > vent > chaleur > sec ; sans annonce : neutre).
@@ -254,6 +255,7 @@ func refresh(model: Dictionary, play: Button) -> void:
 func _page_possible(model: Dictionary, page: String) -> bool:
 	if not model.get("next") is Dictionary or model.next.is_empty(): return false
 	if page == "espoir": return not Espoir.offer(model).is_empty() or Present.reduced_bench_number(model) != 0
+	if page == "tests": return not Tests.lignes(model).is_empty()
 	return page == "delegation"
 
 func _construire(model: Dictionary, next: Dictionary, play: Button, etat: Dictionary, page: String) -> void:
@@ -276,7 +278,9 @@ func _construire(model: Dictionary, next: Dictionary, play: Button, etat: Dictio
 		colonne.add_child(_pied(false))
 		return
 	if not page.is_empty():
-		colonne.add_child(Pages.construire(self, app, model, page))
+		# Tests physiques d'avant-match (idée FM27 n° 36) : sous-page en liste.
+		if page == "tests": colonne.add_child(Tests.page(self, app, model))
+		else: colonne.add_child(Pages.construire(self, app, model, page))
 		colonne.add_child(_pied(true))
 		return
 	var cote := _cote(model, next)
@@ -1168,7 +1172,11 @@ func _feuille(model: Dictionary, etat: Dictionary) -> Control:
 	groupe.tooltip_text = "Ouvrir l'effectif : blessures, fatigue, forme"
 	column.add_child(groupe)
 	_pousse(column)
-	_liens(column, [["Vérifier la feuille →", func(): _aller("Composition"), "MatchOpenSheet", "Ouvrir la composition"]])
+	var liens_feuille: Array = [["Vérifier la feuille →", func(): _aller("Composition"), "MatchOpenSheet", "Ouvrir la composition"]]
+	# Tests physiques des joueurs revenus de blessure (idée FM27 n° 36) : sous-page de l'avant-match.
+	var lien_tests: Array = Tests.lien(self, model)
+	if not lien_tests.is_empty(): liens_feuille.append(lien_tests)
+	_liens(column, liens_feuille)
 	return _tile_of(column)
 
 ## Barre de condition d'un titulaire : valeur au-dessus (jamais la couleur seule), numéro dessous, repère à 80 %.

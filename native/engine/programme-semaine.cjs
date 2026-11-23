@@ -67,6 +67,12 @@ function factory(){
  // Effets des séances du programme jour par jour (calendar-planning.cjs weekEffects, posés par le worker dans
  // `nativeProgrammeEffets` à chaque projection) sur la semaine simulée du club du manager : fatigue et condition après la
  // séance collective, progression des avants / arrières (part d'XP de la séance), organisation collective du match.
+ // Depuis le 23/11/2026 (idée FM27 n° 25) : risque de blessure (points de risque −4…+4) et moral (−2…+2).
+ //  - risque : le tirage de blessure de la séance intensive (dist/game.js trainWeek, 1,8 % × fragilité) est multiplié par
+ //    1 + 0,1 × risque (0,6 à 1,4) ; une semaine plus risquée que la moyenne ajoute en plus un petit tirage aux joueurs en
+ //    charge normale : 0,1 % × risque × fragilité par joueur (au plus 0,4 %, ≈ 0,1 blessure par semaine à 30 joueurs),
+ //    pendant la séance (journal des blessures v39 compris) ;
+ //  - moral : le moral du groupe (S.morale, 25-98) bouge de la valeur après la séance collective.
  // Écart à la semaine standard : une semaine standard laisse la simulation exactement comme avant. Sans programme
  // de la semaine (autre saison, autre semaine, calendrier simulé), rien ne change.
  const g=globalThis;let installed=false;
@@ -76,6 +82,7 @@ function factory(){
   return e.effects;
  }
  const borne=(v,a,b)=>Math.max(a,Math.min(b,v));
+ const PENTE_RISQUE=.1,RISQUE_NORMAL=.001;
  function installHooks(){
   if(installed||typeof g.trainWeek!=='function')return true;installed=true;
   const train=g.trainWeek;
@@ -83,23 +90,39 @@ function factory(){
    const s=state(),e=effets(s),avant=s?.trained;
    if(!e||avant||!s.clubs?.[s.club])return train.apply(this,arguments);
    const joueurs=s.clubs[s.club].players.filter(p=>!p.injury),ids=new Set(joueurs.map(p=>p.id));
-   const dev=g.developmentTraining;
-   if(typeof dev==='function'&&(e.avants||e.arrieres)){
+   const dev=g.developmentTraining,fragilite=g.facteurFragilite;
+   const risque=Number.isFinite(e.blessure)?borne(e.blessure,-4,4):0;
+   const facteurFrag=p=>typeof fragilite==='function'?fragilite(p):1;
+   if(typeof dev==='function'&&(e.avants||e.arrieres||risque>0)){
     g.developmentTraining=function(p,mode,ci){
      if(ci!==s.club||!ids.has(p?.id))return dev.apply(this,arguments);
-     const facteur=1+(p.fam<=3?e.avants:e.arrieres)/100,grow=g.growPlayer;
-     g.growPlayer=function(q,xp,...reste){return grow.call(this,q,q===p&&Number.isFinite(xp)?xp*facteur:xp,...reste);};
-     try{return dev.apply(this,arguments);}finally{g.growPlayer=grow;}
+     let ret;
+     if(e.avants||e.arrieres){
+      const facteur=1+(p.fam<=3?e.avants:e.arrieres)/100,grow=g.growPlayer;
+      g.growPlayer=function(q,xp,...reste){return grow.call(this,q,q===p&&Number.isFinite(xp)?xp*facteur:xp,...reste);};
+      try{ret=dev.apply(this,arguments);}finally{g.growPlayer=grow;}
+     }else ret=dev.apply(this,arguments);
+     // Semaine plus risquée que la moyenne : petit tirage pour les joueurs en charge normale (l'intensive a le sien).
+     if(risque>0&&mode==='normal'&&!p.injury&&Math.random()<RISQUE_NORMAL*risque*facteurFrag(p)){
+      p.injury=typeof g.rand==='function'?g.rand(1,2):1;
+      if(typeof g.news==='function')g.news(`${p.name} s’est blessé à l’entraînement : indisponible ${p.injury} semaine(s).`);
+     }
+     return ret;
     };
    }
+   // Tirage de la séance intensive (facteurFragilite lu par trainWeek) des joueurs du club : × (1 + 0,1 × risque).
+   if(risque&&typeof fragilite==='function'){
+    g.facteurFragilite=function(p){const f=fragilite.apply(this,arguments);return ids.has(p?.id)?f*(1+PENTE_RISQUE*risque):f;};
+   }
    let ret;
-   try{ret=train.apply(this,arguments);}finally{g.developmentTraining=dev;}
+   try{ret=train.apply(this,arguments);}finally{g.developmentTraining=dev;g.facteurFragilite=fragilite;}
    if(s.trained&&(e.fatigue||e.condition))for(const p of joueurs){
     if(p.injury)continue;
     const charge=typeof g.ensurePhysicalLoad==='function'?g.ensurePhysicalLoad(p):null;
     if(charge&&e.fatigue)charge.fatigue=borne(charge.fatigue+e.fatigue,0,100);
     if(e.condition)p.condition=borne(p.condition+e.condition,20,100);
    }
+   if(s.trained&&Number.isFinite(e.moral)&&e.moral)s.morale=borne((Number.isFinite(s.morale)?s.morale:70)+borne(e.moral,-2,2),25,98);
    return ret;
   };
   // Organisation collective (vidéo, mise en place) : puissance de la préparation collective du club au match.

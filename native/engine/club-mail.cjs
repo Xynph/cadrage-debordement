@@ -310,6 +310,20 @@ function factory() {
       const back = (st.memo.injured || []).map(id => F.byId.get(id)).filter(p => p && !(p.injury > 0));
       return back.slice(0, 1).map(p => ({ key: p.id + ':' + F.d, player: p.id, vars: playerVars(p) }));
     },
+    // Tests de reprise d'avant-match du médecin (tests-physiques.cjs) : un message par rencontre, dès les tests faits.
+    tests_reprise(F) {
+      const t = F.s.testsPhysiques?.tests;
+      if (!obj(t) || !F.next || String(F.next.id) !== t.fixture || !Array.isArray(t.joueurs) || !t.joueurs.length || F.d > t.date) return [];
+      const ligne = j => {
+        const p = F.byId.get(j.id); if (!p) return null;
+        const minutes = j.conseil <= 0 ? 'à ne pas aligner' : j.conseil >= 80 ? 'match entier' : j.conseil + '′ au plus';
+        return p.name + ' (' + (j.ok ? 'réussi' : 'échoué') + ', ' + minutes + ')';
+      };
+      const lignes = t.joueurs.map(ligne).filter(Boolean);
+      if (!lignes.length) return [];
+      const opp = F.opponent(F.next);
+      return [{ key: t.fixture, club: opp, vars: { adversaire: F.name(opp), match: shortDate(F.next.date), liste: lignes.join(', ') + '.', n: lignes.length } }];
+    },
     surcharge(F, t) {
       const sx = t.seuils || {};
       const list = F.lineup.filter(p => !(p.injury > 0) && fatigueOf(p) >= (sx.fatigue ?? 25) && conditionOf(p) <= (sx.condition ?? 62)).sort((a, b) => fatigueOf(b) - fatigueOf(a) || String(a.id).localeCompare(String(b.id)));
