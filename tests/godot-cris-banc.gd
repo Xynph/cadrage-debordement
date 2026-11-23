@@ -154,6 +154,8 @@ func run() -> void:
 	if fermer != null: fermer.pressed.emit()
 	await settle(10)
 	check(between.find_child("FmBancMenuPanneau", true, false) == null, "✕ ferme la fenêtre")
+	var rond_ferme := bouton(between, "FmBancJoueur")
+	check(rond_ferme != null and not bool(rond_ferme.get_meta("ouvert", true)), "liste fermée : le rond s'éteint")
 	var g := str(lineup[10].get("id", "")) if lineup.size() > 13 and lineup[10] is Dictionary else ""
 	var d := str(lineup[13].get("id", "")) if lineup.size() > 13 and lineup[13] is Dictionary else ""
 	var b_ailes := bouton(between, "FmAjust_ailes")
@@ -183,6 +185,14 @@ func capture_tailles(between: Control) -> void:
 		check(panneau != null and ecran.encloses(panneau.get_global_rect()), "%s : fenêtre « À un joueur » dans l'écran" % str(t))
 		var barre := between.find_child("FmBancBarre", true, false) as Control
 		check(barre != null and ecran.encloses(barre.get_global_rect()), "%s : barre du banc dans l'écran" % str(t))
+		# Liste accrochée au rond « À un joueur » : juste dessous, alignée sur lui ; le rond reste allumé.
+		var rond := bouton(between, "FmBancJoueur")
+		if rond != null and panneau != null:
+			var rr := rond.get_global_rect()
+			var pr := panneau.get_global_rect()
+			check(pr.position.y >= rr.end.y and pr.position.y - rr.end.y < 24.0, "%s : liste juste sous le rond (%d px)" % [str(t), int(pr.position.y - rr.end.y)])
+			check(absf(pr.position.x - rr.position.x) < 2.0 or pr.end.x >= root.size.x - 40, "%s : liste alignée sur le rond" % str(t))
+		check(rond != null and bool(rond.get_meta("ouvert", false)), "%s : rond « À un joueur » allumé tant que la liste est ouverte" % str(t))
 		await capture("final-%d" % t.x)
 	await taille(Vector2i(1920, 1080))
 

@@ -67,6 +67,7 @@ var between: Control
 var barre_b: PanelContainer
 var _menu: Control
 var _cle := ""
+var _ancre := Rect2()
 
 ## Pose la barre du banc en tête de page du tableau de bord.
 static func poser(hote: Control, _barre: Control, page: Control) -> Node:
@@ -291,15 +292,35 @@ func _remplir_joueurs() -> void:
 	fermer.pressed.connect(fermer_joueurs)
 	tete.add_child(fermer)
 	_liste_joueurs(col)
-	var largeur := px(760)
-	panneau.custom_minimum_size.x = largeur
+	panneau.custom_minimum_size.x = px(760)
 	panneau.reset_size()
-	var pos := Vector2(px(40), px(140))
+	panneau.visible = false
+	_placer(panneau)
+
+## La liste s'ouvre juste sous le rond « À un joueur » (accrochée à lui), sans sortir de l'écran.
+func _placer(panneau: Control, essais: int = 0, suivis: int = 3) -> void:
+	if not is_instance_valid(panneau) or not is_instance_valid(between) or not is_inside_tree(): return
+	var ancre := Rect2()
 	if is_instance_valid(barre_b):
-		var r := barre_b.get_global_rect()
-		pos = Vector2(r.end.x - largeur, r.end.y + px(8))
-	pos.x = clampf(pos.x, px(16), between.get_viewport_rect().size.x - largeur - px(16))
+		for n: Node in barre_b.find_children("FmBancJoueur", "Button", true, false):
+			var r := (n as Control).get_global_rect()
+			if r.size.x > 0.0 and not n.is_queued_for_deletion(): ancre = r
+	if ancre.size.x <= 0.0: ancre = _ancre
+	if ancre.size.x <= 0.0:
+		# Écran tout juste reconstruit : la barre n'est pas encore posée, on réessaie à l'image suivante.
+		if essais < 12: get_tree().process_frame.connect(_placer.bind(panneau, essais + 1, suivis), CONNECT_ONE_SHOT)
+		else: panneau.visible = true
+		return
+	_ancre = ancre
+	var largeur := panneau.size.x
+	var ecran := between.get_viewport_rect().size
+	var pos := Vector2(ancre.position.x, ancre.end.y + px(6))
+	pos.x = clampf(pos.x, px(16), ecran.x - largeur - px(16))
+	pos.y = minf(pos.y, maxf(px(16), ecran.y - panneau.size.y - px(16)))
 	panneau.position = pos - between.get_global_rect().position
+	# La barre se pose sur une ou deux images (écran reconstruit) : on suit le rond, la liste paraît une fois posée.
+	if suivis > 0: get_tree().process_frame.connect(_placer.bind(panneau, essais, suivis - 1), CONNECT_ONE_SHOT)
+	if suivis < 3: panneau.visible = true
 
 ## Nos quinze : numéro, nom, moral en direct, trois cris en ronds, puis la réaction au dernier cri (après coup).
 func _liste_joueurs(col: VBoxContainer) -> void:
@@ -420,7 +441,18 @@ func _remplir_b() -> void:
 		b.tooltip_text = str(o.get("label", def[2]))
 		h.add_child(b)
 	var ouvert := is_instance_valid(_menu)
-	h.add_child(_bouton_rond("FmBancJoueur", "people", Charte.IVOIRE_2, "À un joueur", ouvert, true, ouvrir_joueurs, "", -1.0))
+	# Rond « À un joueur » : allumé et enfoncé (fond éclairé, liseré or) tant que sa liste est ouverte.
+	var joueur := _bouton_rond("FmBancJoueur", "people", Charte.OR if ouvert else Charte.IVOIRE_2, "À un joueur", ouvert, true, ouvrir_joueurs, "", -1.0)
+	if ouvert:
+		for etat: String in ["normal", "hover", "pressed", "hover_pressed"]:
+			var st := StyleBoxFlat.new()
+			st.bg_color = Charte.PANNEAU_3
+			st.border_color = Charte.OR
+			st.set_border_width_all(maxi(2, px(2)))
+			st.set_corner_radius_all(Charte.RAYON_PETIT)
+			joueur.add_theme_stylebox_override(etat, st)
+	joueur.set_meta("ouvert", ouvert)
+	h.add_child(joueur)
 	var sep := ColorRect.new()
 	sep.color = Charte.FILET
 	sep.custom_minimum_size = Vector2(px(2), px(52))
