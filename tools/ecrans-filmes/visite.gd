@@ -83,7 +83,7 @@ const EXTRAS := [
 	{"id": "effectif-contrats", "libelle": "Effectif · onglet Contrats", "type": "effectif_onglet", "onglet": 2},
 	{"id": "contrats-prolongation", "libelle": "Effectif · Contrats · prolongation d'un joueur", "type": "effectif_onglet", "onglet": 2, "ouvrir_prefixe": "ContractRenew_"},
 	{"id": "contrats-prolongation-fenetre", "libelle": "Effectif · Contrats · petite fenêtre de la prolongation", "type": "effectif_onglet", "onglet": 2, "ouvrir_prefixe": "ContractRenew_", "puis": ["ProlongationApresLien"]},
-	{"id": "contrats-fenetre-echeance", "libelle": "Effectif · Contrats · petite fenêtre des échéances", "type": "effectif_onglet", "onglet": 2, "ouvrir": "ContractReviewStatEnding"},
+	{"id": "contrats-fenetre-echeance", "libelle": "Effectif · Contrats · petite fenêtre des échéances", "type": "effectif_onglet", "onglet": 2, "ouvrir_prefixe": "ContractReviewBar_"},
 	{"id": "effectif-condition", "libelle": "Effectif · onglet Condition", "type": "effectif_onglet", "onglet": 1},
 	{"id": "effectif-poste", "libelle": "Effectif · liste classée au poste 12 (clic sur le maillot du XV)", "type": "effectif_onglet", "onglet": 0, "poste_xv": 12},
 	{"id": "effectif-developpement", "libelle": "Effectif · onglet Développement", "type": "effectif_onglet", "onglet": 3},
@@ -95,6 +95,7 @@ const EXTRAS := [
 	{"id": "effectif-courbe", "libelle": "Effectif · mini-courbe au survol de la condition", "type": "effectif_onglet", "onglet": 0, "survol": "TotalTuileOuvrir_Condition"},
 	{"id": "classements-calendrier", "libelle": "Classements · onglet Calendrier (tableau)", "type": "classements_onglet", "onglet": "calendar"},
 	{"id": "recrutement-entre-clubs", "libelle": "Recrutement · sous-page Marché entre clubs", "type": "recrutement_sous", "page": "interclub"},
+	{"id": "recrutement-entre-clubs-offre", "libelle": "Recrutement · Marché entre clubs, offre guidée par le recruteur", "type": "recrutement_sous", "page": "interclub", "offre": true},
 	{"id": "recrutement-rapport-recruteur", "libelle": "Recrutement · Rapport du recruteur", "type": "recrutement_sous", "page": "recruteur"},
 	{"id": "finances-tresorerie", "libelle": "Finances · onglet Trésorerie (colonne de verdict)", "type": "finances_onglet", "onglet": "cash"},
 	{"id": "finances-salaires", "libelle": "Finances · onglet Salaires", "type": "finances_onglet", "onglet": "wages"},
@@ -694,6 +695,20 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			await stabiliser()
 			await stabiliser()
 			if app.find_child("RecrutementSubpage_" + str(ecran.page), true, false) == null: return {"statut": "echec", "note": "sous-page non ouverte"}
+			if ecran.get("offre", false):
+				# Offre guidée entre clubs : premier joueur proposable du catalogue.
+				var vue: Node = null
+				for fenetre: Node in app.find_children("InterclubMarket", "", true, false):
+					if fenetre.has_method("_offer"): vue = fenetre
+				var personne: Dictionary = {}
+				for candidat: Variant in app.model.get("clubLife", {}).get("interclubMarket", {}).get("candidates", []):
+					if candidat is Dictionary and candidat.get("available", false) and int(candidat.get("clause", 0)) > 0 and int(candidat.get("fee", 0)) >= 100000:
+						personne = candidat
+						break
+				if vue == null or personne.is_empty(): return {"statut": "indisponible", "note": "aucun joueur proposable"}
+				vue._offer(personne)
+				await stabiliser()
+				if app.find_child("InterclubGuidee", true, false) == null: return {"statut": "echec", "note": "bande du recruteur absente"}
 		"classements_page":
 			# Sous-pages de Classements (décision de Léo du 19/11/2026 : plus de petite fenêtre) : une rencontre du calendrier du club, les archives.
 			app.management_ui.erase("competition_page")

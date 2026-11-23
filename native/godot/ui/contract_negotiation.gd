@@ -200,7 +200,10 @@ static func open(app: Control, player: Dictionary, recruiting: bool, answer: Str
 	dialog.get_cancel_button().text = "FERMER" if blocked else "ANNULER"
 	dialog.confirmed.connect(func():
 		if blocked: return
-		app._command("recruit" if recruiting else "extend_contract",{"playerId":player.id,"salary":Salary.input_weekly(salary),"years":int(years.value),"confirmed":true})
+		var offre := {"playerId":player.id,"salary":Salary.input_weekly(salary),"years":int(years.value),"confirmed":true}
+		# Offre guidée : prime à la signature et clause libératoire choisies (recrutement).
+		if recruiting: offre.merge(preload("res://ui/offre_guidee.gd").charge(ctx, int(years.value)))
+		app._command("recruit" if recruiting else "extend_contract",offre)
 		dialog.queue_free())
 	dialog.canceled.connect(dialog.queue_free)
 	# Échap ferme d'abord la petite fenêtre ouverte dans l'offre, puis seulement l'offre elle-même.

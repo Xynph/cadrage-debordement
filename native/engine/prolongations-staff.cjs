@@ -78,6 +78,47 @@ function saisonsAjoutees(age, anneesCarriere) {
   return Math.max(0, Math.min(voulu, anneesCarriere - 1));
 }
 
+// Conseil du staff sur chaque contrat, toute l'année (revue FM27 idée 12 « contrats en un coup d'œil », décision de Léo du
+// 23/11/2026) : la même grille que les prolongations ci-dessus, avec le même jugement imparfait du directeur sportif,
+// appliquée à tout l'effectif et pas seulement aux fins de contrat de mars à juin. Lecture seule : rien n'est décidé.
+// Conseils : prolonger, partir (laisser partir à l'échéance), vendre, vente (déjà en vente ou offre en cours), garder.
+// c : {estime, potentiel, age, reste (saisons de contrat après la saison en cours : 0 = fin cette saison),
+//      possibles (saisons qu'il peut encore signer, saisonsAjoutees), profondeur (joueurs de sa famille de poste encore
+//      sous contrat la saison prochaine), part (part de la masse salariale), vente (bool), decision ('libere' si le
+//      directeur sportif l'a déjà laissé partir cette saison)}.
+// x : {base (niveau du club), effectif (nombre de joueurs), consigne}.
+const CONSEILS = Object.freeze(['prolonger', 'partir', 'vendre', 'vente', 'garder']);
+const RAISONS_CONSEIL = Object.freeze({
+  vente: 'Vente en cours',
+  decide: 'Départ décidé à l’échéance',
+  retraite: 'Fin de carrière',
+  cadre: 'Compte à son poste',
+  jeune: 'Jeune avec de la marge',
+  profondeur: 'Manque de monde à son poste',
+  niveau: 'Plus le niveau',
+  salaire: 'Salaire élevé pour son niveau',
+  effectif: 'Utile au groupe',
+});
+function conseiller(c, x) {
+  if (c.vente) return { conseil: 'vente', raison: 'vente' };
+  if (c.decision === 'libere') return { conseil: 'partir', raison: 'decide' };
+  const v = valeur(c, x.consigne), marge = Math.max(0, c.potentiel - c.estime);
+  if (c.reste <= 0) {
+    if (c.possibles < 1) return { conseil: 'partir', raison: 'retraite' };
+    if (v >= x.base - 6) return { conseil: 'prolonger', raison: c.age <= 23 && marge >= 4 ? 'jeune' : 'cadre' };
+    if (c.profondeur < 2 && v >= x.base - 12) return { conseil: 'prolonger', raison: 'profondeur' };
+    return { conseil: 'partir', raison: 'niveau' };
+  }
+  // Dernière année de contrat la saison prochaine : verrouiller tôt les jeunes prometteurs et les cadres.
+  if (c.reste === 1 && c.possibles >= 1) {
+    if (c.age <= 24 && marge >= 6) return { conseil: 'prolonger', raison: 'jeune' };
+    if (c.age <= 29 && v >= x.base + 3) return { conseil: 'prolonger', raison: 'cadre' };
+  }
+  if (c.age >= 30 && v < x.base - 8 && c.part > 1.2 / Math.max(1, x.effectif)) return { conseil: 'vendre', raison: 'salaire' };
+  if (c.age >= 24 && v < x.base - 14) return { conseil: 'vendre', raison: 'niveau' };
+  return { conseil: 'garder', raison: v >= x.base - 3 ? 'cadre' : 'effectif' };
+}
+
 // Code exécuté dans le moteur (après le BRANCHEMENT de club-budget.cjs) : attend nativeProlongations (ce module).
 const BRANCHEMENT = `
 const dsContratsMonde=()=>!!S&&!S.franceMode&&typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S)&&!!S.manager?.delegation;
@@ -184,6 +225,26 @@ function dsContratsAction(kind,playerId){
  transferEvent(p.name+' prolonge jusqu’à la fin de la saison '+dsContratsSaison(p.contractEnd)+', à '+money(salaire)+' par semaine dès la saison prochaine.');
  return true;
 }
+// Conseil du staff sur chaque contrat du club, toute l'année (nativeProlongations.conseiller) : Map id → {conseil, raison}.
+// Lu par model.cjs (squad[].conseilStaff). Lecture seule ; mode Monde.
+function dsContratsConseils(){
+ if(!dsContratsMonde()||!club())return null;
+ const c=club(),ds=dsContratsDirecteur(),e=S.economy||{},bureau=S.manager?.contractDesk;
+ const decides=new Map((bureau?.season===S.season?bureau.decisions:[]).filter(x=>x.etat!=='force'&&(x.d==='libere'||x.etat==='annule')).map(x=>[x.id,'libere']));
+ const sous=c.players.filter(p=>Number.isFinite(p.contractEnd)&&!p.espoirLoan);
+ const total=sous.reduce((t,p)=>t+(Number.isFinite(p.salary)?p.salary:0),0);
+ const suivants=sous.filter(p=>p.contractEnd>S.season&&p.age+1<(p.dev?.retireAge??40));
+ const accord=id=>{try{return typeof venteAccord==='function'&&!!venteAccord(id);}catch(err){return false;}};
+ const out=new Map();
+ for(const p of sous){
+  const vue=dsContratsVue(p,ds.evaluation);
+  const vente=!!e.listings?.[p.id]||(e.offers||[]).some(o=>o.playerId===p.id&&o.expires>=e.week)||accord(p.id);
+  out.set(p.id,nativeProlongations.conseiller({...vue,age:p.age,reste:p.contractEnd-S.season,possibles:nativeProlongations.saisonsAjoutees(p.age,careerContractYears(p)),
+   profondeur:suivants.filter(q=>q.id!==p.id&&q.fam===p.fam).length,part:total>0&&Number.isFinite(p.salary)?p.salary/total:0,vente,decision:decides.get(p.id)||null},
+   {base:c.base,effectif:sous.length,consigne:dsContratsConsigne()}));
+ }
+ return out;
+}
 // Filet de la bascule de saison : ce qui n'a pas été tranché l'est avant le départ des joueurs libres.
 const dsContratsSettleV1=settleContracts;
 settleContracts=function(){
@@ -212,4 +273,4 @@ function valider(m, saison) {
   return true;
 }
 
-module.exports = Object.freeze({ FENETRE, CONSIGNES, RAISONS, valeur, planifier, saisonsAjoutees, valider, BRANCHEMENT });
+module.exports = Object.freeze({ FENETRE, CONSIGNES, RAISONS, CONSEILS, RAISONS_CONSEIL, valeur, planifier, conseiller, saisonsAjoutees, valider, BRANCHEMENT });
