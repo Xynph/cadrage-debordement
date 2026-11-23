@@ -1317,6 +1317,8 @@ func _page() -> void:
 		(barre as HBoxContainer).alignment = BoxContainer.ALIGNMENT_END
 		page.add_child(barre)
 	for noeud: Control in [phase, equipe, _touche("T", BARRE_HAUT), parametres, plus]: barre.add_child(noeud)
+	# Planche FM27 n° 34 (ajustements et cris du banc), sous CD_VARIANTE_VISUELLE=A|B.
+	load("res://ui/contextual/match_banc_fm.gd").poser(self, barre, page)
 	_page_d3(page)
 
 ## Pied : les raccourcis de l'écran et où trouver ce qui n'y est pas (vitesse, autres matchs).
@@ -2873,6 +2875,8 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	terrain.queue_redraw()
 	_etat(live, direct, equipes)
 	_pilotage = Pilotage.pilotage(live)
+	var banc_fm := get_node_or_null("MatchFmBanc")
+	if banc_fm != null: banc_fm.rafraichir()
 	_remplir_journee(model, direct, equipes)
 	_remplir_bonus(model, live, direct)
 	_niveaux = direct.get("niveaux", [])
