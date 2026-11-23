@@ -130,7 +130,8 @@ static func donnees(model: Dictionary, j: Dictionary) -> Dictionary:
 	var max_minutes := 1.0
 	for p: Variant in model.get("squad", []):
 		if p is Dictionary: max_minutes = maxf(max_minutes, _n(p.get("minutes"), 0.0))
-	var plan := str(j.get("loadPlan", "collective"))
+	# Intensité appliquée à la prochaine séance (moteur : loadMode, règle Auto par forme comprise).
+	var plan := str(j.get("loadMode", j.get("loadPlan", "collective")))
 	if semaines > 0: plan = "repos"  # un blessé est au repos pendant la séance (moteur : physicalModeFor)
 	var jauges: Array = []
 	jauges.append(_jauge("forme", "Forme", "heart", Charte.CONDITION, condition / 100.0, "%d" % roundi(condition) if condition >= 0 else "?",
@@ -141,7 +142,7 @@ static func donnees(model: Dictionary, j: Dictionary) -> Dictionary:
 	var ratio := minutes / max_minutes
 	jauges.append(_jauge("match", "Charge en match", "ball", Charte.INTENSIF, ratio, "%d min" % roundi(minutes),
 		"Légère" if ratio < .34 else "Moyenne" if ratio < .67 else "Lourde", "%d match%s" % [matchs, "s" if matchs > 1 else ""]))
-	var niveaux := {"repos": [.25, "Repos", Charte.REPOS], "normal": [.5, "Normale", Charte.NORMAL], "collective": [.5, "Collectif", Charte.NORMAL], "intense": [1.0, "Intensive", Charte.INTENSIF]}
+	var niveaux := {"repos": [.25, "Repos", Charte.REPOS], "normal": [.5, "Normale", Charte.NORMAL], "collective": [.5, "Auto", Charte.NORMAL], "intense": [1.0, "Intensive", Charte.INTENSIF]}
 	var n: Array = niveaux.get(plan, niveaux.collective)
 	jauges.append(_jauge("entrainement", "Charge à l'entraînement", "train", n[2], n[0], "", n[1]))
 	# Fragilité (moteur : fragilite.cjs, 0 à 100) : module le risque de blessure de −25 % à +25 %.

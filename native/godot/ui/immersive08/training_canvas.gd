@@ -16,10 +16,11 @@ const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
 const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
 const Carte = preload("res://ui/carte_joueur_survol.gd")
 const Lignes = preload("res://ui/immersive08/training_semaine_lignes.gd")
+const IntensiteAuto = preload("res://ui/immersive08/intensite_auto.gd")
 const Mois = preload("res://ui/immersive08/training_mois.gd")
 const TABS = ["Semaine", "Groupes", "Individuel", "Staff", "Fatigue", "Mois"]
 const MODES = {"repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
-const INDIVIDUAL = {"collective":"Suivre le collectif", "repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
+const INDIVIDUAL = {"collective":"Auto", "repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
 const FAMILIES = [["PIL.", [0]], ["TAL.", [1]], ["2e L.", [2]], ["3e L.", [3]], ["CHAR.", [4, 5]], ["CEN.", [7]], ["3/4", [6, 8]]]
 const GREEN = Color("b6d6b6")
 const PALE_GOLD = Color("d7aa5a")
@@ -581,41 +582,8 @@ func _plans_reason() -> String:
 	return "Les plans ne sont disponibles qu'en période de championnat."
 
 func _individuals() -> void:
-	var tile := D.panel(self, Rect2(4, 260, 1740, 950), "Le travail individuel", "train", "", "TrainingIndividuals")
-	var scroll := ScrollContainer.new()
-	scroll.name = "TrainingIndividualsScroll"
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.follow_focus = true
-	tile.add_child(scroll)
-	# Petite fenêtre : en-têtes de tri et lignes à la cible minimale (la liste défile un peu plus).
-	var header_height := C.reach(31)
-	var row_height := C.reach(32)
-	var lift := (row_height - 32.0) / 2.0
-	D.place(scroll, Rect2(17, 103 + maxf(0.0, header_height - 31 - 4), 1704, 821 - maxf(0.0, header_height - 31 - 4)))
-	var list := C.v(3)
-	C.fill(list)
-	scroll.add_child(list)
-	for column in [["JOUEUR", 60, 366, "name"], ["POSTE", 440, 330, "pos"], ["CONDITION", 800, 180, "condition"], ["CHARGE", 993, 170, "physicalLoad"], ["PLAN INDIVIDUEL", 1174, 420, "loadPlan"]]:
-		Fatigue.sort_header(app, tile, Rect2(column[1], 62 - minf(4.0, header_height - 31), column[2], header_height), column[0], column[3], state, "individual", "TrainingIndividualSort_" + str(column[3]))
-	var ordered := Fatigue.sorted_players(squad, str(state.get("individual_sort", "priority")), state.get("individual_descending", false))
-	for p: Dictionary in ordered:
-		var row := C.button("", func(): _player_dialog(p))
-		row.name = "TrainingIndividual_" + str(p.id).replace(":", "_")
-		row.accessibility_name = str(p.name) + " · plan individuel"
-		row.set_meta("player_id", p.id)
-		row.custom_minimum_size.y = C.px(row_height)
-		Fatigue.compact_button(row, 18)
-		list.add_child(row)
-		var link := Fatigue.profile_link(app, row, Rect2(0, 0, 429, row_height), p, "TrainingOpenPlayer_" + str(p.id).replace(":", "_"))
-		_portrait(link, p, Rect2(7, 2 + lift, 26, 28))
-		D.text(link, 63, 24 + lift, str(p.name), 20, C.IVORY, 700, 366)
-		D.text(row, 442, 24 + lift, str(p.pos), 18, C.MUTED, 500, 330)
-		D.text(row, 802, 24 + lift, Fatigue._number(p, "condition", " %"), 19, GREEN, 600, 160)
-		D.text(row, 993, 24 + lift, Fatigue._number(p, "physicalLoad", " / 100"), 19, PALE_GOLD if p in watched else C.IVORY, 600, 150)
-		D.text(row, 1174, 24 + lift, INDIVIDUAL.get(p.get("loadPlan", ""), "—"), 18, C.IVORY, 500, 420)
-	if squad.is_empty(): list.add_child(C.label("Aucun joueur dans l’effectif.", 24, C.MUTED))
-	_chart()
-	_vigilance()
+	# Intensité auto par forme (revue FM27, idée 13, option A retenue le 23/11/2026) : ui/immersive08/intensite_auto.gd.
+	IntensiteAuto.build(app, self, state, squad, locked or trained)
 
 func _staff_tab() -> void:
 	var tile := D.panel(self, Rect2(4, 260, 1740, 525), "Préparer avec le staff", "people", "", "TrainingDelegation")
