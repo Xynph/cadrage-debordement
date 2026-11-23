@@ -51,6 +51,15 @@ static func construire(page, section: Control) -> float:
 	var x := 600.0
 	page._crest(section, adversaire, Rect2(x, 4, 44, 44))
 	Link.name_link(page.app, section, C.reach_rect(Rect2(x + 54, 6, 520, 42)), "club", str(club_id), G.club_name(adversaire).to_upper(), 24, Charte.IVOIRE, "RapportAdverseClub")
+	# Planche « Points forts / faibles » (revue FM27, idée 29) : en tête, sous CD_VARIANTE_VISUELLE seulement ; le rapport dessous.
+	var forces: float = load("res://ui/immersive08/adversaire_forces.gd").construire(page, section, donnees)
+	if forces > 0.0:
+		var bas := Control.new()
+		bas.name = "RapportAdverseBas"
+		bas.mouse_filter = Control.MOUSE_FILTER_PASS
+		section.add_child(bas)
+		D.place(bas, Rect2(0, 66.0 + forces, 2248, 946))
+		return 66.0 + forces + _dessiner(etat, bas, 880.0, 0.0)
 	return _dessiner(etat, section, 880.0, 66.0)
 
 ## Onglet « Rapport » de la fiche du club (club_sheet_canvas.gd) : `zone` = l'espace de l'onglet (2248 × `hauteur`),
