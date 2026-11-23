@@ -473,6 +473,16 @@ function calActuAccord(text){
  const st=calIAEtat(),cle=S.season+':'+S.round;if(st.actus?.cle!==cle)st.actus={cle,n:0};
  if(st.actus.n<(calG().actusParSemaine??4)){st.actus.n++;calActu(text);}
 }
+// Transferts entre clubs adverses gardés pour la page « Dans le monde » (idée FM27 n° 30, choix de Léo du 23/11/2026) :
+// S.mondeTransferts, les 60 plus récents d'abord, jamais purgés à la bascule (le fil S.economy.transfers ne garde que du
+// texte). type : 'accord' (indemnité, arrivée à la bascule), 'precontrat' (libre), 'achat' (exécuté tout de suite, ancien
+// marché). Club du manager exclu. Apparence copiée pour le portrait de l'article.
+function calMondeTransfert(b,s,p,montant,type){
+ if(!b||!s||!p||b.id===S.club||s.id===S.club)return;
+ const x={date:calJour()||'',saison:S.season,semaine:S.round,type,playerId:p.id,nom:p.name,pos:p.pos,age:p.age,note:Math.round(Number(p.rating)||0),vendeurId:s.id,acheteurId:b.id,montant:Math.max(0,Math.round(Number(montant)||0))};
+ for(const k of ['sourcePlayerId','appearanceId','appearanceAge','appearanceBankVersion','appearanceBuild'])if(p[k]!==undefined)x[k]=p[k];
+ S.mondeTransferts=[x,...(Array.isArray(S.mondeTransferts)?S.mondeTransferts:[])].slice(0,60);
+}
 // Accord d'achat d'un club géré (b achète p à s) : le joueur reste à son club jusqu'à la bascule ; l'indemnité passe tout de
 // suite d'une caisse à l'autre (paye, décision de Léo du 20/11/2026) et le président de l'acheteur tranche s'il passe sous sa
 // réserve (president-reprise.cjs), comme avant la v2.
@@ -483,7 +493,7 @@ function calIANouvelAccord(b,s,p,montant,salaire,annees){
  const avant=b.cash;b.cash-=montant;s.cash+=montant;calProlongerCarriere(p,S.season+annees);
  if(typeof repriseApresAchat==='function'&&b.id!==S.club)repriseApresAchat(b,avant);
  const texte=b.name+' s’est mis d’accord avec '+s.name+' pour '+p.name+' ('+calPoste(p)+') : il arrivera le '+calJourMois(calArrivee())+'.';
- calFil(texte.slice(0,-1)+' ('+money(montant)+').');calActuAccord(texte);calMercato('accord',texte,montant);
+ calFil(texte.slice(0,-1)+' ('+money(montant)+').');calActuAccord(texte);calMercato('accord',texte,montant);calMondeTransfert(b,s,p,montant,'accord');
  return a;
 }
 // ---- Résumé du mercato (temps forts, lignes de la semaine) ----
@@ -586,7 +596,7 @@ function calIAPreContrats(){
    achats.set(b.id,(achats.get(b.id)||0)+1);departs.set(c.id,(departs.get(c.id)||0)+1);signes++;
    if(rumeur)rumeur.suite='signe';
    const texte=b.name+' a signé '+p.name+' ('+calPoste(p)+' de '+c.name+') pour la saison prochaine.';
-   calFil(texte);calActu(texte);calMercato('precontrat',texte,0);continue;
+   calFil(texte);calActu(texte);calMercato('precontrat',texte,0);calMondeTransfert(b,c,p,0,'precontrat');continue;
   }
   if(rumeurs<nr&&!enCours.has(p.id)){
    // Piste vraie (tauxRealisation) ou fausse : une fausse est démentie dementiSemaines plus tard.
