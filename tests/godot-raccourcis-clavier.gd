@@ -54,6 +54,10 @@ func espace_sur_continuer(inactif: bool) -> int:
 		await key(KEY_SPACE)
 		if is_instance_valid(cible) and cible.is_inside_tree():
 			cible.disabled = false
+			# Bouton actif et aucune activation : le bureau se redessinait encore (poste lent), on laisse le temps et on recommence.
+			if not inactif and compte[0] == 0 and _essai < 3:
+				await settle(30)
+				continue
 			return compte[0]
 	return -2
 
