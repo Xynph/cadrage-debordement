@@ -1036,6 +1036,8 @@ func _construire() -> void:
 	_commandes()
 	_composants()
 	_page()
+	# Planche FM27 n° 35 (conseil de l'adjoint en bulle), sous CD_VARIANTE_VISUELLE=A|B.
+	load("res://ui/contextual/match_adjoint_fm.gd").poser(self)
 	_arret_decision()
 	montrer_droite(vue_droite)
 	if not _arret.is_empty(): montrer_arret(_arret)
@@ -2873,6 +2875,8 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	terrain.queue_redraw()
 	_etat(live, direct, equipes)
 	_pilotage = Pilotage.pilotage(live)
+	var adjoint_fm := get_node_or_null("MatchFmAdjoint")
+	if adjoint_fm != null: adjoint_fm.rafraichir()
 	_remplir_journee(model, direct, equipes)
 	_remplir_bonus(model, live, direct)
 	_niveaux = direct.get("niveaux", [])
@@ -2934,6 +2938,7 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	_remplir_xv(passe.lineup, direct)
 	_remplir_compos_fm(passe.lineup, direct)
 	_remplir_adjoint(conseil, live, direct, appliquer)
+	if adjoint_fm != null: adjoint_fm.apres_adjoint()
 	_appliquer_blocage()
 
 ## Texte imposé par la régie (liaison entre deux temps forts : l'arrêt de jeu en cours) ; vide : l'état du moteur.
