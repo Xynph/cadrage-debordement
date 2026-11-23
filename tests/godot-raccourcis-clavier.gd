@@ -8,6 +8,11 @@ var checks := 0
 
 func _initialize() -> void:
 	call_deferred("run")
+	# Garde-fou : une erreur de script dans run() laisserait la scène tourner sans fin (le test n'avait alors que le
+	# délai de 240 s du processus) ; on échoue vite, avec un message.
+	create_timer(150.0).timeout.connect(func():
+		printerr("FAIL: délai de 150 s dépassé (suite interrompue)")
+		quit(1))
 
 func check(ok: bool, message: String) -> void:
 	checks += 1
@@ -36,11 +41,21 @@ func key(code: int, ctrl := false, shift := false) -> void:
 		await process_frame
 	await settle()
 
-# Le bouton Continuer peut etre reconstruit par un rafraichissement pendant une attente (runner lent) : on ne touche jamais
-# une instance liberee, on le dit (un controle en echec) au lieu de planter et de laisser Godot attendre jusqu'a la limite.
-func rendre_actif(bouton: Button, actif: bool) -> void:
-	if is_instance_valid(bouton): bouton.disabled = not actif
-	else: check(false, "Continuer libere pendant l'attente (rafraichissement de l'ecran)")
+# Appuie sur Espace avec le bouton Continuer actif ou rendu inactif, et rend le nombre d'activations. Le bureau peut se
+# redessiner pendant la touche (réponse tardive du worker sur un poste lent) : le bouton tenu en main est alors libéré,
+# donc on le retrouve à chaque essai au lieu d'écrire sur un nœud libéré, et on recommence sur le nouveau bouton.
+func espace_sur_continuer(inactif: bool) -> int:
+	for _essai in 4:
+		var cible := app.find_child("ImmersiveContinue", true, false) as Button
+		if cible == null: return -1
+		var compte := [0]
+		cible.pressed.connect(func(): compte[0] += 1)
+		cible.disabled = inactif
+		await key(KEY_SPACE)
+		if is_instance_valid(cible) and cible.is_inside_tree():
+			cible.disabled = false
+			return compte[0]
+	return -2
 
 func finish() -> void:
 	print("RACCOURCIS : ", checks, " contrôles ; ", failures.size(), " échec(s)")
@@ -177,12 +192,10 @@ func run() -> void:
 	# Espace n'ouvre jamais le courrier (le bouton « Courrier suivant non lu » de la Réception reste là pour ça).
 	var Reception = load("res://ui/immersive08/reception_canvas.gd")
 	app._navigate("Bureau")
-	await wait_idle()
+	await settle()
 	var continuer := app.find_child("ImmersiveContinue", true, false) as Button
 	check(continuer != null and not continuer.disabled, "Bouton Continuer actif")
 	if continuer == null: return finish()
-	var compteur := [0]
-	continuer.pressed.connect(func(): compteur[0] += 1)
 	var avant: int = Reception.unread(app)
 	if avant == 0:
 		# Rend un message non lu pour couvrir ce cas.
@@ -196,31 +209,27 @@ func run() -> void:
 	continuer.mouse_entered.emit()
 	check(continuer.tooltip_text.count("Espace :") == 1, "Indication jamais doublée")
 	# Bouton rendu inactif le temps de la vérification : Espace ne doit ni avancer ni ouvrir le courrier.
-	rendre_actif(continuer, false)
-	await key(KEY_SPACE)
-	check(compteur[0] == 0 and app.route == "Bureau", "Non lus restants : Espace n'ouvre pas la Réception (" + app.route + ")")
+	var inactif_1 := await espace_sur_continuer(true)
+	check(inactif_1 == 0 and app.route == "Bureau", "Non lus restants : Espace n'ouvre pas la Réception (" + app.route + ")")
 	check(Reception.unread(app) == avant, "Aucun message marqué lu par Espace (" + str(Reception.unread(app)) + " pour " + str(avant) + ")")
-	rendre_actif(continuer, true)
 	# Tout lire : Espace = Continuer.
 	var marques2: Dictionary = app.management_ui.reception.marks
 	for message: Dictionary in Reception._messages(app): marques2[message.id] = {"read": true}
 	check(Reception.unread(app) == 0 and Reception.next_unread(app).is_empty(), "Plus aucun non lu")
 	app._navigate("Bureau")
-	await wait_idle()
+	await settle()
 	continuer = app.find_child("ImmersiveContinue", true, false) as Button
 	if continuer == null: return finish()
 	continuer.mouse_entered.emit()
 	check(continuer.tooltip_text.ends_with("Espace : continuer"), "Info-bulle : continuer (" + continuer.tooltip_text + ")")
-	compteur[0] = 0
-	continuer.pressed.connect(func(): compteur[0] += 1)
-	rendre_actif(continuer, false)
-	await key(KEY_SPACE)
-	check(compteur[0] == 0, "Continuer inactif : Espace ne fait rien")
-	rendre_actif(continuer, true)
-	await key(KEY_SPACE)
-	check(compteur[0] == 1, "Zéro non lu : Espace = Continuer (" + str(compteur[0]) + ")")
+	var inactif_2 := await espace_sur_continuer(true)
+	check(inactif_2 == 0, "Continuer inactif : Espace ne fait rien")
+	var actif := await espace_sur_continuer(false)
+	check(actif == 1, "Zéro non lu : Espace = Continuer (" + str(actif) + ")")
 	# Entrée ne déclenche plus Continuer.
-	compteur[0] = 0
+	var compteur := [0]
+	var courant := app.find_child("ImmersiveContinue", true, false) as Button
+	if courant != null: courant.pressed.connect(func(): compteur[0] += 1)
 	await key(KEY_ENTER)
 	check(compteur[0] == 0, "Entrée : pas de Continuer (" + str(compteur[0]) + ")")
 	# Un autre bouton ciblé : Espace l'active, pas Continuer.
