@@ -200,6 +200,10 @@ func capture_tailles(between: Control) -> void:
 			check(terrain_2d == null or not terrain_2d.is_visible_in_tree() or not pr.intersects(terrain_2d.get_global_rect()), "%s : la liste ne chevauche pas le terrain 2D" % str(t))
 			var centre := between.find_child("MatchBetweenCentre", true, false) as Control
 			check(centre == null or not pr.intersects(centre.get_global_rect()), "%s : la liste reste à gauche du centre" % str(t))
+			for etiquette: Node in panneau.find_children("FmCriNom", "Label", true, false):
+				var l := etiquette as Label
+				var large := l.get_theme_font("font").get_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, l.get_theme_font_size("font_size")).x
+				check(large <= l.custom_minimum_size.x + 1.0 and not l.clip_text, "%s : nom « %s » entier (%d / %d px)" % [str(t), l.text, int(large), int(l.custom_minimum_size.x)])
 			var lignes := between.find_child("FmCriJoueur_10", true, false) as Control
 			check(lignes != null and lignes.get_global_rect().end.x <= pr.end.x + 1.0, "%s : colonnes de la liste dans sa largeur" % str(t))
 		check(rond != null and bool(rond.get_meta("ouvert", false)), "%s : rond « À un joueur » allumé tant que la liste est ouverte" % str(t))

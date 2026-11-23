@@ -365,8 +365,9 @@ func _liste_joueurs(col: VBoxContainer) -> void:
 		num.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		ligne.add_child(num)
 		var nom := _texte(str(j.get("name", "")), 18, PAL.encre)
+		nom.name = "FmCriNom"
 		nom.custom_minimum_size.x = px(160)
-		nom.clip_text = true
+		_nom_qui_tient(nom, px(160))
 		nom.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		ligne.add_child(nom)
 		var moral: Dictionary = between.moral_joueur(_pilotage(), id)
@@ -401,6 +402,25 @@ func _liste_joueurs(col: VBoxContainer) -> void:
 			b.pressed.connect(func(): crier_joueur(id_j, id_c))
 			ligne.add_child(b)
 		ligne.add_child(_reaction(vu))
+
+## Nom jamais coupé (Léo, 23/11) : nom complet s'il tient, sinon prénom en initiale (« J.-C. ROYER »), sinon police
+## légèrement réduite (12 px au plus bas).
+func _nom_qui_tient(etiquette: Label, largeur: float) -> void:
+	var police := etiquette.get_theme_font("font")
+	var taille := etiquette.get_theme_font_size("font_size")
+	var largeur_de := func(t: String, s: int) -> float: return police.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, s).x
+	if largeur_de.call(etiquette.text, taille) <= largeur: return
+	etiquette.text = nom_court(etiquette.text)
+	while taille > 12 and largeur_de.call(etiquette.text, taille) > largeur: taille -= 1
+	etiquette.add_theme_font_size_override("font_size", taille)
+
+## « Jean-Charles ROYER » → « J.-C. ROYER » ; « Giacomo PELLEGRINI » → « G. PELLEGRINI ».
+static func nom_court(nom: String) -> String:
+	var mots := nom.strip_edges().split(" ", false)
+	if mots.size() < 2: return nom
+	var initiales: Array[String] = []
+	for partie: String in mots[0].split("-", false): initiales.append(partie.left(1) + ".")
+	return "%s %s" % ["-".join(initiales), " ".join(mots.slice(1))]
 
 ## Réaction au dernier cri, découverte après coup : ▲ bien pris (vert), ▼ mal pris (rouge), « — » il n'écoute plus ;
 ## la minute du cri en petit. Rien tant qu'on ne lui a rien dit.
