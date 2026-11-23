@@ -366,8 +366,8 @@ static func _attributs(card: Panel, app: Control, player: Dictionary, source: St
 	FicheRoles.bandes(card,Vector2(24,72),Vector2(1372,340),FicheRoles.role(str(FicheRoles.etat(app,player,values).role)))
 	Commune.grille_attributs(card,Vector2(24,72),Vector2(1372,340),values,"PlayerDetailedAttribute_")
 
-## Carte Postes et rôles : rôles des postes du joueur (étoiles = capacité au rôle), qualités du rôle choisi, terrain
-## des 15 postes coloré par étoiles au poste (fiche_roles.gd), puis courbe des notes de match.
+## Carte Postes et rôles : rôles des postes du joueur (note du rôle + familiarité au poste), qualités du rôle choisi,
+## terrain des 15 postes coloré par familiarité (fiche_roles.gd), puis courbe des notes de match.
 static func _postes(card: Panel, app: Control, player: Dictionary, source: String) -> void:
 	_titre(card,"POSTES ET RÔLES")
 	FicheRoles.carte(card,app,player,Commune.valeurs(player,source))

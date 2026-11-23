@@ -79,6 +79,7 @@ const EXTRAS := [
 	{"id": "contrats-prolongation-fenetre", "libelle": "Effectif · Contrats · petite fenêtre de la prolongation", "type": "effectif_onglet", "onglet": 2, "ouvrir_prefixe": "ContractRenew_", "puis": ["ProlongationApresLien"]},
 	{"id": "contrats-fenetre-echeance", "libelle": "Effectif · Contrats · petite fenêtre des échéances", "type": "effectif_onglet", "onglet": 2, "ouvrir": "ContractReviewStatEnding"},
 	{"id": "effectif-condition", "libelle": "Effectif · onglet Condition", "type": "effectif_onglet", "onglet": 1},
+	{"id": "effectif-poste", "libelle": "Effectif · liste classée au poste 12 (clic sur le maillot du XV)", "type": "effectif_onglet", "onglet": 0, "poste_xv": 12},
 	{"id": "effectif-developpement", "libelle": "Effectif · onglet Développement", "type": "effectif_onglet", "onglet": 3},
 	{"id": "planificateur", "libelle": "Effectif · Planificateur", "type": "effectif_onglet", "onglet": 4},
 	{"id": "planificateur-prochaine", "libelle": "Effectif · Planificateur · saison prochaine", "type": "effectif_onglet", "onglet": 4, "ouvrir": "PlanSaisonOuvrir1"},
@@ -813,6 +814,12 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			await stabiliser()
 		"effectif_onglet":
 			app.management_ui.roster.immersive_tab = int(ecran.onglet)
+			# Poste choisi sur le terrain XV (même état qu'un clic sur le maillot, sans bascule d'une taille à l'autre).
+			if ecran.has("poste_xv"):
+				app.management_ui.roster.etoiles_poste = int(ecran.poste_xv)
+				app.management_ui.roster.sort = "Note au poste"
+				app.management_ui.roster.descending = true
+				app.roster_sort = "Note au poste"
 			app._navigate("Effectif")
 			await stabiliser()
 			if ecran.has("ouvrir"):
@@ -979,6 +986,11 @@ func refermer(ecran: Dictionary) -> void:
 	if str(ecran.type) == "effectif_onglet":
 		app.management_ui.roster.immersive_tab = 0
 		app.management_ui.roster.erase("plan_saison")
+	if ecran.has("poste_xv"):
+		app.management_ui.roster.etoiles_poste = 0
+		app.management_ui.roster.sort = "Poste"
+		app.management_ui.roster.descending = false
+		app.roster_sort = "Poste"
 	if str(ecran.type) == "finances_onglet": app.management_ui["immersive08_finance_tab"] = "summary"
 	if str(ecran.type) == "centre_onglet": app.management_ui.immersive_centre = {"club": app.model.get("club", {}).get("id"), "tab": "", "scroll": {}}
 	if str(ecran.type) == "onglet_cle":

@@ -127,7 +127,7 @@ func run() -> void:
 		check_grid(mini, "CarteJoueurAttribut_", PlayerAttributes.detail(target, true), "Carte joueur")
 		var nom := mini.find_child("CarteJoueurNom", true, false) as Label
 		check(nom != null and nom.text == str(target.name).to_upper(), "Carte joueur : nom du joueur")
-		check(mini.find_child("CarteJoueurEtat", true, false) != null and mini.find_child("CarteJoueurPolyvalence", true, false) != null, "Carte joueur : état et postes en étoiles")
+		check(mini.find_child("CarteJoueurEtat", true, false) != null and mini.find_child("CarteJoueurPolyvalence", true, false) != null, "Carte joueur : état et postes")
 	Carte.cacher(app)
 	await settle(2)
 	check(Carte.actuelle(app) == null, "La souris quitte le nom : la carte disparaît")
