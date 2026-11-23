@@ -79,21 +79,24 @@ function careerRecruitSigning(p,t){
  careerRecord('manager','Recrutement : '+p.name+' · '+money(p.salary)+'/semaine',S.club,'sign-'+p.id);
  return true;
 }
+const CAREER_BOARD_EVERY=3,CAREER_BOARD_WEIGHTS=Object.freeze({results:.7,finances:.2,youth:.1});
 function careerBoardWeekReview(){
- if(!careerIntegrated()||S.phase!=='league'||!club().played||club().played%5!==0||
+ // Bilan tous les 3 matchs (22/11/2026, choix de Léo : la note du conseil colle aux résultats) : la note des résultats
+ // suit le taux de victoires (nul = demi-victoire), le bilan tire la confiance aux 7/10 vers la note du club (±15 au plus).
+ if(!careerIntegrated()||S.phase!=='league'||!club().played||club().played%CAREER_BOARD_EVERY!==0||
   S.careerManagement.lastBoardRound===S.round)return false;
  const c=S.careerManagement,past=S.trust,team=club();
- const result=clamp(50+(team.won-team.lost)*4,0,100);
+ const result=clamp(Math.round(120*(team.won+team.drawn/2)/team.played-10),0,100);
  const finance=team.cash<0?5:team.cash<750000?50:team.cash<2500000?70:90;
  const youth=clamp(50+c.promotions*20,0,100);
- const target=CDBoardPlanning.boardConfidence({current:past,results:result,finances:finance,youth});
- const delta=clamp(target.change,-2,2);
+ const target=CDBoardPlanning.boardConfidence({current:past,results:result,finances:finance,youth,weights:CAREER_BOARD_WEIGHTS,pull:.7});
+ const delta=clamp(target.change,-15,15);
  S.trust=clamp(past+delta,0,100);
  c.boardHistory.unshift({season:S.season,round:S.round,previous:past,after:S.trust,
   results:result,finances:finance,youth,score:Math.round(target.score)});
  c.boardHistory=c.boardHistory.slice(0,24);
  c.lastBoardRound=S.round;
- news('Bilan de direction : '+(delta>=0?'+':'')+delta+' confiance (résultats 55 %, finances 30 %, formation 15 %).');
+ news('Bilan de direction : '+(delta>=0?'+':'')+delta+' confiance (résultats 70 %, finances 20 %, formation 10 %).');
  return true;
 }
 function careerRecordChampion(id){

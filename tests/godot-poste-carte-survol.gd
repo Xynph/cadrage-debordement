@@ -85,7 +85,7 @@ func survoler(ecran_nom: String, controle: Control, nom_capture: String) -> void
 	if carte != null:
 		check(Rect2(Vector2.ZERO, Vector2(root.size)).grow(1.0).encloses(carte.get_global_rect()), ecran_nom + " : carte entière dans l'écran")
 		check(str(carte.get_meta("player_id", "")) == str(controle.get_meta("carte_joueur")), ecran_nom + " : carte du joueur survolé")
-		check(carte.find_child("CarteJoueurEtoilesPoste_*", true, false) != null or carte.find_child("CarteJoueurPolyvalence", true, false) != null, ecran_nom + " : postes de la carte")
+		check(carte.find_child("CarteJoueurPolyvalence", true, false) != null and carte.find_child("CarteJoueurEtoilesPoste_*", true, false) == null, ecran_nom + " : postes de la carte, sans étoiles")
 		check(carte.find_child("CarteJoueurEtoilesNiveau", true, false) == null, ecran_nom + " : jamais d'étoiles pour le niveau")
 		check(app.get_node_or_null("MiniFicheJoueur") == null, ecran_nom + " : plus de mini-fiche par-dessus")
 		if not nom_capture.is_empty(): await capture(nom_capture)

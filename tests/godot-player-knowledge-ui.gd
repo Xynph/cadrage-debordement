@@ -103,7 +103,7 @@ func run() -> void:
 	check(G.rating_text(target)=="—" and G.potential_text(target)=="—","Étranger non observé : niveau et potentiel inconnus")
 	check(A.detail(target).is_empty(),"Attributs étrangers non observés masqués")
 	var fiche_roles_inconnus = preload("res://ui/immersive08/fiche_roles.gd")
-	check(fiche_roles_inconnus.etoiles_role(A.detail(target),fiche_roles_inconnus.ROLES[0])==-1.0,"Qualités inconnues : étoiles du rôle en « ? », jamais inventées")
+	check(fiche_roles_inconnus.note_role(A.detail(target),fiche_roles_inconnus.ROLES[0])==-1.0,"Qualités inconnues : note du rôle en « ? », jamais inventée")
 	var page: Control=app.find_child("CarnetMarket",true,false)
 	page.state.player_id=str(target.id)
 	page.state.immersive_tab=1;app._render(false);await settle()
