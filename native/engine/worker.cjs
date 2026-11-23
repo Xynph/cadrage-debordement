@@ -1297,6 +1297,8 @@ function createBridge(options={}){
      // Règle « Auto » par forme (dist/development.js) : posée à la création et sur les anciennes carrières (clé toujours
      // présente : les lectures mémorisées de la projection restent valides d'une commande à l'autre).
      run("if(S&&typeof intensiteAutoValide==='function'&&!intensiteAutoValide(S.intensiteAuto))S.intensiteAuto=INTENSITE_AUTO_DEFAUT.slice();");
+     // Relevé mensuel des qualités (releve-qualites.cjs) : premier relevé à la création et au chargement d'une ancienne carrière.
+     run("nativeSystems.domain('releveQualites').observe();");
      // Rôle promis au contrat (role-contrat.cjs) : enregistré pour chaque nouveau contrat du club et, au premier passage,
      // pour les contrats des anciennes carrières ; jamais après une commande déclarée sans effet sur les joueurs.
      if(!stateVersions.untouched(command,payload).includes('clubs'))run("nativeSystems.domain('roleContrat').observe();");

@@ -160,7 +160,8 @@ func sort_cases() -> void:
 	var before := JSON.stringify(model)
 	for key in Fatigue.SORT_KEYS:
 		if key == "selection": continue
-		var text_status: bool = key in ["injury", "suspension", "loadPlan"]
+		# loadPlan : le libellé « Auto » (intensité automatique) passe avant « Récupération » dans l’ordre alphabétique.
+		var text_status: bool = key in ["injury", "suspension"]
 		for descending in [false, true]:
 			var ids: Array = Fatigue.overview(model, "Tout l’effectif", key, descending).rows.map(func(row: Dictionary): return row.player.id)
 			var expected := ["b", "a", "a2", "0-unknown"] if (text_status and not descending) or (not text_status and descending) else ["a", "a2", "b", "0-unknown"]
