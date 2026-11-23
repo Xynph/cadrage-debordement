@@ -85,6 +85,8 @@ const EXTRAS := [
 	{"id": "effectif-condition", "libelle": "Effectif · onglet Condition", "type": "effectif_onglet", "onglet": 1},
 	{"id": "effectif-poste", "libelle": "Effectif · liste classée au poste 12 (clic sur le maillot du XV)", "type": "effectif_onglet", "onglet": 0, "poste_xv": 12},
 	{"id": "effectif-developpement", "libelle": "Effectif · onglet Développement", "type": "effectif_onglet", "onglet": 3},
+	{"id": "planificateur", "libelle": "Effectif · Planificateur", "type": "effectif_onglet", "onglet": 4},
+	{"id": "planificateur-prochaine", "libelle": "Effectif · Planificateur · saison prochaine", "type": "effectif_onglet", "onglet": 4, "ouvrir": "PlanSaisonOuvrir1"},
 	## Forme récente (21/11/2026) : petite fenêtre du dernier match noté d’un joueur.
 	{"id": "effectif-forme-fenetre", "libelle": "Effectif · petite fenêtre d'un match de la forme récente", "type": "effectif_onglet", "onglet": 0, "ouvrir": "FormeMatch4"},
 	## Bandeau des filtres et restes des listes (21/11/2026) : courbe au survol, calendrier en tableau, « Entre clubs ».
@@ -1026,7 +1028,9 @@ func refermer(ecran: Dictionary) -> void:
 	if str(ecran.type) == "creation_options":
 		app.management_ui.erase("creation_step")
 		app.management_ui.erase("creation_selection")
-	if str(ecran.type) == "effectif_onglet": app.management_ui.roster.immersive_tab = 0
+	if str(ecran.type) == "effectif_onglet":
+		app.management_ui.roster.immersive_tab = 0
+		app.management_ui.roster.erase("plan_saison")
 	if ecran.has("poste_xv"):
 		app.management_ui.roster.etoiles_poste = 0
 		app.management_ui.roster.sort = "Poste"
