@@ -43,7 +43,9 @@ const EXTRAS := [
 	{"id": "fiche-joueur", "libelle": "Fiche joueur", "type": "joueur"},
 	{"id": "mini-fiche", "libelle": "Mini-fiche au survol (Effectif)", "type": "mini_fiche"},
 	{"id": "equilibre-postes", "libelle": "Équilibre par poste (infobulle Aptes)", "type": "equilibre_postes"},
-	{"id": "comparateur", "libelle": "Comparateur (trois joueurs)", "type": "comparateur"},
+	{"id": "comparateur", "libelle": "Comparateur (deux joueurs)", "type": "comparateur"},
+	{"id": "radar", "libelle": "Comparateur en radar (deux joueurs du même poste)", "type": "comparateur_radar"},
+	{"id": "radar-axe", "libelle": "Comparateur en radar · clic sur un axe", "type": "comparateur_radar", "axe": 6},
 	{"id": "salle-conseil", "libelle": "Salle du conseil", "type": "salle_conseil"},
 	{"id": "salle-conseil-fenetre", "libelle": "Salle du conseil · petite fenêtre", "type": "salle_conseil", "fenetre": true},
 	{"id": "salle-conseil-match", "libelle": "Salle du conseil · fenêtre d'un match", "type": "salle_conseil", "ballon": true},
@@ -746,12 +748,33 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 		"comparateur":
 			var effectif_cmp: Array = app.model.get("squad", [])
 			if effectif_cmp.size() < 3: return {"statut": "indisponible", "note": "effectif trop court"}
-			app.management_ui.compare = [ident(effectif_cmp[0].get("id")), ident(effectif_cmp[1].get("id")), ident(effectif_cmp[2].get("id"))]
+			app.management_ui.compare = [ident(effectif_cmp[0].get("id")), ident(effectif_cmp[1].get("id"))]
 			app._navigate("Effectif")
 			await stabiliser()
 			load("res://ui/immersive08/comparateur_canvas.gd").ouvrir(app)
 			await stabiliser()
 			if app.route != "Comparateur": return {"statut": "echec", "note": "comparateur non ouvert"}
+		"comparateur_radar":
+			var effectif_r: Array = app.model.get("squad", [])
+			if effectif_r.size() < 2: return {"statut": "indisponible", "note": "effectif trop court"}
+			var premier_r: Dictionary = effectif_r[0]
+			var second_r: Dictionary = effectif_r[1]
+			for p: Dictionary in effectif_r.slice(1):
+				if str(p.get("pos", "")) == str(premier_r.get("pos", "")):
+					second_r = p
+					break
+			app.management_ui.compare = [ident(premier_r.get("id")), ident(second_r.get("id"))]
+			app.management_ui.erase("radar_axe")
+			app._navigate("Effectif")
+			await stabiliser()
+			load("res://ui/immersive08/comparateur_canvas.gd").ouvrir(app)
+			await stabiliser()
+			if app.route != "Comparateur": return {"statut": "echec", "note": "comparateur non ouvert"}
+			if ecran.has("axe"):
+				var axe_r := app.root_content.find_child("RadarAxe" + str(ecran.axe), true, false) as BaseButton
+				if axe_r == null: return {"statut": "echec", "note": "axe du radar absent"}
+				axe_r.pressed.emit()
+				await stabiliser()
 		"club":
 			var id := club_adverse()
 			if id.is_empty(): return {"statut": "indisponible", "note": "aucun club adverse connu"}
