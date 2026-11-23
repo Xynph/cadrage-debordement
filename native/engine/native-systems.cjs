@@ -159,6 +159,8 @@ domains.agentsJoueurs=require('./agents-joueurs.cjs');
 domains.tonAgent=require('./ton-agent.cjs');
 // Avis du conseil sur notre jeu : chiffres de la saison, attentes du club, note du jeu au bilan (native/engine/conseil-jeu.cjs).
 domains.conseilJeu=require('./conseil-jeu.cjs');
+// Tests physiques avant le match et historique des blessures (native/engine/tests-physiques.cjs).
+domains.testsPhysiques=require('./tests-physiques.cjs');
 const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files,...domains.clubSheet.files,...domains.pressPromises.files,...domains.clubMail.files,...domains.multiplex.files,...domains.avantMatch.files,...domains.doublons.files,...domains.matchIncidents.files,...domains.weekProgram.files])]);
 const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands,...domains.clubMail.commands,...domains.multiplex.commands,...domains.avantMatch.commands,...domains.doublons.commands,...domains.matchIncidents.commands,...domains.weekProgram.commands,...domains.familiarite.commands,...domains.tonAgent.commands,...domains.staffServices.commands]);
 if(new Set(allCommands).size!==allCommands.length)throw Error('Commandes natives de domaine en double.');

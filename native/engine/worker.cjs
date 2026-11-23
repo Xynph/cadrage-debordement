@@ -93,6 +93,8 @@ COMMANDS.add('restore_checkpoint');
 COMMANDS.add('remove_checkpoint');
 COMMANDS.add('calendar_template');
 COMMANDS.add('calendar_mail_decide');
+// Remplacer une seule séance d'un jour (Entraînement › Mois, fiche de séance ; calendar-planning.cjs swapSession).
+COMMANDS.add('calendar_session');
 const NATIONAL_COMMANDS=['national_take_job','national_leave_job','national_play_match'];
 NATIONAL_COMMANDS.forEach(command=>COMMANDS.add(command));
 const NATIONAL_ONLY_COMMANDS=new Set(['new_career','import','save','advance_day','next_season',...NATIONAL_COMMANDS]);
@@ -212,7 +214,9 @@ function createBridge(options={}){
   NumberFormat.prototype=Intl.NumberFormat.prototype;NumberFormat.supportedLocalesOf=Intl.NumberFormat.supportedLocalesOf.bind(Intl.NumberFormat);
   const engineIntl=Object.create(Intl,{NumberFormat:{value:NumberFormat,writable:true,configurable:true}});
   ctx=vm.createContext({console:{log(){},warn(){},error(){}},Intl:engineIntl,Math:math,Date:EngineDate,Set,JSON,CDNativeHeadless:true,document:{querySelector:()=>element},window:{CDNativeHeadless:true,CDOfflineStorage:storage,CDOfflineError:true},localStorage:storage,setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},nativeDataDirectory:dataDir});
-  const run=(source,filename)=>vm.runInContext(source,ctx,filename?{timeout:15000,filename}:{timeout:15000});
+  // Harnais de test (testVm) : les commandes lourdes (relecture des sections, passage de saison) dépassent 15 s sur un runner lent.
+  const vmLimit=options.testVm===true?120000:15000;
+  const run=(source,filename)=>vm.runInContext(source,ctx,filename?{timeout:vmLimit,filename}:{timeout:vmLimit});
   // Visage affiché d'un joueur (même calcul que la projection des portraits) : repris tel quel par la reconversion en staff.
   ctx.nativePortraitLook=process.env.CD_PORTRAIT_CARRURE==='0'?undefined:(player,world)=>{
     if(portraitLooks.hasRealPhoto(player))return null;
@@ -417,6 +421,9 @@ function createBridge(options={}){
    if(operation?.command==='calendar_template'){
     if(!today||model.live)throw Error('La planification est indisponible.');
     planning=calendarPlanning.applyTemplate(planningModel,planning,operation.payload,today,{anchors:calendarMail.anchors(mail)});
+   }else if(operation?.command==='calendar_session'){
+    if(!today||model.live)throw Error('La planification est indisponible.');
+    planning=calendarPlanning.swapSession(planningModel,planning,operation.payload,today,{anchors:calendarMail.anchors(mail),trained:model.meta?.trained===true});
    }else if(operation?.command==='calendar_mail_decide'){
     if(!today||simulatedDates||model.live)throw Error('La planification est indisponible.');
     const anchors=calendarMail.anchors(mail);
@@ -1334,6 +1341,8 @@ function createBridge(options={}){
      if(!stateVersions.untouched(command,payload).includes('clubs'))run("nativeSystems.domain('roleContrat').observe();");
      // Clause libératoire payée par un club géré (clauses-contrat.cjs) : période des mutations, une semaine tirée, rare.
      if(advancesCareer)run("nativeSystems.domain('clausesContrat').observe();");
+     // Historique des blessures et tests de reprise d'avant-match (tests-physiques.cjs) : avant le courrier du médecin.
+     run("nativeSystems.domain('testsPhysiques').observe();");
      run("nativeSystems.domain('clubMail').observe(nativeCommand);");
      // Réglage « Conférences ordinaires : envoyer l'adjoint » (press.cjs) : la conférence ordinaire qui vient de
      // s'ouvrir est tenue par Gabi dans la même commande, avant la sauvegarde ; « Jour suivant » et « Continuer »

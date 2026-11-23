@@ -1,5 +1,6 @@
 'use strict';
-// Carrière Monde : classement fermé avant la 1re journée, abonnés de départ déterministes et sans effet sur les recettes.
+// Carrière Monde : classement fermé avant la 1re journée, abonnés de départ déterministes. Billetterie réelle (23/11/2026) :
+// les abonnés paient à l'année (Abonnements) ; la recette prévue d'un match est celle du guichet, abonnés présents déduits.
 const assert = require('node:assert/strict');
 const { ouvrir, creer, jouer } = require('./helpers/carriere-monde.cjs');
 const fan = require('../dist/fan-experience-v111-v116.js');
@@ -22,9 +23,11 @@ try {
   assert.ok(fans.subscribers >= 0.22 * fans.capacity && fans.subscribers <= fans.capacity, 'Monde : abonnés initiaux ' + fans.subscribers);
   assert.equal(m.club.standingsOpen, false, 'avant la 1re journée : classement fermé');
   assert.ok(m.league.every(c => c.standingsOpen === false && c.played === 0), 'aucun match joué en division');
-  const recette = fans.expectedTicketRevenue;
+  assert.ok(fans.expectedTicketRevenue > 0 && fans.expectedTicketRevenue < fans.expectedAttendance * fans.price, 'recette estimée : guichet × prix, abonnés déduits');
   m = jouer(jeu, m, 1);
   assert.equal(m.club.standingsOpen, true, 'après un match : classement ouvert');
-  assert.equal(m.clubLife.clubStrategy.fans.expectedTicketRevenue, recette, 'recette prévue inchangée par les abonnés');
+  const apres = m.clubLife.clubStrategy.fans;
+  assert.equal(apres.subscribers, fans.subscribers, 'abonnés inchangés par un match');
+  assert.ok(apres.expectedTicketRevenue > 0 && apres.expectedTicketRevenue < apres.expectedAttendance * apres.price, 'recette estimée : guichet × prix');
   console.log('Monde club0 : abonnés ' + fans.subscribers + ' / ' + fans.capacity + ', classement fermé puis ouvert PASS');
 } finally { jeu.fermer(); }

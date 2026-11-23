@@ -28,8 +28,56 @@ const DIVISIONS = Object.freeze(Object.fromEntries(Object.entries(ECONOMIE.CHAMP
   moyenne: c.recettes, bas: c.bas, haut: c.haut, partenaires: c.partenaires, ligue: c.ligue, billetterie: c.billetterie, boutique: c.boutique, divers: c.divers })])));
 const COTISATIONS = 0.4;
 const FONCTIONNEMENT = 0.58;
+// Fonctionnement dégressif (choix de Léo du 23/11/2026 : « Staff et fonctionnement » énorme chez les gros budgets, 610 000 €
+// par semaine au Stade toulousain du jeu) : 58 % sur les 20 premiers M€ de recettes, 45 % au-delà. Les frais d'un club
+// (administration, déplacements, stade) ne grossissent pas au même rythme que ses recettes. Tous les calculs du budget
+// (masse autorisée, train de vie, prévision, perte prévue) lisent ce même montant.
+const SEUIL_FONCTIONNEMENT = 20e6, FONCTIONNEMENT_AU_DELA = 0.45;
+const fonctionnementAnnuel = annuel => FONCTIONNEMENT * Math.min(annuel, SEUIL_FONCTIONNEMENT) + FONCTIONNEMENT_AU_DELA * Math.max(0, annuel - SEUIL_FONCTIONNEMENT);
 
-// forces : [{id, division, base}] ; renvoie les recettes annuelles visées par club.
+// Salaires du staff (choix de Léo du 23/11/2026) : chaque membre est payé selon son rôle, son niveau et la division du club.
+// Salaire annuel de référence en première division française, pour un niveau 54 ; repères publiés (entraîneur principal de
+// Top 14 : 250 000 à 500 000 € ; kinésithérapeute de club pro : 40 000 à 60 000 €). Les autres divisions suivent le rapport de
+// leur masse salariale à celle du Top 14, à la puissance 0,75 (un staff se paie un peu moins bas que les joueurs : Pro D2 × 0,43,
+// Nationale × 0,23).
+// Niveau : × 0,6 au niveau 40, × 1 au niveau 54, × 1,46 au niveau 70, × 1,89 au niveau 85 : un meilleur kiné coûte plus cher.
+// Ces salaires sortent de l'enveloppe de fonctionnement : le reste (« Fonctionnement du club ») est l'enveloppe moins le staff
+// d'un club de ce rang (niveau attendu, 21 + 0,6 × base, comme l'avis des dirigeants) ; un staff meilleur que le rang du club
+// coûte donc vraiment plus, un staff plus faible moins.
+const STAFF_REFERENCE = Object.freeze({ chef: 320000, coach: 130000, assistant: 100000, fitnessChef: 95000, fitness: 70000, medecin: 100000, medical: 55000, soigneur: 40000,
+  analyst: 55000, scoutChef: 80000, scout: 60000, formation: 80000, intendant: 35000, support: 45000 });
+const CHEF = /principal|en chef|head coach|director of rugby|directeur (du rugby|sportif)|manager g[ée]n[ée]ral|general manager|capo allenatore|manager sportif|^manager$/i;
+const RESPONSABLE = /responsable|head|directeur|director|lead|chief/i;
+function categorieStaff(p) {
+  const role = p?.role, label = String(p?.roleLabel ?? p?.role ?? '');
+  if (role === 'coach' || role === 'assistant') return CHEF.test(label) ? 'chef' : role;
+  if (role === 'fitness') return RESPONSABLE.test(label) ? 'fitnessChef' : 'fitness';
+  if (role === 'medical') return /m[ée]decin|doctor|medico|medical|médical/i.test(label) ? 'medecin' : /soigneur|masseur|massage/i.test(label) ? 'soigneur' : 'medical';
+  if (role === 'scout') return RESPONSABLE.test(label) ? 'scoutChef' : 'scout';
+  if (role === 'analyst' || role === 'formation') return role;
+  return /intendan|kit|magasin|property|interpr/i.test(label) ? 'intendant' : 'support';
+}
+const echelleStaff = division => { const d = ECONOMIE.CHAMPIONNATS[division], ref = ECONOMIE.CHAMPIONNATS.elite; return d && ref ? (d.masse / ref.masse) ** 0.75 : 0.5; };
+const facteurNiveauStaff = niveau => Math.max(0.5, Math.min(2, 0.6 + ((Number.isFinite(niveau) ? niveau : 54) - 40) / 35));
+const niveauAttenduStaff = base => Math.max(45, Math.min(80, Math.round(21 + 0.6 * (Number.isFinite(base) ? base : 65))));
+// Salaire annuel d'un membre du staff (euros, arrondi à la centaine).
+function salaireStaff(p, division, niveau = p?.level) {
+  return rond(STAFF_REFERENCE[categorieStaff(p)] * echelleStaff(division) * facteurNiveauStaff(niveau));
+}
+// Staff d'un club : {annuel : salaires réels, reference : mêmes postes au niveau attendu du club, membres}.
+function masseStaff(membres, division, base) {
+  const attendu = niveauAttenduStaff(base);
+  let annuel = 0, reference = 0, n = 0;
+  for (const p of membres ?? []) { if (!p) continue; annuel += salaireStaff(p, division); reference += salaireStaff(p, division, attendu); n++; }
+  return { annuel, reference, membres: n };
+}
+
+// forces : [{id, division, base, billetterie?}] ; renvoie les recettes annuelles visées par club.
+// billetterie (carrière Monde, billetterie réelle) : recette annuelle de son stade (abonnements et guichet d'un match moyen,
+// billetterieAnnuelle) ; elle remplace la part « billetterie » du modèle dans les recettes du club. Sans elle, le petit stade
+// d'un club riche (un club du championnat celte de 8 700 places à 30 M€ de recettes) perdait 4 M€ par saison sur son budget
+// voté, et le grand stade d'un club modeste en gagnait autant : la masse autorisée, le fonctionnement et la prévision suivent
+// maintenant les vraies recettes de son stade.
 function recettes(forces) {
   const resultat = new Map();
   for (const [division, regle] of Object.entries(DIVISIONS)) {
@@ -38,7 +86,7 @@ function recettes(forces) {
     const min = Math.min(...groupe.map(club => club.base)), max = Math.max(...groupe.map(club => club.base));
     const brut = groupe.map(club => regle.bas + (regle.haut - regle.bas) * (max === min ? 0.5 : (club.base - min) / (max - min)));
     const correction = groupe.length / brut.reduce((somme, valeur) => somme + valeur, 0);
-    groupe.forEach((club, i) => resultat.set(club.id, regle.moyenne * brut[i] * correction));
+    groupe.forEach((club, i) => { const modele = regle.moyenne * brut[i] * correction; resultat.set(club.id, Number.isFinite(club.billetterie) && club.billetterie >= 0 ? modele * (1 - regle.billetterie) + club.billetterie : modele); });
   }
   return resultat;
 }
@@ -159,10 +207,12 @@ function euros(montant) {
   if (m >= 1e6) return (Math.round(m / 1e4) / 100).toString().replace('.', ',') + ' M€';
   return String(Math.round(m)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €';
 }
+// modele : recettes du modèle de la division, sans la billetterie réelle (partenaires, ligue, subventions et boutique s'y lisent).
 function regleDe(forces, clubId) {
   const force = forces.find(club => club.id === clubId), regle = force && DIVISIONS[force.division];
   if (!regle) throw Error('Budget de club : division inconnue.');
-  return { force, regle, annuel: recettes(forces).get(clubId) };
+  const annuel = recettes(forces).get(clubId), reelle = Number.isFinite(force.billetterie) && force.billetterie >= 0;
+  return { force, regle, annuel, modele: reelle ? (annuel - force.billetterie) / (1 - regle.billetterie) : annuel };
 }
 
 // Le propriétaire d'un club et ce qu'il promet de combler cette saison.
@@ -187,17 +237,91 @@ const affluence = (formeClub, alea) => 0.78 + 0.36 * formeClub + 0.08 * alea;
 // Humeur des supporters (0-100, club du manager, club-strategy.cjs) : public multiplié par 0,90 (humeur 0) à 1,10
 // (humeur 100), neutre à 50 ou inconnue (clubs gérés par le jeu). Choix de Léo du 23/11/2026 : effet réel et modeste.
 const HUMEUR_PUBLIC = 0.10;
+// Billetterie réelle (choix de Léo du 23/11/2026) : la recette d'un match à domicile = billets vendus au guichet × prix du
+// billet, encaissée au match ; les abonnés paient leur place à l'année (Abonnements, chaque semaine, 30 % de remise). Le prix
+// du billet suit la division (league-economy.cjs, billet) et la politique choisie par le manager ; il pèse sur l'affluence :
+// sous le prix de la division, le public grossit peu (élasticité 0,4 : billet à 60 % → public × 1,23) ; au-dessus, il fond
+// vite (élasticité 1,2 : billet × 1,5 → public × 0,61). L'affluence reste bornée par la vraie capacité du stade : pour une
+// grosse affiche qui remplirait deux stades, monter le prix ne coûte presque aucun spectateur (prix ajusté par match).
+// Préréglages (anciens boutons de la politique de prix) : accessible = billet × 0,6, premium = billet × 1,5.
+const POLITIQUES_BILLET = Object.freeze({ accessible: Object.freeze({ prix: 0.6 }), equilibree: Object.freeze({ prix: 1 }), premium: Object.freeze({ prix: 1.5 }) });
+const ELASTICITE_PRIX = Object.freeze({ bas: 0.4, haut: 1.2 });
+// rapport : prix du billet / prix de la division ; facteur appliqué au public (0,05 à 1,35). Grosse affiche : le public tient
+// mieux au match (élasticité 0,6 jusqu'à 1,5 fois le prix de la division, 1,6 au-delà) : la monter rapporte, jusqu'à un point.
+function facteurPrix(rapport, affiche = false) {
+  const r = Number.isFinite(rapport) && rapport > 0 ? rapport : 1;
+  const f = r <= 1 ? r ** -ELASTICITE_PRIX.bas : !affiche ? r ** -ELASTICITE_PRIX.haut : r <= 1.5 ? r ** -0.6 : 1.5 ** -0.6 * (r / 1.5) ** -1.6;
+  return Math.max(0.05, Math.min(1.35, f));
+}
+// Politique : préréglage (texte) ou rapport prix / prix de la division (nombre).
+const rapportPrix = politique => Number.isFinite(politique) && politique > 0 ? politique : POLITIQUES_BILLET[politiqueBillet(politique)].prix;
+// Estimation du staff (règle de Léo du 23/11/2026 : jamais d'effet chiffré exact avant d'agir) : la valeur vraie décalée de 1 à
+// 3 % pour un très bon staff (niveau 80 et plus), jusqu'à 5 à 15 % pour un staff faible (niveau 45), dans un sens tiré du match.
+function estimationStaff(valeur, niveau, cle, pas = 10) {
+  const amplitude = Math.max(0.03, Math.min(0.15, 0.03 + (80 - (Number.isFinite(niveau) ? niveau : 55)) / 290));
+  const u = unite('estimation|' + cle), signe = u < 0.5 ? -1 : 1, part = 0.35 + 0.65 * (u < 0.5 ? u : u - 0.5) * 2;
+  return Math.max(0, Math.round((Number.isFinite(valeur) ? valeur : 0) * (1 + signe * amplitude * part) / pas) * pas);
+}
+// Conseil de prix d'un membre du staff (et prix appliqué quand le manager lui confie la billetterie) : le meilleur prix décalé
+// de 25 à 100 % d'une amplitude de ±30 % au niveau 45 à ±5 % au niveau 85, jamais exact ; parfois mieux que le manager,
+// parfois moins bien.
+function conseilPrix(optimum, niveau, cle) {
+  const amplitude = Math.max(0.05, Math.min(0.3, 0.3 - ((Number.isFinite(niveau) ? niveau : 55) - 45) * 0.00625));
+  const u = unite('conseil|' + cle), signe = u < 0.5 ? -1 : 1, part = 0.25 + 0.75 * (u < 0.5 ? u : u - 0.5) * 2;
+  const prix = Math.max(1, Math.round(optimum * (1 + signe * amplitude * part)));
+  return prix === optimum ? prix + signe : Math.max(1, prix);
+}
+const REMISE_ABONNEMENT = 0.7;
+const politiqueBillet = politique => Object.hasOwn(POLITIQUES_BILLET, politique ?? '') ? politique : 'equilibree';
+function prixBillet(division, politique) {
+  const reference = ECONOMIE.CHAMPIONNATS[division]?.billet;
+  return Math.max(1, Math.round((Number.isFinite(reference) ? reference : 20) * POLITIQUES_BILLET[politiqueBillet(politique)].prix));
+}
+// Abonnés d'un club géré par le jeu : même règle que les abonnés de départ du club du manager (fan-experience-v111-v116.js,
+// initialSubscribers) : 25 % de la capacité pour un petit club, 75 % pour un grand, ±3 points propres au club.
+function abonnesEstimes(capacite, base, cle = '') {
+  const places = Number.isInteger(capacite) && capacite >= 500 && capacite <= 100000 ? capacite : 12000, t = Math.max(0, Math.min(1, ((Number.isFinite(base) ? base : 70) - 60) / 26));
+  let h = 2166136261; const k = String(cle);
+  for (let i = 0; i < k.length; i++) { h ^= k.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return Math.max(0, Math.min(Math.round(places * Math.max(0.2, Math.min(0.78, 0.25 + 0.5 * t + ((h % 7) - 3) / 100))), places, 100000));
+}
+// Recette d'un match à domicile : {spectateurs, abonnes, payants, prix, recette}. finale : billet × 1,5 (phase finale).
+// Abonnés présents : 85 % des abonnés (les autres places d'abonnés ne se revendent pas) ; le reste du public paie au guichet.
+const PRESENCE_ABONNES = 0.85;
+function guichet({ spectateurs: n, abonnes, prix, finale = false }) {
+  const presents = Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0, abo = Math.max(0, Math.round((Number.isFinite(abonnes) ? abonnes : 0) * PRESENCE_ABONNES));
+  const payants = Math.max(0, presents - abo), tarif = finale ? Math.round(prix * GUICHET_PHASE_FINALE) : prix;
+  return { spectateurs: presents, abonnes: Math.min(abo, presents), payants, prix: tarif, recette: payants * tarif };
+}
+// Billetterie d'une saison type (budget voté) : abonnements + guichet d'un match moyen (forme neutre, tirage médian,
+// politique équilibrée) à chaque réception de saison régulière.
+function billetterieAnnuelle({ capacite, abonnes, prix, receptions, demande = 1 }) {
+  const n = spectateurs({ capacite, resultats: ['V', 'D'], alea: 0.5, abonnes, demande }), matchs = Math.max(0, receptions);
+  return rond(Math.max(0, abonnes) * prix * REMISE_ABONNEMENT * matchs + guichet({ spectateurs: n, abonnes, prix }).recette * matchs);
+}
+// Abonnements de la saison, versés chaque semaine : abonnés × billet × 70 % × réceptions de saison régulière / semaines.
+const abonnementsHebdo = ({ abonnes, prix, receptions, semaines }) => rond(Math.max(0, abonnes) * prix * REMISE_ABONNEMENT * Math.max(1, receptions) / Math.max(1, semaines));
 const facteurHumeur = humeur => Number.isFinite(humeur) ? 1 + HUMEUR_PUBLIC * (Math.max(0, Math.min(100, humeur)) - 50) / 50 : 1;
 // Spectateurs d'une rencontre (compte rendu du match, idée FM n°19) : la même affluence que la billetterie (forme du
 // club qui reçoit, aléa, accueil du stade) ramenée à un remplissage de 50 % (cinq défaites) à 95 % (cinq victoires)
 // en saison, 97 % en phase finale ; arrondi à la dizaine. Capacité inconnue : null. humeur : humeur des supporters du
 // club qui reçoit s'il est celui du manager (facteurHumeur), sinon neutre.
-function spectateurs({ capacite, resultats, cle = '', accueil = 1, phase = 'league', humeur = null }) {
+// politique : préréglage de prix du club qui reçoit (accessible, equilibree, premium) ou rapport prix du billet / prix de la
+// division (nombre) ; alea : tirage imposé (sinon tiré de cle).
+// affiche : grosse affiche (derby, club plus fort) : 30 % de demande en plus, jusqu'au stade plein.
+// abonnes : abonnés du club : les présents (85 %) occupent leurs places, le prix du billet ne joue que sur le reste du public,
+// qui remplit les places restantes au même taux (0 : tout le stade est au guichet, comme avant).
+// demande : appétit du public occasionnel du club (division et réputation, league-economy.cjs, public) : multiplie le
+// remplissage des places hors abonnés (pas en phase finale, où le stade est plein).
+function spectateurs({ capacite, resultats, cle = '', accueil = 1, phase = 'league', humeur = null, politique = null, alea = null, affiche = false, abonnes = 0, demande = 1 }) {
   if (!Number.isFinite(capacite) || capacite <= 0) return null;
-  const a = affluence(forme(resultats), unite('affluence|' + cle)) * (Number.isFinite(accueil) && accueil > 0 ? accueil : 1);
-  // L'humeur multiplie le public comme la billetterie (±10 % au plus), dans les mêmes bornes de remplissage.
-  const taux = phase !== 'league' && phase !== 'pool' ? 0.97 : Math.min(0.95, Math.max(0.35, (0.5 + 0.45 * (a - 0.78) / 0.44) * facteurHumeur(humeur)));
-  return Math.round(capacite * taux / 10) * 10;
+  const a = affluence(forme(resultats), Number.isFinite(alea) ? alea : unite('affluence|' + cle)) * (Number.isFinite(accueil) && accueil > 0 ? accueil : 1);
+  // L'humeur multiplie le public comme la billetterie (±10 % au plus), dans les mêmes bornes de remplissage ; le prix du
+  // billet l'élargit ou le réduit ensuite, sans jamais dépasser la capacité. Phase finale : stade plein quel que soit le prix.
+  const taux = phase !== 'league' && phase !== 'pool' ? 0.97 : Math.min(1, Math.min(affiche ? 1 : 0.95, Math.max(0.35, (0.5 + 0.45 * (a - 0.78) / 0.44) * facteurHumeur(humeur) * (affiche ? 1.3 : 1))) * facteurPrix(rapportPrix(politique), affiche));
+  const presents = Math.min(capacite, Math.round(Math.max(0, Number.isFinite(abonnes) ? abonnes : 0) * PRESENCE_ABONNES));
+  const part = phase !== 'league' && phase !== 'pool' ? taux : Math.min(1, taux * (Number.isFinite(demande) && demande > 0 ? demande : 1));
+  return Math.round((presents + (capacite - presents) * part) / 10) * 10;
 }
 
 // Ce qu'un club géré par le jeu ajuste dans son fonctionnement, sur l'année : il réduit
@@ -207,7 +331,7 @@ function spectateurs({ capacite, resultats, cle = '', accueil = 1, phase = 'leag
 // le train de vie n'y touche pas ; seul ce qui le dépasse est réinvesti.
 const TRAIN_DE_VIE = 0.7;
 function ajustement(annuel, masseAnnuelle, enveloppe, marge = 0) {
-  const resultat = annuel * (1 - FONCTIONNEMENT) - masseAnnuelle * (1 + COTISATIONS);
+  const resultat = annuel - fonctionnementAnnuel(annuel) - masseAnnuelle * (1 + COTISATIONS);
   if (resultat > 0) return TRAIN_DE_VIE * Math.max(0, resultat - Math.max(0, Number.isFinite(marge) ? marge : 0));
   const economies = Math.min(0.15 * annuel, 0.7 * Math.max(0, -resultat - enveloppe));
   return economies > 0 ? -economies : 0;
@@ -251,7 +375,7 @@ function limites(forces, saison, { creation = false, types = null, credits = nul
     // Suite (#885 → ici) : la borne suit la gestion propre du club (cibleGestion) au lieu de l'enveloppe entière du propriétaire.
     const economies = regle.encadrement ? 0 : 0.15 * annuel, prudence = (regle.prudence ?? 0) * annuel, aPerdre = regle.encadrement && regle.gestion ? -cibleGestion(forces, force.id, p.type) : p.enveloppe;
     const rembourse = Number.isFinite(remboursements?.[force.id]) ? Math.max(0, remboursements[force.id]) : 0;
-    const bornes = [['budget', (annuel * (1 - FONCTIONNEMENT) - prudence + aPerdre + economies - rembourse) / (1 + COTISATIONS)]];
+    const bornes = [['budget', (annuel - fonctionnementAnnuel(annuel) - prudence + aPerdre + economies - rembourse) / (1 + COTISATIONS)]];
     const credit = credits?.[force.id] ?? 0;
     if (regle.plafond !== null) bornes.push(['plafond', regle.plafond + credit]);
     if (regle.ratio) bornes.push(['recettes', annuel * RATIO_SALAIRES]);
@@ -272,32 +396,50 @@ function limites(forces, saison, { creation = false, types = null, credits = nul
 //   receptions : matchs de saison régulière à domicile ; gere : club géré par le jeu.
 //   marge : excédent visé par le budget voté (cibleGestion), épargné par le train de vie ; 0 pour le club joué.
 //   humeur : humeur des supporters du club du manager (0-100) : relève ou baisse le public payant (facteurHumeur).
-function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle, resultats, phase = 'league', neutre = false, receptions, gere = false, repere = '', formation = null, investissement = 0, accueil = 1, marge = 0, aideRelegation: aide = 0, remboursement = 0, humeur = null }) {
-  const { force, regle, annuel } = regleDe(forces, clubId);
+//   billets : billetterie réelle {prix, abonnes, spectateurs, abonnementsHebdo} (prix et spectateurs du match de la semaine à
+//     domicile, sinon null) : Abonnements = abonnementsHebdo, Billetterie = guichet ; sans billets (anciens appels), l'ancienne part des recettes.
+//   staff : {annuel, reference} (masseStaff) : Salaires du staff (cotisations comprises dans Cotisations) et fonctionnement
+//     du club = enveloppe − staff de référence ; sans staff, une seule ligne « Staff et fonctionnement » comme avant.
+function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle, resultats, phase = 'league', neutre = false, receptions, gere = false, repere = '', formation = null, investissement = 0, accueil = 1, marge = 0, aideRelegation: aide = 0, remboursement = 0, humeur = null, billets = null, staff = null }) {
+  const { force, regle, annuel, modele } = regleDe(forces, clubId);
   if (!Number.isInteger(semaines) || semaines < 1) throw Error('Budget de club : nombre de semaines invalide.');
   const salaires = rond(masseHebdo * 52 / semaines), matchs = Math.max(1, receptions ?? Math.round(semaines / 2));
   const hasard = Number.isFinite(alea) ? alea : unite('affluence|' + clubId + '|' + repere), public_ = affluence(forme(resultats), hasard) * (Number.isFinite(accueil) && accueil > 0 ? accueil : 1) * facteurHumeur(humeur);
-  const billetterie = annuel * regle.billetterie, finale = phase !== 'league';
+  const billetterie = modele * regle.billetterie, finale = phase !== 'league';
+  const reels = !!billets && Number.isFinite(billets.prix) && billets.prix > 0 && Number.isFinite(billets.abonnes);
   const ecritures = [
-    { title: libelle + ' · Partenaires', amount: rond(annuel * regle.partenaires / semaines) },
-    { title: libelle + ' · Versement de la ligue', amount: rond(annuel * regle.ligue * (1 - PART_PRIME) / semaines) },
-    { title: libelle + ' · Subventions et divers', amount: rond(annuel * regle.divers / semaines) },
-    { title: libelle + ' · Abonnements', amount: rond(billetterie * PART_ABONNEMENTS / semaines) },
+    { title: libelle + ' · Partenaires', amount: rond(modele * regle.partenaires / semaines) },
+    { title: libelle + ' · Versement de la ligue', amount: rond(modele * regle.ligue * (1 - PART_PRIME) / semaines) },
+    { title: libelle + ' · Subventions et divers', amount: rond(modele * regle.divers / semaines) },
+    { title: libelle + ' · Abonnements', amount: reels ? (Number.isFinite(billets.abonnementsHebdo) ? billets.abonnementsHebdo : abonnementsHebdo({ abonnes: billets.abonnes, prix: billets.prix, receptions: matchs, semaines })) : rond(billetterie * PART_ABONNEMENTS / semaines) },
   ];
   if (Number.isFinite(aide) && aide > 0) ecritures.push({ title: libelle + ' · ' + LIBELLE_AIDE_RELEGATION, amount: rond(aide / semaines) });
   if (domicile && !neutre) {
+    // Prix réel du match (billet de base ou des grosses affiches, phase finale comprise) : pas de majoration en plus.
+    const recette = reels && Number.isFinite(billets.spectateurs) ? guichet({ spectateurs: billets.spectateurs, abonnes: billets.abonnes, prix: billets.prix }).recette : null;
     ecritures.push(finale
-      ? { title: libelle + ' · Billetterie de phase finale', amount: rond(billetterie / matchs * GUICHET_PHASE_FINALE * public_) }
-      : { title: libelle + ' · Billetterie', amount: rond(billetterie * (1 - PART_ABONNEMENTS) / matchs * public_) });
-    ecritures.push({ title: libelle + ' · Boutique et buvettes', amount: rond(annuel * regle.boutique / matchs * (finale ? GUICHET_PHASE_FINALE : 1) * (0.9 + 0.2 * hasard) * (Number.isFinite(accueil) && accueil > 0 ? accueil : 1)) });
+      ? { title: libelle + ' · Billetterie de phase finale', amount: recette ?? rond(billetterie / matchs * GUICHET_PHASE_FINALE * public_) }
+      : { title: libelle + ' · Billetterie', amount: recette ?? rond(billetterie * (1 - PART_ABONNEMENTS) / matchs * public_) });
+    ecritures.push({ title: libelle + ' · Boutique et buvettes', amount: rond(modele * regle.boutique / matchs * (finale ? GUICHET_PHASE_FINALE : 1) * (0.9 + 0.2 * hasard) * (Number.isFinite(accueil) && accueil > 0 ? accueil : 1)) });
   } else if (neutre) {
     ecritures.push({ title: libelle + ' · Part de recette de phase finale', amount: rond(regle.moyenne * regle.billetterie / matchs * PART_TERRAIN_NEUTRE) });
   }
-  const fonctionnement = annuel * FONCTIONNEMENT + (gere ? ajustement(annuel, masseHebdo * 52, proprietaire(forces, clubId).enveloppe, marge) : 0);
-  ecritures.push({ title: libelle + ' · Salaires des joueurs', amount: -salaires });
-  ecritures.push({ title: libelle + ' · Cotisations', amount: -rond(salaires * COTISATIONS) });
+  const train = gere ? ajustement(annuel, masseHebdo * 52, proprietaire(forces, clubId).enveloppe, marge) : 0;
   const centre = centreFormation(annuel, force.division, formation);
-  ecritures.push({ title: libelle + ' · Staff et fonctionnement', amount: -rond((fonctionnement - centre.referenceNette) / semaines) });
+  ecritures.push({ title: libelle + ' · Salaires des joueurs', amount: -salaires });
+  if (staff && Number.isFinite(staff.annuel) && Number.isFinite(staff.reference)) {
+    // Staff payé sur les mêmes semaines que les joueurs ; le train de vie (excédent dépensé) a sa propre ligne, les
+    // économies d'un club en déficit réduisent son fonctionnement.
+    const paieStaff = rond(staff.annuel / semaines);
+    ecritures.push({ title: libelle + ' · ' + LIBELLE_STAFF, amount: -paieStaff });
+    ecritures.push({ title: libelle + ' · Cotisations', amount: -rond((salaires + paieStaff) * COTISATIONS) });
+    const reste = fonctionnementAnnuel(annuel) - centre.referenceNette - staff.reference * (1 + COTISATIONS) + Math.min(0, train);
+    ecritures.push({ title: libelle + ' · ' + LIBELLE_FONCTIONNEMENT, amount: -rond(Math.max(0, reste) / semaines) });
+    if (train > 0) ecritures.push({ title: libelle + ' · ' + LIBELLE_TRAIN_DE_VIE, amount: -rond(train / semaines) });
+  } else {
+    ecritures.push({ title: libelle + ' · Cotisations', amount: -rond(salaires * COTISATIONS) });
+    ecritures.push({ title: libelle + ' · Staff et fonctionnement', amount: -rond((fonctionnementAnnuel(annuel) + train - centre.referenceNette) / semaines) });
+  }
   ecritures.push({ title: libelle + ' · Centre de formation', amount: -rond(centre.cout / semaines) });
   if (centre.aide > 0) ecritures.push({ title: libelle + ' · ' + centre.libelleAide, amount: rond(centre.aide / semaines) });
   if (Number.isFinite(investissement) && investissement > 0) ecritures.push({ title: libelle + ' · Investissements (excédents réinvestis)', amount: -rond(investissement / semaines) });
@@ -349,6 +491,7 @@ function aideRelegation(division, depuis, saisonsDepuis) {
   return regle.montants[saisonsDepuis] ?? 0;
 }
 const LIBELLE_AIDE_RELEGATION = 'Aide de la ligue aux clubs relégués';
+const LIBELLE_STAFF = 'Salaires du staff', LIBELLE_FONCTIONNEMENT = 'Fonctionnement du club', LIBELLE_TRAIN_DE_VIE = 'Train de vie du club';
 const LIBELLE_REMBOURSEMENT = 'Remboursement du prêt de l’actionnaire';
 const annonceAideRelegation = (montant, premiere) => premiere
   ? `Descente : la ligue accompagne les clubs relégués. Le club touchera ${euros(montant)} de plus cette saison, versés avec la part de la ligue, puis une aide plus faible la saison prochaine.`
@@ -361,15 +504,19 @@ const annonceInvestissement = (montant, reserve) => `La trésorerie dépasse la 
 // victoire et de qualification, d'accueil, de sécurité et de déplacements : 70 % en repartent aussi.
 // Écart de la semaine entre le guichet encaissé et le guichet attendu d'un match moyen (affluence 1, accueil
 // du club compris) ; une phase finale n'est jamais attendue. Négatif après une série de défaites.
-function recettesImprevues(ecritures, { forces, clubId, receptions, accueil = 1 }) {
-  const { regle, annuel } = regleDe(forces, clubId), matchs = Math.max(1, receptions ?? 13), facteur = Number.isFinite(accueil) && accueil > 0 ? accueil : 1;
+// billets : billetterie réelle ({attendu} : recette au guichet d'un match moyen de ce club, à forme neutre) : l'attendu est le
+// plus bas des deux (sa recette moyenne, la part du budget) ; sans billets, la part des recettes du budget.
+function recettesImprevues(ecritures, { forces, clubId, receptions, accueil = 1, billets = null }) {
+  const { regle, modele: annuel } = regleDe(forces, clubId), matchs = Math.max(1, receptions ?? 13), facteur = Number.isFinite(accueil) && accueil > 0 ? accueil : 1;
   const titre = e => e.title.slice(e.title.lastIndexOf(' · ') + 3);
   const finale = ecritures.some(e => ['Billetterie de phase finale', 'Part de recette de phase finale'].includes(titre(e)));
   let ecart = 0;
   for (const e of ecritures) {
     const t = titre(e);
     if (t === 'Billetterie de phase finale' || t === 'Part de recette de phase finale') ecart += e.amount;
-    else if (t === 'Billetterie') ecart += e.amount - annuel * regle.billetterie * (1 - PART_ABONNEMENTS) / matchs * facteur;
+    // Billetterie réelle : un grand stade rapporte plus que la part « billetterie » du budget ; ce surplus de structure compte
+    // comme imprévu (accueil, sécurité, primes : la moitié en repart), un petit stade n'est jugé que sur sa propre recette moyenne.
+    else if (t === 'Billetterie') { const part = annuel * regle.billetterie * (1 - PART_ABONNEMENTS) / matchs * facteur; ecart += e.amount - (Number.isFinite(billets?.attendu) ? Math.min(billets.attendu, part) : part); }
     else if (t === 'Boutique et buvettes') ecart += e.amount - (finale ? 0 : annuel * regle.boutique / matchs * facteur);
   }
   return rond(ecart);
@@ -388,7 +535,7 @@ function fraisDeMatch(compte, ecart, deficit = 0) {
 // de base, salaires et cotisations) ; 0 si le budget est équilibré ou excédentaire.
 function deficitPrevu(forces, clubId, masseAnnuelle) {
   const { annuel } = regleDe(forces, clubId);
-  return Math.max(0, rond(masseAnnuelle * (1 + COTISATIONS) - annuel * (1 - FONCTIONNEMENT)));
+  return Math.max(0, rond(masseAnnuelle * (1 + COTISATIONS) - (annuel - fonctionnementAnnuel(annuel))));
 }
 // Moitié seulement (décision de Léo du 17/11 : « il faut que ça reste un jeu ») : une belle saison doit se voir en caisse.
 const PART_FRAIS_IMPREVUS = 0.5;
@@ -419,13 +566,15 @@ const annonceClauses = (sens, avant, apres, touches) => sens < 0
 // Prévision de la saison du club joué, mise à jour chaque semaine.
 //   compte : compteur du club ; tresorerie : caisse actuelle ; reste : semaines restantes ;
 //   receptionsRestantes : matchs de saison régulière à domicile encore à jouer ; rang, taille : classement actuel.
-function prevision({ forces, clubId, compte, tresorerie, masseHebdo, semaines, reste, receptions, receptionsRestantes, rang, taille }) {
-  const { force, regle, annuel } = regleDe(forces, clubId), division = force.division, masseAnnuelle = Math.round(masseHebdo * 52);
-  const prime = primeClassement(division, rang, taille);
-  const fixes = (annuel * (regle.partenaires + regle.ligue * (1 - PART_PRIME) + regle.divers + regle.billetterie * PART_ABONNEMENTS) + (Number.isFinite(compte.aideRelegation) ? compte.aideRelegation : 0)) / semaines;
-  const guichet = annuel * (regle.billetterie * (1 - PART_ABONNEMENTS) + regle.boutique) / Math.max(1, receptions);
-  const recettesPrevues = rond(compte.recettes + fixes * reste + guichet * receptionsRestantes + prime);
-  const fonctionnement = annuel * FONCTIONNEMENT + ajustement(annuel, masseHebdo * 52, compte.enveloppe) + (Number.isFinite(compte.investissement) ? compte.investissement : 0);
+//   billets : billetterie réelle {abonnementsHebdo, attendu} (même calcul que les écritures de la semaine) ; staff : masseStaff.
+function prevision({ forces, clubId, compte, tresorerie, masseHebdo, semaines, reste, receptions, receptionsRestantes, rang, taille, billets = null, staff = null }) {
+  const { force, regle, annuel, modele } = regleDe(forces, clubId), division = force.division, masseAnnuelle = Math.round(masseHebdo * 52);
+  const prime = primeClassement(division, rang, taille), reels = Number.isFinite(billets?.abonnementsHebdo) && Number.isFinite(billets?.attendu);
+  const fixes = (modele * (regle.partenaires + regle.ligue * (1 - PART_PRIME) + regle.divers + (reels ? 0 : regle.billetterie * PART_ABONNEMENTS)) + (Number.isFinite(compte.aideRelegation) ? compte.aideRelegation : 0)) / semaines + (reels ? billets.abonnementsHebdo : 0);
+  const guichetMatch = (reels ? billets.attendu : modele * regle.billetterie * (1 - PART_ABONNEMENTS) / Math.max(1, receptions)) + modele * regle.boutique / Math.max(1, receptions);
+  const recettesPrevues = rond(compte.recettes + fixes * reste + guichetMatch * receptionsRestantes + prime);
+  const ecartStaff = staff && Number.isFinite(staff.annuel) && Number.isFinite(staff.reference) ? (staff.annuel - staff.reference) * (1 + COTISATIONS) : 0;
+  const fonctionnement = fonctionnementAnnuel(annuel) + ajustement(annuel, masseHebdo * 52, compte.enveloppe) + (Number.isFinite(compte.investissement) ? compte.investissement : 0) + ecartStaff;
   const chargesPrevues = rond(compte.charges + (masseHebdo * 52 / semaines * (1 + COTISATIONS) + fonctionnement / semaines) * reste);
   // Transferts, primes de signature, travaux : tout ce qui a bougé la caisse hors du budget courant.
   const rembourse = Number.isFinite(compte.rembourse) ? compte.rembourse : 0, aRembourser = Math.max(0, (Number.isFinite(compte.remboursement) ? compte.remboursement : 0) - rembourse);
@@ -539,7 +688,8 @@ const budgetMonde=()=>!S.franceMode&&typeof CDWorldCareer!=='undefined'&&CDWorld
 const budgetActif=()=>!!S&&S.startingSalaries!==undefined&&(budgetFrance()||budgetMonde());
 const budgetCopie=x=>JSON.parse(JSON.stringify(x));
 const budgetLigue=id=>budgetFrance()?CDFranceCompetition.leagueId(S,id):CDWorldCareer.leagueId(S,id);
-const budgetForces=()=>budgetFrance()?CDFranceClubs.clubs.map(c=>({id:c.id,division:CDFranceCompetition.leagueId(S,c.id),base:c.base})):S.clubs.map(c=>({id:c.id,division:CDWorldCareer.leagueId(S,c.id),base:c.base}));
+// Carrière Monde : chaque club porte la billetterie annuelle de son stade (budgetBilletterieClub), lue par ses recettes prévues.
+const budgetForces=()=>budgetFrance()?CDFranceClubs.clubs.map(c=>({id:c.id,division:CDFranceCompetition.leagueId(S,c.id),base:c.base})):S.clubs.map(c=>{const b=budgetBilletterieClub(c);return Number.isFinite(b)?{id:c.id,division:CDWorldCareer.leagueId(S,c.id),base:c.base,billetterie:b}:{id:c.id,division:CDWorldCareer.leagueId(S,c.id),base:c.base};});
 const budgetSemaineNo=()=>S.franceMode?S.franceMode.week:S.worldMode.week;
 const budgetMasse=c=>c.players.reduce((s,p)=>s+p.salary,0);
 // Source unique des masses salariales affichées (Finances, Club, Bureau) : trois mesures nommées, jamais confondues.
@@ -610,10 +760,201 @@ function budgetRepere(){
  budgetRepereMemo={etat:S,cle,valeur:{classement,receptions,restantes}};
  return budgetRepereMemo.valeur;
 }
+// Staff de chaque club (carrière Monde) : membres sous contrat avec le club, hors anciens membres historiques ; le club du
+// manager ne repaie pas ceux que l'emploi rémunéré (staff-employment.cjs) paie déjà. Une fois par semaine.
+let budgetStaffMemo=null;
+// Identifiants des membres du club du manager payés par Staff par service (projection services[].enPlus), sinon vide.
+function budgetStaffPostesEnPlus(){
+ try{const d=typeof nativeSystems!=='undefined'?nativeSystems.domain('staffServices'):null,v=d&&typeof d.project==='function'?d.project():null;
+  return new Set((Array.isArray(v?.services)?v.services:[]).flatMap(x=>Array.isArray(x?.enPlus)?x.enPlus:[]));}catch(e){return new Set();}
+}
+function budgetStaff(c){
+ if(budgetFrance()||!Array.isArray(S.staffCareer?.people))return null;
+ const cle=S.season+'|'+budgetSemaineNo()+'|'+S.staffCareer.people.length,m=budgetStaffMemo;
+ if(!m||m.etat!==S||m.cle!==cle){const parClub=new Map();for(const p of S.staffCareer.people.flat()){if(!p||p.historical===true||!Number.isInteger(p.clubId))continue;const l=parClub.get(p.clubId);if(l)l.push(p);else parClub.set(p.clubId,[p]);}budgetStaffMemo={etat:S,cle,parClub};}
+ let gens=budgetStaffMemo.parClub.get(c.id)||[];
+ if(!gens.length)return null;
+ if(c.id===S.club&&Array.isArray(S.staffEmployment?.contracts)){const payes=new Set(S.staffEmployment.contracts.filter(k=>k&&k.clubId===c.id&&k.endSeason>=S.season).map(k=>k.staffId));if(payes.size)gens=gens.filter(p=>!payes.has(p.id));}
+ // Staff par service (PR #1192, postes en plus) : les membres tenant un poste en plus y sont payés au forfait du service
+ // (« Salaires du staff · postes en plus ») ; ils ne sont pas payés une seconde fois ici. Lu sur sa projection publique.
+ if(c.id===S.club&&S.staffServices){const ids=budgetStaffPostesEnPlus();if(ids.size)gens=gens.filter(p=>!ids.has(p.id));}
+ const r=nativeClubBudget.masseStaff(gens,budgetLigue(c.id),Number.isFinite(S.clubBudget?.clubs?.[c.id]?.base)?S.clubBudget.clubs[c.id].base:c.base);
+ return r.membres?{annuel:r.annuel,reference:r.reference}:null;
+}
+// Billetterie réelle (carrière Monde) : prix du billet (division et politique du club ; les clubs gérés restent à la politique
+// équilibrée), abonnés (ceux du club du manager, sinon l'estimation par la capacité et le rang), capacité réelle du stade.
+// Réceptions de saison régulière d'un club cette saison (calendrier), une fois par saison.
+let budgetReceptionsMemo=null;
+function budgetReceptions(id){
+ const m=budgetReceptionsMemo,cle=S.season+'|'+(S.worldMode?.fixtures?.length||0);
+ if(!m||m.etat!==S||m.cle!==cle){const n=new Map();for(const f of S.worldMode?.fixtures||[]){if(f.phase!=='league'||f.neutral)continue;n.set(f.homeId,(n.get(f.homeId)||0)+1);}budgetReceptionsMemo={etat:S,cle,n};}
+ return budgetReceptionsMemo.n.get(id)||0;
+}
+// Billetterie d'une saison type du club (budget voté) : stade, abonnés estimés, billet de la division au prix équilibré ;
+// null pour un club sans réception de championnat (clubs invités) : il garde la part « billetterie » du modèle.
+function budgetBilletterieClub(c){
+ const division=CDWorldCareer.leagueId(S,c.id);if(!nativeClubBudget.DIVISIONS[division])return null;
+ const receptions=budgetReceptions(c.id);if(!receptions)return null;
+ const capacite=budgetCapacite(c);
+ return nativeClubBudget.billetterieAnnuelle({capacite,abonnes:nativeClubBudget.abonnesEstimes(capacite,c.base,String(c.abbr??c.name??c.id)),prix:budgetPrixReference(c).base,receptions,demande:budgetDemande(c)});
+}
+const budgetPolitique=c=>c.id===S.club&&S.v111to116&&typeof S.v111to116.price==='string'?S.v111to116.price:'equilibree';
+const budgetCapacite=c=>Number.isInteger(c.stadiumCapacity)&&c.stadiumCapacity>0?c.stadiumCapacity:typeof CDWorldStadiumCapacities!=='undefined'&&Number.isInteger(CDWorldStadiumCapacities[c.id])?CDWorldStadiumCapacities[c.id]:12000;
+const budgetAccueil=id=>typeof investAccueil==='function'?nativeClubInvestments.facteurAccueil(investAccueil(id)):1;
+// Prix de la saison du club du manager (choix de Léo du 23/11/2026) : S.billetterie = {version:1, saison, base, abonnement,
+// affiche, delegue}. Trois prix fixés pour la saison : billet de base, abonnement saison, billet des grosses affiches (derby,
+// club plus fort, phase finale) ; null = prix de la division (préréglage de la politique de prix pour le billet). delegue : les
+// trois prix sont confiés au responsable de la billetterie (budgetResponsable), qui applique ses conseils.
+const budgetBilletterieEtat=()=>{const b=S.billetterie;return b&&b.version===1?b:null;};
+// Prix de référence de la division : billet, abonnement (billet × 70 % × réceptions), grosse affiche (billet × 1,5).
+// Prix « juste » de chaque club (précision de Léo du 23/11/2026) : celui de sa division, surtout ajusté à sa réputation (rang de
+// sa base dans la division, 0 à 1, budgetReputation : prix × 0,75 pour le plus modeste à × 1,3 pour le plus réputé). L'affluence réagit au prix autour de
+// cette référence, le conseil du staff tend vers elle ; elle n'est jamais affichée.
+let budgetReputationMemo=null;
+function budgetReputation(c){
+ const d=budgetLigue(c.id),cle=S.season+'|'+d,m=budgetReputationMemo;
+ if(!m||m.etat!==S||m.saison!==S.season){budgetReputationMemo={etat:S,saison:S.season,parDivision:new Map()};}
+ const memo=budgetReputationMemo.parDivision;
+ if(!memo.has(d)){const bases=S.clubs.filter(x=>budgetLigue(x.id)===d).map(x=>x.base).filter(Number.isFinite);memo.set(d,bases.length?[Math.min(...bases),Math.max(...bases)]:[c.base,c.base]);}
+ const [min,max]=memo.get(d);return max>min?Math.max(0,Math.min(1,(c.base-min)/(max-min))):0.5;
+}
+// Facteur de prix d'un club : × 0,75 (le plus modeste de sa division) à × 1,3 (le plus réputé).
+const budgetFacteurReputation=c=>0.75+0.55*budgetReputation(c);
+// Appétit du public occasionnel : celui de la division (league-economy.cjs, public), × 0,8 à × 1,2 selon la réputation.
+const budgetDemande=c=>(nativeLeagueEconomy.CHAMPIONNATS[budgetLigue(c.id)]?.public??1)*(0.8+0.4*budgetReputation(c));
+function budgetPrixReference(c){
+ const billet=Math.max(1,Math.round(nativeClubBudget.prixBillet(budgetLigue(c.id),'equilibree')*budgetFacteurReputation(c)));
+ return {base:billet,abonnement:Math.round(billet*nativeClubBudget.REMISE_ABONNEMENT*Math.max(1,budgetReceptions(c.id))),affiche:Math.round(billet*1.5)};
+}
+// Membre du staff qui tient la billetterie (le club n'a pas de directeur financier) : le meilleur de l'encadrement du club
+// (team manager, direction et intendance), sinon le meilleur du staff.
+function budgetResponsable(c){
+ const gens=(S.staffCareer?.people||[]).flat().filter(p=>p&&p.clubId===c.id&&p.historical!==true);
+ if(!gens.length)return null;
+ const parNiveau=(x,y)=>(y.level||0)-(x.level||0)||(x.id<y.id?-1:1),encadrement=gens.filter(p=>p.role==='support').sort(parNiveau);
+ const p=encadrement[0]||gens.sort(parNiveau)[0];
+ // Fiche réduite pour le portrait de l'écran (mêmes champs que l'annuaire du staff).
+ const fiche=Object.fromEntries(['id','name','role','roleLabel','age','appearanceId','appearanceAge','appearanceBankVersion','portraitStatus','identityStatus','sourceKind','level'].filter(k=>p[k]!==undefined).map(k=>[k,p[k]]));
+ return {id:p.id,nom:p.name,niveau:Number.isFinite(p.level)?p.level:55,fiche};
+}
+// Grosse affiche : phase finale, derby, ou adversaire nettement plus fort (base + 5) ou parmi les grands (base 80 et plus).
+function budgetAffiche(c,f){
+ if(!f)return false;
+ if(f.phase&&f.phase!=='league'&&f.phase!=='pool')return true;
+ const autre=f.homeId===c.id?f.awayId:f.homeId,o=S.clubs[autre];
+ if(typeof isDerby==='function'&&Number.isInteger(autre)&&isDerby(S,c.id,autre))return true;
+ return !!o&&Number.isFinite(o.base)&&(o.base>=80||o.base>=(c.base||0)+5);
+}
+// Abonnés : ceux du club (campagnes comprises) ou l'estimation par le stade et le rang, puis le prix de l'abonnement :
+// moins cher, il en attire plus (élasticité 0,5), plus cher, il en perd vite (2) ; au plus 90 % des places.
+function budgetAbonnes(c,capacite=budgetCapacite(c),prixAbonnement=null){
+ const socle=c.id===S.club&&Number.isInteger(S.v111to116?.subscribers)?Math.min(capacite,S.v111to116.subscribers):nativeClubBudget.abonnesEstimes(capacite,c.base,String(c.abbr??c.name??c.id));
+ const ref=budgetPrixReference(c).abonnement,prix=prixAbonnement??budgetPrixSaison(c).abonnement,r=prix/ref;
+ const facteur=Math.max(0.4,Math.min(1.3,r<=1?r**-0.5:r**-2));
+ return Math.min(Math.round(capacite*0.9),Math.round(socle*facteur));
+}
+// Spectateurs d'une réception (affluence du compte rendu, world-career.cjs, et billetterie) : la demande du match au prix du
+// billet (grosse affiche : plus de demande, prix des grosses affiches), jamais moins que les abonnés présents, au plus la capacité.
+function budgetSpectateurs(c,f,{alea=null,resultats=null,prix=null,affiche=null,abonnes=null,saison=null,humeur}={}){
+ const capacite=budgetCapacite(c),grosse=affiche??budgetAffiche(c,f),ref=budgetPrixReference(c).base;saison=saison??budgetPrixSaison(c);
+ const n=nativeClubBudget.spectateurs({capacite,resultats:resultats??(Array.isArray(c.form)?c.form.slice(-5):[]),cle:c.id+'|'+S.season+'|'+(f?.id??f?.fixtureId??''),phase:f?.phase||'league',
+  accueil:budgetAccueil(c.id),humeur:humeur!==undefined?humeur:c.id===S.club?budgetHumeur():null,politique:(prix??(grosse?saison.affiche:saison.base))/ref,alea,affiche:grosse,abonnes:abonnes??budgetAbonnes(c,capacite,saison.abonnement),demande:budgetDemande(c)});
+ return n;
+}
+// Spectateurs de la rencontre f (world-career.cjs, affluenceMatch).
+function budgetSpectateursMatch(c,f){return budgetSpectateurs(c,f);}
+// Meilleurs prix de la saison (ce que vise le conseil du staff) : billet et grosse affiche maximisent la recette au guichet
+// d'un match moyen ; l'abonnement maximise la recette des abonnements.
+function budgetPrixOptimaux(c){
+ const ref=budgetPrixReference(c),saison=budgetPrixSaison(c,true),capacite=budgetCapacite(c);
+ const humeur=c.id===S.club?budgetHumeur():null,guichet=(prix,affiche,abonnes)=>nativeClubBudget.guichet({spectateurs:budgetSpectateurs(c,null,{alea:.5,resultats:['V','D'],prix,affiche,abonnes,saison,humeur}),abonnes,prix}).recette;
+ const meilleur=(min,max,pas,valeur)=>{let m=min,v=-1;for(let p=min;p<=max;p+=pas){const x=valeur(p);if(x>v){v=x;m=p;}}return m;};
+ const aboActuels=budgetAbonnes(c,capacite,saison.abonnement);
+ const base=meilleur(Math.max(1,Math.round(ref.base*.5)),Math.round(ref.base*2.5),1,p=>guichet(p,false,aboActuels));
+ const affiche=meilleur(Math.max(1,Math.round(ref.base*.5)),Math.round(ref.base*3.5),1,p=>guichet(p,true,aboActuels));
+ const pas=Math.max(1,Math.round(ref.abonnement/100));
+ const abonnement=meilleur(Math.max(1,Math.round(ref.abonnement*.3)),Math.round(ref.abonnement*1.6),pas,p=>budgetAbonnes(c,capacite,p)*p);
+ return {base,abonnement,affiche};
+}
+// Conseils du responsable de la billetterie : le meilleur prix décalé selon son niveau (±30 % au niveau 45, ±5 % au niveau 85,
+// jamais exact), un tirage par saison et par prix : parfois mieux que le manager, parfois moins bien.
+let budgetConseilsMemo=null;
+function budgetConseils(c){
+ const r=budgetResponsable(c);if(!r)return null;
+ const cle=S.season+'|'+budgetSemaineNo()+'|'+S.history.length+'|'+c.id+'|'+r.id+'|'+JSON.stringify(budgetBilletterieEtat()),m=budgetConseilsMemo;
+ if(m&&m.etat===S&&m.cle===cle)return m.valeur;
+ const o=budgetPrixOptimaux(c);
+ budgetConseilsMemo={etat:S,cle,valeur:{par:{name:r.nom,level:r.niveau,person:r.fiche},base:nativeClubBudget.conseilPrix(o.base,r.niveau,S.season+'|base|'+r.id),
+  abonnement:nativeClubBudget.conseilPrix(o.abonnement,r.niveau,S.season+'|abonnement|'+r.id),affiche:nativeClubBudget.conseilPrix(o.affiche,r.niveau,S.season+'|affiche|'+r.id)}};
+ return budgetConseilsMemo.valeur;
+}
+// Prix de la saison : ceux du manager, ceux du staff si la billetterie lui est confiée, sinon ceux de la division.
+// sansDelegation : prix fixés à la main (le calcul des conseils ne se lit pas lui-même).
+function budgetPrixSaison(c,sansDelegation=false){
+ const ref=budgetPrixReference(c),b=c.id===S.club?budgetBilletterieEtat():null,prereglage=Math.max(1,Math.round(ref.base*nativeClubBudget.POLITIQUES_BILLET[budgetPolitique(c)].prix));
+ // Clubs gérés : ils fixent eux-mêmes leurs prix autour de leur référence (±8 % propres au club et à la saison).
+ if(c.id!==S.club){const v=1+0.16*(nativeLeagueEconomy.unite('prix|'+c.id+'|'+S.season)-0.5),k=x=>Math.max(1,Math.round(x*v));return {base:k(ref.base),abonnement:k(ref.abonnement),affiche:k(ref.affiche)};}
+ if(!b)return {base:prereglage,abonnement:ref.abonnement,affiche:ref.affiche};
+ if(b.delegue===true&&!sansDelegation){const k=budgetConseils(c);if(k)return {base:k.base,abonnement:k.abonnement,affiche:k.affiche};}
+ return {base:Number.isInteger(b.base)?b.base:prereglage,abonnement:Number.isInteger(b.abonnement)?b.abonnement:ref.abonnement,affiche:Number.isInteger(b.affiche)?b.affiche:ref.affiche};
+}
+// {prix, abonnes, spectateurs, attendu, abonnementsHebdo} ; rencontre : réception de la semaine ({affluence} lue sur le résultat).
+function budgetBillets(c,rencontre,repere){
+ if(budgetFrance()||!budgetReceptions(c.id))return null;
+ const capacite=budgetCapacite(c),saison=budgetPrixSaison(c),abonnes=budgetAbonnes(c,capacite,saison.abonnement);
+ const chez=!!rencontre&&rencontre.pair[0]===c.id&&rencontre.neutral!==true,prix=chez&&budgetAffiche(c,rencontre)?saison.affiche:saison.base;
+ const spectateurs=chez?(Number.isInteger(rencontre.affluence)?rencontre.affluence:budgetSpectateurs(c,rencontre)):null;
+ // Match moyen de ce club : forme neutre, tirage médian, humeur, accueil et billet de base.
+ const moyen=budgetSpectateurs(c,null,{alea:.5,resultats:['V','D'],prix:saison.base,affiche:false,abonnes}),attendu=nativeClubBudget.guichet({spectateurs:moyen,abonnes,prix:saison.base}).recette;
+ // Abonnements de la saison, étalés sur les semaines comme les autres recettes de la saison.
+ return {prix,abonnes,spectateurs,attendu,abonnementsHebdo:Math.round(abonnes*saison.abonnement/Math.max(1,wageForecastWeeks())/100)*100};
+}
+// Ce que l'écran Le public montre : les trois prix de la saison, les conseils du responsable de la billetterie, et SON ESTIMATION
+// du prochain match à domicile et des abonnés (règle de Léo : jamais d'effet exact avant d'agir ; estimationStaff).
+function budgetBilletterieVue(){
+ if(!budgetActif()||budgetFrance()||!budgetReceptions(S.club))return null;
+ const c=club(),capacite=budgetCapacite(c),b=budgetBilletterieEtat(),saison=budgetPrixSaison(c),ref=budgetPrixReference(c),abonnes=budgetAbonnes(c,capacite,saison.abonnement);
+ const f=(S.worldMode?.fixtures||[]).filter(x=>x.homeId===c.id&&!x.neutral&&x.week>=S.worldMode.week&&!S.history.some(r=>r.fixtureId===x.id)).sort((x,y)=>x.week-y.week)[0]||null;
+ const affiche=budgetAffiche(c,f),prix=affiche?saison.affiche:saison.base,g=nativeClubBudget.guichet({spectateurs:budgetSpectateurs(c,f),abonnes,prix});
+ const r=budgetResponsable(c),niveau=r?r.niveau:45,cle=(f?.id??'saison')+'|'+[saison.base,saison.abonnement,saison.affiche].join('/')+'|'+(r?.id??'')+'|'+budgetSemaineNo();
+ const spectateurs=Math.min(capacite,nativeClubBudget.estimationStaff(g.spectateurs,niveau,'public|'+cle)),recette=nativeClubBudget.estimationStaff(g.recette,niveau,'recette|'+cle,100);
+ const aboEstimes=Math.min(capacite,nativeClubBudget.estimationStaff(abonnes,niveau,'abonnes|'+cle));
+ const conseils=budgetConseils(c),adverse=f?S.clubs[f.homeId===c.id?f.awayId:f.homeId]:null;
+ // Tendance de chaque prix, autour du prix juste du club (jamais affiché) : -2 à +2 sur le public (billet, grosse affiche)
+ // ou sur les abonnés (abonnement) ; aucun chiffre.
+ const tendance=f=>f>=1.12?2:f>=1.03?1:f>0.97?0:f>0.88?-1:-2,rAbo=saison.abonnement/ref.abonnement;
+ const trends={base:tendance(nativeClubBudget.facteurPrix(saison.base/ref.base)),affiche:tendance(nativeClubBudget.facteurPrix(saison.affiche/ref.base,true)/nativeClubBudget.facteurPrix(ref.affiche/ref.base,true)),abonnement:tendance(Math.max(0.4,Math.min(1.3,rAbo<=1?rAbo**-0.5:rAbo**-2)))};
+ // Pistes des curseurs : autour du prix de la division (pas du club), pour ne rien dévoiler du prix juste.
+ const div=nativeClubBudget.prixBillet(budgetLigue(c.id),'equilibree'),aboDiv=Math.round(div*nativeClubBudget.REMISE_ABONNEMENT*Math.max(1,budgetReceptions(c.id)));
+ const ranges={base:{min:Math.max(1,Math.round(div*.4)),max:Math.round(div*2.5),step:1},affiche:{min:Math.max(1,Math.round(div*.6)),max:Math.round(div*4),step:1},abonnement:{min:Math.max(5,Math.round(aboDiv*.4/5)*5),max:Math.round(aboDiv*2.5/5)*5,step:5}};
+ const presents=Math.min(spectateurs,Math.round(aboEstimes*nativeClubBudget.PRESENCE_ABONNES));
+ return {capacity:capacite,trends,ranges,subscribersPresent:presents,ticketsSold:Math.max(0,spectateurs-presents),price:prix,prices:{base:saison.base,abonnement:saison.abonnement,affiche:saison.affiche},
+  advice:conseils?{base:conseils.base,abonnement:conseils.abonnement,affiche:conseils.affiche}:null,estimatedBy:conseils?conseils.par:null,delegated:b?.delegue===true,
+  expectedAttendance:spectateurs,expectedTicketRevenue:recette,expectedSubscribers:aboEstimes,demand:Math.round(100*spectateurs/capacite),
+  bigMatch:affiche,fixtureId:f?.id??null,opponent:adverse?adverse.name:null,fixtureWeek:f?.week??null};
+}
+// Commandes du manager (club-strategy.cjs) : un des trois prix de la saison (club_ticket_price {kind, prix}) ou la billetterie
+// confiée au staff (club_ticket_delegate {delegue}). Fixer un prix à la main reprend la billetterie au staff.
+function budgetBilletterieCommande(command,p){
+ if(!budgetActif()||budgetFrance()||!budgetReceptions(S.club))throw Error('Billetterie indisponible.');
+ const b=S.billetterie=budgetBilletterieEtat()||{version:1,saison:S.season,base:null,abonnement:null,affiche:null,delegue:false};
+ b.saison=S.season;
+ if(command==='club_ticket_price'){
+  const max=p.kind==='abonnement'?20000:500;
+  if(!['base','abonnement','affiche'].includes(p.kind)||!Number.isInteger(p.prix)||p.prix<1||p.prix>max)throw Error('Prix invalide.');
+  b[p.kind]=p.prix;b.delegue=false;
+  // Le billet de base règle aussi l'humeur des familles (profil des tribunes) : préréglage le plus proche.
+  if(p.kind==='base'&&typeof CDFanExperienceV111V116!=='undefined'){const r=p.prix/budgetPrixReference(club()).base,st=CDFanExperienceV111V116.ensure(S);if(st)st.price=r<=.8?'accessible':r>=1.25?'premium':'equilibree';}
+ }else if(command==='club_ticket_delegate'){
+  if(typeof p.delegue!=='boolean')throw Error('Choix invalide.');
+  b.delegue=p.delegue;
+ }else throw Error('Commande de billetterie inconnue.');
+ return true;
+}
 function budgetPrevoir(forces,repere){
  const b=S.clubBudget,c=club(),semaines=wageForecastWeeks(),k=repere.classement[c.id]||b.clubs[c.id];
  const r=budgetCopie(nativeClubBudget.prevision({forces,clubId:c.id,compte:b.clubs[c.id],tresorerie:c.cash,masseHebdo:budgetMasse(c),semaines,reste:Math.max(0,semaines-b.semaines),
-  receptions:repere.receptions[c.id]||12,receptionsRestantes:repere.restantes[c.id]||0,rang:k.rang,taille:k.taille}));
+  receptions:repere.receptions[c.id]||12,receptionsRestantes:repere.restantes[c.id]||0,rang:k.rang,taille:k.taille,billets:budgetBillets(c,null,repere),staff:budgetStaff(c)}));
  b.prevision=r.prevision;
  for(const a of r.alertes){const derniere=b.alertes[a.cle];if(derniere===undefined||b.semaines-derniere>=10){b.alertes[a.cle]=b.semaines;news(a.message);}}
 }
@@ -644,9 +985,9 @@ function budgetOuvrir(annoncer,nouvelleSaison=false){
  budgetPrevoir(forces,budgetRepere());
 }
 function budgetEtat(){if(!budgetLisible(S.clubBudget)||S.clubBudget.saison!==S.season)budgetOuvrir(false);return S.clubBudget;}
-// rencontre : {pair:[domicile,extérieur], neutral, phase} ou null. Une poule européenne compte comme une journée ordinaire.
+// rencontre : {pair:[domicile,extérieur], neutral, phase, id, affluence} ou null. Une poule européenne compte comme une journée ordinaire.
 function budgetSemaine(forces,repere,c,rencontre,libelle){
- const b=budgetEtat(),masse=budgetMasse(c);
+ const b=budgetEtat(),masse=budgetMasse(c),billets=budgetBillets(c,rencontre,repere);
  const ecritures=budgetCopie(nativeClubBudget.semaine({forces,clubId:c.id,masseHebdo:masse,semaines:wageForecastWeeks(),receptions:repere.receptions[c.id]||12,
   domicile:!!rencontre&&rencontre.pair[0]===c.id,neutre:!!rencontre&&rencontre.neutral===true,phase:!rencontre||rencontre.phase==='pool'?'league':rencontre.phase,resultats:c.form.slice(-5),
   // Même train de vie pour le club joué que pour les clubs gérés (décision de Léo du 12 novembre) :
@@ -658,11 +999,13 @@ function budgetSemaine(forces,repere,c,rencontre,libelle){
   // Accueil du stade relevé par les investissements des excédents (club-investments.cjs).
   accueil:typeof investAccueil==='function'?nativeClubInvestments.facteurAccueil(investAccueil(c.id)):1,
   // Humeur des supporters du club du manager (club-strategy.cjs) : public payant de ses réceptions.
-  humeur:c.id===S.club?budgetHumeur():null}));
+  humeur:c.id===S.club?budgetHumeur():null,
+  // Billetterie réelle (spectateurs × prix) et salaires du staff (choix de Léo du 23/11/2026), carrière Monde.
+  billets,staff:budgetStaff(c)}));
  // Mode Monde : les recettes de guichet imprévues (série de victoires, phase finale) coûtent aussi des primes et des frais.
  if(!budgetFrance()){
   const compte=b.clubs[c.id],accueil=typeof investAccueil==='function'?nativeClubInvestments.facteurAccueil(investAccueil(c.id)):1;
-  const frais=nativeClubBudget.fraisDeMatch(compte,nativeClubBudget.recettesImprevues(ecritures,{forces,clubId:c.id,receptions:repere.receptions[c.id]||12,accueil}),
+  const frais=nativeClubBudget.fraisDeMatch(compte,nativeClubBudget.recettesImprevues(ecritures,{forces,clubId:c.id,receptions:repere.receptions[c.id]||12,accueil,billets}),
    nativeClubBudget.deficitPrevu(forces,c.id,masse*52));
   compte.imprevu=frais.imprevu;compte.fraisMatch=frais.fraisMatch;
   if(frais.montant>0)ecritures.push({title:libelle+' · '+nativeClubBudget.LIBELLE_FRAIS_MATCH,amount:-frais.montant});
@@ -676,7 +1019,8 @@ function budgetHumeur(){try{const d=typeof nativeSystems!=='undefined'?nativeSys
 financeWeek=function(m,won){
  if(!budgetActif())return financeWeekV1(m,won);
  const forces=budgetForces(),repere=budgetRepere(),f=budgetFrance()?CDFranceCompetition.userFixture(S):CDWorldCareer.userFixture(S);
- const ecritures=budgetSemaine(forces,repere,club(),f?{pair:f.pair||[f.homeId,f.awayId],neutral:f.neutral,phase:f.phase}:null,label());
+ const joue=f&&!budgetFrance()?S.history.find(r=>r.fixtureId===f.id):null;
+ const ecritures=budgetSemaine(forces,repere,club(),f?{pair:f.pair||[f.homeId,f.awayId],neutral:f.neutral,phase:f.phase,id:f.id,affluence:joue?.affluence}:null,label());
  ecritures.forEach(e=>club().cash+=e.amount);S.ledger.unshift(...ecritures);S.ledger=S.ledger.slice(0,100);careerSponsorWeek(won);
  S.clubBudget.semaines++;budgetPrevoir(forces,repere);
  if(club().cash<0){S.trust=clamp(S.trust-5,0,100);news('La trésorerie est négative. Le président demande de réduire les dépenses.')}
@@ -992,11 +1336,13 @@ function budgetFinance(hebdoFormation,hebdoPartenaire,entretien){
  const b=S.clubBudget;
  if(!budgetActif()||!budgetLisible(b)||b.saison!==S.season||!b.prevision)return null;
  const forces=budgetForces(),c=club(),masse=budgetMasse(c),semaines=wageForecastWeeks();
- const type=budgetCopie(nativeClubBudget.semaine({forces,clubId:c.id,masseHebdo:masse,semaines,domicile:false,alea:0.5,libelle:'',gere:true,formation:budgetCentre(c)})),somme=f=>type.filter(f).reduce((s,e)=>s+e.amount,0);
- const salaires=chiffresMasse().chargeHebdo,fonctionnement=-somme(e=>/fonctionnement|Centre de formation/.test(e.title)),centre=-somme(e=>/Centre de formation/.test(e.title)),recettes=somme(e=>e.amount>0)+hebdoPartenaire;
+ const staff=budgetStaff(c),type=budgetCopie(nativeClubBudget.semaine({forces,clubId:c.id,masseHebdo:masse,semaines,domicile:false,alea:0.5,libelle:'',gere:true,formation:budgetCentre(c),billets:budgetBillets(c,null,budgetRepere()),staff})),somme=f=>type.filter(f).reduce((s,e)=>s+e.amount,0);
+ // Charges hors joueurs : tout ce que la semaine type débite, moins les salaires des joueurs et leurs cotisations.
+ const salaires=chiffresMasse().chargeHebdo,fonctionnement=Math.max(0,-somme(e=>e.amount<0)-salaires),centre=-somme(e=>/Centre de formation/.test(e.title)),recettes=somme(e=>e.amount>0)+hebdoPartenaire;
+ const staffHebdo=-somme(e=>e.title.endsWith(nativeClubBudget.LIBELLE_STAFF)),staffCharge=Math.round(staffHebdo*(1+nativeClubBudget.COTISATIONS)/100)*100;
  return {weeklyWages:salaires,weeklyIncome:recettes,weeklyCosts:salaires+fonctionnement+hebdoFormation+entretien,baseForecast:b.prevision.tresoreriePrevue,
   notice:'Prévision de fin de saison : recettes, charges, prime de classement et soutien du propriétaire compris ; transferts à venir non comptés.',
-  budget:{...budgetCopie(b.prevision),fonctionnementHebdo:fonctionnement,centreFormationHebdo:centre,semainesDePaie:semaines,plancherSalaire:budgetPlancherHebdo()}};
+  budget:{...budgetCopie(b.prevision),fonctionnementHebdo:fonctionnement,centreFormationHebdo:centre,staffHebdo:staffCharge,semainesDePaie:semaines,plancherSalaire:budgetPlancherHebdo()}};
 }
 `;
 
@@ -1012,7 +1358,9 @@ const VALIDATION = `{
  }
 }`;
 
-module.exports = Object.freeze({ PART_FORMATION, FORMATION, CREDIT_ACADEMIE, centreFormation, creditAcademie, ECONOMIE, DIVISIONS, COTISATIONS, FONCTIONNEMENT, PART_PRIME, PART_ABONNEMENTS, PLAFOND_SALARIAL, RATIO_SALAIRES, PROPRIETAIRES, BRANCHEMENT, VALIDATION,
+module.exports = Object.freeze({ fonctionnementAnnuel, SEUIL_FONCTIONNEMENT, FONCTIONNEMENT_AU_DELA, STAFF_REFERENCE, categorieStaff, echelleStaff, facteurNiveauStaff, niveauAttenduStaff, salaireStaff, masseStaff,
+  POLITIQUES_BILLET, ELASTICITE_PRIX, facteurPrix, rapportPrix, estimationStaff, conseilPrix, REMISE_ABONNEMENT, PRESENCE_ABONNES, billetterieAnnuelle, politiqueBillet, prixBillet, abonnesEstimes, guichet, abonnementsHebdo, LIBELLE_STAFF, LIBELLE_FONCTIONNEMENT, LIBELLE_TRAIN_DE_VIE,
+  PART_FORMATION, FORMATION, CREDIT_ACADEMIE, centreFormation, creditAcademie, ECONOMIE, DIVISIONS, COTISATIONS, FONCTIONNEMENT, PART_PRIME, PART_ABONNEMENTS, PLAFOND_SALARIAL, RATIO_SALAIRES, PROPRIETAIRES, BRANCHEMENT, VALIDATION,
   aideRelegation, annonceAideRelegation, LIBELLE_AIDE_RELEGATION, LIBELLE_REMBOURSEMENT,
   RESERVE, EXCEDENTS, EXCEDENT_DORMANT, TRAIN_DE_VIE, reserveCible, engagement, apportProprietaire, annonceDividende, annonceInvestissement,
   recettesImprevues, fraisDeMatch, PART_FRAIS_IMPREVUS, deficitPrevu, LIBELLE_FRAIS_MATCH,

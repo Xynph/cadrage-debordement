@@ -70,7 +70,11 @@ try {
   assert.equal(fans.supporters.mood, fans.humeur, 'une seule humeur : celle de l’anneau des tribunes');
   assert.equal(fans.supporters.segments.length, 6, 'six groupes');
   assert.equal(fans.humeurPublic, Math.round(100 * (B.facteurHumeur(fans.humeur) - 1)), 'effet affiché = effet appliqué');
-  assert.equal(fans.demand, Fans.forecast({ season: 1, club: 0, clubs: [{ stadiumCapacity: fans.capacity }] }, fans.humeur).demand, 'demande lue sur l’humeur');
+  // Billetterie réelle (choix de Léo du 23/11/2026) : la demande affichée est le remplissage du prochain match à domicile,
+  // calculé comme l'affluence du match (humeur comprise) ; la recette prévue est celle du guichet de ce match.
+  assert.equal(fans.demand, Math.round(100 * fans.expectedAttendance / fans.capacity), 'demande = remplissage prévu');
+  assert.equal(fans.expectedAttendance, Number(b.inspect('budgetBilletterieVue().expectedAttendance')), 'affluence prévue = celle du moteur');
+  assert.equal(fans.expectedTicketRevenue, Number(b.inspect('budgetBilletterieVue().expectedTicketRevenue')), 'recette prévue = guichet du moteur');
   assert.equal(Number(b.inspect('nativeSystems.domain("clubStrategy").humeur()')), fans.humeur, 'humeur du moteur = humeur affichée');
   assert.equal(b.inspect('JSON.stringify(S.v111to116?.sentiment)'), undefined, 'rien de sauvegardé sous l’ancien nom');
   // Branchements : budget (billetterie), affluence des matchs et conseil lisent la même humeur.
