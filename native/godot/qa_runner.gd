@@ -294,7 +294,8 @@ func _publish_press_invitation(restore_route: bool = true, minimize_impact: bool
 		var journalist: Dictionary = question.journalist
 		expected.append({"id":question.id,"season":context.season,"week":context.week,"club":context.club,"answerId":chosen.id,"questionText":question.question,"answerText":chosen.text,"journalist":{"id":journalist.id,"name":journalist.name,"outlet":journalist.outlet}})
 		if not _press_named("PressAnswer_" + str(question.id) + "_" + str(chosen.id), scope): return false
-	if not _press_named("PressPublish" if immersive else "PressSubmit", scope): return false
+	# Salle de presse : la dernière réponse publie d'elle-même (aucun bouton Publier, choix de Léo du 23/11/2026).
+	if not immersive and not _press_named("PressSubmit", scope): return false
 	await _wait()
 	var success: bool = app.bridge.last_response_ok and not app.model.clubLife.press.conference.required
 	if success:
