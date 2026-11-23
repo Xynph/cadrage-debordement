@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "_doc": "Courrier du club (club-mail.cjs), façon Football Manager : chaque jour de calendrier, des interlocuteurs du club écrivent au manager (tutoiement) selon l'état de la carrière. Recevoir un mail ne change rien au monde : seule la réponse du manager a un effet (commande club_mail_reply, notée au journal d'actions). Contenu en données : types, expéditeurs, formulations (une par réception, jamais deux fois de suite la même pour un type), réponses et effets, seuils et cadence. Effets possibles d'une réponse : moral (moral du groupe), confiance (direction), supporters, medias, pression (relations presse), satisfaction, fatigue, condition, plan (charge individuelle), entrainement (séance collective), focus (préparation collective), promesse (temps de jeu promis), promouvoir (jeune du centre), caisse (euros), suite (mail de suivi), appel (commission de discipline), specialiste (avis du spécialiste indépendant sur une commotion : retour au 7e jour possible, sans garantie). Une réponse « ouvrir » mène à l'écran du type, ou à son propre « ecran » s'il est donné. Placeholders entre accolades : variables calculées par le moteur à la réception.",
+  "_doc": "Courrier du club (club-mail.cjs), façon Football Manager : chaque jour de calendrier, des interlocuteurs du club écrivent au manager (tutoiement) selon l'état de la carrière. Recevoir un mail ne change rien au monde : seule la réponse du manager a un effet (commande club_mail_reply, notée au journal d'actions ; choix « deleguer » : l'adjoint Gabi répond à sa place avec une des réponses du mail, choisie selon le contexte, jamais une réponse qui ouvre un écran). Contenu en données : types, expéditeurs, formulations (une par réception, jamais deux fois de suite la même pour un type), réponses et effets, seuils et cadence. Effets possibles d'une réponse : moral (moral du groupe), confiance (direction), supporters, medias, pression (relations presse), satisfaction, fatigue, condition, plan (charge individuelle), entrainement (séance collective), focus (préparation collective), promesse (temps de jeu promis), promouvoir (jeune du centre), caisse (euros), suite (mail de suivi), appel (commission de discipline), specialiste (avis du spécialiste indépendant sur une commotion : retour au 7e jour possible, sans garantie). Une réponse « ouvrir » mène à l'écran du type, ou à son propre « ecran » s'il est donné. Placeholders entre accolades : variables calculées par le moteur à la réception.",
   "cadence": {
     "_doc": "maxParJour : mails reçus au plus le même jour (suites comprises) ; nature de chaque type (décision de Léo, 18/11/2026) : « action » (une réponse est attendue : arrêt de « Continuer » à lui seul), « info » (rangé dans l'arrêt d'info du jour, un seul par jour), « routine » (n'arrête jamais à lui seul : rangé dans l'arrêt veille, lendemain ou info du jour s'il y en a un) ; semaine : plafond par catégorie et par semaine (lundi-dimanche) ; boite : mails conservés ; delaiReponse : jours avant qu'une demande sans réponse soit classée ; memoire : jours pendant lesquels un même sujet n'est pas réécrit.",
     "maxParJour": 3,
@@ -14,9 +14,9 @@
     "infirmerie": { "label": "Médical", "ecran": "infirmerie" },
     "vestiaire": { "label": "Vestiaire", "ecran": "Vestiaire" },
     "staff": { "label": "Staff", "ecran": "Préparation" },
-    "recrutement": { "label": "Recrutement", "ecran": "Recrutement" },
+    "recrutement": { "label": "Transferts", "ecran": "Recrutement" },
     "presse": { "label": "Presse", "ecran": "Presse" },
-    "direction": { "label": "Direction", "ecran": "Club" },
+    "direction": { "label": "Conseil", "ecran": "Club" },
     "competition": { "label": "Compétitions", "ecran": "Calendrier" },
     "formation": { "label": "Formation", "ecran": "Formation" },
     "moments": { "label": "Club", "ecran": "Effectif" },
