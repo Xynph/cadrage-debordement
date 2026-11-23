@@ -116,7 +116,7 @@ func lien_depuis_la_liste() -> void:
 	check(node("RapportRecruteurNom") != null and str((node("RapportRecruteurNom") as Button).text) == str(piste().get("name", "")), "Le rapport suit la piste choisie")
 	check(await press("RecrutementRetour") and page_kind().is_empty(), "Retour : la liste du recrutement")
 
-## Note au poste inconnue (piste jamais observée) : lettre « ? », pas d'étoiles pour la piste.
+## Note au poste inconnue (piste jamais observée) : lettre « ? », pas de note pour la piste.
 func lettre_inconnue() -> void:
 	if piste_id.is_empty(): return
 	var p := piste()
@@ -137,7 +137,8 @@ func lettre_connue() -> void:
 	var meta: Dictionary = node("RecrutementSubpage_recruteur").get_meta("rapport", {})
 	check(str(meta.get("lettre", "")) == "A+" and int(meta.get("rang", 0)) == 1, "Note connue la meilleure : A+ et rang 1 (%s)" % meta)
 	check(node("RapportRecruteurLignePiste") != null, "La piste est insérée dans la liste comparée")
-	check(node("RapportRecruteurEtoiles_0") != null, "Étoiles de capacité au poste dans la liste")
+	check(node("RapportRecruteurFamiliarite_0") != null, "Familiarité au poste dans la liste")
+	check(app.root_content.find_children("RapportRecruteurEtoiles*", "", true, false).is_empty(), "Plus d'étoiles de poste dans la liste")
 	var pour: Array = app.root_content.find_children("RapportRecruteurPour_*", "Button", true, false)
 	check(not pour.is_empty(), "Au moins un « Pour »")
 	# Barème validé par Léo : écart avec notre n° 1.

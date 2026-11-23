@@ -217,6 +217,35 @@ func run() -> void:
 		check(app.find_children("PreparationTheirXIName_*", "Button", true, false).size() == 15, "Tableau détaillé : quinze noms cliquables")
 		if not adjoint.is_empty(): check(named("PreparationAdjointLink") != null, "Lien vers la fiche de l'adjoint")
 		await press(named("PreparationSubBack") as Button)
+	# Rapport adverse (idée n° 10 de la revue FM27) : sous-page, XV habituel en maillots sur un terrain, bandes d'où partent
+	# les essais, essais par tranche de 10 min ; un maillot ouvre une petite fenêtre (choix de Léo : visuelle), Échap la ferme.
+	await reset()
+	for i in 240:
+		if named("PreparationRapportAdverseLien") != null: break
+		await process_frame
+	var lien_rapport := named("PreparationRapportAdverseLien") as Button
+	check(lien_rapport != null, "Lien vers le rapport adverse")
+	if lien_rapport != null:
+		var ouverture := await press(lien_rapport)
+		check(ouverture == "Préparation|0|adversaire" and open_windows().is_empty(), "Rapport adverse : sous-page, pas une fenêtre (%s)" % ouverture)
+		for id in ["RapportAdverseXV", "RapportAdverseZones", "RapportAdverseTemps", "RapportAdverseMatchs", "RapportAdverseClub"]:
+			check(named(id) != null, "Rapport adverse : " + id)
+		check(app.body.find_children("RapportAdverseMaillot*", "Button", true, false).size() == 15, "Rapport adverse : quinze maillots cliquables")
+		check(app.body.find_children("RapportAdverseTranche*", "Button", true, false).size() == 8, "Rapport adverse : huit tranches de 10 min")
+		check(gold_used(named("PreparationDossier")) == 0, "Aucun or dans le rapport adverse")
+		var maillot := named("RapportAdverseMaillot1") as Button
+		if maillot != null:
+			maillot.pressed.emit()
+			await settle()
+			check(named("RapportAdverseFenetre") != null and open_windows().is_empty(), "Maillot : petite fenêtre visuelle dans la page")
+			var fermer := InputEventKey.new()
+			fermer.keycode = KEY_ESCAPE
+			fermer.pressed = true
+			Input.parse_input_event(fermer)
+			await settle()
+			check(str(app.management_ui.preparation.get("sub", "")) == "adversaire", "Échap ferme d'abord la petite fenêtre, pas la sous-page")
+		await press(named("PreparationSubBack") as Button)
+		check(str(app.management_ui.preparation.get("sub", "")) == "", "Retour du rapport adverse au dossier")
 	await reset()
 	check(gold_used(named("PreparationDossier")) == 0 and gold_used(named("PreparationTabs")) == 0, "Aucun or dans l'écran (réservé à Continuer)")
 	var sector_buttons := app.find_children("PreparationSector_*", "Button", true, false)

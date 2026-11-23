@@ -127,7 +127,7 @@ func run() -> void:
 		check_grid(mini, "CarteJoueurAttribut_", PlayerAttributes.detail(target, true), "Carte joueur")
 		var nom := mini.find_child("CarteJoueurNom", true, false) as Label
 		check(nom != null and nom.text == str(target.name).to_upper(), "Carte joueur : nom du joueur")
-		check(mini.find_child("CarteJoueurEtat", true, false) != null and mini.find_child("CarteJoueurPolyvalence", true, false) != null, "Carte joueur : état et postes en étoiles")
+		check(mini.find_child("CarteJoueurEtat", true, false) != null and mini.find_child("CarteJoueurPolyvalence", true, false) != null, "Carte joueur : état et postes")
 	Carte.cacher(app)
 	await settle(2)
 	check(Carte.actuelle(app) == null, "La souris quitte le nom : la carte disparaît")
@@ -166,6 +166,63 @@ func run() -> void:
 	var heading := full.find_child("ProfilePlayerName", true, false) as Label
 	check(heading != null and heading.text == str(target.name).to_upper(), "Bandeau : nom du joueur")
 	check(windows(app).is_empty(), "Fiche complète : aucune fenêtre")
+
+	# Apprendre un poste (choix de Léo du 23/11/2026) : clic = petite fenêtre des postes, un clic sur un poste l'applique
+	# (sans Valider), re-clic sur la cible ou ✕ arrête ; ni poste principal ni 1re ligne non qualifiée dans la liste.
+	var apprendre := full.find_child("PlayerLearnPosition", true, false) as Button
+	check(apprendre != null and (apprendre.find_child("PlayerLearnPositionTexte", true, false) as Label).text == "Apprendre un poste", "Apprendre un poste : bouton sans cible")
+	if apprendre != null:
+		apprendre.pressed.emit()
+		await settle(4)
+		var fenetre := app.find_child("ApprendrePosteFenetre", true, false) as Control
+		check(fenetre != null and windows(app).is_empty(), "Apprendre un poste : petite fenêtre (Control, pas de fenêtre système)")
+		var principaux: Array = target.get("primaryPositions", [])
+		var lignes := 0
+		var premier := 0
+		for n in range(1, 16):
+			var l := app.find_child("ApprendrePoste_%d" % n, true, false)
+			if l != null:
+				lignes += 1
+				if premier == 0 and n > 3: premier = n
+				check(not (n in principaux), "Apprendre : pas le poste principal %d" % n)
+		check(lignes >= 10 and premier > 0, "Apprendre : postes proposés (%d)" % lignes)
+		var ligne := app.find_child("ApprendrePoste_%d" % premier, true, false) as Button
+		if ligne != null:
+			ligne.pressed.emit()
+			await wait_idle()
+			await settle(6)
+			var joueur: Dictionary = {}
+			for p: Dictionary in app.model.squad:
+				if str(p.id) == id: joueur = p
+			check(int(joueur.get("positionLearning", 0)) == premier, "Clic sur un poste : appliqué au moteur sans Valider")
+			check(app.find_child("ApprendrePosteFenetre", true, false) == null or not (app.find_child("ApprendrePosteFenetre", true, false) as Control).is_visible_in_tree(), "Clic sur un poste : la fenêtre se ferme")
+			var texte := app.find_child("PlayerLearnPositionTexte", true, false) as Label
+			check(texte != null and texte.text == "Apprendre un poste : %d · %s" % [premier, preload("res://ui/immersive08/liste_etoiles.gd").nom_poste(premier)], "Cible affichée sur la fiche")
+			# Re-clic sur la cible dans la fenêtre : arrêt.
+			(app.find_child("PlayerLearnPosition", true, false) as Button).pressed.emit()
+			await settle(4)
+			(app.find_child("ApprendrePoste_%d" % premier, true, false) as Button).pressed.emit()
+			await wait_idle()
+			await settle(6)
+			for p: Dictionary in app.model.squad:
+				if str(p.id) == id: joueur = p
+			check(joueur.get("positionLearning") == null, "Re-clic sur la cible : arrêt")
+			# ✕ sur la fiche : arrêt.
+			(app.find_child("PlayerLearnPosition", true, false) as Button).pressed.emit()
+			await settle(4)
+			(app.find_child("ApprendrePoste_%d" % premier, true, false) as Button).pressed.emit()
+			await wait_idle()
+			await settle(6)
+			var arret := app.find_child("PlayerLearnPositionStop", true, false) as Button
+			check(arret != null, "✕ à côté de la cible")
+			if arret != null:
+				arret.pressed.emit()
+				await wait_idle()
+				await settle(6)
+				for p: Dictionary in app.model.squad:
+					if str(p.id) == id: joueur = p
+				check(joueur.get("positionLearning") == null and app.find_child("PlayerLearnPositionStop", true, false) == null, "✕ : arrêt")
+		full = app.find_child("ImmersivePlayerFull", true, false) as Control
 
 	# Joueur suivant (liste d'origine), puis Échap.
 	var ids := Commune.liste(app, "squad")

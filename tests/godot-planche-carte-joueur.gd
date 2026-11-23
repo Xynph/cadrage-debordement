@@ -180,7 +180,7 @@ func run() -> void:
 		var d := defauts(carte)
 		check(d.is_empty(), "%s : rien de coupé : %s" % [str(taille), str(d.slice(0, 6))])
 		check(carte.find_child("CarteJoueurMatch", true, false) != null, "%s : état du match en tête" % str(taille))
-		check(carte.find_child("CarteJoueurEtoilesPoste_*", true, false) != null, "%s : étoiles d'adaptabilité" % str(taille))
+		check(carte.find_child("CarteJoueurNotePoste_*", true, false) != null and carte.find_child("CarteJoueurFamiliarite_*", true, false) != null and carte.find_child("CarteJoueurEtoilesPoste_*", true, false) == null, "%s : note au poste + familiarité, sans étoiles" % str(taille))
 		check(carte.find_child("CarteJoueurTuileNiveau", true, false) != null and carte.find_child("CarteJoueurEtoilesNiveau", true, false) == null, "%s : niveau en tuile, sans étoiles" % str(taille))
 		print("PLANCHE_CARTE_JOUEUR %s : carte %s" % [str(taille), str(carte.get_global_rect())])
 		await capture("carte-%dx%d" % [taille.x, taille.y])
