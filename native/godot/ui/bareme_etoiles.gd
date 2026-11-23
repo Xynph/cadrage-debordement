@@ -11,3 +11,22 @@ const PAS_PAR_ETOILE := 9.0
 static func etoiles_sur_100(note: Variant) -> float:
 	if not (note is int or note is float) or not is_finite(float(note)) or float(note) < 0.0: return -1.0
 	return clampf(roundf((float(note) - NOTE_ZERO) / PAS_PAR_ETOILE * 2.0) / 2.0, 0.0, 5.0)
+
+## Étoiles RELATIVES à notre effectif (choix de Léo du 22/11/2026, « solution 2 ») : `reference` = meilleure note du
+## groupe à ce poste ou ce rôle ; elle vaut 5 étoiles, les autres en proportion (part de la référence), lisible en
+## toute division. Repères : 100 % → 5 · 94 % → 4 · 88 % → 3 · 82 % → 2 · 76 % → 1 · 70 % et moins → 0.
+## Au-dessus de la référence (recrue meilleure que notre n° 1) : 5. -1 si la note ou la référence est inconnue.
+const PART_ZERO := 0.70
+const PART_PAR_ETOILE := 0.06
+
+static func etoiles_relatives(note: Variant, reference: Variant) -> float:
+	if etoiles_sur_100(note) < 0.0 or etoiles_sur_100(reference) < 0.0 or float(reference) <= 0.0: return -1.0
+	var part := float(note) / float(reference)
+	return clampf(roundf((part - PART_ZERO) / PART_PAR_ETOILE * 2.0) / 2.0, 0.0, 5.0)
+
+## Meilleure note d'une liste (valeurs inconnues ignorées) ; -1 si aucune.
+static func meilleure_note(notes: Array) -> float:
+	var meilleure := -1.0
+	for n: Variant in notes:
+		if etoiles_sur_100(n) >= 0.0: meilleure = maxf(meilleure, float(n))
+	return meilleure
