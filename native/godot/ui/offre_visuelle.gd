@@ -157,12 +157,16 @@ static func _fenetre_duree(toile: Control, val: Dictionary) -> void:
 		["%d à %d ans" % [int(val.min), int(val.max)] if int(val.min) != int(val.max) else "%d an" % int(val.min), "Accepté par le joueur", Pieces.VERT, "people"],
 	], COULEUR_DUREE)
 
+## « /3 » pour une prolongation, rien pour l'agent d'une recrue (patience cachée, idée 24).
+static func _sur(ctx: Dictionary) -> String:
+	return load("res://ui/contract_negotiation.gd").sur(ctx.get("quote", {}) if ctx.get("quote") is Dictionary else {})
+
 static func _fenetre_discussion(toile: Control, ctx: Dictionary, val: Dictionary) -> void:
 	var negociation: Dictionary = ctx.negotiation
 	var contre := str(negociation.get("status", "")) == "counter"
-	var tentatives := int(negociation.get("attempts", 0))
+	var tentatives: int = load("res://ui/contract_negotiation.gd").tentatives(ctx.quote) if ctx.get("quote") is Dictionary else int(negociation.get("attempts", 0))
 	_fenetre(toile, "OffreFenetreDiscussion", "La discussion", [
-		["%d / 3" % mini(3, tentatives + 1), "Proposition", COULEUR_SALAIRE, "renew"],
+		["%d / 3" % mini(3, tentatives + 1) if not _sur(ctx).is_empty() else "%d" % (tentatives + 1), "Proposition", COULEUR_SALAIRE, "renew"],
 		[G.salary(negociation.get("salary")) if contre else "—", "Contre-offre", Pieces.ORANGE, "mail"],
 		[G.salary(val.demande), "Demande", Pieces.VERT, "money"],
 	], COULEUR_SALAIRE)

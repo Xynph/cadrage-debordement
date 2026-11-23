@@ -1004,7 +1004,7 @@ func _question_block(question: Dictionary, choices: Dictionary, publier: Button,
 	carte.add_child(_texte(str(question.question), 21, C.IVORY))
 	var groupe := ButtonGroup.new()
 	for reponse: Dictionary in question.answers:
-		var legende := "%s · %s\n%s" % [str(reponse.toneLabel).to_upper(), reponse.text, reponse.consequence]
+		var legende := "%s · %s" % [str(reponse.toneLabel).to_upper(), reponse.text]  # effets découverts après la réponse (Léo, 23/11/2026)
 		var option := Button.new()
 		option.name = "PressAnswer_" + str(question.id) + "_" + str(reponse.id)
 		option.text = legende
