@@ -35,7 +35,7 @@ const Y_LIGNES := 292.0
 const Y_PIED := 1206.0
 ## Postes de l'équilibre du groupe : libellé et numéros de poste principal.
 const POSTES := [["Pilier gauche",[1]],["Talonneur",[2]],["Pilier droit",[3]],["Deuxième ligne",[4,5]],["3e ligne aile",[6,7]],["Numéro 8",[8]],["Demi de mêlée",[9]],["Ouvreur",[10]],["Ailier",[11,14]],["Centre",[12,13]],["Arrière",[15]]]
-const VUES := ["Vue d’ensemble","Condition","Contrats","Développement"]
+const VUES := ["Vue d’ensemble","Condition","Contrats","Développement","Planificateur"]
 const TRIS := ["Numéro","Poste","Autres postes","Nom","Niveau","Potentiel","Condition","Fatigue","Minutes","Moyenne","Forme","Statut","Âge","Salaire","Échéance","Motif"]
 var app: Control
 var state: Dictionary
@@ -88,6 +88,10 @@ func _build() -> void:
 		var review := preload("res://ui/contract_review.gd").build(app)
 		add_child(review)
 		D.place(review, Rect2(0, Y_FILTRES, LARGEUR, HAUT_PAGE - Y_FILTRES - 40))
+		return
+	if int(state.get("immersive_tab", 0)) == 4:
+		# Planificateur d'effectif (revue FM27, idée 11) : terrain + liste du poste, saisons à venir (planificateur.gd).
+		preload("res://ui/immersive08/planificateur.gd").construire(self, app, Y_FILTRES, HAUT_PAGE - 4)
 		return
 	_dy = DY_RANGEES
 	_poste = int(state.get("etoiles_poste", 0))
@@ -402,7 +406,7 @@ func _onglets() -> void:
 		var largeur := _largeur(VUES[i], 19) + 44.0
 		var onglet := _lien(self, Rect2(x, Y_ONGLETS, largeur, 44), VUES[i], func():
 			state.immersive_tab = i
-			state.sort = ["Poste","Condition","Échéance","Potentiel"][i]
+			state.sort = ["Poste","Condition","Échéance","Potentiel","Poste"][i]
 			state.descending = i in [1,3]
 			app.roster_sort = state.sort
 			app._render(), "RosterTab" + str(i), Charte.IVOIRE if i == courant else Charte.IVOIRE_2, 19.0, HORIZONTAL_ALIGNMENT_CENTER)
@@ -431,7 +435,7 @@ func _onglets() -> void:
 func _onglet_suivant() -> void:
 	var i := (int(state.get("immersive_tab", 0)) + 1) % VUES.size()
 	state.immersive_tab = i
-	state.sort = ["Poste","Condition","Échéance","Potentiel"][i]
+	state.sort = ["Poste","Condition","Échéance","Potentiel","Poste"][i]
 	state.descending = i in [1,3]
 	app.roster_sort = state.sort
 	app._render()
