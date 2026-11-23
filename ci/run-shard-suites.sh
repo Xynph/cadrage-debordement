@@ -117,7 +117,10 @@ budget() {
     tests/match-rating-curve.cjs) echo 900s ;;
     # Outil Monde en fin de saison (#1058) : saison 1 entière validée par le moteur, puis premier match de la saison 2 ;
     # 117 s en local, 180 s dépassées en CI (Suites 6/10). Budget ≈ 3,5 fois.
-    tests/carriere-monde-fin-de-saison.cjs) echo 420s ;;
+    # 23/11/2026 : 214 s en local sous charge et 420 s dépassées en CI (PR #1199, Suites 6/10, suite et moteur non touchés) ; budget ≈ 4 fois.
+    tests/carriere-monde-fin-de-saison.cjs) echo 900s ;;
+    # Analyste vidéo : carrière Monde, 107 s en local sous charge et 180 s dépassées en CI (PR #1199, suite non touchée) ; budget ≈ 4 fois.
+    tests/analyste-video.cjs) echo 480s ;;
     # Audit des flux financiers migré en carrière Monde : 13 semaines tracées + contre-épreuve dans un second worker,
     # 85 s en local (20/11/2026) ; budget ≈ 5 fois, comme les autres carrières Monde sans poids mesuré.
     tests/world-finance-flow-audit.cjs) echo 420s ;;
