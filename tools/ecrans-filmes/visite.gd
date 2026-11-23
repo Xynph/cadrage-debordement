@@ -111,6 +111,8 @@ const EXTRAS := [
 	{"id": "strategie-public", "libelle": "Club › Direction · petite fenêtre Le public", "type": "strategie_onglet", "onglet": 2, "zone": "DirectionLien_Humeur"},
 	{"id": "club-infrastructures", "libelle": "Club · onglet Infrastructures", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "infrastructure", "repos": "overview"},
 	{"id": "club-histoire", "libelle": "Club · onglet Histoire", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "history", "repos": "overview"},
+	{"id": "club-jeu", "libelle": "Club · onglet Notre jeu (planche FM27 n° 31)", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "jeu", "repos": "overview"},
+	{"id": "club-jeu-fenetre", "libelle": "Club · Notre jeu, petite fenêtre d'un chiffre", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "jeu", "repos": "overview", "presser": "ConseilJeuLigne_0"},
 	{"id": "vestiaire-entretiens", "libelle": "Vestiaire · onglet Entretiens et duos", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week"},
 	{"id": "selections-offres", "libelle": "Sélections · onglet Offres", "type": "onglet_cle", "route": "Sélections", "cle": "international_section", "onglet": "offers", "repos": "callups"},
 	{"id": "selections-disponibilites", "libelle": "Sélections · onglet Disponibilités", "type": "onglet_cle", "route": "Sélections", "cle": "international_section", "onglet": "availability", "repos": "callups"},
@@ -1006,6 +1008,11 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			app.management_ui[str(ecran.cle)] = str(ecran.onglet)
 			app._navigate(str(ecran.route))
 			await stabiliser()
+			if ecran.has("presser"):
+				var bouton := app.find_child(str(ecran.presser), true, false) as Button
+				if bouton == null: return {"statut": "echec", "note": "bouton %s absent" % ecran.presser}
+				bouton.pressed.emit()
+				await stabiliser()
 			if ecran.has("defiler"):
 				var colonne := app.find_child(str(ecran.defiler), true, false) as ScrollContainer
 				if colonne == null: return {"statut": "echec", "note": "colonne %s absente" % ecran.defiler}
