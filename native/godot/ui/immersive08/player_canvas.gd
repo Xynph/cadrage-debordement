@@ -262,6 +262,7 @@ static func _bandeau(page: Control, app: Control, player: Dictionary, source: St
 	var agent := AgentJoueur.de_joueur(app, str(player.get("id","")))
 	if not agent.is_empty():
 		identite.add_child(C.label("·",22,Charte.IVOIRE_2))
+		identite.add_child(AgentJoueur.visage(agent,30,"PlayerAgentFace"))
 		var lien := Button.new()
 		lien.name = "PlayerAgentLink"
 		lien.text = "Agent : " + str(agent.get("nom",""))

@@ -1,5 +1,5 @@
 'use strict';
-const commands=['playbook_set','playbook_staff_zone'];
+const commands=['playbook_set','playbook_staff_zone','playbook_combo'];
 function factory(){
  const copy=value=>JSON.parse(JSON.stringify(value));
  const check=(ok,message)=>{if(!ok)throw Error(message);};
@@ -7,6 +7,13 @@ function factory(){
  const context=()=>({season:S.season,week:S.franceMode?.week??S.round,club:S.club,live:!!S.live});
  const available=()=>!!S?.manager?.playbook&&S.phase!=='ended'&&(!S.live||playbookRules(S.live)&&S.live.paused&&!S.live.finished&&!presentationPending(S.live));
  const options=table=>Object.entries(table).map(([id,[label,description]])=>({id,label,description}));
+ // Combinaisons de phases arrêtées (onglet Tactique › Phases arrêtées) : listes, choix et effets lus dans le moteur.
+ function combinaisons(plan){
+  const huit=(()=>{try{const id=S.live?S.live.sheets[S.live.userSide].on[7]:S.lineup?.[7];const p=S.live?matchPlayer(S.live,S.live.userSide,id):player(id);return p?skill(p,'power',true):65;}catch{return 65;}})();
+  return Object.fromEntries(COMBI_CLES.map(cle=>{const e=combiListe(plan,cle);return [cle,{active:e.active,max:COMBI_MAX,
+   liste:e.liste.map(k=>({nom:k.nom,choix:{...combiNeutre(cle),...k.choix},effets:combiEffets(cle,k.choix,huit)})),
+   pivots:COMBI_PIVOTS[cle].map(([id,label,options])=>({id,label,options:options.map(([oid,olabel])=>({id:oid,label:olabel,effets:combiEffets(cle,{...combiNeutre(cle),[id]:oid},huit)}))}))}];}));
+ }
  function project(){
   if(!S)return null;
   const live=S.live,plan=live&&playbookRules(live)?live.playbooks[live.userSide]:S.manager?.playbook;
@@ -15,11 +22,24 @@ function factory(){
   return {context:context(),available:available(),inMatch:!!live,currentZone:live?fieldZone(live.userSide,live.territory):null,general:{attack,defence,attackLabel:TACTICS[attack][0],defenceLabel:DEFENCES[defence][0]},
    zones:Object.entries(FIELD_ZONES).map(([id,label])=>({id,label,attack:plan.zones[id].attack,defence:plan.zones[id].defence,effectiveAttack:plan.zones[id].attack==='inherit'?attack:plan.zones[id].attack,effectiveDefence:plan.zones[id].defence==='inherit'?defence:plan.zones[id].defence})),
    attackOptions:[{id:'inherit',label:'Plan principal',description:'Suivre le choix général.'},...options(TACTICS)],defenceOptions:[{id:'inherit',label:'Plan principal',description:'Suivre le choix général.'},...options(DEFENCES)],
-   setPieces:[['scrum','Mêlées',SCRUM_MOVES],['lineout','Touches',LINEOUT_MOVES],['kickoff','Renvois',KICKOFF_MOVES]].map(([key,label,table])=>({key,label,selected:plan[key],options:options(table)})),
+   combinaisons:combinaisons(plan),setPieces:[['scrum','Mêlées',SCRUM_MOVES],['lineout','Touches',LINEOUT_MOVES],['kickoff','Renvois',KICKOFF_MOVES]].map(([key,label,table])=>({key,label,selected:plan[key],options:options(table)})),
    preview:live&&playbookRules(live)?copy(fourZoneTacticalPreview(live)):[],staffAdvice:live?copy(numericalStaffAdvice(live)):null,
    notice:'Une consigne locale remplace le plan principal dans sa zone. Les phases arrêtées suivent leur propre choix. Ces compromis de simulation ne garantissent aucun résultat.',reason:available()?'':live?'Mets le match en pause pour décider, en dehors des transitions et après le coup de sifflet.':'Décision indisponible en fin de saison.'};
  }
+ function executeCombo(p){
+  check(object(p)&&Object.keys(p).every(key=>['context','cle','action','index','pivot','valeur'].includes(key)),'Champs de combinaison inconnus.');
+  const current=context();
+  check(object(p.context)&&Object.keys(p.context).length===4&&Object.keys(current).every(key=>p.context[key]===current[key]),'Ce carnet est périmé : actualise le plan de jeu.');
+  check(available(),'Plan indisponible : mets le match en pause et termine sa transition.');
+  check(COMBI_CLES.includes(p.cle)&&['choisir','ajouter','pivot'].includes(p.action),'Combinaison inconnue.');
+  check(p.action!=='choisir'||Number.isInteger(p.index),'Combinaison inconnue.');
+  check(p.action!=='pivot'||typeof p.pivot==='string'&&typeof p.valeur==='string'&&!!combiOption(p.cle,p.pivot,p.valeur),'Choix de combinaison inconnu.');
+  check(setCombinaison(p.cle,p.action,p.index,p.pivot,p.valeur),'La combinaison n’a pas pu être appliquée.');
+  const e=S.manager.playbook.combos[p.cle];
+  return {playbookDecision:{key:p.cle,action:p.action,active:e.active,choix:copy(e.liste[e.active].choix)}};
+ }
  function execute(command,p){
+  if(command==='playbook_combo')return executeCombo(p);
   check(object(p)&&Object.keys(p).every(key=>['context','key','value','zone'].includes(key)),'Champs du carnet inconnus.');
   const current=context();
   check(object(p.context)&&Object.keys(p.context).length===4&&Object.keys(current).every(key=>p.context[key]===current[key]),'Ce carnet est périmé : actualise le plan de jeu.');
