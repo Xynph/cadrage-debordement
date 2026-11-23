@@ -11,8 +11,9 @@ const G = preload("res://ui/game_skin.gd")
 const Budget = preload("res://ui/transfer_budget.gd")
 const Salary = preload("res://ui/salary_display.gd")
 const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
+const Guidee = preload("res://ui/offre_guidee.gd")
 const LARGEUR := 1500.0
-const HAUTEUR := 650.0
+const HAUTEUR := 680.0
 const COULEUR_SALAIRE := Pieces.BLEU
 const COULEUR_DUREE := Pieces.VIOLET
 const COULEUR_PRIME := Pieces.TURQUOISE
@@ -21,7 +22,7 @@ const COULEUR_PRIME := Pieces.TURQUOISE
 static func construire(body: Control, ctx: Dictionary) -> Control:
 	var toile := Control.new()
 	toile.name = "OffreVisuelle"
-	toile.custom_minimum_size = Vector2(LARGEUR, HAUTEUR) * C.density
+	toile.custom_minimum_size = Vector2(LARGEUR, HAUTEUR + Guidee.supplement()) * C.density
 	toile.mouse_filter = Control.MOUSE_FILTER_PASS
 	body.add_child(toile)
 	body.move_child(toile, 0)
@@ -29,14 +30,16 @@ static func construire(body: Control, ctx: Dictionary) -> Control:
 	dessin.name = "OffreDessin"
 	dessin.mouse_filter = Control.MOUSE_FILTER_PASS
 	toile.add_child(dessin)
-	D.place(dessin, Rect2(0, 0, LARGEUR, HAUTEUR))
+	D.place(dessin, Rect2(0, 0, LARGEUR, HAUTEUR + Guidee.supplement()))
 	# Champs de la négociation repris sur la toile (au-dessus du dessin, jamais redessinés : le focus reste).
 	for champ: SpinBox in [ctx.salary, ctx.years]:
 		if champ.get_parent() != null: champ.get_parent().remove_child(champ)
 		toile.add_child(champ)
-	D.place(ctx.salary, Rect2(1196, 232, 280, 50))
-	D.place(ctx.years, Rect2(1196, 432, 280, 50))
+	D.place(ctx.salary, Rect2(LARGEUR - 304, 232, 280, 50))
+	D.place(ctx.years, Rect2(LARGEUR - 304, 432, 280, 50))
 	var redessiner := func(): _dessiner(toile, dessin, ctx)
+	# Prime et clause (offre guidée) : réglées par clic sur leurs crans, sans champ de saisie ; la toile se redessine.
+	ctx["redessiner"] = redessiner
 	ctx.salary.value_changed.connect(func(_x: float): redessiner.call())
 	ctx.years.value_changed.connect(func(_x: float): redessiner.call())
 	redessiner.call()
@@ -53,11 +56,15 @@ static func valeurs(ctx: Dictionary) -> Dictionary:
 	var annees := int(ctx.years.value)
 	var fee: Variant = quote.get("fee")
 	var premiere := int(ctx.first_season)
+	# Offre guidée : prime de base + cran choisi, clause choisie (recrutement seulement).
+	var en_plus := 0 if ctx.get("prolongation", false) else Guidee.prime_en_plus(ctx, annees)
+	var niveau := "sans" if ctx.get("prolongation", false) else str(Guidee.extras(ctx).clause)
 	return {
 		"propose": propose, "demande": demande, "ecart": propose - demande, "annees": annees,
 		"min": int(quote.get("minYears", 1)), "max": maxi(int(quote.get("maxYears", 3)), annees),
 		"premiere": premiere, "fin": G.contract_year(premiere + annees - 1),
-		"fee": int(fee) if fee is int or fee is float else -1,
+		"fee": int(fee) + en_plus if fee is int or fee is float else -1, "fee_base": int(fee) if fee is int or fee is float else -1,
+		"clause": niveau, "clause_montant": int(Guidee.clause(ctx, niveau).get("montant", 0)),
 		"budget": {} if ctx.get("prolongation", false) else Budget.data(ctx.app.model), "cash": ctx.app.model.get("finance", {}).get("cash"),
 		"prolongation": bool(ctx.get("prolongation", false)),
 		"actuel": int(ctx.player.get("salary", 0)), "fin_actuelle": ctx.player.get("contractEnd"),
@@ -112,7 +119,8 @@ static func _dessiner(toile: Control, dessin: Control, ctx: Dictionary) -> void:
 	_identite(toile, dessin, ctx, val)
 	_regle(toile, dessin, ctx, val, 170.0, true)
 	_frise(toile, dessin, ctx, val, Rect2(0, 370, LARGEUR, 130), true)
-	_jeton(toile, dessin, val, Rect2(0, 520, LARGEUR, 120))
+	Guidee.reglages(load("res://ui/offre_visuelle.gd"), toile, dessin, ctx, val, Rect2(0, 520, LARGEUR, 146))
+	Guidee.dessiner(load("res://ui/offre_visuelle.gd"), toile, dessin, ctx, val, LARGEUR, HAUTEUR)
 	_marquer(toile)
 
 static func _etiquette(parent: Node, x: float, y: float, texte: String, largeur: float = 600) -> Label:
@@ -184,7 +192,7 @@ static func _regle(toile: Control, parent: Control, ctx: Dictionary, val: Dictio
 	haut = ceilf(haut / 100.0) * 100.0
 	if haut <= bas: haut = bas + 100.0
 	var x0 := 40.0
-	var w := (1150.0 if interactif else large - 40) - x0
+	var w := (large - 350.0 if interactif else large - 40) - x0
 	var ty := 84.0 if interactif else 70.0
 	var vers_x := func(valeur: float) -> float: return x0 + w * clampf((valeur - bas) / (haut - bas), 0, 1)
 	D.rect(cadre, Rect2(x0, ty, w, 10), Charte.PANNEAU_3, Charte.RAYON_PILULE)
@@ -206,7 +214,8 @@ static func _regle(toile: Control, parent: Control, ctx: Dictionary, val: Dictio
 		D.text(cadre, xp, ty + 50, "TA PROPOSITION " + G.salary_amount(val.propose), 15, COULEUR_SALAIRE, 700, 260, HORIZONTAL_ALIGNMENT_CENTER)
 		return
 	D.text(cadre, xp, ty + 72, "TA PROPOSITION " + G.salary_amount(val.propose), 16, COULEUR_SALAIRE, 700, 260, HORIZONTAL_ALIGNMENT_CENTER)
-	D.text(cadre, 1196, 54, "SALAIRE " + G.salary_period(true).to_upper(), 14, COULEUR_SALAIRE, 700, 280)
+	Guidee.reperes_regle(cadre, ctx, val, vers_x, ty)
+	D.text(cadre, large - 304, 54, "SALAIRE " + G.salary_period(true).to_upper(), 14, COULEUR_SALAIRE, 700, 280)
 	var salaire: SpinBox = ctx.salary
 	var zone := Button.new()
 	zone.name = "OffreRegleClic"
@@ -236,7 +245,7 @@ static func _frise(toile: Control, parent: Control, ctx: Dictionary, val: Dictio
 	fin.name = "OffreFriseFin"
 	_lien(cadre, Rect2(16, 4, 280, 46), "OffreFriseFinZone", "Durée du contrat", func(): _fenetre_duree(toile, val))
 	var x0 := 40.0
-	var w := (1150.0 if interactif else zone.size.x - 80) - x0
+	var w := (zone.size.x - 350.0 if interactif else zone.size.x - 80) - x0
 	var n := maxi(1, int(val.max))
 	var pas := w / n
 	var sy := 56.0 if interactif else 48.0
@@ -255,7 +264,8 @@ static func _frise(toile: Control, parent: Control, ctx: Dictionary, val: Dictio
 		var annee := G.contract_year(int(val.premiere) + i - 1)
 		var couleur := COULEUR_DUREE if i == int(val.annees) else Charte.IVOIRE_3
 		D.text(cadre, x0 + i * pas, sy + (58 if interactif else 52), annee, 16 if i != int(val.annees) else 19, couleur, 700, 90, HORIZONTAL_ALIGNMENT_CENTER)
-	if interactif: D.text(cadre, 1196, zone.size.y - 74 - 18, "SAISONS", 14, COULEUR_DUREE, 700, 280)
+	if interactif: Guidee.repere_frise(cadre, ctx, val, x0, pas, sy)
+	if interactif: D.text(cadre, zone.size.x - 304, zone.size.y - 74 - 18, "SAISONS", 14, COULEUR_DUREE, 700, 280)
 
 ## Jeton de la prime à la signature et ce qu'il reste du budget de transferts.
 static func _jeton(toile: Control, parent: Control, val: Dictionary, zone: Rect2) -> void:
@@ -290,6 +300,9 @@ static func _jeton(toile: Control, parent: Control, val: Dictionary, zone: Rect2
 			Charte.PANNEAU_3, func(): _fenetre_budget(toile, val)) + 12
 	if (val.cash is int or val.cash is float) and not etroit:
 		Pieces.pastille(cadre, x, py, "Trésorerie %s" % G.euros(val.cash), "money", "OffreJetonTresorerie", "", Charte.IVOIRE, Charte.PANNEAU_3, func(): _fenetre_budget(toile, val))
+	# Récapitulatif (zone étroite) : clause libératoire choisie.
+	if etroit and str(val.get("clause", "sans")) != "sans":
+		Pieces.pastille(cadre, x, py, "Clause %s · %s" % [str(Guidee.NOMS[val.clause]).to_lower(), Guidee.court(int(val.clause_montant))], "lock", "OffreJetonClause", "", Guidee.COULEURS_CLAUSE[val.clause], Charte.PANNEAU_3)
 
 # --- Récapitulatif de la confirmation ------------------------------------------------------------------------------------
 
