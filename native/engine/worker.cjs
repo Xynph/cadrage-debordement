@@ -1326,6 +1326,9 @@ function createBridge(options={}){
      run("nativeSystems.domain('fragilite').observe();");
      // Familiarité au poste (familiarite-poste.cjs) : valeur de départ posée sur les joueurs créés et les anciennes carrières.
      run("nativeSystems.domain('familiarite').observe();");
+     // Agents de joueurs nommés (agents-joueurs.cjs) : annuaire posé à la création et sur les anciennes carrières, relation
+     // et caractère de l'agent repris des anciennes sauvegardes (S.tonAgent version 1 → 2).
+     run("nativeSystems.domain('agentsJoueurs').observe();");
      // Règle « Auto » par forme (dist/development.js) : posée à la création et sur les anciennes carrières (clé toujours
      // présente : les lectures mémorisées de la projection restent valides d'une commande à l'autre).
      run("if(S&&typeof intensiteAutoValide==='function'&&!intensiteAutoValide(S.intensiteAuto))S.intensiteAuto=INTENSITE_AUTO_DEFAUT.slice();");

@@ -13,7 +13,7 @@ test('Rapport du recruteur : lettre, liste comparée, tuiles, prêt', { skip: !g
   const profil = fs.mkdtempSync(path.join(os.tmpdir(), 'rl27-rapport-recruteur-'));
   try {
     const captures = process.env.CD_RAPPORT_RECRUTEUR_CAPTURES || '';
-    const affichage = captures ? ['--display-driver', 'x11', '--rendering-method', 'gl_compatibility', '--windowed', '--resolution', '1920x1080'] : ['--headless'];
+    const affichage = captures ? ['--display-driver', process.platform === 'win32' ? 'windows' : 'x11', '--rendering-method', 'gl_compatibility', '--windowed', '--resolution', process.env.CD_RAPPORT_RECRUTEUR_RESOLUTION === '2560' ? '2560x1440' : '1920x1080'] : ['--headless'];
     const r = spawnSync(godot, [...affichage, '--audio-driver', 'Dummy', '--path', 'native/godot', '--script', path.resolve(__dirname, 'godot-rapport-recruteur.gd')], {
       cwd: racine, encoding: 'utf8', timeout: 420000,
       env: { ...process.env, CD_GODOT_SELF_TEST: '0', CD_GODOT_GUIDE_MODULE_TEST: '1', CD_NODE_EXECUTABLE: process.execPath, CD_GODOT_DATA_DIR: profil, CD_RAPPORT_RECRUTEUR_CAPTURES: captures ? path.resolve(captures) : '' },

@@ -36,6 +36,8 @@ const UNTOUCHED = Object.freeze({
   transfer_budget_extension: NONE,
   // Séance d'un jour remplacée (calendar-planning.cjs swapSession) : planning des entraînements (section légère).
   calendar_session: NONE,
+  // Ton donné à l'agent d'une piste (ton-agent.cjs) : section légère tonAgent seulement.
+  agent_ton: NONE, agent_question: NONE,
   // Décisions sur les joueurs du club : la section des clubs est relue.
   set_player_load: except('clubs'), appliquer_avis_kine: except('clubs'), set_development_focus: except('clubs'), training_plan: except('clubs'),
   // Poste à apprendre (familiarite-poste.cjs) : un champ du joueur du club, appliqué aux prochaines séances.
