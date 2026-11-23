@@ -52,7 +52,13 @@ function factory(){
    const cands=[];
    for(const side of [0,1]){const sh=l.sheets[side];for(const p of activePlayers(l,side)){const slot=sh.on.indexOf(p.id);if(slot>=0&&eligibleChanges(l,side,slot).length)cands.push({side,slot});}}
    if(!cands.length)continue;
-   const v=cands[Math.min(cands.length-1,Math.floor(draw(kind+'-joueur|'+key+'|'+l.minute)*cands.length))];
+   // Blessure : le blessé est tiré au poids de sa fragilité (fragilite.cjs, 0,75 à 1,25) ; saignement : au hasard.
+   let v=cands[Math.min(cands.length-1,Math.floor(draw(kind+'-joueur|'+key+'|'+l.minute)*cands.length))];
+   if(kind==='blessure'&&typeof facteurFragilite==='function'){
+    const poids=cands.map(c=>facteurFragilite(matchPlayer(l,c.side,l.sheets[c.side].on[c.slot])));
+    let reste=draw(kind+'-joueur|'+key+'|'+l.minute)*poids.reduce((a,b)=>a+b,0);
+    v=cands[cands.length-1];for(let i=0;i<cands.length;i++){reste-=poids[i];if(reste<0){v=cands[i];break;}}
+   }
    start(l,v.side,v.slot,kind);
   }
  }

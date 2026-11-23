@@ -9,7 +9,7 @@ class ReadingApp extends Control:
 	var table_division := "elite"
 	var route := "Réception"
 	var commands := 0
-	func _navigate(destination: String, _remember: bool = true) -> void:
+	func _navigate(destination: String, _remember: bool = true, _replace: bool = false) -> void:
 		route = destination
 	func _command(_id: String, _payload: Dictionary = {}) -> void:
 		commands += 1
@@ -38,9 +38,9 @@ func _initialize() -> void:
 	check(Competition.target_available(app,"date","2028-02-29") and not Competition.target_available(app,"date","2027-02-29"),"Date calendaire réelle sans normalisation silencieuse")
 	check(not Competition.open_target(app,"competition","absent") and app.route=="Réception","Compétition absente ne change pas de route")
 	check(Competition.open_target(app,"competition","elite") and app.route=="Classements" and app.table_division=="elite","Compétition cible le classement réel")
-	app.management_ui.calendar_reading = {"filter":"matches","view":"week","scroll":47}
-	check(Competition.open_target(app,"date","2026-11-12") and app.route=="Calendrier","Date ouvre le calendrier")
-	check(app.management_ui.calendar_reading.selected=="2026-11-12" and app.management_ui.calendar_reading.filter=="matches" and app.management_ui.calendar_reading.view=="week" and app.management_ui.calendar_reading.scroll==47,"Date ciblée conserve filtre vue et lecture existante")
+	# Date : programme du mois (Entraînement › Mois) au mois du jour, fenêtre du jour demandée.
+	check(Competition.open_target(app,"date","2026-11-12") and app.route=="Préparation","Date ouvre le programme du mois")
+	check(int(app.management_ui.immersive_training.tab)==5 and app.management_ui.immersive_training.mois=="2026-11" and app.management_ui.immersive_training.jour_ouvert=="2026-11-12","Date ciblée : mois et jour retenus")
 	for tab: String in ["summary","cash","wages","transfers","budget"]:
 		check(Finance.open_target(app,tab) and app.route=="Finances" and app.management_ui[Finance.KEY]==tab,"Onglet financier réel : "+tab)
 	check(not Finance.open_target(app,"unknown") and app.management_ui[Finance.KEY]=="budget","Onglet absent refusé sans écraser la sélection")

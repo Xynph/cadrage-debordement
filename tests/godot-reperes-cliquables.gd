@@ -121,7 +121,8 @@ func run() -> void:
 	await essai("Effectif", "RosterGroupAvants", "filtre Avants", func(): return app.route == "Effectif" and str(app.management_ui.roster.family) == "Avants")
 	await essai("Effectif", "RosterSousTitreFond", "tous les joueurs", func(): return app.route == "Effectif" and str(app.management_ui.roster.family) == "Tous", false, "Avants")
 	await essai("Effectif", "RosterSaisonFond", "calendrier", func(): return app.route == "Calendrier")
-	await essai("Effectif", "RosterStatutFond", "fiche du joueur", func(): return fiche_ouverte() or app.route != "Effectif")
+	# Badge Blessé derrière le nom (22/11/2026) : fenêtre blessure quand elle existe, sinon la fiche.
+	await essai("Effectif", "RosterBadgeOuvrir_Blesse", "blessure du joueur", func(): return app.find_child("FenetreBlessure", true, false) != null or fiche_ouverte() or app.route != "Effectif")
 	await essai("Effectif", "RosterContractEndFond", "contrat du joueur", func(): return fiche_ouverte() or app.route != "Effectif")
 	# Préparation
 	await essai("Préparation", "PreparationBriefingTitle_injuriesFond", "Effectif", func(): return app.route == "Effectif")

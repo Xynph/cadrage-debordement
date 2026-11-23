@@ -19,7 +19,7 @@ const Training = preload("res://ui/immersive08/training_canvas.gd")
 const Academy = preload("res://ui/immersive08/academy_canvas.gd")
 const Recruitment = preload("res://ui/immersive08/recruitment_canvas.gd")
 const Competition = preload("res://ui/immersive08/competition_canvas.gd")
-const MonthCalendar = preload("res://ui/immersive08/month_calendar.gd")
+const TrainingMois = preload("res://ui/immersive08/training_mois.gd")
 const ClubCanvas = preload("res://ui/immersive08/club_canvas.gd")
 const FinanceCanvas = preload("res://ui/immersive08/finance_canvas.gd")
 const Preparation = preload("res://ui/immersive08/preparation_canvas.gd")
@@ -170,8 +170,7 @@ static func render(app: Control) -> bool:
 	inset.add_child(content)
 	var canvas_script := _dedicated_page(app,physical)
 	var immersive_match: bool = app.route=="Match" and physical.x>=RICH_MIN_SIZE.x and physical.y>=RICH_MIN_SIZE.y
-	var monthly_calendar: bool = app.route=="Calendrier" and not Selections.nation_only(app.model) and not app.get_meta("calendar_table",false)
-	if canvas_script!=null or immersive_match or monthly_calendar or app.route=="Effectif":
+	if canvas_script!=null or immersive_match or app.route=="Effectif":
 		app.heading=null
 		app.minibar=C.label("",17,C.GOLD);app.minibar.visible=false;content.add_child(app.minibar)
 	else: _heading(content, app)
@@ -196,7 +195,7 @@ static func render(app: Control) -> bool:
 		app.body.add_child(canvas)
 		canvas_script.build(app,canvas)
 		if app.route == "Calendrier":
-			D.button(canvas,Rect2(1830,147,395,40),"Vue mensuelle",_calendar_table.bind(app,false),false,"calendar",true,app.accent,"CalendarShowMonth")
+			D.button(canvas,Rect2(1830,147,395,40),"Programme du mois",func(): TrainingMois.ouvrir(app),false,"calendar",true,app.accent,"CalendarShowMonth")
 	elif app.route == "Bureau": app.body.add_child(OfficeCanvas.build(app) if physical.x >= OFFICE_CANVAS_MIN_WIDTH else Office.build(app))
 	else: _existing_page(app,immersive_match)
 	if not hors_coque: _footer(content, app, layout)
@@ -330,7 +329,6 @@ static func _dedicated_page(app: Control, size: Vector2i) -> Script:
 	# Composition (choix de Léo du 19/11/2026, variante 1) : page dédiée à toutes les tailles, avec son propre en-tête.
 	if app.route == "Composition": return TacticsCanvas
 	if app.route == "Calendrier" and Selections.nation_only(app.model): return null
-	if app.route == "Calendrier" and not app.get_meta("calendar_table",false): return null
 	if app.route=="Calendrier" and size.x>=1280 and size.y>=720 and app.model.meta.get("leagueId") in ["nationale","champ"]: return Competition
 	if size.x<1920 or size.y<1080:
 		if size.x<RICH_MIN_SIZE.x or size.y<RICH_MIN_SIZE.y or app.route not in RICH_FROM_720P: return null
@@ -1374,8 +1372,6 @@ static func _sync_office_props(match_status: Label) -> void:
 static func _subnavigation(parent: Node, app: Control) -> void:
 	if Selections.nation_only(app.model): return
 	if app.route=="Composition" or app.route=="Effectif": return
-	# Grille mensuelle du Calendrier : elle porte la rangée d'onglets de Compétitions (une seule rangée, month_calendar.gd).
-	if app.route=="Calendrier" and not app.get_meta("calendar_table",false): return
 	for group: Array in GROUPS:
 		if app.route not in group[2] or group[2].size() < 2: continue
 		var row := C.h(8)
@@ -1499,16 +1495,12 @@ static func _fit_status(status: Label, pixels: int, smallest: int) -> void:
 		status.size.y = font.get_height(chosen)
 	status.tooltip_text = status.text
 
+## Date de la barre haute : le programme du mois (Entraînement › Mois), au mois du jour. Il remplace l'ancienne grille
+## mensuelle du Calendrier (choix de Léo du 22/11/2026) ; la liste des rencontres reste dans Compétitions › Calendrier.
 static func _open_current_calendar(app: Control) -> void:
-	app.set_meta("calendar_table",false)
-	app._navigate("Calendrier")
-	var calendar: Control = app.body.find_child("CarnetCalendar",true,false)
-	if calendar != null and not calendar.today.is_empty():
-		calendar._jump_to_today()
-
-static func _calendar_table(app: Control, show_table: bool) -> void:
-	app.set_meta("calendar_table",show_table)
-	app._render(false)
+	# Sélectionneur sans club : son calendrier international (Calendrier), pas d'entraînement de club.
+	if Selections.nation_only(app.model): app._navigate("Calendrier")
+	else: TrainingMois.ouvrir(app)
 
 static func _existing_page(app: Control, immersive_match: bool) -> void:
 	match app.route:
@@ -1520,11 +1512,9 @@ static func _existing_page(app: Control, immersive_match: bool) -> void:
 		"Club": app.body.add_child(app.ClubViews.club(app))
 		"Calendrier":
 			if Selections.nation_only(app.model): app.body.add_child(Selections.calendar(app))
-			elif app.get_meta("calendar_table",false):
-				D.button(app.heading.get_parent(),Rect2(1050,16,340,52),"Vue mensuelle",_calendar_table.bind(app,false),false,"calendar",true,app.accent,"CalendarShowMonth")
-				app.body.add_child(app.ClubViews.calendar(app))
 			else:
-				app.body.add_child(MonthCalendar.build(app,_calendar_table.bind(app,true)))
+				D.button(app.heading.get_parent(),Rect2(1050,16,340,52),"Programme du mois",func(): TrainingMois.ouvrir(app),false,"calendar",true,app.accent,"CalendarShowMonth")
+				app.body.add_child(app.ClubViews.calendar(app))
 		"Classements": app.body.add_child(app.ClubViews.tables(app))
 		"Finances": app.body.add_child(app.ClubViews.finance(app))
 		"Effectif":

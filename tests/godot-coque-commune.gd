@@ -290,7 +290,8 @@ func search() -> void:
 
 func top_actions() -> void:
 	app._navigate("Effectif"); await settle()
-	check(await press("ImmersiveCalendarDate") and app.route == "Calendrier", "Date : Calendrier")
+	# Date : programme du mois (Entraînement › Mois, qui remplace la grille du Calendrier depuis le 22/11/2026).
+	check(await press("ImmersiveCalendarDate") and app.route == "Préparation" and int(app.management_ui.get("immersive_training", {}).get("tab", -1)) == 5, "Date : programme du mois")
 	var date := named("ImmersiveDateText") as Label
 	check(date != null and not date.text.is_empty() and not date.text.contains("JANV.") and date.text == date.text.to_lower(), "Date en minuscules, format « mar. 17 nov. » (%s)" % (date.text if date != null else "?"))
 	var back := named("NavigationBack") as Button
