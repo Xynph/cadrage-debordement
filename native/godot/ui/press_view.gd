@@ -171,7 +171,7 @@ static func _conference(app: Control, data: Dictionary) -> Control:
 		interview.add_child(G.wrap(question.question, 13, G.INK))
 		var group := ButtonGroup.new()
 		for answer: Dictionary in question.answers:
-			var caption := "%s · %s\n%s" % [str(answer.toneLabel).to_upper(), answer.text, answer.consequence]
+			var caption := "%s · %s" % [str(answer.toneLabel).to_upper(), answer.text]  # effets découverts après la réponse (Léo, 23/11/2026)
 			var option := G.button(caption, func():
 				choices[question.id] = answer.id
 				submit.disabled = choices.size() != conference.questions.size())
@@ -182,7 +182,7 @@ static func _conference(app: Control, data: Dictionary) -> Control:
 			option.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			option.alignment = HORIZONTAL_ALIGNMENT_LEFT
 			option.custom_minimum_size.y = 60
-			option.tooltip_text = answer.consequence
+			option.tooltip_text = ""
 			option.button_pressed = choices.get(question.id, "") == answer.id
 			interview.add_child(option)
 	list.add_child(submit)
