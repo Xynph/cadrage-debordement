@@ -184,13 +184,19 @@ function forme(resultats) {
 }
 // Affluence d'un match à domicile : 0,78 après cinq défaites, 1,22 après cinq victoires.
 const affluence = (formeClub, alea) => 0.78 + 0.36 * formeClub + 0.08 * alea;
+// Humeur des supporters (0-100, club du manager, club-strategy.cjs) : public multiplié par 0,90 (humeur 0) à 1,10
+// (humeur 100), neutre à 50 ou inconnue (clubs gérés par le jeu). Choix de Léo du 23/11/2026 : effet réel et modeste.
+const HUMEUR_PUBLIC = 0.10;
+const facteurHumeur = humeur => Number.isFinite(humeur) ? 1 + HUMEUR_PUBLIC * (Math.max(0, Math.min(100, humeur)) - 50) / 50 : 1;
 // Spectateurs d'une rencontre (compte rendu du match, idée FM n°19) : la même affluence que la billetterie (forme du
 // club qui reçoit, aléa, accueil du stade) ramenée à un remplissage de 50 % (cinq défaites) à 95 % (cinq victoires)
-// en saison, 97 % en phase finale ; arrondi à la dizaine. Capacité inconnue : null.
-function spectateurs({ capacite, resultats, cle = '', accueil = 1, phase = 'league' }) {
+// en saison, 97 % en phase finale ; arrondi à la dizaine. Capacité inconnue : null. humeur : humeur des supporters du
+// club qui reçoit s'il est celui du manager (facteurHumeur), sinon neutre.
+function spectateurs({ capacite, resultats, cle = '', accueil = 1, phase = 'league', humeur = null }) {
   if (!Number.isFinite(capacite) || capacite <= 0) return null;
   const a = affluence(forme(resultats), unite('affluence|' + cle)) * (Number.isFinite(accueil) && accueil > 0 ? accueil : 1);
-  const taux = phase !== 'league' && phase !== 'pool' ? 0.97 : Math.min(0.95, Math.max(0.35, 0.5 + 0.45 * (a - 0.78) / 0.44));
+  // L'humeur multiplie le public comme la billetterie (±10 % au plus), dans les mêmes bornes de remplissage.
+  const taux = phase !== 'league' && phase !== 'pool' ? 0.97 : Math.min(0.95, Math.max(0.35, (0.5 + 0.45 * (a - 0.78) / 0.44) * facteurHumeur(humeur)));
   return Math.round(capacite * taux / 10) * 10;
 }
 
@@ -265,11 +271,12 @@ function limites(forces, saison, { creation = false, types = null, credits = nul
 //   resultats : derniers résultats du club ('V', 'N', 'D') ; alea dans [0;1] (tiré du club et de la date par défaut) ;
 //   receptions : matchs de saison régulière à domicile ; gere : club géré par le jeu.
 //   marge : excédent visé par le budget voté (cibleGestion), épargné par le train de vie ; 0 pour le club joué.
-function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle, resultats, phase = 'league', neutre = false, receptions, gere = false, repere = '', formation = null, investissement = 0, accueil = 1, marge = 0, aideRelegation: aide = 0, remboursement = 0 }) {
+//   humeur : humeur des supporters du club du manager (0-100) : relève ou baisse le public payant (facteurHumeur).
+function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle, resultats, phase = 'league', neutre = false, receptions, gere = false, repere = '', formation = null, investissement = 0, accueil = 1, marge = 0, aideRelegation: aide = 0, remboursement = 0, humeur = null }) {
   const { force, regle, annuel } = regleDe(forces, clubId);
   if (!Number.isInteger(semaines) || semaines < 1) throw Error('Budget de club : nombre de semaines invalide.');
   const salaires = rond(masseHebdo * 52 / semaines), matchs = Math.max(1, receptions ?? Math.round(semaines / 2));
-  const hasard = Number.isFinite(alea) ? alea : unite('affluence|' + clubId + '|' + repere), public_ = affluence(forme(resultats), hasard) * (Number.isFinite(accueil) && accueil > 0 ? accueil : 1);
+  const hasard = Number.isFinite(alea) ? alea : unite('affluence|' + clubId + '|' + repere), public_ = affluence(forme(resultats), hasard) * (Number.isFinite(accueil) && accueil > 0 ? accueil : 1) * facteurHumeur(humeur);
   const billetterie = annuel * regle.billetterie, finale = phase !== 'league';
   const ecritures = [
     { title: libelle + ' · Partenaires', amount: rond(annuel * regle.partenaires / semaines) },
@@ -649,7 +656,9 @@ function budgetSemaine(forces,repere,c,rencontre,libelle){
   // Clubs gérés d'un championnat encadré : l'excédent que vise leur budget n'est pas dépensé (le club joué fait ses propres choix).
   marge:c.id===S.club?0:Math.max(0,nativeClubBudget.cibleGestion(forces,c.id,b.clubs[c.id].type)),
   // Accueil du stade relevé par les investissements des excédents (club-investments.cjs).
-  accueil:typeof investAccueil==='function'?nativeClubInvestments.facteurAccueil(investAccueil(c.id)):1}));
+  accueil:typeof investAccueil==='function'?nativeClubInvestments.facteurAccueil(investAccueil(c.id)):1,
+  // Humeur des supporters du club du manager (club-strategy.cjs) : public payant de ses réceptions.
+  humeur:c.id===S.club?budgetHumeur():null}));
  // Mode Monde : les recettes de guichet imprévues (série de victoires, phase finale) coûtent aussi des primes et des frais.
  if(!budgetFrance()){
   const compte=b.clubs[c.id],accueil=typeof investAccueil==='function'?nativeClubInvestments.facteurAccueil(investAccueil(c.id)):1;
@@ -662,6 +671,8 @@ function budgetSemaine(forces,repere,c,rencontre,libelle){
  if(typeof pretRembourser==='function')for(const e of ecritures)if(e.title.endsWith(nativeClubBudget.LIBELLE_REMBOURSEMENT))pretRembourser(c.id,-e.amount);
  return ecritures;
 }
+// Humeur des supporters du club du manager (0-100) ou null (domaine clubStrategy absent, club non géré).
+function budgetHumeur(){try{const d=typeof nativeSystems!=='undefined'?nativeSystems.domain('clubStrategy'):null;return d&&typeof d.humeur==='function'?d.humeur():null;}catch(e){return null;}}
 financeWeek=function(m,won){
  if(!budgetActif())return financeWeekV1(m,won);
  const forces=budgetForces(),repere=budgetRepere(),f=budgetFrance()?CDFranceCompetition.userFixture(S):CDWorldCareer.userFixture(S);
@@ -1005,4 +1016,4 @@ module.exports = Object.freeze({ PART_FORMATION, FORMATION, CREDIT_ACADEMIE, cen
   aideRelegation, annonceAideRelegation, LIBELLE_AIDE_RELEGATION, LIBELLE_REMBOURSEMENT,
   RESERVE, EXCEDENTS, EXCEDENT_DORMANT, TRAIN_DE_VIE, reserveCible, engagement, apportProprietaire, annonceDividende, annonceInvestissement,
   recettesImprevues, fraisDeMatch, PART_FRAIS_IMPREVUS, deficitPrevu, LIBELLE_FRAIS_MATCH,
-  recettes, semaine, proprietaire, cibleGestion, limites, annonceClauses, forme, affluence, spectateurs, ajustement, primeClassement, regles, ouverture, compter, annonce, prevision, cloture, leviers, euros });
+  recettes, semaine, proprietaire, cibleGestion, limites, annonceClauses, forme, affluence, spectateurs, ajustement, primeClassement, regles, ouverture, compter, annonce, prevision, cloture, leviers, euros, facteurHumeur, HUMEUR_PUBLIC });

@@ -130,8 +130,34 @@ func run() -> void:
 	for link: Array in [[0, "DirectionLien_Tresorerie", "Finances"], [0, "DirectionLien_Salaires", "Finances"], [0, "DirectionLien_Projection", "Finances"], [0, "DirectionLien_Semaines", "Calendrier"], [0, "DirectionLien_Releve", "Formation"], [1, "DirectionLien_Disponibles", "Effectif"], [1, "DirectionLien_Condition", "Effectif"], [1, "DirectionLien_Jauge", "Effectif"]]:
 		await check_link(link[0], link[1], link[2])
 	# Repères sans écran dédié : petite fenêtre visuelle, refermée par Échap.
-	for window: Array in [[1, "DirectionLien_Organisation", "DirectionFenetreOrganisation"], [2, "DirectionLien_Sentiment", "DirectionFenetrePublic"], [2, "DirectionLien_Affluence", "DirectionFenetrePublic"], [2, "DirectionLien_Abonnes", "DirectionFenetrePublic"]]:
+	for window: Array in [[1, "DirectionLien_Organisation", "DirectionFenetreOrganisation"], [2, "DirectionLien_Humeur", "DirectionFenetrePublic"], [2, "DirectionLien_Affluence", "DirectionFenetrePublic"], [2, "DirectionLien_Abonnes", "DirectionFenetrePublic"]]:
 		await check_window(window[0], window[1], window[2])
+	# Supporters (idée FM27 n° 15, option B de Léo) : une seule humeur, l'anneau des tribunes ; plus de « Sentiment ».
+	await open_tab(2)
+	var fans: Dictionary = app.model.clubLife.clubStrategy.fans
+	check(not fans.has("sentiment") and fans.get("humeur") != null and fans.get("supporters", {}).get("mood") == fans.get("humeur"), "Une seule humeur des supporters : %s" % str(fans.get("humeur")))
+	check(app.body.find_children("*", "Label", true, false).filter(func(l: Label): return l.is_visible_in_tree() and l.text.contains("Sentiment")).is_empty(), "Plus aucun « Sentiment » à l'écran")
+	check(find("SupportersTribunes") != null and find("SupportersBilletterie") != null, "Tribunes puis billetterie")
+	var groupes: Array = app.body.find_children("SupportersGroupe_*", "Button", true, false)
+	check(groupes.size() == 6, "Une ligne par groupe de supporters (%d)" % groupes.size())
+	if not groupes.is_empty():
+		await scroll_to(groupes[0])
+		await click_at((groupes[0] as Control).get_global_rect().get_center())
+		var groupe := PetiteFenetre.ouverte(self)
+		check(groupe != null and str(groupe.name) == "SupportersFenetreGroupe", "Ligne d'un groupe : sa petite fenêtre")
+		check(PetiteFenetre.fermer_derniere(self), "Échap referme la fenêtre du groupe")
+		await settle()
+	var anneau := find("SupportersAnneau")
+	check(anneau != null, "Anneau de l'humeur")
+	if anneau != null:
+		await scroll_to(anneau)
+		await click_at(anneau.get_global_rect().get_center())
+		var public := PetiteFenetre.ouverte(self)
+		check(public != null and str(public.name) == "DirectionFenetrePublic" and public.find_child("PublicHumeur", true, false) != null, "Centre de l'anneau : « Le public » avec l'humeur")
+		check(PetiteFenetre.fermer_derniere(self), "Échap referme « Le public »")
+		await settle()
+	await open_tab(1)
+	check(find("PlanCinqAns") != null and app.body.find_children("PlanObjectif_*", "Button", true, false).size() >= 2, "Plan des dirigeants : tableau sur 5 saisons")
 	# Cap du club depuis la pilule réelle.
 	await open_tab(1)
 	await click(find("BoardPriority_finances") as Button)
@@ -143,8 +169,9 @@ func run() -> void:
 	check(app.model.clubLife.clubStrategy.board.objectives.size() == 1, "Jalon enregistré")
 	await open_tab(1)
 	var goal: Dictionary = app.model.clubLife.clubStrategy.board.objectives[0]
-	var goal_labels: Array = app.body.find_children("*", "Label", true, false).filter(func(l: Label): return l.text.ends_with("· S%d" % int(goal.deadline)))
-	check(not goal_labels.is_empty() and not (goal_labels[0] as Label).text.contains(str(goal.type) + " ·"), "Jalon lisible (pas de « %s »)" % goal.type)
+	# Le jalon rejoint le plan sur 5 ans (sa ligne, saison en cours), libellé en clair.
+	var goal_row := find("PlanObjectif_" + str(goal.type))
+	check(goal_row != null and goal_row.find_children("*", "Label", true, false).filter(func(l: Label): return l.text.contains(str(goal.type))).is_empty(), "Jalon lisible dans le plan (pas de « %s »)" % goal.type)
 	# Une tuile d'offre agit comme sa pilule : la confirmation s'ouvre en place, Annuler ne débite rien.
 	await open_tab(1)
 	var before: float = app.model.finance.cash
@@ -178,16 +205,19 @@ func run() -> void:
 	await click(offer)
 	await confirm_in_place()
 	check(app.model.finance.cash == before + 120000, "Signature réelle et avance unique : " + app.last_error)
-	# Action locale depuis la tuile entière, confirmée en place.
+	# Action locale depuis la tuile entière : clic = appliqué (règle du 23/11/2026), sans confirmation.
 	await open_tab(2)
 	var action := find("club_fans_community_ecoles") as Button
 	before = app.model.finance.cash
+	var humeur_avant: Variant = app.model.clubLife.clubStrategy.fans.get("humeur")
 	if action != null:
 		var card := action.get_parent().get_parent().get_parent() as Control
 		await scroll_to(card)
 		await click_at(card.get_global_rect().position + Vector2(24, 24))
-		await confirm_in_place()
+		check(app.find_child("ClubConfirmation", true, false) == null, "Aucune confirmation : le clic applique")
+		await wait_model()
 	check(app.model.finance.cash == before - 1500, "Action locale débitée une seule fois : " + app.last_error)
+	check(float(app.model.clubLife.clubStrategy.fans.get("humeur", 0)) >= float(humeur_avant if humeur_avant != null else 0), "L'action locale ne baisse pas l'humeur")
 	await capture("strategie-action-locale")
 	finish()
 func finish() -> void:

@@ -2,7 +2,7 @@
 
 Six versions groupées, distinctes des Espoirs V101–V104 et de la direction sportive V105–V110.
 
-- **V111** : prévision de demande selon politique tarifaire, sentiment, campagnes et qualité d'accueil ; enregistrement commercial facultatif de créneaux fictifs 1–26, bornés à la jauge (pas des matchs réels).
+- **V111** : prévision de demande selon politique tarifaire, humeur des supporters (calculée par club-strategy.cjs, choix de Léo du 23/11/2026 : l'ancien sentiment sauvegardé est supprimé), campagnes et qualité d'accueil ; enregistrement commercial facultatif de créneaux fictifs 1–26, bornés à la jauge (pas des matchs réels).
 - **V112** : choix des tarifs fictifs 12 / 20 / 30 € ; prévision de recette évolutive.
 - **V113** : choix d'une campagne abonnements, coût unique par saison, progression du nombre suivi.
 - **V114** : jusqu'à deux actions locales distinctes par saison, coût et gain de satisfaction bornés.
