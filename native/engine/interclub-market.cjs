@@ -41,8 +41,12 @@ function factory(){
   else if(!integer(p.age,18,60)||!integer(contractEnd,S.season,9999))reason='Joueur majeur sous contrat requis';
   else if(loanIds.has(p.id))reason='Joueur concerné par un prêt';
   else if(saleBlocked(p))reason=saleBlocked(p);
-  else if(c.players.length<=releasePolicy(S).minimum)reason='Le vendeur conserve au moins '+releasePolicy(S).minimum+' professionnels';
-  else if((p.fam===0&&c.players.filter(q=>q.id!==p.id&&q.pos===p.pos).length<2)||c.players.filter(q=>q.id!==p.id&&q.fam===p.fam).length<2)reason='Le vendeur doit conserver deux joueurs de cette famille de poste';
+  // Clause libératoire (clauses-contrat.cjs) : la payer oblige le vendeur à le laisser partir malgré ses gardes d'effectif.
+  const clause=typeof clauseJoueur==='function'?clauseJoueur(p,c.id):null;
+  let garde='';
+  if(!reason&&c.players.length<=releasePolicy(S).minimum)garde='Le vendeur conserve au moins '+releasePolicy(S).minimum+' professionnels';
+  else if(!reason&&((p.fam===0&&c.players.filter(q=>q.id!==p.id&&q.pos===p.pos).length<2)||c.players.filter(q=>q.id!==p.id&&q.fam===p.fam).length<2))garde='Le vendeur doit conserver deux joueurs de cette famille de poste';
+  if(garde&&!clause)reason=garde;
   const releaseReason=reason;
   // v2 : place de la saison suivante (contrats qui continuent, arrivées et départs conclus), réservée dès l'accord.
   const pleine=v2&&typeof calRaisonPlaceSuivante==='function'?(reason?'':calRaisonPlaceSuivante(own).replace(/\.$/,'')):professionalPlaces(own,S)<=0?'Effectif acheteur complet':'';
@@ -69,6 +73,7 @@ function factory(){
   const forme=typeof CDMatchNotes!=='undefined'&&CDMatchNotes&&typeof CDMatchNotes.formeJoueur==='function'?CDMatchNotes.formeJoueur(p.id):null;
   const fm=forme?forme.matchs.map(o=>o.adversaireId==null?[Math.round(o.note*10)]:[Math.round(o.note*10),o.semaine,o.adversaireId,o.scorePour,o.scoreContre]):null;
   return {id:p.id,name:p.name,clubId:c.id,club:c.name,pos:p.pos,family:p.fam,age:p.age,contractEnd,sourceSalary,fee,salary,available:!reason,reason,releaseReason,
+   ...(clause?{clause:clause.montant}:{}),...(garde&&clause?{clauseRequise:true,garde}:{}),
    ...(pending?{pending:{date:pending.date,dateLabel:nativeVenteJoueurs.dateFr(pending.date),fee:pending.fee}}:{}),...(pre?{preContract:pre}:{}),...(fm?{forme:fm}:{})};
  }
  // Période des mutations (vente-joueurs.json, fenetres) : hors période, un accord est conclu et exécuté à l'ouverture.
@@ -110,14 +115,20 @@ function factory(){
   const seller=S.clubs[p.sellerId],player=seller.players.find(q=>q.id===p.playerId);
   check(player&&player.salary===p.sourceSalary&&player.contractEnd===p.contractEnd,'joueur ou contrat source modifié');
   const q=quote(seller,player);check(!q.releaseReason,q.releaseReason);
-  const sellerResponse={accepted:p.fee>=q.fee,counter:q.fee,reason:p.fee>=q.fee?'Le vendeur accepte cette indemnité.':'Le vendeur demande au moins '+money(q.fee)+'.'};
+  // Prix d'ouverture (offre guidée) : le vendeur accepte un peu sous sa demande et contre-propose ce minimum ; une clause
+  // libératoire payée l'oblige à accepter ; s'il ne voulait pas vendre (garde d'effectif), seule la clause le fait céder.
+  const clausePayee=Number.isSafeInteger(q.clause)&&p.fee>=q.clause;
+  const plancher=q.clauseRequise?q.clause:typeof clauseVendeurMinimum==='function'?clauseVendeurMinimum(player,q.fee):q.fee;
+  const sellerResponse=clausePayee?{accepted:true,counter:q.clause,clause:true,reason:'Clause libératoire payée : le vendeur ne peut pas refuser.'}:
+   {accepted:p.fee>=plancher,counter:plancher,reason:p.fee>=plancher?'Le vendeur accepte cette indemnité.':q.clauseRequise?q.garde+' : seule sa clause libératoire ('+money(q.clause)+') le libère.':'Le vendeur demande au moins '+money(plancher)+'.'};
   const playerResponse={accepted:p.salary>=q.salary,counter:q.salary,reason:p.salary>=q.salary?'Le joueur accepte ce salaire.':'Le joueur demande au moins '+money(q.salary)+' par semaine.'};
   const a2r=typeof a2rRefusRecrue==='function'?a2rRefusRecrue(p.salary):'',horsBudget=typeof budgetTransfertsRefus==='function'?budgetTransfertsRefus(p.fee):null,offers=[],humanReady=!a2r&&!horsBudget&&sellerResponse.accepted&&playerResponse.accepted&&affordable(S.clubs[S.club],p.fee,p.salary);
   if(humanReady)offers.push({clubId:S.club,club:S.clubs[S.club].name,fee:p.fee,salary:p.salary,need:publicNeed(S.clubs[S.club],player),human:true});
   // Hors période des mutations, les autres clubs n'enchérissent pas (ils respectent le même calendrier) : seul l'accord
   // différé du manager est possible.
   const f=mutations(),d=differe();
-  for(const c of f.ouverte?S.clubs:[]){
+  // Vendeur qui ne veut pas vendre (garde d'effectif) : seul le manager peut payer la clause ; les clubs gérés n'enchérissent pas.
+  for(const c of f.ouverte&&!q.clauseRequise?S.clubs:[]){
    if(c.id===S.club||c.id===seller.id)continue;
    const base=publicNeed(c,player);if(base<=0)continue;
    const need=base+quotaNeed(c,player);
@@ -231,7 +242,7 @@ function factory(){
   const seller=S.clubs[p.sellerId],buyer=S.clubs[S.club],player=seller.players.find(q=>q.id===p.playerId);
   check(player&&!buyer.players.some(q=>q.id===p.playerId),'joueur indisponible');
   const q=quote(seller,player);check(q.available,q.reason);check(player.salary===p.sourceSalary&&player.contractEnd===p.contractEnd,'contrat source modifié');
-  check(p.fee>=q.fee,'le vendeur refuse cette indemnité');check(p.salary>=q.salary,'le joueur refuse ce salaire');
+  check(p.fee>=(q.clauseRequise?q.clause:typeof clauseVendeurMinimum==='function'?Math.min(q.fee,clauseVendeurMinimum(player,q.fee)):q.fee)||Number.isSafeInteger(q.clause)&&p.fee>=q.clause,'le vendeur refuse cette indemnité');check(p.salary>=q.salary,'le joueur refuse ce salaire');
   check(buyer.cash-p.fee>=400000,'réserve financière insuffisante');
   const horsBudget=typeof budgetTransfertsRefus==='function'?budgetTransfertsRefus(p.fee):null;if(horsBudget)throw Error(horsBudget);check(buyer.cash-p.fee-400000>=p.salary*Math.min(8,Math.max(0,wageForecastWeeks(S)-week())),'provision salariale insuffisante');
   // Accord différé (calendrier-mutations.cjs) : v2 toujours (changement de saison), sinon hors période des mutations.
