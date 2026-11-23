@@ -18,7 +18,8 @@ test('Un centre de référence (30 Crabos, 30 Espoirs) ne change pas le résulta
   for (const club of forces) {
     const rows = week(club.id, { crabos: 30, espoirs: 30 });
     const annuel = B.recettes(forces).get(club.id);
-    const expected = -Math.round(annuel * B.FONCTIONNEMENT / 46 / 100) * 100;
+    // Fonctionnement dégressif au-delà de 20 M€ de recettes (choix de Léo du 23/11/2026).
+    const expected = -Math.round(B.fonctionnementAnnuel(annuel) / 46 / 100) * 100;
     const operations = line(rows, /fonctionnement/) + line(rows, /Centre de formation/) + rows.filter(e => e.amount > 0 && !/Partenaires|ligue|Subventions|Abonnements/.test(e.title)).reduce((s, e) => s + e.amount, 0);
     assert.ok(Math.abs(operations - expected) <= 300, `${club.division} : ${operations} contre ${expected}`);
     assert.deepEqual(rows.map(e => e.amount), week(club.id, null).map(e => e.amount), 'sans effectif connu, le centre de référence');

@@ -11,10 +11,19 @@
 //    p.dev.etale.n niveau, .c points ciblés). Ce qui reste à la transition est appliqué à ce moment-là.
 //  - Déclin de l'âge (LNR_V11_AGE, calculé comme à la transition) : appliqué chaque semaine d'entraînement au prorata
 //    (SAISON semaines), le reste à la transition ; la note de niveau suit à la transition (somme des écarts, .r).
-// Même total par saison qu'avant (scripts/mesure-progression-saison.cjs). Profils non détaillés (jeunes générés,
-// nativeAttributesV1) : inchangés.
+// Même total par saison qu'avant (scripts/mesure-progression-saison.cjs).
 // p.dev.etale = {s: saison, t: semaines d'entraînement vues, a: semaine de départ si créé en cours de saison,
 //   n: niveau en attente, c: {compétence: points ciblés en attente}, r: écart de niveau cumulé du déclin}.
+//
+// Jeunes du centre (choix de Léo du 23/11/2026, même mécanisme) : profils générés, sans attributesV2 ; leurs 36 qualités
+// sont entières (nativeAttributesV1, suivies par player-attributes.cjs d'après les compétences de match). Avant, un point
+// de niveau (séance, match, investissement du centre, accueil des centres gérés à l'intersaison) montait d'un coup les
+// 11 compétences et les 36 qualités de +1. Désormais, même réservoir (p.dev.etale.n) et même rythme : la note de niveau
+// monte tout de suite, les compétences reçoivent la part de la semaine (au centième) et les qualités montent une à une
+// (36 hausses d'un point par point de niveau, dans un ordre propre au joueur) : leur moyenne suit la part de la semaine.
+// Le suivi des qualités retranche la part versée ici (verse) pour ne pas la compter deux fois. Jeune promu en cours de
+// réservoir : le reste lui est versé de la même façon. Pas de déclin de l'âge (aucun jeune concerné), pas de .c/.r/.a
+// utiles ; l'état est effacé dès que rien n'est plus en attente.
 module.exports=function inSeasonDevelopment(){
  // Semaines d'entraînement d'une saison Monde (17 août → 5 juillet ; mesuré le 23/11/2026, 46 semaines).
  const SAISON=46;
@@ -23,6 +32,35 @@ module.exports=function inSeasonDevelopment(){
  const PAS=.1;
  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),round=n=>Math.round(n*100)/100,cents=round,dixmill=n=>Math.round(n*1e4)/1e4;
  function detailed(p){return !!p?.attributesV2&&(p.lnrRatingsVersion===1||p.worldRatingsVersion===1&&typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S)&&CDWorldCareer.sourcePlayerKnown(p.id));}
+ // Jeune du centre au profil généré (36 qualités entières) : son gain de niveau est étalé.
+ function jeune(p){return p?.academy===true&&!p.attributesV2;}
+ // Qualités des jeunes : 7 et 36 étant premiers entre eux, chaque qualité monte une fois par point de niveau, en
+ // alternant les familles (passe, plaquage, coup de pied, vitesse…) ; départ propre au joueur.
+ const ORDRE=7;
+ // Part versée aux compétences des jeunes depuis le dernier relevé d'avant commande (player-attributes.cjs).
+ let verses=new WeakMap();
+ // Hausses des qualités pour un réservoir qui passe de `avant` à `apres` points : 36 par point, une à une. Qualités pas
+ // encore créées (jeune arrivé dans la commande) : rien, elles partiront des compétences déjà versées.
+ function hausses(p,avant,apres){
+  const q=p.nativeAttributesV1;let r=Math.round(avant*36);const fin=Math.max(0,Math.round(apres*36));
+  if(r<=fin||typeof q!=='string'||!/^\d{72}$/.test(q))return;
+  const v=[];for(let i=0;i<36;i++)v.push(Number(q.slice(2*i,2*i+2)));
+  const depart=(typeof seedHash==='function'?seedHash(p.id):0)%36;
+  for(;r>fin;r--){const i=(depart+((36-r%36)%36)*ORDRE)%36;v[i]=Math.min(97,v[i]+1);}
+  p.nativeAttributesV1=v.map(x=>String(x).padStart(2,'0')).join('');
+ }
+ // Verse `part` du réservoir d'un jeune (de `avant` à `apres` points en attente) : compétences et qualités.
+ function verserJeune(p,part,avant,apres){
+  if(!part)return;
+  p.skills=Object.fromEntries(Object.entries(p.skills).map(([key,value])=>[key,round(clamp(value+part,15,99))]));
+  verses.set(p,cents((verses.get(p)||0)+part));
+  hausses(p,avant,apres);
+ }
+ // Tout ce qui reste en attente, d'un coup (profil détaillé ou jeune).
+ function solder(p,e){
+  if(!e||!(e.n||e.c))return;
+  if(p.attributesV2)appliquer(p,e.n||0,e.c||{},null);else verserJeune(p,e.n||0,e.n||0,0);
+ }
  function projected(p){return lnrProjectV12({...p,gameplayPosition:p.gameplayPosition||p.pos});}
  // Applique aux 36 qualités un gain de niveau (même valeur partout), des points ciblés (qualités de la compétence
  // visée) et un déclin par qualité. Les compétences suivent la projection ; niveau et base ne bougent pas.
@@ -61,7 +99,7 @@ module.exports=function inSeasonDevelopment(){
  function etat(p){
   const d=p.dev;let e=d.etale;
   if(e&&e.s===S.season)return e;
-  if(e){if(e.n||e.c)appliquer(p,e.n||0,e.c||{},null);delete d.etale;}
+  if(e){solder(p,e);delete d.etale;}
   const t=clamp(Math.floor(Number(S.worldMode?.week)||0),0,SAISON);
   e=d.etale={s:S.season,t};if(t)e.a=t;
   return e;
@@ -108,10 +146,25 @@ module.exports=function inSeasonDevelopment(){
   for(const p of s?.development?.academy||[])if(!vus.has(p)){vus.add(p);yield p;}
   // Marché : copies des agents libres après un rechargement ; elles doivent rester identiques au vivier.
   for(const p of Array.isArray(s?.market)?s.market:[])if(!vus.has(p)){vus.add(p);yield p;}
+  // Centres de formation des clubs gérés.
+  for(const a of s?.aiRoster?.academies||[])for(const p of a?.players||[])if(!vus.has(p)){vus.add(p);yield p;}
+  for(const a of s?.nativeAcademy?.centers||[])for(const p of a?.players||[])if(!vus.has(p)){vus.add(p);yield p;}
  }
- function hebdo(){if(typeof S==='undefined'||!S)return;for(const p of joueurs(S))if(p?.dev&&detailed(p))semaine(p);}
+ // Une semaine d'entraînement d'un jeune : part de son réservoir (même règle que semaine()), état effacé une fois vide.
+ function semaineJeune(p){
+  const e=p.dev.etale;
+  if(e.s!==S.season){solder(p,e);delete p.dev.etale;return;}
+  const reste=Math.max(1,SAISON-e.t);e.t++;
+  if(e.n){const part=cents(Math.min(e.n,Math.max(e.n/reste,PAS))),apres=cents(e.n-part);verserJeune(p,part,e.n,apres);if(apres>0)e.n=apres;else delete e.n;}
+  if(!e.n&&!e.c)delete p.dev.etale;
+ }
+ function hebdo(){if(typeof S==='undefined'||!S)return;for(const p of joueurs(S))if(p?.dev){if(detailed(p))semaine(p);else if(p.dev.etale&&!p.attributesV2)semaineJeune(p);}}
+ // Suivi des qualités (player-attributes.cjs) : part versée aux compétences d'un jeune depuis le relevé d'avant
+ // commande (à retrancher de l'écart constaté), et remise à zéro à chaque relevé.
+ function verse(p){return verses.get(p)||0;}
+ function releve(){verses=new WeakMap();}
  // Tout ce qui est en attente, d'un coup (tests).
- function liberer(p){const e=p?.dev?.etale;if(e&&(e.n||e.c)){appliquer(p,e.n||0,e.c||{},null);delete e.n;delete e.c;}}
+ function liberer(p){const e=p?.dev?.etale;if(e&&(e.n||e.c)){solder(p,e);delete e.n;delete e.c;}}
  // Transition annuelle d'un profil détaillé suivi cette saison : reste des gains et du déclin, puis note de niveau.
  function transition(p,completedSeason,e){
   const d=p.dev;
@@ -149,7 +202,13 @@ module.exports=function inSeasonDevelopment(){
    if(!Number.isFinite(xp)||xp<=0)return legacyGrow.apply(this,arguments);
    const professionalism=typeof nativePotentialEvolution!=='undefined'?nativePotentialEvolution.traits(p).professionalism:p.hiddenTraitsV2?.professionalism??50;
    const learningXP=xp*(.85+clamp(professionalism,0,100)*.003);
-   if(!detailed(p))return legacyGrow.call(this,p,learningXP,allowFocus);
+   if(!detailed(p)){
+    if(!jeune(p))return legacyGrow.call(this,p,learningXP,allowFocus);
+    // Jeune du centre : niveau tout de suite, compétences et qualités semaine après semaine.
+    const niveau=p.rating,result=legacyGrow.call(this,p,learningXP,allowFocus);
+    if(p.rating>niveau)franchir(p,p.rating-niveau,{});
+    return result;
+   }
    const level=p.rating,bonuses={...(p.dev?.specialization?.bonuses||{})};
    const flags={};for(const key of ['lnrRatingsVersion','worldRatingsVersion'])if(Object.hasOwn(p,key)){flags[key]=p[key];delete p[key];}
    let result;try{result=legacyGrow.call(this,p,learningXP,allowFocus);}finally{Object.assign(p,flags);}
@@ -183,5 +242,5 @@ module.exports=function inSeasonDevelopment(){
    Object.assign(trainWeek,avant);
   }
  }
- return Object.freeze({installHooks,validate,liberer,semaine,hebdo,SAISON});
+ return Object.freeze({installHooks,validate,liberer,semaine,hebdo,verse,releve,SAISON});
 };
