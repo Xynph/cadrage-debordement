@@ -237,7 +237,7 @@ static func _frise(fond: Control, ctx: Dictionary, W: float, y_haut: float) -> v
 		D.rect(zone, Rect2(rx - 1, y0 - 12, 2, 24), Charte.IVOIRE_2, 0)
 		if repere[0] == 0: D.text(zone, gx - 14, y0 + 6, str(repere[1]), 16, Charte.IVOIRE_2, 700, 60, HORIZONTAL_ALIGNMENT_RIGHT)
 		elif repere[0] == 80: D.text(zone, gx + gw + 14, y0 + 6, str(repere[1]), 16, Charte.IVOIRE_2, 700, 60)
-		else: D.text(zone, rx + 8, y0 + 30, str(repere[1]), 15, Charte.IVOIRE_2, 700, 40).name = "CompteRenduMiTemps"
+		else: D.text(zone, rx + 8, y0 + 30, str(repere[1]), 15, Charte.IVOIRE_2, 700, R.largeur("MT", 15) + 4).name = "CompteRenduMiTemps"
 	# Une rangée d'étiquettes par camp, sans chevauchement : une étiquette trop proche de la précédente glisse à droite,
 	# puis, en partant de la fin, à gauche si la rangée déborde ; reliée à son repère par un coude.
 	var rangees := [[], []]
@@ -248,7 +248,11 @@ static func _frise(fond: Control, ctx: Dictionary, W: float, y_haut: float) -> v
 		var o: Array = ORIGINES.get(str(essai.get("origin", "j")), ORIGINES.j)
 		var lw := R.largeur(nom, 17) + 64 + (22.0 if o[1] != "ball" else 0.0)
 		rangees[camp].append({"essai": essai, "ex": gx + gw * float(_n(essai.get("minute"))) / fin, "nom": nom, "o": o, "lw": lw})
-	for rangee: Array in rangees:
+	# « MT » est écrit sous la frise, à droite du repère de la 40e : la rangée du dessous le contourne.
+	var mt_x := gx + gw * 40.0 / fin
+	var mt := Vector2(mt_x + 2.0, mt_x + 14.0 + R.largeur("MT", 15))
+	for camp in 2:
+		var rangee: Array = rangees[camp]
 		# Rangée trop longue pour la carte : le nom de famille seul.
 		var total := 0.0
 		for e: Dictionary in rangee: total += float(e.lw) + 10.0
@@ -261,11 +265,13 @@ static func _frise(fond: Control, ctx: Dictionary, W: float, y_haut: float) -> v
 		var bout := 4.0 - 10.0
 		for e: Dictionary in rangee:
 			e.lx = maxf(float(e.ex) - float(e.lw) / 2.0, bout + 10.0)
+			if camp == 1 and float(e.lx) < mt.y and float(e.lx) + float(e.lw) > mt.x: e.lx = mt.y + 6.0
 			bout = float(e.lx) + float(e.lw)
 		var debut := W - 4.0 + 10.0
 		for k in range(rangee.size() - 1, -1, -1):
 			var e: Dictionary = rangee[k]
 			e.lx = maxf(4.0, minf(float(e.lx), debut - 10.0 - float(e.lw)))
+			if camp == 1 and float(e.lx) < mt.y and float(e.lx) + float(e.lw) > mt.x: e.lx = maxf(4.0, mt.x - 6.0 - float(e.lw))
 			debut = float(e.lx)
 	var compte := [0, 0]
 	for e: Dictionary in rangees[0] + rangees[1]:

@@ -210,7 +210,34 @@ func run() -> void:
 			check(fiche_id == adverse_id, "Fiche du bon club : %s / %s" % [fiche_id, adverse_id])
 			destinations.append("BilanClubAdverse [fenêtre] -> %s" % app.route)
 	await article_compte_rendu(report)
+	await essai_apres_mi_temps(report)
 	finish()
+
+## Essais juste avant et juste après la 40e (les deux camps) : aucune étiquette de la frise ne couvre « MT ».
+func essai_apres_mi_temps(report: Dictionary) -> void:
+	var origine: Array = (report.get("essais", []) as Array).duplicate(true)
+	var essais := origine.duplicate(true)
+	for e: Array in [[39, 0], [40, 1], [41, 1], [41, 0], [42, 1]]:
+		essais.append({"minute": e[0], "side": e[1], "id": null, "name": "Mathéo ESSAI-MT", "origin": "j", "zone": 30})
+	essais.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a.minute) < int(b.minute))
+	app.model.decisions.report.essais = essais
+	for t: Vector2i in [Vector2i(2560, 1440), Vector2i(1920, 1080)]:
+		await taille(t)
+		var avant := await avant_match()
+		if avant == null or not await ouvrir_bilan("essai après 40'"): continue
+		var mt := app.find_child("CompteRenduMiTemps", true, false) as Control
+		check(mt != null, "%dx%d : « MT » sur la frise" % [t.x, t.y])
+		if mt == null: continue
+		var etiquettes: Array = app.find_children("CompteRenduFriseEtiquette*", "", true, false)
+		check(etiquettes.size() == essais.size(), "%dx%d : une étiquette par essai (%d)" % [t.x, t.y, etiquettes.size()])
+		for i in etiquettes.size():
+			check(not rect(etiquettes[i]).grow(-1).intersects(rect(mt)), "%dx%d : %s ne couvre pas « MT » %s / %s" % [t.x, t.y, etiquettes[i].name, rect(etiquettes[i]), rect(mt)])
+			for j in range(i + 1, etiquettes.size()):
+				check(not rect(etiquettes[i]).grow(-1).intersects(rect(etiquettes[j]).grow(-1)), "%dx%d : %s et %s sans chevauchement" % [t.x, t.y, etiquettes[i].name, etiquettes[j].name])
+		await capture("fenetre-mt-%dx%d" % [t.x, t.y])
+		await touche(KEY_ESCAPE)
+	app.model.decisions.report.essais = origine
+	destinations.append("Frise : essais autour de la 40e sans recouvrir « MT »")
 
 ## Réception : l'article du dernier match porte la carte complète (frise, le match avec le public, stats, marqueurs).
 func article_compte_rendu(report: Dictionary) -> void:
