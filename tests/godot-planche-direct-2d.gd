@@ -132,7 +132,7 @@ func run() -> void:
 	await essayer("ligne du classement", "MatchFenetreClub", "direct-2d-fenetre-club-2560", func(): ligne.gui_input.emit(clic), ligne != null, view)
 	var rencontre: Control = premier.call(between.multiplex_cartes, "MatchBetweenMultiplexMatch*", "PanelContainer")
 	await essayer("carte du multiplex", "MatchFenetreMatch", "direct-2d-fenetre-match-2560", func(): rencontre.gui_input.emit(clic), rencontre != null, view)
-	var stat: Button = premier.call(between, "MatchBetweenMirror_possession_0", "Button")
+	var stat: Button = premier.call(between, "MatchBetweenMirrorBar_possession", "Button")
 	await essayer("ligne de chiffre", "MatchFenetreStat", "direct-2d-fenetre-stat-2560", func(): stat.pressed.emit(), stat != null, view)
 	var fait: Control = premier.call(between, "MatchBetweenEvent*", "PanelContainer")
 	if fait == null: fait = premier.call(between, "MatchBetweenHighlight*", "PanelContainer")

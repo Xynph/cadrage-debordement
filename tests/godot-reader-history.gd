@@ -133,11 +133,12 @@ func run() -> void:
 	check(date_button != null, "La date historique est un vrai lien vers le calendrier")
 	if date_button == null: await finish(); return
 	await activate(date_button)
-	check(app.route == "Calendrier" and app.management_ui.calendar_reading.selected == str(historical.date), "La date cible le calendrier réellement projeté")
+	# Date : programme du mois (Entraînement › Mois, qui remplace la grille du Calendrier depuis le 22/11/2026), fenêtre du jour.
+	check(app.route == "Préparation" and int(app.management_ui.get("immersive_training", {}).get("tab", -1)) == 5 and str(app.management_ui.immersive_training.get("mois", "")) == str(historical.date).substr(0, 7) and named("TrainingMonthDayWindow") != null, "La date cible le programme du mois réellement projeté")
 	nav._travel(-1)
 	await settle()
 	detail = named("CompetitionFixtureDetails")
-	check(app.route == "Classements" and detail != null and str(detail.get_meta("entity_id", "")) == str(historical.id), "Précédent depuis le calendrier restitue la page de la rencontre")
+	check(app.route == "Classements" and detail != null and str(detail.get_meta("entity_id", "")) == str(historical.id), "Précédent depuis le programme du mois restitue la page de la rencontre")
 	check(visible_readers() == 0, "Aucune fenêtre ne s'ouvre pendant la navigation de la rencontre")
 	check(app.bridge._next_id == requests, "Tous les liens et retours sont sans commande worker")
 	check(saved == FileAccess.get_file_as_bytes(save_path), "Sauvegarde strictement identique après consultations et retours")

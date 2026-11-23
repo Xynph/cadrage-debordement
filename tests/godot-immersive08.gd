@@ -794,28 +794,9 @@ func resize_shell() -> void:
 	await settle()
 	app._navigate("Calendrier")
 	await settle()
-	var monthly: Control = app.find_child("CalendarMonthGrid",true,false)
-	check(monthly!=null,"La vue mensuelle s’ouvre par défaut")
-	var day: Control = app.find_child("MonthDay_"+str(app.model.calendarPlanning.today),true,false)
-	# Le jour courant est soit un jour du compte à rebours, soit (carrière Monde avancée jusqu'au coup d'envoi) le jour même du prochain match.
-	var next_day: String = str(app.model.next.date) if app.model.get("next") is Dictionary else ""
-	check(day!=null and (day.get_meta("countdown",false) or str(app.model.calendarPlanning.today)==next_day),"Le jour courant précède le prochain match ou en est le jour · today=%s next=%s" % [str(app.model.calendarPlanning.today),next_day])
-	await capture("49-calendrier-mensuel-1440x900")
-	var show_table: Button = app.find_child("CalendarShowTable",true,false)
-	check(show_table!=null,"Le tableau historique reste accessible depuis la vue mensuelle")
-	if show_table!=null:
-		# En 1440 × 900 le bouton « Tableau » de la vue mensuelle du Monde se trouve sous le pli : on le fait défiler dans la vue avant de cliquer.
-		var scroller := show_table.get_parent()
-		while scroller!=null:
-			if scroller is ScrollContainer: scroller.ensure_control_visible(show_table)
-			scroller=scroller.get_parent()
-		await settle()
-		await click(show_table)
-		await settle()
-		if not app.get_meta("calendar_table",false):
-			print("DIAG tableau : clic sans effet, bouton ",show_table.get_global_rect()," visible=",show_table.is_visible_in_tree()," fenêtre=",root.size," app=",app.size)
-			show_table.pressed.emit()
-			await settle()
+	# Depuis le 22/11/2026, le programme jour par jour (ancienne grille mensuelle) est dans Entraînement › Mois :
+	# le Calendrier ouvre directement la liste des rencontres.
+	check(app.find_child("CalendarMonthGrid",true,false)==null,"Calendrier : liste des rencontres, plus de grille mensuelle")
 	var locations: Array[String] = []
 	for marker: TextureRect in app.find_children("CalendarLocation","TextureRect",true,false):
 		locations.append(marker.accessibility_name)
@@ -823,10 +804,7 @@ func resize_shell() -> void:
 	check(locations.any(func(label): return "extérieur" in label),"Le Calendrier identifie les déplacements")
 	await capture("14-calendrier-reperes-1440x900")
 	var show_month: Button = app.find_child("CalendarShowMonth",true,false)
-	check(show_month!=null,"La vue mensuelle reste accessible depuis le tableau")
-	if show_month!=null:
-		await click(show_month)
-		await settle()
+	check(show_month!=null,"Le programme du mois reste accessible depuis le Calendrier")
 	root.size = Vector2i(2560,1440)
 	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
 	await settle()
@@ -1067,7 +1045,7 @@ func desktop_1080() -> void:
 				if observe!=null: check(Rect2(Vector2.ZERO,app.size).encloses(observe.get_global_rect()),"Travail du club : « Voir l'entraînement » entier dans la fenêtre")
 			if route in ["Classements","Recrutement","Club","Carrière"]: await capture(family[2]+"-1280x720")
 		elif route=="Calendrier":
-			check(app.find_child("CalendarMonthGrid",true,false)!=null,"Grille mensuelle visible en 720p")
+			check(app.find_child("CalendarShowMonth",true,false)!=null,"Calendrier en 720p : liste et lien vers le programme du mois")
 		elif route=="Rivalités":
 			var hero := app.find_child("RivalryHero",true,false) as Control
 			var photo := hero.find_child("Art_stadium",true,false) as TextureRect if hero!=null else null
