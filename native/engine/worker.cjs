@@ -1292,6 +1292,8 @@ function createBridge(options={}){
      run("nativeSystems.domain('doublons').observe();");
      // Fragilité des joueurs créés (fragilite.cjs) : tirée à la création, posée aussi sur les anciennes carrières.
      run("nativeSystems.domain('fragilite').observe();");
+     // Familiarité au poste (familiarite-poste.cjs) : valeur de départ posée sur les joueurs créés et les anciennes carrières.
+     run("nativeSystems.domain('familiarite').observe();");
      // Règle « Auto » par forme (dist/development.js) : posée à la création et sur les anciennes carrières (clé toujours
      // présente : les lectures mémorisées de la projection restent valides d'une commande à l'autre).
      run("if(S&&typeof intensiteAutoValide==='function'&&!intensiteAutoValide(S.intensiteAuto))S.intensiteAuto=INTENSITE_AUTO_DEFAUT.slice();");
