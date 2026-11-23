@@ -73,6 +73,12 @@ const NORMAL := Color("7fbf7a")       ## séance normale
 const INTENSIF := Color("e0a04a")     ## séance intensive
 const GAIN := Color("7fbf7a")         ## écart favorable ▲
 const PERTE := Color("d9634f")        ## écart défavorable ▼
+## Rôle promis au contrat (décision de Léo du 23/11/2026, idées FM 12, 16 et 18) : une couleur par rôle, toujours avec le
+## mot. Libellés et pastille communs : ui/role_contrat.gd.
+const ROLE_TITULAIRE := Color("5b9bd5") ## bleu
+const ROLE_ROTATION := Color("a88bd6")  ## violet
+const ROLE_ESPOIR := Color("4fb3a9")    ## turquoise
+const ROLE_APPOINT := GRIS_VERT         ## gris
 ## Note de match excellente (7,5 et plus, barème des notes de Léo du 21/11/2026).
 const NOTE_EXCELLENTE := Color("3f9a5a")
 
