@@ -28,6 +28,7 @@ const Sales = preload("res://ui/player_sales_view.gd")
 const FicheCharge = preload("res://ui/immersive08/fiche_charge.gd")
 const FicheRoles = preload("res://ui/immersive08/fiche_roles.gd")
 const TempsJeu = preload("res://ui/immersive08/fiche_temps_jeu.gd")
+const Progression = preload("res://ui/immersive08/progression_fiche.gd")
 
 ## Onglets : [index d'état, libellé]. L'index 1 (ancien onglet Attributs) n'existe plus : ses 36 attributs sont en
 ## première page ; un état resté sur 1 ouvre la Vue d'ensemble.
@@ -127,6 +128,9 @@ static func build(app:Control,player:Dictionary,source:String="squad") -> Contro
 			_selection(D.panel(page,Rect2(1686,top+536,562,270),"SÉLECTION","flag","","PlayerSelectionNotes"),app,player)
 		3:
 			_contrat_temps_jeu(page,app,player,top)
+		4 when source=="squad" and not Progression.valeurs(player).is_empty():
+			# Progression par qualité (idée FM27 n° 14) : courbe 12 mois du relevé mensuel, grille des 36 qualités à cocher.
+			Progression.construire(page,app,player,top)
 		4:
 			_development(D.panel(page,Rect2(0,top,1670,560),"DÉVELOPPEMENT ET PROGRESSION","school","","PlayerDevelopmentCard"),app,player,source)
 			var poste := BanqueImages.poste(str(player.get("pos", "")))
