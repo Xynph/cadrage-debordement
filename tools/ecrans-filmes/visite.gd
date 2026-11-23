@@ -106,6 +106,7 @@ const EXTRAS := [
 	{"id": "classements-calendrier", "libelle": "Classements · onglet Calendrier (tableau)", "type": "classements_onglet", "onglet": "calendar"},
 	{"id": "recrutement-entre-clubs", "libelle": "Recrutement · sous-page Marché entre clubs", "type": "recrutement_sous", "page": "interclub"},
 	{"id": "recrutement-entre-clubs-offre", "libelle": "Recrutement · Marché entre clubs, offre guidée par le recruteur", "type": "recrutement_sous", "page": "interclub", "offre": true},
+	{"id": "recherche-ciblee", "libelle": "Recrutement · recherche ciblée (poste, rôle, critères, joueurs observés)", "type": "recherche_ciblee"},
 	{"id": "recrutement-rapport-recruteur", "libelle": "Recrutement · Rapport du recruteur", "type": "recrutement_sous", "page": "recruteur"},
 	{"id": "agent-discussion", "libelle": "Recrutement · discussion avec l'agent", "type": "recrutement_sous", "page": "recruteur", "presser": "RapportAgentOuvrirLien"},
 	{"id": "agent-ton", "libelle": "Recrutement · discussion avec l'agent, ton à tout prix puis rôle attendu", "type": "recrutement_sous", "page": "recruteur", "presser": "RapportAgentOuvrirLien", "puis": ["AgentTon_tout_prix", "AgentQuestion_role"]},
@@ -121,6 +122,8 @@ const EXTRAS := [
 	{"id": "strategie-public", "libelle": "Club › Direction · petite fenêtre Le public", "type": "strategie_onglet", "onglet": 2, "zone": "DirectionLien_Humeur"},
 	{"id": "club-infrastructures", "libelle": "Club · onglet Infrastructures", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "infrastructure", "repos": "overview"},
 	{"id": "club-histoire", "libelle": "Club · onglet Histoire", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "history", "repos": "overview"},
+	## Staff par service (23/11/2026) : un poste en plus visé (même commande que le clic « + ») dans chaque service qui a un membre en surnombre.
+	{"id": "staff-services-renfort", "libelle": "Staff par service · postes en plus visés", "type": "staff_services"},
 	{"id": "vestiaire-entretiens", "libelle": "Vestiaire · onglet Entretiens et duos", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week"},
 	{"id": "selections-offres", "libelle": "Sélections · onglet Offres", "type": "onglet_cle", "route": "Sélections", "cle": "international_section", "onglet": "offers", "repos": "callups"},
 	{"id": "selections-disponibilites", "libelle": "Sélections · onglet Disponibilités", "type": "onglet_cle", "route": "Sélections", "cle": "international_section", "onglet": "availability", "repos": "callups"},
@@ -782,6 +785,21 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				salaire.pressed.emit()
 				await stabiliser()
 				if app.find_child("OffreFenetreSalaire", true, false) == null: return {"statut": "echec", "note": "petite fenêtre du salaire non ouverte"}
+		"recherche_ciblee":
+			app.management_ui.erase("recrutement_page")
+			app._navigate("Recrutement")
+			await stabiliser()
+			if app.route != "Recrutement": return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
+			var Recherche = load("res://ui/immersive08/recherche_ciblee.gd")
+			var etat_r: Dictionary = Recherche._etat(app)
+			etat_r.poste = 8
+			etat_r.role = str(load("res://ui/immersive08/fiche_roles.gd").roles_famille(Recherche._famille_role(etat_r))[0][0])
+			etat_r.note = 0
+			var bouton_r := app.find_child("RechercheCibleeOuvrir", true, false) as Button
+			if bouton_r == null: return {"statut": "echec", "note": "lien Recherche ciblée absent"}
+			bouton_r.pressed.emit()
+			await stabiliser()
+			if app.find_child("RechercheCibleeFenetre", true, false) == null: return {"statut": "echec", "note": "fenêtre absente"}
 		"recrutement_sous":
 			app.management_ui.erase("recrutement_page")
 			app._navigate("Recrutement")
@@ -844,6 +862,18 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			suivi.pressed.emit()
 			await stabiliser()
 			if app.find_child("FormationRetour", true, false) == null: return {"statut": "echec", "note": "la sous-page ne s'est pas ouverte"}
+		"staff_services":
+			var services: Array = app.model.get("clubLife", {}).get("staffServices", {}).get("services", [])
+			if services.is_empty(): return {"statut": "indisponible", "note": "staff par service absent"}
+			for s: Dictionary in services:
+				if (s.get("surnombre", []) as Array).is_empty() or int(s.get("cible", 0)) > 0: continue
+				app._command("staff_services_target", {"service": str(s.id), "cible": 1})
+				while app.waiting: await process_frame
+			app.management_ui.erase("staff_services_vue")
+			app.StaffViews.reading(app).navigation_id = ""
+			app._navigate("Staff")
+			await stabiliser()
+			if app.find_child("StaffService_coaching", true, false) == null: return {"statut": "echec", "note": "vue par service absente"}
 		"calendrier_semaine":
 			app._navigate("Calendrier")
 			await stabiliser()
@@ -1196,6 +1226,9 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 
 ## Remet l'écran dans son état ordinaire après la capture.
 func refermer(ecran: Dictionary) -> void:
+	if str(ecran.type) == "recherche_ciblee":
+		load("res://ui/petite_fenetre.gd").fermer_derniere(app.get_tree())
+		app.management_ui.erase("recherche_ciblee")
 	if str(ecran.type) == "calendrier_semaine":
 		var mois: Node = app.find_child("CarnetCalendar", true, false)
 		if mois != null and mois.has_method("_view_as"): mois._view_as("month")

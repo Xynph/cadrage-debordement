@@ -191,6 +191,18 @@ func trouver(nom: String) -> Control:
 	var n := node(nom)
 	return n if n != null else root.find_child(nom, true, false) as Control
 
+## Visages d'agents (banque art/agents) : numéro `portrait` de la fiche projetée, numéro affiché par une photo (meta
+## posée seulement quand la photo de la banque est chargée ; -1 : nœud absent, 0 : repli sur la réserve du staff).
+func visage_projete(joueur_id: String) -> int:
+	var vue: Dictionary = app.model.get("clubLife", {}).get("agentsJoueurs", {})
+	return int(vue.get("agents", {}).get(str(vue.get("joueurs", {}).get(joueur_id, "")), {}).get("portrait", 0))
+
+func visage_affiche(nom: String) -> int:
+	var n := trouver(nom)
+	if n == null: return -1
+	if not n.has_meta("agent_portrait") and n.get_child_count() > 0: n = n.get_child(0) as Control
+	return int(n.get_meta("agent_portrait", 0)) if n != null else -1
+
 func presser(nom: String) -> bool:
 	var b := trouver(nom) as Button
 	if b == null or b.disabled: return false
@@ -217,11 +229,15 @@ func agent() -> void:
 	var nom_agent := str(a0.get("nom", ""))
 	check(not nom_agent.is_empty() and nom_agent != "L’agent" and texte_bouton("AgentNom") == nom_agent, "En-tête : nom de l'agent (%s / %s)" % [nom_agent, texte_bouton("AgentNom")])
 	check(trouver("AgentPortraitPhoto") != null and trouver("AgentVisage") != null, "Portrait de l'agent en tête et dans ses bulles")
+	var visage := visage_projete(piste_id)
+	check(visage >= 1 and visage <= 60 and visage_affiche("AgentPortraitPhoto") == visage and visage_affiche("AgentVisage") == visage,
+		"Visage de l'agent (banque) en tête et dans ses bulles : %d / %d / %d" % [visage, visage_affiche("AgentPortraitPhoto"), visage_affiche("AgentVisage")])
 	check(trouver("AgentEchelleAttitude") == null and trouver("AgentPalier0") == null and trouver("AgentRelationCran_4") != null, "Relation une seule fois (en-tête), pas d'échelle au-dessus du fil")
 	check(trouver("AgentSujet") != null and trouver("AgentJoueurNom") != null, "Carte « Au sujet de » : le joueur")
 	check(trouver("AgentClient_0") != null and trouver("AgentClientVise") != null and trouver("AgentClientsTitre") != null, "Ses joueurs : liste, joueur concerné surligné")
 	check(texte("AgentBulleAccueilTexte").contains("mon client"), "L'agent parle de son client (%s)" % texte("AgentBulleAccueilTexte"))
 	check(await presser("AgentNom") and trouver("FenetreAgentJoueur") != null and texte("FenetreAgentNom") == nom_agent and trouver("FenetreAgentClient_0") != null, "Clic sur le nom : petite fenêtre de l'agent")
+	check(visage_affiche("FenetreAgentPortraitPhoto") == visage, "Petite fenêtre : même visage (%d)" % visage_affiche("FenetreAgentPortraitPhoto"))
 	await settle(10)
 	shot("final-fenetre-agent-%d" % root.size.x)
 	PetiteFenetre.fermer_derniere(self)
@@ -253,6 +269,7 @@ func agent() -> void:
 	await settle(10)
 	check(trouver("NegoPropo_1") == null and trouver("NegoHumeur") != null, "Offre : humeur de l'agent, plus de ronds numérotés")
 	check(texte_bouton("NegoAgentNom") == nom_agent and trouver("NegoAgentAvatarPhoto") != null, "Offre : nom et portrait de l'agent (%s)" % texte_bouton("NegoAgentNom"))
+	check(visage_affiche("NegoAgentAvatarPhoto") == visage_projete(piste_id), "Offre : même visage d'agent (%d)" % visage_affiche("NegoAgentAvatarPhoto"))
 	check(texte("NegoRelationAgent") == "Bonne" and texte("NegoCaractere") == mot and trouver("NegoEffetRelationDemande") == null, "Offre : relation sans chiffre, caractère (%s · %s)" % [texte("NegoRelationAgent"), texte("NegoCaractere")])
 	shot("final-offre-agent-%d" % root.size.x)
 	check(texte("OffreEtapeTexte") == "Proposition 1", "Offre : étape sans total (%s)" % texte("OffreEtapeTexte"))
@@ -279,6 +296,8 @@ func reception_et_fiche() -> void:
 	app._navigate("Réception", false)
 	await settle(12)
 	check(node("InboxAgentPortraitPhoto") != null, "Réception : portrait de l'agent")
+	check(visage_affiche("InboxAgentPortraitPhoto") == int(ag.get("portrait", 0)) and visage_affiche("InboxRowAgentFacePhoto") == int(ag.get("portrait", 0)),
+		"Réception : même visage dans le courrier et sa ligne (%d / %d / %d)" % [int(ag.get("portrait", 0)), visage_affiche("InboxAgentPortraitPhoto"), visage_affiche("InboxRowAgentFacePhoto")])
 	var nom := node("InboxSenderName") as Label
 	check(nom != null and nom.text == str(ag.nom), "Réception : nom de l'agent (%s)" % (nom.text if nom != null else "?"))
 	shot("final-reception-agent-%d" % root.size.x)
@@ -293,6 +312,7 @@ func reception_et_fiche() -> void:
 	var lien := node("PlayerAgentLink") as Button
 	var a2: Dictionary = vue.get("agents", {}).get(str(vue.get("joueurs", {}).get(str(joueur.id), "")), {})
 	check(lien != null and lien.text == "Agent : " + str(a2.get("nom", "?")), "Fiche joueur : « Agent : <nom> » (%s)" % (lien.text if lien != null else "?"))
+	check(int(a2.get("portrait", 0)) >= 1 and visage_affiche("PlayerAgentFace") == int(a2.get("portrait", 0)), "Fiche joueur : visage de l'agent (%d)" % visage_affiche("PlayerAgentFace"))
 	shot("final-fiche-joueur-%d" % root.size.x)
 	if lien != null:
 		lien.pressed.emit()

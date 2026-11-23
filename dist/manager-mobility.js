@@ -10,8 +10,13 @@ function managerMobilityEnable(){
  try{S.managerMobilityVersion=1;S.managerMobility={version:1,originClub:S.club,enabledSeason:S.season,currentFrom:S.season,pending:null,applications:[],history:[],archives:[]};validateCareer(S)}catch(error){S=before;throw error}
  save();render();return true;
 }
+// Identifiants des clubs d'une division dans l'ordre du classement. En carriere Monde, CDWorldCareer.ranked recopie chaque club en entier
+// (joueurs compris) : on lit seulement les lignes de classement, pour que l'avis des clubs ne depende pas des joueurs du club.
+function managerMobilityRankIds(id){
+ return typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S)?CDWorldCareer.rows(S,CDWorldCareer.leagueId(S,id)).map(r=>r.clubId):S.franceMode&&typeof CDFranceCompetition!=='undefined'?CDFranceCompetition.ranked(S,CDFranceCompetition.leagueId(S,id)).map(c=>c.id):ranked().map(c=>c.id);
+}
 function managerMobilityProfile(){
- const international=typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S),position=ranked().findIndex(c=>c.id===S.club)+1,n=S.franceMode||international?ranked().length:14;
+ const international=typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S),ids=managerMobilityRankIds(S.club),position=ids.indexOf(S.club)+1,n=S.franceMode||international?ids.length:14;
  return clamp(Math.round(worldClub(S.club).reputation*.6+S.trust*.2+(n+1-position)/n*20),0,100);
 }
 function managerMobilityDecision(id){
@@ -24,7 +29,7 @@ function managerMobilityOutlook(id){
  const international=typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S);
  if(!S||!Number.isInteger(id)||id<0||id>=S.clubs.length||id===S.club||international&&CDWorldCareer.leagueId(S,id)==='guest')return null;
  const c=S.clubs[id],w=worldClub(id),risk=CDCoachMarket.dismissalRisk({confidence:w.coachConfidence,consecutiveLosses:w.consecutiveLosses});
- const rank=(international?CDWorldCareer.ranked(S,CDWorldCareer.leagueId(S,id)):S.franceMode&&typeof CDFranceCompetition!=='undefined'?CDFranceCompetition.ranked(S,CDFranceCompetition.leagueId(S,id)):ranked()).findIndex(x=>x.id===id)+1,reputation=managerMobilityProfile(),budget=Math.max(0,c.cash-w.debt);
+ const rank=managerMobilityRankIds(id).indexOf(id)+1,reputation=managerMobilityProfile(),budget=Math.max(0,c.cash-w.debt);
  // Affinite V48 reutilisee, sans inventer de remuneration ni paiement.
  const proposal=CDCoachMarket.jobOffers([{id:'club-'+id,vacant:true,budget,reputation:w.reputation}],{salary:0,reputation})[0];
  const reason=c.cash<0||w.debt>Math.max(c.cash,0)?'finances':risk.risk<35&&rank<8?'stable':reputation+15<w.reputation?'reputation':'offer';

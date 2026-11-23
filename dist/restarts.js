@@ -2,7 +2,7 @@
 // Atomic match sequences, pinned to the 2025 laws. The clock/advantage engine
 // remains separate; each restart has a cause, beneficiary and longitudinal mark.
 const RESTART_AUTH=new WeakMap();
-const RESTART_CAUSES={scrum:['knock-on','forward-pass','kick-dead-option','defender-grounded'],lineout:['carry-touch','indirect-touch','direct-touch','penalty-touch','50-22','missed-goal-touch'],kickoff:['start','second-half','score','extra-first','extra-second'],drop22:['missed-goal-dead','kick-dead'],goalLine:['held-up','attacking-kick-grounded','ingoal-knock-on']};
+const RESTART_CAUSES={scrum:['knock-on','forward-pass','kick-dead-option','defender-grounded','penalty-scrum'],lineout:['carry-touch','indirect-touch','direct-touch','penalty-touch','50-22','missed-goal-touch'],kickoff:['start','second-half','score','extra-first','extra-second'],drop22:['missed-goal-dead','kick-dead'],goalLine:['held-up','attacking-kick-grounded','ingoal-knock-on']};
 function restartRules(l){return l.restartVersion===1}
 function ownGoal(side){return side===0?0:100}
 function attackingGoal(side){return ownGoal(1-side)}
@@ -31,8 +31,8 @@ function performKickRestart(l,kind,team,cause,by){
  const name=kind==='kickoff'?(cause==='start'?'coup d’envoi':cause==='second-half'?'coup d’envoi de la seconde période':'renvoi au centre'):kind==='drop22'?'renvoi aux 22 mètres':'drop de renvoi sur la ligne d’essai';
  const policy=kickoffPolicy(l,team,kind),kicker=actionPlayer(l,team,'kicker');addEvent(l,`${kicker?.name||S.clubs[l.pair[team]].abbr} (${S.clubs[l.pair[team]].abbr}) effectue le ${name}${cause==='score'?' après les points encaissés':''}${policy.choice!=='normal'?' · '+KICKOFF_MOVES[policy.choice][0].toLowerCase():''}.`,'restart',{kind,team,actor:kicker?.id||null,from:{x:at,y:35},to:{x:at,y:35},possession:team,move:policy.choice});
  const pr=l.pilotage&&typeof pilotageRenvoi==='function'?pilotageRenvoi(l,team):{distance:1,garde:0};
- const distance=Math.round((policy.distance?rand(...policy.distance):kind==='kickoff'?rand(15,25):kind==='drop22'?rand(20,32):rand(18,30))*pr.distance),landing=clamp(at+(team===0?1:-1)*distance,1,99);
- const retain=Math.random()<clamp(.12+policy.retain+pr.garde+(unit(l,team,'kick')-unit(l,1-team,'mental'))*.002,pr.garde<0?.03:.05,pr.garde>0?.36:.22);
+ const distance=Math.round((policy.distance?rand(...policy.distance):kind==='kickoff'?rand(15,25):kind==='drop22'?rand(20,32):rand(18,30))*pr.distance)+(policy.extra||0),landing=clamp(at+(team===0?1:-1)*distance,1,99);
+ const retain=Math.random()<clamp(.12+policy.retain+pr.garde+(unit(l,team,'kick')-unit(l,1-team,'mental'))*.002,pr.garde<0?.03:.05,(pr.garde>0?.36:.22)+(policy.plafond||0));
  ballPossession(l,retain?team:1-team,landing);let receiver=actionPlayer(l,l.possession,'receiver');
  // Ballon repris par l'équipe qui botte : un partenaire qui a suivi le coup de pied, jamais le botteur lui-même
  // (il botte du centre, le ballon tombe 15 à 25 m plus loin ; le chorégraphe ne peut pas mettre en scène un botteur receveur).

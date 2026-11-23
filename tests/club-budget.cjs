@@ -187,7 +187,9 @@ test('Moteur, carrière marquée : salaire demandé selon le niveau, prolongatio
  const ancienBareme=sans.lire("managerPool()[0].salary");
  assert.ok(libre.demande>=10&&libre.demande<ancienBareme/2,'un joueur libre demande un salaire de son niveau, pas l’ancien barème ('+ancienBareme+') : '+JSON.stringify(libre));
  assert.ok(libre.plancher<=Math.ceil(libre.demande*1.2/100)*100);
- assert.equal(sans.lire("(()=>{const p=managerPool()[0];return askingWage(p,'recruit')===p.salary})()"),true,'sans la marque, la demande d’un joueur libre reste son salaire affiché');
+ assert.equal(sans.lire("(()=>{const p=managerPool()[0];return salaryDemandBreakdown(p,'recruit').asked===p.salary})()"),true,'sans la marque, la demande de base d’un joueur libre reste son salaire affiché');
+ // L’agent nommé (#1209, ton-agent.cjs) ajoute au marché un écart du jour (demande ±4 %, tirage seulement) quelle que soit la carrière : seul ce petit écart sépare la demande affichée de la base.
+ assert.equal(sans.lire("(()=>{const p=managerPool()[0];return Math.abs(askingWage(p,'recruit')/p.salary-1)<=.05})()"),true,'l’écart de l’agent reste borné à ±4 % (marge d’arrondi)');
 });
 test('Moteur, carrière marquée : des comptes illisibles dans une sauvegarde sont rouverts, sans arrêt du jeu',()=>{
  for(const casse of ["S.clubBudget.clubs.pop()","S.clubBudget.clubs[3].type='inconnu'","S.clubBudget.clubs[29].recettes=null","delete S.clubBudget","S.clubBudget.alertes=7"]){
