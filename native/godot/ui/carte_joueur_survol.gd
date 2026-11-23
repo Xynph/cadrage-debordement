@@ -5,9 +5,8 @@ extends RefCounted
 ## Fiche complète (option A choisie par Léo le 21/11/2026, à 75 % de sa taille d'essai) : en-tête, grille des 36
 ## attributs, rapport du staff (niveau et potentiel en chiffres et jauges), état, postes.
 ## Dans le direct, l'état du joueur dans le match (note, énergie, plaquages…) passe en tête.
-## Étoiles d'adaptabilité au poste (sur 5, demi-étoiles) : note au poste du moteur rapportée à son meilleur poste,
-## voir `etoiles_poste` ; la note du joueur reste son niveau de base. Règle de Léo : les étoiles ne servent qu'à la
-## capacité au poste, jamais au niveau.
+## Postes : note au poste sur 100 (moteur, colorée) + familiarité au poste en barres 5 crans (familiarite_poste.gd,
+## choix de Léo du 23/11/2026 : plus aucune étoile de poste) ; la note du joueur reste son niveau de base.
 ## Exemple : `CarteJoueurSurvol.lier(app, bouton_du_nom, str(player.id), "squad", func(): return infos_du_match)`.
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
@@ -17,6 +16,7 @@ const PlayerAttributes = preload("res://ui/player_attributes.gd")
 const Knowledge = preload("res://ui/player_knowledge_text.gd")
 const Identity = preload("res://ui/player_identity.gd")
 const NotesMatch = preload("res://ui/notes_match.gd")
+const Familiarite = preload("res://ui/familiarite_poste.gd")
 const NOM := "CarteJoueurSurvol"
 const GUETTEUR := "CarteJoueurSurvolGuetteur"
 ## Délai avant l'apparition (secondes) : un passage rapide de la souris n'ouvre rien.
@@ -26,50 +26,33 @@ const MARGE := 8.0
 const ECHELLE := 0.75
 const POSTES := ["Pilier gauche", "Talonneur", "Pilier droit", "2e ligne", "2e ligne", "3e ligne aile", "3e ligne aile",
 	"Numéro 8", "Demi de mêlée", "Demi d’ouverture", "Ailier", "Centre", "Centre", "Ailier", "Arrière"]
-## Barème des étoiles d'adaptabilité : [part minimale de la note au meilleur poste, étoiles].
-const BAREME_ETOILES := [[0.97, 5.0], [0.92, 4.5], [0.87, 4.0], [0.80, 3.5], [0.72, 3.0], [0.64, 2.5], [0.56, 2.0],
-	[0.48, 1.5], [0.40, 1.0], [0.30, 0.5]]
-
 static func _commune() -> Script:
 	return load("res://ui/immersive08/fiche_commune.gd")
 
-# --- Étoiles d'adaptabilité ------------------------------------------------------------------------------------------
+# --- Postes : note au poste + familiarité ----------------------------------------------------------------------------
 
-## Étoiles (0 à 5, par demi) du joueur au poste `numero` (1-15) : note au poste du moteur (positionRatings) divisée par
-## sa meilleure note au poste, puis BAREME_ETOILES. -1 si le staff ne connaît pas ses notes au poste ; 0 au premier
-## rang non qualifié (note 0).
-static func etoiles_poste(player: Dictionary, numero: int) -> float:
+## Note au poste `numero` (1-15) du moteur (positionRatings) ; -1 si inconnue.
+static func note_poste(player: Dictionary, numero: int) -> float:
 	var notes: Variant = player.get("positionRatings")
-	if not notes is Dictionary or (notes as Dictionary).is_empty(): return -1.0
-	var meilleure := 0.0
-	for valeur: Variant in (notes as Dictionary).values():
-		if Knowledge.number(valeur): meilleure = maxf(meilleure, float(valeur))
-	var note: Variant = notes.get(str(numero))
-	if meilleure <= 0.0 or not Knowledge.number(note): return -1.0
-	return etoiles_part(float(note) / meilleure)
+	if not notes is Dictionary: return -1.0
+	var note: Variant = (notes as Dictionary).get(str(numero))
+	return float(note) if Knowledge.number(note) and float(note) >= 0.0 else -1.0
 
-static func etoiles_part(part: float) -> float:
-	for palier: Array in BAREME_ETOILES:
-		if part >= float(palier[0]) - 0.0001: return float(palier[1])
-	return 0.0
-
-## Couleur des étoiles : barème des attributs (5 = vert d'eau, 3 = citron, 1 = rouge).
-static func couleur_etoiles(etoiles: float) -> Color:
-	return Charte.couleur_attribut(etoiles * 20.0 - 1.0 if etoiles >= 5.0 else etoiles * 20.0)
-
-## Postes du joueur triés par étoiles, regroupés par rôle (« 11 · 14 Ailier ») : [{numeros, poste, etoiles, note}].
+## Postes du joueur triés par familiarité puis note au poste, regroupés par rôle (« 11 · 14 Ailier ») :
+## [{numeros, poste, niveau, note}] ; vide si ni la familiarité ni les notes ne sont connues.
 static func postes_tries(player: Dictionary) -> Array:
 	var groupes := {}
+	var connu := false
 	for numero in range(1, 16):
-		var etoiles := etoiles_poste(player, numero)
-		if etoiles < 0.0: return []
-		var cle := "%s|%s" % [POSTES[numero - 1], etoiles]
-		if not groupes.has(cle):
-			var note: Variant = player.get("positionRatings", {}).get(str(numero))
-			groupes[cle] = {"numeros": [], "poste": POSTES[numero - 1], "etoiles": etoiles, "note": float(note) if Knowledge.number(note) else 0.0}
+		var niveau := Familiarite.niveau(player, numero)
+		var note := note_poste(player, numero)
+		if niveau >= 0 or note >= 0.0: connu = true
+		var cle := "%s|%d|%d" % [POSTES[numero - 1], niveau, roundi(note)]
+		if not groupes.has(cle): groupes[cle] = {"numeros": [], "poste": POSTES[numero - 1], "niveau": niveau, "note": note}
 		groupes[cle].numeros.append(numero)
+	if not connu: return []
 	var liste: Array = groupes.values()
-	liste.sort_custom(func(a: Dictionary, b: Dictionary): return a.etoiles > b.etoiles or (a.etoiles == b.etoiles and (a.note > b.note or (a.note == b.note and a.numeros[0] < b.numeros[0]))))
+	liste.sort_custom(func(a: Dictionary, b: Dictionary): return a.niveau > b.niveau or (a.niveau == b.niveau and (a.note > b.note or (a.note == b.note and a.numeros[0] < b.numeros[0]))))
 	return liste
 
 # --- Branchement et guetteur -----------------------------------------------------------------------------------------
@@ -106,12 +89,6 @@ static func icone(app: Control, parent: Control, zone: Rect2, player_id: String,
 	D.place(info, zone)
 	lier(app, info, player_id, source)
 	return info
-
-## Cinq étoiles de capacité au poste posées dans `parent` (unités du gabarit) : Tactique, Préparation… `valeur` < 0
-## (notes au poste inconnues) : rien n'est posé.
-static func poser_etoiles(parent: Node, zone: Rect2, valeur: float, nom: String = "") -> Control:
-	if valeur < 0.0: return null
-	return _etoiles(parent, zone, valeur, nom)
 
 ## Le guetteur vit à la racine de l'arbre (dernier enfant quand la carte s'ouvre) : il reçoit Échap avant l'écran
 ## en cours (menu du match).
@@ -268,41 +245,17 @@ class Guetteur extends Node:
 			masque = joueur
 			Carte.cacher(app)
 
-# --- Dessins : étoiles, mini-terrain, jauge -------------------------------------------------------------------------
+# --- Dessins : mini-terrain, jauge -------------------------------------------------------------------------
 
-## Cinq étoiles (pleines, demi, vides) ; la valeur est aussi portée par le nombre d'étoiles pleines (forme).
-class Etoiles extends Control:
-	var valeur := 0.0
-	var couleur := Color.WHITE
-	func _ready() -> void:
-		mouse_filter = Control.MOUSE_FILTER_IGNORE
-	func _draw() -> void:
-		var r := minf(size.y / 2.0, size.x / 10.4)
-		var pas := size.x / 5.0
-		for i in 5:
-			var centre := Vector2(pas * i + pas / 2.0, size.y / 2.0)
-			var etoile := _forme(centre, r)
-			draw_colored_polygon(etoile, Color(0.95, 0.93, 0.86, 0.16))
-			var part := clampf(valeur - i, 0.0, 1.0)
-			if part >= 0.99: draw_colored_polygon(etoile, couleur)
-			elif part >= 0.49:
-				var moitie := PackedVector2Array([centre + Vector2(-r - 1, -r - 1), centre + Vector2(0, -r - 1), centre + Vector2(0, r + 1), centre + Vector2(-r - 1, r + 1)])
-				for morceau: PackedVector2Array in Geometry2D.intersect_polygons(etoile, moitie): draw_colored_polygon(morceau, couleur)
-	static func _forme(centre: Vector2, r: float) -> PackedVector2Array:
-		var points := PackedVector2Array()
-		for k in 10:
-			var angle := -PI / 2.0 + k * PI / 5.0
-			points.append(centre + Vector2(cos(angle), sin(angle)) * (r if k % 2 == 0 else r * 0.45))
-		return points
-
-## Mini-terrain des 15 postes : pastille numérotée à la couleur des étoiles, cerclée de crème au poste principal.
+## Mini-terrain des 15 postes : pastille numérotée à la couleur de la familiarité au poste (`couleurs`, une Color ou
+## null par maillot), cerclée de crème au poste principal.
 class MiniTerrain extends Control:
 	const Charte = preload("res://ui/charte.gd")
 	const C = preload("res://ui/immersive08/components.gd")
 	const PLACES := [Vector2(.24, .11), Vector2(.5, .11), Vector2(.76, .11), Vector2(.38, .22), Vector2(.62, .22), Vector2(.14, .27),
 		Vector2(.86, .27), Vector2(.5, .33), Vector2(.4, .46), Vector2(.64, .53), Vector2(.1, .73), Vector2(.4, .64), Vector2(.62, .72),
 		Vector2(.9, .73), Vector2(.5, .88)]
-	var etoiles: Array = []
+	var couleurs: Array = []
 	var principaux: Array = []
 	func _ready() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -320,13 +273,13 @@ class MiniTerrain extends Control:
 		var taille := maxi(10, int(r * 1.15))
 		for i in 15:
 			var centre := Vector2(PLACES[i].x * size.x, PLACES[i].y * size.y)
-			var e: float = float(etoiles[i]) if i < etoiles.size() else -1.0
-			var teinte: Color = Color(Charte.CREME, .14) if e <= 0.0 else load("res://ui/carte_joueur_survol.gd").couleur_etoiles(e)
+			var connue: bool = i < couleurs.size() and couleurs[i] is Color
+			var teinte: Color = couleurs[i] if connue else Color(Charte.CREME, .14)
 			if (i + 1) in principaux: draw_circle(centre, r + maxf(2.0, r * .22), Charte.CREME)
 			draw_circle(centre, r, teinte)
 			var texte := str(i + 1)
 			var largeur := police.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x
-			var encre: Color = Charte.ENCRE if e > 0.0 else Charte.IVOIRE_3
+			var encre: Color = Charte.ENCRE if connue else Charte.IVOIRE_3
 			draw_string(police, centre + Vector2(-largeur / 2.0, police.get_ascent(taille) / 2.0 - 1.0), texte, HORIZONTAL_ALIGNMENT_LEFT, -1, taille, encre)
 
 # --- Construction ----------------------------------------------------------------------------------------------------
@@ -338,17 +291,6 @@ static func _panneau(parent: Node, zone: Rect2, couleur: Color = Charte.PANNEAU,
 	parent.add_child(p)
 	D.place(p, zone)
 	return p
-
-static func _etoiles(parent: Node, zone: Rect2, valeur: float, nom: String = "") -> Control:
-	var e := Etoiles.new()
-	e.valeur = valeur
-	e.couleur = couleur_etoiles(valeur)
-	e.set_meta("etoiles", valeur)
-	e.accessibility_name = ("%s étoiles au poste" % str(valeur)).replace(".", ",")
-	if not nom.is_empty(): e.name = nom
-	parent.add_child(e)
-	D.place(e, zone)
-	return e
 
 static func _titre(parent: Node, x: float, y: float, texte: String, largeur: float) -> Label:
 	var l := D.text(parent, x, y, texte.to_upper(), 24, Charte.IVOIRE, 700, largeur)
@@ -573,7 +515,8 @@ static func _etat(carte: Panel, app: Control, player: Dictionary, _source: Strin
 			var p := _panneau(bloc, Rect2(px, 186, 40, 30), Charte.couleur_note(note), Charte.RAYON_PETIT)
 			D.text(p, 20, 23, ("%.1f" % note).replace(".", ","), 18, Charte.encre_note(note), 800, 40, HORIZONTAL_ALIGNMENT_CENTER)
 
-## Polyvalence : les meilleurs postes en étoiles (numéros et rôle) et le mini-terrain des 15 postes.
+## Polyvalence : les postes les plus familiers (numéros, rôle, note au poste, barres de familiarité) et le
+## mini-terrain des 15 postes coloré par familiarité.
 static func _polyvalence(carte: Panel, player: Dictionary, zone: Rect2, combien: int) -> void:
 	var bloc := _panneau(carte, zone, Charte.PANNEAU)
 	bloc.name = "CarteJoueurPolyvalence"
@@ -583,7 +526,7 @@ static func _polyvalence(carte: Panel, player: Dictionary, zone: Rect2, combien:
 	var postes := postes_tries(player)
 	if postes.is_empty():
 		D.text(bloc, 20, 92, str(player.get("pos", "—")), 22, Charte.IVOIRE, 600, w - terrain_l - 60)
-		D.text(bloc, 20, 130, "Étoiles à observer", 19, Charte.IVOIRE_3, 600, w - terrain_l - 60)
+		D.text(bloc, 20, 130, "À observer", 19, Charte.IVOIRE_3, 600, w - terrain_l - 60)
 		return
 	var liste_l := w - terrain_l - 56.0
 	for i in mini(combien, postes.size()):
@@ -592,13 +535,17 @@ static func _polyvalence(carte: Panel, player: Dictionary, zone: Rect2, combien:
 		var numeros: Array[String] = []
 		for n: int in p.numeros: numeros.append(str(n))
 		D.text(bloc, 20, by + 8, " · ".join(numeros), 24, Charte.CREME, 800, 70).add_theme_font_override("font", Charte.TITRE_EXTRA)
-		D.text(bloc, 96, by + 8, str(p.poste), 20, Charte.IVOIRE, 600, liste_l - 96 - 160)
-		_etoiles(bloc, Rect2(20 + liste_l - 150, by - 14, 150, 28), float(p.etoiles), "CarteJoueurEtoilesPoste_%d" % int(p.numeros[0]))
+		var droite := 20.0 + liste_l
+		# Note au poste + barres de familiarité (sans le mot : le nom du poste garde sa place).
+		var x_note := droite - 100.0
+		D.text(bloc, 96, by + 8, str(p.poste), 20, Charte.IVOIRE, 600, maxf(40.0, x_note - 96.0 - 8.0))
+		Familiarite.poser_note(bloc, x_note, by + 9, float(p.note), 24, 44, "CarteJoueurNotePoste_%d" % int(p.numeros[0]))
+		Familiarite.poser(bloc, x_note + 54.0, by + 8, int(p.niveau), 19, "CarteJoueurFamiliarite_%d" % int(p.numeros[0]), false)
 	var terrain := MiniTerrain.new()
 	terrain.name = "CarteJoueurMiniTerrain"
-	var etoiles: Array = []
-	for n in range(1, 16): etoiles.append(etoiles_poste(player, n))
-	terrain.etoiles = etoiles
+	for n in range(1, 16):
+		var niveau := Familiarite.niveau(player, n)
+		terrain.couleurs.append(Familiarite.couleur(niveau) if niveau >= 0 else null)
 	terrain.principaux = player.get("primaryPositions", []) if player.get("primaryPositions") is Array else []
 	bloc.add_child(terrain)
 	D.place(terrain, Rect2(w - terrain_l - 18, 16, terrain_l, zone.size.y - 32))

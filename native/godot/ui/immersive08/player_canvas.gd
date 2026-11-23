@@ -366,12 +366,19 @@ static func _attributs(card: Panel, app: Control, player: Dictionary, source: St
 	FicheRoles.bandes(card,Vector2(24,72),Vector2(1372,340),FicheRoles.role(str(FicheRoles.etat(app,player,values).role)))
 	Commune.grille_attributs(card,Vector2(24,72),Vector2(1372,340),values,"PlayerDetailedAttribute_")
 
-## Carte Postes et rôles : rôles des postes du joueur (étoiles = capacité au rôle), qualités du rôle choisi, terrain
-## des 15 postes coloré par étoiles au poste (fiche_roles.gd), puis courbe des notes de match.
+## Carte Postes et rôles : rôles des postes du joueur (note du rôle + familiarité au poste), qualités du rôle choisi,
+## terrain des 15 postes coloré par familiarité (fiche_roles.gd), puis courbe des notes de match.
 static func _postes(card: Panel, app: Control, player: Dictionary, source: String) -> void:
 	_titre(card,"POSTES ET RÔLES")
 	FicheRoles.carte(card,app,player,Commune.valeurs(player,source))
+	# Apprendre un poste (23/11/2026) : joueurs de notre effectif seulement, à droite du titre.
+	if source != "market" and _dans_effectif(app,str(player.get("id",""))): FicheRoles.apprendre(card,app,player,card.size.x/C.density-24)
 	_courbe(card,app,player,source)
+
+static func _dans_effectif(app: Control, id: String) -> bool:
+	for p: Variant in app.model.get("squad",[]):
+		if p is Dictionary and str(p.get("id","")) == id: return true
+	return false
 
 static func _courbe(card: Panel, app: Control, player: Dictionary, source: String) -> void:
 	if source == "market": return

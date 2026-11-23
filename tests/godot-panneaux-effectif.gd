@@ -7,6 +7,7 @@ extends SceneTree
 ## CD_PANNEAUX_CAPTURES=<dossier> (+ CD_PANNEAUX_TAILLE=LxH) : enregistre développé, replié et fenêtre des tensions.
 const ContextualFlow = preload("helpers/contextual_flow.gd")
 const Panneaux = preload("res://ui/immersive08/panneaux_effectif.gd")
+const Familiarite = preload("res://ui/familiarite_poste.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -74,38 +75,47 @@ func appliquer_taille() -> void:
 	await create_timer(0.5).timeout
 	print("PANNEAUX taille rendue ", root.get_texture().get_size())
 
-## Maillot du terrain XV -> liste classée par étoiles à ce poste (barème absolu, note au poste du moteur), maillot marqué,
+## Maillot du terrain XV -> liste classée par note au poste (note du moteur, sur 100) + familiarité, maillot marqué,
 ## titre du poste ; badge « Jeune » -> Formation ; nom du titulaire -> sa fiche ; ✕ -> retour au tri par poste.
 func etoiles_au_poste(xv: Dictionary) -> void:
 	const Etoiles = preload("res://ui/immersive08/liste_etoiles.gd")
 	var numero := 10 if xv.has(10) else (int(xv.keys()[0]) if not xv.is_empty() else 0)
 	if numero == 0 or not await click_id("PanneauJoueur_%d" % numero): return
 	check(app.route == "Effectif" and found("CarnetSquad") != null, "N° %d : on reste sur l'Effectif" % numero)
-	check(int(app.management_ui.roster.get("etoiles_poste", 0)) == numero and str(app.management_ui.roster.sort) == "Étoiles", "N° %d -> tri par étoiles au poste" % numero)
+	check(int(app.management_ui.roster.get("etoiles_poste", 0)) == numero and str(app.management_ui.roster.sort) == "Note au poste", "N° %d -> tri par note au poste" % numero)
 	check(found("PanneauChoisi_%d" % numero) != null, "Maillot %d marqué sur le terrain" % numero)
 	var titre: Label = found("EtoilesTitrePoste") as Label
 	check(titre != null and titre.text.contains(Etoiles.nom_poste(numero).to_upper()), "Titre du poste au-dessus de la liste")
+	var effacer: Control = found("EtoilesEffacer")
+	check(effacer != null and not effacer.tooltip_text.to_lower().contains("toile") and not titre.text.contains("★"), "Plus aucune étoile de poste (titre, ✕)")
+	# Niveaux du moteur (positionFamiliarityLevels, indice 0 = maillot 1) prioritaires sur la déduction ; repli sinon.
+	var lu := {"primaryPositions": [10], "positionFamiliarityLevels": [0, 0, 0, 1, 1, 1, 1, 1, 2, 3, 2, 4, 2, 2, 2]}
+	check(Familiarite.niveau(lu, 12) == Familiarite.NATUREL and Familiarite.niveau(lu, 10) == Familiarite.CONFIRME, "Familiarité lue dans le moteur")
+	check(Familiarite.niveau({"primaryPositions": [10], "positionFamiliarityLevels": [1, 2]}, 10) == Familiarite.NATUREL, "Tableau du moteur incomplet : repli sur les postes")
 	var lignes: Array = found("ImmersiveRosterRows").get_children().filter(func(n: Node): return n is Button and n.has_meta("player_id"))
 	var notes: Array = []
 	var par_id := {}
 	for p: Dictionary in app.model.squad: par_id[str(p.id)] = p
-	var repere := Etoiles.reference_poste(app.model.squad, numero)
-	for ligne: Button in lignes: notes.append(Etoiles.etoiles(par_id.get(str(ligne.get_meta("player_id")), {}), numero, repere))
+	for ligne: Button in lignes: notes.append(Etoiles.note_poste(par_id.get(str(ligne.get_meta("player_id")), {}), numero))
 	var connues: Array = notes.filter(func(v: float): return v >= 0.0)
+	var meilleure := -1.0
+	for p: Dictionary in app.model.squad: meilleure = maxf(meilleure, Etoiles.note_poste(p, numero))
 	var classe := true
 	for i in range(1, connues.size()): classe = classe and connues[i - 1] >= connues[i]
-	# Étoiles relatives à notre effectif : le meilleur joueur du groupe à ce poste a 5 étoiles, en tête de liste.
-
-	check(connues.size() >= 10 and classe and is_equal_approx(float(connues[0]), 5.0), "Liste classée par étoiles décroissantes, notre meilleur au poste à 5 (%s)" % str(connues.slice(0, 6)))
+	# Note au poste (sur 100, la même pour tous les clubs) : la meilleure du groupe en tête de liste.
+	check(connues.size() >= 10 and classe and is_equal_approx(float(connues[0]), meilleure), "Liste classée par note au poste décroissante (%s)" % str(connues.slice(0, 6)))
 	var premiere: Control = lignes[0] if not lignes.is_empty() else null
-	var dessin: Control = premiere.find_child("RosterEtoiles", true, false) if premiere != null else null
-	check(dessin != null and is_equal_approx(float(dessin.get_meta("etoiles", -1.0)), 5.0), "Étoiles dessinées sur la ligne : 5 pour notre meilleur (%s, %s)" % [str(dessin.get_meta("etoiles", -1.0)) if dessin != null else "—", str(dessin.get("valeur")) if dessin != null else "—"])
-	var toutes: Array = connues.duplicate()
-	toutes.sort()
-	check(toutes.size() > 0 and toutes[0] < toutes[-1], "Des étoiles différentes d'un joueur à l'autre")
-	var pastille := found("EtoilesProfondeur")
-	check(pastille is Label and (pastille as Label).text.begins_with(str(Etoiles.profondeur(app.model.squad, numero)) + " "), "Pastille ★4+ = nombre de joueurs à 4 étoiles et plus")
-	check(connues.size() < app.model.squad.size() or Etoiles.profondeur(app.model.squad, numero) == connues.filter(func(v: float): return v >= 4.0).size(), "Pastille ★4+ cohérente avec les étoiles de la liste")
+	var note: Label = premiere.find_child("RosterNotePoste", true, false) as Label if premiere != null else null
+	check(note != null and note.text == str(int(roundf(float(connues[0])))), "Note au poste écrite sur la ligne (%s)" % (note.text if note != null else "—"))
+	var marque: Control = premiere.find_child("RosterFamiliarite*", true, false) as Control if premiere != null else null
+	var attendu_f := Familiarite.niveau(par_id.get(str(premiere.get_meta("player_id")), {}), numero) if premiere != null else -1
+	check(marque != null and (attendu_f < 0 or int(marque.get_meta("familiarite", -2)) == attendu_f or (marque.get_parent() != null and int(marque.get_parent().get_meta("familiarite", -2)) == attendu_f)), "Familiarité au poste sur la ligne (%s)" % Familiarite.mot(attendu_f))
+	var niveaux := {}
+	for p: Dictionary in app.model.squad: niveaux[Familiarite.niveau(p, numero)] = true
+	check(niveaux.size() >= 3, "Plusieurs niveaux de familiarité dans le groupe (%s)" % str(niveaux.keys()))
+	var naturels: int = app.model.squad.filter(func(p: Dictionary): return Familiarite.niveau(p, numero) == Familiarite.NATUREL).size()
+	var compte: Control = found("FamiliariteCompte_%d" % Familiarite.NATUREL)
+	check(compte != null, "Nombre de joueurs Naturels au poste près du titre (%d)" % naturels)
 	# Badge « Jeune » (21 ans et moins) derrière le nom -> Formation.
 	var jeune: Control = found("RosterBadgeOuvrir_Jeune")
 	var attendu: bool = app.model.squad.any(func(p: Dictionary): return (p.get("age") is int or p.get("age") is float) and int(p.age) <= 21)
@@ -120,7 +130,7 @@ func etoiles_au_poste(xv: Dictionary) -> void:
 	await montrer(found("SquadOpenPlayer_" + titulaire.validate_node_name()))
 	if await click_id("SquadOpenPlayer_" + titulaire.validate_node_name()):
 		check(app.selected_player == titulaire and found("CarnetSquad") == null, "Nom du titulaire -> sa fiche")
-		check(found("PlayerRolePitch") != null, "Fiche : terrain des postes (étoiles relatives au groupe)")
+		check(found("PlayerRolePitch") != null, "Fiche : terrain des postes (familiarité)")
 		await capture("fiche")
 	await effectif()
 	# Souris hors de la liste : pas de carte joueur au survol sur la capture.

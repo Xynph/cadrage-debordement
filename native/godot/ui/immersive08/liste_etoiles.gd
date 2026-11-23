@@ -1,15 +1,15 @@
 extends RefCounted
-## Effectif : « poste → étoiles » (revue FM27, idée 5, choix de Léo du 22/11/2026).
-## Un clic sur un maillot du terrain XV (panneau de gauche) classe la liste par étoiles à ce poste : étoiles = capacité
-## au poste uniquement, RELATIVES à notre effectif (bareme_etoiles.gd : notre meilleur joueur au poste = 5). Le poste choisi
-## s'affiche en titre au-dessus de la liste, ✕ revient au tri par poste. Badges de statut courts, colorés et
+## Effectif : « poste → liste » (revue FM27, idée 5, choix de Léo du 22/11/2026 ; étoiles remplacées le 23/11/2026).
+## Un clic sur un maillot du terrain XV (panneau de gauche) classe la liste par note au poste (sur 100, moteur) avec la
+## familiarité au poste en barres (familiarite_poste.gd). Le poste choisi s'affiche en titre au-dessus de la liste
+## (nombre de Naturels et de Confirmés), ✕ revient au tri par poste. Badges de statut courts, colorés et
 ## cliquables derrière le nom (Blessé → fenêtre blessure, Suspendu, Sélection, Offre, Départ, Jeune = 21 ans et moins) ;
 ## la colonne STATUT ne garde que Titulaire, Remplaçant ou Hors groupe.
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Charte = preload("res://ui/charte.gd")
 const R = preload("res://ui/immersive08/reperes.gd")
-const Bareme = preload("res://ui/bareme_etoiles.gd")
+const Familiarite = preload("res://ui/familiarite_poste.gd")
 
 const NOMS := ["Pilier gauche", "Talonneur", "Pilier droit", "Deuxième ligne", "Deuxième ligne", "3e ligne aile",
 	"3e ligne aile", "Numéro 8", "Demi de mêlée", "Demi d’ouverture", "Ailier", "Centre", "Centre", "Ailier", "Arrière"]
@@ -34,32 +34,7 @@ static func note_poste(joueur: Dictionary, numero: int) -> float:
 	var notes: Variant = joueur.get("positionRatings")
 	if not notes is Dictionary: return -1.0
 	var v: Variant = (notes as Dictionary).get(str(numero))
-	return float(v) if Bareme.etoiles_sur_100(v) >= 0.0 else -1.0
-
-## Repère du poste : meilleure note de notre effectif à ce poste (5 étoiles) ; -1 si personne n'est connu.
-static func reference_poste(joueurs: Array, numero: int) -> float:
-	var notes: Array = []
-	for p: Variant in joueurs:
-		if p is Dictionary: notes.append(note_poste(p, numero))
-	return Bareme.meilleure_note(notes)
-
-## Étoiles (0 à 5, par demi) du joueur au poste, RELATIVES à notre meilleur joueur à ce poste ; -1 si inconnues.
-static func etoiles(joueur: Dictionary, numero: int, reference: float) -> float:
-	return Bareme.etoiles_relatives(note_poste(joueur, numero), reference)
-
-## Joueurs à 4 étoiles et plus au poste (même repère que la liste).
-static func profondeur(joueurs: Array, numero: int) -> int:
-	var reference := reference_poste(joueurs, numero)
-	var n := 0
-	for p: Variant in joueurs:
-		if p is Dictionary and etoiles(p, numero, reference) >= 4.0: n += 1
-	return n
-
-static func couleur_profondeur(n: int) -> Color:
-	if n <= 0: return R.ROUGE
-	if n == 1: return R.ORANGE
-	if n == 2: return Charte.couleur_attribut(60)
-	return R.VERT
+	return float(v) if (v is int or v is float) and is_finite(float(v)) and float(v) >= 0.0 else -1.0
 
 # ---------------------------------------------------------------- badges de statut
 
@@ -114,26 +89,43 @@ static func poser_badges(page: Control, app: Control, rangee: Control, joueur: D
 
 # ---------------------------------------------------------------- titre du poste choisi
 
-## « ★ CENTRE 12 », pastille « n × ★4+ » et ✕, alignés à droite de `fin` sur la rangée des pastilles de poste.
+## « CENTRE 12 », nombre de joueurs Naturels et Confirmés à ce poste (barres de familiarité + chiffre) et ✕,
+## alignés à droite de `fin` sur la rangée des pastilles de poste.
 static func titre_poste(parent: Control, fin: float, y: float, joueurs: Array, numero: int, effacer: Callable) -> void:
 	if numero <= 0: return
-	var nom := "★ %s %d" % [nom_poste(numero).to_upper(), numero]
-	var prof := profondeur(joueurs, numero)
-	var texte_prof := "%d × ★4+" % prof
+	var nom := "%s %d" % [nom_poste(numero).to_upper(), numero]
+	var comptes := [0, 0]
+	for p: Variant in joueurs:
+		if p is Dictionary:
+			var n := Familiarite.niveau(p, numero)
+			if n == Familiarite.NATUREL: comptes[0] += 1
+			elif n == Familiarite.CONFIRME: comptes[1] += 1
+	var marques: Array = []
+	for i in 2:
+		var niv: int = Familiarite.NATUREL if i == 0 else Familiarite.CONFIRME
+		marques.append({"n": niv, "compte": comptes[i]})
+	var l_marques := 0.0
+	for m: Dictionary in marques:
+		m.l = Familiarite.largeur(m.n, 20, false) + 8.0 + R.largeur(str(m.compte), 22, 800) + 4.0
+		l_marques += m.l + 12.0
 	var l_nom := R.largeur(nom, 30, 800)
-	var l_prof := 12.0 + R.largeur(texte_prof, 19) + 2.0 + 12.0
-	var x := fin - 44.0 - 12.0 - l_prof - 16.0 - l_nom
+	var x := fin - 44.0 - 12.0 - l_marques - 16.0 - l_nom
 	var titre := D.text(parent, x, y + 32, nom, 30, Charte.IVOIRE, 800, l_nom + 8)
 	titre.add_theme_font_override("font", Charte.TITRE_FICHE)
 	titre.name = "EtoilesTitrePoste"
-	var pastille := R.pastille(parent, x + l_nom + 16.0, y + 27, texte_prof, couleur_profondeur(prof), "", "EtoilesProfondeur", 19)
-	pastille.tooltip_text = "Joueurs à 4 étoiles et plus · %s" % nom_poste(numero)
-	pastille.mouse_filter = Control.MOUSE_FILTER_PASS
+	var xm := x + l_nom + 16.0
+	for m: Dictionary in marques:
+		var aide := "%s · %s" % [Familiarite.mot(m.n), nom_poste(numero)]
+		var lb := Familiarite.poser(parent, xm, y + 28, m.n, 20, "FamiliariteCompte_%d" % m.n, false)
+		var chiffre := D.text(parent, xm + lb + 8.0, y + 29, str(m.compte), 22, Familiarite.couleur(m.n) if m.compte > 0 else Charte.IVOIRE_3, 800, 40)
+		chiffre.tooltip_text = aide
+		chiffre.mouse_filter = Control.MOUSE_FILTER_PASS
+		xm += m.l + 12.0
 	var fermer := Button.new()
 	fermer.name = "EtoilesEffacer"
 	fermer.text = "✕"
-	fermer.tooltip_text = "Retirer les étoiles"
-	fermer.accessibility_name = "Retirer les étoiles du poste " + nom_poste(numero)
+	fermer.tooltip_text = "Retirer le poste"
+	fermer.accessibility_name = "Retirer le poste " + nom_poste(numero)
 	fermer.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	fermer.focus_mode = Control.FOCUS_ALL
 	C.style_bouton_lien(fermer, 22)
