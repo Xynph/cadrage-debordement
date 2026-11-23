@@ -28,6 +28,7 @@ const Meteo = preload("res://ui/contextual/meteo_texte.gd")
 const Zones = preload("res://ui/immersive08/standings_zones.gd")
 const Visuels = preload("res://ui/contextual/training_visuels.gd")
 const MenuJoueur = preload("res://ui/contextual/match_menu_joueur.gd")
+const BullesAdjoint = preload("res://ui/contextual/match_bulles_adjoint.gd")
 const Commune = preload("res://ui/immersive08/fiche_commune.gd")
 
 signal niveau_choisi(id: String)
@@ -1042,8 +1043,8 @@ func _construire() -> void:
 	_commandes()
 	_composants()
 	_page()
-	# Planche FM27 n° 35 (conseil de l'adjoint en bulle), sous CD_VARIANTE_VISUELLE=A|B.
-	load("res://ui/contextual/match_adjoint_fm.gd").poser(self)
+	# Conseils de Gabi en bulles dans sa carte et phrase de jeu en aplat coloré (idée FM27 n° 35).
+	BullesAdjoint.poser(self)
 	_arret_decision()
 	montrer_droite(vue_droite)
 	if not _arret.is_empty(): montrer_arret(_arret)
@@ -2928,8 +2929,8 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	terrain.queue_redraw()
 	_etat(live, direct, equipes)
 	_pilotage = Pilotage.pilotage(live)
-	var adjoint_fm := get_node_or_null("MatchFmAdjoint")
-	if adjoint_fm != null: adjoint_fm.rafraichir()
+	var bulles := get_node_or_null(BullesAdjoint.NOM)
+	if bulles != null: bulles.rafraichir()
 	_remplir_journee(model, direct, equipes)
 	_remplir_bonus(model, live, direct)
 	_niveaux = direct.get("niveaux", [])
@@ -2993,7 +2994,7 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	_remplir_xv(passe.lineup, direct)
 	_remplir_compos_fm(passe.lineup, direct)
 	_remplir_adjoint(conseil, live, direct, appliquer)
-	if adjoint_fm != null: adjoint_fm.apres_adjoint()
+	if bulles != null: bulles.apres_adjoint()
 	_appliquer_blocage()
 
 ## Texte imposé par la régie (liaison entre deux temps forts : l'arrêt de jeu en cours) ; vide : l'état du moteur.
@@ -4573,7 +4574,8 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 	if remplacer >= 0:
 		var poste := remplacer
 		# Le remplaçant conseillé par le staff (`live.pilotage.conseilChangement`), s'il vise ce joueur.
-		var entrant := _entrant_conseille(live, str(alertes_xv.filter(func(a: Dictionary): return int(a.poste) == poste)[0].id) if alertes_xv.any(func(a: Dictionary): return int(a.poste) == poste) else "")
+		# Avec la file du prochain arrêt, le remplaçant conseillé est dans la bulle de Gabi (pas en double ici).
+		var entrant := "" if not MenuJoueur.arrets(live).is_empty() else _entrant_conseille(live, str(alertes_xv.filter(func(a: Dictionary): return int(a.poste) == poste)[0].id) if alertes_xv.any(func(a: Dictionary): return int(a.poste) == poste) else "")
 		var libelle := "Remplacer le %d" % (poste + 1) + (" par %s" % _nom_court(entrant) if not entrant.is_empty() else "") + " →"
 		var bouton_remplacer := _bouton(libelle, func(): joueur_choisi.emit(poste))
 		bouton_remplacer.name = "MatchBetweenReplace"
@@ -4581,7 +4583,8 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 		bouton_remplacer.set_meta("contextual_enabled", true)
 		actions.add_child(bouton_remplacer)
 		actions.add_child(_touche("Entrée"))
-	elif not fini and conseil is Dictionary and (conseil.get("attackChanged", false) or conseil.get("defenceChanged", false)):
+	# Match avec file du prochain arrêt de jeu : le plan de jeu conseillé passe par les bulles de Gabi (un clic).
+	elif not fini and conseil is Dictionary and (conseil.get("attackChanged", false) or conseil.get("defenceChanged", false)) and MenuJoueur.arrets(live).is_empty():
 		var possible: bool = conseil.get("canAct", false) and conseil.get("defenceAvailable", false)
 		var bouton := _bouton("Appliquer ses consignes →", func(): appliquer.call(conseil), possible)
 		bouton.name = "MatchBetweenApplyAdvice"

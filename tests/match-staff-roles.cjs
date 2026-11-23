@@ -76,12 +76,28 @@ try {
     assert.notEqual(m.live.pilotage.consignes[a.axe], a.valeur, 'proposition différente de la consigne en place');
   }
   const avantAvis = rng();
-  m = jeu.call('appliquer_staff', {});
+  assert.equal(jeu.brut('appliquer_staff', { axes: 'rythme' }).ok, false, 'axes invalides refusés');
+  // Bulle de Gabi (idée FM27 n° 35) : une partie de l'avis seulement, puis le reste.
+  const premier = avis[0];
+  m = jeu.call('appliquer_staff', { axes: [premier.axe] });
   assert.equal(rng(), avantAvis, 'aucun tirage');
-  for (const a of avis) assert.equal(m.live.pilotage.consignes[a.axe], a.valeur, a.axe + ' appliquée');
+  const fileAdjoint = () => (m.live.pilotage.arrets?.file || []).filter(e => e.auteur === 'adjoint');
+  const appliqueAdjoint = axe => (m.live.pilotage.arrets?.appliques || []).some(x => x.auteur === 'adjoint' && x.axe === axe && x.ok);
+  // Conseil accepté : il attend le prochain arrêt de jeu (sauf ballon déjà mort), jamais appliqué au milieu du jeu.
+  assert.ok(fileAdjoint().some(e => e.cle === 'consigne:' + premier.axe && e.valeur === premier.valeur) || appliqueAdjoint(premier.axe), premier.axe + ' : en file, auteur adjoint');
+  assert.ok(!m.live.pilotage.staff.propositions.some(a => a.axe === premier.axe), 'la bulle acceptée quitte l’avis');
+  assert.equal(m.live.pilotage.staff.propositions.length, avis.length - 1, 'le reste de l’avis reste proposé');
+  if (avis.length > 1) m = jeu.call('appliquer_staff', {});
   assert.equal(m.live.pilotage.staff.propositions.length, 0, 'avis épuisé');
   assert.ok(m.live.pilotage.journal.some(j => /Tu suis l’avis du staff/.test(j.texte)), 'journal');
   assert.equal(jeu.brut('appliquer_staff', {}).ok, false, 'second clic refusé');
+  // Le prochain arrêt de jeu applique les consignes de Gabi.
+  for (let k = 0; k < 200 && !m.live.finished && fileAdjoint().length; k++) m = jeu.call('tick', { steps: 1 });
+  assert.equal(fileAdjoint().length, 0, 'la file de Gabi part au prochain arrêt de jeu');
+  for (const a of avis) {
+    assert.ok(appliqueAdjoint(a.axe), a.axe + ' appliquée à l’arrêt, auteur adjoint');
+    assert.equal(m.live.pilotage.consignes[a.axe], a.valeur, a.axe + ' en place');
+  }
   console.log('OK avis du staff et rôles en direct');
 } finally {
   jeu.fermer?.();
