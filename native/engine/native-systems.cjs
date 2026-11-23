@@ -139,7 +139,13 @@ domains.matchIncidents=require('./incidents-match.cjs');
 domains.weekProgram=require('./programme-semaine.cjs');
 // Fragilité physique des joueurs : risque de blessure modulé de −25 % à +25 % (native/engine/fragilite.cjs).
 domains.fragilite=require('./fragilite.cjs');
+// Familiarité au poste (0-20 par maillot) : efficacité au poste, progression par match et entraînement, oubli (native/engine/familiarite-poste.cjs).
+domains.familiarite=require('./familiarite-poste.cjs');
+// Rôle promis au contrat (titulaire, rotation, espoir, appoint), enregistré à la signature (native/engine/role-contrat.cjs).
+domains.roleContrat=require('./role-contrat.cjs');
+// Offre guidée : prime à la signature négociable, clause libératoire, clauses payées par les clubs gérés (native/engine/clauses-contrat.cjs).
+domains.clausesContrat=require('./clauses-contrat.cjs');
 const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files,...domains.clubSheet.files,...domains.pressPromises.files,...domains.clubMail.files,...domains.multiplex.files,...domains.avantMatch.files,...domains.doublons.files,...domains.matchIncidents.files,...domains.weekProgram.files])]);
-const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands,...domains.clubMail.commands,...domains.multiplex.commands,...domains.avantMatch.commands,...domains.doublons.commands,...domains.matchIncidents.commands,...domains.weekProgram.commands]);
+const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands,...domains.clubMail.commands,...domains.multiplex.commands,...domains.avantMatch.commands,...domains.doublons.commands,...domains.matchIncidents.commands,...domains.weekProgram.commands,...domains.familiarite.commands]);
 if(new Set(allCommands).size!==allCommands.length)throw Error('Commandes natives de domaine en double.');
 module.exports={files:allFiles,commands:allCommands,bootstrap};

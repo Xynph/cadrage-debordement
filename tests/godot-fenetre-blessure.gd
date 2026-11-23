@@ -48,7 +48,7 @@ func pastille(id: String) -> BaseButton:
 	for b: Node in get_nodes_in_group(&"ouvre_blessure"):
 		if not (b is BaseButton and b.is_visible_in_tree()): continue
 		if b.name.ends_with(id.validate_node_name()): return b
-		# Badge Blessé derrière le nom (liste classée par étoiles) : retrouvé par la rangée du joueur.
+		# Badge Blessé derrière le nom (liste classée par note au poste) : retrouvé par la rangée du joueur.
 		var parent: Node = b.get_parent()
 		while parent != null and not (parent.has_meta("player_id") and str(parent.get_meta("player_id")) == id): parent = parent.get_parent()
 		if parent != null: return b
