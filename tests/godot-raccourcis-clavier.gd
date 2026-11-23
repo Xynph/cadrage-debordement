@@ -59,6 +59,9 @@ func espace_sur_continuer(inactif: bool) -> int:
 				await settle(30)
 				continue
 			return compte[0]
+		# Bouton libéré pendant la touche : l'activation a déjà redessiné le bureau (on garde son compte) ; Continuer
+		# inactif ne compte rien ; sinon la touche est arrivée avant le redessin, on recommence sur le nouveau bouton.
+		if compte[0] > 0 or inactif: return compte[0]
 	return -2
 
 func finish() -> void:
