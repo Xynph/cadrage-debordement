@@ -149,7 +149,7 @@ func run() -> void:
 		bravo.pressed.emit()
 		await wait_command()
 	await capture_tailles(between)
-	# Toutes les petites fenêtres de l'écran 2D en ardoise claire (teinte D), captures en 1920.
+	# Toutes les petites fenêtres de l'écran 2D en anthracite satiné (choix B de Léo), captures en 1920.
 	await fenetres(view, between)
 	# Fenêtre refermée (✕) ; permuter les ailes : attente du prochain arrêt (« ⧗ »), puis nos ailiers échangés.
 	var fermer := bouton(between, "FmBancMenuFermer")
@@ -198,7 +198,7 @@ func capture_tailles(between: Control) -> void:
 		await capture("final-%d" % t.x)
 	await taille(Vector2i(1920, 1080))
 
-## Chaque petite fenêtre de l'écran 2D (et la fenêtre Équipe, le menu Plus) : ouverte, fond ardoise claire, capture.
+## Chaque petite fenêtre de l'écran 2D (et la fenêtre Équipe, le menu Plus) : ouverte, fond anthracite satiné, capture.
 func fenetres(view: Control, between: Control) -> void:
 	var ardoise: Color = load("res://ui/contextual/match_menu_joueur.gd").PAL.fond
 	if bouton(between, "FmBancMenuFermer") != null: bouton(between, "FmBancMenuFermer").pressed.emit()
@@ -229,8 +229,8 @@ func fenetres(view: Control, between: Control) -> void:
 		if view.fenetre_ouverte() and view.fenetre_hote.find_child(str(c[1]) + "*", true, false) != null:
 			for n: Node in view.fenetre_hote.find_children("*", "Panel", true, false):
 				var st: StyleBox = (n as Panel).get_theme_stylebox("panel")
-				if st is StyleBoxFlat and (st as StyleBoxFlat).bg_color.is_equal_approx(ardoise): en_ardoise = true
-		check(en_ardoise, "fenêtre %s ouverte, en ardoise claire" % str(c[0]))
+				if st != null and st.get("bg_color") is Color and (st.get("bg_color") as Color).is_equal_approx(ardoise): en_ardoise = true
+		check(en_ardoise, "fenêtre %s ouverte, en anthracite satiné" % str(c[0]))
 		await capture("final-fenetres-%s-1920" % str(c[0]))
 		load("res://ui/petite_fenetre.gd").fermer_derniere(self)
 		await settle(12)
@@ -240,14 +240,14 @@ func fenetres(view: Control, between: Control) -> void:
 	plus.show_popup()
 	await settle(12)
 	var st_plus: StyleBox = plus.get_popup().get_theme_stylebox("panel")
-	check(st_plus is StyleBoxFlat and (st_plus as StyleBoxFlat).bg_color.is_equal_approx(ardoise), "menu Plus en ardoise claire")
+	check(st_plus != null and st_plus.get("bg_color") is Color and (st_plus.get("bg_color") as Color).is_equal_approx(ardoise), "menu Plus en anthracite satiné")
 	await capture("final-fenetres-plus-1920")
 	plus.get_popup().hide()
 	await settle(8)
 	view.ouvrir_equipe("composition")
 	await settle(30)
 	var fond_equipe := view.equipe.find_child("TeamBackdrop", true, false) as ColorRect if is_instance_valid(view.equipe) else null
-	check(fond_equipe != null and fond_equipe.color.is_equal_approx(ardoise), "fenêtre Équipe en ardoise claire")
+	check(fond_equipe != null and fond_equipe.color.is_equal_approx(ardoise), "fenêtre Équipe en anthracite satiné")
 	await capture("final-fenetres-equipe-1920")
 	if is_instance_valid(view.equipe) and view.equipe.visible: view.equipe.fermer(false)
 	await settle(20)

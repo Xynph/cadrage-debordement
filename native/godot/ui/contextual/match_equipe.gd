@@ -282,8 +282,8 @@ func fs(valeur: float) -> int:
 ## n'est gardé que pour les disques du terrain (`rond`), seule forme ronde admise.
 func _boite(fond: Color, bord: Color = Color.TRANSPARENT, rayon: float = 0, epaisseur: float = 1, marge: float = 0, rond: bool = false, cote: String = "bottom") -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	style.bg_color = fond
-	style.border_color = bord
+	style.bg_color = MenuJoueur.teinte_bloc(fond)
+	style.border_color = MenuJoueur.teinte_bloc(bord)
 	style.set_border_width_all(0)
 	if bord.a > 0.0: style.set("border_width_" + cote, maxi(1, px(epaisseur)))
 	style.set_corner_radius_all(maxi(2, px(rayon)) if rond else 0)
@@ -553,6 +553,7 @@ func _fond() -> void:
 	fond.mouse_filter = Control.MOUSE_FILTER_STOP
 	S.full(fond)
 	add_child(fond)
+	MenuJoueur.fond_plein(fond)
 
 func _horloge() -> String:
 	if view != null and view.get("clock") is Label: return str(view.clock.text)

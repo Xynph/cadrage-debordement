@@ -202,11 +202,15 @@ func _icone(id: String, couleur: Color, cote: float) -> TextureRect:
 
 ## Rond coloré portant une icône (allumé : aplat de la couleur, icône sombre ; éteint : voile de la couleur). `attente` :
 ## liseré pointillé de la couleur (changement demandé, pas encore en place).
-func _rond(id: String, couleur: Color, cote: float, allume: bool, attente: bool = false) -> PanelContainer:
+## `vif` : rond éteint mieux lisible sur l'anthracite des fenêtres (voile plus dense, liseré, icône éclaircie).
+func _rond(id: String, couleur: Color, cote: float, allume: bool, attente: bool = false, vif: bool = false) -> PanelContainer:
 	var rond := PanelContainer.new()
 	rond.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var st := StyleBoxFlat.new()
-	st.bg_color = couleur if allume else Color(couleur, 0.16)
+	st.bg_color = couleur if allume else Color(couleur, 0.26 if vif else 0.16)
+	if vif and not allume and not attente:
+		st.border_color = Color(couleur, 0.55)
+		st.set_border_width_all(maxi(1, px(1.5)))
 	st.set_corner_radius_all(Charte.RAYON_PILULE)
 	st.anti_aliasing = true
 	if attente:
@@ -219,7 +223,7 @@ func _rond(id: String, couleur: Color, cote: float, allume: bool, attente: bool 
 	st.content_margin_bottom = m
 	rond.add_theme_stylebox_override("panel", st)
 	rond.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	rond.add_child(_icone(id, Charte.ENCRE if allume else couleur, cote * 0.6))
+	rond.add_child(_icone(id, Charte.ENCRE if allume else (couleur.lightened(0.3) if vif else couleur), cote * 0.6))
 	return rond
 
 func _texte(t: String, taille: float, couleur: Color, titre: bool = false) -> Label:
@@ -381,7 +385,7 @@ func _liste_joueurs(col: VBoxContainer) -> void:
 			b.focus_mode = Control.FOCUS_ALL
 			b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 			b.custom_minimum_size = Vector2(px(40), px(40))
-			var rond := _rond(str(c[2]), c[3], 38, ici)
+			var rond := _rond(str(c[2]), c[3], 38, ici, false, true)
 			rond.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 			b.add_child(rond)
 			var id_j := id

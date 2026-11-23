@@ -34,10 +34,121 @@ const PALIERS := [[78, "gonfle", "Gonflé à bloc"], [62, "confiant", "Confiant"
 const PLACES := [Vector2(.22, .90), Vector2(.5, .90), Vector2(.78, .90), Vector2(.39, .78), Vector2(.61, .78),
 	Vector2(.16, .68), Vector2(.84, .68), Vector2(.5, .66), Vector2(.36, .53), Vector2(.6, .47), Vector2(.1, .2),
 	Vector2(.38, .32), Vector2(.62, .32), Vector2(.9, .2), Vector2(.5, .1)]
-## Ardoise claire (teinte D retenue par Léo) : fond, cases, filets, encres.
-const PAL := {"fond": Color("3a4947"), "case": Color("445350"), "choisi": Color("2f5a46"), "filet": Color(0.949, 0.925, 0.863, .16),
-	"encre": Color("f2ecdc"), "encre2": Color("abb7b1"), "encre3": Color("a7b0aa"), "accent": Color("d7aa5a"),
-	"rail": Color(0.949, 0.925, 0.863, .18), "bord": Color(0.949, 0.925, 0.863, .40)}
+## Anthracite satiné (choix B de Léo, 23/11 : « un gris métallique, plus qualitatif » que l'ardoise claire) : fond,
+## cases, filets, encres de toutes les petites fenêtres de l'écran de match 2D.
+const PAL := {"fond": Color("2c3236"), "case": Color("3a4146"), "choisi": Color("2f5a46"), "filet": Color(1, 1, 1, .10),
+	"encre": Color("f2ecdc"), "encre2": Color("b9c0c4"), "encre3": Color("9aa2a7"), "accent": Color("d7aa5a"),
+	"rail": Color(1, 1, 1, .14), "bord": Color(0, 0, 0, .60)}
+## Dégradé satiné du fond : haut, reflet adouci vers 16 %, bas.
+const SATIN := [Color("3a4045"), Color("474e54"), Color("1b1f22")]
+
+## Blocs intérieurs (fenêtre Équipe) accordés au fond anthracite : fond, panneau, survol, choisi et filet de la charte
+## → mêmes rôles en anthracite.
+const BLOCS := [[Charte.FOND, Color("121517")], [Charte.PANNEAU, Color("181b1e")], [Charte.PANNEAU_2, Color("22272a")],
+	[Charte.PANNEAU_3, Color("2e3438")], [Charte.FILET, Color("3a4045")]]
+
+static func teinte_bloc(c: Color) -> Color:
+	if c.a <= 0.0: return c
+	for paire: Array in BLOCS:
+		var s: Color = paire[0]
+		if is_equal_approx(s.r, c.r) and is_equal_approx(s.g, c.g) and is_equal_approx(s.b, c.b): return Color(paire[1], c.a)
+	return c
+
+## Fond plein écran de la fenêtre Équipe : même satin, sans cadre, ni biseau, ni ombre.
+static func fond_plein(cible: Control) -> void:
+	var panneau := Panel.new()
+	panneau.name = "FondSatin"
+	panneau.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panneau.add_theme_stylebox_override("panel", style_satin(false, false))
+	cible.add_child(panneau)
+	panneau.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+## Fond anthracite satiné : `ombre` portée marquée, `cadre` faux pour un fond plein écran (ni liseré ni coins arrondis).
+static func style_satin(ombre: bool, cadre: bool = true) -> FondSatin:
+	var m := FondSatin.new()
+	m.haut = SATIN[0]
+	m.milieu = SATIN[1]
+	m.pos_milieu = 0.16
+	m.bas = SATIN[2]
+	m.bg_color = PAL.fond
+	m.rayon = float(Charte.RAYON_PANNEAU) if cadre else 0.0
+	m.bord_w = float(maxi(1, C.px(1))) if cadre else 0.0
+	m.bord = PAL.bord
+	m.biseau = 0.22 if cadre else 0.0
+	m.ombre = float(maxi(10, C.px(44))) if ombre else 0.0
+	m.ombre_y = float(C.px(10)) if ombre else 0.0
+	m.set_content_margin_all(18)
+	return m
+
+## Dessin du fond satiné : ombre portée, dégradé vertical par bandes (coins arrondis suivis finement), biseau clair en
+## haut et à gauche, sombre en bas et à droite, puis liseré net par-dessus. `bg_color` : teinte moyenne (repère des tests).
+class FondSatin extends StyleBox:
+	var haut := Color.GRAY
+	var milieu := Color.GRAY
+	var pos_milieu := 0.16
+	var bas := Color.DIM_GRAY
+	var bg_color := Color.GRAY
+	var rayon := 18.0
+	var bord_w := 1.0
+	var bord := Color.BLACK
+	var ombre := 0.0
+	var ombre_y := 0.0
+	var ombre_teinte := Color(0, 0, 0, .80)
+	var biseau := 0.0
+
+	func _get_draw_rect(rect: Rect2) -> Rect2:
+		return rect.grow(ombre + absf(ombre_y))
+
+	func _teinte(t: float) -> Color:
+		return haut.lerp(milieu, t / pos_milieu) if t < pos_milieu else milieu.lerp(bas, (t - pos_milieu) / (1.0 - pos_milieu))
+
+	func _bornes(r: Rect2, y: float, R: float) -> Vector2:
+		var dy := 0.0
+		if y < r.position.y + R: dy = r.position.y + R - y
+		elif y > r.end.y - R: dy = y - (r.end.y - R)
+		var dx := R - sqrt(maxf(0.0, R * R - dy * dy)) if dy > 0.0 else 0.0
+		return Vector2(r.position.x + dx, r.end.x - dx)
+
+	func _draw(ci: RID, rect: Rect2) -> void:
+		var R := maxf(0.0, rayon - bord_w)
+		var r := rect.grow(-bord_w)
+		if ombre > 0.0:
+			var o := StyleBoxFlat.new()
+			o.bg_color = bas
+			o.set_corner_radius_all(int(rayon))
+			o.shadow_size = int(ombre)
+			o.shadow_offset = Vector2(0, ombre_y)
+			o.shadow_color = ombre_teinte
+			o.anti_aliasing = true
+			o.draw(ci, rect)
+		if r.size.x <= 2.0 * R or r.size.y <= 2.0 * R: return
+		var pas := maxf(4.0, r.size.y / 48.0)
+		var y := r.position.y
+		while y < r.end.y - 0.01:
+			var coin := y < r.position.y + R or y >= r.end.y - R - 0.01
+			var suivant := minf(r.end.y, y + (1.5 if coin else pas))
+			if not coin and suivant > r.end.y - R: suivant = r.end.y - R
+			var b0 := _bornes(r, y, R)
+			var b1 := _bornes(r, suivant, R)
+			var c0 := _teinte((y - r.position.y) / r.size.y)
+			var c1 := _teinte((suivant - r.position.y) / r.size.y)
+			RenderingServer.canvas_item_add_polygon(ci, PackedVector2Array([Vector2(b0.x, y), Vector2(b0.y, y), Vector2(b1.y, suivant), Vector2(b1.x, suivant)]),
+				PackedColorArray([c0, c0, c1, c1]))
+			y = suivant
+		if biseau > 0.0:
+			var e := 2.0
+			RenderingServer.canvas_item_add_line(ci, Vector2(r.position.x + R, r.position.y + e * .5), Vector2(r.end.x - R, r.position.y + e * .5), Color(1, 1, 1, biseau), e, true)
+			RenderingServer.canvas_item_add_line(ci, Vector2(r.position.x + e * .5, r.position.y + R), Vector2(r.position.x + e * .5, r.end.y - R), Color(1, 1, 1, biseau * .5), e, true)
+			RenderingServer.canvas_item_add_line(ci, Vector2(r.position.x + R, r.end.y - e * .5), Vector2(r.end.x - R, r.end.y - e * .5), Color(0, 0, 0, biseau * 2.2), e, true)
+			RenderingServer.canvas_item_add_line(ci, Vector2(r.end.x - e * .5, r.position.y + R), Vector2(r.end.x - e * .5, r.end.y - R), Color(0, 0, 0, biseau * 1.4), e, true)
+		if bord_w > 0.0:
+			var contour := StyleBoxFlat.new()
+			contour.draw_center = false
+			contour.border_color = bord
+			contour.set_border_width_all(int(bord_w))
+			contour.set_corner_radius_all(int(rayon))
+			contour.anti_aliasing = true
+			contour.draw(ci, rect)
 
 static func teinte_moral(cle: String) -> Color:
 	match cle:
@@ -230,15 +341,11 @@ static func ouvrir(view: Control, id: String, _ancre: Control) -> void:
 	_colonne_role(view, fond, d, p)
 	view.director._refresh_controls()
 
-## Cadre commun des petites fenêtres du direct en ardoise claire (teinte D) : fenêtre d'un joueur, consignes (idée 33).
+## Cadre commun des petites fenêtres du direct en anthracite satiné (choix B de Léo, 23/11) : fenêtre d'un joueur,
+## consignes (idée 33), fenêtres du direct.
 static func habiller(fond: Panel, nom: String) -> void:
 	var p := PAL
-	var style := Charte.style_panneau(p.fond, Charte.RAYON_PANNEAU)
-	style.border_color = p.bord
-	style.set_border_width_all(maxi(1, C.px(2)))
-	style.shadow_color = Color(0, 0, 0, .65)
-	style.shadow_size = maxi(8, C.px(36))
-	fond.add_theme_stylebox_override("panel", style)
+	fond.add_theme_stylebox_override("panel", style_satin(true))
 	var croix := fond.find_child(nom + "Fermer", false, false) as Button
 	if croix != null:
 		croix.add_theme_color_override("font_color", p.encre2)
@@ -618,15 +725,10 @@ static func Tableau_nom(nom: String) -> String:
 	var m := nom.strip_edges().split(" ", false)
 	return nom if m.size() < 2 else "%s. %s" % [m[0].left(1), " ".join(m.slice(1)).to_upper()]
 
-## Style de l'ardoise claire (teinte D) pour les autres petites fenêtres du direct (Léo, 23/11 : « c'est le cas pour
-## toutes les fenêtres sur l'écran 2D ») : même fond, liseré et ombre que `habiller` ; `marge` en pixels, `ombre` faux
-## pour un menu déroulant. Survol des lignes : `PAL.case`.
-static func style_ardoise(marge: int = -1, ombre: bool = true) -> StyleBoxFlat:
-	var p := PAL
-	var style := Charte.style_panneau(p.fond, Charte.RAYON_PANNEAU)
-	style.border_color = p.bord
-	style.set_border_width_all(maxi(1, C.px(2)))
-	style.shadow_color = Color(0, 0, 0, .65)
-	style.shadow_size = maxi(8, C.px(36)) if ombre else 0
-	if marge >= 0: style.set_content_margin_all(marge)
-	return style
+## Style des autres petites fenêtres du direct (Léo, 23/11 : « c'est le cas pour toutes les fenêtres sur l'écran 2D »),
+## anthracite satiné comme `habiller` (nom gardé pour les appelants) ; `marge` en pixels, `ombre` faux pour un menu
+## déroulant. Survol des lignes : `PAL.case`.
+static func style_ardoise(marge: int = -1, ombre: bool = true) -> StyleBox:
+	var m := style_satin(ombre)
+	if marge >= 0: m.set_content_margin_all(marge)
+	return m
