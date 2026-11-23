@@ -24,7 +24,9 @@ module.exports=function nativeGestion(command,p){
  if(command==='scout_mission'){
   requireThat(p.confirmed===true&&!S.live&&S.phase!=='ended','Confirme la mission à 5 000 € hors match.');
   requireThat([p.family,p.maxAge,p.budget,p.maxWage].every(Number.isInteger),'Critères entiers requis.');
-  requireThat(createScoutMission(p.family,p.maxAge,p.budget,p.maxWage),'Mission refusée : critères, trésorerie ou quatre missions déjà en cours.');return;
+  // Recherche ciblée (recherche-ciblee.cjs) : maillot, rôle, minimums, priorité et recruteurs, validés avant le paiement.
+  const cible=typeof nativeSystems!=='undefined'?nativeSystems.domain('rechercheCiblee')?.cible(p)??null:null;
+  requireThat(createScoutMission(p.family,p.maxAge,p.budget,p.maxWage,cible),'Mission refusée : critères, trésorerie ou quatre missions déjà en cours.');return;
  }
  // Plusieurs postes d'un coup (bannière des Bleus : « Faire souffler les 9 ») : tout ou rien, dans l'ordre donné.
  if(command==='set_lineup'&&Array.isArray(p.changes)){

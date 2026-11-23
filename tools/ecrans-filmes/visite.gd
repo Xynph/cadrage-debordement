@@ -106,6 +106,7 @@ const EXTRAS := [
 	{"id": "classements-calendrier", "libelle": "Classements · onglet Calendrier (tableau)", "type": "classements_onglet", "onglet": "calendar"},
 	{"id": "recrutement-entre-clubs", "libelle": "Recrutement · sous-page Marché entre clubs", "type": "recrutement_sous", "page": "interclub"},
 	{"id": "recrutement-entre-clubs-offre", "libelle": "Recrutement · Marché entre clubs, offre guidée par le recruteur", "type": "recrutement_sous", "page": "interclub", "offre": true},
+	{"id": "recherche-ciblee", "libelle": "Recrutement · recherche ciblée (poste, rôle, critères, joueurs observés)", "type": "recherche_ciblee"},
 	{"id": "recrutement-rapport-recruteur", "libelle": "Recrutement · Rapport du recruteur", "type": "recrutement_sous", "page": "recruteur"},
 	{"id": "agent-discussion", "libelle": "Recrutement · discussion avec l'agent", "type": "recrutement_sous", "page": "recruteur", "presser": "RapportAgentOuvrirLien"},
 	{"id": "agent-ton", "libelle": "Recrutement · discussion avec l'agent, ton à tout prix puis rôle attendu", "type": "recrutement_sous", "page": "recruteur", "presser": "RapportAgentOuvrirLien", "puis": ["AgentTon_tout_prix", "AgentQuestion_role"]},
@@ -784,6 +785,21 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				salaire.pressed.emit()
 				await stabiliser()
 				if app.find_child("OffreFenetreSalaire", true, false) == null: return {"statut": "echec", "note": "petite fenêtre du salaire non ouverte"}
+		"recherche_ciblee":
+			app.management_ui.erase("recrutement_page")
+			app._navigate("Recrutement")
+			await stabiliser()
+			if app.route != "Recrutement": return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
+			var Recherche = load("res://ui/immersive08/recherche_ciblee.gd")
+			var etat_r: Dictionary = Recherche._etat(app)
+			etat_r.poste = 8
+			etat_r.role = str(load("res://ui/immersive08/fiche_roles.gd").roles_famille(Recherche._famille_role(etat_r))[0][0])
+			etat_r.note = 0
+			var bouton_r := app.find_child("RechercheCibleeOuvrir", true, false) as Button
+			if bouton_r == null: return {"statut": "echec", "note": "lien Recherche ciblée absent"}
+			bouton_r.pressed.emit()
+			await stabiliser()
+			if app.find_child("RechercheCibleeFenetre", true, false) == null: return {"statut": "echec", "note": "fenêtre absente"}
 		"recrutement_sous":
 			app.management_ui.erase("recrutement_page")
 			app._navigate("Recrutement")
@@ -1210,6 +1226,9 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 
 ## Remet l'écran dans son état ordinaire après la capture.
 func refermer(ecran: Dictionary) -> void:
+	if str(ecran.type) == "recherche_ciblee":
+		load("res://ui/petite_fenetre.gd").fermer_derniere(app.get_tree())
+		app.management_ui.erase("recherche_ciblee")
 	if str(ecran.type) == "calendrier_semaine":
 		var mois: Node = app.find_child("CarnetCalendar", true, false)
 		if mois != null and mois.has_method("_view_as"): mois._view_as("month")
