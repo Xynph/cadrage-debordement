@@ -1323,7 +1323,7 @@ func _page() -> void:
 		(barre as HBoxContainer).alignment = BoxContainer.ALIGNMENT_END
 		page.add_child(barre)
 	for noeud: Control in [phase, equipe, _touche("T", BARRE_HAUT), parametres, plus]: barre.add_child(noeud)
-	# Planche FM27 n° 34 (ajustements et cris du banc), sous CD_VARIANTE_VISUELLE=A|B.
+	# Barre du banc (idée FM27 n° 34) : cris d'équipe, cris à un joueur, ajustements, permuter les ailes.
 	load("res://ui/contextual/match_banc_fm.gd").poser(self, barre, page)
 	_page_d3(page)
 
