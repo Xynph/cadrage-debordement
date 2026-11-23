@@ -1,12 +1,11 @@
 extends RefCounted
-## Rapport d'analyste après match (revue FM27, idée 28) — PLANCHE A/B sous CD_VARIANTE_VISUELLE, rien sans variante.
-## Sous la carte du compte rendu (article du dernier match, Réception) : l'analyse vidéo du match.
-## A : verdicts par domaine en pastilles ▲/▼ + liste des « données clés » ; un clic sur une ligne = petite fenêtre
-##     (essais minute par minute, nos joueurs, d'où partent les essais, conquête).
-## B : panneau en largeur, verdicts en colonne à gauche, onglets à droite qui changent le contenu sur place.
-## Données réelles seulement : `decisions.report` (stats, essais détaillés : minute, camp, origine, zone, marqueur) et
-## `clubLife.matchNotes` (notes du dernier match, détail de nos joueurs). Domination, entrées dans les 22 m et carte de
-## chaleur ne sont pas gardées après le match (seulement pendant le direct) : absentes ici.
+## Rapport de l'analyste vidéo après le match (revue FM27, idée 28 ; choix B de Léo du 23/11/2026) : son propre message
+## « Analyse vidéo » dans la Réception (club-mail.cjs, type analyse_video). Panneau en largeur : verdicts de l'analyste
+## en colonne à gauche (un clic = petite fenêtre de la donnée), quatre onglets à droite qui changent le contenu sur place
+## (occasions, domination, nos joueurs, conquête et discipline).
+## Données du vrai match seulement : `decisions.report` (stats, essais détaillés, `analyse` : domination minute par minute
+## et entrées dans les 22 datées, gardées dans la carrière à la clôture, match-direct.cjs analyseVideo) et
+## `clubLife.matchNotes` (notes et détail de nos joueurs). Seul le message du dernier match porte le panneau.
 
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
@@ -17,34 +16,43 @@ const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
 const Notes = preload("res://ui/notes_match.gd")
 const Link = preload("res://ui/entity_link.gd")
 const BanqueImages = preload("res://ui/banque_images.gd")
+const ClubMail = preload("res://ui/club_mail.gd")
 
+const TYPE := "analyse_video"
 const NOUS := R.VERT
 const EUX := R.BLEU
-const ZONES := [["0-5 m", 5], ["5-22 m", 22], ["22-50 m", 50], ["+50 m", 100]]
 const FENETRE := "AnalysteFenetre"
-## [id, libellé, icône]
-const DONNEES := [["essais", "Essais minute par minute", "ball"], ["joueurs", "Nos joueurs", "people"],
-	["zones", "D'où partent les essais", "target"], ["conquete", "Conquête et discipline", "shield"]]
+const HAUTEUR := 700.0
+const GAUCHE := 300.0
+## Onglets : [id, libellé, icône].
+const ONGLETS := [["occasions", "Occasions", "target"], ["domination", "Domination", "flag"], ["joueurs", "Nos joueurs", "people"],
+	["conquete", "Conquête et discipline", "shield"]]
 
-static func variante() -> String:
-	var v := OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper()
-	return v if v in ["A", "B"] else ""
-
-## Le bloc d'analyse sous la carte du compte rendu, ou null (pas de variante, pas de match).
-static func bloc(app: Control, carte_match: Control, largeur: float) -> Control:
-	if variante().is_empty() or carte_match == null: return null
-	var CR = load("res://ui/immersive08/compte_rendu_carte.gd")
+## Le panneau d'analyse du message `mail` (courrier du club), ou null : autre type, pas de match, ou message d'un match
+## plus ancien que le dernier rapport.
+static func bloc_mail(app: Control, mail: Dictionary, largeur: float) -> Control:
+	if str(mail.get("type", "")) != TYPE: return null
 	var report: Dictionary = load("res://ui/immersive08/avant_match_bilan.gd").rapport(app.model)
 	if report.is_empty(): return null
+	if mail.get("club") == null or _n(mail.get("club")) != _n(report.teams[1 - int(report.side)].get("id")): return null
+	var dernier := -1
+	for autre: Dictionary in ClubMail.mails(app.model):
+		if str(autre.get("type", "")) == TYPE: dernier = maxi(dernier, str(autre.get("id", "")).trim_prefix("mail-").to_int())
+	if str(mail.get("id", "")).trim_prefix("mail-").to_int() != dernier: return null
+	return bloc(app, report, largeur)
+
+static func bloc(app: Control, report: Dictionary, largeur: float) -> Control:
+	var CR = load("res://ui/immersive08/compte_rendu_carte.gd")
 	var ctx: Dictionary = CR._contexte(app, report)
-	ctx["onglet"] = "essais"
+	ctx["analyse"] = report.get("analyse") if report.get("analyse") is Dictionary else {}
+	ctx["onglet"] = "occasions"
 	var racine := Control.new()
 	racine.name = "AnalysteMatch"
 	racine.mouse_filter = Control.MOUSE_FILTER_PASS
 	ctx["racine"] = racine
 	ctx["largeur"] = largeur
-	var h := _bloc_a(racine, ctx, largeur) if variante() == "A" else _bloc_b(racine, ctx, largeur)
-	racine.custom_minimum_size = Vector2(C.px(largeur), C.px(h))
+	_panneau(racine, ctx, largeur)
+	racine.custom_minimum_size = Vector2(C.px(largeur), C.px(HAUTEUR + 8.0))
 	return racine
 
 # ---- Données -------------------------------------------------------------------------------------------------------
@@ -70,6 +78,45 @@ static func _stat(ctx: Dictionary, camp: int, cle: String) -> int:
 static func _pct(gagnes: int, total: int) -> int:
 	return roundi(100.0 * gagnes / total) if total > 0 else 0
 
+## Entrées dans les 22 adverses : minutes de chaque camp, triées ([] sans analyse gardée).
+static func _occasions_camp(ctx: Dictionary, camp: int) -> Array:
+	var out: Array = []
+	var liste: Variant = ctx.analyse.get("occasions")
+	if liste is Array:
+		for o: Variant in liste:
+			if o is Array and o.size() == 2 and _n(o[1]) == camp: out.append(_n(o[0]))
+	out.sort()
+	return out
+
+static func _a_occasions(ctx: Dictionary) -> bool:
+	return ctx.analyse.get("occasions") is Array and ctx.analyse.get("zone22") is Dictionary
+
+static func _zone22(ctx: Dictionary, cle: String, camp: int) -> int:
+	var z: Variant = ctx.analyse.get("zone22")
+	if z is Dictionary and z.get(cle) is Array and (z[cle] as Array).size() == 2: return _n(z[cle][camp])
+	return 0
+
+## Domination minute par minute vue de notre camp (+ : nous, − : eux).
+static func _domination(ctx: Dictionary) -> Array:
+	var out: Array = []
+	var d: Variant = ctx.analyse.get("domination")
+	if not d is Array: return out
+	var signe := 1 if int(ctx.cote) == 0 else -1
+	for v: Variant in d: out.append(_n(v) * signe)
+	return out
+
+## Part des minutes dominées : [nous, eux] en %, ou [] sans courbe.
+static func _parts_domination(ctx: Dictionary) -> Array:
+	var dom := _domination(ctx)
+	var a := 0
+	var b := 0
+	for v: int in dom:
+		if v > 0: a += 1
+		elif v < 0: b += 1
+	if a + b == 0: return []
+	var p := roundi(100.0 * a / (a + b))
+	return [p, 100 - p]
+
 ## Nos joueurs du dernier match (notes, minutes, essais, plaquages, mètres) + détail de la feuille (historique[0]).
 static func _nos_joueurs(ctx: Dictionary) -> Array:
 	var out: Array = []
@@ -85,42 +132,61 @@ static func _nos_joueurs(ctx: Dictionary) -> Array:
 		var detail := {}
 		var j: Variant = joueurs.get(id)
 		if j is Dictionary and j.get("historique") is Array and not (j.historique as Array).is_empty() and j.historique[0] is Dictionary: detail = j.historique[0]
-		out.append({"id": id, "nom": str(fiche.get("name", "—")), "poste": str(fiche.get("pos", "")), "fiche": fiche, "note": float(n.get("note", 0)),
+		out.append({"id": id, "nom": str(fiche.get("name", "—")), "poste": str(fiche.get("pos", "")), "note": float(n.get("note", 0)),
 			"minutes": _n(n.get("minutes")), "essais": _n(n.get("essais")), "plaquages": _n(n.get("plaquages")), "metres": _n(n.get("metres")), "detail": detail})
 	out.sort_custom(func(a, b): return a.note > b.note)
 	return out
 
-## Verdicts de l'analyste par domaine : [domaine, icône, sens (1 ▲, 0 =, -1 ▼), chiffre].
+## Verdicts de l'analyste : [id, domaine, icône, sens (1 ▲, 0 =, -1 ▼), chiffre, donnée ouverte en petite fenêtre].
 static func _verdicts(ctx: Dictionary) -> Array:
 	var nous := int(ctx.cote)
 	var eux := 1 - nous
 	var out: Array = []
 	var e := [_essais_camp(ctx, 0).size(), _essais_camp(ctx, 1).size()]
-	out.append(["Attaque", "ball", signi(e[nous] - e[eux]), "%d – %d" % [e[nous], e[eux]]])
+	out.append(["attaque", "Attaque", "ball", signi(e[nous] - e[eux]), "%d – %d" % [e[nous], e[eux]], "occasions"])
+	if _a_occasions(ctx):
+		var o := [_zone22(ctx, "entrees", 0), _zone22(ctx, "entrees", 1)]
+		out.append(["occasions", "Entrées 22 m", "target", signi(o[nous] - o[eux]) if absi(o[nous] - o[eux]) >= 2 else 0, "%d – %d" % [o[nous], o[eux]], "occasions"])
+	var parts := _parts_domination(ctx)
+	if not parts.is_empty():
+		out.append(["domination", "Domination", "flag", 1 if parts[0] >= 55 else -1 if parts[0] <= 45 else 0, "%d %%" % parts[0], "domination"])
 	var cq := [0, 0]
 	var ct := [0, 0]
 	for camp in 2:
 		cq[camp] = _stat(ctx, camp, "scrumsWon") + _stat(ctx, camp, "lineoutsWon")
 		ct[camp] = _stat(ctx, camp, "scrums") + _stat(ctx, camp, "lineouts")
 	var pc := [_pct(cq[0], ct[0]), _pct(cq[1], ct[1])]
-	out.append(["Conquête", "shield", signi(pc[nous] - pc[eux]) if absi(pc[nous] - pc[eux]) >= 5 else 0, "%d %%" % pc[nous]])
-	var te := [0.0, 0.0]
-	var s: Variant = ctx.report.get("stats")
-	if s is Array and s.size() == 2 and s[0] is Dictionary and s[1] is Dictionary: te = [float(s[0].get("territory", 0)), float(s[1].get("territory", 0))]
-	var tt: float = float(te[0]) + float(te[1])
-	var tn: int = roundi(100.0 * float(te[nous]) / tt) if tt > 0 else 50
-	out.append(["Territoire", "flag", 1 if tn >= 55 else -1 if tn <= 45 else 0, "%d %%" % tn])
+	out.append(["conquete", "Conquête", "shield", signi(pc[nous] - pc[eux]) if absi(pc[nous] - pc[eux]) >= 5 else 0, "%d %%" % pc[nous], "conquete"])
 	var pen := [_stat(ctx, 0, "penalties"), _stat(ctx, 1, "penalties")]
-	out.append(["Discipline", "warning", signi(pen[eux] - pen[nous]) if absi(pen[eux] - pen[nous]) >= 2 else 0, "%d – %d" % [pen[nous], pen[eux]]])
-	var pl := [0, 0]
-	var notes: Array = ctx.dernier.get("notes", []) if ctx.dernier.get("notes") is Array else []
-	for n: Variant in notes:
-		if n is Dictionary: pl[clampi(_n(n.get("cote")), 0, 1)] += _n(n.get("plaquages"))
-	out.append(["Défense", "people", 1 if e[eux] <= 1 else -1 if e[eux] >= 3 else 0, "%d plaq." % pl[nous]])
+	out.append(["discipline", "Discipline", "warning", signi(pen[eux] - pen[nous]) if absi(pen[eux] - pen[nous]) >= 2 else 0, "%d – %d" % [pen[nous], pen[eux]], "conquete"])
+	var pl := 0
+	for j: Dictionary in _nos_joueurs(ctx): pl += int(j.plaquages)
+	out.append(["defense", "Défense", "people", 1 if e[eux] <= 1 else -1 if e[eux] >= 3 else 0, "%d plaq." % pl, "joueurs"])
 	return out
 
 static func _sens(v: int) -> Array:
 	return ["▲", R.VERT] if v > 0 else ["▼", R.ROUGE] if v < 0 else ["=", R.BLEU]
+
+## Chiffre clé de chaque onglet : [texte, couleur].
+static func _chiffre(ctx: Dictionary, id: String) -> Array:
+	var nous := int(ctx.cote)
+	match id:
+		"occasions":
+			var a := _zone22(ctx, "entrees", nous) if _a_occasions(ctx) else _essais_camp(ctx, nous).size()
+			var b := _zone22(ctx, "entrees", 1 - nous) if _a_occasions(ctx) else _essais_camp(ctx, 1 - nous).size()
+			return ["%d – %d" % [a, b], R.VERT if a > b else R.ROUGE if a < b else R.BLEU]
+		"domination":
+			var parts := _parts_domination(ctx)
+			if parts.is_empty(): return ["—", Charte.IVOIRE_2]
+			return ["%d %%" % parts[0], R.VERT if parts[0] > 50 else R.ROUGE if parts[0] < 50 else R.BLEU]
+		"joueurs":
+			var j := _nos_joueurs(ctx)
+			if j.is_empty(): return ["—", Charte.IVOIRE_2]
+			return ["%s  %s" % [str(j[0].nom).split(" ")[-1], Notes.texte_note(j[0].note)], R.ORANGE]
+		_:
+			var m := "%d/%d" % [_stat(ctx, nous, "scrumsWon"), _stat(ctx, nous, "scrums")]
+			var t := "%d/%d" % [_stat(ctx, nous, "lineoutsWon"), _stat(ctx, nous, "lineouts")]
+			return ["M %s · T %s" % [m, t], R.VIOLET]
 
 # ---- Briques -------------------------------------------------------------------------------------------------------
 
@@ -150,103 +216,174 @@ static func _survol(ligne: Panel) -> void:
 static func _ouvrir_joueur(ctx: Dictionary, id: String) -> void:
 	if Link.available(ctx.app, "player", id): ctx.app.navigation_controller.open_entity({"kind": "player", "id": id})
 
-## Chiffre clé de chaque donnée (ligne de A, onglet de B) : [texte, couleur].
-static func _chiffre(ctx: Dictionary, id: String) -> Array:
-	var nous := int(ctx.cote)
-	match id:
-		"essais":
-			var a := _essais_camp(ctx, nous).size()
-			var b := _essais_camp(ctx, 1 - nous).size()
-			return ["%d – %d" % [a, b], R.VERT if a > b else R.ROUGE if a < b else R.BLEU]
-		"joueurs":
-			var j := _nos_joueurs(ctx)
-			if j.is_empty(): return ["—", Charte.IVOIRE_2]
-			return ["%s  %s" % [str(j[0].nom).split(" ")[-1], Notes.texte_note(j[0].note)], R.ORANGE]
-		"zones":
-			var compte := [0, 0, 0, 0]
-			for e: Dictionary in _essais_camp(ctx, nous): compte[_zone(e)] += 1
-			var best := 0
-			for i in 4:
-				if compte[i] > compte[best]: best = i
-			return [str(ZONES[best][0]) if compte[best] > 0 else "—", R.TURQUOISE]
-		_:
-			var m := "%d/%d" % [_stat(ctx, nous, "scrumsWon"), _stat(ctx, nous, "scrums")]
-			var t := "%d/%d" % [_stat(ctx, nous, "lineoutsWon"), _stat(ctx, nous, "lineouts")]
-			return ["M %s · T %s" % [m, t], R.VIOLET]
+static func _legende(cadre: Control, ctx: Dictionary, x: float, chiffres: Array) -> void:
+	for camp in 2:
+		var lx := x + camp * 380.0
+		var cr := G.crest(ctx.clubs[camp], C.px(26))
+		cadre.add_child(cr)
+		D.place(cr, Rect2(lx, 12, 26, 26))
+		D.rect(cadre, Rect2(lx + 34, 22, 30, 6), _couleur(ctx, camp), 3)
+		D.text(cadre, lx + 72, 33, G.club_abbr(ctx.clubs[camp]), 18, _couleur(ctx, camp), 800, 70)
+		if camp < chiffres.size(): D.text(cadre, lx + 140, 33, str(chiffres[camp]), 18, Charte.IVOIRE, 800, 200)
 
-static func _zone(e: Dictionary) -> int:
-	var z := _n(e.get("zone"))
-	for i in 4:
-		if z <= int(ZONES[i][1]): return i
-	return 3
+## Ballon d'un essai (clic = fiche du marqueur) et étiquette « minute + nom », posée à droite ou à gauche, dessous ou
+## dessus, à la première place libre (`places` : zones déjà prises du cadre, `largeur` : largeur du cadre).
+static func _ballon(cadre: Control, ctx: Dictionary, e: Dictionary, camp: int, i: int, centre: Vector2, etiquette_dessous: bool, places: Array, largeur: float) -> void:
+	var couleur := _couleur(ctx, camp)
+	var rond := D.rect(cadre, Rect2(centre.x - 16, centre.y - 16, 32, 32), couleur, 16)
+	rond.name = "AnalysteEssai%d_%d" % [camp, i]
+	places.append(Rect2(centre.x - 16, centre.y - 16, 32, 32))
+	var ball := C.icon("ball", C.px(18), Charte.ENCRE)
+	rond.add_child(ball)
+	D.place(ball, Rect2(7, 7, 18, 18))
+	var nom := str(e.get("name")) if e.get("name") != null else "—"
+	var pid := str(e.get("id", "")) if e.get("id") != null else ""
+	R.cliquable(rond, func(): _ouvrir_joueur(ctx, pid), "AnalysteEssaiLien%d_%d" % [camp, i], "%d' · %s" % [_n(e.get("minute")), nom])
+	var etiquette := "%d' %s" % [_n(e.get("minute")), nom.split(" ")[-1]]
+	var lw := R.largeur(etiquette, 16) + 16
+	var ys := [centre.y + 8.0, centre.y - 34.0] if etiquette_dessous else [centre.y - 34.0, centre.y + 8.0]
+	var choix := Rect2()
+	var trouve := false
+	for x: float in [centre.x + 18.0, centre.x - 18.0 - lw]:
+		for y: float in ys:
+			var r := Rect2(x, y, lw, 26)
+			if r.position.x < 4 or r.end.x > largeur - 4: continue
+			var libre := true
+			for autre: Rect2 in places:
+				if autre.grow(-1).intersects(r): libre = false; break
+			if libre and not trouve: choix = r; trouve = true
+	if not trouve: choix = Rect2(clampf(centre.x + 18.0, 4.0, largeur - 4.0 - lw), ys[0], lw, 26)
+	places.append(choix)
+	var fond_e := D.rect(cadre, choix, Charte.PANNEAU_3, 6, couleur)
+	fond_e.name = "AnalysteEtiquette%d_%d" % [camp, i]
+	D.text(fond_e, 8, 19, etiquette, 16, Charte.IVOIRE, 800, lw - 12)
 
-# ---- Contenus (fenêtre de A, onglet de B) ----------------------------------------------------------------------------
+# ---- Contenus (onglet, petite fenêtre) -----------------------------------------------------------------------------
 
 static func _contenu(parent: Control, ctx: Dictionary, id: String, zone: Rect2) -> void:
 	match id:
-		"essais": _courbe(parent, ctx, zone)
+		"occasions": _occasions(parent, ctx, zone)
+		"domination": _domination_vue(parent, ctx, zone)
 		"joueurs": _joueurs(parent, ctx, zone)
-		"zones": _zones(parent, ctx, zone)
 		_: _conquete(parent, ctx, zone)
 
-## Courbe cumulée des essais (marches) des deux équipes, 0-80', mi-temps, ballon sur chaque essai (clic = fiche).
-static func _courbe(parent: Control, ctx: Dictionary, zone: Rect2) -> void:
+## Courbe cumulée des occasions (entrées dans les 22 adverses) des deux équipes, 0-80', mi-temps, et chaque essai posé
+## sur la courbe de son équipe à sa minute (clic = fiche du marqueur). Sans analyse gardée : la courbe des essais.
+static func _occasions(parent: Control, ctx: Dictionary, zone: Rect2) -> void:
 	var cadre := D.rect(parent, zone, Charte.PANNEAU_2, 12)
-	cadre.name = "AnalysteCourbe"
+	cadre.name = "AnalysteOccasions"
 	cadre.mouse_filter = Control.MOUSE_FILTER_PASS
+	var avec := _a_occasions(ctx)
 	var gx := 70.0
-	var gy := 50.0
-	var gw := zone.size.x - 110.0
-	var gh := zone.size.y - 110.0
+	var gy := 64.0
+	var gw := zone.size.x - 120.0
+	var gh := zone.size.y - 120.0
 	var fin := 80.0
+	var series := []
 	var maxi_e := 1
-	for camp in 2: maxi_e = maxi(maxi_e, _essais_camp(ctx, camp).size())
-	for k in range(0, maxi_e + 1):
+	for camp in 2:
+		var minutes: Array = []
+		if avec: minutes = _occasions_camp(ctx, camp)
+		else:
+			for e: Dictionary in _essais_camp(ctx, camp): minutes.append(_n(e.get("minute")))
+		for m: int in minutes: fin = maxf(fin, float(m))
+		series.append(minutes)
+		maxi_e = maxi(maxi_e, minutes.size())
+	var pas := maxi(1, ceili(maxi_e / 6.0))
+	for k in range(0, maxi_e + 1, pas):
 		var y := gy + gh - gh * k / float(maxi_e)
 		D.line(cadre, Vector2(gx, y), Vector2(gx + gw, y), Color(Charte.FILET, .6))
 		D.text(cadre, gx - 14, y + 7, str(k), 17, Charte.IVOIRE_2, 700, 40, HORIZONTAL_ALIGNMENT_RIGHT)
 	for m: int in [0, 20, 40, 60, 80]:
 		var x := gx + gw * m / fin
 		D.text(cadre, x, gy + gh + 32, "MT" if m == 40 else "%d'" % m, 17, Charte.IVOIRE if m == 40 else Charte.IVOIRE_2, 700, 60, HORIZONTAL_ALIGNMENT_CENTER)
-	D.rect(cadre, Rect2(gx + gw / 2.0 - 1, gy - 10, 2, gh + 10), Color(Charte.IVOIRE_2, .7), 0)
+	D.rect(cadre, Rect2(gx + gw * 40.0 / fin - 1, gy - 10, 2, gh + 10), Color(Charte.IVOIRE_2, .7), 0)
+	var niveau_a := func(camp: int, minute: int) -> int:
+		var n := 0
+		for m: int in series[camp]:
+			if m <= minute: n += 1
+		return n
 	for camp in 2:
 		var couleur := _couleur(ctx, camp)
-		var liste := _essais_camp(ctx, camp)
 		var px := gx
 		var niveau := 0
-		var i := 0
-		for e: Dictionary in liste + [{"minute": 80, "fin": true}]:
-			var x := gx + gw * clampf(float(_n(e.get("minute"))), 0, fin) / fin
+		for m: int in series[camp] + [int(fin)]:
+			var x := gx + gw * clampf(float(m), 0, fin) / fin
 			var y := gy + gh - gh * niveau / float(maxi_e)
 			D.rect(cadre, Rect2(px, y - 2.5, maxf(5.0, x - px), 5), couleur, 2)
-			if e.get("fin", false): break
+			if niveau >= (series[camp] as Array).size(): break
 			var y2 := gy + gh - gh * (niveau + 1) / float(maxi_e)
 			D.rect(cadre, Rect2(x - 2.5, y2, 5, y - y2), couleur, 2)
 			niveau += 1
-			var rond := D.rect(cadre, Rect2(x - 16, y2 - 16, 32, 32), couleur, 16)
-			rond.name = "AnalysteEssai%d_%d" % [camp, i]
-			var ball := C.icon("ball", C.px(18), Charte.ENCRE)
-			rond.add_child(ball)
-			D.place(ball, Rect2(7, 7, 18, 18))
-			var nom := str(e.get("name")) if e.get("name") != null else "—"
-			var pid := str(e.get("id", ""))
-			R.cliquable(rond, func(): _ouvrir_joueur(ctx, pid), "AnalysteEssaiLien%d_%d" % [camp, i], "%d' · %s" % [_n(e.get("minute")), nom]).set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-			var etiquette := "%d' %s" % [_n(e.get("minute")), nom.split(" ")[-1]]
-			var fond_e := D.rect(cadre, Rect2(x + 18, y2 - 40, R.largeur(etiquette, 16) + 16, 26), Charte.PANNEAU_3, 6, couleur)
-			D.text(fond_e, 8, 19, etiquette, 16, Charte.IVOIRE, 800, R.largeur(etiquette, 16) + 4)
 			px = x
-			i += 1
-	# Légende : écussons + nombre d'essais.
+	var places: Array = [Rect2(0, 0, zone.size.x, 44)]
 	for camp in 2:
-		var lx := gx + (0.0 if camp == 0 else 260.0)
-		var cr := G.crest(ctx.clubs[camp], C.px(26))
-		cadre.add_child(cr)
-		D.place(cr, Rect2(lx, 12, 26, 26))
-		D.rect(cadre, Rect2(lx + 34, 22, 30, 6), _couleur(ctx, camp), 3)
-		D.text(cadre, lx + 72, 33, G.club_abbr(ctx.clubs[camp]), 18, _couleur(ctx, camp), 800, 160)
+		var i := 0
+		for e: Dictionary in _essais_camp(ctx, camp):
+			var minute := _n(e.get("minute"))
+			var x := gx + gw * clampf(float(minute), 0, fin) / fin
+			var y: float = gy + gh - gh * float(niveau_a.call(camp, minute)) / float(maxi_e)
+			_ballon(cadre, ctx, e, camp, i, Vector2(x, y), camp != int(ctx.cote), places, zone.size.x)
+			i += 1
+	var chiffres: Array = []
+	for camp in 2:
+		var essais := _essais_camp(ctx, camp).size()
+		chiffres.append(("%d entrée%s  ·  " % [(series[camp] as Array).size(), "s" if (series[camp] as Array).size() > 1 else ""] if avec else "") + "%d essai%s" % [essais, "s" if essais > 1 else ""])
+	_legende(cadre, ctx, gx, chiffres)
+	var ic := C.icon("target" if avec else "ball", C.px(22), Charte.IVOIRE_2)
+	cadre.add_child(ic)
+	D.place(ic, Rect2(zone.size.x - 46, 14, 22, 22))
 
-## Nos joueurs en liste façon Effectif : nom (fiche), note colorée, minutes, essais, mètres, plaquages, franchissements,
-## plaquages manqués, en barres de couleur sur le maximum de l'équipe.
+## Domination minute par minute : une barre par minute, au-dessus de l'axe quand nous dominons (notre couleur), dessous
+## quand ils dominent ; mi-temps ; ballons des essais à leur minute ; part du temps dominé de chaque côté.
+static func _domination_vue(parent: Control, ctx: Dictionary, zone: Rect2) -> void:
+	var cadre := D.rect(parent, zone, Charte.PANNEAU_2, 12)
+	cadre.name = "AnalysteDomination"
+	cadre.mouse_filter = Control.MOUSE_FILTER_PASS
+	var dom := _domination(ctx)
+	var parts := _parts_domination(ctx)
+	var chiffres: Array = []
+	for camp in 2:
+		chiffres.append("—" if parts.is_empty() else "%d %%" % parts[0 if camp == int(ctx.cote) else 1])
+	_legende(cadre, ctx, 70.0, chiffres)
+	var gx := 70.0
+	var gw := zone.size.x - 120.0
+	var haut := 96.0
+	var bas := zone.size.y - 84.0
+	var axe := (haut + bas) / 2.0
+	var demi := (bas - haut) / 2.0 - 24.0
+	var fin := maxf(80.0, float(dom.size()))
+	D.line(cadre, Vector2(gx, axe), Vector2(gx + gw, axe), Color(Charte.IVOIRE_2, .6))
+	for m: int in [0, 20, 40, 60, 80]:
+		D.text(cadre, gx + gw * m / fin, zone.size.y - 14, "MT" if m == 40 else "%d'" % m, 17, Charte.IVOIRE if m == 40 else Charte.IVOIRE_2, 700, 60, HORIZONTAL_ALIGNMENT_CENTER)
+	var mt: Variant = ctx.analyse.get("miTemps")
+	var x_mt := gx + gw * (float(mt) if mt is int or mt is float else 40.0) / fin
+	D.rect(cadre, Rect2(x_mt - 1, haut, 2, bas - haut), Color(Charte.IVOIRE_2, .7), 0)
+	if dom.is_empty():
+		D.text(cadre, zone.size.x / 2.0, axe - 12, "—", 40, Charte.IVOIRE_2, 800, 100, HORIZONTAL_ALIGNMENT_CENTER)
+		return
+	var bw := gw / fin
+	for i in dom.size():
+		var v: int = dom[i]
+		if v == 0: continue
+		var h := demi * absf(v) / 100.0
+		var couleur := NOUS if v > 0 else EUX
+		var barre := D.rect(cadre, Rect2(gx + i * bw + 1, axe - h if v > 0 else axe, maxf(2.0, bw - 2), h), Color(couleur, .55 + .45 * absf(v) / 100.0), 2)
+		barre.name = "AnalysteDomMinute%d" % (i + 1)
+		barre.tooltip_text = "%d'" % (i + 1)
+		barre.mouse_filter = Control.MOUSE_FILTER_PASS
+	# Ballons des essais : les nôtres au-dessus, les leurs dessous.
+	var places: Array = [Rect2(0, 0, zone.size.x, 44)]
+	for camp in 2:
+		var i := 0
+		var dessus := camp == int(ctx.cote)
+		for e: Dictionary in _essais_camp(ctx, camp):
+			var x := gx + gw * clampf(float(_n(e.get("minute"))) - 0.5, 0, fin) / fin
+			_ballon(cadre, ctx, e, camp, i, Vector2(x, haut + 4.0 if dessus else bas + 4.0), not dessus, places, zone.size.x)
+			i += 1
+
+## Nos joueurs en liste façon Effectif : poste, nom (fiche), note colorée, minutes, essais, mètres, plaquages,
+## franchissements, plaquages manqués, en barres de couleur sur le maximum de l'équipe.
 static func _joueurs(parent: Control, ctx: Dictionary, zone: Rect2) -> void:
 	var cadre := D.rect(parent, zone, Charte.PANNEAU_2, 12)
 	cadre.name = "AnalysteJoueurs"
@@ -286,41 +423,8 @@ static func _val(j: Dictionary, cle: String) -> int:
 	if j.has(cle): return _n(j.get(cle))
 	return _n(j.detail.get(cle))
 
-## D'où partent les essais : quatre bandes du terrain (0-5 m … +50 m), nos essais à gauche, les leurs à droite.
-static func _zones(parent: Control, ctx: Dictionary, zone: Rect2) -> void:
-	var cadre := D.rect(parent, zone, Charte.PANNEAU_2, 12)
-	cadre.name = "AnalysteZones"
-	cadre.mouse_filter = Control.MOUSE_FILTER_PASS
-	var compte := [[0, 0, 0, 0], [0, 0, 0, 0]]
-	for camp in 2:
-		for e: Dictionary in _essais_camp(ctx, camp):
-			compte[camp][_zone(e)] += 1
-	var nous := int(ctx.cote)
-	var m := 1
-	for camp in 2:
-		for v: int in compte[camp]: m = maxi(m, v)
-	var bh := (zone.size.y - 70.0) / 4.0
-	var mi := zone.size.x / 2.0
-	for camp in 2:
-		var cr := G.crest(ctx.clubs[camp], C.px(28))
-		cadre.add_child(cr)
-		var tx := mi - 200.0 if camp == nous else mi + 172.0
-		D.place(cr, Rect2(tx, 14, 28, 28))
-	for i in 4:
-		var y := 56.0 + i * bh
-		var bande := D.rect(cadre, Rect2(mi - 70, y + 4, 140, bh - 8), Color(R.VERT, .18 + .12 * (3 - i)), 8)
-		bande.name = "AnalysteZone%d" % i
-		D.text(bande, 70, bh * .5 + 4, str(ZONES[i][0]), 18, Charte.IVOIRE, 800, 130, HORIZONTAL_ALIGNMENT_CENTER)
-		for camp in 2:
-			var v: int = compte[camp][i]
-			var w := (mi - 200.0) * v / float(m)
-			var gauche := camp == nous
-			var bx := (mi - 80.0 - w) if gauche else mi + 80.0
-			if v > 0: D.rect(cadre, Rect2(bx, y + bh * .25, w, bh * .5), _couleur(ctx, camp), 8)
-			var tx := (mi - 80.0 - w - 12.0) if gauche else (mi + 80.0 + w + 12.0)
-			D.text(cadre, tx, y + bh * .5 + 10, str(v), 28, _couleur(ctx, camp) if v > 0 else Charte.IVOIRE_2, 800, 50, HORIZONTAL_ALIGNMENT_RIGHT if gauche else HORIZONTAL_ALIGNMENT_LEFT)
-
-## Conquête et discipline : barres miroir (mêlées, touches, pénalités, possession, territoire).
+## Conquête et discipline : barres miroir (mêlées, touches, pénalités, possession, territoire, entrées dans les 22 et
+## points qui en découlent).
 static func _conquete(parent: Control, ctx: Dictionary, zone: Rect2) -> void:
 	var cadre := D.rect(parent, zone, Charte.PANNEAU_2, 12)
 	cadre.name = "AnalysteConquete"
@@ -340,6 +444,11 @@ static func _conquete(parent: Control, ctx: Dictionary, zone: Rect2) -> void:
 			var b := float(s[1 - nous].get(c[1], 0))
 			var p := roundi(100.0 * a / (a + b)) if a + b > 0 else 50
 			lignes.append([c[0], p, 100 - p, "%d %%" % p, "%d %%" % (100 - p), false])
+	if _a_occasions(ctx):
+		for c: Array in [["Entrées dans les 22", "entrees"], ["Points après entrée", "points"]]:
+			var a := _zone22(ctx, c[1], nous)
+			var b := _zone22(ctx, c[1], 1 - nous)
+			lignes.append([c[0], a, b, str(a), str(b), false])
 	var mi := zone.size.x / 2.0
 	var demi := mi - 260.0
 	var hl := minf(64.0, (zone.size.y - 60.0) / lignes.size())
@@ -349,11 +458,11 @@ static func _conquete(parent: Control, ctx: Dictionary, zone: Rect2) -> void:
 		D.place(cr, Rect2(20.0 if k == 0 else zone.size.x - 48.0, 14, 28, 28))
 	for i in lignes.size():
 		var l: Array = lignes[i]
-		var y := 56.0 + i * hl
+		var y := 52.0 + i * hl
 		var ligne := D.rect(cadre, Rect2(8, y, zone.size.x - 16, hl - 4), Color.TRANSPARENT, 6)
 		ligne.name = "AnalysteConq%d" % i
 		_survol(ligne)
-		D.text(ligne, mi - 8, hl * .3, str(l[0]).to_upper(), 15, Charte.IVOIRE_2, 800, 300, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(ligne, mi - 8, hl * .32, str(l[0]).to_upper(), 15, Charte.IVOIRE_2, 800, 300, HORIZONTAL_ALIGNMENT_CENTER)
 		var tot := float(l[1] + l[2])
 		for k in 2:
 			var part := float(l[1 + k]) / tot if tot > 0 else 0.0
@@ -364,106 +473,63 @@ static func _conquete(parent: Control, ctx: Dictionary, zone: Rect2) -> void:
 			var gagne: bool = (l[1 + k] < l[2 - k]) if l[5] else (l[1 + k] > l[2 - k])
 			D.text(ligne, 12.0 if k == 0 else zone.size.x - 28.0, hl * .5 + 14, str(l[3 + k]), 22, (NOUS if k == 0 else EUX) if gagne else Charte.IVOIRE, 800, 140, HORIZONTAL_ALIGNMENT_LEFT if k == 0 else HORIZONTAL_ALIGNMENT_RIGHT)
 
-# ---- Option A : verdicts en pastilles + liste des données clés → petite fenêtre -----------------------------------
+# ---- Panneau : verdicts en colonne, onglets à droite ---------------------------------------------------------------
 
-static func _bloc_a(racine: Control, ctx: Dictionary, W: float) -> float:
-	var H := 120.0 + DONNEES.size() * 76.0 + 20.0
-	var fond := D.rect(racine, Rect2(0, 16, W, H), Charte.PANNEAU, Charte.RAYON_CARTE)
+static func _panneau(racine: Control, ctx: Dictionary, W: float) -> void:
+	var fond := D.rect(racine, Rect2(0, 8, W, HAUTEUR), Charte.PANNEAU, Charte.RAYON_CARTE)
 	fond.name = "AnalysteFond"
 	fond.mouse_filter = Control.MOUSE_FILTER_PASS
-	_portrait_analyste(fond, Rect2(24, 20, 72, 72))
-	var t := D.text(fond, 112, 52, "ANALYSE VIDÉO", 26, Charte.IVOIRE, 800, 300)
+	_portrait_analyste(fond, Rect2(24, 20, 64, 64))
+	var t := D.text(fond, 100, 50, "ANALYSE VIDÉO", 22, Charte.IVOIRE, 800, GAUCHE - 106)
 	t.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
-	D.text(fond, 112, 84, "DONNÉES CLÉS", 16, R.TURQUOISE, 800, 300)
-	# Verdicts par domaine (le « récapitulatif » de l'analyste, sans phrase) : pastilles ▲ / = / ▼.
-	var x := W - 24.0
+	# Le match analysé : score (domicile d'abord), couleur du résultat.
+	var sc: Array = ctx.report.score
+	var nous := int(ctx.cote)
+	var ecart := _n(sc[nous]) - _n(sc[1 - nous])
+	var score := D.text(fond, 100, 80, "%s %d – %d %s" % [G.club_abbr(ctx.clubs[0]), _n(sc[0]), _n(sc[1]), G.club_abbr(ctx.clubs[1])], 18,
+		R.VERT if ecart > 0 else R.ROUGE if ecart < 0 else R.BLEU, 800, GAUCHE - 106)
+	score.name = "AnalysteScore"
 	var verdicts := _verdicts(ctx)
-	for i in range(verdicts.size() - 1, -1, -1):
-		var v: Array = verdicts[i]
-		var s := _sens(int(v[2]))
-		var texte := "%s %s" % [s[0], v[0]]
-		var lw := R.largeur(texte, 17) + 52
-		x -= lw + 10
-		var p := R.pastille(fond, x, 64, texte, s[1], str(v[1]), "AnalysteVerdict%d" % i, 17)
-		p.tooltip_text = "%s · %s" % [v[0], v[3]]
-	var y := 120.0
-	for i in DONNEES.size():
-		var d: Array = DONNEES[i]
-		var ligne := D.rect(fond, Rect2(20, y, W - 40, 68), Charte.PANNEAU_2, 10)
-		ligne.name = "AnalysteDonnee_%s" % d[0]
-		_survol(ligne)
-		var ic := D.rect(ligne, Rect2(12, 10, 48, 48), Charte.PANNEAU_3, 10)
-		var icone := C.icon(str(d[2]), C.px(26), R.TURQUOISE)
-		ic.add_child(icone)
-		D.place(icone, Rect2(11, 11, 26, 26))
-		D.text(ligne, 80, 43, str(d[1]), 22, Charte.IVOIRE, 800, 520)
-		var ch := _chiffre(ctx, str(d[0]))
-		D.text(ligne, W - 120, 45, str(ch[0]), 26, ch[1], 800, 420, HORIZONTAL_ALIGNMENT_RIGHT)
-		var fl := C.icon("arrow", C.px(22), Charte.IVOIRE_2)
-		ligne.add_child(fl)
-		D.place(fl, Rect2(W - 90, 23, 22, 22))
-		var id := str(d[0])
-		var titre := str(d[1])
-		R.cliquable(ligne, func(): ouvrir_fenetre(ctx, id, titre), "AnalysteOuvrir_%s" % id, titre).set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		y += 76.0
-	return H + 16.0
-
-static func ouvrir_fenetre(ctx: Dictionary, id: String, titre: String) -> void:
-	var page: Control = ctx.app.find_child("ImmersiveInbox", true, false)
-	if page == null: page = ctx.racine
-	var fond := Fenetre.ouvrir(page, FENETRE, titre.to_upper(), "", 1400, 720)
-	_contenu(fond, ctx, id, Rect2(28, 84, 1344, 610))
-
-# ---- Option B : panneau en largeur, verdicts à gauche, onglets à droite --------------------------------------------
-
-static func _bloc_b(racine: Control, ctx: Dictionary, W: float) -> float:
-	var H := 640.0
-	var fond := D.rect(racine, Rect2(0, 16, W, H), Charte.PANNEAU, Charte.RAYON_CARTE)
-	fond.name = "AnalysteFond"
-	fond.mouse_filter = Control.MOUSE_FILTER_PASS
-	var gauche := 300.0
-	_portrait_analyste(fond, Rect2(24, 22, 64, 64))
-	var t := D.text(fond, 100, 52, "ANALYSE", 24, Charte.IVOIRE, 800, gauche - 110)
-	t.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
-	D.text(fond, 100, 80, "VIDÉO", 16, R.TURQUOISE, 800, gauche - 110)
-	var y := 110.0
-	var verdicts := _verdicts(ctx)
+	var y := 102.0
+	var pas := (HAUTEUR - y - 14.0) / verdicts.size()
 	for i in verdicts.size():
 		var v: Array = verdicts[i]
-		var s := _sens(int(v[2]))
-		var ligne := D.rect(fond, Rect2(16, y, gauche - 24, 92), Color(s[1], .16), 10, Color(s[1], .6))
-		ligne.name = "AnalysteVerdict%d" % i
-		_survol(ligne)
-		var ic := C.icon(str(v[1]), C.px(22), s[1])
+		var s := _sens(int(v[3]))
+		var ligne := D.rect(fond, Rect2(16, y, GAUCHE - 24, pas - 8), Color(s[1], .16), 10, Color(s[1], .6))
+		ligne.name = "AnalysteVerdict_%s" % v[0]
+		var ic := C.icon(str(v[2]), C.px(22), s[1])
 		ligne.add_child(ic)
-		D.place(ic, Rect2(14, 14, 22, 22))
-		D.text(ligne, 46, 32, str(v[0]).to_upper(), 17, Charte.IVOIRE, 800, gauche - 110)
-		D.text(ligne, gauche - 40, 40, str(s[0]), 34, s[1], 800, 40, HORIZONTAL_ALIGNMENT_CENTER)
-		D.text(ligne, 46, 74, str(v[3]), 24, s[1], 800, gauche - 110)
-		y += 102.0
-	D.line(fond, Vector2(gauche + 4, 20), Vector2(gauche + 5, H - 20), Charte.FILET)
+		D.place(ic, Rect2(14, 12, 22, 22))
+		D.text(ligne, 46, 30, str(v[1]).to_upper(), 17, Charte.IVOIRE, 800, GAUCHE - 110)
+		D.text(ligne, GAUCHE - 40, (pas - 8) * .5 + 12, str(s[0]), 34, s[1], 800, 40, HORIZONTAL_ALIGNMENT_CENTER)
+		D.text(ligne, 46, pas - 20, str(v[4]), 24, s[1], 800, GAUCHE - 110)
+		var donnee := str(v[5])
+		var titre := str(v[1])
+		R.cliquable(ligne, func(): ouvrir_fenetre(ctx, donnee, titre), "AnalysteVerdictLien_%s" % v[0], "%s · %s" % [v[1], v[4]])
+		y += pas
+	D.line(fond, Vector2(GAUCHE + 4, 20), Vector2(GAUCHE + 5, HAUTEUR - 20), Charte.FILET)
 	var corps := Control.new()
 	corps.name = "AnalysteCorps"
 	corps.mouse_filter = Control.MOUSE_FILTER_PASS
 	fond.add_child(corps)
-	D.place(corps, Rect2(gauche + 20, 16, W - gauche - 40, H - 32))
+	D.place(corps, Rect2(GAUCHE + 20, 16, W - GAUCHE - 40, HAUTEUR - 32))
 	ctx["corps"] = corps
-	_onglets_b(ctx)
-	return H + 16.0
+	_onglets(ctx)
 
-static func _onglets_b(ctx: Dictionary) -> void:
+static func _onglets(ctx: Dictionary) -> void:
 	var corps: Control = ctx.corps
-	for enfant in corps.get_children(): enfant.queue_free()
-	var w := float(ctx.largeur) - 340.0
-	var ow := (w - 3 * 10.0) / DONNEES.size()
-	for i in DONNEES.size():
-		var d: Array = DONNEES[i]
+	for enfant in corps.get_children():
+		corps.remove_child(enfant)
+		enfant.queue_free()
+	var w := float(ctx.largeur) - GAUCHE - 40.0
+	var ow := (w - 3 * 10.0) / ONGLETS.size()
+	for i in ONGLETS.size():
+		var d: Array = ONGLETS[i]
 		var actif := str(d[0]) == str(ctx.onglet)
 		var ch := _chiffre(ctx, str(d[0]))
 		var onglet := D.rect(corps, Rect2(i * (ow + 10), 0, ow, 76), Charte.PANNEAU_3 if actif else Charte.PANNEAU_2, 10, ch[1] if actif else Color.TRANSPARENT)
 		onglet.name = "AnalysteOnglet_%s" % d[0]
 		if actif: (onglet.get_theme_stylebox("panel") as StyleBoxFlat).set_border_width_all(maxi(2, C.px(3)))
-		else: _survol(onglet)
 		var ic := C.icon(str(d[2]), C.px(22), ch[1] if actif else Charte.IVOIRE_2)
 		onglet.add_child(ic)
 		D.place(ic, Rect2(14, 12, 22, 22))
@@ -472,5 +538,12 @@ static func _onglets_b(ctx: Dictionary) -> void:
 		var id := str(d[0])
 		R.cliquable(onglet, func():
 			ctx.onglet = id
-			_onglets_b(ctx), "AnalysteOngletLien_%s" % id, str(d[1])).set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_contenu(corps, ctx, str(ctx.onglet), Rect2(0, 90, w, 518))
+			_onglets(ctx), "AnalysteOngletLien_%s" % id, str(d[1]))
+	_contenu(corps, ctx, str(ctx.onglet), Rect2(0, 90, w, HAUTEUR - 32 - 92))
+
+## Petite fenêtre d'une donnée (clic sur un verdict) : la même vue en grand.
+static func ouvrir_fenetre(ctx: Dictionary, id: String, titre: String) -> void:
+	var page: Control = ctx.app.find_child("ImmersiveInbox", true, false)
+	if page == null: page = ctx.racine
+	var fond := Fenetre.ouvrir(page, FENETRE, titre.to_upper(), "", 1500, 760)
+	_contenu(fond, ctx, id, Rect2(28, 84, 1444, 650))

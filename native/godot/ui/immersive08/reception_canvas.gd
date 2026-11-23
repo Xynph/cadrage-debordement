@@ -21,6 +21,7 @@ const ClubMail = preload("res://ui/club_mail.gd")
 const Bandeau = preload("res://ui/bandeau_filtres.gd")
 const Messages = preload("res://ui/immersive08/reception_messages.gd")
 const CompteRendu = preload("res://ui/immersive08/compte_rendu_carte.gd")
+const Analyste = preload("res://ui/immersive08/analyste_match.gd")
 
 const CATEGORIES = ["Tous", "Staff", "Médical", "Conseil", "Transferts", "Compétitions"]
 const ICONS = {"Staff":"train", "Médical":"heart", "Conseil":"shield", "Transferts":"search", "Formation":"school", "Compétitions":"trophy", "Club":"mail", "Météo":"cloud"}
@@ -1188,7 +1189,9 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 		var support := MarginContainer.new()
 		support.name = "InboxLetterSupport"
 		for cote: String in ["left", "right", "top", "bottom"]: support.add_theme_constant_override("margin_" + cote, marge)
-		support.add_child(_letter(app, message, content_width - 12.0))
+		# Analyse vidéo du dernier match (revue FM27, idée 28) : le panneau de l'analyste remplace la lettre.
+		var analyse: Control = Analyste.bloc_mail(app, message.get("club_mail", {}), content_width - 12.0) if message.get("club_mail") is Dictionary else null
+		support.add_child(analyse if analyse != null else _letter(app, message, content_width - 12.0))
 		column.add_child(support)
 		if message.get("category") == "Médical" and not national: column.add_child(_infirmary(app, reading_width))
 		content = column
@@ -1399,9 +1402,6 @@ static func _clipping(app: Control, message: Dictionary, mail: Dictionary, width
 	# Compte rendu du match en carte (idée FM n°19, choix de Léo du 23/11) : sur l'article du dernier match seulement.
 	var carte_match: Control = CompteRendu.carte(app, mail, width - 68.0)
 	if carte_match != null: column.add_child(carte_match)
-	# Planche « Rapport d'analyste après match » (revue FM27, idée 28) : sous la carte, sous CD_VARIANTE_VISUELLE seulement.
-	var analyse: Control = load("res://ui/immersive08/analyste_match.gd").bloc(app, carte_match, width - 68.0)
-	if analyse != null: column.add_child(analyse)
 	var paragraphs: Array[String] = []
 	for part in str(mail.get("corps", "")).replace("\r", "").split("\n"):
 		if not part.strip_edges().is_empty(): paragraphs.append(part.strip_edges())
