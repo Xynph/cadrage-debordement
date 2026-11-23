@@ -138,10 +138,15 @@ function factory(){
   if(s?.staffCareer?.version!==1)return null;
   return s.staffCareer.people.flat().filter(p=>p.role==='scout'&&p.clubId===s.club&&number(p.level)&&p.contractEnd>=s.season).sort((a,b)=>b.level-a.level||(a.id<b.id?-1:a.id>b.id?1:0))[0]??null;
  }
+ // Coût d'une observation ciblée : 5 000 €, moins le bonus des postes en plus du service Recrutement et club
+ // (staff-services.cjs, CDStaffServices dans la VM).
+ function coutObservation(s){return typeof CDStaffServices!=='undefined'&&typeof CDStaffServices.coutObservation==='function'?CDStaffServices.coutObservation(s):5000;}
+ const montant=n=>String(n).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
  function scouting(s,p,staff=scout(s)){
+  const cost=coutObservation(s);
   const job=(s?.playerKnowledge?.jobs||[]).find(j=>j.playerId===p.id&&j.status!=='done'),workCycles=job?.workCycles??(staff?.level>=70?1:2),context={season:s.season,week:week(s),club:s.club};
-  const reason=p.owned?'Les joueurs du club sont déjà suivis.':s?.national?.role?.club===false?'Observation réservée au manager d’un club.':s.live?'Observation indisponible pendant le match.':s.phase==='ended'?'Saison terminée.':job?'Observation en cours.':pending(s).length>=4?'Quatre missions sont déjà en attente.':(s.clubs[s.club]?.cash??0)<5000?'Trésorerie insuffisante (5 000 €).':'';
-  return {available:!reason,reason,cost:5000,workCycles,workUnit:'week',sourceScoutId:job?job.sourceScoutId:staff?.id??null,sourceScoutLevel:job?job.sourceScoutLevel:staff?.level??null,pending:!!job,job:job?{id:job.id,status:job.status,remaining:job.remaining,remainingWeeks:job.remaining}:null,context};
+  const reason=p.owned?'Les joueurs du club sont déjà suivis.':s?.national?.role?.club===false?'Observation réservée au manager d’un club.':s.live?'Observation indisponible pendant le match.':s.phase==='ended'?'Saison terminée.':job?'Observation en cours.':pending(s).length>=4?'Quatre missions sont déjà en attente.':(s.clubs[s.club]?.cash??0)<cost?'Trésorerie insuffisante ('+montant(cost)+' €).':'';
+  return {available:!reason,reason,cost,workCycles,workUnit:'week',sourceScoutId:job?job.sourceScoutId:staff?.id??null,sourceScoutLevel:job?job.sourceScoutLevel:staff?.level??null,pending:!!job,job:job?{id:job.id,status:job.status,remaining:job.remaining,remainingWeeks:job.remaining}:null,context};
  }
  function plan(s,payload,effects={}){
   check(s&&shape(payload,['playerId','confirmed','context'])&&id(payload.playerId)&&payload.confirmed===true&&shape(payload.context,['season','week','club']),'confirme le coût et le contexte de l’observation');
@@ -149,11 +154,11 @@ function factory(){
   const p=players(s).get(payload.playerId);check(p,'joueur extérieur introuvable');const status=scouting(s,p);check(status.available,status.reason||'observation indisponible');
   // The worker supplies the existing ledger and inbox functions. Tests can use
   // explicit isolated effects; no protocol value can install an effect.
-  check(typeof effects.charge==='function','registre financier indisponible');effects.charge(5000);
+  check(typeof effects.charge==='function','registre financier indisponible');effects.charge(status.cost);
   const st=s.playerKnowledge??{version:VERSION,records:[]},jobs=(st.jobs||[]).filter(j=>j.status!=='done').concat((st.jobs||[]).filter(j=>j.status==='done').slice(-19));
   const serial=++s.manager.serial;
   jobs.push({id:'observation-'+serial,playerId:p.id,remaining:status.workCycles,status:pending(s).some(j=>j.status==='active')?'queued':'active',season:s.season,week:week(s),club:s.club,completedSeason:null,completedWeek:null,workCycles:status.workCycles,sourceScoutId:status.sourceScoutId,sourceScoutLevel:status.sourceScoutLevel});
-  s.playerKnowledge={...st,jobs};validate(s);effects.message?.('Observation confiée au recruteur','5 000 €. Rapport après '+status.workCycles+' semaine(s) de travail du recruteur.');return {scoutingAction:{command:'observe_player',playerId:p.id}};
+  s.playerKnowledge={...st,jobs};validate(s);effects.message?.('Observation confiée au recruteur',montant(status.cost)+' €. Rapport après '+status.workCycles+' semaine(s) de travail du recruteur.');return {scoutingAction:{command:'observe_player',playerId:p.id}};
  }
  function queue(s){
   const jobs=pending(s);if(!jobs.length)return;

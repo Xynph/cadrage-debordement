@@ -27,6 +27,7 @@ const Habillage = preload("res://ui/immersive08/recruitment_pages.gd")
 const Etat = preload("res://ui/management_state.gd")
 const StaffTable = preload("res://ui/staff_career_view.gd")
 const ConseilLettre = preload("res://ui/immersive08/conseil_lettre.gd")
+const StaffServices = preload("res://ui/immersive08/staff_services.gd")
 const KEY = "immersive08_club_tab"
 const GOALS = {"wins":"Victoires", "points":"Points", "rank":"Place au classement", "cash":"Trésorerie"}
 const GOAL_STATUS = {"pending":"À suivre", "met":"Atteint", "missed":"Manqué", "unverified":"Non vérifié"}
@@ -792,6 +793,11 @@ static func _staff_contrats(card: Control, app: Control) -> void:
 		valeur.add_theme_font_override("font", Kit.texte_gras())
 
 static func _staff_detail(app: Control, canvas: Control) -> void:
+	# Revue FM27 n° 22 (choix A de Léo) : vue « par service » par défaut ; « Tout le staff » rend ce tableau.
+	if StaffServices.actif(app):
+		StaffServices.build(app, canvas)
+		return
+	if app.route == "Staff": StaffServices.bascule(app, canvas, false)
 	var gauche := STAFF_GAUCHE
 	var blocs := [[214.0, 404.0, "L’encadrement", "ClubStaffPeople"], [634.0, 306.0, "Diagnostic de la semaine", "ClubStaffDiagnostic"], [956.0, 288.0, "Contrats et engagements", "ClubStaffContracts"]]
 	var panneaux: Array[Panel] = []

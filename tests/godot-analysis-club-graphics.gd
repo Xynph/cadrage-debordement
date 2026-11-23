@@ -168,6 +168,8 @@ func run() -> void:
 		await key(KEY_LEFT,true)
 		choice=found("PerformancePlayerChoice") as OptionButton
 		check(choice!=null and choice.selected==1 and str(found("PerformancePlayerLink").get_meta("entity_id"))==player_id,"Retour conserve le joueur sélectionné")
+	# Tableau habituel (« Tout le staff ») : la vue par service est la vue par défaut depuis le 23/11/2026.
+	app.management_ui["staff_services_vue"] = "tous"
 	app._navigate("Staff"); await settle()
 	var staff:=app.find_children("ClubStaffName_*","Button",true,false)
 	check(not staff.is_empty(),"Nom de staff réellement projeté sur Club")
