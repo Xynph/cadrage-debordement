@@ -475,12 +475,21 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
    }
   }
  }
- function result(l){return{pair:l.pair.slice(),score:l.score.slice(),tries:l.tries.slice(),stats:copy(l.stats),weather:l.weather,duration:l.minute,...(l.winner!==undefined?{winner:l.winner,decision:copy(l.decision)}:{}),...(l.worldContext?.competitionId==='srp'?CDWorldSRPMatch.historyFields(l):JP&&CDWorldJapanMatch.isFixture(l.worldContext)?CDWorldJapanMatch.historyFields(l):CH&&CDWorldChampMatch.isFixture(l.worldContext)?CDWorldChampMatch.historyFields(l):N&&typeof CDWorldNationaleMatch!=='undefined'?CDWorldNationaleMatch.historyFields(l):{})};}
+ function result(l){return{pair:l.pair.slice(),score:l.score.slice(),tries:l.tries.slice(),stats:copy(l.stats),weather:l.weather,duration:l.minute,...(Array.isArray(l.essaisDetail)?{essais:l.essaisDetail.map(e=>e.slice())}:{}),...(l.winner!==undefined?{winner:l.winner,decision:copy(l.decision)}:{}),...(l.worldContext?.competitionId==='srp'?CDWorldSRPMatch.historyFields(l):JP&&CDWorldJapanMatch.isFixture(l.worldContext)?CDWorldJapanMatch.historyFields(l):CH&&CDWorldChampMatch.isFixture(l.worldContext)?CDWorldChampMatch.historyFields(l):N&&typeof CDWorldNationaleMatch!=='undefined'?CDWorldNationaleMatch.historyFields(l):{})};}
  // Rencontre de l'IA : moteur complet, ou suivi de loin selon les championnats suivis (league-detail.cjs).
  // `watch(l)` (déroulé anticipé du multiplex, match-multiplex.cjs) : appelé après chaque minute jouée.
  // Sans `watch`, une rencontre dont le déroulé a été montré garde ce résultat (CDMultiplex.official).
  function simulate(f,watch=null){const full=()=>{const pair=[f.homeId,f.awayId];for(const id of pair)CDFranceCareer.ensureAISheet(S.clubs[id]);const l=createRugbyMatch(pair,null,true);if(typeof initPilotageIA==='function')initPilotageIA(l,f);for(let n=0;!l.finished;n++){check(n<=600,'limite de simulation atteinte.');l.paused=false;advanceRugby(l);if(watch)watch(l);}applyMatchInjuries(l);return result(l);};const play=()=>typeof CDLeagueDetail!=='undefined'?CDLeagueDetail.play(S,f,full):full();return !watch&&typeof CDMultiplex!=='undefined'?CDMultiplex.official(S,f,play):play();}
- const fixtureEntry=(s,f,r)=>({...r,fixtureId:f.id,competitionId:f.competitionId,leagueId:f.competitionId,season:s.season,round:s.round,competitionRound:f.round,week:s.round,date:f.date,phase:f.phase,poolId:f.poolId??null,neutral:f.neutral});
+ // Affluence de chaque rencontre (compte rendu du match, idée FM n°19) : spectateurs au stade du club qui reçoit
+ // (club-budget.cjs, spectateurs), tirée avant que le résultat n'entre dans sa forme ; terrain neutre : non comptée.
+ const affluenceMatch=(s,f)=>{
+  if(f.neutral||typeof nativeClubBudget==='undefined'||typeof nativeClubBudget.spectateurs!=='function')return {};
+  const c=s.clubs[f.homeId],n=nativeClubBudget.spectateurs({capacite:Number.isFinite(c?.stadiumCapacity)?c.stadiumCapacity:stadiumCapacity(f.homeId)??12000,
+   resultats:Array.isArray(c?.form)?c.form.slice(-5):[],cle:f.homeId+'|'+s.season+'|'+f.id,phase:f.phase||'league',
+   accueil:typeof investAccueil==='function'&&typeof nativeClubInvestments!=='undefined'?nativeClubInvestments.facteurAccueil(investAccueil(f.homeId)):1});
+  return Number.isInteger(n)?{affluence:n}:{};
+ };
+ const fixtureEntry=(s,f,r)=>({...r,fixtureId:f.id,competitionId:f.competitionId,leagueId:f.competitionId,season:s.season,round:s.round,competitionRound:f.round,week:s.round,date:f.date,phase:f.phase,poolId:f.poolId??null,neutral:f.neutral,...affluenceMatch(s,f)});
  // Multiplex : rencontre jouée comme à la validation, ligne d'historique, résultat du direct et
  // classement avec des résultats provisoires, par la même fonction de table que rows().
  const multiplex=s=>({simulate:(f,watch)=>simulate(f,watch),entry:(f,r)=>fixtureEntry(s,f,r),live:()=>result(s.live),rows:(id,extra)=>rows({...s,history:s.history.concat(extra)},id)});
@@ -495,7 +504,7 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
    const entry=fixtureEntry(S,f,r);
    S.history.push(entry);updateOppositionMorale(entry);worldRecordResult(entry);results.push(entry);
   }
-  const own=results.find(r=>r.pair.includes(S.club)),won=CDFranceCareer.recordOwnOutcome(own);if(own&&typeof derbyAftermath==='function')derbyAftermath(S,own);
+  const own=results.find(r=>r.pair.includes(S.club)),won=CDFranceCareer.recordOwnOutcome(own);if(own&&S.lastReport&&Number.isInteger(own.affluence)&&String(S.lastReport.pair)===String(own.pair))S.lastReport.affluence=own.affluence;if(own&&typeof derbyAftermath==='function')derbyAftermath(S,own);
   financeWeek(ownFixture&&!ownFixture.neutral?[ownFixture.homeId,ownFixture.awayId]:null,won);worldWeeklyEconomy(results);careerBoardWeekReview();recordSatisfactionRound(S.live);recordIndividualObjectivesRound(S.live);if(typeof soldeReleve==='function')soldeReleve();if(typeof groupeReleve==='function')groupeReleve();
   S.live=null;S.trained=false;S.worldMode.week++;
   if(S.worldMode.day!==undefined){

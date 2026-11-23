@@ -19,8 +19,12 @@ const Tenue = preload("res://ui/tenue_club.gd")
 const ROUTE := "Fiche club"
 const WIDTH := 2248
 const HEIGHT := 1240
-const TABS := ["Vue d’ensemble", "Effectif", "XV type", "Statistiques"]
-const TAB_ICONS := ["shield", "people", "tactic", "trophy"]
+## « Rapport » (idée n° 10 de la revue FM27, 23/11/2026) : XV habituel en maillots colorés par fréquence, bandes d'où
+## partent les essais, essais par tranche de 10 min (preparation_adversaire.gd, aussi dans la Préparation).
+const TABS := ["Vue d’ensemble", "Effectif", "XV type", "Statistiques", "Rapport"]
+const TAB_ICONS := ["shield", "people", "tactic", "trophy", "target"]
+## Largeur d'un onglet (pas de 12 compris) : les cinq onglets tiennent avant les actions (x = 1240).
+const TAB_STEP := 244
 ## Ordre des postes dans l'effectif (numéro du maillot de référence).
 const POSITION_ORDER := {"Pilier gauche":1, "Talonneur":2, "Pilier droit":3, "Deuxième ligne":4, "Troisième ligne":6, "Numéro 8":8, "Demi de mêlée":9, "Demi d’ouverture":10, "Ailier":11, "Centre":12, "Arrière":15}
 const WIN := Color("54de81")
@@ -134,6 +138,7 @@ func _build() -> void:
 		1: _squad()
 		2: _xv()
 		3: _stats()
+		4: _rapport()
 
 # ---- Identité ---------------------------------------------------------------------------------
 
@@ -253,11 +258,15 @@ func _form(parent: Control, origin: Vector2, form: Variant, side: float) -> void
 		chip.name = "Forme%d" % i
 		D.text(chip, side / 2, side * .72, code, 26, TINTS.get(code, DRAW), 800, side, HORIZONTAL_ALIGNMENT_CENTER)
 
+## Onglet « Rapport » : même rapport que la sous-page « Rapport adverse » de la Préparation, à la taille de l'onglet.
+func _rapport() -> void:
+	load("res://ui/immersive08/preparation_adversaire.gd").onglet_club(app, self, workspace, club_id, data, 844.0)
+
 # ---- Onglets et actions -----------------------------------------------------------------------
 
 func _tabs() -> void:
 	for i in TABS.size():
-		var rect := Rect2(i * 300, 320, 288, 58)
+		var rect := Rect2(i * TAB_STEP, 320, TAB_STEP - 12, 58)
 		var tab := D.button(self, rect, TABS[i], _select.bind(i), false, TAB_ICONS[i], false, app.accent, "ClubSheetTab%d" % i)
 		D.tab_state(tab, rect.size, i == active, TAB_ICONS[i])
 		tab.toggle_mode = true

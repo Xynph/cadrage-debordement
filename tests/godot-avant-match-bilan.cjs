@@ -1,5 +1,5 @@
 'use strict';
-// Avant-match · « Dernière rencontre » (option B, 21/11/2026) : pastille du bandeau (absente en début de saison),
+// Avant-match · « Dernière rencontre » (option B, 21/11/2026 ; carte du compte rendu réduite depuis le 23/11) : pastille du bandeau (absente en début de saison),
 // petite fenêtre du bilan en 2560×1440, 1920×1080 et 1280×720, fermetures Échap / ✕ / clic à côté,
 // « tes choix » → Plan de jeu, club adverse → sa fiche. Carrière Monde réelle ; ignorée sans SDK.
 const assert = require('node:assert/strict');

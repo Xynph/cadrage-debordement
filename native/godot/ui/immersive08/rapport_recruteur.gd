@@ -15,7 +15,7 @@ const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
 const K = preload("res://ui/player_knowledge_text.gd")
 const G = preload("res://ui/game_skin.gd")
 const Link = preload("res://ui/entity_link.gd")
-const Etoiles = preload("res://ui/bareme_etoiles.gd")
+const Familiarite = preload("res://ui/familiarite_poste.gd")
 
 const LARGEUR := 2248.0
 const HAUTEUR := 1000.0
@@ -411,9 +411,9 @@ static func _liste(app: Control, cadre: Control, r: Dictionary, zone: Rect2, col
 		D.text(bouton, 116, base, Kit.casse(str(joueur.get("name", "—"))), 21, Charte.VERT_CLAIR if est_piste else Charte.IVOIRE, 700 if est_piste else 600, largeur_nom - 10, HORIZONTAL_ALIGNMENT_LEFT, true)
 		cx = x0 + 14 + 50 + 52 + largeur_nom - x0
 		for colonne: Array in colonnes:
-			if str(colonne[2]) == "etoiles":
-				var etoiles := Etoiles.etoiles_sur_100(ligne.note)
-				if etoiles >= 0.0: load("res://ui/carte_joueur_survol.gd").poser_etoiles(bouton, Rect2(cx, base - 22, float(colonne[1]) - 12, 22), etoiles, "RapportRecruteurEtoiles_%d" % i)
+			if str(colonne[2]) == "familiarite":
+				# Familiarité au poste du rapport : barres 5 crans + mot (« — » si le poste du joueur est inconnu).
+				Familiarite.poser(bouton, cx, base, Familiarite.niveau(joueur, int(r.numero)), 17, "RapportRecruteurFamiliarite_%d" % i)
 				cx += float(colonne[1])
 				continue
 			var valeur: Array = _cellule(colonne, joueur, ligne, est_piste)
@@ -438,7 +438,7 @@ static func _col_note() -> Array: return ["NOTE", 90, "note", null]
 static func _col_age() -> Array: return ["ÂGE", 70, "age", null]
 static func _col_potentiel() -> Array: return ["POT.", 100, "potentiel", null]
 static func _col_salaire() -> Array: return ["SALAIRE", 120, "salaire", null]
-static func _col_etoiles() -> Array: return ["POSTE", 130, "etoiles", null]
+static func _col_familiarite() -> Array: return ["FAMILIARITÉ", 130, "familiarite", null]
 
 ## Valeur d'une cellule : [texte, couleur].
 static func _cellule(colonne: Array, j: Dictionary, l: Dictionary, p: bool) -> Array:
@@ -473,4 +473,4 @@ static func _mise_en_page(app: Control, cadre: Control, r: Dictionary) -> void:
 	_raisons(cadre, 680, y + 30, 640, "CONTRE", "warning", Pieces.ROUGE, r.contre, "RapportRecruteurContre", 62, 4)
 	# Colonne 3 : rang chez nous.
 	Kit.etiquette(cadre, 1372, 216, "NOTRE EFFECTIF · " + str(r.poste).to_upper(), 840)
-	_liste(app, cadre, r, Rect2(1372, 236, 848, 740), [_col_note(), _col_etoiles(), _col_potentiel(), _col_age(), _col_salaire()], 58, 12)
+	_liste(app, cadre, r, Rect2(1372, 236, 848, 740), [_col_note(), _col_familiarite(), _col_potentiel(), _col_age(), _col_salaire()], 58, 12)

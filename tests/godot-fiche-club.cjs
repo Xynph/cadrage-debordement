@@ -1,8 +1,8 @@
 'use strict';
 // Fiche d'un club dans le vrai jeu Godot (carrière Monde, mode unique) : ouverture depuis un classement
-// et depuis la recherche Ctrl K, quatre onglets, XV type sur le terrain, club du manager → écran « Club »,
+// et depuis la recherche Ctrl K, cinq onglets (dont le rapport sur l'adversaire), XV type sur le terrain, club du manager → écran « Club »,
 // aucun chevauchement de texte en 1920 × 1080 et en 1280 × 720. Captures (CD_FICHE_CAPTURES=1, rendu
-// graphique) : fiche-club-vue-ensemble, -effectif, -xv-type, -stats (.png) dans CD_FICHE_OUTPUT.
+// graphique) : fiche-club-vue-ensemble, -effectif, -xv-type, -stats, -rapport (.png) dans CD_FICHE_OUTPUT.
 // Le profil est préparé par le vrai moteur : club de l'élite française, quelques journées déléguées.
 // CD_FICHE_PROFIL réutilise un profil déjà préparé (itérations locales).
 const assert = require('node:assert/strict');

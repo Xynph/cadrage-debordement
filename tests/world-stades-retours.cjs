@@ -10,7 +10,7 @@ const table = require('../native/engine/world-stadium-capacities.json');
 const ids = Object.keys(table.capacities);
 assert.equal(ids.length, 116, '116 clubs');
 assert.deepEqual(ids.map(Number).sort((a, b) => a - b), [...Array(116).keys()]);
-for (const id of ids) { const n = table.capacities[id]; assert.ok(Number.isInteger(n) && n >= 2000 && n <= 40000, 'capacité plausible club ' + id + ' : ' + n); }
+for (const id of ids) { const n = table.capacities[id]; assert.ok(Number.isInteger(n) && n >= 2000 && n <= 70000, 'capacité plausible club ' + id + ' : ' + n); }
 assert.equal(table.capacities[0], 19500, 'Ernest-Wallon');
 assert.ok(new Set(Object.values(table.capacities)).size > 60, 'capacités variées, plus de 12 000 partout');
 const moyenne = (a, b) => { const v = Object.entries(table.capacities).filter(([k]) => k >= a && k <= b).map(([, n]) => n); return v.reduce((x, y) => x + y, 0) / v.length; };

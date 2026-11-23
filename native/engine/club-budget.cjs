@@ -184,6 +184,15 @@ function forme(resultats) {
 }
 // Affluence d'un match à domicile : 0,78 après cinq défaites, 1,22 après cinq victoires.
 const affluence = (formeClub, alea) => 0.78 + 0.36 * formeClub + 0.08 * alea;
+// Spectateurs d'une rencontre (compte rendu du match, idée FM n°19) : la même affluence que la billetterie (forme du
+// club qui reçoit, aléa, accueil du stade) ramenée à un remplissage de 50 % (cinq défaites) à 95 % (cinq victoires)
+// en saison, 97 % en phase finale ; arrondi à la dizaine. Capacité inconnue : null.
+function spectateurs({ capacite, resultats, cle = '', accueil = 1, phase = 'league' }) {
+  if (!Number.isFinite(capacite) || capacite <= 0) return null;
+  const a = affluence(forme(resultats), unite('affluence|' + cle)) * (Number.isFinite(accueil) && accueil > 0 ? accueil : 1);
+  const taux = phase !== 'league' && phase !== 'pool' ? 0.97 : Math.min(0.95, Math.max(0.35, 0.5 + 0.45 * (a - 0.78) / 0.44));
+  return Math.round(capacite * taux / 10) * 10;
+}
 
 // Ce qu'un club géré par le jeu ajuste dans son fonctionnement, sur l'année : il réduit
 // ses dépenses quand son déficit dépasse ce que le propriétaire comble, et il réinvestit
@@ -996,4 +1005,4 @@ module.exports = Object.freeze({ PART_FORMATION, FORMATION, CREDIT_ACADEMIE, cen
   aideRelegation, annonceAideRelegation, LIBELLE_AIDE_RELEGATION, LIBELLE_REMBOURSEMENT,
   RESERVE, EXCEDENTS, EXCEDENT_DORMANT, TRAIN_DE_VIE, reserveCible, engagement, apportProprietaire, annonceDividende, annonceInvestissement,
   recettesImprevues, fraisDeMatch, PART_FRAIS_IMPREVUS, deficitPrevu, LIBELLE_FRAIS_MATCH,
-  recettes, semaine, proprietaire, cibleGestion, limites, annonceClauses, forme, affluence, ajustement, primeClassement, regles, ouverture, compter, annonce, prevision, cloture, leviers, euros });
+  recettes, semaine, proprietaire, cibleGestion, limites, annonceClauses, forme, affluence, spectateurs, ajustement, primeClassement, regles, ouverture, compter, annonce, prevision, cloture, leviers, euros });

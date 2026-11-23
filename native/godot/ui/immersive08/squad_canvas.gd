@@ -19,6 +19,8 @@ const Panneaux = preload("res://ui/immersive08/panneaux_effectif.gd")
 const Listes = preload("res://ui/immersive08/listes_joueurs.gd")
 const Bandeau = preload("res://ui/bandeau_filtres.gd")
 const Courbe = preload("res://ui/mini_courbe_survol.gd")
+const Etoiles = preload("res://ui/immersive08/liste_etoiles.gd")
+const Familiarite = preload("res://ui/familiarite_poste.gd")
 const ROW_HEIGHT := 34
 const GROUP_HEIGHT := 30
 const FIRST_ROWS := 26
@@ -33,7 +35,7 @@ const Y_LIGNES := 292.0
 const Y_PIED := 1206.0
 ## Postes de l'équilibre du groupe : libellé et numéros de poste principal.
 const POSTES := [["Pilier gauche",[1]],["Talonneur",[2]],["Pilier droit",[3]],["Deuxième ligne",[4,5]],["3e ligne aile",[6,7]],["Numéro 8",[8]],["Demi de mêlée",[9]],["Ouvreur",[10]],["Ailier",[11,14]],["Centre",[12,13]],["Arrière",[15]]]
-const VUES := ["Vue d’ensemble","Condition","Contrats","Développement"]
+const VUES := ["Vue d’ensemble","Condition","Contrats","Développement","Planificateur"]
 const TRIS := ["Numéro","Poste","Autres postes","Nom","Niveau","Potentiel","Condition","Fatigue","Minutes","Moyenne","Forme","Statut","Âge","Salaire","Échéance","Motif"]
 var app: Control
 var state: Dictionary
@@ -57,6 +59,8 @@ const Y_POSTES := Y_FILTRES + 122.0
 const DY_RANGEES := 118.0
 var _dy := 0.0
 var _bandeau_totaux: Control
+## Poste (1-15) dont la liste montre la note au poste et la familiarité, choisi d'un clic sur un maillot du terrain XV ; 0 = aucun.
+var _poste := 0
 
 static func build(owner_app: Control) -> Control:
 	var page: Control = load("res://ui/immersive08/squad_canvas.gd").new()
@@ -76,6 +80,8 @@ func _build() -> void:
 	state.sort = app.roster_sort
 	if state.sort == "Note":
 		state.sort = "Niveau"; state.descending = true; app.roster_sort = "Niveau"
+	elif state.sort == "Étoiles":
+		state.sort = "Note au poste"; app.roster_sort = "Note au poste"
 	_entete_page()
 	_onglets()
 	if int(state.get("immersive_tab", 0)) == 2:
@@ -83,7 +89,12 @@ func _build() -> void:
 		add_child(review)
 		D.place(review, Rect2(0, Y_FILTRES, LARGEUR, HAUT_PAGE - Y_FILTRES - 40))
 		return
+	if int(state.get("immersive_tab", 0)) == 4:
+		# Planificateur d'effectif (revue FM27, idée 11) : terrain + liste du poste, saisons à venir (planificateur.gd).
+		preload("res://ui/immersive08/planificateur.gd").construire(self, app, Y_FILTRES, HAUT_PAGE - 4)
+		return
 	_dy = DY_RANGEES
+	_poste = int(state.get("etoiles_poste", 0))
 	# Panneaux latéraux à gauche : bandeau des filtres, totaux, pastilles de poste et tableau prennent la largeur restante.
 	_x0 = Panneaux.reserve(app)
 	_lt = LARGEUR - _x0
@@ -395,7 +406,7 @@ func _onglets() -> void:
 		var largeur := _largeur(VUES[i], 19) + 44.0
 		var onglet := _lien(self, Rect2(x, Y_ONGLETS, largeur, 44), VUES[i], func():
 			state.immersive_tab = i
-			state.sort = ["Poste","Condition","Échéance","Potentiel"][i]
+			state.sort = ["Poste","Condition","Échéance","Potentiel","Poste"][i]
 			state.descending = i in [1,3]
 			app.roster_sort = state.sort
 			app._render(), "RosterTab" + str(i), Charte.IVOIRE if i == courant else Charte.IVOIRE_2, 19.0, HORIZONTAL_ALIGNMENT_CENTER)
@@ -412,8 +423,8 @@ func _onglets() -> void:
 	var vestiaire := _lien(self, Rect2(droite - 170, Y_ONGLETS, 170, 44), "Vestiaire →", func(): app._navigate("Vestiaire"), "RosterOpenLocker", Charte.IVOIRE, 19.0, HORIZONTAL_ALIGNMENT_CENTER, true)
 	vestiaire.tooltip_text = "Ouvrir le vestiaire"
 	droite -= 186.0
-	var texte := "Comparer %d/3 →" % app.management_ui.compare.size()
-	var largeur_comparer := _largeur("Comparer 3/3 →", 19) + 36.0
+	var texte := "Comparer %d/2 →" % app.management_ui.compare.size()
+	var largeur_comparer := _largeur("Comparer 2/2 →", 19) + 36.0
 	compare = _lien(self, Rect2(droite - largeur_comparer, Y_ONGLETS, largeur_comparer, 44), texte, func(): app.SquadViews.comparison(app), "OpenComparison", Charte.IVOIRE, 19.0, HORIZONTAL_ALIGNMENT_CENTER, true)
 	droite -= largeur_comparer + 16.0
 	# « Ctrl Tab » (onglet suivant) est dans l'aide « ? » du pied du tableau (21/11).
@@ -424,7 +435,7 @@ func _onglets() -> void:
 func _onglet_suivant() -> void:
 	var i := (int(state.get("immersive_tab", 0)) + 1) % VUES.size()
 	state.immersive_tab = i
-	state.sort = ["Poste","Condition","Échéance","Potentiel"][i]
+	state.sort = ["Poste","Condition","Échéance","Potentiel","Poste"][i]
 	state.descending = i in [1,3]
 	app.roster_sort = state.sort
 	app._render()
@@ -684,6 +695,21 @@ func _colonnes(vue: int, etroit: bool, surveillance: bool) -> Array:
 			for c: Dictionary in sans:
 				if c.k == "statut": c.x = 1890.0; c.w = 280.0
 		colonnes = sans
+	# Poste choisi sur le terrain XV : la colonne POSTE devient « CENTRE 12 » (note au poste + familiarité + poste du
+	# joueur en petit) ; elle prend 110 unités à la colonne CONDITION quand elle la suit.
+	if _poste > 0:
+		for i in colonnes.size():
+			if colonnes[i].k == "poste":
+				var cond := -1
+				for j in range(i + 1, colonnes.size()):
+					if colonnes[j].k == "cond": cond = j; break
+				var extra := 110.0 if cond > 0 else 0.0
+				colonnes[i] = (colonnes[i] as Dictionary).merged({"k": "etoiles", "t": "%s %d" % [Etoiles.nom_poste(_poste).to_upper(), _poste], "s": "Note au poste", "w": float(colonnes[i].w) + extra}, true)
+				if extra > 0.0:
+					for j in range(i + 1, cond + 1):
+						colonnes[j] = (colonnes[j] as Dictionary).merged({"x": float(colonnes[j].x) + extra}, true)
+					colonnes[cond] = (colonnes[cond] as Dictionary).merged({"w": float(colonnes[cond].w) - extra}, true)
+				break
 	return colonnes
 
 func _tableau() -> void:
@@ -824,6 +850,11 @@ static func _compare_secondary(left: Array, right: Array) -> int:
 	return -1 if left.size() < right.size() else 1
 
 static func sort_value(player: Dictionary, key: String) -> Variant:
+	if key == "Note au poste":
+		# Note au poste choisi, puis familiarité, puis niveau ; inconnues en dernier.
+		var e := float(player.get("notePoste", -1.0))
+		if e < 0.0: return null
+		return e * 1000.0 + float(player.get("familiarite", 0)) * 100.0 + (float(player.rating) if _known_number(player.get("rating")) else 0.0)
 	if key in ["Niveau","Potentiel"]: return G.knowledge_sort_value(player,"rating" if key == "Niveau" else "potential",true)
 	if key == "Autres postes":
 		var order: Array[int] = []
@@ -889,13 +920,15 @@ func _players() -> Array:
 		if player is Dictionary:
 			var copie: Dictionary = player.duplicate()
 			copie.matchNotes = Notes.joueur(app.model,str(player.get("id","")))
+			copie.notePoste = Etoiles.note_poste(player, _poste)
+			copie.familiarite = Familiarite.niveau(player, _poste)
 			source.append(copie)
 	source = Listes.filtrer_groupe(source, str(state.get("poste_groupe", "")))
 	return ordered_players(source,state,int(app.model.meta.get("season",1)))
 
 
 func _toggle_sort(key: String) -> void:
-	state.descending = not state.descending if state.sort == key else key in ["Niveau","Potentiel","Condition","Fatigue","Minutes","Moyenne","Forme"]
+	state.descending = not state.descending if state.sort == key else key in ["Niveau","Potentiel","Condition","Fatigue","Minutes","Moyenne","Forme","Note au poste"]
 	state.sort = key
 	app.roster_sort = key
 	state.scroll = 0
@@ -929,7 +962,7 @@ func _refresh(reveal: bool) -> void:
 	state.visible_player=app.selected_player
 	count.text="%d / %d joueurs" % [players.size(),app.model.get("squad",[]).size()]
 	_totaux(players)
-	if compare != null: compare.text="Comparer %d/3 →" % app.management_ui.compare.size()
+	if compare != null: compare.text="Comparer %d/2 →" % app.management_ui.compare.size()
 	# Construction progressive : les lignes visibles sont créées tout de suite, le reste sur les
 	# images suivantes (60 lignes d'un coup coûtaient plus de 100 ms avant la première image).
 	_generation += 1
@@ -1044,6 +1077,10 @@ func _statut(player: Dictionary) -> Dictionary:
 					var jour := str(sortie.returnDate)
 					retour = " · retour %s/%s" % [jour.substr(8, 2), jour.substr(5, 2)]
 			return {"t": "◇ En sélection" + retour, "c": C.IVORY}
+	return _statut_feuille(player)
+
+## Place sur la feuille de match : Titulaire, Remplaçant ou Hors groupe.
+func _statut_feuille(player: Dictionary) -> Dictionary:
 	var numero: Variant = player.get("shirtNumber")
 	var statut := str(player.get("status", ""))
 	if statut in ["Titulaire", "Remplaçant"]: return {"t": statut, "c": C.IVORY if statut == "Titulaire" else C.MUTED}
@@ -1115,6 +1152,15 @@ func _row(player:Dictionary,index:int) -> void:
 				for numero: int in primary_numbers(player): principaux.append(str(numero))
 				poste.tooltip_text = "Poste principal · %s · %s" % ["·".join(principaux),primary_caption(player)] if not principaux.is_empty() else primary_caption(player)
 				if not secondary_numbers(player).is_empty(): poste.tooltip_text += "\nAutres postes · " + secondary_tooltip(player,app.model).replace("\n"," ; ")
+			"etoiles":
+				# Note au poste (sur 100, barème des attributs) puis familiarité au poste (barres 5 crans + mot).
+				var note := Familiarite.poser_note(row, x, base, float(player.get("notePoste", -1.0)), 22, 36, "RosterNotePoste")
+				note.tooltip_text = "Note au poste · %s" % Etoiles.nom_poste(_poste)
+				var fam := int(player.get("familiarite", -1))
+				var lf := Familiarite.poser(row, x + 48, base, fam, 17, "RosterFamiliarite")
+				var court := Etoiles.abrege(player)
+				var xc := x + 48 + maxf(lf, Familiarite.largeur(Familiarite.CONFIRME, 17)) + 10
+				D.text(row, xc, base, court if not court.is_empty() else primary_caption(player), 17, C.MUTED, 600, maxf(20.0, l - (xc - x)), HORIZONTAL_ALIGNMENT_LEFT, true).name = "RosterPostePrincipal"
 			"autres":
 				var autres := D.text(row,x,base,secondary_caption(player),18,C.MUTED,600,l,HORIZONTAL_ALIGNMENT_LEFT,true)
 				autres.name = "RosterSecondaryPositions"
@@ -1169,16 +1215,10 @@ func _row(player:Dictionary,index:int) -> void:
 			"motif":
 				D.text(row,x,base,reason,19,C.IVORY,600,l,HORIZONTAL_ALIGNMENT_LEFT,true).name="RosterWatchReason"
 			"statut":
-				if statut.has("pastille"):
-					# Blessé : pastille croix + date de retour ; le motif complet dans l'infobulle.
-					var pastille_statut := R.pastille(row, x, base, str(statut.pastille), R.ROUGE, "", "RosterStatut", 21)
-					pastille_statut.tooltip_text = str(statut.t)
-					# Clic = petite fenêtre « blessure » (silhouette, retour, jauges).
-					var bouton_blessure := R.cliquable(pastille_statut, func(): preload("res://ui/immersive08/fenetre_blessure.gd").ouvrir(self, app, id, row), "RosterBlessure_" + id.validate_node_name(), str(statut.t))
-					bouton_blessure.add_to_group(&"ouvre_blessure")
-				else:
-					var texte := D.text(row,x,base,str(statut.t),19,statut.c,600 if statut.c != C.MUTED else 500,l,HORIZONTAL_ALIGNMENT_LEFT,true)
-					texte.name = "RosterStatut"
+				# Place sur la feuille seulement ; blessé, suspendu et sélection sont des badges derrière le nom (22/11).
+				var feuille := _statut_feuille(player)
+				var texte := D.text(row,x,base,str(feuille.t),19,feuille.c,600 if feuille.c != C.MUTED else 500,l,HORIZONTAL_ALIGNMENT_LEFT,true)
+				texte.name = "RosterStatut"
 	var comparer_ligne := Button.new()
 	comparer_ligne.name = "RosterCompare_" + id.validate_node_name()
 	comparer_ligne.set_meta("player_id", id)
@@ -1206,9 +1246,9 @@ func _basculer_comparaison(id: String) -> void:
 	var memo: Array = app.management_ui.compare
 	if id in memo: memo.erase(id)
 	else:
-		if memo.size() >= 3: memo.remove_at(0)
+		if memo.size() >= 2: memo.remove_at(0)
 		memo.append(id)
-	if compare != null: compare.text = "Comparer %d/3 →" % memo.size()
+	if compare != null: compare.text = "Comparer %d/2 →" % memo.size()
 	for ligne: Node in rows.get_children():
 		var pid := str(ligne.get_meta("player_id", ""))
 		var b := ligne.get_node_or_null("RosterCompare_" + pid.validate_node_name()) as Button
@@ -1223,7 +1263,7 @@ func _echeance(player: Dictionary) -> String:
 func _repere_comparaison(id: String) -> String:
 	var memo: Array = app.management_ui.compare
 	var rang := memo.find(id)
-	return "" if rang < 0 else ["A", "B", "C"][rang]
+	return "" if rang < 0 else ["A", "B"][rang]
 
 ## Portrait, drapeau, nom (souligné au survol) et « i » : le nom ouvre la fiche, le survol montre la carte joueur.
 func _cellule_joueur(row: Control, player: Dictionary, index: int, h: float, base: float) -> void:
@@ -1263,7 +1303,21 @@ func _cellule_joueur(row: Control, player: Dictionary, index: int, h: float, bas
 	lien.mouse_exited.connect(func(): soulignement.visible = false)
 	var taille_i := maxf(20.0, ceilf(16.0 / C.density))
 	CarteSurvol.icone(app, row, Rect2(176 + largeur_nom + 12, (h - taille_i) / 2.0, taille_i, taille_i), id, "squad")
-	if en_vente: _pastille_en_vente(row, player, 176 + largeur_nom + 12 + taille_i + 10, base, h)
+	var apres := 176 + largeur_nom + 12 + taille_i + 10
+	if en_vente:
+		_pastille_en_vente(row, player, apres, base, h)
+		apres += R.largeur("En vente", 19) + 2.0 + 12.0 + 21.0 + 7.0 + 12.0 + 6.0
+	# Badges courts derrière le nom (Offre, Départ, Jeune), dans la largeur de la colonne JOUEUR.
+	Etoiles.poser_badges(self, app, row, player, _indispo(player), apres, base, 548.0 - apres)
+
+## Indisponibilité pour les badges : {etat, t (infobulle complète), court (pastille)} ; vide si disponible.
+func _indispo(player: Dictionary) -> Dictionary:
+	var etat := str(U.indisponibilite(player))
+	if etat.is_empty(): return {}
+	var statut := _statut(player)
+	var court: String = str(statut.get("pastille", ""))
+	if court.is_empty(): court = "! Susp." if etat == "suspendu" else "◇ Sél."
+	return {"etat": etat, "t": str(statut.t), "court": court}
 
 ## Pastille « En vente » (bleu de la charte + pièces + mot) : le clic ouvre la fiche sur l'onglet Contrat (offres, retrait du marché).
 func _pastille_en_vente(row: Control, player: Dictionary, x: float, base: float, h: float) -> void:
@@ -1339,9 +1393,26 @@ func _choisir_groupe(id: String) -> void:
 	state.focus = "PostePastille_" + (id if not id.is_empty() else "tous")
 	app._render(false)
 
+## Poste choisi (clic sur un maillot du terrain XV ; 0 = ✕) : la liste se classe par note au poste ; sans
+## poste, retour au tri par poste.
+func choisir_etoiles(numero: int) -> void:
+	state.etoiles_poste = numero
+	state.scroll = 0
+	if numero > 0:
+		state.sort = "Note au poste"; state.descending = true; app.roster_sort = "Note au poste"
+	elif str(state.sort) == "Note au poste":
+		state.sort = "Poste"; state.descending = false; app.roster_sort = "Poste"
+	state.focus = ("PanneauJoueur_%d" % numero) if numero > 0 else ""
+	app._render(false)
+
+func poste_etoiles() -> int:
+	return _poste
+
 func _rangees_listes() -> void:
 	var joueurs: Array = app.model.get("squad", [])
 	Listes.pastilles_postes(self, Vector2(_x0 + Bandeau.MARGE, Y_POSTES), Listes.compter_groupes(joueurs), joueurs.size(), str(state.get("poste_groupe", "")), _choisir_groupe)
+	# Poste choisi sur le terrain XV : titre, nombre de Naturels et de Confirmés, ✕ (au bout de la rangée).
+	Etoiles.titre_poste(self, _x0 + _lt - Bandeau.MARGE, Y_POSTES, joueurs, _poste, choisir_etoiles)
 	_bandeau_totaux = Control.new()
 	_bandeau_totaux.name = "RosterTuilesTotaux"
 	add_child(_bandeau_totaux)
