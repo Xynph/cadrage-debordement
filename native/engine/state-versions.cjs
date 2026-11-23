@@ -37,6 +37,8 @@ const UNTOUCHED = Object.freeze({
   manager_recruitment_watch: NONE, regen_shortlist: NONE,
   // Rallonge du conseil (budget-transferts.cjs) : budgetTransferts, confiance et nouvelles (sections légères).
   transfer_budget_extension: NONE,
+  // Séance d'un jour remplacée (calendar-planning.cjs swapSession) : planning des entraînements (section légère).
+  calendar_session: NONE,
   // Ton donné à l'agent d'une piste (ton-agent.cjs) : section légère tonAgent seulement.
   agent_ton: NONE, agent_question: NONE,
   // Décisions sur les joueurs du club : la section des clubs est relue.

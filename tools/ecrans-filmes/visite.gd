@@ -39,6 +39,8 @@ const EXTRAS := [
 	{"id": "entrainement-individuel", "libelle": "Entraînement · onglet Individuel", "type": "entrainement_onglet", "onglet": 2},
 	{"id": "entrainement-mois", "libelle": "Entraînement · onglet Mois", "type": "entrainement_onglet", "onglet": 5},
 	{"id": "entrainement-mois-jour", "libelle": "Entraînement · Mois · petite fenêtre d'un jour", "type": "entrainement_onglet", "onglet": 5, "jour": true},
+	{"id": "entrainement-seance", "libelle": "Entraînement · Mois · fiche de séance (FM27 n° 25)", "type": "entrainement_onglet", "onglet": 5, "jour": true, "seance": true},
+	{"id": "entrainement-seance-choisie", "libelle": "Entraînement · Mois · séance remplacée d'un clic", "type": "entrainement_onglet", "onglet": 5, "jour": true, "seance": true, "seance_choix": true},
 	{"id": "salle-entrainement", "libelle": "Observer la préparation (salle d'entraînement)", "type": "salle_entrainement"},
 	{"id": "salle-entrainement-joueur", "libelle": "Observer la préparation · petite fenêtre d'un joueur", "type": "salle_entrainement", "joueur": true},
 	{"id": "fiche-joueur", "libelle": "Fiche joueur", "type": "joueur"},
@@ -633,7 +635,10 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				var page := app.find_child("ImmersiveTraining", true, false)
 				var choix: Button = null
 				var plein := -1
+				# Fiche de séance : un jour à venir (séances encore modifiables), le plus rempli.
+				var aujourdhui := str(app.model.get("calendarPlanning", {}).get("today", "")) if bool(ecran.get("seance", false)) else ""
 				for b: Node in page.find_children("TrainingMonthDayOpen_*", "Button", true, false):
+					if not aujourdhui.is_empty() and str(b.name).trim_prefix("TrainingMonthDayOpen_") <= aujourdhui: continue
 					var n: int = b.get_parent().get_child_count()
 					if n > plein:
 						plein = n
@@ -641,6 +646,25 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				if choix == null: return {"statut": "echec", "note": "aucun jour"}
 				choix.pressed.emit()
 				await stabiliser()
+				if bool(ecran.get("seance", false)):
+					var seances := page.find_children("TrainingMonthDaySessionOpen*", "Button", true, false)
+					if seances.is_empty(): return {"statut": "echec", "note": "aucune séance dans le jour"}
+					(seances[seances.size() - 1] as Button).pressed.emit()
+					await stabiliser()
+					# Séance déjà remplacée (taille précédente) : la fiche montre déjà le choix, on ne revient pas en arrière.
+					if bool(ecran.get("seance_choix", false)) and page.find_child("TrainingSessionChanged", true, false) == null:
+						# Famille Intensif : jauges vertes (gains) et rouges (coûts, risque) côte à côte.
+						var intensif := page.find_child("TrainingSessionFamilyOpen_intensif", true, false) as Button
+						if intensif != null:
+							intensif.pressed.emit()
+							await stabiliser()
+						var lignes := page.find_children("TrainingSessionPick*", "Button", true, false)
+						var autre: Button = null
+						if not lignes.is_empty(): autre = lignes[lignes.size() - 1]
+						if autre != null and autre.get_parent().find_child("TrainingSessionInPlace", true, false) != null: autre = lignes[0]
+						if autre == null: return {"statut": "echec", "note": "aucune autre séance"}
+						autre.pressed.emit()
+						await stabiliser()
 		"salle_entrainement":
 			app._navigate("Préparation")
 			await stabiliser()
@@ -1251,6 +1275,13 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 
 ## Remet l'écran dans son état ordinaire après la capture.
 func refermer(ecran: Dictionary) -> void:
+	if str(ecran.type) == "entrainement_onglet" and bool(ecran.get("seance", false)):
+		var PF = load("res://ui/petite_fenetre.gd")
+		PF.fermer_derniere(app.get_tree())
+		PF.fermer_derniere(app.get_tree())
+		if app.management_ui.get("immersive_training") is Dictionary:
+			app.management_ui.immersive_training.erase("seances_choisies")
+			app.management_ui.immersive_training.erase("seance_cible")
 	if str(ecran.type) == "recherche_ciblee":
 		load("res://ui/petite_fenetre.gd").fermer_derniere(app.get_tree())
 		app.management_ui.erase("recherche_ciblee")

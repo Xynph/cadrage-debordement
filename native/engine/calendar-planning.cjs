@@ -23,6 +23,12 @@ const programmes = {
  ]}
 };
 const kinds = new Set(['team','strength','speed','tactics','skills','recovery','video','kicking']);
+// Séances au choix pour remplacer UNE séance d'un jour (idée FM27 n° 25, 23/11/2026) : chaque séance distincte des
+// semaines types et des blocs d'entraînement (famille + nom), sans les groupes avants / arrières des ateliers.
+const REGULAR = [[0,'strength','Force'],[2,'team','Ateliers par poste','Conquête','Circulation'],[4,'skills','Passes et appuis']];
+const CATALOGUE = Object.freeze([...new Map([...Object.values(programmes).flatMap(({slots})=>slots),...REGULAR]
+ .map(([,kind,label])=>[kind+'|'+label,Object.freeze({kind,label})])).values()]);
+const inCatalogue = (kind,label) => CATALOGUE.some(item=>item.kind === kind && item.label === label);
 const isRecord = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const owns = (record,key) => Object.hasOwn(record,key);
 const validFixtureId = value => typeof value === 'string' && value.length > 0 && value.length <= 160
@@ -91,10 +97,9 @@ function freeSessions(first, last) {
  // the next fixture is reserved for that fixture's own programme.
  const gap = dayGap(first,last);
  if (gap < 15) return [];
- const regular = [[0,'strength','Force'],[2,'team','Ateliers par poste','Conquête','Circulation'],[4,'skills','Passes et appuis']];
  const sessions = [];
  for (let week=4; week < gap-10 && week <= 70; week+=7) {
-  for (const slot of regular) {
+  for (const slot of REGULAR) {
    const offset = week+slot[0];
    if (offset < gap-10) sessions.push(makeSession(null,dayOffset(first,offset),slot,0));
   }
@@ -139,9 +144,19 @@ function preparation(model, state, today, anchors, chosen = null) {
   if (recuperation) displayed.push(recuperation,...sessions.filter(session=>session.kind === 'video'));
   else displayed.push(...sessions);
  }
+ const swaps = saved?.swaps ?? {};
  return [...new Map(displayed.map(session=>[session.id,session])).values()]
-  .sort((a,b)=>a.date.localeCompare(b.date) || a.id.localeCompare(b.id))
+  .map(session=>(saved?.through && session.date < saved.through) || !owns(swaps,session.id) ? session : swapped(session,swaps[session.id]))
+  .sort((a,b)=>a.date.localeCompare(b.date) || (a.sourceId ?? a.id).localeCompare(b.sourceId ?? b.id))
   .map(session=>({...session,completed:today !== null && session.date < today}));
+}
+
+// Séance remplacée : même jour, même place (identifiant d'origine dans sourceId, ordre du jour inchangé), nouvelle
+// famille et nouveau nom ; l'identifiant suit la famille (format de l'historique : <match>:<date>:<famille>:<rang>).
+function swapped(session, {kind,label}) {
+ const {forwards,backs,...rest} = session;
+ const id = session.fixtureId ? session.id.replace(/:[a-z]+:(\d)$/,`:${kind}:$1`) : `club:${session.date}:${kind}`;
+ return {...rest,id,kind,label,sourceId:session.id,swapped:true};
 }
 
 // Effets des séances sur la semaine (22/11/2026, Entraînement › Mois, choix de Léo) : chaque séance du programme
@@ -151,23 +166,27 @@ function preparation(model, state, today, anchors, chosen = null) {
 // La charge choisie dans l'onglet Semaine (repos / normale / intensive) garde son rôle : l'intensité de la semaine ;
 // le programme en règle le contenu, sans compter deux fois le même effet.
 const EFFETS = Object.freeze({
- strength:{fatigue:3,condition:-1,avants:4,arrieres:2,cohesion:0},
- speed:{fatigue:1,condition:0,avants:1,arrieres:3,cohesion:0},
- team:{fatigue:2,condition:-1,avants:4,arrieres:0,cohesion:0},
- skills:{fatigue:1,condition:0,avants:2,arrieres:3,cohesion:0},
- kicking:{fatigue:1,condition:0,avants:0,arrieres:3,cohesion:0},
- tactics:{fatigue:0,condition:0,avants:0,arrieres:0,cohesion:2},
- video:{fatigue:-1,condition:1,avants:0,arrieres:0,cohesion:2},
- recovery:{fatigue:-4,condition:3,avants:0,arrieres:0,cohesion:0}
+ strength:{fatigue:3,condition:-1,avants:4,arrieres:2,cohesion:0,blessure:2,moral:-1},
+ speed:{fatigue:1,condition:0,avants:1,arrieres:3,cohesion:0,blessure:2,moral:0},
+ team:{fatigue:2,condition:-1,avants:4,arrieres:0,cohesion:0,blessure:2,moral:0},
+ skills:{fatigue:1,condition:0,avants:2,arrieres:3,cohesion:0,blessure:1,moral:1},
+ kicking:{fatigue:1,condition:0,avants:0,arrieres:3,cohesion:0,blessure:0,moral:1},
+ tactics:{fatigue:0,condition:0,avants:0,arrieres:0,cohesion:2,blessure:0,moral:0},
+ video:{fatigue:-1,condition:1,avants:0,arrieres:0,cohesion:2,blessure:0,moral:0},
+ recovery:{fatigue:-4,condition:3,avants:0,arrieres:0,cohesion:0,blessure:-2,moral:1}
 });
-const AXES = ['fatigue','condition','avants','arrieres','cohesion'];
-const BORNES = Object.freeze({fatigue:8,condition:5,avants:12,arrieres:12,cohesion:6});
+// Risque de blessure (blessure) et effet moral (moral) par séance (idée FM27 n° 25, choix de Léo du 23/11/2026) :
+// points de risque de la semaine (contact, intensité ; la récupération en retire) et points de moral du groupe
+// (séances ludiques ou au ballon : +, force et vidéo : −). Appliqués à la séance collective du club du manager
+// (programme-semaine.cjs) : le risque pèse sur les blessures à l'entraînement, le moral sur le moral du groupe.
+const AXES = ['fatigue','condition','avants','arrieres','cohesion','blessure','moral'];
+const BORNES = Object.freeze({fatigue:8,condition:5,avants:12,arrieres:12,cohesion:6,blessure:4,moral:2});
 // Semaine de référence = la semaine moyenne du programme proposé par le staff sur une saison Monde (sonde du 22/11/2026,
 // scripts/sonde-programme-entrainement.cjs) : sur une saison au programme par défaut, la simulation reste en moyenne
 // celle d'avant. Une semaine type standard en reste à un ou deux points (avec la séance de force du lundi : +1 de
 // fatigue, +2 % de progression ; sans elle, quand la récupération d'après-match tombe le lundi : -2 de fatigue, +1 de
-// condition, -2 % pour les avants).
-const REFERENCE = Object.freeze({fatigue:2,condition:2,avants:9,arrieres:9,cohesion:4});
+// condition, -2 % pour les avants). Risque et moral (23/11/2026) : même méthode (scripts/sonde-seance-effets.cjs).
+const REFERENCE = Object.freeze({fatigue:2,condition:2,avants:9,arrieres:9,cohesion:4,blessure:4,moral:1});
 
 function weekStart(date) {
  const weekday = new Date(Date.parse(date)).getUTCDay();
@@ -224,6 +243,7 @@ function project(model, state, date, {anchors = []} = {}) {
   // dans Entraînement › Mois avant de choisir.
   weeks:weeksEffects(sessions),
   sessionEffects:EFFETS,
+  sessionCatalogue:CATALOGUE,
   templates:Object.entries(programmes).map(([id,{label,slots}])=>({id,label,
    slots:slots.map(([offset,kind,name])=>({offset,kind,label:name})),
    effects:effectsOf(Object.fromEntries(Object.keys(EFFETS).map(kind=>[kind,slots.filter(slot=>slot[1]===kind).length])))}))
@@ -242,10 +262,12 @@ function previousModel(model, fixtureId, date) {
  return {...model,calendar:model.calendar.map(item=>item.id === fixtureId ? {...item,date} : item)};
 }
 
-function changeState(model,state,fixtureId,entry,completed) {
+function changeState(model,state,fixtureId,entry,completed,swaps) {
  const saved = state?.season === seasonOf(model) ? state : null;
  const history = completed ?? (saved?.through ? {through:saved.through,history:saved.history} : {});
- const result = {version:1,season:seasonOf(model),fixtures:{...activeState(model,state),[fixtureId]:entry},...history};
+ const kept = swaps ?? saved?.swaps;
+ const fixtures = fixtureId ? {...activeState(model,state),[fixtureId]:entry} : {...activeState(model,state)};
+ const result = {version:1,season:seasonOf(model),fixtures,...history,...(kept && Object.keys(kept).length ? {swaps:kept} : {})};
  validateState(result);
  return result;
 }
@@ -254,7 +276,7 @@ function remember(model,state,today,anchors) {
  const previous = state?.season === seasonOf(model) ? state.through : null;
  const through = previous > today ? previous : today;
  const history = project(model,state,through,{anchors}).sessions
-  .filter(session=>session.completed).map(({completed,...session})=>session);
+  .filter(session=>session.completed).map(({completed,sourceId,swapped,...session})=>session);
  return {through,history};
 }
 
@@ -280,7 +302,30 @@ function applyTemplate(model,state,{fixtureId,template},date,{anchors = []} = {}
  const prior = lookup(model,state,fixtureId);
  const anchor = anchorIndex(anchors).get(fixtureId) ?? prior?.date ?? fixture.date;
  if (anchor < today) throw Error('La rencontre doit être recalée avant de choisir un nouveau programme.');
- return changeState(model,state,fixtureId,{date:anchor,template},remember(model,state,today,anchors));
+ const saved = state?.season === seasonOf(model) ? state : null;
+ const swaps = Object.fromEntries(Object.entries(saved?.swaps ?? {}).filter(([id])=>!id.startsWith(fixtureId+':')));
+ return changeState(model,state,fixtureId,{date:anchor,template},remember(model,state,today,anchors),swaps);
+}
+
+// Remplace UNE séance d'un jour (Entraînement › Mois, fiche de séance) : {sessionId (identifiant d'origine), kind,
+// label} pris dans le catalogue. Séance du jour ou à venir seulement ; reprendre la séance d'origine annule le
+// remplacement. Le choix compte dans la semaine simulée (weekEffects : fatigue, condition, progression, organisation,
+// risque de blessure, moral), lue par la séance collective du club (programme-semaine.cjs).
+function swapSession(model,state,{sessionId,kind,label} = {},date,{anchors = [],trained = false} = {}) {
+ if (typeof sessionId !== 'string' || !inCatalogue(kind,label)) throw Error('Séance inconnue.');
+ const today = dateOf(model,date);
+ if (!isDate(today)) throw Error('La planification est indisponible.');
+ const sessions = project(model,state,today,{anchors}).sessions;
+ const target = sessions.find(session=>(session.sourceId ?? session.id) === sessionId);
+ if (!target || target.completed) throw Error('Cette séance ne peut plus être changée.');
+ if (trained && weekStart(target.date) === weekStart(today)) throw Error('La séance collective de la semaine est déjà faite.');
+ const saved = state?.season === seasonOf(model) ? state : null;
+ const live = new Set(sessions.filter(session=>!session.completed).map(session=>session.sourceId ?? session.id));
+ const swaps = Object.fromEntries(Object.entries(saved?.swaps ?? {}).filter(([id])=>live.has(id) && id !== sessionId));
+ const plain = saved ? (({swaps:ignored,...rest})=>rest)(saved) : state;
+ const source = project(model,plain,today,{anchors}).sessions.find(session=>session.id === sessionId);
+ if (!source || source.kind !== kind || source.label !== label) swaps[sessionId] = {kind,label};
+ return changeState(model,state,null,null,remember(model,state,today,anchors),swaps);
 }
 
 function describeChange(model,state,change,date) {
@@ -310,7 +355,14 @@ function validateState(state) {
  const invalid = ()=>{ throw Error('Planning des entraînements invalide.'); };
  if (!isRecord(state) || state.version !== 1 || !Number.isSafeInteger(state.season) || state.season < 1
   || !isRecord(state.fixtures) || Object.keys(state.fixtures).length > 200
-  || Object.keys(state).some(key=>!['version','season','fixtures','through','history'].includes(key))) invalid();
+  || Object.keys(state).some(key=>!['version','season','fixtures','through','history','swaps'].includes(key))) invalid();
+ if (state.swaps !== undefined) {
+  if (!isRecord(state.swaps) || Object.keys(state.swaps).length > 400) invalid();
+  for (const [id,swap] of Object.entries(state.swaps)) {
+   if (!validFixtureId(id) || !isRecord(swap) || Object.keys(swap).some(key=>!['kind','label'].includes(key))
+    || !inCatalogue(swap.kind,swap.label)) invalid();
+  }
+ }
  for (const [id,entry] of Object.entries(state.fixtures)) {
   if (!validFixtureId(id) || !isRecord(entry) || !isDate(entry.date) || !programmeExists(entry.template)
    || Object.keys(entry).some(key=>!['date','template'].includes(key))) invalid();
@@ -338,4 +390,4 @@ function validateState(state) {
  }
 }
 
-module.exports = {project,applyTemplate,reschedule,keepSchedule,validateState,weekEffects,EFFETS};
+module.exports = {project,applyTemplate,swapSession,reschedule,keepSchedule,validateState,weekEffects,EFFETS,CATALOGUE};
