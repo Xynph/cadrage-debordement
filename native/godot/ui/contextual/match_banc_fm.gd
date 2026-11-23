@@ -13,7 +13,7 @@ const C = preload("res://ui/immersive08/components.gd")
 const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 ## Ardoise claire (teinte D) commune aux petites fenêtres du direct : fenêtre d'un joueur, consignes, cris à un joueur.
 const MenuJoueur = preload("res://ui/contextual/match_menu_joueur.gd")
-const PAL: Dictionary = MenuJoueur.PAL
+static var PAL: Dictionary = MenuJoueur.PAL
 
 const NOM := "MatchFmBanc"
 

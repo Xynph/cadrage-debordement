@@ -34,10 +34,196 @@ const PALIERS := [[78, "gonfle", "Gonflé à bloc"], [62, "confiant", "Confiant"
 const PLACES := [Vector2(.22, .90), Vector2(.5, .90), Vector2(.78, .90), Vector2(.39, .78), Vector2(.61, .78),
 	Vector2(.16, .68), Vector2(.84, .68), Vector2(.5, .66), Vector2(.36, .53), Vector2(.6, .47), Vector2(.1, .2),
 	Vector2(.38, .32), Vector2(.62, .32), Vector2(.9, .2), Vector2(.5, .1)]
-## Ardoise claire (teinte D retenue par Léo) : fond, cases, filets, encres.
-const PAL := {"fond": Color("3a4947"), "case": Color("445350"), "choisi": Color("2f5a46"), "filet": Color(0.949, 0.925, 0.863, .16),
-	"encre": Color("f2ecdc"), "encre2": Color("abb7b1"), "encre3": Color("a7b0aa"), "accent": Color("d7aa5a"),
-	"rail": Color(0.949, 0.925, 0.863, .18), "bord": Color(0.949, 0.925, 0.863, .40)}
+## Ardoise claire (teinte D retenue par Léo) : fond, cases, filets, encres. Planche du 23/11 (« un gris métallique,
+## plus qualitatif ») : CD_VARIANTE_VISUELLE=A (métal brossé froid), B (anthracite satiné), C (acier clair grainé,
+## filet doré) change le fond des fenêtres, leurs cases et les blocs de la fenêtre Équipe ; sans variante, ardoise.
+static var PAL: Dictionary = _palette()
+
+static func variante_fond() -> String:
+	var v := OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper()
+	return v if v in ["A", "B", "C"] else ""
+
+static func _palette() -> Dictionary:
+	var p := {"fond": Color("3a4947"), "case": Color("445350"), "choisi": Color("2f5a46"), "filet": Color(0.949, 0.925, 0.863, .16),
+		"encre": Color("f2ecdc"), "encre2": Color("abb7b1"), "encre3": Color("a7b0aa"), "accent": Color("d7aa5a"),
+		"rail": Color(0.949, 0.925, 0.863, .18), "bord": Color(0.949, 0.925, 0.863, .40)}
+	match variante_fond():
+		"A": p.merge({"fond": Color("4f585f"), "case": Color("5b656c"), "filet": Color(0.86, 0.91, 0.95, .18), "encre2": Color("c6ced3"),
+			"encre3": Color("a9b2b8"), "rail": Color(0.86, 0.91, 0.95, .20), "bord": Color(0.84, 0.87, 0.89, .55)}, true)
+		"B": p.merge({"fond": Color("2c3236"), "case": Color("3a4146"), "filet": Color(1, 1, 1, .10), "encre2": Color("b9c0c4"),
+			"encre3": Color("9aa2a7"), "rail": Color(1, 1, 1, .14), "bord": Color(0, 0, 0, .60)}, true)
+		"C": p.merge({"fond": Color("5a646b"), "case": Color("4b555c"), "filet": Color(1, 1, 1, .20), "encre2": Color("d6dce0"),
+			"encre3": Color("bcc4c9"), "rail": Color(1, 1, 1, .22), "bord": Color("d7aa5a")}, true)
+	return p
+
+## Blocs intérieurs (fenêtre Équipe) accordés au fond métal de la variante : panneaux de la charte → teintes de métal.
+const BLOCS := {
+	"A": [Color("262d32"), Color("2e353a"), Color("384046"), Color("454e55"), Color("5a646b")],
+	"B": [Color("121517"), Color("181b1e"), Color("22272a"), Color("2e3438"), Color("3a4045")],
+	"C": [Color("323a40"), Color("3b444b"), Color("465058"), Color("535e66"), Color("6b757c")]}
+
+static func teinte_bloc(c: Color) -> Color:
+	var v := variante_fond()
+	if v.is_empty() or c.a <= 0.0: return c
+	var source := [Charte.FOND, Charte.PANNEAU, Charte.PANNEAU_2, Charte.PANNEAU_3, Charte.FILET]
+	for i in source.size():
+		var s: Color = source[i]
+		if is_equal_approx(s.r, c.r) and is_equal_approx(s.g, c.g) and is_equal_approx(s.b, c.b): return Color(BLOCS[v][i], c.a)
+	return c
+
+## Fond plein écran de la fenêtre Équipe en variante métal (dégradé et texture, sans cadre ni ombre).
+static func fond_plein(cible: Control) -> void:
+	if variante_fond().is_empty(): return
+	var panneau := Panel.new()
+	panneau.name = "FondMetal"
+	panneau.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panneau.add_theme_stylebox_override("panel", _metal(false, false))
+	cible.add_child(panneau)
+	panneau.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+static var _brosse: ImageTexture
+static var _grain: ImageTexture
+
+## Texture en mosaïque : « brosse » (stries horizontales) ou grain fin, très discrète.
+static func _texture(nom: String) -> ImageTexture:
+	if nom == "brosse" and _brosse != null: return _brosse
+	if nom == "grain" and _grain != null: return _grain
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 23112026
+	var l := 8 if nom == "brosse" else 96
+	var h := 160 if nom == "brosse" else 96
+	var img := Image.create(l, h, false, Image.FORMAT_RGBA8)
+	for y in h:
+		var ligne := rng.randf_range(-1.0, 1.0)
+		for x in l:
+			var v := ligne if nom == "brosse" else rng.randf_range(-1.0, 1.0)
+			var a := absf(v) * (0.075 if nom == "brosse" else 0.07)
+			img.set_pixel(x, y, Color(1, 1, 1, a) if v > 0.0 else Color(0, 0, 0, a))
+	var tex := ImageTexture.create_from_image(img)
+	if nom == "brosse": _brosse = tex
+	else: _grain = tex
+	return tex
+
+## Fond métal de la variante : `cadre` faux pour un fond plein écran (ni liseré ni coins arrondis).
+static func _metal(ombre: bool, cadre: bool = true) -> StyleBox:
+	var m := FondMetal.new()
+	m.rayon = float(Charte.RAYON_PANNEAU) if cadre else 0.0
+	m.bord_w = float(maxi(1, C.px(2))) if cadre else 0.0
+	m.bord = PAL.bord
+	match variante_fond():
+		"A":
+			m.haut = Color("6b757c")
+			m.bas = Color("343c42")
+			m.reflet = 0.16
+			m.trait_haut = 0.42 if cadre else 0.0
+			m.texture = _texture("brosse")
+			m.ombre = float(maxi(8, C.px(36))) if ombre else 0.0
+			m.ombre_teinte = Color(0, 0, 0, .65)
+		"B":
+			m.haut = Color("3a4045")
+			m.milieu = Color("474e54")
+			m.pos_milieu = 0.16
+			m.bas = Color("1b1f22")
+			m.biseau = 0.22 if cadre else 0.0
+			m.bord_w = float(maxi(1, C.px(1))) if cadre else 0.0
+			m.ombre = float(maxi(10, C.px(44))) if ombre else 0.0
+			m.ombre_y = float(C.px(10)) if ombre else 0.0
+			m.ombre_teinte = Color(0, 0, 0, .80)
+		_:
+			m.haut = Color("6f7980")
+			m.bas = Color("455057")
+			m.reflet = 0.06
+			m.trait_haut = 0.30 if cadre else 0.0
+			m.texture = _texture("grain")
+			m.ombre = float(maxi(8, C.px(36))) if ombre else 0.0
+			m.ombre_teinte = Color(0, 0, 0, .60)
+	m.set_content_margin_all(18)
+	return m
+
+## Dessin du fond métal : ombre, dégradé vertical par bandes (coins arrondis suivis finement), reflet et texture,
+## biseau ou filet lumineux du haut, puis liseré net par-dessus.
+class FondMetal extends StyleBox:
+	var haut := Color.GRAY
+	var milieu := Color(0, 0, 0, 0)
+	var pos_milieu := 0.2
+	var bas := Color.DIM_GRAY
+	var rayon := 18.0
+	var bord_w := 2.0
+	var bord := Color.WHITE
+	var ombre := 0.0
+	var ombre_y := 0.0
+	var ombre_teinte := Color(0, 0, 0, .65)
+	var reflet := 0.0
+	var trait_haut := 0.0
+	var biseau := 0.0
+	var texture: Texture2D
+
+	func _get_draw_rect(rect: Rect2) -> Rect2:
+		return rect.grow(ombre + absf(ombre_y))
+
+	func _teinte(t: float) -> Color:
+		var c := haut.lerp(bas, t)
+		if milieu.a > 0.0:
+			c = haut.lerp(milieu, t / pos_milieu) if t < pos_milieu else milieu.lerp(bas, (t - pos_milieu) / (1.0 - pos_milieu))
+		if reflet > 0.0 and t < 0.38: c = c.lerp(Color.WHITE, reflet * pow(1.0 - t / 0.38, 1.6))
+		return c
+
+	func _bornes(r: Rect2, y: float, R: float) -> Vector2:
+		var dy := 0.0
+		if y < r.position.y + R: dy = r.position.y + R - y
+		elif y > r.end.y - R: dy = y - (r.end.y - R)
+		var dx := R - sqrt(maxf(0.0, R * R - dy * dy)) if dy > 0.0 else 0.0
+		return Vector2(r.position.x + dx, r.end.x - dx)
+
+	func _draw(ci: RID, rect: Rect2) -> void:
+		var R := maxf(0.0, rayon - bord_w)
+		var r := rect.grow(-bord_w)
+		if ombre > 0.0:
+			var o := StyleBoxFlat.new()
+			o.bg_color = bas
+			o.set_corner_radius_all(int(rayon))
+			o.shadow_size = int(ombre)
+			o.shadow_offset = Vector2(0, ombre_y)
+			o.shadow_color = ombre_teinte
+			o.anti_aliasing = true
+			o.draw(ci, rect)
+		if r.size.x <= 2.0 * R or r.size.y <= 2.0 * R: return
+		var pas := maxf(4.0, r.size.y / 48.0)
+		var y := r.position.y
+		while y < r.end.y - 0.01:
+			var coin := y < r.position.y + R or y >= r.end.y - R - 0.01
+			var suivant := minf(r.end.y, y + (1.5 if coin else pas))
+			if not coin and suivant > r.end.y - R: suivant = r.end.y - R
+			var b0 := _bornes(r, y, R)
+			var b1 := _bornes(r, suivant, R)
+			var c0 := _teinte((y - r.position.y) / r.size.y)
+			var c1 := _teinte((suivant - r.position.y) / r.size.y)
+			RenderingServer.canvas_item_add_polygon(ci, PackedVector2Array([Vector2(b0.x, y), Vector2(b0.y, y), Vector2(b1.y, suivant), Vector2(b1.x, suivant)]),
+				PackedColorArray([c0, c0, c1, c1]))
+			y = suivant
+		if texture != null:
+			var th := float(texture.get_height())
+			var marge_y := ceilf(R / th) * th
+			RenderingServer.canvas_item_add_texture_rect(ci, Rect2(r.position.x + R, r.position.y, r.size.x - 2.0 * R, r.size.y), texture.get_rid(), true)
+			if R > 0.0 and r.size.y > 2.0 * marge_y:
+				for x: float in [r.position.x, r.end.x - R]:
+					RenderingServer.canvas_item_add_texture_rect(ci, Rect2(x, r.position.y + marge_y, R, r.size.y - marge_y - R), texture.get_rid(), true)
+		if trait_haut > 0.0:
+			RenderingServer.canvas_item_add_line(ci, Vector2(r.position.x + R, r.position.y + 1.0), Vector2(r.end.x - R, r.position.y + 1.0), Color(1, 1, 1, trait_haut), 1.5, true)
+		if biseau > 0.0:
+			var e := 2.0
+			RenderingServer.canvas_item_add_line(ci, Vector2(r.position.x + R, r.position.y + e * .5), Vector2(r.end.x - R, r.position.y + e * .5), Color(1, 1, 1, biseau), e, true)
+			RenderingServer.canvas_item_add_line(ci, Vector2(r.position.x + e * .5, r.position.y + R), Vector2(r.position.x + e * .5, r.end.y - R), Color(1, 1, 1, biseau * .5), e, true)
+			RenderingServer.canvas_item_add_line(ci, Vector2(r.position.x + R, r.end.y - e * .5), Vector2(r.end.x - R, r.end.y - e * .5), Color(0, 0, 0, biseau * 2.2), e, true)
+			RenderingServer.canvas_item_add_line(ci, Vector2(r.end.x - e * .5, r.position.y + R), Vector2(r.end.x - e * .5, r.end.y - R), Color(0, 0, 0, biseau * 1.4), e, true)
+		if bord_w > 0.0:
+			var contour := StyleBoxFlat.new()
+			contour.draw_center = false
+			contour.border_color = bord
+			contour.set_border_width_all(int(bord_w))
+			contour.set_corner_radius_all(int(rayon))
+			contour.anti_aliasing = true
+			contour.draw(ci, rect)
 
 static func teinte_moral(cle: String) -> Color:
 	match cle:
@@ -238,7 +424,7 @@ static func habiller(fond: Panel, nom: String) -> void:
 	style.set_border_width_all(maxi(1, C.px(2)))
 	style.shadow_color = Color(0, 0, 0, .65)
 	style.shadow_size = maxi(8, C.px(36))
-	fond.add_theme_stylebox_override("panel", style)
+	fond.add_theme_stylebox_override("panel", style if variante_fond().is_empty() else _metal(true))
 	var croix := fond.find_child(nom + "Fermer", false, false) as Button
 	if croix != null:
 		croix.add_theme_color_override("font_color", p.encre2)
@@ -621,7 +807,11 @@ static func Tableau_nom(nom: String) -> String:
 ## Style de l'ardoise claire (teinte D) pour les autres petites fenêtres du direct (Léo, 23/11 : « c'est le cas pour
 ## toutes les fenêtres sur l'écran 2D ») : même fond, liseré et ombre que `habiller` ; `marge` en pixels, `ombre` faux
 ## pour un menu déroulant. Survol des lignes : `PAL.case`.
-static func style_ardoise(marge: int = -1, ombre: bool = true) -> StyleBoxFlat:
+static func style_ardoise(marge: int = -1, ombre: bool = true) -> StyleBox:
+	if not variante_fond().is_empty():
+		var m := _metal(ombre)
+		if marge >= 0: m.set_content_margin_all(marge)
+		return m
 	var p := PAL
 	var style := Charte.style_panneau(p.fond, Charte.RAYON_PANNEAU)
 	style.border_color = p.bord
