@@ -10,8 +10,9 @@ extends RefCounted
 ## de l'offre ou pied de la page Recrutement) envoie, en un clic (exception tolérée : signature d'un contrat).
 ## Données moteur : quote.roles {attendu, liste[{role, salary, refus}]} (native/engine/role-contrat.cjs) : demande et refus
 ## de chaque rôle ; ctx.role est envoyé avec l'offre (contract_negotiation.gd).
-## Lignes du contrat ouvertes aux clauses de l'offre guidée (idée 17, branche claude/fm-offre-guidee) : clause libératoire
-## et prime à la signature négociable apparaissent dès que le moteur les envoie dans le devis (voir lignes_contrat).
+## Offre guidée (idée 17, native/engine/clauses-contrat.cjs, ui/offre_guidee.gd) : au recrutement, la prime à la signature
+## (crans) et la clause libératoire (sans, haute, moyenne, basse) sont deux lignes du contrat, réglées d'un clic ; le
+## conseil du recruteur est entouré d'orange.
 ## Petite fenêtre « Disponibilité » (fiche joueur) : remplace le bouton « Proposer aux autres clubs ».
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
@@ -23,6 +24,7 @@ const Offre = preload("res://ui/offre_visuelle.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
 const Role = preload("res://ui/role_contrat.gd")
+const Guidee = preload("res://ui/offre_guidee.gd")
 const LARGEUR := 1500.0
 const HAUTEUR := 860.0
 ## Repères du temps de jeu promis (idée 16, native/engine/role-contrat.cjs SEUILS) : minutes par match.
@@ -67,15 +69,9 @@ static func _role_repris(ctx: Dictionary) -> String:
 	var roles := roles_offre(ctx.quote)
 	return r if roles.has(r) and str(roles[r].get("refus", "")).is_empty() else ""
 
-## Clauses de l'offre guidée (idée 17) quand le moteur les envoie : [libellé, valeur, état, id, icône].
-## Le devis porte alors `releaseClause` (clause libératoire, €) et/ou `signingBonus` (prime à la signature, €).
-static func lignes_options(quote: Dictionary) -> Array:
-	var out: Array = []
-	var clause: Variant = quote.get("releaseClause")
-	if clause is int or clause is float: out.append(["Clause libératoire", G.euros(clause), "ok", "NegoLigneClause", "lock"])
-	var prime: Variant = quote.get("signingBonus")
-	if prime is int or prime is float: out.append(["Prime à la signature", G.euros(prime), "ok", "NegoLignePrimeSignature", "money"])
-	return out
+## Offre guidée au recrutement : prime en crans et clause libératoire négociables (devis `offre` du moteur).
+static func offre_guidee(ctx: Dictionary) -> bool:
+	return not ctx.get("prolongation", false) and not Guidee.offre(ctx).is_empty()
 
 ## État d'une ligne : "ok" (accord, vert), "proche" (orange), "loin" (rouge), "attente" (gris, rôle pas encore promis).
 static func donnees(ctx: Dictionary) -> Dictionary:
@@ -106,10 +102,11 @@ static func donnees(ctx: Dictionary) -> Dictionary:
 	d.merge({"id":str(ctx.player.get("id", "")), "contre":contre, "retrait":retrait, "cible":cible, "tentatives":int(negociation.get("attempts", 0)),
 		"contre_annees":int(negociation.get("years", 0)), "salaire":etat_salaire, "duree":etat_duree, "prime":etat_prime,
 		"attendu":attendu, "choisi":choisi, "role":etat_role, "requis":role_requis(ctx), "masse":masse, "ajout":ajout, "apres":masse + ajout,
-		"semaines":int(paie.weeks), "saison":saison if saison is Dictionary else {}, "options":lignes_options(ctx.quote),
+		"semaines":int(paie.weeks), "saison":saison if saison is Dictionary else {}, "guidee":offre_guidee(ctx),
 		"base":int(ctx.quote.get("salary", val.demande))})
 	var etats: Array = [etat_role, etat_salaire, etat_duree, etat_prime]
-	for o: Array in d.options: etats.append(str(o[2]))
+	# Clause libératoire : l'agent l'accepte toujours (plus elle est basse, plus il baisse sa demande).
+	if d.guidee: etats.append("ok")
 	d["clauses"] = etats.size()
 	d["accords"] = 0 if etat_role == "attente" else etats.count("ok")
 	return d
@@ -312,37 +309,41 @@ static func _centre(toile: Control, parent: Control, ctx: Dictionary, d: Diction
 		var refus := str(info.get("refus", ""))
 		var choisi := str(d.choisi) == role
 		var couleur: Color = Role.couleur(role) if refus.is_empty() else Charte.IVOIRE_3
-		var carte := D.rect(centre, Rect2(x, 58, largeur, 176), Charte.PANNEAU_3.lerp(couleur, .30 if choisi else .06), Charte.RAYON_CARTE, couleur if choisi else (Color(Pieces.ORANGE, .55) if manque and refus.is_empty() else Color.TRANSPARENT))
+		var carte := D.rect(centre, Rect2(x, 58, largeur, 160), Charte.PANNEAU_3.lerp(couleur, .30 if choisi else .06), Charte.RAYON_CARTE, couleur if choisi else (Color(Pieces.ORANGE, .55) if manque and refus.is_empty() else Color.TRANSPARENT))
 		carte.name = "NegoRoleCarte_" + role
 		D.rect(carte, Rect2(0, 0, largeur, 6), couleur, 3)
 		_icone(carte, Rect2(14, 20, 24, 24), ROLE_ICONE[role], couleur)
 		_titre(carte, 46, 40, Role.libelle(role), couleur if role != "appoint" or not refus.is_empty() else Charte.IVOIRE, 19, largeur - 54)
 		if refus.is_empty():
-			_gros(carte, 14, 92, G.salary_amount(info.get("salary", 0)), Charte.IVOIRE if not choisi else couleur, 26, largeur - 24).name = "NegoRoleDemande_" + role
+			_gros(carte, 14, 86, G.salary_amount(info.get("salary", 0)), Charte.IVOIRE if not choisi else couleur, 26, largeur - 24).name = "NegoRoleDemande_" + role
 			var ecart := ecart_role(d, ctx.quote, role)
-			D.text(carte, 14, 122, ecart if not ecart.is_empty() else G.salary_period(true), 16, Pieces.ORANGE if ecart.begins_with("+") else Pieces.VERT if ecart.begins_with("−") else Charte.IVOIRE_2, 700, largeur - 24)
+			D.text(carte, 14, 114, ecart if not ecart.is_empty() else G.salary_period(true), 16, Pieces.ORANGE if ecart.begins_with("+") else Pieces.VERT if ecart.begins_with("−") else Charte.IVOIRE_2, 700, largeur - 24)
 		else:
-			D.text(carte, 14, 92, "✕", 30, Pieces.ROUGE, 800, 40).name = "NegoRoleRefus_" + role
+			D.text(carte, 14, 90, "✕", 30, Pieces.ROUGE, 800, 40).name = "NegoRoleRefus_" + role
 			D.line(carte, Vector2(14, 34), Vector2(largeur - 14, 34), Color(Charte.IVOIRE_3, .8), 2)
 			carte.tooltip_text = refus
 			carte.mouse_filter = Control.MOUSE_FILTER_STOP
-		D.text(carte, 14, 158, ROLE_MINUTES[role], 16, Charte.IVOIRE_2, 600, largeur - 24, HORIZONTAL_ALIGNMENT_LEFT, true)
+		D.text(carte, 14, 146, ROLE_MINUTES[role], 16, Charte.IVOIRE_2, 600, largeur - 24, HORIZONTAL_ALIGNMENT_LEFT, true)
 		if role == str(d.attendu): _icone(carte, Rect2(largeur - 34, 18, 22, 22), "flag", Pieces.ORANGE).name = "NegoRoleAttendu"
-		if choisi: _icone(carte, Rect2(largeur - 38, 134, 26, 26), "check", Pieces.VERT).name = "NegoRoleChoisi"
+		if choisi: _icone(carte, Rect2(largeur - 38, 120, 26, 26), "check", Pieces.VERT).name = "NegoRoleChoisi"
 		if refus.is_empty() and not bool(d.retrait):
 			var r := role
-			Pieces.rendre_cliquable(carte, Vector2(largeur, 176), func(): choisir_role(ctx, r), "NegoRole_" + role, Role.libelle(role), "", Charte.RAYON_CARTE)
+			Pieces.rendre_cliquable(carte, Vector2(largeur, 160), func(): choisir_role(ctx, r), "NegoRole_" + role, Role.libelle(role), "", Charte.RAYON_CARTE)
 		x += largeur + 8
-	_titre(centre, 24, 276, "2 · Contrat", Charte.IVOIRE_3 if manque else Pieces.BLEU, 18)
+	_titre(centre, 24, 256, "2 · Contrat", Charte.IVOIRE_3 if manque else Pieces.BLEU, 18)
+	var guidee := bool(d.guidee)
+	var cs := Guidee.conseil(ctx, d) if guidee and not manque else {}
 	var lignes := [
-		["Salaire " + G.salary_period(true), d.salaire, G.salary(d.propose), "Agent " + G.salary(d.cible), "NegoLigneSalaire", "money", func(): Offre._fenetre_salaire(toile, d)],
-		["Durée", d.duree, "%d an%s · fin %s" % [int(d.annees), "s" if int(d.annees) > 1 else "", str(d.fin)], ("Agent %d à %d ans" % [int(d.min), int(d.max)]) if not d.contre else ("Agent %d an%s" % [int(d.contre_annees), "s" if int(d.contre_annees) > 1 else ""]), "NegoLigneDuree", "calendar", func(): Offre._fenetre_duree(toile, d)],
-		["Prime de prolongation" if d.prolongation else "Coût à la signature", d.prime, G.euros(maxi(0, int(d.fee))) if int(d.fee) >= 0 else "—", "Fixe", "NegoLignePrime", "money", func(): Offre._fenetre_budget(toile, d)],
+		["Salaire " + G.salary_period(true), d.salaire, G.salary(d.propose), "Agent " + G.salary(d.cible), "NegoLigneSalaire", func(): Offre._fenetre_salaire(toile, d)],
+		["Durée", d.duree, "%d an%s · fin %s" % [int(d.annees), "s" if int(d.annees) > 1 else "", str(d.fin)], ("Agent %d à %d ans" % [int(d.min), int(d.max)]) if not d.contre else ("Agent %d an%s" % [int(d.contre_annees), "s" if int(d.contre_annees) > 1 else ""]), "NegoLigneDuree", func(): Offre._fenetre_duree(toile, d)],
+		["Prime de prolongation" if d.prolongation else "Prime à la signature", d.prime, G.euros(maxi(0, int(d.fee))) if int(d.fee) >= 0 else "—", "" if guidee else "Fixe", "NegoLignePrime", func(): Offre._fenetre_budget(toile, d)],
 	]
-	for o: Array in d.options: lignes.append([str(o[0]), str(o[2]), str(o[1]), "", str(o[3]), str(o[4]), Callable()])
-	var pas := 104.0 if lignes.size() <= 3 else 86.0
+	if guidee:
+		var niveau := str(Guidee.extras(ctx).clause)
+		lignes.append(["Clause libératoire", "ok", "Sans" if niveau == "sans" else G.euros(int(d.get("clause_montant", 0))), "", "NegoLigneClause", Callable()])
+	var pas := 104.0 if lignes.size() <= 3 else 96.0
 	var hauteur := pas - 10
-	var y := 290.0
+	var y := 270.0
 	var y_champs := {}
 	for l: Array in lignes:
 		var etat: String = "attente" if manque else str(l[1])
@@ -350,9 +351,13 @@ static func _centre(toile: Control, parent: Control, ctx: Dictionary, d: Diction
 		if manque:
 			D.text(ligne, 72, hauteur - 20, "—", 24, Charte.IVOIRE_3, 700, 120)
 		else:
-			_gros(ligne, 72, hauteur - 16, str(l[2]), couleur_etat(etat), 26, 330).name = str(l[4]) + "Valeur"
+			var valeur := _gros(ligne, 72, hauteur - 16, str(l[2]), couleur_etat(etat), 26, 260)
+			valeur.name = str(l[4]) + "Valeur"
+			if str(l[4]) == "NegoLigneClause": valeur.add_theme_color_override("font_color", Guidee.COULEURS_CLAUSE.get(str(Guidee.extras(ctx).clause), Charte.IVOIRE))
 			if not str(l[3]).is_empty(): D.text(ligne, 620, 30, str(l[3]), 17, Charte.IVOIRE_2, 600, 240, HORIZONTAL_ALIGNMENT_RIGHT, true)
-			if (l[6] as Callable).is_valid(): Pieces.rendre_cliquable(ligne, Vector2(380, hauteur), l[6], str(l[4]) + "Lien", str(l[0]), "", Charte.RAYON_CARTE)
+			if (l[5] as Callable).is_valid(): Pieces.rendre_cliquable(ligne, Vector2(330, hauteur), l[5], str(l[4]) + "Lien", str(l[0]), "", Charte.RAYON_CARTE)
+			if guidee and str(l[4]) == "NegoLignePrime": _crans_prime(ctx, ligne, d, cs, hauteur)
+			if guidee and str(l[4]) == "NegoLigneClause": _niveaux_clause(ctx, ligne, cs, hauteur)
 		y_champs[str(l[4])] = y
 		y += pas
 	# Champs réglables posés sur les lignes Salaire et Durée (cachés tant qu'aucun rôle n'est promis).
@@ -369,6 +374,45 @@ static func _centre(toile: Control, parent: Control, ctx: Dictionary, d: Diction
 		var reprendre: Button = ctx.reuse
 		Pieces.pastille(centre, 24, 790, "Contre-offre %s · %d an(s)" % [G.salary(ctx.negotiation.get("salary")), int(ctx.negotiation.get("years", 1))], "mail", "OffreContreOffre", "", Pieces.ORANGE, Charte.PANNEAU_3,
 			func(): if is_instance_valid(reprendre) and not reprendre.disabled and not manque: reprendre.pressed.emit())
+
+## Crans de la prime à la signature dans sa ligne (offre guidée) : un clic applique ; conseil du recruteur en orange.
+static func _crans_prime(ctx: Dictionary, ligne: Control, d: Dictionary, cs: Dictionary, hauteur: float) -> void:
+	var liste := Guidee.crans(ctx, int(d.annees))
+	var choisi := clampi(int(Guidee.extras(ctx).cran), 0, liste.size() - 1)
+	var conseille := clampi(int(cs.get("cran", -1)), -1, liste.size() - 1)
+	var pilules: Array = []
+	for i in liste.size():
+		var extra := int(liste[i])
+		var cran := i
+		pilules.append(["Base" if extra == 0 else "+" + Guidee.court(extra), Offre.COULEUR_PRIME, i == choisi, i == conseille, "NegoPrimeCran_%d" % i, func(): Guidee.choisir_cran(ctx, cran)])
+	_pilules(ligne, hauteur, pilules)
+
+## Niveaux de la clause libératoire dans sa ligne (offre guidée) : un clic applique ; conseil du recruteur en orange.
+static func _niveaux_clause(ctx: Dictionary, ligne: Control, cs: Dictionary, hauteur: float) -> void:
+	var niveau := str(Guidee.extras(ctx).clause)
+	var pilules: Array = []
+	for c: Variant in Guidee.clauses(ctx):
+		if not c is Dictionary: continue
+		var nom := str(c.get("niveau", "sans"))
+		pilules.append([str(Guidee.NOMS.get(nom, nom)), Guidee.COULEURS_CLAUSE.get(nom, Charte.IVOIRE), nom == niveau, nom == str(cs.get("clause", "")), "NegoClause_" + nom, func(): Guidee.choisir_clause(ctx, nom)])
+	_pilules(ligne, hauteur, pilules)
+
+## Pilules cliquables à droite d'une ligne du contrat : [mot, couleur, choisi, conseil, id, action].
+static func _pilules(ligne: Control, hauteur: float, pilules: Array) -> void:
+	var n := pilules.size()
+	if n <= 0: return
+	var w := 72.0
+	var x := 636.0 - 16 - n * (w + 6) + 6
+	for p: Array in pilules:
+		var couleur: Color = p[1]
+		var choisi := bool(p[2])
+		var bord: Color = couleur if choisi else Pieces.ORANGE if bool(p[3]) else Charte.FILET
+		var pilule := D.rect(ligne, Rect2(x, hauteur - 50, w, 36), Charte.PANNEAU_3.lerp(couleur, .3 if choisi else 0.0), Charte.RAYON_PILULE, bord)
+		pilule.name = str(p[4])
+		D.text(pilule, w / 2.0, 24, str(p[0]), 15, couleur if choisi else Charte.IVOIRE, 700, w - 8, HORIZONTAL_ALIGNMENT_CENTER)
+		if bool(p[3]): pilule.set_meta("conseil", true)
+		Pieces.rendre_cliquable(pilule, Vector2(w, 36), p[5], str(p[4]) + "Lien", str(p[0]), "Conseil du recruteur" if bool(p[3]) else "", Charte.RAYON_PILULE)
+		x += w + 6
 
 static func _agent(toile: Control, parent: Control, ctx: Dictionary, d: Dictionary) -> void:
 	var droite := D.rect(parent, Rect2(1092, 0, 408, 842), Charte.PANNEAU_2, Charte.RAYON_CARTE)

@@ -204,6 +204,8 @@ static func open(app: Control, player: Dictionary, recruiting: bool, answer: Str
 		var envoi := {"playerId":player.id,"salary":Salary.input_weekly(salary),"years":int(years.value),"confirmed":true}
 		# Rôle promis (idées 16 et 18) : choisi dans l'offre, gardé par le moteur à la signature.
 		if ctx.has("role"): envoi["role"] = str(ctx.role)
+		# Offre guidée (idée 17) : prime à la signature et clause libératoire choisies dans les lignes du contrat (recrutement).
+		if recruiting: envoi.merge(preload("res://ui/offre_guidee.gd").charge(ctx, int(years.value)))
 		app._command("recruit" if recruiting else "extend_contract",envoi)
 		dialog.queue_free())
 	dialog.canceled.connect(dialog.queue_free)

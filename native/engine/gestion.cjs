@@ -102,12 +102,16 @@ module.exports=function nativeGestion(command,p){
   return {coverage:{count,weeklySalary:coverSalary,totalWeeklySalary,message:`${count} renfort${count===1?'':'s'} signé${count===1?'':'s'}. Salaires supplémentaires de ${totalWeeklySalary.toLocaleString('fr-FR')} € par semaine. Feuille à 23 complète.`}};
  }
  if(command==='recruit'||command==='extend_contract'){
-  requireThat(p.confirmed===true,'Confirme le salaire, la durée et la prime avant cette offre.');requireThat(typeof p.playerId==='string'&&Number.isInteger(p.salary)&&p.salary>=(typeof budgetActif==='function'&&budgetActif()?budgetPlancherHebdo():1000)&&p.salary<=100000&&[1,2,3].includes(p.years)&&(p.role===undefined||['titulaire','rotation','espoir','appoint'].includes(p.role)),'Offre invalide.');
+  requireThat(p.confirmed===true,'Confirme le salaire, la durée et la prime avant cette offre.');requireThat(typeof p.playerId==='string'&&Number.isInteger(p.salary)&&p.salary>=(typeof budgetActif==='function'&&budgetActif()?budgetPlancherHebdo():1000)&&p.salary<=100000&&[1,2,3].includes(p.years)&&(p.role===undefined||['titulaire','rotation','espoir','appoint'].includes(p.role))&&(p.prime===undefined||Number.isSafeInteger(p.prime))&&(p.clause===undefined||['sans','haute','moyenne','basse'].includes(p.clause)),'Offre invalide.');
   const kind=command==='recruit'?'recruit':'renew',target=talkPlayer(p.playerId,kind);requireThat(target,'Joueur indisponible ou offre périmée.');
   // Calendrier du recrutement (calendrier-mutations.cjs) : joueurs sans club jusqu'au 31 décembre, deux supplémentaires en
   // janvier ; un joueur qui a signé un pré-contrat ailleurs ne se prolonge plus.
   const ferme=kind==='recruit'&&typeof calendrierRefusRecrue==='function'?calendrierRefusRecrue():'';requireThat(!ferme,ferme);
   const parti=kind==='renew'&&typeof preContratRefusProlongation==='function'?preContratRefusProlongation(p.playerId):'';requireThat(!parti,parti);
+  // Offre guidée (clauses-contrat.cjs) : prime en plus et clause libératoire, actives pour ce joueur le temps de la commande
+  // (salaire minimum accepté abaissé, prime payée augmentée) ; la clause est posée sur le joueur à la signature.
+  const extras=typeof clausesPreparer==='function'?clausesPreparer(target,kind,p):null;
+  try{
   requireThat(club().cash>=contractFee(target,kind),'Trésorerie insuffisante pour la prime.');requireThat(kind!=='recruit'||professionalPlaces()>0,'Effectif complet.');
   // Contrôle de gestion (a2r.cjs) : une recrue que l'A2R n'homologue pas n'est même pas proposée.
   const a2r=kind==='recruit'&&typeof a2rRefusRecrue==='function'?a2rRefusRecrue(p.salary):'';requireThat(!a2r,a2r);
@@ -127,10 +131,12 @@ module.exports=function nativeGestion(command,p){
   // Rôle promis au contrat (role-contrat.cjs) : champ facultatif `role` ; sans lui, le rôle est déduit de la hiérarchie
   // à la fin de la commande (observe, worker.cjs).
   if(talk.status==='signed'&&p.role&&typeof roleContratPoser==='function'){const signe=club().players.find(x=>x.id===p.playerId);if(signe)roleContratPoser(signe,p.role,false);}
+  if(talk.status==='signed'&&extras&&typeof clausesPoser==='function'){const signe=club().players.find(x=>x.id===p.playerId);if(signe)clausesPoser(signe,extras);}
   // Le président reprend la main si l'achat fait passer la trésorerie sous la réserve (president-reprise.cjs),
   // sauf pour un achat dans l'enveloppe de transferts fixée par le conseil.
   if(kind==='recruit'&&talk.status==='signed'&&typeof repriseApresAchat==='function'&&!(typeof budgetTransfertsExempte==='function'&&budgetTransfertsExempte()))repriseApresAchat(club(),avant);
-  return {negotiation:{playerId:p.playerId,status:talk.status,message:talk.status==='signed'?'Contrat signé.':talk.message,fee:talk.fee,salary:talk.acceptedSalary,years:talk.years}};
+  return {negotiation:{playerId:p.playerId,status:talk.status,message:talk.status==='signed'?'Contrat signé.':talk.message,fee:talk.fee,salary:talk.acceptedSalary,years:talk.years,...(extras?{clause:extras.niveau,clauseMontant:extras.montant}:{})}};
+  }finally{if(extras)clausesFin();}
  }
  // Rallonge demandée au conseil (budget-transferts.cjs, R3 bis) : {amount, confirmed:true} ; réponse dans meta.transferBudgetExtension.
  if(command==='transfer_budget_extension'){requireThat(typeof budgetTransfertsRallonge==='function','Budget de transferts indisponible.');return {transferBudgetExtension:budgetTransfertsRallonge(p)};}
