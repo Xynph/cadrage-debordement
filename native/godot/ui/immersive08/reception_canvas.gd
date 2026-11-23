@@ -779,7 +779,13 @@ static func _row(rows: Control, app: Control, state: Dictionary, message: Dictio
 	var service_w := minf(Messages.largeur_pastille(service, 17), 220.0)
 	var pill := Messages.pastille(row, Rect2(36, 12, service_w, 30), service, SERVICE_ICONS.get(service, "home"), 17, filtre)
 	pill.tooltip_text = service + " · " + _sender(app, message)
-	D.text(row, 36 + service_w + 12, 33, _sender(app, message), 17, C.MUTED, 500, width - service_w - 48 - 20 - meta_width)
+	# Courrier signé par un agent nommé : son visage devant son nom (même visage que dans sa fenêtre et la discussion).
+	var sender_x := 36 + service_w + 12
+	var agent := _mail_agent(app, message)
+	if not agent.is_empty():
+		AgentJoueur.poser_portrait(row, Rect2(sender_x, 12, 30, 30), agent, "InboxRowAgentFace").mouse_filter = Control.MOUSE_FILTER_IGNORE
+		sender_x += 40
+	D.text(row, sender_x, 33, _sender(app, message), 17, C.MUTED, 500, width - (sender_x - 36) - 48 - 20 - meta_width)
 	var meta_x := width - 18
 	if not hour.is_empty():
 		D.text(row, meta_x, 33, hour, 16, C.FAINT.lightened(.2), 500, 80, HORIZONTAL_ALIGNMENT_RIGHT, true).name = "InboxRowHour"

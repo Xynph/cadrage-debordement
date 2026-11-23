@@ -21,9 +21,19 @@
 //    encore (même nom, même pays) gardant leur caractère, leur relation et leur découverte ; la relation et le caractère
 //    de l'idée 24, gardés par joueur (S.tonAgent version 1), passent à l'agent (version 2) : relations additionnées par
 //    agent (bornées à ±10), caractère gardé repris par l'agent, découverte gardée.
+//  - Visage (banque art/agents/agent-<1..60>.webp, 15 femmes, 45 hommes) et sexe de chaque agent, gardés dans l'annuaire :
+//    une agente sur sept environ (prénom féminin, visage de la liste des femmes) ; visage tiré par l'identifiant de l'agent
+//    et la graine, réparti pour que deux agents d'une même agence ne partagent jamais un visage quand la liste le permet et
+//    que chaque visage serve à peu près autant de fois. Anciennes sauvegardes (annuaire sans visage) : agents hommes (leurs
+//    prénoms le sont), visages posés par observe() avec le même calcul.
+//  - Visage accordé au nom (retour de Léo du 23/11 : « Finlay Keating » avec un visage asiatique) : chaque image a une
+//    origine visuelle (agents-visages.json) ; l'origine de l'agent est tirée selon la culture de son nom (FR : surtout
+//    européen, part africaine / caribéenne et polynésienne ; EN : surtout européen, part polynésienne, africaine,
+//    sud-asiatique, jamais est-asiatique ; JP : est-asiatique) et gardée (`origine`). Annuaires d'avant : visages refaits
+//    au chargement par le même calcul, sexe et nom gardés.
 // Fonctions globales de la VM : agentJoueurId(idJoueur, age?), agentJoueur(idAgent), agentJoueurNom(idJoueur),
 // agentJoueurCaractere(idAgent). Projection : clubLife.agentsJoueurs = {joueurs:{idJoueur:idAgent}, agents:{idAgent:
-// {id, nom, agence, age, pays, rang, rangMot, cran, caractere, total, clients:[[id, nom, poste, âge, club, idClub, où]…12]}}} pour l'effectif, le marché et le courrier.
+// {id, nom, agence, age, pays, rang, rangMot, portrait, sexe, cran, caractere, total, clients:[[id, nom, poste, âge, club, idClub, où]…12]}}} pour l'effectif, le marché et le courrier.
 const files=Object.freeze([]),commands=Object.freeze([]);
 function factory(){
  const noms=(function staffCompletionPolicy(){return null;})();
@@ -31,6 +41,21 @@ function factory(){
  const CARS=Object.freeze(['gourmand','presse','fidele','poker','arrangeant']);
  const RANGS=Object.freeze(['grande','moyenne','petite','independant']);
  const PAYS=Object.freeze(['FR','EN','JP']);
+ // Banque des visages d'agents (native/godot/art/agents/agent-<n>.webp) : origine visuelle et sexe de chaque image, part
+ // de chaque origine selon la culture du nom (agents-visages.json, composé ici).
+ const DONNEES_VISAGES=(function agentsVisagesData(){return null;})();
+ const PORTRAITS=Object.keys(DONNEES_VISAGES.visages).length,ORIGINE=n=>Number.isInteger(n)&&DONNEES_VISAGES.visages[n]?.[0]||'',SEXE_VISAGE=n=>Number.isInteger(n)&&DONNEES_VISAGES.visages[n]?.[1]||'';
+ const NUMEROS=Object.freeze(Array.from({length:PORTRAITS},(_,i)=>i+1));
+ const FEMMES=Object.freeze(NUMEROS.filter(n=>SEXE_VISAGE(n)==='F')),HOMMES=Object.freeze(NUMEROS.filter(n=>SEXE_VISAGE(n)==='H'));
+ const ORIGINES=Object.freeze(Object.keys(DONNEES_VISAGES.groupes));
+ // Visages d'une origine pour un sexe ; origines possibles d'une culture (part en %, origines sans visage de ce sexe retirées).
+ const DU_GROUPE=(o,sexe)=>NUMEROS.filter(n=>ORIGINE(n)===o&&SEXE_VISAGE(n)===sexe);
+ const POIDS=(pays,sexe)=>Object.entries(DONNEES_VISAGES.parCulture[pays]||DONNEES_VISAGES.parCulture.EN).filter(([o,p])=>p>0&&DU_GROUPE(o,sexe).length);
+ const PART_FEMMES=15;
+ const PRENOMS_F=Object.freeze({
+  FR:['Amélie','Anne','Camille','Caroline','Céline','Charlotte','Claire','Élodie','Émilie','Hélène','Isabelle','Julie','Laure','Léa','Lucie','Manon','Marion','Mathilde','Nathalie','Pauline','Sandrine','Sophie','Valérie','Virginie'],
+  EN:['Abigail','Alice','Amy','Charlotte','Chloe','Claire','Emily','Emma','Georgia','Grace','Hannah','Helen','Jessica','Kate','Laura','Lucy','Megan','Olivia','Rachel','Rebecca','Sarah','Sophie','Victoria','Zoe'],
+  JP:['Aiko','Akemi','Ayaka','Chiaki','Emi','Haruka','Hitomi','Kaori','Keiko','Mai','Mayumi','Megumi','Miho','Misaki','Naomi','Nanami','Rie','Sakura','Sayaka','Tomoko','Yoko','Yui','Yumi','Yuko']});
  // Part des joueurs par rang (en %, cumulée dans l'ordre RANGS) et clients visés par agent.
  const PARTS=Object.freeze({grande:10,moyenne:30,petite:50,independant:10}),VISE=Object.freeze({grande:12,moyenne:8,petite:5,independant:5});
  // Grandes agences internationales (fictives) : cinq tirées par la graine.
@@ -57,7 +82,12 @@ function factory(){
   for(const p of Array.isArray(s?.market)?s.market:[])if(p&&typeof p.id==='string'&&!vus.has(p.id)){vus.add(p.id);yield [p,null];}
   for(const p of Array.isArray(s?.economy?.freeAgents)?s.economy.freeAgents:[])if(p&&typeof p.id==='string'&&!vus.has(p.id)){vus.add(p.id);yield [p,null];}
  }
- const agentValide=a=>!!a&&typeof a==='object'&&Object.keys(a).length===8&&typeof a.id==='string'&&/^ag-\d{1,5}$/.test(a.id)
+ // Visage et sexe (depuis les visages d'agents) : absents des annuaires plus anciens, posés par observe().
+ // Origine du visage (depuis l'accord nom / visage) : absente des annuaires d'avant, visages refaits par observe().
+ const visageValide=a=>a.sexe===undefined&&a.portrait===undefined&&a.origine===undefined&&Object.keys(a).length===8
+  ||a.origine===undefined&&Object.keys(a).length===10&&(a.sexe==='F'||a.sexe==='H')&&SEXE_VISAGE(a.portrait)===a.sexe
+  ||Object.keys(a).length===11&&(a.sexe==='F'||a.sexe==='H')&&SEXE_VISAGE(a.portrait)===a.sexe&&ORIGINES.includes(a.origine)&&ORIGINE(a.portrait)===a.origine;
+ const agentValide=a=>!!a&&typeof a==='object'&&visageValide(a)&&typeof a.id==='string'&&/^ag-\d{1,5}$/.test(a.id)
   &&typeof a.nom==='string'&&a.nom.length>0&&a.nom.length<=80&&typeof a.agence==='string'&&a.agence.length>0&&a.agence.length<=80
   &&Number.isInteger(a.age)&&a.age>=25&&a.age<=75&&PAYS.includes(a.pays)&&RANGS.includes(a.rang)&&CARS.includes(a.car)&&Number.isInteger(a.g)&&a.g>=0&&a.g<GRANDES.length;
  const etatBrut=(e,v)=>!!e&&typeof e==='object'&&!Array.isArray(e)&&Object.keys(e).length===3&&e.version===v&&Number.isInteger(e.graine)
@@ -66,10 +96,12 @@ function factory(){
  // Annuaire de la première version (avant le recalage des agences) : lisible seulement pour être refait par observe().
  const ancienValide=e=>etatBrut(e,1)&&e.agents.every(a=>a.rang!=='independant');
  // Nom d'une personne (générateur du staff, sans double nom) ; unique dans l'annuaire.
- function personne(cle,pays,utilises){
+ function personne(cle,pays,utilises,sexe='H'){
   for(let sel=0;sel<400;sel++){
    const p=noms.profile(cle+':'+sel,{function:'teamManager',country:pays});
-   const nom=pays==='JP'?p.name:p.name.replace(/-[^ ]+$/,'');
+   let nom=pays==='JP'?p.name:p.name.replace(/-[^ ]+$/,'');
+   // Agente : prénom féminin de sa culture, même nom de famille.
+   if(sexe==='F'){const l=PRENOMS_F[pays]||PRENOMS_F.EN;nom=l[hache(cle+':'+sel+':prenom')%l.length]+nom.slice(nom.indexOf(' '));}
    if(!utilises.has(norm(nom))){utilises.add(norm(nom));return nom;}
   }
   throw Error('Noms d’agents épuisés.');
@@ -106,8 +138,8 @@ function factory(){
   const adultes=ids.length||1;
   const agents=[],utilises=new Set(),agences=new Set();
   const ajouter=(rang,pays,agence,g,cle)=>{
-   const id='ag-'+(agents.length+1),nom=personne(G+':agent:nom:'+cle,pays,utilises);
-   agents.push({id,nom,agence:agence||'',age:32+hache(G+':agent:age:'+cle)%30,pays,rang,car:CARS[hache(G+':agent:car:'+cle)%CARS.length],g});
+   const id='ag-'+(agents.length+1),sexe=hache(G+':agent:sexe:'+cle)%100<PART_FEMMES?'F':'H',nom=personne(G+':agent:nom:'+cle,pays,utilises,sexe);
+   agents.push({id,nom,agence:agence||'',age:32+hache(G+':agent:age:'+cle)%30,pays,rang,car:CARS[hache(G+':agent:car:'+cle)%CARS.length],g,sexe,portrait:0});
    return agents[agents.length-1];
   };
   // Tailles des agences d'un rang (nombre d'agents entre min et max), la dernière agence jamais réduite à un seul agent.
@@ -161,8 +193,40 @@ function factory(){
    if(!trop.length||tour>=8)break;
    for(const a of trop)ajouter(a.rang,a.pays,a.agence,a.g,'x'+tour+':'+a.id);
   }
-  const gardes=agents.filter(a=>compte.get(a.id)>0);
-  return {version:VERSION,graine:G,agents:gardes.length?gardes:agents.slice(0,1)};
+  const gardes=agents.filter(a=>compte.get(a.id)>0),liste=gardes.length?gardes:agents.slice(0,1);
+  for(const a of liste)delete a.portrait;
+  visages(liste,G);
+  return {version:VERSION,graine:G,agents:liste};
+ }
+ // Visages des agents sans visage accordé à leur nom (annuaire neuf ; annuaire sans visage : agents hommes ; annuaire
+ // d'avant l'accord nom / visage : visages refaits, sexe gardé). Origine tirée par l'identifiant de l'agent et la graine
+ // selon la culture de son nom (agents-visages.json, `parCulture`), puis le visage de cette origine le moins servi, jamais
+ // celui d'un collègue de la même agence : si l'origine tirée n'a plus de visage libre dans l'agence, une autre origine
+ // possible pour la culture (part décroissante) ; sinon le moins servi de l'origine tirée. Même annuaire, mêmes visages.
+ function visages(agents,G){
+  const ok=a=>ORIGINES.includes(a.origine)&&ORIGINE(a.portrait)===a.origine&&SEXE_VISAGE(a.portrait)===a.sexe;
+  const usage=new Map(),parAgence=new Map(),deAgence=a=>{if(!parAgence.has(a.agence))parAgence.set(a.agence,new Set());return parAgence.get(a.agence);};
+  for(const a of agents)if(ok(a)){usage.set(a.portrait,(usage.get(a.portrait)||0)+1);deAgence(a).add(a.portrait);}
+  let n=0;
+  for(const a of agents){
+   if(ok(a))continue;
+   if(a.sexe!=='F'&&a.sexe!=='H')a.sexe='H';
+   const poids=POIDS(a.pays,a.sexe),total=poids.reduce((t,[,p])=>t+p,0),pris=deAgence(a);
+   let u=hache(G+':agent:origine:'+a.id)%total,origine=poids[0][0];
+   for(const [o,p] of poids){if(u<p){origine=o;break;}u-=p;}
+   // Le moins servi d'une liste, départ tiré par l'agent ; null si tous sont déjà pris dans l'agence (et `libre` exigé).
+   const meilleur=(liste,libre)=>{
+    const dep=hache(G+':agent:visage:'+a.id)%liste.length;let choix=null,cout=Infinity;
+    for(let k=0;k<liste.length;k++){const v=liste[(dep+k)%liste.length];if(libre&&pris.has(v))continue;const c=(pris.has(v)?1e6:0)+(usage.get(v)||0);if(c<cout){cout=c;choix=v;}}
+    return choix;
+   };
+   let choix=meilleur(DU_GROUPE(origine,a.sexe),true);
+   if(choix===null)for(const [o] of poids.filter(([o])=>o!==origine).sort((x,y)=>y[1]-x[1]||(x[0]<y[0]?-1:1))){choix=meilleur(DU_GROUPE(o,a.sexe),true);if(choix!==null)break;}
+   if(choix===null)choix=meilleur(DU_GROUPE(origine,a.sexe),false);
+   delete a.portrait;delete a.origine;
+   a.portrait=choix;a.origine=ORIGINE(choix);usage.set(choix,(usage.get(choix)||0)+1);pris.add(choix);n++;
+  }
+  return n;
  }
  // Index de l'annuaire (par identifiant, par rang et culture), recalculé quand l'annuaire change.
  let index={cle:null};
@@ -204,6 +268,10 @@ function factory(){
    if(ancienValide(s.agentsJoueurs))migrerAnnuaire(s);else s.agentsJoueurs=tirer(s);
    n++;
   }
+  // Annuaire d'avant les visages (agents hommes) ou d'avant l'accord nom / visage : visages posés par le même calcul qu'à
+  // la création (un annuaire d'avant l'accord retrouve exactement les visages d'un annuaire neuf de même graine).
+  const e=annuaire(s);
+  if(e&&e.agents.some(a=>typeof a.origine!=='string')){for(const a of e.agents){delete a.portrait;delete a.origine;}visages(e.agents,e.graine);n++;}
   if(s.tonAgent&&s.tonAgent.version===1){migrer(s);n++;}
   return n;
  }
@@ -243,7 +311,7 @@ function factory(){
   const liste=(map.get(a.id)||[]).sort(([p,c],[q,d])=>(c?.id===s.club?0:1)-(d?.id===s.club?0:1)||note(q)-note(p)||(p.id<q.id?-1:1))
    .map(([p,c])=>[p.id,p.name,p.pos,p.age,c?String(c.name||''):'',c&&Number.isSafeInteger(c.id)?c.id:null,c?(c.id===s.club?'effectif':'club'):'marche']);
   const relation=typeof tonAgentRelationCran==='function'?tonAgentRelationCran(a.id):2,car=typeof tonAgentCaractereMot==='function'?tonAgentCaractereMot(a.id):'';
-  return {id:a.id,nom:a.nom,agence:a.agence,age:a.age,pays:a.pays,rang:a.rang,rangMot:MOT_RANG[a.rang],cran:relation,caractere:car,total:liste.length,clients:liste.slice(0,MAX_CLIENTS)};
+  return {id:a.id,nom:a.nom,agence:a.agence,age:a.age,pays:a.pays,rang:a.rang,rangMot:MOT_RANG[a.rang],portrait:Number.isInteger(a.portrait)?a.portrait:0,sexe:a.sexe==='F'?'F':'H',cran:relation,caractere:car,total:liste.length,clients:liste.slice(0,MAX_CLIENTS)};
  }
  function project(){
   const s=vm();if(!s||!annuaire(s))return null;
@@ -276,8 +344,9 @@ function factory(){
   globalThis.agentsJoueursObserver=()=>observe();
   return true;
  }
- return {project,validate,execute(){throw Error('Aucune commande d’agent nommé.');},installHooks,observe,tirer,agentId,agent,clients,repartition,etatValide,ancienValide,CARS,GRANDES};
+ return {project,validate,execute(){throw Error('Aucune commande d’agent nommé.');},installHooks,observe,tirer,visages,agentId,agent,clients,repartition,etatValide,ancienValide,CARS,GRANDES,FEMMES,HOMMES,ORIGINES,ORIGINE,POIDS,DONNEES_VISAGES};
 }
 // Seule la source locale de confiance est composée ici (générateur de noms du staff) ; aucun texte de sauvegarde n'est évalué.
-const serializedFactory=Function('return ('+factory.toString().replace('function staffCompletionPolicy(){return null;}',require('./staff-completion.cjs').factory.toString())+')')();
+const serializedFactory=Function('return ('+factory.toString().replace('function staffCompletionPolicy(){return null;}',require('./staff-completion.cjs').factory.toString())
+ .replace('function agentsVisagesData(){return null;}',()=>'function agentsVisagesData(){return '+JSON.stringify(require('./agents-visages.json'))+';}')+')')();
 module.exports={files,commands,factory:serializedFactory};
