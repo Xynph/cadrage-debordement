@@ -135,7 +135,7 @@ static func build(app: Control, page: Control, kind: String) -> void:
 		# Bouton principal de la vue adoptée, en un clic. Offre au joueur (négociation avec l'agent, idée 18, règle du 23/11
 		# « un clic applique ») : « Signer si accord » envoie l'offre directement, sans confirmation en place.
 		var libelle := str(ok.text)
-		var valider := Kit.bouton_ivoire(cadre, Rect2(pied.position.x, pied.position.y, 560, 46), libelle, func(): if is_instance_valid(ok) and not ok.disabled: ok.pressed.emit(), "RecrutementPageValider")
+		var valider := Kit.bouton_ivoire(cadre, Rect2(pied.position.x, pied.position.y, 560, 46), libelle, func(): _signer(ok), "RecrutementPageValider")
 		valider.disabled = ok.disabled
 		valider.set_meta("source", ok)
 		var suivi := Timer.new()
@@ -157,6 +157,10 @@ static func build(app: Control, page: Control, kind: String) -> void:
 					annuler.pressed.emit(), "RecrutementPageAnnuler", 20)
 		lien.set_meta("source", annuler)
 		(lien as Control).grab_focus.call_deferred()
+
+## Bouton principal de la page : envoie la vue adoptée (offre au joueur : « Signer si accord ») en un clic.
+static func _signer(ok: Button) -> void:
+	if is_instance_valid(ok) and not ok.disabled: ok.pressed.emit()
 
 # --- Habillage aux jetons de la charte des vues adoptées (anciennes fenêtres) --------------------------------------------
 
