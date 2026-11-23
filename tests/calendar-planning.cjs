@@ -54,4 +54,25 @@ assert.throws(()=>planning.applyTemplate(original,undefined,{fixtureId:'m1',temp
 assert.throws(()=>planning.reschedule(revised,pending,{...change,toDate:'2026-09-23'},today),/rencontre/i);
 assert.throws(()=>planning.validateState({version:1,season:1,fixtures:{m1:{date:'2026-02-30',template:'standard'}}}),/planning/i);
 planning.validateState(undefined);
+
+// Une seule séance d'un jour remplacée (fiche de séance, 23/11/2026) : même jour, même place, nouvelle famille.
+const avenir = projected.sessions.find(s=>!s.completed && s.fixtureId==='m3' && s.kind==='strength');
+const swap = planning.swapSession(original,undefined,{sessionId:avenir.id,kind:'recovery',label:'Mobilité'},today);
+planning.validateState(swap);
+const apres = planning.project(original,swap,today).sessions;
+const remplacee = apres.find(s=>s.sourceId===avenir.id);
+assert.ok(remplacee && remplacee.kind==='recovery' && remplacee.label==='Mobilité' && remplacee.date===avenir.date && remplacee.swapped);
+assert.equal(apres.filter(s=>s.date===avenir.date).findIndex(s=>s.sourceId===avenir.id),
+ projected.sessions.filter(s=>s.date===avenir.date).findIndex(s=>s.id===avenir.id),'même place dans la journée');
+assert.equal(apres.length,projected.sessions.length);
+assert.throws(()=>planning.swapSession(original,swap,{sessionId:avenir.id,kind:'recovery',label:'Inventée'},today),/séance/i);
+const passee = projected.sessions.find(s=>s.completed);
+assert.throws(()=>planning.swapSession(original,undefined,{sessionId:passee.id,kind:'recovery',label:'Mobilité'},today),/séance/i);
+assert.equal(planning.swapSession(original,swap,{sessionId:avenir.id,kind:avenir.kind,label:avenir.label},today).swaps,undefined,'retour à la séance d’origine');
+assert.equal(planning.applyTemplate(original,swap,{fixtureId:'m3',template:'congested'},today).swaps,undefined,'nouvelle semaine type : remplacements du match effacés');
+assert.throws(()=>planning.validateState({version:1,season:1,fixtures:{},swaps:{x:{kind:'recovery',label:'Inventée'}}}),/planning/i);
+// Une fois passée, la séance remplacée entre dans l'historique sous sa nouvelle famille (format validé).
+const plusTard = planning.swapSession(original,swap,{sessionId:projected.sessions.find(s=>s.fixtureId==='m3' && s.date>='2026-10-09' && s.kind!=='video').id,kind:'video',label:'Vidéo'},'2026-10-09');
+planning.validateState(plusTard);
+assert.ok(plusTard.history.some(s=>s.id===remplacee.id && s.kind==='recovery' && !('sourceId' in s)));
 console.log('Planning calendrier : séances, statuts, semaines libres, choix et recalage vérifiés.');

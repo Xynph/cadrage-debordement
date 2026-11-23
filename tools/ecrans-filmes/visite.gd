@@ -39,6 +39,8 @@ const EXTRAS := [
 	{"id": "entrainement-individuel", "libelle": "Entraînement · onglet Individuel", "type": "entrainement_onglet", "onglet": 2},
 	{"id": "entrainement-mois", "libelle": "Entraînement · onglet Mois", "type": "entrainement_onglet", "onglet": 5},
 	{"id": "entrainement-mois-jour", "libelle": "Entraînement · Mois · petite fenêtre d'un jour", "type": "entrainement_onglet", "onglet": 5, "jour": true},
+	{"id": "entrainement-seance", "libelle": "Entraînement · Mois · fiche de séance (FM27 n° 25)", "type": "entrainement_onglet", "onglet": 5, "jour": true, "seance": true},
+	{"id": "entrainement-seance-choisie", "libelle": "Entraînement · Mois · séance remplacée d'un clic", "type": "entrainement_onglet", "onglet": 5, "jour": true, "seance": true, "seance_choix": true},
 	{"id": "salle-entrainement", "libelle": "Observer la préparation (salle d'entraînement)", "type": "salle_entrainement"},
 	{"id": "salle-entrainement-joueur", "libelle": "Observer la préparation · petite fenêtre d'un joueur", "type": "salle_entrainement", "joueur": true},
 	{"id": "fiche-joueur", "libelle": "Fiche joueur", "type": "joueur"},
@@ -81,6 +83,9 @@ const EXTRAS := [
 	{"id": "creation-options", "libelle": "Création · étape 2 Carrière (options)", "type": "creation_options"},
 	{"id": "avant-match-delegation", "libelle": "Avant-match · sous-page Déléguer le match", "type": "avant_delegation"},
 	{"id": "avant-match-bilan", "libelle": "Avant-match · petite fenêtre de la dernière rencontre", "type": "avant_bilan"},
+	{"id": "avant-match-tests", "libelle": "Avant-match · tests physiques des joueurs revenus de blessure", "type": "avant_tests"},
+	{"id": "fiche-blessures", "libelle": "Fiche joueur · onglet Blessures (joueur testé avant le match)", "type": "fiche_blessures"},
+	{"id": "message-medecin", "libelle": "Réception · tests de reprise du médecin", "type": "reception_tests"},
 	{"id": "compte-rendu", "libelle": "Réception · article du dernier match (carte du compte rendu)", "type": "reception_article"},
 	{"id": "analyste-match", "libelle": "Réception · message « Analyse vidéo » du dernier match", "type": "reception_analyse"},
 	{"id": "analyste-match-domination", "libelle": "Réception · analyse vidéo, petite fenêtre de la domination", "type": "reception_analyse", "verdict": "domination"},
@@ -634,7 +639,10 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				var page := app.find_child("ImmersiveTraining", true, false)
 				var choix: Button = null
 				var plein := -1
+				# Fiche de séance : un jour à venir (séances encore modifiables), le plus rempli.
+				var aujourdhui := str(app.model.get("calendarPlanning", {}).get("today", "")) if bool(ecran.get("seance", false)) else ""
 				for b: Node in page.find_children("TrainingMonthDayOpen_*", "Button", true, false):
+					if not aujourdhui.is_empty() and str(b.name).trim_prefix("TrainingMonthDayOpen_") <= aujourdhui: continue
 					var n: int = b.get_parent().get_child_count()
 					if n > plein:
 						plein = n
@@ -642,6 +650,25 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				if choix == null: return {"statut": "echec", "note": "aucun jour"}
 				choix.pressed.emit()
 				await stabiliser()
+				if bool(ecran.get("seance", false)):
+					var seances := page.find_children("TrainingMonthDaySessionOpen*", "Button", true, false)
+					if seances.is_empty(): return {"statut": "echec", "note": "aucune séance dans le jour"}
+					(seances[seances.size() - 1] as Button).pressed.emit()
+					await stabiliser()
+					# Séance déjà remplacée (taille précédente) : la fiche montre déjà le choix, on ne revient pas en arrière.
+					if bool(ecran.get("seance_choix", false)) and page.find_child("TrainingSessionChanged", true, false) == null:
+						# Famille Intensif : jauges vertes (gains) et rouges (coûts, risque) côte à côte.
+						var intensif := page.find_child("TrainingSessionFamilyOpen_intensif", true, false) as Button
+						if intensif != null:
+							intensif.pressed.emit()
+							await stabiliser()
+						var lignes := page.find_children("TrainingSessionPick*", "Button", true, false)
+						var autre: Button = null
+						if not lignes.is_empty(): autre = lignes[lignes.size() - 1]
+						if autre != null and autre.get_parent().find_child("TrainingSessionInPlace", true, false) != null: autre = lignes[0]
+						if autre == null: return {"statut": "echec", "note": "aucune autre séance"}
+						autre.pressed.emit()
+						await stabiliser()
 		"salle_entrainement":
 			app._navigate("Préparation")
 			await stabiliser()
@@ -1215,6 +1242,28 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				while Time.get_ticks_msec() < limite_d and not app.model.get("clubLife", {}).get("matchTalks", {}).get("scene", {}).get("decision") is Dictionary: await process_frame
 			await stabiliser()
 			await stabiliser()
+		"avant_tests":
+			app._navigate("Match")
+			await stabiliser()
+			var ouvre_tests := app.find_child("MatchTestsPhysiques", true, false) as Button
+			if ouvre_tests == null: return {"statut": "indisponible", "note": "lien des tests physiques absent"}
+			ouvre_tests.pressed.emit()
+			await stabiliser()
+		"fiche_blessures":
+			var testes: Array = load("res://ui/immersive08/tests_physiques.gd").lignes(app.model)
+			if testes.is_empty(): return {"statut": "indisponible", "note": "aucun joueur testé dans la carrière filmée"}
+			load("res://ui/immersive08/tests_physiques.gd").ouvrir_fiche(app, str(testes[0].j.get("id", "")))
+			await stabiliser()
+			if app.find_child("PlayerInjuryHistory", true, false) == null: return {"statut": "echec", "note": "onglet Blessures absent"}
+		"reception_tests":
+			var tests_id := ""
+			for courrier: Dictionary in load("res://ui/club_mail.gd").mails(app.model):
+				if str(courrier.get("type", "")) == "tests_reprise" and str(courrier.id).trim_prefix("mail-").to_int() > tests_id.trim_prefix("mail-").to_int(): tests_id = str(courrier.id)
+			if tests_id.is_empty(): return {"statut": "indisponible", "note": "aucun message des tests de reprise"}
+			app._reset_reception(tests_id)
+			app._navigate("Réception", false)
+			await stabiliser()
+			if app.find_child("TestsPhysiquesMail", true, false) == null: return {"statut": "echec", "note": "liste des tests absente du message"}
 		"avant_bilan":
 			# Bilan de la dernière rencontre : pastille du bandeau → petite fenêtre.
 			app._navigate("Match")
@@ -1230,6 +1279,13 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 
 ## Remet l'écran dans son état ordinaire après la capture.
 func refermer(ecran: Dictionary) -> void:
+	if str(ecran.type) == "entrainement_onglet" and bool(ecran.get("seance", false)):
+		var PF = load("res://ui/petite_fenetre.gd")
+		PF.fermer_derniere(app.get_tree())
+		PF.fermer_derniere(app.get_tree())
+		if app.management_ui.get("immersive_training") is Dictionary:
+			app.management_ui.immersive_training.erase("seances_choisies")
+			app.management_ui.immersive_training.erase("seance_cible")
 	if str(ecran.type) == "recherche_ciblee":
 		load("res://ui/petite_fenetre.gd").fermer_derniere(app.get_tree())
 		app.management_ui.erase("recherche_ciblee")

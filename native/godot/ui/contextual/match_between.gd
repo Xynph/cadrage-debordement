@@ -239,6 +239,8 @@ var fiche_vers: Callable = Callable()
 var menu_vers: Callable = Callable()
 ## Dernier remplacement du prochain arrêt de jeu déjà montré en carte sortant / entrant (numéro de la file).
 var _changement_vu := -1
+## Vrai dès qu'un rendu a vu le match sans aucun remplacement fait : le premier à venir est donc un vrai changement du direct, jamais un ancien.
+var _changement_amorce := false
 var _fiche_id := ""
 ## Lignes du classement en direct : notre voisinage (± 3 places) et le haut du tableau.
 const CLASSEMENT_LIGNES := 9
@@ -2614,9 +2616,11 @@ func _montrer_changement(live: Dictionary, direct: Dictionary, montre: Array) ->
 	var dernier: Dictionary = {}
 	for f: Variant in faits:
 		if f is Dictionary and str(f.get("type", "")) == "remplacement" and bool(f.get("ok", false)): dernier = f
-	if dernier.is_empty(): return
+	if dernier.is_empty():
+		_changement_amorce = true
+		return
 	var n := int(dernier.get("n", -1))
-	if _changement_vu < 0 and n >= 0 and int(live.get("minute", 0)) - int(dernier.get("minute", 0)) > 2:
+	if _changement_vu < 0 and not _changement_amorce and n >= 0 and int(live.get("minute", 0)) - int(dernier.get("minute", 0)) > 2:
 		_changement_vu = n
 		return
 	if n <= _changement_vu: return

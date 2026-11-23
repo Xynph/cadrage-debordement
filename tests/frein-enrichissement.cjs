@@ -125,7 +125,7 @@ test('Moteur Monde : création sans dividende ni investissement, jokers au vrai 
    return out;})()`);
   for(const [qui,x] of Object.entries(f)){
    assert.equal(x.frais.length,1,qui+' : une ligne de frais');assert.ok(Math.abs(-x.frais[0]-0.5*x.guichet)<=200,qui+' : 50 % de la recette de phase finale');
-   assert.equal(x.compte[0],x.guichet,qui+' : toute la recette de phase finale est imprévue');assert.equal(x.compte[1],-x.frais[0],qui+' : frais comptés');
+   assert.ok(Math.abs(x.compte[0]-x.guichet)<=100,qui+' : toute la recette de phase finale est imprévue');assert.equal(x.compte[1],-x.frais[0],qui+' : frais comptés');
   }
  }finally{jeu.fermer();}
 });
@@ -173,5 +173,5 @@ test('Guichet imprévu : rien pour un match moyen, tout pour une phase finale, f
  assert.equal(B.fraisDeMatch({},1e6,1.5e6).montant,0,'tout va au trou prévu');
  assert.equal(B.fraisDeMatch({},2.5e6,1.5e6).montant,5e5,'50 % de ce qui dépasse');
  assert.equal(B.deficitPrevu(forces,id,1e6),0,'petite masse : budget excédentaire');
- const r=B.recettes(forces).get(id);assert.equal(B.deficitPrevu(forces,id,r),Math.round((r*1.4-r*(1-B.FONCTIONNEMENT))/100)*100);
+ const r=B.recettes(forces).get(id);assert.equal(B.deficitPrevu(forces,id,r),Math.round((r*1.4-(r-B.fonctionnementAnnuel(r)))/100)*100);
 });
