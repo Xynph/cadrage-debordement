@@ -1,13 +1,13 @@
 extends RefCounted
-## Compte rendu du match en carte (idée FM n°19, planche A/B du 22/11/2026, pas encore tranchée par Léo) : en tête de
+## Compte rendu du match en carte (idée FM n°19, choix de Léo du 23/11/2026 : option A + frise de B) : en tête de
 ## l'article « COMPTE RENDU » de la Réception (courrier de presse `article`, le lendemain du match), une carte du
-## match, puis le texte du journal. Données : `decisions.report` (score, météo, stats, essais avec minute, marqueur et
-## origine) et `clubLife.matchNotes.dernier` (homme du match, notes). Seule la dernière rencontre du club est connue :
-## la carte ne se pose que sur l'article de ce match. Variante sous CD_VARIANTE_VISUELLE=A|B :
-##   A : carte d'article en trois colonnes (fiche du match + homme du match · stats en barres miroir · marqueurs) ;
-##   B : feuille de match en largeur (bandeau du score, frise 0-80' des essais, lignes « Effectif » des meilleures
-##       notes et tableau de stats à barre partagée).
-## Coordonnées en unités du gabarit (primitives.gd), relatives à la carte.
+## match, puis le texte du journal. Bandeau (écussons, noms, score, résultat), frise 0-80' des essais (minute,
+## marqueur, origine ; mi-temps), puis trois colonnes : le match (lieu, météo, spectateurs) et l'homme du match ·
+## stats en barres miroir · marqueurs. Version réduite (sans la colonne du match) dans la petite fenêtre
+## « Dernière rencontre » de l'avant-match (avant_match_bilan.gd).
+## Données : `decisions.report` (score, météo, affluence, stats, essais détaillés du moteur : minute, camp, origine,
+## zone, marqueur) et `clubLife.matchNotes.dernier` (homme du match). Seule la dernière rencontre du club est connue :
+## la carte ne se pose que sur l'article de ce match. Coordonnées en unités du gabarit (primitives.gd), relatives à la carte.
 
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
@@ -24,9 +24,6 @@ const NOUS := R.VERT
 const EUX := R.BLEU
 const ORIGINES := {"j": ["Jeu courant", "ball"], "b": ["Ballon porté", "people"], "m": ["Mêlée", "shield"]}
 
-static func variante() -> String:
-	return "B" if OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper() == "B" else "A"
-
 ## La carte du match pour ce courrier de presse, ou null (autre courrier, match inconnu, article d'un ancien match).
 static func carte(app: Control, mail: Dictionary, largeur: float) -> Control:
 	if str(mail.get("type", "")) != "article": return null
@@ -39,12 +36,21 @@ static func carte(app: Control, mail: Dictionary, largeur: float) -> Control:
 		if str(autre.get("type", "")) == "article":
 			if str(autre.get("id", "")) != str(mail.get("id", "")): return null
 			break
-	var ctx := _contexte(app, report)
+	return _racine(_contexte(app, report), largeur, false)
+
+## La carte réduite du dernier match (petite fenêtre « Dernière rencontre » de l'avant-match), ou null sans match.
+static func carte_rapport(app: Control, largeur: float) -> Control:
+	var report := Bilan.rapport(app.model)
+	if report.is_empty(): return null
+	return _racine(_contexte(app, report), largeur, true)
+
+static func _racine(ctx: Dictionary, largeur: float, reduite: bool) -> Control:
 	var racine := Control.new()
 	racine.name = "CompteRenduCarte"
 	racine.mouse_filter = Control.MOUSE_FILTER_PASS
-	var hauteur := _carte_a(racine, ctx, largeur) if variante() == "A" else _carte_b(racine, ctx, largeur)
+	var hauteur := _carte(racine, ctx, largeur, reduite)
 	racine.custom_minimum_size = Vector2(C.px(largeur), C.px(hauteur))
+	racine.set_meta("hauteur", hauteur)
 	return racine
 
 # ---- Données ---------------------------------------------------------------------------------------------------------
@@ -162,17 +168,29 @@ static func _titre(parent: Control, x: float, baseline: float, texte: String, ic
 	D.place(i, Rect2(x, baseline - 19, 22, 22))
 	D.text(parent, x + 32, baseline, texte, 20, Charte.IVOIRE, 800, 400)
 
-# ---- Option A : carte d'article en trois colonnes ------------------------------------------------------------------
+# ---- La carte : bandeau, frise 0-80', puis trois colonnes (deux en version réduite) -------------------------------
 
-static func _carte_a(racine: Control, ctx: Dictionary, W: float) -> float:
+const H_BANDEAU := 112.0
+const H_FRISE := 150.0
+
+static func _milliers(n: int) -> String:
+	var t := str(absi(n))
+	var out := ""
+	while t.length() > 3:
+		out = " " + t.substr(t.length() - 3) + out
+		t = t.substr(0, t.length() - 3)
+	return t + out
+
+static func _carte(racine: Control, ctx: Dictionary, W: float, reduite: bool) -> float:
 	var stats := _stats(ctx)
-	var corps_h := maxf(300.0, maxf(64.0 + stats.size() * 38.0, 44.0 + 2 * 54.0 + maxf(1, ctx.essais.size()) * 38.0 + 38.0))
-	var H := 112.0 + corps_h + 16.0
+	var corps_h := maxf(64.0 + stats.size() * 38.0, 44.0 + 2 * 54.0 + maxf(1, ctx.essais.size()) * 38.0 + 38.0)
+	if not reduite: corps_h = maxf(corps_h, 330.0)
+	var H := H_BANDEAU + H_FRISE + 16.0 + corps_h + 16.0
 	var fond := D.rect(racine, Rect2(0, 0, W, H), Charte.PANNEAU, Charte.RAYON_CARTE)
 	fond.name = "CompteRenduFond"
 	fond.add_theme_stylebox_override("panel", Charte.ombrer(fond.get_theme_stylebox("panel") as StyleBoxFlat, Charte.RAYON_CARTE))
 	# Bandeau : noms, écussons et score, résultat dessous.
-	var bandeau := D.rect(fond, Rect2(0, 0, W, 112), Charte.PANNEAU_3, Charte.RAYON_CARTE)
+	var bandeau := D.rect(fond, Rect2(0, 0, W, H_BANDEAU), Charte.PANNEAU_3, Charte.RAYON_CARTE)
 	bandeau.name = "CompteRenduBandeau"
 	var m := W / 2.0
 	_ecusson(bandeau, ctx, 0, Rect2(m - 290, 16, 74, 74), "CompteRenduEcusson0")
@@ -186,28 +204,118 @@ static func _carte_a(racine: Control, ctx: Dictionary, W: float) -> float:
 	if not str(ctx.competition).is_empty():
 		var lien := D.text(bandeau, 28, 100, str(ctx.competition).to_upper(), 17, Charte.IVOIRE_2, 700, m - 360)
 		lien.name = "CompteRenduCompetition"
-	# Trois colonnes.
-	var y := 112.0 + 16.0
+	_frise(fond, ctx, W, H_BANDEAU)
+	D.line(fond, Vector2(0, H_BANDEAU + H_FRISE), Vector2(W, H_BANDEAU + H_FRISE), Charte.FILET)
+	# Colonnes : le match et l'homme du match (carte complète) · stats en barres miroir · marqueurs.
+	var y := H_BANDEAU + H_FRISE + 16.0
 	var c1 := 32.0
-	var w1 := W * .27
-	var c2 := c1 + w1 + 32.0
-	var w2 := W * .40
+	var w1 := 0.0 if reduite else W * .27
+	var c2 := c1 + (0.0 if reduite else w1 + 32.0)
+	var w2 := W * (.52 if reduite else .40)
 	var c3 := c2 + w2 + 32.0
 	var w3 := W - c3 - 32.0
-	for x: float in [c2 - 16.0, c3 - 16.0]: D.line(fond, Vector2(x, y), Vector2(x, H - 16), Charte.FILET)
-	# 1. Le match (lieu, météo) puis l'homme du match.
+	for x: float in ([c3 - 16.0] if reduite else [c2 - 16.0, c3 - 16.0]): D.line(fond, Vector2(x, y), Vector2(x, H - 16), Charte.FILET)
+	if not reduite: _colonne_match(fond, ctx, c1, w1, y)
+	_colonne_stats(fond, ctx, stats, c2, w2, y)
+	_colonne_essais(fond, ctx, c3, w3, y)
+	return H
+
+## Frise 0-80' : mi-temps marquée ; essais du club qui reçoit au-dessus, des visiteurs dessous (minute, marqueur, origine).
+static func _frise(fond: Control, ctx: Dictionary, W: float, y_haut: float) -> void:
+	var zone := D.rect(fond, Rect2(0, y_haut, W, H_FRISE), Color.TRANSPARENT, 0)
+	zone.name = "CompteRenduFrise"
+	zone.mouse_filter = Control.MOUSE_FILTER_PASS
+	var y0 := H_FRISE / 2.0 + 4
+	var gx := 90.0
+	var gw := W - 180.0
+	var fin := 80.0
+	for essai: Variant in ctx.essais:
+		if essai is Dictionary: fin = maxf(fin, float(_n(essai.get("minute"))))
+	D.rect(zone, Rect2(gx, y0 - 3, gw, 6), Charte.PANNEAU_3, 3)
+	for repere: Array in [[0, "0'"], [40, "MT"], [80, "80'"]]:
+		var rx := gx + gw * float(repere[0]) / fin
+		D.rect(zone, Rect2(rx - 1, y0 - 12, 2, 24), Charte.IVOIRE_2, 0)
+		if repere[0] == 0: D.text(zone, gx - 14, y0 + 6, str(repere[1]), 16, Charte.IVOIRE_2, 700, 60, HORIZONTAL_ALIGNMENT_RIGHT)
+		elif repere[0] == 80: D.text(zone, gx + gw + 14, y0 + 6, str(repere[1]), 16, Charte.IVOIRE_2, 700, 60)
+		else: D.text(zone, rx + 8, y0 + 30, str(repere[1]), 15, Charte.IVOIRE_2, 700, 40).name = "CompteRenduMiTemps"
+	# Une rangée d'étiquettes par camp, sans chevauchement : une étiquette trop proche de la précédente glisse à droite,
+	# puis, en partant de la fin, à gauche si la rangée déborde ; reliée à son repère par un coude.
+	var rangees := [[], []]
+	for essai: Variant in ctx.essais:
+		if not essai is Dictionary: continue
+		var camp := clampi(_n(essai.get("side")), 0, 1)
+		var nom := str(essai.get("name")) if essai.get("name") != null else "—"
+		var o: Array = ORIGINES.get(str(essai.get("origin", "j")), ORIGINES.j)
+		var lw := R.largeur(nom, 17) + 64 + (22.0 if o[1] != "ball" else 0.0)
+		rangees[camp].append({"essai": essai, "ex": gx + gw * float(_n(essai.get("minute"))) / fin, "nom": nom, "o": o, "lw": lw})
+	for rangee: Array in rangees:
+		# Rangée trop longue pour la carte : le nom de famille seul.
+		var total := 0.0
+		for e: Dictionary in rangee: total += float(e.lw) + 10.0
+		if total > W - 8.0:
+			for e: Dictionary in rangee:
+				var mots := str(e.nom).split(" ", false)
+				if mots.size() > 1:
+					e.nom = mots[mots.size() - 1]
+					e.lw = R.largeur(str(e.nom), 17) + 64 + (22.0 if e.o[1] != "ball" else 0.0)
+		var bout := 4.0 - 10.0
+		for e: Dictionary in rangee:
+			e.lx = maxf(float(e.ex) - float(e.lw) / 2.0, bout + 10.0)
+			bout = float(e.lx) + float(e.lw)
+		var debut := W - 4.0 + 10.0
+		for k in range(rangee.size() - 1, -1, -1):
+			var e: Dictionary = rangee[k]
+			e.lx = maxf(4.0, minf(float(e.lx), debut - 10.0 - float(e.lw)))
+			debut = float(e.lx)
+	var compte := [0, 0]
+	for e: Dictionary in rangees[0] + rangees[1]:
+		var essai: Dictionary = e.essai
+		var camp := clampi(_n(essai.get("side")), 0, 1)
+		var ex: float = e.ex
+		var nom: String = e.nom
+		var o: Array = e.o
+		var lw: float = e.lw
+		var lx: float = e.lx
+		var sens := -1.0 if camp == 0 else 1.0
+		var tige := 30.0
+		var couleur := _couleur_camp(ctx, camp)
+		D.rect(zone, Rect2(ex - 1, y0 + (sens * tige if sens < 0 else 0.0), 2, tige), Color(couleur, .7), 0)
+		var centre := lx + lw / 2.0
+		if absf(centre - ex) > 2: D.rect(zone, Rect2(minf(ex, centre) - 1, y0 + sens * tige - 1, absf(centre - ex) + 2, 2), Color(couleur, .7), 0)
+		var pastille := D.rect(zone, Rect2(ex - 13, y0 - 13, 26, 26), couleur, 13)
+		pastille.name = "CompteRenduFriseEssai%d_%d" % [camp, compte[camp]]
+		var ball := C.icon("ball", C.px(16), Charte.ENCRE)
+		pastille.add_child(ball)
+		D.place(ball, Rect2(5, 5, 16, 16))
+		var haut := y0 + sens * tige + (-30.0 if sens < 0 else 0.0)
+		var cadre := D.rect(zone, Rect2(lx, haut, lw, 30), Charte.PANNEAU_2, 6, Color(couleur, .5))
+		cadre.name = "CompteRenduFriseEtiquette%d_%d" % [camp, compte[camp]]
+		D.text(cadre, 8, 22, "%d'" % _n(essai.get("minute")), 17, couleur, 800, 44)
+		_nom_joueur(cadre, ctx, str(essai.get("id", "")), nom, Rect2(48, -3, R.largeur(nom, 17) + 12, 30), 17, Charte.IVOIRE, "CompteRenduFriseNom%d_%d" % [camp, compte[camp]])
+		if o[1] != "ball":
+			var io := C.icon(str(o[1]), C.px(16), R.TURQUOISE)
+			io.tooltip_text = str(o[0])
+			io.mouse_filter = Control.MOUSE_FILTER_STOP
+			cadre.add_child(io)
+			D.place(io, Rect2(lw - 26, 7, 16, 16))
+		compte[camp] += 1
+
+## 1. Le match (lieu, météo, spectateurs) puis l'homme du match.
+static func _colonne_match(fond: Control, ctx: Dictionary, c1: float, w1: float, y: float) -> void:
 	_titre(fond, c1, y + 22, "LE MATCH", "calendar", Charte.IVOIRE_2)
 	var infos: Array = []
-	infos.append(["home", "Lieu", str(ctx.stade) if not str(ctx.stade).is_empty() else ("Domicile" if int(ctx.cote) == 0 else "Extérieur")])
-	if ctx.report.get("weather") is String and not str(ctx.report.weather).is_empty(): infos.append(["cloud", "Météo", str(ctx.report.weather)])
+	infos.append(["home", "Lieu", str(ctx.stade) if not str(ctx.stade).is_empty() else ("Domicile" if int(ctx.cote) == 0 else "Extérieur"), R.TURQUOISE, "CompteRenduLieu"])
+	if ctx.report.get("weather") is String and not str(ctx.report.weather).is_empty(): infos.append(["cloud", "Météo", str(ctx.report.weather), R.BLEU, "CompteRenduMeteo"])
+	if ctx.report.get("affluence") is int or ctx.report.get("affluence") is float: infos.append(["people", "Public", _milliers(_n(ctx.report.affluence)), R.ORANGE, "CompteRenduAffluence"])
 	var yy := y + 60.0
 	for info: Array in infos:
-		D.rect(fond, Rect2(c1, yy - 26, w1, 40), Charte.PANNEAU_2, 6)
-		var ic := C.icon(str(info[0]), C.px(20), R.BLEU)
-		fond.add_child(ic)
-		D.place(ic, Rect2(c1 + 12, yy - 16, 20, 20))
-		D.text(fond, c1 + 42, yy, str(info[1]), 17, Charte.IVOIRE_2, 600, 110)
-		D.text(fond, c1 + 150, yy, str(info[2]), 18, Charte.IVOIRE, 700, w1 - 160)
+		var ligne := D.rect(fond, Rect2(c1, yy - 26, w1, 40), Charte.PANNEAU_2, 6)
+		ligne.name = str(info[4])
+		var ic := C.icon(str(info[0]), C.px(20), info[3])
+		ligne.add_child(ic)
+		D.place(ic, Rect2(12, 10, 20, 20))
+		D.text(ligne, 42, 26, str(info[1]), 17, Charte.IVOIRE_2, 600, 110)
+		D.text(ligne, 150, 26, str(info[2]), 18, Charte.IVOIRE, 700, w1 - 160).name = str(info[4]) + "Valeur"
 		yy += 44.0
 	var hdm: Variant = ctx.dernier.get("hommeDuMatch")
 	yy += 12.0
@@ -227,29 +335,36 @@ static func _carte_a(racine: Control, ctx: Dictionary, W: float) -> float:
 			var t := "%d %s" % [fait[0], fait[1]]
 			D.text(fond, x, yy + 89, t, 18, fait[2], 800, R.largeur(t, 18, 800) + 4)
 			x += R.largeur(t, 18, 800) + 16
-	# 2. Stats en barres miroir : domicile à gauche, extérieur à droite, part de chacun depuis le centre.
+
+## 2. Stats en barres miroir : domicile à gauche, extérieur à droite, part de chacun depuis le centre.
+static func _colonne_stats(fond: Control, ctx: Dictionary, stats: Array, c2: float, w2: float, y: float) -> void:
 	_titre(fond, c2, y + 22, "STATS DU MATCH", "target", Charte.IVOIRE_2)
 	for camp in 2:
 		var p := R.pastille(fond, c2 + (230.0 if camp == 0 else w2 - 120.0), y + 22, G.club_abbr(ctx.clubs[camp]), _couleur_camp(ctx, camp), "", "CompteRenduLegende%d" % camp, 16)
 		if camp == 1: p.position.x = C.px(c2 + w2) - p.size.x
 	var ys := y + 66.0
-	var mi := c2 + w2 / 2.0
+	var mi := w2 / 2.0
 	var trou := 92.0
 	var demi := w2 / 2.0 - trou - 70.0
 	for i in stats.size():
 		var l: Array = stats[i]
 		var total := float(l[1] + l[2])
-		D.text(fond, mi, ys + 6, str(l[0]), 15, Charte.IVOIRE_2, 600, trou * 2 - 8, HORIZONTAL_ALIGNMENT_CENTER).name = "CompteRenduStat%d" % i
+		var ligne := D.rect(fond, Rect2(c2, ys - 14, w2, 32), Color.TRANSPARENT, 6)
+		ligne.name = "CompteRenduStat%d" % i
+		_survol(ligne)
+		D.text(ligne, mi, 20, str(l[0]), 15, Charte.IVOIRE_2, 600, trou * 2 - 8, HORIZONTAL_ALIGNMENT_CENTER)
 		for camp in 2:
 			var bx := mi - trou - demi if camp == 0 else mi + trou
-			D.rect(fond, Rect2(bx, ys - 6, demi, 14), Charte.PANNEAU_3, 7)
+			D.rect(ligne, Rect2(bx, 8, demi, 14), Charte.PANNEAU_3, 7)
 			var part := (float(l[1 + camp]) / total) if total > 0 else 0.0
 			var w := demi * part
-			if w > 2: D.rect(fond, Rect2(mi - trou - w if camp == 0 else mi + trou, ys - 6, w, 14), _couleur_camp(ctx, camp), 7)
+			if w > 2: D.rect(ligne, Rect2(mi - trou - w if camp == 0 else mi + trou, 8, w, 14), _couleur_camp(ctx, camp), 7)
 			var gagne: bool = l[1 + camp] > l[2 - camp] if l[0] != "Pénalités concédées" else l[1 + camp] < l[2 - camp]
-			D.text(fond, c2 if camp == 0 else c2 + w2, ys + 8, str(l[3 + camp]), 20, _couleur_camp(ctx, camp) if gagne else Charte.IVOIRE, 800, 64, HORIZONTAL_ALIGNMENT_LEFT if camp == 0 else HORIZONTAL_ALIGNMENT_RIGHT)
+			D.text(ligne, 4.0 if camp == 0 else w2 - 4.0, 22, str(l[3 + camp]), 20, _couleur_camp(ctx, camp) if gagne else Charte.IVOIRE, 800, 64, HORIZONTAL_ALIGNMENT_LEFT if camp == 0 else HORIZONTAL_ALIGNMENT_RIGHT)
 		ys += 38.0
-	# 3. Marqueurs : par équipe, minute, nom, origine de l'essai.
+
+## 3. Marqueurs : par équipe, minute, nom, origine de l'essai.
+static func _colonne_essais(fond: Control, ctx: Dictionary, c3: float, w3: float, y: float) -> void:
 	_titre(fond, c3, y + 22, "ESSAIS", "ball", Charte.IVOIRE_2)
 	var ye := y + 44.0
 	for camp in 2:
@@ -263,6 +378,7 @@ static func _carte_a(racine: Control, ctx: Dictionary, W: float) -> float:
 			if not essai is Dictionary or _n(essai.get("side")) != camp: continue
 			var ligne := D.rect(fond, Rect2(c3, ye, w3, 36), Charte.PANNEAU_2 if n % 2 == 0 else Color.TRANSPARENT, 6)
 			ligne.name = "CompteRenduEssai%d_%d" % [camp, n]
+			_survol(ligne)
 			D.text(ligne, 10, 25, "%d'" % _n(essai.get("minute")), 19, _couleur_camp(ctx, camp), 800, 46)
 			var nom := str(essai.get("name")) if essai.get("name") != null else "—"
 			_nom_joueur(ligne, ctx, str(essai.get("id", "")), nom, Rect2(56, 2, w3 - 56 - 150, 32), 18, Charte.IVOIRE, "CompteRenduMarqueur%d_%d" % [camp, n])
@@ -275,168 +391,6 @@ static func _carte_a(racine: Control, ctx: Dictionary, W: float) -> float:
 			D.text(fond, c3 + 10, ye + 22, "—", 19, Charte.IVOIRE_2, 700, 40)
 			ye += 38.0
 		ye += 14.0
-	return H
-
-# ---- Option B : feuille de match en largeur ------------------------------------------------------------------------
-
-static func _carte_b(racine: Control, ctx: Dictionary, W: float) -> float:
-	var stats := _stats(ctx)
-	var H_bandeau := 126.0
-	var H_frise := 148.0
-	var H_bas := 52.0 + maxf(4.0, stats.size()) * 34.0
-	var H := H_bandeau + H_frise + H_bas + 26.0
-	var fond := D.rect(racine, Rect2(0, 0, W, H), Charte.PANNEAU, Charte.RAYON_CARTE)
-	fond.name = "CompteRenduFond"
-	fond.add_theme_stylebox_override("panel", Charte.ombrer(fond.get_theme_stylebox("panel") as StyleBoxFlat, Charte.RAYON_CARTE))
-	# Bandeau : couleur du camp sur chaque bord, écussons, noms, score géant, pastilles résultat / lieu / météo.
-	var m := W / 2.0
-	for camp in 2:
-		var bord := D.rect(fond, Rect2(0 if camp == 0 else W - 10, 0, 10, H_bandeau), _couleur_camp(ctx, camp), 0)
-		bord.name = "CompteRenduBord%d" % camp
-	_ecusson(fond, ctx, 0, Rect2(36, 18, 86, 86), "CompteRenduEcusson0")
-	_ecusson(fond, ctx, 1, Rect2(W - 122, 18, 86, 86), "CompteRenduEcusson1")
-	_nom_club(fond, ctx, 0, 146, 58, m - 380, 34, HORIZONTAL_ALIGNMENT_LEFT, "CompteRenduNom0")
-	_nom_club(fond, ctx, 1, W - 146, 58, m - 380, 34, HORIZONTAL_ALIGNMENT_RIGHT, "CompteRenduNom1")
-	for camp in 2:
-		var leg := G.club_abbr(ctx.clubs[camp])
-		var p := R.pastille(fond, 146, 94, leg, _couleur_camp(ctx, camp), "", "CompteRenduLegende%d" % camp, 17)
-		if camp == 1: p.position.x = C.px(W - 146) - p.size.x
-	_score(fond, ctx, m, 72, 68)
-	var res := _resultat(ctx)
-	var pastilles: Array = [[res[0], res[1], res[2]]]
-	pastilles.append([str(ctx.stade) if not str(ctx.stade).is_empty() else ("Domicile" if int(ctx.cote) == 0 else "Extérieur"), R.TURQUOISE, "home"])
-	if ctx.report.get("weather") is String and not str(ctx.report.weather).is_empty(): pastilles.append([str(ctx.report.weather), R.BLEU, "cloud"])
-	if not str(ctx.competition).is_empty(): pastilles.append([str(ctx.competition), Charte.IVOIRE_2, "trophy"])
-	var total_w := 0.0
-	for p: Array in pastilles: total_w += R.largeur(str(p[0]), 17) + 52 + 10
-	var x := m - (total_w - 10) / 2.0
-	for i in pastilles.size():
-		var p: Array = pastilles[i]
-		var pa := R.pastille(fond, x, 108, str(p[0]), p[1], str(p[2]), "CompteRenduInfo%d" % i, 17)
-		x += pa.size.x / C.density + 10
-	D.line(fond, Vector2(0, H_bandeau), Vector2(W, H_bandeau), Charte.FILET)
-	# Frise des essais : 0' à 80', mi-temps marquée ; domicile au-dessus, extérieur dessous, nom et minute.
-	var y0 := H_bandeau + H_frise / 2.0 + 4
-	var gx := 90.0
-	var gw := W - 180.0
-	var fin := 80.0
-	for essai: Variant in ctx.essais:
-		if essai is Dictionary: fin = maxf(fin, float(_n(essai.get("minute"))))
-	D.rect(fond, Rect2(gx, y0 - 3, gw, 6), Charte.PANNEAU_3, 3)
-	for repere: Array in [[0, "0'"], [40, "MT"], [80, "80'"]]:
-		var rx := gx + gw * float(repere[0]) / fin
-		D.rect(fond, Rect2(rx - 1, y0 - 12, 2, 24), Charte.IVOIRE_2, 0)
-		if repere[0] == 0: D.text(fond, gx - 14, y0 + 6, str(repere[1]), 16, Charte.IVOIRE_2, 700, 60, HORIZONTAL_ALIGNMENT_RIGHT)
-		elif repere[0] == 80: D.text(fond, gx + gw + 14, y0 + 6, str(repere[1]), 16, Charte.IVOIRE_2, 700, 60)
-		else: D.text(fond, rx + 8, y0 + 30, str(repere[1]), 15, Charte.IVOIRE_2, 700, 40)
-	# Une rangée d'étiquettes par camp : une étiquette trop proche de la précédente glisse à droite, reliée par un coude.
-	var bout := [-9999.0, -9999.0]
-	var compte := [0, 0]
-	for essai: Variant in ctx.essais:
-		if not essai is Dictionary: continue
-		var camp := clampi(_n(essai.get("side")), 0, 1)
-		var ex := gx + gw * float(_n(essai.get("minute"))) / fin
-		var nom := str(essai.get("name")) if essai.get("name") != null else "—"
-		var o: Array = ORIGINES.get(str(essai.get("origin", "j")), ORIGINES.j)
-		var lw := R.largeur(nom, 17) + 64 + (22.0 if o[1] != "ball" else 0.0)
-		var lx := clampf(maxf(ex - lw / 2.0, float(bout[camp]) + 10.0), 4.0, W - lw - 4.0)
-		bout[camp] = lx + lw
-		var sens := -1.0 if camp == 0 else 1.0
-		var tige := 34.0
-		var couleur := _couleur_camp(ctx, camp)
-		D.rect(fond, Rect2(ex - 1, y0 + (sens * tige if sens < 0 else 0), 2, tige), Color(couleur, .7), 0)
-		var centre := lx + lw / 2.0
-		if absf(centre - ex) > 2: D.rect(fond, Rect2(minf(ex, centre) - 1, y0 + sens * tige - 1, absf(centre - ex) + 2, 2), Color(couleur, .7), 0)
-		var pastille := D.rect(fond, Rect2(ex - 13, y0 - 13, 26, 26), couleur, 13)
-		var ball := C.icon("ball", C.px(16), Charte.ENCRE)
-		pastille.add_child(ball)
-		D.place(ball, Rect2(5, 5, 16, 16))
-		var haut := y0 + sens * tige + (-30.0 if sens < 0 else 0.0)
-		var cadre := D.rect(fond, Rect2(lx, haut, lw, 30), Charte.PANNEAU_2, 6, Color(couleur, .5))
-		cadre.name = "CompteRenduEssai%d_%d" % [camp, compte[camp]]
-		D.text(cadre, 8, 22, "%d'" % _n(essai.get("minute")), 17, couleur, 800, 44)
-		_nom_joueur(cadre, ctx, str(essai.get("id", "")), nom, Rect2(48, 0, R.largeur(nom, 17) + 12, 30), 17, Charte.IVOIRE, "CompteRenduMarqueur%d_%d" % [camp, compte[camp]])
-		if o[1] != "ball":
-			var io := C.icon(str(o[1]), C.px(16), R.TURQUOISE)
-			io.tooltip_text = str(o[0])
-			io.mouse_filter = Control.MOUSE_FILTER_STOP
-			cadre.add_child(io)
-			D.place(io, Rect2(lw - 26, 7, 16, 16))
-		compte[camp] += 1
-	D.line(fond, Vector2(0, H_bandeau + H_frise), Vector2(W, H_bandeau + H_frise), Charte.FILET)
-	# Bas gauche : lignes « Effectif » des meilleures notes du match (homme du match en tête, étoile).
-	var yb := H_bandeau + H_frise + 30.0
-	var gl := W * .46
-	_titre(fond, 32, yb, "LES NOTES", "star", R.ORANGE)
-	var colonnes := [["NOTE", 120.0], ["ESS.", 70.0], ["PLAQ.", 80.0], ["M", 70.0]]
-	var cx := 32.0 + gl - 340.0
-	for c: Array in colonnes:
-		D.text(fond, cx, yb + 32, str(c[0]), 14, Charte.IVOIRE_2, 700, float(c[1]), HORIZONTAL_ALIGNMENT_CENTER if c[0] != "NOTE" else HORIZONTAL_ALIGNMENT_LEFT)
-		cx += float(c[1])
-	var lignes: Array = []
-	var hdm: Variant = ctx.dernier.get("hommeDuMatch")
-	var hdm_id := str(hdm.get("id", "")) if hdm is Dictionary else ""
-	if hdm is Dictionary: lignes.append({"id": hdm_id, "nom": str(hdm.get("nom", "")), "note": hdm.get("note"), "essais": hdm.get("essais"), "plaquages": hdm.get("plaquages"), "metres": hdm.get("metres"), "camp": 0 if _n(hdm.get("club")) == _n(ctx.report.teams[0].get("id")) else 1})
-	var nos: Array = []
-	for n: Variant in ctx.dernier.get("notes", []):
-		if n is Dictionary and n.get("note") != null and _n(n.get("cote")) == int(ctx.cote) and str(n.get("id", "")) != hdm_id: nos.append(n)
-	nos.sort_custom(func(a: Dictionary, b: Dictionary): return float(a.note) > float(b.note))
-	for n: Dictionary in nos.slice(0, 4 - lignes.size()):
-		var p := _joueur(ctx, str(n.id), "")
-		lignes.append({"id": str(n.id), "nom": str(p.get("name", "")), "note": n.note, "essais": n.get("essais"), "plaquages": n.get("plaquages"), "metres": n.get("metres"), "camp": int(ctx.cote)})
-	var yl := yb + 38.0
-	for i in lignes.size():
-		var l: Dictionary = lignes[i]
-		var ligne := D.rect(fond, Rect2(32, yl, gl, 38), Charte.PANNEAU_2 if i % 2 == 0 else Color.TRANSPARENT, 6)
-		ligne.name = "CompteRenduLigne%d" % i
-		_survol(ligne)
-		D.rect(ligne, Rect2(0, 5, 4, 28), _couleur_camp(ctx, int(l.camp)), 2)
-		var joueur := _joueur(ctx, str(l.id), str(l.nom))
-		var visage: Control = G.portrait_lazy(int(joueur.get("portraitIndex", 0)), C.px(34), joueur)
-		visage.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		ligne.add_child(visage)
-		D.place(visage, Rect2(12, 3, 32, 32))
-		var lw := gl - 340.0 - 60.0 - (34.0 if str(l.id) == hdm_id else 0.0)
-		_nom_joueur(ligne, ctx, str(l.id), str(l.nom), Rect2(54, 3, lw, 32), 19, Charte.IVOIRE, "CompteRenduNoteNom%d" % i)
-		if str(l.id) == hdm_id:
-			var etoile := C.icon("star", C.px(22), R.ORANGE)
-			etoile.tooltip_text = "Homme du match"
-			etoile.mouse_filter = Control.MOUSE_FILTER_STOP
-			ligne.add_child(etoile)
-			D.place(etoile, Rect2(54 + lw + 6, 8, 22, 22))
-		var x0 := gl - 340.0
-		if l.note != null: _note(ligne, Rect2(x0, 5, 56, 28), l.note)
-		else: D.text(ligne, x0 + 10, 26, "—", 19, Charte.IVOIRE_2, 700, 40)
-		x0 += 120.0
-		for val: Array in [[l.essais, NOUS, 70.0], [l.plaquages, R.VIOLET, 80.0], [l.metres, R.BLEU, 70.0]]:
-			D.text(ligne, x0 + float(val[2]) / 2.0, 26, str(_n(val[0])), 20, val[1] if _n(val[0]) > 0 else Charte.IVOIRE_2, 800, float(val[2]), HORIZONTAL_ALIGNMENT_CENTER)
-			x0 += float(val[2])
-		yl += 40.0
-	# Bas droit : tableau de stats, une barre partagée par ligne (part de chaque camp), chiffre du meilleur coloré.
-	var tx := 32.0 + gl + 48.0
-	var tw := W - tx - 32.0
-	_titre(fond, tx, yb, "STATS", "target", Charte.IVOIRE_2)
-	var yt := yb + 18.0
-	for i in stats.size():
-		var s: Array = stats[i]
-		var ligne := D.rect(fond, Rect2(tx, yt, tw, 32), Charte.PANNEAU_2 if i % 2 == 0 else Color.TRANSPARENT, 6)
-		ligne.name = "CompteRenduStat%d" % i
-		_survol(ligne)
-		D.text(ligne, 12, 23, str(s[0]), 18, Charte.IVOIRE_2, 600, 210)
-		var bx := 232.0
-		var bw := tw - bx - 170.0
-		var total := float(s[1] + s[2])
-		var part := float(s[1]) / total if total > 0 else 0.5
-		D.rect(ligne, Rect2(bx, 10, bw, 12), Charte.PANNEAU_3, 6)
-		if total > 0:
-			if part > 0: D.rect(ligne, Rect2(bx, 10, bw * part - 1, 12), _couleur_camp(ctx, 0), 6)
-			if part < 1: D.rect(ligne, Rect2(bx + bw * part + 1, 10, bw * (1.0 - part) - 1, 12), _couleur_camp(ctx, 1), 6)
-		for camp in 2:
-			var gagne: bool = s[1 + camp] > s[2 - camp] if s[0] != "Pénalités concédées" else s[1 + camp] < s[2 - camp]
-			var vx := tw - 170.0 + 78.0 if camp == 0 else tw - 170.0 + 92.0
-			D.text(ligne, vx, 23, str(s[3 + camp]), 19, _couleur_camp(ctx, camp) if gagne else Charte.IVOIRE, 800, 72, HORIZONTAL_ALIGNMENT_RIGHT if camp == 0 else HORIZONTAL_ALIGNMENT_LEFT)
-		yt += 34.0
-	return H
 
 ## Survol d'une ligne (grammaire de l'Effectif) : la ligne se démarque sous la souris, sans changer d'écran.
 static func _survol(ligne: Panel) -> void:

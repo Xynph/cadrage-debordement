@@ -1378,7 +1378,7 @@ static func _clipping(app: Control, message: Dictionary, mail: Dictionary, width
 	var headline := C.wrap(str(mail.get("sujet", message.get("subject", ""))), 54, ink, true, 800)
 	headline.name = "InboxPressHeadline"
 	column.add_child(headline)
-	# Compte rendu du match en carte (idée FM n°19, planche A/B) : sur l'article du dernier match seulement.
+	# Compte rendu du match en carte (idée FM n°19, choix de Léo du 23/11) : sur l'article du dernier match seulement.
 	var carte_match: Control = CompteRendu.carte(app, mail, width - 68.0)
 	if carte_match != null: column.add_child(carte_match)
 	var paragraphs: Array[String] = []
