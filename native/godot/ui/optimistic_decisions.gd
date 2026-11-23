@@ -39,6 +39,14 @@ static func edits(command: String, payload: Dictionary, model: Dictionary) -> Ar
 			var mail_id := str(payload.get("id", ""))
 			var choice := str(payload.get("choice", ""))
 			if not answers is Dictionary or mail_id.is_empty() or choice.is_empty(): return []
+			# « Déléguer » : la réponse que Gabi donnera (projetée par le moteur, `adjoint`) et la marque « Gabi a répondu ».
+			if choice == "deleguer":
+				var mails: Variant = _node(model, ["clubLife", "clubMail", "mails"])
+				if not mails is Array or not _node(model, ["clubLife", "clubMail", "delegues"]) is Dictionary: return []
+				for mail: Variant in mails:
+					if mail is Dictionary and str(mail.get("id", "")) == mail_id and mail.get("adjoint") is String:
+						return [[["clubLife", "clubMail", "reponses", mail_id], mail.adjoint], [["clubLife", "clubMail", "delegues", mail_id], true]]
+				return []
 			return [[["clubLife", "clubMail", "reponses", mail_id], choice]]
 		"club_follow":
 			var followed: Variant = _node(model, ["clubLife", "clubSheet", "followed"])

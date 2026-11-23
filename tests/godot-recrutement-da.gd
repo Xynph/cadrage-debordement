@@ -329,6 +329,8 @@ func recherche_ciblee() -> void:
 	await settle(6)
 
 ## Approcher : l'offre est un écran (valider en ivoire plein, annuler en lien), rien ne s'ouvre en fenêtre.
+## Négociation avec l'agent (idée 18, choix A de Léo du 23/11/2026) : rôle promis obligatoire avant le contrat ; la
+## signature part en un seul clic (règle du 23/11 : pas de confirmation en place).
 func offer_page() -> void:
 	var bouton := node("OfferRecruitment") as Button
 	check(bouton != null, "Action principale présente")
@@ -339,21 +341,6 @@ func offer_page() -> void:
 	await settle(12)
 	check(page_kind() == "negociation", "Approcher ouvre l'écran « Offre au joueur »")
 	await offer_pieces()
-	# Deux temps : « Envoyer l'offre » ouvre la confirmation EN PLACE ; rien n'est envoyé avant « Confirmer ».
-	var envoyer := node("RecrutementPageValider") as Button
-	if envoyer != null and not envoyer.disabled:
-		check(envoyer.text.to_lower().begins_with("envoyer"), "Premier temps : « Envoyer l'offre » (%s)" % envoyer.text)
-		var commandes := int(app.bridge._next_id)
-		envoyer.pressed.emit()
-		await settle(6)
-		check(node("ContractSignatureConfirmation") != null and node("ContractSignatureConfirmationOk") != null, "Second temps : confirmation en place avec « Confirmer »")
-		check(int(app.bridge._next_id) == commandes, "Aucune commande envoyée avant la confirmation")
-		check(node("OffreRecap") != null and node("ContractSignaturePhrase") == null, "Confirmation : récapitulatif visuel figé, sans phrase")
-		check(windows().is_empty(), "La confirmation de l'offre n'ouvre aucune fenêtre")
-		var non := node("ContractSignatureConfirmationAnnuler") as Button
-		if non != null: non.pressed.emit()
-		await settle(4)
-		check(node("ContractSignatureConfirmation") == null, "Annuler referme la confirmation sans rien envoyer")
 	check(windows().is_empty(), "L'offre n'ouvre aucune fenêtre")
 	check(node("RecrutementPageValider") != null and node("RecrutementPageAnnuler") != null, "Valider et annuler sont ceux de la page")
 	shot("recrutement-offre-1920x1080")
@@ -363,22 +350,40 @@ func offer_page() -> void:
 		await settle(12)
 	check(page_kind().is_empty(), "Annuler ferme l'écran d'offre sans rien envoyer")
 
-## Offre au joueur (choix de Léo du 21/11/2026) : règle, frise, jeton ; chaque chiffre ou pastille ouvre une petite
-## fenêtre visuelle, fermée tour à tour par ✕, Échap (PetiteFenetre.fermer_derniere) et un clic à côté.
+## Trois colonnes : budgets à gauche, rôle promis puis lignes du contrat au centre, bulles de l'agent à droite ; chaque
+## chiffre ou carte ouvre une petite fenêtre visuelle, fermée tour à tour par ✕, Échap et un clic à côté.
 func offer_pieces() -> void:
 	var PetiteFenetre: Variant = load("res://ui/petite_fenetre.gd")
-	for id in ["OffreRegle", "OffreFrise", "OffreJeton", "OffreRegleCurseur", "OffreRegleDemande"]:
-		check(node(id) != null, "Offre au joueur : pièce %s affichée" % id)
-	check(node("OfferSalary") != null and node("OfferSalary").is_visible_in_tree() and node("OfferYears") != null and node("OfferYears").is_visible_in_tree(), "Offre au joueur : champs salaire et durée visibles")
+	for id in ["NegoIdentite", "NegoMasse", "NegoTransferts", "NegoContrat", "NegoAgent", "NegoRoleCarte_titulaire", "NegoRoleCarte_appoint", "NegoLigneSalaire", "NegoLigneDuree", "NegoLignePrime", "NegoBulle_0"]:
+		check(node(id) != null, "Négociation : pièce %s affichée" % id)
 	check(node("ContractTransferBudget") == null or not node("ContractTransferBudget").is_visible_in_tree(), "Offre au joueur : plus de phrase « Disponible pour les transferts »")
-	var liens := ["OffreEtapeLien", "OffreDemandeLien", "OffreRegleEcartZoneLien", "OffreFriseFinZoneLien", "OffreJetonLien", "OffreJetonResteLien", "OffreGuideePlafondLien", "OffreGuideeSegmentLien_0"]
+	# Rôle promis obligatoire : contrat fermé, signature grisée.
+	await create_timer(.3).timeout
+	var signer := node("RecrutementPageValider") as Button
+	check(not node("OfferSalary").is_visible_in_tree() and (node("NegoLigneSalaire") as Control).get_meta("etat", "") == "attente", "Sans rôle promis : contrat fermé")
+	check(signer != null and signer.disabled, "Sans rôle promis : signature grisée")
+	var commandes := int(app.bridge._next_id)
+	var promis := ""
+	for role in ["rotation", "titulaire", "espoir", "appoint"]:
+		var carte := node("NegoRole_" + role) as Button
+		if carte != null:
+			carte.pressed.emit()
+			promis = role
+			break
+	await settle(3)
+	await create_timer(.3).timeout
+	check(not promis.is_empty() and node("NegoRoleChoisi") != null, "Un clic promet le rôle (%s)" % promis)
+	check(node("OfferSalary").is_visible_in_tree() and node("OfferYears").is_visible_in_tree(), "Rôle promis : champs salaire et durée visibles")
+	signer = node("RecrutementPageValider") as Button
+	check(signer != null and not signer.disabled and signer.text.to_lower().begins_with("signer"), "Rôle promis : « Signer si accord » en un clic (%s)" % (signer.text if signer != null else "—"))
+	var liens := ["OffreEtapeLien", "NegoLigneSalaireLien", "NegoLigneDureeLien", "NegoLignePrimeLien", "NegoMasseLien", "NegoTransfertsLien", "NegoAgentLien", "NegoCoutSaisonLien"]
 	var manieres := ["croix", "echap", "a_cote"]
 	var vus := 0
 	for i in liens.size():
 		var lien := node(liens[i]) as Button
 		if lien == null:
-			# Budget de saison absent : pastilles « Reste » et place sous le plafond non affichées.
-			check(liens[i] in ["OffreJetonResteLien", "OffreGuideePlafondLien"], "Offre au joueur : %s cliquable" % liens[i])
+			# Offre guidée absente (devis sans crans) : pas de tuiles de coût.
+			check(liens[i] in ["NegoCoutSaisonLien"], "Négociation : %s cliquable" % liens[i])
 			continue
 		vus += 1
 		lien.pressed.emit()
@@ -391,7 +396,7 @@ func offer_pieces() -> void:
 		match maniere:
 			"croix":
 				var croix: Button = null
-				for bouton: Node in calque.find_children("*Fermer", "Button", true, false): croix = bouton
+				for b: Node in calque.find_children("*Fermer", "Button", true, false): croix = b
 				check(croix != null, "%s : bouton ✕" % liens[i])
 				if croix != null: croix.pressed.emit()
 			"echap":
@@ -402,59 +407,45 @@ func offer_pieces() -> void:
 				if a_cote != null: a_cote.pressed.emit()
 		await settle(3)
 		check(node("OffrePetiteFenetre") == null and PetiteFenetre.ouverte(self) == null, "%s : petite fenêtre fermée (%s)" % [liens[i], maniere])
-	check(vus >= 6, "Offre au joueur : au moins six pièces cliquables (%d)" % vus)
-	# La frise règle la durée, la règle garde le salaire ; rien n'est envoyé.
-	var annees := node("OfferYears") as SpinBox
-	var commandes := int(app.bridge._next_id)
-	if annees != null and annees.editable:
-		var avant := annees.value
-		var cible := int(annees.min_value) if annees.value != annees.min_value else int(annees.max_value)
-		var segment := node("OffreFriseClic_%d" % cible) as Button
-		check(segment != null, "Frise : saison %d cliquable" % cible)
-		if segment != null:
-			segment.pressed.emit()
-			await settle(3)
-			check(int(annees.value) == cible and node("OffreFriseFin") != null, "Frise : un clic règle la durée à %d an(s)" % cible)
-			annees.value = avant
-			await settle(3)
-	check(int(app.bridge._next_id) == commandes, "Régler l'offre n'envoie aucune commande")
+	check(vus >= 7, "Négociation : au moins sept pièces cliquables (%d)" % vus)
+	check(int(app.bridge._next_id) == commandes, "Promettre un rôle et régler l'offre n'envoie aucune commande")
 	await offre_guidee()
 
-## Offre guidée (choix B de Léo, 23/11/2026) : conseils du recruteur sur chaque réglage, un clic les applique ; prime en
-## crans et clause libératoire ; barre de coût par saison ; rien n'est envoyé avant « Envoyer l'offre ».
+## Offre guidée (idée 17) dans les lignes du contrat : crans de prime et niveaux de clause, conseil du recruteur entouré,
+## conseils posés sur le salaire et la durée ; un clic applique ; rien n'est envoyé avant la signature.
 func offre_guidee() -> void:
 	var commandes := int(app.bridge._next_id)
-	for id in ["OffreGuideeCarte", "OffreGuideeZone", "OffreGuideeOuverture", "OffreGuideeSaison", "OffreClause", "OffreGuideeCouts", "OffreGuideeSuggestion", "OffrePrimeCran_0", "OffreClauseNiveau_sans", "OffreClauseNiveau_basse"]:
+	for id in ["NegoLigneClause", "NegoPrimeCran_0", "NegoClause_sans", "NegoClause_basse", "NegoCoutImmediat", "NegoCoutTotal"]:
 		check(node(id) != null, "Offre guidée : %s affiché" % id)
-	check(node("OffreGuideeColonne") == null and node("OffreGuideeImmediat") == null, "Offre guidée : variante A retirée")
-	check(node("OffreGuideePrimeConseil") != null or node("OffreGuideeClauseConseil") != null, "Offre guidée : conseil posé sur la prime ou la clause")
-	var montant := node("OffreJetonMontant") as Label
+	check(node("OffreGuideeCarte") == null and node("OffreRegle") == null, "Ancienne présentation de l'offre retirée")
+	var conseils := 0
+	for n: Node in app.find_children("Nego*", "Panel", true, false):
+		if n.get_meta("conseil", false): conseils += 1
+	check(conseils >= 1, "Offre guidée : conseil du recruteur entouré sur la prime ou la clause (%d)" % conseils)
+	var montant := node("NegoLignePrimeValeur") as Label
 	var avant := montant.text if montant != null else ""
-	var cran := node("OffrePrimeCranLien_1") as Button
+	var cran := node("NegoPrimeCran_1Lien") as Button
 	if cran != null:
 		cran.pressed.emit()
 		await settle(3)
-		montant = node("OffreJetonMontant") as Label
+		montant = node("NegoLignePrimeValeur") as Label
 		check(montant != null and montant.text != avant, "Prime : un clic sur un cran change la prime (%s → %s)" % [avant, montant.text if montant != null else "—"])
-	var basse := node("OffreClauseLien_basse") as Button
+	var basse := node("NegoClause_basseLien") as Button
 	check(basse != null, "Clause basse cliquable")
 	if basse != null:
 		basse.pressed.emit()
 		await settle(3)
-		var clause := node("OffreClauseMontant") as Label
+		var clause := node("NegoLigneClauseValeur") as Label
 		check(clause != null and clause.text != "Sans", "Clause : un clic choisit la clause basse (%s)" % (clause.text if clause != null else "—"))
 	var salaire := node("OfferSalary") as SpinBox
-	var ouverture := node("OffreGuideeOuvertureLien") as Button
-	if salaire != null and ouverture != null:
-		ouverture.pressed.emit()
+	var conseil := node("NegoConseilSalaireLien") as Button
+	check(conseil != null, "Conseil du recruteur posé sur le salaire")
+	if salaire != null and conseil != null:
+		var texte := str((node("NegoConseilSalaireTexte") as Label).text)
+		conseil.pressed.emit()
 		await settle(3)
-		var drapeau := node("OffreGuideeOuvertureTexte") as Label
-		check(drapeau != null and drapeau.text.ends_with(G.salary_amount(Salary.input_weekly(salaire))), "Ouverture : un clic l'applique (%s, %s)" % [drapeau.text if drapeau != null else "—", G.salary_amount(Salary.input_weekly(salaire))])
-	var suggestion := node("OffreGuideeSuggestion") as Button
-	if suggestion != null:
-		suggestion.pressed.emit()
-		await settle(3)
-	check(int(app.bridge._next_id) == commandes, "Offre guidée : aucun envoi avant « Envoyer l'offre »")
+		check(texte.ends_with(G.salary_amount(Salary.input_weekly(salaire))), "Conseil de salaire : un clic l'applique (%s, %s)" % [texte, G.salary_amount(Salary.input_weekly(salaire))])
+	check(int(app.bridge._next_id) == commandes, "Offre guidée : aucun envoi avant la signature")
 
 ## Besoins du club : arrive filtré sur le poste du besoin n° 1 ; une carte sans piste propose une mission ; « ★ » trie.
 func needs_and_sort() -> void:

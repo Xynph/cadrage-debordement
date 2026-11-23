@@ -9,7 +9,7 @@ const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
 const Link = preload("res://ui/entity_link.gd")
 const FILTERS := ["À ménager", "Blessés", "Suspendus", "En sélection", "Tout l’effectif"]
-const PLANS := {"collective":"Suivre le collectif", "repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
+const PLANS := {"collective":"Auto", "repos":"Récupération", "normal":"Charge normale", "intense":"Intensive"}
 const SORT_KEYS := ["name", "pos", "condition", "physicalLoad", "minutes", "injury", "selection", "suspension", "loadPlan"]
 const LOAD_LABELS := ["0–19", "20–39", "40–59", "60–79", "80–100"]
 

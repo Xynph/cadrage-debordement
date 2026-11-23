@@ -55,6 +55,8 @@ test('Données : catalogue complet, formulations variées, effets connus', () =>
 
 // Choix du manager pendant la partie (sinon la première réponse possible).
 const CHOIX = { temps_de_jeu: 'plus_tard', relance_temps_de_jeu: 'promettre', agent: 'rapport', discipline: 'appel', gene: 'medecin', surcharge: 'alleger', president: 'bilan', cadre_rdv: 'recevoir', prolongation: 'reporter', pepite: 'progresser', moral_groupe: 'sortie', seance_adjoint: 'garder', analyste: 'conquete', kine_bilan: 'programme', critique: 'calme' };
+// Mails délégués à l'adjoint (« Déléguer », 23/11/2026) : Gabi répond, la réponse est rejouée à l'identique par le journal.
+const DELEGUES = ['tests_physiques', 'article', 'serie', 'rumeur', 'jalon', 'anniversaire', 'arbitre', 'meteo', 'une_derby', 'tour_championnats', 'recrue', 'bilan_match'];
 const FIN = '2026-10-21';
 const sha = text => crypto.createHash('sha256').update(text, 'utf8').digest('hex');
 const ouvrir = dir => M.ouvrir({ dataDir: dir, deferredCommits: true, testVm: true, mandatoryPress: false, journal: true, savePolicy: 'semaine' });
@@ -89,7 +91,9 @@ test('Carrière Monde : courrier varié, réponses enregistrées, monde inchang�
       // Réponses aux mails en attente (choix scénarisés), puis une seconde réponse refusée.
       // Une réponse par type de mail (chaque réponse coûte une projection complète du modèle).
       for (const mail of m.clubLife.clubMail.mails.filter(x => x.status === 'nouveau' && x.reponses.some(r => r.disponible) && !reponses.some(y => y.startsWith(x.type + '/')))) {
-        const choix = mail.reponses.find(r => r.id === CHOIX[mail.type] && r.disponible) || mail.reponses.find(r => r.disponible);
+        const gabi = DELEGUES.includes(mail.type) && mail.adjoint ? mail.adjoint : null;
+        const choix = gabi ? { id: 'deleguer' } : mail.reponses.find(r => r.id === CHOIX[mail.type] && r.disponible) || mail.reponses.find(r => r.disponible);
+        const retenu = gabi || choix.id;
         // Réponse déclarée « club du manager seulement » (state-versions.cjs, OWN_CLUB) : sections lourdes autres que les
         // clubs et clubs autres que celui du manager intacts (sinon la projection garderait un texte périmé).
         const horsClub = () => sha(vm.run('JSON.stringify([S.aiRoster,S.staffCareer,S.potentialEvolution,S.worldMode,S.matchNotes,S.clubs.filter((c,i)=>i!==S.club)])'));
@@ -99,9 +103,10 @@ test('Carrière Monde : courrier varié, réponses enregistrées, monde inchang�
         if (r.ok) assert.equal(horsClub(), avantReponse, mail.type + '/' + choix.id + ' : seul le club du manager change');
         assert.equal(r.ok, true, mail.type + '/' + choix.id + ' : ' + r.error);
         m = r.model;
-        assert.equal(m.meta.clubMailReply.choice, choix.id);
-        assert.equal(m.clubLife.clubMail.reponses[mail.id], choix.id);
-        reponses.push(mail.type + '/' + choix.id);
+        assert.equal(m.meta.clubMailReply.choice, retenu);
+        assert.equal(m.meta.clubMailReply.delegue, !!gabi);
+        assert.equal(m.clubLife.clubMail.reponses[mail.id], retenu);
+        reponses.push(mail.type + '/' + (gabi ? 'gabi:' : '') + retenu);
         if (reponses.length === 1) assert.match(jeu.brut('club_mail_reply', { id: mail.id, choice: choix.id }).error, /déjà répondu/);
       }
       if (m.meta.calendarCadence?.matchReady && m.next) { m = M.jouerLeMatch(jeu, m); continue; }
@@ -146,6 +151,7 @@ test('Carrière Monde : courrier varié, réponses enregistrées, monde inchang�
     // Réponses variées et arrêts : le mail qui attend une réponse arrête « Continuer » sur la Réception.
     assert.ok(new Set(reponses.map(x => x.split('/')[0])).size >= 10, 'réponses à au moins 10 types de mails');
     assert.ok(reponses.includes('agent/rapport') && types.includes('rapport_agent'), 'rapport demandé à un agent puis reçu');
+    assert.ok(reponses.filter(x => x.includes('/gabi:')).length >= 3, 'au moins trois mails délégués à Gabi');
     const courrier = arrets.filter(x => x.type === 'courrier');
     assert.ok(courrier.length >= 3 && courrier.every(x => x.mail && x.ecran === 'Réception'), 'arrêts courrier : ' + courrier.length);
     assert.ok(arrets.some(x => x.type === 'veille' && x.ecran === 'Composition'), 'veille : composition');

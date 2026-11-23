@@ -86,6 +86,9 @@ module.exports=function nativeGestion(command,p){
   requireThat(S.live&&S.live.paused&&!S.live.finished&&!presentationPending(S.live),'Mets le match en pause pour changer la consigne sur pénalité.');
   setPenaltyPolicy(p.policy);return;
  }
+ // Règle « Auto » d'un niveau de forme (0 = < 60 % … 4 = ≥ 90 %) : repos, normal ou intense (dist/development.js).
+ if(command==='set_intensite_auto'){requireThat(setIntensiteAuto(p.niveau,p.mode),'Règle indisponible : match en cours, niveau ou intensité inconnus.');return;}
+ if(command==='appliquer_avis_kine'){requireThat(appliquerAvisKine()>=0,'Charge indisponible : séance appliquée ou match en cours.');return;}
  if(command==='set_player_load'){requireThat(setPhysicalTraining(p.playerId,p.mode),'Charge indisponible : séance appliquée, joueur absent ou match en cours.');return;}
  if(command==='promote_cover'){
   requireThat(p.confirmed===true,'Confirme le salaire hebdomadaire de chaque renfort.');
@@ -120,7 +123,11 @@ module.exports=function nativeGestion(command,p){
   // Budget de transferts (budget-transferts.cjs) : la prime d'une recrue entre dans l'enveloppe ; une prolongation, jamais.
   const horsBudget=kind==='recruit'&&typeof budgetTransfertsRefus==='function'?budgetTransfertsRefus(contractFee(target,kind)):null;requireThat(!horsBudget,horsBudget);
   const avant=club().cash;
-  requireThat(negotiateContract(p.playerId,kind,p.salary,p.years),'Offre refusée : durée, joueur ou négociation indisponible.');
+  // Rôle promis (role-contrat.cjs, idée 16) : Espoir à 21 ans et moins, Appoint refusé par un ambitieux ; le rôle règle la
+   // demande de salaire pendant la négociation (+5 % par cran au-dessus du rôle attendu, −4 % par cran en dessous).
+   const refusRole=p.role&&typeof roleContratRefus==='function'?roleContratRefus(target,p.role):'';requireThat(!refusRole,refusRole);
+   const negocier=()=>negotiateContract(p.playerId,kind,p.salary,p.years);
+   requireThat(p.role&&typeof roleContratAvec==='function'?roleContratAvec(target,p.role,negocier):negocier(),'Offre refusée : durée, joueur ou négociation indisponible.');
   const key=talkKey(p.playerId,kind),talk=S.economy.talks[key];
   if(talk.status==='ready')requireThat(confirmContract(key),'Signature devenue indisponible.');
   if(kind==='recruit'&&talk.status==='signed'&&typeof budgetTransfertsDepenser==='function')budgetTransfertsDepenser(talk.fee);

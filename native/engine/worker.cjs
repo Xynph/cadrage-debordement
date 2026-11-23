@@ -82,7 +82,7 @@ const LEGACY_PURGE_NOTICE='Les carrières des anciens modes de jeu ont été ret
 const CAREER_STATE_KEYS=['bdt-v1','bdt-backup-v1','bdt-before-import','bdt-recovery-invalid'];
 const CAREER_SIDE_KEYS=['bdt-backup-development','bdt-backup-economy','bdt-matchday-pending','bdt-exported-at'];
 const PRESS_PROGRESSION=new Set(['advance_day','begin_match','finish_round','next_season','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation']);
-const COMMANDS=new Set([...SYSTEM_COMMANDS,'population_enable','academy_groups_preview','academy_groups_enable','competition_editor_preview','epcr_preview','club_sheet','set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','advance_day','finish_round','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation','save','import','export','shutdown','set_lineup','set_tactics','set_penalty_policy','set_consignes','appliquer_staff','set_role_direct','cri','set_player_load','recruit','extend_contract','next_season','substitute','promote_cover','sale_list','sale_answer','precontract_offer','recover_profile','pack_inspect','pack_install','pack_select','advance_until_event']);
+const COMMANDS=new Set([...SYSTEM_COMMANDS,'population_enable','academy_groups_preview','academy_groups_enable','competition_editor_preview','epcr_preview','club_sheet','set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','snapshot','new_career','train','auto_lineup','begin_match','tick','pause','delegate','advance_day','finish_round','advance_pacific_preparation','advance_japan_preparation','advance_champ_preparation','save','import','export','shutdown','set_lineup','set_tactics','set_penalty_policy','set_consignes','appliquer_staff','set_role_direct','cri','set_player_load','set_intensite_auto','appliquer_avis_kine','recruit','extend_contract','next_season','substitute','promote_cover','sale_list','sale_answer','precontract_offer','recover_profile','pack_inspect','pack_install','pack_select','advance_until_event']);
 COMMANDS.add('observe_player');
 // Rallonge demandée au conseil (budget-transferts.cjs) : contrôleur dans gestion.cjs.
 COMMANDS.add('transfer_budget_extension');
@@ -1161,12 +1161,23 @@ function createBridge(options={}){
         // d'envoi sans réponse est refusé sans écriture (tests/native-nationale-reduced-bench.cjs).
         else if(!nativeAt22&&nativeProfessionalDepth.playedClubExempt(S)&&!(typeof CDNationaleReducedBench!=='undefined'&&CDNationaleReducedBench?.vacancy(S))){const nativeMontes=nativeEspoirs.callUpProposed(S);if(nativeMontes.length)managerMessage('Des espoirs montent pour le match',(nativeMontes.length>1?nativeMontes.length+' jeunes du centre de formation complètent':'Un jeune du centre de formation complète')+' la feuille de 23 pour ce match : '+nativeMontes.map(id=>S.clubs[S.club].players.find(p=>p.id===id)?.name).filter(Boolean).join(', ')+'. '+(nativeMontes.length>1?'Ils retourneront':'Il retournera')+' au centre après la rencontre.','staff','team');}
         if(nativeAt22)nativeEspoirs.setOff(true);
-        try{beginMatch(nativePayload.reducedBench===true);}finally{if(nativeAt22)nativeEspoirs.setOff(false);if(nativePayload.delegated===true)nativeSystems.domain('matchTalks').setDelegating(false);if(nativeDelegation)nativeDelegation.lineup=nativeLineupFlag;}
+        // Blessure à la séance lancée par ce coup d'envoi (séance pas encore faite) : si un poste reste vide faute de pro
+        // apte, le centre de formation complète la feuille (comme « Appeler un espoir ») et le coup d'envoi repart (séance
+        // déjà faite). Sinon, les blessés du jour nomment le refus (message clair plus bas).
+        const nativeSeanceAvant=!!S.trained,nativeBlessesAvant=new Set(S.clubs[S.club].players.filter(p=>p.injury>0).map(p=>p.id));
+        globalThis.nativeSeanceBlesses=[];
+        try{beginMatch(nativePayload.reducedBench===true);
+         if(!S.live&&!nativeAt22&&!nativeSeanceAvant&&S.trained&&sheetErrors().length){
+          globalThis.nativeSeanceBlesses=S.clubs[S.club].players.filter(p=>p.injury>0&&!nativeBlessesAvant.has(p.id)).map(p=>p.name+' ('+p.pos+')');
+          if(nativeEspoirs.callUpProposed(S).length&&!sheetErrors().length)beginMatch(false);
+         }
+        }finally{if(nativeAt22)nativeEspoirs.setOff(false);if(nativePayload.delegated===true)nativeSystems.domain('matchTalks').setDelegating(false);if(nativeDelegation)nativeDelegation.lineup=nativeLineupFlag;}
        }finally{createRugbyMatch=nativeCreate;}
       }`);}finally{
        // VM timeouts skip its inner finally; restore without executing more VM code.
        ctx.createRugbyMatch=nativeCreate;
       }
+      if(hadFixture&&!run('!!S.live')){const blesses=JSON.parse(run('JSON.stringify(globalThis.nativeSeanceBlesses||[])'));if(blesses.length&&!reducedBench)throw Error('Blessure à la séance d’avant-match : '+blesses.join(', ')+' forfait, aucun remplaçant au poste. Effectue d’abord la séance (Entraînement), puis complète la feuille (Composition).');}
       if(hadFixture&&!run('!!S.live'))throw Error(reducedBench?'La feuille à 22 a changé après la préparation. Vérifie la composition et l’entraînement.':'Coup d’envoi refusé : vérifie la feuille à 23 et le calendrier.');
      }else if(command==='tick'){
       if(!run('!!S.live'))throw Error('Aucun match en cours.');const steps=payload.steps??1;
@@ -1235,7 +1246,7 @@ function createBridge(options={}){
       if(options.dailyCalendar)run('nativeEnableDailyCalendar()');
      }
      let extra=ctx.nativeKnowledgeReceipt??null;if(SYSTEM_COMMANDS.has(command)){ctx.nativeCommand=command;extra=run('nativeSystems.execute(nativeCommand,nativePayload)');}
-     else if(['set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','set_lineup','set_tactics','set_penalty_policy','set_consignes','appliquer_staff','set_role_direct','cri','set_player_load','recruit','extend_contract','transfer_budget_extension','next_season','substitute','promote_cover','sale_list','sale_answer','precontract_offer'].includes(command)){ctx.nativeCommand=command;extra=run('nativeGestion(nativeCommand,nativePayload)');}
+     else if(['set_collective_focus','set_opponent_level','set_delegation','set_development_focus','promote_academy','scout_mission','set_lineup','set_tactics','set_penalty_policy','set_consignes','appliquer_staff','set_role_direct','cri','set_player_load','set_intensite_auto','appliquer_avis_kine','recruit','extend_contract','transfer_budget_extension','next_season','substitute','promote_cover','sale_list','sale_answer','precontract_offer'].includes(command)){ctx.nativeCommand=command;extra=run('nativeGestion(nativeCommand,nativePayload)');}
      if(command==='new_career'){
       run('CDNativeAcademyGroups.start(S)');
       ctx.nativeCreationVariation={version:1,seed:priorSeed,varyCurrent:payload.varyCurrent??true};
@@ -1283,6 +1294,9 @@ function createBridge(options={}){
      run("nativeSystems.domain('fragilite').observe();");
      // Familiarité au poste (familiarite-poste.cjs) : valeur de départ posée sur les joueurs créés et les anciennes carrières.
      run("nativeSystems.domain('familiarite').observe();");
+     // Règle « Auto » par forme (dist/development.js) : posée à la création et sur les anciennes carrières (clé toujours
+     // présente : les lectures mémorisées de la projection restent valides d'une commande à l'autre).
+     run("if(S&&typeof intensiteAutoValide==='function'&&!intensiteAutoValide(S.intensiteAuto))S.intensiteAuto=INTENSITE_AUTO_DEFAUT.slice();");
      // Relevé mensuel des qualités (releve-qualites.cjs) : premier relevé à la création et au chargement d'une ancienne carrière.
      run("nativeSystems.domain('releveQualites').observe();");
      // Rôle promis au contrat (role-contrat.cjs) : enregistré pour chaque nouveau contrat du club et, au premier passage,

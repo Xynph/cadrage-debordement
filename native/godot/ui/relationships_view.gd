@@ -125,6 +125,12 @@ static func build(app: Control) -> Control:
 	var context: Dictionary = data.get("context", {})
 	if not app.management_ui.has("relationships"): app.management_ui["relationships"] = {}
 	var selection: Dictionary = app.management_ui.relationships
+	# Page compacte (hors toile immersive) : la fenêtre de discussion ouverte revient avec la réponse du moteur. La toile
+	# immersive la rouvre elle-même (locker_canvas.gd).
+	var Discussion = load("res://ui/discussion_joueur.gd")
+	var rouvrir := func():
+		if is_instance_valid(app) and app.find_child("ImmersiveLockerRoom", true, false) == null: Discussion.reprendre(app, app)
+	rouvrir.call_deferred()
 	var left := G.panel(page, 1.0)
 	G.chapter(left, "11", "Le vestiaire", "", app.accent)
 	var follow := G.scroll(left)
@@ -269,8 +275,9 @@ static func _player(app: Control, parent: VBoxContainer, data: Dictionary, p: Di
 	chiffres.add_child(Pastilles.tuile(_number(p.get("minutes")), "min", Pastilles.TURQUOISE, Charte.PANNEAU_2, 28, "RelationshipTileMinutes", false, fiche))
 	cote.add_child(chiffres)
 	parent.add_child(scene)
-	for c: Dictionary in data.get("conversations", []):
-		parent.add_child(V.ligne_action(str(c.id), str(c.label), str(c.detail), func(): app._command("relationship_conversation", {"context":context, "playerId":p.id, "choice":c.id}), "Conversation_" + str(c.id), p.get("conversationAvailable", false)))
+	# Discussion avec un joueur (revue FM27, idée 23) : une carte « Discuter » ouvre la petite fenêtre (données à gauche,
+	# fil et phrases à droite) ; elle remplace les trois lignes d'entretien.
+	parent.add_child(load("res://ui/discussion_joueur.gd").bouton(app, p))
 	_promesses(app, parent, data, p, context)
 	# Nos derniers échanges : une ligne visuelle par souvenir (réponse en pastille, date, satisfaction avant → après).
 	var entretiens: Array = data.get("conversationHistory", []).filter(func(h): return h.playerId == p.id).slice(0, 3)

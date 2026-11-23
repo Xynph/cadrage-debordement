@@ -14,7 +14,6 @@ const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Charte = preload("res://ui/charte.gd")
 const Kit = preload("res://ui/immersive08/tactics_kit.gd")
-const EnPlace = preload("res://ui/confirmation_en_place.gd")
 const HOTE := "RecrutementHote"
 const PAGES := ["releve", "interclub", "offres", "missions", "negociation", "rapport", "dossier", "recruteur"]
 const TITRES := {"releve":"Repérer la relève", "interclub":"Marché entre clubs", "offres":"Offres reçues", "missions":"Besoins, missions et rapports", "negociation":"Offre au joueur", "rapport":"Rapport d’observation", "dossier":"Dossier", "recruteur":"Rapport du recruteur"}
@@ -133,11 +132,10 @@ static func build(app: Control, page: Control, kind: String) -> void:
 	var confirmation := fenetre is ConfirmationDialog
 	var annuler: Button = (fenetre as ConfirmationDialog).get_cancel_button() if confirmation else null
 	if confirmation and ok.visible:
-		# Offre au joueur : « Envoyer l'offre » ouvre une confirmation EN PLACE (récapitulatif + « Confirmer »), jamais un engagement
-		# en un seul clic ; les autres vues ont leur propre confirmation en place.
-		var deux_temps := kind == "negociation"
-		var libelle := "Envoyer l’offre" if deux_temps else str(ok.text)
-		var valider := Kit.bouton_ivoire(cadre, Rect2(pied.position.x, pied.position.y, 560, 46), libelle, func(): _valider(app, cadre, zone, ok, deux_temps), "RecrutementPageValider")
+		# Bouton principal de la vue adoptée, en un clic. Offre au joueur (négociation avec l'agent, idée 18, règle du 23/11
+		# « un clic applique ») : « Signer si accord » envoie l'offre directement, sans confirmation en place.
+		var libelle := str(ok.text)
+		var valider := Kit.bouton_ivoire(cadre, Rect2(pied.position.x, pied.position.y, 560, 46), libelle, func(): _signer(ok), "RecrutementPageValider")
 		valider.disabled = ok.disabled
 		valider.set_meta("source", ok)
 		var suivi := Timer.new()
@@ -152,7 +150,7 @@ static func build(app: Control, page: Control, kind: String) -> void:
 			var bouton := valider_faible.get_ref() as Button
 			if source != null and bouton != null:
 				bouton.disabled = source.disabled
-				if not deux_temps: bouton.text = str(source.text).to_upper())
+				bouton.text = str(source.text).to_upper())
 		valider.add_child(suivi)
 		var lien := Kit.lien(cadre, Rect2(pied.position.x + 600, pied.position.y + 4, 0, 38), str(annuler.text).capitalize(), func():
 				if is_instance_valid(annuler):
@@ -160,48 +158,9 @@ static func build(app: Control, page: Control, kind: String) -> void:
 		lien.set_meta("source", annuler)
 		(lien as Control).grab_focus.call_deferred()
 
-## Premier clic sur le bouton principal d'une offre : confirmation EN PLACE ; le second (« Confirmer … ») envoie.
-static func _valider(app: Control, cadre: Control, zone: Control, ok: Button, deux_temps: bool) -> void:
-	if not is_instance_valid(ok) or ok.disabled: return
-	if not deux_temps:
-		ok.pressed.emit()
-		return
-	var envoi := func():
-		if is_instance_valid(ok): ok.pressed.emit()
-	# Offre au joueur (choix de Léo du 21/11/2026) : le récapitulatif figé en pièces visuelles, sans phrase.
-	var toile := zone.find_child("OffreVisuelle", true, false) as Control
-	if toile != null and toile.has_meta("recap"):
-		var bloc_visuel := EnPlace.ouvrir(app, cadre, "ContractSignatureConfirmation", "Confirmer l’offre", [], "Confirmer : autoriser la signature si accord", envoi)
-		var recap: Control = (toile.get_meta("recap") as Callable).call()
-		var colonne := bloc_visuel.get_child(0)
-		colonne.add_child(recap)
-		colonne.move_child(recap, 1)
-		var haut_bloc := 18 + float(toile.get_meta("y_confirmation", 320.0))
-		D.place(bloc_visuel, Rect2(24, haut_bloc, LARGEUR - 48, 10))
-		# Le bloc recouvre toute la partie réglable de l'écran (jusqu'au pied) : l'offre se relit figée.
-		bloc_visuel.custom_minimum_size.y = (18 + toile.size.y / C.density - haut_bloc + 20) * C.density
-		var pied_page: Array[Control] = []
-		for nom_pied in ["RecrutementPageValider", "RecrutementPageAnnuler"]:
-			var bouton := cadre.get_node_or_null(nom_pied) as Control
-			if bouton != null:
-				bouton.visible = false
-				pied_page.append(bouton)
-		bloc_visuel.tree_exited.connect(func():
-			for bouton: Control in pied_page:
-				if is_instance_valid(bouton): bouton.visible = true)
-		return
-	var lignes: Array = []
-	var resume := zone.find_child("OfferSummary", true, false) as Label
-	if resume != null: lignes.append({"id":"ContractSignatureSummary", "text":resume.text})
-	lignes.append({"id":"ContractSignaturePhrase", "text":"En confirmant, tu envoies ces conditions. Si le joueur accepte, le contrat est signé et la prime est débitée. Sinon, seule la discussion est enregistrée."})
-	var envoyer := func():
-		if is_instance_valid(ok): ok.pressed.emit()
-	var bloc := EnPlace.ouvrir(app, cadre, "ContractSignatureConfirmation", "Confirmer l’offre", lignes, "Confirmer : autoriser la signature si accord", envoyer)
-	D.place(bloc, Rect2(24, 470, LARGEUR - 48, 10))
-	var valider := cadre.get_node_or_null("RecrutementPageValider") as Control
-	if valider != null: valider.visible = false
-	bloc.tree_exited.connect(func():
-		if is_instance_valid(valider): valider.visible = true)
+## Bouton principal de la page : envoie la vue adoptée (offre au joueur : « Signer si accord ») en un clic.
+static func _signer(ok: Button) -> void:
+	if is_instance_valid(ok) and not ok.disabled: ok.pressed.emit()
 
 # --- Habillage aux jetons de la charte des vues adoptées (anciennes fenêtres) --------------------------------------------
 
