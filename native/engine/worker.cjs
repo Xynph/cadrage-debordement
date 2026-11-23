@@ -1283,6 +1283,8 @@ function createBridge(options={}){
      run("nativeSystems.domain('fragilite').observe();");
      // Familiarité au poste (familiarite-poste.cjs) : valeur de départ posée sur les joueurs créés et les anciennes carrières.
      run("nativeSystems.domain('familiarite').observe();");
+     // Relevé mensuel des qualités (releve-qualites.cjs) : premier relevé à la création et au chargement d'une ancienne carrière.
+     run("nativeSystems.domain('releveQualites').observe();");
      run("nativeSystems.domain('clubMail').observe(nativeCommand);");
      // Réglage « Conférences ordinaires : envoyer l'adjoint » (press.cjs) : la conférence ordinaire qui vient de
      // s'ouvrir est tenue par Gabi dans la même commande, avant la sauvegarde ; « Jour suivant » et « Continuer »

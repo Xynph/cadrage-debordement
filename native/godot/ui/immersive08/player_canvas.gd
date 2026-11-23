@@ -130,10 +130,9 @@ static func build(app:Control,player:Dictionary,source:String="squad") -> Contro
 			_sale(D.panel(page,Rect2(0,top+286,850,234),"MARCHÉ DES TRANSFERTS","money","","PlayerSalePanel"),app,player,850)
 			_health(D.panel(page,Rect2(866,top,562,520),"CHARGE INDIVIDUELLE","heart"),app,player)
 			D.photo(page,"hospitality",Rect2(1444,top,804,520))
-		4 when source=="squad" and not Progression.variante().is_empty() and not Progression.valeurs(player).is_empty():
-			# Planche FM27 n° 14 « Progression par qualité » (CD_VARIANTE_VISUELLE=A|B).
-			if Progression.variante()=="A": Progression.construire_a(page,app,player,top)
-			else: Progression.construire_b(page,app,player,top)
+		4 when source=="squad" and not Progression.valeurs(player).is_empty():
+			# Progression par qualité (idée FM27 n° 14) : courbe 12 mois du relevé mensuel, grille des 36 qualités à cocher.
+			Progression.construire(page,app,player,top)
 		4:
 			_development(D.panel(page,Rect2(0,top,1670,560),"DÉVELOPPEMENT ET PROGRESSION","school","","PlayerDevelopmentCard"),app,player,source)
 			var poste := BanqueImages.poste(str(player.get("pos", "")))

@@ -141,6 +141,8 @@ domains.weekProgram=require('./programme-semaine.cjs');
 domains.fragilite=require('./fragilite.cjs');
 // Familiarité au poste (0-20 par maillot) : efficacité au poste, progression par match et entraînement, oubli (native/engine/familiarite-poste.cjs).
 domains.familiarite=require('./familiarite-poste.cjs');
+// Relevé mensuel des qualités (12 mois glissants, courbe de l'onglet Développement) : native/engine/releve-qualites.cjs.
+domains.releveQualites=require('./releve-qualites.cjs');
 const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files,...domains.clubSheet.files,...domains.pressPromises.files,...domains.clubMail.files,...domains.multiplex.files,...domains.avantMatch.files,...domains.doublons.files,...domains.matchIncidents.files,...domains.weekProgram.files])]);
 const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands,...domains.clubMail.commands,...domains.multiplex.commands,...domains.avantMatch.commands,...domains.doublons.commands,...domains.matchIncidents.commands,...domains.weekProgram.commands,...domains.familiarite.commands]);
 if(new Set(allCommands).size!==allCommands.length)throw Error('Commandes natives de domaine en double.');
