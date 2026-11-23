@@ -5,7 +5,8 @@ extends RefCounted
 ##  - données : clubLife.agentsJoueurs = {joueurs: {idJoueur: idAgent}, agents: {idAgent: {id, nom, agence, age, pays,
 ##    rang, rangMot, cran (relation 0..4), caractere (mot découvert ou ""), total, clients: [[id, nom, poste, âge, club,
 ##    idClub, où], …]}}} (moteur native/engine/agents-joueurs.cjs) ;
-##  - portrait d'adulte : réserve des portraits du staff (regen_portrait.gd, rôle « staff »), jamais un visage de joueur ;
+##  - visage de l'agent : banque `art/agents/agent-<1..60>.webp` (numéro `portrait` tiré par le moteur et sauvegardé, même
+##    visage partout et après rechargement) ; repli : réserve des portraits du staff (regen_portrait.gd, rôle « staff ») ;
 ##  - nom cliquable → petite fenêtre de l'agent : portrait, nom, agence, relation (5 crans), caractère (« ? » tant qu'il
 ##    n'est pas découvert), puis « Ses joueurs » façon Effectif (clic = fiche du joueur ou du club). Aucun chiffre du
 ##    moteur, aucune phrase d'explication.
@@ -53,6 +54,37 @@ static func cran(a: Dictionary) -> int:
 
 # --- Pièces ------------------------------------------------------------------------------------------------------------
 
+const DOSSIER_VISAGES := "res://art/agents/"
+static var _visages: Dictionary = {}
+
+## Texture du visage de l'agent (banque des agents, numéro `portrait` de sa fiche) ; null si absent.
+static func texture_visage(a: Dictionary) -> Texture2D:
+	var n := int(a.get("portrait", 0))
+	if n < 1 or n > 60: return null
+	if _visages.has(n): return _visages[n]
+	var path := DOSSIER_VISAGES + "agent-%d.webp" % n
+	var tex: Texture2D = null
+	if ResourceLoader.exists(path): tex = load(path) as Texture2D
+	elif FileAccess.file_exists(path):
+		# Dossier pas encore importé : lecture directe.
+		var image := Image.new()
+		if image.load_webp_from_buffer(FileAccess.get_file_as_bytes(path)) == OK: tex = ImageTexture.create_from_image(image)
+	if tex != null: _visages[n] = tex
+	return tex
+
+## Photo de l'agent : son visage de la banque, sinon un portrait d'adulte de la réserve du staff.
+static func photo_agent(a: Dictionary, largeur: int) -> TextureRect:
+	var tex := texture_visage(a)
+	if tex == null: return G.portrait(0, largeur, apparence(a))
+	var r := TextureRect.new()
+	r.texture = tex
+	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	r.custom_minimum_size = Vector2(largeur, largeur)
+	r.tooltip_text = str(a.get("nom", "Agent"))
+	r.set_meta("agent_portrait", int(a.get("portrait", 0)))
+	return r
+
 ## Apparence pour la réserve de portraits du staff (adulte, costume) : même visage pour le même agent.
 static func apparence(a: Dictionary) -> Dictionary:
 	return {"id": "agent:" + str(a.get("id", "")), "name": str(a.get("nom", "Agent")), "age": int(a.get("age", 45)), "appearanceAge": int(a.get("age", 45)), "portraitRole": "staff", "appearanceBankVersion": 2}
@@ -63,7 +95,7 @@ static func poser_portrait(parent: Control, zone: Rect2, a: Dictionary, id: Stri
 	cadre.name = id
 	cadre.clip_contents = true
 	cadre.mouse_filter = Control.MOUSE_FILTER_PASS
-	var photo := G.portrait(0, int(zone.size.x * C.density), apparence(a))
+	var photo := photo_agent(a, int(zone.size.x * C.density))
 	photo.name = id + "Photo"
 	photo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	cadre.add_child(photo)
@@ -79,7 +111,7 @@ static func visage(a: Dictionary, cote: float, id: String = "") -> Control:
 	fond.custom_minimum_size = Vector2(C.px(cote), C.px(cote))
 	fond.clip_contents = true
 	fond.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var photo := G.portrait(0, C.px(cote), apparence(a))
+	var photo := photo_agent(a, C.px(cote))
 	photo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fond.add_child(photo)
 	return fond

@@ -44,6 +44,50 @@ test('Annuaire déterministe par graine, un agent par joueur adulte', () => {
   assert.throws(() => avecS(S1, () => A.factory().validate({ agentsJoueurs: { version: 1, graine: 1, agents: [{ id: 'x' }] } })), /Annuaire/);
 });
 
+test('Visages des agents : sexe, liste des femmes, répartition, anciennes sauvegardes', () => {
+  const S1 = monde(11), S2 = monde(11);
+  const [e1, e2] = [S1, S2].map(S => avecS(S, () => { A.factory().observe(); return S.agentsJoueurs; }));
+  assert.deepEqual(e1.agents.map(a => [a.id, a.sexe, a.portrait]), e2.agents.map(a => [a.id, a.sexe, a.portrait]), 'même graine : mêmes visages');
+  const k = A.factory();
+  const femmes = e1.agents.filter(a => a.sexe === 'F');
+  assert.ok(femmes.length >= e1.agents.length * .08 && femmes.length <= e1.agents.length * .25, `agentes minoritaires : ${femmes.length}/${e1.agents.length}`);
+  for (const a of e1.agents) {
+    assert.ok((a.sexe === 'F' ? k.FEMMES : k.HOMMES).includes(a.portrait), `visage de la bonne liste : ${a.id} ${a.sexe} ${a.portrait}`);
+  }
+  assert.equal(k.FEMMES.length + k.HOMMES.length, 60);
+  // Prénom féminin pour une agente (jamais un prénom du générateur du staff, tous masculins).
+  for (const a of femmes) assert.match(a.nom, /^(Amélie|Anne|Camille|Caroline|Céline|Charlotte|Claire|Élodie|Émilie|Hélène|Isabelle|Julie|Laure|Léa|Lucie|Manon|Marion|Mathilde|Nathalie|Pauline|Sandrine|Sophie|Valérie|Virginie|Abigail|Alice|Amy|Chloe|Emily|Emma|Georgia|Grace|Hannah|Helen|Jessica|Kate|Laura|Lucy|Megan|Olivia|Rachel|Rebecca|Sarah|Victoria|Zoe|Aiko|Akemi|Ayaka|Chiaki|Emi|Haruka|Hitomi|Kaori|Keiko|Mai|Mayumi|Megumi|Miho|Misaki|Naomi|Nanami|Rie|Sakura|Sayaka|Tomoko|Yoko|Yui|Yumi|Yuko) /);
+  // Jamais deux visages identiques dans une agence (les listes sont assez longues pour ce monde) ; visages répartis.
+  const parAgence = {};
+  for (const a of e1.agents) { const cle = a.agence + '|' + a.portrait; assert.ok(!parAgence[cle], 'même visage dans ' + a.agence); parAgence[cle] = true; }
+  for (const [liste, qui] of [[k.HOMMES, e1.agents.filter(a => a.sexe === 'H')], [k.FEMMES, femmes]]) {
+    const n = liste.map(v => qui.filter(a => a.portrait === v).length);
+    assert.ok(Math.max(...n) - Math.min(...n) <= 3, 'visages répartis : ' + n.join(','));
+  }
+  // Sauvegarde : aller-retour JSON, mêmes visages, annuaire valide.
+  avecS({ ...S1, agentsJoueurs: JSON.parse(JSON.stringify(e1)) }, () => {
+    const k2 = A.factory();
+    assert.equal(k2.etatValide(globalThis.S.agentsJoueurs), true);
+    assert.equal(k2.observe(), 0, 'visages déjà posés : rien à refaire');
+    assert.deepEqual(globalThis.S.agentsJoueurs.agents.map(a => a.portrait), e1.agents.map(a => a.portrait));
+  });
+  // Ancienne sauvegarde (annuaire sans visage) : agents hommes, visages posés par le même calcul, puis gardés.
+  const ancien = () => { const e = JSON.parse(JSON.stringify(e1)); for (const a of e.agents) { delete a.sexe; delete a.portrait; } return e; };
+  const [v1, v2] = [ancien(), ancien()].map(e => avecS({ ...monde(11), agentsJoueurs: e }, () => {
+    const k3 = A.factory();
+    assert.equal(k3.etatValide(e), true, 'ancien annuaire valide');
+    assert.equal(k3.observe(), 1, 'visages posés');
+    assert.equal(k3.observe(), 0);
+    assert.equal(k3.etatValide(e), true);
+    return e.agents.map(a => a.sexe + a.portrait);
+  }));
+  assert.deepEqual(v1, v2, 'ancienne sauvegarde : attribution stable');
+  assert.ok(v1.every(x => x[0] === 'H' && k.HOMMES.includes(Number(x.slice(1)))), 'agents d’avant : visages d’hommes');
+  // Visage invalide ou d'une autre liste : annuaire refusé.
+  const faux = JSON.parse(JSON.stringify(e1)); faux.agents[0].portrait = faux.agents[0].sexe === 'F' ? k.HOMMES[0] : k.FEMMES[0];
+  assert.equal(k.etatValide(faux), false);
+});
+
 test('Carrière Monde : répartition, projection, relation partagée, migration des anciennes sauvegardes', { timeout: 600000 }, () => {
   const { ouvrir, creer } = require('./helpers/carriere-monde.cjs');
   const jeu = ouvrir({ testVm: true, hebdomadaire: true, simulation: true });
@@ -75,7 +119,8 @@ test('Carrière Monde : répartition, projection, relation partagée, migration 
     const vue = model.clubLife.agentsJoueurs;
     for (const p of [...model.squad, ...model.market].filter(p => p.age >= 18)) assert.ok(vue.agents[vue.joueurs[p.id]], 'agent projeté pour ' + p.id);
     const fiche = vue.agents[vue.joueurs[model.market[0].id]];
-    assert.deepEqual(Object.keys(fiche).sort(), ['age', 'agence', 'caractere', 'clients', 'cran', 'id', 'nom', 'pays', 'rang', 'rangMot', 'total']);
+    assert.deepEqual(Object.keys(fiche).sort(), ['age', 'agence', 'caractere', 'clients', 'cran', 'id', 'nom', 'pays', 'portrait', 'rang', 'rangMot', 'sexe', 'total']);
+    assert.equal(fiche.portrait, lire(`agentJoueur(${JSON.stringify(fiche.id)}).portrait`), 'visage projeté = visage sauvegardé');
     assert.ok(fiche.clients.length >= 1 && fiche.clients.length <= 12 && fiche.total >= fiche.clients.length);
     assert.ok(fiche.clients.every(c => c.length === 7), 'lignes compactes, sans note');
     assert.equal(model.market[0].agent.nom, fiche.nom, 'même agent dans la discussion');
@@ -134,5 +179,10 @@ test('Carrière Monde : répartition, projection, relation partagée, migration 
     // Sauvegarde : annuaire refait à l'identique (graine), carrière valide après un aller-retour JSON.
     assert.equal(lire('S.agentsJoueurs.agents.length'), r.agents);
     assert.equal(lire('(validateCareer(JSON.parse(JSON.stringify(S))),true)'), true);
+    // Visages : posés sur l'annuaire refait, gardés d'une commande à l'autre (même visage partout et après rechargement).
+    const visages = lire('S.agentsJoueurs.agents.map(a=>a.portrait)');
+    assert.ok(visages.every(v => v >= 1 && v <= 60));
+    res = jeu.brut('agent_question', { playerId: model.market.find(p => p.agent.agent !== ag).id });
+    assert.deepEqual(lire('S.agentsJoueurs.agents.map(a=>a.portrait)'), visages, 'visages gardés');
   } finally { jeu.fermer(); }
 });
