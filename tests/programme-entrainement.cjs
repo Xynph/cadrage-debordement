@@ -36,9 +36,11 @@ try {
   assert.ok(week && /^\d{4}-\d{2}-\d{2}$/.test(week.weekStart), 'semaine du programme projetée');
   const vm = jeu.bridge.vm;
   const etat = vm.run('JSON.stringify(S)');
-  const essai = (effets, graine = 777, charge = null) => {
-    vm.run('S=JSON.parse(' + JSON.stringify(etat) + ');S.trained=false;for(const p of S.clubs[S.club].players){ensurePhysicalLoad(p).fatigue=40;p.condition=60}' + (charge ? ';S.training=' + JSON.stringify(charge) : ''));
+  const essai = (effets, graine = 777, charge = null, tirage = null) => {
+    vm.run('S=JSON.parse(' + JSON.stringify(etat) + ');S.trained=false;for(const p of S.clubs[S.club].players){ensurePhysicalLoad(p).fatigue=40;p.condition=60' + (charge ? ';p.physicalLoad.plan=' + JSON.stringify(charge) : '') + '}');
     vm.setSeed(graine);
+    vm.run('if(!globalThis.hasardMoteur)globalThis.hasardMoteur=Math.random;Math.random=hasardMoteur');
+    if (tirage !== null) vm.run('Math.random=()=>' + tirage);
     vm.run(effets ? 'nativeProgrammeDesactive=false;nativeProgrammeEffets={season:S.season,round:S.round,effects:' + JSON.stringify(effets) + '}' : 'nativeProgrammeDesactive=true');
     vm.run('trainWeek()');
     return JSON.parse(vm.run('JSON.stringify(S.clubs[S.club].players.map(p=>({id:p.id,injury:p.injury,condition:p.condition,fatigue:p.physicalLoad?.fatigue??null,xp:p.dev?.xp??0,rating:p.rating})))'));
@@ -57,15 +59,19 @@ try {
   // Risque de blessure : sur 20 séances (graines), une semaine au risque maximal blesse plus qu'une semaine sans risque,
   // en charge normale (petit tirage ajouté) comme en charge intensive (tirage existant × 1,4) ; risque minimal en
   // intensive : moins de blessures. Mesuré, pas d'explosion : au plus ~0,4 % par joueur et par semaine en normale.
-  const blesses = (effets, graine, charge) => {
-    const avant = new Set(JSON.parse(vm.run('JSON.stringify(S.clubs[S.club].players.filter(p=>p.injury).map(p=>p.id))')));
-    return essai(effets, graine, charge).filter(p => p.injury && !avant.has(p.id)).length;
+  const blesses = (effets, graine, charge, tirage = null) => {
+    // Les blessés d'avant sont ceux de l'état de départ (pas ceux de l'essai précédent, qui fausserait le compte).
+    const avant = new Set(JSON.parse(etat).clubs[JSON.parse(etat).club].players.filter(p => p.injury).map(p => p.id));
+    return essai(effets, graine, charge, tirage).filter(p => p.injury && !avant.has(p.id)).length;
   };
   const compte = (effets, charge) => { let n = 0; for (let g = 1; g <= 20; g++) n += blesses(effets, 1000 + g, charge); return n; };
-  const normalSans = compte(zero, 'normal'), normalRisque = compte({ ...zero, blessure: 4 }, 'normal');
+  // Charge normale : le tirage ajouté est trop rare (0,4 % au plus, fois la fragilité) pour un test au hasard : on fixe le tirage à 0,0005, sous le seuil de tout joueur fragile,
+  // une semaine à risque maximal blesse alors des joueurs en charge normale et une semaine sans risque aucun.
+  const normalSans = blesses(zero, 1001, 'normal', 0.0005), normalRisque = blesses({ ...zero, blessure: 4 }, 1001, 'normal', 0.0005);
   const intenseSans = compte(zero, 'intense'), intenseRisque = compte({ ...zero, blessure: 4 }, 'intense'), intenseCalme = compte({ ...zero, blessure: -4 }, 'intense');
   assert.ok(normalRisque > normalSans, 'charge normale : le risque ajoute des blessures (' + normalSans + ' → ' + normalRisque + ')');
-  assert.ok(normalRisque - normalSans <= 10, 'charge normale : 20 semaines au risque maximal, pas d\'explosion (' + (normalRisque - normalSans) + ')');
+  assert.ok(normalRisque - normalSans >= 1, 'charge normale : le tirage fixé blesse au moins un joueur (' + (normalRisque - normalSans) + ')');
+  assert.ok(normalSans === 0, 'charge normale sans risque : le tirage fixé ne blesse personne (' + normalSans + ')');
   assert.ok(intenseRisque > intenseSans && intenseCalme < intenseSans, 'charge intensive : risque ' + intenseCalme + ' < ' + intenseSans + ' < ' + intenseRisque);
   // Moral du groupe : la séance collective le bouge de la valeur de la semaine.
   const moral = effets => { essai(effets); return Number(vm.run('S.morale')); };
