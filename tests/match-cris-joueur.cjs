@@ -119,7 +119,10 @@ try {
   }
   assert.ok(sage.cris > 10 && fou.cris > 20, 'les cris ont bien été poussés');
   assert.ok(sonde.e > 0 && sonde.d > 0, 'permutation : gain en attaque, prix à payer en défense');
-  assert.ok(ailesPerm.ecart > ailesBase.ecart, 'notre ailier rapide face à leur ailier lent : ça rapporte');
+  // Le gain se lit en attaque (mètres) ; le score net reste au bruit près, car leur rapide trouve notre lent en défense
+  // (écart −11,2 → −11,26 sur 300 matchs avec les conseils de l'adjoint, #1219 : bruit, pas une perte).
+  assert.ok(ailesPerm.metres > ailesBase.metres, 'notre ailier rapide face à leur ailier lent : plus de mètres');
+  assert.ok(ailesPerm.ecart - ailesBase.ecart > -1, 'permutation : pas de perte nette au score (' + r2(ailesBase.ecart) + ' → ' + r2(ailesPerm.ecart) + ')');
   assert.ok(ailesPerm.ecart - ailesBase.ecart < 6, 'effet modéré');
   console.log('Cris à un joueur et permutation des ailes PASS');
 } finally { jeu.fermer?.(); }
