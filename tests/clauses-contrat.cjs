@@ -107,7 +107,8 @@ test('Carrière Monde : offre avec prime et clause, contre-offre, signature, cla
     const ic = model.clubLife.interclubMarket;
     const avecClause = ic.candidates.filter(c => Number.isInteger(c.clause));
     assert.ok(avecClause.length > ic.candidates.length * 0.25 && avecClause.length < ic.candidates.length * 0.45, 'clauses des clubs gérés : ' + avecClause.length + '/' + ic.candidates.length);
-    const achat = ic.candidates.find(c => c.available && c.fee >= 40000 && !c.clauseRequise);
+    // Indemnité d'au moins 30 000 € : le budget restant dépend du salaire signé plus haut (demande de l'agent, idée 24).
+    const achat = ic.candidates.find(c => c.available && c.fee >= 30000 && !c.clauseRequise);
     assert.ok(achat, 'un joueur achetable');
     {
       const offre = fee => jeu.brut('interclub_negotiate', { playerId: achat.id, sellerId: achat.clubId, fee, salary: achat.salary, sourceSalary: achat.sourceSalary, contractEnd: achat.contractEnd, context: ic.context });

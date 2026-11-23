@@ -4,6 +4,7 @@ extends SceneTree
 ## aucun or hors Continuer, remarque de l'adjoint lue dans le staff. Carrière world-champ préparée par le .cjs.
 const ContextualFlow = preload("helpers/contextual_flow.gd")
 const Charte = preload("res://ui/charte.gd")
+const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -244,6 +245,37 @@ func run() -> void:
 			Input.parse_input_event(fermer)
 			await settle()
 			check(str(app.management_ui.preparation.get("sub", "")) == "adversaire", "Échap ferme d'abord la petite fenêtre, pas la sous-page")
+		# Points forts / faibles (idée n° 29, option A) : trois colonnes, entraîneur et style, tout cliquable, plus de variante.
+		for id in ["AdversaireForcesForts", "AdversaireForcesFaibles", "AdversaireCles", "AdversaireCoach"]:
+			check(named(id) != null, "Points forts / faibles : " + id)
+		var source_forces := FileAccess.get_file_as_string("res://ui/immersive08/adversaire_forces.gd")
+		check(not source_forces.contains("CD_VARIANTE_VISUELLE") and not source_forces.contains("static func _b("), "Variante B et switch retirés")
+		var lignes_cles: Array = app.body.find_children("AdversaireCle*", "Panel", true, false).filter(func(n: Node): return str(n.name).trim_prefix("AdversaireCle").is_valid_int())
+		check(app.body.find_children("AdversaireCleLien*", "Button", true, false).size() == lignes_cles.size(), "Chaque homme clé ouvre sa fiche")
+		var points: Array = app.body.find_children("AdversairePoint*Lien", "Button", true, false)
+		for bouton: Button in points:
+			if bouton.tooltip_text.begins_with("Ouvrir"): continue
+			bouton.pressed.emit()
+			await settle()
+			check(named("AdversaireForceFenetre") != null and named("AdversaireForceBarreLigue") != null, "Point : petite fenêtre eux / moyenne du championnat")
+			PetiteFenetre.fermer_derniere(app.get_tree())
+			await settle()
+			break
+		var style := named("AdversaireCoachStyleLien") as Button
+		if style != null:
+			style.pressed.emit()
+			await settle()
+			check(named("AdversaireStyle_conquete") != null, "Style de l'entraîneur : petite fenêtre des quatre styles")
+			PetiteFenetre.fermer_derniere(app.get_tree())
+			await settle()
+		# Petit terrain : habituel / dernier match / probable, un clic change le XV montré.
+		for mode in ["dernier", "probable", "habituel"]:
+			var pastille := named("RapportAdverseXVModeLien_" + mode) as Button
+			check(pastille != null, "Petit terrain : pastille " + mode)
+			if pastille == null: continue
+			pastille.pressed.emit()
+			await settle()
+			check(app.body.find_children("RapportAdverseMaillot*", "Button", true, false).filter(func(b): return not b.is_queued_for_deletion()).size() == 15, "Petit terrain %s : quinze maillots" % mode)
 		await press(named("PreparationSubBack") as Button)
 		check(str(app.management_ui.preparation.get("sub", "")) == "", "Retour du rapport adverse au dossier")
 	await reset()
