@@ -192,6 +192,16 @@ function domination(lignes){
  }
  return {minutes:courbe,miTemps};
 }
+// Rapport de l'analyste vidéo après le match (revue FM27, idée 28 ; choix de Léo du 23/11/2026) : la domination minute
+// par minute et les entrées dans les 22 adverses (occasions, datées) de TOUT le journal du match terminé, gardées dans
+// la carrière (`S.lastReport.analyse`, worker.cjs) quand le direct, qui les calculait, est refermé. Lecture seule.
+const ANALYSE_VERSION=1;
+function analyseVideo(events){
+ if(!Array.isArray(events)||!events.length)return null;
+ const lignes=selection.normaliser(events),d=domination(lignes),z=zone22(lignes,{liste:true});
+ return {version:ANALYSE_VERSION,domination:d.minutes.slice(0,120),miTemps:Number.isInteger(d.miTemps)?d.miTemps:null,
+  zone22:{entrees:z.entrees,points:z.points,secondes:z.secondes},occasions:z.liste.slice(0,200).map(([m,e])=>[Math.min(120,Math.round(m)),e])};
+}
 // Chiffres du rugby tirés du journal : chaque course se termine par un plaquage (ruck) ;
 // une course de 22 m ou plus est un franchissement (comme `longGains` du moteur), un essai en
 // jeu courant passe la dernière défense. Plaquages manqués = franchissements et essais en jeu
@@ -563,4 +573,4 @@ function habillerJournee(j,model){
   classement:j.classement.map(r=>({...r,...nom(r.clubId,r)}))};
 }
 
-module.exports=Object.freeze({NOTE_DEPART,NIVEAUX,LIBELLES,lecteur,project,borneEntracte,domination,chiffresRugby,periodes,PAS_PERIODE,notesDuMatch,xvAdverse,plaqueur,DEROULE_MAX,ECHANTILLON_MINUTES});
+module.exports=Object.freeze({analyseVideo,ANALYSE_VERSION,NOTE_DEPART,NIVEAUX,LIBELLES,lecteur,project,borneEntracte,domination,chiffresRugby,periodes,PAS_PERIODE,notesDuMatch,xvAdverse,plaqueur,DEROULE_MAX,ECHANTILLON_MINUTES});
