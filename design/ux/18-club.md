@@ -55,6 +55,7 @@ Décisions de Léo du 19/11/2026 intégrées : densité « Football Manager » (
 ```
 Club (rail)
   ├── Vue d'ensemble
+  ├── Notre jeu     (avis du conseil sur notre style : lettre, attentes du club, chiffres de la saison)
   ├── Direction     (conseil, objectifs, demandes)
   ├── Infrastructures (devis, projets)
   ├── Staff         (encadrement, contrats, recrutement du staff)
