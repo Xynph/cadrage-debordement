@@ -60,7 +60,7 @@ func pure_cases() -> void:
 	var tied: Dictionary = sorting[0].duplicate(true)
 	tied.id = "c"
 	sorting.append(tied)
-	for scenario in [["salary", ["b","a","c","u"], ["a","c","b","u"]], ["rating", ["a","c","b","u"], ["b","a","c","u"]], ["potential", ["b","a","c","u"], ["a","c","b","u"]], ["name", ["b","a","c","u"], ["a","c","b","u"]], ["contractEnd", ["b","a","c","u"], ["a","c","b","u"]]]:
+	for scenario in [["salary", ["b","a","c","u"], ["a","c","b","u"]], ["rating", ["a","c","b","u"], ["b","a","c","u"]], ["name", ["b","a","c","u"], ["a","c","b","u"]], ["contractEnd", ["b","a","c","u"], ["a","c","b","u"]]]:
 		for descending in [false, true]:
 			var ordered: Array = Review.filtered(sorting, {"sort":scenario[0], "descending":descending}).map(func(player): return player.id)
 			check(ordered == scenario[2 if descending else 1], "Tri %s %s : valeurs exactes, égalités par ID et inconnues dernières" % [scenario[0], "descendant" if descending else "ascendant"])
@@ -125,16 +125,16 @@ func clics_et_destinations() -> void:
 	app.find_child("ContractReviewReset", true, false).pressed.emit()
 	await settle()
 	# Tuiles et barres : une petite fenêtre de portraits, fermée par ✕, Échap, clic à côté ; un portrait ouvre la fiche.
-	var cibles: Array = ["ContractReviewStatEnding", "ContractReviewStatRenewable"]
+	var cibles: Array = []
 	for barre: Node in app.find_children("ContractReviewBar_*", "Button", true, false): cibles.append(str(barre.name))
-	check(cibles.size() > 2, "Barres Échéances par année cliquables")
+	check(cibles.size() > 1, "Barres Échéances par année cliquables")
 	for cible: String in cibles:
 		if not await cliquer(cible): continue
 		var fenetre := app.find_child("ContractWindow", true, false)
 		check(fenetre != null and PetiteFenetre.ouverte(app.get_tree()) != null, "Petite fenêtre ouverte : " + cible)
 		check(app.find_child("ContractWindowTitle", true, false) != null, "Fenêtre : titre court " + cible)
 		var tuiles := app.find_children("ContractWindowPlayer_*", "Button", true, false)
-		if cible == "ContractReviewStatEnding": check(tuiles.size() == Review.filtered(app.model.squad, {"season": saison}).size(), "Fenêtre échéances : un portrait par joueur concerné")
+		if cible == "ContractReviewBar_%d" % saison: check(tuiles.size() == Review.filtered(app.model.squad, {"season": saison}).size(), "Fenêtre échéances : un portrait par joueur concerné")
 		if fenetre != null:
 			for etiquette: Node in fenetre.find_children("*", "Label", true, false): check(not (etiquette as Label).text.ends_with("…"), "Fenêtre : aucun nom tronqué")
 		check(PetiteFenetre.fermer_derniere(app.get_tree()), "Échap ferme la petite fenêtre : " + cible)
@@ -152,7 +152,7 @@ func clics_et_destinations() -> void:
 		voile.gui_input.emit(clic)
 		await settle()
 		check(app.find_child("ContractWindow", true, false) == null, "Petite fenêtre refermée par clic à côté : " + cible)
-	if await cliquer("ContractReviewStatEnding"):
+	if not cibles.is_empty() and await cliquer(str(cibles[0])):
 		await capture("contrats-fenetre-echeance")
 		var portraits := app.find_children("ContractWindowPlayer_*", "Button", true, false)
 		if not portraits.is_empty():
@@ -169,12 +169,12 @@ func clics_et_destinations() -> void:
 		if await cliquer(passage[0]): check(str(app.route) == passage[1], passage[2] + " (route : " + str(app.route) + ")")
 	check(str(app.management_ui.get("recrutement_page", {}).get("kind", "")) == "offres", "Les tuiles du marché ouvrent la page Offres reçues")
 	await rouvrir_contrats()
-	var icones := app.find_children("ContractRenewal_*", "Button", true, false)
-	check(not icones.is_empty(), "Icône de prolongation cliquable")
-	if not icones.is_empty():
-		icones[0].pressed.emit()
+	var temps := app.find_children("ContractPlaytime_*", "Button", true, false)
+	check(not temps.is_empty(), "Rôle et temps de jeu cliquables")
+	if not temps.is_empty():
+		temps[0].pressed.emit()
 		await settle()
-		check(review() == null, "Icône de prolongation : quitte l'onglet pour l'écran du joueur")
+		check(review() == null, "Rôle et temps de jeu : quitte l'onglet pour la fiche du joueur")
 	await rouvrir_contrats()
 
 func run() -> void:
@@ -288,10 +288,8 @@ func run() -> void:
 	check(view.find_child("ContractReviewRows", true, false).get_child_count() == expected.size(), "Filtre saison reçu sur les bons identifiants")
 	var target: Dictionary = expected[0]
 	var level := app.find_child(Review.action_id("ContractLevel", str(target.id)), true, false) as Label
-	var potential := app.find_child(Review.action_id("ContractPotential", str(target.id)), true, false) as Label
 	check(level != null and level.text == Review.projected_mark(target, "rating"), "Colonne Niveau égale au niveau global projeté")
-	check(potential != null and potential.text == Review.projected_mark(target, "potential"), "Colonne Potentiel égale au potentiel projeté")
-	check(level.get_index() == 2 and potential.get_index() == 3, "Niveau et Potentiel côte à côte après le poste")
+	check(level.get_index() == 2, "Niveau juste après le poste")
 	for scenario: Array in [["ContractNameLink", "", true], ["ContractPortraitLink", "", false], ["ContractSalaryLink", "contract", true], ["ContractEndLink", "contract", false]]:
 		view = review()
 		var link := button(str(scenario[0]), str(target.id))
@@ -317,7 +315,7 @@ func run() -> void:
 		link = button(str(scenario[0]), str(target.id))
 		check(link != null and link.has_focus(), "Focus rendu au lien horizon exact")
 		check(absi(view.find_child("ContractReviewScroll", true, false).scroll_vertical - int(reading_before.scroll)) <= 1, "Défilement de la revue conservé")
-	var profile := button("ContractProfile", str(target.id))
+	var profile := button("ContractNameLink", str(target.id))
 	view.find_child("ContractReviewScroll", true, false).ensure_control_visible(profile)
 	profile.grab_focus()
 	await settle()
@@ -331,7 +329,7 @@ func run() -> void:
 	await settle()
 	view = review()
 	check(view != null and int(app.management_ui.roster.contract_review.season) == Review.horizon(target), "Filtre saison conservé au retour")
-	profile = button("ContractProfile", str(target.id))
+	profile = button("ContractNameLink", str(target.id))
 	check(profile != null and profile.has_focus(), "Focus rendu à la fiche consultée")
 	var eligible: Dictionary = {}
 	for player: Dictionary in expected:

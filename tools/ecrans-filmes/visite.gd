@@ -84,7 +84,7 @@ const EXTRAS := [
 	{"id": "effectif-contrats", "libelle": "Effectif · onglet Contrats", "type": "effectif_onglet", "onglet": 2},
 	{"id": "contrats-prolongation", "libelle": "Effectif · Contrats · prolongation d'un joueur", "type": "effectif_onglet", "onglet": 2, "ouvrir_prefixe": "ContractRenew_"},
 	{"id": "contrats-prolongation-fenetre", "libelle": "Effectif · Contrats · petite fenêtre de la prolongation", "type": "effectif_onglet", "onglet": 2, "ouvrir_prefixe": "ContractRenew_", "puis": ["ProlongationApresLien"]},
-	{"id": "contrats-fenetre-echeance", "libelle": "Effectif · Contrats · petite fenêtre des échéances", "type": "effectif_onglet", "onglet": 2, "ouvrir": "ContractReviewStatEnding"},
+	{"id": "contrats-fenetre-echeance", "libelle": "Effectif · Contrats · petite fenêtre des échéances", "type": "effectif_onglet", "onglet": 2, "ouvrir_prefixe": "ContractReviewBar_"},
 	{"id": "effectif-condition", "libelle": "Effectif · onglet Condition", "type": "effectif_onglet", "onglet": 1},
 	{"id": "effectif-poste", "libelle": "Effectif · liste classée au poste 12 (clic sur le maillot du XV)", "type": "effectif_onglet", "onglet": 0, "poste_xv": 12},
 	{"id": "effectif-developpement", "libelle": "Effectif · onglet Développement", "type": "effectif_onglet", "onglet": 3},
@@ -759,8 +759,19 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			if effectif.is_empty(): return {"statut": "indisponible", "note": "effectif vide"}
 			app._navigate("Effectif")
 			await stabiliser()
-			var ouvert: bool = app.navigation_controller.open_entity({"kind": "player", "id": ident(effectif[0].get("id"))})
+			# CD_FILM_FICHE_ONGLET=<index d'onglet> et CD_FILM_FICHE_JOUEUR=<id> : onglet et joueur de la fiche filmée.
+			var cible_joueur: Variant = effectif[0].get("id")
+			if not OS.get_environment("CD_FILM_FICHE_JOUEUR").is_empty(): cible_joueur = OS.get_environment("CD_FILM_FICHE_JOUEUR")
+			if not OS.get_environment("CD_FILM_FICHE_ONGLET").is_empty(): app.management_ui.immersive_player_tab = int(OS.get_environment("CD_FILM_FICHE_ONGLET"))
+			var ouvert: bool = app.navigation_controller.open_entity({"kind": "player", "id": ident(cible_joueur)})
 			await stabiliser()
+			# CD_FILM_PROLONGATION=1 : ouvre la fenêtre de prolongation du joueur (bouton « Proposer une prolongation »).
+			if ouvert and OS.get_environment("CD_FILM_PROLONGATION") == "1":
+				var joueur: Dictionary = {}
+				for j: Variant in effectif:
+					if j is Dictionary and str(j.get("id")) == str(cible_joueur): joueur = j
+				if not joueur.is_empty(): app.SquadViews.contract(app, joueur, false)
+				await stabiliser()
 			if not ouvert or app.route != "Effectif" or not bool(app.get_meta("immersive08_full_player", false)): return {"statut": "echec", "note": "fiche joueur non ouverte"}
 			if ecran.has("onglet") and int(app.management_ui.get("immersive_player_tab", 0)) != int(ecran.onglet):
 				var onglet_fiche := app.find_child("FullPlayerTab%d" % int(ecran.onglet), true, false) as Button

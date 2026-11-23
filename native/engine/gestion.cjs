@@ -102,7 +102,7 @@ module.exports=function nativeGestion(command,p){
   return {coverage:{count,weeklySalary:coverSalary,totalWeeklySalary,message:`${count} renfort${count===1?'':'s'} signé${count===1?'':'s'}. Salaires supplémentaires de ${totalWeeklySalary.toLocaleString('fr-FR')} € par semaine. Feuille à 23 complète.`}};
  }
  if(command==='recruit'||command==='extend_contract'){
-  requireThat(p.confirmed===true,'Confirme le salaire, la durée et la prime avant cette offre.');requireThat(typeof p.playerId==='string'&&Number.isInteger(p.salary)&&p.salary>=(typeof budgetActif==='function'&&budgetActif()?budgetPlancherHebdo():1000)&&p.salary<=100000&&[1,2,3].includes(p.years),'Offre invalide.');
+  requireThat(p.confirmed===true,'Confirme le salaire, la durée et la prime avant cette offre.');requireThat(typeof p.playerId==='string'&&Number.isInteger(p.salary)&&p.salary>=(typeof budgetActif==='function'&&budgetActif()?budgetPlancherHebdo():1000)&&p.salary<=100000&&[1,2,3].includes(p.years)&&(p.role===undefined||['titulaire','rotation','espoir','appoint'].includes(p.role)),'Offre invalide.');
   const kind=command==='recruit'?'recruit':'renew',target=talkPlayer(p.playerId,kind);requireThat(target,'Joueur indisponible ou offre périmée.');
   // Calendrier du recrutement (calendrier-mutations.cjs) : joueurs sans club jusqu'au 31 décembre, deux supplémentaires en
   // janvier ; un joueur qui a signé un pré-contrat ailleurs ne se prolonge plus.
@@ -114,12 +114,19 @@ module.exports=function nativeGestion(command,p){
   // Budget de transferts (budget-transferts.cjs) : la prime d'une recrue entre dans l'enveloppe ; une prolongation, jamais.
   const horsBudget=kind==='recruit'&&typeof budgetTransfertsRefus==='function'?budgetTransfertsRefus(contractFee(target,kind)):null;requireThat(!horsBudget,horsBudget);
   const avant=club().cash;
-  requireThat(negotiateContract(p.playerId,kind,p.salary,p.years),'Offre refusée : durée, joueur ou négociation indisponible.');
+  // Rôle promis (role-contrat.cjs, idée 16) : Espoir à 21 ans et moins, Appoint refusé par un ambitieux ; le rôle règle la
+  // demande de salaire pendant la négociation (+5 % par cran au-dessus du rôle attendu, −4 % par cran en dessous).
+  const refusRole=p.role&&typeof roleContratRefus==='function'?roleContratRefus(target,p.role):'';requireThat(!refusRole,refusRole);
+  const negocier=()=>negotiateContract(p.playerId,kind,p.salary,p.years);
+  requireThat(p.role&&typeof roleContratAvec==='function'?roleContratAvec(target,p.role,negocier):negocier(),'Offre refusée : durée, joueur ou négociation indisponible.');
   const key=talkKey(p.playerId,kind),talk=S.economy.talks[key];
   if(talk.status==='ready')requireThat(confirmContract(key),'Signature devenue indisponible.');
   if(kind==='recruit'&&talk.status==='signed'&&typeof budgetTransfertsDepenser==='function')budgetTransfertsDepenser(talk.fee);
   if(kind==='recruit'&&talk.status==='signed'&&typeof calendrierApresRecrue==='function')calendrierApresRecrue(p.playerId);
   if(kind==='renew'&&talk.status==='signed'&&typeof calendrierApresProlongation==='function')calendrierApresProlongation(p.playerId);
+  // Rôle promis au contrat (role-contrat.cjs) : champ facultatif `role` ; sans lui, le rôle est déduit de la hiérarchie
+  // à la fin de la commande (observe, worker.cjs).
+  if(talk.status==='signed'&&p.role&&typeof roleContratPoser==='function'){const signe=club().players.find(x=>x.id===p.playerId);if(signe)roleContratPoser(signe,p.role,false);}
   // Le président reprend la main si l'achat fait passer la trésorerie sous la réserve (president-reprise.cjs),
   // sauf pour un achat dans l'enveloppe de transferts fixée par le conseil.
   if(kind==='recruit'&&talk.status==='signed'&&typeof repriseApresAchat==='function'&&!(typeof budgetTransfertsExempte==='function'&&budgetTransfertsExempte()))repriseApresAchat(club(),avant);
