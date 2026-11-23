@@ -88,6 +88,7 @@ func run() -> void:
 	await colors()
 	await links()
 	await conseil_lettre()
+	await conseil_jeu()
 	await names()
 	await tabs()
 	await confirmation_en_place()
@@ -192,7 +193,7 @@ func finish() -> void:
 func layout() -> void:
 	check(node("ImmersiveClub") != null and node("ClubOverview") != null, "Écran Club ouvert (vue d'ensemble)")
 	check(node("ClubTitle") != null and node("ClubSubtitle") != null, "Titre et sous-titre")
-	for cle in ["overview", "direction", "infrastructure", "staff", "history"]: check(node("ClubTab_" + cle) != null, "Onglet " + cle)
+	for cle in ["overview", "jeu", "direction", "infrastructure", "staff", "history"]: check(node("ClubTab_" + cle) != null, "Onglet " + cle)
 	check(node("ClubStadium") != null, "Bandeau du club")
 	for id in ["ClubCouncil", "ClubFacilities", "ClubDecide", "ClubLocker"]: check(node(id) != null, "Bloc " + id)
 	var conseil := node("ClubCouncil")
@@ -261,13 +262,17 @@ func conseil_lettre() -> void:
 	# Deux bilans du moteur (mêmes champs que finance.boardHistory) pour voir lignes, lettres et flèches.
 	var finance: Dictionary = app.model.clubLife.clubStrategy.finance
 	var avant: Array = finance.get("boardHistory", [])
-	finance.boardHistory = [{"season": 1, "round": 6, "previous": 60, "after": 48, "results": 30, "finances": 90, "youth": 50, "supporters": 72, "score": 44}, {"season": 1, "round": 3, "previous": 60, "after": 60, "results": 50, "finances": 70, "youth": 50, "score": 56}]
+	finance.boardHistory = [{"season": 1, "round": 6, "previous": 60, "after": 48, "results": 30, "finances": 90, "youth": 50, "supporters": 72, "jeu": 35, "score": 44}, {"season": 1, "round": 3, "previous": 60, "after": 60, "results": 50, "finances": 70, "youth": 50, "score": 56}]
 	await overview()
 	check(node("ClubTrustRow0") != null and node("ClubTrustRow1") != null, "Bilans : une ligne par bilan")
 	var ligne := node("ClubTrustRow0")
 	check(ligne != null and ligne.find_child("Fleche_down", true, false) != null and ligne.find_child("Fleche_up", true, false) != null, "Bilan : flèches ▲ / ▼ par domaine")
 	check(node("ConseilDomaine_results") != null and node("ConseilDomaine_results").find_child("Fleche_down", true, false) != null, "Résultats 30 : flèche ▼")
 	check(node("ConseilDomaine_supporters") != null and node("ConseilDomaine_supporters").find_child("Fleche_up", true, false) != null, "Supporters 72 : flèche ▲")
+	check(node("ConseilDomaine_jeu") != null and node("ConseilDomaine_jeu").find_child("Fleche_down", true, false) != null, "Notre jeu 35 : flèche ▼")
+	var cinquieme := node("ConseilDomaine_jeu")
+	var conseil := node("ClubCouncil")
+	check(cinquieme != null and conseil != null and cinquieme.global_position.y + cinquieme.size.y <= conseil.global_position.y + 306.0 * float(load("res://ui/immersive08/components.gd").density) + 1.0, "Cinq domaines tiennent avant le filet du conseil")
 	var lettre := node("ConseilLettre") as Button
 	check(lettre != null, "Grande lettre cliquable")
 	if lettre != null:
@@ -294,7 +299,7 @@ func conseil_lettre() -> void:
 		await settle(4)
 		check(load("res://ui/petite_fenetre.gd").fermer_derniere(self), "Échap ferme la petite fenêtre")
 		await settle(4)
-	for domaine: Array in [["results", "Classements"], ["finances", "Finances"], ["youth", "Centre"], ["supporters", "Stratégie"]]:
+	for domaine: Array in [["results", "Classements"], ["finances", "Finances"], ["youth", "Centre"], ["supporters", "Stratégie"], ["jeu", "Club"]]:
 		await overview()
 		var bouton := node("ConseilDomaine_" + str(domaine[0])) as Button
 		check(bouton != null, "Domaine %s : ligne" % domaine[0])
@@ -302,7 +307,108 @@ func conseil_lettre() -> void:
 		bouton.pressed.emit()
 		await settle(10)
 		check(app.route == str(domaine[1]), "Domaine %s : ouvre %s (%s)" % [domaine[0], domaine[1], app.route])
+		if domaine[0] == "jeu": check(node("ConseilJeu") != null and str(app.management_ui.get(app.Immersive.ClubCanvas.KEY, "")) == "jeu", "Domaine jeu : ouvre Club › Notre jeu")
 	finance.boardHistory = avant
+	await overview()
+
+## Avis du conseil sur notre jeu (idée n° 31, option A) : jeu de données du moteur (même forme que clubLife.conseilJeu),
+## 6 familles et 16 chiffres.
+func fixture_jeu() -> Dictionary:
+	var familles := [["plan", "Plan de jeu", "tactic", ["victoires", "ecart"], 2], ["conquete", "Conquête", "people", ["melee", "touche", "possession"], 1],
+		["spectacle", "Spectacle", "star", ["essais", "bonus"], 3], ["attaque", "Attaque", "ball", ["points", "entrees22", "territoire", "buteur"], 3],
+		["defense", "Défense", "shield", ["encaisses", "essais_enc", "penalites", "jaunes"], 1], ["formation", "Formation", "school", ["jeunes"], 1]]
+	var unites := {"victoires": "%", "melee": "%", "touche": "%", "possession": "%", "bonus": "%", "territoire": "%", "buteur": "%"}
+	var noms := {"entrees22": "Entrées dans les 22 m", "jeunes": "Jeunes titulaires (−23 ans)"}
+	var indicateurs := {}
+	var matchs: Array = []
+	for j in 6: matchs.append({"journee": j + 1, "valeurs": {}})
+	var fams: Array = []
+	var k := 0
+	for f: Array in familles:
+		for id: String in f[3]:
+			var sens := -1 if id in ["encaisses", "essais_enc", "penalites", "jaunes"] else 1
+			var nous := 10.0 + k
+			indicateurs[id] = {"id": id, "nom": str(noms.get(id, id.capitalize())), "unite": str(unites.get(id, "")), "sens": sens, "nous": nous, "moyenne": nous + (1.5 if k % 2 == 0 else -1.5),
+				"rang": 1 + k % 14, "clubs": 14, "note": float(10 + k * 5), "avis": ["up", "down", "neutre"][k % 3], "matchs": 6}
+			if id == "entrees22": indicateurs[id]["total"] = 62
+			for m: Dictionary in matchs: m.valeurs[id] = nous + float(int(m.journee) % 3) - 1.0
+			k += 1
+		fams.append({"id": f[0], "nom": f[1], "picto": f[2], "indicateurs": f[3], "note": float(30 + fams.size() * 10), "attente": f[4]})
+	return {"available": true, "saison": 1, "courante": true, "competition": "elite", "profil": "spectacle", "identite": "Spectacle", "matchs": matchs, "indicateurs": indicateurs, "familles": fams, "note": 55.0, "dernierBilan": null}
+
+func jeu_ouvert() -> void:
+	app.management_ui.erase("club_page")
+	app.management_ui[app.Immersive.ClubCanvas.KEY] = "jeu"
+	app._navigate("Club")
+	await settle(10)
+
+## Onglet Notre jeu : vide avant tout match ; avec les chiffres, bandeau (lettre, humeur, identité), une tête par famille
+## avec son attente en crans, une ligne par chiffre, intitulés posés exactement sur leurs chiffres ; lignes, têtes et
+## lettre ouvrent leur petite fenêtre (Échap ferme) ; plus de variante B ni de switch.
+func conseil_jeu() -> void:
+	var source := FileAccess.get_file_as_string("res://ui/immersive08/conseil_jeu.gd")
+	check(source.find("CD_VARIANTE_VISUELLE") < 0 and source.find("_option_b") < 0, "Notre jeu : variante B et switch retirés")
+	var vie: Dictionary = app.model.get("clubLife", {})
+	var avant: Variant = vie.get("conseilJeu")
+	await jeu_ouvert()
+	check(node("ClubTab_jeu") != null and node("ClubTab_jeu").button_pressed, "Onglet Notre jeu choisi")
+	if not (avant is Dictionary and bool(avant.get("available", false))): check(node("ConseilJeuVide") != null, "Notre jeu : avant le premier match, rien à juger")
+	vie["conseilJeu"] = fixture_jeu()
+	await jeu_ouvert()
+	for id in ["ConseilJeuBandeau", "ConseilJeuLettre", "ConseilJeuReaction", "ConseilJeuIdentite", "ConseilJeuMatchs"]: check(node(id) != null, "Notre jeu : " + id)
+	var lignes := 0
+	var tetes := 0
+	for b: Node in node("ConseilJeu").find_children("ConseilJeu*", "Button", true, false):
+		if str(b.name).begins_with("ConseilJeuLigne_"): lignes += 1
+		elif str(b.name).begins_with("ConseilJeuFamille_"): tetes += 1
+	check(tetes == 6 and lignes == 16, "Notre jeu : 6 familles, 16 chiffres (%d, %d)" % [tetes, lignes])
+	check(node("ConseilJeuAttente_spectacle") != null and int(node("ConseilJeuAttente_spectacle").get("niveau")) == 3 and int(node("ConseilJeuAttente_conquete").get("niveau")) == 1, "Attentes du conseil en crans par famille")
+	var points: Variant = node("ConseilJeuPoints_entrees22")
+	check(points != null and (points.get("couleurs") as Array).size() == 6, "Entrées dans les 22 m : un point par match")
+	# Intitulés alignés : même bord droit que les chiffres de chaque ligne.
+	for col: Array in [["Nous", "ConseilJeuNous"], ["Moyenne", "ConseilJeuMoyenne"], ["Écart", "ConseilJeuEcart"], ["Rang", "ConseilJeuRang"]]:
+		var tete := node("ConseilJeuColonne_" + str(col[0])) as Label
+		var ok := tete != null and tete.horizontal_alignment == HORIZONTAL_ALIGNMENT_RIGHT
+		for i in 16:
+			var ligne := node("ConseilJeuLigne_%d" % i)
+			var chiffre := ligne.find_child(str(col[1]), true, false) as Label if ligne != null else null
+			if chiffre == null or tete == null: ok = false; continue
+			ok = ok and chiffre.horizontal_alignment == HORIZONTAL_ALIGNMENT_RIGHT and absf(tete.global_position.x + tete.size.x - chiffre.global_position.x - chiffre.size.x) < 1.5
+		check(ok, "Colonne %s : intitulé aligné sur ses chiffres" % col[0])
+	var bas := 0.0
+	for b: Node in node("ConseilJeu").find_children("ConseilJeuLigne_*", "Button", true, false): bas = maxf(bas, (b as Control).global_position.y + (b as Control).size.y)
+	var panneau := node("ConseilJeu")
+	check(bas <= panneau.global_position.y + panneau.size.y + 1.0, "Les 16 lignes tiennent dans le panneau")
+	var dores := 0
+	for control in panneau.find_children("*", "Control", true, false): if gold_on(control as Control, false): dores += 1
+	check(dores == 0, "Notre jeu : aucun or (%d)" % dores)
+	shot("conseil-jeu-1920x1080")
+	# Clic sur la ligne des entrées dans les 22 m : petite fenêtre avec le total de la saison et un bâton par match.
+	var ligne22: Button = null
+	for b: Node in panneau.find_children("ConseilJeuLigne_*", "Button", true, false): if str(b.get_meta("indicateur", "")) == "entrees22": ligne22 = b
+	check(ligne22 != null, "Ligne des entrées dans les 22 m")
+	if ligne22 != null:
+		ligne22.pressed.emit()
+		await settle(6)
+		var fenetre := app.get_node_or_null("ConseilJeuFenetre")
+		check(fenetre != null and fenetre.find_child("ConseilJeuHistogramme", true, false) != null and fenetre.find_child("ConseilJeuFenetreSaison", true, false) != null, "Entrées dans les 22 m : total de la saison et bâtons par match")
+		check(windows().is_empty(), "Petite fenêtre dessinée, pas de fenêtre système")
+		shot("conseil-jeu-fenetre-1920x1080")
+		check(load("res://ui/petite_fenetre.gd").fermer_derniere(self), "Échap ferme la petite fenêtre")
+		await settle(4)
+	for id in ["ConseilJeuFamille_attaque", "ConseilJeuLettre"]:
+		var bouton := node(id) as Button
+		if bouton == null: check(false, id + " absent"); continue
+		bouton.pressed.emit()
+		await settle(6)
+		var fenetre := app.get_node_or_null("ConseilJeuFenetre")
+		check(fenetre != null and fenetre.find_child("ConseilJeuFenetreAttente" if id == "ConseilJeuFamille_attaque" else "ConseilJeuFenetreFamille_formation", true, false) != null, id + " : petite fenêtre")
+		var fermer := fenetre.find_child("ConseilJeuFenetreFermer", true, false) as Button if fenetre != null else null
+		if fermer != null: fermer.pressed.emit()
+		await settle(4)
+		check(not is_instance_valid(app.get_node_or_null("ConseilJeuFenetre")) or app.get_node_or_null("ConseilJeuFenetre").is_queued_for_deletion(), id + " : Fermer ferme")
+	if avant == null: vie.erase("conseilJeu")
+	else: vie["conseilJeu"] = avant
 	await overview()
 
 ## Noms de joueurs : survol = carte joueur (même composant que partout), clic = fiche complète.
@@ -332,7 +438,7 @@ func names() -> void:
 
 ## Chaque onglet s'affiche sans fenêtre ni or (hors anneau de focus des pilules de la charte).
 func tabs() -> void:
-	for cle in ["infrastructure", "history", "direction", "staff", "overview"]:
+	for cle in ["jeu", "infrastructure", "history", "direction", "staff", "overview"]:
 		var onglet := node("ClubTab_" + cle) as Button
 		check(onglet != null, "Onglet " + cle + " cliquable")
 		if onglet == null: continue

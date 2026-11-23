@@ -34,7 +34,8 @@ const GOAL_STATUS = {"pending":"À suivre", "met":"Atteint", "missed":"Manqué",
 const W := 2248.0
 const TOP := 132.0
 const HAUT := 1244.0
-const TABS := [["overview", "Vue d’ensemble"], ["direction", "Direction"], ["infrastructure", "Infrastructures"], ["staff", "Staff"], ["history", "Histoire"]]
+## « Notre jeu » : avis du conseil sur notre style (revue FM27 n° 31, conseil_jeu.gd).
+const TABS := [["overview", "Vue d’ensemble"], ["jeu", "Notre jeu"], ["direction", "Direction"], ["infrastructure", "Infrastructures"], ["staff", "Staff"], ["history", "Histoire"]]
 const LIGNE := 32.0
 
 ## Case dessinée de la charte : coche (ok), point d'exclamation (alerte), croix (menace), tiret (neutre). Le sens est
@@ -162,7 +163,7 @@ static func _header(app: Control, canvas: Control, tab: String) -> void:
 	var sous := Kit.texte(canvas, 150, 46, _sous_titre(app), Charte.IVOIRE_2, 1900, 19)
 	sous.name = "ClubSubtitle"
 	var x := 0.0
-	var onglets := _onglets()
+	var onglets: Array = TABS
 	for i in onglets.size():
 		var key: String = onglets[i][0]
 		var libelle: String = str(onglets[i][1])
@@ -198,13 +199,6 @@ static func _header(app: Control, canvas: Control, tab: String) -> void:
 	# Raccourci ← → : en info-bulle des onglets, plus en mode d'emploi écrit (règle de Léo du 21/11/2026).
 	for onglet: Node in canvas.get_children():
 		if onglet is Button and str(onglet.name).begins_with("ClubTab_"): (onglet as Button).tooltip_text = "← → pour changer d’onglet"
-
-## Onglets du Club ; « Notre jeu » (avis du conseil sur notre style, revue FM27 n° 31) seulement en planche A/B.
-static func _onglets() -> Array:
-	if ConseilJeu.variante().is_empty(): return TABS
-	var liste: Array = TABS.duplicate()
-	liste.insert(1, ["jeu", "Notre jeu"])
-	return liste
 
 static func _tab(app: Control, key: String, id: String = "") -> void:
 	if key == "direction" or key == "staff":

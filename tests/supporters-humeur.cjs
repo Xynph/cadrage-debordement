@@ -80,7 +80,9 @@ try {
   for (let i = 0; i < 12 && !(m.clubLife.clubStrategy.finance.boardHistory || []).length; i++) m = playNextMatch(m, call);
   const bilan = m.clubLife.clubStrategy.finance.boardHistory[0];
   assert.ok(bilan && Number.isInteger(bilan.supporters), 'bilan du conseil : note des supporters ' + JSON.stringify(bilan));
-  assert.equal(bilan.score, Math.round(.6 * bilan.results + .2 * bilan.finances + .1 * bilan.youth + .1 * bilan.supporters), 'poids 60/20/10/10');
+  // Avec la note du conseil sur notre jeu (conseil-jeu.cjs, 23/11/2026) : résultats 50, finances 15, formation 10, supporters 10, jeu 15.
+  if (Number.isInteger(bilan.jeu)) assert.equal(bilan.score, Math.round(.5 * bilan.results + .15 * bilan.finances + .1 * bilan.youth + .1 * bilan.supporters + .15 * bilan.jeu), 'poids 50/15/10/10/15');
+  else assert.equal(bilan.score, Math.round(.6 * bilan.results + .2 * bilan.finances + .1 * bilan.youth + .1 * bilan.supporters), 'poids 60/20/10/10');
   // Affluence enregistrée des matchs à domicile du club : bornée par la capacité, présente.
   const domicile = JSON.parse(b.inspect('JSON.stringify(S.history.filter(r=>r.pair[0]===S.club&&!r.neutral&&r.season===S.season).map(r=>r.affluence))'));
   assert.ok(domicile.every(n => Number.isInteger(n) && n > 0 && n <= fans.capacity), 'affluence à domicile : ' + domicile.join(', '));

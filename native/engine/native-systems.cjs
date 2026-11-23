@@ -19,7 +19,7 @@ function bootstrap(){
   const domains={${definitions}},owners=new Map(),memo=new Map(),memoStats={};
   // Domaines mémorisables : projections coûteuses relues sans changement entre deux décisions (marché entre clubs,
   // carrière du manager, staff…), sans état transitoire ni dépendance au déroulé d'une commande.
-  const MEMO_DOMAINS=new Set(['interclubMarket','managerCareer','regenScouting','clubSupport','staffCareer','coachNotebook','youthDevelopment','staffMentoring','clubWorld','performanceAnalysis','staffEmployment','press']);
+  const MEMO_DOMAINS=new Set(['interclubMarket','managerCareer','regenScouting','clubSupport','staffCareer','coachNotebook','youthDevelopment','staffMentoring','clubWorld','performanceAnalysis','staffEmployment','press','conseilJeu']);
   // Réglage hors de S dont dépend une projection mémorisée (d.memoKey, ex. presse obligatoire) : un autre réglage périme la mémoire.
   const extraOf=d=>typeof d.memoKey==='function'?String(d.memoKey()):'';
   ${Object.entries(domains).map(([key,d])=>d.commands.map(c=>`owners.set(${JSON.stringify(c)},domains[${JSON.stringify(key)}]);`).join('')).join('')}
@@ -153,6 +153,8 @@ domains.clausesContrat=require('./clauses-contrat.cjs');
 domains.agentsJoueurs=require('./agents-joueurs.cjs');
 // Discussion avec l'agent : ton (demande, propositions) et relation gardée (native/engine/ton-agent.cjs).
 domains.tonAgent=require('./ton-agent.cjs');
+// Avis du conseil sur notre jeu : chiffres de la saison, attentes du club, note du jeu au bilan (native/engine/conseil-jeu.cjs).
+domains.conseilJeu=require('./conseil-jeu.cjs');
 const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files,...domains.clubSheet.files,...domains.pressPromises.files,...domains.clubMail.files,...domains.multiplex.files,...domains.avantMatch.files,...domains.doublons.files,...domains.matchIncidents.files,...domains.weekProgram.files])]);
 const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands,...domains.clubMail.commands,...domains.multiplex.commands,...domains.avantMatch.commands,...domains.doublons.commands,...domains.matchIncidents.commands,...domains.weekProgram.commands,...domains.familiarite.commands,...domains.tonAgent.commands]);
 if(new Set(allCommands).size!==allCommands.length)throw Error('Commandes natives de domaine en double.');

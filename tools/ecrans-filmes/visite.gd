@@ -121,7 +121,7 @@ const EXTRAS := [
 	{"id": "strategie-public", "libelle": "Club › Direction · petite fenêtre Le public", "type": "strategie_onglet", "onglet": 2, "zone": "DirectionLien_Humeur"},
 	{"id": "club-infrastructures", "libelle": "Club · onglet Infrastructures", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "infrastructure", "repos": "overview"},
 	{"id": "club-histoire", "libelle": "Club · onglet Histoire", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "history", "repos": "overview"},
-	{"id": "club-jeu", "libelle": "Club · onglet Notre jeu (planche FM27 n° 31)", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "jeu", "repos": "overview"},
+	{"id": "club-jeu", "libelle": "Club · onglet Notre jeu (avis du conseil sur notre jeu)", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "jeu", "repos": "overview"},
 	{"id": "club-jeu-fenetre", "libelle": "Club · Notre jeu, petite fenêtre d'un chiffre", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "jeu", "repos": "overview", "presser": "ConseilJeuLigne_0"},
 	{"id": "vestiaire-entretiens", "libelle": "Vestiaire · onglet Entretiens et duos", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week"},
 	{"id": "selections-offres", "libelle": "Sélections · onglet Offres", "type": "onglet_cle", "route": "Sélections", "cle": "international_section", "onglet": "offers", "repos": "callups"},

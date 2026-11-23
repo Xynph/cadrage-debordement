@@ -82,6 +82,11 @@ function careerRecruitSigning(p,t){
 const CAREER_BOARD_EVERY=3,CAREER_BOARD_WEIGHTS=Object.freeze({results:.7,finances:.2,youth:.1});
 // Avec l'humeur des supporters (moteur natif, club-strategy.cjs ; choix de Léo du 23/11/2026) : 10 % pris aux résultats.
 const CAREER_BOARD_WEIGHTS_FANS=Object.freeze({results:.6,finances:.2,youth:.1,supporters:.1});
+// Avec la note du conseil sur notre jeu (conseil-jeu.cjs, revue FM27 n° 31, choix de Léo du 23/11/2026) : 15 %, pris aux
+// résultats et aux finances ; le conseil juge le style selon les attentes propres au club.
+const CAREER_BOARD_WEIGHTS_JEU=Object.freeze({results:.6,finances:.15,youth:.1,jeu:.15});
+const CAREER_BOARD_WEIGHTS_FANS_JEU=Object.freeze({results:.5,finances:.15,youth:.1,supporters:.1,jeu:.15});
+function careerBoardJeu(){try{const d=typeof nativeSystems!=='undefined'?nativeSystems.domain('conseilJeu'):null,n=d&&typeof d.noteBilan==='function'?d.noteBilan():null;return Number.isFinite(n)?clamp(Math.round(n),0,100):null;}catch(e){return null;}}
 function careerBoardFans(){try{const d=typeof nativeSystems!=='undefined'?nativeSystems.domain('clubStrategy'):null,h=d&&typeof d.humeur==='function'?d.humeur():null;return Number.isFinite(h)?clamp(Math.round(h),0,100):null;}catch(e){return null;}}
 function careerBoardWeekReview(){
  // Bilan tous les 3 matchs (22/11/2026, choix de Léo : la note du conseil colle aux résultats) : la note des résultats
@@ -93,14 +98,17 @@ function careerBoardWeekReview(){
  const finance=team.cash<0?5:team.cash<750000?50:team.cash<2500000?70:90;
  const youth=clamp(50+c.promotions*20,0,100);
  const fans=careerBoardFans();
- const target=CDBoardPlanning.boardConfidence({current:past,results:result,finances:finance,youth,...(fans===null?{weights:CAREER_BOARD_WEIGHTS}:{supporters:fans,weights:CAREER_BOARD_WEIGHTS_FANS}),pull:.7});
+ const jeu=careerBoardJeu();
+ const weights=jeu===null?(fans===null?CAREER_BOARD_WEIGHTS:CAREER_BOARD_WEIGHTS_FANS):(fans===null?CAREER_BOARD_WEIGHTS_JEU:CAREER_BOARD_WEIGHTS_FANS_JEU);
+ const target=CDBoardPlanning.boardConfidence({current:past,results:result,finances:finance,youth,...(fans===null?{}:{supporters:fans}),...(jeu===null?{}:{jeu}),weights,pull:.7});
  const delta=clamp(target.change,-15,15);
  S.trust=clamp(past+delta,0,100);
  c.boardHistory.unshift({season:S.season,round:S.round,previous:past,after:S.trust,
-  results:result,finances:finance,youth,...(fans===null?{}:{supporters:fans}),score:Math.round(target.score)});
+  results:result,finances:finance,youth,...(fans===null?{}:{supporters:fans}),...(jeu===null?{}:{jeu}),score:Math.round(target.score)});
  c.boardHistory=c.boardHistory.slice(0,24);
  c.lastBoardRound=S.round;
- news('Bilan de direction : '+(delta>=0?'+':'')+delta+' confiance ('+(fans===null?'résultats 70 %, finances 20 %, formation 10 %':'résultats 60 %, finances 20 %, formation 10 %, supporters 10 %')+').');
+ const parts={results:'résultats',finances:'finances',youth:'formation',supporters:'supporters',jeu:'jeu'};
+ news('Bilan de direction : '+(delta>=0?'+':'')+delta+' confiance ('+Object.entries(weights).map(([k,w])=>parts[k]+' '+Math.round(w*100)+' %').join(', ')+').');
  return true;
 }
 function careerRecordChampion(id){
