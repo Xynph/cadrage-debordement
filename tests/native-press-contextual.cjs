@@ -200,4 +200,39 @@ for (const q of grounded) {
 }
 run('S.pressConference.history.forEach(h=>{delete h.questionText;delete h.answerText}); api.validate(S)');
 assert.ok(read('api.project().history').every(h => h.answer === null && h.question === null));
+// Idée FM27 n° 27 (choix de Léo, 23/11/2026) : chaque question vise un vrai joueur choisi selon l'actualité, jamais au
+// hasard, et la réponse agit sur le moral (satisfaction) de CE joueur, pas de Gabi.
+run('S=' + snapshot);
+run(`S.satisfactionVersion=1;
+  globalThis.ensureSatisfaction=p=>p.satisfaction||(p.satisfaction={version:1,score:65,season:S.season,baseline:0,promise:null,history:[]});
+  S.clubs[29].players=[
+   {id:'cadre',name:'Paul Cadre',age:29,rating:80},
+   {id:'forme',name:'Hugo Forme',age:26,rating:70},
+   {id:'recrue',name:'Léo Recrue',age:25,rating:72,joinedSeason:2},
+   {id:'jeune',name:'Tom Jeune',age:20,rating:60},
+   {id:'meforme',name:'Max Méforme',age:27,rating:68},
+   {id:'blesse',name:'Noé Blessé',age:28,rating:75,injury:3}];
+  S.matchNotes={joueurs:{forme:{s:[],f:[80,82,85]},jeune:{s:[],f:[62,66]},meforme:{s:[],f:[50,55,52]}}};`);
+const visees = conference();
+assert.ok(visees.length >= 2 && visees.every(q => q.player && q.player.name), 'Chaque question vise un joueur');
+assert.equal(new Set(visees.map(q => q.player.id)).size, visees.length, 'Un joueur différent par question');
+for (const q of visees) {
+  assert.ok(['blesse','forme','recrue','jeune','meforme','cadre'].includes(q.player.news));
+  assert.equal(q.player.id, q.player.news, 'Joueur choisi selon son actualité : ' + q.player.id);
+  assert.ok(q.question.includes(q.player.name), 'La question nomme le joueur');
+  assert.ok(q.answers.every(a => Number.isInteger(a.effects.player)), 'Effet sur le moral du joueur projeté');
+}
+const avant = Object.fromEntries(visees.map(q => [q.player.id, read(`S.clubs[29].players.find(p=>p.id==='${q.player.id}').satisfaction?.score??65`)]));
+context.payload = {context: read('api.project().context'), answers: visees.map(q => ({questionId:q.id, answerId:'r2'}))};
+run("api.execute('press_conference',payload); api.validate(S)");
+const bilan = read('S.pressConference.lastOutcome.players');
+assert.equal(bilan.length, visees.length);
+for (const q of visees) {
+  const e = bilan.find(x => x.id === q.player.id), apres = read(`S.clubs[29].players.find(p=>p.id==='${q.player.id}').satisfaction.score`);
+  assert.equal(e.before, avant[q.player.id]);
+  assert.equal(apres - avant[q.player.id], q.answers.find(a => a.id === 'r2').effects.player, 'Moral du joueur = effet projeté');
+  assert.ok(e.delta < 0, 'Réponse agressive : moral du joueur en baisse');
+}
+run('delete globalThis.ensureSatisfaction');
+
 console.log('Presse contextuelle : calendrier, résultat orienté, indisponibilité, effets et archives exactes PASS.');
