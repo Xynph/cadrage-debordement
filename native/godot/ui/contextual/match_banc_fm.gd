@@ -299,12 +299,13 @@ func _remplir_joueurs() -> void:
 	fermer.pressed.connect(fermer_joueurs)
 	tete.add_child(fermer)
 	_liste_joueurs(col)
-	panneau.custom_minimum_size.x = px(760)
+	panneau.custom_minimum_size.x = px(540)
 	panneau.reset_size()
 	panneau.visible = false
 	_placer(panneau)
 
-## La liste s'ouvre juste sous le rond « À un joueur » (accrochée à lui), sans sortir de l'écran.
+## La liste s'ouvre sous la barre du banc, à GAUCHE, par-dessus la colonne Gabi / Événements / Banc (Léo, 23/11 : elle
+## ne recouvre jamais le terrain 2D) : bord gauche et largeur de cette colonne, sans sortir de l'écran.
 func _placer(panneau: Control, essais: int = 0, suivis: int = 3) -> void:
 	if not is_instance_valid(panneau) or not is_instance_valid(between) or not is_inside_tree(): return
 	var ancre := Rect2()
@@ -322,6 +323,13 @@ func _placer(panneau: Control, essais: int = 0, suivis: int = 3) -> void:
 	var largeur := panneau.size.x
 	var ecran := between.get_viewport_rect().size
 	var pos := Vector2(ancre.position.x, ancre.end.y + px(6))
+	var colonne := between.find_child("MatchBetweenEventsColumn", true, false) as Control
+	if colonne != null and colonne.is_visible_in_tree() and colonne.size.x > 0.0:
+		var rc := colonne.get_global_rect()
+		largeur = rc.size.x
+		panneau.custom_minimum_size.x = largeur
+		panneau.size.x = largeur
+		pos.x = rc.position.x
 	pos.x = clampf(pos.x, px(16), ecran.x - largeur - px(16))
 	pos.y = minf(pos.y, maxf(px(16), ecran.y - panneau.size.y - px(16)))
 	panneau.position = pos - between.get_global_rect().position
@@ -349,22 +357,22 @@ func _liste_joueurs(col: VBoxContainer) -> void:
 		var id := str(j.get("id", ""))
 		var ligne := HBoxContainer.new()
 		ligne.name = "FmCriJoueur_%d" % n
-		ligne.add_theme_constant_override("separation", px(10))
+		ligne.add_theme_constant_override("separation", px(5))
 		ligne.custom_minimum_size.y = px(44)
 		liste.add_child(ligne)
-		var num := _texte(str(n), 20, PAL.encre2, true)
-		num.custom_minimum_size.x = px(30)
+		var num := _texte(str(n), 18, PAL.encre2, true)
+		num.custom_minimum_size.x = px(26)
 		num.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		ligne.add_child(num)
-		var nom := _texte(str(j.get("name", "")), 20, PAL.encre)
-		nom.custom_minimum_size.x = px(230)
+		var nom := _texte(str(j.get("name", "")), 18, PAL.encre)
+		nom.custom_minimum_size.x = px(160)
 		nom.clip_text = true
 		nom.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		ligne.add_child(nom)
 		var moral: Dictionary = between.moral_joueur(_pilotage(), id)
 		var pastille := PanelContainer.new()
 		pastille.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		pastille.custom_minimum_size.x = px(120)
+		pastille.custom_minimum_size.x = px(88)
 		pastille.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		if not moral.is_empty():
 			var teinte: Color = between.teinte_moral(str(moral.get("cle", "")))
@@ -384,8 +392,8 @@ func _liste_joueurs(col: VBoxContainer) -> void:
 			b.tooltip_text = str(c[1])
 			b.focus_mode = Control.FOCUS_ALL
 			b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-			b.custom_minimum_size = Vector2(px(40), px(40))
-			var rond := _rond(str(c[2]), c[3], 38, ici, false, true)
+			b.custom_minimum_size = Vector2(px(38), px(40))
+			var rond := _rond(str(c[2]), c[3], 36, ici, false, true)
 			rond.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 			b.add_child(rond)
 			var id_j := id
@@ -399,7 +407,7 @@ func _liste_joueurs(col: VBoxContainer) -> void:
 func _reaction(vu: Dictionary) -> Control:
 	var h := HBoxContainer.new()
 	h.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	h.custom_minimum_size.x = px(74)
+	h.custom_minimum_size.x = px(50)
 	h.add_theme_constant_override("separation", px(4))
 	h.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	if vu.is_empty(): return h

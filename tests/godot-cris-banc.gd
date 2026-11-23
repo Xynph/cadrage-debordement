@@ -193,7 +193,15 @@ func capture_tailles(between: Control) -> void:
 			var rr := rond.get_global_rect()
 			var pr := panneau.get_global_rect()
 			check(pr.position.y >= rr.end.y and pr.position.y - rr.end.y < 24.0, "%s : liste juste sous le rond (%d px)" % [str(t), int(pr.position.y - rr.end.y)])
-			check(absf(pr.position.x - rr.position.x) < 2.0 or pr.end.x >= root.size.x - 40, "%s : liste alignée sur le rond" % str(t))
+			var colonne := between.find_child("MatchBetweenEventsColumn", true, false) as Control
+			var rc := colonne.get_global_rect() if colonne != null else Rect2()
+			check(colonne != null and absf(pr.position.x - rc.position.x) < 2.0 and pr.end.x <= rc.end.x + 2.0, "%s : liste sur la colonne de gauche (%d → %d, colonne %d → %d)" % [str(t), int(pr.position.x), int(pr.end.x), int(rc.position.x), int(rc.end.x)])
+			var terrain_2d: Control = between.get("terrain")
+			check(terrain_2d == null or not terrain_2d.is_visible_in_tree() or not pr.intersects(terrain_2d.get_global_rect()), "%s : la liste ne chevauche pas le terrain 2D" % str(t))
+			var centre := between.find_child("MatchBetweenCentre", true, false) as Control
+			check(centre == null or not pr.intersects(centre.get_global_rect()), "%s : la liste reste à gauche du centre" % str(t))
+			var lignes := between.find_child("FmCriJoueur_10", true, false) as Control
+			check(lignes != null and lignes.get_global_rect().end.x <= pr.end.x + 1.0, "%s : colonnes de la liste dans sa largeur" % str(t))
 		check(rond != null and bool(rond.get_meta("ouvert", false)), "%s : rond « À un joueur » allumé tant que la liste est ouverte" % str(t))
 		await capture("final-%d" % t.x)
 	await taille(Vector2i(1920, 1080))
