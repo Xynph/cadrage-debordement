@@ -51,7 +51,7 @@ test('Séance effectuée : le jour de la séance passe à fait, la charge suit l
 });
 
 test('Relevé hebdomadaire de la confiance du groupe dans groupHistory, daté comme la trésorerie', () => {
-  model = M.jouerLeMatch(jeu, model);
+  model = M.jouerLeMatch(jeu, jeu.regler(model));
   model = M.jusquALaSemaineSuivante(jeu, model);
   const h = model.clubLife.relationships.playerTrustHistory, cash = model.finance.cashHistory;
   assert.ok(h.length >= 1, 'un relevé après la semaine jouée');
