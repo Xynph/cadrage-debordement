@@ -52,9 +52,12 @@ function instants(lignes) {
   return durees;
 }
 
-function zone22(lignes) {
-  const entrees = [0, 0], points = [0, 0], secondes = [0, 0];
-  if (!Array.isArray(lignes)) return { entrees, points, secondes };
+// `options.liste` : joint aussi chaque entrée datée, [minute, équipe] dans l'ordre du match (rapport de l'analyste
+// vidéo après le match, courbe cumulée des occasions).
+function zone22(lignes, options = {}) {
+  const entrees = [0, 0], points = [0, 0], secondes = [0, 0], liste = [];
+  const rendu = () => options.liste ? { entrees, points, secondes: secondes.map(s => Math.round(s)), liste } : { entrees, points, secondes: secondes.map(s => Math.round(s)) };
+  if (!Array.isArray(lignes)) return rendu();
   const durees = instants(lignes);
   let seq = null;
   for (const l of lignes) {
@@ -69,13 +72,13 @@ function zone22(lignes) {
       const e = l.possession;
       if (!seq || seq.equipe !== e) seq = { equipe: e, dehors: false, entree: false };
       if (Number.isFinite(l.depuis) && distance(e, l.depuis) > ZONE) seq.dehors = true;
-      if (!seq.entree && seq.dehors && dansLes22(l)) { seq.entree = true; entrees[e]++; }
+      if (!seq.entree && seq.dehors && dansLes22(l)) { seq.entree = true; entrees[e]++; liste.push([Math.max(0, Number(l.minute) || 0), e]); }
       if (seq.entree && Number.isFinite(l.x) && distance(e, l.x) <= ZONE && !ARRETS.has(l.kind)) secondes[e] += durees.get(l.i) || 0;
       if (Number.isFinite(l.x) && distance(e, l.x) > ZONE) seq.dehors = true;
     }
     if (MARQUES.has(l.kind) || l.kind === 'break' || l.kind === 'end') seq = null;
   }
-  return { entrees, points, secondes: secondes.map(s => Math.round(s)) };
+  return rendu();
 }
 
 module.exports = Object.freeze({ ZONE, zone22 });

@@ -79,7 +79,13 @@ func promise(dialog: ConfirmationDialog) -> void:
 func send(dialog: ConfirmationDialog) -> void:
 	if offer_page() == null:
 		dialog.confirmed.emit();return
+	# Le bouton de la page recopie celui de la fenêtre toutes les 0,25 s (recruitment_pages.gd) : juste après la promesse du
+	# rôle il peut encore être grisé. Cause de l'instabilité du « retrait après refus » : envoi raté au mauvais moment.
 	var valider := shown(dialog,"RecrutementPageValider") as Button
+	var limite := Time.get_ticks_msec()+1500
+	while valider != null and valider.disabled and Time.get_ticks_msec()<limite:
+		await process_frame
+		valider = shown(dialog,"RecrutementPageValider") as Button
 	check(valider != null and not valider.disabled,"Signer si accord disponible")
 	if valider == null: return
 	valider.pressed.emit();await settle()
@@ -115,10 +121,15 @@ func run() -> void:
 	await ContextualFlow.settle_club_meetings(app, self, check)
 	app._navigate("Recrutement");await settle()
 	var target: Dictionary={}
+	# Piste nettement au-dessus du plancher : une offre au plancher est toujours refusée (jamais un accord par hasard).
+	var plancher := float(app.model.get("finance",{}).get("salaryFloor",1000))
 	for player: Dictionary in app.model.market:
-		if player.available and player.salary>1000: target=player;break
+		if player.available and player.salary>plancher*3: target=player;break
 	check(not target.is_empty(),"Piste réelle négociable")
 	if target.is_empty(): await app._close(1);return
+	# Patience de l'agent cachée (idée 24, 2 à 5 propositions), ton « À tout prix » donné comme un manager.
+	await command("agent_ton",{"playerId":str(target.id),"ton":"tout_prix"})
+	check(current(str(target.id),true).get("agent",{}).get("ton","") == "tout_prix","Ton donné à l'agent")
 	var id := str(target.id)
 	var profile := str(app.model.meta.dataDir).path_join("donnees.json")
 	var before := FileAccess.get_sha256(profile)
@@ -143,7 +154,7 @@ func run() -> void:
 	check(page_cancel != null and page_cancel.has_focus(),"Annulation focalisée par défaut")
 	var portrait := shown(dialog,"ContractPlayerPortrait") as TextureRect
 	check(portrait != null and portrait.get_meta("player_id","")==id,"Portrait existant rattaché au bon joueur")
-	check(await discussion_tile(dialog,0) == "1 / 3","Prochaine proposition1/3 explicite")
+	check(await discussion_tile(dialog,0) == "1","Prochaine proposition : 1, sans total (patience cachée)")
 	salary=part(dialog,"OfferSalary");years=part(dialog,"OfferYears")
 	salary.value=1000;years.value=years.min_value
 	await settle()
@@ -171,7 +182,8 @@ func run() -> void:
 	var counter_chip := shown(dialog,"OffreContreOffreTexte") as Label
 	check(counter_chip != null and counter_chip.text.contains(Salary.amount(counter.salary)),"Contre-offre retrouvée après snapshot")
 	check(int(counter.attempts)==1,"Numéro réellement enregistré")
-	check(await discussion_tile(dialog,0) == "2 / 3","Prochaine tentative2/3")
+	check(await discussion_tile(dialog,0) == "2","Prochaine tentative : 2, sans total")
+	check(shown(dialog,"NegoHumeur") != null and shown(dialog,"NegoPropo_1") == null,"Humeur de l'agent, plus de ronds numérotés")
 	var reuse := shown(dialog,"OffreContreOffreLien") as Button
 	check(reuse != null,"Contre-offre cliquable")
 	if reuse != null:
@@ -182,8 +194,12 @@ func run() -> void:
 	await capture("contrat-recrutement-contreoffre-1440")
 	await cancel(dialog)
 	check(offer_page() == null,"Annuler ferme l'écran d'offre")
-	await low_offer(id,true);await low_offer(id,true)
-	check(current(id,true).negotiation.status=="withdrawn","Retrait réel après troisième refus")
+	# Refus jusqu'à la rupture : entre la 2e et la 5e proposition selon la patience cachée de l'agent.
+	var refus := 1
+	while refus < 5 and str(current(id,true).negotiation.get("status","")) == "counter":
+		await low_offer(id,true);refus += 1
+	check(current(id,true).negotiation.status=="withdrawn","Retrait réel après %d refus (%s)" % [refus, JSON.stringify(current(id,true).negotiation)])
+	check(refus >= 2 and refus <= 5,"Patience de l'agent entre 2 et 5 propositions : %d" % refus)
 	app.management_ui.market.navigation_id = id
 	app._navigate("Recrutement");await settle()
 	var consult := app.find_child("OfferRecruitment",true,false) as Button
