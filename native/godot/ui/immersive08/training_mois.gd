@@ -101,6 +101,9 @@ static func _donnees(page: Control) -> Dictionary:
 		if not Agenda.valid_date(date): continue
 		if not seances.has(date): seances[date] = []
 		seances[date].append(s)
+	# Planche « Séance avec ses effets » (revue FM27, idée 25) : séances remplacées à la main.
+	var Seance = load("res://ui/immersive08/seance_effets.gd")
+	if not Seance.variante().is_empty(): Seance.appliquer_choix(page, seances)
 	var modeles := {}
 	for t: Variant in planning.get("templates", []):
 		if t is Dictionary: modeles[str(t.get("id", ""))] = t
@@ -523,6 +526,11 @@ static func _fenetre_jour(page: Control, data: Dictionary, date: String) -> void
 		D.text(carte, 92, 68, sous, 18, couleur, 600, 300)
 		var effets: Variant = data.par_seance.get(str(s.get("kind", "")))
 		if effets is Dictionary: _effets(carte, Vector2(420, 29), effets, "TrainingMonthDayEffect%d_" % k, 410)
+		var Seance = load("res://ui/immersive08/seance_effets.gd")
+		if not Seance.variante().is_empty():
+			var rang: int = Array(data.seances.get(date, [])).find(s)
+			var jour := date
+			Pieces.rendre_cliquable(carte, Vector2(840, 84), func(): Seance.ouvrir(page, jour, rang), "TrainingMonthDaySessionOpen%d" % k, str(s.get("label", "")), "", Charte.RAYON_CARTE)
 
 ## Une famille sur le mois : un jour par case avec le nombre de séances de la famille (couleur), clic = le jour.
 static func _fenetre_famille(page: Control, data: Dictionary, famille: String) -> void:

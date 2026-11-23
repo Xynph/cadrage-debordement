@@ -38,6 +38,8 @@ const EXTRAS := [
 	{"id": "entrainement-groupes", "libelle": "Entraînement · onglet Groupes", "type": "entrainement_onglet", "onglet": 1},
 	{"id": "entrainement-mois", "libelle": "Entraînement · onglet Mois", "type": "entrainement_onglet", "onglet": 5},
 	{"id": "entrainement-mois-jour", "libelle": "Entraînement · Mois · petite fenêtre d'un jour", "type": "entrainement_onglet", "onglet": 5, "jour": true},
+	{"id": "entrainement-seance", "libelle": "Entraînement · Mois · choisir une séance (planche FM27 n° 25)", "type": "entrainement_onglet", "onglet": 5, "jour": true, "seance": true},
+	{"id": "entrainement-seance-choisie", "libelle": "Entraînement · Mois · séance remplacée d'un clic", "type": "entrainement_onglet", "onglet": 5, "jour": true, "seance": true, "seance_choix": true},
 	{"id": "salle-entrainement", "libelle": "Observer la préparation (salle d'entraînement)", "type": "salle_entrainement"},
 	{"id": "salle-entrainement-joueur", "libelle": "Observer la préparation · petite fenêtre d'un joueur", "type": "salle_entrainement", "joueur": true},
 	{"id": "fiche-joueur", "libelle": "Fiche joueur", "type": "joueur"},
@@ -579,6 +581,19 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				if choix == null: return {"statut": "echec", "note": "aucun jour"}
 				choix.pressed.emit()
 				await stabiliser()
+				if bool(ecran.get("seance", false)):
+					var seances := page.find_children("TrainingMonthDaySessionOpen*", "Button", true, false)
+					if seances.is_empty(): return {"statut": "echec", "note": "aucune séance dans le jour"}
+					(seances[0] as Button).pressed.emit()
+					await stabiliser()
+					if bool(ecran.get("seance_choix", false)):
+						var lignes := page.find_children("TrainingSessionPick*", "Button", true, false)
+						var autre: Button = null
+						if not lignes.is_empty(): autre = lignes[lignes.size() - 1]
+						if autre != null and autre.get_parent().find_child("TrainingSessionInPlace", true, false) != null: autre = lignes[0]
+						if autre == null: return {"statut": "echec", "note": "aucune autre séance"}
+						autre.pressed.emit()
+						await stabiliser()
 		"salle_entrainement":
 			app._navigate("Préparation")
 			await stabiliser()
@@ -1019,6 +1034,13 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 
 ## Remet l'écran dans son état ordinaire après la capture.
 func refermer(ecran: Dictionary) -> void:
+	if str(ecran.type) == "entrainement_onglet" and bool(ecran.get("seance", false)):
+		var PF = load("res://ui/petite_fenetre.gd")
+		PF.fermer_derniere(app.get_tree())
+		PF.fermer_derniere(app.get_tree())
+		if app.management_ui.get("immersive_training") is Dictionary:
+			app.management_ui.immersive_training.erase("seances_choisies")
+			app.management_ui.immersive_training.erase("seance_cible")
 	if str(ecran.type) == "calendrier_semaine":
 		var mois: Node = app.find_child("CarnetCalendar", true, false)
 		if mois != null and mois.has_method("_view_as"): mois._view_as("month")
