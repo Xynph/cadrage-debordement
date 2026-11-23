@@ -127,6 +127,8 @@ const EXTRAS := [
 	{"id": "strategie-public", "libelle": "Club › Direction · petite fenêtre Le public", "type": "strategie_onglet", "onglet": 2, "zone": "DirectionLien_Humeur"},
 	{"id": "club-infrastructures", "libelle": "Club · onglet Infrastructures", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "infrastructure", "repos": "overview"},
 	{"id": "club-histoire", "libelle": "Club · onglet Histoire", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "history", "repos": "overview"},
+	{"id": "club-jeu", "libelle": "Club · onglet Notre jeu (avis du conseil sur notre jeu)", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "jeu", "repos": "overview"},
+	{"id": "club-jeu-fenetre", "libelle": "Club · Notre jeu, petite fenêtre d'un chiffre", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "jeu", "repos": "overview", "presser": "ConseilJeuLigne_0"},
 	## Staff par service (23/11/2026) : un poste en plus visé (même commande que le clic « + ») dans chaque service qui a un membre en surnombre.
 	{"id": "staff-services-renfort", "libelle": "Staff par service · postes en plus visés", "type": "staff_services"},
 	{"id": "vestiaire-entretiens", "libelle": "Vestiaire · onglet Entretiens et duos", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week"},
@@ -1116,6 +1118,11 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			app.management_ui[str(ecran.cle)] = str(ecran.onglet)
 			app._navigate(str(ecran.route))
 			await stabiliser()
+			if ecran.has("presser"):
+				var bouton := app.find_child(str(ecran.presser), true, false) as Button
+				if bouton == null: return {"statut": "echec", "note": "bouton %s absent" % ecran.presser}
+				bouton.pressed.emit()
+				await stabiliser()
 			if ecran.has("defiler"):
 				var colonne := app.find_child(str(ecran.defiler), true, false) as ScrollContainer
 				if colonne == null: return {"statut": "echec", "note": "colonne %s absente" % ecran.defiler}
