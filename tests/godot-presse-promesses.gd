@@ -97,8 +97,9 @@ func run() -> void:
 		if option.get("kind") == "home_wins": choice = option; break
 	var id := "PressPromise_" + str(choice.id).replace(":", "_")
 	var button := node(id) as Button
-	check(button != null and button.text.contains(str(choice.realismLabel)), "Vraisemblance affichée sur le choix : " + (button.text if button != null else "absent"))
-	check(button != null and button.tooltip_text.contains("Supporters"), "Réactions annoncées au survol")
+	var puce := node("PressPromiseChip_" + str(choice.id).replace(":", "_"))
+	check(button != null and puce != null and puce.find_children("*", "Label", true, false).any(func(l: Label): return l.text == str(choice.label)), "Objectif proposé en pastille cliquable")
+	check(button != null and not button.tooltip_text.contains("Supporters"), "Aucune réaction annoncée avant de répondre (Léo, 23/11/2026)")
 	check(node("PressPromise_refuse") != null, "Refuser de promettre est possible")
 	await click(id)
 	check(view().promise_choice == str(choice.id), "Objectif retenu")
@@ -111,7 +112,6 @@ func run() -> void:
 	for index in questions.size():
 		var shown: Dictionary = questions[view().question_index]
 		await click("PressAnswer_%s_%s" % [shown.id, "r1"])
-	await click("PressPublish")
 	await settle(8)
 	var promises: Dictionary = app.model.get("clubLife", {}).get("pressPromises", {})
 	check(promises.get("active", []).size() == 1 and str(promises.active[0].kind) == "home_wins", "Promesse enregistrée par le moteur")
