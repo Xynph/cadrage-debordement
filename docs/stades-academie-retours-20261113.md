@@ -14,8 +14,7 @@ Demandes de Léo du 13 novembre 2026 (trois corrections). Carrière Monde unique
   Premiership : Wikipédia, liste des stades anglais ; URC : JetPunk, stades 2023-24 ; Super Rugby et Japon : capacités
   publiées), 18 estimées sur la taille de la ville et le niveau (Nationale et quelques clubs étrangers), 23 créées, crédibles
   pour le niveau (règle du projet : créées comme si elles étaient réelles). Ernest-Wallon : 19 500.
-- Règle de plafond : un stade de plus de 40 000 places compte 30 000 (le club ferme ses tribunes hautes en championnat). Sans
-  elle, les grands stades sud-africains, néo-zélandais et australiens donneraient 25 000 à 30 000 abonnés.
+- Plafond retiré (23/11/2026) : les huit grands stades plafonnés à 30 000 (identifiants 52, 53, 54, 55, 58, 65, 66, 77) reprennent leur capacité réelle publiée : 55 000, 51 762, 52 000, 62 567, 50 000, 52 500, 42 500, 45 000.
 - Effet : abonnés de départ = capacité × (25 % + 50 % × popularité) (PR #676), affluence prévue, recette de billetterie
   prévue (projection de gestion, jamais encaissée), effet des campagnes d'abonnés. **Aucun effet sur la trésorerie** : le
   budget (`club-budget.cjs`) calcule la billetterie à partir des recettes du championnat et ne lit pas la capacité (test).

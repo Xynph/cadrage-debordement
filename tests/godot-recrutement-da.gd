@@ -10,6 +10,8 @@ extends SceneTree
 const Flow = preload("helpers/contextual_flow.gd")
 const Charte = preload("res://ui/charte.gd")
 const Listes = preload("res://ui/immersive08/listes_joueurs.gd")
+const G = preload("res://ui/game_skin.gd")
+const Salary = preload("res://ui/salary_display.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -317,14 +319,14 @@ func offer_pieces() -> void:
 		check(node(id) != null, "Offre au joueur : pièce %s affichée" % id)
 	check(node("OfferSalary") != null and node("OfferSalary").is_visible_in_tree() and node("OfferYears") != null and node("OfferYears").is_visible_in_tree(), "Offre au joueur : champs salaire et durée visibles")
 	check(node("ContractTransferBudget") == null or not node("ContractTransferBudget").is_visible_in_tree(), "Offre au joueur : plus de phrase « Disponible pour les transferts »")
-	var liens := ["OffreEtapeLien", "OffreDemandeLien", "OffreRegleEcartZoneLien", "OffreFriseFinZoneLien", "OffreJetonLien", "OffreJetonResteLien", "OffreJetonEngageLien", "OffreJetonTresorerieLien"]
+	var liens := ["OffreEtapeLien", "OffreDemandeLien", "OffreRegleEcartZoneLien", "OffreFriseFinZoneLien", "OffreJetonLien", "OffreJetonResteLien", "OffreGuideePlafondLien", "OffreGuideeSegmentLien_0"]
 	var manieres := ["croix", "echap", "a_cote"]
 	var vus := 0
 	for i in liens.size():
 		var lien := node(liens[i]) as Button
 		if lien == null:
-			# Budget de saison absent : pastilles « Reste » et « Engagé » non affichées.
-			check(liens[i] in ["OffreJetonResteLien", "OffreJetonEngageLien"], "Offre au joueur : %s cliquable" % liens[i])
+			# Budget de saison absent : pastilles « Reste » et place sous le plafond non affichées.
+			check(liens[i] in ["OffreJetonResteLien", "OffreGuideePlafondLien"], "Offre au joueur : %s cliquable" % liens[i])
 			continue
 		vus += 1
 		lien.pressed.emit()
@@ -364,6 +366,43 @@ func offer_pieces() -> void:
 			annees.value = avant
 			await settle(3)
 	check(int(app.bridge._next_id) == commandes, "Régler l'offre n'envoie aucune commande")
+	await offre_guidee()
+
+## Offre guidée (choix B de Léo, 23/11/2026) : conseils du recruteur sur chaque réglage, un clic les applique ; prime en
+## crans et clause libératoire ; barre de coût par saison ; rien n'est envoyé avant « Envoyer l'offre ».
+func offre_guidee() -> void:
+	var commandes := int(app.bridge._next_id)
+	for id in ["OffreGuideeCarte", "OffreGuideeZone", "OffreGuideeOuverture", "OffreGuideeSaison", "OffreClause", "OffreGuideeCouts", "OffreGuideeSuggestion", "OffrePrimeCran_0", "OffreClauseNiveau_sans", "OffreClauseNiveau_basse"]:
+		check(node(id) != null, "Offre guidée : %s affiché" % id)
+	check(node("OffreGuideeColonne") == null and node("OffreGuideeImmediat") == null, "Offre guidée : variante A retirée")
+	check(node("OffreGuideePrimeConseil") != null or node("OffreGuideeClauseConseil") != null, "Offre guidée : conseil posé sur la prime ou la clause")
+	var montant := node("OffreJetonMontant") as Label
+	var avant := montant.text if montant != null else ""
+	var cran := node("OffrePrimeCranLien_1") as Button
+	if cran != null:
+		cran.pressed.emit()
+		await settle(3)
+		montant = node("OffreJetonMontant") as Label
+		check(montant != null and montant.text != avant, "Prime : un clic sur un cran change la prime (%s → %s)" % [avant, montant.text if montant != null else "—"])
+	var basse := node("OffreClauseLien_basse") as Button
+	check(basse != null, "Clause basse cliquable")
+	if basse != null:
+		basse.pressed.emit()
+		await settle(3)
+		var clause := node("OffreClauseMontant") as Label
+		check(clause != null and clause.text != "Sans", "Clause : un clic choisit la clause basse (%s)" % (clause.text if clause != null else "—"))
+	var salaire := node("OfferSalary") as SpinBox
+	var ouverture := node("OffreGuideeOuvertureLien") as Button
+	if salaire != null and ouverture != null:
+		ouverture.pressed.emit()
+		await settle(3)
+		var drapeau := node("OffreGuideeOuvertureTexte") as Label
+		check(drapeau != null and drapeau.text.ends_with(G.salary_amount(Salary.input_weekly(salaire))), "Ouverture : un clic l'applique (%s, %s)" % [drapeau.text if drapeau != null else "—", G.salary_amount(Salary.input_weekly(salaire))])
+	var suggestion := node("OffreGuideeSuggestion") as Button
+	if suggestion != null:
+		suggestion.pressed.emit()
+		await settle(3)
+	check(int(app.bridge._next_id) == commandes, "Offre guidée : aucun envoi avant « Envoyer l'offre »")
 
 ## Besoins du club : arrive filtré sur le poste du besoin n° 1 ; une carte sans piste propose une mission ; « ★ » trie.
 func needs_and_sort() -> void:
