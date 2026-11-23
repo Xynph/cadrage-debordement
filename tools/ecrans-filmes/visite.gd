@@ -56,6 +56,9 @@ const EXTRAS := [
 	{"id": "salle-conseil-fenetre", "libelle": "Salle du conseil · petite fenêtre", "type": "salle_conseil", "fenetre": true},
 	{"id": "salle-conseil-match", "libelle": "Salle du conseil · fenêtre d'un match", "type": "salle_conseil", "ballon": true},
 	{"id": "presse-ouverte", "libelle": "Presse : conférence avec questions ouvertes", "type": "presse_ouverte"},
+	{"id": "presse-conference-fm", "libelle": "Presse : conférence de presse (salle, une question à la fois)", "type": "presse_ouverte", "fm": true},
+	{"id": "presse-conference-fm-suite", "libelle": "Presse : conférence après une réponse (réaction en flèches)", "type": "presse_ouverte", "fm": true, "repondre": true},
+	{"id": "presse-conference-fm-joueur", "libelle": "Presse : conférence, petite fenêtre du joueur concerné", "type": "presse_ouverte", "fm": true, "clic": "PressPlayerOpen"},
 	{"id": "presse-conference", "libelle": "Presse : Conférence", "type": "presse_onglet", "onglet": 1},
 	{"id": "presse-historique", "libelle": "Presse : Historique", "type": "presse_onglet", "onglet": 2},
 	{"id": "presse-portraits", "libelle": "Presse : Portraits", "type": "presse_onglet", "onglet": 3},
@@ -71,6 +74,7 @@ const EXTRAS := [
 	{"id": "classements-archives", "libelle": "Classements · sous-page des archives des saisons", "type": "classements_page", "page": "archives"},
 	{"id": "classements-phases", "libelle": "Classements · onglet Phases finales", "type": "classements_onglet", "onglet": "playoffs"},
 	{"id": "classements-stats", "libelle": "Classements · onglet Statistiques", "type": "classements_onglet", "onglet": "stats"},
+	{"id": "dans-le-monde", "libelle": "Compétitions · Dans le monde", "type": "classements_onglet", "onglet": "monde"},
 	{"id": "formation-suivi", "libelle": "Formation · sous-page Suivi des jeunes", "type": "formation_suivi"},
 	{"id": "options", "libelle": "Options", "type": "options"},
 	{"id": "recherche", "libelle": "Recherche (résultats de la barre haute)", "type": "recherche"},
@@ -78,6 +82,9 @@ const EXTRAS := [
 	{"id": "avant-match-delegation", "libelle": "Avant-match · sous-page Déléguer le match", "type": "avant_delegation"},
 	{"id": "avant-match-bilan", "libelle": "Avant-match · petite fenêtre de la dernière rencontre", "type": "avant_bilan"},
 	{"id": "compte-rendu", "libelle": "Réception · article du dernier match (carte du compte rendu)", "type": "reception_article"},
+	{"id": "analyste-match", "libelle": "Réception · message « Analyse vidéo » du dernier match", "type": "reception_analyse"},
+	{"id": "analyste-match-domination", "libelle": "Réception · analyse vidéo, petite fenêtre de la domination", "type": "reception_analyse", "verdict": "domination"},
+	{"id": "analyste-match-joueurs", "libelle": "Réception · analyse vidéo, onglet Nos joueurs", "type": "reception_analyse", "onglet": "joueurs"},
 	{"id": "preparation-bas", "libelle": "Préparation · leur XV probable (bas de page)", "type": "preparation_bas"},
 	{"id": "preparation-consignes", "libelle": "Préparation · onglet Consignes", "type": "preparation_onglet", "onglet": 1},
 	{"id": "preparation-conseils", "libelle": "Préparation · conseils détaillés (sous-page)", "type": "preparation_sous", "sous": "conseils"},
@@ -99,7 +106,11 @@ const EXTRAS := [
 	{"id": "classements-calendrier", "libelle": "Classements · onglet Calendrier (tableau)", "type": "classements_onglet", "onglet": "calendar"},
 	{"id": "recrutement-entre-clubs", "libelle": "Recrutement · sous-page Marché entre clubs", "type": "recrutement_sous", "page": "interclub"},
 	{"id": "recrutement-entre-clubs-offre", "libelle": "Recrutement · Marché entre clubs, offre guidée par le recruteur", "type": "recrutement_sous", "page": "interclub", "offre": true},
+	{"id": "recherche-ciblee", "libelle": "Recrutement · recherche ciblée (poste, rôle, critères, joueurs observés)", "type": "recherche_ciblee"},
 	{"id": "recrutement-rapport-recruteur", "libelle": "Recrutement · Rapport du recruteur", "type": "recrutement_sous", "page": "recruteur"},
+	{"id": "agent-discussion", "libelle": "Recrutement · discussion avec l'agent", "type": "recrutement_sous", "page": "recruteur", "presser": "RapportAgentOuvrirLien"},
+	{"id": "agent-ton", "libelle": "Recrutement · discussion avec l'agent, ton à tout prix puis rôle attendu", "type": "recrutement_sous", "page": "recruteur", "presser": "RapportAgentOuvrirLien", "puis": ["AgentTon_tout_prix", "AgentQuestion_role"]},
+	{"id": "agent-offre", "libelle": "Recrutement · offre après la discussion avec l'agent (relation, caractère, humeur)", "type": "recrutement_sous", "page": "recruteur", "presser": "RapportAgentOuvrirLien", "puis": ["AgentTon_tout_prix", "AgentQuestion_role", "AgentFaireOffre"]},
 	{"id": "finances-tresorerie", "libelle": "Finances · onglet Trésorerie (colonne de verdict)", "type": "finances_onglet", "onglet": "cash"},
 	{"id": "finances-salaires", "libelle": "Finances · onglet Salaires", "type": "finances_onglet", "onglet": "wages"},
 	{"id": "finances-budget", "libelle": "Finances · onglet Budget", "type": "finances_onglet", "onglet": "budget"},
@@ -111,6 +122,8 @@ const EXTRAS := [
 	{"id": "strategie-public", "libelle": "Club › Direction · petite fenêtre Le public", "type": "strategie_onglet", "onglet": 2, "zone": "DirectionLien_Humeur"},
 	{"id": "club-infrastructures", "libelle": "Club · onglet Infrastructures", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "infrastructure", "repos": "overview"},
 	{"id": "club-histoire", "libelle": "Club · onglet Histoire", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "history", "repos": "overview"},
+	## Staff par service (23/11/2026) : un poste en plus visé (même commande que le clic « + ») dans chaque service qui a un membre en surnombre.
+	{"id": "staff-services-renfort", "libelle": "Staff par service · postes en plus visés", "type": "staff_services"},
 	{"id": "vestiaire-entretiens", "libelle": "Vestiaire · onglet Entretiens et duos", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week"},
 	{"id": "selections-offres", "libelle": "Sélections · onglet Offres", "type": "onglet_cle", "route": "Sélections", "cle": "international_section", "onglet": "offers", "repos": "callups"},
 	{"id": "selections-disponibilites", "libelle": "Sélections · onglet Disponibilités", "type": "onglet_cle", "route": "Sélections", "cle": "international_section", "onglet": "availability", "repos": "callups"},
@@ -554,6 +567,22 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			if lecture != null:
 				lecture.scroll_vertical = int(carte_cr.global_position.y - lecture.global_position.y) + lecture.scroll_vertical - 12
 				await stabiliser()
+		"reception_analyse":
+			var analyse_id := ""
+			for courrier: Dictionary in load("res://ui/club_mail.gd").mails(app.model):
+				if str(courrier.get("type", "")) == "analyse_video" and str(courrier.id).trim_prefix("mail-").to_int() > analyse_id.trim_prefix("mail-").to_int(): analyse_id = str(courrier.id)
+			if analyse_id.is_empty(): return {"statut": "indisponible", "note": "aucune analyse vidéo dans la carrière filmée"}
+			app._reset_reception(analyse_id)
+			app._navigate("Réception", false)
+			await stabiliser()
+			if app.find_child("AnalysteMatch", true, false) == null: return {"statut": "echec", "note": "panneau de l'analyste absent"}
+			var bouton_a: Button = null
+			if ecran.has("verdict"): bouton_a = app.find_child("AnalysteVerdictLien_" + str(ecran.verdict), true, false) as Button
+			elif ecran.has("onglet"): bouton_a = app.find_child("AnalysteOngletLien_" + str(ecran.onglet), true, false) as Button
+			if (ecran.has("verdict") or ecran.has("onglet")) and bouton_a == null: return {"statut": "echec", "note": "donnée de l'analyste absente"}
+			if bouton_a != null:
+				bouton_a.pressed.emit()
+				await stabiliser()
 		"tactique_onglet":
 			app._navigate("Composition")
 			await stabiliser()
@@ -669,6 +698,23 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			app.set_meta("press_mail_origin", conference.invitationId)
 			canvas._select(1)
 			await stabiliser()
+			if ecran.get("fm", false):
+				# Salle de presse (vue contextuelle) : la conférence s'y tient, une question à la fois.
+				app.contextual_director.sync()
+				await stabiliser()
+				if app.contextual_director.kind != "press": return {"statut": "indisponible", "note": "salle de presse non ouverte (%s)" % app.contextual_director.kind}
+				await stabiliser()
+				if app.find_child("PressQuestionBubble", true, false) == null: return {"statut": "echec", "note": "conférence FM absente"}
+				if ecran.get("repondre", false):
+					var reponses: Array = app.contextual_director.view.find_children("PressAnswer_*", "Button", true, false)
+					if reponses.is_empty(): return {"statut": "echec", "note": "aucune réponse"}
+					(reponses[0] as Button).pressed.emit()
+					await stabiliser()
+				if ecran.has("clic"):
+					var cible: Button = app.contextual_director.view.find_child(str(ecran.clic), true, false) as Button
+					if cible == null: return {"statut": "echec", "note": "%s absent" % ecran.clic}
+					cible.pressed.emit()
+					await stabiliser()
 		"strategie_onglet":
 			app.management_ui.immersive08_strategy_tab = int(ecran.onglet)
 			app._navigate("Stratégie")
@@ -739,6 +785,21 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				salaire.pressed.emit()
 				await stabiliser()
 				if app.find_child("OffreFenetreSalaire", true, false) == null: return {"statut": "echec", "note": "petite fenêtre du salaire non ouverte"}
+		"recherche_ciblee":
+			app.management_ui.erase("recrutement_page")
+			app._navigate("Recrutement")
+			await stabiliser()
+			if app.route != "Recrutement": return {"statut": "redirige", "note": "le jeu affiche « %s » à la place" % app.route}
+			var Recherche = load("res://ui/immersive08/recherche_ciblee.gd")
+			var etat_r: Dictionary = Recherche._etat(app)
+			etat_r.poste = 8
+			etat_r.role = str(load("res://ui/immersive08/fiche_roles.gd").roles_famille(Recherche._famille_role(etat_r))[0][0])
+			etat_r.note = 0
+			var bouton_r := app.find_child("RechercheCibleeOuvrir", true, false) as Button
+			if bouton_r == null: return {"statut": "echec", "note": "lien Recherche ciblée absent"}
+			bouton_r.pressed.emit()
+			await stabiliser()
+			if app.find_child("RechercheCibleeFenetre", true, false) == null: return {"statut": "echec", "note": "fenêtre absente"}
 		"recrutement_sous":
 			app.management_ui.erase("recrutement_page")
 			app._navigate("Recrutement")
@@ -748,6 +809,16 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			await stabiliser()
 			await stabiliser()
 			if app.find_child("RecrutementSubpage_" + str(ecran.page), true, false) == null: return {"statut": "echec", "note": "sous-page non ouverte"}
+			if ecran.has("presser"):
+				var ouvre := app.find_child(str(ecran.presser), true, false) as Button
+				if ouvre == null: return {"statut": "echec", "note": "bouton %s absent" % ecran.presser}
+				ouvre.pressed.emit()
+				await stabiliser()
+				for nom_puis: Variant in ecran.get("puis", []):
+					var suite := app.find_child(str(nom_puis), true, false) as Button
+					if suite == null: return {"statut": "echec", "note": "bouton %s absent" % nom_puis}
+					suite.pressed.emit()
+					await stabiliser()
 			if ecran.get("offre", false):
 				# Offre guidée entre clubs : premier joueur proposable du catalogue.
 				var vue: Node = null
@@ -791,6 +862,18 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			suivi.pressed.emit()
 			await stabiliser()
 			if app.find_child("FormationRetour", true, false) == null: return {"statut": "echec", "note": "la sous-page ne s'est pas ouverte"}
+		"staff_services":
+			var services: Array = app.model.get("clubLife", {}).get("staffServices", {}).get("services", [])
+			if services.is_empty(): return {"statut": "indisponible", "note": "staff par service absent"}
+			for s: Dictionary in services:
+				if (s.get("surnombre", []) as Array).is_empty() or int(s.get("cible", 0)) > 0: continue
+				app._command("staff_services_target", {"service": str(s.id), "cible": 1})
+				while app.waiting: await process_frame
+			app.management_ui.erase("staff_services_vue")
+			app.StaffViews.reading(app).navigation_id = ""
+			app._navigate("Staff")
+			await stabiliser()
+			if app.find_child("StaffService_coaching", true, false) == null: return {"statut": "echec", "note": "vue par service absente"}
 		"calendrier_semaine":
 			app._navigate("Calendrier")
 			await stabiliser()
@@ -1143,6 +1226,9 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 
 ## Remet l'écran dans son état ordinaire après la capture.
 func refermer(ecran: Dictionary) -> void:
+	if str(ecran.type) == "recherche_ciblee":
+		load("res://ui/petite_fenetre.gd").fermer_derniere(app.get_tree())
+		app.management_ui.erase("recherche_ciblee")
 	if str(ecran.type) == "calendrier_semaine":
 		var mois: Node = app.find_child("CarnetCalendar", true, false)
 		if mois != null and mois.has_method("_view_as"): mois._view_as("month")
@@ -1156,6 +1242,9 @@ func refermer(ecran: Dictionary) -> void:
 	if str(ecran.type) == "creation_options":
 		app.management_ui.erase("creation_step")
 		app.management_ui.erase("creation_selection")
+	if str(ecran.type) == "recrutement_sous" and ecran.has("presser"):
+		load("res://ui/petite_fenetre.gd").fermer_derniere(app.get_tree())
+		app.management_ui.erase("agent_tons")
 	if str(ecran.type) == "effectif_onglet":
 		app.management_ui.roster.immersive_tab = 0
 		app.management_ui.roster.erase("plan_saison")

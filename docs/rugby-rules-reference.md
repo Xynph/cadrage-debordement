@@ -360,3 +360,24 @@ Lois World Rugby en ligne relues pour le principe, numéros de sous-articles non
   fréquence des pénalités de mêlée). Le commentaire dit « récupère l'introduction » ou « rend le ballon ».
 - Réserves : répartition entre causes fixée par le jeu (pas de statistique officielle par cause) ; la scène 3D
   d'un lancer pas droit reste celle d'une touche perdue.
+
+## Combinaisons de phases arrêtées (23/11/2026)
+
+Rencontres créées avec `combiVersion: 1` (`dist/playbook.js`) ; carnet sans combinaisons (clubs de l'ordinateur) : effets et tirages inchangés.
+
+- Touche ([loi 18](https://passport.world.rugby/fr/les-regles-du-jeu/regles-du-jeu-par-numero/18-touche-remise-en-jeu-rapide-et-alignement/)) :
+  l'équipe qui lance fixe le nombre de joueurs alignés (7, 5 ou 4 ici, au moins deux par équipe) ; l'adversaire peut
+  en aligner moins, pas plus. Le contre (devant, fond, contrer le maul) ne change que la probabilité de conserver,
+  les mètres et l'essai sur ballon porté ; aucun contact avant le saut n'est simulé.
+- Mêlée ([loi 19](https://passport.world.rugby/fr/les-regles-du-jeu/regles-du-jeu-par-numero/19-la-melee-ordonnee/)) :
+  le n° 8 peut ramasser le ballon au pied de la mêlée (« 8 qui part ») ; poussée défensive sur l'introduction
+  adverse : plus de pénalités sifflées en faveur de l'équipe qui introduit. Mêlée non disputée : aucun effet (inchangé).
+- Pénalité ([loi 20](https://passport.world.rugby/fr/les-regles-du-jeu/regles-du-jeu-par-numero/20-penalite-et-coup-franc/)) :
+  poteaux, touche, jeu rapide ou mêlée au point de la faute (cause `penalty-scrum`), choisis avant le match par zone
+  (dans les 22 adverses, 22-40 m, au-delà) ; « Selon le score » garde la décision du staff. Après la sirène, la règle
+  de fin de période (loi 5) prime ; une consigne du direct autre que « Selon le contexte » prime sur le plan.
+  Choix de simulation : une consigne figée répétée dans le match est lue par l'adversaire (pénaltouche, mêlée,
+  jeu vite moins dangereux à chaque répétition).
+- Renvoi ([loi 12](https://passport.world.rugby/fr/les-regles-du-jeu/regles-du-jeu-par-numero/12-coup-d-envoi-et-renvois/)) :
+  le renvoi court parcourt toujours au moins dix mètres, quelle que soit la réception adverse.
+- Coefficients fictifs, recalés par mesure sur des matchs simulés (aucune option dominante) ; ils ne sont pas tirés des lois.

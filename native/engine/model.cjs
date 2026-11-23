@@ -71,7 +71,7 @@ module.exports=function nativeModel(){
   const reason=S.live?'Match en cours':calendrierFerme?calendrierFerme:places<=0?'Effectif complet':cash<p.price?'Trésorerie insuffisante':horsBudget?horsBudget:maxYears<1?'Retraite prévue':withdrawn?withdrawnReason:'';
   const available=!S.live&&!calendrierFerme&&places>0&&cash>=p.price&&!horsBudget&&maxYears>=1&&!withdrawn;
   return {...(p.appearanceBankVersion===undefined?{}:{appearanceBankVersion:p.appearanceBankVersion}),...(p.appearanceId===undefined?{}:{appearanceId:p.appearanceId}),id:p.id,name:p.name,pos:p.pos,age:p.age,rating:p.rating,...nativePlayerAttributes(p),
-   salary:askingWage(p,'recruit'),fee,minYears:1,maxYears,available,reason,loan:pretPiste(p),...(typeof clausesOffre==='function'?{offre:clausesOffre(p,'recruit')}:{}),...(negotiation?{negotiation}:{}),...(quotaBadge(p)?{quota:quotaBadge(p)}:{}),...(formeRecente(p.id)?{formeRecente:formeRecente(p.id)}:{}),...(typeof roleContratRoles==='function'?{roles:roleContratRoles(source,'recruit')}:{})};
+   salary:askingWage(p,'recruit'),fee,minYears:1,maxYears,available,reason,loan:pretPiste(p),...(typeof clausesOffre==='function'?{offre:clausesOffre(p,'recruit')}:{}),...(negotiation?{negotiation}:{}),...(quotaBadge(p)?{quota:quotaBadge(p)}:{}),...(formeRecente(p.id)?{formeRecente:formeRecente(p.id)}:{}),...(typeof roleContratRoles==='function'?{roles:roleContratRoles(source,'recruit')}:{}),...(typeof tonAgentVue==='function'?{agent:tonAgentVue(p.id)}:{})};
  });
  const pair=nextMatch(),l=S.live;
  // Météo vue par le manager : libellé, conseil du staff (sans la phrase du vent, composée par l'écran avec
