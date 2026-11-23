@@ -91,7 +91,7 @@ module.exports={
    // Discussion avec un joueur (discussion-joueur.cjs) : hiérarchie du vestiaire, phrases du moment, fil des échanges.
    const D=typeof CDDiscussionJoueur!=='undefined'?CDDiscussionJoueur:null,leaderId=CDRelationsV70.leader(S)?.id??null,rangs=D?D.hierarchie(roster(),leaderId):null;
    return {context:ctx,active,available:!blocked,reason:blocked?'Match en cours, saison terminée ou négociation ouverte.':'',morale:S.morale,trust:S.trust,playerTrust:groupTrust(),playerTrustHistory:(Array.isArray(S.groupHistory)?S.groupHistory:[]).filter(h=>Number.isInteger(h?.confiance)).map(h=>({date:h.date,saison:h.saison,confiance:h.confiance})),tensions:tensions(),
-    players:roster().map(p=>({id:p.id,pos:p.pos,score:p.satisfaction?.score??null,trust:playerTrust(p),condition:p.condition,injury:p.injury,minutes:p.dev?.minutes??null,personality:CDLivingLockerRoom.personality(p),promise:p.satisfaction?.promise?copy(p.satisfaction.promise):null,promiseHistory:copy(p.satisfaction?.history||[]),conversationAvailable:active&&!blocked&&!(p.satisfaction?.coachMeeting?.season===S.season&&p.satisfaction.coachMeeting.week===S.economy.week),promiseAvailable:active&&!blocked&&S.phase==='league'&&S.round<PROMISE_LAST_JOURNEY&&!p.injury&&!p.satisfaction?.promise,...(D?{discussion:D.vue(p,rangs.get(p.id)||'groupe')}:{})})),
+    players:roster().map(p=>({id:p.id,pos:p.pos,score:p.satisfaction?.score??null,trust:playerTrust(p),condition:p.condition,injury:p.injury,minutes:p.dev?.minutes??null,personality:CDLivingLockerRoom.personality(p),promise:p.satisfaction?.promise?copy(p.satisfaction.promise):null,promiseHistory:copy(p.satisfaction?.history||[]),conversationAvailable:active&&!blocked&&!(p.satisfaction?.coachMeeting?.season===S.season&&p.satisfaction.coachMeeting.week===S.economy.week),promiseAvailable:active&&!blocked&&S.phase==='league'&&S.round<PROMISE_LAST_JOURNEY&&!p.injury&&!p.satisfaction?.promise,...(D?{discussion:D.vue(p,rangs.get(p.id)||'groupe',active&&!blocked)}:{})})),
     conversations:[{id:'ecouter',label:'Écouter',detail:'Satisfaction +2.'},{id:'rassurer',label:'Rassurer',detail:'Satisfaction +1 ; premier entretien : moral +1.'},{id:'clarifier',label:'Clarifier',detail:'Premier entretien : confiance +1.'}],
     promiseLastJourney:PROMISE_LAST_JOURNEY,promiseOptions:Object.entries(PROMISE_MINUTES).map(([id,minutes])=>({id,minutes})),
     leaderId,pairs:copy(S.v70Relations?.pairs||[]),duoAvailable:CDRelationsV70.allowed(S),duoActions:Object.entries(CDRelationsV70.ACTIONS).map(([id,c])=>({id,...c})),
@@ -114,25 +114,37 @@ module.exports={
     if(!text(p.playerId)||!['ecouter','rassurer','clarifier'].includes(p.choice))throw Error('Entretien invalide.');
     const first=!roster().some(p=>p.satisfaction?.coachMeeting?.season===S.season&&p.satisfaction.coachMeeting.week===S.economy.week);
     const person=roster().find(x=>x.id===p.playerId);if(person&&S.satisfactionVersion===1)ensureSatisfaction(person);
-    // Discussion (discussion-joueur.cjs) : la phrase dite doit être proposée à ce joueur maintenant et appartenir à la
-    // famille d'entretien envoyée ; son effet réel (caractère, situation, hiérarchie) remplace le bonus fixe.
-    let dit=null,rang='groupe';
+    // Discussion (discussion-joueur.cjs) : trois tours (ouverture, relance, conclusion) ; la phrase dite doit être
+    // proposée à ce joueur maintenant et appartenir à la famille d'entretien envoyée. Le premier tour tient l'entretien
+    // de la semaine ; son effet réel (caractère, situation, hiérarchie) remplace le bonus fixe, tour après tour.
+    let dit=null;
     if(p.phrase!==undefined){
      check(typeof CDDiscussionJoueur!=='undefined','discussion indisponible');
      if(!text(p.phrase,40)||!person)throw Error('Entretien invalide.');
-     rang=CDDiscussionJoueur.hierarchie(roster(),CDRelationsV70.leader(S)?.id??null).get(person.id)||'groupe';
+     const rang=CDDiscussionJoueur.hierarchie(roster(),CDRelationsV70.leader(S)?.id??null).get(person.id)||'groupe';
      dit=CDDiscussionJoueur.evaluer(person,p.phrase,rang);
      if(!dit||dit.phrase.choix!==p.choice)throw Error('Phrase indisponible pour ce joueur.');
     }
-    ok=coachConversation(p.playerId,p.choice);
-    if(ok&&dit){
-     const st=person.satisfaction,entree=S.economy.relationLog?.[0];
-     const avant=Number.isFinite(entree?.amount)?entree.amount:st.score;
-     st.score=clamp(Math.round(avant+dit.effet),20,95);
-     if(entree&&entree.kind==='coach'&&entree.playerId===person.id){entree.minimum=st.score;entree.phrase=dit.phrase.id;entree.effet=dit.effet;}
-     S.morale=clamp(S.morale+CDDiscussionJoueur.moralGroupe(rang,dit.effet),25,98);
+    if(dit&&dit.entree){
+     // Relance ou conclusion d'une discussion commencée cette semaine.
+     const e=dit.entree,st=person.satisfaction;
+     check(S.satisfactionVersion===1&&S.relationsVersion===1&&!!st&&Number.isFinite(e.amount),'discussion sans suivi');
+     // Écart avec l'effet déjà appliqué (un autre événement de la semaine a pu bouger la satisfaction entre deux tours).
+     const ecart=dit.total-(Number.isFinite(e.effet)?e.effet:0);
+     e.chemin.push(dit.phrase.id);e.reactions.push(dit.reaction);e.effet=dit.total;
+     st.score=clamp(Math.round(st.score+ecart),20,95);e.minimum=st.score;
+     if(dit.fin)S.morale=clamp(S.morale+CDDiscussionJoueur.moralGroupe(dit.rang,dit.total),25,98);
+     ok=true;
+    }else{
+     ok=coachConversation(p.playerId,p.choice);
+     if(ok&&dit){
+      const st=person.satisfaction,e=S.economy.relationLog?.[0];
+      check(!!e&&e.kind==='coach'&&e.playerId===person.id,'entretien non enregistré');
+      st.score=clamp(Math.round(e.amount+dit.total),20,95);
+      Object.assign(e,{minimum:st.score,chemin:[dit.phrase.id],reactions:[dit.reaction],effet:dit.total,situation:dit.situation,rang:dit.rang});
+     }
+     if(ok){const impact=CDVestiaireV64.meetingImpact(p.choice,first);S.morale=clamp(S.morale+impact.morale,25,98);S.trust=clamp(S.trust+impact.trust,0,100);}
     }
-    if(ok){const impact=CDVestiaireV64.meetingImpact(p.choice,first);S.morale=clamp(S.morale+impact.morale,25,98);S.trust=clamp(S.trust+impact.trust,0,100);}
    }else if(command==='relationship_promise'){
     if(!text(p.playerId)||!Object.hasOwn(PROMISE_MINUTES,p.target))throw Error('Promesse invalide.');ok=makePlayingPromise(p.playerId,p.target);
    }else if(command==='relationship_duo'){

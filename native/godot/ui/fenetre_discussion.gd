@@ -12,7 +12,8 @@ extends RefCounted
 ##     flèche de l'un à l'autre) ;
 ##   visage : Callable() -> Control, petit portrait des bulles de l'interlocuteur ;
 ##   fil : [{qui: "lui" | "moi" | "repere", texte, couleur, id, effet: Control (sous la bulle), controle: Control
-##     (repère centré : date, état)}, …], du plus ancien au plus récent ; le fil défile jusqu'au dernier message ;
+##     (repère centré : date, état)}, …], du plus ancien au plus récent, sur autant de tours que voulu ; le fil défile
+##     jusqu'au dernier message et prend toute la hauteur quand il n'y a plus de choix ;
 ##   choix : [{id, texte, icone, couleur, action: Callable, actif: bool, choisi: bool, bulle}, …] (trois au plus).
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
@@ -39,7 +40,10 @@ static func ouvrir(page: Control, cfg: Dictionary) -> Panel:
 	var gauche: Callable = cfg.get("gauche", Callable())
 	if gauche.is_valid(): gauche.call(f, GAUCHE)
 	if cfg.get("echelle") is Dictionary: _echelle(f, cfg.echelle, prefixe)
-	_fil(f, cfg.get("fil", []), cfg.get("visage", Callable()), prefixe)
+	# Sans phrase à dire (discussion conclue), le fil prend aussi la place des choix : tout l'échange reste lisible.
+	var choix_l: Array = cfg.get("choix", [])
+	var zone_fil := FIL if not choix_l.is_empty() else Rect2(FIL.position, Vector2(FIL.size.x, DROITE.end.y - FIL.position.y))
+	_fil(f, cfg.get("fil", []), cfg.get("visage", Callable()), prefixe, zone_fil)
 	var y := CHOIX_Y
 	for choix: Dictionary in cfg.get("choix", []):
 		var carte := _carte_choix(choix)
@@ -79,14 +83,14 @@ static func _echelle(f: Control, e: Dictionary, prefixe: String) -> void:
 		D.text(echelle, a1 + (6 if a1 > a0 else -26), ECHELLE_H + 22, "▶" if a1 > a0 else "◀", 18, Charte.IVOIRE, 800, 22)
 
 ## Fil de discussion : bulles de l'interlocuteur à gauche (avec son visage), les nôtres à droite, repères centrés.
-static func _fil(f: Control, messages: Array, visage: Callable, prefixe: String) -> void:
-	var fond := D.rect(f, FIL, Charte.PANNEAU_2, Charte.RAYON_CARTE)
+static func _fil(f: Control, messages: Array, visage: Callable, prefixe: String, zone: Rect2 = FIL) -> void:
+	var fond := D.rect(f, zone, Charte.PANNEAU_2, Charte.RAYON_CARTE)
 	fond.name = prefixe + "Fil"
 	var defile := ScrollContainer.new()
 	defile.name = prefixe + "FilDefile"
 	defile.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	f.add_child(defile)
-	D.place(defile, Rect2(FIL.position.x + 18, FIL.position.y + 16, FIL.size.x - 36, FIL.size.y - 32))
+	D.place(defile, Rect2(zone.position.x + 18, zone.position.y + 16, zone.size.x - 36, zone.size.y - 32))
 	var liste := C.v(14)
 	liste.name = prefixe + "FilListe"
 	liste.size_flags_horizontal = Control.SIZE_EXPAND_FILL

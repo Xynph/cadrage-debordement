@@ -112,7 +112,7 @@ const EXTRAS := [
 	{"id": "vestiaire-entretiens-duos", "libelle": "Vestiaire · Entretiens et duos, bas de la colonne (duos)", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week", "defiler": "RelationshipPeopleScroll"},
 	{"id": "vestiaire-groupe", "libelle": "Vestiaire · petite fenêtre du groupe (portraits)", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week", "presser": "RelationshipAllPortraits"},
 	{"id": "discussion", "libelle": "Vestiaire · discussion avec un joueur (petite fenêtre)", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week", "presser": "DiscussionOuvrir", "joueur_forme": true},
-	{"id": "discussion-reponse", "libelle": "Vestiaire · discussion, réponse du joueur", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week", "presser": "DiscussionOuvrir", "presser_ensuite": "DiscussionPhrase_", "joueur_forme": true},
+	{"id": "discussion-reponse", "libelle": "Vestiaire · discussion en trois tours", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week", "presser": "DiscussionOuvrir", "presser_ensuite": "DiscussionPhrase_", "tours": 3, "joueur_forme": true},
 	{"id": "carriere-mobilite", "libelle": "Carrière · onglet Mobilité et recrutement", "type": "onglet_cle", "route": "Carrière", "cle": "immersive08_career_tab", "onglet": "details", "repos": "summary"},
 	{"id": "vestiaire-historique", "libelle": "Vestiaire · onglet Engagements et historique", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "history", "repos": "week"},
 	## Onglets du Centre (parcours activés) : un écran par onglet ; Parcours avec le parcours individuel du premier Espoir ouvert.
@@ -942,18 +942,21 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				if bouton == null: return {"statut": "echec", "note": "bouton %s absent" % ecran.presser}
 				bouton.pressed.emit()
 				await stabiliser()
-			# Discussion : CD_FILM_DISCUSSION_CHOIX (rang de la phrase, 0 à 2 ; 0 par défaut) choisit nos mots.
+			# Discussion : « tours » clics successifs ; CD_FILM_DISCUSSION_CHOIX (rangs des phrases, ex. « 0,1,0 » ; 0 par
+			# défaut) choisit nos mots à chaque tour.
 			if ecran.has("presser_ensuite"):
 				var nom_suite := str(ecran.presser_ensuite)
-				var suite: Button = null
-				if nom_suite.ends_with("_"):
-					var candidats := app.find_children(nom_suite + "*", "Button", true, false)
-					var rang := clampi(int(OS.get_environment("CD_FILM_DISCUSSION_CHOIX")), 0, maxi(0, candidats.size() - 1))
-					if not candidats.is_empty(): suite = candidats[rang] as Button
-				else: suite = app.find_child(nom_suite, true, false) as Button
-				if suite == null: return {"statut": "echec", "note": "bouton %s absent" % nom_suite}
-				suite.pressed.emit()
-				for i in 6: await stabiliser()
+				var rangs := OS.get_environment("CD_FILM_DISCUSSION_CHOIX").split(",", false)
+				for tour in int(ecran.get("tours", 1)):
+					var suite: Button = null
+					if nom_suite.ends_with("_"):
+						var candidats := app.find_children(nom_suite + "*", "Button", true, false).filter(func(x): return not (x as Button).disabled)
+						var rang := clampi(int(rangs[tour]) if tour < rangs.size() else 0, 0, maxi(0, candidats.size() - 1))
+						if not candidats.is_empty(): suite = candidats[rang] as Button
+					else: suite = app.find_child(nom_suite, true, false) as Button
+					if suite == null: return {"statut": "echec", "note": "bouton %s absent (tour %d)" % [nom_suite, tour + 1]}
+					suite.pressed.emit()
+					for i in 6: await stabiliser()
 		"centre_onglet":
 			app.management_ui.immersive_centre = {"club": app.model.get("club", {}).get("id"), "tab": str(ecran.onglet), "scroll": {}}
 			app._navigate("Centre")

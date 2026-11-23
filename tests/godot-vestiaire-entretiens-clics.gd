@@ -37,7 +37,7 @@ func settle() -> void:
 	for frame in 4: await process_frame
 
 func discussion(rang: String) -> Dictionary:
-	return {"situation": "normal", "hierarchie": rang, "attitude": 2, "attitudeAvant": 2, "accueil": "Oui, coach ?", "faite": false, "fil": [],
+	return {"situation": "normal", "hierarchie": rang, "attitude": 2, "attitudeAvant": 2, "accueil": "Oui, coach ?", "faite": false, "enCours": false, "tour": 0, "tours": 3,
 		"phrases": [{"id": "n_ecoute", "texte": "Dis-moi comment tu te sens.", "nature": "ecoute", "choice": "ecouter"},
 			{"id": "n_soutien", "texte": "On compte sur toi.", "nature": "soutien", "choice": "rassurer"},
 			{"id": "n_critique", "texte": "J’attends plus de toi.", "nature": "critique", "choice": "clarifier"}]}
@@ -104,20 +104,37 @@ func run() -> void:
 	check(dit[0] == "relationship_conversation" and dit[1].get("choice") == "clarifier" and dit[1].get("phrase") == "n_critique" and dit[1].get("playerId") == "p0", "Un clic dit la phrase : %s" % [dit])
 	check(host.find_child("DiscussionBulleCoachEnvoi", true, false) != null, "La phrase apparaît tout de suite dans le fil")
 	check(bouton(host, "DiscussionPhrase_n_ecoute") != null and bouton(host, "DiscussionPhrase_n_ecoute").disabled, "Une seule phrase par semaine")
-	# Réponse du moteur : sa réponse et l'effet dans le fil, l'échelle d'attitude bouge, « Vu cette semaine ».
+	# Réponse du moteur (tour 1) : sa réponse à CETTE phrase, sa réaction, deux relances qui en découlent.
 	var p0: Dictionary = host.model.clubLife.relationships.players[0]
 	p0.conversationAvailable = false
-	p0.discussion.faite = true
-	p0.discussion.attitudeAvant = 2
-	p0.discussion.attitude = 0
-	p0.discussion.fil = [{"season": 1, "round": 2, "phrase": "n_critique", "texte": "J’attends plus de toi.", "nature": "critique", "reponse": "Tu me parles pas comme ça.", "effet": -4, "avant": 50, "apres": 46}]
+	var tour1 := {"texte": "J’attends plus de toi.", "nature": "critique", "reponse": "Je donne déjà tout, moi.", "reaction": -4}
+	p0.discussion.merge({"tour": 1, "enCours": true, "attitudeAvant": 2, "attitude": 1,
+		"fil": {"courante": true, "season": 1, "round": 2, "avant": 50, "apres": 46, "effet": -4, "tours": [tour1]},
+		"phrases": [{"id": "n_details", "texte": "Plus de rigueur sur les détails.", "nature": "exigence", "choice": "clarifier"}, {"id": "n_groupe", "texte": "Avec le groupe, ça se passe bien ?", "nature": "ecoute", "choice": "ecouter"}]}, true)
 	host._render(); await settle()
 	disc = host.find_child("DiscussionFenetre", true, false)
 	var reponse := disc.find_child("DiscussionBulleJoueur0Texte", true, false) as Label if disc != null else null
-	check(reponse != null and reponse.text == "Tu me parles pas comme ça.", "Réponse du joueur dans le fil")
-	for nom: String in ["DiscussionBulleCoach0", "DiscussionEffet0", "DiscussionEchelleFleche", "DiscussionDejaVu"]:
-		check(disc != null and disc.find_child(nom, true, false) != null, "Après la réponse : " + nom)
+	check(reponse != null and reponse.text == "Je donne déjà tout, moi.", "Sa réponse répond à la phrase dite")
+	for nom: String in ["DiscussionBulleAccueil", "DiscussionBulleCoach0", "DiscussionReaction0", "DiscussionEchelleFleche"]:
+		check(disc != null and disc.find_child(nom, true, false) != null, "Après le tour 1 : " + nom)
 	check(disc != null and disc.find_child("DiscussionBulleCoachEnvoi", true, false) == null, "Phrase en attente remplacée par l'échange")
+	check(disc != null and disc.find_children("DiscussionPhrase_*", "Button", true, false).size() == 2, "Deux relances au tour 2")
+	check(bouton(host, "DiscussionPhrase_n_details") != null and not bouton(host, "DiscussionPhrase_n_details").disabled, "Relance cliquable")
+	host.commands.clear()
+	bouton(host, "DiscussionPhrase_n_details").pressed.emit(); await settle()
+	dit = host.commands.back() if not host.commands.is_empty() else ["", {}]
+	check(dit[0] == "relationship_conversation" and dit[1].get("phrase") == "n_details" and dit[1].get("choice") == "clarifier", "La relance est dite d'un clic")
+	# Conclusion : trois tours dans le fil, effet total, « Vu cette semaine », plus de phrase.
+	p0.discussion.merge({"tour": 3, "enCours": false, "faite": true, "attitude": 0, "phrases": [],
+		"fil": {"courante": true, "season": 1, "round": 2, "avant": 50, "apres": 45, "effet": -5, "tours": [tour1,
+			{"texte": "Plus de rigueur sur les détails.", "nature": "exigence", "reponse": "Toujours les mêmes reproches.", "reaction": -1},
+			{"texte": "Je te fais confiance.", "nature": "soutien", "reponse": "Merci.", "reaction": 0}]}}, true)
+	host._render(); await settle()
+	disc = host.find_child("DiscussionFenetre", true, false)
+	for nom: String in ["DiscussionBulleCoach2", "DiscussionBulleJoueur2", "DiscussionEffetTotal", "DiscussionDejaVu"]:
+		check(disc != null and disc.find_child(nom, true, false) != null, "Conclusion : " + nom)
+	check(disc != null and disc.find_children("DiscussionPhrase_*", "Button", true, false).is_empty(), "Discussion conclue : plus de phrase")
+	check(bouton(host, "DiscussionOuvrir") != null and host.find_child("DiscussionVuSemaine", true, false) != null, "Carte Discuter : Vu")
 	check(PetiteFenetre.fermer_derniere(self), "Échap ferme la discussion")
 	await settle()
 	check(host.find_child("DiscussionFenetre", true, false) == null and not host.management_ui.has("discussion"), "Discussion refermée et oubliée")

@@ -65,8 +65,11 @@ static func bouton(app: Control, p: Dictionary) -> Control:
 	var etat := Pastilles.pastille(str(att[0]), att[1], str(att[2]), "Attitude", 16)
 	etat.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	ligne.add_child(etat)
-	if not p.get("conversationAvailable", false):
-		var vu := Pastilles.pastille("Vu", Charte.IVOIRE_2, "clock", "Discussion de la semaine faite", 16)
+	# Discussion de la semaine : « Vu » une fois conclue, « 1/3 » ou « 2/3 » en cours (reprise au même tour).
+	var vu: Control = null
+	if bool(disc.get("faite", false)) or (disc.is_empty() and not p.get("conversationAvailable", false)): vu = Pastilles.pastille("Vu", Charte.IVOIRE_2, "clock", "Discussion de la semaine faite", 16, "DiscussionVuSemaine")
+	elif bool(disc.get("enCours", false)): vu = Pastilles.pastille("%d/%d" % [int(disc.get("tour", 0)), int(disc.get("tours", 3))], Pastilles.ORANGE, "clock", "Discussion en cours", 16, "DiscussionEnCours")
+	if vu != null:
 		vu.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		ligne.add_child(vu)
 	var fleche := C.label("›", 26, Charte.IVOIRE_2, true, 700)
@@ -105,18 +108,20 @@ static func donnees(app: Control, id: String) -> Dictionary:
 	var personnalite: Variant = p.get("personality")
 	var disc: Dictionary = p.get("discussion", {}) if p.get("discussion") is Dictionary else {}
 	var etat: Dictionary = app.management_ui.get(CLE, {}) if app.management_ui.get(CLE) is Dictionary else {}
-	# Phrase envoyée, réponse du moteur reçue : la discussion de la semaine est faite.
-	if etat.has("envoi") and bool(disc.get("faite", false)): etat.erase("envoi")
+	# Phrase envoyée, réponse du moteur reçue (le tour a avancé) : elle quitte l'attente.
+	if etat.get("envoi") is Dictionary and int(disc.get("tour", 0)) > int(etat.envoi.get("tour", -1)): etat.erase("envoi")
 	return {"id": id, "p": p, "identite": identite, "nom": str(identite.get("name", "Joueur")), "poste": str(p.get("pos", "")),
 		"score": p.get("score"), "confiance": p.get("trust"), "condition": int(p.get("condition", 0)), "minutes": p.get("minutes"),
 		"trait": str(personnalite.get("trait", "")) if personnalite is Dictionary else "", "disc": disc,
 		"forme": NotesMatch.forme(NotesMatch.joueur(app.model, id)), "tempsJeu": identite.get("tempsJeu") if identite.get("tempsJeu") is Dictionary else {},
-		"libre": bool(p.get("conversationAvailable", false)) and not etat.has("envoi") and not bool(disc.get("faite", false)),
+		"libre": not etat.has("envoi") and not (disc.get("phrases", []) as Array).is_empty(),
 		"contexte": rel.get("context", {}), "etat": etat}
 
 ## Nos mots : la phrase s'affiche aussitôt dans le fil, le moteur répond, la fenêtre revient au nouveau rendu.
 static func _dire(app: Control, d: Dictionary, phrase: Dictionary) -> void:
-	app.management_ui[CLE] = {"id": d.id, "envoi": phrase.duplicate(true)}
+	var envoi: Dictionary = phrase.duplicate(true)
+	envoi["tour"] = int(d.disc.get("tour", 0))
+	app.management_ui[CLE] = {"id": d.id, "envoi": envoi}
 	ouvrir(app, str(d.id))
 	app._command("relationship_conversation", {"context": d.contexte, "playerId": d.id, "choice": str(phrase.get("choice", "ecouter")), "phrase": str(phrase.get("id", ""))})
 
@@ -152,35 +157,49 @@ static func _dessiner(app: Control, canvas: Control, id: String) -> void:
 		"visage": func() -> Control: return _visage(d, 52),
 		"fil": _fil(d, envoi), "choix": choix})
 
-## ---- Fil : derniers échanges (date, nos mots, sa réponse et l'effet), puis l'accueil ou nos mots en attente ----------
+## ---- Fil : la discussion de la semaine tour par tour (nos mots, sa réponse, sa réaction), conclusion -----------------
 
 static func _fil(d: Dictionary, envoi: Dictionary) -> Array:
 	var disc: Dictionary = d.disc
 	var fil: Array = []
-	var echanges: Array = disc.get("fil", [])
-	for i in echanges.size():
-		var e: Dictionary = echanges[i]
-		if e.get("texte") == null: continue
-		fil.append({"qui": "repere", "id": "DiscussionDate%d" % i, "controle": Pastilles.pastille("%s J%d" % [G.season_label(e.get("season")), int(e.get("round", 0)) + 1], Charte.IVOIRE_3, "calendar", "Date de l'échange", 15)})
-		var st := style(str(e.get("nature", "")))
-		fil.append({"qui": "moi", "id": "DiscussionBulleCoach%d" % i, "texte": str(e.texte), "couleur": st[1]})
-		fil.append({"qui": "lui", "id": "DiscussionBulleJoueur%d" % i, "texte": str(e.get("reponse", "")), "couleur": Pastilles.BLEU, "effet": _effet(e, "DiscussionEffet%d" % i)})
+	var derniere: Dictionary = disc.get("fil", {}) if disc.get("fil") is Dictionary else {}
+	var courante := bool(derniere.get("courante", false))
+	# Discussion d'une semaine passée : un repère (date et effet) avant la nouvelle.
+	if not derniere.is_empty() and not courante:
+		var ligne := C.h(10)
+		ligne.add_child(Pastilles.pastille("%s J%d" % [G.season_label(derniere.get("season")), int(derniere.get("round", 0)) + 1], Charte.IVOIRE_3, "calendar", "Dernière discussion", 15, "DiscussionDateAvant"))
+		ligne.add_child(_effet(derniere, "DiscussionEffetAvant", 15))
+		fil.append({"qui": "repere", "id": "DiscussionAvant", "controle": ligne})
+	fil.append({"qui": "lui", "id": "DiscussionBulleAccueil", "texte": str(disc.get("accueil", "Oui, coach ?")), "couleur": Pastilles.BLEU})
+	var tours: Array = derniere.get("tours", []) if courante else []
+	for i in tours.size():
+		var t: Dictionary = tours[i]
+		fil.append({"qui": "moi", "id": "DiscussionBulleCoach%d" % i, "texte": str(t.get("texte", "")), "couleur": style(str(t.get("nature", "")))[1]})
+		fil.append({"qui": "lui", "id": "DiscussionBulleJoueur%d" % i, "texte": str(t.get("reponse", "")), "couleur": Pastilles.BLEU, "effet": _reaction(int(t.get("reaction", 0)), "DiscussionReaction%d" % i)})
 	if not envoi.is_empty():
 		fil.append({"qui": "moi", "id": "DiscussionBulleCoachEnvoi", "texte": str(envoi.get("texte", "")), "couleur": style(str(envoi.get("nature", "")))[1]})
-	elif not bool(disc.get("faite", false)):
-		fil.append({"qui": "lui", "id": "DiscussionBulleAccueil", "texte": str(disc.get("accueil", "Oui, coach ?")), "couleur": Pastilles.BLEU})
-	else:
-		fil.append({"qui": "repere", "id": "DiscussionVu", "controle": Pastilles.pastille("Vu cette semaine", Charte.IVOIRE_2, "clock", "Une discussion par joueur et par semaine", 16, "DiscussionDejaVu")})
+	elif bool(disc.get("faite", false)):
+		# Conclusion : effet total sur la satisfaction, discussion de la semaine faite.
+		var fin := C.h(10)
+		if courante: fin.add_child(_effet(derniere, "DiscussionEffetTotal", 17))
+		fin.add_child(Pastilles.pastille("Vu cette semaine", Charte.IVOIRE_2, "clock", "Une discussion par joueur et par semaine", 16, "DiscussionDejaVu"))
+		fil.append({"qui": "repere", "id": "DiscussionFin", "controle": fin})
 	return fil
 
-## Effet réel de l'échange : ▲ / ▼ satisfaction avant → après (couleur jamais seule : flèche et chiffres).
-static func _effet(e: Dictionary, id: String) -> Control:
+## Réaction à une phrase : ▲ bien reçue, ● sans effet, ▼ mal reçue (couleur jamais seule : forme et mot).
+static func _reaction(r: int, id: String) -> Control:
+	if r > 0: return Pastilles.pastille("▲ Bien reçu", Pastilles.VERT, "", "Sa réaction", 15, id)
+	if r < 0: return Pastilles.pastille("▼ Mal reçu", Pastilles.ROUGE, "", "Sa réaction", 15, id)
+	return Pastilles.pastille("● Sans effet", Charte.IVOIRE_2, "", "Sa réaction", 15, id)
+
+## Effet réel de la discussion : ▲ / ▼ satisfaction avant → après.
+static func _effet(e: Dictionary, id: String, taille: int = 16) -> Control:
 	var effet := int(e.get("effet", 0))
 	var couleur: Color = Pastilles.VERT if effet > 0 else (Pastilles.ROUGE if effet < 0 else Charte.IVOIRE_2)
 	var signe := "▲ +%d" % effet if effet > 0 else ("▼ −%d" % absi(effet) if effet < 0 else "= 0")
 	var texte := "%s satisf." % signe
 	if (e.get("avant") is int or e.get("avant") is float) and (e.get("apres") is int or e.get("apres") is float): texte += " · %d → %d" % [int(e.avant), int(e.apres)]
-	return Pastilles.pastille(texte, couleur, "heart", "Satisfaction", 16, id)
+	return Pastilles.pastille(texte, couleur, "heart", "Satisfaction", taille, id)
 
 ## ---- Données du joueur (gauche) ----------------------------------------------------------------------------------
 
