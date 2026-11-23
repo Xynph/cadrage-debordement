@@ -201,7 +201,7 @@ static func open(app: Control, player: Dictionary, recruiting: bool, answer: Str
 	dialog.confirmed.connect(func():
 		if blocked: return
 		var envoi := {"playerId":player.id,"salary":Salary.input_weekly(salary),"years":int(years.value),"confirmed":true}
-		# Rôle promis (planche « temps de jeu au contrat ») : choisi dans la prolongation, gardé par le moteur à la signature.
+		# Rôle promis (temps de jeu au contrat, idée 16) : choisi dans la prolongation, gardé par le moteur à la signature.
 		if ctx.has("role"): envoi["role"] = str(ctx.role)
 		app._command("recruit" if recruiting else "extend_contract",envoi)
 		dialog.queue_free())

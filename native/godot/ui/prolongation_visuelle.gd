@@ -9,6 +9,7 @@ const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
 const G = preload("res://ui/game_skin.gd")
 const Salary = preload("res://ui/salary_display.gd")
 const O = preload("res://ui/offre_visuelle.gd")
+const Role = preload("res://ui/role_contrat.gd")
 const LARGEUR := O.LARGEUR
 const HAUTEUR := 744.0
 
@@ -29,6 +30,10 @@ static func construire(body: Control, ctx: Dictionary) -> Control:
 		toile.add_child(champ)
 	D.place(ctx.salary, Rect2(1196, 316, 280, 50))
 	D.place(ctx.years, Rect2(1196, 511, 280, 50))
+	if not ctx.has("role") and not role_initial(ctx).is_empty():
+		ctx["role"] = role_initial(ctx)
+		var demande := O.demande_du_role(ctx.quote, str(ctx.role))
+		if demande >= 0 and Salary.input_weekly(ctx.salary) == int(ctx.quote.get("salary", -1)): Salary.set_input_weekly(ctx.salary, float(demande))
 	var redessiner := func(): _dessiner(toile, dessin, ctx)
 	ctx.salary.value_changed.connect(func(_x: float): redessiner.call())
 	ctx.years.value_changed.connect(func(_x: float): redessiner.call())
@@ -215,24 +220,68 @@ static func _fenetre_avant_apres(toile: Control, val: Dictionary) -> void:
 		[str(val.fin), "Nouvelle fin", O.COULEUR_DUREE, "flag"],
 	], O.COULEUR_SALAIRE)
 
-# --- Rôle promis (planche « temps de jeu au contrat », idée FM 16) : fixé à la prolongation, envoyé avec l'offre ------
+# --- Rôle promis (temps de jeu au contrat, idée 16, choix de Léo du 23/11/2026) ------------------------------------
+# Un clic sur un rôle l'applique (pas de bouton Valider) : la demande du joueur suit le rôle (+5 % par cran au-dessus de
+# sa place dans la hiérarchie, −4 % en dessous) et la proposition aussi tant qu'elle était à la demande. Rôle refusé
+# (Espoir après 21 ans, Appoint pour un ambitieux) : barré, sans clic. Envoyé avec l'offre (contract_negotiation.gd).
+
+## Rôles de l'offre : {role: {salary, refus}} (moteur : renewal.roles, native/engine/role-contrat.cjs).
+static func roles_offre(ctx: Dictionary) -> Dictionary:
+	var out := {}
+	var roles: Variant = ctx.quote.get("roles")
+	if roles is Dictionary and roles.get("liste") is Array:
+		for r: Variant in roles.liste:
+			if r is Dictionary and str(r.get("role", "")) in Role.ROLES: out[str(r.role)] = r
+	return out
+
+## Rôle proposé à l'ouverture : celui que la hiérarchie lui donne, ou le premier accepté au-dessus.
+static func role_initial(ctx: Dictionary) -> String:
+	var roles := roles_offre(ctx)
+	if roles.is_empty(): return ""
+	var attendu := str(ctx.quote.get("roles", {}).get("attendu", "rotation"))
+	var ordre: Array = Role.ROLES.duplicate()
+	ordre.reverse()
+	var depart := maxi(0, ordre.find(attendu))
+	for i in range(depart, ordre.size()):
+		if str(roles.get(ordre[i], {}).get("refus", "")).is_empty(): return str(ordre[i])
+	return attendu
 
 static func _role(toile: Control, parent: Control, ctx: Dictionary, zone: Rect2) -> void:
-	var TJ = load("res://ui/immersive08/fiche_temps_jeu.gd")
-	if TJ.variante() not in ["A", "B"]: return
-	var tj: Dictionary = TJ.donnees(ctx.player)
-	if not ctx.has("role"): ctx["role"] = str(tj.get("role", "rotation"))
+	var roles := roles_offre(ctx)
+	if roles.is_empty(): return
+	if not ctx.has("role"): ctx["role"] = role_initial(ctx)
 	var cadre := D.rect(parent, zone, Charte.PANNEAU_2, Charte.RAYON_CARTE)
 	cadre.name = "ProlongationRole"
 	O._etiquette(cadre, 24, 44, "Rôle promis", 220)
 	var largeur := (zone.size.x - 260 - 24) / 4.0
-	for i in TJ.ROLES.size():
-		var r: String = TJ.ROLES[i]
+	for i in Role.ROLES.size():
+		var r: String = Role.ROLES[i]
+		var info: Dictionary = roles.get(r, {})
+		var refus := str(info.get("refus", ""))
 		var choisi := r == str(ctx.role)
-		var c: Color = TJ.couleur_role(r)
+		var c: Color = Role.couleur(r) if refus.is_empty() else Charte.IVOIRE_3
 		var p := D.rect(cadre, Rect2(250 + i * largeur, 10, largeur - 12, 50), c if choisi else Color(c, .12), Charte.RAYON_PILULE)
 		p.name = "ProlongationRole_" + r
-		TJ._t(p, 0, 33, str(TJ.LIBELLES[r]) + "  ·  " + str(TJ.SEUILS[r]), 18, Charte.NOIR_PANNEAU if choisi else c, 700, largeur - 12, HORIZONTAL_ALIGNMENT_CENTER)
-		Pieces.rendre_cliquable(p, Vector2(largeur - 12, 50), func():
-			ctx["role"] = r
-			_dessiner(toile, parent, ctx), "ProlongationRoleLien_" + r, str(TJ.LIBELLES[r]), "", Charte.RAYON_PILULE)
+		var encre: Color = Charte.NOIR_PANNEAU if choisi else c
+		var mot := D.text(p, 22, 33, Role.libelle(r).to_upper(), 20, encre, 800, largeur * .5)
+		mot.add_theme_font_override("font", Charte.TITRE_GRAS_ITALIQUE)
+		var droite := largeur - 12 - 20
+		if refus.is_empty():
+			D.text(p, droite, 33, G.salary(info.get("salary", 0)), 18, encre, 700, largeur * .5, HORIZONTAL_ALIGNMENT_RIGHT).name = "ProlongationRoleDemande_" + r
+			Pieces.rendre_cliquable(p, Vector2(largeur - 12, 50), func(): choisir_role(toile, parent, ctx, r), "ProlongationRoleLien_" + r, Role.libelle(r), "", Charte.RAYON_PILULE)
+		else:
+			D.text(p, droite, 33, "✕", 22, Pieces.ROUGE, 800, 40, HORIZONTAL_ALIGNMENT_RIGHT)
+			D.line(p, Vector2(18, 25), Vector2(largeur - 30, 25), Color(Charte.IVOIRE_3, .8), 2)
+			p.tooltip_text = refus
+			p.mouse_filter = Control.MOUSE_FILTER_STOP
+
+## Clic sur un rôle : appliqué tout de suite ; la proposition suit la demande si elle y était.
+static func choisir_role(toile: Control, parent: Control, ctx: Dictionary, r: String) -> void:
+	var roles := roles_offre(ctx)
+	if not str(roles.get(r, {}).get("refus", "")).is_empty(): return
+	var avant := O.demande_du_role(ctx.quote, str(ctx.get("role", "")))
+	ctx["role"] = r
+	var apres := O.demande_du_role(ctx.quote, r)
+	if avant >= 0 and apres >= 0 and Salary.input_weekly(ctx.salary) == avant and apres != avant:
+		Salary.set_input_weekly(ctx.salary, float(apres))
+	_dessiner(toile, parent, ctx)
