@@ -129,6 +129,9 @@ module.exports=function nativeGestion(command,p){
    const negocierTon=()=>typeof tonAgentNegocier==='function'?tonAgentNegocier(p.playerId,kind,negocier,p.salary):negocier();
    requireThat(p.role&&typeof roleContratAvec==='function'?roleContratAvec(target,p.role,negocierTon):negocierTon(),'Offre refusée : durée, joueur ou négociation indisponible.');
   const key=talkKey(p.playerId,kind),talk=S.economy.talks[key];
+  // Agent nommé (agents-joueurs.cjs) : c'est lui qui répond pour son client, prolongation comprise.
+  const agentNom=typeof agentJoueurNom==='function'?agentJoueurNom(p.playerId):'';
+  if(agentNom&&talk&&typeof talk.message==='string')talk.message=talk.message.replace(/^Le joueur refuse et demande/,agentNom+' refuse pour son client et demande').replace(/Le joueur met fin aux échanges/,agentNom+' coupe court : son client met fin aux échanges');
   if(talk.status==='ready')requireThat(confirmContract(key),'Signature devenue indisponible.');
   if(kind==='recruit'&&talk.status==='signed'&&typeof budgetTransfertsDepenser==='function')budgetTransfertsDepenser(talk.fee);
   if(kind==='recruit'&&talk.status==='signed'&&typeof calendrierApresRecrue==='function')calendrierApresRecrue(p.playerId);

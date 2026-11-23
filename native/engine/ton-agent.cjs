@@ -1,14 +1,15 @@
 'use strict';
 // Discussion avec l'agent d'une piste du marché (revue FM27, idée 24 ; choix de Léo du 23/11/2026, retouche « incertitude ») :
-// même fenêtre que la discussion avec un joueur (idée 23). L'agent n'a pas de nom. Rien de chiffré n'est montré au manager :
+// même fenêtre que la discussion avec un joueur (idée 23). Depuis le 23/11 au soir, l'agent est nommé (agents-joueurs.cjs) :
+// relation et caractère sont CEUX DE L'AGENT, valables pour tous ses clients. Rien de chiffré n'est montré au manager :
 // le ton, la relation et le caractère font PENCHER la négociation en moyenne, sans rien garantir.
 //  - Ton (un par piste et par journée, avant la première proposition) : À tout prix (demande plus haute, agent plus patient,
 //    relation +2), Enthousiaste (relation +1), Curieux (demande plus basse, agent moins patient, relation −1).
 //  - Relation avec l'agent : gardée d'une journée et d'une saison à l'autre, bornée à ±10, 5 crans à l'écran (Froide ≤ −6
 //    < Distante ≤ −2 < Neutre < 2 ≤ Bonne < 6 ≤ Proche) ; elle pèse sur la demande, la patience et le minimum accepté.
 //    Issue : accord +1 ; offre ridicule (moins de 70 % de la demande, une fois par journée) −1 ; rupture −1.
-//  - Caractère caché de l'agent (Gourmand, Pressé, Fidèle à son joueur, Joueur de poker, Arrangeant) : tiré au sort par
-//    la graine du monde et l'identifiant du joueur, gardé dans la sauvegarde dès qu'on parle à l'agent ou qu'on négocie.
+//  - Caractère caché de l'agent (Gourmand, Pressé, Fidèle à son joueur, Joueur de poker, Arrangeant) : celui de
+//    l'annuaire des agents (agents-joueurs.cjs, tiré par la graine du monde).
 //    Il module demande, patience et minimum. Le manager peut découvrir le MOT (jamais ses effets) : au 2e tour de la
 //    discussion (commande agent_question), dès une première négociation avec lui (pour toujours), ou si le recruteur a observé
 //    le joueur.
@@ -17,8 +18,9 @@
 //    trois vers plus tendu) et ses répliques qui se durcissent.
 // Propositions réglées autour de negotiateContract (gestion.cjs, commande recruit) sans toucher au format des talks
 // (attempts reste entre 1 et 3 dans la sauvegarde) : le vrai compte de la journée est gardé dans S.tonAgent.jours.
-// Sauvegarde : S.tonAgent = {version:1, tons:{id:{ton, saison, semaine}}, relations:{id: entier},
-//  jours?:{id:{saison, semaine, n, vexe}}, agents?:{id:{car, connu}}}.
+// Sauvegarde : S.tonAgent = {version:2, tons:{idJoueur:{ton, saison, semaine}}, relations:{idAgent: entier},
+//  jours?:{idJoueur:{saison, semaine, n, vexe}}, connus?:{idAgent: true}} (version 1 : relations et agents par joueur,
+//  convertie par agents-joueurs.cjs).
 // Commandes : agent_ton {playerId, ton}, agent_question {playerId}. Projection : market[].agent (model.cjs) par tonAgentVue(id).
 // Fonctions globales de la VM : tonAgentVue(id), tonAgentNegocier(id, kind, fn, salaire).
 const files=Object.freeze([]),commands=Object.freeze(['agent_ton','agent_question']);
@@ -62,13 +64,20 @@ function factory(){
   &&entier(j.n)&&j.n>=0&&j.n<=PATIENCE_MAX&&typeof j.vexe==='boolean';
  const agentValide=a=>!!a&&typeof a==='object'&&Object.keys(a).length===2&&Object.hasOwn(CARACTERES,a.car)&&typeof a.connu==='boolean';
  const dico=(x,ok)=>!!x&&typeof x==='object'&&!Array.isArray(x)&&Object.keys(x).length<=MAX_RELATIONS&&Object.entries(x).every(([id,v])=>id.length<=180&&ok(v));
- const etatValide=e=>!!e&&typeof e==='object'&&Object.keys(e).every(k=>['version','tons','relations','jours','agents'].includes(k))&&e.version===1
+ // Version 1 (avant les agents nommés) : relation et caractère par joueur ; version 2 : par agent (agents-joueurs.cjs),
+ // tons et journées restant par piste. La version 1 est convertie par agents-joueurs.cjs (observe) au premier passage.
+ const etatValide=e=>!!e&&typeof e==='object'&&(e.version===1||e.version===2)
+  &&Object.keys(e).every(k=>['version','tons','relations','jours',e.version===1?'agents':'connus'].includes(k))
   &&dico(e.tons,tonValide)&&dico(e.relations,r=>entier(r)&&r>=-BORNE&&r<=BORNE)&&(e.jours===undefined||dico(e.jours,jourValide))
-  &&(e.agents===undefined||dico(e.agents,agentValide));
+  &&(e.version===2||e.agents===undefined||dico(e.agents,agentValide))&&(e.version===1||e.connus===undefined||dico(e.connus,x=>x===true));
  function etat(ecrire,s=vm()){
-  if(etatValide(s?.tonAgent))return s.tonAgent;
-  const neuf={version:1,tons:{},relations:{}};if(ecrire&&s)s.tonAgent=neuf;return neuf;
+  if(ecrire&&s?.tonAgent?.version===1&&typeof agentsJoueursObserver==='function')agentsJoueursObserver();
+  if(etatValide(s?.tonAgent)&&(!ecrire||s.tonAgent.version===2))return s.tonAgent;
+  const neuf={version:2,tons:{},relations:{}};if(ecrire&&s)s.tonAgent=neuf;return neuf;
  }
+ // Agent du joueur (agents-joueurs.cjs) ; sans annuaire (module seul), l'identifiant du joueur tient lieu d'agent.
+ const agentDe=id=>{const a=typeof agentJoueurId==='function'?agentJoueurId(id):null;return typeof a==='string'&&a?a:id;};
+ const nomAgent=id=>{const a=typeof agentJoueur==='function'?agentJoueur(agentDe(id)):null;return a&&a.nom?a.nom:'L’agent';};
  const semaine=s=>s?.economy?.week??s?.round??0;
  const duJour=(x,s)=>!!x&&x.saison===s.season&&x.semaine===semaine(s);
  const cleJour=(id,s,quoi)=>graine(s)+':'+s.season+':'+semaine(s)+':agent:'+quoi+':'+id;
@@ -77,12 +86,15 @@ function factory(){
   const t=s?.tonAgent?.tons?.[id];
   return t&&tonValide(t)&&duJour(t,s)?t.ton:'';
  }
- const relation=(id,s=vm())=>{const r=s?.tonAgent?.relations?.[id];return entier(r)?r:0;};
- // Caractère : gardé dans la sauvegarde, sinon celui que le tirage donnera (même graine, même joueur).
- function caractere(id,s=vm()){
-  const a=s?.tonAgent?.agents?.[id];
-  return agentValide(a)?a.car:LISTE[hache(graine(s)+':agent:caractere:'+id)%LISTE.length];
+ // Relation avec l'agent du joueur (la même pour tous ses clients).
+ const relationAgent=(ag,s=vm())=>{const r=s?.tonAgent?.version===2?s.tonAgent.relations?.[ag]:undefined;return entier(r)?r:0;};
+ const relation=(id,s=vm())=>relationAgent(agentDe(id),s);
+ // Caractère de l'agent : celui de l'annuaire (agents-joueurs.cjs), sinon le tirage (même graine, même agent).
+ function caractereAgent(ag,s=vm()){
+  const c=typeof agentJoueurCaractere==='function'?agentJoueurCaractere(ag):'';
+  return Object.hasOwn(CARACTERES,c)?c:LISTE[hache(graine(s)+':agent:caractere:'+ag)%LISTE.length];
  }
+ const caractere=(id,s=vm())=>caractereAgent(agentDe(id),s);
  // Joueurs observés par le recruteur (registre de connaissance, anciens rapports) : cache par registre.
  let observes={cle:null,ids:new Set()};
  function observe(id,s){
@@ -95,7 +107,8 @@ function factory(){
   }
   return observes.ids.has(id);
  }
- const connu=(id,s=vm())=>!!s?.tonAgent?.agents?.[id]?.connu||observe(id,s);
+ const connuAgent=(ag,s=vm())=>s?.tonAgent?.version===2&&s.tonAgent.connus?.[ag]===true;
+ const connu=(id,s=vm())=>connuAgent(agentDe(id),s)||observe(id,s);
  // Patience de la journée : 3 + ton + relation + caractère + hasard, entre 2 et 5. Jamais projetée.
  function patience(id,s=vm()){
   const brut=PATIENCE_BASE+(TONS[ton(id,s)]?.patience||0)+effet(relation(id,s)).patience+CARACTERES[caractere(id,s)].patience+tirage(cleJour(id,s,'patience'),1);
@@ -144,29 +157,27 @@ function factory(){
  function vue(id,s=vm()){
   if(!s)return null;
   const t=ton(id,s),r=relation(id,s),d=TONS[t],c=connu(id,s);
-  return {ton:t,cran:cran(r),avant:cran(d?borne(r-d.relation):r),caractere:c?CARACTERES[caractere(id,s)].mot:'',
+  return {agent:agentDe(id),nom:nomAgent(id),ton:t,cran:cran(r),avant:cran(d?borne(r-d.relation):r),caractere:c?CARACTERES[caractere(id,s)].mot:'',
    humeur:humeur(id,s),faites:faites(id,s),libre:!t&&!talkEnCours(id,s)&&!s.live};
  }
  const euros=v=>Math.round(v).toLocaleString('fr-FR')+' €';
  // Répliques de l'agent qui se durcissent avec l'humeur.
  const REPLIQUES=Object.freeze({calme:'On peut encore en parler.',agace:'Mon client commence à s’impatienter.',tendu:'Ne me faites pas perdre mon temps.'});
- // Relation remise en fin de liste (les plus anciennes sortent au-delà de MAX_RELATIONS).
+ // Relation avec l'agent, remise en fin de liste (les plus anciennes sortent au-delà de MAX_RELATIONS).
  function changerRelation(id,delta,s=vm()){
   if(!delta||!s)return;
-  const e=etat(true,s),avant=relation(id,s);
-  if(Object.hasOwn(e.relations,id))delete e.relations[id];
+  const e=etat(true,s),ag=agentDe(id),avant=relationAgent(ag,s);
+  if(Object.hasOwn(e.relations,ag))delete e.relations[ag];
   const ids=Object.keys(e.relations);if(ids.length>=MAX_RELATIONS)for(const k of ids.slice(0,ids.length-MAX_RELATIONS+1))delete e.relations[k];
-  e.relations[id]=borne(avant+delta);
+  e.relations[ag]=borne(avant+delta);
  }
- // Caractère gardé (et éventuellement découvert) : les plus anciens sortent au-delà de MAX_RELATIONS.
+ // Caractère de l'agent découvert (pour tous ses clients) : les plus anciens sortent au-delà de MAX_RELATIONS.
  function noterAgent(id,decouvert,s=vm()){
-  if(!s)return;
-  const e=etat(true,s);if(!e.agents)e.agents={};
-  const avant=e.agents[id],car=caractere(id,s),vu=!!avant?.connu||!!decouvert;
-  if(avant&&avant.car===car&&avant.connu===vu)return;
-  delete e.agents[id];
-  const ids=Object.keys(e.agents);if(ids.length>=MAX_RELATIONS)for(const k of ids.slice(0,ids.length-MAX_RELATIONS+1))delete e.agents[k];
-  e.agents[id]={car,connu:vu};
+  if(!s||!decouvert)return;
+  const e=etat(true,s),ag=agentDe(id);if(!e.connus)e.connus={};
+  if(e.connus[ag]===true)return;
+  const ids=Object.keys(e.connus);if(ids.length>=MAX_RELATIONS)for(const k of ids.slice(0,ids.length-MAX_RELATIONS+1))delete e.connus[k];
+  e.connus[ag]=true;
  }
  function noterJour(id,n,vexe,s){
   const e=etat(true,s);if(!e.jours)e.jours={};
@@ -193,10 +204,10 @@ function factory(){
   if(t.status==='counter'||t.status==='withdrawn'){
    if(n>=max){
     t.status='withdrawn';
-    t.message='L’agent coupe court. Le joueur met fin aux échanges pour cette journée.';
+    t.message=nomAgent(id)+' coupe court : son client met fin aux échanges pour cette journée.';
    }else{
     if(t.status==='withdrawn')t.status='counter';
-    t.message=`Le joueur refuse et demande ${euros(t.acceptedSalary)} par semaine sur ${t.years} saison(s).`;
+    t.message=`${nomAgent(id)} refuse pour son client et demande ${euros(t.acceptedSalary)} par semaine sur ${t.years} saison(s).`;
    }
   }
   const vexe=ridicule&&!j?.vexe;
@@ -221,7 +232,6 @@ function factory(){
   for(const [k,t] of Object.entries(e.tons))if(!(t.saison===s.season&&t.semaine===sem))delete e.tons[k];
   e.tons[id]={ton:choix,saison:s.season,semaine:sem};
   changerRelation(id,TONS[choix].relation,s);
-  noterAgent(id,false,s);
   return undefined;
  }
  // Deuxième tour de la discussion : l'agent se dévoile (caractère découvert).
@@ -243,6 +253,8 @@ function factory(){
  function installHooks(){
   globalThis.tonAgentVue=id=>vue(id);
   globalThis.tonAgentNegocier=(id,kind,fn,salaire)=>negocier(id,kind,fn,salaire);
+  globalThis.tonAgentRelationCran=ag=>cran(relationAgent(ag));
+  globalThis.tonAgentCaractereMot=ag=>connuAgent(ag)?CARACTERES[caractereAgent(ag)].mot:'';
   if(installe)return true;installe=true;
   if(typeof askingWage==='function'){
    const ask=askingWage;

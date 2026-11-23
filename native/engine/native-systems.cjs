@@ -149,6 +149,8 @@ domains.roleContrat=require('./role-contrat.cjs');
 domains.discussionJoueur=require('./discussion-joueur.cjs');
 // Offre guidée : prime à la signature négociable, clause libératoire, clauses payées par les clubs gérés (native/engine/clauses-contrat.cjs).
 domains.clausesContrat=require('./clauses-contrat.cjs');
+// Agents de joueurs nommés : annuaire tiré par la graine, un agent par joueur (native/engine/agents-joueurs.cjs).
+domains.agentsJoueurs=require('./agents-joueurs.cjs');
 // Discussion avec l'agent : ton (demande, propositions) et relation gardée (native/engine/ton-agent.cjs).
 domains.tonAgent=require('./ton-agent.cjs');
 const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files,...domains.clubSheet.files,...domains.pressPromises.files,...domains.clubMail.files,...domains.multiplex.files,...domains.avantMatch.files,...domains.doublons.files,...domains.matchIncidents.files,...domains.weekProgram.files])]);

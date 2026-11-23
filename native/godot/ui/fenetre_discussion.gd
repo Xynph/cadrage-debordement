@@ -9,7 +9,7 @@ extends RefCounted
 ##   prefixe : préfixe des nœuds créés (« Discussion » par défaut ; les suites les retrouvent par leur nom) ;
 ##   gauche : Callable(fenetre: Control, zone: Rect2) qui dessine les données dans `zone` (coordonnées du gabarit) ;
 ##   echelle : {paliers: [[mot, couleur, icône], …], avant: int, apres: int} (palier courant plein, l'ancien estompé,
-##     flèche de l'un à l'autre) ;
+##     flèche de l'un à l'autre) ; facultative (sans elle, le fil monte jusqu'en haut de la colonne) ;
 ##   visage : Callable() -> Control, petit portrait des bulles de l'interlocuteur ;
 ##   fil : [{qui: "lui" | "moi" | "repere", texte, couleur, id, effet: Control (sous la bulle), controle: Control
 ##     (repère centré : date, état)}, …], du plus ancien au plus récent, sur autant de tours que voulu ; le fil défile
@@ -41,8 +41,11 @@ static func ouvrir(page: Control, cfg: Dictionary) -> Panel:
 	if gauche.is_valid(): gauche.call(f, GAUCHE)
 	if cfg.get("echelle") is Dictionary: _echelle(f, cfg.echelle, prefixe)
 	# Sans phrase à dire (discussion conclue), le fil prend aussi la place des choix : tout l'échange reste lisible.
+	# Sans échelle (discussion avec un agent : sa relation est dans l'en-tête de gauche), le fil monte en haut de la colonne.
 	var choix_l: Array = cfg.get("choix", [])
-	var zone_fil := FIL if not choix_l.is_empty() else Rect2(FIL.position, Vector2(FIL.size.x, DROITE.end.y - FIL.position.y))
+	var haut := FIL.position.y if cfg.get("echelle") is Dictionary else DROITE.position.y
+	var bas := FIL.end.y if not choix_l.is_empty() else DROITE.end.y
+	var zone_fil := Rect2(FIL.position.x, haut, FIL.size.x, bas - haut)
 	_fil(f, cfg.get("fil", []), cfg.get("visage", Callable()), prefixe, zone_fil)
 	var y := CHOIX_Y
 	for choix: Dictionary in cfg.get("choix", []):

@@ -2,7 +2,8 @@
 // Discussion avec l'agent (revue FM27, idée 24 ; retouche « incertitude » du 23/11/2026) : ton, relation et caractère caché
 // font pencher demande, patience et minimum accepté EN MOYENNE, avec un hasard de la journée tiré par la graine du monde.
 // Rien de chiffré dans la projection ; le caractère se découvre (2e tour, négociation terminée, joueur observé).
-// native/engine/ton-agent.cjs, commandes agent_ton / agent_question, projection market[].agent.
+// native/engine/ton-agent.cjs, commandes agent_ton / agent_question, projection market[].agent. Depuis les agents nommés
+// (agents-joueurs.cjs, tests/agents-joueurs.cjs), relation et caractère sont ceux de l'agent (S.tonAgent version 2).
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const K = require('../native/engine/ton-agent.cjs');
@@ -15,7 +16,7 @@ function avecS(S, fn) {
   globalThis.S = S;
   try { return fn(); } finally { if (avant === undefined) delete globalThis.S; else globalThis.S = avant; }
 }
-const monde = (seed = 7) => ({ season: 1, careerVariation: { seed }, economy: { week: 3, talks: {} }, market: ids.map(id => ({ id })), tonAgent: { version: 1, tons: {}, relations: {} } });
+const monde = (seed = 7) => ({ season: 1, careerVariation: { seed }, economy: { week: 3, talks: {} }, market: ids.map(id => ({ id })), tonAgent: { version: 2, tons: {}, relations: {} } });
 
 test('Règles pures : tons, crans, caractères, sauvegarde', () => {
   assert.deepEqual(Object.keys(K.TONS), ['tout_prix', 'enthousiaste', 'curieux']);
@@ -25,6 +26,10 @@ test('Règles pures : tons, crans, caractères, sauvegarde', () => {
   assert.equal(K.etatValide({ version: 1, tons: {}, relations: { a: 3 }, agents: { a: { car: 'poker', connu: false } } }), true);
   assert.equal(K.etatValide({ version: 1, tons: {}, relations: {}, agents: { a: { car: 'menteur', connu: false } } }), false);
   assert.equal(K.etatValide({ version: 1, tons: {}, relations: {}, jours: { a: { saison: 1, semaine: 2, n: 6, vexe: false } } }), false);
+  // Version 2 (agents nommés) : relation et découverte par agent, plus de caractère gardé par joueur.
+  assert.equal(K.etatValide({ version: 2, tons: {}, relations: { 'ag-3': 4 }, connus: { 'ag-3': true } }), true);
+  assert.equal(K.etatValide({ version: 2, tons: {}, relations: {}, agents: { a: { car: 'poker', connu: false } } }), false);
+  assert.equal(K.etatValide({ version: 2, tons: {}, relations: {}, connus: { 'ag-3': false } }), false);
   assert.equal(K.etatValide({ version: 1, tons: {}, relations: { a: 11 } }), false);
 });
 
@@ -76,7 +81,7 @@ test('Projection sans chiffres, humeur qui se tend, caractère gardé', () => {
   avecS(S, () => {
     const k = K.factory();
     const v = k.vue('piste-1');
-    assert.deepEqual(Object.keys(v).sort(), ['avant', 'caractere', 'cran', 'faites', 'humeur', 'libre', 'ton']);
+    assert.deepEqual(Object.keys(v).sort(), ['agent', 'avant', 'caractere', 'cran', 'faites', 'humeur', 'libre', 'nom', 'ton']);
     assert.equal(v.caractere, '', 'caractère inconnu au départ');
     assert.ok(['calme', 'agace', 'tendu'].includes(v.humeur));
     // Humeur : suit la patience restante (au plus un cran plus tendue, une fois sur trois) ; « tendu » à la dernière.
@@ -94,12 +99,10 @@ test('Projection sans chiffres, humeur qui se tend, caractère gardé', () => {
       }
     }
     assert.ok(brouillees > total * .15 && brouillees < total * .5, `humeur brouillée ${brouillees}/${total}`);
-    // Caractère : la sauvegarde prime sur le tirage ; le mot ne sort qu'une fois découvert.
-    S.tonAgent.agents = { 'piste-2': { car: 'poker', connu: false } };
-    assert.equal(k.caractere('piste-2'), 'poker');
+    // Caractère : le mot ne sort qu'une fois découvert (sans annuaire, l'agent tient lieu de joueur).
     assert.equal(k.vue('piste-2').caractere, '');
-    S.tonAgent.agents['piste-2'].connu = true;
-    assert.equal(k.vue('piste-2').caractere, 'Joueur de poker');
+    S.tonAgent.connus = { 'piste-2': true };
+    assert.equal(k.vue('piste-2').caractere, K.CARACTERES[k.caractere('piste-2')].mot);
     // Joueur observé par le recruteur : caractère découvert.
     S.playerKnowledge = { version: 1, records: [[['piste-3', 'observed']]] };
     assert.notEqual(k.vue('piste-3').caractere, '');
@@ -114,9 +117,12 @@ test('Carrière Monde : ton, découverte, patience cachée, relation selon l’i
   try {
     const model = creer(jeu);
     const plancher = lire("typeof budgetActif==='function'&&budgetActif()?budgetPlancherHebdo():1000");
+    // Quatre pistes chères d'agents différents (la relation est celle de l'agent, partagée par ses clients).
+    const agentsVus = new Set();
     const pistes = model.market.filter(p => p.available && p.agent && p.salary >= plancher * 3)
-      .sort((a, b) => b.salary - a.salary || (a.id < b.id ? -1 : 1));
+      .sort((a, b) => b.salary - a.salary || (a.id < b.id ? -1 : 1)).filter(p => !agentsVus.has(p.agent.agent) && agentsVus.add(p.agent.agent));
     assert.ok(pistes.length >= 4, 'quatre pistes chères disponibles');
+    for (const p of pistes) assert.match(p.agent.agent, /^ag-[0-9]+$/, 'agent nommé');
     for (const p of pistes) {
       assert.deepEqual([p.agent.ton, p.agent.cran, p.agent.faites, p.agent.libre], ['', 2, 0, true]);
       for (const cle of ['essais', 'ecart', 'effet', 'relation', 'patience']) assert.equal(p.agent[cle], undefined, 'pas de chiffre : ' + cle);
@@ -124,15 +130,17 @@ test('Carrière Monde : ton, découverte, patience cachée, relation selon l’i
     const [a, b, c, d] = pistes;
     const offrir = id => jeu.brut('recruit', { playerId: id, salary: plancher, years: 1, confirmed: true });
     const piste = (m, id) => m.market.find(p => p.id === id);
-    const relations = () => lire('S.tonAgent.relations');
-    const agents = () => lire('S.tonAgent.agents||{}');
+    const rel = lire('S.tonAgent?.relations||{}'), ag = p => p.agent.agent;
+    const relations = () => { const r = lire('S.tonAgent.relations'); return Object.fromEntries(pistes.map(p => [p.id, r[ag(p)] ?? 0])); };
+    const agents = () => { const c = lire('S.tonAgent.connus||{}'); return Object.fromEntries(pistes.filter(p => c[ag(p)]).map(p => [p.id, { connu: true }])); };
+    for (const p of pistes) assert.equal(rel[ag(p)], undefined, 'aucune relation au départ');
 
     // À tout prix : relation +2 (Bonne), caractère gardé mais pas encore découvert (sauf joueur déjà observé).
     let r = jeu.brut('agent_ton', { playerId: a.id, ton: 'tout_prix' });
     assert.equal(r.ok, true, r.error);
+    assert.equal(lire('S.tonAgent.version'), 2, 'relation gardée par agent');
     let vu = piste(r.model, a.id);
     assert.deepEqual([vu.agent.ton, vu.agent.cran, vu.agent.avant, vu.agent.libre], ['tout_prix', 3, 2, false]);
-    assert.ok(agents()[a.id], 'caractère gardé dans la sauvegarde');
     const observe = a.knowledge?.stage === 'observed' || a.knowledge?.stage === 'deep';
     if (!observe) assert.equal(vu.agent.caractere, '', 'caractère encore inconnu');
     assert.match(jeu.brut('agent_ton', { playerId: a.id, ton: 'curieux' }).error, /déjà/);
@@ -149,6 +157,7 @@ test('Carrière Monde : ton, découverte, patience cachée, relation selon l’i
         res = offrir(id); n++;
         assert.equal(res.ok, true, res.error);
         assert.doesNotMatch(String(res.model.meta.negotiation.message), /\d\/\d/, 'aucun compteur dans la réplique');
+        assert.ok(String(res.model.meta.negotiation.message).startsWith(piste(res.model, id).agent.nom), 'l’agent parle (son nom) : ' + res.model.meta.negotiation.message);
       } while (res.model.meta.negotiation.status === 'counter' && n < 6);
       assert.equal(res.model.meta.negotiation.status, 'withdrawn', 'rupture');
       assert.ok(n >= 2 && n <= 5, 'patience entre 2 et 5 : ' + n);
@@ -167,7 +176,7 @@ test('Carrière Monde : ton, découverte, patience cachée, relation selon l’i
     assert.equal(agents()[b.id].connu, true, 'négociation terminée : caractère découvert');
 
     // Proche : accord au minimum accepté (relation +1, caractère découvert).
-    jeu.bridge.vm.run(`S.tonAgent.relations[${JSON.stringify(c.id)}]=7;`);
+    jeu.bridge.vm.run(`S.tonAgent.relations[${JSON.stringify(ag(c))}]=7;`);
     const minimum = lire(`reservationWage(S.market.find(p=>p.id===${JSON.stringify(c.id)}),'recruit',1)`);
     r = jeu.brut('recruit', { playerId: c.id, salary: minimum, years: 1, confirmed: true });
     assert.equal(r.ok, true, r.error);

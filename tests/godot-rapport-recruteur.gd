@@ -87,6 +87,7 @@ func run() -> void:
 	await lignes()
 	await tuiles_et_pastilles()
 	await agent()
+	await reception_et_fiche()
 	await ouvrir_rapport()
 	shot("rapport-recruteur-1920x1080")
 	finish()
@@ -212,6 +213,20 @@ func agent() -> void:
 	var observe := str(piste().get("knowledge", {}).get("stage", "")) in ["observed", "deep"]
 	check(observe or texte("AgentCaractere") == "?", "Caractère inconnu : « ? » (%s)" % texte("AgentCaractere"))
 	check(trouver("AgentHumeur") != null, "Pastille d'humeur")
+	# Agent nommé (retour de Léo du 23/11) : c'est l'agent qu'on voit, il parle de son client ; relation une seule fois.
+	var nom_agent := str(a0.get("nom", ""))
+	check(not nom_agent.is_empty() and nom_agent != "L’agent" and texte_bouton("AgentNom") == nom_agent, "En-tête : nom de l'agent (%s / %s)" % [nom_agent, texte_bouton("AgentNom")])
+	check(trouver("AgentPortraitPhoto") != null and trouver("AgentVisage") != null, "Portrait de l'agent en tête et dans ses bulles")
+	check(trouver("AgentEchelleAttitude") == null and trouver("AgentPalier0") == null and trouver("AgentRelationCran_4") != null, "Relation une seule fois (en-tête), pas d'échelle au-dessus du fil")
+	check(trouver("AgentSujet") != null and trouver("AgentJoueurNom") != null, "Carte « Au sujet de » : le joueur")
+	check(trouver("AgentClient_0") != null and trouver("AgentClientVise") != null and trouver("AgentClientsTitre") != null, "Ses joueurs : liste, joueur concerné surligné")
+	check(texte("AgentBulleAccueilTexte").contains("mon client"), "L'agent parle de son client (%s)" % texte("AgentBulleAccueilTexte"))
+	check(await presser("AgentNom") and trouver("FenetreAgentJoueur") != null and texte("FenetreAgentNom") == nom_agent and trouver("FenetreAgentClient_0") != null, "Clic sur le nom : petite fenêtre de l'agent")
+	await settle(10)
+	shot("final-fenetre-agent-%d" % root.size.x)
+	PetiteFenetre.fermer_derniere(self)
+	await settle(6)
+	check(trouver("FenetreAgentJoueur") == null and trouver("DiscussionAgent") != null, "Petite fenêtre de l'agent refermée, discussion toujours là")
 	await settle(10)
 	shot("final-pastilles-%d" % root.size.x)
 	var b := trouver("AgentTon_tout_prix") as Button
@@ -225,6 +240,9 @@ func agent() -> void:
 	# Le ton fait pencher la demande sans garantie chiffrée (arrondis, plancher) : jamais plus basse après « À tout prix ».
 	check(int(piste().get("salary", 0)) >= avant, "Demande pas baissée (%d → %d)" % [avant, int(piste().get("salary", 0))])
 	check(trouver("DiscussionAgent") != null and trouver("AgentBulleDemande") != null and trouver("AgentEffets") == null, "Fenêtre rouverte : réponse de l'agent, sans pastille d'effet")
+	check(trouver("AgentRelationFleche") != null, "Le cran de la relation bouge dans l'en-tête (Neutre → Bonne)")
+	await settle(10)
+	shot("final-discussion-%d" % root.size.x)
 	check(await presser("AgentQuestion_role"), "Deuxième tour : rôle attendu")
 	await wait_engine()
 	await settle(10)
@@ -234,9 +252,62 @@ func agent() -> void:
 	check(await presser("AgentFaireOffre") and page_kind() == "negociation", "Troisième tour : offre au joueur (%s)" % page_kind())
 	await settle(10)
 	check(trouver("NegoPropo_1") == null and trouver("NegoHumeur") != null, "Offre : humeur de l'agent, plus de ronds numérotés")
+	check(texte_bouton("NegoAgentNom") == nom_agent and trouver("NegoAgentAvatarPhoto") != null, "Offre : nom et portrait de l'agent (%s)" % texte_bouton("NegoAgentNom"))
 	check(texte("NegoRelationAgent") == "Bonne" and texte("NegoCaractere") == mot and trouver("NegoEffetRelationDemande") == null, "Offre : relation sans chiffre, caractère (%s · %s)" % [texte("NegoRelationAgent"), texte("NegoCaractere")])
 	shot("final-offre-agent-%d" % root.size.x)
 	check(texte("OffreEtapeTexte") == "Proposition 1", "Offre : étape sans total (%s)" % texte("OffreEtapeTexte"))
+
+## Agent nommé ailleurs dans le jeu : courrier « Un agent de joueurs » (Réception) et fiche d'un joueur de l'effectif.
+func reception_et_fiche() -> void:
+	var vue: Dictionary = app.model.get("clubLife", {}).get("agentsJoueurs", {})
+	var p := piste()
+	var ag_id := str(vue.get("joueurs", {}).get(piste_id, ""))
+	var ag: Dictionary = vue.get("agents", {}).get(ag_id, {})
+	check(not ag.is_empty() and not str(ag.get("agence", "")).is_empty(), "Agent de la piste projeté, avec son agence")
+	if ag.is_empty(): return
+	# Courrier de l'agent, sous la forme projetée par club-mail.cjs (expéditeur = son nom, agent, agence).
+	var today := str(app.model.get("meta", {}).get("calendarToday", ""))
+	if not app.model.clubLife.has("clubMail") or not app.model.clubLife.clubMail is Dictionary: app.model.clubLife.clubMail = {"mails": [], "reponses": {}}
+	var box: Dictionary = app.model.clubLife.clubMail
+	var mail := {"id": "mail-990101", "type": "agent", "categorie": "recrutement", "categorieLabel": "Recrutement", "date": today, "expediteur": str(ag.nom), "agent": ag_id,
+		"agence": str(ag.agence), "sujet": "Proposition : " + str(p.get("name", "")), "status": "nouveau", "ecran": "fiche", "arret": true, "nature": "action", "joueur": piste_id,
+		"corps": "Bonjour coach. Je représente " + str(p.get("name", "")) + ". Il cherche un projet ambitieux et ton club l'intéresse.",
+		"reponses": [{"id": "negocier", "libelle": "Ouvrir les discussions", "effets": "", "disponible": true, "raison": "", "ouvrir": true},
+			{"id": "decliner", "libelle": "Décliner poliment", "effets": "", "disponible": true, "raison": ""}]}
+	box.mails = [mail] + (box.get("mails", []) as Array)
+	app._reset_reception("mail-990101")
+	app._navigate("Réception", false)
+	await settle(12)
+	check(node("InboxAgentPortraitPhoto") != null, "Réception : portrait de l'agent")
+	var nom := node("InboxSenderName") as Label
+	check(nom != null and nom.text == str(ag.nom), "Réception : nom de l'agent (%s)" % (nom.text if nom != null else "?"))
+	shot("final-reception-agent-%d" % root.size.x)
+	check(await press("InboxAgentNomLien") and node("FenetreAgentJoueur") != null and node("FenetreAgentClientVise") != null, "Réception : clic sur le nom → petite fenêtre de l'agent, client surligné")
+	shot("final-reception-fenetre-agent-%d" % root.size.x)
+	PetiteFenetre.fermer_derniere(self)
+	await settle(6)
+	# Fiche d'un joueur de l'effectif : « Agent : <nom> », clic = petite fenêtre de l'agent.
+	var joueur: Dictionary = app.model.squad[0]
+	app.navigation_controller.open_entity({"kind": "player", "id": str(joueur.id)})
+	await settle(12)
+	var lien := node("PlayerAgentLink") as Button
+	var a2: Dictionary = vue.get("agents", {}).get(str(vue.get("joueurs", {}).get(str(joueur.id), "")), {})
+	check(lien != null and lien.text == "Agent : " + str(a2.get("nom", "?")), "Fiche joueur : « Agent : <nom> » (%s)" % (lien.text if lien != null else "?"))
+	shot("final-fiche-joueur-%d" % root.size.x)
+	if lien != null:
+		lien.pressed.emit()
+		await settle(10)
+		check(node("FenetreAgentJoueur") != null and node("FenetreAgentClientVise") != null, "Fiche : petite fenêtre de l'agent, joueur surligné")
+		shot("final-fiche-agent-%d" % root.size.x)
+		PetiteFenetre.fermer_derniere(self)
+		await settle(6)
+	app._navigate("Recrutement", false)
+	await settle(8)
+
+## Texte d'un bouton (liens de nom).
+func texte_bouton(nom: String) -> String:
+	var b := trouver(nom) as Button
+	return b.text if b != null else ""
 
 ## Texte du premier Label sous un nœud (pastilles).
 func texte(nom: String) -> String:

@@ -5,7 +5,7 @@ extends RefCounted
 ##    en prolongation) ;
 ##  - centre : 1 · Promesses (rôle promis Titulaire / Rotation / Espoir / Appoint, OBLIGATOIRE avant le contrat), puis
 ##    2 · Contrat, une ligne par clause ; chaque ligne acceptée par l'agent passe au vert ;
-##  - droite : l'agent du joueur (anonyme : « Agent de <joueur> »), ses réponses en bulles chiffrées.
+##  - droite : l'agent nommé du joueur (portrait, nom cliquable → sa petite fenêtre, agence ; ui/agent_joueur.gd), ses réponses en bulles.
 ## Clic = appliqué : un rôle cliqué est promis, les champs règlent la proposition ; seul le bouton de signature (fenêtre
 ## de l'offre ou pied de la page Recrutement) envoie, en un clic (exception tolérée : signature d'un contrat).
 ## Données moteur : quote.roles {attendu, liste[{role, salary, refus}]} (native/engine/role-contrat.cjs) : demande et refus
@@ -25,6 +25,7 @@ const P = preload("res://ui/immersive08/projection.gd")
 const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
 const Role = preload("res://ui/role_contrat.gd")
 const Guidee = preload("res://ui/offre_guidee.gd")
+const AgentJoueur = preload("res://ui/agent_joueur.gd")
 const LARGEUR := 1500.0
 const HAUTEUR := 860.0
 ## Repères du temps de jeu promis (idée 16, native/engine/role-contrat.cjs SEUILS) : minutes par match.
@@ -153,7 +154,7 @@ static func bulles(d: Dictionary, quote: Dictionary) -> Array:
 		if str(d.attendu).is_empty() or rang == 0: liste.append(["Ça lui va.", Pieces.VERT, true])
 		elif rang < 0: liste.append(["Il signe des deux mains." + (" " + ecart if not ecart.is_empty() else ""), Pieces.VERT, true])
 		else: liste.append(["Il espérait mieux." + (" " + ecart if not ecart.is_empty() else ""), Pieces.ORANGE, true])
-	liste.append(["Il demande %s." % G.salary(d.demande), Charte.IVOIRE, true])
+	liste.append(["Mon client demande %s." % G.salary(d.demande), Charte.IVOIRE, true])
 	if int(d.min) != int(d.max): liste.append(["%d à %d saisons." % [int(d.min), int(d.max)], Charte.IVOIRE, true])
 	else: liste.append(["%d saison." % int(d.min), Charte.IVOIRE, true])
 	if d.contre:
@@ -451,10 +452,19 @@ static func _pilules(ligne: Control, hauteur: float, pilules: Array) -> void:
 static func _agent(toile: Control, parent: Control, ctx: Dictionary, d: Dictionary) -> void:
 	var droite := D.rect(parent, Rect2(1092, 0, 408, 842), Charte.PANNEAU_2, Charte.RAYON_CARTE)
 	droite.name = "NegoAgent"
-	_avatar_agent(droite, 20, 20, 64)
-	_titre(droite, 100, 50, "Agent", Pieces.BLEU, 22, 280)
-	D.text(droite, 100, 78, "de " + str(ctx.player.get("name", "")), 18, Charte.IVOIRE_2, 600, 290, HORIZONTAL_ALIGNMENT_LEFT, true).name = "NegoAgentNom"
-	Pieces.rendre_cliquable(droite.get_node("NegoAgentAvatar"), Vector2(64, 64), func(): Offre._fenetre_discussion(toile, ctx, d), "NegoAgentLien", "Agent de " + str(ctx.player.get("name", "")), "", Charte.RAYON_PILULE)
+	# Agent nommé (ui/agent_joueur.gd) : son portrait d'adulte (clic = la discussion), son nom (clic = sa petite fenêtre),
+	# son agence ; sans annuaire projeté, l'ancien avatar « Agent de <joueur> ».
+	var pid := str(ctx.player.get("id", ""))
+	var ag := AgentJoueur.de_joueur(ctx.app, pid)
+	if ag.is_empty():
+		_avatar_agent(droite, 20, 20, 64)
+		_titre(droite, 100, 50, "Agent", Pieces.BLEU, 22, 280)
+		D.text(droite, 100, 78, "de " + str(ctx.player.get("name", "")), 18, Charte.IVOIRE_2, 600, 290, HORIZONTAL_ALIGNMENT_LEFT, true).name = "NegoAgentNom"
+	else:
+		AgentJoueur.poser_portrait(droite, Rect2(20, 20, 64, 64), ag, "NegoAgentAvatar", Pieces.BLEU)
+		AgentJoueur.lien_nom(ctx.app, toile, droite, Rect2(100, 16, 290, 40), ag, 22, "NegoAgentNom", Pieces.BLEU, pid, AgentJoueur.ligne_de(ctx.player, "effectif" if ctx.get("prolongation", false) else "marche"))
+		D.text(droite, 100, 80, str(ag.get("agence", "")), 16, Charte.IVOIRE_2, 600, 290, HORIZONTAL_ALIGNMENT_LEFT, true).name = "NegoAgentAgence"
+	Pieces.rendre_cliquable(droite.get_node("NegoAgentAvatar"), Vector2(64, 64), func(): Offre._fenetre_discussion(toile, ctx, d), "NegoAgentLien", str(ag.get("nom", "Agent de " + str(ctx.player.get("name", "")))), "", Charte.RAYON_PILULE)
 	D.line(droite, Vector2(20, 104), Vector2(388, 104), Charte.FILET)
 	var by := 122.0
 	var i := 0
@@ -619,8 +629,13 @@ static func ouvrir_disponibilite(page: Control, app: Control, joueur: Dictionary
 	panneau.add_child(contenu)
 	D.place(contenu, Rect2(0, 0, 900, hauteur))
 	var phrase := phrase_disponibilite(joueur)
-	_avatar_agent(contenu, 28, 84, 64)
-	_titre(contenu, 108, 108, "Agent de " + str(joueur.get("name", "")), Pieces.BLEU, 18, 600)
+	var ag := AgentJoueur.de_joueur(app, str(joueur.get("id", "")))
+	if ag.is_empty():
+		_avatar_agent(contenu, 28, 84, 64)
+		_titre(contenu, 108, 108, "Agent de " + str(joueur.get("name", "")), Pieces.BLEU, 18, 600)
+	else:
+		AgentJoueur.poser_portrait(contenu, Rect2(28, 84, 64, 64), ag, "NegoAgentAvatar", Pieces.BLEU)
+		AgentJoueur.lien_nom(app, page, contenu, Rect2(108, 76, 600, 40), ag, 20, "NegoDispoAgentNom", Pieces.BLEU, str(joueur.get("id", "")))
 	_bulle(contenu, 108, 122, 760, str(phrase[0]), phrase[1], true, "NegoDispoPhrase")
 	if vue == "clubs":
 		_dispo_clubs(page, app, joueur, contenu, prets, clubs)

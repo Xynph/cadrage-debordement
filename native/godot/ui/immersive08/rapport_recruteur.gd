@@ -220,7 +220,8 @@ static func construire(app: Control, cadre: Control, titre: Label, courant: Dict
 	var Agent: Variant = load("res://ui/discussion_agent.gd")
 	var stade := str(p.get("knowledge", {}).get("stage", "")) if p.get("knowledge") is Dictionary else ""
 	var mot := {"deep": "Bien connu", "observed": "Observé"}.get(stade, "Non observé") as String
-	Pieces.pastille(cadre, 172 + Pieces.largeur_pastille(mot, "search"), 124, "Parler à l’agent", "people", "RapportAgentOuvrir", "", Pieces.BLEU, Charte.PANNEAU_3,
+	var agent_nom := str(p.get("agent", {}).get("nom", "")) if p.get("agent") is Dictionary else ""
+	Pieces.pastille(cadre, 172 + Pieces.largeur_pastille(mot, "search"), 124, "Parler à " + agent_nom if not agent_nom.is_empty() and agent_nom != "L’agent" else "Parler à l’agent", "people", "RapportAgentOuvrir", "", Pieces.BLEU, Charte.PANNEAU_3,
 		func(): Agent.ouvrir(app, cadre.get_parent(), p))
 	if bool(courant.get("agent", false)):
 		courant.erase("agent")
