@@ -74,6 +74,7 @@ const EXTRAS := [
 	{"id": "classements-archives", "libelle": "Classements · sous-page des archives des saisons", "type": "classements_page", "page": "archives"},
 	{"id": "classements-phases", "libelle": "Classements · onglet Phases finales", "type": "classements_onglet", "onglet": "playoffs"},
 	{"id": "classements-stats", "libelle": "Classements · onglet Statistiques", "type": "classements_onglet", "onglet": "stats"},
+	{"id": "dans-le-monde", "libelle": "Compétitions · Dans le monde", "type": "classements_onglet", "onglet": "monde"},
 	{"id": "formation-suivi", "libelle": "Formation · sous-page Suivi des jeunes", "type": "formation_suivi"},
 	{"id": "options", "libelle": "Options", "type": "options"},
 	{"id": "recherche", "libelle": "Recherche (résultats de la barre haute)", "type": "recherche"},
@@ -106,6 +107,9 @@ const EXTRAS := [
 	{"id": "recrutement-entre-clubs", "libelle": "Recrutement · sous-page Marché entre clubs", "type": "recrutement_sous", "page": "interclub"},
 	{"id": "recrutement-entre-clubs-offre", "libelle": "Recrutement · Marché entre clubs, offre guidée par le recruteur", "type": "recrutement_sous", "page": "interclub", "offre": true},
 	{"id": "recrutement-rapport-recruteur", "libelle": "Recrutement · Rapport du recruteur", "type": "recrutement_sous", "page": "recruteur"},
+	{"id": "agent-discussion", "libelle": "Recrutement · discussion avec l'agent", "type": "recrutement_sous", "page": "recruteur", "presser": "RapportAgentOuvrirLien"},
+	{"id": "agent-ton", "libelle": "Recrutement · discussion avec l'agent, ton à tout prix puis rôle attendu", "type": "recrutement_sous", "page": "recruteur", "presser": "RapportAgentOuvrirLien", "puis": ["AgentTon_tout_prix", "AgentQuestion_role"]},
+	{"id": "agent-offre", "libelle": "Recrutement · offre après la discussion avec l'agent (relation, caractère, humeur)", "type": "recrutement_sous", "page": "recruteur", "presser": "RapportAgentOuvrirLien", "puis": ["AgentTon_tout_prix", "AgentQuestion_role", "AgentFaireOffre"]},
 	{"id": "finances-tresorerie", "libelle": "Finances · onglet Trésorerie (colonne de verdict)", "type": "finances_onglet", "onglet": "cash"},
 	{"id": "finances-salaires", "libelle": "Finances · onglet Salaires", "type": "finances_onglet", "onglet": "wages"},
 	{"id": "finances-budget", "libelle": "Finances · onglet Budget", "type": "finances_onglet", "onglet": "budget"},
@@ -787,6 +791,16 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			await stabiliser()
 			await stabiliser()
 			if app.find_child("RecrutementSubpage_" + str(ecran.page), true, false) == null: return {"statut": "echec", "note": "sous-page non ouverte"}
+			if ecran.has("presser"):
+				var ouvre := app.find_child(str(ecran.presser), true, false) as Button
+				if ouvre == null: return {"statut": "echec", "note": "bouton %s absent" % ecran.presser}
+				ouvre.pressed.emit()
+				await stabiliser()
+				for nom_puis: Variant in ecran.get("puis", []):
+					var suite := app.find_child(str(nom_puis), true, false) as Button
+					if suite == null: return {"statut": "echec", "note": "bouton %s absent" % nom_puis}
+					suite.pressed.emit()
+					await stabiliser()
 			if ecran.get("offre", false):
 				# Offre guidée entre clubs : premier joueur proposable du catalogue.
 				var vue: Node = null
@@ -1195,6 +1209,9 @@ func refermer(ecran: Dictionary) -> void:
 	if str(ecran.type) == "creation_options":
 		app.management_ui.erase("creation_step")
 		app.management_ui.erase("creation_selection")
+	if str(ecran.type) == "recrutement_sous" and ecran.has("presser"):
+		load("res://ui/petite_fenetre.gd").fermer_derniere(app.get_tree())
+		app.management_ui.erase("agent_tons")
 	if str(ecran.type) == "effectif_onglet":
 		app.management_ui.roster.immersive_tab = 0
 		app.management_ui.roster.erase("plan_saison")
