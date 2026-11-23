@@ -53,6 +53,7 @@ func until_vivant(condition: Callable, limit_ms: int) -> bool:
 
 ## État du direct pour le journal (un rouge en ligne se lit sans rejouer le match).
 func etat_direct(view: Control) -> String:
+	if view == null or view.regie == null or not is_instance_valid(view.regie.between): return "direct absent ou écran reconstruit (minute %d)" % int(live().get("minute", 0))
 	var couvert: bool = view.regie.between.couvert.call() if view.regie != null and view.regie.between.couvert.is_valid() else false
 	return "minute %d, fini %s, pause %s, file %d, fenêtre %s, couvert %s, étape %s, attente %s" % [int(live().get("minute", 0)), str(live().get("finished", false)), str(live().get("paused", false)), file().size(), str(view.fenetre_ouverte()), str(couvert), str(view.regie.etat) if view.regie != null else "?", str(app.waiting)]
 
@@ -61,6 +62,7 @@ func capture(nom: String) -> void:
 	root.get_texture().get_image().save_png(dossier.path_join(nom + ".png"))
 
 func vue_2d(view: Control) -> bool:
+	if view == null or view.regie == null or not is_instance_valid(view.regie.between): return false
 	return view.regie != null and view.regie.etat == view.regie.INTER and view.regie.between.is_visible_in_tree() and view.regie.between._journee_montree() and not view.regie.between.panneaux_direct.is_empty() and view.regie.between.panneaux_direct[0].is_visible_in_tree()
 
 func live() -> Dictionary:
@@ -190,19 +192,19 @@ func run() -> void:
 		if en_attente:
 			await settle(20)
 			# Le moteur peut avoir trouvé un arrêt de jeu pendant ces images : le badge n'a alors plus lieu d'être.
-			check(file().is_empty() or not between.find_children("MatchMenuJoueurAttenteBadge", "", true, false).is_empty(), "badge ⧗ sur la carte du sortant")
+			check(file().is_empty() or bt() == null or not bt().find_children("MatchMenuJoueurAttenteBadge", "", true, false).is_empty(), "badge ⧗ sur la carte du sortant")
 		Engine.time_scale = 8.0
 		t0 = Time.get_ticks_msec()
 		m0 = int(live().get("minute", 0))
-		print("MENU_JOUEUR remplacement demandé : ", etat_direct(view))
+		print("MENU_JOUEUR remplacement demandé : ", etat_direct(surface()))
 		check(await until_vivant(func(): return file().is_empty(), 180000), "le remplacement part au prochain arrêt")
-		print("MENU_JOUEUR remplacement attendu : ", etat_direct(view))
-		print("MENU_JOUEUR remplacement parti : minute %d -> %d en %d s (fini %s, pause %s, file %d, fenêtre %s)" % [m0, int(live().get("minute", 0)), (Time.get_ticks_msec() - t0) / 1000, str(live().get("finished", false)), str(live().get("paused", false)), file().size(), str(view.fenetre_ouverte())])
+		print("MENU_JOUEUR remplacement attendu : ", etat_direct(surface()))
+		print("MENU_JOUEUR remplacement parti : minute %d -> %d en %d s (fini %s, pause %s, file %d, fenêtre %s)" % [m0, int(live().get("minute", 0)), (Time.get_ticks_msec() - t0) / 1000, str(live().get("finished", false)), str(live().get("paused", false)), file().size(), str(surface() != null and surface().fenetre_ouverte())])
 		Engine.time_scale = 4.0
-		check(await until_vivant(func(): return between.find_child("MatchChangementCarte", true, false) != null, 120000), "carte sortant / entrant affichée quand le direct montre le changement")
+		check(await until_vivant(func(): return bt() != null and bt().find_child("MatchChangementCarte", true, false) != null, 120000), "carte sortant / entrant affichée quand le direct montre le changement")
 		Engine.time_scale = 1.0
-		var carte_ch := between.find_child("MatchChangementCarte", true, false) as Control
-		check(carte_ch != null and between.terrain.find_child("MatchChangementCarte", true, false) == null, "carte hors du terrain 2D")
+		var carte_ch: Control = bt().find_child("MatchChangementCarte", true, false) as Control if bt() != null else null
+		check(carte_ch != null and bt().terrain.find_child("MatchChangementCarte", true, false) == null, "carte hors du terrain 2D")
 		var entrant_label := false
 		if carte_ch != null:
 			for l: Node in carte_ch.find_children("*", "Label", true, false):
@@ -211,16 +213,16 @@ func run() -> void:
 		check(int(live().get("numeros", {}).get(entrant, 0)) == numero, "numéro gardé par le moteur")
 		var nom_tuile := "MatchBetweenPlayer%d" % (int(choix.slot) + 1)
 		# Capture sur l'écran 2D posé (pas pendant le fondu vers un temps fort 3D).
-		await until(func(): return vue_2d(view) and not app.waiting, 60000)
+		await until(func(): return vue_2d(surface()) and not app.waiting, 60000)
 		await settle(20)
-		carte_ch = between.find_child("MatchChangementCarte", true, false) as Control
-		check(carte_ch != null and not carte_ch.get_global_rect().intersects(between.terrain.get_global_rect()), "carte qui ne recouvre pas le terrain 2D")
-		check(carte_ch != null and between.phrase_fm.get_global_rect().grow(4.0).encloses(carte_ch.get_global_rect()), "carte posée sur la bande de la phrase de jeu")
+		carte_ch = bt().find_child("MatchChangementCarte", true, false) as Control if bt() != null else null
+		check(carte_ch != null and not carte_ch.get_global_rect().intersects(bt().terrain.get_global_rect()), "carte qui ne recouvre pas le terrain 2D")
+		check(carte_ch != null and bt().phrase_fm.get_global_rect().grow(4.0).encloses(carte_ch.get_global_rect()), "carte posée sur la bande de la phrase de jeu")
 		await capture("final-remplacement-1920")
 		# Le numéro sur la médaille arrive avec le dernier rafraîchissement de la carte (runner lent) : on attend qu'il s'affiche.
 		var chiffre := ""
 		var lire_numero := func() -> String:
-			var t: Button = la_carte(between, nom_tuile)
+			var t: Button = la_carte(bt(), nom_tuile)
 			var texte := ""
 			var medaille: Node = t.find_child("MatchBetweenFaceNumber", true, false) if t != null else null
 			for l: Node in (medaille.find_children("*", "Label", true, false) if medaille != null else []): texte = (l as Label).text
@@ -228,8 +230,8 @@ func run() -> void:
 		# Runner lent : la carte du poste peut rester cachée le temps d'un temps fort 3D, on laisse le match avancer pour le passer
 		# (en CI, 60 s à vitesse 1 n'ont pas suffi : la carte n'était pas encore visible, puis portait bien l'entrant).
 		Engine.time_scale = 4.0
-		var entrant_sur_carte := func() -> bool: return la_carte(between, nom_tuile) != null and str(la_carte(between, nom_tuile).get_meta("player_id", "")) == entrant
-		if not await until_vivant(entrant_sur_carte, 120000): print("MENU_JOUEUR carte du poste sans l'entrant : ", etat_direct(view))
+		var entrant_sur_carte := func() -> bool: return la_carte(bt(), nom_tuile) != null and str(la_carte(bt(), nom_tuile).get_meta("player_id", "")) == entrant
+		if not await until_vivant(entrant_sur_carte, 120000): print("MENU_JOUEUR carte du poste sans l'entrant : ", etat_direct(surface()))
 		check(entrant_sur_carte.call(), "Mon XV : l'entrant prend la carte du poste")
 		await until(func(): return lire_numero.call() == str(numero), 90000)
 		Engine.time_scale = 1.0
@@ -250,8 +252,14 @@ func capture_tailles(view: Control, id: String) -> void:
 		await capture("final-%d" % t.x)
 	await taille(Vector2i(1920, 1080))
 
+## Écran entre les temps forts courant : la régie peut le reconstruire en cours de match (l'ancien est libéré).
+func bt() -> Control:
+	var v := surface()
+	return v.regie.between if v != null and v.regie != null and is_instance_valid(v.regie.between) else null
+
 ## La carte de Mon XV est reconstruite au changement de taille : on la retrouve par son nom.
 func la_carte(between: Control, nom: String) -> Button:
+	if between == null: return null
 	for n: Node in between.find_children(nom, "Button", true, false):
 		if (n as Control).is_visible_in_tree() and not n.is_queued_for_deletion(): return n
 	return null
