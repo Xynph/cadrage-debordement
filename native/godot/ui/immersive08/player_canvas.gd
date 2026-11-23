@@ -31,10 +31,11 @@ const TempsJeu = preload("res://ui/immersive08/fiche_temps_jeu.gd")
 const Progression = preload("res://ui/immersive08/progression_fiche.gd")
 const AgentJoueur = preload("res://ui/agent_joueur.gd")
 const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
+const FicheBlessures = preload("res://ui/immersive08/fiche_blessures.gd")
 
 ## Onglets : [index d'état, libellé]. L'index 1 (ancien onglet Attributs) n'existe plus : ses 36 attributs sont en
 ## première page ; un état resté sur 1 ouvre la Vue d'ensemble.
-const ONGLETS := [[0, "Vue d’ensemble"], [2, "Performances"], [3, "Contrat"], [4, "Développement"], [5, "Repères"]]
+const ONGLETS := [[0, "Vue d’ensemble"], [2, "Performances"], [3, "Contrat"], [4, "Développement"], [5, "Repères"], [6, "Blessures"]]
 const HAUTEUR := 1296
 const HAUT := 332
 const GAUCHE := 1420
@@ -141,6 +142,14 @@ static func build(app:Control,player:Dictionary,source:String="squad") -> Contro
 			_contexts(D.panel(page,Rect2(0,top,1498,806),"LE JOUEUR DANS LE GROUPE","people","","FullPlayerContexts"),app,player)
 			_sources(D.panel(page,Rect2(1514,top,734,520),"REPÈRES DE DÉPART","info","","FullPlayerSources"),app,player)
 			D.photo(page,"scouting",Rect2(1514,top+536,734,270))
+		6:
+			# Blessures en cours et passées (idée FM27 n° 36), dernier test de reprise à droite.
+			FicheBlessures.construire(D.panel(page,Rect2(0,top,1670,HAUTEUR-top-50),"BLESSURES","heart","","PlayerInjuryHistory"),app,player)
+			var test := D.panel(page,Rect2(1686,top,562,330),"TEST DE REPRISE","heart","","PlayerReturnTest")
+			if not FicheBlessures.test_reprise(test,app,player):
+				test.queue_free()
+				D.photo(page,"medical-recovery",Rect2(1686,top,562,330))
+			else: D.photo(page,"medical-recovery",Rect2(1686,top+346,562,HAUTEUR-top-50-346))
 	_pied(page,app,player,source)
 	return page
 

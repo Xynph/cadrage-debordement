@@ -22,6 +22,7 @@ const Bandeau = preload("res://ui/bandeau_filtres.gd")
 const Messages = preload("res://ui/immersive08/reception_messages.gd")
 const CompteRendu = preload("res://ui/immersive08/compte_rendu_carte.gd")
 const Analyste = preload("res://ui/immersive08/analyste_match.gd")
+const TestsPhysiques = preload("res://ui/immersive08/tests_physiques.gd")
 const AgentJoueur = preload("res://ui/agent_joueur.gd")
 const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
 
@@ -1227,7 +1228,10 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 		var analyse: Control = Analyste.bloc_mail(app, message.get("club_mail", {}), content_width - 12.0) if message.get("club_mail") is Dictionary else null
 		support.add_child(analyse if analyse != null else _letter(app, message, content_width - 12.0))
 		column.add_child(support)
-		if message.get("category") == "Médical" and not national: column.add_child(_infirmary(app, reading_width))
+		# Tests de reprise du médecin (idée FM27 n° 36) : la liste des joueurs testés sous sa lettre.
+		var tests: Control = TestsPhysiques.bloc_mail(app, message.get("club_mail", {}), content_width - 12.0) if message.get("club_mail") is Dictionary else null
+		if tests != null: column.add_child(tests)
+		if message.get("category") == "Médical" and not national and tests == null: column.add_child(_infirmary(app, reading_width))
 		content = column
 	C.fill(content)
 	var natural := _clipping_height(content, C.px(_w-2*PAD-14)) if not press.is_empty() else _column_height(content, C.px(content_width))
