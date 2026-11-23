@@ -90,7 +90,7 @@ func _build() -> void:
 		D.place(review, Rect2(0, Y_FILTRES, LARGEUR, HAUT_PAGE - Y_FILTRES - 40))
 		return
 	if int(state.get("immersive_tab", 0)) == 4:
-		# Planificateur d'effectif (revue FM27, idée 11) : planche A/B sous CD_VARIANTE_VISUELLE.
+		# Planificateur d'effectif (revue FM27, idée 11) : terrain + liste du poste, saisons à venir (planificateur.gd).
 		preload("res://ui/immersive08/planificateur.gd").construire(self, app, Y_FILTRES, HAUT_PAGE - 4)
 		return
 	_dy = DY_RANGEES
