@@ -371,7 +371,14 @@ static func _attributs(card: Panel, app: Control, player: Dictionary, source: St
 static func _postes(card: Panel, app: Control, player: Dictionary, source: String) -> void:
 	_titre(card,"POSTES ET RÔLES")
 	FicheRoles.carte(card,app,player,Commune.valeurs(player,source))
+	# Apprendre un poste (23/11/2026) : joueurs de notre effectif seulement, à droite du titre.
+	if source != "market" and _dans_effectif(app,str(player.get("id",""))): FicheRoles.apprendre(card,app,player,card.size.x/C.density-24)
 	_courbe(card,app,player,source)
+
+static func _dans_effectif(app: Control, id: String) -> bool:
+	for p: Variant in app.model.get("squad",[]):
+		if p is Dictionary and str(p.get("id","")) == id: return true
+	return false
 
 static func _courbe(card: Panel, app: Control, player: Dictionary, source: String) -> void:
 	if source == "market": return

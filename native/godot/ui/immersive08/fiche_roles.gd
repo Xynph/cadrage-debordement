@@ -15,6 +15,8 @@ const Carte = preload("res://ui/carte_joueur_survol.gd")
 const Roster = preload("res://ui/immersive08/squad_canvas.gd")
 const Liste = preload("res://ui/immersive08/liste_etoiles.gd")
 const Familiarite = preload("res://ui/familiarite_poste.gd")
+const R = preload("res://ui/immersive08/reperes.gd")
+const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
 
 const CLE := Charte.CONDITION
 const UTILE := Charte.MORAL
@@ -243,3 +245,87 @@ static func _terrain(card: Control, app: Control, player: Dictionary, values: Di
 			func(): choisir(app, player, meilleur_role(values, n), n))
 		var note := Liste.note_poste(player, n)
 		b.tooltip_text = "%d · %s · %s · %s" % [n, POSTE[FAMILLE[i]], Familiarite.mot(Familiarite.niveau(player, n)), str(int(note)) if note >= 0.0 else "?"]
+
+# --- Apprendre un poste ----------------------------------------------------------------------------------------------
+
+## « Apprendre un poste : <poste> » (choix de Léo du 23/11/2026) : une seule cible à la fois, enregistrée au moteur
+## (commande `set_position_learning`, projection `positionLearning`). Les séances de la semaine font progresser la
+## familiarité à ce poste, même s'il joue ailleurs le week-end ; sans cible, rien à l'entraînement (les matchs comptent
+## toujours). Clic = petite fenêtre des postes, un clic sur un poste l'applique (pas de bouton Valider) ; re-clic sur la
+## cible ou ✕ = arrêt. Joueurs de notre effectif seulement, posé à droite du titre de la carte (`fin` = bord droit).
+const FENETRE_APPRENDRE := "ApprendrePosteFenetre"
+
+static func cible_apprentissage(player: Dictionary) -> int:
+	var c: Variant = player.get("positionLearning")
+	return int(c) if (c is int or c is float) and int(c) >= 1 and int(c) <= 15 else 0
+
+## Postes qu'il peut apprendre : ni son poste principal, ni la 1re ligne sans qualification.
+static func postes_a_apprendre(player: Dictionary) -> Array[int]:
+	var principaux := Roster.primary_numbers(player)
+	var front: Variant = player.get("qualifiedFrontRowPositions")
+	var sortie: Array[int] = []
+	for n in range(1, 16):
+		if n in principaux: continue
+		if n <= 3 and not (front is Array and n in (front as Array)): continue
+		sortie.append(n)
+	return sortie
+
+static func apprendre(card: Control, app: Control, player: Dictionary, fin: float) -> void:
+	var cible := cible_apprentissage(player)
+	var texte := "Apprendre un poste : %d · %s" % [cible, Liste.nom_poste(cible)] if cible > 0 else "Apprendre un poste"
+	var largeur := R.largeur(texte, 18, 700) + 36.0
+	var x := fin - largeur - (44.0 if cible > 0 else 0.0)
+	var bouton := _bouton(card, Rect2(x, 15, largeur, 34), "PlayerLearnPosition", cible > 0, func(): pass)
+	bouton.pressed.connect(func(): fenetre_apprendre(card.get_parent() as Control, app, player, bouton))
+	bouton.accessibility_name = texte
+	var t := D.text(bouton, 18, 24, texte, 18, Charte.CREME if cible > 0 else Charte.IVOIRE, 700, largeur - 20)
+	t.name = "PlayerLearnPositionTexte"
+	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if cible <= 0:
+		var cadre := Charte.sans_ombre(C.box(Color.TRANSPARENT, Color(Charte.CREME, .35), 6, 1))
+		for s in ["normal", "pressed", "focus"]: bouton.add_theme_stylebox_override(s, cadre)
+		return
+	var arret := Button.new()
+	arret.name = "PlayerLearnPositionStop"
+	arret.text = "✕"
+	arret.flat = true
+	arret.tooltip_text = "Arrêter d'apprendre ce poste"
+	arret.accessibility_name = "Arrêter d'apprendre le poste " + Liste.nom_poste(cible)
+	arret.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	arret.add_theme_font_size_override("font_size", maxi(12, C.px(22)))
+	arret.add_theme_color_override("font_color", Charte.IVOIRE_2)
+	arret.pressed.connect(func(): app._command("set_position_learning", {"playerId": str(player.get("id", "")), "numero": null}))
+	card.add_child(arret)
+	D.place(arret, Rect2(fin - 38.0, 15, 38, 34))
+
+## Petite fenêtre des postes : numéro et poste, note au poste colorée, barres de familiarité ; la cible en vert.
+static func fenetre_apprendre(page: Control, app: Control, player: Dictionary, declencheur: Control = null) -> void:
+	if page == null: return
+	var postes := postes_a_apprendre(player)
+	var cible := cible_apprentissage(player)
+	var ligne_h := 46.0
+	var hauteur := 96.0 + ligne_h * postes.size() + 20.0
+	var fond := Fenetre.ouvrir(page, FENETRE_APPRENDRE, "APPRENDRE UN POSTE", "", 720.0, hauteur, func(): if is_instance_valid(declencheur): declencheur.grab_focus())
+	var y := 84.0
+	for n: int in postes:
+		var choisi := n == cible
+		var numero := n
+		var ligne := _bouton(fond, Rect2(20, y, 680, ligne_h - 4), "ApprendrePoste_%d" % n, choisi, func():
+			app._command("set_position_learning", {"playerId": str(player.get("id", "")), "numero": null if numero == cible else numero})
+			Fenetre.fermer(page, FENETRE_APPRENDRE))
+		ligne.accessibility_name = "%d · %s%s" % [n, Liste.nom_poste(n), " · en cours, re-clic pour arrêter" if choisi else ""]
+		var base := 30.0
+		var num := D.text(ligne, 16, base, str(n), 22, Charte.CREME, 800, 40)
+		num.add_theme_font_override("font", Charte.TITRE_EXTRA)
+		num.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		D.text(ligne, 66, base, Liste.nom_poste(n), 20, Charte.CREME if choisi else Charte.IVOIRE, 700 if choisi else 600, 260).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var note := Familiarite.poser_note(ligne, 330, base + 1, Liste.note_poste(player, n), 22, 44, "ApprendreNote_%d" % n)
+		note.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		Familiarite.poser(ligne, 392, base, Familiarite.niveau(player, n), 17, "ApprendreFamiliarite_%d" % n)
+		for enfant in ligne.get_children():
+			if enfant is Control: (enfant as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if choisi:
+			var cours := D.text(ligne, 666, base, "✕", 20, Charte.CREME, 800, 30, HORIZONTAL_ALIGNMENT_RIGHT)
+			cours.name = "ApprendrePosteArret"
+			cours.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		y += ligne_h
