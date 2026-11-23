@@ -36,6 +36,12 @@ func check(ok: bool, message: String) -> void:
 func settle() -> void:
 	for frame in 4: await process_frame
 
+func discussion(rang: String) -> Dictionary:
+	return {"situation": "normal", "hierarchie": rang, "attitude": 2, "attitudeAvant": 2, "accueil": "Oui, coach ?", "faite": false, "fil": [],
+		"phrases": [{"id": "n_ecoute", "texte": "Dis-moi comment tu te sens.", "nature": "ecoute", "choice": "ecouter"},
+			{"id": "n_soutien", "texte": "On compte sur toi.", "nature": "soutien", "choice": "rassurer"},
+			{"id": "n_critique", "texte": "J’attends plus de toi.", "nature": "critique", "choice": "clarifier"}]}
+
 func sample() -> Dictionary:
 	var squad: Array = []
 	var players: Array = []
@@ -43,7 +49,7 @@ func sample() -> Dictionary:
 		var id := "p%d" % i
 		squad.append({"id": id, "name": "Joueur NUMERO%d" % i, "pos": "Centre", "portraitIndex": i})
 		players.append({"id": id, "pos": "Centre", "score": 40 + i * 5, "condition": 88, "injury": 0, "minutes": 20 + i, "conversationAvailable": true, "promiseAvailable": true, "promiseHistory": [],
-			"personality": {"trait": "Loyal", "leadership": 50 + i}})
+			"personality": {"trait": "Loyal", "leadership": 50 + i}, "discussion": discussion("relais" if i == 3 else "groupe")})
 	return {"squad": squad, "clubLife": {"relationships": {"active": true, "context": {"season": 1, "week": 1}, "morale": 70, "trust": 80, "players": players, "leaderId": "p3",
 		"conversations": [{"id": "ecouter", "label": "Écouter", "detail": "Satisfaction +2."}, {"id": "rassurer", "label": "Rassurer", "detail": "Satisfaction +1 ; premier entretien : moral +1."}],
 		"promiseLastJourney": 24, "promiseOptions": [{"id": "rotation", "minutes": 80}, {"id": "titulaire", "minutes": 160}],
@@ -71,7 +77,6 @@ func run() -> void:
 		if b.is_visible_in_tree() and not b.disabled: check(b.focus_mode == Control.FOCUS_ALL, "Focus clavier : " + b.name)
 	# Réponses, entretiens, promesses, duo : chaque carte envoie sa vraie commande.
 	for attendu: Array in [["LockerDecision_ecouter", "locker_room_decision", "choice", "ecouter"], ["LockerDecision_cadrer", "locker_room_decision", "choice", "cadrer"],
-			["Conversation_ecouter", "relationship_conversation", "choice", "ecouter"], ["Conversation_rassurer", "relationship_conversation", "choice", "rassurer"],
 			["Promise_rotation", "relationship_promise", "target", "rotation"], ["Promise_titulaire", "relationship_promise", "target", "titulaire"],
 			["DuoAction_mediation", "relationship_duo", "mode", "mediation"]]:
 		var b := bouton(host, attendu[0])
@@ -80,7 +85,42 @@ func run() -> void:
 		b.pressed.emit()
 		var dernier: Array = host.commands.back() if not host.commands.is_empty() else ["", {}]
 		check(dernier[0] == attendu[1] and str(dernier[1].get(attendu[2], "")) == attendu[3], "Commande de " + attendu[0])
-	check(str(host.commands[2][1].get("playerId", "")) == "p0", "Entretien du joueur choisi")
+	# Discussion : la carte « Discuter » ouvre la petite fenêtre (données à gauche, échelle, fil et phrases à droite) ;
+	# un clic sur une phrase la dit tout de suite, sans bouton Valider.
+	check(bouton(host, "Conversation_ecouter") == null, "Plus de lignes d'entretien : la discussion les remplace")
+	host.commands.clear()
+	bouton(host, "DiscussionOuvrir").pressed.emit(); await settle()
+	var disc := host.find_child("DiscussionFenetre", true, false)
+	check(disc != null and PetiteFenetre.ouverte(self) == disc, "Fenêtre de discussion ouverte et inscrite")
+	for nom: String in ["DiscussionEchelleAttitude", "DiscussionFil", "DiscussionBulleAccueil", "DiscussionCourbeForme", "DiscussionHierarchie", "DiscussionAttitude", "DiscussionAnneauSatisfaction", "DiscussionAnneauConfiance"]:
+		check(disc != null and disc.find_child(nom, true, false) != null, "Discussion : " + nom)
+	var rang := disc.find_child("DiscussionHierarchie", true, false) if disc != null else null
+	check(rang != null and (rang.find_children("*", "Label", true, false)[0] as Label).text == "Groupe", "Hiérarchie lue du moteur")
+	check(disc != null and disc.find_children("DiscussionPhrase_*", "Button", true, false).size() == 3, "Trois phrases")
+	for b: Button in (disc.find_children("*", "Button", true, false) if disc != null else []):
+		check(not b.text.to_lower().contains("valider") and not b.text.to_lower().contains("confirmer"), "Aucun bouton Valider")
+	bouton(host, "DiscussionPhrase_n_critique").pressed.emit(); await settle()
+	var dit: Array = host.commands.back() if not host.commands.is_empty() else ["", {}]
+	check(dit[0] == "relationship_conversation" and dit[1].get("choice") == "clarifier" and dit[1].get("phrase") == "n_critique" and dit[1].get("playerId") == "p0", "Un clic dit la phrase : %s" % [dit])
+	check(host.find_child("DiscussionBulleCoachEnvoi", true, false) != null, "La phrase apparaît tout de suite dans le fil")
+	check(bouton(host, "DiscussionPhrase_n_ecoute") != null and bouton(host, "DiscussionPhrase_n_ecoute").disabled, "Une seule phrase par semaine")
+	# Réponse du moteur : sa réponse et l'effet dans le fil, l'échelle d'attitude bouge, « Vu cette semaine ».
+	var p0: Dictionary = host.model.clubLife.relationships.players[0]
+	p0.conversationAvailable = false
+	p0.discussion.faite = true
+	p0.discussion.attitudeAvant = 2
+	p0.discussion.attitude = 0
+	p0.discussion.fil = [{"season": 1, "round": 2, "phrase": "n_critique", "texte": "J’attends plus de toi.", "nature": "critique", "reponse": "Tu me parles pas comme ça.", "effet": -4, "avant": 50, "apres": 46}]
+	host._render(); await settle()
+	disc = host.find_child("DiscussionFenetre", true, false)
+	var reponse := disc.find_child("DiscussionBulleJoueur0Texte", true, false) as Label if disc != null else null
+	check(reponse != null and reponse.text == "Tu me parles pas comme ça.", "Réponse du joueur dans le fil")
+	for nom: String in ["DiscussionBulleCoach0", "DiscussionEffet0", "DiscussionEchelleFleche", "DiscussionDejaVu"]:
+		check(disc != null and disc.find_child(nom, true, false) != null, "Après la réponse : " + nom)
+	check(disc != null and disc.find_child("DiscussionBulleCoachEnvoi", true, false) == null, "Phrase en attente remplacée par l'échange")
+	check(PetiteFenetre.fermer_derniere(self), "Échap ferme la discussion")
+	await settle()
+	check(host.find_child("DiscussionFenetre", true, false) == null and not host.management_ui.has("discussion"), "Discussion refermée et oubliée")
 	# Anneaux moral / conseil : ouvrent leur écran ; anneau de satisfaction et pastilles : la fiche du joueur.
 	bouton(host, "RelationshipRingMorale").pressed.emit()
 	bouton(host, "RelationshipRingTrust").pressed.emit()
@@ -95,8 +135,12 @@ func run() -> void:
 	bouton(host, "RelationshipPortrait_p3").pressed.emit(); await settle()
 	check(host.management_ui.relationships.playerId == "p3", "Portrait choisi")
 	host.commands.clear()
-	bouton(host, "Conversation_ecouter").pressed.emit()
-	check(not host.commands.is_empty() and host.commands.back()[1].playerId == "p3", "Entretien adressé au portrait choisi")
+	bouton(host, "DiscussionOuvrir").pressed.emit(); await settle()
+	var relais := host.find_child("DiscussionHierarchie", true, false)
+	check(relais != null and (relais.find_children("*", "Label", true, false)[0] as Label).text == "Relais", "Le relais est marqué Relais")
+	if bouton(host, "DiscussionPhrase_n_ecoute") != null: bouton(host, "DiscussionPhrase_n_ecoute").pressed.emit()
+	check(not host.commands.is_empty() and host.commands.back()[1].playerId == "p3", "Discussion adressée au portrait choisi")
+	PetiteFenetre.fermer_derniere(self); await settle()
 	# « +N » : petite fenêtre de tout le groupe, fermée par le mécanisme commun (Échap), puis choix d'un portrait.
 	var tous := bouton(host, "RelationshipAllPortraits")
 	check(tous != null and not tous.disabled, "Tuile « +N » cliquable")

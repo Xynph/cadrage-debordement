@@ -1,46 +1,40 @@
 extends RefCounted
-## Discussion avec un joueur (revue FM27, idée 23) : petite fenêtre ouverte depuis Vestiaire › Entretiens et duos.
-## Planche A/B sous CD_VARIANTE_VISUELLE (sans variante, l'écran garde ses trois lignes d'entretien).
-##  A « face à face » : bandeau portrait + attitude + hiérarchie + bulle du joueur, ses données à gauche, nos mots à droite.
-##  B « fil de discussion » : échelle d'attitude, ligne de données façon Effectif, fil de bulles, réponses en bas.
-## Données : moteur relationships.cjs (satisfaction, confiance envers le coach, condition, minutes, trait, leadership,
-## entretien disponible, effets) et notes de match (5 dernières notes). L'attitude est la satisfaction lue en six
-## paliers ; pendant la discussion, le trait du joueur fait monter ou baisser d'un palier selon nos mots (affichage).
+## Discussion avec un joueur (revue FM27, idée 23, choix de Léo du 23/11/2026) : petite fenêtre ouverte depuis
+## Vestiaire › Entretiens et duos (carte « Discuter »). Fenêtre commune fenetre_discussion.gd : à gauche ses données
+## (portrait, attitude, hiérarchie Relais / Cadre / Groupe / Jeune, caractère, forme, satisfaction, confiance, temps de
+## jeu promis), à droite l'échelle d'attitude, le fil et trois phrases ; un clic sur une phrase la dit tout de suite.
+## Données : moteur relationships.cjs + discussion-joueur.cjs (players[].discussion : situation, hiérarchie, attitude,
+## phrases du moment, fil des derniers échanges ; l'effet réel dépend du caractère), squad[].tempsJeu (role-contrat.cjs),
+## notes de match (5 dernières).
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Charte = preload("res://ui/charte.gd")
 const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
 const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
+const FenetreDiscussion = preload("res://ui/fenetre_discussion.gd")
 const V = preload("res://ui/relationships_visuals.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const NotesMatch = preload("res://ui/notes_match.gd")
 const Tableau = preload("res://ui/contextual/match_tableau_widgets.gd")
 const CarteSurvol = preload("res://ui/carte_joueur_survol.gd")
+const Role = preload("res://ui/role_contrat.gd")
+const TempsJeu = preload("res://ui/immersive08/fiche_temps_jeu.gd")
 
 const NOM := "DiscussionFenetre"
 const CLE := "discussion"
-## Paliers d'attitude (satisfaction) : mot, couleur, icône.
+## Paliers d'attitude (satisfaction, seuils du moteur 30 / 45 / 55 / 65 / 80) : mot, couleur, icône.
 const ATTITUDES := [["Fermé", Pastilles.ROUGE, "warning"], ["Mécontent", Pastilles.ORANGE, "warning"], ["Inexpressif", Charte.IVOIRE_2, "info"],
 	["Neutre", Pastilles.BLEU, "people"], ["Content", Pastilles.VERT, "check"], ["Enthousiaste", Pastilles.TURQUOISE, "star"]]
 const SEUILS := [30, 45, 55, 65, 80]
-## Nos mots (commande relationship_conversation) : phrase courte, icône et couleur de V.REPONSES.
-const PHRASES := {"ecouter": "Dis-moi comment tu te sens.", "rassurer": "On compte sur toi, ta place viendra.", "clarifier": "Voilà ce que j'attends de toi."}
-const ORDRE := ["ecouter", "rassurer", "clarifier"]
-const BONUS := {"ecouter": 2, "rassurer": 1, "clarifier": 0}
-## Réaction du trait (living-locker-room : TRAITS) à nos mots : +1 palier, 0, −1.
-const REACTIONS := {
-	"ecouter": {"Sensible": 1, "Discret": 1, "Loyal": 1, "Exigeant": -1},
-	"rassurer": {"Sensible": 1, "Loyal": 1, "Protecteur": 1, "Collectif": 1, "Competiteur": -1},
-	"clarifier": {"Exigeant": 1, "Ambitieux": 1, "Competiteur": 1, "Sensible": -1}}
-const REPONSES := {
-	"ecouter": {1: "Merci de prendre le temps, coach.", 0: "Ça va. Je bosse.", -1: "Je préfère parler sur le terrain."},
-	"rassurer": {1: "Ça me fait du bien. Je serai prêt.", 0: "On verra sur le terrain.", -1: "J'attends des actes, coach."},
-	"clarifier": {1: "C'est clair. Je sais quoi faire.", 0: "Compris.", -1: "J'avais déjà compris."}}
-const ACCUEIL := "Oui, coach ?"
-
-static func variante() -> String:
-	var v := OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper()
-	return v if v in ["A", "B"] else ""
+## Hiérarchie du vestiaire (moteur) : mot, couleur, icône.
+const HIERARCHIES := {"relais": ["Relais", Pastilles.VIOLET, "star"], "cadre": ["Cadre", Pastilles.BLEU, "shield"],
+	"groupe": ["Groupe", Charte.IVOIRE_2, "people"], "jeune": ["Jeune", Pastilles.TURQUOISE, "people"]}
+## Situation qui change les phrases proposées (normal et mécontent : l'attitude suffit).
+const SITUATIONS := {"blesse": ["Blessé", Pastilles.ROUGE, "warning"], "temps_jeu": ["Temps de jeu", Pastilles.ORANGE, "clock"],
+	"peu_utilise": ["Peu utilisé", Pastilles.ORANGE, "clock"], "en_forme": ["En forme", Pastilles.VERT, "rating"]}
+## Nature d'une phrase → icône et couleur.
+const NATURES := {"ecoute": ["heart", Pastilles.BLEU], "soutien": ["shield", Pastilles.VERT], "eloge": ["star", Pastilles.TURQUOISE],
+	"critique": ["flag", Pastilles.ROUGE], "exigence": ["info", Pastilles.ORANGE], "collectif": ["people", Pastilles.VIOLET]}
 
 static func palier(score: Variant) -> int:
 	if not (score is int or score is float): return 2
@@ -49,9 +43,13 @@ static func palier(score: Variant) -> int:
 		if float(score) >= s: n += 1
 	return n
 
-## Carte « Discuter » de la colonne du joueur (remplace les trois lignes d'entretien sous variante).
+static func style(nature: String) -> Array:
+	return NATURES.get(nature, ["mail", Charte.IVOIRE_2])
+
+## Carte « Discuter » de la colonne du joueur (remplace les trois lignes d'entretien).
 static func bouton(app: Control, p: Dictionary) -> Control:
-	var att: Array = ATTITUDES[palier(p.get("score"))]
+	var disc: Dictionary = p.get("discussion", {}) if p.get("discussion") is Dictionary else {}
+	var att: Array = ATTITUDES[clampi(int(disc.get("attitude", palier(p.get("score")))), 0, ATTITUDES.size() - 1)]
 	var ligne := C.h(12)
 	var lisere := ColorRect.new()
 	lisere.color = Pastilles.BLEU
@@ -68,7 +66,7 @@ static func bouton(app: Control, p: Dictionary) -> Control:
 	etat.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	ligne.add_child(etat)
 	if not p.get("conversationAvailable", false):
-		var vu := Pastilles.pastille("Vu", Charte.IVOIRE_2, "clock", "Entretien de la semaine fait", 16)
+		var vu := Pastilles.pastille("Vu", Charte.IVOIRE_2, "clock", "Discussion de la semaine faite", 16)
 		vu.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		ligne.add_child(vu)
 	var fleche := C.label("›", 26, Charte.IVOIRE_2, true, 700)
@@ -79,15 +77,17 @@ static func bouton(app: Control, p: Dictionary) -> Control:
 
 ## Rouvre la fenêtre après un nouveau rendu du Vestiaire (réponse du moteur).
 static func reprendre(app: Control, canvas: Control) -> void:
-	if variante().is_empty(): return
 	var etat: Variant = app.management_ui.get(CLE)
 	if etat is Dictionary and not str(etat.get("id", "")).is_empty(): _dessiner(app, canvas, str(etat.id))
+
+static func _toile(app: Control) -> Control:
+	var canvas := app.find_child("ImmersiveLockerRoom", true, false) as Control
+	return canvas if canvas != null else app
 
 static func ouvrir(app: Control, id: String) -> void:
 	var etat: Variant = app.management_ui.get(CLE)
 	if not (etat is Dictionary and str(etat.get("id", "")) == id): app.management_ui[CLE] = {"id": id}
-	var canvas := app.find_child("ImmersiveLockerRoom", true, false) as Control
-	if canvas != null: _dessiner(app, canvas, id)
+	_dessiner(app, _toile(app), id)
 
 static func _oublier(app: Control) -> void:
 	app.management_ui.erase(CLE)
@@ -95,48 +95,30 @@ static func _oublier(app: Control) -> void:
 ## Données du joueur pour la fenêtre ; {} si le joueur n'est plus suivi.
 static func donnees(app: Control, id: String) -> Dictionary:
 	var rel: Dictionary = app.model.get("clubLife", {}).get("relationships", {})
-	var players: Array = rel.get("players", [])
 	var p: Dictionary = {}
-	for x: Dictionary in players:
+	for x: Dictionary in rel.get("players", []):
 		if str(x.get("id")) == id: p = x
 	if p.is_empty(): return {}
 	var identite: Dictionary = {"id": id}
 	for s: Dictionary in app.model.get("squad", []):
 		if str(s.get("id")) == id: identite = s
-	# Hiérarchie : rang de leadership dans le groupe suivi ; relais pressenti, cadres (5 premiers), jeunes (21 ans et moins).
-	var rangs := players.duplicate()
-	rangs.sort_custom(func(a, b): return _leadership(a) > _leadership(b))
-	var rang := 1
-	for i in rangs.size():
-		if str(rangs[i].get("id")) == id: rang = i + 1
-	var statut := ["Groupe", Pastilles.BLEU, "people"]
-	if str(rel.get("leaderId", "")) == id: statut = ["Relais", Pastilles.VIOLET, "star"]
-	elif rang <= 5: statut = ["Cadre", Pastilles.VIOLET, "star"]
-	elif int(identite.get("age", 30)) <= 21: statut = ["Jeune", Pastilles.TURQUOISE, "people"]
 	var personnalite: Variant = p.get("personality")
-	var trait_nom := str(personnalite.get("trait", "")) if personnalite is Dictionary else ""
-	var detail := {}
-	for c: Dictionary in rel.get("conversations", []): detail[str(c.id)] = str(c.detail)
+	var disc: Dictionary = p.get("discussion", {}) if p.get("discussion") is Dictionary else {}
 	var etat: Dictionary = app.management_ui.get(CLE, {}) if app.management_ui.get(CLE) is Dictionary else {}
+	# Phrase envoyée, réponse du moteur reçue : la discussion de la semaine est faite.
+	if etat.has("envoi") and bool(disc.get("faite", false)): etat.erase("envoi")
 	return {"id": id, "p": p, "identite": identite, "nom": str(identite.get("name", "Joueur")), "poste": str(p.get("pos", "")),
 		"score": p.get("score"), "confiance": p.get("trust"), "condition": int(p.get("condition", 0)), "minutes": p.get("minutes"),
-		"trait": trait_nom, "rang": rang, "total": players.size(), "statut": statut, "forme": NotesMatch.forme(NotesMatch.joueur(app.model, id)),
-		"libre": bool(p.get("conversationAvailable", false)) and not etat.has("choix"), "contexte": rel.get("context", {}), "effets": detail, "etat": etat}
+		"trait": str(personnalite.get("trait", "")) if personnalite is Dictionary else "", "disc": disc,
+		"forme": NotesMatch.forme(NotesMatch.joueur(app.model, id)), "tempsJeu": identite.get("tempsJeu") if identite.get("tempsJeu") is Dictionary else {},
+		"libre": bool(p.get("conversationAvailable", false)) and not etat.has("envoi") and not bool(disc.get("faite", false)),
+		"contexte": rel.get("context", {}), "etat": etat}
 
-static func _leadership(p: Dictionary) -> float:
-	var x: Variant = p.get("personality")
-	return float(x.get("leadership", 0)) if x is Dictionary and x.get("leadership") != null else 0.0
-
-## Nos mots : réponse immédiate dans la fenêtre, commande du moteur, la fenêtre revient au nouveau rendu.
-static func _choisir(app: Control, d: Dictionary, choix: String) -> void:
-	var avant: Variant = d.score
-	var apres: Variant = clampi(int(avant) + int(BONUS.get(choix, 0)), 20, 95) if (avant is int or avant is float) else avant
-	var reaction := int(REACTIONS.get(choix, {}).get(d.trait, 0))
-	var depart := palier(avant)
-	var arrivee := clampi(palier(apres) + reaction, 0, ATTITUDES.size() - 1)
-	app.management_ui[CLE] = {"id": d.id, "choix": choix, "avant": avant, "apres": apres, "depart": depart, "arrivee": arrivee, "reaction": reaction}
+## Nos mots : la phrase s'affiche aussitôt dans le fil, le moteur répond, la fenêtre revient au nouveau rendu.
+static func _dire(app: Control, d: Dictionary, phrase: Dictionary) -> void:
+	app.management_ui[CLE] = {"id": d.id, "envoi": phrase.duplicate(true)}
 	ouvrir(app, str(d.id))
-	app._command("relationship_conversation", {"context": d.contexte, "playerId": d.id, "choice": choix})
+	app._command("relationship_conversation", {"context": d.contexte, "playerId": d.id, "choice": str(phrase.get("choice", "ecouter")), "phrase": str(phrase.get("id", ""))})
 
 static func _fiche(app: Control, id: String) -> Callable:
 	var nav: Variant = app.get("navigation_controller")
@@ -147,17 +129,108 @@ static func _fiche(app: Control, id: String) -> Callable:
 		_oublier(app)
 		nav.open_entity(cible)
 
+static func _attitude(index: int, taille: int = 20, id: String = "") -> Control:
+	var a: Array = ATTITUDES[clampi(index, 0, ATTITUDES.size() - 1)]
+	return Pastilles.pastille(str(a[0]), a[1], str(a[2]), "Attitude : " + str(a[0]), taille, id)
+
 static func _dessiner(app: Control, canvas: Control, id: String) -> void:
 	var d := donnees(app, id)
 	if d.is_empty():
 		_oublier(app)
 		return
-	if variante() == "B": _dessiner_b(app, canvas, d)
-	else: _dessiner_a(app, canvas, d)
+	var disc: Dictionary = d.disc
+	var envoi: Dictionary = d.etat.get("envoi", {}) if d.etat.get("envoi") is Dictionary else {}
+	var choix: Array = []
+	for ph: Dictionary in disc.get("phrases", []):
+		var st := style(str(ph.get("nature", "")))
+		var phrase := ph
+		choix.append({"id": "DiscussionPhrase_" + str(ph.get("id", "")), "texte": str(ph.get("texte", "")), "icone": st[0], "couleur": st[1],
+			"action": func(): _dire(app, d, phrase), "actif": d.libre, "choisi": str(envoi.get("id", "")) == str(ph.get("id", ""))})
+	FenetreDiscussion.ouvrir(canvas, {"nom": NOM, "titre": "Discussion", "icone": "people", "fermeture": func(): _oublier(app),
+		"gauche": func(f: Control, zone: Rect2): _gauche(app, f, zone, d),
+		"echelle": {"paliers": ATTITUDES, "avant": int(disc.get("attitudeAvant", palier(d.score))), "apres": int(disc.get("attitude", palier(d.score)))},
+		"visage": func() -> Control: return _visage(d, 52),
+		"fil": _fil(d, envoi), "choix": choix})
 
-## ---- Pièces communes ---------------------------------------------------------------------------
+## ---- Fil : derniers échanges (date, nos mots, sa réponse et l'effet), puis l'accueil ou nos mots en attente ----------
 
-static func _portrait(app: Control, parent: Control, d: Dictionary, zone: Rect2, id: String) -> void:
+static func _fil(d: Dictionary, envoi: Dictionary) -> Array:
+	var disc: Dictionary = d.disc
+	var fil: Array = []
+	var echanges: Array = disc.get("fil", [])
+	for i in echanges.size():
+		var e: Dictionary = echanges[i]
+		if e.get("texte") == null: continue
+		fil.append({"qui": "repere", "id": "DiscussionDate%d" % i, "controle": Pastilles.pastille("%s J%d" % [G.season_label(e.get("season")), int(e.get("round", 0)) + 1], Charte.IVOIRE_3, "calendar", "Date de l'échange", 15)})
+		var st := style(str(e.get("nature", "")))
+		fil.append({"qui": "moi", "id": "DiscussionBulleCoach%d" % i, "texte": str(e.texte), "couleur": st[1]})
+		fil.append({"qui": "lui", "id": "DiscussionBulleJoueur%d" % i, "texte": str(e.get("reponse", "")), "couleur": Pastilles.BLEU, "effet": _effet(e, "DiscussionEffet%d" % i)})
+	if not envoi.is_empty():
+		fil.append({"qui": "moi", "id": "DiscussionBulleCoachEnvoi", "texte": str(envoi.get("texte", "")), "couleur": style(str(envoi.get("nature", "")))[1]})
+	elif not bool(disc.get("faite", false)):
+		fil.append({"qui": "lui", "id": "DiscussionBulleAccueil", "texte": str(disc.get("accueil", "Oui, coach ?")), "couleur": Pastilles.BLEU})
+	else:
+		fil.append({"qui": "repere", "id": "DiscussionVu", "controle": Pastilles.pastille("Vu cette semaine", Charte.IVOIRE_2, "clock", "Une discussion par joueur et par semaine", 16, "DiscussionDejaVu")})
+	return fil
+
+## Effet réel de l'échange : ▲ / ▼ satisfaction avant → après (couleur jamais seule : flèche et chiffres).
+static func _effet(e: Dictionary, id: String) -> Control:
+	var effet := int(e.get("effet", 0))
+	var couleur: Color = Pastilles.VERT if effet > 0 else (Pastilles.ROUGE if effet < 0 else Charte.IVOIRE_2)
+	var signe := "▲ +%d" % effet if effet > 0 else ("▼ −%d" % absi(effet) if effet < 0 else "= 0")
+	var texte := "%s satisf." % signe
+	if (e.get("avant") is int or e.get("avant") is float) and (e.get("apres") is int or e.get("apres") is float): texte += " · %d → %d" % [int(e.avant), int(e.apres)]
+	return Pastilles.pastille(texte, couleur, "heart", "Satisfaction", 16, id)
+
+## ---- Données du joueur (gauche) ----------------------------------------------------------------------------------
+
+static func _gauche(app: Control, f: Control, zone: Rect2, d: Dictionary) -> void:
+	var disc: Dictionary = d.disc
+	var x0 := zone.position.x + 20
+	var fiche := _fiche(app, str(d.id))
+	_portrait(app, f, d, Rect2(x0, zone.position.y + 20, 150, 150))
+	var xn := x0 + 172
+	_nom(app, f, d, xn, zone.position.y + 66, 44, zone.end.x - xn - 20)
+	var x := xn
+	var h: Array = HIERARCHIES.get(str(disc.get("hierarchie", "groupe")), HIERARCHIES.groupe)
+	x += Pastilles.poser(f, Pastilles.pastille(str(h[0]), h[1], str(h[2]), "Hiérarchie du vestiaire", 18, "DiscussionHierarchie", fiche), x, zone.position.y + 88) + 10
+	if not str(d.poste).is_empty(): x += Pastilles.poser(f, Pastilles.pastille(str(d.poste), Charte.IVOIRE_2, "people", "Poste", 18, "DiscussionPoste", fiche), x, zone.position.y + 88) + 10
+	if not str(d.trait).is_empty(): Pastilles.poser(f, Pastilles.pastille(str(d.trait), Pastilles.VIOLET, "heart", "Caractère", 18, "DiscussionTrait", fiche), x, zone.position.y + 88)
+	x = xn
+	x += Pastilles.poser(f, _attitude(int(disc.get("attitude", palier(d.score))), 22, "DiscussionAttitude"), x, zone.position.y + 130) + 10
+	var sit: Variant = SITUATIONS.get(str(disc.get("situation", "")))
+	if sit is Array: Pastilles.poser(f, Pastilles.pastille(str(sit[0]), sit[1], str(sit[2]), "Situation", 20, "DiscussionSituation", fiche), x, zone.position.y + 132)
+	# Forme : 5 dernières notes de match.
+	var y := zone.position.y + 214
+	_section(f, x0, y, "Forme · 5 derniers matchs", "rating", Charte.IVOIRE_2)
+	_courbe(f, Rect2(x0, y + 14, zone.size.x - 40, 180), d.forme)
+	# Lui et le coach : satisfaction, confiance, condition, minutes.
+	y += 244
+	_section(f, x0, y, "Lui et le coach", "heart", Pastilles.BLEU)
+	var rangee := C.h(18)
+	rangee.name = "DiscussionJauges"
+	var score := float(d.score) if (d.score is int or d.score is float) else 0.0
+	rangee.add_child(V.anneau(score, "Satisf.", "heart", V.teinte(score), "DiscussionAnneauSatisfaction", fiche))
+	rangee.add_child(V.anneau(float(d.confiance) if (d.confiance is int or d.confiance is float) else 0.0, "Confiance", "shield", Charte.CONFIANCE, "DiscussionAnneauConfiance", fiche))
+	var tuiles := C.v(10)
+	for t: Control in [Pastilles.tuile("%d %%" % int(d.condition), "condition", Pastilles.VERT if d.condition >= 80 else (Pastilles.ORANGE if d.condition >= 50 else Pastilles.ROUGE), Charte.PANNEAU_3, 30, "DiscussionCondition", false, fiche),
+			Pastilles.tuile(str(int(d.minutes)) if (d.minutes is int or d.minutes is float) else "—", "minutes", Pastilles.TURQUOISE, Charte.PANNEAU_3, 30, "DiscussionMinutes", false, fiche)]:
+		t.custom_minimum_size.x = C.px(170)
+		tuiles.add_child(t)
+	rangee.add_child(tuiles)
+	Pastilles.poser(f, rangee, x0 + 8, y + 16)
+	# Temps de jeu promis au contrat : rôle, humeur, minutes des 10 derniers matchs.
+	y += 224
+	_section(f, x0, y, "Temps de jeu promis", "clock", Pastilles.ORANGE)
+	_temps_jeu(f, Rect2(x0, y + 14, zone.size.x - 40, zone.end.y - y - 30), d.tempsJeu, fiche)
+
+static func _section(parent: Control, x: float, base: float, texte: String, icone: String, couleur: Color) -> void:
+	var image := C.icon(icone, 22, couleur)
+	parent.add_child(image)
+	D.place(image, Rect2(x, base - 20, 22, 22))
+	D.text(parent, x + 32, base, texte.to_upper(), 20, Charte.IVOIRE_2, 700, 480)
+
+static func _portrait(app: Control, parent: Control, d: Dictionary, zone: Rect2) -> void:
 	var fond := D.rect(parent, zone, Charte.PANNEAU_3, Charte.RAYON_CARTE)
 	fond.clip_contents = true
 	var visage := G.portrait(int(d.identite.get("portraitIndex", posmod(str(d.id).hash(), 32))), C.px(zone.size.x), d.identite)
@@ -168,7 +241,7 @@ static func _portrait(app: Control, parent: Control, d: Dictionary, zone: Rect2,
 	var action := _fiche(app, str(d.id))
 	if not action.is_valid(): return
 	var bouton := Button.new()
-	bouton.name = id
+	bouton.name = "DiscussionPortrait"
 	bouton.flat = true
 	bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	bouton.tooltip_text = str(d.nom)
@@ -180,6 +253,8 @@ static func _portrait(app: Control, parent: Control, d: Dictionary, zone: Rect2,
 static func _nom(app: Control, parent: Control, d: Dictionary, x: float, base: float, taille: int, largeur: float) -> void:
 	var nom := D.text(parent, x, base, str(d.nom).to_upper(), taille, Charte.IVOIRE, 700, largeur)
 	nom.add_theme_font_override("font", Charte.TITRE_FICHE)
+	nom.clip_text = true
+	nom.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	var action := _fiche(app, str(d.id))
 	if not action.is_valid(): return
 	var bouton := Button.new()
@@ -192,21 +267,16 @@ static func _nom(app: Control, parent: Control, d: Dictionary, x: float, base: f
 	bouton.size = Vector2(minf(nom.size.x, Charte.TITRE_FICHE.get_string_size(nom.text, HORIZONTAL_ALIGNMENT_LEFT, -1, C.px(taille)).x), nom.size.y)
 	CarteSurvol.lier(app, bouton, str(d.id), "squad")
 
-static func _attitude(index: int, taille: int = 20, id: String = "") -> Control:
-	var a: Array = ATTITUDES[clampi(index, 0, ATTITUDES.size() - 1)]
-	return Pastilles.pastille(str(a[0]), a[1], str(a[2]), "Attitude : " + str(a[0]), taille, id)
-
-static func _hierarchie(d: Dictionary, taille: int = 18) -> Control:
-	var s: Array = d.statut
-	return Pastilles.pastille("%s · %de / %d" % [s[0], d.rang, d.total], s[1], s[2], "Hiérarchie du vestiaire (leadership)", taille, "DiscussionHierarchie")
-
-## Bulle de parole : fond teinté, texte sur une ligne ; `droite` = bulle du coach.
-static func _bulle(parent: Control, zone: Rect2, texte: String, couleur: Color, id: String, taille: int = 24) -> Panel:
-	var bulle := D.rect(parent, zone, Color(couleur, .22), Charte.RAYON_CARTE)
-	bulle.name = id
-	var mot := D.text(bulle, 22, zone.size.y * .5 + taille * .36, texte, taille, Charte.IVOIRE, 600, zone.size.x - 44, HORIZONTAL_ALIGNMENT_LEFT, true)
-	mot.name = id + "Texte"
-	return bulle
+static func _visage(d: Dictionary, cote: float) -> Control:
+	var fond := PanelContainer.new()
+	fond.add_theme_stylebox_override("panel", C.box(Charte.PANNEAU_3, Color.TRANSPARENT, int(cote * .5), 0))
+	fond.custom_minimum_size = Vector2(C.px(cote), C.px(cote))
+	fond.clip_contents = true
+	fond.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var visage := G.portrait(int(d.identite.get("portraitIndex", posmod(str(d.id).hash(), 32))), C.px(cote), d.identite)
+	visage.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fond.add_child(visage)
+	return fond
 
 ## Courbe de forme : les 5 dernières notes de match, points à la couleur de la note, chiffre au-dessus.
 class Courbe extends Control:
@@ -241,222 +311,61 @@ class Courbe extends Control:
 static func _courbe(parent: Control, zone: Rect2, notes: Array) -> Control:
 	var courbe := Courbe.new()
 	courbe.name = "DiscussionCourbeForme"
-	courbe.notes = notes
+	courbe.notes = notes.slice(-5)
 	var textes: Array[String] = []
-	for n: Variant in notes: textes.append(NotesMatch.texte_note(n))
+	for n: Variant in courbe.notes: textes.append(NotesMatch.texte_note(n))
 	courbe.tooltip_text = "Forme : " + (" · ".join(textes) if not textes.is_empty() else "aucun match noté")
 	parent.add_child(courbe)
 	D.place(courbe, zone)
 	return courbe
 
-static func _section(parent: Control, x: float, base: float, texte: String, icone: String, couleur: Color) -> void:
-	var image := C.icon(icone, 22, couleur)
-	parent.add_child(image)
-	D.place(image, Rect2(x, base - 20, 22, 22))
-	D.text(parent, x + 32, base, texte.to_upper(), 20, Charte.IVOIRE_2, 700, 400)
+## Minutes des 10 derniers matchs en barres (vert = exigence tenue, rouge = manquée, gris = absent ou sans exigence),
+## trait de l'exigence du rôle ; rôle promis et humeur en pastilles.
+class Barres extends Control:
+	var matchs: Array = []
+	var seuil: Variant = null
+	func _init() -> void:
+		mouse_filter = Control.MOUSE_FILTER_PASS
+	func _draw() -> void:
+		var haut := size.y - C.px(26)
+		var n := 10
+		var ecart := C.px(8)
+		var l := (size.x - ecart * (n - 1)) / float(n)
+		var echelle := 80.0
+		for i in n:
+			var x := i * (l + ecart)
+			draw_rect(Rect2(x, 0, l, haut), Color(Charte.IVOIRE, .05))
+			var k := i - (n - matchs.size())
+			if k < 0: continue
+			var m: Dictionary = matchs[k]
+			var minutes := float(m.get("minutes", 0))
+			var etat := str(m.get("etat", "neutre"))
+			var hb := haut * clampf(minutes / echelle, 0.0, 1.0)
+			draw_rect(Rect2(x, haut - hb, l, hb), TempsJeu.couleur_etat(etat))
+			var t := "×" if etat == "absent" else str(int(minutes))
+			var corps := maxi(11, C.px(16))
+			var lt := C.BOLD.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, corps).x
+			draw_string(C.BOLD, Vector2(x + (l - lt) * .5, size.y - C.px(4)), t, HORIZONTAL_ALIGNMENT_LEFT, -1, corps, Charte.IVOIRE_2)
+		if seuil is int or seuil is float:
+			var y := haut - haut * clampf(float(seuil) / echelle, 0.0, 1.0)
+			draw_line(Vector2(0, y), Vector2(size.x, y), Charte.IVOIRE, maxf(1.0, C.px(2)))
 
-## ---- Option A : face à face ------------------------------------------------------------------------
-
-static func _dessiner_a(app: Control, canvas: Control, d: Dictionary) -> void:
-	var L := 1660.0
-	var H := 930.0
-	var f := Fenetre.ouvrir(canvas, NOM, "Discussion", "people", L, H, func(): _oublier(app))
-	var etat: Dictionary = d.etat
-	var parle := etat.has("choix")
-	# Bandeau : portrait, nom, hiérarchie, trait, poste ; attitude à droite ; bulle du joueur.
-	D.rect(f, Rect2(28, 84, L - 56, 214), Charte.PANNEAU_2, Charte.RAYON_CARTE)
-	_portrait(app, f, d, Rect2(52, 104, 174, 174), "DiscussionPortrait")
-	_nom(app, f, d, 254, 158, 52, 760)
-	var x := 254.0
-	var fiche := _fiche(app, str(d.id))
-	if not str(d.poste).is_empty(): x += Pastilles.poser(f, Pastilles.pastille(str(d.poste), Charte.IVOIRE_2, "people", "Poste", 18, "DiscussionPoste", fiche), x, 178) + 10
-	x += Pastilles.poser(f, _hierarchie(d), x, 178) + 10
-	if not str(d.trait).is_empty(): Pastilles.poser(f, Pastilles.pastille(str(d.trait), Pastilles.VIOLET, "people", "Personnalité", 18, "DiscussionTrait"), x, 178)
-	var reponse := ACCUEIL
-	if parle: reponse = str(REPONSES.get(etat.choix, {}).get(int(etat.reaction), ACCUEIL))
-	_bulle(f, Rect2(254, 228, 900, 54), reponse, Pastilles.BLEU, "DiscussionBulleJoueur", 24)
-	D.text(f, L - 52, 128, "ATTITUDE", 18, Charte.IVOIRE_3, 700, 300, HORIZONTAL_ALIGNMENT_RIGHT)
-	if parle and int(etat.depart) != int(etat.arrivee):
-		var arrivee := _attitude(int(etat.arrivee), 24, "DiscussionAttitude")
-		var largeur := Pastilles.poser_a_droite(f, arrivee, L - 52, 146)
-		D.text(f, L - 52 - largeur - 14, 176, "›", 34, Charte.IVOIRE_2, 800, 30, HORIZONTAL_ALIGNMENT_RIGHT)
-		var avant := _attitude(int(etat.depart), 18, "DiscussionAttitudeAvant")
-		avant.modulate = Color(1, 1, 1, .55)
-		Pastilles.poser_a_droite(f, avant, L - 52 - largeur - 52, 150)
-	else:
-		Pastilles.poser_a_droite(f, _attitude(int(etat.get("arrivee", palier(d.score))), 24, "DiscussionAttitude"), L - 52, 146)
-	if parle:
-		var effet := int(etat.apres) - int(etat.avant) if (etat.avant is int or etat.avant is float) else 0
-		var signe := "▲ +%d" % effet if effet > 0 else "= 0"
-		Pastilles.poser_a_droite(f, Pastilles.pastille("%s satisf. · %d → %d" % [signe, int(etat.avant), int(etat.apres)], Pastilles.VERT if effet > 0 else Charte.IVOIRE_2, "heart", "Satisfaction", 18, "DiscussionEffet"), L - 52, 228)
-	# Colonne gauche : ses données.
-	var gauche := D.rect(f, Rect2(28, 318, 900, H - 346), Charte.PANNEAU_2, Charte.RAYON_CARTE)
-	gauche.name = "DiscussionDonnees"
-	_section(f, 52, 366, "Forme · 5 derniers matchs", "rating", Charte.IVOIRE_2)
-	_courbe(f, Rect2(52, 384, 852, 230), d.forme)
-	_section(f, 52, 662, "Lui et le coach", "heart", Pastilles.BLEU)
-	var rangee := C.h(18)
-	rangee.name = "DiscussionJauges"
-	var score := float(d.score) if (d.score is int or d.score is float) else 0.0
-	if parle and (etat.apres is int or etat.apres is float): score = float(etat.apres)
-	rangee.add_child(V.anneau(score, "Satisf.", "heart", V.teinte(score), "DiscussionAnneauSatisfaction", fiche))
-	rangee.add_child(V.anneau(float(d.confiance) if (d.confiance is int or d.confiance is float) else 0.0, "Confiance", "shield", Charte.CONFIANCE, "DiscussionAnneauConfiance", fiche))
-	var tuiles := C.v(10)
-	for t: Control in [Pastilles.tuile("%d %%" % int(d.condition), "condition", Pastilles.VERT if d.condition >= 80 else (Pastilles.ORANGE if d.condition >= 50 else Pastilles.ROUGE), Charte.PANNEAU_3, 30, "DiscussionCondition", false, fiche),
-			Pastilles.tuile(str(int(d.minutes)) if (d.minutes is int or d.minutes is float) else "—", "minutes", Pastilles.TURQUOISE, Charte.PANNEAU_3, 30, "DiscussionMinutes", false, fiche)]:
-		t.custom_minimum_size.x = C.px(170)
-		tuiles.add_child(t)
-	rangee.add_child(tuiles)
-	Pastilles.poser(f, rangee, 60, 684)
-	# Colonne droite : nos mots.
-	D.rect(f, Rect2(948, 318, L - 976, H - 346), Charte.PANNEAU_2, Charte.RAYON_CARTE)
-	_section(f, 972, 366, "Tes mots", "mail", Charte.IVOIRE_2)
-	var y := 390.0
-	for choix: String in ORDRE:
-		var style: Array = V.REPONSES.get(choix, ["check", Pastilles.BLEU])
-		var colonne := C.v(8)
-		var tete := C.h(12)
-		var icone := C.icon(style[0], 30, style[1])
-		icone.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		tete.add_child(icone)
-		var phrase := C.label(str(PHRASES[choix]), 24, Charte.IVOIRE, false, 600)
-		phrase.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		tete.add_child(phrase)
-		colonne.add_child(tete)
-		colonne.add_child(V.effets(str(d.effets.get(choix, "")), 16))
-		colonne.custom_minimum_size = Vector2(C.px(L - 1060), 0)
-		var choisi := parle and str(etat.choix) == choix
-		var carte := V.carte(colonne, func(): _choisir(app, d, choix), "DiscussionPhrase_" + choix, str(PHRASES[choix]), style[1], d.libre, choisi)
-		if parle and not choisi: carte.modulate = Color(1, 1, 1, .35)
-		f.add_child(carte)
-		D.place(carte, Rect2(972, y, L - 1020, 136))
-		y += 156
-	if not d.libre and not parle:
-		Pastilles.poser(f, Pastilles.pastille("Entretien de la semaine fait", Charte.IVOIRE_2, "clock", "Un entretien par joueur et par semaine", 18, "DiscussionDejaVu"), 972, y + 4)
-
-## ---- Option B : fil de discussion --------------------------------------------------------------------
-
-static func _dessiner_b(app: Control, canvas: Control, d: Dictionary) -> void:
-	var L := 1240.0
-	var H := 1060.0
-	var f := Fenetre.ouvrir(canvas, NOM, "Discussion", "people", L, H, func(): _oublier(app))
-	var etat: Dictionary = d.etat
-	var parle := etat.has("choix")
-	var fiche := _fiche(app, str(d.id))
-	# Tête : portrait, nom, poste + hiérarchie + trait.
-	_portrait(app, f, d, Rect2(32, 84, 128, 128), "DiscussionPortrait")
-	_nom(app, f, d, 184, 140, 46, 700)
-	var x := 184.0
-	if not str(d.poste).is_empty(): x += Pastilles.poser(f, Pastilles.pastille(str(d.poste), Charte.IVOIRE_2, "people", "Poste", 18, "DiscussionPoste", fiche), x, 166) + 10
-	x += Pastilles.poser(f, _hierarchie(d), x, 166) + 10
-	if not str(d.trait).is_empty(): Pastilles.poser(f, Pastilles.pastille(str(d.trait), Pastilles.VIOLET, "people", "Personnalité", 18, "DiscussionTrait"), x, 166)
-	# Échelle d'attitude : six paliers colorés, le palier courant en plein ; l'ancien barré d'une flèche.
-	var depart := int(etat.get("depart", palier(d.score)))
-	var arrivee := int(etat.get("arrivee", depart))
-	var echelle := Control.new()
-	echelle.name = "DiscussionEchelleAttitude"
-	f.add_child(echelle)
-	D.place(echelle, Rect2(32, 236, L - 64, 74))
-	var case_l := (L - 64 - 5 * 8) / 6.0
-	for i in ATTITUDES.size():
-		var a: Array = ATTITUDES[i]
-		var actif := i == arrivee
-		var fond := D.rect(echelle, Rect2(i * (case_l + 8), 0, case_l, 50), Color(a[1], .9 if actif else (.3 if i == depart and depart != arrivee else .12)), Charte.RAYON_PETIT)
-		fond.name = "DiscussionPalier%d" % i
-		var couleur_texte: Color = Charte.ENCRE if actif else (a[1] if i == depart else Color(a[1], .7))
-		D.text(fond, case_l * .5, 33, str(a[0]), 20, couleur_texte, 700, case_l, HORIZONTAL_ALIGNMENT_CENTER)
-	if depart != arrivee:
-		var a0 := depart * (case_l + 8) + case_l * .5
-		var a1 := arrivee * (case_l + 8) + case_l * .5
-		D.rect(echelle, Rect2(minf(a0, a1), 60, absf(a1 - a0), 5), Charte.IVOIRE, 2)
-		D.text(echelle, a1 + (10 if a1 > a0 else -30), 72, "▶" if a1 > a0 else "◀", 18, Charte.IVOIRE, 800, 22)
-	# Ligne de données façon Effectif : en-têtes discrets, chiffres colorés, toute la ligne ouvre la fiche.
-	var cols := [["FORME", 32.0, 300.0], ["SATISF.", 380.0, 150.0], ["CONFIANCE", 560.0, 170.0], ["CONDITION", 760.0, 170.0], ["MINUTES", 960.0, 150.0], ["HIÉRARCHIE", 1110.0, 100.0]]
-	D.rect(f, Rect2(20, 324, L - 40, 40), Charte.BANDEAU_ENTETE, Charte.RAYON_PETIT)
-	for c: Array in cols: D.text(f, c[1], 351, c[0], 17, Charte.IVOIRE_3, 700, c[2])
-	var ligne := D.rect(f, Rect2(20, 368, L - 40, 76), Charte.PANNEAU_2, Charte.RAYON_PETIT)
-	ligne.name = "DiscussionLigne"
-	NotesMatch.pastilles(f, Vector2(32, 392), d.forme, Vector2(50, 30), 6.0, 0.42)
-	var score: Variant = etat.get("apres", d.score) if parle else d.score
-	var chiffres := [[str(int(score)) if (score is int or score is float) else "—", V.teinte(score), 380.0],
-		[str(int(d.confiance)) if (d.confiance is int or d.confiance is float) else "—", Charte.CONFIANCE, 560.0],
-		["%d %%" % int(d.condition), Pastilles.VERT if d.condition >= 80 else (Pastilles.ORANGE if d.condition >= 50 else Pastilles.ROUGE), 760.0],
-		[str(int(d.minutes)) if (d.minutes is int or d.minutes is float) else "—", Pastilles.TURQUOISE, 960.0],
-		["%de" % int(d.rang), Pastilles.VIOLET, 1110.0]]
-	for c: Array in chiffres: D.text(f, c[2], 420, c[0], 34, c[1], 800, 170)
-	if parle and (etat.avant is int or etat.avant is float) and int(etat.apres) != int(etat.avant):
-		D.text(f, 440, 420, "▲ +%d" % (int(etat.apres) - int(etat.avant)), 20, Pastilles.VERT, 800, 100)
-	if fiche.is_valid():
-		var survol := Button.new()
-		survol.name = "DiscussionLigneFiche"
-		survol.flat = true
-		survol.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		var vide := StyleBoxFlat.new()
-		vide.bg_color = Color.TRANSPARENT
-		var dessus := StyleBoxFlat.new()
-		dessus.bg_color = Color(Charte.IVOIRE, .06)
-		dessus.set_corner_radius_all(C.px(Charte.RAYON_PETIT))
-		survol.add_theme_stylebox_override("normal", vide)
-		survol.add_theme_stylebox_override("hover", dessus)
-		survol.add_theme_stylebox_override("pressed", dessus)
-		survol.add_theme_stylebox_override("focus", vide)
-		survol.tooltip_text = str(d.nom)
-		survol.pressed.connect(fiche)
-		f.add_child(survol)
-		D.place(survol, Rect2(20, 368, L - 40, 76))
-		CarteSurvol.lier(app, survol, str(d.id), "squad")
-	# Fil de discussion : le joueur à gauche (petit visage), le coach à droite.
-	var fil := D.rect(f, Rect2(20, 464, L - 40, 380), Charte.PANNEAU_2, Charte.RAYON_CARTE)
-	fil.name = "DiscussionFil"
-	var y := 488.0
-	_visage(f, d, Rect2(40, y, 56, 56))
-	_bulle(f, Rect2(110, y, 560, 56), ACCUEIL, Pastilles.BLEU, "DiscussionBulleAccueil", 24)
-	if parle:
-		var style: Array = V.REPONSES.get(str(etat.choix), ["check", Pastilles.BLEU])
-		y += 84
-		_bulle(f, Rect2(L - 40 - 20 - 640, y, 640, 56), str(PHRASES.get(str(etat.choix), "")), style[1], "DiscussionBulleCoach", 24)
-		y += 84
-		_visage(f, d, Rect2(40, y, 56, 56))
-		_bulle(f, Rect2(110, y, 640, 56), str(REPONSES.get(etat.choix, {}).get(int(etat.reaction), "")), Pastilles.BLEU, "DiscussionBulleJoueur", 24)
-		y += 80
-		Pastilles.poser(f, V.effets(str(d.effets.get(str(etat.choix), "")), 18), 110, y)
-	# Réponses : trois pilules en bas, de la couleur du ton ; une fois parlé, « Terminer ».
-	var bas := 866.0
-	if parle:
-		var fin := D.button(f, Rect2((L - 320) / 2.0, bas + 30, 320, 72), "Terminer", func(): Fenetre.fermer(canvas, NOM), false, "check")
-		fin.name = "DiscussionTerminer"
+static func _temps_jeu(f: Control, zone: Rect2, tj: Dictionary, fiche: Callable) -> void:
+	if tj.is_empty():
+		D.text(f, zone.position.x + 8, zone.position.y + 50, "—", 30, Charte.IVOIRE_3, 700, 100)
 		return
-	var largeur := (L - 40 - 2 * 16) / 3.0
-	for i in ORDRE.size():
-		var choix: String = ORDRE[i]
-		var style: Array = V.REPONSES.get(choix, ["check", Pastilles.BLEU])
-		var colonne := C.v(6)
-		var tete := C.h(10)
-		var icone := C.icon(style[0], 26, style[1])
-		icone.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		tete.add_child(icone)
-		var phrase := C.wrap(str(PHRASES[choix]), 21, Charte.IVOIRE, false, 600)
-		phrase.custom_minimum_size.x = C.px(largeur - 90)
-		tete.add_child(phrase)
-		colonne.add_child(tete)
-		colonne.add_child(V.effets(str(d.effets.get(choix, "")), 15))
-		var carte := V.carte(colonne, func(): _choisir(app, d, choix), "DiscussionPhrase_" + choix, str(PHRASES[choix]), style[1], d.libre)
-		f.add_child(carte)
-		D.place(carte, Rect2(20 + i * (largeur + 16), bas, largeur, 150))
-	if not d.libre:
-		Pastilles.poser(f, Pastilles.pastille("Entretien de la semaine fait", Charte.IVOIRE_2, "clock", "Un entretien par joueur et par semaine", 18, "DiscussionDejaVu"), 110, 780)
-
-static func _visage(parent: Control, d: Dictionary, zone: Rect2) -> void:
-	var fond := D.rect(parent, zone, Charte.PANNEAU_3, int(zone.size.x * .5))
-	fond.clip_contents = true
-	var visage := G.portrait(int(d.identite.get("portraitIndex", posmod(str(d.id).hash(), 32))), C.px(zone.size.x), d.identite)
-	visage.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	fond.add_child(visage)
-	visage.position = Vector2.ZERO
-	visage.size = zone.size * C.density
-
-## Les mots auxquels ce trait réagit le mieux (captures de la planche).
-static func meilleur_choix(trait_nom: String) -> String:
-	for choix: String in ORDRE:
-		if int(REACTIONS.get(choix, {}).get(trait_nom, 0)) > 0: return choix
-	return "ecouter"
+	var role := str(tj.get("role", ""))
+	var x := zone.position.x + 8
+	x += Pastilles.poser(f, Role.pastille(role, 18), x, zone.position.y + 6) + 10
+	var h := str(tj.get("humeur", "neutre"))
+	var hum: Array = TempsJeu.HUMEURS.get(h, TempsJeu.HUMEURS.neutre)
+	Pastilles.poser(f, Pastilles.pastille("%s %s" % [hum[0], hum[1]], TempsJeu.couleur_humeur(h), "", "Temps de jeu promis : " + str(hum[1]), 18, "DiscussionTempsJeuHumeur", fiche), x, zone.position.y + 4)
+	var exigence := str(TempsJeu.EXIGENCES.get(role, "—"))
+	Pastilles.poser_a_droite(f, Pastilles.pastille(exigence, Charte.IVOIRE_2, "clock", "Exigence du rôle", 16, "DiscussionTempsJeuExigence"), zone.end.x - 8, zone.position.y + 6)
+	var barres := Barres.new()
+	barres.name = "DiscussionTempsJeuBarres"
+	barres.matchs = tj.get("pastilles", []) if tj.get("pastilles") is Array else []
+	barres.seuil = tj.get("seuil")
+	barres.tooltip_text = "Minutes des 10 derniers matchs"
+	f.add_child(barres)
+	D.place(barres, Rect2(zone.position.x + 8, zone.position.y + 50, zone.size.x - 16, zone.size.y - 54))

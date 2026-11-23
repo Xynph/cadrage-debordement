@@ -942,21 +942,18 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				if bouton == null: return {"statut": "echec", "note": "bouton %s absent" % ecran.presser}
 				bouton.pressed.emit()
 				await stabiliser()
-			# Discussion : CD_FILM_DISCUSSION_CHOIX (ecouter, rassurer, clarifier ; rassurer par défaut) choisit nos mots.
+			# Discussion : CD_FILM_DISCUSSION_CHOIX (rang de la phrase, 0 à 2 ; 0 par défaut) choisit nos mots.
 			if ecran.has("presser_ensuite"):
 				var nom_suite := str(ecran.presser_ensuite)
+				var suite: Button = null
 				if nom_suite.ends_with("_"):
-					var choix_film := OS.get_environment("CD_FILM_DISCUSSION_CHOIX")
-					if choix_film.is_empty():
-						var Discussion = load("res://ui/discussion_joueur.gd")
-						var etat_d: Variant = app.management_ui.get("discussion")
-						choix_film = Discussion.meilleur_choix(Discussion.donnees(app, str(etat_d.get("id", ""))).get("trait", "")) if etat_d is Dictionary else "ecouter"
-					nom_suite += choix_film
-				var suite := app.find_child(nom_suite, true, false) as Button
+					var candidats := app.find_children(nom_suite + "*", "Button", true, false)
+					var rang := clampi(int(OS.get_environment("CD_FILM_DISCUSSION_CHOIX")), 0, maxi(0, candidats.size() - 1))
+					if not candidats.is_empty(): suite = candidats[rang] as Button
+				else: suite = app.find_child(nom_suite, true, false) as Button
 				if suite == null: return {"statut": "echec", "note": "bouton %s absent" % nom_suite}
 				suite.pressed.emit()
-				await stabiliser()
-				await stabiliser()
+				for i in 6: await stabiliser()
 		"centre_onglet":
 			app.management_ui.immersive_centre = {"club": app.model.get("club", {}).get("id"), "tab": str(ecran.onglet), "scroll": {}}
 			app._navigate("Centre")
