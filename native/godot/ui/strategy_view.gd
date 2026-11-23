@@ -18,6 +18,8 @@ const JaugeAnneau = preload("res://ui/jauge_anneau.gd")
 const Supporters = preload("res://ui/supporters_camembert.gd")
 
 const PRIX := {"accessible":"Accessible", "equilibree":"Équilibrée", "premium":"Premium"}
+## Trois prix de la saison (choix de Léo du 23/11/2026) : clé, libellé, pas des pilules − / +.
+const LIGNES_PRIX := [["base", "Billet", 1], ["abonnement", "Abonnement saison", 5], ["affiche", "Grosse affiche", 1]]
 const STATUTS := {"pending":["À suivre", "clock", Charte.GRIS_VERT], "met":["Atteint", "check", Charte.V], "missed":["Manqué", "warning", Charte.D], "unverified":["Non vérifiable", "info", Charte.GRIS_VERT]}
 
 static func _send(app: Control, command: String, payload: Dictionary, confirmation: String = "") -> void:
@@ -267,16 +269,21 @@ static func _fans(app: Control, page: Container, data: Dictionary, locked: bool)
 		Tuile.proteger(box)
 		return box
 	var open := func(): _public(app, f)
-	LienZone.relier(Visuel.chiffre_picto(cell.call(), "people", G.n(f.expectedAttendance), "AFFLUENCE PRÉVUE"), "DirectionLien_Affluence", "Le public", open)
+	# Billetterie réelle : l'affluence est une estimation du staff, jamais un chiffre exact (règle de Léo du 23/11/2026).
+	var estime := f.has("ticketing")
+	LienZone.relier(Visuel.chiffre_picto(cell.call(), "people", ("≈ " if estime else "") + G.n(f.expectedAttendance), "AFFLUENCE ESTIMÉE" if estime else "AFFLUENCE PRÉVUE"), "DirectionLien_Affluence", "Le public", open)
 	LienZone.relier(Visuel.chiffre_picto(cell.call(), "heart", _pourcent(int(f.get("humeurPublic", 0))), "PUBLIC · HUMEUR"), "DirectionLien_Humeur", "Le public", open)
-	LienZone.relier(Visuel.chiffre_picto(cell.call(), "star", G.n(f.subscribers), "ABONNÉS"), "DirectionLien_Abonnes", "Le public", open)
-	var price_row := G.h(10)
-	card.add_child(price_row)
-	for price: Dictionary in f.prices:
-		var button := _toggle("%s · %s" % [PRIX.get(price.id, str(price.id).capitalize()), G.euros(price.price)], func(): _send(app, "club_fans_price", {"key":price.id}), f.policy == price.id)
-		button.name = "FansPrice_" + str(price.id)
-		button.disabled = locked
-		price_row.add_child(button)
+	LienZone.relier(Visuel.chiffre_picto(cell.call(), "star", ("≈ " + G.n(f.ticketing.get("expectedSubscribers", f.subscribers))) if estime else G.n(f.subscribers), "ABONNÉS"), "DirectionLien_Abonnes", "Le public", open)
+	if estime:
+		_billetterie(app, card, f.ticketing, locked)
+	else:
+		var price_row := G.h(10)
+		card.add_child(price_row)
+		for price: Dictionary in f.prices:
+			var button := _toggle("%s · %s" % [PRIX.get(price.id, str(price.id).capitalize()), G.euros(price.price)], func(): _send(app, "club_fans_price", {"key":price.id}), f.policy == price.id)
+			button.name = "FansPrice_" + str(price.id)
+			button.disabled = locked
+			price_row.add_child(button)
 	for category: Dictionary in [{"title":"Faire venir","key":"campaigns","command":"club_fans_campaign","icon":"people"},{"title":"Tisser des liens","key":"community","command":"club_fans_community","icon":"heart"},{"title":"Accueillir au stade","key":"services","command":"club_fans_service","icon":"home"}]:
 		var actions := G.panel(page)
 		actions.add_child(Tuile.titre_bloc(category.title, "Dépenses prévues, sans nouvelle recette automatique."))
@@ -287,6 +294,43 @@ static func _fans(app: Control, page: Container, data: Dictionary, locked: bool)
 			var state: Control = Tuile.pastille("Déjà engagé", Charte.V, "check") if option.used else _short(app, "DirectionLien_%s_%s" % [category.key, option.id]) if short else null
 			# Clic = appliqué (règle de Léo du 23/11/2026) : ni confirmation ni bouton Valider.
 			Visuel.tuile_offre(cards, category.icon, option.label, G.euros(option.cost), "", _choice(app, category.command, {"key":option.id, "confirmed":true}, locked or option.used or short, "", "Choisir", "Déjà engagé" if option.used else "Trésorerie insuffisante" if short else ""), state)
+
+## Billetterie de la saison : billet, abonnement et grosse affiche, chacun en − / prix / + et le conseil du responsable de la
+## billetterie (un clic l'applique) ; puis « Confier à … » : le staff fixe lui-même les trois prix (clic = appliqué).
+static func _billetterie(app: Control, card: Control, t: Dictionary, locked: bool) -> void:
+	var prix: Dictionary = t.get("prices", {})
+	var conseils: Variant = t.get("advice")
+	var staff: Variant = t.get("estimatedBy")
+	var delegue := bool(t.get("delegated", false))
+	for ligne: Array in LIGNES_PRIX:
+		var kind: String = ligne[0]
+		var pas: int = ligne[2]
+		var valeur := int(prix.get(kind, 0))
+		var row := G.h(10)
+		row.name = "Billetterie_" + kind
+		card.add_child(row)
+		var nom := G.label(ligne[1], 18, Charte.IVOIRE)
+		nom.custom_minimum_size.x = 230
+		nom.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		row.add_child(nom)
+		row.add_child(Tuile.pilule("−", "BilletMoins_" + kind, not locked and valeur > pas, "", func(): _send(app, "club_ticket_price", {"kind": kind, "prix": valeur - pas})))
+		var montant := G.label(G.euros(valeur), 20, Charte.IVOIRE, true)
+		montant.name = "BilletPrix_" + kind
+		montant.custom_minimum_size.x = 120
+		montant.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		montant.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		row.add_child(montant)
+		row.add_child(Tuile.pilule("+", "BilletPlus_" + kind, not locked, "", func(): _send(app, "club_ticket_price", {"kind": kind, "prix": valeur + pas})))
+		if conseils is Dictionary:
+			var conseil := int(conseils.get(kind, valeur))
+			row.add_child(Tuile.pilule("Conseil · %s" % G.euros(conseil), "BilletConseil_" + kind, not locked and conseil != valeur, "", func(): _send(app, "club_ticket_price", {"kind": kind, "prix": conseil})))
+	if staff is Dictionary:
+		var bas := G.h(10)
+		card.add_child(bas)
+		var confier := _toggle("Confier à %s · %d" % [str(staff.get("name", "")), int(staff.get("level", 0))], func(): _send(app, "club_ticket_delegate", {"delegue": not delegue}), delegue)
+		confier.name = "BilletterieConfier"
+		confier.disabled = locked
+		bas.add_child(confier)
 
 ## Saison lisible d'une entrée d'historique (saison, sinon semaine).
 static func _when(entry: Dictionary) -> String:
@@ -307,12 +351,19 @@ static func _public(app: Control, f: Dictionary) -> void:
 	var ring := JaugeAnneau.new(float(humeur) if humeur != null else 0.0, "Humeur", ton[1], 100.0, "heart")
 	ring.name = "PublicHumeur"
 	var capacity: Variant = f.get("capacity")
-	var first: Array = [ring, Visuel.tuile_chiffre("heart", _pourcent(int(f.get("humeurPublic", 0))), "Public · humeur"), Visuel.tuile_chiffre("people", G.n(f.expectedAttendance) + ("" if capacity == null else " / " + G.n(capacity)), "Affluence prévue" + ("" if capacity == null else " / places"))]
+	var estime := f.has("ticketing")
+	var first: Array = [ring, Visuel.tuile_chiffre("heart", _pourcent(int(f.get("humeurPublic", 0))), "Public · humeur"), Visuel.tuile_chiffre("people", ("≈ " if estime else "") + G.n(f.expectedAttendance) + ("" if capacity == null else " / " + G.n(capacity)), ("Affluence estimée" if estime else "Affluence prévue") + ("" if capacity == null else " / places"))]
 	if f.has("demand"): first.append(Visuel.tuile_chiffre("target", "%d %%" % int(f.demand), "Demande"))
 	var second: Array = []
-	if f.has("price"): second.append(Visuel.tuile_chiffre("money", G.euros(f.price), "Billet · " + str(PRIX.get(f.policy, f.policy))))
-	if f.has("expectedTicketRevenue"): second.append(Visuel.tuile_chiffre("money", G.euros(f.expectedTicketRevenue), "Recette prévue par match"))
-	second.append(Visuel.tuile_chiffre("star", G.n(f.subscribers), "Abonnés"))
+	if estime:
+		var t: Dictionary = f.ticketing
+		second.append(Visuel.tuile_chiffre("money", G.euros(f.price), "Grosse affiche" if t.get("bigMatch", false) else "Billet"))
+		second.append(Visuel.tuile_chiffre("money", "≈ " + G.euros(f.expectedTicketRevenue), "Recette estimée · prochain match"))
+		second.append(Visuel.tuile_chiffre("star", "≈ " + G.n(t.get("expectedSubscribers", f.subscribers)), "Abonnés"))
+	else:
+		if f.has("price"): second.append(Visuel.tuile_chiffre("money", G.euros(f.price), "Billet · " + str(PRIX.get(f.policy, f.policy))))
+		if f.has("expectedTicketRevenue"): second.append(Visuel.tuile_chiffre("money", G.euros(f.expectedTicketRevenue), "Recette prévue par match"))
+		second.append(Visuel.tuile_chiffre("star", G.n(f.subscribers), "Abonnés"))
 	var blocks: Array = [Visuel.rangee(first), Visuel.rangee(second)]
 	var history: Array = f.get("history", [])
 	if not history.is_empty():

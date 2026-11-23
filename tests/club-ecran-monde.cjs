@@ -23,11 +23,11 @@ try {
   assert.ok(fans.subscribers >= 0.22 * fans.capacity && fans.subscribers <= fans.capacity, 'Monde : abonnés initiaux ' + fans.subscribers);
   assert.equal(m.club.standingsOpen, false, 'avant la 1re journée : classement fermé');
   assert.ok(m.league.every(c => c.standingsOpen === false && c.played === 0), 'aucun match joué en division');
-  assert.ok(fans.payingSpectators >= 0 && fans.expectedTicketRevenue === fans.payingSpectators * fans.price, 'recette prévue = guichet × prix');
+  assert.ok(fans.expectedTicketRevenue > 0 && fans.expectedTicketRevenue < fans.expectedAttendance * fans.price, 'recette estimée : guichet × prix, abonnés déduits');
   m = jouer(jeu, m, 1);
   assert.equal(m.club.standingsOpen, true, 'après un match : classement ouvert');
   const apres = m.clubLife.clubStrategy.fans;
   assert.equal(apres.subscribers, fans.subscribers, 'abonnés inchangés par un match');
-  assert.equal(apres.expectedTicketRevenue, apres.payingSpectators * apres.price, 'recette prévue = guichet × prix');
+  assert.ok(apres.expectedTicketRevenue > 0 && apres.expectedTicketRevenue < apres.expectedAttendance * apres.price, 'recette estimée : guichet × prix');
   console.log('Monde club0 : abonnés ' + fans.subscribers + ' / ' + fans.capacity + ', classement fermé puis ouvert PASS');
 } finally { jeu.fermer(); }

@@ -27,8 +27,8 @@ try {
     const f = m.clubLife.clubStrategy.fans;
     assert.equal(f.capacity, table.capacities[club], 'capacité du club ' + club);
     assert.ok(f.subscribers >= 0.2 * f.capacity && f.subscribers <= 0.78 * f.capacity, 'abonnés dans 20-78 % de la capacité : club ' + club);
-    // Recette prévue = billets vendus au guichet (spectateurs moins abonnés présents) × prix du billet.
-    assert.ok(f.expectedAttendance <= f.capacity && f.payingSpectators <= f.expectedAttendance && f.expectedTicketRevenue === f.payingSpectators * f.price);
+    // Affluence et recette du prochain match : estimation du staff (billets au guichet × prix), bornée par la capacité.
+    assert.ok(f.expectedAttendance <= f.capacity && f.expectedTicketRevenue >= 0 && f.expectedTicketRevenue <= f.expectedAttendance * f.price, JSON.stringify([club, f.expectedAttendance, f.expectedTicketRevenue, f.price]));
     rows.push(club + ' : ' + f.capacity + ' places, ' + f.subscribers + ' abonnés, ' + f.expectedAttendance + ' spectateurs prévus, ' + f.expectedTicketRevenue + ' € par match');
     if (club !== 0) continue;
     const a = m.international.availability, r = m.clubLife.reprise;
