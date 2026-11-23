@@ -489,7 +489,9 @@ module.exports=function worldCareer(edition,active,initialContracts=null,lnrCale
    resultats:Array.isArray(c?.form)?c.form.slice(-5):[],cle:f.homeId+'|'+s.season+'|'+f.id,phase:f.phase||'league',
    accueil:typeof investAccueil==='function'&&typeof nativeClubInvestments!=='undefined'?nativeClubInvestments.facteurAccueil(investAccueil(f.homeId)):1,
    // Humeur des supporters (club-strategy.cjs) : seulement quand le club du manager reçoit.
-   humeur:f.homeId===s.club&&typeof budgetHumeur==='function'?budgetHumeur():null});
+   humeur:f.homeId===s.club&&typeof budgetHumeur==='function'?budgetHumeur():null,
+   // Prix du billet choisi par le manager (club-budget.cjs, POLITIQUES_BILLET) : les clubs gérés restent au prix équilibré.
+   politique:f.homeId===s.club&&typeof s.v111to116?.price==='string'?s.v111to116.price:null});
   return Number.isInteger(n)?{affluence:n}:{};
  };
  const fixtureEntry=(s,f,r)=>({...r,fixtureId:f.id,competitionId:f.competitionId,leagueId:f.competitionId,season:s.season,round:s.round,competitionRound:f.round,week:s.round,date:f.date,phase:f.phase,poolId:f.poolId??null,neutral:f.neutral,...affluenceMatch(s,f)});

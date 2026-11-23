@@ -15,8 +15,8 @@ assert.equal(table.capacities[0], 19500, 'Ernest-Wallon');
 assert.ok(new Set(Object.values(table.capacities)).size > 60, 'capacités variées, plus de 12 000 partout');
 const moyenne = (a, b) => { const v = Object.entries(table.capacities).filter(([k]) => k >= a && k <= b).map(([, n]) => n); return v.reduce((x, y) => x + y, 0) / v.length; };
 assert.ok(moyenne(0, 13) > moyenne(14, 29) && moyenne(14, 29) > moyenne(88, 101) && moyenne(88, 101) > moyenne(102, 115), 'Élite > Accession > Nationale > Championship');
-// La billetterie réelle (recettes du club) ne lit pas la capacité : seul le module supporters (affichage) la lit.
-assert.ok(!/stadiumCapacity|CDWorldStadiumCapacities/.test(fs.readFileSync(path.join(__dirname, '../native/engine/club-budget.cjs'), 'utf8')), 'club-budget ne lit pas la capacité');
+// Billetterie réelle (choix de Léo du 23/11/2026) : la recette d'un match vient des spectateurs, bornés par la vraie capacité.
+assert.ok(/CDWorldStadiumCapacities/.test(fs.readFileSync(path.join(__dirname, '../native/engine/club-budget.cjs'), 'utf8')), 'club-budget lit la capacité du stade');
 
 // 2. Moteur : capacité, abonnés, affluence et recette prévues suivent le stade ; retours = mêmes dates.
 const jeu = ouvrir({});
@@ -27,7 +27,8 @@ try {
     const f = m.clubLife.clubStrategy.fans;
     assert.equal(f.capacity, table.capacities[club], 'capacité du club ' + club);
     assert.ok(f.subscribers >= 0.2 * f.capacity && f.subscribers <= 0.78 * f.capacity, 'abonnés dans 20-78 % de la capacité : club ' + club);
-    assert.ok(f.expectedAttendance <= f.capacity && f.expectedTicketRevenue === f.expectedAttendance * f.price);
+    // Recette prévue = billets vendus au guichet (spectateurs moins abonnés présents) × prix du billet.
+    assert.ok(f.expectedAttendance <= f.capacity && f.payingSpectators <= f.expectedAttendance && f.expectedTicketRevenue === f.payingSpectators * f.price);
     rows.push(club + ' : ' + f.capacity + ' places, ' + f.subscribers + ' abonnés, ' + f.expectedAttendance + ' spectateurs prévus, ' + f.expectedTicketRevenue + ' € par match');
     if (club !== 0) continue;
     const a = m.international.availability, r = m.clubLife.reprise;
