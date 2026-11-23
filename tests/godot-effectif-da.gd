@@ -311,7 +311,7 @@ func run() -> void:
 	check(selection_free(page()), "Retour sur l'Effectif : le joueur choisi est montré sans être coloré")
 	app.selected_player = str(squad[0].id)
 
-	# Comparateur : page pleine (jamais une fenêtre), ajout à la souris, emplacements vides, 36 attributs colorés, Échap.
+	# Comparateur : page pleine (jamais une fenêtre), ajout à la souris, emplacements vides, radar 8 axes, Échap.
 	app.management_ui.compare = []
 	app._navigate("Bureau")
 	await settle(6)
@@ -323,7 +323,7 @@ func run() -> void:
 		plus.pressed.emit()
 		await settle()
 		check(app.management_ui.compare.size() == 1 and plus.text == "A" and plus.visible, "Le repère de la ligne ajoute le joueur au comparateur (A)")
-	check((app.find_child("OpenComparison", true, false) as Button).text.begins_with("Comparer 1/3"), "Compteur Comparer 1/3")
+	check((app.find_child("OpenComparison", true, false) as Button).text.begins_with("Comparer 1/2"), "Compteur Comparer 1/2")
 	await press("OpenComparison")
 	check(app.route == "Comparateur" and app.find_child("ImmersiveComparateur", true, false) != null, "Comparer ouvre l'écran Comparateur")
 	check(windows(app).is_empty(), "Le comparateur n'est pas une fenêtre")
@@ -334,14 +334,32 @@ func run() -> void:
 		choix.item_selected.emit(2)
 		await settle(10)
 	check(app.management_ui.compare.size() == 2, "Le sélecteur ajoute un second joueur")
-	var attribute_labels := app.find_children("Attribut_*_0", "Label", true, false)
-	check(attribute_labels.size() == 36, "36 attributs affichés dans la première colonne (%d)" % attribute_labels.size())
-	var colored := 0
-	for label: Label in attribute_labels:
-		var digits := label.text.replace(" ▲", "").replace(",", ".")
-		if digits == "—" or label.get_theme_color("font_color").is_equal_approx(Charte.couleur_attribut(digits.to_float())): colored += 1
-	check(colored == 36, "Chaque attribut écrit au barème coloré (%d/36)" % colored)
-	check(app.find_child("ComparateurJoueur2", true, false) != null, "Troisième colonne proposée à 2 joueurs")
+	check(app.find_child("RadarDessin", true, false) != null, "Radar dessiné")
+	check(app.find_children("RadarAxe?", "Button", true, false).size() == 8, "Huit axes cliquables")
+	check(app.find_child("ComparateurJoueur2", true, false) == null, "Deux joueurs au plus : pas de troisième colonne")
+	var poste := app.find_child("RadarSynthese0_Auposte", true, false) as Label
+	check(poste != null and not poste.text.contains("★"), "Note au poste chiffrée, sans étoiles")
+	var chiffre_poste := poste.text.replace("▲", "").strip_edges() if poste != null else ""
+	if chiffre_poste.is_valid_int():
+		check(poste.get_theme_color("font_color").is_equal_approx(Charte.couleur_attribut(chiffre_poste.to_int())), "Note au poste colorée au barème")
+	check(app.find_child("RadarFamiliarite0", true, false) != null, "Emplacement de la familiarité au poste")
+	await press("RadarAxe0")
+	var fenetre_axe := app.find_child("RadarAxeFenetre", true, false)
+	check(fenetre_axe != null and fenetre_axe.find_child("RadarFenetreLigne_tackling", true, false) != null, "Clic sur Défense : ses qualités en barres miroir")
+	var echap_fenetre := InputEventKey.new()
+	echap_fenetre.keycode = KEY_ESCAPE
+	for down in [true, false]:
+		echap_fenetre.pressed = down
+		Input.parse_input_event(echap_fenetre)
+		await process_frame
+	await settle(4)
+	check(app.route == "Comparateur" and (app.find_child("RadarAxeFenetre", true, false) == null or app.find_child("RadarAxeFenetre", true, false).is_queued_for_deletion()), "Échap ferme d'abord la petite fenêtre")
+	await press("RadarSynthese0_Pointfort")
+	check(app.find_child("RadarAxeFenetre", true, false) != null, "Clic sur le point fort : petite fenêtre de l'axe")
+	var croix := app.find_child("RadarAxeFenetreFermer", true, false) as Button
+	if croix != null:
+		croix.pressed.emit()
+		await settle(4)
 	var escape := InputEventKey.new()
 	escape.keycode = KEY_ESCAPE
 	for down in [true, false]:

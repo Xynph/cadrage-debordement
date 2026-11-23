@@ -378,6 +378,7 @@ function createBridge(options={}){
   const edition=mode=>{if(mode==='common')return legacyDatabase.id;const e=worldEditions.forMode(mode);if(!e)throw Error('Édition de pack invalide.');return e.id;};
   const currentEdition=()=>run("CDWorldCareer.edition(S)?.mode||'common'");
   function projectCalendar(model, operation){
+   ctx.nativeProgrammeEffets=null;
    if(!model.club)return;
    const {fixtures,today,simulatedDates}=calendarContext(model);
    const stored=calendarState();
@@ -403,6 +404,10 @@ function createBridge(options={}){
     ...(fixtures===model.calendar ? {} : {fixtures}),simulatedDates
    };
    model.calendarMail=calendarMail.project(mail);
+   // Effets des séances de la semaine en cours (calendar-planning.cjs weekEffects) : lus par trainWeek dans la VM
+   // (programme-semaine.cjs) pour le club du manager, seulement pour cette saison et cette semaine.
+   const semaine=model.calendarPlanning.week;
+   ctx.nativeProgrammeEffets=semaine&&!simulatedDates?JSON.parse(JSON.stringify({...semaine,season:model.meta?.season,round:model.meta?.week})):null;
    if(operation&&(JSON.stringify(mail)!==JSON.stringify(stored.mail)||JSON.stringify(planning)!==JSON.stringify(stored.planning))){
     validateCalendarState({planning,mail});
     ctx.nativeCalendarState=JSON.parse(JSON.stringify({planning,mail}));

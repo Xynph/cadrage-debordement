@@ -163,7 +163,8 @@ func run() -> void:
 			app._command("club_meeting_continue", {"meetingId":scene.get("id")})
 			check(await ready_for_input(), "Rendez-vous d'accueil terminé")
 		else: break
-	app._navigate("Calendrier")
+	# Programme du mois du club (Entraînement › Mois, qui remplace la grille du Calendrier depuis le 22/11/2026).
+	load("res://ui/immersive08/training_mois.gd").ouvrir(app)
 	await settle()
 	var summary := app.find_child("InternationalAvailabilityOpen", true, false) as Button
 	check(summary != null, "Calendrier club relié au suivi international")
