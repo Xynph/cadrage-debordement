@@ -95,6 +95,8 @@ budget() {
     tests/continuer-evenement-monde.cjs|tests/retouches-coherence.cjs) echo 600s ;;
     # Dilemmes de presse (#727) : carrière Monde, 146 s sur le runner sur main (shard 7) et délai de 180 s dépassé sur la PR #730 (shard 4, même code) ; budget ≈ 3 fois.
     tests/presse-dilemmes-monde.cjs) echo 420s ;;
+    # Noms de compétitions du pack dans les textes générés : carrière Monde, 64 s en local mais 181 s sur le runner (délai de 180 s dépassé sur la PR #1191, suite non touchée) ; budget ≈ 3 fois.
+    tests/pack-noms-competitions-textes.cjs) echo 420s ;;
     # Presse rapide (#928) : carrière Monde, 192 s en local sur main (19/11) et délai de 180 s dépassé dans le train 20261118-2307 ; budget ≈ 2 fois.
     tests/presse-rapide-monde.cjs) echo 420s ;;
     # Homme du match par poste : carrière Monde hebdomadaire jusqu'à 150 matchs notés, 135 s en local sous charge.
