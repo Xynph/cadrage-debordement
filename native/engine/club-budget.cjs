@@ -785,7 +785,7 @@ function budgetBilletterieClub(c){
  const division=CDWorldCareer.leagueId(S,c.id);if(!nativeClubBudget.DIVISIONS[division])return null;
  const receptions=budgetReceptions(c.id);if(!receptions)return null;
  const capacite=budgetCapacite(c);
- return nativeClubBudget.billetterieAnnuelle({capacite,abonnes:nativeClubBudget.abonnesEstimes(capacite,c.base,String(c.abbr??c.name??c.id)),prix:nativeClubBudget.prixBillet(division,'equilibree'),receptions});
+ return nativeClubBudget.billetterieAnnuelle({capacite,abonnes:nativeClubBudget.abonnesEstimes(capacite,c.base,String(c.abbr??c.name??c.id)),prix:budgetPrixReference(c).base,receptions});
 }
 const budgetPolitique=c=>c.id===S.club&&S.v111to116&&typeof S.v111to116.price==='string'?S.v111to116.price:'equilibree';
 const budgetCapacite=c=>Number.isInteger(c.stadiumCapacity)&&c.stadiumCapacity>0?c.stadiumCapacity:typeof CDWorldStadiumCapacities!=='undefined'&&Number.isInteger(CDWorldStadiumCapacities[c.id])?CDWorldStadiumCapacities[c.id]:12000;
@@ -796,8 +796,19 @@ const budgetAccueil=id=>typeof investAccueil==='function'?nativeClubInvestments.
 // trois prix sont confiés au responsable de la billetterie (budgetResponsable), qui applique ses conseils.
 const budgetBilletterieEtat=()=>{const b=S.billetterie;return b&&b.version===1?b:null;};
 // Prix de référence de la division : billet, abonnement (billet × 70 % × réceptions), grosse affiche (billet × 1,5).
+// Prix « juste » de chaque club (précision de Léo du 23/11/2026) : celui de sa division, surtout ajusté à sa réputation (rang de
+// sa base dans la division : × 0,75 pour le plus modeste à × 1,3 pour le plus réputé). L'affluence réagit au prix autour de
+// cette référence, le conseil du staff tend vers elle ; elle n'est jamais affichée.
+let budgetReputationMemo=null;
+function budgetReputation(c){
+ const d=budgetLigue(c.id),cle=S.season+'|'+d,m=budgetReputationMemo;
+ if(!m||m.etat!==S||m.saison!==S.season){budgetReputationMemo={etat:S,saison:S.season,parDivision:new Map()};}
+ const memo=budgetReputationMemo.parDivision;
+ if(!memo.has(d)){const bases=S.clubs.filter(x=>budgetLigue(x.id)===d).map(x=>x.base).filter(Number.isFinite);memo.set(d,bases.length?[Math.min(...bases),Math.max(...bases)]:[c.base,c.base]);}
+ const [min,max]=memo.get(d);return 0.75+0.55*(max>min?Math.max(0,Math.min(1,(c.base-min)/(max-min))):0.5);
+}
 function budgetPrixReference(c){
- const billet=nativeClubBudget.prixBillet(budgetLigue(c.id),'equilibree');
+ const billet=Math.max(1,Math.round(nativeClubBudget.prixBillet(budgetLigue(c.id),'equilibree')*budgetReputation(c)));
  return {base:billet,abonnement:Math.round(billet*nativeClubBudget.REMISE_ABONNEMENT*Math.max(1,budgetReceptions(c.id))),affiche:Math.round(billet*1.5)};
 }
 // Membre du staff qui tient la billetterie (le club n'a pas de directeur financier) : le meilleur de l'encadrement du club
@@ -862,10 +873,12 @@ function budgetConseils(c){
 // Prix de la saison : ceux du manager, ceux du staff si la billetterie lui est confiée, sinon ceux de la division.
 // sansDelegation : prix fixés à la main (le calcul des conseils ne se lit pas lui-même).
 function budgetPrixSaison(c,sansDelegation=false){
- const ref=budgetPrixReference(c),b=c.id===S.club?budgetBilletterieEtat():null;
- if(!b)return {base:c.id===S.club?nativeClubBudget.prixBillet(budgetLigue(c.id),budgetPolitique(c)):ref.base,abonnement:ref.abonnement,affiche:ref.affiche};
+ const ref=budgetPrixReference(c),b=c.id===S.club?budgetBilletterieEtat():null,prereglage=Math.max(1,Math.round(ref.base*nativeClubBudget.POLITIQUES_BILLET[budgetPolitique(c)].prix));
+ // Clubs gérés : ils fixent eux-mêmes leurs prix autour de leur référence (±8 % propres au club et à la saison).
+ if(c.id!==S.club){const v=1+0.16*(nativeLeagueEconomy.unite('prix|'+c.id+'|'+S.season)-0.5),k=x=>Math.max(1,Math.round(x*v));return {base:k(ref.base),abonnement:k(ref.abonnement),affiche:k(ref.affiche)};}
+ if(!b)return {base:prereglage,abonnement:ref.abonnement,affiche:ref.affiche};
  if(b.delegue===true&&!sansDelegation){const k=budgetConseils(c);if(k)return {base:k.base,abonnement:k.abonnement,affiche:k.affiche};}
- return {base:Number.isInteger(b.base)?b.base:nativeClubBudget.prixBillet(budgetLigue(c.id),budgetPolitique(c)),abonnement:Number.isInteger(b.abonnement)?b.abonnement:ref.abonnement,affiche:Number.isInteger(b.affiche)?b.affiche:ref.affiche};
+ return {base:Number.isInteger(b.base)?b.base:prereglage,abonnement:Number.isInteger(b.abonnement)?b.abonnement:ref.abonnement,affiche:Number.isInteger(b.affiche)?b.affiche:ref.affiche};
 }
 // {prix, abonnes, spectateurs, attendu, abonnementsHebdo} ; rencontre : réception de la semaine ({affluence} lue sur le résultat).
 function budgetBillets(c,rencontre,repere){
@@ -889,7 +902,7 @@ function budgetBilletterieVue(){
  const spectateurs=Math.min(capacite,nativeClubBudget.estimationStaff(g.spectateurs,niveau,'public|'+cle)),recette=nativeClubBudget.estimationStaff(g.recette,niveau,'recette|'+cle,100);
  const aboEstimes=Math.min(capacite,nativeClubBudget.estimationStaff(abonnes,niveau,'abonnes|'+cle));
  const conseils=budgetConseils(c),adverse=f?S.clubs[f.homeId===c.id?f.awayId:f.homeId]:null;
- return {capacity:capacite,price:prix,prices:{base:saison.base,abonnement:saison.abonnement,affiche:saison.affiche},references:ref,
+ return {capacity:capacite,price:prix,prices:{base:saison.base,abonnement:saison.abonnement,affiche:saison.affiche},
   advice:conseils?{base:conseils.base,abonnement:conseils.abonnement,affiche:conseils.affiche}:null,estimatedBy:conseils?conseils.par:null,delegated:b?.delegue===true,
   expectedAttendance:spectateurs,expectedTicketRevenue:recette,expectedSubscribers:aboEstimes,demand:Math.round(100*spectateurs/capacite),
   bigMatch:affiche,fixtureId:f?.id??null,opponent:adverse?adverse.name:null,fixtureWeek:f?.week??null};

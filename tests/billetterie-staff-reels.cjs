@@ -63,7 +63,7 @@ try {
   let model = creer(jeu, 29);
   const run = src => jeu.bridge.vm.run(src);
   const vue0 = JSON.parse(run('JSON.stringify(budgetBilletterieVue())'));
-  assert.ok(vue0.expectedAttendance <= vue0.capacity && vue0.price === 7 && vue0.prices.abonnement > 8, JSON.stringify(vue0));
+  assert.ok(vue0.expectedAttendance <= vue0.capacity && vue0.price >= 5 && vue0.price <= 10 && vue0.prices.abonnement > 8, JSON.stringify(vue0));
   // Trois prix de la saison fixés par le manager : billet plus cher = moins de monde (estimation du staff) ; abonnement moins
   // cher = plus d'abonnés.
   const prix = (kind, valeur) => { model = jeu.call('club_ticket_price', { context: model.clubLife.clubStrategy.context, kind, prix: valeur }); return model.clubLife.clubStrategy.fans; };
