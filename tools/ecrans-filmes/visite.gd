@@ -750,8 +750,19 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			if effectif.is_empty(): return {"statut": "indisponible", "note": "effectif vide"}
 			app._navigate("Effectif")
 			await stabiliser()
-			var ouvert: bool = app.navigation_controller.open_entity({"kind": "player", "id": ident(effectif[0].get("id"))})
+			# CD_FILM_FICHE_ONGLET=<index d'onglet> et CD_FILM_FICHE_JOUEUR=<id> : onglet et joueur de la fiche filmée.
+			var cible_joueur: Variant = effectif[0].get("id")
+			if not OS.get_environment("CD_FILM_FICHE_JOUEUR").is_empty(): cible_joueur = OS.get_environment("CD_FILM_FICHE_JOUEUR")
+			if not OS.get_environment("CD_FILM_FICHE_ONGLET").is_empty(): app.management_ui.immersive_player_tab = int(OS.get_environment("CD_FILM_FICHE_ONGLET"))
+			var ouvert: bool = app.navigation_controller.open_entity({"kind": "player", "id": ident(cible_joueur)})
 			await stabiliser()
+			# CD_FILM_PROLONGATION=1 : ouvre la fenêtre de prolongation du joueur (bouton « Proposer une prolongation »).
+			if ouvert and OS.get_environment("CD_FILM_PROLONGATION") == "1":
+				var joueur: Dictionary = {}
+				for j: Variant in effectif:
+					if j is Dictionary and str(j.get("id")) == str(cible_joueur): joueur = j
+				if not joueur.is_empty(): app.SquadViews.contract(app, joueur, false)
+				await stabiliser()
 			if not ouvert or app.route != "Effectif" or not bool(app.get_meta("immersive08_full_player", false)): return {"statut": "echec", "note": "fiche joueur non ouverte"}
 			if ecran.get("apprendre", false):
 				# Cible d'apprentissage : premier poste hors 1re ligne qu'il peut apprendre (même commande que le clic).

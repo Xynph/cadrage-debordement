@@ -53,6 +53,9 @@ static func valeurs(ctx: Dictionary) -> Dictionary:
 	var quote: Dictionary = ctx.quote
 	var propose := Salary.input_weekly(ctx.salary)
 	var demande := int(quote.get("salary", propose))
+	# Rôle promis choisi (temps de jeu, idée 16) : la demande est celle de ce rôle (moteur : quote.roles, role-contrat.cjs).
+	var du_role := demande_du_role(quote, str(ctx.get("role", "")))
+	if du_role >= 0: demande = du_role
 	var annees := int(ctx.years.value)
 	var fee: Variant = quote.get("fee")
 	var premiere := int(ctx.first_season)
@@ -69,6 +72,14 @@ static func valeurs(ctx: Dictionary) -> Dictionary:
 		"prolongation": bool(ctx.get("prolongation", false)),
 		"actuel": int(ctx.player.get("salary", 0)), "fin_actuelle": ctx.player.get("contractEnd"),
 	}
+
+## Salaire demandé pour un rôle promis (-1 si le moteur ne le donne pas).
+static func demande_du_role(quote: Dictionary, role: String) -> int:
+	var roles: Variant = quote.get("roles")
+	if role.is_empty() or not (roles is Dictionary) or not (roles.get("liste") is Array): return -1
+	for r: Variant in roles.liste:
+		if r is Dictionary and str(r.get("role", "")) == role and (r.get("salary") is int or r.get("salary") is float): return int(r.salary)
+	return -1
 
 ## Écart de salaire au format des salaires affichés (arrondi et période du jeu).
 static func hausse(val: Dictionary) -> int:
