@@ -2,6 +2,7 @@ extends RefCounted
 ## Les six onglets du Centre de formation (parcours actifs), choix de Léo du 22/11/2026 : structure « chemin » pour
 ## Centre, Parcours, Passerelle pro et Générations, structure « cartes » pour Centres et Filières, habillage de
 ## l'Effectif (panneaux à gauche, listes à lignes à droite). Pièces communes : centre_visuel.gd (V).
+const Fleches = preload("res://ui/fleches_progression.gd")
 const V = preload("res://ui/immersive08/centre_visuel.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
@@ -306,7 +307,10 @@ static func _parcours(ctx: Dictionary, zone: Rect2) -> void:
 			"nom": V.cellule_joueur(ctx, ligne, x, h, base, p, w)
 			"poste": V.texte(ligne, x, base, str(p.pos), 19, Charte.IVOIRE, w, a, 500)
 			"age": V.texte(ligne, x, base, G.n(p.age), 19, Charte.IVOIRE_2, w, a, 500)
-			"niv": V.texte(ligne, x, base, V.niveau_txt(p), 21, V.couleur(V.valeur(p, "rating")), w, a, 700, false)
+			"niv":
+				var niv_l := V.texte(ligne, x, base, V.niveau_txt(p), 21, V.couleur(V.valeur(p, "rating")), w, a, 700, false)
+				var fl_niv: Dictionary = Fleches.donnees(ctx.app, p).get("niveau", {})
+				if not fl_niv.is_empty(): Fleches.marquer(ctx.app, niv_l, int(fl_niv.cran), fl_niv.serie, "Niveau", "Niveau_" + str(p.id).replace(":", "_"))
 			"pot": V.texte(ligne, x, base, V.potentiel_txt(p), 21, V.couleur(V.valeur(p, "potential")), w, a, 700, false)
 			"traj":
 				var t := V.trajectoire(str(p.path))
@@ -728,7 +732,10 @@ static func _generations(ctx: Dictionary, zone: Rect2) -> void:
 			"nom": V.cellule_joueur(ctx, ligne, x, h, base, p, w, "academy" if not V.joueur(data, str(p.id)).is_empty() else "")
 			"poste": V.texte(ligne, x, base, str(p.pos), 19, Charte.IVOIRE, w, a, 500)
 			"age": V.texte(ligne, x, base, G.n(p.age), 19, Charte.IVOIRE_2, w, a, 500)
-			"niv": V.texte(ligne, x, base, V.niveau_txt(p), 21, V.couleur(V.valeur(p, "rating")), w, a, 700, false)
+			"niv":
+				var niv_l := V.texte(ligne, x, base, V.niveau_txt(p), 21, V.couleur(V.valeur(p, "rating")), w, a, 700, false)
+				var fl_niv: Dictionary = Fleches.donnees(ctx.app, p).get("niveau", {})
+				if not fl_niv.is_empty(): Fleches.marquer(ctx.app, niv_l, int(fl_niv.cran), fl_niv.serie, "Niveau", "Niveau_" + str(p.id).replace(":", "_"))
 			"pot": V.texte(ligne, x, base, V.potentiel_txt(p), 21, V.couleur(V.valeur(p, "potential")), w, a, 700, false)
 			"min": V.texte(ligne, x, base, V.mille(p.get("minutes", 0)), 19, V.MINUTES, w, a, 700, false)
 			"traj":

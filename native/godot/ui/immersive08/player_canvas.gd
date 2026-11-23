@@ -391,7 +391,7 @@ static func _attributs(card: Panel, app: Control, player: Dictionary, source: St
 	else:
 		D.text(card,1396,38,"36 ATTRIBUTS",17,Charte.IVOIRE_2,700,240,HORIZONTAL_ALIGNMENT_RIGHT)
 	FicheRoles.bandes(card,Vector2(24,72),Vector2(1372,340),FicheRoles.role(str(FicheRoles.etat(app,player,values).role)))
-	Commune.grille_attributs(card,Vector2(24,72),Vector2(1372,340),values,"PlayerDetailedAttribute_")
+	Commune.grille_attributs(card,Vector2(24,72),Vector2(1372,340),values,"PlayerDetailedAttribute_",{"app":app,"joueur":player} if source=="squad" else {})
 
 ## Carte Postes et rôles : rôles des postes du joueur (note du rôle + familiarité au poste), qualités du rôle choisi,
 ## terrain des 15 postes coloré par familiarité (fiche_roles.gd), puis courbe des notes de match.

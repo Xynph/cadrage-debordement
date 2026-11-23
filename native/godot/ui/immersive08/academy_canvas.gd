@@ -3,6 +3,7 @@ extends Control
 ## choisi (promouvoir, avec confirmation EN PLACE) et file « À décider » aux raisons écrites. Nom d'un jeune : survol =
 ## mini-fiche, clic = fiche complète ; jamais de fiche fixe ni de petite fenêtre (sous-pages : formation_pages.gd).
 ## Coordonnées en unités du gabarit (2248 de large), couleurs uniquement depuis ui/charte.gd, aucun or.
+const Fleches = preload("res://ui/fleches_progression.gd")
 const Copy = preload("res://ui/management_copy.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
@@ -561,7 +562,9 @@ func _draw_rows(columns: Array) -> void:
 		_cellule(hit, _col(columns, "pos"), str(p.pos), Charte.IVOIRE_2)
 		_cellule(hit, _col(columns, "age"), G.n(p.age), Charte.IVOIRE)
 		var niveau: Variant = G.knowledge_sort_value(p, "rating")
-		_cellule(hit, _col(columns, "note"), G.rating_text(p, true), Charte.couleur_attribut(niveau) if niveau != null else Charte.IVOIRE_3, true)
+		var niv_cellule := _cellule(hit, _col(columns, "note"), G.rating_text(p, true), Charte.couleur_attribut(niveau) if niveau != null else Charte.IVOIRE_3, true)
+		var fl_niv: Dictionary = Fleches.donnees(app, p).get("niveau", {})
+		if niv_cellule != null and not fl_niv.is_empty(): Fleches.marquer(app, niv_cellule, int(fl_niv.cran), fl_niv.serie, "Niveau", "Niveau_" + str(p.id).replace(":", "_"))
 		var potentiel: Variant = G.knowledge_sort_value(p, "potential")
 		if not _col(columns, "potential").is_empty():
 			var texte_pot := ("★ " if _pepite(p) else "") + G.potential_text(p)
@@ -587,13 +590,14 @@ func _draw_rows(columns: Array) -> void:
 		var largeur_nom: float = police_nom.get_string_size(nom.text, HORIZONTAL_ALIGNMENT_LEFT, -1, nom.get_theme_font_size("font_size")).x / C.density if police_nom != null else Kit.largeur(str(p.name), 20)
 		_lien_nom(hit, p, Rect2(60, 0, 520, ROW), largeur_nom)
 
-func _cellule(row: Control, col: Dictionary, texte: String, couleur: Color, gras: bool = false) -> void:
-	if col.is_empty(): return
+func _cellule(row: Control, col: Dictionary, texte: String, couleur: Color, gras: bool = false) -> Label:
+	if col.is_empty(): return null
 	var align := HORIZONTAL_ALIGNMENT_RIGHT if col.align == 2 else HORIZONTAL_ALIGNMENT_CENTER if col.align == 1 else HORIZONTAL_ALIGNMENT_LEFT
 	# D.text prend le bord droit pour un texte aligné à droite et le centre pour un texte centré.
 	var ancre: float = col.x + col.w if col.align == 2 else col.x + col.w / 2.0 if col.align == 1 else col.x
 	var cellule := D.text(row, ancre, 21, texte, 20, couleur, 700 if gras else 500, col.w, align)
 	cellule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return cellule
 
 ## Statut écrit, jamais la couleur seule : puce (symbole) + mot ; une blessure s'ajoute avec sa durée.
 func _statut(row: Control, p: Dictionary, x: float) -> void:
