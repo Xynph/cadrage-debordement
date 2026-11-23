@@ -161,6 +161,7 @@ module.exports=function clubTransfers(){
   aiRosterEvent(seller.id,'sell',p,offer.fee);aiRosterEvent(buyer.id,'recruit',p,offer.fee);
   S.economy.transfers.unshift({season:S.season,round:S.round,text:buyer.name+' achète '+p.name+' à '+seller.name+' pour '+money(offer.fee)+' (besoin : '+need+').'});
   S.economy.transfers=S.economy.transfers.slice(0,80);
+  if(typeof calMondeTransfert==='function')calMondeTransfert(buyer,seller,p,offer.fee,'achat');
   return {season:S.season,round:S.round,buyer:buyer.id,seller:seller.id,playerId:p.id,fee:offer.fee,salary,plan,sellerPlan};
  }
  function transferWindow(rounds=ROUNDS,differe=false){
