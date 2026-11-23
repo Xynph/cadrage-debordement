@@ -494,6 +494,10 @@ func _filters(positions: Array) -> void:
 	var comparer := Kit.lien(self, Rect2(droite, Y_FILTRES + 4, 0, 32), "Comparer →", func(): _compare(), "CompareMarket", 18, true)
 	comparer.accessibility_name = "Comparer deux pistes de recrutement"
 	droite -= comparer.size.x / C.density + 18
+	# Planche « Recherche ciblée » (revue FM27, idée 26).
+	if not load("res://ui/immersive08/recherche_ciblee.gd").variante().is_empty():
+		var ciblee := Kit.lien(self, Rect2(droite, Y_FILTRES + 4, 0, 32), "Recherche ciblée →", func(): _staff(1), "RechercheCibleeOuvrir", 18, true)
+		droite -= ciblee.size.x / C.density + 18
 	for lien: Array in _liens_filtre:
 		var bouton := Kit.lien(self, Rect2(droite, Y_FILTRES + 4, 0, 32), str(lien[1]), lien[2], str(lien[0]), 18, true)
 		bouton.tooltip_text = ""
@@ -1113,6 +1117,10 @@ func _approcher(player: Dictionary) -> void:
 # --- Divers -----------------------------------------------------------------------------------------------------
 
 func _staff(index: int, role: String = "") -> void:
+	var Recherche = load("res://ui/immersive08/recherche_ciblee.gd")
+	if index == 1 and not Recherche.variante().is_empty():
+		Recherche.ouvrir(app, self, role)
+		return
 	Pages.ouvrir(app, "missions", {"tab": index, "role": role})
 
 func _fins_de_contrat() -> void:
