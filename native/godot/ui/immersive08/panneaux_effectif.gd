@@ -220,7 +220,7 @@ static func _terrain(parent: Control, page: Control, app: Control, zone: Rect2) 
 		if j.is_empty():
 			var vide := D.rect(parent, rect, Color.TRANSPARENT, 99, Charte.IVOIRE_2)
 			D.text(vide, d / 2.0, d / 2.0 + 7, str(n), 19, Charte.IVOIRE_2, 700, d, HORIZONTAL_ALIGNMENT_CENTER)
-			if page.has_method("choisir_etoiles"): _bouton(parent, rect, func(): page.choisir_etoiles(0 if choisi else n), "PanneauPoste_%d" % n, "N° %d · ★ %s" % [n, Etoiles.nom_poste(n)])
+			if page.has_method("choisir_etoiles"): _bouton(parent, rect, func(): page.choisir_etoiles(0 if choisi else n), "PanneauPoste_%d" % n, "N° %d · %s" % [n, Etoiles.nom_poste(n)])
 			else: _bouton(parent, rect, func(): _ecran(app, "xv"), "PanneauPoste_%d" % n, "N° %d · Composition" % n)
 			continue
 		var rond := D.rect(parent, rect, _teinte_condition(j), 99)
@@ -229,7 +229,7 @@ static func _terrain(parent: Control, page: Control, app: Control, zone: Rect2) 
 		# Clic = la liste se classe par étoiles à ce poste (choix de Léo du 22/11/2026) ; la fiche du titulaire reste
 		# ouverte par son nom dans la liste. Re-clic sur le maillot choisi = retour au tri par poste.
 		var id := str(j.get("id", ""))
-		var aide := "%s · %d %% · ★ %s" % [str(j.get("name", "")), int(j.get("condition", 0)), Etoiles.nom_poste(n)]
+		var aide := "%s · %d %% · %s" % [str(j.get("name", "")), int(j.get("condition", 0)), Etoiles.nom_poste(n)]
 		if page.has_method("choisir_etoiles"): _bouton(parent, rect.grow(4), func(): page.choisir_etoiles(0 if choisi else n), "PanneauJoueur_%d" % n, aide)
 		else: _bouton(parent, rect.grow(4), func(): _fiche(page, app, id), "PanneauJoueur_%d" % n, aide)
 	# Légende par forme et couleur (le numéro est écrit, la condition est dans l'infobulle).

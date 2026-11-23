@@ -303,6 +303,8 @@ class MiniTerrain extends Control:
 		Vector2(.86, .27), Vector2(.5, .33), Vector2(.4, .46), Vector2(.64, .53), Vector2(.1, .73), Vector2(.4, .64), Vector2(.62, .72),
 		Vector2(.9, .73), Vector2(.5, .88)]
 	var etoiles: Array = []
+	## Couleur imposée par maillot (familiarité au poste, fiche joueur) ; vide : couleur des étoiles.
+	var couleurs: Array = []
 	var principaux: Array = []
 	func _ready() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -321,7 +323,8 @@ class MiniTerrain extends Control:
 		for i in 15:
 			var centre := Vector2(PLACES[i].x * size.x, PLACES[i].y * size.y)
 			var e: float = float(etoiles[i]) if i < etoiles.size() else -1.0
-			var teinte: Color = Color(Charte.CREME, .14) if e <= 0.0 else load("res://ui/carte_joueur_survol.gd").couleur_etoiles(e)
+			if i < couleurs.size(): e = 1.0
+			var teinte: Color = Color(Charte.CREME, .14) if e <= 0.0 else (couleurs[i] if i < couleurs.size() else load("res://ui/carte_joueur_survol.gd").couleur_etoiles(e))
 			if (i + 1) in principaux: draw_circle(centre, r + maxf(2.0, r * .22), Charte.CREME)
 			draw_circle(centre, r, teinte)
 			var texte := str(i + 1)

@@ -7,6 +7,7 @@ extends SceneTree
 ## CD_PANNEAUX_CAPTURES=<dossier> (+ CD_PANNEAUX_TAILLE=LxH) : enregistre développé, replié et fenêtre des tensions.
 const ContextualFlow = preload("helpers/contextual_flow.gd")
 const Panneaux = preload("res://ui/immersive08/panneaux_effectif.gd")
+const Familiarite = preload("res://ui/familiarite_poste.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -89,23 +90,24 @@ func etoiles_au_poste(xv: Dictionary) -> void:
 	var notes: Array = []
 	var par_id := {}
 	for p: Dictionary in app.model.squad: par_id[str(p.id)] = p
-	var repere := Etoiles.reference_poste(app.model.squad, numero)
-	for ligne: Button in lignes: notes.append(Etoiles.etoiles(par_id.get(str(ligne.get_meta("player_id")), {}), numero, repere))
+	for ligne: Button in lignes: notes.append(Etoiles.note_poste(par_id.get(str(ligne.get_meta("player_id")), {}), numero))
 	var connues: Array = notes.filter(func(v: float): return v >= 0.0)
 	var classe := true
 	for i in range(1, connues.size()): classe = classe and connues[i - 1] >= connues[i]
-	# Étoiles relatives à notre effectif : le meilleur joueur du groupe à ce poste a 5 étoiles, en tête de liste.
-
-	check(connues.size() >= 10 and classe and is_equal_approx(float(connues[0]), 5.0), "Liste classée par étoiles décroissantes, notre meilleur au poste à 5 (%s)" % str(connues.slice(0, 6)))
+	# Note au poste (sur 100, la même pour tous les clubs) : la meilleure du groupe en tête de liste.
+	check(connues.size() >= 10 and classe and is_equal_approx(float(connues[0]), Etoiles.reference_poste(app.model.squad, numero)), "Liste classée par note au poste décroissante (%s)" % str(connues.slice(0, 6)))
 	var premiere: Control = lignes[0] if not lignes.is_empty() else null
-	var dessin: Control = premiere.find_child("RosterEtoiles", true, false) if premiere != null else null
-	check(dessin != null and is_equal_approx(float(dessin.get_meta("etoiles", -1.0)), 5.0), "Étoiles dessinées sur la ligne : 5 pour notre meilleur (%s, %s)" % [str(dessin.get_meta("etoiles", -1.0)) if dessin != null else "—", str(dessin.get("valeur")) if dessin != null else "—"])
-	var toutes: Array = connues.duplicate()
-	toutes.sort()
-	check(toutes.size() > 0 and toutes[0] < toutes[-1], "Des étoiles différentes d'un joueur à l'autre")
-	var pastille := found("EtoilesProfondeur")
-	check(pastille is Label and (pastille as Label).text.begins_with(str(Etoiles.profondeur(app.model.squad, numero)) + " "), "Pastille ★4+ = nombre de joueurs à 4 étoiles et plus")
-	check(connues.size() < app.model.squad.size() or Etoiles.profondeur(app.model.squad, numero) == connues.filter(func(v: float): return v >= 4.0).size(), "Pastille ★4+ cohérente avec les étoiles de la liste")
+	var note: Label = premiere.find_child("RosterNotePoste", true, false) as Label if premiere != null else null
+	check(note != null and note.text == str(int(roundf(float(connues[0])))), "Note au poste écrite sur la ligne (%s)" % (note.text if note != null else "—"))
+	var marque: Control = premiere.find_child("RosterFamiliarite*", true, false) as Control if premiere != null else null
+	var attendu_f := Familiarite.niveau(par_id.get(str(premiere.get_meta("player_id")), {}), numero) if premiere != null else -1
+	check(marque != null and (attendu_f < 0 or int(marque.get_meta("familiarite", -2)) == attendu_f or (marque.get_parent() != null and int(marque.get_parent().get_meta("familiarite", -2)) == attendu_f)), "Familiarité au poste sur la ligne (%s)" % Familiarite.mot(attendu_f))
+	var niveaux := {}
+	for p: Dictionary in app.model.squad: niveaux[Familiarite.niveau(p, numero)] = true
+	check(niveaux.size() >= 3, "Plusieurs niveaux de familiarité dans le groupe (%s)" % str(niveaux.keys()))
+	var naturels: int = app.model.squad.filter(func(p: Dictionary): return Familiarite.niveau(p, numero) == Familiarite.NATUREL).size()
+	var compte: Control = found("FamiliariteCompte_%d" % Familiarite.NATUREL)
+	check(compte != null, "Nombre de joueurs Naturels au poste près du titre (%d)" % naturels)
 	# Badge « Jeune » (21 ans et moins) derrière le nom -> Formation.
 	var jeune: Control = found("RosterBadgeOuvrir_Jeune")
 	var attendu: bool = app.model.squad.any(func(p: Dictionary): return (p.get("age") is int or p.get("age") is float) and int(p.age) <= 21)

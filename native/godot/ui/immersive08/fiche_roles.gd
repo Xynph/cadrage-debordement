@@ -15,6 +15,7 @@ const Carte = preload("res://ui/carte_joueur_survol.gd")
 const Roster = preload("res://ui/immersive08/squad_canvas.gd")
 const BaremeEtoiles = preload("res://ui/bareme_etoiles.gd")
 const Liste = preload("res://ui/immersive08/liste_etoiles.gd")
+const Familiarite = preload("res://ui/familiarite_poste.gd")
 
 const CLE := Charte.CONDITION
 const UTILE := Charte.MORAL
@@ -127,9 +128,9 @@ static func roles_joueur(player: Dictionary, values: Dictionary, refs: Dictionar
 		for r: Array in roles_famille(FAMILLE[n - 1]):
 			if vus.has(r[0]): continue
 			vus[r[0]] = true
-			liste.append({"role": r, "etoiles": etoiles_role(values, r, refs), "numero": n, "rang": rang})
+			liste.append({"role": r, "note": note_role(values, r), "numero": n, "rang": rang})
 			rang += 1
-	liste.sort_custom(func(a: Dictionary, b: Dictionary): return a.etoiles > b.etoiles or (a.etoiles == b.etoiles and a.rang < b.rang))
+	liste.sort_custom(func(a: Dictionary, b: Dictionary): return a.note > b.note or (a.note == b.note and a.rang < b.rang))
 	return liste
 
 ## Meilleur rôle d'un poste (premier du poste si les qualités sont inconnues).
@@ -137,7 +138,7 @@ static func meilleur_role(values: Dictionary, numero: int, refs: Dictionary = {}
 	var choix := ""
 	var meilleur := -2.0
 	for r: Array in roles_famille(FAMILLE[numero - 1]):
-		var s := etoiles_role(values, r, refs)
+		var s := note_role(values, r)
 		if s > meilleur:
 			meilleur = s
 			choix = r[0]
@@ -150,7 +151,7 @@ static func etat(app: Control, player: Dictionary, values: Dictionary) -> Dictio
 	if e is Dictionary and str(e.get("joueur", "")) == id and not role(str(e.get("role", ""))).is_empty(): return e
 	var principaux := Roster.primary_numbers(player)
 	if principaux.is_empty(): return {"joueur": id, "role": "", "numero": 0}
-	return {"joueur": id, "role": meilleur_role(values, principaux[0], references(app)), "numero": principaux[0]}
+	return {"joueur": id, "role": meilleur_role(values, principaux[0]), "numero": principaux[0]}
 
 static func choisir(app: Control, player: Dictionary, role_id: String, numero: int) -> void:
 	app.management_ui["fiche_roles"] = {"joueur": str(player.get("id", "")), "role": role_id, "numero": numero}
@@ -216,10 +217,11 @@ static func _qualite(parent: Control, x: float, y: float, cle: String, valeur: V
 ## Haut de la carte (zone 0-1420 × 60-280) ; la courbe des notes reste dessous.
 static func carte(card: Control, app: Control, player: Dictionary, values: Dictionary) -> void:
 	var e := etat(app, player, values)
-	var refs := references(app)
+	var refs := {}
 	D.text(card, 24, 86, "RÔLE", 16, Charte.IVOIRE_2, 700, 200)
 	D.text(card, 230, 86, "POSTE", 16, Charte.IVOIRE_2, 700, 200)
-	D.text(card, 500, 86, "CAPACITÉ", 16, Charte.IVOIRE_2, 700, 200)
+	D.text(card, 544, 86, "NOTE", 16, Charte.IVOIRE_2, 700, 60, HORIZONTAL_ALIGNMENT_RIGHT)
+	D.text(card, 556, 86, "FAMILIARITÉ", 16, Charte.IVOIRE_2, 700, 110)
 	# Son rôle : meilleur rôle au poste principal (qualités connues seulement), marqué en permanence.
 	var principaux := Roster.primary_numbers(player)
 	var son_role := meilleur_role(values, principaux[0], refs) if not principaux.is_empty() and not values.is_empty() else ""
@@ -240,7 +242,9 @@ static func carte(card: Control, app: Control, player: Dictionary, values: Dicti
 			var pastille := D.rect(card, Rect2(398, y + 4, 92, 20), Charte.CREME, 10)
 			pastille.name = "PlayerRoleSien"
 			D.text(card, 444, y + 19, "SON RÔLE", 13, Charte.ENCRE, 800, 92, HORIZONTAL_ALIGNMENT_CENTER).mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_etoiles(card, Rect2(500, y + 4, 130, 20), item.etoiles, "PlayerRoleStars_" + str(r[0]))
+		# Note du rôle sur 100 (barème des attributs, la même pour tous les clubs) puis familiarité au poste du rôle.
+		Familiarite.poser_note(card, 500, y + 22, float(item.note), 21, 44, "PlayerRoleNote_" + str(r[0])).tooltip_text = "Note au rôle · %s" % r[2]
+		Familiarite.poser(card, 556, y + 20, Familiarite.niveau(player, int(item.numero)), 17, "PlayerRoleFamiliarite_" + str(r[0]))
 		y += 29
 	var r: Array = role(str(e.role))
 	if not r.is_empty():
@@ -262,7 +266,7 @@ static func _terrain(card: Control, app: Control, player: Dictionary, values: Di
 	var terrain := Carte.MiniTerrain.new()
 	terrain.name = "PlayerRolePitch"
 	var groupe: Array = app.model.get("squad", [])
-	for n in range(1, 16): terrain.etoiles.append(Liste.etoiles(player, n, Liste.reference_poste(groupe, n)))
+	for n in range(1, 16): terrain.couleurs.append(Familiarite.couleur(Familiarite.niveau(player, n)))
 	terrain.principaux = Roster.primary_numbers(player)
 	card.add_child(terrain)
 	D.place(terrain, zone)
@@ -273,4 +277,5 @@ static func _terrain(card: Control, app: Control, player: Dictionary, values: Di
 		var centre := zone.position + Vector2(places[i].x * zone.size.x, places[i].y * zone.size.y)
 		var b := _bouton(card, Rect2(centre - Vector2(rayon, rayon), Vector2(rayon, rayon) * 2), "PlayerRolePitchPost%d" % n, false,
 			func(): choisir(app, player, meilleur_role(values, n, refs), n))
-		b.tooltip_text = "%d · %s" % [n, POSTE[FAMILLE[i]]]
+		var note := Liste.note_poste(player, n)
+		b.tooltip_text = "%d · %s · %s · %s" % [n, POSTE[FAMILLE[i]], Familiarite.mot(Familiarite.niveau(player, n)), str(int(note)) if note >= 0.0 else "?"]

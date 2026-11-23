@@ -20,6 +20,7 @@ const Listes = preload("res://ui/immersive08/listes_joueurs.gd")
 const Bandeau = preload("res://ui/bandeau_filtres.gd")
 const Courbe = preload("res://ui/mini_courbe_survol.gd")
 const Etoiles = preload("res://ui/immersive08/liste_etoiles.gd")
+const Familiarite = preload("res://ui/familiarite_poste.gd")
 const ROW_HEIGHT := 34
 const GROUP_HEIGHT := 30
 const FIRST_ROWS := 26
@@ -688,11 +689,21 @@ func _colonnes(vue: int, etroit: bool, surveillance: bool) -> Array:
 			for c: Dictionary in sans:
 				if c.k == "statut": c.x = 1890.0; c.w = 280.0
 		colonnes = sans
-	# Poste choisi sur le terrain XV : la colonne POSTE devient « ★ CENTRE » (étoiles au poste + poste du joueur en petit).
+	# Poste choisi sur le terrain XV : la colonne POSTE devient « CENTRE 12 » (note au poste + familiarité + poste du
+	# joueur en petit) ; elle prend 110 unités à la colonne CONDITION quand elle la suit.
 	if _poste > 0:
 		for i in colonnes.size():
 			if colonnes[i].k == "poste":
-				colonnes[i] = (colonnes[i] as Dictionary).merged({"k": "etoiles", "t": "★ " + Etoiles.nom_poste(_poste).to_upper(), "s": "Étoiles"}, true)
+				var cond := -1
+				for j in range(i + 1, colonnes.size()):
+					if colonnes[j].k == "cond": cond = j; break
+				var extra := 110.0 if cond > 0 else 0.0
+				colonnes[i] = (colonnes[i] as Dictionary).merged({"k": "etoiles", "t": "%s %d" % [Etoiles.nom_poste(_poste).to_upper(), _poste], "s": "Étoiles", "w": float(colonnes[i].w) + extra}, true)
+				if extra > 0.0:
+					for j in range(i + 1, cond + 1):
+						colonnes[j] = (colonnes[j] as Dictionary).merged({"x": float(colonnes[j].x) + extra}, true)
+					colonnes[cond] = (colonnes[cond] as Dictionary).merged({"w": float(colonnes[cond].w) - extra}, true)
+				break
 	return colonnes
 
 func _tableau() -> void:
@@ -834,10 +845,10 @@ static func _compare_secondary(left: Array, right: Array) -> int:
 
 static func sort_value(player: Dictionary, key: String) -> Variant:
 	if key == "Étoiles":
-		# Étoiles au poste choisi, puis niveau à égalité d'étoiles ; inconnues en dernier.
-		var e := float(player.get("etoilesPoste", -1.0))
+		# Note au poste choisi, puis familiarité, puis niveau ; inconnues en dernier.
+		var e := float(player.get("notePoste", -1.0))
 		if e < 0.0: return null
-		return e * 1000.0 + (float(player.rating) if _known_number(player.get("rating")) else 0.0)
+		return e * 1000.0 + float(player.get("familiarite", 0)) * 100.0 + (float(player.rating) if _known_number(player.get("rating")) else 0.0)
 	if key in ["Niveau","Potentiel"]: return G.knowledge_sort_value(player,"rating" if key == "Niveau" else "potential",true)
 	if key == "Autres postes":
 		var order: Array[int] = []
@@ -899,13 +910,12 @@ static func ordered_players(source: Array, reading: Dictionary, season: int) -> 
 func _players() -> Array:
 	# Les notes de match (clubLife.matchNotes) accompagnent chaque joueur pour le tri.
 	var source: Array = []
-	# Étoiles relatives : notre meilleur joueur au poste choisi = 5 étoiles.
-	var reference := Etoiles.reference_poste(app.model.get("squad", []), _poste) if _poste > 0 else -1.0
 	for player: Variant in app.model.get("squad",[]):
 		if player is Dictionary:
 			var copie: Dictionary = player.duplicate()
 			copie.matchNotes = Notes.joueur(app.model,str(player.get("id","")))
-			copie.etoilesPoste = Etoiles.etoiles(player, _poste, reference)
+			copie.notePoste = Etoiles.note_poste(player, _poste)
+			copie.familiarite = Familiarite.niveau(player, _poste)
 			source.append(copie)
 	source = Listes.filtrer_groupe(source, str(state.get("poste_groupe", "")))
 	return ordered_players(source,state,int(app.model.meta.get("season",1)))
@@ -1137,15 +1147,14 @@ func _row(player:Dictionary,index:int) -> void:
 				poste.tooltip_text = "Poste principal · %s · %s" % ["·".join(principaux),primary_caption(player)] if not principaux.is_empty() else primary_caption(player)
 				if not secondary_numbers(player).is_empty(): poste.tooltip_text += "\nAutres postes · " + secondary_tooltip(player,app.model).replace("\n"," ; ")
 			"etoiles":
-				var valeur := float(player.get("etoilesPoste", -1.0))
-				if valeur < 0.0:
-					D.text(row, x, base, "—", 19, C.FAINT, 500, 40).name = "RosterEtoilesInconnues"
-				else:
-					var etoiles := CarteSurvol.poser_etoiles(row, Rect2(x, h / 2.0 - 12, 124, 24), valeur, "RosterEtoiles")
-					etoiles.tooltip_text = ("%s étoiles · %s" % [str(valeur), Etoiles.nom_poste(_poste)]).replace(".", ",")
-					etoiles.mouse_filter = Control.MOUSE_FILTER_PASS
+				# Note au poste (sur 100, barème des attributs) puis familiarité au poste (A pastille, B barres).
+				var note := Familiarite.poser_note(row, x, base, float(player.get("notePoste", -1.0)), 22, 36, "RosterNotePoste")
+				note.tooltip_text = "Note au poste · %s" % Etoiles.nom_poste(_poste)
+				var fam := int(player.get("familiarite", -1))
+				var lf := Familiarite.poser(row, x + 48, base, fam, 17, "RosterFamiliarite")
 				var court := Etoiles.abrege(player)
-				D.text(row, x + 136, base, court if not court.is_empty() else primary_caption(player), 17, C.MUTED, 600, maxf(20.0, l - 136), HORIZONTAL_ALIGNMENT_LEFT, true).name = "RosterPostePrincipal"
+				var xc := x + 48 + maxf(lf, Familiarite.largeur(Familiarite.CONFIRME, 17)) + 10
+				D.text(row, xc, base, court if not court.is_empty() else primary_caption(player), 17, C.MUTED, 600, maxf(20.0, l - (xc - x)), HORIZONTAL_ALIGNMENT_LEFT, true).name = "RosterPostePrincipal"
 			"autres":
 				var autres := D.text(row,x,base,secondary_caption(player),18,C.MUTED,600,l,HORIZONTAL_ALIGNMENT_LEFT,true)
 				autres.name = "RosterSecondaryPositions"
