@@ -20,6 +20,7 @@ const Pilotage = preload("res://ui/contextual/match_consignes.gd")
 const W = preload("res://ui/contextual/match_tableau_widgets.gd")
 const BanqueImages = preload("res://ui/banque_images.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
+const MenuJoueur = preload("res://ui/contextual/match_menu_joueur.gd")
 
 ## Taille de la maquette : tout est écrit pour 1600×900 et mis à l'échelle (k) de la fenêtre.
 const REF := Vector2(1600, 900)
@@ -123,6 +124,10 @@ func _process(_delta: float) -> void:
 	if not _attente.is_empty() and not bool(app.waiting):
 		var erreur := str(app.get("last_error"))
 		_message = erreur if not erreur.is_empty() else _succes
+		# Match du manager : le changement attend le prochain arrêt de jeu (file du moteur, match-arrets.cjs).
+		var meta: Variant = app.model.get("meta", {}) if app.get("model") is Dictionary else {}
+		var file: Variant = meta.get("fileArret") if meta is Dictionary else null
+		if erreur.is_empty() and file is Dictionary and bool(file.get("enAttente", false)): _message = "⧗ Au prochain arrêt de jeu : " + _succes.left(1).to_lower() + _succes.substr(1)
 		_message_teinte = C.ALERT if not erreur.is_empty() else C.MINT
 		_attente = ""
 		_cle = ""
@@ -955,7 +960,7 @@ func _terrain(centre: VBoxContainer) -> void:
 		var medaillon := Medaillon.new()
 		medaillon.name = "TeamPlayer%d" % (slot + 1)
 		medaillon.k = k
-		medaillon.numero = str(slot + 1)
+		medaillon.numero = str(MenuJoueur.numero_feuille(_live(), str(joueur.get("id", "")), slot + 1) if joueur is Dictionary else slot + 1)
 		medaillon.choisi = poste_choisi == slot
 		medaillon.cible = slot in cibles
 		medaillon.custom_minimum_size.x = px(128)
@@ -998,6 +1003,10 @@ func _terrain(centre: VBoxContainer) -> void:
 				puce_teinte = C.ALERT
 			elif bool(d.carton):
 				puce_texte = "Carton"
+				puce_teinte = C.IVORY
+			elif not str(MenuJoueur.texte_badge(_live(), id)[0]).is_empty():
+				# Changement en attente du prochain arrêt de jeu (sortie, rôle, consignes) : « ⧗ », discret.
+				puce_texte = str(MenuJoueur.texte_badge(_live(), id)[0])
 				puce_teinte = C.IVORY
 			elif not humeur.is_empty() and sens_humeur != 0:
 				puce_texte = str(humeur.label)
@@ -1189,7 +1198,7 @@ func _banc(p: Dictionary) -> void:
 		var eligible: bool = autorises.has(id) if poste_choisi >= 0 else tous.has(id)
 		var choisi := entrant_choisi == id
 		var conseille := not conseil.is_empty() and str(conseil.get("inId", "")) == id
-		grille.add_child(_tuile(joueur, 16 + n, eligible, choisi, conseille))
+		grille.add_child(_tuile(joueur, MenuJoueur.numero_feuille(_live(), id, 16 + n), eligible, choisi, conseille))
 	if not conseil.is_empty(): _carte_conseil(colonne, conseil)
 
 func _tuile(joueur: Dictionary, numero: int, eligible: bool, choisi: bool, conseille: bool) -> Button:

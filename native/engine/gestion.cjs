@@ -2,6 +2,9 @@
 // Runs inside the native VM. Only explicit commands reach these controllers.
 module.exports=function nativeGestion(command,p){
  const requireThat=(ok,message)=>{if(!ok)throw Error(message);};
+ // Match du manager en carrière Monde (pilotage) : remplacements, rôles et consignes passent par la file du prochain
+ // arrêt de jeu (native/engine/match-arrets.cjs), sans pause ; les autres matchs gardent leurs règles d'avant.
+ const file=()=>typeof CDMatchArrets!=='undefined'&&S.live&&CDMatchArrets.actif(S.live)?CDMatchArrets:null;
  if(command==='set_collective_focus'){requireThat(setCollectiveFocus(p.focus),'Préparation collective indisponible : séance appliquée, match en cours ou option inconnue.');return;}
  if(command==='set_opponent_level'){requireThat(!S.live&&S.phase!=='ended'&&Object.hasOwn(DIFFICULTIES,p.level),'Niveau adverse indisponible.');setDifficulty(p.level);return;}
  // « Confier aussi les prolongations au staff » (prolongations-staff.cjs) : réglable aussi entre deux saisons, mode Monde.
@@ -61,6 +64,7 @@ module.exports=function nativeGestion(command,p){
  if(command==='set_consignes'){
   // Consignes en direct (match-pilotage.js) : sans pause, effet dès la minute suivante.
   requireThat(S.live&&!S.live.finished&&typeof setConsigne==='function'&&S.live.pilotage,'Consignes indisponibles pour ce match.');
+  if(file())return {fileArret:file().ajouter(S.live,{type:'consigne',axe:p.axe,valeur:p.valeur})};
   // Plan de jeu (attaque, défense, pénalités) : comme avant, seulement match en pause.
   if(typeof CONSIGNES_PLAN!=='undefined'&&Object.hasOwn(CONSIGNES_PLAN,p.axe)){requireThat(S.live.paused&&!presentationPending(S.live),'Mets le match en pause pour changer le plan de jeu.');requireThat(setPlan(S.live,p.axe,p.valeur),'Réglage inconnu.');return;}
   requireThat(setConsigne(S.live,p.axe,p.valeur),'Consigne inconnue.');return;
@@ -73,6 +77,7 @@ module.exports=function nativeGestion(command,p){
  if(command==='set_role_direct'){
   // Rôles en direct (match-actions.js) : buteur, secours, lanceur, botteur parmi les joueurs sur le terrain.
   requireThat(S.live&&!S.live.finished&&typeof setPlayerRoleLive==='function','Rôles indisponibles pour ce match.');
+  if(file())return {fileArret:file().ajouter(S.live,{type:'responsabilite',role:p.role,id:p.id??null})};
   requireThat(setPlayerRoleLive(S.live,p.role,p.id??null),'Rôle inconnu ou joueur absent du terrain.');return;
  }
  if(command==='cri'){
@@ -157,13 +162,15 @@ module.exports=function nativeGestion(command,p){
  if(command==='precontract_offer'){requireThat(typeof preContratProposer==='function'&&S.phase!=='ended','Pré-contrats indisponibles.');return preContratProposer(p);}
  if(command==='next_season'){requireThat(p.confirmed===true&&S.phase==='ended'&&!S.live,'Confirme le passage à la saison suivante après la fin des compétitions.');advanceSeason();return;}
  if(command==='substitute'){
-  const l=S.live;requireThat(l&&l.paused&&!l.finished&&!presentationPending(l),'Remplacement indisponible : mets le match en pause.');
+  const l=S.live,A=file();requireThat(l&&!l.finished&&(A||l.paused&&!presentationPending(l)),'Remplacement indisponible : mets le match en pause.');
   const on=l.sheets[l.userSide].on,explicitSlot=Object.hasOwn(p,'slot');
   requireThat(explicitSlot||typeof p.outId==='string'&&p.outId.length>0,'Précise le poste du remplacement.');
   const slot=explicitSlot?p.slot:on.indexOf(p.outId);
   requireThat(Number.isInteger(slot)&&slot>=0&&slot<15,'Poste de remplacement invalide.');
   requireThat(!Object.hasOwn(p,'outId')||on[slot]===p.outId,'Le joueur de ce poste a changé.');
   requireThat(eligibleChanges(l,l.userSide,slot).some(x=>x.id===p.inId),'Changement non autorisé pour ces joueurs.');
+  // Entrée au prochain arrêt de jeu (tout de suite à la mi-temps).
+  if(A)return {fileArret:A.ajouter(l,{type:'remplacement',slot,inId:p.inId})};
   requireThat(makeSub(l,l.userSide,slot,p.inId),'Remplacement refusé.');syncMatchPresentation(l);return;
  }
  throw Error('Commande de gestion inconnue.');
