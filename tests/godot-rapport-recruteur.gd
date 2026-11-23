@@ -206,6 +206,7 @@ func agent() -> void:
 	for ton in ["tout_prix", "enthousiaste", "curieux"]: check(trouver("AgentTon_" + ton) != null, "Ton proposé : " + ton)
 	check(trouver("AgentRapportLigne") != null and trouver("AgentRapportLettre") != null, "Rapport du recruteur à gauche")
 	check(trouver("AgentRelationValeur") != null and trouver("AgentFamiliarite") != null and trouver("AgentNotePoste") != null, "Relation, familiarité, note au poste")
+	check(texte("AgentEffetRelationNeutre") == "Sans effet", "Relation neutre : pastille sans effet")
 	var b := trouver("AgentTon_tout_prix") as Button
 	check(b != null and not b.disabled, "Ton cliquable")
 	if b == null: return
@@ -216,7 +217,19 @@ func agent() -> void:
 	check(str(a.get("ton", "")) == "tout_prix" and int(a.get("essais", 0)) == 4 and int(a.get("relation", 0)) == 2, "Moteur : ton à tout prix (%s)" % JSON.stringify(a))
 	check(int(piste().get("salary", 0)) > avant, "Demande relevée (%d → %d)" % [avant, int(piste().get("salary", 0))])
 	check(trouver("DiscussionAgent") != null and trouver("AgentBulleDemande") != null and trouver("AgentEffets") != null, "Fenêtre rouverte : réponse chiffrée de l'agent")
+	# Relation +2 (Bonne) : elle pèse aussi (demande −2 %, minimum −2 %), pastilles sous la relation.
+	check(a.get("effet") is Dictionary and int(a.effet.get("demande", 0)) == -2 and int(a.effet.get("seuil", 0)) == -2 and int(a.effet.get("essais", 9)) == 0, "Moteur : effet de la relation Bonne (%s)" % JSON.stringify(a.get("effet")))
+	check(texte("AgentEffetRelationDemande") == "Demande −2 %" and texte("AgentEffetRelationSeuil") == "Minimum −2 %" and trouver("AgentEffetRelationEssais") == null, "Pastilles d'effet sous la relation (%s / %s)" % [texte("AgentEffetRelationDemande"), texte("AgentEffetRelationSeuil")])
 	check(await presser("AgentQuestion_role") and trouver("AgentBulleReponse") != null, "Deuxième tour : rôle attendu")
 	check(await presser("AgentFaireOffre") and page_kind() == "negociation", "Troisième tour : offre au joueur (%s)" % page_kind())
 	await settle(10)
-	check(trouver("NegoPropo_4") != null, "Offre : quatre propositions")
+	check(trouver("NegoPropo_4") != null and trouver("NegoPropo_5") == null, "Offre : quatre propositions")
+	check(texte("NegoRelationAgent") == "Bonne +2" and texte("NegoEffetRelationDemande") == "Demande −2 %", "Offre : relation et effet (%s · %s)" % [texte("NegoRelationAgent"), texte("NegoEffetRelationDemande")])
+
+## Texte du premier Label sous un nœud (pastilles).
+func texte(nom: String) -> String:
+	var n := trouver(nom)
+	if n == null: return ""
+	if n is Label: return (n as Label).text
+	for l in n.find_children("*", "Label", true, false): return (l as Label).text
+	return ""

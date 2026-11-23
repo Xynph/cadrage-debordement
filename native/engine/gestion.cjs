@@ -125,8 +125,8 @@ module.exports=function nativeGestion(command,p){
    // demande de salaire pendant la négociation (+5 % par cran au-dessus du rôle attendu, −4 % par cran en dessous).
    const refusRole=p.role&&typeof roleContratRefus==='function'?roleContratRefus(target,p.role):'';requireThat(!refusRole,refusRole);
    const negocier=()=>negotiateContract(p.playerId,kind,p.salary,p.years);
-   // Ton donné à l'agent (ton-agent.cjs, idée 24) : 4, 3 ou 2 propositions pour cette journée.
-   const negocierTon=()=>typeof tonAgentNegocier==='function'?tonAgentNegocier(p.playerId,kind,negocier):negocier();
+   // Ton donné à l’agent et relation (ton-agent.cjs, idée 24) : 1 à 5 propositions pour cette journée, relation selon l’issue.
+   const negocierTon=()=>typeof tonAgentNegocier==='function'?tonAgentNegocier(p.playerId,kind,negocier,p.salary):negocier();
    requireThat(p.role&&typeof roleContratAvec==='function'?roleContratAvec(target,p.role,negocierTon):negocierTon(),'Offre refusée : durée, joueur ou négociation indisponible.');
   const key=talkKey(p.playerId,kind),talk=S.economy.talks[key];
   if(talk.status==='ready')requireThat(confirmContract(key),'Signature devenue indisponible.');

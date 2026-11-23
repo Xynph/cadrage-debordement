@@ -102,7 +102,7 @@ static func donnees(ctx: Dictionary) -> Dictionary:
 	var finance: Dictionary = app.model.get("finance", {})
 	var saison: Variant = finance.get("budget")
 	var d := val.duplicate()
-	d.merge({"id":str(ctx.player.get("id", "")), "contre":contre, "retrait":retrait, "cible":cible, "tentatives":int(negociation.get("attempts", 0)), "essais":load("res://ui/contract_negotiation.gd").essais(ctx.quote),
+	d.merge({"id":str(ctx.player.get("id", "")), "contre":contre, "retrait":retrait, "cible":cible, "tentatives":load("res://ui/contract_negotiation.gd").tentatives(ctx.quote), "essais":load("res://ui/contract_negotiation.gd").essais(ctx.quote),
 		"contre_annees":int(negociation.get("years", 0)), "salaire":etat_salaire, "duree":etat_duree, "prime":etat_prime,
 		"attendu":attendu, "choisi":choisi, "role":etat_role, "requis":role_requis(ctx), "masse":masse, "ajout":ajout, "apres":masse + ajout,
 		"semaines":int(paie.weeks), "saison":saison if saison is Dictionary else {}, "guidee":offre_guidee(ctx),
@@ -453,18 +453,32 @@ static func _agent(toile: Control, parent: Control, ctx: Dictionary, d: Dictiona
 	var by := 122.0
 	var i := 0
 	for b: Array in bulles(d, ctx.quote):
-		if by > 700: break
+		if by > 620: break
 		by += _bulle(droite, 20, by, 368, str(b[0]), b[1], bool(b[2]), "NegoBulle_%d" % i)
 		i += 1
-	# Compteur des propositions en bas de la colonne : trois pastilles.
+	# Relation avec l'agent (idée 24) : cran et pastilles d'effet sur la négociation.
+	_relation_agent(droite, ctx.quote)
+	# Compteur des propositions en bas de la colonne : une pastille par proposition (1 à 5, ton et relation).
 	_titre(droite, 20, 790, "Propositions", Charte.IVOIRE_2, 16, 160)
-	# Ton donné à l'agent (idée 24) : 4, 3 ou 2 pastilles.
-	var pas := 64.0 if int(d.essais) <= 3 else 48.0
+	var pas := 64.0 if int(d.essais) <= 3 else 48.0 if int(d.essais) == 4 else 38.0
 	for n in int(d.essais):
 		var faite := n < int(d.tentatives)
 		var couleur := Pieces.ROUGE if d.retrait else Pieces.ORANGE if faite else Charte.IVOIRE_3
 		D.rect(droite, Rect2(196 + n * pas, 766, pas - 12, 34), Charte.PANNEAU_3.lerp(couleur, .3 if faite else 0.0), Charte.RAYON_PILULE, couleur).name = "NegoPropo_%d" % (n + 1)
 		D.text(droite, 196 + n * pas + (pas - 12) / 2.0, 790, str(n + 1), 18, couleur if faite else Charte.IVOIRE_2, 700, 40, HORIZONTAL_ALIGNMENT_CENTER)
+
+## Relation avec l'agent au-dessus du compteur : cran (mot + valeur) puis pastilles d'effet (discussion_agent.gd).
+static func _relation_agent(droite: Control, quote: Dictionary) -> void:
+	var a: Variant = quote.get("agent")
+	if not a is Dictionary: return
+	var Agent: Variant = load("res://ui/discussion_agent.gd")
+	var Pastilles: Variant = load("res://ui/immersive08/pastilles_club.gd")
+	var valeur := int(a.get("relation", 0))
+	var cran: Array = Agent.RELATIONS[Agent.cran(valeur)]
+	D.line(droite, Vector2(20, 664), Vector2(388, 664), Charte.FILET)
+	var mot := "%s %s" % [str(cran[0]), ("%+d" % valeur).replace("-", "−") if valeur != 0 else "0"]
+	Pastilles.poser(droite, Pastilles.pastille(mot, cran[1], "heart", "Relation avec l’agent", 16, "NegoRelationAgent"), 20, 676)
+	Pastilles.poser(droite, Agent.effets_relation(a.get("effet", {}) if a.get("effet") is Dictionary else {}, "Nego", 14), 20, 716)
 
 ## Ligne du contrat (grammaire de l'Effectif) : liseré et fond verts quand l'agent accepte.
 static func _ligne(parent: Node, zone: Rect2, libelle: String, etat: String, id: String) -> Panel:

@@ -72,7 +72,7 @@ static func donnees(app: Control, id: String) -> Dictionary:
 	if not ton.is_empty(): e.erase("envoi")
 	var roles: Variant = p.get("roles")
 	return {"p": p, "id": id, "r": load("res://ui/immersive08/rapport_recruteur.gd").lire(app, p), "ton": ton, "e": e,
-		"essais": int(a.get("essais", 3)), "relation": int(a.get("relation", 0)), "avant": int(a.get("avant", a.get("relation", 0))),
+		"essais": int(a.get("essais", 3)), "faites": int(a.get("faites", 0)), "effet": a.get("effet", {}) if a.get("effet") is Dictionary else {}, "relation": int(a.get("relation", 0)), "avant": int(a.get("avant", a.get("relation", 0))),
 		"libre": bool(a.get("libre", false)) and not e.has("envoi"), "ouvert": bool(p.get("available", false)),
 		"salaire": int(p.get("salary", 0)) if p.get("salary") is int or p.get("salary") is float else 0,
 		"attendu": str(roles.get("attendu", "")) if roles is Dictionary else "", "max": int(p.get("maxYears", 1)),
@@ -291,16 +291,17 @@ static func _gauche(app: Control, page: Control, f: Control, zone: Rect2, d: Dic
 	var demi := (l - 16) / 2.0
 	_raisons(f, x0, y, demi, "Pour", "check", Pastilles.VERT, r.pour, "AgentPour")
 	_raisons(f, x0 + demi + 16, y, demi, "Contre", "warning", Pastilles.ROUGE, r.contre, "AgentContre")
-	# Relation avec l'agent : 5 crans, mot, valeur ; puis demande et propositions de la journée.
-	y = zone.end.y - 190
+	# Relation avec l'agent : 5 crans, mot, valeur, pastilles d'effet ; puis demande et propositions de la journée.
+	y = zone.end.y - 226
 	_section(f, x0, y, "Relation avec l’agent", "heart", RELATIONS[cran(int(d.relation))][1])
 	_relation(f, Rect2(x0, y + 16, l, 64), d)
-	y += 112
+	Pastilles.poser(f, effets_relation(d.effet, "Agent"), x0, y + 70)
+	y += 148
 	var dx := x0
-	var ecart := 0 if str(d.ton).is_empty() else int(TONS[d.ton].ecart)
+	var ecart := (0 if str(d.ton).is_empty() else int(TONS[d.ton].ecart)) + int(d.effet.get("demande", 0))
 	dx += Pastilles.poser(f, Pastilles.tuile(G.salary(int(d.salaire)), "demande", Pastilles.ROUGE if ecart > 0 else Pastilles.VERT if ecart < 0 else Pastilles.BLEU, Charte.PANNEAU_3, 26, "AgentDemande", true, _offre(app, page, str(d.id))), dx, y) + 32
 	var essais := int(d.essais)
-	var faites := int(d.nego.get("attempts", 0))
+	var faites := int(d.faites)
 	Pastilles.poser(f, _propositions(essais, faites), dx, y + 4)
 
 static func _relation(f: Control, zone: Rect2, d: Dictionary) -> void:
@@ -321,6 +322,25 @@ static func _relation(f: Control, zone: Rect2, d: Dictionary) -> void:
 	chiffre.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 	chiffre.tooltip_text = "Relation avec l’agent (−10 à +10)"
 	chiffre.mouse_filter = Control.MOUSE_FILTER_PASS
+
+## Effet de la relation sur la négociation (moteur : market[].agent.effet) : demande, propositions, minimum accepté.
+## Neutre : une pastille « Sans effet ». Couleur : vert si ça nous aide, rouge sinon.
+static func effets_relation(effet: Dictionary, prefixe: String, taille := 15) -> Control:
+	var ligne := C.h(8)
+	ligne.name = prefixe + "EffetsRelation"
+	var demande := int(effet.get("demande", 0))
+	var essais := int(effet.get("essais", 0))
+	var seuil := int(effet.get("seuil", 0))
+	if demande == 0 and essais == 0 and seuil == 0:
+		ligne.add_child(Pastilles.pastille("Sans effet", Charte.IVOIRE_2, "people", "Relation sans effet sur la négociation", taille, prefixe + "EffetRelationNeutre"))
+		return ligne
+	if demande != 0:
+		ligne.add_child(Pastilles.pastille(("Demande %+d %%" % demande).replace("-", "−"), Pastilles.ROUGE if demande > 0 else Pastilles.VERT, "money", "Demande de salaire", taille, prefixe + "EffetRelationDemande"))
+	if essais != 0:
+		ligne.add_child(Pastilles.pastille(("%+d proposition" % essais).replace("-", "−"), Pastilles.VERT if essais > 0 else Pastilles.ROUGE, "renew", "Propositions avant la rupture", taille, prefixe + "EffetRelationEssais"))
+	if seuil != 0:
+		ligne.add_child(Pastilles.pastille(("Minimum %+d %%" % seuil).replace("-", "−"), Pastilles.ROUGE if seuil > 0 else Pastilles.VERT, "check", "Salaire minimum accepté", taille, prefixe + "EffetRelationSeuil"))
+	return ligne
 
 ## Propositions de la journée : une pastille par essai (faites en orange).
 static func _propositions(essais: int, faites: int) -> Control:

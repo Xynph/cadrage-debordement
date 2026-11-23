@@ -163,7 +163,7 @@ static func _essais(ctx: Dictionary) -> int:
 static func _fenetre_discussion(toile: Control, ctx: Dictionary, val: Dictionary) -> void:
 	var negociation: Dictionary = ctx.negotiation
 	var contre := str(negociation.get("status", "")) == "counter"
-	var tentatives := int(negociation.get("attempts", 0))
+	var tentatives: int = load("res://ui/contract_negotiation.gd").tentatives(ctx.quote) if ctx.get("quote") is Dictionary else int(negociation.get("attempts", 0))
 	_fenetre(toile, "OffreFenetreDiscussion", "La discussion", [
 		["%d / %d" % [mini(_essais(ctx), tentatives + 1), _essais(ctx)], "Proposition", COULEUR_SALAIRE, "renew"],
 		[G.salary(negociation.get("salary")) if contre else "—", "Contre-offre", Pieces.ORANGE, "mail"],
