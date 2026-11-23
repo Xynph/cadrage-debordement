@@ -5,7 +5,7 @@ extends RefCounted
 ##    en prolongation) ;
 ##  - centre : 1 · Promesses (rôle promis Titulaire / Rotation / Espoir / Appoint, OBLIGATOIRE avant le contrat), puis
 ##    2 · Contrat, une ligne par clause ; chaque ligne acceptée par l'agent passe au vert ;
-##  - droite : l'agent du joueur (anonyme : « Agent de <joueur> »), ses réponses en bulles chiffrées.
+##  - droite : l'agent nommé du joueur (portrait, nom cliquable → sa petite fenêtre, agence ; ui/agent_joueur.gd), ses réponses en bulles.
 ## Clic = appliqué : un rôle cliqué est promis, les champs règlent la proposition ; seul le bouton de signature (fenêtre
 ## de l'offre ou pied de la page Recrutement) envoie, en un clic (exception tolérée : signature d'un contrat).
 ## Données moteur : quote.roles {attendu, liste[{role, salary, refus}]} (native/engine/role-contrat.cjs) : demande et refus
@@ -25,6 +25,7 @@ const P = preload("res://ui/immersive08/projection.gd")
 const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
 const Role = preload("res://ui/role_contrat.gd")
 const Guidee = preload("res://ui/offre_guidee.gd")
+const AgentJoueur = preload("res://ui/agent_joueur.gd")
 const LARGEUR := 1500.0
 const HAUTEUR := 860.0
 ## Repères du temps de jeu promis (idée 16, native/engine/role-contrat.cjs SEUILS) : minutes par match.
@@ -102,7 +103,7 @@ static func donnees(ctx: Dictionary) -> Dictionary:
 	var finance: Dictionary = app.model.get("finance", {})
 	var saison: Variant = finance.get("budget")
 	var d := val.duplicate()
-	d.merge({"id":str(ctx.player.get("id", "")), "contre":contre, "retrait":retrait, "cible":cible, "tentatives":int(negociation.get("attempts", 0)),
+	d.merge({"id":str(ctx.player.get("id", "")), "contre":contre, "retrait":retrait, "cible":cible, "tentatives":load("res://ui/contract_negotiation.gd").tentatives(ctx.quote),
 		"contre_annees":int(negociation.get("years", 0)), "salaire":etat_salaire, "duree":etat_duree, "prime":etat_prime,
 		"attendu":attendu, "choisi":choisi, "role":etat_role, "requis":role_requis(ctx), "masse":masse, "ajout":ajout, "apres":masse + ajout,
 		"semaines":int(paie.weeks), "saison":saison if saison is Dictionary else {}, "guidee":offre_guidee(ctx),
@@ -153,10 +154,16 @@ static func bulles(d: Dictionary, quote: Dictionary) -> Array:
 		if str(d.attendu).is_empty() or rang == 0: liste.append(["Ça lui va.", Pieces.VERT, true])
 		elif rang < 0: liste.append(["Il signe des deux mains." + (" " + ecart if not ecart.is_empty() else ""), Pieces.VERT, true])
 		else: liste.append(["Il espérait mieux." + (" " + ecart if not ecart.is_empty() else ""), Pieces.ORANGE, true])
-	liste.append(["Il demande %s." % G.salary(d.demande), Charte.IVOIRE, true])
+	liste.append(["Mon client demande %s." % G.salary(d.demande), Charte.IVOIRE, true])
 	if int(d.min) != int(d.max): liste.append(["%d à %d saisons." % [int(d.min), int(d.max)], Charte.IVOIRE, true])
 	else: liste.append(["%d saison." % int(d.min), Charte.IVOIRE, true])
-	if d.contre: liste.append(["Pas sous %s." % G.salary(d.cible), Pieces.ORANGE, true])
+	if d.contre:
+		liste.append(["Pas sous %s." % G.salary(d.cible), Pieces.ORANGE, true])
+		# Agent d'une recrue : sa réplique se durcit avec son humeur (seul indice de sa patience cachée).
+		var agent: Variant = quote.get("agent")
+		if agent is Dictionary:
+			var h: Array = load("res://ui/discussion_agent.gd").HUMEURS.get(str(agent.get("humeur", "calme")), [])
+			if not h.is_empty(): liste.append([str(h[3]), h[1], true])
 	liste.append([G.salary(d.propose) + " · %d an%s" % [int(d.annees), "s" if int(d.annees) > 1 else ""], Pieces.BLEU, false])
 	if str(d.salaire) == "ok" and str(d.prime) == "ok": liste.append(["Marché conclu si tu signes.", Pieces.VERT, true])
 	elif str(d.salaire) != "ok": liste.append(["Trop bas.", couleur_etat(str(d.salaire)), true])
@@ -282,8 +289,8 @@ static func _identite(toile: Control, parent: Node, ctx: Dictionary, zone: Rect2
 	nom.name = "OffreNom"
 	D.fit_title(nom, largeur, 60, 2, 18)
 	D.text(parent, x, zone.position.y + 82, "%s · %s ans" % [str(joueur.get("pos", "—")), G.n(joueur.get("age", "—"))], 17, Charte.IVOIRE_2, 600, largeur, HORIZONTAL_ALIGNMENT_LEFT, true).name = "OffreDetail"
-	var tentative := mini(3, int(d.tentatives) + 1)
-	Pieces.pastille(parent, x, zone.position.y + 100, "Discussion close" if d.retrait else "Proposition %d/3" % tentative, "lock" if d.retrait else "renew", "OffreEtape", "",
+	var tentative := int(d.tentatives) + 1
+	Pieces.pastille(parent, x, zone.position.y + 100, "Discussion close" if d.retrait else "Proposition %d" % tentative, "lock" if d.retrait else "renew", "OffreEtape", "",
 		Pieces.ROUGE if d.retrait else Pieces.BLEU, Charte.PANNEAU_3, func(): Offre._fenetre_discussion(toile, ctx, d))
 	var role_actuel := Role.role(joueur) if ctx.get("prolongation", false) else ""
 	if not role_actuel.is_empty():
@@ -445,24 +452,50 @@ static func _pilules(ligne: Control, hauteur: float, pilules: Array) -> void:
 static func _agent(toile: Control, parent: Control, ctx: Dictionary, d: Dictionary) -> void:
 	var droite := D.rect(parent, Rect2(1092, 0, 408, 842), Charte.PANNEAU_2, Charte.RAYON_CARTE)
 	droite.name = "NegoAgent"
-	_avatar_agent(droite, 20, 20, 64)
-	_titre(droite, 100, 50, "Agent", Pieces.BLEU, 22, 280)
-	D.text(droite, 100, 78, "de " + str(ctx.player.get("name", "")), 18, Charte.IVOIRE_2, 600, 290, HORIZONTAL_ALIGNMENT_LEFT, true).name = "NegoAgentNom"
-	Pieces.rendre_cliquable(droite.get_node("NegoAgentAvatar"), Vector2(64, 64), func(): Offre._fenetre_discussion(toile, ctx, d), "NegoAgentLien", "Agent de " + str(ctx.player.get("name", "")), "", Charte.RAYON_PILULE)
+	# Agent nommé (ui/agent_joueur.gd) : son portrait d'adulte (clic = la discussion), son nom (clic = sa petite fenêtre),
+	# son agence ; sans annuaire projeté, l'ancien avatar « Agent de <joueur> ».
+	var pid := str(ctx.player.get("id", ""))
+	var ag := AgentJoueur.de_joueur(ctx.app, pid)
+	if ag.is_empty():
+		_avatar_agent(droite, 20, 20, 64)
+		_titre(droite, 100, 50, "Agent", Pieces.BLEU, 22, 280)
+		D.text(droite, 100, 78, "de " + str(ctx.player.get("name", "")), 18, Charte.IVOIRE_2, 600, 290, HORIZONTAL_ALIGNMENT_LEFT, true).name = "NegoAgentNom"
+	else:
+		AgentJoueur.poser_portrait(droite, Rect2(20, 20, 64, 64), ag, "NegoAgentAvatar", Pieces.BLEU)
+		AgentJoueur.lien_nom(ctx.app, toile, droite, Rect2(100, 16, 290, 40), ag, 22, "NegoAgentNom", Pieces.BLEU, pid, AgentJoueur.ligne_de(ctx.player, "effectif" if ctx.get("prolongation", false) else "marche"))
+		D.text(droite, 100, 80, str(ag.get("agence", "")), 16, Charte.IVOIRE_2, 600, 290, HORIZONTAL_ALIGNMENT_LEFT, true).name = "NegoAgentAgence"
+	Pieces.rendre_cliquable(droite.get_node("NegoAgentAvatar"), Vector2(64, 64), func(): Offre._fenetre_discussion(toile, ctx, d), "NegoAgentLien", str(ag.get("nom", "Agent de " + str(ctx.player.get("name", "")))), "", Charte.RAYON_PILULE)
 	D.line(droite, Vector2(20, 104), Vector2(388, 104), Charte.FILET)
 	var by := 122.0
 	var i := 0
 	for b: Array in bulles(d, ctx.quote):
-		if by > 700: break
+		if by > 620: break
 		by += _bulle(droite, 20, by, 368, str(b[0]), b[1], bool(b[2]), "NegoBulle_%d" % i)
 		i += 1
-	# Compteur des propositions en bas de la colonne : trois pastilles.
+	# Agent d'une recrue (idée 24) : relation (cran), caractère (« ? » tant qu'inconnu) et humeur ; sa patience reste cachée.
+	if ctx.quote.get("agent") is Dictionary:
+		_relation_agent(droite, ctx.quote)
+		return
+	# Prolongation : trois propositions, une pastille par proposition en bas de la colonne.
 	_titre(droite, 20, 790, "Propositions", Charte.IVOIRE_2, 16, 160)
 	for n in 3:
 		var faite := n < int(d.tentatives)
 		var couleur := Pieces.ROUGE if d.retrait else Pieces.ORANGE if faite else Charte.IVOIRE_3
 		D.rect(droite, Rect2(196 + n * 64, 766, 52, 34), Charte.PANNEAU_3.lerp(couleur, .3 if faite else 0.0), Charte.RAYON_PILULE, couleur).name = "NegoPropo_%d" % (n + 1)
 		D.text(droite, 196 + n * 64 + 26, 790, str(n + 1), 18, couleur if faite else Charte.IVOIRE_2, 700, 40, HORIZONTAL_ALIGNMENT_CENTER)
+
+## Agent d'une recrue en bas de la colonne : relation (mot du cran), caractère et humeur (discussion_agent.gd), sans chiffre.
+static func _relation_agent(droite: Control, quote: Dictionary) -> void:
+	var a: Dictionary = quote.get("agent")
+	var Agent: Variant = load("res://ui/discussion_agent.gd")
+	var Pastilles: Variant = load("res://ui/immersive08/pastilles_club.gd")
+	var cran: Array = Agent.RELATIONS[clampi(int(a.get("cran", 2)), 0, 4)]
+	var humeur := "rompu" if str((quote.get("negotiation", {}) if quote.get("negotiation") is Dictionary else {}).get("status", "")) == "withdrawn" else str(a.get("humeur", "calme"))
+	D.line(droite, Vector2(20, 664), Vector2(388, 664), Charte.FILET)
+	Pastilles.poser(droite, Pastilles.pastille(str(cran[0]), cran[1], "heart", "Relation avec l’agent", 28, "NegoRelationAgent"), 20, 674)
+	Pastilles.poser(droite, Agent.caractere(str(a.get("caractere", "")), "Nego", 28), 20, 724)
+	_titre(droite, 20, 806, "Humeur", Charte.IVOIRE_2, 16, 160)
+	Pastilles.poser(droite, Agent.humeur(humeur, "Nego", 28), 150, 780)
 
 ## Ligne du contrat (grammaire de l'Effectif) : liseré et fond verts quand l'agent accepte.
 static func _ligne(parent: Node, zone: Rect2, libelle: String, etat: String, id: String) -> Panel:
@@ -596,8 +629,13 @@ static func ouvrir_disponibilite(page: Control, app: Control, joueur: Dictionary
 	panneau.add_child(contenu)
 	D.place(contenu, Rect2(0, 0, 900, hauteur))
 	var phrase := phrase_disponibilite(joueur)
-	_avatar_agent(contenu, 28, 84, 64)
-	_titre(contenu, 108, 108, "Agent de " + str(joueur.get("name", "")), Pieces.BLEU, 18, 600)
+	var ag := AgentJoueur.de_joueur(app, str(joueur.get("id", "")))
+	if ag.is_empty():
+		_avatar_agent(contenu, 28, 84, 64)
+		_titre(contenu, 108, 108, "Agent de " + str(joueur.get("name", "")), Pieces.BLEU, 18, 600)
+	else:
+		AgentJoueur.poser_portrait(contenu, Rect2(28, 84, 64, 64), ag, "NegoAgentAvatar", Pieces.BLEU)
+		AgentJoueur.lien_nom(app, page, contenu, Rect2(108, 76, 600, 40), ag, 20, "NegoDispoAgentNom", Pieces.BLEU, str(joueur.get("id", "")))
 	_bulle(contenu, 108, 122, 760, str(phrase[0]), phrase[1], true, "NegoDispoPhrase")
 	if vue == "clubs":
 		_dispo_clubs(page, app, joueur, contenu, prets, clubs)
