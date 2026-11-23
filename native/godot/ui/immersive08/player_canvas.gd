@@ -29,6 +29,8 @@ const FicheCharge = preload("res://ui/immersive08/fiche_charge.gd")
 const FicheRoles = preload("res://ui/immersive08/fiche_roles.gd")
 const TempsJeu = preload("res://ui/immersive08/fiche_temps_jeu.gd")
 const Progression = preload("res://ui/immersive08/progression_fiche.gd")
+const AgentJoueur = preload("res://ui/agent_joueur.gd")
+const Pastilles = preload("res://ui/immersive08/pastilles_club.gd")
 
 ## Onglets : [index d'état, libellé]. L'index 1 (ancien onglet Attributs) n'existe plus : ses 36 attributs sont en
 ## première page ; un état resté sur 1 ouvre la Vue d'ensemble.
@@ -256,6 +258,28 @@ static func _bandeau(page: Control, app: Control, player: Dictionary, source: St
 		identite.move_child(age,origine.get_index()+2)
 		var pays := origine as Label
 		pays.add_theme_color_override("font_color",Charte.IVOIRE)
+	# Agent du joueur (agents nommés, ui/agent_joueur.gd) : « Agent : <nom> », clic = sa petite fenêtre.
+	var agent := AgentJoueur.de_joueur(app, str(player.get("id","")))
+	if not agent.is_empty():
+		identite.add_child(C.label("·",22,Charte.IVOIRE_2))
+		var lien := Button.new()
+		lien.name = "PlayerAgentLink"
+		lien.text = "Agent : " + str(agent.get("nom",""))
+		lien.tooltip_text = str(agent.get("agence",""))
+		lien.flat = true
+		lien.focus_mode = Control.FOCUS_ALL
+		lien.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		lien.add_theme_font_override("font",C.font(700))
+		lien.add_theme_font_size_override("font_size",maxi(12,C.px(22)))
+		for etat in ["font_color","font_focus_color"]: lien.add_theme_color_override(etat,Pastilles.BLEU)
+		lien.add_theme_color_override("font_hover_color",Charte.IVOIRE)
+		var plat := C.box(Color.TRANSPARENT,Color.TRANSPARENT,0,0)
+		for etat in ["normal","hover","pressed","focus"]: lien.add_theme_stylebox_override(etat,plat)
+		var ag := str(agent.get("id",""))
+		var pid := str(player.get("id",""))
+		var ligne := AgentJoueur.ligne_de(player,"effectif" if source == "squad" else "marche" if source == "market" else "club")
+		lien.pressed.connect(func(): AgentJoueur.ouvrir(app,page,ag,pid,ligne))
+		identite.add_child(lien)
 	hero.add_child(identite)
 	D.place(identite,Rect2(300,106,1220,34))
 	var autres := Roster.secondary_tooltip(player,app.model)

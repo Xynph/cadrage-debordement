@@ -1057,6 +1057,7 @@ func _cout() -> void:
 	var liens: Array = []
 	if observable: liens.append(["Observer →" if Observation.caption(player) == "Observer" else Observation.caption(player) + " →", "ObserveRecruitment", func(): _confirmer_observation(player), not Observation.reason(app, player).is_empty()])
 	liens.append(["Rapport du recruteur →", "OpenRecruiterReport", func(): Pages.ouvrir(app, "recruteur", {"player_id": player_id}), false])
+	liens.append(["Parler à l’agent →", "OpenAgentTalk", func(): Pages.ouvrir(app, "recruteur", {"player_id": player_id, "agent": true}), false])
 	liens.append(["Ouvrir la fiche →", "OpenRecruitmentPlayer", func(): app.navigation_controller.open_entity({"kind":"market", "id":player_id}), false])
 	var context_suivi: Variant = app.model.get("clubLife", {}).get("managerCareer", {}).get("context")
 	var peut_suivre: bool = not app.waiting and app._live().is_empty() and app.model.meta.get("phase", "") != "ended" and context_suivi is Dictionary

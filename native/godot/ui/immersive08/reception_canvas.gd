@@ -22,6 +22,8 @@ const Bandeau = preload("res://ui/bandeau_filtres.gd")
 const Messages = preload("res://ui/immersive08/reception_messages.gd")
 const CompteRendu = preload("res://ui/immersive08/compte_rendu_carte.gd")
 const Analyste = preload("res://ui/immersive08/analyste_match.gd")
+const AgentJoueur = preload("res://ui/agent_joueur.gd")
+const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
 
 const CATEGORIES = ["Tous", "Staff", "Médical", "Conseil", "Transferts", "Compétitions"]
 const ICONS = {"Staff":"train", "Médical":"heart", "Conseil":"shield", "Transferts":"search", "Formation":"school", "Compétitions":"trophy", "Club":"mail", "Météo":"cloud"}
@@ -922,6 +924,18 @@ static func _sender_badge(parent: Control, app: Control, message: Dictionary, ar
 	tile.tooltip_text = _sender(app, message)
 	_icon(tile,SERVICE_ICONS.get(service, "home"),Rect2(area.size.x*.2,area.size.y*.2,area.size.x*.6,area.size.y*.6),color)
 
+## Agent nommé qui signe un courrier « Un agent de joueurs » (moteur : club_mail.agent) ; vide sinon.
+static func _mail_agent(app: Control, message: Dictionary) -> Dictionary:
+	var mail: Variant = message.get("club_mail")
+	if not mail is Dictionary or str(mail.get("agent", "")).is_empty(): return {}
+	return AgentJoueur.agent(app, str(mail.agent))
+
+## Toile de la Réception (ImmersiveInbox) qui porte la petite fenêtre de l'agent.
+static func _inbox_page(noeud: Node) -> Control:
+	var n := noeud
+	while n != null and str(n.name) != "ImmersiveInbox": n = n.get_parent()
+	return (n if n != null else noeud) as Control
+
 ## Expéditeur du courrier, pour la liste et l'en-tête du mail ouvert.
 static func _sender(app: Control, message: Dictionary) -> String:
 	if message.has("club_mail"): return str(message.club_mail.get("expediteur", SENDERS.Club))
@@ -1131,14 +1145,28 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 	var service := _service(message)
 	var sender := service if not _press_mail(message).is_empty() else _sender(app,message)
 	var head_width := _w-2*PAD-tools_width-20
+	# Agent de joueurs nommé (ui/agent_joueur.gd) : son portrait d'adulte, son nom cliquable (sa petite fenêtre), son agence.
+	var agent := _mail_agent(app, message)
+	var hx := PAD
+	if not agent.is_empty():
+		var joueur := str(message.get("club_mail", {}).get("joueur", ""))
+		var ouvrir_agent := func(): AgentJoueur.ouvrir(app, _inbox_page(card), str(agent.id), joueur)
+		var portrait := AgentJoueur.poser_portrait(card, Rect2(PAD, 20, 84, 84), agent, "InboxAgentPortrait", AgentJoueur.RANGS.get(str(agent.get("rang", "petite")), C.GOLD))
+		Pieces.rendre_cliquable(portrait, Vector2(84, 84), ouvrir_agent, "InboxAgentPortraitLien", str(agent.get("nom", "")), str(agent.get("agence", "")), 8)
+		hx = PAD + 100
+		head_width -= 100
 	if sender == service:
-		D.text(card,PAD,56,sender,23,C.IVORY,700,head_width).name = "InboxSenderName"
+		D.text(card,hx,56,sender,23,C.IVORY,700,head_width).name = "InboxSenderName"
 	else:
 		var caps := service.to_upper()
 		var caps_width := C.font(700).get_string_size(caps, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x + 12.0
-		D.text(card,PAD,56,caps,16,C.MUTED,700,caps_width)
-		D.text(card,PAD+caps_width,56,sender,23,C.IVORY,700,head_width-caps_width).name = "InboxSenderName"
-	D.text(card,PAD,86,when,19,C.MUTED,500,head_width)
+		D.text(card,hx,56,caps,16,C.MUTED,700,caps_width)
+		var nom := D.text(card,hx+caps_width,56,sender,23,C.IVORY,700,head_width-caps_width)
+		nom.name = "InboxSenderName"
+		if not agent.is_empty():
+			var largeur_nom := C.font(700).get_string_size(sender, HORIZONTAL_ALIGNMENT_LEFT, -1, 23).x + 8.0
+			Pieces.rendre_cliquable(nom, Vector2(minf(largeur_nom, head_width - caps_width), 32), func(): AgentJoueur.ouvrir(app, _inbox_page(card), str(agent.id), str(message.get("club_mail", {}).get("joueur", ""))), "InboxAgentNomLien", sender, str(agent.get("agence", "")), 6)
+	D.text(card,hx,86,when + ("" if agent.is_empty() else "  ·  " + str(agent.get("agence", ""))),19,C.MUTED,500,head_width)
 	# Une coupure de presse n'a pas de lettre : l'échéance s'écrit alors dans l'en-tête (mot « À FAIRE », jamais la couleur seule).
 	var press_due := _deadline(app, message, true)
 	if not _press_mail(message).is_empty() and not press_due.is_empty():

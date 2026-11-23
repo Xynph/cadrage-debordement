@@ -151,7 +151,11 @@ domains.discussionJoueur=require('./discussion-joueur.cjs');
 domains.clausesContrat=require('./clauses-contrat.cjs');
 // Recherche ciblée du recruteur (maillot, rôle, critères, priorité, recruteurs) : native/engine/recherche-ciblee.cjs.
 domains.rechercheCiblee=require('./recherche-ciblee.cjs');
+// Agents de joueurs nommés : annuaire tiré par la graine, un agent par joueur (native/engine/agents-joueurs.cjs).
+domains.agentsJoueurs=require('./agents-joueurs.cjs');
+// Discussion avec l'agent : ton (demande, propositions) et relation gardée (native/engine/ton-agent.cjs).
+domains.tonAgent=require('./ton-agent.cjs');
 const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files,...domains.clubSheet.files,...domains.pressPromises.files,...domains.clubMail.files,...domains.multiplex.files,...domains.avantMatch.files,...domains.doublons.files,...domains.matchIncidents.files,...domains.weekProgram.files])]);
-const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands,...domains.clubMail.commands,...domains.multiplex.commands,...domains.avantMatch.commands,...domains.doublons.commands,...domains.matchIncidents.commands,...domains.weekProgram.commands,...domains.familiarite.commands]);
+const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands,...domains.clubMail.commands,...domains.multiplex.commands,...domains.avantMatch.commands,...domains.doublons.commands,...domains.matchIncidents.commands,...domains.weekProgram.commands,...domains.familiarite.commands,...domains.tonAgent.commands]);
 if(new Set(allCommands).size!==allCommands.length)throw Error('Commandes natives de domaine en double.');
 module.exports={files:allFiles,commands:allCommands,bootstrap};
