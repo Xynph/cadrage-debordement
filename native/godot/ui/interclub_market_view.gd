@@ -8,6 +8,7 @@ const EnPlace = preload("res://ui/confirmation_en_place.gd")
 const Sales = preload("res://ui/player_sales_view.gd")
 const Listes = preload("res://ui/immersive08/listes_joueurs.gd")
 const C = preload("res://ui/immersive08/components.gd")
+const Guidee = preload("res://ui/offre_guidee.gd")
 var app: Control
 var rows: VBoxContainer
 var query := ""
@@ -32,6 +33,7 @@ var pre_button: Button
 var page := 0
 const PAGE_SIZE := 12
 var _noms: Dictionary = {}
+var guidee: Control
 
 static func entry(owner_app: Control, parent: Container) -> Button:
 	var button := G.button("NÉGOCIER ENTRE CLUBS →",func(): open(owner_app))
@@ -137,8 +139,15 @@ func _redraw() -> void:
 		var card := G.card(rows)
 		_profile_heading(card, person)
 		_forme(card, person)
-		card.add_child(G.wrap("Indemnité %s · salaire proposé %s · échéance %s conservée" % [G.euros(person.fee),G.salary(person.salary),G.season_label(person.contractEnd)],13))
+		var ligne := "Indemnité %s · salaire proposé %s · échéance %s conservée" % [G.euros(person.fee),G.salary(person.salary),G.season_label(person.contractEnd)]
+		if int(person.get("clause", 0)) > 0: ligne += " · clause libératoire %s" % G.euros(person.clause)
+		card.add_child(G.wrap(ligne,13))
 		if not str(person.reason).is_empty(): card.add_child(G.wrap(Copy.notice("interclub", person.reason),13,G.ALERT))
+		# Club qui ne veut pas le vendre : seule sa clause libératoire le libère (clauses-contrat.cjs).
+		if person.get("clauseRequise", false):
+			var garde := G.wrap("%s · clause %s" % [Copy.notice("interclub", str(person.get("garde", ""))), G.euros(person.clause)],13,G.ALERT)
+			garde.name = "InterclubClauseRequise"
+			card.add_child(garde)
 		var offer := G.button("PROPOSER L’ACCORD",func(): _offer(person))
 		offer.name = "InterclubOffer"
 		offer.set_meta("player_id",str(person.id))
@@ -201,7 +210,7 @@ func _precontract_line(card: Container, person: Dictionary) -> void:
 		signed.name = "InterclubPreContractStatus"
 		card.add_child(signed)
 	elif pre.get("available", false):
-		var button := G.button("PROPOSER UN PRÉ-CONTRAT", func(): _precontract(person))
+		var button := G.button("SIGNER À L’AVANCE · PRÉ-CONTRAT", func(): _precontract(person))
 		button.name = "InterclubPreContract"
 		button.set_meta("player_id", str(person.id))
 		button.disabled = app.waiting
@@ -300,7 +309,8 @@ func _confirm_precontract() -> void:
 func _offer(person: Dictionary) -> void:
 	if app.waiting: return
 	selected_person = person.duplicate(true)
-	offer_fee = int(person.fee)
+	# Prix d'ouverture conseillé par le recruteur (sous la demande ; clause si son club ne le vend pas autrement).
+	offer_fee = int(person.clause) if person.get("clauseRequise", false) else floori(int(person.fee) * .9 / 1000.0) * 1000
 	offer_salary = int(person.salary)
 	negotiation = {}
 	_draw_negotiation()
@@ -312,7 +322,6 @@ func _draw_negotiation() -> void:
 	search_field.editable = false
 	var person := selected_person
 	_profile_heading(rows, person)
-	rows.add_child(G.wrap("La consultation ne réserve pas le joueur. La clôture peut attribuer le joueur à un autre club ; tu verras le gagnant pressenti avant de confirmer.",13))
 	var fields := G.h(12)
 	rows.add_child(fields)
 	for item in [["Indemnité (€)","fee",offer_fee,1000000000,1000],["Salaire "+G.salary_period(),"salary",offer_salary,100000,100]]:
@@ -333,7 +342,9 @@ func _draw_negotiation() -> void:
 			salary_input = input
 			preload("res://ui/salary_display.gd").bind_input(input,offer_salary,1000,100000)
 			input.value_changed.connect(func(_value: float): offer_salary=preload("res://ui/salary_display.gd").input_weekly(input); _invalidate_quote())
-	local_message = G.wrap("Propose tes conditions pour recevoir les réponses et découvrir les offres concurrentes.",13)
+	# Offre guidée (choix B de Léo, 23/11/2026) : conseils du recruteur posés sur l'indemnité et le salaire, coût par saison.
+	_guidee()
+	local_message = G.wrap("",13)
 	local_message.name = "InterclubNegotiationMessage"
 	rows.add_child(local_message)
 	budget_note = G.wrap("",13)
@@ -389,7 +400,21 @@ func _ask_extension() -> void:
 		extension_button.disabled = true
 		local_message.text = "Demande transmise au conseil…"
 	Sales.lisible(Budget.confirm_extension(app, rows, Budget.data(app.model), amount, envoyee, extension_button))
+## Bande du recruteur sous les champs, redessinée à chaque changement d'indemnité ou de salaire.
+func _guidee() -> void:
+	if not is_instance_valid(rows) or selected_person.is_empty() or not is_instance_valid(fee_input): return
+	var place := -1
+	if is_instance_valid(guidee):
+		place = guidee.get_index()
+		rows.remove_child(guidee)
+		guidee.queue_free()
+	var vers_indemnite := func(montant: int): if is_instance_valid(fee_input) and fee_input.editable: fee_input.value = montant
+	var vers_salaire := func(montant: int): if is_instance_valid(salary_input) and salary_input.editable: preload("res://ui/salary_display.gd").set_input_weekly(salary_input, float(montant))
+	guidee = Guidee.bande_interclub(app, rows, selected_person, offer_fee, offer_salary, vers_indemnite, vers_salaire)
+	if place >= 0: rows.move_child(guidee, place)
+
 func _invalidate_quote() -> void:
+	_guidee.call_deferred()
 	negotiation = {}
 	close_button.disabled = true
 	local_message.text = "Conditions modifiées : soumets-les à nouveau avant toute clôture."

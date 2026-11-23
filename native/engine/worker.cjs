@@ -1297,6 +1297,11 @@ function createBridge(options={}){
      // Règle « Auto » par forme (dist/development.js) : posée à la création et sur les anciennes carrières (clé toujours
      // présente : les lectures mémorisées de la projection restent valides d'une commande à l'autre).
      run("if(S&&typeof intensiteAutoValide==='function'&&!intensiteAutoValide(S.intensiteAuto))S.intensiteAuto=INTENSITE_AUTO_DEFAUT.slice();");
+     // Rôle promis au contrat (role-contrat.cjs) : enregistré pour chaque nouveau contrat du club et, au premier passage,
+     // pour les contrats des anciennes carrières ; jamais après une commande déclarée sans effet sur les joueurs.
+     if(!stateVersions.untouched(command,payload).includes('clubs'))run("nativeSystems.domain('roleContrat').observe();");
+     // Clause libératoire payée par un club géré (clauses-contrat.cjs) : période des mutations, une semaine tirée, rare.
+     if(advancesCareer)run("nativeSystems.domain('clausesContrat').observe();");
      run("nativeSystems.domain('clubMail').observe(nativeCommand);");
      // Réglage « Conférences ordinaires : envoyer l'adjoint » (press.cjs) : la conférence ordinaire qui vient de
      // s'ouvrir est tenue par Gabi dans la même commande, avant la sauvegarde ; « Jour suivant » et « Continuer »
