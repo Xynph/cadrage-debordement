@@ -103,6 +103,38 @@ test('Entraînement : +0,25 par semaine au poste ; oubli −1 par 10 semaines sa
   assert.equal(f.validate({ clubs: [{ players: [p, blesse] }] }), true);
 });
 
+test('Apprendre un poste : une seule cible, ni poste principal ni 1re ligne non qualifiée, null arrête', () => {
+  const p = joueur('cible', CENTRE);
+  assert.equal(t.apprendre(p, 10), 10);
+  assert.equal(p.familiarite.c, 10);
+  assert.equal(t.apprendre(p, 15), 15, 'une seule cible : la nouvelle remplace l’ancienne');
+  assert.equal(p.familiarite.c, 15);
+  assert.throws(() => t.apprendre(p, 12), /naturel/, 'poste principal refusé');
+  assert.throws(() => t.apprendre(p, 2), /qualification/, '1re ligne non qualifiée refusée');
+  assert.throws(() => t.apprendre(p, 16), /invalide/);
+  assert.equal(p.familiarite.c, 15, 'refus : cible inchangée');
+  assert.equal(t.apprendre(p, null), null);
+  assert.equal(p.familiarite.c, undefined, 'arrêt');
+  t.apprendre(p, 9);
+  assert.equal(f.validate({ clubs: [{ players: [p] }] }), true);
+  assert.throws(() => f.validate({ clubs: [{ players: [{ id: 'x', familiarite: { d: '000111112234433', c: 0 } }] }] }), /Familiarité/);
+});
+
+test('Semaine : notre club s’entraîne au poste choisi (même s’il joue ailleurs), sans cible rien ; autres clubs : dernier poste joué', () => {
+  const cible = joueur('n1', CENTRE), sans = joueur('n2', CENTRE), titulaire = joueur('n3', CENTRE), ia = joueur('ia', CENTRE);
+  t.apprendre(cible, 15);
+  t.match(ia, 9, 80, 'S0-0');
+  const avantIa = t.valeurs(ia, CENTRE)[8];
+  globalThis.S = { club: 0, season: 1, week: 3, lineup: [null, null, null, null, null, null, null, null, sans.id, titulaire.id], clubs: [{ id: 0, players: [cible, sans, titulaire] }, { id: 1, players: [ia] }] };
+  try {
+    for (let i = 0; i < 4; i++) t.apresSemaine();
+  } finally { delete globalThis.S; }
+  assert.equal(t.valeurs(cible, CENTRE)[14], 17, 'cible : 16 + 4 × 0,25');
+  assert.deepEqual(t.valeurs(sans, CENTRE), t.valeurs(joueur('ref', CENTRE), CENTRE), 'sans cible : rien, même titulaire hors poste dans la composition');
+  assert.deepEqual(t.valeurs(titulaire, CENTRE), t.valeurs(joueur('ref2', CENTRE), CENTRE));
+  assert.equal(t.valeurs(ia, CENTRE)[8], avantIa + 1, 'club de l’ordinateur : dernier poste joué hors poste principal');
+});
+
 test('1re ligne : bloquée sans qualification, Confirmé au moins une fois qualifié', () => {
   const p = joueur('t', CENTRE);
   t.assurer(p);
@@ -166,6 +198,21 @@ test('Carrière Monde : familiarité enregistrée, envoyée à l\'écran, effica
   const apres = val(`nativePositionAptitudes.project(S.clubs[S.club].players.find(p=>p.id===${JSON.stringify(centre.id)}))`);
   const joue = val(`S.clubs[S.club].players.find(p=>p.id===${JSON.stringify(centre.id)}).familiarite`);
   assert.ok(apres.positionFamiliarity[9] > avant, `progression à l'ouverture : ${avant} → ${apres.positionFamiliarity[9]} (${JSON.stringify(joue)})`);
+  // Apprendre un poste par la commande du jeu : cible enregistrée, envoyée à l'écran, refusée au poste principal,
+  // arrêtée par null ; +0,25 par semaine d'entraînement sur la cible.
+  // Rendez-vous du club coupés avant chaque décision, comme au départ du harnais (ils bloquent les décisions).
+  const commande = (nom, charge) => { h.run('delete S.clubMeetings'); return h.command(nom, charge); };
+  const ailier = val('S.clubs[S.club].players.map(p=>({id:p.id,...nativePositionAptitudes.project(p)}))').find(p => p.primaryPositions.includes(11) && p.positionFamiliarity[14] < 20 && !p.primaryPositions.includes(15));
+  assert.ok(ailier, 'un ailier qui n’est pas naturel à l’arrière');
+  let modele = commande('set_position_learning', { playerId: ailier.id, numero: 15 });
+  assert.equal(modele.squad.find(p => p.id === ailier.id).positionLearning, 15, 'cible envoyée à l’écran');
+  assert.throws(() => commande('set_position_learning', { playerId: ailier.id, numero: 11 }), /naturel/);
+  const depart = val(`nativePositionAptitudes.project(S.clubs[S.club].players.find(p=>p.id===${JSON.stringify(ailier.id)})).positionFamiliarity[14]`);
+  h.run('S.trained=false;trainWeek()');
+  const entraine = val(`nativePositionAptitudes.project(S.clubs[S.club].players.find(p=>p.id===${JSON.stringify(ailier.id)})).positionFamiliarity[14]`);
+  assert.ok(entraine > depart && entraine <= depart + 0.375, `entraînement à la cible : ${depart} → ${entraine}`);
+  modele = commande('set_position_learning', { playerId: ailier.id, numero: null });
+  assert.equal(modele.squad.find(p => p.id === ailier.id).positionLearning, null, 'arrêt');
   // Sauvegarde : l'enregistrement passe la validation et survit à l'aller-retour JSON.
   h.run('validateCareer(S)');
   const texte = h.run('JSON.stringify(S.clubs[S.club].players.map(p=>p.familiarite))');

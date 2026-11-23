@@ -108,7 +108,9 @@ module.exports=function positionAptitudes(){
   const {_familyNotes,_structure,_levels,...result}=derive(p);
   // Familiarité au poste envoyée à l'écran (15 maillots) : valeur 0-20 et niveau 0 Inadapté … 4 Naturel.
   return {...result,primaryPositions:result.primaryPositions.slice(),secondaryPositions:result.secondaryPositions.slice(),positionRatings:{...result.positionRatings},qualifiedFrontRowPositions:result.qualifiedFrontRowPositions.slice(),
-   positionFamiliarity:familiarityValues(p,_structure),positionFamiliarityLevels:_levels.map(l=>Math.max(0,l))};
+   positionFamiliarity:familiarityValues(p,_structure),positionFamiliarityLevels:_levels.map(l=>Math.max(0,l)),
+   // Poste à apprendre choisi sur la fiche (« Apprendre un poste ») ; null sans cible.
+   positionLearning:Number.isInteger(p?.familiarite?.c)?p.familiarite.c:null};
  }
 
  function rating(p,slot){return derive(p).positionRatings[positionNumber(slot)]??0;}

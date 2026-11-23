@@ -41,6 +41,9 @@ const EXTRAS := [
 	{"id": "salle-entrainement", "libelle": "Observer la préparation (salle d'entraînement)", "type": "salle_entrainement"},
 	{"id": "salle-entrainement-joueur", "libelle": "Observer la préparation · petite fenêtre d'un joueur", "type": "salle_entrainement", "joueur": true},
 	{"id": "fiche-joueur", "libelle": "Fiche joueur", "type": "joueur"},
+	## Apprendre un poste (23/11/2026) : fiche du même joueur avec une cible choisie, puis la petite fenêtre des postes.
+	{"id": "fiche-joueur-apprendre", "libelle": "Fiche joueur · Apprendre un poste (cible choisie)", "type": "joueur", "apprendre": true},
+	{"id": "fiche-joueur-apprendre-fenetre", "libelle": "Fiche joueur · Apprendre un poste (petite fenêtre)", "type": "joueur", "apprendre": true, "ouvrir": "PlayerLearnPosition"},
 	{"id": "mini-fiche", "libelle": "Mini-fiche au survol (Effectif)", "type": "mini_fiche"},
 	{"id": "equilibre-postes", "libelle": "Équilibre par poste (infobulle Aptes)", "type": "equilibre_postes"},
 	{"id": "comparateur", "libelle": "Comparateur (deux joueurs)", "type": "comparateur"},
@@ -717,6 +720,21 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 			var ouvert: bool = app.navigation_controller.open_entity({"kind": "player", "id": ident(effectif[0].get("id"))})
 			await stabiliser()
 			if not ouvert or app.route != "Effectif" or not bool(app.get_meta("immersive08_full_player", false)): return {"statut": "echec", "note": "fiche joueur non ouverte"}
+			if ecran.get("apprendre", false):
+				# Cible d'apprentissage : premier poste hors 1re ligne qu'il peut apprendre (même commande que le clic).
+				var postes: Array = load("res://ui/immersive08/fiche_roles.gd").postes_a_apprendre(effectif[0])
+				var cible := 0
+				for n: int in postes:
+					if n > 3: cible = n; break
+				if cible > 0 and int(effectif[0].get("positionLearning", 0) if effectif[0].get("positionLearning") != null else 0) != cible:
+					app._command("set_position_learning", {"playerId": str(effectif[0].get("id", "")), "numero": cible})
+					while app.waiting: await process_frame
+					await stabiliser()
+				if ecran.has("ouvrir"):
+					var bouton := app.find_child(str(ecran.ouvrir), true, false) as Button
+					if bouton == null: return {"statut": "echec", "note": "élément introuvable : " + str(ecran.ouvrir)}
+					bouton.pressed.emit()
+					await stabiliser()
 		"mini_fiche":
 			# Le bureau séparé n'a pas de souris : la mini-fiche est affichée par programme sur le nom d'un joueur
 			# (même appel que le survol, ui/immersive08/mini_fiche.gd).

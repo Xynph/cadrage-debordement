@@ -9,15 +9,17 @@
 // Valeur de départ (création du joueur ou ancienne sauvegarde) déduite des postes actuels : Naturel 20 (poste
 //   principal), Confirmé 16 (autre poste maîtrisé), Correct 12 (famille voisine), Dépanne 7 (même ligne), Inadapté 2
 //   (autre ligne). 1re ligne (1 à 3) sans qualification : bloquée à 0, sans progression ; qualifié : Confirmé au moins.
-// Progression : +1 par match joué au poste (+0,5 sous 40 minutes), +0,25 par semaine d'entraînement au poste (poste
-//   tenu dans la composition du manager, sinon poste du dernier match hors de son poste principal), × 1,5 jusqu'à 23
-//   ans, × 0,5 dès 31 ans ; au plus un palier gagné par mois et par poste.
+// Progression : +1 par match joué au poste (+0,5 sous 40 minutes), +0,25 par semaine d'entraînement au poste, × 1,5
+//   jusqu'à 23 ans, × 0,5 dès 31 ans ; au plus un palier gagné par mois et par poste. Poste travaillé à l'entraînement :
+//   club du manager, le poste choisi sur la fiche (« Apprendre un poste », commande set_position_learning, une seule
+//   cible, enregistrée en c ; sans cible, rien à l'entraînement, même s'il joue ailleurs le week-end) ; autres clubs, le
+//   poste du dernier match joué hors de son poste principal.
 // Oubli : −1 par 10 semaines sans y jouer ni s'y entraîner, jamais sous la valeur de départ.
 // Enregistrement compact : {d: niveaux de départ (15 chiffres), k: niveaux actuels (15 chiffres, absent s'ils valent d), v: valeurs qui
 //   diffèrent du départ {maillot: valeur}, o: semaines sans y jouer {maillot: n}, m: mois du dernier palier gagné
-//   {maillot: 'AAAA-MM'}, p: dernier maillot joué hors poste principal}. Aucun tirage au sort : tout est déterministe.
+//   {maillot: 'AAAA-MM'}, p: dernier maillot joué hors poste principal, c: poste à apprendre choisi par le manager}. Aucun tirage au sort : tout est déterministe.
 // Fonctions globales de la VM (installHooks) : CDFamiliarite.{niveaux, valeurs, RULES} lues par position-aptitudes.cjs.
-const files=Object.freeze([]),commands=Object.freeze([]);
+const files=Object.freeze([]),commands=Object.freeze(['set_position_learning']);
 function factory(){
  const SEUILS=[5,10,14,18],DEPART=[2,7,12,16,20],MULT=[.60,.76,.88,.96,1],MAX=20,PAS=.125;
  const MATCH=1,MATCH_COURT=.5,MINUTES_COURT=40,ENTRAINEMENT=.25;
@@ -129,13 +131,13 @@ function factory(){
  // Semaine d'entraînement (avant trainWeek, qui soigne les blessés) : tous les joueurs des clubs.
  function apresSemaine(){
   if(typeof S==='undefined'||!S)return;
-  const mois=moisCourant(),compo=Array.isArray(S.lineup)?S.lineup:[];
+  const mois=moisCourant();
   for(const c of Object.values(S.clubs||{})){
    const nous=c&&c.id===S.club;
    for(const p of c?.players||[]){
     if(!p||typeof p!=='object')continue;
-    const i=nous?compo.indexOf(p.id):-1,r=valide(p.familiarite)?p.familiarite:null;
-    semaine(p,i>=0&&i<15?i+1:(r&&r.p)||null,mois,!!p.injury);
+    const r=valide(p.familiarite)?p.familiarite:null;
+    semaine(p,(nous?r&&r.c:r&&r.p)||null,mois,!!p.injury);
    }
   }
  }
@@ -156,14 +158,33 @@ function factory(){
  function validate(s){
   for(const p of joueurs(s)){
    const r=p?.familiarite;if(r===undefined)continue;
-   const ok=valide(r)&&Object.keys(r).every(k=>['d','k','v','o','m','p'].includes(k))
+   const ok=valide(r)&&Object.keys(r).every(k=>['d','k','v','o','m','p','c'].includes(k))
     &&(r.v===undefined||r.v&&typeof r.v==='object'&&Object.entries(r.v).every(([n,v])=>+n>=1&&+n<=15&&typeof v==='number'&&v>=0&&v<=MAX))
     &&(r.o===undefined||r.o&&typeof r.o==='object'&&Object.entries(r.o).every(([n,v])=>+n>=1&&+n<=15&&Number.isInteger(v)&&v>=0&&v<OUBLI_SEMAINES))
     &&(r.m===undefined||r.m&&typeof r.m==='object'&&Object.entries(r.m).every(([n,v])=>+n>=1&&+n<=15&&typeof v==='string'&&v.length<=12))
-    &&(r.p===undefined||Number.isInteger(r.p)&&r.p>=1&&r.p<=15);
+    &&(r.p===undefined||Number.isInteger(r.p)&&r.p>=1&&r.p<=15)
+    &&(r.c===undefined||Number.isInteger(r.c)&&r.c>=1&&r.c<=15);
    if(!ok)throw Error('Familiarité au poste invalide.');
   }
   return true;
+ }
+ // « Apprendre un poste » (fiche joueur) : une seule cible par joueur ; null/0 arrête. Ni poste principal, ni 1re
+ // ligne sans qualification.
+ function apprendre(p,numero){
+  const structure=structureDe(p),r=assurer(p,structure);
+  if(numero===null||numero===undefined||numero===0){delete r.c;return null;}
+  if(!(Number.isInteger(numero)&&numero>=1&&numero<=15))throw Error('Poste à apprendre invalide.');
+  const s=structure[numero-1];
+  if(s===4)throw Error('Poste déjà naturel pour ce joueur.');
+  if(s<0)throw Error('Première ligne : qualification requise.');
+  r.c=numero;return numero;
+ }
+ function execute(command,payload){
+  if(command!=='set_position_learning')throw Error('Commande de familiarité inconnue.');
+  if(typeof S==='undefined'||!S||S.live&&!S.live.finished)throw Error('Apprendre un poste : indisponible pendant un match.');
+  const club=S.clubs?.[S.club],p=club?.players?.find(x=>x.id===payload?.playerId);
+  if(!p)throw Error('Apprendre un poste : joueur absent de ton effectif.');
+  apprendre(p,payload.numero??null);
  }
  const api=Object.freeze({RULES,niveau,niveaux,valeurs,facteurAge});
  let installe=false;
@@ -182,9 +203,9 @@ function factory(){
   }
   return true;
  }
- return {project(){return null;},validate,execute(){throw Error('Aucune commande de familiarité.');},installHooks,observe,
+ return {project(){return null;},validate,execute,installHooks,observe,
   // Pour les tests : règles pures sur un joueur, structure fournie.
-  _tests:{gagner,semaine,match,creer,assurer,niveaux,valeurs,niveau,apresSemaine,apresMatch,moisCourant,fixerStructure(f){structureDe=f;}},
+  _tests:{gagner,semaine,match,creer,assurer,niveaux,valeurs,niveau,apresSemaine,apresMatch,moisCourant,apprendre,fixerStructure(f){structureDe=f;}},
   ...api};
 }
 module.exports={files,commands,factory};
