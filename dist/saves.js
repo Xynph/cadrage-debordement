@@ -309,7 +309,7 @@ if(s.careerManagement!==undefined){
  Object.prototype.hasOwnProperty.call(CAREER_SPONSORS,v.sponsor.key)&&v.sponsor.season===s.season);
  for(const x of v.boardHistory)saveCheck(saveObject(x)&&saveInt(x.season,1,s.season)&&
  saveInt(x.round,0,maxRound)&&saveInt(x.previous,0,100)&&saveInt(x.after,0,100)&&
- ['results','finances','youth','score'].every(k=>saveInt(x[k],0,100)));
+ ['results','finances','youth','score'].every(k=>saveInt(x[k],0,100))&&(x.supporters===undefined||saveInt(x.supporters,0,100)));
  const eventIds=new Set();
  for(const x of v.history){
   saveCheck(saveObject(x)&&typeof x.id==='string'&&x.id.length>0&&x.id.length<=250&&

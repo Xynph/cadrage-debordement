@@ -4,7 +4,8 @@ extends RefCounted
 ## ses bilans), une ligne par domaine du bilan (poids, lettre, courbe des bilans, dernière note, flèche ▲ / ▼), puis les
 ## bilans en lignes (journée, lettre, évolution, résultat du match, flèche et lettre par domaine). Installations : pastille
 ## d'état et pictogramme coloré par ligne.
-## Données du moteur : confiance (meta.trust) et bilans (finance.boardHistory : results, finances, youth sur 100).
+## Données du moteur : confiance (meta.trust) et bilans (finance.boardHistory : results, finances, youth, supporters sur
+## 100 ; supporters = humeur des supporters, absente des bilans d'avant le 23/11/2026).
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Charte = preload("res://ui/charte.gd")
@@ -19,8 +20,11 @@ const BAREME := [[92, "A+"], [85, "A"], [78, "A−"], [74, "B+"], [70, "B"], [65
 ## Avis d'un domaine : ▲ à partir de 65, ▼ sous 45 (notes du bilan sur 100).
 const ELOGE := 65
 const CRITIQUE := 45
-## Domaines et poids du bilan du moteur (dist/career-integration.js, CAREER_BOARD_WEIGHTS).
-const DOMAINES := [["results", "Résultats", 70], ["finances", "Finances", 20], ["youth", "Formation", 10]]
+## Domaines et poids du bilan du moteur (dist/career-integration.js, CAREER_BOARD_WEIGHTS_FANS : l'humeur des
+## supporters compte pour 10 %, choix de Léo du 23/11/2026).
+const DOMAINES := [["results", "Résultats", 60], ["finances", "Finances", 20], ["youth", "Formation", 10], ["supporters", "Supporters", 10]]
+## Hauteur d'une ligne de domaine (quatre lignes tiennent avant le filet de la Vue d'ensemble, y = 306).
+const LIGNE_DOMAINE := 50.0
 
 static func lettre(valeur: Variant) -> String:
 	if not (valeur is int or valeur is float): return "—"
@@ -54,6 +58,11 @@ static func _signe(valeur: int) -> String:
 
 static func _vers_jalons(app: Control) -> void:
 	app.management_ui.immersive08_strategy_tab = 1
+	app._navigate("Stratégie")
+
+## Domaine Supporters : Club › Direction › Supporters (les tribunes et l'humeur).
+static func _vers_supporters(app: Control) -> void:
+	app.management_ui.immersive08_strategy_tab = 2
 	app._navigate("Stratégie")
 
 # --- Formes ------------------------------------------------------------------------------------------------------------
@@ -168,27 +177,28 @@ static func conseil(panneau: Control, app: Control, finance: Dictionary, largeur
 	for c: Array in cols: Kit.etiquette(panneau, x0 + float(c[1]) + (float(c[2]) if c[3] else 0.0), 84, str(c[0]), float(c[2]), c[3])
 	D.line(panneau, Vector2(x0, 94), Vector2(x0 + tl, 94), Charte.FILET)
 	var dernier: Dictionary = historique[0] if not historique.is_empty() else {}
-	var actions := {"results": func(): app._navigate("Classements"), "finances": func(): app._navigate("Finances"), "youth": func(): app._navigate("Centre")}
+	var actions := {"results": func(): app._navigate("Classements"), "finances": func(): app._navigate("Finances"), "youth": func(): app._navigate("Centre"), "supporters": func(): _vers_supporters(app)}
 	for i in DOMAINES.size():
 		var dom: Array = DOMAINES[i]
-		var haut := 98.0 + i * 54.0
+		var haut := 98.0 + i * LIGNE_DOMAINE
 		if i > 0: D.line(panneau, Vector2(x0, haut), Vector2(x0 + tl, haut), Charte.FILET)
-		var rangee := _ligne(panneau, Rect2(x0, haut, tl, 54), "ConseilDomaine_" + str(dom[0]), str(dom[1]), actions[dom[0]])
-		var nom := Kit.texte(rangee, 0, 34, str(dom[1]), Charte.IVOIRE, 200, 21)
+		var rangee := _ligne(panneau, Rect2(x0, haut, tl, LIGNE_DOMAINE), "ConseilDomaine_" + str(dom[0]), str(dom[1]), actions[dom[0]])
+		var nom := Kit.texte(rangee, 0, 32, str(dom[1]), Charte.IVOIRE, 200, 21)
 		nom.add_theme_font_override("font", Kit.texte_gras())
-		Kit.texte(rangee, 300, 34, "%d %%" % int(dom[2]), Charte.IVOIRE_2, 90, 19, HORIZONTAL_ALIGNMENT_RIGHT)
+		Kit.texte(rangee, 300, 32, "%d %%" % int(dom[2]), Charte.IVOIRE_2, 90, 19, HORIZONTAL_ALIGNMENT_RIGHT)
 		var note: Variant = dernier.get(dom[0])
-		if note != null: disque(rangee, Rect2(338, 8, 64, 38), note, 26)
-		else: Kit.texte(rangee, 370, 34, "—", Charte.IVOIRE_3, 64, 20, HORIZONTAL_ALIGNMENT_CENTER)
+		if note != null: disque(rangee, Rect2(338, 7, 64, 36), note, 25)
+		else: Kit.texte(rangee, 370, 32, "—", Charte.IVOIRE_3, 64, 20, HORIZONTAL_ALIGNMENT_CENTER)
 		var valeurs: Array = []
-		for j in range(mini(8, historique.size()) - 1, -1, -1): valeurs.append(historique[j].get(dom[0], 0))
+		for j in range(mini(8, historique.size()) - 1, -1, -1):
+			if historique[j].has(dom[0]): valeurs.append(historique[j].get(dom[0], 0))
 		var courbe := Courbe.new()
 		courbe.valeurs = valeurs
 		courbe.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		rangee.add_child(courbe)
-		D.place(courbe, Rect2(450, 7, tl - 620, 40))
-		Kit.texte(rangee, tl - 60, 34, G.n(note) if note != null else "—", Charte.IVOIRE, 80, 20, HORIZONTAL_ALIGNMENT_RIGHT)
-		fleche(rangee, Rect2(tl - 34, 15, 24, 24), avis(note))
+		D.place(courbe, Rect2(450, 6, tl - 620, 38))
+		Kit.texte(rangee, tl - 60, 32, G.n(note) if note != null else "—", Charte.IVOIRE, 80, 20, HORIZONTAL_ALIGNMENT_RIGHT)
+		fleche(rangee, Rect2(tl - 34, 13, 24, 24), avis(note))
 
 ## Bilans en lignes : journée, lettre, évolution, résultat du match (`lier` : ovale et lien vers la fiche du match), puis
 ## flèche et lettre par domaine. Une ligne sans match ouvre le suivi des objectifs.
@@ -203,8 +213,9 @@ static func bilans(panneau: Control, app: Control, historique: Array, x: float, 
 		Kit.texte(bloc, 0, 96, "—", Charte.IVOIRE_2, largeur, 34).name = "ClubTrustTableEmpty"
 		return
 	var depart := 300.0
-	var part := (largeur - depart) / 3.0
-	var cols := [["J.", 8.0], ["Note", 70.0], ["Évol.", 150.0], ["Rés.", 226.0], ["Résultats", depart], ["Finances", depart + part], ["Formation", depart + 2.0 * part]]
+	var part := (largeur - depart) / float(DOMAINES.size())
+	var cols := [["J.", 8.0], ["Note", 70.0], ["Évol.", 150.0], ["Rés.", 226.0]]
+	for k in DOMAINES.size(): cols.append([str(DOMAINES[k][1]), depart + k * part])
 	for c: Array in cols: Kit.etiquette(bloc, float(c[1]), 60, str(c[0]), 160)
 	D.line(bloc, Vector2(0, 70), Vector2(largeur, 70), Charte.FILET)
 	for i in mini(5, historique.size()):

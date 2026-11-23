@@ -261,12 +261,13 @@ func conseil_lettre() -> void:
 	# Deux bilans du moteur (mêmes champs que finance.boardHistory) pour voir lignes, lettres et flèches.
 	var finance: Dictionary = app.model.clubLife.clubStrategy.finance
 	var avant: Array = finance.get("boardHistory", [])
-	finance.boardHistory = [{"season": 1, "round": 6, "previous": 60, "after": 48, "results": 30, "finances": 90, "youth": 50, "score": 44}, {"season": 1, "round": 3, "previous": 60, "after": 60, "results": 50, "finances": 70, "youth": 50, "score": 56}]
+	finance.boardHistory = [{"season": 1, "round": 6, "previous": 60, "after": 48, "results": 30, "finances": 90, "youth": 50, "supporters": 72, "score": 44}, {"season": 1, "round": 3, "previous": 60, "after": 60, "results": 50, "finances": 70, "youth": 50, "score": 56}]
 	await overview()
 	check(node("ClubTrustRow0") != null and node("ClubTrustRow1") != null, "Bilans : une ligne par bilan")
 	var ligne := node("ClubTrustRow0")
 	check(ligne != null and ligne.find_child("Fleche_down", true, false) != null and ligne.find_child("Fleche_up", true, false) != null, "Bilan : flèches ▲ / ▼ par domaine")
 	check(node("ConseilDomaine_results") != null and node("ConseilDomaine_results").find_child("Fleche_down", true, false) != null, "Résultats 30 : flèche ▼")
+	check(node("ConseilDomaine_supporters") != null and node("ConseilDomaine_supporters").find_child("Fleche_up", true, false) != null, "Supporters 72 : flèche ▲")
 	var lettre := node("ConseilLettre") as Button
 	check(lettre != null, "Grande lettre cliquable")
 	if lettre != null:
@@ -293,7 +294,7 @@ func conseil_lettre() -> void:
 		await settle(4)
 		check(load("res://ui/petite_fenetre.gd").fermer_derniere(self), "Échap ferme la petite fenêtre")
 		await settle(4)
-	for domaine: Array in [["results", "Classements"], ["finances", "Finances"], ["youth", "Centre"]]:
+	for domaine: Array in [["results", "Classements"], ["finances", "Finances"], ["youth", "Centre"], ["supporters", "Stratégie"]]:
 		await overview()
 		var bouton := node("ConseilDomaine_" + str(domaine[0])) as Button
 		check(bouton != null, "Domaine %s : ligne" % domaine[0])
