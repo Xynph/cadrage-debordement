@@ -21,7 +21,9 @@ module.exports=function nativeGestion(command,p){
  if(command==='scout_mission'){
   requireThat(p.confirmed===true&&!S.live&&S.phase!=='ended','Confirme la mission à 5 000 € hors match.');
   requireThat([p.family,p.maxAge,p.budget,p.maxWage].every(Number.isInteger),'Critères entiers requis.');
-  requireThat(createScoutMission(p.family,p.maxAge,p.budget,p.maxWage),'Mission refusée : critères, trésorerie ou quatre missions déjà en cours.');return;
+  // Recherche ciblée (recherche-ciblee.cjs) : maillot, rôle, minimums, priorité et recruteurs, validés avant le paiement.
+  const cible=typeof nativeSystems!=='undefined'?nativeSystems.domain('rechercheCiblee')?.cible(p)??null:null;
+  requireThat(createScoutMission(p.family,p.maxAge,p.budget,p.maxWage,cible),'Mission refusée : critères, trésorerie ou quatre missions déjà en cours.');return;
  }
  // Plusieurs postes d'un coup (bannière des Bleus : « Faire souffler les 9 ») : tout ou rien, dans l'ordre donné.
  if(command==='set_lineup'&&Array.isArray(p.changes)){
@@ -125,8 +127,13 @@ module.exports=function nativeGestion(command,p){
    // demande de salaire pendant la négociation (+5 % par cran au-dessus du rôle attendu, −4 % par cran en dessous).
    const refusRole=p.role&&typeof roleContratRefus==='function'?roleContratRefus(target,p.role):'';requireThat(!refusRole,refusRole);
    const negocier=()=>negotiateContract(p.playerId,kind,p.salary,p.years);
-   requireThat(p.role&&typeof roleContratAvec==='function'?roleContratAvec(target,p.role,negocier):negocier(),'Offre refusée : durée, joueur ou négociation indisponible.');
+   // Ton donné à l’agent et relation (ton-agent.cjs, idée 24) : patience cachée (2 à 5 propositions) pour cette journée, relation selon l’issue.
+   const negocierTon=()=>typeof tonAgentNegocier==='function'?tonAgentNegocier(p.playerId,kind,negocier,p.salary):negocier();
+   requireThat(p.role&&typeof roleContratAvec==='function'?roleContratAvec(target,p.role,negocierTon):negocierTon(),'Offre refusée : durée, joueur ou négociation indisponible.');
   const key=talkKey(p.playerId,kind),talk=S.economy.talks[key];
+  // Agent nommé (agents-joueurs.cjs) : c'est lui qui répond pour son client, prolongation comprise.
+  const agentNom=typeof agentJoueurNom==='function'?agentJoueurNom(p.playerId):'';
+  if(agentNom&&talk&&typeof talk.message==='string')talk.message=talk.message.replace(/^Le joueur refuse et demande/,agentNom+' refuse pour son client et demande').replace(/Le joueur met fin aux échanges/,agentNom+' coupe court : son client met fin aux échanges');
   if(talk.status==='ready')requireThat(confirmContract(key),'Signature devenue indisponible.');
   if(kind==='recruit'&&talk.status==='signed'&&typeof budgetTransfertsDepenser==='function')budgetTransfertsDepenser(talk.fee);
   if(kind==='recruit'&&talk.status==='signed'&&typeof calendrierApresRecrue==='function')calendrierApresRecrue(p.playerId);

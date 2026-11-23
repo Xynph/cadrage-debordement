@@ -163,6 +163,8 @@ func _build() -> void:
 	# Une case de forme porte le même nom sur chaque ligne : on ne lui rend pas le focus (il sauterait en tête de liste).
 	if str(state.get("focus", "")).begins_with("FormeMatch"): state.focus = ""
 	U.restore(app, self, "market")
+	# Recherche ciblée restée ouverte (envoi du recruteur, retour depuis une fiche) : elle revient par-dessus.
+	load("res://ui/immersive08/recherche_ciblee.gd").rouvrir(app, self)
 	# Courrier « offre_transfert » (Réception) : ouvre directement les offres reçues.
 	if app.has_meta("open_player_sales"):
 		app.remove_meta("open_player_sales")
@@ -358,7 +360,7 @@ func _needs() -> void:
 		if stock == 0:
 			var libelle_mission := "Lancer une mission pour ce poste →"
 			var largeur_mission := Kit.largeur(libelle_mission, 18) + 14
-			var lien_mission := Kit.lien(self, Rect2(x + largeur - 20 - largeur_mission, 136 + 50, largeur_mission, 34), libelle_mission, func(): _staff(1, role), "MarketNeedMission_" + str(i), 18)
+			var lien_mission := Kit.lien(self, Rect2(x + largeur - 20 - largeur_mission, 136 + 50, largeur_mission, 34), libelle_mission, func(): _recherche(role), "MarketNeedMission_" + str(i), 18)
 			lien_mission.tooltip_text = ""
 
 
@@ -494,6 +496,9 @@ func _filters(positions: Array) -> void:
 	var comparer := Kit.lien(self, Rect2(droite, Y_FILTRES + 4, 0, 32), "Comparer →", func(): _compare(), "CompareMarket", 18, true)
 	comparer.accessibility_name = "Comparer deux pistes de recrutement"
 	droite -= comparer.size.x / C.density + 18
+	# Recherche ciblée du recruteur (revue FM27, idée 26).
+	var ciblee := Kit.lien(self, Rect2(droite, Y_FILTRES + 4, 0, 32), "Recherche ciblée →", func(): _recherche(), "RechercheCibleeOuvrir", 18, true)
+	droite -= ciblee.size.x / C.density + 18
 	for lien: Array in _liens_filtre:
 		var bouton := Kit.lien(self, Rect2(droite, Y_FILTRES + 4, 0, 32), str(lien[1]), lien[2], str(lien[0]), 18, true)
 		bouton.tooltip_text = ""
@@ -1052,6 +1057,7 @@ func _cout() -> void:
 	var liens: Array = []
 	if observable: liens.append(["Observer →" if Observation.caption(player) == "Observer" else Observation.caption(player) + " →", "ObserveRecruitment", func(): _confirmer_observation(player), not Observation.reason(app, player).is_empty()])
 	liens.append(["Rapport du recruteur →", "OpenRecruiterReport", func(): Pages.ouvrir(app, "recruteur", {"player_id": player_id}), false])
+	liens.append(["Parler à l’agent →", "OpenAgentTalk", func(): Pages.ouvrir(app, "recruteur", {"player_id": player_id, "agent": true}), false])
 	liens.append(["Ouvrir la fiche →", "OpenRecruitmentPlayer", func(): app.navigation_controller.open_entity({"kind":"market", "id":player_id}), false])
 	var context_suivi: Variant = app.model.get("clubLife", {}).get("managerCareer", {}).get("context")
 	var peut_suivre: bool = not app.waiting and app._live().is_empty() and app.model.meta.get("phase", "") != "ended" and context_suivi is Dictionary
@@ -1111,6 +1117,10 @@ func _approcher(player: Dictionary) -> void:
 	Pages.ouvrir(app, "negociation", {"player_id": str(player.get("id", ""))})
 
 # --- Divers -----------------------------------------------------------------------------------------------------
+
+## Recherche ciblée du recruteur (petite fenêtre) : poste pré-choisi d'après un besoin.
+func _recherche(role: String = "") -> void:
+	load("res://ui/immersive08/recherche_ciblee.gd").ouvrir(app, self, role)
 
 func _staff(index: int, role: String = "") -> void:
 	Pages.ouvrir(app, "missions", {"tab": index, "role": role})

@@ -164,7 +164,25 @@ module.exports=function worldModel(base,publishedVenue,clubHistory){
    for(const f of S.worldMode.fixtures.filter(f=>!joues.has(f.id)&&typeof f.date==='string').sort((a,b)=>a.date.localeCompare(b.date)||String(a.id).localeCompare(String(b.id))))
     for(const [id,autre,dom] of [[f.homeId,f.awayId,true],[f.awayId,f.homeId,false]])
      if(suivis.has(id)&&!(id in prochains))prochains[id]={opponent:resume(autre),home:dom&&!f.neutral,neutral:!!f.neutral,date:f.date,week:f.week};
-   m.clubNext=prochains;}
+   m.clubNext=prochains;
+   // Page « Dans le monde » (idée FM27 n° 30, choix de Léo du 23/11/2026) : transferts entre clubs adverses
+   // (calendrier-mutations.cjs, S.mondeTransferts), cadres adverses blessés (3 semaines et plus, parmi les 15 meilleurs de
+   // leur club) et journalistes des médias du jeu par compétition (banque de presse : région du championnat, presse
+   // européenne pour les coupes). Apparence jointe pour les portraits.
+   const apparence=p=>{const o={};for(const k of ['sourcePlayerId','appearanceId','appearanceAge','appearanceBankVersion','appearanceBuild'])if(p[k]!==undefined)o[k]=p[k];return o;};
+   const blessures=[];
+   for(const c of S.clubs){
+    if(c.id===S.club||!suivis.has(c.id))continue;
+    for(const p of c.players.slice().sort((a,b)=>(Number(b.rating)||0)-(Number(a.rating)||0)).slice(0,15))
+     if((p.injury|0)>=3)blessures.push({id:p.id,name:p.name,pos:p.pos,age:p.age,rating:Math.round(Number(p.rating)||0),clubId:c.id,weeks:p.injury|0,...apparence(p)});
+   }
+   blessures.sort((a,b)=>b.rating-a.rating||String(a.id).localeCompare(String(b.id)));
+   const Q=typeof CDPressQuestionBank!=='undefined'?CDPressQuestionBank:null,presse={};
+   if(Q)for(const l of m.leagues){
+    const premier=(l.rows||[])[0]?.id,liste=['champions','challenge'].includes(l.id)?Q.journalists.filter(j=>j.region==='eu'):premier==null?[]:Q.journalistsFor(Q.regionFor(S,premier));
+    presse[l.id]=liste.map(j=>({id:j.id,name:j.name,outlet:j.outlet,style:j.style}));
+   }
+   m.monde={transferts:(Array.isArray(S.mondeTransferts)?S.mondeTransferts:[]).slice(0,30).map(x=>({...x})),blessures:blessures.slice(0,10),presse};}
   // Derby : rivalité (tension >= seuil du moteur) entre les deux clubs de la rencontre ; champ absent sinon (jamais pour un match ordinaire).
   const derbyOf=f=>{if(typeof derbyTension!=='function'||typeof DERBYS==='undefined')return {};const t=derbyTension(S,f.homeId,f.awayId);return t>=DERBYS.seuil?{derby:{tension:t}}:{};};
   const f=confirmedResult?null:W.userFixture(S);m.next=f?{pair:[f.homeId,f.awayId],home:clubSummary(f.homeId),away:clubSummary(f.awayId),label:W.label(S),round:f.round,week:S.round,date:f.date,neutral:f.neutral,phase:f.phase,leagueId:f.competitionId,competitionId:f.competitionId,venue:venue(f),...derbyOf(f),...dateProof(f),...(m.next?.meteo&&m.next.meteo.date===f.date?{meteo:m.next.meteo}:{}),...(()=>{const c=!f.neutral&&typeof CDWorldStadiumCapacities!=='undefined'?CDWorldStadiumCapacities[S.clubs[f.homeId]?.id??f.homeId]:undefined;return Number.isInteger(c)?{capacity:c}:{};})()}:null;

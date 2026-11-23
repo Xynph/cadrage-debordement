@@ -364,6 +364,12 @@ function factory() {
       return [{ key: F.d, vars: { mode: MODE_LABELS[F.s.training] || String(F.s.training || 'normal'), condition: Math.round(F.mean(F.players.filter(p => !(p.injury > 0)).map(conditionOf))) } }];
     },
     // Lendemain d'un match du club : trois enseignements tirés des vraies statistiques, axe de semaine proposé.
+    // Rapport de l'analyste vidéo (revue FM27, idée 28) : le dernier match du club, jusqu'à trois jours après.
+    analyse_video(F) {
+      const last = F.season[F.season.length - 1];
+      if (!last?.date || last.date < shift(F.d, -3) || last.date >= F.d) return [];
+      return [{ key: last.fixtureId || last.date, club: last.opp, vars: { adversaire: F.name(last.opp), score: last.us + '-' + last.them } }];
+    },
     bilan_match(F) {
       const last = F.season[F.season.length - 1];
       // Après la clôture du match (réponse possible), au plus trois jours après la rencontre.
@@ -902,7 +908,13 @@ function factory() {
     // Courrier en liste (mercato) : puces et titres vides retirés.
     // « 1er juillet » ne se coupe pas en fin de ligne (espace insécable).
     if (t.liste) corps = corps.split('\n').filter(l => l.trim() !== '•').join('\n').replace(/\n{3,}/g, '\n\n').trim().replace(/\b1er (?=\p{L})/gu, '1er ');
-    return { sujet: fill(form.sujet, m.vars), corps, expediteur: fill(t.expediteur, m.vars) };
+    return { sujet: fill(form.sujet, m.vars), corps, expediteur: agentDuMail(m)?.nom || fill(t.expediteur, m.vars) };
+  }
+  // Agent nommé qui écrit pour son client (agents-joueurs.cjs) : courrier « agent » seulement.
+  function agentDuMail(m) {
+    if (m.type !== 'agent' || typeof m.player !== 'string' || typeof agentJoueurId !== 'function' || typeof agentJoueur !== 'function') return null;
+    const id = agentJoueurId(m.player), a = id ? agentJoueur(id) : null;
+    return a ? { id, nom: a.nom, agence: a.agence } : null;
   }
   const SIGN = n => (n > 0 ? '+' : '−') + Math.abs(n);
   function effectText(e, p = null, d = null) {
@@ -1084,6 +1096,8 @@ function factory() {
         const mail = { id: m.id, type: m.type, date: m.date, categorie: t.categorie || 'moments', categorieLabel: cat.label || 'Club', expediteur: r.expediteur, sujet: r.sujet, corps: r.corps,
           arret: nature(m.type) === 'action', nature: nature(m.type), importance: rang(m.type), ecran: t.ecran || cat.ecran || 'Bureau', joueur: m.player, club: m.club ?? null, status: m.status, choice: m.choice, resultat: chosen ? (m.verdict ? chosen.resultat + ' ' + m.verdict : chosen.resultat) : null,
           reponses: [], delegue: m.delegue === true, reponse: chosen ? { id: chosen.id, libelle: chosen.libelle, genre: genre(chosen) } : null };
+        const agent = agentDuMail(m);
+        if (agent) { mail.agent = agent.id; mail.agence = agent.agence; }
         if (m.status !== 'nouveau') return mail;
         const raisons = {};
         mail.reponses = (t.reponses || []).map(x => { const raison = raisons[x.id] = unavailable(S, m, x); return { id: x.id, libelle: x.libelle, effets: effectText(x.effets || {}, m.player ? S.clubs[S.club]?.players?.find(y => y.id === m.player) : null, todayOf(S) || m.date), disponible: !raison, raison, ouvrir: !!x.ouvrir, genre: genre(x) }; });
