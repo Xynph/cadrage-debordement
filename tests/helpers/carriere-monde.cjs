@@ -102,9 +102,23 @@ function jusquAuMatch(jeu, model, garde = 150) {
 // Joue le match du jour : feuille, coup d'envoi, causeries ignorées, match délégué jusqu'au bout.
 // `delegue: false` s'arrête après le coup d'envoi (direct).
 function jouerLeMatch(jeu, model, { delegue = true } = {}) {
+  // Rendez-vous du jour (point médical d'un blessé à l'entraînement, etc.) réglés avant le coup d'envoi.
+  model = jeu.regler(model);
   if (!model.selection.valid) model = jeu.call('auto_lineup');
   if (!model.selection.valid) model = jeu.call('promote_cover', { confirmed: true });
-  model = skipMatchTalk(jeu.call('begin_match'), jeu.call);
+  // Blessure à la séance lancée par le coup d'envoi, poste vide que ni les pros ni le centre ne couvrent : le coup d'envoi
+  // est refusé et annulé (séance comprise). Comme un manager : séance faite d'abord, point médical réglé, feuille
+  // complétée, puis coup d'envoi.
+  let depart = jeu.brut('begin_match');
+  if (!depart.ok && /vacant|feuille/u.test(String(depart.error))) {
+    if (!jeu.bridge.vm.run('S.trained')) jeu.call('train');
+    model = jeu.regler(jeu.call('snapshot'));
+    model = jeu.call('auto_lineup');
+    if (!model.selection.valid) model = jeu.call('promote_cover', { confirmed: true });
+    depart = jeu.brut('begin_match');
+  }
+  assert.equal(depart.ok, true, 'begin_match : ' + depart.error);
+  model = skipMatchTalk(depart.model, jeu.call);
   if (!delegue) return model;
   model = skipMatchTalk(jeu.call('delegate'), jeu.call);
   if (!model.meta.calendarCadence) return jeu.regler(jeu.call('finish_round'));

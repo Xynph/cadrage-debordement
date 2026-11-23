@@ -96,9 +96,20 @@ func run() -> void:
  if portrait != null: portrait.pressed.emit()
  for i in 5: await process_frame
  check(str(app.management_ui.relationships.playerId) == second, "Portrait choisi")
- await press("Conversation_rassurer")
+ # Discussion : la carte « Discuter » ouvre la petite fenêtre, un clic sur une phrase la dit (vrai moteur).
+ var discuter: Button = named(app, "DiscussionOuvrir")
+ check(discuter != null, "Carte Discuter")
+ if discuter != null: discuter.pressed.emit()
+ for i in 3: await process_frame
+ var phrases: Array = app.find_children("DiscussionPhrase_*", "Button", true, false)
+ check(phrases.size() == 3, "Trois phrases selon la situation")
+ if not phrases.is_empty(): await press(str(phrases[0].name))
+ for i in 5: await process_frame
  check(str(app.management_ui.relationships.playerId) == second, "Joueur sélectionné conservé après décision")
- check(named(app, "Conversation_rassurer").disabled, "Entretien bloqué après décision")
+ check(not bool(app.model.clubLife.relationships.players[1].conversationAvailable), "Discussion de la semaine faite dans le vrai état")
+ check(named(app, "DiscussionBulleJoueur0") != null, "Réponse du joueur dans le fil")
+ load("res://ui/petite_fenetre.gd").fermer_derniere(self)
+ for i in 3: await process_frame
  await press("Promise_rotation")
  check(app.model.clubLife.relationships.players[1].promise.target == "rotation", "Promesse réelle du joueur sélectionné")
  await press("DuoAction_duo")
