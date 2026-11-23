@@ -87,6 +87,7 @@ func run() -> void:
 	await layout()
 	await colors()
 	await links()
+	await conseil_lettre()
 	await names()
 	await tabs()
 	await confirmation_en_place()
@@ -200,7 +201,8 @@ func layout() -> void:
 	check(node("ClubTrustValue") != null, "Confiance en chiffre")
 	check(node("ClubTrustWord") != null or node("ClubLastReview") != null, "Confiance dite en mot (ou premier bilan à venir)")
 	check(node("ClubObjectives") != null and node("ClubGoal") != null, "Objectif de la saison")
-	check(node("ClubTrustTable") != null, "Tableau « ce qui a fait bouger la confiance »")
+	check(node("ClubTrustTable") != null, "Bilans du conseil en lignes")
+	check(node("ConseilLettre") != null, "Note du conseil en lettre")
 	check(node("ClubFacilityDetails") != null and node("ClubFacilityTraining") != null, "Installations en tableau")
 	check(node("ClubCashLink") != null or app.navigation_controller == null, "Lien trésorerie")
 	check(windows().is_empty(), "Aucune fenêtre ouverte sur la vue d'ensemble")
@@ -248,6 +250,58 @@ func links() -> void:
 		var change: bool = avant != apres or app.route != "Club" or (app.navigation_controller != null and "history" in app.navigation_controller and int(app.navigation_controller.history.size()) != historique)
 		check(change, "%s : mène quelque part (%s -> %s)" % [id, avant, apres])
 		check(windows().is_empty(), "%s : aucune fenêtre ouverte" % id)
+	await overview()
+
+## Note du conseil en lettre (idée n° 8, option B) : la lettre ouvre sa petite fenêtre (familles A-E, histogramme des
+## bilans ; Fermer et Échap la ferment), chaque domaine ouvre son écran, chaque bilan porte une lettre et une flèche par domaine.
+func conseil_lettre() -> void:
+	const Lettre = preload("res://ui/immersive08/conseil_lettre.gd")
+	check(Lettre.lettre(98) == "A+" and Lettre.lettre(62) == "C+" and Lettre.lettre(33) == "D+" and Lettre.lettre(5) == "E", "Barème des lettres")
+	check(Lettre.palier(70) == "Solide" and Lettre.palier(69) == "Fragile" and Lettre.palier(39) == "Menacé", "Lettre alignée sur les paliers")
+	# Deux bilans du moteur (mêmes champs que finance.boardHistory) pour voir lignes, lettres et flèches.
+	var finance: Dictionary = app.model.clubLife.clubStrategy.finance
+	var avant: Array = finance.get("boardHistory", [])
+	finance.boardHistory = [{"season": 1, "round": 6, "previous": 60, "after": 48, "results": 30, "finances": 90, "youth": 50, "score": 44}, {"season": 1, "round": 3, "previous": 60, "after": 60, "results": 50, "finances": 70, "youth": 50, "score": 56}]
+	await overview()
+	check(node("ClubTrustRow0") != null and node("ClubTrustRow1") != null, "Bilans : une ligne par bilan")
+	var ligne := node("ClubTrustRow0")
+	check(ligne != null and ligne.find_child("Fleche_down", true, false) != null and ligne.find_child("Fleche_up", true, false) != null, "Bilan : flèches ▲ / ▼ par domaine")
+	check(node("ConseilDomaine_results") != null and node("ConseilDomaine_results").find_child("Fleche_down", true, false) != null, "Résultats 30 : flèche ▼")
+	var lettre := node("ConseilLettre") as Button
+	check(lettre != null, "Grande lettre cliquable")
+	if lettre != null:
+		lettre.pressed.emit()
+		await settle(6)
+		var fenetre := app.get_node_or_null("ConseilFenetreLettre")
+		check(fenetre != null and fenetre.find_child("ConseilHistogramme", true, false) != null, "Lettre : petite fenêtre avec l'histogramme des bilans")
+		check(fenetre != null and fenetre.find_child("ConseilFamille_C", true, false) != null, "Lettre : familles A à E")
+		shot("conseil-lettre-fenetre-1920x1080")
+		if not capture_dir.is_empty() and DisplayServer.get_name() != "headless":
+			root.size = Vector2i(2560, 1440)
+			DisplayServer.window_set_size(root.size)
+			await settle(8)
+			shot("conseil-lettre-fenetre-2560x1440")
+			root.size = Vector2i(1920, 1080)
+			DisplayServer.window_set_size(root.size)
+			await settle(8)
+		var fermer := fenetre.find_child("ConseilFenetreLettreFermer", true, false) as Button if fenetre != null else null
+		if fermer != null: fermer.pressed.emit()
+		await settle(4)
+		check(not is_instance_valid(app.get_node_or_null("ConseilFenetreLettre")) or app.get_node_or_null("ConseilFenetreLettre").is_queued_for_deletion(), "Fermer ferme la petite fenêtre")
+		lettre = node("ConseilLettre") as Button
+		lettre.pressed.emit()
+		await settle(4)
+		check(load("res://ui/petite_fenetre.gd").fermer_derniere(self), "Échap ferme la petite fenêtre")
+		await settle(4)
+	for domaine: Array in [["results", "Classements"], ["finances", "Finances"], ["youth", "Centre"]]:
+		await overview()
+		var bouton := node("ConseilDomaine_" + str(domaine[0])) as Button
+		check(bouton != null, "Domaine %s : ligne" % domaine[0])
+		if bouton == null: continue
+		bouton.pressed.emit()
+		await settle(10)
+		check(app.route == str(domaine[1]), "Domaine %s : ouvre %s (%s)" % [domaine[0], domaine[1], app.route])
+	finance.boardHistory = avant
 	await overview()
 
 ## Noms de joueurs : survol = carte joueur (même composant que partout), clic = fiche complète.

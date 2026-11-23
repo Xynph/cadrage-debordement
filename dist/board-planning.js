@@ -14,14 +14,14 @@
   const met=objective.direction==='minimum'?gap>=0:gap<=0;
   return {met,gap,remaining:met?0:Math.abs(gap)};
  }
- function boardConfidence({current,results,finances,youth,weights={results:.55,finances:.3,youth:.15}}){
+ function boardConfidence({current,results,finances,youth,weights={results:.55,finances:.3,youth:.15},pull=.3}){
   if(!between(current,0,100)||![results,finances,youth].every(n=>between(n,0,100))||
    !weights||Object.values(weights).some(n=>!between(n,0,1))||
    !['results','finances','youth'].every(k=>valid(weights[k]))||
-   Math.abs(weights.results+weights.finances+weights.youth-1)>1e-8)
+   Math.abs(weights.results+weights.finances+weights.youth-1)>1e-8||!between(pull,0,1))
    throw new RangeError('Évaluation du conseil invalide');
   const score=results*weights.results+finances*weights.finances+youth*weights.youth;
-  const next=Math.max(0,Math.min(100,Math.round(current*.7+score*.3)));
+  const next=Math.max(0,Math.min(100,Math.round(current*(1-pull)+score*pull)));
   return {next,change:next-current,score,warning:next<35};
  }
  function sponsorContract({weeklyPayment=0,signingBonus=0,winBonus=0,rankingBonus=0,weeks,wins=0,rankingReached=false}){
