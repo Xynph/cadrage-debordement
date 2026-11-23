@@ -26,7 +26,10 @@ assert.equal(api.community(s,'ecoles',()=>true),true);
 assert.equal(api.community(s,'ecoles',()=>true),false,'no duplicate outreach');
 assert.equal(api.community(s,'associations',()=>true),true);
 assert.equal(api.community(s,'portesOuvertes',()=>true),false,'max two community events');
-assert.equal(api.ensure(s).sentiment,66);
+assert.equal(api.ensure(s).sentiment,undefined,'humeur unique (23/11/2026) : plus de sentiment sauvegardé');
+assert.equal(api.forecast(s,50).demand,api.forecast(s).demand,'humeur inconnue = neutre (50)');
+assert.ok(api.forecast(s,27).demand<api.forecast(s,50).demand&&api.forecast(s,80).demand>api.forecast(s,50).demand,'la demande suit l’humeur');
+{const f0=make();assert.equal(api.forecast(f0,80).demand-api.forecast(f0,50).demand,15,'demi-point de demande par point d’humeur');}
 assert.equal(api.service(s,'premium',()=>false),false,'V115 service rollback');
 assert.equal(api.service(s,'confort',()=>true),true);
 assert.equal(api.service(s,'simple',()=>true),false,'only one service decision');
@@ -48,8 +51,9 @@ const prior=JSON.stringify(s);
 s.phase='ended';
 assert.equal(api.closeSeason(s,()=>false),false,'V116 annual report rollback');
 assert.equal(api.ensure(s).history.length,0);
-assert.equal(api.closeSeason(s,()=>true),true);
+assert.equal(api.closeSeason(s,()=>true,63),true);
 assert.equal(api.closeSeason(s,()=>true),false,'annual closure idempotent');
+assert.equal(api.ensure(s).history[0].humeur,63,'bilan de saison : humeur des supporters');
 assert.equal(api.ensure(s).history[0].totalAttendance,9000);
 assert.equal(api.ensure(s).history[0].totalRevenue,108000);
 assert.equal(api.valid(JSON.parse(JSON.stringify(s)).v111to116),true);
@@ -65,6 +69,12 @@ assert.equal(api.ensure(s).subscribers,Math.max(Math.floor(subs*.85),Math.min(su
 const stale=make();stale.v111to116={version:5};
 assert.equal(api.ensure(stale),null,'corrupt state never silently replaced');
 const old=make();delete old.v111to116;assert.ok(api.ensure(old),'legacy saved career accepted');
+// Ancienne sauvegarde : sentiment retiré, bilans gardés sous `humeur`.
+const legacy=make();legacy.v111to116={version:1,season:1,sentiment:71,price:'equilibree',subscribers:3000,campaign:null,service:null,community:[],ledger:[{round:1,attendance:5000,revenue:100000,price:'equilibree'}],
+ history:[{season:1,sentiment:44,subscribers:3000,rounds:1,totalAttendance:5000,totalRevenue:100000,price:'equilibree',community:0}],commercialCash:0};
+assert.equal(api.valid(legacy.v111to116),true,'ancien format valide');
+const migrated=api.ensure(legacy);assert.equal(migrated.sentiment,undefined);assert.equal(migrated.history[0].humeur,44);assert.equal(migrated.history[0].sentiment,undefined);
+assert.equal(api.valid(JSON.parse(JSON.stringify(migrated))),true,'format migré valide');
 const poor=make();poor.clubs[0].cash=0;
 assert.equal(api.campaign(poor,'locale',()=>true),false,'insufficient budget campaign');
 assert.equal(api.community(poor,'ecoles',()=>true),false,'insufficient budget outreach');

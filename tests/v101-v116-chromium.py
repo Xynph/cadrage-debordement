@@ -108,8 +108,7 @@ try:
           const before=clone.clubs[0].cash;
           if(!Number.isFinite(before))throw Error('Cash invalid after combined decisions');
           return {season:clone.season,cash:before,path:clone.v101to104.paths.length,
-            staff:clone.v105to110.missions.length,sales:clone.v111to116.ledger.length,
-            sentiment:clone.v111to116.sentiment};
+            staff:clone.v105to110.missions.length,sales:clone.v111to116.ledger.length};
         }""")
         assert not errors,errors
         page.screenshot(path="/tmp/v101-v116-chromium.png",full_page=True)
