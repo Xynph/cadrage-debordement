@@ -13,7 +13,7 @@ const Salary = preload("res://ui/salary_display.gd")
 const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 const Guidee = preload("res://ui/offre_guidee.gd")
 const LARGEUR := 1500.0
-const HAUTEUR := 650.0
+const HAUTEUR := 680.0
 const COULEUR_SALAIRE := Pieces.BLEU
 const COULEUR_DUREE := Pieces.VIOLET
 const COULEUR_PRIME := Pieces.TURQUOISE
@@ -35,10 +35,11 @@ static func construire(body: Control, ctx: Dictionary) -> Control:
 	for champ: SpinBox in [ctx.salary, ctx.years]:
 		if champ.get_parent() != null: champ.get_parent().remove_child(champ)
 		toile.add_child(champ)
-	var u := Guidee.utile(LARGEUR)
-	D.place(ctx.salary, Rect2(u - 304, 232, 280, 50))
-	D.place(ctx.years, Rect2(u - 304, 432, 280, 50))
+	D.place(ctx.salary, Rect2(LARGEUR - 304, 232, 280, 50))
+	D.place(ctx.years, Rect2(LARGEUR - 304, 432, 280, 50))
 	var redessiner := func(): _dessiner(toile, dessin, ctx)
+	# Prime et clause (offre guidée) : réglées par clic sur leurs crans, sans champ de saisie ; la toile se redessine.
+	ctx["redessiner"] = redessiner
 	ctx.salary.value_changed.connect(func(_x: float): redessiner.call())
 	ctx.years.value_changed.connect(func(_x: float): redessiner.call())
 	redessiner.call()
@@ -55,11 +56,15 @@ static func valeurs(ctx: Dictionary) -> Dictionary:
 	var annees := int(ctx.years.value)
 	var fee: Variant = quote.get("fee")
 	var premiere := int(ctx.first_season)
+	# Offre guidée : prime de base + cran choisi, clause choisie (recrutement seulement).
+	var en_plus := 0 if ctx.get("prolongation", false) else Guidee.prime_en_plus(ctx, annees)
+	var niveau := "sans" if ctx.get("prolongation", false) else str(Guidee.extras(ctx).clause)
 	return {
 		"propose": propose, "demande": demande, "ecart": propose - demande, "annees": annees,
 		"min": int(quote.get("minYears", 1)), "max": maxi(int(quote.get("maxYears", 3)), annees),
 		"premiere": premiere, "fin": G.contract_year(premiere + annees - 1),
-		"fee": int(fee) if fee is int or fee is float else -1,
+		"fee": int(fee) + en_plus if fee is int or fee is float else -1, "fee_base": int(fee) if fee is int or fee is float else -1,
+		"clause": niveau, "clause_montant": int(Guidee.clause(ctx, niveau).get("montant", 0)),
 		"budget": {} if ctx.get("prolongation", false) else Budget.data(ctx.app.model), "cash": ctx.app.model.get("finance", {}).get("cash"),
 		"prolongation": bool(ctx.get("prolongation", false)),
 		"actuel": int(ctx.player.get("salary", 0)), "fin_actuelle": ctx.player.get("contractEnd"),
@@ -113,8 +118,8 @@ static func _dessiner(toile: Control, dessin: Control, ctx: Dictionary) -> void:
 	var val := valeurs(ctx)
 	_identite(toile, dessin, ctx, val)
 	_regle(toile, dessin, ctx, val, 170.0, true)
-	_frise(toile, dessin, ctx, val, Rect2(0, 370, Guidee.utile(LARGEUR), 130), true)
-	_jeton(toile, dessin, val, Rect2(0, 520, Guidee.utile(LARGEUR), 120))
+	_frise(toile, dessin, ctx, val, Rect2(0, 370, LARGEUR, 130), true)
+	Guidee.reglages(load("res://ui/offre_visuelle.gd"), toile, dessin, ctx, val, Rect2(0, 520, LARGEUR, 146))
 	Guidee.dessiner(load("res://ui/offre_visuelle.gd"), toile, dessin, ctx, val, LARGEUR, HAUTEUR)
 	_marquer(toile)
 
@@ -169,7 +174,7 @@ static func _identite(toile: Control, parent: Control, ctx: Dictionary, val: Dic
 ## Règle de salaire : repère de la demande, curseur de la proposition, écart entre les deux. Un clic sur la règle règle le salaire.
 static func _regle(toile: Control, parent: Control, ctx: Dictionary, val: Dictionary, y: float, interactif: bool) -> void:
 	var hauteur := 180.0 if interactif else 128.0
-	var large := Guidee.utile(LARGEUR) if interactif else LARGEUR - 40
+	var large := LARGEUR if interactif else LARGEUR - 40
 	var cadre := D.rect(parent, Rect2(0, y, large, hauteur), Charte.PANNEAU_2, Charte.RAYON_CARTE)
 	cadre.name = "OffreRegle" if interactif else "OffreRegleFigee"
 	_etiquette(cadre, 24, 34, "Salaire " + G.salary_period(true), 300)
@@ -285,7 +290,7 @@ static func _jeton(toile: Control, parent: Control, val: Dictionary, zone: Rect2
 	var budget: Dictionary = val.budget
 	var x := 40.0 + d + 300.0
 	var py := zone.size.y / 2 - 17
-	var etroit := zone.size.x < (1200 if not Guidee.variante().is_empty() else 1000)
+	var etroit := zone.size.x < 1000
 	if not budget.is_empty():
 		var reste := int(budget.get("disponible", 0)) - maxi(0, fee)
 		x += Pieces.pastille(cadre, x, py, "Reste %s" % G.euros(reste), "check" if reste >= 0 else "warning", "OffreJetonReste", "", Pieces.VERT if reste >= 0 else Pieces.ROUGE,
@@ -295,6 +300,9 @@ static func _jeton(toile: Control, parent: Control, val: Dictionary, zone: Rect2
 			Charte.PANNEAU_3, func(): _fenetre_budget(toile, val)) + 12
 	if (val.cash is int or val.cash is float) and not etroit:
 		Pieces.pastille(cadre, x, py, "Trésorerie %s" % G.euros(val.cash), "money", "OffreJetonTresorerie", "", Charte.IVOIRE, Charte.PANNEAU_3, func(): _fenetre_budget(toile, val))
+	# Récapitulatif (zone étroite) : clause libératoire choisie.
+	if etroit and str(val.get("clause", "sans")) != "sans":
+		Pieces.pastille(cadre, x, py, "Clause %s · %s" % [str(Guidee.NOMS[val.clause]).to_lower(), Guidee.court(int(val.clause_montant))], "lock", "OffreJetonClause", "", Guidee.COULEURS_CLAUSE[val.clause], Charte.PANNEAU_3)
 
 # --- Récapitulatif de la confirmation ------------------------------------------------------------------------------------
 
