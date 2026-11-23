@@ -192,11 +192,16 @@ func run() -> void:
 		check(carte_ch != null and not carte_ch.get_global_rect().intersects(between.terrain.get_global_rect()), "carte qui ne recouvre pas le terrain 2D")
 		check(carte_ch != null and between.phrase_fm.get_global_rect().grow(4.0).encloses(carte_ch.get_global_rect()), "carte posée sur la bande de la phrase de jeu")
 		await capture("final-remplacement-1920")
-		var tuile: Button = la_carte(between, nom_tuile)
+		# Le numéro sur la médaille arrive avec le dernier rafraîchissement de la carte (runner lent) : on attend qu'il s'affiche.
 		var chiffre := ""
-		if tuile != null:
-			var medaille := tuile.find_child("MatchBetweenFaceNumber", true, false)
-			for l: Node in (medaille.find_children("*", "Label", true, false) if medaille != null else []): chiffre = (l as Label).text
+		var lire_numero := func() -> String:
+			var t: Button = la_carte(between, nom_tuile)
+			var texte := ""
+			var medaille: Node = t.find_child("MatchBetweenFaceNumber", true, false) if t != null else null
+			for l: Node in (medaille.find_children("*", "Label", true, false) if medaille != null else []): texte = (l as Label).text
+			return texte
+		await until(func(): return lire_numero.call() == str(numero), 30000)
+		chiffre = lire_numero.call()
 		check(chiffre == str(numero), "Mon XV : l'entrant porte le n° %d (vu : %s)" % [numero, chiffre])
 	finir()
 
