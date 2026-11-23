@@ -123,7 +123,7 @@ func run() -> void:
 		vue.add_child(ecran)
 		for i in 4: await process_frame
 		signaux.clear()
-		for nom in ["tiroir_demande", "joueur_choisi", "reprise_demandee", "pause_demandee", "horloge_choisie", "niveau_choisi", "delegation_demandee", "camera_demandee", "consigne_bonus", "fiche_ouverte", "journal_demande", "stats_demandees", "club_demande", "confier_fin_demande", "stat_demandee", "match_demande"]:
+		for nom in ["tiroir_demande", "joueur_choisi", "reprise_demandee", "pause_demandee", "horloge_choisie", "niveau_choisi", "delegation_demandee", "camera_demandee", "consigne_bonus", "fiche_ouverte", "journal_demande", "stats_demandees", "club_demande", "confier_fin_demande", "stat_demandee", "match_demande", "consignes_demandees"]:
 			var signal_nom: String = nom
 			ecran.connect(signal_nom, func(a = null, _b = null): signaux.append([signal_nom, a]))
 		# Plein écran obligatoire : un joueur cliqué ouvre sa petite fenêtre (branchée par la régie ; ici, un signal noté).

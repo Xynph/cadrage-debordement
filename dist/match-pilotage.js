@@ -304,6 +304,8 @@ function pilotageSkillMod(p,k){
   if(c.apaise&&d&&d.tous<0)n=0;
   n+=Math.round(((c.tous||0)+(c[k]||0))*cri.force);
  }
+ // Cri individuel du banc (bien ou mal pris).
+ if(l.pilotage.crisJoueurs)n+=criJoueurMod(l,p,k);
  // Rôle du poste et consignes individuelles (club joué, match du manager seulement).
  if(l===(typeof S!=='undefined'&&S?S.live:null))n+=pilIndiv()?.skill(p,k)??0;
  return n;
@@ -334,7 +336,53 @@ function crier(l,id){
 function pilotageCrisProjection(l){
  const c=l.pilotage.cri,actif=c&&l.minute<c.jusqua?{id:c.id,label:CRIS[c.id].label,jusqua:c.jusqua,force:c.force}:null;
  return {actif,options:Object.entries(CRIS).map(([id,x])=>{const f=criForce(l,id),tot=l.minute>=(x.des||0);
-  return {id,label:x.label,note:!tot?'À partir de la '+x.des+'e minute':f===1?x.note:f===.5?'Déjà crié : effet réduit de moitié':'Trop répété : ils n’écoutent plus',disponible:tot&&!l.finished,usure:1-f}})};
+  return {id,label:x.label,note:!tot?'À partir de la '+x.des+'e minute':f===1?x.note:f===.5?'Déjà crié : effet réduit de moitié':'Trop répété : ils n’écoutent plus',disponible:tot&&!l.finished,usure:1-f}}),individuels:pilotageCrisJoueurProjection(l)};
+}
+// --- Cris à un joueur (idée FM27 n° 34, choix de Léo du 23/11/2026) ---
+// Un mot du banc à un joueur sur le terrain. Bien pris : un coup de fouet court (points d'attribut pendant `duree`
+// minutes) et du moral ; mal pris : l'inverse. Rien n'est chiffré à l'écran (principe d'incertitude) : la réaction se
+// découvre après coup (sens 1 bien pris, -1 mal pris, 0 il n'écoute plus). Part de hasard tirée de l'empreinte du match
+// (pilotageHash) : la suite des tirages Math.random reste inchangée.
+// `ok` : chance d'être bien pris selon son moral du moment (palier) ; CRIS_JOUEUR_ETATS la corrige selon son état
+// d'après causerie, et son mental compte un peu. `bien` / `mal` : `tous` et points par geste, `moral` (points de moral).
+// Usure : un joueur déjà interpellé dans les 15 dernières minutes écoute moitié moins, une troisième fois plus du tout ;
+// le banc qui crie sans arrêt s'use aussi (dès 4 cris individuels en 10 minutes : moitié moins, dès 6 : plus rien).
+// Valeurs de jeu étalonnées dans tests/match-cris-joueur.cjs (lots de matchs, mêmes graines : effet sur les victoires
+// négligeable, même en criant toutes les 3 minutes).
+const CRIS_JOUEUR={
+ bravo:{label:'Bien joué',duree:6,ok:{gonfle:.5,confiant:.7,concentre:.8,inquiet:.9,abattu:.85},bien:{tous:1,moral:6},mal:{tous:-1,moral:-1}},
+ niveau:{label:'Hausse le niveau',duree:8,ok:{gonfle:.75,confiant:.7,concentre:.6,inquiet:.35,abattu:.25},bien:{tous:2,moral:2},mal:{tous:-1,moral:-6}},
+ reveil:{label:'Réveille-toi',duree:8,ok:{gonfle:.3,confiant:.45,concentre:.55,inquiet:.4,abattu:.5},bien:{tous:3,moral:-1},mal:{tous:-1,discipline:-6,moral:-5}}
+};
+const CRIS_JOUEUR_ETATS={relache:{reveil:.25,bravo:-.1},indifferent:{reveil:.15},tendu:{bravo:.1,niveau:-.15,reveil:-.15},vexe:{reveil:-.2,bravo:.05},galvanise:{reveil:-.2,niveau:.05}};
+const CRIS_JOUEUR_USURE=Object.freeze({joueur:15,banc:10,bancMoitie:4,bancMuet:6});
+function criJoueurForce(l,id){
+ const log=l.pilotage.crisJoueursLog||[],U=CRIS_JOUEUR_USURE;
+ const n=log.filter(x=>x.id===id&&l.minute-x.minute<U.joueur).length,b=log.filter(x=>l.minute-x.minute<U.banc).length;
+ return (n===0?1:n===1?.5:0)*(b>=U.bancMuet?0:b>=U.bancMoitie?.5:1);
+}
+function crierJoueur(l,id,cri){
+ if(!pilotageActif(l)||l.finished)return false;
+ const c=CRIS_JOUEUR[cri],u=l.userSide;if(!c)return false;
+ const p=activePlayers(l,u).find(x=>x.id===id);if(!p)return false;
+ const force=criJoueurForce(l,id),log=l.pilotage.crisJoueursLog||[];
+ const m=l.pilotage.moral?.joueurs?.[id],palier=moralPalier(m?m.v:moralDepart(l,id))[1],etat=l.pilotage.etats?.[id]?.etat;
+ const chance=Math.max(.1,Math.min(.95,(c.ok[palier]??.6)+(CRIS_JOUEUR_ETATS[etat]?.[cri]||0)+((typeof skill==='function'?skill(p,'mental'):60)-60)*.004));
+ const tirage=pilotageHash(['crijoueur',l.worldContext?.id??'',(l.pair||[]).join('-'),id,cri,Math.floor(l.minute),log.length].join('|'))/4294967296;
+ const sens=force===0?0:tirage<chance?1:-1,e=sens>0?c.bien:sens<0?c.mal:{};
+ const fiche={cri,minute:l.minute,jusqua:l.minute+c.duree,sens};
+ for(const [k,v] of Object.entries(e))if(k!=='moral')fiche[k]=v*force;
+ if(e.moral&&l.pilotage.moral)moralBouge(l,id,e.moral*force);
+ l.pilotage.crisJoueurs={...(l.pilotage.crisJoueurs||{}),[id]:fiche};
+ l.pilotage.crisJoueursLog=[...log,{id,cri,minute:l.minute}].slice(-40);
+ return {sens};
+}
+// Bonus du cri individuel en cours pour le joueur `p` et le geste `k`.
+function criJoueurMod(l,p,k){const f=l.pilotage.crisJoueurs?.[p.id];return f&&l.minute<f.jusqua?(f.tous||0)+(f[k]||0):0}
+function pilotageCrisJoueurProjection(l){
+ const r={};
+ for(const [id,f] of Object.entries(l.pilotage.crisJoueurs||{}))r[id]={cri:f.cri,label:CRIS_JOUEUR[f.cri]?.label||f.cri,minute:f.minute,sens:f.sens,enCours:l.minute<f.jusqua};
+ return {options:Object.entries(CRIS_JOUEUR).map(([id,x])=>({id,label:x.label})),joueurs:r};
 }
 // Fatigue : le rythme et « Tout donner » usent plus vite (charge par minute, rugby.js). Même règle pour les deux
 // bancs : un adversaire qui accélère s'use aussi.
@@ -739,6 +787,60 @@ function pilotageBilan(l,axe){
  }[axe]||[];
  return {axe,valeur:v,depuis:l.pilotage.depuis[axe],texte:`${CONSIGNES[axe].label} « ${consigneLabel(axe,v)} » depuis ${l.pilotage.depuis[axe]}′ : ${morceaux.join(', ')}.`};
 }
+// Avis du staff sur chaque cran (idée FM27 n° 33, fenêtre des consignes en direct ; choix de Léo du 23/11/2026) :
+// pour / contre de chaque cran EN TENDANCE, jamais chiffrés (principe d'incertitude). `force` : 2 net, 1 léger,
+// 0 le staff ne sait pas. Ce que le staff lit dépend de sa compétence (`niveauStaff`) : il peut grossir, minimiser ou
+// ne pas voir un effet ; la lecture est figée pour le match (hachage, aucun tirage) et tient compte de l'arbitre et de
+// la météo. Mots courts, ordres de grandeur des effets réels ci-dessus et de tactical-plans.js.
+const CONSIGNES_TENDANCES={
+ piedJeu:{moins:[[1,1,'Ballon gardé'],[-1,2,'Moins de jeu au pied'],[-1,1,'Moins de territoire']],normal:[[0,0,'Équilibre']],plus:[[1,2,'Jeu au pied'],[1,1,'Territoire'],[-1,1,'Ballons rendus']]},
+ rythme:{lent:[[1,1,'Moins d’en-avant'],[1,1,'Moins d’usure'],[-1,1,'Moins d’avancée']],normal:[[0,0,'Équilibre']],rapide:[[1,1,'Plus d’avancée'],[-1,1,'En-avant'],[-1,1,'Usure des deux XV']]},
+ relance:{degager:[[1,2,'Jeu au pied chez nous'],[-1,1,'Ballon rendu']],selon:[[0,0,'Au choix du 10']],relancer:[[1,1,'Ballon à la main'],[-1,2,'Moins de pied chez nous'],[-1,1,'Ballons perdus']]},
+ finDeMatch:{montre:[[1,2,'Ballon gardé'],[-1,1,'Moins de jeu au pied'],[0,0,'Dès 70′']],normal:[[0,0,'Sans effet']],tout:[[1,1,'Prise de risque'],[-1,2,'Ballons perdus'],[0,0,'Dès 70′']]},
+ rucks:{prudente:[[1,1,'Moins de fautes'],[-1,1,'Moins d’arrachés']],normale:[[0,0,'Équilibre']],agressive:[[1,2,'Ballons arrachés'],[-1,'arbitre-rucks','Fautes']]},
+ discipline:{stricte:[[1,2,'Moins de fautes'],[-1,1,'Défense moins mordante']],normale:[[0,0,'Équilibre']],limite:[[1,1,'Défense mordante'],[-1,2,'Fautes'],[-1,'arbitre-cartons','Cartons']]},
+ touche:{sure:[[1,2,'Touche gagnée'],[-1,1,'Plateforme moyenne']],normale:[[0,0,'Équilibre']],risquee:[[1,1,'Plateforme idéale'],[-1,2,'Touches perdues']]},
+ maul:{jamais:[[1,1,'Ballon vite sorti'],[-1,2,'Moins d’essais portés']],selon:[[0,0,'Au choix du pack']],souvent:[[1,2,'Essais portés'],[-1,1,'Jeu prévisible']]},
+ melee:{vite:[[1,2,'Moins de sifflets'],[1,1,'Plateforme']],normale:[[0,0,'Équilibre']],pousser:[[1,1,'Pénalités si pack fort'],[-1,'arbitre-melee','Coups de sifflet']]},
+ coupsEnvoi:{longs:[[1,2,'Distance'],[-1,1,'Moins de récupérés']],normaux:[[0,0,'Équilibre']],courts:[[1,2,'Ballons récupérés'],[-1,1,'Moins de distance']]},
+ cible:{aucune:[[0,0,'Sans effet']],aile:[[1,1,'Mètres sur leur aile'],[-1,1,'Ils s’adaptent']],ouvreur:[[1,1,'Ballons perdus chez eux'],[-1,1,'Plaquages en retard'],[-1,1,'Ils s’adaptent']]},
+ planAttaque:{equilibre:[[0,0,'Jeu varié']],large:[[1,2,'Gains plus longs'],[-1,1,'Fatigue'],[-1,'pluie-large','Fautes de main']],conquete:[[1,1,'Moins de fautes de main'],[1,1,'Pénaltouche'],[-1,1,'Gains plus courts']],occupation:[[1,2,'Territoire'],[1,1,'Moins d’usure'],[-1,1,'Ballons rendus'],[-1,'vent-occupation','Selon le vent']]},
+ systemeDefense:{equilibre:[[0,0,'Compromis']],pression:[[1,2,'Erreurs provoquées'],[-1,1,'Fatigue'],[-1,1,'Grands gains concédés'],[-1,1,'Pénalités']],prudente:[[1,1,'Profondeur protégée'],[1,1,'Moins de pénalités'],[-1,1,'Premiers mètres cédés']]},
+ penalites:{auto:[[0,0,'Au choix du capitaine']],points:[[1,2,'Points au pied'],[-1,1,'Moins d’occasions d’essai']],touch:[[1,1,'Ballon porté'],[-1,1,'Points laissés']],main:[[1,1,'Jeu rapide'],[-1,1,'Ballons perdus']]}
+};
+// Force qui dépend du contexte du match : l'arbitre et la météo durcissent un effet.
+function tendanceContexte(l,cle){
+ const a=l.pilotage.arbitre||{};
+ if(cle==='arbitre-rucks')return a.rucks>=4?2:1;
+ if(cle==='arbitre-cartons')return a.cartons>=4?2:1;
+ if(cle==='arbitre-melee')return a.melee>=4?2:1;
+ if(cle==='pluie-large')return l.weather==='Pluie'?2:1;
+ if(cle==='vent-occupation')return l.weather==='Vent'?2:1;
+ return 1;
+}
+// Fiabilité affichée de la lecture du staff (un mot, jamais son niveau chiffré).
+function avisFiabilite(lv){return lv>=75?'fiable':lv>=60?'correct':'approximatif'}
+function pilotageAvisCrans(l){
+ if(!pilotageActif(l))return null;
+ const lv=niveauStaff(),erreur=Math.max(.04,Math.min(.42,(95-lv)/110)),graine='avis|'+(l.worldContext?.id||'match')+'|'+(l.pair||[]).join('-')+'|';
+ const axes={};
+ for(const [axe,crans] of Object.entries(CONSIGNES_TENDANCES)){
+  axes[axe]={};
+  for(const [v,effets] of Object.entries(crans)){
+   const r={pour:[],contre:[],neutre:[]};
+   for(const [sens,f,mot] of effets){
+    if(!sens){r.neutre.push(mot);continue;}
+    let force=typeof f==='string'?tendanceContexte(l,f):f;
+    // Lecture du staff : plus il est compétent, moins il se trompe d'intensité ou passe à côté.
+    const h=pilotageHash(graine+axe+'|'+v+'|'+mot)/4294967296;
+    if(h<erreur)force=force===2?1:(h<erreur/3?0:2);
+    (sens>0?r.pour:r.contre).push({mot,force});
+   }
+   axes[axe][v]=r;
+  }
+ }
+ return {fiabilite:avisFiabilite(lv),axes};
+}
 function pilotageProjection(l){
  if(!pilotageActif(l))return null;
  const p=l.pilotage,joueurs={};
@@ -765,10 +867,12 @@ function pilotageProjection(l){
   roles:typeof playerRolesLive==='function'?playerRolesLive(l):null,
   // File « prochain arrêt de jeu », rôles du poste et consignes individuelles (native/engine/match-arrets.cjs).
   ...(typeof CDMatchArrets!=='undefined'?{arrets:CDMatchArrets.projection(l)}:{}),
+  // Avis du staff sur chaque cran, en tendance (fenêtre des consignes en direct).
+  avisCrans:pilotageAvisCrans(l),
   ...(()=>{const prev=pilotagePrevision(l);return {fatigue:[...prev].sort((a,b)=>a.prevue-b.prevue).slice(0,4),conseilChangement:pilotageConseilChangement(l,prev)}})(),
   // Banc adverse : consignes en cours (ce que son jeu laisse voir), derniers changements, tons de ses causeries.
   adversaire:{consignes:{...CONSIGNES_NEUTRES,...(p.consignesAdverses||{})},derniers:(p.adversaire?.derniers||[]).slice(-5).map(x=>({...x})),
    causeries:Object.fromEntries(Object.entries(p.adversaire?.causeries||{}).map(([ph,t])=>[ph,{ton:t,label:TONS_LABELS[t]||t}]))}
  };
 }
-if(typeof module!=='undefined'&&module.exports)module.exports={MORAL_DEPART,MORAL_FAITS,MORAL_PALIERS,moralEffet,ARBITRES,arbitreDuMatch,arbitreResume,CONSIGNES,CONSIGNES_GROUPES,CONSIGNES_PLAN,CRIS,TONS_CAUSERIE,TONS_LABELS,PILOTAGE_ETATS};
+if(typeof module!=='undefined'&&module.exports)module.exports={MORAL_DEPART,MORAL_FAITS,MORAL_PALIERS,moralEffet,ARBITRES,arbitreDuMatch,arbitreResume,CONSIGNES,CONSIGNES_GROUPES,CONSIGNES_PLAN,CRIS,CRIS_JOUEUR,TONS_CAUSERIE,TONS_LABELS,PILOTAGE_ETATS};

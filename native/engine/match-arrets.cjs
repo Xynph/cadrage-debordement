@@ -14,6 +14,8 @@
 //   retirer(l, cle) ; file(l) ; appliquer(l, cause) ; apresMinute(l) (branché sur la minute du moteur) ; projection(l).
 // Changements : {type:'remplacement', slot, inId} · {type:'role', id, role|null} · {type:'consignes', id, valeurs:[…]}
 //   · {type:'responsabilite', role:'buteur'|'secours'|'lanceur'|'pied', id|null} · {type:'consigne', axe, valeur}
+//   · {type:'ailes'} (permuter les ailes : nos deux ailiers, n° 11 et 14, échangent leurs côtés ; redemandé avant
+//   l'arrêt, la demande s'annule ; redemandé après, ils reprennent leur côté)
 //   (consignes collectives en direct et plan de jeu : planAttaque, systemeDefense, penalites). `auteur` : 'manager',
 //   'adjoint' (conseil de Gabi appliqué) ou 'staff'.
 //
@@ -208,6 +210,41 @@ function factory(){
   CACHE={l,cle,equipe:tot,joueurs};
   return CACHE;
  }
+ // --- Permuter les ailes : chaque ailier fait face à l'ailier adverse de sa touche (notre 11 face à leur 14, notre 14 face
+ // à leur 11). Duel d'un attaquant contre son vis-à-vis : sa vitesse contre le plaquage et la vitesse du défenseur ;
+ // au-delà de `seuil` points, l'avantage croît comme le carré de l'écart (`k`), plafonné à `max` : un gros décalage
+ // rapporte bien plus que deux petits, c'est ce que la permutation va chercher.
+ // Seul l'écart avec le placement d'avant compte (comme pour les rôles) : un ailier rapide envoyé face à leur ailier
+ // lent rapporte, l'inverse coûte, et nos ailiers défendent aussi face à d'autres. L'adversaire s'adapte en
+ // `adaptation` minutes (il garde `residuel` de l'effet) ; réceptivité 0,7 à 1,3 tirée de l'empreinte du match.
+ // Valeurs de jeu, étalonnées dans tests/match-cris-joueur.cjs (lots de matchs, mêmes graines).
+ const AILES=Object.freeze({seuil:4,k:.0004,max:.06,adaptation:25,residuel:.4});
+ const AILE_G=10,AILE_D=13;
+ function ailesPermutees(l){
+  const a=l.pilotage?.ailes,sh=l.sheets?.[l.userSide];
+  return !!(a&&Array.isArray(a.ids)&&sh&&sh.on[AILE_G]===a.ids[0]&&sh.on[AILE_D]===a.ids[1]);
+ }
+ function duelAile(att,def){
+  if(!att||!def||typeof skill!=='function')return 0;
+  const x=skill(att,'speed')-(skill(def,'tackle')+skill(def,'speed'))/2;
+  const e=Math.max(0,x-AILES.seuil);return Math.min(AILES.max,AILES.k*e*e);
+ }
+ let CACHE_AILES={cle:'',v:null};
+ // {att, def} : écart de réussite (temps de jeu) de notre attaque et de la leur, placement actuel moins placement d'avant.
+ function ailesEcart(l){
+  if(!actif(l)||!ailesPermutees(l))return null;
+  const u=l.userSide,o=1-u,sh=l.sheets[u],so=l.sheets[o],on=x=>typeof activePlayers==='function'?activePlayers(l,x.side).find(p=>p.id===x.id)||null:null;
+  const cle=l.minute+'|'+sh.on.join(',')+'|'+so.on.join(',')+'|'+(sh.cards||[]).length+'|'+(so.cards||[]).length;
+  if(CACHE_AILES.l===l&&CACHE_AILES.cle===cle)return CACHE_AILES.v;
+  const g=on({side:u,id:sh.on[AILE_G]}),d=on({side:u,id:sh.on[AILE_D]}),eg=on({side:o,id:so.on[AILE_G]}),ed=on({side:o,id:so.on[AILE_D]});
+  const a=l.pilotage.ailes,depuis=Number.isFinite(a.minute)?a.minute:l.minute;
+  const f=(.7+.6*hash('ailes|'+matchKey(l)+'|'+a.ids.join('-')+'|'+depuis))*Math.max(AILES.residuel,1-(l.minute-depuis)/AILES.adaptation);
+  const att=(duelAile(g,ed)+duelAile(d,eg))-(duelAile(d,ed)+duelAile(g,eg));
+  const def=(duelAile(ed,g)+duelAile(eg,d))-(duelAile(ed,d)+duelAile(eg,g));
+  const v={att:att*f,def:def*f};
+  CACHE_AILES={l,cle,v};
+  return v;
+ }
  const nous=(l,side)=>actif(l)&&side===l.userSide;
  const val=(l,k)=>equipe(l)?.equipe[k]||0;
  const effets={
@@ -217,7 +254,10 @@ function factory(){
    return Math.round((e.skills[k]||0)+(e.skills.tous||0));
   },
   kick(l,side){return nous(l,side)?Math.max(.5,1+val(l,'kick')):1;},
-  edge(l,side){return nous(l,side)?val(l,'edge'):actif(l)&&side===1-l.userSide?-val(l,'def'):0;},
+  edge(l,side){
+   const a=ailesEcart(l);
+   return nous(l,side)?val(l,'edge')+(a?a.att:0):actif(l)&&side===1-l.userSide?-val(l,'def')+(a?a.def:0):0;
+  },
   hand(l,side){return nous(l,side)?val(l,'hand'):actif(l)&&side===1-l.userSide?val(l,'handOpp'):0;},
   foul(l,side,kind){return nous(l,side)&&kind==='jeu'?Math.max(.6,1+val(l,'foul')):1;},
   gain(l,side){return nous(l,side)?Math.round(val(l,'gain')):0;},
@@ -261,6 +301,10 @@ function factory(){
    check(plan?planOptions(c.axe).some(o=>o.id===c.valeur):typeof CONSIGNES!=='undefined'&&CONSIGNES[c.axe]?.valeurs.some(v=>v[0]===c.valeur),'Consigne inconnue.');
    return {cle:'consigne:'+c.axe,type:'consigne',axe:c.axe,valeur:c.valeur};
   }
+  if(c.type==='ailes'){
+   check(sh.on[AILE_G]&&sh.on[AILE_D]&&[AILE_G,AILE_D].every(s=>activePlayers(l,l.userSide).some(p=>p.id===sh.on[s])),'Il faut nos deux ailiers sur le terrain.');
+   return {cle:'ailes',type:'ailes',gauche:sh.on[AILE_G],droite:sh.on[AILE_D]};
+  }
   throw Error('Changement en direct inconnu.');
  }
  // Le changement ramène-t-il l'état actuel ?
@@ -276,6 +320,8 @@ function factory(){
   check(actif(l),'Changements en direct indisponibles pour ce match.');
   check(['manager','adjoint','staff'].includes(auteur),'Auteur inconnu.');
   const p=etat(l),e=normaliser(l,change);
+  // Permuter les ailes une seconde fois avant l'arrêt : la demande s'annule.
+  if(e.type==='ailes'&&p.file.some(x=>x.cle==='ailes')){p.file=p.file.filter(x=>x.cle!=='ailes');return {annule:true,cle:e.cle};}
   p.file=p.file.filter(x=>x.cle!==e.cle&&!(e.type==='remplacement'&&x.type==='remplacement'&&x.inId===e.inId));
   if(dejaEnPlace(l,e))return {annule:true,cle:e.cle};
   e.auteur=auteur;e.minute=l.minute;e.n=++p.arrets.n;
@@ -307,6 +353,14 @@ function factory(){
     ind.v++;return true;
    }
    if(e.type==='responsabilite')return setPlayerRoleLive(l,e.role,e.id)?true:'Le joueur n’est plus sur le terrain.';
+   if(e.type==='ailes'){
+    if(sh.on[AILE_G]!==e.gauche||sh.on[AILE_D]!==e.droite)return 'Les ailiers ont changé.';
+    if(![AILE_G,AILE_D].every(s=>activePlayers(l,l.userSide).some(p=>p.id===sh.on[s])))return 'Un ailier n’est plus sur le terrain.';
+    const retour=ailesPermutees(l);
+    sh.on[AILE_G]=e.droite;sh.on[AILE_D]=e.gauche;
+    if(retour)delete l.pilotage.ailes;else l.pilotage.ailes={ids:[e.droite,e.gauche],minute:l.minute};
+    return true;
+   }
    if(e.type==='consigne'){
     if(Object.hasOwn(CONSIGNES_PLAN,e.axe))return plan(l,e.axe,e.valeur);
     return setConsigne(l,e.axe,e.valeur,e.auteur==='staff'?'staff':'manager')?true:'Consigne refusée.';
@@ -329,13 +383,14 @@ function factory(){
   if(e.type==='role')return `${nom(e.id)} : ${ROLE.get(e.role)?.[2]||'rôle naturel'}`;
   if(e.type==='consignes'){const fam=CONSIGNES_INDIV[famillePoste(Math.max(0,l.sheets[l.userSide].on.indexOf(e.id)))]||[];return `${nom(e.id)} : ${e.valeurs.map(v=>fam.find(x=>x[0]===v)?.[1]||v).join(', ')||'sans consigne'}`;}
   if(e.type==='responsabilite')return `${PLAYER_ROLES[e.role]?.[0]||e.role} : ${e.id?nom(e.id):'choix du staff'}`;
+  if(e.type==='ailes')return `Ailes permutées : ${nom(e.droite)} à gauche, ${nom(e.gauche)} à droite`;
   if(e.type==='consigne'){const plan=Object.hasOwn(CONSIGNES_PLAN,e.axe);return plan?`${CONSIGNES_PLAN[e.axe].label} : ${planOptions(e.axe).find(o=>o.id===e.valeur)?.label||e.valeur}`:`${CONSIGNES[e.axe].label} : ${consigneLabel(e.axe,e.valeur)}`;}
   return '';
  }
  function noter(l,e,r,cause){
   const a=l.pilotage.arrets;
   a.appliques=[...a.appliques,{n:e.n,cle:e.cle,type:e.type,auteur:e.auteur,demande:e.minute,minute:l.minute,cause,ok:r===true,...(r===true?{}:{raison:r}),
-   ...(e.type==='remplacement'?{slot:e.slot,outId:e.outId,inId:e.inId}:e.type==='responsabilite'?{role:e.role,id:e.id}:e.type==='consigne'?{axe:e.axe,valeur:e.valeur}:{id:e.id}),texte:libelle(l,e)}].slice(-MAX_APPLIQUES);
+   ...(e.type==='remplacement'?{slot:e.slot,outId:e.outId,inId:e.inId}:e.type==='responsabilite'?{role:e.role,id:e.id}:e.type==='consigne'?{axe:e.axe,valeur:e.valeur}:e.type==='ailes'?{gauche:e.gauche,droite:e.droite}:{id:e.id}),texte:libelle(l,e)}].slice(-MAX_APPLIQUES);
   if(r===true&&e.auteur!=='staff'&&Array.isArray(l.pilotage.journal)){l.pilotage.journal.push({minute:l.minute,auteur:e.auteur,texte:'Arrêt de jeu : '+libelle(l,e)+'.'});l.pilotage.journal=l.pilotage.journal.slice(-30);}
  }
  function appliquer(l,cause='arret'){
@@ -366,7 +421,9 @@ function factory(){
    roles,consignes:Object.fromEntries(Object.entries(ind.consignes||{}).map(([k,v])=>[k,v.slice()])),
    catalogue:Object.fromEntries(Object.entries(CONSIGNES_INDIV).map(([k,v])=>[k,v.map(([id,label])=>({id,label}))])),
    exclusions:Object.fromEntries(Object.entries(EXCLUS).map(([k,v])=>[k,v.map(x=>x.slice())])),
-   maxConsignes:MAX_CONSIGNES
+   maxConsignes:MAX_CONSIGNES,
+   // Ailes permutées (ailiers toujours à la place échangée) ; effet jamais chiffré.
+   ailes:{permutees:ailesPermutees(l),attente:(p.file||[]).some(e=>e.cle==='ailes')}
   };
  }
  function execute(command,payload){
@@ -374,13 +431,14 @@ function factory(){
   check(typeof S!=='undefined'&&S&&S.live&&!S.live.finished,'Aucun match en cours.');
   check(obj(payload)&&['ajouter','retirer'].includes(payload.action),'Action de file invalide.');
   if(payload.action==='retirer'){check(typeof payload.cle==='string','Clé de file invalide.');return {fileArret:{retire:retirer(S.live,payload.cle)}};}
-  check(obj(payload.change)&&['role','consignes','remplacement','responsabilite','consigne'].includes(payload.change.type),'Changement en direct invalide.');
+  check(obj(payload.change)&&['role','consignes','remplacement','responsabilite','consigne','ailes'].includes(payload.change.type),'Changement en direct invalide.');
   return {fileArret:ajouter(S.live,payload.change,payload.auteur??'manager')};
  }
  function validate(s){
   const p=s?.live?.pilotage;if(!p)return true;
   if(p.file!==undefined)check(Array.isArray(p.file)&&p.file.length<=MAX_FILE&&p.file.every(e=>obj(e)&&typeof e.cle==='string'&&typeof e.type==='string'),'File des arrêts de jeu invalide.');
   if(p.indiv!==undefined)check(obj(p.indiv)&&obj(p.indiv.roles)&&obj(p.indiv.consignes)&&Object.values(p.indiv.roles).every(r=>ROLE.has(r))&&Object.values(p.indiv.consignes).every(v=>Array.isArray(v)&&v.length<=MAX_CONSIGNES),'Rôles et consignes individuelles invalides.');
+  if(p.ailes!==undefined)check(obj(p.ailes)&&Array.isArray(p.ailes.ids)&&p.ailes.ids.length===2&&p.ailes.ids.every(x=>typeof x==='string'),'Ailes permutées invalides.');
   if(p.arrets!==undefined)check(obj(p.arrets)&&Array.isArray(p.arrets.appliques)&&p.arrets.appliques.length<=MAX_APPLIQUES,'Journal des arrêts de jeu invalide.');
   return true;
  }

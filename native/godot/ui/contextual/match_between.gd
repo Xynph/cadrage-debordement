@@ -50,6 +50,8 @@ signal score_joue(score: Array)
 signal camera_demandee(mode: String)
 ## Consigne de fin de match choisie dans la tuile Bonus ({attack, defense, penalty}, commandes existantes).
 signal consigne_bonus(consigne: Dictionary)
+## « Consignes » (idée FM27 n° 33) ouvre la petite fenêtre des consignes, le match continue.
+signal consignes_demandees
 ## Pause demandée depuis l'entracte (Espace, Échap) : commande `pause` du jeu, branchée par la régie.
 signal pause_demandee
 ## Fiche joueur ouverte (vrai) ou refermée (faux) pendant le match : la régie met le match en pause le temps de la lire.
@@ -134,6 +136,8 @@ var lien_adverse: Button
 var adjoint: VBoxContainer
 ## Bouton « ÉQUIPE » : fenêtre plein écran (composition, banc, cris, consignes), match en pause.
 var equipe: Button
+## Lien « Consignes » de la barre (idée FM27 n° 33) : petite fenêtre des consignes, sans pause.
+var lien_consignes: Button
 var plus: MenuButton
 ## Horloge de l'entracte choisie (reprise de la régie à l'ouverture).
 var horloge := "normale"
@@ -1151,18 +1155,16 @@ func _commandes() -> void:
 ## Menu déroulant à la charte : carte `PANNEAU` opaque rayon 12, sans ombre ni cadre ; survol en case
 ## `PANNEAU_3` rayon 6 ; texte crème (grisé pour un choix indisponible).
 func _habiller_menu(menu: PopupMenu) -> void:
-	var fond := _case(Color(PANNEAU, 1.0), Charte.RAYON_CARTE)
-	fond.shadow_size = 0
-	fond.set_content_margin_all(px(8))
-	menu.add_theme_stylebox_override("panel", fond)
-	menu.add_theme_stylebox_override("hover", _case(SURVOL))
+	# Ardoise claire (teinte D) des petites fenêtres du direct (Léo, 23/11) ; survol en case plus claire.
+	menu.add_theme_stylebox_override("panel", MenuJoueur.style_ardoise(px(8), false))
+	menu.add_theme_stylebox_override("hover", _case(MenuJoueur.PAL.case))
 	var filet := StyleBoxLine.new()
-	filet.color = TRAIT
+	filet.color = MenuJoueur.PAL.filet
 	filet.thickness = 1
 	for cle in ["separator", "labeled_separator_left", "labeled_separator_right"]: menu.add_theme_stylebox_override(cle, filet)
 	for cle in ["font_color", "font_hover_color", "font_accelerator_color"]: menu.add_theme_color_override(cle, IVOIRE)
-	menu.add_theme_color_override("font_disabled_color", FAIBLE)
-	menu.add_theme_color_override("font_separator_color", DOUX)
+	menu.add_theme_color_override("font_disabled_color", MenuJoueur.PAL.encre3)
+	menu.add_theme_color_override("font_separator_color", MenuJoueur.PAL.encre2)
 	menu.add_theme_constant_override("v_separation", px(10))
 	menu.transparent_bg = true
 
@@ -1327,7 +1329,13 @@ func _page() -> void:
 		barre = S.G.h(px(12))
 		(barre as HBoxContainer).alignment = BoxContainer.ALIGNMENT_END
 		page.add_child(barre)
-	for noeud: Control in [phase, equipe, _touche("T", BARRE_HAUT), parametres, plus]: barre.add_child(noeud)
+	var noeuds_barre: Array[Control] = [phase, equipe, _touche("T", BARRE_HAUT), parametres, plus]
+	lien_consignes = _lien("Consignes", func(): consignes_demandees.emit(), "MatchBetweenConsignes")
+	lien_consignes.add_theme_font_size_override("font_size", fpx(22 * BARRE_HAUT))
+	noeuds_barre.insert(3, lien_consignes)
+	for noeud: Control in noeuds_barre: barre.add_child(noeud)
+	# Barre du banc (idée FM27 n° 34) : cris d'équipe, cris à un joueur, ajustements, permuter les ailes.
+	load("res://ui/contextual/match_banc_fm.gd").poser(self, barre, page)
 	_page_d3(page)
 
 ## Pied : les raccourcis de l'écran et où trouver ce qui n'y est pas (vitesse, autres matchs).
@@ -2935,6 +2943,8 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	_pilotage = Pilotage.pilotage(live)
 	var bulles := get_node_or_null(BullesAdjoint.NOM)
 	if bulles != null: bulles.rafraichir()
+	var banc_fm := get_node_or_null("MatchFmBanc")
+	if banc_fm != null: banc_fm.rafraichir()
 	_remplir_journee(model, direct, equipes)
 	_remplir_bonus(model, live, direct)
 	_niveaux = direct.get("niveaux", [])

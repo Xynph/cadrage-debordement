@@ -251,8 +251,9 @@ func controler_charte(contexte: String) -> void:
 		verifier(s.border_width_left >= 2 and s.border_width_top == 0 and s.border_width_right == 0 and s.border_width_bottom == 0 and s.bg_color.get_luminance() < 0.3, contexte + " : choix « %s » en filet gauche sur fond sombre" % b.name)
 	# Menus déroulants du plan de jeu : fond PANNEAU, angles droits, sans ombre.
 	for choix: OptionButton in fenetre.find_children("*", "OptionButton", true, false):
-		var fond := choix.get_popup().get_theme_stylebox("panel") as StyleBoxFlat
-		verifier(fond != null and fond.bg_color.is_equal_approx(Charte.PANNEAU) and fond.shadow_size == 0, contexte + " : menu de « %s » habillé (PANNEAU, sans ombre)" % choix.name)
+		var fond := choix.get_popup().get_theme_stylebox("panel")
+		var teinte: Variant = fond.get("bg_color") if fond != null else null
+		verifier(teinte is Color and (teinte as Color).is_equal_approx(load("res://ui/contextual/match_menu_joueur.gd").PAL.fond) and float(fond.get("ombre")) == 0.0, contexte + " : menu de « %s » habillé (anthracite satiné, sans ombre)" % choix.name)
 	verifier(fenetre.name == "MatchTeamPage", contexte + " : calque nommé MatchTeamPage (%s)" % fenetre.name)
 
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
