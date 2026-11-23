@@ -1777,11 +1777,11 @@ func ouvrir_fenetre_joueur(id: String) -> void:
 
 ## Ouvre le calque d'une petite fenêtre du direct et rend son panneau (unités du gabarit 2248 × 1230, centré).
 ## Une fenêtre déjà ouverte est remplacée. Le match se met en pause (sauf sous la fenêtre Équipe, qui tient la pause).
-func _ouvrir_fenetre(nom: String, titre: String, largeur: float, hauteur: float) -> Panel:
+func _ouvrir_fenetre(nom: String, titre: String, largeur: float, hauteur: float, suspendre: bool = true) -> Panel:
 	_mini_fiche().cacher(app)
 	if drawer.visible: _fermer_tiroir()
 	_retirer_fenetre()
-	if not (is_instance_valid(equipe) and equipe.visible): _suspendre()
+	if suspendre and not (is_instance_valid(equipe) and equipe.visible): _suspendre()
 	var hote := Control.new()
 	hote.name = "MatchFenetre"
 	hote.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -1844,6 +1844,33 @@ func fermer_fenetre() -> void:
 			var fermer: Variant = noeud.get_meta(PetiteFenetre.FERMER, Callable())
 			if fermer is Callable and (fermer as Callable).is_valid(): (fermer as Callable).call()
 			return
+
+# --- Planche FM27 n° 33 : consignes en petite fenêtre, le match continue derrière ---------------------------------
+
+const ConsignesFenetre = preload("res://ui/contextual/match_consignes_fenetre.gd")
+## Axe montré, crans envoyés pas encore confirmés par le moteur, et l'envoi de la régie.
+var consignes_axe := ""
+var consignes_envois: Dictionary = {}
+var _consignes_envoyer: Callable
+
+## Ouvre la petite fenêtre des consignes (sans pause) ; `envoyer(axe, valeur)` applique un cran.
+func ouvrir_fenetre_consignes(envoyer: Callable = Callable()) -> void:
+	if envoyer.is_valid(): _consignes_envoyer = envoyer
+	var p: Dictionary = Pilotage.pilotage(_live())
+	Pilotage.confirmer(p, consignes_envois)
+	var vue := Pilotage.avec_envois(p, consignes_envois)
+	var fond := _ouvrir_fenetre(ConsignesFenetre.NOM, "CONSIGNES", ConsignesFenetre.LARGEUR, ConsignesFenetre.HAUTEUR, false)
+	var choisir := func(axe: String):
+		consignes_axe = axe
+		ouvrir_fenetre_consignes()
+	var appliquer := func(axe: String, valeur: String):
+		consignes_axe = axe
+		if Pilotage.cran(vue, {"id": axe}) != valeur:
+			consignes_envois[axe] = valeur
+			if _consignes_envoyer.is_valid(): _consignes_envoyer.call(axe, valeur)
+			else: app._command(Pilotage.COMMANDE, Pilotage.charge(axe, valeur))
+		ouvrir_fenetre_consignes()
+	ConsignesFenetre.construire(fond, vue, OS.get_environment("CD_VARIANTE_VISUELLE"), consignes_axe, choisir, appliquer, int(_live().get("minute", 0)))
 
 # --- Petites fenêtres de l'écran 2D : fait, chiffre, match du multiplex -----------------------------------------
 

@@ -47,6 +47,8 @@ signal score_joue(score: Array)
 signal camera_demandee(mode: String)
 ## Consigne de fin de match choisie dans la tuile Bonus ({attack, defense, penalty}, commandes existantes).
 signal consigne_bonus(consigne: Dictionary)
+## Planche FM27 n° 33 (CD_VARIANTE_VISUELLE A|B) : « Consignes » ouvre la petite fenêtre des consignes, le match continue.
+signal consignes_demandees
 ## Pause demandée depuis l'entracte (Espace, Échap) : commande `pause` du jeu, branchée par la régie.
 signal pause_demandee
 ## Fiche joueur ouverte (vrai) ou refermée (faux) pendant le match : la régie met le match en pause le temps de la lire.
@@ -131,6 +133,8 @@ var lien_adverse: Button
 var adjoint: VBoxContainer
 ## Bouton « ÉQUIPE » : fenêtre plein écran (composition, banc, cris, consignes), match en pause.
 var equipe: Button
+## Planche FM27 n° 33 : lien « Consignes » de la barre (seulement sous CD_VARIANTE_VISUELLE A|B).
+var lien_consignes: Button
 var plus: MenuButton
 ## Horloge de l'entracte choisie (reprise de la régie à l'ouverture).
 var horloge := "normale"
@@ -1316,7 +1320,12 @@ func _page() -> void:
 		barre = S.G.h(px(12))
 		(barre as HBoxContainer).alignment = BoxContainer.ALIGNMENT_END
 		page.add_child(barre)
-	for noeud: Control in [phase, equipe, _touche("T", BARRE_HAUT), parametres, plus]: barre.add_child(noeud)
+	var noeuds_barre: Array[Control] = [phase, equipe, _touche("T", BARRE_HAUT), parametres, plus]
+	if OS.get_environment("CD_VARIANTE_VISUELLE") in ["A", "B"]:
+		lien_consignes = _lien("Consignes", func(): consignes_demandees.emit(), "MatchBetweenConsignes")
+		lien_consignes.add_theme_font_size_override("font_size", fpx(22 * BARRE_HAUT))
+		noeuds_barre.insert(3, lien_consignes)
+	for noeud: Control in noeuds_barre: barre.add_child(noeud)
 	_page_d3(page)
 
 ## Pied : les raccourcis de l'écran et où trouver ce qui n'y est pas (vitesse, autres matchs).
