@@ -3,17 +3,27 @@
 // V27 : charge physique fictive, distincte de la condition instantanée.
 // Modèle : 0..100 ; la récupération ne modifie que la condition, déjà utilisée par skill/fitScore.
 // Plan « collective » = « Auto » (revue FM27, idée 13, choix de Léo du 23/11/2026 ; la clé reste « collective » dans les
-// sauvegardes : un ancien « Suivre le collectif » se lit donc « Auto » sans conversion). Un joueur en Auto prend l'intensité
-// de la règle de son niveau de forme (S.intensiteAuto, 5 modes, du plus bas au plus haut niveau) ; seuils de condition :
-// < 60 / 60 / 70 / 80 / 90 %. Sans règle sauvegardée : Repos, Repos, Normal, Normal, Intensif.
+// sauvegardes : un ancien « Suivre le collectif » se lit donc « Auto » sans conversion). Un joueur en Auto part de la
+// séance de la semaine (S.training, ou décision du préparateur en délégation) et la règle de son niveau de forme l'ajuste
+// d'un cran (S.intensiteAuto, 5 réglages : Repos = −1 cran, Normal = séance, Intensif = +1 ; borné Repos..Intensif).
+// Garde-fou : l'intensif n'est retenu qu'en très bonne forme (≥ 90 %) et charge basse (< 25), sinon séance normale.
+// Seuils de condition : < 60 / 60 / 70 / 80 / 90 %. Sans règle sauvegardée : Repos, Repos, Normal, Normal, Normal.
 const PHYSICAL_PLANS={collective:'Auto',repos:'Récupération',normal:'Normale',intense:'Intensive'};
 const INTENSITE_AUTO_SEUILS=[60,70,80,90];
-const INTENSITE_AUTO_DEFAUT=['repos','repos','normal','normal','intense'];
+const INTENSITE_AUTO_DEFAUT=['repos','repos','normal','normal','normal'];
 const INTENSITE_AUTO_MODES=['repos','normal','intense'];
+const INTENSITE_AUTO_CHARGE_BASSE=25;
 function intensiteAutoValide(r){return Array.isArray(r)&&r.length===5&&r.every(m=>INTENSITE_AUTO_MODES.includes(m))}
 function intensiteAutoRegle(){return intensiteAutoValide(S?.intensiteAuto)?S.intensiteAuto.slice():INTENSITE_AUTO_DEFAUT.slice()}
 function niveauForme(p){const c=Number(p?.condition);return Number.isFinite(c)?INTENSITE_AUTO_SEUILS.filter(seuil=>c>=seuil).length:0}
-function intensiteAutoPour(p){return intensiteAutoRegle()[niveauForme(p)]}
+// Séance de la semaine : choix du manager, ou celle du préparateur quand l'entraînement lui est confié (pendant la séance,
+// S.training porte déjà sa décision).
+function intensiteAutoBase(){let base=INTENSITE_AUTO_MODES.includes(S?.training)?S.training:'normal';if(S&&!S.trained&&typeof staffTrainingDecision==='function'){const d=staffTrainingDecision(S,base);if(d?.delegated&&INTENSITE_AUTO_MODES.includes(d.mode))base=d.mode;}return base}
+function intensiteAutoPour(p,base=intensiteAutoBase()){
+ const cran={repos:-1,normal:0,intense:1}[intensiteAutoRegle()[niveauForme(p)]]??0;
+ const mode=INTENSITE_AUTO_MODES[Math.max(0,Math.min(2,INTENSITE_AUTO_MODES.indexOf(INTENSITE_AUTO_MODES.includes(base)?base:'normal')+cran))];
+ return mode==='intense'&&!(Number(p?.condition)>=90&&physicalLoadValue(p)<INTENSITE_AUTO_CHARGE_BASSE)?'normal':mode;
+}
 // Règle d'un niveau de forme : sauvegardée tout de suite, appliquée à la prochaine séance (même déjà jouée cette semaine).
 function setIntensiteAuto(niveau,mode){if(!S||S.live||!Number.isInteger(niveau)||niveau<0||niveau>4||!INTENSITE_AUTO_MODES.includes(mode))return false;const regle=intensiteAutoRegle();regle[niveau]=mode;S.intensiteAuto=regle;save();render();return true}
 // Avis du kiné (même base que la règle des clubs de l'ordinateur : fatigue ≥ 55 ou condition < 60 → repos ; intensif pour un

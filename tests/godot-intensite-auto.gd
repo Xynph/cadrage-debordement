@@ -62,7 +62,7 @@ func run() -> void:
 	# « Auto » remplace « Suivre le collectif » partout.
 	check(Training.INDIVIDUAL.collective == "Auto" and Fatigue.PLANS.collective == "Auto" and FicheCharge.MODES[0][1] == "Auto", "Libellé Auto partout")
 	var moteur: Dictionary = app.model.decisions.training.get("intensiteAuto", {})
-	check(moteur.get("regle", []) == ["repos", "repos", "normal", "normal", "intense"] and moteur.get("seuils", []).map(func(v: Variant): return int(v)) == [60, 70, 80, 90], "Règle par défaut et seuils du moteur")
+	check(moteur.get("regle", []) == ["repos", "repos", "normal", "normal", "normal"] and moteur.get("seuils", []).map(func(v: Variant): return int(v)) == [60, 70, 80, 90], "Règle par défaut et seuils du moteur")
 	await onglet()
 	check(found("IntensiteRegle") != null and found("IntensiteListe") != null and found("IntensiteRisques") != null, "Onglet Individuel : règle, liste, risques")
 	for i in 5:
@@ -78,14 +78,17 @@ func run() -> void:
 		await wait_worker()
 		check(app.last_command == "set_intensite_auto" and app.bridge.last_response_ok, "Commande de règle envoyée au moteur")
 		var regle: Array = app.model.decisions.training.intensiteAuto.regle
-		check(regle[4] == IntensiteAuto.mode_suivant(avant) and regle[4] == "repos", "Règle « Très bonne » : %s → %s" % [avant, regle[4]])
+		check(regle[4] == IntensiteAuto.mode_suivant(avant) and regle[4] == "intense", "Règle « Très bonne » : %s → %s" % [avant, regle[4]])
 		for p: Dictionary in app.model.squad:
-			if IntensiteAuto.auto(p) and float(p.condition) >= 90: check(p.loadMode == "repos", "Joueur en Auto à ≥ 90 % : repos · " + str(p.name))
+			if IntensiteAuto.auto(p): check(p.loadMode == IntensiteAuto.intensite(app, p), "Intensité finale affichée = moteur · " + str(p.name))
+			if IntensiteAuto.auto(p) and float(p.condition) >= 90 and float(p.physicalLoad) < 25: check(p.loadMode == "intense", "Très bonne forme, charge basse : Intensif · " + str(p.name))
+			if IntensiteAuto.auto(p) and (float(p.condition) < 90 or float(p.physicalLoad) >= 25): check(p.loadMode != "intense", "Intensif refusé hors très bonne forme ou charge haute · " + str(p.name))
 		await onglet()
-		check(str((found("IntensiteRegle_4") as Button).tooltip_text).contains("Repos → Normal"), "La carte montre la nouvelle règle")
+		check(str((found("IntensiteRegle_4") as Button).tooltip_text).contains("Intensif → Repos"), "La carte montre la nouvelle règle")
+		check(found("IntensiteSeance") is Button, "Séance de la semaine montrée et cliquable")
 		await press("IntensiteRegle_4"); await wait_worker()
 		await onglet(); await press("IntensiteRegle_4"); await wait_worker()
-		check(app.model.decisions.training.intensiteAuto.regle[4] == "intense", "Trois clics : la règle revient à Intensif")
+		check(app.model.decisions.training.intensiteAuto.regle[4] == "normal", "Trois clics : la règle revient à Normal")
 		await onglet()
 	# Tri par forme : la forme la plus basse en tête.
 	if await press("IntensiteTri_forme"):
@@ -121,6 +124,15 @@ func run() -> void:
 			if float(p.get("injury", 0)) <= 0: check(p.loadMode == p.avisKine, "Avis du kiné suivi · " + str(p.name))
 		await onglet()
 		check((found("IntensiteKineTous") as Button).disabled, "Plus d'écart : bouton du kiné éteint")
+	# Séance de la semaine : un clic ouvre l'onglet Semaine ; un cran choisi là change l'intensité finale des joueurs en Auto.
+	await onglet()
+	if await press("IntensiteSeance"):
+		check(int(app.management_ui.immersive_training.get("tab", -1)) == 0, "Séance → onglet Semaine")
+	app.management_ui.immersive_training.mode = "repos"
+	await onglet()
+	for p: Dictionary in app.model.squad:
+		if IntensiteAuto.auto(p): check(IntensiteAuto.intensite(app, p) == str(p.autoModes.repos), "Séance Repos choisie : intensité finale selon la forme · " + str(p.name))
+	app.management_ui.immersive_training.erase("mode")
 	# Fiche joueur › charge : Auto avec l'intensité de sa règle.
 	var auto_p: Array = app.model.squad.filter(func(p: Dictionary): return IntensiteAuto.auto(p))
 	if not auto_p.is_empty():

@@ -66,8 +66,6 @@ test('Délégation : case décochée, la feuille du joueur reste inchangée ; al
   const jeu = M.ouvrir({ hebdomadaire: true, testVm: true });
   try {
     let model = M.creer(jeu);
-    // Règle Auto sans intensif (intensite-auto) : aucune blessure à la séance du coup d'envoi ne vient retoucher la feuille.
-    model = jeu.call('set_intensite_auto', { niveau: 4, mode: 'normal' });
     assert.equal(model.selection.fatigue, undefined, 'début de carrière : groupe frais, aucune alerte');
     let alertes = 0, verifie = false;
     for (let w = 0; w < 30 && alertes < 1; w++) {

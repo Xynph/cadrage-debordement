@@ -14,7 +14,9 @@ const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
 
 const FORMES := ["Très basse", "Basse", "Correcte", "Bonne", "Très bonne"]
 const SEUILS_FORME := [60.0, 70.0, 80.0, 90.0]
-const REGLE_DEFAUT := ["repos", "repos", "normal", "normal", "intense"]
+const REGLE_DEFAUT := ["repos", "repos", "normal", "normal", "normal"]
+## Cran de chaque réglage de carte autour de la séance de la semaine.
+const CRANS := {"repos":"−1", "normal":"=", "intense":"+1"}
 const MODES := ["repos", "normal", "intense"]
 const NOMS_MODE := {"repos":"Repos", "normal":"Normal", "intense":"Intensif", "collective":"Auto"}
 const ICONES_MODE := {"repos":"renew", "normal":"train", "intense":"warning"}
@@ -57,14 +59,30 @@ static func niveau_forme(app: Control, p: Dictionary) -> int:
 static func auto(p: Dictionary) -> bool:
 	return str(p.get("loadPlan", "collective")) == "collective" and float(p.get("injury", 0)) <= 0
 
-## Intensité appliquée à la prochaine séance (moteur : physicalModeFor) : blessé = repos, choix individuel, sinon la règle.
+## Séance de la semaine qui sert de base aux joueurs en Auto : celle du préparateur en délégation (moteur), sinon le cran
+## choisi dans l'onglet Semaine (pas encore effectué), sinon la séance enregistrée.
+static func base_seance(app: Control) -> String:
+	var base := str(_moteur(app).get("base", "normal"))
+	var decisions: Variant = app.model.get("decisions", {})
+	var delegue: bool = decisions is Dictionary and decisions.get("delegation", {}) is Dictionary and bool(decisions.get("delegation", {}).get("training", false))
+	var etat: Variant = app.management_ui.get("immersive_training")
+	if not delegue and etat is Dictionary and str(etat.get("mode", "")) in MODES: base = str(etat.mode)
+	return base if base in MODES else "normal"
+
+## Intensité finale à la prochaine séance (moteur : physicalModeFor) : blessé = repos, choix individuel, sinon Auto =
+## séance de la semaine ajustée d'un cran par la carte de sa forme (moteur : autoModes, garde-fou de l'intensif compris).
 static func intensite(app: Control, p: Dictionary) -> String:
-	var moteur := str(p.get("loadMode", ""))
-	if moteur in MODES: return moteur
 	if float(p.get("injury", 0)) > 0: return "repos"
 	var plan := str(p.get("loadPlan", "collective"))
 	if plan in MODES: return plan
-	return str(regles(app)[niveau_forme(app, p)])
+	var base := base_seance(app)
+	var modes: Variant = p.get("autoModes")
+	if modes is Dictionary and str(modes.get(base, "")) in MODES: return str(modes[base])
+	var moteur := str(p.get("loadMode", ""))
+	if moteur in MODES: return moteur
+	var cran: int = {"repos":-1, "normal":0, "intense":1}.get(str(regles(app)[niveau_forme(app, p)]), 0)
+	var mode: String = MODES[clampi(MODES.find(base) + cran, 0, 2)]
+	return "normal" if mode == "intense" and not (float(p.get("condition", 0)) >= 90.0 and float(p.get("physicalLoad", 0)) < float(_moteur(app).get("chargeBasse", 25))) else mode
 
 ## Avis du kiné (moteur : avisKine, dist/development.js).
 static func kine(p: Dictionary) -> String:
@@ -196,7 +214,8 @@ static func fenetre_joueur(app: Control, page: Control, p: Dictionary, bloque: b
 	for i in choix.size():
 		var mode: String = choix[i]
 		var r := Rect2(28 + i * 233, 200, 222, 180)
-		var couleur := couleur_mode(str(regles(app)[niveau]) if mode == "collective" else mode)
+		var final_auto := intensite(app, p.merged({"loadPlan":"collective", "injury":0}, true))
+		var couleur := couleur_mode(final_auto if mode == "collective" else mode)
 		var pris := mode == actuel
 		D.rect(fond, r, couleur if pris else Color(couleur, .14), Charte.RAYON_CARTE)
 		var encre := Charte.ENCRE if pris else couleur
@@ -205,7 +224,7 @@ static func fenetre_joueur(app: Control, page: Control, p: Dictionary, bloque: b
 		D.place(icone, Rect2(r.position.x + (r.size.x - 50) / 2.0, r.position.y + 24, 50, 50))
 		D.text(fond, r.position.x + r.size.x / 2.0, r.position.y + 118, NOMS_MODE[mode].to_upper(), 27, encre, 800, r.size.x - 16, HORIZONTAL_ALIGNMENT_CENTER)
 		if mode == "collective":
-			D.text(fond, r.position.x + r.size.x / 2.0, r.position.y + 152, "→ " + NOMS_MODE[str(regles(app)[niveau])], 18, encre, 600, r.size.x - 16, HORIZONTAL_ALIGNMENT_CENTER)
+			D.text(fond, r.position.x + r.size.x / 2.0, r.position.y + 152, "→ " + NOMS_MODE[final_auto], 18, encre, 600, r.size.x - 16, HORIZONTAL_ALIGNMENT_CENTER)
 		if mode == avis:
 			D.rect(fond, Rect2(r.end.x - 70, r.position.y + 10, 60, 24), Charte.IVOIRE if not pris else Charte.ENCRE, Charte.RAYON_PETIT)
 			D.text(fond, r.end.x - 40, r.position.y + 28, "KINÉ", 14, Charte.ENCRE if not pris else Charte.IVOIRE, 800, 58, HORIZONTAL_ALIGNMENT_CENTER)
@@ -220,6 +239,12 @@ static func build(app: Control, page: Control, state: Dictionary, squad: Array, 
 	var regle := regles(app)
 	# Règle par forme : cinq colonnes.
 	var haut := D.panel(page, Rect2(4, 252, 1740, 206), "Intensité selon la forme", "heart", "", "IntensiteRegle")
+	# Séance de la semaine (base des joueurs en Auto) : un clic ouvre l'onglet Semaine pour la régler.
+	var base := base_seance(app)
+	D.text(haut, 1356, 41, "SÉANCE", 16, Charte.IVOIRE_3, 700, 120, HORIZONTAL_ALIGNMENT_RIGHT)
+	_pilule(haut, Rect2(1372, 18, 200, 34), base, true, 17)
+	var seance := _zone(haut, Rect2(1270, 14, 310, 42), "IntensiteSeance", "Séance de la semaine · " + NOMS_MODE[base], func(): if page.has_method("_open_tab"): page._open_tab(0))
+	seance.disabled = not page.has_method("_open_tab")
 	var compte := [0, 0, 0, 0, 0]
 	for p: Dictionary in squad: compte[niveau_forme(app, p)] += 1
 	for i in 5:
@@ -231,7 +256,8 @@ static func build(app: Control, page: Control, state: Dictionary, squad: Array, 
 		var bornes := seuils(app)
 		D.text(carte, 72, 56, ("< %d %%" % int(bornes[0])) if i == 0 else ("≥ %d %%" % int(bornes[i - 1])), 15, Charte.IVOIRE_3, 600, 120)
 		D.text(carte, 316, 50, str(compte[i]), 34, Charte.IVOIRE, 800, 60, HORIZONTAL_ALIGNMENT_RIGHT)
-		_pilule(carte, Rect2(14, 72, 302, 38), str(regle[i]), true, 19)
+		_pilule(carte, Rect2(14, 72, 246, 38), str(regle[i]), true, 19)
+		_pastille(carte, Rect2(266, 72, 50, 38), CRANS[str(regle[i])], couleur_mode(str(regle[i])), 20)
 		var niveau := i
 		var suivant := mode_suivant(str(regle[i]))
 		var zone := _zone(carte, Rect2(0, 0, 330, 122), "IntensiteRegle_" + str(i), "Forme %s · %s → %s" % [FORMES[i], NOMS_MODE[str(regle[i])], NOMS_MODE[suivant]], func(): _choisir_regle(app, niveau, suivant))

@@ -106,8 +106,8 @@ function jouerLeMatch(jeu, model, { delegue = true } = {}) {
   model = jeu.regler(model);
   if (!model.selection.valid) model = jeu.call('auto_lineup');
   if (!model.selection.valid) model = jeu.call('promote_cover', { confirmed: true });
-  // Blessure à la séance lancée par le coup d'envoi (joueurs en Auto à l'intensif) : poste vacant sans remplaçant, le coup
-  // d'envoi est refusé et annulé (séance comprise). Comme un manager : séance faite d'abord, point médical réglé, feuille
+  // Blessure à la séance lancée par le coup d'envoi, poste vide que ni les pros ni le centre ne couvrent : le coup d'envoi
+  // est refusé et annulé (séance comprise). Comme un manager : séance faite d'abord, point médical réglé, feuille
   // complétée, puis coup d'envoi.
   let depart = jeu.brut('begin_match');
   if (!depart.ok && /vacant|feuille/u.test(String(depart.error))) {

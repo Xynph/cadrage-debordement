@@ -35,8 +35,8 @@
    : 'Ce plan configure le mode collectif normal.'};
   const players=s.clubs[s.club].players.map(p=>{
    const planned=mode(p,key,starters.has(p.id));
-   // « collective » = Auto : intensité de la règle de sa forme (engine.autoMode, dist/development.js) ; ancien calcul sinon.
-   const effectiveMode=planned==='collective'?(typeof engine.autoMode==='function'?engine.autoMode(p):collective.mode):planned;
+   // « collective » = Auto : séance prévue ajustée d'un cran par la règle de sa forme (engine.autoMode, dist/development.js).
+   const effectiveMode=planned==='collective'?(typeof engine.autoMode==='function'?engine.autoMode(p,collective.mode):collective.mode):planned;
    const projected=engine.outcome(p,effectiveMode);
    return {id:p.id,name:p.name,plan:planned,effectiveMode,current:p.condition,
     condition:projected.condition,fatigue:projected.fatigue,

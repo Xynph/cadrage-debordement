@@ -1161,12 +1161,23 @@ function createBridge(options={}){
         // d'envoi sans réponse est refusé sans écriture (tests/native-nationale-reduced-bench.cjs).
         else if(!nativeAt22&&nativeProfessionalDepth.playedClubExempt(S)&&!(typeof CDNationaleReducedBench!=='undefined'&&CDNationaleReducedBench?.vacancy(S))){const nativeMontes=nativeEspoirs.callUpProposed(S);if(nativeMontes.length)managerMessage('Des espoirs montent pour le match',(nativeMontes.length>1?nativeMontes.length+' jeunes du centre de formation complètent':'Un jeune du centre de formation complète')+' la feuille de 23 pour ce match : '+nativeMontes.map(id=>S.clubs[S.club].players.find(p=>p.id===id)?.name).filter(Boolean).join(', ')+'. '+(nativeMontes.length>1?'Ils retourneront':'Il retournera')+' au centre après la rencontre.','staff','team');}
         if(nativeAt22)nativeEspoirs.setOff(true);
-        try{beginMatch(nativePayload.reducedBench===true);}finally{if(nativeAt22)nativeEspoirs.setOff(false);if(nativePayload.delegated===true)nativeSystems.domain('matchTalks').setDelegating(false);if(nativeDelegation)nativeDelegation.lineup=nativeLineupFlag;}
+        // Blessure à la séance lancée par ce coup d'envoi (séance pas encore faite) : si un poste reste vide faute de pro
+        // apte, le centre de formation complète la feuille (comme « Appeler un espoir ») et le coup d'envoi repart (séance
+        // déjà faite). Sinon, les blessés du jour nomment le refus (message clair plus bas).
+        const nativeSeanceAvant=!!S.trained,nativeBlessesAvant=new Set(S.clubs[S.club].players.filter(p=>p.injury>0).map(p=>p.id));
+        globalThis.nativeSeanceBlesses=[];
+        try{beginMatch(nativePayload.reducedBench===true);
+         if(!S.live&&!nativeAt22&&!nativeSeanceAvant&&S.trained&&sheetErrors().length){
+          globalThis.nativeSeanceBlesses=S.clubs[S.club].players.filter(p=>p.injury>0&&!nativeBlessesAvant.has(p.id)).map(p=>p.name+' ('+p.pos+')');
+          if(nativeEspoirs.callUpProposed(S).length&&!sheetErrors().length)beginMatch(false);
+         }
+        }finally{if(nativeAt22)nativeEspoirs.setOff(false);if(nativePayload.delegated===true)nativeSystems.domain('matchTalks').setDelegating(false);if(nativeDelegation)nativeDelegation.lineup=nativeLineupFlag;}
        }finally{createRugbyMatch=nativeCreate;}
       }`);}finally{
        // VM timeouts skip its inner finally; restore without executing more VM code.
        ctx.createRugbyMatch=nativeCreate;
       }
+      if(hadFixture&&!run('!!S.live')){const blesses=JSON.parse(run('JSON.stringify(globalThis.nativeSeanceBlesses||[])'));if(blesses.length&&!reducedBench)throw Error('Blessure à la séance d’avant-match : '+blesses.join(', ')+' forfait, aucun remplaçant au poste. Effectue d’abord la séance (Entraînement), puis complète la feuille (Composition).');}
       if(hadFixture&&!run('!!S.live'))throw Error(reducedBench?'La feuille à 22 a changé après la préparation. Vérifie la composition et l’entraînement.':'Coup d’envoi refusé : vérifie la feuille à 23 et le calendrier.');
      }else if(command==='tick'){
       if(!run('!!S.live'))throw Error('Aucun match en cours.');const steps=payload.steps??1;
