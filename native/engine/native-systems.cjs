@@ -143,6 +143,8 @@ domains.fragilite=require('./fragilite.cjs');
 domains.familiarite=require('./familiarite-poste.cjs');
 // Staff par service : postes visés au-delà du minimum (bonus et salaire), avis des dirigeants (native/engine/staff-services.cjs).
 domains.staffServices=require('./staff-services.cjs');
+// Relevé mensuel des qualités (12 mois glissants, courbe de l'onglet Développement) : native/engine/releve-qualites.cjs.
+domains.releveQualites=require('./releve-qualites.cjs');
 // Rôle promis au contrat (titulaire, rotation, espoir, appoint), enregistré à la signature (native/engine/role-contrat.cjs).
 domains.roleContrat=require('./role-contrat.cjs');
 // Offre guidée : prime à la signature négociable, clause libératoire, clauses payées par les clubs gérés (native/engine/clauses-contrat.cjs).
