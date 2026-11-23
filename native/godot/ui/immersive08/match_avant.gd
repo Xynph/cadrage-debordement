@@ -254,6 +254,7 @@ func refresh(model: Dictionary, play: Button) -> void:
 func _page_possible(model: Dictionary, page: String) -> bool:
 	if not model.get("next") is Dictionary or model.next.is_empty(): return false
 	if page == "espoir": return not Espoir.offer(model).is_empty() or Present.reduced_bench_number(model) != 0
+	if page == "tests": return load("res://ui/immersive08/tests_physiques.gd").variante() == "A"
 	return page == "delegation"
 
 func _construire(model: Dictionary, next: Dictionary, play: Button, etat: Dictionary, page: String) -> void:
@@ -276,7 +277,9 @@ func _construire(model: Dictionary, next: Dictionary, play: Button, etat: Dictio
 		colonne.add_child(_pied(false))
 		return
 	if not page.is_empty():
-		colonne.add_child(Pages.construire(self, app, model, page))
+		# Planche FM27 n° 36 : tests physiques en sous-page (variante A).
+		if page == "tests": colonne.add_child(load("res://ui/immersive08/tests_physiques.gd").page(self, app, model))
+		else: colonne.add_child(Pages.construire(self, app, model, page))
 		colonne.add_child(_pied(true))
 		return
 	var cote := _cote(model, next)
@@ -1168,7 +1171,13 @@ func _feuille(model: Dictionary, etat: Dictionary) -> Control:
 	groupe.tooltip_text = "Ouvrir l'effectif : blessures, fatigue, forme"
 	column.add_child(groupe)
 	_pousse(column)
-	_liens(column, [["Vérifier la feuille →", func(): _aller("Composition"), "MatchOpenSheet", "Ouvrir la composition"]])
+	var liens_feuille: Array = [["Vérifier la feuille →", func(): _aller("Composition"), "MatchOpenSheet", "Ouvrir la composition"]]
+	# Planche FM27 n° 36 (CD_VARIANTE_VISUELLE=A|B) : les tests physiques d'avant-match.
+	var Tests = load("res://ui/immersive08/tests_physiques.gd")
+	if not Tests.variante().is_empty():
+		var lien_tests: Array = Tests.lien(self, model)
+		if not lien_tests.is_empty(): liens_feuille.append(lien_tests)
+	_liens(column, liens_feuille)
 	return _tile_of(column)
 
 ## Barre de condition d'un titulaire : valeur au-dessus (jamais la couleur seule), numéro dessous, repère à 80 %.

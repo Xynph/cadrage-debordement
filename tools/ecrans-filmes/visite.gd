@@ -77,6 +77,7 @@ const EXTRAS := [
 	{"id": "creation-options", "libelle": "Création · étape 2 Carrière (options)", "type": "creation_options"},
 	{"id": "avant-match-delegation", "libelle": "Avant-match · sous-page Déléguer le match", "type": "avant_delegation"},
 	{"id": "avant-match-bilan", "libelle": "Avant-match · petite fenêtre de la dernière rencontre", "type": "avant_bilan"},
+	{"id": "avant-match-tests", "libelle": "Avant-match · tests physiques (planche FM27 n° 36)", "type": "avant_tests"},
 	{"id": "compte-rendu", "libelle": "Réception · article du dernier match (carte du compte rendu)", "type": "reception_article"},
 	{"id": "preparation-bas", "libelle": "Préparation · leur XV probable (bas de page)", "type": "preparation_bas"},
 	{"id": "preparation-consignes", "libelle": "Préparation · onglet Consignes", "type": "preparation_onglet", "onglet": 1},
@@ -1127,6 +1128,13 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				var limite_d := Time.get_ticks_msec() + 60000
 				while Time.get_ticks_msec() < limite_d and not app.model.get("clubLife", {}).get("matchTalks", {}).get("scene", {}).get("decision") is Dictionary: await process_frame
 			await stabiliser()
+			await stabiliser()
+		"avant_tests":
+			app._navigate("Match")
+			await stabiliser()
+			var ouvre_tests := app.find_child("MatchTestsPhysiques", true, false) as Button
+			if ouvre_tests == null: return {"statut": "indisponible", "note": "lien des tests physiques absent"}
+			ouvre_tests.pressed.emit()
 			await stabiliser()
 		"avant_bilan":
 			# Bilan de la dernière rencontre : pastille du bandeau → petite fenêtre.
