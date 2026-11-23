@@ -514,7 +514,11 @@ function factory() {
     },
     affluence(F, t) {
       const g = F.playedOn(F.yesterday); if (!g || !g.result.home) return [];
-      const fans = F.s.pressRelations?.fanTrust ?? 50, band = fans >= 60 ? 'plein' : fans >= 40 ? 'moyen' : 'faible';
+      // Tribunes décrites d'après le public réel du match (affluence / capacité) ; sans chiffre, l'humeur des supporters.
+      const cap = Number(F.club.stadiumCapacity) || 0, vu = (F.hist || []).find(r => r.fixtureId === g.fixture.id)?.affluence;
+      let band;
+      if (Number.isFinite(vu) && cap > 0) band = vu / cap >= 0.85 ? 'plein' : vu / cap >= 0.6 ? 'moyen' : 'faible';
+      else { let h = null; try { h = nativeSystems.domain('clubStrategy').humeur(); } catch (e) { h = null; } const fans = Number.isFinite(h) ? h : 50; band = fans >= 60 ? 'plein' : fans >= 40 ? 'moyen' : 'faible'; }
       return [{ key: g.fixture.id, club: g.result.opp, vars: { adversaire: F.name(g.result.opp), capacite: euros(Number(F.club.stadiumCapacity) || 0), ambiance: pick(t.variantes?.[band], g.fixture.id) } }];
     },
     sponsor(F) {

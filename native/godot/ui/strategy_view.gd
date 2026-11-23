@@ -1,8 +1,10 @@
 extends RefCounted
 ## Club › Direction (« Les moyens de tes ambitions »), choix de Léo du 21/11/2026 sur la revue visuelle n° 2 :
 ## Finances = règle à trois crans pour la relève + tuiles des partenaires avec mini-histogramme semaine / avance /
-## victoire ; Projet sportif = tuiles d'offre des projets ; Supporters = photo, anneau du sentiment, affluence et abonnés,
-## puis tuiles des actions. Explications derrière un « i » ; chaque chiffre ou jauge ouvre son écran ou une petite
+## victoire ; Projet sportif = plan des dirigeants sur 5 saisons en tableau + tuiles d'offre des projets ; Supporters =
+## les tribunes (anneau de l'humeur unique des supporters, une ligne par groupe ; supporters_camembert.gd, option B de
+## Léo du 23/11/2026), billetterie (affluence prévue, abonnés, effet de l'humeur sur le public, prix) puis tuiles des
+## actions, appliquées au clic. Explications derrière un « i » ; chaque chiffre ou jauge ouvre son écran ou une petite
 ## fenêtre visuelle ; chaque tuile agit comme sa pilule ; l'argent se confirme en place (confirmation_en_place.gd).
 const Copy = preload("res://ui/management_copy.gd")
 const Champs = preload("res://ui/immersive08/champs_charte.gd")
@@ -207,8 +209,7 @@ static func _board(app: Control, page: Container, data: Dictionary, locked: bool
 	if plan.is_empty(): objectives.add_child(Tuile.titre_bloc("Les rendez-vous du conseil", "Objectifs suivis depuis les résultats de ta carrière." + ("\n\n" + empty if b.objectives.is_empty() else "")))
 	else:
 		objectives.add_child(Tuile.titre_bloc("Plan sur 5 ans", "Saison en cours : jalons du conseil. Saisons suivantes : projection vers l’objectif du club."))
-		if Supporters.variante() == "B": Supporters.plan_b(app, objectives, plan)
-		else: Supporters.plan_a(app, objectives, plan)
+		Supporters.plan_cinq_ans(app, objectives, plan)
 		# Plan des dirigeants en tête de l'onglet (planche FM27 n° 15).
 		var racine: Node = objectives
 		while racine.get_parent() != page: racine = racine.get_parent()
@@ -250,12 +251,11 @@ static func _board(app: Control, page: Container, data: Dictionary, locked: bool
 static func _fans(app: Control, page: Container, data: Dictionary, locked: bool) -> void:
 	var f: Dictionary = data.fans
 	var profil: Dictionary = f.get("supporters", {})
-	if not profil.is_empty():
-		if Supporters.variante() == "B": Supporters.supporters_b(app, page, profil, func(): _public(app, f))
-		else: Supporters.supporters_a(app, page, profil, func(): _public(app, f))
+	if not profil.is_empty(): Supporters.tribunes(app, page, profil, func(): _public(app, f))
 	G.photo_note(page, app.model.club, "Le territoire", "Une ville derrière toi", "city", 140)
 	var card := G.panel(page)
-	card.add_child(Tuile.titre_bloc("Une ville derrière toi", "L’accueil et l’ancrage local se construisent toute la saison.\n\n" + Copy.notice("strategy", f.notice)))
+	card.name = "SupportersBilletterie"
+	card.add_child(Tuile.titre_bloc("Billetterie", "L’humeur des supporters fait varier le public de chaque match à domicile.\n\n" + Copy.notice("strategy", f.notice)))
 	# Trois cellules de même largeur sur toute la carte, contenu centré : espacement régulier, milieux alignés.
 	var metrics := G.h(0)
 	card.add_child(metrics)
@@ -267,11 +267,8 @@ static func _fans(app: Control, page: Container, data: Dictionary, locked: bool)
 		Tuile.proteger(box)
 		return box
 	var open := func(): _public(app, f)
-	var mood := JaugeAnneau.new(float(f.sentiment), "Sentiment", Charte.MORAL, 100.0, "people")
-	cell.call().add_child(mood)
-	Tuile.proteger(mood)
-	LienZone.relier(mood, "DirectionLien_Sentiment", "Le public", open)
 	LienZone.relier(Visuel.chiffre_picto(cell.call(), "people", G.n(f.expectedAttendance), "AFFLUENCE PRÉVUE"), "DirectionLien_Affluence", "Le public", open)
+	LienZone.relier(Visuel.chiffre_picto(cell.call(), "heart", _pourcent(int(f.get("humeurPublic", 0))), "PUBLIC · HUMEUR"), "DirectionLien_Humeur", "Le public", open)
 	LienZone.relier(Visuel.chiffre_picto(cell.call(), "star", G.n(f.subscribers), "ABONNÉS"), "DirectionLien_Abonnes", "Le public", open)
 	var price_row := G.h(10)
 	card.add_child(price_row)
@@ -288,19 +285,29 @@ static func _fans(app: Control, page: Container, data: Dictionary, locked: bool)
 		for option: Dictionary in f[category.key]:
 			var short: bool = data.finance.cash < option.cost
 			var state: Control = Tuile.pastille("Déjà engagé", Charte.V, "check") if option.used else _short(app, "DirectionLien_%s_%s" % [category.key, option.id]) if short else null
-			Visuel.tuile_offre(cards, category.icon, option.label, G.euros(option.cost), "", _choice(app, category.command, {"key":option.id}, locked or option.used or short, "Engager « %s » pour %s ?" % [option.label, G.euros(option.cost)], "Choisir", "Déjà engagé" if option.used else "Trésorerie insuffisante" if short else ""), state)
+			# Clic = appliqué (règle de Léo du 23/11/2026) : ni confirmation ni bouton Valider.
+			Visuel.tuile_offre(cards, category.icon, option.label, G.euros(option.cost), "", _choice(app, category.command, {"key":option.id, "confirmed":true}, locked or option.used or short, "", "Choisir", "Déjà engagé" if option.used else "Trésorerie insuffisante" if short else ""), state)
 
 ## Saison lisible d'une entrée d'historique (saison, sinon semaine).
 static func _when(entry: Dictionary) -> String:
 	if entry.has("season"): return G.season_label(entry.season)
 	return "S%d" % int(entry.get("week", 0))
 
-## Petite fenêtre « Le public » : sentiment, affluence et capacité, demande, billet, recette prévue, abonnés, et
-## l'évolution des saisons passées quand elle existe.
+## Effet en pour cent, signé (« +6 % », « −4 % », « = »).
+static func _pourcent(valeur: int) -> String:
+	if valeur > 0: return "+%d %%" % valeur
+	if valeur < 0: return "−%d %%" % absi(valeur)
+	return "="
+
+## Petite fenêtre « Le public » : humeur des supporters (la seule, celle des tribunes) et son effet sur le public,
+## affluence et capacité, demande, billet, recette prévue, abonnés, et l'évolution des saisons passées.
 static func _public(app: Control, f: Dictionary) -> void:
-	var ring := JaugeAnneau.new(float(f.sentiment), "Sentiment", Charte.MORAL, 100.0, "people")
+	var humeur: Variant = f.get("humeur")
+	var ton: Array = Supporters.reaction(humeur)
+	var ring := JaugeAnneau.new(float(humeur) if humeur != null else 0.0, "Humeur", ton[1], 100.0, "heart")
+	ring.name = "PublicHumeur"
 	var capacity: Variant = f.get("capacity")
-	var first: Array = [ring, Visuel.tuile_chiffre("people", G.n(f.expectedAttendance) + ("" if capacity == null else " / " + G.n(capacity)), "Affluence prévue" + ("" if capacity == null else " / places"))]
+	var first: Array = [ring, Visuel.tuile_chiffre("heart", _pourcent(int(f.get("humeurPublic", 0))), "Public · humeur"), Visuel.tuile_chiffre("people", G.n(f.expectedAttendance) + ("" if capacity == null else " / " + G.n(capacity)), "Affluence prévue" + ("" if capacity == null else " / places"))]
 	if f.has("demand"): first.append(Visuel.tuile_chiffre("target", "%d %%" % int(f.demand), "Demande"))
 	var second: Array = []
 	if f.has("price"): second.append(Visuel.tuile_chiffre("money", G.euros(f.price), "Billet · " + str(PRIX.get(f.policy, f.policy))))
@@ -315,9 +322,10 @@ static func _public(app: Control, f: Dictionary) -> void:
 		for entry: Dictionary in history: top = maxf(top, float(entry.get("subscribers", 0)))
 		for i in range(history.size() - 1, -1, -1):
 			var entry: Dictionary = history[i]
-			moods.append({"valeur":entry.get("sentiment", 0), "maximum":100, "montant":str(int(entry.get("sentiment", 0))), "critere":_when(entry), "couleur":Charte.MORAL})
+			var h: Variant = entry.get("humeur", entry.get("sentiment", 0))
+			moods.append({"valeur":h, "maximum":100, "montant":str(int(h)), "critere":_when(entry), "couleur":Supporters.reaction(h)[1]})
 			subs.append({"valeur":entry.get("subscribers", 0), "maximum":top, "montant":G.n(entry.get("subscribers", 0)), "critere":_when(entry), "couleur":Visuel.VIOLET})
-		blocks.append(Tuile.titre_bloc("Sentiment des saisons passées"))
+		blocks.append(Tuile.titre_bloc("Humeur des saisons passées"))
 		blocks.append(Visuel.Histogramme.new(moods, 140))
 		blocks.append(Tuile.titre_bloc("Abonnés des saisons passées"))
 		blocks.append(Visuel.Histogramme.new(subs, 140))

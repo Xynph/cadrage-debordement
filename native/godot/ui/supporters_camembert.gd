@@ -2,10 +2,11 @@ extends RefCounted
 ## Supporters en camembert et plan des dirigeants sur 5 ans (revue FM27, idée n° 15 ; planche A/B du 22/11/2026).
 ## Club › Direction › Supporters : types de supporters (part de la foule prévue), leurs attentes avec une barre
 ## d'importance et leur réaction en pastille. Projet sportif : plan sur 5 saisons (saison en cours = jalons réels).
-## Option A (`CD_VARIANTE_VISUELLE=A`) : camembert plein + légende, tableau des attentes ; plan en onglets par saison.
-## Option B : anneau avec l'humeur au centre + un tableau par groupe (part, attente, importance, réaction) ; plan en
-## tableau objectifs × saisons. Données : `clubStrategy.fans.supporters` et `clubStrategy.board.plan` (moteur,
-## club-strategy.cjs), lecture seule. Chaque ligne, tranche ou cellule ouvre l'écran pertinent ou une petite fenêtre.
+## Option B choisie par Léo le 23/11/2026 : anneau avec l'humeur au centre (l'humeur UNIQUE des supporters, qui fait
+## varier le public des matchs à domicile et compte dans le bilan du conseil) + une ligne par groupe (part, attente,
+## importance, réaction) ; plan en tableau objectifs × saisons. Données : `clubStrategy.fans.supporters` et
+## `clubStrategy.board.plan` (moteur, club-strategy.cjs). Chaque ligne, tranche ou cellule ouvre l'écran pertinent ou
+## une petite fenêtre ; le centre de l'anneau ouvre « Le public ».
 const C = preload("res://ui/immersive08/components.gd")
 const Charte = preload("res://ui/charte.gd")
 const G = preload("res://ui/carnet_skin.gd")
@@ -13,7 +14,6 @@ const Tuile = preload("res://ui/tuile_choix.gd")
 const Visuel = preload("res://ui/strategy_visuals.gd")
 const Kit = preload("res://ui/immersive08/tactics_kit.gd")
 const JaugeAnneau = preload("res://ui/jauge_anneau.gd")
-const LienZone = preload("res://ui/lien_zone.gd")
 
 const COULEURS := {"abonnes": Charte.MORAL, "familles": Charte.CONDITION, "amateurs": Charte.REPOS, "connectes": Charte.CONFIANCE,
 	"partenaires": Charte.INTENSIF, "occasionnels": Charte.GRIS_VERT}
@@ -22,9 +22,6 @@ const IMPORTANCE := ["", "Secondaire", "Souhaitée", "Importante", "Indispensabl
 const PLAN_ICONES := {"rank": "trophy", "wins": "trophy", "points": "rating", "cash": "money", "youth": "school"}
 const PLAN_STATUTS := {"pending": ["À suivre", "clock", Charte.GRIS_VERT], "met": ["Atteint", "check", Charte.CONDITION], "missed": ["Manqué", "warning", Charte.PERTE],
 	"unverified": ["Non vérifiable", "info", Charte.GRIS_VERT], "future": ["À venir", "hourglass", Charte.IVOIRE_3]}
-
-static func variante() -> String:
-	return "B" if OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper() == "B" else "A"
 
 static func couleur(id: String) -> Color:
 	return COULEURS.get(id, Charte.IVOIRE_2)
@@ -56,6 +53,8 @@ class Camembert extends Control:
 	var centre_bas := ""
 	var couleur_centre := Charte.IVOIRE
 	var choisir: Callable = Callable()
+	## Clic au centre de l'anneau (humeur) : petite fenêtre « Le public ».
+	var choisir_centre: Callable = Callable()
 	func _init(liste: Array = [], diametre: float = 260.0, en_anneau: bool = false) -> void:
 		tranches = liste
 		anneau = en_anneau
@@ -74,12 +73,14 @@ class Camembert extends Control:
 			if angle >= debut and angle < fin: return i
 			debut = fin
 		return -1
+	func _au_centre(point: Vector2) -> bool:
+		return anneau and choisir_centre.is_valid() and point.distance_to(size / 2.0) < _rayon() * .58
 	func _gui_input(event: InputEvent) -> void:
 		if event is InputEventMouseMotion:
 			var i := _index(event.position)
+			mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if (i >= 0 and choisir.is_valid()) or _au_centre(event.position) else Control.CURSOR_ARROW
 			if i != survolee:
 				survolee = i
-				mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if i >= 0 and choisir.is_valid() else Control.CURSOR_ARROW
 				tooltip_text = "" if i < 0 else "%s · %d %%" % [tranches[i].label, int(tranches[i].share)]
 				queue_redraw()
 		elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
@@ -87,6 +88,9 @@ class Camembert extends Control:
 			if i >= 0 and choisir.is_valid():
 				accept_event()
 				choisir.call(i)
+			elif _au_centre(event.position):
+				accept_event()
+				choisir_centre.call()
 	func _notification(what: int) -> void:
 		if what == NOTIFICATION_MOUSE_EXIT and survolee != -1:
 			survolee = -1
@@ -227,11 +231,6 @@ static func _texte(valeur: String, taille: int = 22, couleur_texte: Color = Char
 
 # --- Supporters --------------------------------------------------------------------------------------------------------
 
-static func _segment(data: Dictionary, id: String) -> Dictionary:
-	for s: Dictionary in data.get("segments", []):
-		if str(s.id) == id: return s
-	return {}
-
 static func _attente(data: Dictionary, id: String) -> Dictionary:
 	for e: Dictionary in data.get("expectations", []):
 		if str(e.segment) == id: return e
@@ -243,11 +242,12 @@ static func _ouvrir_attente(app: Control, data: Dictionary, attente: Dictionary,
 		"resultats": app._navigate("Calendrier")
 		"classement": app._navigate("Classements")
 		"formation": app._navigate("Centre")
-		"prix": public.call()
-		_: fenetre_groupe(app, data, str(attente.get("segment", "")))
+		"prix": if public.is_valid(): public.call()
+		_: pass
 
-## Petite fenêtre d'un groupe : camembert avec sa tranche, part, nombre, attente (importance) et réaction.
-static func fenetre_groupe(app: Control, data: Dictionary, id: String) -> void:
+## Petite fenêtre d'un groupe : anneau avec sa tranche, part, nombre, attente (importance) et réaction ; un clic sur
+## l'attente ouvre l'écran qui la juge (ou « Le public » pour le prix des billets).
+static func fenetre_groupe(app: Control, data: Dictionary, id: String, public: Callable = Callable()) -> void:
 	var segments: Array = data.get("segments", [])
 	var index := -1
 	for i in segments.size():
@@ -255,7 +255,7 @@ static func fenetre_groupe(app: Control, data: Dictionary, id: String) -> void:
 	if index < 0: return
 	var seg: Dictionary = segments[index]
 	var att := _attente(data, id)
-	var pie := Camembert.new(segments, 220, variante() == "B")
+	var pie := Camembert.new(segments, 220, true)
 	pie.choisie = index
 	pie.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var part := Visuel.tuile_chiffre("people", "%d %%" % int(seg.share), "Part du public")
@@ -268,75 +268,12 @@ static func fenetre_groupe(app: Control, data: Dictionary, id: String) -> void:
 	attente_ligne.add_child(titre)
 	attente_ligne.add_child(importance(int(att.get("importance", 0)), 150))
 	attente_ligne.add_child(pastille_reaction(att.get("reaction")))
-	Visuel.petite_fenetre(app, "SupportersFenetreGroupe", str(seg.label), [haut, attente_ligne])
+	var attente_lien := ligne("SupportersFenetreAttente", [[attente_ligne, 0]], func(): _ouvrir_attente(app, data, att, public), 64)
+	Visuel.petite_fenetre(app, "SupportersFenetreGroupe", str(seg.label), [haut, attente_lien])
 
-## Onglet Supporters, option A : camembert plein + légende chiffrée, puis tableau des attentes.
-static func supporters_a(app: Control, page: Container, data: Dictionary, public: Callable) -> void:
-	var segments: Array = data.get("segments", [])
-	if segments.is_empty(): return
-	var carte := G.panel(page)
-	carte.name = "SupportersProfil"
-	var tete := C.h(14)
-	carte.add_child(tete)
-	var titre := Tuile.titre_bloc("Profil des supporters")
-	C.fill(titre)
-	tete.add_child(titre)
-	tete.add_child(_petit_chiffre("people", G.n(data.get("crowd", 0)), "SPECTATEURS PAR MATCH"))
-	var corps := C.h(36)
-	carte.add_child(corps)
-	var pie := Camembert.new(segments, 300, false)
-	pie.name = "SupportersCamembert"
-	pie.choisir = func(i: int): fenetre_groupe(app, data, str(segments[i].id))
-	corps.add_child(pie)
-	var legende := C.v(2)
-	legende.custom_minimum_size.x = C.px(820)
-	legende.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	corps.add_child(legende)
-	var vide := Control.new()
-	vide.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	corps.add_child(vide)
-	var mood: Variant = data.get("mood")
-	var anneau := JaugeAnneau.new(float(mood) if mood != null else 0.0, "Humeur", reaction(mood)[1], 100.0, "heart")
-	anneau.name = "SupportersHumeurAnneau"
-	anneau.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	var colonne := C.v(10)
-	colonne.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	colonne.alignment = BoxContainer.ALIGNMENT_CENTER
-	colonne.add_child(anneau)
-	var mot := pastille_reaction(mood)
-	mot.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	colonne.add_child(mot)
-	corps.add_child(colonne)
-	LienZone.relier(anneau, "SupportersLien_Humeur", "Le public", public)
-	for s: Dictionary in segments:
-		var id := str(s.id)
-		legende.add_child(ligne("SupportersType_" + id, [[carre(id), 22], [_texte("%d %%" % int(s.share), 26, couleur(id), 700), 70], [_texte(str(s.label), 22), 0], [_texte(G.n(s.count), 22, Charte.IVOIRE_2), 110]], func(): fenetre_groupe(app, data, id), 46))
-	# Attentes : une ligne par groupe, colonnes Attente / Importance / Groupe / Réaction.
-	var attentes := G.panel(page)
-	attentes.name = "SupportersAttentes"
-	var tete2 := C.h(14)
-	attentes.add_child(tete2)
-	var titre2 := Tuile.titre_bloc("Culture et attentes")
-	C.fill(titre2)
-	tete2.add_child(titre2)
-	var humeur := pastille_reaction(data.get("mood"))
-	humeur.name = "SupportersHumeur"
-	tete2.add_child(humeur)
-	attentes.add_child(entete([["Attente", 0], ["Importance", 190], ["Groupe", 330], ["Réaction", 190]]))
-	for e: Dictionary in data.get("expectations", []):
-		var id := str(e.segment)
-		var seg := _segment(data, id)
-		var nom := C.h(12)
-		nom.add_child(C.icon(ICONES.get(str(e.kind), "target"), 26, couleur(id)))
-		nom.add_child(_texte(str(e.label), 22))
-		var groupe := C.h(10)
-		groupe.add_child(carre(id, 14))
-		groupe.add_child(_texte(str(seg.get("label", "")), 19, Charte.IVOIRE_2))
-		attentes.add_child(ligne("SupportersAttente_" + id, [[nom, 0], [importance(int(e.importance), 150), 190], [groupe, 330], [pastille_reaction(e.get("reaction")), 190]], func(): _ouvrir_attente(app, data, e, public)))
-
-## Onglet Supporters, option B : anneau (humeur au centre) et un tableau par groupe qui réunit part, attente,
-## importance et réaction.
-static func supporters_b(app: Control, page: Container, data: Dictionary, public: Callable) -> void:
+## Onglet Supporters : anneau (humeur au centre, clic = « Le public ») et une ligne par groupe qui réunit part,
+## attente, importance et réaction ; un clic sur une ligne ou une tranche ouvre la petite fenêtre du groupe.
+static func tribunes(app: Control, page: Container, data: Dictionary, public: Callable) -> void:
 	var segments: Array = data.get("segments", [])
 	if segments.is_empty(): return
 	var carte := G.panel(page)
@@ -355,7 +292,8 @@ static func supporters_b(app: Control, page: Container, data: Dictionary, public
 	pie.centre_haut = "—" if data.get("mood") == null else str(int(data.mood))
 	pie.centre_bas = str(r[0]).to_upper()
 	pie.couleur_centre = r[1]
-	pie.choisir = func(i: int): fenetre_groupe(app, data, str(segments[i].id))
+	pie.choisir = func(i: int): fenetre_groupe(app, data, str(segments[i].id), public)
+	pie.choisir_centre = public
 	corps.add_child(pie)
 	var tableau := C.v(2)
 	tableau.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -375,7 +313,7 @@ static func supporters_b(app: Control, page: Container, data: Dictionary, public
 		var attente := C.h(10)
 		attente.add_child(C.icon(ICONES.get(str(e.get("kind", "")), "target"), 24, Charte.IVOIRE_2))
 		attente.add_child(_texte(str(e.get("label", "—")), 19, Charte.IVOIRE))
-		tableau.add_child(ligne("SupportersGroupe_" + id, [[nom, 0], [part, 200], [attente, 380], [importance(int(e.get("importance", 0)), 130), 170], [pastille_reaction(e.get("reaction")), 180]], func(): fenetre_groupe(app, data, id), 60))
+		tableau.add_child(ligne("SupportersGroupe_" + id, [[nom, 0], [part, 200], [attente, 380], [importance(int(e.get("importance", 0)), 130), 170], [pastille_reaction(e.get("reaction")), 180]], func(): fenetre_groupe(app, data, id, public), 60))
 
 ## Barre horizontale de la part d'un groupe (rail sombre, remplissage de la couleur du groupe).
 class _BarrePart extends Control:
@@ -424,54 +362,12 @@ static func _ouvrir_objectif(app: Control, o: Dictionary) -> void:
 		"youth": app._navigate("Centre")
 		_: app._navigate("Classements")
 
-static func _statut(o: Dictionary) -> Control:
-	var s: Array = PLAN_STATUTS.get(str(o.get("status", "")), ["—", "info", Charte.GRIS_VERT])
-	return Tuile.pastille(s[0], s[2], s[1])
-
 static func _saison(saison: Dictionary) -> String:
 	return "Saison actuelle" if saison.get("current", false) else G.season_label(saison.season)
 
-## Option A : onglets par saison (pilules), une liste Objectif / Importance / Évaluation par saison.
-static func plan_a(app: Control, parent: Container, plan: Array) -> void:
-	var bloc := C.v(10)
-	bloc.name = "PlanCinqAns"
-	parent.add_child(bloc)
-	var onglets := C.h(10)
-	bloc.add_child(onglets)
-	var pages: Array = []
-	var boutons: Array = []
-	for i in plan.size():
-		var saison: Dictionary = plan[i]
-		var liste := C.v(2)
-		liste.name = "PlanSaison%d" % i
-		liste.visible = i == 0
-		liste.add_child(entete([["Objectif", 0], ["Importance", 200], ["Évaluation", 200]]))
-		for j in (saison.get("objectives", []) as Array).size():
-			var o: Dictionary = saison.objectives[j]
-			var nom := C.h(12)
-			nom.add_child(C.icon(PLAN_ICONES.get(str(o.label), "target"), 26, Charte.CONFIANCE))
-			nom.add_child(_texte(_objectif_texte(o), 22))
-			liste.add_child(ligne("PlanObjectif_%d_%d" % [i, j], [[nom, 0], [importance(int(o.get("importance", 0)), 150), 200], [_statut(o), 200]], func(): _ouvrir_objectif(app, o)))
-		pages.append(liste)
-		bloc.add_child(liste)
-	for i in plan.size():
-		var bouton := Tuile.pilule(_saison(plan[i]), "PlanOnglet%d" % i, true, "", func():
-			for k in pages.size(): (pages[k] as Control).visible = k == i
-			for k in boutons.size(): _onglet_style(boutons[k], k == i))
-		boutons.append(bouton)
-		onglets.add_child(bouton)
-	for k in boutons.size(): _onglet_style(boutons[k], k == 0)
-
-static func _onglet_style(bouton: Button, actif: bool) -> void:
-	var fond := Charte.IVOIRE if actif else Color.TRANSPARENT
-	var style := C.box(fond, Color.TRANSPARENT if actif else Charte.FILET, Charte.RAYON_PILULE, 18)
-	for etat in ["normal", "hover", "pressed", "focus"]: bouton.add_theme_stylebox_override(etat, style)
-	for cle in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
-		bouton.add_theme_color_override(cle, Charte.PANNEAU if actif else Charte.IVOIRE)
-
-## Option B : tableau objectifs × saisons, toutes les saisons visibles d'un coup ; chaque cellule ouvre l'écran qui juge
-## l'objectif.
-static func plan_b(app: Control, parent: Container, plan: Array) -> void:
+## Plan des dirigeants : tableau objectifs × saisons, toutes les saisons visibles d'un coup ; chaque ligne ouvre
+## l'écran qui juge l'objectif.
+static func plan_cinq_ans(app: Control, parent: Container, plan: Array) -> void:
 	var bloc := C.v(2)
 	bloc.name = "PlanCinqAns"
 	parent.add_child(bloc)

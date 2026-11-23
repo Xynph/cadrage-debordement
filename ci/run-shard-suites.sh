@@ -105,6 +105,8 @@ budget() {
     tests/rapport-adverse-monde.cjs) echo 600s ;;
     # Compte rendu en carte : carrière Monde hebdomadaire, 3 + 1 journées et deux réouvertures (67 s en local, 23/11/2026).
     tests/compte-rendu-monde.cjs) echo 600s ;;
+    # Humeur des supporters : carrière Monde jouée jusqu'au premier bilan du conseil (3 matchs), 49 s en local (23/11/2026).
+    tests/supporters-humeur.cjs) echo 400s ;;
     # Délégation de la composition au staff : trois carrières Monde hebdomadaires (10 journées déléguées, feuille gardée jusqu'à l'alerte de fatigue, refus), ~5 min en local sous charge.
     tests/delegue-composition-staff.cjs) echo 900s ;;
     # Courbe de niveau (lot 0 notes réalistes) : carrière Monde, 720 matchs complets et 4 000 résultats rapides, 69 s seul en local, 112 s en CI (PR #712, poids 129 = mesure +15 %).
