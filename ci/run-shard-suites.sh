@@ -99,6 +99,8 @@ budget() {
     tests/presse-dilemmes-monde.cjs) echo 420s ;;
     # Noms de compétitions du pack dans les textes générés : carrière Monde, 64 s en local mais 181 s sur le runner (délai de 180 s dépassé sur la PR #1191, suite non touchée) ; budget ≈ 3 fois.
     tests/pack-noms-competitions-textes.cjs) echo 420s ;;
+    # Rubrique talents du pack : création de carrières, 179 s sur le runner (délai de 180 s atteint sur la PR #1217, suite non touchée) ; budget ≈ 2 fois.
+    tests/pack-talents.cjs) echo 420s ;;
     # Presse rapide (#928) : carrière Monde, 192 s en local sur main (19/11) et délai de 180 s dépassé dans le train 20261118-2307 ; budget ≈ 2 fois.
     tests/presse-rapide-monde.cjs) echo 420s ;;
     # Homme du match par poste : carrière Monde hebdomadaire jusqu'à 150 matchs notés, 135 s en local sous charge.
