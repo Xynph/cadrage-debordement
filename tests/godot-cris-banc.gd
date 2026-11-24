@@ -74,7 +74,7 @@ func banc() -> Node:
 	return surface().regie.between.get_node_or_null("MatchFmBanc") if surface() != null and surface().regie != null else null
 
 func deroulant() -> Control:
-	return surface().regie.between.find_child("FmBancDeroulant", true, false) as Control if surface() != null and surface().regie != null else null
+	return surface().find_child("FmBancDeroulant", true, false) as Control if surface() != null else null
 
 ## Ouvre le menu « Cris » d'un clic sur son bouton (s'il est fermé).
 func ouvrir_menu() -> void:
@@ -176,9 +176,9 @@ func run() -> void:
 	var joueur := bouton(between, "FmBancJoueur")
 	if joueur != null: joueur.pressed.emit()
 	await settle(10)
-	var fenetre := between.find_child("FmBancMenuPanneau", true, false) as Control
+	var fenetre := surface().find_child("FmBancMenuPanneau", true, false) as Control
 	check(fenetre != null, "sous-liste « À un joueur » ouverte")
-	check(between.find_children("FmCriJoueur_*_bravo", "Button", true, false).size() == 15, "quinze joueurs, un rond par cri")
+	check(surface().find_children("FmCriJoueur_*_bravo", "Button", true, false).size() == 15, "quinze joueurs, un rond par cri")
 	var lineup: Array = live().get("lineup", []) if live().get("lineup") is Array else []
 	var id10 := str(lineup[9].get("id", "")) if lineup.size() > 9 and lineup[9] is Dictionary else ""
 	var cri := bouton(between, "FmCriJoueur_10_niveau")
@@ -189,7 +189,7 @@ func run() -> void:
 		await settle(12)
 		var vu: Variant = pilotage().get("cris", {}).get("individuels", {}).get("joueurs", {}).get(id10)
 		check(vu is Dictionary and int(vu.get("sens", 0)) != 0, "le cri au joueur est pris par le moteur (bien ou mal)")
-		var ligne := between.find_child("FmCriJoueur_10", true, false)
+		var ligne := surface().find_child("FmCriJoueur_10", true, false)
 		var fleche := ligne.find_child("FmCriReaction", true, false) as Label if ligne != null else null
 		check(fleche != null and fleche.text in ["▲", "▼"], "réaction affichée après coup (▲ / ▼)")
 		for l: Node in (ligne.find_children("*", "Label", true, false) if ligne != null else []):
@@ -210,7 +210,7 @@ func run() -> void:
 	var fermer := bouton(between, "FmBancMenuFermer")
 	if fermer != null: fermer.pressed.emit()
 	await settle(10)
-	check(between.find_child("FmBancMenuPanneau", true, false) == null and deroulant() != null, "✕ ferme la sous-liste, le menu reste")
+	check(surface().find_child("FmBancMenuPanneau", true, false) == null and deroulant() != null, "✕ ferme la sous-liste, le menu reste")
 	var ligne_j := bouton(between, "FmBancJoueur")
 	check(ligne_j != null and not bool(ligne_j.get_meta("ouvert", true)), "sous-liste fermée : la ligne « À un joueur » s'éteint")
 	load("res://ui/petite_fenetre.gd").fermer_derniere(self)
@@ -226,6 +226,10 @@ func run() -> void:
 	if calque != null: calque.gui_input.emit(clic)
 	await settle(8)
 	check(calque_pose and deroulant() == null and not bool(bouton(between, "MatchBetweenShouts").get_meta("ouvert", true)), "un clic à côté ferme le menu")
+	# Pendant un temps fort 3D, le bouton « Cris » reste un vrai bouton : son menu s'ouvre sous lui (jamais de faux bouton).
+	await menu_en_3d()
+	view = surface()
+	between = view.regie.between
 	# Toutes les petites fenêtres de l'écran 2D en anthracite satiné (choix B de Léo), captures en 1920.
 	await fenetres(view, between)
 	# Permuter les ailes (ligne du menu) : attente du prochain arrêt (« ⧗ »), puis nos ailiers échangés.
@@ -282,7 +286,7 @@ func capture_tailles(between: Control) -> void:
 		await until(func(): return surface() != null and vue_2d(surface()), 30000)
 		await settle(10)
 		var ecran := Rect2(Vector2.ZERO, Vector2(root.size)).grow(1.0)
-		var panneau := between.find_child("FmBancMenuPanneau", true, false) as Control
+		var panneau := surface().find_child("FmBancMenuPanneau", true, false) as Control
 		var menu := deroulant()
 		check(panneau != null and panneau.is_visible_in_tree() and ecran.encloses(panneau.get_global_rect()), "%s : sous-liste « À un joueur » dans l'écran" % str(t))
 		check(menu != null and menu.is_visible_in_tree() and ecran.encloses(menu.get_global_rect()), "%s : menu « Cris » dans l'écran" % str(t))
@@ -294,7 +298,7 @@ func capture_tailles(between: Control) -> void:
 				var l := etiquette as Label
 				var large := l.get_theme_font("font").get_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, l.get_theme_font_size("font_size")).x
 				check(large <= l.custom_minimum_size.x + 1.0 and not l.clip_text, "%s : nom « %s » entier (%d / %d px)" % [str(t), l.text, int(large), int(l.custom_minimum_size.x)])
-			var lignes := between.find_child("FmCriJoueur_10", true, false) as Control
+			var lignes := surface().find_child("FmCriJoueur_10", true, false) as Control
 			check(lignes != null and lignes.get_global_rect().end.x <= pr.end.x + 1.0, "%s : colonnes de la liste dans sa largeur" % str(t))
 		var rond := bouton(between, "FmBancJoueur")
 		check(rond != null and bool(rond.get_meta("ouvert", false)), "%s : ligne « À un joueur » allumée tant que la sous-liste est ouverte" % str(t))
@@ -350,7 +354,7 @@ func tailles_vrai_match() -> void:
 ## visible avec l'écran 2D, défilement inchangé ; la carte du n° 10 de Mon XV garde son nœud.
 func liste_en_place() -> void:
 	var between: Control = surface().regie.between
-	var panneau := between.find_child("FmBancMenuPanneau", true, false) as Control
+	var panneau := surface().find_child("FmBancMenuPanneau", true, false) as Control
 	check(panneau != null, "liste « À un joueur » ouverte avant le match lancé")
 	if panneau == null: return
 	var defile := panneau.find_child("FmBancMenuDefile", true, false) as ScrollContainer
@@ -380,11 +384,11 @@ func liste_en_place() -> void:
 		var v := surface()
 		if v == null or not vue_2d(v): continue
 		images += 1
-		var p := v.regie.between.find_child("FmBancMenuPanneau", true, false) as Control
+		var p := v.find_child("FmBancMenuPanneau", true, false) as Control
 		if p == null or p.get_instance_id() != id_panneau: recree += 1
 		elif not p.is_visible_in_tree(): cachee += 1
 		elif defile.scroll_vertical != bas: bouge += 1
-		var m := v.regie.between.find_child("FmBancDeroulant", true, false) as Control
+		var m := v.find_child("FmBancDeroulant", true, false) as Control
 		var lc: Node = m.find_child("FmCri_exiger", true, false) if m != null else null
 		if m == null or m.get_instance_id() != id_menu or not m.is_visible_in_tree() or lc == null or lc.get_instance_id() != id_ligne: menus += 1
 		var c: Node = v.regie.between.find_child("MatchBetweenPlayer10", true, false)
@@ -466,3 +470,40 @@ func finir() -> void:
 	for i in 10: await process_frame
 	quit(0 if failures.is_empty() else 1)
 
+## Match lancé jusqu'à un temps fort 3D, mis en pause dessus : le bouton « Cris » est visible et son menu s'ouvre
+## sous lui, par-dessus la 3D ; Échap le ferme ; retour à l'écran 2D.
+func menu_en_3d() -> void:
+	await command("pause", {"paused": false})
+	Engine.time_scale = 8.0
+	var en_3d := await until(func(): return surface() != null and surface().regie != null and surface().regie.etat != surface().regie.INTER and not surface().regie.between.is_visible_in_tree(), 240000)
+	await command("pause", {"paused": true})
+	Engine.time_scale = 1.0
+	await settle(10)
+	check(en_3d and not surface().regie.between.is_visible_in_tree(), "temps fort 3D à l'écran, match en pause")
+	var b := bouton(null, "MatchBetweenShouts")
+	if b != null and b.is_visible_in_tree():
+		b.pressed.emit()
+		await settle(10)
+		var menu := deroulant()
+		var ok := menu != null and menu.is_visible_in_tree()
+		if ok:
+			var mr := menu.get_global_rect()
+			var br := b.get_global_rect()
+			ok = mr.position.y >= br.end.y and mr.position.y - br.end.y < 24.0 and Rect2(Vector2.ZERO, Vector2(root.size)).grow(1.0).encloses(mr)
+		check(ok and bool(b.get_meta("ouvert", false)), "en 3D : le bouton « Cris » ouvre son menu juste dessous")
+		await capture("final-menu-3d-1920")
+		var ligne := bouton(null, "FmCri_exiger")
+		check(ligne != null and ligne.is_visible_in_tree(), "en 3D : les lignes du menu sont cliquables")
+		load("res://ui/petite_fenetre.gd").fermer_derniere(self)
+		await settle(8)
+		check(deroulant() == null and not bool(b.get_meta("ouvert", true)), "en 3D : Échap ferme le menu")
+	else:
+		# Sinon le bouton doit être caché (jamais un bouton qui ne fait rien).
+		check(b == null, "en 3D : bouton « Cris » visible mais sans menu")
+	await command("pause", {"paused": false})
+	Engine.time_scale = 8.0
+	await until(func(): return surface() != null and vue_2d(surface()), 240000)
+	Engine.time_scale = 1.0
+	await command("pause", {"paused": true})
+	await until(func(): return surface() != null and vue_2d(surface()), 60000)
+	await settle(10)

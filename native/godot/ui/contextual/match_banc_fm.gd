@@ -78,6 +78,20 @@ var _deroulant: PanelContainer
 var _menu: PanelContainer
 var _cle := ""
 
+## Le menu vit dans la vue du direct (pas dans l'écran 2D) : il s'ouvre aussi pendant un temps fort 3D, sous le bouton
+## « Cris » de la bande des commandes (règle « jamais de faux bouton »). Sans vue du direct (maquette) : l'écran 2D.
+func _hote_menu() -> Control:
+	var n: Node = bouton_banc if is_instance_valid(bouton_banc) else between
+	while n != null:
+		if n.name == "ContextualLiveMatch" and n is Control: return n
+		n = n.get_parent()
+	return between
+
+## L'écran 2D reconstruit (ou quitté) emporte ce banc : son menu posé dans la vue part avec lui (il revient avec le
+## nouveau banc si l'écran a seulement changé d'échelle).
+func _exit_tree() -> void:
+	if is_instance_valid(_calque) and not between.is_ancestor_of(_calque): _calque.queue_free()
+
 ## Pose le bouton « Cris » dans la bande des commandes, juste avant « Consignes ».
 static func poser(hote: Control, barre: Control, _page: Control) -> Node:
 	# Un seul banc par écran : celui d'une pose précédente part (update_frame retrouve le banc par son nom).
@@ -275,7 +289,7 @@ func ouvrir_menu(avec_joueurs: bool = false) -> void:
 	_calque.gui_input.connect(func(e: InputEvent):
 		var clic := e as InputEventMouseButton
 		if clic != null and clic.pressed: fermer_menu())
-	between.add_child(_calque)
+	_hote_menu().add_child(_calque)
 	_calque.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	PetiteFenetre.enregistrer(_calque, fermer_menu)
 	between.set_meta("fm_menu", true)
@@ -344,7 +358,7 @@ func _placer_menu(essais: int = 0) -> void:
 	var pos := Vector2(r.position.x, r.end.y + px(6))
 	if pos.x + _deroulant.size.x > ecran.x - px(16): pos.x = r.end.x - _deroulant.size.x
 	pos.x = clampf(pos.x, px(16), maxf(px(16), ecran.x - _deroulant.size.x - px(16)))
-	_deroulant.position = pos - between.get_global_rect().position
+	_deroulant.position = pos - _calque.get_global_rect().position
 	_deroulant.visible = true
 	if is_instance_valid(_menu): _placer_joueurs()
 	# La bande se pose sur une ou deux images (écran reconstruit) : on suit le bouton.
@@ -505,7 +519,7 @@ func _placer_joueurs() -> void:
 	if pos.x < px(16): pos.x = d.end.x + px(8)
 	pos.x = clampf(pos.x, px(16), maxf(px(16), ecran.x - _menu.size.x - px(16)))
 	pos.y = clampf(pos.y, px(16), maxf(px(16), ecran.y - _menu.size.y - px(16)))
-	_menu.position = pos - between.get_global_rect().position
+	_menu.position = pos - _calque.get_global_rect().position
 
 ## Nos quinze : numéro, nom, moral en direct, trois cris en ronds, puis la réaction au dernier cri (après coup).
 var _liste: VBoxContainer
