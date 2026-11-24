@@ -131,7 +131,7 @@ func layout() -> void:
 	check(node("AcademyImmersiveDossier") == null, "Plus de fiche fixe à droite")
 	var table := node("AcademyImmersiveTable")
 	check(table != null and table.size.x >= app.root_content.size.x * .6, "Le tableau prend toute la largeur")
-	for key in ["source", "name", "pos", "age", "note", "potential", "change", "minutes", "contract", "status"]:
+	for key in ["source", "name", "pos", "age", "note", "potential", "minutes", "contract", "status"]:
 		check(node("AcademySort_" + key) != null, "Tri par colonne · " + key)
 	for index in 4: check(node("AcademyImmersiveTab" + str(index)) != null, "Onglet " + str(index))
 	for id in ["AcademyTileEspoirs", "AcademyTilePepites", "AcademyTileDecider", "AcademyTilePlaces", "OpenYouthDevelopment", "AcademyDecision", "AcademyDecisions"]:
@@ -215,7 +215,7 @@ func decision_strip() -> void:
 
 func tabs() -> void:
 	check(await press("AcademyImmersiveTab1"), "Onglet Progression")
-	check(node("AcademySort_start") != null and node("AcademySort_change") != null, "Progression : niveau de départ et gain triables")
+	check(node("AcademySort_start") != null and node("AcademySort_note") != null and node("AcademySort_change") == null, "Progression : niveau de départ et niveau (flèche) triables, plus de colonne « depuis juillet »")
 	check(await press("AcademyImmersiveTab2"), "Onglet Passerelles")
 	check(node("AcademyPathwayPane") != null, "Passerelles : panneau")
 	for id in ["AcademyStage0", "AcademyStage1", "AcademyStage2", "AcademyOpenCentre", "AcademyFollowUp", "AcademyJuniorCompetition"]:

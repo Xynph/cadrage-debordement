@@ -54,6 +54,8 @@ const EXTRAS := [
 	{"id": "fleches-survol", "libelle": "Flèches de progression · courbe 12 mois au survol", "type": "fleches", "vue": "survol"},
 	{"id": "fleches-effectif", "libelle": "Flèches de progression · Effectif", "type": "fleches", "vue": "effectif"},
 	{"id": "fleches-centre", "libelle": "Flèches de progression · Centre (parcours)", "type": "fleches", "vue": "centre"},
+	{"id": "fleches-fiche-baisses", "libelle": "Flèches de progression · fiche d'un joueur âgé (baisses)", "type": "fleches", "vue": "fiche", "baisses": true},
+	{"id": "fleches-developpement", "libelle": "Flèches de progression · fiche, onglet Développement (entraînement individuel)", "type": "fleches", "vue": "developpement"},
 	{"id": "progression-niveau", "libelle": "Fiche joueur · progression, vue Niveau", "type": "progression", "autre": true},
 	{"id": "equilibre-postes", "libelle": "Équilibre par poste (infobulle Aptes)", "type": "equilibre_postes"},
 	{"id": "comparateur", "libelle": "Comparateur (deux joueurs)", "type": "comparateur"},
@@ -992,10 +994,17 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				if not p is Dictionary: continue
 				var n_f := 0
 				var crans_f := {}
+				var baisses_f := 0
+				var hausses_f := 0
 				for q: Dictionary in F.donnees(app, p).get("qualites", {}).values():
 					crans_f[int(q.cran)] = true
 					if int(q.cran) != 0: n_f += 1
+					if int(q.cran) < 0: baisses_f += 1
+					if int(q.cran) > 0: hausses_f += 1
 				n_f += 100 * crans_f.size()
+				# Hausses ET baisses d'abord ; « baisses » : le joueur aux baisses les plus nombreuses (âge).
+				if baisses_f > 0 and hausses_f > 0: n_f += 10000
+				if bool(ecran.get("baisses", false)): n_f = baisses_f * 1000 + crans_f.size() * 10 + hausses_f
 				if n_f > meilleur_f:
 					meilleur_f = n_f
 					choisi_f = p
@@ -1014,7 +1023,7 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 						app._navigate("Formation")
 					await stabiliser()
 				_:
-					app.management_ui.immersive_player_tab = 0
+					app.management_ui.immersive_player_tab = 4 if str(ecran.vue) == "developpement" else 0
 					app._navigate("Effectif")
 					await stabiliser()
 					if not app.navigation_controller.open_entity({"kind": "player", "id": ident(choisi_f.get("id"))}): return {"statut": "echec", "note": "fiche joueur non ouverte"}

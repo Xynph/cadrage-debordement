@@ -432,13 +432,13 @@ func _columns() -> Array:
 		return [{"id":"num", "titre":"#", "tri":"source", "x":22.0, "w":40.0, "align":1}, {"id":"name", "titre":"JOUEUR", "tri":"name", "x":132.0, "w":420.0, "align":0},
 			{"id":"pos", "titre":"POSTE", "tri":"pos", "x":580.0, "w":200.0, "align":0}, {"id":"age", "titre":"ÂGE", "tri":"age", "x":800.0, "w":70.0, "align":2},
 			{"id":"start", "titre":"NIV. EN JUILLET", "tri":"start", "x":890.0, "w":170.0, "align":2}, {"id":"note", "titre":"NIV.", "tri":"note", "x":1080.0, "w":80.0, "align":2},
-			{"id":"change", "titre":"PROG. DEPUIS JUILLET", "tri":"change", "x":1180.0, "w":260.0, "align":2}, {"id":"trend", "titre":"SAISONS PASSÉES", "tri":"", "x":1480.0, "w":260.0, "align":0},
+			{"id":"trend", "titre":"SAISONS PASSÉES", "tri":"", "x":1220.0, "w":520.0, "align":0},
 			{"id":"minutes", "titre":"MINUTES", "tri":"minutes", "x":1780.0, "w":140.0, "align":2}, {"id":"status", "titre":"STATUT", "tri":"status", "x":1950.0, "w":290.0, "align":0}]
 	return [{"id":"num", "titre":"#", "tri":"source", "x":22.0, "w":40.0, "align":1}, {"id":"name", "titre":"JOUEUR", "tri":"name", "x":132.0, "w":420.0, "align":0},
 		{"id":"pos", "titre":"POSTE", "tri":"pos", "x":580.0, "w":190.0, "align":0}, {"id":"age", "titre":"ÂGE", "tri":"age", "x":790.0, "w":70.0, "align":2},
 		{"id":"note", "titre":"NIV.", "tri":"note", "x":880.0, "w":80.0, "align":2}, {"id":"potential", "titre":"POTENTIEL", "tri":"potential", "x":980.0, "w":150.0, "align":2},
-		{"id":"change", "titre":"PROG. DEPUIS JUILLET", "tri":"change", "x":1150.0, "w":240.0, "align":2}, {"id":"minutes", "titre":"MINUTES", "tri":"minutes", "x":1420.0, "w":130.0, "align":2},
-		{"id":"contract", "titre":"FIN DU CONTRAT", "tri":"contract", "x":1580.0, "w":170.0, "align":2}, {"id":"status", "titre":"STATUT", "tri":"status", "x":1790.0, "w":450.0, "align":0}]
+		{"id":"minutes", "titre":"MINUTES", "tri":"minutes", "x":1180.0, "w":130.0, "align":2},
+		{"id":"contract", "titre":"FIN DU CONTRAT", "tri":"contract", "x":1350.0, "w":170.0, "align":2}, {"id":"status", "titre":"STATUT", "tri":"status", "x":1570.0, "w":670.0, "align":0}]
 
 func _col(columns: Array, id: String) -> Dictionary:
 	for col: Dictionary in columns:

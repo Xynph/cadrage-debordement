@@ -18,8 +18,8 @@
 // S.releveQualites = {m: 'AAAA-MM'} : mois du dernier relevé (une fois par mois pour tout le monde).
 // Relevé hebdomadaire (choix de Léo du 24/11/2026) : chaque semaine d'entraînement, même format avec le lundi
 // (AAAA-MM-DD) à la place du mois, 5 semaines glissantes (p.rh) ; S.releveQualites.s = lundi du dernier relevé.
-// Flèches de progression (CDReleveQualites.fleches) : écart sur 4 semaines, seulement les qualités qui sortent du lot,
-// niveau = moyenne des 36.
+// Flèches de progression (CDReleveQualites.fleches) : écart sur 4 semaines, toute qualité qui a vraiment bougé (hausse
+// ou baisse), niveau = moyenne des 36.
 // Fonctions de la VM : CDReleveQualites.{lire, fleches, CLES}.
 const files=Object.freeze([]),commands=Object.freeze([]);
 function factory(){
@@ -133,12 +133,18 @@ function factory(){
  }
  // Après chaque commande (worker) : carrière neuve ou ancienne sauvegarde sans relevé, premier relevé tout de suite.
  function observe(){if(typeof S==='undefined'||!S||S.releveQualites)return 0;return releverTous(true);}
- // Flèches de progression du joueur (choix de Léo du 24/11/2026) : écart entre ses qualités du jour et celles d'il y a
- // 4 semaines (relevé hebdomadaire), en crans −3..3 (dixièmes : ±1-3 léger, ±4-9 net, ±10 point gagné / perdu).
- //  - q : seulement les qualités qui sortent du lot (écart à la médiane des 36 d'au moins 2 dixièmes), 6 au plus ;
- //  - n : niveau = moyenne des 36 qualités.
+ // Flèches de progression du joueur (choix de Léo du 24/11/2026, retouche : « dans FM ça peut être plus, en positif
+ // ou négatif ») : écart entre ses qualités du jour et celles d'il y a 4 semaines (relevé hebdomadaire), en crans
+ // −3..3 : léger (+0,3 / −0,2 à −0,3), net (±0,4 à 0,9), point gagné / perdu (±1 ou plus).
+ //  - q : toute qualité qui a vraiment bougé, en hausse comme en baisse, sans limite de nombre. Seuils de bruit sur 4
+ //    semaines (mesurés en milieu de saison Monde) : hausse 0,3 point (un jeune ≤ 22 ans a 1,3 flèche en moyenne, 20 au
+ //    plus ; à 0,2 il en avait 3,2 et jusqu'à 25, des mouvements de fond sans signification) ; baisse 0,2 point (le déclin
+ //    de l'âge est lent et étalé : à 0,3, deux joueurs au plus par club en montraient une ; à 0,2, un joueur de 31 ans et
+ //    plus en a 5 en moyenne). Baisses du moteur : déclin de l'âge, appliqué chaque semaine (in-season-development.cjs) ;
+ //    ni blessure ni manque de jeu ne font baisser une qualité ;
+ //  - n : niveau = moyenne des 36 qualités (hausse ou baisse, mêmes crans sur la moyenne).
  // null sans relevé d'au moins une semaine.
- const QUALITES_MAX=6,SEUIL_LOT=2;
+ const SEUIL_HAUSSE=3,SEUIL_BAISSE=2;
  const cran=d=>{const a=Math.abs(d);return a>=10?3*Math.sign(d):a>=4?2*Math.sign(d):a>=1?Math.sign(d):0;};
  function fleches(p){
   const r=decoder(p?.rh,SEMAINE);if(!r)return null;
@@ -147,14 +153,9 @@ function factory(){
   // Référence : la semaine d'il y a 4 semaines, sinon la plus ancienne relevée.
   while(k<dernier&&!r.points[k])k++;
   const ref=r.points[k];if(!ref)return null;
-  const maintenant=CLES.map(c=>Math.round(v[c]*10));
-  if(k===dernier&&maintenant.every((x,i)=>x===ref.dix[i]))return {n:0,q:{}};
-  const ecarts=maintenant.map((x,i)=>x-ref.dix[i]);
-  const tri=ecarts.slice().sort((a,b)=>a-b),mediane=(tri[17]+tri[18])/2;
+  const ecarts=CLES.map((c,i)=>Math.round(v[c]*10)-ref.dix[i]);
   const moyenne=ecarts.reduce((a,b)=>a+b,0)/36;
-  const lot=ecarts.map((d,i)=>[i,d,d-mediane]).filter(([,d,e])=>cran(d)!==0&&Math.abs(e)>=SEUIL_LOT)
-   .sort((a,b)=>Math.abs(b[2])-Math.abs(a[2])||a[0]-b[0]).slice(0,QUALITES_MAX);
-  return {n:cran(Math.round(moyenne)),q:Object.fromEntries(lot.map(([i,d])=>[CLES[i],cran(d)]))};
+  return {n:cran(Math.round(moyenne)),q:Object.fromEntries(ecarts.flatMap((d,i)=>d>=SEUIL_HAUSSE||d<=-SEUIL_BAISSE?[[CLES[i],cran(d)]]:[]))};
  }
  function validate(s){
   const m=s?.releveQualites;

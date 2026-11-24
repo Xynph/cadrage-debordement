@@ -311,6 +311,71 @@ static func _specialisation(card: Control, app: Control, player: Dictionary, zon
 	card.add_child(control)
 	D.place(control, zone)
 
+## Entraînement individuel du moteur (entrainement-cible.cjs) : {poste: {nom, qualites}, role: {nom, cles, utiles},
+## designations: [{nom, qualites}]} ; {} sans données.
+static func _individuel_donnees(app: Control, player: Dictionary) -> Dictionary:
+	var record := Academy.professional_progress(app, str(player.get("id", "")))
+	var development: Variant = record.get("development", {})
+	var i: Variant = development.get("individuel", {}) if development is Dictionary else {}
+	return i if i is Dictionary and i.get("poste") is Dictionary else {}
+
+## Bloc « Entraînement individuel » (24/11/2026) : qualités travaillées au poste, au rôle de jeu (clés puis utiles) et
+## aux rôles désignés, en puces à chevron, sans chiffre.
+static func _individuel(parent: Control, i: Dictionary, zone: Rect2) -> void:
+	var bloc := Control.new()
+	bloc.name = "ProgressionIndividuel"
+	bloc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(bloc)
+	D.place(bloc, zone)
+	D.text(bloc, 0, 22, "ENTRAÎNEMENT INDIVIDUEL", 17, Charte.IVOIRE_3, 700, zone.size.x)
+	var y := 36.0
+	var lignes: Array = []
+	var poste: Dictionary = i.get("poste", {})
+	lignes.append(["POSTE · " + str(poste.get("nom", "")).to_upper(), poste.get("qualites", []), Charte.GAIN, "Poste"])
+	var role: Variant = i.get("role")
+	if role is Dictionary:
+		lignes.append(["RÔLE · " + str(role.get("nom", "")).to_upper(), role.get("cles", []), Charte.GAIN, "RoleCle"])
+		lignes.append(["", role.get("utiles", []), Color(Charte.GAIN, .55), "RoleUtile"])
+	for d: Variant in i.get("designations", []):
+		if d is Dictionary: lignes.append([str(d.get("nom", "")).to_upper(), d.get("qualites", []), Charte.GAIN, "Designe"])
+	for ligne: Array in lignes:
+		if y > zone.size.y - 34: break
+		if not str(ligne[0]).is_empty():
+			D.text(bloc, 0, y + 20, str(ligne[0]), 16, Charte.IVOIRE_2, 700, zone.size.x).name = "ProgressionIndividuelTitre" + str(ligne[3])
+			y += 28
+		var x := 0.0
+		for cle: Variant in ligne[1]:
+			var w := _largeur_puce(str(cle))
+			if x + w > zone.size.x and x > 0:
+				x = 0
+				y += 40
+			if y > zone.size.y - 34: break
+			_puce(bloc, x, y, str(cle), ligne[2], "ProgressionIndividuel%s_%s" % [ligne[3], cle])
+			x += w + 8
+		y += 44
+
+static func _largeur_puce(cle: String) -> float:
+	return C.font(700).get_string_size(_libelle(cle), HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(18))).x / C.density + 50
+
+static func _libelle(cle: String) -> String:
+	for groupe: Array in PlayerAttributes.GROUPS:
+		for pair: Array in groupe[1]:
+			if str(pair[0]) == cle: return str(pair[1])
+	return cle
+
+## Puce : chevron (tendance, sans chiffre) + nom de la qualité.
+static func _puce(parent: Control, x: float, y: float, cle: String, couleur: Color, id: String) -> void:
+	var largeur := _largeur_puce(cle)
+	var pilule := D.rect(parent, Rect2(x, y, largeur, 34), Color(couleur, .18), Charte.RAYON_PILULE)
+	pilule.name = id
+	pilule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var chevron = load("res://ui/fleches_progression.gd").Fleche.new()
+	chevron.cran = 1
+	chevron.modulate = Color(1, 1, 1, couleur.a)
+	pilule.add_child(chevron)
+	D.place(chevron, Rect2(11, -4, 18, 27))
+	D.text(pilule, 36, 24, _libelle(cle), 18, Charte.IVOIRE if couleur.a > .9 else Charte.IVOIRE_2, 700, largeur - 40).mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 ## Saisons passées (historique du moteur : niveau en début et en fin de saison).
 static func _saisons(card: Control, app: Control, player: Dictionary, x: float, y: float, largeur: float) -> void:
 	var record := Academy.professional_progress(app, str(player.get("id", "")))
@@ -375,7 +440,9 @@ static func construire(page: Control, app: Control, player: Dictionary, top: flo
 				vals.append_array(q.serie)
 		_cadre_y(courbe, vals)
 		haut.add_child(courbe)
-		D.place(courbe, Rect2(24, 96, 2200, 370))
+		var individuel := _individuel_donnees(app, player)
+		D.place(courbe, Rect2(24, 96, 1590 if not individuel.is_empty() else 2200, 370))
+		if not individuel.is_empty(): _individuel(haut, individuel, Rect2(1650, 96, 574, 372))
 	# Grille des 36 qualités à cocher.
 	var bas_y := top + 496
 	var grille := D.panel(page, Rect2(0, bas_y, 2248, 1246 - bas_y), "", "", "", "ProgressionGrille")

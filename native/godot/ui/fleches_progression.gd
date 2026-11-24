@@ -2,9 +2,11 @@ extends RefCounted
 ## Flèches de progression façon jeu de gestion (choix B de Léo du 24/11/2026), à côté des qualités de la fiche, du
 ## niveau dans l'Effectif et des jeunes du Centre. Les crans viennent du moteur (native/engine/releve-qualites.cjs,
 ## champ « fleches » du joueur) : écart sur 4 semaines lu dans le relevé HEBDOMADAIRE (au dixième, jamais affiché) :
-## léger (+0,1 à +0,3), net (+0,4 à +0,9), point gagné (+1 ou plus) ; même chose en baisse (orange, puis rouge).
-## Seules les qualités qui sortent du lot ont une flèche (6 au plus) ; flèche du niveau = moyenne des 36 qualités.
-## Marque : 1, 2 ou 3 chevrons empilés à gauche du chiffre ; point gagné = chiffre en pastille pleine + « +1 ».
+## léger (+0,2 à +0,3), net (+0,4 à +0,9), point gagné (+1 ou plus) ; même chose en baisse, en rouge (déclin de l'âge).
+## Toute qualité qui a vraiment bougé a sa flèche, sans limite (retouche de Léo du 24/11/2026, comme FM) ; flèche du
+## niveau = moyenne des 36 qualités, en hausse ou en baisse.
+## Marque : 1, 2 ou 3 chevrons empilés à gauche du chiffre (vers le haut en vert, vers le bas en rouge) ; point gagné ou
+## perdu = chiffre cerclé (il garde sa couleur de tranche) + « +1 » / « −1 » à gauche des chevrons.
 ## Survol du chiffre : bulle avec la courbe des 12 derniers mois (relevé mensuel, bulle_survol.gd, sans clic).
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
@@ -12,10 +14,8 @@ const Charte = preload("res://ui/charte.gd")
 const Bulle = preload("res://ui/bulle_survol.gd")
 const Courbe = preload("res://ui/mini_courbe_survol.gd")
 
-## Hausse : pâle, vert (gain de la charte), vert vif. Baisse : orange pâle, orange (intensif), rouge (perte).
+## Hausse : vert pâle, vert (gain de la charte), vert vif. Baisse : rouge pâle, rouge (perte de la charte), rouge plein.
 const VIF := Color("4be08a")
-const BAISSE := Charte.INTENSIF
-const BAISSE_VIVE := Charte.PERTE
 
 static var _cache: Dictionary = {}
 
@@ -28,13 +28,12 @@ static func teinte(cran: int) -> Color:
 		3: return VIF
 		2: return Charte.GAIN
 		1: return Color(Charte.GAIN, 0.5)
-		-1: return Color(BAISSE, 0.55)
-		-2: return BAISSE
-		-3: return BAISSE_VIVE
+		-1: return Color(Charte.PERTE, 0.55)
+		-2, -3: return Charte.PERTE
 	return Color.TRANSPARENT
 
 ## {qualites: {clé: {cran, serie, libelle}}, niveau: {cran, serie}} du joueur ; {} sans relevé. Crans du moteur (0 pour
-## une qualité qui ne sort pas du lot : pas de marque, mais la courbe au survol).
+## une qualité qui n'a pas bougé : pas de marque, mais la courbe au survol).
 static func donnees(app: Control, player: Dictionary) -> Dictionary:
 	var f: Variant = player.get("fleches")
 	if not f is Dictionary or str(player.get("releve", "")).is_empty() or _p().valeurs(player).is_empty(): return {}
@@ -69,7 +68,8 @@ static func marquer(app: Control, label: Label, cran_: int, serie: Array, titre:
 	if cran_ != 0: zone = _chevrons(parent, label, cran_, gauche, droite, haut, hauteur, s, id)
 	_survol(app, parent, zone, serie, titre, cran_, id)
 
-## Chevrons empilés à gauche (1, 2 ou 3) ; point gagné = chiffre en pastille pleine + « +1 » en exposant.
+## Chevrons empilés à gauche (1, 2 ou 3) ; point gagné ou perdu = chiffre cerclé (sa couleur de tranche reste) et
+## « +1 » / « −1 » lisible à gauche des chevrons (rien ne déborde à droite sur la colonne voisine).
 static func _chevrons(parent: Control, label: Label, n: int, gauche: float, droite: float, haut: float, hauteur: float, s: float, id: String) -> Rect2:
 	var f := Fleche.new()
 	f.name = "Fleche_" + id
@@ -79,24 +79,27 @@ static func _chevrons(parent: Control, label: Label, n: int, gauche: float, droi
 	f.size = Vector2(l, hauteur * 1.1)
 	var marge := s * (0.55 if absi(n) == 3 else 0.3)
 	f.position = Vector2(gauche - marge - l, haut - hauteur * 0.05)
+	var debut := f.position.x
 	var fin := droite
 	if absi(n) == 3:
-		var pastille := Panel.new()
-		pastille.name = "FlechePastille_" + id
-		pastille.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var cadre := Panel.new()
+		cadre.name = "FlechePastille_" + id
+		cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var style := StyleBoxFlat.new()
-		style.bg_color = teinte(n)
+		style.bg_color = Color(teinte(n), 0.16)
+		style.border_color = teinte(n)
+		style.set_border_width_all(maxi(2, C.px(2)))
 		style.set_corner_radius_all(maxi(3, C.px(7)))
-		pastille.add_theme_stylebox_override("panel", style)
-		parent.add_child(pastille)
-		parent.move_child(pastille, label.get_index())
-		pastille.position = Vector2(gauche - s * 0.32, haut - hauteur * 0.14)
-		pastille.size = Vector2(droite - gauche + s * 0.64, hauteur * 1.3)
-		label.add_theme_color_override("font_color", Charte.ENCRE)
-		var un := _petit(parent, "+1" if n > 0 else "−1", teinte(n), s * 1.0, "FlecheUn_" + id)
-		un.position = Vector2(pastille.position.x + pastille.size.x + s * 0.05, pastille.position.y - un.size.y * 0.35)
-		fin = un.position.x + un.size.x
-	return Rect2(f.position.x, haut, fin - f.position.x, hauteur)
+		cadre.add_theme_stylebox_override("panel", style)
+		parent.add_child(cadre)
+		parent.move_child(cadre, label.get_index())
+		cadre.position = Vector2(gauche - s * 0.32, haut - hauteur * 0.14)
+		cadre.size = Vector2(droite - gauche + s * 0.64, hauteur * 1.3)
+		fin = cadre.position.x + cadre.size.x
+		var un := _petit(parent, "+1" if n > 0 else "−1", teinte(n), float(label.get_theme_font_size("font_size")) * 0.8, "FlecheUn_" + id)
+		un.position = Vector2(f.position.x - un.size.x - s * 0.15, haut + (hauteur - un.size.y) / 2.0 + hauteur * 0.05)
+		debut = un.position.x
+	return Rect2(debut, haut, fin - debut, hauteur)
 
 static func _petit(parent: Control, texte: String, couleur: Color, taille: float, nom: String) -> Label:
 	var l := Label.new()
@@ -104,10 +107,10 @@ static func _petit(parent: Control, texte: String, couleur: Color, taille: float
 	l.text = texte
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	l.add_theme_font_override("font", C.font(800))
-	l.add_theme_font_size_override("font_size", maxi(12, roundi(taille)))
+	l.add_theme_font_size_override("font_size", maxi(14, roundi(taille)))
 	l.add_theme_color_override("font_color", couleur)
 	parent.add_child(l)
-	l.size = C.font(800).get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, roundi(taille))) + Vector2(2, 0)
+	l.size = C.font(800).get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(14, roundi(taille))) + Vector2(2, 0)
 	return l
 
 ## Zone de survol posée sur le chiffre et sa marque : bulle « courbe 12 mois » (au moins 2 relevés).
