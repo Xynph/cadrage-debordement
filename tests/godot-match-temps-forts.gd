@@ -1159,10 +1159,15 @@ func player_path() -> Array:
 	var before := highlights(regie.suivi)
 	var options: Array = app.model.live.get("substitutions", []).filter(func(option: Dictionary): return not option.get("inIds", []).is_empty())
 	check(not options.is_empty(), "Des remplacements sont proposés pendant la pause")
+	var remplacement: Dictionary = {}
 	if not options.is_empty():
 		var choice: Dictionary = options[0]
 		await command("substitute", {"slot": int(choice.slot), "outId": choice.outId, "inId": choice.inIds[0]})
-		check(app.model.live.lineup[int(choice.slot)].get("id") == choice.inIds[0], "Le remplaçant entre pendant l'écran intermédiaire")
+		# Match du manager : le changement attend le prochain arrêt de jeu (file du moteur, match-arrets.cjs).
+		var file: Array = app.model.live.get("pilotage", {}).get("arrets", {}).get("file", [])
+		var attend := file.any(func(e: Variant) -> bool: return e is Dictionary and str(e.get("type", "")) == "remplacement")
+		check(attend or app.model.live.lineup[int(choice.slot)].get("id") == choice.inIds[0], "Le remplaçant entre ou attend le prochain arrêt de jeu")
+		if attend: remplacement = {"slot": int(choice.slot), "id": str(choice.inIds[0])}
 	var tactics: Dictionary = app.model.get("tactics", {})
 	var other := ""
 	for option: Dictionary in tactics.get("attacks", []):
@@ -1176,6 +1181,8 @@ func player_path() -> Array:
 	check(app.model.live.minute == minute and not app.waiting, "En pause, l'horloge attend")
 	await command("pause", {"paused": false})
 	check(await until(func(): return app.model.live.minute > minute, 60000), "Le match reprend après la pause")
+	if not remplacement.is_empty():
+		check(await until(func(): return str(app.model.live.lineup[int(remplacement.slot)].get("id", "")) == str(remplacement.id) or app.model.live.get("finished", false), 120000), "Le remplaçant entre au prochain arrêt de jeu")
 	# Le niveau choisi dans la barre vaut tout de suite et pour les prochains matchs.
 	var extended := labels.find("Temps forts étendus")
 	# Le niveau se choisit dans Paramètres (bouton du panneau, comme le joueur).
@@ -1519,13 +1526,18 @@ func terrain2d(view: Control) -> void:
 	var rangs_xv: Array = between.xv.get_children().filter(func(n: Node): return n is Button)
 	# Plein écran obligatoire (Léo, 21/11/2026) : la carte d'un joueur ouvre sa petite fenêtre par-dessus le match ;
 	# la fenêtre Équipe reste ouverte par le bouton Équipe, T et « Remplacer le N » de Gabi.
+	# Fenêtre du joueur en match (idée 32) : le match continue derrière ; ici on le tient arrêté le temps du contrôle
+	# (la suite mesure l'écran intermédiaire, qu'un temps fort viendrait couvrir).
+	var jouait := not bool(app.model.live.get("paused", false))
+	if jouait: await command("pause", {"paused": true})
 	(rangs_xv[9] as Button).pressed.emit()
 	await settle(6)
 	var hote_carte: Control = view.get("fenetre_hote") if view.fenetre_ouverte() else null
-	var panneau_carte: Control = hote_carte.find_child("MatchFenetreJoueurPanneau", true, false) if hote_carte != null else null
-	check(panneau_carte != null and str(panneau_carte.get_meta("player_id", "")) == str(lineup[9].id) and surface() == view, "La carte d'un joueur de Mon XV ouvre sa petite fenêtre par-dessus le match (poste 10)")
+	var panneau_carte: Control = hote_carte.find_child("MatchMenuJoueurPanneau", true, false) if hote_carte != null else null
+	check(panneau_carte != null and str(panneau_carte.get_meta("player_id", "")) == str(lineup[9].id) and surface() == view, "La carte d'un joueur de Mon XV ouvre sa fenêtre en match par-dessus le direct (poste 10)")
 	view.fermer_fenetre()
 	await settle(4)
+	if jouait: await command("pause", {"paused": false})
 	await settle(2)
 	# Mon XV a pu être reconstruit entre-temps (minute suivante) : ses cartes sont relues.
 	rangs_xv = between.xv.get_children().filter(func(n: Node): return n is Button)
@@ -1703,8 +1715,9 @@ func consigne_reelle(regie: Node) -> void:
 		return
 	var pauses: int = regie.suivi.size()
 	bouton.pressed.emit()
-	var recu: bool = await until(func() -> bool: return app.model.live.get("pilotage") is Dictionary and str(app.model.live.pilotage.get("consignes", {}).get("rythme", "")) == voulu, 30000)
-	check(recu, "Consignes : le moteur applique « %s » (%s)" % [voulu, str(app.model.live.get("pilotage", {}).get("consignes", {}) if app.model.live.get("pilotage") is Dictionary else null)])
+	# Match du manager : la consigne attend le prochain arrêt de jeu (file du moteur, match-arrets.cjs) ou est déjà en place.
+	var recu: bool = await until(func() -> bool: return app.model.live.get("pilotage") is Dictionary and (str(app.model.live.pilotage.get("consignes", {}).get("rythme", "")) == voulu or (app.model.live.pilotage.get("arrets", {}).get("file", []) as Array).any(func(e: Variant) -> bool: return e is Dictionary and str(e.get("cle", "")) == "consigne:rythme" and str(e.get("valeur", "")) == voulu)), 30000)
+	check(recu, "Consignes : le moteur prend « %s », au prochain arrêt de jeu (%s)" % [voulu, str(app.model.live.get("pilotage", {}).get("consignes", {}) if app.model.live.get("pilotage") is Dictionary else null)])
 	check(regie.suivi.slice(pauses).any(func(e: Dictionary) -> bool: return e.evenement == "consigne" and e.get("valeur") == voulu), "Consignes : envoyée par la régie")
 	if vue.equipe.visible: vue.equipe.fermer(false)
 

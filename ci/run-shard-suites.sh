@@ -138,7 +138,10 @@ budget() {
     # Pont natif en carrière Monde (#828) : deux workers jumeaux, un match délégué, exports de ~20 Mo, sept workers successifs ; 151 s en local avec Godot, 180 s dépassées en CI.
     tests/godot-engine.cjs) echo 600s ;;
     # Pilotage du match (#912) : carrière Monde + 11 séries de 160 matchs rejoués, 125-150 s en local ; 180 s dépassées en CI.
-    tests/match-pilotage.cjs) echo 480s ;;
+    # Arrêts de jeu (PR #1216) : carrière Monde + séries de matchs, 86 s en local, 180 s dépassées en CI (Suites 9/10) ; budget ≈ 5 fois.
+    tests/match-arrets.cjs) echo 480s ;;
+    # 23/11/2026 : 323 s en local sur main, 352 s avec les arrêts de jeu (PR #1216) ; 480 s dépassées en CI (Suites 1/10) ; budget ≈ 2,5 fois.
+    tests/match-pilotage.cjs) echo 900s ;;
     # Dilemmes rugby (#925, 18/11/2026) : la presse rapide en carrière Monde passe de 149 à 172 s en local (commotions, doublons, relâchement
     # calculés chaque jour) ; 180 s dépassées en CI. Même cause pour le test de charge natif (71 s en local, 180 s dépassées sur le runner).
     tests/presse-rapide-monde.cjs|tests/v63-2-stress-native.cjs) echo 420s ;;

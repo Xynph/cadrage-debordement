@@ -563,7 +563,7 @@ function createBridge(options={}){
   // internationale gardent leur présentation de la dernière réponse complète jusqu'au coup de sifflet final ou à la
   // première commande hors du direct. Les sections lourdes de la carrière touchées pendant le direct sont relues à
   // la projection complète suivante.
-  const LIVE_COMMANDS=new Set(['tick','pause','set_tactics','set_penalty_policy','set_consignes','appliquer_staff','set_role_direct','cri','substitute','match_talk_decide','match_talk_continue','match_incident_choice']);
+  const LIVE_COMMANDS=new Set(['tick','pause','set_tactics','set_penalty_policy','set_consignes','appliquer_staff','set_role_direct','cri','substitute','file_arret','match_talk_decide','match_talk_continue','match_incident_choice']);
   let projectionState=null,versionsSynced=false;
   // Versions des sections de la carrière pour cette projection (state-versions.cjs), avant toute lecture mémorisée.
   const refreshVersions=operation=>{
