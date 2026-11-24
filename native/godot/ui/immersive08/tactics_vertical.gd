@@ -197,7 +197,7 @@ static func carte(app: Control, page: Control, zone: Rect2, slot: int, choisir: 
 	Selection.wire(bouton, app, id, slot, slot, str(person.get("name", "Poste vacant")))
 	glisser(app, bouton, person, true)
 	# Plaque du nom en bas (nom + pastille), portrait au-dessus : rien ne sort de la carte.
-	var bas_y := h - 56.0
+	var bas_y := h - 62.0
 	# Cercle entier au-dessus de la plaque (4 px en haut, 6 px d'écart avec la plaque) : jamais de chevauchement.
 	var cote := minf(bas_y - 10.0, 74.0)
 	var accessible := "Poste n° %d · " % (slot + 1)
@@ -229,10 +229,10 @@ static func carte(app: Control, page: Control, zone: Rect2, slot: int, choisir: 
 		var forme: Variant = person.get("condition")
 		var faible := (forme is int or forme is float) and float(forme) < 80
 		var dispo := w - 12 - (52.0 if faible else 0.0)
-		var abrege := Poste.largeur(note, familiarite, 20) > dispo
-		var l := minf(dispo, Poste.largeur(note, familiarite, 20, abrege))
+		var abrege := Poste.largeur(note, familiarite, 24) > dispo
+		var l := minf(dispo, Poste.largeur(note, familiarite, 24, abrege))
 		var total := l + (52.0 if faible else 0.0)
-		var valeur := Poste.poser(bouton, Rect2((w - total) / 2.0, bas_y + 30, l, 20), note, familiarite, "TacticsPositionRating%02d" % (slot + 1), false, abrege)
+		var valeur := Poste.poser(bouton, Rect2((w - total) / 2.0, bas_y + 28, l, 24), note, familiarite, "TacticsPositionRating%02d" % (slot + 1), false, abrege)
 		accessible += "%s · %s" % [str(person.get("name", "")), Poste.accessible(note, familiarite)]
 		if faible:
 			var x := (w - total) / 2.0 + float(valeur.get_meta("largeur", l)) + 6

@@ -857,11 +857,11 @@ static func _compare_secondary(left: Array, right: Array) -> int:
 
 static func sort_value(player: Dictionary, key: String) -> Variant:
 	if key == "Note au poste":
-		# Note au poste choisi, puis familiarité, puis niveau ; inconnues en dernier.
+		# Lettre MONTRÉE au poste choisi, puis familiarité (à égalité : identifiant, jamais le chiffre caché) ; inconnues en dernier.
 		var e := float(player.get("notePoste", -1.0))
 		if e < 0.0: return null
-		return e * 1000.0 + float(player.get("familiarite", 0)) * 100.0 + (float(player.rating) if _known_number(player.get("rating")) else 0.0)
-	if key in ["Niveau","Potentiel"]: return G.knowledge_sort_value(player,"rating" if key == "Niveau" else "potential",true)
+		return e * 100.0 + float(player.get("familiarite", 0))
+	if key in ["Niveau","Potentiel"]: return Notation.tri_champ(player,"rating" if key == "Niveau" else "potential",true)
 	if key == "Autres postes":
 		var order: Array[int] = []
 		var roles: Array = ["PG","PD","T","2E L","3E L","8","DM","DO","C","AL","AR"]
@@ -926,7 +926,7 @@ func _players() -> Array:
 		if player is Dictionary:
 			var copie: Dictionary = player.duplicate()
 			copie.matchNotes = Notes.joueur(app.model,str(player.get("id","")))
-			copie.notePoste = Etoiles.note_poste(player, _poste)
+			copie.notePoste = Notation.rang_lettre(Notation.lettre_poste(app.model, player, _poste, true)) if _poste > 0 else -1.0
 			copie.familiarite = Familiarite.niveau(player, _poste)
 			source.append(copie)
 	source = Listes.filtrer_groupe(source, str(state.get("poste_groupe", "")))
@@ -954,7 +954,6 @@ func _sort_header_state() -> void:
 		header.label.add_theme_color_override("font_color",C.IVORY if active else C.MUTED)
 		var detail := "par famille puis poste" if key == "Poste" else "par "+key
 		header.button.tooltip_text = "Tri "+direction+" "+detail+" · cliquer pour inverser" if active else "Trier "+detail+" · valeurs inconnues en dernier"
-		if key == "Niveau": header.button.tooltip_text += "\nNiveau global du joueur / 100."
 		if key == "Moyenne": header.button.tooltip_text += "\nMoyenne de la saison en cours (notes de match de 1 à 10)."
 		if key == "Forme": header.button.tooltip_text += "\nCinq dernières notes de match, la plus récente à droite."
 		header.button.accessibility_name = str(header.caption)+" · "+("tri "+direction if active else "trier")
@@ -1180,7 +1179,8 @@ func _row(player:Dictionary,index:int) -> void:
 			"niveau":
 				# Notation façon FM (planche 24/11) : lettre du staff, relative à notre effectif.
 				var note_n := Notation.resume(app.model,player,true)
-				var pastille_n := Notation.pastille_noeud(row,x+l/2.0-16,h/2.0,int(note_n.niveau),32,"RosterLevel")
+				var w_n := Notation.largeur_note(note_n.niveau_note, 32)
+				var pastille_n := Notation.pastille_note(row,x+l/2.0-w_n/2.0,h/2.0,note_n.niveau_note,32,"RosterLevel")
 				var fl_niveau: Dictionary = Fleches.donnees(app, player).get("niveau", {})
 				if not fl_niveau.is_empty(): Fleches.marquer_pastille(app, pastille_n, int(fl_niveau.cran), fl_niveau.serie, "Niveau", "Niveau_" + str(player.id).replace(":", "_"))
 			"pot":

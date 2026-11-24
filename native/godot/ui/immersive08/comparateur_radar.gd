@@ -210,18 +210,21 @@ static func _colonne_synthese(app: Control, page: Control, joueurs: Array, k: in
 	if droite: t.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	var lignes: Array = []
 	var propre := bool(joueur.get("__own", false))
-	lignes.append(["Niveau", G.rating_text(joueur, propre), Base.value(joueur, "rating"), Base.value(autre, "rating") if not autre.is_empty() else null, true])
-	lignes.append(["Potentiel", G.potential_text(joueur), Base.value(joueur, "potential"), Base.value(autre, "potential") if not autre.is_empty() else null, true])
+	# Niveau, Potentiel et Au poste : lettres du staff en pastille, ▲ comparé sur les lettres MONTRÉES (aucun chiffre,
+	# aucune fuite de la valeur cachée en mode fourchette).
+	var propre_autre := bool(autre.get("__own", false)) if not autre.is_empty() else false
+	var l_niv := Notation.lettre_champ(joueur, "rating", propre, app.model)
+	var l_pot := Notation.lettre_champ(joueur, "potential", propre, app.model)
+	var l_poste := lettre_poste(app, joueur)
+	var rang := func(l: Dictionary) -> Variant: return Notation.rang_lettre(l) if Notation.rang_lettre(l) >= 0.0 else null
+	var sans := autre.is_empty()
+	lignes.append(["Niveau", "", rang.call(l_niv), null if sans else rang.call(Notation.lettre_champ(autre, "rating", propre_autre, app.model)), true, l_niv])
+	lignes.append(["Potentiel", "", rang.call(l_pot), null if sans else rang.call(Notation.lettre_champ(autre, "potential", propre_autre, app.model)), true, l_pot])
 	var forme: Variant = Commune.condition(joueur)
-	lignes.append(["Condition", "%d %%" % roundi(float(forme)) if forme != null else "—", forme, Commune.condition(autre) if not autre.is_empty() else null, true])
-	# Au poste : lettre du staff en pastille, ▲ comparé sur les lettres montrées (aucun chiffre).
-	var lettre := lettre_poste(app, joueur)
-	var rang_poste: Variant = Notation.rang_lettre(lettre) if Notation.rang_lettre(lettre) >= 0.0 else null
-	var rang_autre: Variant = null
-	if not autre.is_empty() and Notation.rang_lettre(lettre_poste(app, autre)) >= 0.0: rang_autre = Notation.rang_lettre(lettre_poste(app, autre))
-	lignes.append(["Au poste", "", rang_poste, rang_autre, true])
-	lignes.append(["Âge", G.n(joueur.get("age", "—")) + " ans", null, null, false])
-	lignes.append(["Contrat", Commune.echeance(app, joueur), null, null, false])
+	lignes.append(["Condition", "%d %%" % roundi(float(forme)) if forme != null else "—", forme, Commune.condition(autre) if not autre.is_empty() else null, true, null])
+	lignes.append(["Au poste", "", rang.call(l_poste), null if sans else rang.call(lettre_poste(app, autre)), true, l_poste])
+	lignes.append(["Âge", G.n(joueur.get("age", "—")) + " ans", null, null, false, null])
+	lignes.append(["Contrat", Commune.echeance(app, joueur), null, null, false, null])
 	var valeurs := axes(joueur)
 	var meilleur := -1
 	for i in valeurs.size():
@@ -233,22 +236,24 @@ static func _colonne_synthese(app: Control, page: Control, joueurs: Array, k: in
 	for ligne: Array in lignes:
 		D.line(panneau, Vector2(marge, y + 50), Vector2(zone.size.x - marge, y + 50), Color(Charte.FILET, .8))
 		var mieux: bool = bool(ligne[4]) and Base.numeric(ligne[2]) and Base.numeric(ligne[3]) and float(ligne[2]) > float(ligne[3])
-		var couleur: Color = Charte.couleur_attribut(ligne[2]) if bool(ligne[4]) and not (str(ligne[0]) in ["Condition", "Au poste"]) and Base.numeric(ligne[2]) else Charte.IVOIRE
+		var couleur: Color = Charte.IVOIRE
 		if str(ligne[0]) == "Condition" and Base.numeric(ligne[2]): couleur = Charte.CONDITION
 		D.text(panneau, zone.size.x - marge if droite else marge, y + 34, str(ligne[0]), 19, Charte.IVOIRE_2, 500, 200, HORIZONTAL_ALIGNMENT_RIGHT if droite else HORIZONTAL_ALIGNMENT_LEFT, true)
 		var valeur := D.text(panneau, marge if droite else zone.size.x - marge, y + 36, (("▲ " if mieux else "") + str(ligne[1])) if droite else (str(ligne[1]) + (" ▲" if mieux else "")), 26, couleur, 800, zone.size.x - 2 * marge - 210, HORIZONTAL_ALIGNMENT_LEFT if droite else HORIZONTAL_ALIGNMENT_RIGHT)
 		valeur.name = "RadarSynthese%d_%s" % [k, str(ligne[0]).replace(" ", "")]
 		if droite: valeur.position.x = C.px(marge)
 		valeur.add_theme_font_override("font", C.EXTRA_BOLD)
-		if str(ligne[0]) == "Au poste":
+		if ligne[5] is Dictionary:
+			var lettre: Dictionary = ligne[5]
 			valeur.add_theme_color_override("font_color", Charte.GAIN)
 			var taille := 40.0
 			var w := Notation.largeur_note(lettre, taille)
 			var decale := 34.0 if mieux else 0.0
-			Notation.pastille_note(panneau, marge + decale if droite else zone.size.x - marge - decale - w, y + 26, lettre, taille, "RadarSynthese%d_AuposteLettre" % k)
-			# Emplacement réservé au futur mot de familiarité au poste (système en préparation) : vide pour l'instant.
-			var familiarite := D.text(panneau, zone.size.x - marge - 96 if droite else marge + 96, y + 34, "", 19, Charte.IVOIRE_2, 600, 160, HORIZONTAL_ALIGNMENT_RIGHT if droite else HORIZONTAL_ALIGNMENT_LEFT, true)
-			familiarite.name = "RadarFamiliarite%d" % k
+			Notation.pastille_note(panneau, marge + decale if droite else zone.size.x - marge - decale - w, y + 26, lettre, taille, "RadarSynthese%d_%sLettre" % [k, str(ligne[0]).replace(" ", "")])
+			if str(ligne[0]) == "Au poste":
+				# Emplacement réservé au futur mot de familiarité au poste (système en préparation) : vide pour l'instant.
+				var familiarite := D.text(panneau, zone.size.x - marge - 96 if droite else marge + 96, y + 34, "", 19, Charte.IVOIRE_2, 600, 160, HORIZONTAL_ALIGNMENT_RIGHT if droite else HORIZONTAL_ALIGNMENT_LEFT, true)
+				familiarite.name = "RadarFamiliarite%d" % k
 		y += 60.0
 	y += 26.0
 	for paire: Array in [["Point fort", meilleur, Charte.GAIN, "▲"], ["Point faible", faible, Charte.PERTE, "▼"]]:

@@ -306,8 +306,9 @@ static func _bandeau(page: Control, app: Control, player: Dictionary, source: St
 	# potentiel en lettre + phrase. Aucun chiffre du moteur.
 	var note := Notation.resume(app.model,player,Commune.notre_joueur(source))
 	D.text(hero,1640,40,"NIVEAU",17,Charte.IVOIRE_2,700,200)
-	var pastille_n := Notation.pastille_noeud(hero,1640,88,int(note.niveau),64,"PlayerGlobalRating")
-	var lettre_l := 64.0
+	# Staff pas sûr (qualités en fourchette) : pastille double, la même que « son rôle ».
+	var pastille_n := Notation.pastille_note(hero,1640,88,note.niveau_note,64,"PlayerGlobalRating")
+	var lettre_l := Notation.largeur_note(note.niveau_note,64)
 	# Flèche du niveau (moyenne des 36 qualités sur 4 semaines), comme dans l'Effectif et la Formation.
 	if source=="squad" or source=="academy":
 		var fl_niveau: Dictionary = load("res://ui/fleches_progression.gd").donnees(app,player).get("niveau",{})

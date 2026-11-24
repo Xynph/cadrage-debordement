@@ -925,7 +925,7 @@ func families() -> void:
 				# Notation façon FM (choix B de Léo, 24/11) : lettre du staff en pastille ronde, estimée sur le niveau général
 				# (jamais la note au poste), aucun chiffre du moteur.
 				var general := app.find_child("PlayerGlobalRating",true,false) as Control
-				var attendue := Notation.texte_lettre(int(Notation.resume(app.model,matches[0],true).niveau))
+				var attendue := Notation.texte_note(Notation.resume(app.model,matches[0],true).niveau_note)
 				check(app.route=="Formation" and general!=null and str(general.get_meta("lettre",""))==attendue and general.find_children("*","Label",true,false).all(func(l: Label): return not l.text.is_valid_int()),"La fiche d'un Espoir montre la lettre du staff sur son niveau général, sans chiffre : "+(str(general.get_meta("lettre","")) if general!=null else "absente")+" / "+attendue)
 				check(app.find_child("FullPlayerTab4",true,false)!=null,"Fiche d'un Espoir : onglet Développement (suivi individuel sans fenêtre)")
 				app._navigate("Formation")
@@ -1570,7 +1570,19 @@ func run() -> void:
 				# Notation façon FM (choix B) : lettre du staff ronde + palier écrit en pilule + phrase de potentiel, aucun chiffre.
 				var global_rating := full.find_child("PlayerGlobalRating",true,false) as Control
 				var note_attendue := Notation.resume(app.model,target,true)
-				check(global_rating != null and str(global_rating.get_meta("lettre","")) == Notation.texte_lettre(int(note_attendue.niveau)), "Lettre du staff dans la fiche complète")
+				check(global_rating != null and str(global_rating.get_meta("lettre","")) == Notation.texte_note(note_attendue.niveau_note), "Lettre du staff dans la fiche complète")
+				# Revue du 24/11 (ecart 6) : la lettre du Niveau = la lettre de son role (meme estimation du staff), et une
+				# pastille double ne montre jamais plus de deux lettres voisines.
+				var nc_sien: Variant = target.get("niveauCalcule")
+				if nc_sien is Dictionary and full.find_child("PlayerRoleNote_" + str(nc_sien.get("role", "")), true, false) != null:
+					var note_sien := full.find_child("PlayerRoleNote_" + str(nc_sien.get("role", "")), true, false) as Control
+					check(str(note_sien.get_meta("lettre", "")) == str(global_rating.get_meta("lettre", "")), "Lettre du Niveau = lettre de son role (%s / %s)" % [str(global_rating.get_meta("lettre", "")), str(note_sien.get_meta("lettre", ""))])
+				var paires_ok := true
+				for v in range(30, 100, 3):
+					for demi: float in [0.0, 1.0, 2.5, 4.5, 9.0]:
+						var lp := Notation.paire(float(v), demi, 65.0)
+						if int(lp.haut) - int(lp.bas) > 1 or int(lp.bas) > Notation.indice(float(v), 65.0) or int(lp.haut) < Notation.indice(float(v), 65.0): paires_ok = false
+				check(paires_ok, "Pastille double : au plus deux lettres voisines, encadrant la lettre seule")
 				var palier := full.find_child("PlayerPalier",true,false) as Control
 				check(palier != null and str(palier.get_meta("palier","")) == str(note_attendue.palier.texte) and palier.size.y > palier.size.x * .1, "Palier écrit dans une pilule : " + (str(palier.get_meta("palier","")) if palier != null else "absent"))
 				check(full.find_child("PlayerGlobalPotential",true,false) != null and full.find_child("PlayerPotentielPhrase",true,false) != null, "Potentiel : lettre + phrase du staff")

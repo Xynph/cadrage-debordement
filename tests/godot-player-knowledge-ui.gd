@@ -2,6 +2,7 @@ extends SceneTree
 const Rooms = preload("res://qa_runner.gd")
 const G = preload("res://ui/game_skin.gd")
 const K = preload("res://ui/player_knowledge_text.gd")
+const Notation = preload("res://ui/notation_staff.gd")
 const Observation = preload("res://ui/player_observation.gd")
 const Comparison = preload("res://ui/immersive08/recruitment_comparison.gd")
 const U = preload("res://ui/management_state.gd")
@@ -67,7 +68,7 @@ func run() -> void:
 	var before:=FileAccess.get_sha256(profile)
 	var commands: int=app.bridge._next_id
 	for person: Dictionary in original.squad:
-		check(person.knowledge.owned and G.rating_text(person)==G.n(person.rating),"Niveau exact du propre effectif")
+		check(person.knowledge.owned and G.rating_text(person)==Notation.texte_champ(person,"rating",true,app.model) and not G.rating_text(person).is_valid_int(),"Niveau du propre effectif en lettre du staff, jamais le chiffre")
 		check(person.potential==null and person.potentialRange.max-person.potentialRange.min==4,"Potentiel propre : cinq valeurs fournies")
 	app._navigate("Effectif");await settle()
 	for row: Node in app.find_child("CarnetSquad",true,false).rows.get_children():
@@ -100,7 +101,7 @@ func run() -> void:
 	app.set_meta("immersive08_full_player",false)
 	app._navigate("Recrutement");await settle()
 	var target: Dictionary=original.market.filter(func(p:Dictionary):return p.get("scouting",{}).get("available",false))[0]
-	check(G.rating_text(target)=="—" and G.potential_text(target)=="—","Étranger non observé : niveau et potentiel inconnus")
+	check(G.rating_text(target)=="?" and G.potential_text(target)=="?","Étranger non observé : niveau et potentiel inconnus")
 	check(A.detail(target).is_empty(),"Attributs étrangers non observés masqués")
 	var fiche_roles_inconnus = preload("res://ui/immersive08/fiche_roles.gd")
 	check(fiche_roles_inconnus.note_role(A.detail(target),fiche_roles_inconnus.ROLES[0])==-1.0,"Qualités inconnues : note du rôle en « ? », jamais inventée")
@@ -174,9 +175,9 @@ func run() -> void:
 	var comparison: AcceptDialog=app.find_child("MarketComparison",true,false)
 	var rating_row: HBoxContainer=comparison.find_child("MarketComparisonRow_rating",true,false)
 	var potential_row: HBoxContainer=comparison.find_child("MarketComparisonRow_potential",true,false)
-	check(rating_row.get_child(1).text=="70–78" and rating_row.get_child(2).text=="72–80","Comparateur : intervalles fournis, scalaires étrangers ignorés")
-	check(comparison.find_child("MarketComparisonDelta_rating",true,false).text=="-6 à +10","Comparateur : écart intervalle, pas fausse différence exacte")
-	check(potential_row.get_child(1).text=="80–90" and potential_row.get_child(1).get_theme_color("font_color")==G.POTENTIAL_COLOR,"Comparateur : potentiel orange")
+	check(rating_row.get_child(1).text==Notation.texte_champ(fixture[0],"rating",false,app.model) and rating_row.get_child(2).text==Notation.texte_champ(fixture[1],"rating",false,app.model) and not rating_row.get_child(1).text.contains("7"),"Comparateur : lettres du staff tirées des intervalles, scalaires étrangers ignorés")
+	check(RegEx.create_from_string("^(Même lettre|[+-]?\\d+ crans?)$").search(comparison.find_child("MarketComparisonDelta_rating",true,false).text)!=null,"Comparateur : écart en crans de lettre, jamais en points")
+	check(potential_row.get_child(1).text==Notation.texte_champ(fixture[0],"potential",false,app.model) and potential_row.get_child(1).get_theme_color("font_color")==G.POTENTIAL_COLOR,"Comparateur : potentiel orange")
 	check(Comparison.value(fixture[0],"attribute:tackling",{})==null,"Attributs contrôlés masqués au premier suivi")
 	await capture("comparaison-fourchettes-cas-ui-controle-1440")
 	await clear_dialogs()

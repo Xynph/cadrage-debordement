@@ -932,8 +932,8 @@ static func _parcours(ctx: Dictionary, parent: Node) -> void:
 			"nom": _cel_joueur(ctx, cel, p)
 			"poste": _cel(cel, col, p.pos, Charte.IVOIRE)
 			"age": _cel(cel, col, G.n(p.age), Charte.IVOIRE_2)
-			"niv": _cel(cel, col, V.niveau_txt(p), V.couleur(V.valeur(p, "rating")), Charte.TITRE_EXTRA, 17)
-			"pot": _cel(cel, col, V.potentiel_txt(p), V.couleur(V.valeur(p, "potential")), Charte.TITRE_EXTRA, 17)
+			"niv": _cel(cel, col, V.niveau_txt(p), V.couleur_champ(p, "rating"), Charte.TITRE_EXTRA, 17)
+			"pot": _cel(cel, col, V.potentiel_txt(p), V.couleur_champ(p, "potential"), Charte.TITRE_EXTRA, 17)
 			"traj":
 				var t := V.trajectoire(str(p.path))
 				_pastille(cel, str(t[1]), t[3], str(t[2]))
@@ -998,7 +998,7 @@ static func _centres(ctx: Dictionary, parent: Node) -> void:
 		var p: Dictionary = candidats[i]
 		var fee := int(p.get("fee", 0))
 		var pid := str(p.id)
-		var pt := V.couleur(V.valeur(p, "potential"))
+		var pt := V.couleur_champ(p, "potential")
 		var b := _zone(func(): V.envoyer(ctx, "academy_recruit", {"playerId": pid, "offer": fee}, fee, "Recruter " + str(p.name)), "CentresCandidat%d" % i, str(p.name), Charte.RAYON_CARTE, 46.0, Charte.PANNEAU_2)
 		b.custom_minimum_size.x = 250.0
 		var h := _dans(b, 8, 8)
@@ -1144,7 +1144,7 @@ static func _filieres(ctx: Dictionary, parent: Node) -> void:
 			"age": _cel(cel, col, G.n(p.age), Charte.IVOIRE_2)
 			"pot":
 				var vu := int(p.scouted) > 0
-				_cel(cel, col, V.potentiel_txt(p) if vu else "?", V.couleur(V.valeur(p, "potential")) if vu else Charte.IVOIRE_3, Charte.TITRE_EXTRA, 17)
+				_cel(cel, col, V.potentiel_txt(p) if vu else "?", V.couleur_champ(p, "potential") if vu else Charte.IVOIRE_3, Charte.TITRE_EXTRA, 17)
 			"obs":
 				_crans(cel, int(p.scouted), 3, V.MINUTES)
 				_txt(cel, "%d/3" % int(p.scouted), PETIT, V.MINUTES if int(p.scouted) > 0 else Charte.IVOIRE_3, C.BOLD)
@@ -1208,8 +1208,8 @@ static func _passerelle(ctx: Dictionary, parent: Node) -> void:
 			"nom": _cel_joueur(ctx, cel, e, "" if pret else "squad")
 			"poste": _cel(cel, col, e.get("pos", "—"), Charte.IVOIRE)
 			"age": _cel(cel, col, G.n(e.get("age", "—")), Charte.IVOIRE_2)
-			"niv": _cel(cel, col, V.niveau_txt(e) if not pret else "—", V.couleur(V.valeur(e, "rating")), Charte.TITRE_EXTRA, 17)
-			"pot": _cel(cel, col, V.potentiel_txt(e) if not pret else "—", V.couleur(V.valeur(e, "potential")), Charte.TITRE_EXTRA, 17)
+			"niv": _cel(cel, col, V.niveau_txt(e) if not pret else "—", V.couleur_champ(e, "rating"), Charte.TITRE_EXTRA, 17)
+			"pot": _cel(cel, col, V.potentiel_txt(e) if not pret else "—", V.couleur_champ(e, "potential"), Charte.TITRE_EXTRA, 17)
 			"statut":
 				if pret: _pastille(cel, "En prêt · " + str(e.hote), V.REPUTATION, "bus")
 				elif e.get("loanEligible", false): _pastille(cel, "Prêtable · Prêter", V.MINUTES, "bus")
@@ -1303,8 +1303,8 @@ static func _generations(ctx: Dictionary, parent: Node) -> void:
 			"nom": _cel_joueur(ctx, cel, p, "academy" if not V.joueur(data, str(p.id)).is_empty() else "")
 			"poste": _cel(cel, col, p.pos, Charte.IVOIRE)
 			"age": _cel(cel, col, G.n(p.age), Charte.IVOIRE_2)
-			"niv": _cel(cel, col, V.niveau_txt(p), V.couleur(V.valeur(p, "rating")), Charte.TITRE_EXTRA, 17)
-			"pot": _cel(cel, col, V.potentiel_txt(p), V.couleur(V.valeur(p, "potential")), Charte.TITRE_EXTRA, 17)
+			"niv": _cel(cel, col, V.niveau_txt(p), V.couleur_champ(p, "rating"), Charte.TITRE_EXTRA, 17)
+			"pot": _cel(cel, col, V.potentiel_txt(p), V.couleur_champ(p, "potential"), Charte.TITRE_EXTRA, 17)
 			"min": _cel(cel, col, V.mille(p.get("minutes", 0)), V.MINUTES, C.BOLD)
 			"traj":
 				var t := V.trajectoire(str(p.get("path", p.get("strategy", "equilibre"))))

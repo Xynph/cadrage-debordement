@@ -106,8 +106,11 @@ ou arrivée au club) → fourchettes de 9 points, 4 à 7 semaines → 5 points, 
   son Niveau ; les écarts entre postes et rôles restent ceux du moteur.
 - **Notes au poste calées sur le Niveau calculé** : au poste principal, note au poste = Niveau (même lettre) ; aux autres
   postes, les écarts du moteur (`positionRatings` : familiarité, qualités du poste) restent (`Notation.decalage_poste`).
-- **Staff pas sûr → pastille double « B/A »** (deux moitiés aux couleurs des deux lettres) : lettre basse et haute =
-  valeur ± 0,7 × demi-largeur d'incertitude. Recrue jamais publiée au poste (tout joueur d'un autre club : le moteur ne
+- **Staff pas sûr → pastille double « B/B+ »** (deux moitiés aux couleurs des deux lettres). Règle du 25/11 (19e conv,
+  revue du vérificateur : « D-|B- » illisible) : **jamais plus de deux lettres VOISINES** — incertitude sous un
+  demi-cran (0,7 × demi-largeur < 1 point) : une lettre ; sinon les deux lettres qui encadrent l'estimation
+  (`Notation.paire`). La lettre seule du même joueur (tri, listes) est toujours l'une des deux. Le **Niveau** suit la
+  même règle et la même estimation que « son rôle » (`Notation.lettre_niveau`) : mêmes lettres sur la fiche. Recrue jamais publiée au poste (tout joueur d'un autre club : le moteur ne
   publie pas ses notes au poste) : estimée depuis la fourchette d'observation du Niveau, aux postes qu'il connaît
   (Naturel, Confirmé) ; ailleurs ou sans fourchette : « ? ».
 - **Niveau au rôle** (colonne NOTE de Postes et rôles, rôles du menu en match) = `niveauCalcule.roles[rôle]` ; « Son
@@ -133,9 +136,24 @@ Tests : `tests/qualites-fourchette.cjs` (milieux, notes au poste décalées, Niv
 (Postes et rôles en lettres, « Son rôle », aucune décimale), suites de la Composition, du recrutement, du planificateur,
 du menu en match.
 
+## 7. Plus aucun chiffre de Niveau ni de Potentiel (19e conv, 25/11 : écarts du vérificateur)
+
+- Texte commun : `player_knowledge_text.gd` `rating_text` / `potential_text` rendent la lettre du staff
+  (`Notation.texte_champ`) ; toutes les vues qui les utilisent (bureau, vues héritées, sélections, suivi des jeunes,
+  Centre de formation, fiche d'un club) passent en lettres. Modèle courant posé par `main.gd` (`Notation.modele`).
+- Effectif › Contrats : colonne NIV. en pastille. Fenêtre Équipe du match : badge du niveau en pastille à sa couleur
+  (titulaires et banc) ; fenêtre d'un joueur en match : tuile Niveau en lettre. Comparateur : Niveau, Potentiel et Au
+  poste en pastilles, ▲ comparé sur les lettres montrées. Comparaison du recrutement : lettres, écart « +2 crans ».
+  Formation : « NIV. EN JUILLET » en pastille, évolution en ▲/▼. Progression de la fiche : tuile Niveau en lettre,
+  courbe du Niveau sans graduation, saisons « C → B ». Préparation : Niveau adverse en pastille. Composition : tuile
+  « Impact face à… » en lettres (▲/▼/=), pastilles au poste agrandies (32 unités, 38 sur le terrain), plus de pastille
+  vide chez les candidats (non qualifié : lettre grisée). Reçu d'entraînement : plus de « Niveau moyen » chiffré.
+- **Tris** : Niveau, Potentiel et note au poste trient sur la lettre MONTRÉE (`Notation.tri_champ`, `rang_lettre`) ; à
+  lettre égale, ordre stable (nom ou identifiant) : l'ordre ne trahit jamais la valeur cachée.
+
 ## Reste à faire
 
 Bascule de `rating` (moteur du match) sur le Niveau calculé, rôle choisi par le club enregistré au moteur, estimation du
-staff calculée dans le moteur (projection `notation` par joueur). Chiffres de Niveau restants hors note au poste
-(comparateur Niveau/Potentiel, « Niveau / 100 » de la comparaison du recrutement, colonne niveau des vues héritées,
-« NIV. EN JUILLET » de la Formation, bureau).
+staff calculée dans le moteur (projection `notation` par joueur). Poids Clé/Utile du Niveau au rôle (écart 4, autre
+chantier). Jauge de position niveau/potentiel des vues héritées du suivi des jeunes (sans chiffre, mais à la position
+de la valeur).

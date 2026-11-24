@@ -274,7 +274,7 @@ func _person(person: Dictionary) -> void:
 	if not baseline is Dictionary or not deltas is Dictionary:
 		info.add_child(_t("Pas encore de référence suivie : aucun gain passé n’est attribué à cet objectif.",13))
 	else:
-		info.add_child(_t("Depuis %s · semaine %s : niveau %s · minutes %s" % [G.season_label(baseline.get("season","—")),G.n(baseline.get("week","—")),_signed(deltas.get("rating",0)),_signed(deltas.get("minutes",0))],13))
+		info.add_child(_t("Depuis %s · semaine %s : niveau %s · minutes %s" % [G.season_label(baseline.get("season","—")),G.n(baseline.get("week","—")),("▲" if float(deltas.get("rating",0)) > 0 else "▼" if float(deltas.get("rating",0)) < 0 else "="),_signed(deltas.get("minutes",0))],13))
 		var changes: Array[String] = []
 		for key in ATTRIBUTES:
 			var delta: float = float(deltas.get("attributes",{}).get(key,0))
@@ -282,7 +282,7 @@ func _person(person: Dictionary) -> void:
 		info.add_child(_t(" · ".join(changes) if not changes.is_empty() else "Aucun changement de qualité observé depuis cette référence.",12))
 	_review(info,person)
 	for observation: Dictionary in person.get("observations",[]):
-		info.add_child(_t("%s · semaine %s · %s · niveau %s · minutes %s" % [G.season_label(observation.get("season","—")),G.n(observation.get("week","—")),REASONS.get(str(observation.get("reason","")),"Observation"),_signed(observation.get("ratingDelta",0)),_signed(observation.get("minutesDelta",0))],12))
+		info.add_child(_t("%s · semaine %s · %s · niveau %s · minutes %s" % [G.season_label(observation.get("season","—")),G.n(observation.get("week","—")),REASONS.get(str(observation.get("reason","")),"Observation"),_sens(observation.get("ratingDelta",0)),_signed(observation.get("minutesDelta",0))],12))
 	for step: Dictionary in person.get("nextSteps",[]): info.add_child(_t(("✓ " if step.get("done",false) else "À préparer · ")+str(step.get("label",""))+" · "+Copy.notice("youth", step.get("detail","")),12))
 	if not str(person.get("planReason","")).is_empty(): info.add_child(_t(str(person.planReason),13,G.ALERT))
 	_objectif(card,person,annual)
@@ -376,7 +376,7 @@ func _review(parent: Container,person: Dictionary,boutons: Container = null,tete
 	var recent_line := _t("",13)
 	recent_line.name = "YouthRecentReview"
 	if recent.get("available",false):
-		recent_line.text = ("Période récente · %s semaine %s → semaine %s · %s semaines · %s minutes · niveau %s" if _court() else "Période récente observée · %s semaine %s → semaine %s · %s semaines · %s minutes · niveau %s. Fenêtre visée : quatre semaines, bornes réelles conservées.") % [G.season_label(recent.from.season),G.n(recent.from.week),G.n(recent.to.week),G.n(recent.weeks),_signed(recent.minutesDelta),_signed(recent.ratingDelta)]
+		recent_line.text = ("Période récente · %s semaine %s → semaine %s · %s semaines · %s minutes · niveau %s" if _court() else "Période récente observée · %s semaine %s → semaine %s · %s semaines · %s minutes · niveau %s. Fenêtre visée : quatre semaines, bornes réelles conservées.") % [G.season_label(recent.from.season),G.n(recent.from.week),G.n(recent.to.week),G.n(recent.weeks),_signed(recent.minutesDelta),_sens(recent.ratingDelta)]
 	else:
 		var reasons := {"untracked":"Démarrer le suivi.","insufficient":"Attendre deux mesures comparables de cette saison et de ce stade.","club":"Référence provenant d’un autre club.","counter":"Continuité du compteur à vérifier.","context":"Continuité du parcours à vérifier."}
 		var raison := str(reasons.get(str(recent.get("reason","insufficient")),"Observations comparables insuffisantes."))
@@ -559,7 +559,7 @@ func _faits(parent: Container, person: Dictionary) -> void:
 		sans.tooltip_text = "Pas encore de référence suivie : aucun gain passé n’est attribué à cet objectif."; sans.mouse_filter = Control.MOUSE_FILTER_STOP
 		parent.add_child(sans)
 		return
-	parent.add_child(_t("Depuis %s · semaine %s : niveau %s · minutes %s" % [G.season_label(baseline.get("season","—")),G.n(baseline.get("week","—")),_signed(deltas.get("rating",0)),_signed(deltas.get("minutes",0))],13))
+	parent.add_child(_t("Depuis %s · semaine %s : niveau %s · minutes %s" % [G.season_label(baseline.get("season","—")),G.n(baseline.get("week","—")),("▲" if float(deltas.get("rating",0)) > 0 else "▼" if float(deltas.get("rating",0)) < 0 else "="),_signed(deltas.get("minutes",0))],13))
 	var changes: Array[String] = []
 	for key in ATTRIBUTES:
 		var delta: float = float(deltas.get("attributes",{}).get(key,0))
@@ -568,7 +568,7 @@ func _faits(parent: Container, person: Dictionary) -> void:
 
 func _suites(parent: Container, person: Dictionary) -> void:
 	for observation: Dictionary in person.get("observations",[]):
-		parent.add_child(_t("%s · semaine %s · %s · niveau %s · minutes %s" % [G.season_label(observation.get("season","—")),G.n(observation.get("week","—")),REASONS.get(str(observation.get("reason","")),"Observation"),_signed(observation.get("ratingDelta",0)),_signed(observation.get("minutesDelta",0))],12))
+		parent.add_child(_t("%s · semaine %s · %s · niveau %s · minutes %s" % [G.season_label(observation.get("season","—")),G.n(observation.get("week","—")),REASONS.get(str(observation.get("reason","")),"Observation"),_sens(observation.get("ratingDelta",0)),_signed(observation.get("minutesDelta",0))],12))
 	for step: Dictionary in person.get("nextSteps",[]):
 		var etape := _t(("✓ " if step.get("done",false) else "À préparer · ")+str(step.get("label","")),12)
 		etape.tooltip_text = Copy.notice("youth", step.get("detail","")); etape.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -697,4 +697,8 @@ func _confirm_plan(person: Dictionary,plan: String,focus: Variant) -> void:
 
 static func _pourcent(value: Variant) -> String: return "%d %%" % roundi(float(value)*100)
 static func _decimal(value: Variant) -> String: return "%.2f" % float(value)
+## Sens de variation du Niveau (caché) : ▲ / ▼ / =, jamais l'écart chiffré.
+static func _sens(v: Variant) -> String:
+	return "▲" if float(v) > 0 else "▼" if float(v) < 0 else "="
+
 static func _signed(value: Variant) -> String: return ("+" if float(value)>0 else "")+_decimal(value)

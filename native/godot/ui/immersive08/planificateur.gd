@@ -134,7 +134,7 @@ static func projection(model: Dictionary, decalage: int) -> Dictionary:
 			if not v is Dictionary or not _nombre(v.get("age")): continue
 			if int(v.age) + decalage < AGE_ESPOIR: continue
 			presents.append({"p": v, "age": int(v.age) + decalage, "espoir": true, "derniere": false, "nego": false})
-	return {"saison": cible, "decalage": decalage, "presents": presents, "partis": partis}
+	return {"saison": cible, "decalage": decalage, "presents": presents, "partis": partis, "model": model}
 
 ## Ordre du poste `i` : {liste: [{e, note, actuelle, niveau, depanne}] triée par note (estimée pour les saisons à
 ## venir), partis (titulaires naturels qui s'en vont), titulaires}. Entrent dans la liste tous les joueurs qui peuvent
@@ -150,8 +150,10 @@ static func ordre(proj: Dictionary, i: int) -> Dictionary:
 		var actuelle := note_groupe(e.p, numeros)
 		var age_aujourdhui := int(e.age) - decalage if int(e.age) >= 0 else -1
 		var note := note_future(actuelle, age_aujourdhui, note_globale(e.p), potentiel(e.p), decalage)
-		liste.append({"e": e, "note": note, "actuelle": actuelle, "niveau": niveau, "depanne": niveau == Familiarite.DEPANNE})
-	liste.sort_custom(func(a: Dictionary, b: Dictionary): return a.note > b.note or (a.note == b.note and (a.niveau > b.niveau or (a.niveau == b.niveau and str(a.e.p.get("id", "")) < str(b.e.p.get("id", ""))))))
+		# Ordre = lettre MONTRÉE (estimation du staff), puis familiarité, puis identifiant : jamais la note cachée.
+		var rang := Notation.rang_lettre(lettre_poste(proj.get("model", Notation.modele), e.p, numeros, note, niveau)) if note >= 0.0 else -1.0
+		liste.append({"e": e, "note": note, "rang": rang, "actuelle": actuelle, "niveau": niveau, "depanne": niveau == Familiarite.DEPANNE})
+	liste.sort_custom(func(a: Dictionary, b: Dictionary): return a.rang > b.rang or (a.rang == b.rang and (a.niveau > b.niveau or (a.niveau == b.niveau and str(a.e.p.get("id", "")) < str(b.e.p.get("id", ""))))))
 	var profondeur_max: int = numeros.size() * 3
 	var gardes: Array = []
 	for item: Dictionary in liste:

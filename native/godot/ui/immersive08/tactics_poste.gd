@@ -31,7 +31,8 @@ static func largeur(lettre: Dictionary, familiarite: int, hauteur: float, court:
 
 ## Pastille un peu plus haute que la ligne : la lettre garde la taille de l'ancien chiffre (17).
 static func _diametre(hauteur: float) -> float:
-	return maxf(28.0, hauteur * 1.5)
+	# Lisible en 1920 (revue du 24/11 : ~14 px trop petit) : au moins 32 unités, 1,6 × la ligne.
+	return maxf(32.0, hauteur * 1.6)
 
 static func _largeur_marque(familiarite: int, court: bool) -> float:
 	return Kit.largeur(str((MOTS_COURTS if court else MOTS).get(familiarite, "")), 13) + 12.0

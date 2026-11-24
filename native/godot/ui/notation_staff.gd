@@ -95,6 +95,7 @@ static var _cache_reference := 65.0
 
 static func reference_effectif(model: Dictionary) -> float:
 	var squad: Variant = model.get("squad", [])
+	if model.has("squad"): modele = model
 	if _cache_effectif != null and is_same(_cache_effectif, squad): return _cache_reference
 	var valeurs: Array[float] = []
 	for p: Variant in model.get("squad", []):
@@ -162,7 +163,11 @@ static func potentiel(model: Dictionary, p: Dictionary, est: Dictionary) -> Dict
 static func resume(model: Dictionary, p: Dictionary, notre: bool) -> Dictionary:
 	var est := estimation(model, p, notre)
 	var ref := reference_effectif(model)
-	return {"niveau": indice(est.niveau, ref), "potentiel": indice(est.potentiel, ref), "palier": palier(est), "phrase": potentiel(model, p, est)}
+	var ln := lettre_niveau(model, p, notre)
+	var i_niveau := indice(est.niveau, ref)
+	# Lettre seule du Niveau = l'une des deux de la pastille double (même estimation que « son rôle »).
+	if int(ln.bas) >= 0 and (i_niveau < int(ln.bas) or i_niveau > int(ln.haut)): i_niveau = clampi(i_niveau, int(ln.bas), int(ln.haut))
+	return {"niveau": i_niveau, "niveau_note": ln, "potentiel": indice(est.potentiel, ref), "palier": palier(est), "phrase": potentiel(model, p, est)}
 
 static func texte_lettre(i: int) -> String:
 	return LETTRES[i] if i >= 0 else "?"
@@ -226,7 +231,52 @@ static func lettre_note(model: Dictionary, p: Dictionary, note: float, notre: bo
 		if bn.is_empty(): return {"bas": -1, "haut": -1}
 		v = (float(bn.min) + float(bn.max)) / 2.0 + e * _empreinte(graine)
 		demi = maxf(q, (float(bn.max) - float(bn.min)) / 2.0)
-	return {"bas": indice(v - demi * 0.7, ref), "haut": indice(v + demi * 0.7, ref)}
+	return paire(v, demi, ref)
+
+## Règle de la pastille double (25/11) : jamais plus de DEUX lettres VOISINES. Staff sûr (incertitude < un demi-cran) :
+## une lettre, celle de l'estimation ; sinon les deux lettres qui encadrent l'estimation (« B/B+ »). La lettre seule du
+## même joueur (Niveau, tri) est toujours l'une des deux.
+static func paire(v: float, demi: float, ref: float) -> Dictionary:
+	var x := REFERENCE + (v - ref) / PAS
+	var seule := indice(v, ref)
+	if demi * 0.7 < PAS / 2.0: return {"bas": seule, "haut": seule}
+	var bas := clampi(floori(x), 0, LETTRES.size() - 2)
+	return {"bas": bas, "haut": bas + 1}
+
+## Niveau du joueur en lettre {bas, haut} : même calcul que « son rôle » (Niveau calculé, même erreur du staff), double
+## quand le staff n'est pas sûr (qualités en fourchette, joueur observé de loin).
+static func lettre_niveau(model: Dictionary, p: Dictionary, notre: bool) -> Dictionary:
+	var nc: Variant = p.get("niveauCalcule")
+	var note := -1.0
+	if nc is Dictionary and K.number(nc.get("niveau")): note = float(nc.niveau)
+	elif K.owned(p, notre) and K.number(p.get("rating")): note = float(p.rating)
+	return lettre_note(model, p, note, notre, "niveau")
+
+# --- Modèle courant (posé par main.gd à chaque réponse du moteur) : textes et tris des vues qui n'ont pas le modèle ---
+static var modele: Dictionary = {}
+
+static func _modele(model: Dictionary = {}) -> Dictionary:
+	return model if not model.is_empty() else modele
+
+## Niveau ou Potentiel d'un joueur en texte de lettre (« B », « B/B+ », « ? »), jamais un chiffre du moteur.
+static func texte_champ(p: Dictionary, champ: String, notre: bool, model: Dictionary = {}) -> String:
+	var m := _modele(model)
+	if champ == "potential": return texte_lettre(int(resume(m, p, notre).potentiel))
+	return texte_note(lettre_niveau(m, p, notre))
+
+## Lettre {bas, haut} du Niveau ou du Potentiel (pastille_note).
+static func lettre_champ(p: Dictionary, champ: String, notre: bool, model: Dictionary = {}) -> Dictionary:
+	var m := _modele(model)
+	if champ == "potential":
+		var i := int(resume(m, p, notre).potentiel)
+		return {"bas": i, "haut": i}
+	return lettre_niveau(m, p, notre)
+
+## Valeur de tri d'un Niveau ou d'un Potentiel : la lettre MONTRÉE (milieu d'une double), null si inconnue. À lettre égale,
+## les listes départagent par nom ou identifiant : l'ordre ne trahit jamais le chiffre caché.
+static func tri_champ(p: Dictionary, champ: String, notre: bool, model: Dictionary = {}) -> Variant:
+	var r := rang_lettre(lettre_champ(p, champ, notre, model))
+	return r if r >= 0.0 else null
 
 ## Notes au poste calées sur le Niveau calculé : au poste principal, la note au poste vaut le Niveau (poste + rôle) ;
 ## aux autres postes, les écarts du moteur (familiarité, qualités du poste) restent. 0 sans Niveau calculé.
@@ -237,6 +287,13 @@ static func decalage_poste(p: Dictionary) -> float:
 	if not (nc is Dictionary and K.number(nc.get("niveau")) and notes is Dictionary and principaux is Array and not (principaux as Array).is_empty()): return 0.0
 	var base: Variant = (notes as Dictionary).get(str(int(principaux[0]))) if K.number(principaux[0]) else null
 	return float(nc.niveau) - float(base) if K.number(base) else 0.0
+
+## Écart entre le Niveau calculé et la valeur posée du moteur (`rating`) : recale une valeur passée (niveau de juillet)
+## sur l'échelle du Niveau montré. 0 sans Niveau calculé.
+static func decalage_niveau(p: Dictionary) -> float:
+	var nc: Variant = p.get("niveauCalcule")
+	if nc is Dictionary and K.number(nc.get("niveau")) and K.number(p.get("rating")): return float(nc.niveau) - float(p.rating)
+	return 0.0
 
 ## Empreinte de l'erreur du staff au poste : une par famille de poste (11 et 14, même note → même lettre).
 static func cle_poste(numero: int) -> String:
@@ -297,7 +354,7 @@ static func pastille_note(parent: Control, x: float, centre_y: float, l: Diction
 	D.rect(fond, Rect2(w / 2.0 - 1.0, taille * 0.18, 2.0, taille * 0.64), Color(Charte.ENCRE, .55)).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for k in 2:
 		var i := b if k == 0 else h
-		var t := D.text(fond, w * (0.27 + 0.46 * k), taille * 0.72, texte_lettre(i), int(taille * 0.5), couleur_texte(i), 800, w / 2.0, HORIZONTAL_ALIGNMENT_CENTER)
+		var t := D.text(fond, w * (0.27 + 0.46 * k), taille * 0.72, texte_lettre(i), int(taille * 0.56), couleur_texte(i), 800, w / 2.0, HORIZONTAL_ALIGNMENT_CENTER)
 		t.add_theme_font_override("font", Charte.TITRE_FICHE)
 		t.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return fond

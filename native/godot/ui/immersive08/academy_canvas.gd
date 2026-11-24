@@ -503,26 +503,23 @@ func _source_index(person: Dictionary) -> int:
 	return -1
 
 func _sort_value(person: Dictionary, key: String) -> Variant:
-	if key in ["note", "rating", "potential"]: return G.knowledge_sort_value(person, "rating" if key == "note" else key, true)
+	if key in ["note", "rating", "potential"]: return Notation.tri_champ(person, "rating" if key == "note" else key, true, app.model)
 	if key == "source": return _source_index(person)
 	if key == "status": return _status(person)[0]
 	if key == "decide":
 		var rang := 0.0 if _a_decider(person) else 1000.0 if float(person.get("injury", 0)) <= 0 else 1500.0
-		var niveau: Variant = G.knowledge_sort_value(person, "rating", true)
-		return rang + 100.0 - (float(niveau) if niveau != null else 0.0)
+		var niveau: Variant = Notation.tri_champ(person, "rating", true, app.model)
+		return rang + 100.0 - (float(niveau) * 5.0 if niveau != null else 0.0)
 	if key == "contract":
 		var fin: Variant = person.get("contractEnd")
 		return fin if fin is int or fin is float else null
 	if key == "start":
-		var depart: Variant = person.get("development", {}).get("seasonStart")
-		return depart if depart is int or depart is float else null
+		var r := Notation.rang_lettre(_lettre_juillet(person))
+		return r if r >= 0.0 else null
 	if key == "minutes":
 		if pathway.get("active", false) and not _professional(person): return _path(person).get("minutes", person.get("minutes"))
 		return person.get("minutes")
-	if key == "change":
-		var start: Variant = person.get("development", {}).get("seasonStart")
-		if not (start is int or start is float) or not (person.get("rating") is int or person.get("rating") is float): return null
-		return roundi(float(person.rating) - float(start))
+	if key == "change": return _delta(person)
 	return person.get(key)
 
 func _sort_by(key: String) -> void:
@@ -566,7 +563,8 @@ func _draw_rows(columns: Array) -> void:
 		var note := Notation.resume(app.model, p, true)
 		var col_n := _col(columns, "note")
 		if not col_n.is_empty():
-			var pastille_n := Notation.pastille_noeud(hit, col_n.x + col_n.w / 2.0 - 13.5, ROW / 2.0, int(note.niveau), 27, "AcademyLettreNiveau")
+			var w_n := Notation.largeur_note(note.niveau_note, 27)
+			var pastille_n := Notation.pastille_note(hit, col_n.x + col_n.w / 2.0 - w_n / 2.0, ROW / 2.0, note.niveau_note, 27, "AcademyLettreNiveau")
 			var fl_niv: Dictionary = Fleches.donnees(app, p).get("niveau", {})
 			if not fl_niv.is_empty(): Fleches.marquer_pastille(app, pastille_n, int(fl_niv.cran), fl_niv.serie, "Niveau", "Niveau_" + str(p.id).replace(":", "_"))
 		var col_p := _col(columns, "potential")
@@ -576,11 +574,16 @@ func _draw_rows(columns: Array) -> void:
 		var gain: Variant = _delta(p)
 		if not _col(columns, "change").is_empty():
 			var colonne_gain := _col(columns, "change")
-			var mot := "—" if gain == null else ("▲ +%d" % int(gain)) if int(gain) > 0 else ("▼ %d" % int(gain)) if int(gain) < 0 else "—"
+			var mot := "—" if gain == null else "▲" if int(gain) > 0 else "▼" if int(gain) < 0 else "—"
 			_cellule(hit, colonne_gain, mot, Charte.V if gain != null and int(gain) > 0 else Charte.D if gain != null and int(gain) < 0 else Charte.IVOIRE_3, true)
 		if not _col(columns, "start").is_empty():
-			var depart: Variant = p.get("development", {}).get("seasonStart")
-			_cellule(hit, _col(columns, "start"), G.n(depart) if depart is int or depart is float else "—", Charte.IVOIRE_2)
+			# Niveau en juillet : lettre du staff (même échelle que la colonne NIV.), jamais le chiffre du moteur.
+			var col_s := _col(columns, "start")
+			var l_juillet := _lettre_juillet(p)
+			if int(l_juillet.bas) >= 0:
+				var w_s := Notation.largeur_note(l_juillet, 27)
+				Notation.pastille_note(hit, col_s.x + col_s.w - w_s - 20, ROW / 2.0, l_juillet, 27, "AcademyLettreJuillet")
+			else: _cellule(hit, col_s, "—", Charte.IVOIRE_2)
 		if not _col(columns, "trend").is_empty(): _courbe(hit, p, _col(columns, "trend"))
 		_cellule(hit, _col(columns, "minutes"), G.n(_minutes(p)) + " min", Charte.IVOIRE_2)
 		if not _col(columns, "contract").is_empty():
@@ -621,10 +624,19 @@ func _statut(row: Control, p: Dictionary, x: float) -> void:
 	Kit.puce(row, Rect2(courant, 5, 20, 20), symbole, principal[1] if principal[1] != Charte.IVOIRE else Charte.IVOIRE_2, Charte.ENCRE)
 	D.text(row, courant + 28, 21, str(principal[0]), 20, Charte.IVOIRE_2 if principal[1] == Charte.IVOIRE or principal[1] == Charte.V else principal[1], 600, 280)
 
+## Niveau de début de saison (juillet) en lettre du staff : même erreur fixe, même référence et même calage sur le
+## Niveau calculé que la colonne NIV.
+func _lettre_juillet(p: Dictionary) -> Dictionary:
+	var depart: Variant = p.get("development", {}).get("seasonStart")
+	if not (depart is int or depart is float): return {"bas": -1, "haut": -1}
+	return Notation.lettre_note(app.model, p, float(depart) + Notation.decalage_niveau(p), true, "niveau")
+
+## Progression depuis juillet en crans de lettre MONTRÉS (▲/▼ seulement à l'écran) ; null si inconnue.
 func _delta(p: Dictionary) -> Variant:
-	var baseline: Variant = p.get("development", {}).get("seasonStart")
-	if not (baseline is int or baseline is float) or not (p.get("rating") is int or p.get("rating") is float): return null
-	return roundi(float(p.rating) - float(baseline))
+	var avant := Notation.rang_lettre(_lettre_juillet(p))
+	var maintenant := Notation.rang_lettre(Notation.lettre_champ(p, "rating", true, app.model))
+	if avant < 0.0 or maintenant < 0.0: return null
+	return roundi(maintenant - avant)
 
 func _courbe(parent: Control, p: Dictionary, col: Dictionary) -> void:
 	var history: Array = p.get("development", {}).get("history", [])
@@ -1201,8 +1213,9 @@ func _portrait(parent: Node, p: Dictionary, rectangle: Rect2, _large: bool = fal
 		D.photo(parent, "player-%02d" % posmod(index, 16), rectangle)
 
 static func _potential_before(a: Dictionary, b: Dictionary) -> bool:
-	var av: Variant = G.knowledge_sort_value(a, "potential")
-	var bv: Variant = G.knowledge_sort_value(b, "potential")
+	# Ordre de la lettre de potentiel montrée ; à lettre égale, identifiant (jamais le chiffre caché).
+	var av: Variant = Notation.tri_champ(a, "potential", true)
+	var bv: Variant = Notation.tri_champ(b, "potential", true)
 	if av == null or bv == null:
 		if av != bv: return av != null
 	elif av != bv: return av > bv

@@ -41,7 +41,7 @@ static func own(player: Dictionary) -> bool:
 	return bool(player.get("__own", false))
 
 static func value(player: Dictionary, key: String, _reports: Dictionary = {}) -> Variant:
-	if key in ["rating","potential"]: return G.knowledge_sort_value(player,key,own(player))
+	if key in ["rating","potential"]: return load("res://ui/notation_staff.gd").tri_champ(player,key,own(player))
 	if key.begins_with("attribute:"): return A.detail(player,own(player)).get(key.trim_prefix("attribute:"))
 	return player.get(key)
 
@@ -49,11 +49,13 @@ static func value(player: Dictionary, key: String, _reports: Dictionary = {}) ->
 static func leader(key: String, pair: Array) -> int:
 	if not (key in HIGHER_BETTER or key.begins_with("attribute:")): return -1
 	if key in ["rating","potential"]:
-		var first := G.knowledge_bounds(pair[0],key,own(pair[0]))
-		var second := G.knowledge_bounds(pair[1],key,own(pair[1]))
-		if first.is_empty() or second.is_empty(): return -1
-		if float(first.min) > float(second.max): return 0
-		if float(second.min) > float(first.max): return 1
+		# Lettres montrées : meilleur seulement si sa lettre (basse) dépasse la lettre (haute) de l'autre.
+		var N: Script = load("res://ui/notation_staff.gd")
+		var first: Dictionary = N.lettre_champ(pair[0],key,own(pair[0]))
+		var second: Dictionary = N.lettre_champ(pair[1],key,own(pair[1]))
+		if int(first.bas) < 0 or int(second.bas) < 0: return -1
+		if int(first.bas) > int(second.haut): return 0
+		if int(second.bas) > int(first.haut): return 1
 		return -1
 	var left: Variant = value(pair[0],key)
 	var right: Variant = value(pair[1],key)
@@ -222,7 +224,7 @@ static func open(app: Control, chosen: String, reports: Dictionary, return_focus
 		overview.name = "Vue d’ensemble"
 		tabs.add_child(overview)
 		_header(overview)
-		for field in [["Poste", "pos", ""], ["Âge", "age", " ans"], ["Niveau / 100", "rating", ""], ["Potentiel / 100", "potential", ""], ["Condition", "condition", " %"], ["Moyenne de la saison", "seasonNote", ""], ["Fin de contrat", "contractEnd", ""], ["Prime à la signature", "fee", " €"], ["Salaire "+G.salary_period(), "salary", " €"]]:
+		for field in [["Poste", "pos", ""], ["Âge", "age", " ans"], ["Niveau", "rating", ""], ["Potentiel", "potential", ""], ["Condition", "condition", " %"], ["Moyenne de la saison", "seasonNote", ""], ["Fin de contrat", "contractEnd", ""], ["Prime à la signature", "fee", " €"], ["Salaire "+G.salary_period(), "salary", " €"]]:
 			_row(overview, str(field[0]), str(field[1]), pair, reports, str(field[2]))
 		var footnote := "Pour un joueur à recruter, prime et salaire sont des demandes distinctes ; pour un joueur de ton effectif, ce sont ses conditions actuelles. Aucun contrat n’est signé depuis cette comparaison. Le potentiel provient des rapports datés. En vert : le meilleur des deux."
 		if compact:
@@ -388,7 +390,15 @@ static func _row(parent: Node, title: String, key: String, pair: Array[Dictionar
 			text.tooltip_text = "Le meilleur des deux sur ce repère"
 			text.mouse_filter = Control.MOUSE_FILTER_PASS
 	var difference_text := delta(values[0],values[1],unit) if key != "pos" else "Même poste" if values[0] == values[1] else "Postes différents"
-	if key in ["rating","potential"]: difference_text = K.range_delta(pair[0],pair[1],key,own(pair[0]),own(pair[1]))
+	if key in ["rating","potential"]:
+		# Écart en crans de lettre montrés (jamais en points du moteur).
+		var N: Script = load("res://ui/notation_staff.gd")
+		var a: Variant = N.tri_champ(pair[0],key,own(pair[0]))
+		var b: Variant = N.tri_champ(pair[1],key,own(pair[1]))
+		if a == null or b == null: difference_text = "Non comparable"
+		else:
+			var crans := roundi(float(b) - float(a))
+			difference_text = "Même lettre" if crans == 0 else ("+" if crans > 0 else "") + str(crans) + (" cran" if absi(crans) == 1 else " crans")
 	elif key == "contractEnd" and numeric(values[0]) and numeric(values[1]):
 		var years := int(values[1]) - int(values[0])
 		difference_text = "Même échéance" if years == 0 else ("+" if years > 0 else "") + str(years) + (" an" if absi(years) == 1 else " ans")

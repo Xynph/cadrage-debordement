@@ -1766,9 +1766,14 @@ func ouvrir_fenetre_joueur(id: String) -> void:
 	var teinte_energie := Charte.CONDITION if energie >= 75.0 else Charte.INTENSIF if energie >= 55.0 else Charte.PERTE
 	var tuile_energie := Pieces.tuile(fond, Rect2(254 + largeur + 12.0, 136, largeur, 116), "%d %%" % roundi(energie), "énergie", teinte_energie, "MatchFenetreJoueurEnergie", 50, "", "heart")
 	D.bar(tuile_energie, Rect2(12, 12, largeur - 52, 8), energie, teinte_energie)
-	var niveau: Variant = joueur.get("rating")
-	var niveau_connu := niveau is float or niveau is int
-	Pieces.tuile(fond, Rect2(254 + 2 * (largeur + 12.0), 136, largeur, 116), str(roundi(float(niveau))) if niveau_connu else "—", "niveau", Charte.couleur_attribut(niveau) if niveau_connu else Charte.IVOIRE, "MatchFenetreJoueurNiveau", 50)
+	# Niveau : lettre du staff (notation façon FM), jamais le chiffre du moteur.
+	var fiche_niv: Dictionary = joueur
+	for p: Variant in app.model.get("squad", []):
+		if p is Dictionary and str(p.get("id", "")) == str(joueur.get("id", "")): fiche_niv = p
+	var Notation: Script = load("res://ui/notation_staff.gd")
+	var l_niv: Dictionary = Notation.lettre_champ(fiche_niv, "rating", true, app.model)
+	var niveau_connu := int(l_niv.bas) >= 0
+	Pieces.tuile(fond, Rect2(254 + 2 * (largeur + 12.0), 136, largeur, 116), Notation.texte_note(l_niv) if niveau_connu else "—", "niveau", Notation.couleur(int(l_niv.haut)).lightened(.15) if niveau_connu else Charte.IVOIRE, "MatchFenetreJoueurNiveau", 50)
 	# Ses chiffres du match.
 	for i in 3:
 		var cle: String = ["essais", "plaquages", "metres"][i]

@@ -353,6 +353,13 @@ func run() -> void:
 	check(lettre_poste != null and (texte_lettre == "?" or Array(texte_lettre.split("/")).all(func(l: String) -> bool: return l in lettres)), "Note au poste en lettre du staff (%s)" % texte_lettre)
 	check(not texte_lettre.is_empty() and not texte_lettre.lstrip("+-").is_valid_float(), "Lettre au poste, pas un chiffre (%s)" % texte_lettre)
 	check(app.find_child("RadarFamiliarite0", true, false) != null, "Emplacement de la familiarité au poste")
+	# Revue du 24/11 (écart 3) : Niveau et Potentiel du comparateur en lettres du staff, aucun chiffre (ni fuite du Niveau).
+	for champ: String in ["Niveau", "Potentiel"]:
+		var valeur := app.find_child("RadarSynthese0_" + champ, true, false) as Label
+		var pastille := app.find_child("RadarSynthese0_%sLettre" % champ, true, false) as Control
+		var lettre_champ := str(pastille.get_meta("lettre", "")) if pastille != null else ""
+		check(valeur != null and RegEx.create_from_string("\\d").search(valeur.text) == null, "Comparateur : %s sans chiffre (« %s »)" % [champ, valeur.text if valeur != null else "absent"])
+		check(pastille != null and (lettre_champ == "?" or Array(lettre_champ.split("/")).all(func(l: String) -> bool: return l in lettres)), "Comparateur : %s en lettre du staff (%s)" % [champ, lettre_champ])
 	await press("RadarAxe0")
 	var fenetre_axe := app.find_child("RadarAxeFenetre", true, false)
 	check(fenetre_axe != null and fenetre_axe.find_child("RadarFenetreLigne_tackling", true, false) != null, "Clic sur Défense : ses qualités en barres miroir")

@@ -96,11 +96,6 @@ static func _note_marche(p: Dictionary, numero: int) -> float:
 	if not b.is_empty(): return (float(b.min) + float(b.max)) / 2.0
 	return -1.0
 
-static func _note_effectif(p: Dictionary, numero: int) -> float:
-	var notes: Variant = p.get("positionRatings")
-	if notes is Dictionary and _nombre(notes.get(str(numero))): return float(notes.get(str(numero)))
-	return float(p.get("rating", 0)) if _nombre(p.get("rating")) else -1.0
-
 ## Joueurs de notre effectif à ce poste (principal ou secondaire, postes équivalents compris), du meilleur au moins bon.
 static func comparaison(app: Control, numero: int) -> Array:
 	var postes := _equivalents(numero)
@@ -114,15 +109,21 @@ static func comparaison(app: Control, numero: int) -> Array:
 				for n: Variant in valeurs:
 					if _nombre(n) and int(n) in postes: joue = true
 		if not joue and str(p.get("pos", "")) == POSTES[numero - 1]: joue = true
-		if joue: liste.append({"joueur": p, "note": _note_effectif(p, numero), "lettre": Notation.lettre_poste(app.model, p, numero, true)})
-	liste.sort_custom(func(a: Dictionary, b: Dictionary): return float(a.note) > float(b.note))
+		if joue:
+			var lettre := Notation.lettre_poste(app.model, p, numero, true)
+			# Ordre = lettre MONTRÉE (milieu d'une double) ; à lettre égale, le nom : jamais le chiffre caché.
+			liste.append({"joueur": p, "note": Notation.rang_lettre(lettre), "lettre": lettre})
+	liste.sort_custom(func(a: Dictionary, b: Dictionary):
+		if float(a.note) != float(b.note): return float(a.note) > float(b.note)
+		return str(a.joueur.get("name", "")) < str(b.joueur.get("name", "")))
 	return liste
 
 ## Lecture complète du rapport : piste, poste, note, rang, lettre du staff (E- à S+, même échelle que la fiche),
 ## pour / contre, qualités clés.
 static func lire(app: Control, p: Dictionary) -> Dictionary:
 	var numero := _poste(p)
-	var note := _note_marche(p, numero)
+	var lettre_piste := Notation.lettre_poste(app.model, p, numero, false)
+	var note := Notation.rang_lettre(lettre_piste)
 	var autres := comparaison(app, numero) if numero > 0 else []
 	var rang := 1
 	for ligne: Dictionary in autres:
@@ -137,7 +138,7 @@ static func lire(app: Control, p: Dictionary) -> Dictionary:
 		for cle: String in QUALITES.get(FAMILLE_QUALITES.get(numero, 0), []):
 			if _nombre(attributs.get(cle)): qualites.append([cle, float(attributs.get(cle))])
 	var r := {"piste": p, "numero": numero, "poste": POSTES[numero - 1] if numero > 0 else str(p.get("pos", "—")), "note": note,
-		"lettre_poste": Notation.lettre_poste(app.model, p, numero, false), "rang": rang, "total": autres.size() + 1, "ecart": ecart, "indice": indice, "lettre": Notation.texte_lettre(indice),
+		"lettre_poste": lettre_piste, "rang": rang, "total": autres.size() + 1, "ecart": ecart, "indice": indice, "lettre": Notation.texte_lettre(indice),
 		"couleur": Notation.couleur(indice), "notation": notation, "autres": autres, "qualites": qualites}
 	r.pour = _pour(app, r)
 	r.contre = _contre(app, r)
@@ -457,13 +458,13 @@ static func _liste(app: Control, cadre: Control, r: Dictionary, zone: Rect2, col
 				continue
 			if str(colonne[2]) == "potentiel":
 				# Notation façon FM (planche 24/11) : lettre de potentiel estimée par le staff, relative à notre effectif.
-				Notation.pastille(bouton, cx, (hauteur_ligne - 4) / 2.0, int(Notation.resume(app.model, joueur, not est_piste).potentiel), 30, "RapportRecruteurLettrePot_%d" % i)
+				Notation.pastille(bouton, cx, (hauteur_ligne - 4) / 2.0, int(Notation.resume(app.model, joueur, not est_piste).potentiel), 34, "RapportRecruteurLettrePot_%d" % i)
 				cx += float(colonne[1])
 				continue
 			if str(colonne[2]) == "note":
 				# Note au poste en lettre (décision de Léo du 24/11) : pastille ronde, double « B/A » si le staff n'est pas sûr.
 				var lettre: Dictionary = ligne.get("lettre", {})
-				Notation.pastille_note(bouton, cx, (hauteur_ligne - 4) / 2.0, lettre, 30, "RapportRecruteurLettrePoste_%d" % i)
+				Notation.pastille_note(bouton, cx, (hauteur_ligne - 4) / 2.0, lettre, 34, "RapportRecruteurLettrePoste_%d" % i)
 				cx += float(colonne[1])
 				continue
 			var valeur: Array = _cellule(colonne, joueur, ligne, est_piste)
@@ -498,8 +499,7 @@ static func _cellule(colonne: Array, j: Dictionary, l: Dictionary, p: bool) -> A
 		"age":
 			return [G.n(j.get("age", "—")), Charte.IVOIRE_2]
 		"potentiel":
-			if not p and K.bounds(j, "potential", true).is_empty() and _nombre(j.get("potential")): return [G.n(j.potential), K.POTENTIAL_COLOR]
-			return [K.text(j, "potential", not p), K.POTENTIAL_COLOR]
+			return [K.potential_text(j), K.POTENTIAL_COLOR]
 		"salaire":
 			return [G.salary_amount(j.get("salary")), Pieces.BLEU]
 	return ["", Charte.IVOIRE_3]

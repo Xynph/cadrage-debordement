@@ -191,6 +191,8 @@ class Courbe extends Control:
 	var bas := 20.0
 	var haut := 100.0
 	var pas := 10.0
+	## Courbe du Niveau (valeur cachée) : forme seule, ni graduation ni valeur en bout de courbe.
+	var sans_chiffres := false
 
 	func _y(v: float, top: float, bottom: float) -> float:
 		return lerpf(bottom, top, inverse_lerp(bas, haut, v))
@@ -206,7 +208,7 @@ class Courbe extends Control:
 		while v <= haut + .01:
 			var y := _y(v, top, bottom)
 			draw_line(Vector2(left, y), Vector2(right, y), Color(Charte.FILET, .9), 1.0)
-			draw_string(font, Vector2(0, y + px * .35), str(roundi(v)), HORIZONTAL_ALIGNMENT_RIGHT, left - C.px(12), px, Charte.IVOIRE_3)
+			if not sans_chiffres: draw_string(font, Vector2(0, y + px * .35), str(roundi(v)), HORIZONTAL_ALIGNMENT_RIGHT, left - C.px(12), px, Charte.IVOIRE_3)
 			v += pas
 		for k in etiquettes.size():
 			var x := lerpf(left, right, float(k) / 12.0)
@@ -236,7 +238,7 @@ class Courbe extends Control:
 			for autre: float in fin_y:
 				if absf(autre - ey) < px * 1.15: ey = autre + px * 1.15
 			fin_y.append(ey)
-			var libelle := "%s %s" % [str(s.get("court", "")), str(roundi(float(vals[-1])))]
+			var libelle := str(s.get("court", "")) if sans_chiffres else "%s %s" % [str(s.get("court", "")), str(roundi(float(vals[-1])))]
 			draw_string(font, Vector2(right + C.px(16), ey + px * .35), libelle, HORIZONTAL_ALIGNMENT_LEFT, C.px(134), px, couleur)
 
 	func _trait(points: PackedVector2Array, couleur: Color, epais: float) -> void:
@@ -390,8 +392,14 @@ static func _saisons(card: Control, app: Control, player: Dictionary, x: float, 
 		var debut := int(an.get("start", 0))
 		var fin := int(an.get("end", 0))
 		D.text(card, x, y + 34 + i * 32, G.season_label(an.get("season", "—")), 19, Charte.IVOIRE_2, 600, 140)
-		D.text(card, x + 150, y + 34 + i * 32, "%d → %d" % [debut, fin], 19, Charte.IVOIRE, 700, 120)
-		_ecart(card, x + largeur, y + 34 + i * 32, fin - debut, 19, 70, "ProgressionSaison%d" % i)
+		# Début → fin de saison en lettres du staff (échelle du Niveau), sens ▲/▼ : jamais le chiffre du moteur.
+		var Notation: Script = load("res://ui/notation_staff.gd")
+		var recale: float = Notation.decalage_niveau(player)
+		var l_debut: Dictionary = Notation.lettre_note(app.model, player, debut + recale, true, "niveau")
+		var l_fin: Dictionary = Notation.lettre_note(app.model, player, fin + recale, true, "niveau")
+		D.text(card, x + 150, y + 34 + i * 32, "%s → %s" % [Notation.texte_note(l_debut), Notation.texte_note(l_fin)], 19, Charte.IVOIRE, 700, 160)
+		var sens := fin - debut
+		if sens != 0: D.text(card, x + largeur, y + 34 + i * 32, "▲" if sens > 0 else "▼", 19, Charte.GAIN if sens > 0 else Charte.PERTE, 800, 70, HORIZONTAL_ALIGNMENT_RIGHT).name = "ProgressionSaison%d" % i
 
 static func _court(libelle: String) -> String:
 	return libelle if libelle.length() <= 11 else libelle.substr(0, 10).strip_edges() + "."
@@ -419,7 +427,8 @@ static func construire(page: Control, app: Control, player: Dictionary, top: flo
 	_pilule(haut, Rect2(720, 16, 150, 40), "Niveau", e.vue == "niveau", "ProgressionVue_niveau", func(): _vue(app, e, "niveau"))
 	var niv := niveau(app, player)
 	var gain := ecart(niv)
-	_tuile(haut, Rect2(1290, 10, 220, 74), "NIVEAU", G.n(roundi(float(niv[12]))), Charte.IVOIRE, ecart_texte(gain), Charte.GAIN if gain >= 0 else Charte.PERTE, "ProgressionTuileNiveau", func(): _vue(app, e, "niveau"))
+	# Niveau : lettre du staff et sens de la courbe (▲/▼), jamais le chiffre du moteur.
+	_tuile(haut, Rect2(1290, 10, 220, 74), "NIVEAU", G.rating_text(player, true), Charte.IVOIRE, "▲" if gain > 0 else "▼" if gain < 0 else "", Charte.GAIN if gain >= 0 else Charte.PERTE, "ProgressionTuileNiveau", func(): _vue(app, e, "niveau"))
 	_tuile(haut, Rect2(1522, 10, 220, 74), "POTENTIEL", G.potential_text(player), Charte.CONFIANCE, "", Charte.IVOIRE, "ProgressionTuilePotentiel", func(): _vue(app, e, "niveau"))
 	_specialisation(haut, app, player, Rect2(1760, 24, 466, 46))
 	var courbe := Courbe.new()
@@ -428,6 +437,7 @@ static func construire(page: Control, app: Control, player: Dictionary, top: flo
 	courbe.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if e.vue == "niveau":
 		courbe.series.append({"valeurs": niv, "couleur": Charte.IVOIRE, "court": "Niveau"})
+		courbe.sans_chiffres = true
 		_cadre_y(courbe, niv)
 		haut.add_child(courbe)
 		D.place(courbe, Rect2(24, 96, 1700, 370))

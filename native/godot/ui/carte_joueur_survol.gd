@@ -465,7 +465,8 @@ static func _rapport_staff(carte: Panel, app: Control, player: Dictionary, sourc
 		var by := 92.0 + i * 78.0
 		var suffixe := "Niveau" if i == 0 else "Potentiel"
 		D.text(bloc, 20, by - 8, "Niveau actuel" if i == 0 else "Potentiel", 19, Charte.IVOIRE_2, 600, w - 100)
-		var pastille: Control = Notation.pastille_noeud(bloc, w - 20 - 46, by - 4, int(note.niveau if i == 0 else note.potentiel), 46, "CarteJoueurTuile" + suffixe)
+		var l_i: Dictionary = note.niveau_note if i == 0 else {"bas": int(note.potentiel), "haut": int(note.potentiel)}
+		var pastille: Control = Notation.pastille_note(bloc, w - 20 - Notation.largeur_note(l_i, 46), by - 4, l_i, 46, "CarteJoueurTuile" + suffixe)
 		pastille.get_child(0).name = "CarteJoueurChiffre" + suffixe
 		if i == 0:
 			Notation.poser_palier(bloc, 20, by + 22, note.palier, 15, w - 100, "CarteJoueurPalier")

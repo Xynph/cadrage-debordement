@@ -223,14 +223,17 @@ func tactique(suffixe: String) -> void:
 		var joueur := Selection.player(app.model, str(ligne.get_meta("player_id", "")))
 		var vraie: Variant = Selection.rating(app.model, joueur, 12)
 		if r != null and str(r.get_meta("lettre", "—")) != "—" and r.modulate.a > 0.9 and vraie != null:
-			notes.append(float(vraie))
+			notes.append(Notation.rang_lettre(Selection.lettre(app.model, joueur, 12)))
 			if str(r.get_meta("lettre")) != Notation.texte_note(Selection.lettre(app.model, joueur, 12)) or not sans_chiffre(r): lettres_ok = false
 	check(notes.size() >= 3, "Candidats : note au poste en lettre (%d lignes)" % notes.size())
 	check(lettres_ok, "Candidats : lettre du staff, aucun chiffre de note au poste")
 	var trie := notes.duplicate()
 	trie.sort()
 	trie.reverse()
-	check(notes == trie, "Candidats : triés sur la vraie note au poste " + str(notes))
+	check(notes == trie, "Candidats : triés sur la lettre montrée (revue du 24/11, écart 5) " + str(notes))
+	# Revue du 24/11 (écart 6) : plus aucune pastille vide dans la liste (non qualifié : lettre grisée).
+	var vides: Array = app.root_content.find_children("TacticsCandidateRating", "", true, false).filter(func(n: Node) -> bool: return str(n.get_meta("lettre", "—")) == "—")
+	check(vides.is_empty(), "Candidats : aucune pastille vide (%d)" % vides.size())
 	check(app.root_content.find_children("TacticsCandidateStars", "Control", true, false).is_empty(), "Candidats : plus d'étoiles")
 	check(app.root_content.find_children("CarteJoueurEtoiles*", "Control", true, false).is_empty(), "Tactique : aucune étoile hors carte joueur")
 	if is_instance_valid(app.coach) and app.coach.has_method("fermer_bulle"): app.coach.fermer_bulle()

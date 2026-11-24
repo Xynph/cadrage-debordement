@@ -17,6 +17,7 @@ const PersonName = preload("res://ui/person_name.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const Carte = preload("res://ui/carte_joueur_survol.gd")
 const Poste = preload("res://ui/immersive08/tactics_poste.gd")
+const Notation = preload("res://ui/notation_staff.gd")
 const LIGNE := 33.0
 const ENCART := 720.0
 
@@ -186,7 +187,10 @@ static func _remplir(app: Control, lignes: Control, compte: Label, slot: int, la
 
 static func _valeur(app: Control, person: Dictionary, slot: int, cle: String) -> Variant:
 	match cle:
-		"note": return Selection.rating(app.model, person, slot)
+		"note":
+			# Lettre MONTRÉE (à égalité : nom), jamais la note cachée.
+			var r := Notation.rang_lettre(Selection.lettre(app.model, person, slot))
+			return r if r >= 0.0 else null
 		"condition":
 			var v: Variant = person.get("condition")
 			return float(v) if v is int or v is float else null
@@ -219,7 +223,8 @@ static func _ligne(app: Control, parent: Control, rang: int, person: Dictionary,
 	var non_qualifie := str(s.texte) == "Non qualifié au poste"
 	# Note au poste en lettre + familiarité (les étoiles ont été rejetées par Léo le 21/11/2026, le chiffre le 24/11) ;
 	# le tri reste sur la note cachée.
-	var note: Dictionary = {"bas": -1, "haut": -1} if non_qualifie else Selection.lettre(app.model, person, slot)
+	# Non qualifié : sa lettre reste visible (grisée), jamais une pastille vide.
+	var note: Dictionary = Selection.lettre(app.model, person, slot)
 	var familiarite := -1 if non_qualifie else Selection.familiarite(app.model, person, slot)
 	Poste.poser(bouton, Rect2(colonnes.note[0], 8, colonnes.note[1], 18), note, familiarite, "TacticsCandidateRating", true, false, gris)
 	# Colonne Condition : barre + pourcentage tiennent dans la colonne (la barre rétrécit quand le tableau est étroit),

@@ -96,14 +96,16 @@ func etoiles_au_poste(xv: Dictionary) -> void:
 	var notes: Array = []
 	var par_id := {}
 	for p: Dictionary in app.model.squad: par_id[str(p.id)] = p
-	for ligne: Button in lignes: notes.append(Etoiles.note_poste(par_id.get(str(ligne.get_meta("player_id")), {}), numero))
+	# Revue du 24/11 (écart 5) : tri sur la lettre MONTRÉE au poste (jamais la note cachée).
+	var N: Script = load("res://ui/notation_staff.gd")
+	for ligne: Button in lignes: notes.append(N.rang_lettre(N.lettre_poste(app.model, par_id.get(str(ligne.get_meta("player_id")), {}), numero, true)) if not par_id.get(str(ligne.get_meta("player_id")), {}).is_empty() else -1.0)
 	var connues: Array = notes.filter(func(v: float): return v >= 0.0)
 	var meilleure := -1.0
-	for p: Dictionary in app.model.squad: meilleure = maxf(meilleure, Etoiles.note_poste(p, numero))
+	for p: Dictionary in app.model.squad: meilleure = maxf(meilleure, N.rang_lettre(N.lettre_poste(app.model, p, numero, true)))
 	var classe := true
 	for i in range(1, connues.size()): classe = classe and connues[i - 1] >= connues[i]
 	# Note au poste (sur 100, la même pour tous les clubs) : la meilleure du groupe en tête de liste.
-	check(connues.size() >= 10 and classe and is_equal_approx(float(connues[0]), meilleure), "Liste classée par note au poste décroissante (%s)" % str(connues.slice(0, 6)))
+	check(connues.size() >= 10 and classe and is_equal_approx(float(connues[0]), meilleure), "Liste classée par lettre au poste décroissante (%s)" % str(connues.slice(0, 6)))
 	var premiere: Control = lignes[0] if not lignes.is_empty() else null
 	# Note au poste en LETTRE du staff (décision de Léo du 24/11), jamais le chiffre du moteur.
 	var note: Control = premiere.find_child("RosterNotePoste", true, false) as Control if premiere != null else null

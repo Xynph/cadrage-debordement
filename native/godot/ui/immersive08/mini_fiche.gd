@@ -149,7 +149,7 @@ static func construire(app: Control, player: Dictionary, source: String) -> Pane
 	# Notation façon FM : lettres du staff (Niveau, Potentiel), jamais de chiffre.
 	var Notation: Script = load("res://ui/notation_staff.gd")
 	var note: Dictionary = Notation.resume(app.model, player, commune.notre_joueur(source))
-	Notation.pastille(fiche, 840 - 54, 82, int(note.niveau), 54, "MiniFicheNiveau")
+	Notation.pastille_note(fiche, 840 - Notation.largeur_note(note.niveau_note, 54), 82, note.niveau_note, 54, "MiniFicheNiveau")
 	D.text(fiche, 840 - 34, 138, "pot.", 17, Charte.IVOIRE_2, 500, 60, HORIZONTAL_ALIGNMENT_RIGHT)
 	Notation.pastille(fiche, 840 - 28, 132, int(note.potentiel), 28, "MiniFichePotentiel")
 	D.line(fiche, Vector2(20, 158), Vector2(LARGEUR - 20, 158), Charte.FILET)

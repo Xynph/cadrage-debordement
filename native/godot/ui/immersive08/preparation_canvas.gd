@@ -623,12 +623,15 @@ func _danger_phrase() -> String:
 	var ecart := 0
 	for domaine: Dictionary in reports.get("domains", []):
 		if not (_nombre(domaine.get("own")) and _nombre(domaine.get("opponent"))): continue
-		var difference := int(domaine.opponent) - int(domaine.own)
+		# Écart en crans de lettre montrés (jamais en points du moteur).
+		var ref_d := Notation.reference_effectif(app.model)
+		var difference := Notation.indice(domaine.opponent, ref_d) - Notation.indice(domaine.own, ref_d)
 		if difference > ecart:
 			ecart = difference
 			pire = domaine
 	if not pire.is_empty():
-		return "Leur avantage le plus net : %s, %d contre %d pour toi (−%d)." % [str(pire.get("label", "secteur")).to_lower(), int(pire.opponent), int(pire.own), ecart]
+		var ref := Notation.reference_effectif(app.model)
+		return "Leur avantage le plus net : %s, %s contre %s pour toi." % [str(pire.get("label", "secteur")).to_lower(), Notation.texte_lettre(Notation.indice(pire.opponent, ref)), Notation.texte_lettre(Notation.indice(pire.own, ref))]
 	if not reports.get("domains", []).is_empty(): return "Aucun secteur ne penche en leur faveur : tu égales ou tu domines partout."
 	var menaces: Array = reports.get("threats", [])
 	if not menaces.is_empty(): return "À surveiller : %s (%s)." % [str(menaces[0].get("name", "")), str(menaces[0].get("role", ""))]
@@ -653,7 +656,7 @@ func _rapport(section: Control, rectangle: Rect2) -> void:
 	var domaines: Array = reports.get("domains", [])
 	var pas := maxf(_pas_rapport(), (rectangle.size.y - 152.0) / 6.0)
 	var panneau := _panneau(section, rectangle, "Rapport de force", "PreparationComparison")
-	R.rond(panneau, 20 + R.largeur("RAPPORT DE FORCE", 26, 800) + 16, 31, "Évaluations sur 100, ajustées à la condition.\nÉcart « pour toi » ou « contre toi ».\nClic sur un secteur : composition, plan de jeu ou entraînement.", "i", "PreparationComparisonInfo")
+	R.rond(panneau, 20 + R.largeur("RAPPORT DE FORCE", 26, 800) + 16, 31, "Lettres du staff, ajustées à la condition.\nÉcart « pour toi » ou « contre toi ».\nClic sur un secteur : composition, plan de jeu ou entraînement.", "i", "PreparationComparisonInfo")
 	var nous: Dictionary = app.model.club
 	var eux := _opponent()
 	for i in 2:
@@ -689,8 +692,13 @@ func _rapport(section: Control, rectangle: Rect2) -> void:
 		var centre := y + pas / 2.0
 		var propre: Variant = domaine.get("own")
 		var adverse: Variant = domaine.get("opponent")
-		_titre(panneau, 24, centre + 11, G.n(propre) if _nombre(propre) else "—", 32, Charte.IVOIRE, 70)
-		if _nombre(propre): _barre(panneau, Rect2(430.0 - echelle * clampf(float(propre) / 100.0, 0, 1), centre - 7, echelle * clampf(float(propre) / 100.0, 0, 1), 14), Charte.VERT_CLAIR)
+		# Notation façon FM : lettres du staff (échelle du Niveau, relative à notre effectif), barres au cran de la lettre.
+		var ref := Notation.reference_effectif(app.model)
+		var i_nous := Notation.indice(propre, ref) if _nombre(propre) else -1
+		var i_eux := Notation.indice(adverse, ref) if _nombre(adverse) else -1
+		var part := func(k: int) -> float: return float(k + 1) / float(Notation.LETTRES.size())
+		Notation.pastille_noeud(panneau, 24, centre, i_nous, 40, "PreparationOwnLevel" + str(i))
+		if _nombre(propre): _barre(panneau, Rect2(430.0 - echelle * part.call(i_nous), centre - 7, echelle * part.call(i_nous), 14), Charte.VERT_CLAIR)
 		_texte(panneau, 590, centre + 7, libelle, 20, Charte.IVOIRE, 300, HORIZONTAL_ALIGNMENT_CENTER).add_theme_font_override("font", Charte.TITRE_GRAS)
 		if not code.is_empty():
 			# Une icône dit l'écran d'action (la ligne entière est cliquable ; le nom de l'écran est dans l'infobulle).
@@ -698,11 +706,11 @@ func _rapport(section: Control, rectangle: Rect2) -> void:
 			outil.name = "PreparationSectorIcon_" + str(domaine.get("key", i))
 			panneau.add_child(outil)
 			D.place(outil, Rect2(590 + R.largeur(libelle, 20) / 2.0 + 14, centre - 10, 20, 20))
-		if _nombre(adverse): _barre(panneau, Rect2(750, centre - 7, echelle * clampf(float(adverse) / 100.0, 0, 1), 14), R.ORANGE).name = "PreparationBarreAdverse" + str(i)
-		_titre(panneau, 1090, centre + 11, G.n(adverse) if _nombre(adverse) else "—", 32, Charte.IVOIRE, 70)
+		if _nombre(adverse): _barre(panneau, Rect2(750, centre - 7, echelle * part.call(i_eux), 14), R.ORANGE).name = "PreparationBarreAdverse" + str(i)
+		Notation.pastille_noeud(panneau, 1090, centre, i_eux, 40, "PreparationOpponentLevel" + str(i))
 		if _nombre(propre) and _nombre(adverse):
-			var delta := int(propre) - int(adverse)
-			var mot := "+%d pour toi" % delta if delta > 0 else "−%d contre toi" % -delta if delta < 0 else "égalité"
+			var delta := i_nous - i_eux
+			var mot := "pour toi" if delta > 0 else "contre toi" if delta < 0 else "égalité"
 			var couleur_delta: Color = R.VERT if delta > 0 else R.ROUGE if delta < 0 else Charte.N
 			_marque(panneau, 1168, centre, 16, "haut" if delta > 0 else "bas" if delta < 0 else "egal", couleur_delta)
 			_texte(panneau, 1194, centre + 7, mot, 19, couleur_delta, 140).add_theme_font_override("font", C.font(700))
@@ -1086,7 +1094,11 @@ func _xv_tableau(section: Control, rectangle: Rect2, adversaire: Dictionary) -> 
 		_texte(panneau, 548, centre + 7, str(joueur.get("pos", "")), 17, Charte.IVOIRE_2, 300)
 		_texte(panneau, 920, centre + 7, G.n(joueur.get("age")) if _nombre(joueur.get("age")) else "—", 18, Charte.IVOIRE_2, 70, HORIZONTAL_ALIGNMENT_RIGHT)
 		var niveau: Variant = joueur.get("rating")
-		if niveau_connu: _texte(panneau, 1020, centre + 7, G.n(niveau) if _nombre(niveau) else "—", 19, Charte.couleur_attribut(niveau), 90, HORIZONTAL_ALIGNMENT_RIGHT).add_theme_font_override("font", C.font(700))
+		# Niveau adverse : lettre du staff (échelle de notre effectif), jamais le chiffre du moteur.
+		if niveau_connu:
+			var l_adv := Notation.lettre_champ(joueur, "rating", _nombre(niveau), app.model) if _nombre(niveau) else {"bas": -1, "haut": -1}
+			if int(l_adv.bas) >= 0: Notation.pastille_note(panneau, 1020 - Notation.largeur_note(l_adv, 30), centre, l_adv, 30, "PreparationTheirXILevel_%d" % (index + 1))
+			else: _texte(panneau, 1020, centre + 7, "—", 19, Charte.IVOIRE_3, 90, HORIZONTAL_ALIGNMENT_RIGHT)
 		_texte(panneau, 1120, centre + 7, str(int(joueur.get("matches", 0))), 18, Charte.IVOIRE, 90, HORIZONTAL_ALIGNMENT_RIGHT)
 		_texte(panneau, 1220, centre + 7, str(int(emplacement.get("starts", joueur.get("starts", 0)))), 18, Charte.IVOIRE, 90, HORIZONTAL_ALIGNMENT_RIGHT)
 		_texte(panneau, 1320, centre + 7, str(int(joueur.get("tries", 0))), 18, Charte.IVOIRE, 90, HORIZONTAL_ALIGNMENT_RIGHT)
