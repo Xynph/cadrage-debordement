@@ -61,6 +61,10 @@ Numéros de ligne approximatifs (au 24/11/2026) : relancer carte-code.cjs avant 
 | · liste de l'Effectif générique | `ui/squad_views_liste.gd` | `squad`, `_squad_rows` |
 | · Composition, Préparation, quotas | `ui/squad_views_composition.gd` | `lineup`, `preparation`, `bleus_resume`, `quota_line` |
 | · Recrutement générique | `ui/squad_views_marche.gd` | `market`, `_market_rows` |
+| Effectif, onglet Contrats : échéances, conseils du staff, fenêtre des joueurs d’une tranche | `ui/contract_review.gd` (fichier public : lignes de joueurs et redéfinitions d’une ligne des statiques lus par les tests et `squad_canvas`) | `build`, `_row`, `filtered`, `coverage` |
+| · socle (constantes, variables, statiques : mois restants, tranches, filtre, tri, couverture, délégation) | `ui/contract_review_socle.gd` | `mois_restants`, `filtered`, `coverage` |
+| · aides (tuiles, pastilles, fenêtre de joueurs, adaptation de la mise en page) | `ui/contract_review_aides.gd` | `_ouvrir_fenetre`, `_tile`, `_adapt` |
+| · corps (construction de l’écran, rafraîchissement, bandeau haut) | `ui/contract_review_corps.gd` | `_build`, `_refresh`, `_haut` |
 | Fiche joueur | `ui/immersive08/player_canvas.gd`, `fiche_page.gd`, `fiche_commune.gd`, `fiche_*.gd` | `build` L97 |
 | Composition / tactique | `ui/immersive08/tactics_canvas.gd` + `tactics_*.gd` | `build` L44 |
 | Préparation (semaine) | `ui/immersive08/preparation_canvas.gd` (fichier public : `build`, `compact`, `ouvrir_sous_page`, en-tête, onglets, `_dossier`), `preparation_adversaire.gd`, `preparation_consignes.gd` | `build` L6, `compact` L15 |
