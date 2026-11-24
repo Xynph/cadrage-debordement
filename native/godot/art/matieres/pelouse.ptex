@@ -1,0 +1,137 @@
+{
+	"label": "Graph",
+	"name": "g",
+	"node_position": {
+		"x": 0,
+		"y": 0
+	},
+	"nodes": [
+		{
+			"name": "Material",
+			"type": "material",
+			"node_position": {
+				"x": 400,
+				"y": 0
+			},
+			"parameters": {
+				"albedo_color": {
+					"a": 1,
+					"b": 1,
+					"g": 1,
+					"r": 1,
+					"type": "Color"
+				},
+				"ao_light_affect": 1,
+				"depth_scale": 0.2,
+				"emission_energy": 1,
+				"metallic": 0,
+				"normal_scale": 1,
+				"resolution": 1,
+				"roughness": 1,
+				"size": 10,
+				"subsurf_scatter_strength": 0
+			}
+		},
+		{
+			"name": "brins",
+			"type": "noise_anisotropic",
+			"node_position": {
+				"x": 0,
+				"y": 0
+			},
+			"parameters": {
+				"scale_x": 48,
+				"scale_y": 384,
+				"smoothness": 1,
+				"interpolation": 1
+			}
+		},
+		{
+			"name": "touffes",
+			"type": "fbm2",
+			"node_position": {
+				"x": 0,
+				"y": 0
+			},
+			"parameters": {
+				"noise": 2,
+				"scale_x": 12,
+				"scale_y": 12,
+				"folds": 0,
+				"iterations": 4,
+				"persistence": 0.55,
+				"offset": 0
+			}
+		},
+		{
+			"name": "melange",
+			"type": "blend",
+			"node_position": {
+				"x": 0,
+				"y": 0
+			},
+			"parameters": {
+				"amount": 0.45,
+				"blend_type": 0
+			}
+		},
+		{
+			"name": "hauteur",
+			"type": "colorize",
+			"node_position": {
+				"x": 0,
+				"y": 0
+			},
+			"parameters": {
+				"gradient": {
+					"interpolation": 1,
+					"type": "Gradient",
+					"points": [
+						{
+							"a": 1,
+							"r": 0.0,
+							"g": 0.0,
+							"b": 0.0,
+							"pos": 0
+						},
+						{
+							"a": 1,
+							"r": 1.0,
+							"g": 1.0,
+							"b": 1.0,
+							"pos": 1
+						}
+					]
+				}
+			}
+		}
+	],
+	"connections": [
+		{
+			"from": "brins",
+			"from_port": 0,
+			"to": "melange",
+			"to_port": 0
+		},
+		{
+			"from": "touffes",
+			"from_port": 0,
+			"to": "melange",
+			"to_port": 1
+		},
+		{
+			"from": "melange",
+			"from_port": 0,
+			"to": "hauteur",
+			"to_port": 0
+		},
+		{
+			"from": "hauteur",
+			"from_port": 0,
+			"to": "Material",
+			"to_port": 0
+		}
+	],
+	"parameters": {},
+	"type": "graph"
+}
