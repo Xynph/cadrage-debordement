@@ -29,6 +29,8 @@ const StaffTable = preload("res://ui/staff_career_view.gd")
 const ConseilLettre = preload("res://ui/immersive08/conseil_lettre.gd")
 const ConseilJeu = preload("res://ui/immersive08/conseil_jeu.gd")
 const StaffServices = preload("res://ui/immersive08/staff_services.gd")
+## Organigramme du club en cercles (planche du 24/11/2026, organigramme.gd).
+const Organigramme = preload("res://ui/immersive08/organigramme.gd")
 const KEY = "immersive08_club_tab"
 const GOALS = {"wins":"Victoires", "points":"Points", "rank":"Place au classement", "cash":"Trésorerie"}
 const GOAL_STATUS = {"pending":"À suivre", "met":"Atteint", "missed":"Manqué", "unverified":"Non vérifié"}
@@ -36,7 +38,7 @@ const W := 2248.0
 const TOP := 132.0
 const HAUT := 1244.0
 ## « Notre jeu » : avis du conseil sur notre style (revue FM27 n° 31, conseil_jeu.gd).
-const TABS := [["overview", "Vue d’ensemble"], ["jeu", "Notre jeu"], ["direction", "Direction"], ["infrastructure", "Infrastructures"], ["staff", "Staff"], ["history", "Histoire"]]
+const TABS := [["overview", "Vue d’ensemble"], ["jeu", "Notre jeu"], ["direction", "Direction"], ["infrastructure", "Infrastructures"], ["staff", "Staff"], ["organigramme", "Organigramme"], ["history", "Histoire"]]
 const LIGNE := 32.0
 
 ## Case dessinée de la charte : coche (ok), point d'exclamation (alerte), croix (menace), tiret (neutre). Le sens est
@@ -116,6 +118,7 @@ static func build(app: Control, canvas: Control) -> void:
 					"history": _history(app, corps)
 					"territory": _territory(app, corps)
 					"jeu": ConseilJeu.build(app, corps)
+					"organigramme": Organigramme.build(app, corps)
 					_: _overview(app, canvas)
 	# Confirmations d'argent EN PLACE (main.gd les route ici) : bloc posé en haut de la page, jamais une fenêtre.
 	var hote := VBoxContainer.new()

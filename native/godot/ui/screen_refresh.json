@@ -61,7 +61,8 @@
         "Préparation",
         "Staff",
         "Match",
-        "Effectif"
+        "Effectif",
+        "Club"
       ],
       "lecteurs": [
         "ui/contextual/match_between.gd",
@@ -74,6 +75,7 @@
         "ui/immersive08/intensite_auto.gd",
         "ui/immersive08/match_avant.gd",
         "ui/immersive08/match_canvas.gd",
+        "ui/immersive08/organigramme.gd",
         "ui/immersive08/press_canvas.gd",
         "ui/immersive08/staff_services.gd",
         "ui/immersive08/training_canvas.gd",

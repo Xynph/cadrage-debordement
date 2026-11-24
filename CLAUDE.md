@@ -59,6 +59,16 @@ sans instruction ») **ne s'applique pas** ici. Léo veut un maximum d'autonomie
   remplace un Grep large.
 - Chantier touchant plusieurs écrans : lancer d'abord l'agent `eclaireur`
   (Sonnet, rapport dans `temp/eclairage-*.md`) et donner son rapport aux exécutants.
+- Un agent = une tâche : au-delà d'environ 60 tours, ou la tâche finie, il rend
+  la main avec un résumé ; la suite repart d'un agent neuf avec le rapport
+  `temp/eclairage-*.md`.
+- Grouper dans un même tour les lectures et commandes indépendantes.
+- Fichier existant : outil Edit (remplacement ciblé), jamais le fichier entier
+  réécrit (Write, Set-Content, python) pour quelques lignes.
+- Captures : réduire ou recadrer pour un détail ; avant/après avec
+  `node scripts/diff-captures.cjs <a.png> <b.png>` (rend la zone changée) ;
+  l'image entière une seule fois.
+- Chaque semaine : `node scripts/mesure-tokens.cjs` (part par catégorie, fichiers les plus lus).
 - Journaux de CI et sorties de tests longues : `log-reader` (Haiku), qui rend
   seulement les échecs.
 - 53 commandes CCGS hors sujet sont masquées au modèle

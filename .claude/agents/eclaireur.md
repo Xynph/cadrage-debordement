@@ -19,6 +19,11 @@ Rapport : `temp/eclairage-<nom>.md` (ou le chemin demandé). Par tâche :
 `fichier:début–fin` + fonction + ce qu'il faut y changer, en une ligne.
 Puis la liste des tests concernés (`tests/…`). Court, pas de code recopié.
 
+Découpe le chantier en tâches courtes, une par exécutant (un agent = une tâche,
+~60 tours au plus, suite par un agent neuf avec ce rapport). Dis aux exécutants
+de grouper leurs lectures indépendantes dans un même tour et de modifier par
+Edit ciblé, jamais en réécrivant un fichier entier.
+
 Règles :
 
 - Tu ne modifies jamais le code du jeu ni les tests.

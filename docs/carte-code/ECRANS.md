@@ -71,6 +71,7 @@ Numéros de ligne approximatifs (au 24/11/2026) : relancer carte-code.cjs avant 
 | Avant-match | `ui/immersive08/match_avant.gd` (+ `avant_match_pages.gd`, `avant_match_bilan.gd`, `avant_match_terrain.gd`) | `setup` L134, `_construire` L261 |
 | Match en direct (3D, HUD) | `ui/contextual/live_view.gd`, `match_view.gd`, `match_*.gd` (racine) | `_ready` L141 |
 | Temps forts (régie) | `ui/contextual/match_temps_forts.gd` | `setup` L231 |
+| Gestes du match 3D (touche, ballon porté, essai) | `match_gestes.gd` (interface, recadrage) ← `match_gestes_essai.gd` (ballon porté, essai, après-essai) ← `match_gestes_placement.gd` (mise en place, touche, coupes) ← `match_gestes_corps.gd` (poses) ← `match_gestes_etat.gd` (constantes, état) : chaîne d'héritage | `observe` L56, `advance` L176, `pose` L320 |
 | Entre-deux (2D) | `ui/contextual/match_between.gd` (5500 l.), `match_terrain_2d.gd` | `_ready` L983 |
 | Consignes / banc / équipe en direct | `ui/contextual/match_consignes_fenetre.gd`, `match_banc_fm.gd`, `match_equipe.gd` | `ouvrir_fenetre_consignes` (live_view L1861) |
 | Après-match | `ui/contextual/apres_match.gd` | `_ready` L71 |

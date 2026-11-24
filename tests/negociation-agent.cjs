@@ -11,6 +11,8 @@ test('Carrière Monde : rôle promis + prime + clause dans une seule offre, sign
   const lire = code => JSON.parse(jeu.bridge.vm.run('JSON.stringify(' + code + ')'));
   try {
     const model = creer(jeu);
+    // Club 102 : caisse de départ ramenée à 0,6 M€ (PR économie des ligues) donc enveloppe de transferts de 70 000 € ; ce test paie une prime : budget et caisse relevés (même réglage que clubs-geres-mutations.cjs).
+    jeu.bridge.vm.run('S.clubs[S.club].cash=Math.max(S.clubs[S.club].cash,9e6);(()=>{const e=budgetTransfertsEtat(true);e.enveloppe=Math.max(e.enveloppe,5e6);})()');
     // L'écran reçoit, pour chaque piste, la demande de chaque rôle et les crans / clauses de l'offre guidée.
     const pistes = model.market.filter(p => p.available && p.offre && p.roles);
     assert.ok(pistes.length > 3, 'pistes avec rôles et offre guidée');

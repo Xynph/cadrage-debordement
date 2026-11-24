@@ -58,6 +58,8 @@ test('Carrière Monde : offre avec prime et clause, contre-offre, signature, cla
   const lire = code => JSON.parse(jeu.bridge.vm.run('JSON.stringify(' + code + ')'));
   try {
     let model = creer(jeu);
+    // Club 102 : caisse de départ ramenée à 0,6 M€ (PR économie des ligues) donc enveloppe de transferts de 70 000 € ; ce test paie une prime : budget et caisse relevés (même réglage que clubs-geres-mutations.cjs).
+    jeu.bridge.vm.run('S.clubs[S.club].cash=Math.max(S.clubs[S.club].cash,9e6);(()=>{const e=budgetTransfertsEtat(true);e.enveloppe=Math.max(e.enveloppe,5e6);})()');
     // Offre au joueur : crans de prime et clauses envoyés à l'écran.
     const libres = model.market.filter(p => p.available && p.offre);
     assert.ok(libres.length > 3, 'joueurs libres avec offre');

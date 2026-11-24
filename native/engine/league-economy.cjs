@@ -13,6 +13,16 @@
 //              club-budget.cjs, limites).
 // reserve    : réserve de trésorerie propre au championnat ({min, ecart} en part des recettes), sinon la règle générale.
 // prudence   : part des recettes que la masse encadrée laisse aux dépenses de la saison non votées (recrues, jokers).
+//              Hors championnat encadré, elle se retranche aussi des 15 % d'économies de fonctionnement que la masse d'un club
+//              compte faire en cours de saison. Deuxième division anglaise et deuxième division japonaise (mesure du 24/11/2026,
+//              carrière Monde réelle, graines 4242, 7 et 2026) : sans prudence, la masse autorisée y montait à 39-47 % des
+//              recettes (Top 14 : 30 %, Premiership : 31 %, Pro D2 : 33 %) ; les clubs gérés la remplissaient dès la deuxième
+//              saison (salaires des joueurs de 30 à 40 % des recettes) et toute la division finissait dans le rouge (-0,3 à
+//              -0,7 M€ par club en saisons 2 et 3). Prudence de 15 % en Championship : la masse ne compte plus que sur les
+//              recettes du club et l'enveloppe de son propriétaire (29 à 37 % des recettes selon le propriétaire). 10 % en D2
+//              japonaise (32 à 40 %) : ses deux plus petits clubs ont dès la création un effectif payé 38 à 43 % de leurs
+//              recettes ; à 15 %, leurs contrats de départ étaient amputés d'un quart et la masse de la division quittait son
+//              niveau (1,78 M€ pour 2,0 ; tests/starting-salaries.cjs).
 // gestion    : championnat encadré seulement : résultat que vise le budget de chaque club, selon son propriétaire.
 //              association : excédent de min à min + ecart des recettes (le « bon élève » qui reconstitue ses fonds propres) ;
 //              entreprise, mécène : part de l'enveloppe du propriétaire que le club s'autorise à perdre (min à min + ecart).
@@ -63,9 +73,9 @@ const CHAMPIONNATS = Object.freeze({
     gestion: Object.freeze({ association: Object.freeze({ min: 0.02, ecart: 0.04 }), entreprise: Object.freeze({ min: 0, ecart: 0.6 }), mecene: Object.freeze({ min: 0.8, ecart: 0.2 }) }),
     engagementMax: 0.02, aideRelegue: Object.freeze({ depuis: 'elite', montants: Object.freeze([600000, 300000]) }), espoir: 'accession', source: 'relevé' }),
   guest: Object.freeze({ libelle: 'Clubs invités', pays: 'autre', reputation: 70, billet: 25, public: 0.7, masse: 4.0e6, recettes: 13e6, bas: 0.9, haut: 1.1, ...parts(0.40, 0.25, 0.18, 0.06, 0.11), plafond: null, ratio: false, espoir: 'accession', source: 'estimation' }),
-  'jlo-d2': Object.freeze({ libelle: 'Deuxième division japonaise', pays: 'japon', reputation: 52, billet: 14, public: 0.4, masse: 2.0e6, recettes: 6.6e6, bas: 0.7, haut: 1.4, ...parts(0.72, 0.06, 0.08, 0.04, 0.10), plafond: null, ratio: false, espoir: 'accession', source: 'estimation' }),
+  'jlo-d2': Object.freeze({ libelle: 'Deuxième division japonaise', pays: 'japon', reputation: 52, billet: 14, public: 0.4, masse: 2.0e6, recettes: 6.6e6, bas: 0.7, haut: 1.4, ...parts(0.72, 0.06, 0.08, 0.04, 0.10), plafond: null, ratio: false, prudence: 0.1, espoir: 'accession', source: 'estimation' }),
   nationale: Object.freeze({ libelle: 'Troisième division française', pays: 'france', reputation: 50, billet: 10, public: 0.3, masse: 1.4e6, recettes: 4.6e6, bas: 0.6, haut: 1.6, ...parts(0.50, 0.10, 0.08, 0.04, 0.28), plafond: null, ratio: true, encadrement: true, reserve: Object.freeze({ min: 0.3, ecart: 0.15 }), prudence: 0.025, espoir: 'accession', source: 'relevé (A2R 2022-2023), niveaux 2026-2027 estimés' }),
-  champ: Object.freeze({ libelle: 'Deuxième division anglaise', pays: 'angleterre', reputation: 48, billet: 18, public: 0.5, masse: 1.1e6, recettes: 3.6e6, bas: 0.7, haut: 1.5, ...parts(0.50, 0.06, 0.18, 0.10, 0.16), plafond: null, ratio: false, espoir: 'accession', source: 'salaire moyen relevé, recettes estimées' }),
+  champ: Object.freeze({ libelle: 'Deuxième division anglaise', pays: 'angleterre', reputation: 48, billet: 18, public: 0.5, masse: 1.1e6, recettes: 3.6e6, bas: 0.7, haut: 1.5, ...parts(0.50, 0.06, 0.18, 0.10, 0.16), plafond: null, ratio: false, prudence: 0.15, espoir: 'accession', source: 'salaire moyen relevé, recettes estimées' }),
 });
 // Seuls ces deux championnats gardent les salaires bruts de la règle : elle a été réglée sur eux.
 const REFERENCES = Object.freeze(['elite', 'accession']);
