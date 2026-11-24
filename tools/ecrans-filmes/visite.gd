@@ -157,6 +157,10 @@ const EN_DIRECT := [
 	## Entracte 2D d'un vrai match arrêté à la mi-temps (horloge Éclair, aucun temps fort : le match y va vite).
 	{"id": "entracte", "libelle": "Entracte 2D (mi-temps)", "type": "direct", "entracte": true},
 	{"id": "direct", "libelle": "Match en direct", "type": "direct"},
+	## Planches FM27 (n° 34-35) : entracte 2D puis boutons pressés dans l'ordre (noms de nœuds, « * » final : préfixe).
+	{"id": "fm-direct-1", "libelle": "Planche FM27 · direct, étape 1", "type": "direct", "entracte": true, "fm": 1},
+	{"id": "fm-direct-2", "libelle": "Planche FM27 · direct, étape 2", "type": "direct", "entracte": true, "fm": 2},
+	{"id": "fm-direct-3", "libelle": "Planche FM27 · direct, étape 3", "type": "direct", "entracte": true, "fm": 3},
 	{"id": "equipe-composition", "libelle": "Fenêtre Équipe · composition", "type": "equipe", "onglet": "composition"},
 	{"id": "equipe-consignes", "libelle": "Fenêtre Équipe · consignes", "type": "equipe", "onglet": "consignes"},
 	## Toujours le dernier : la fin du match est confiée à l'adjoint, puis l'après-match s'affiche (résultat à valider).
@@ -1373,7 +1377,10 @@ func ouvrir_en_direct(ecran: Dictionary) -> Dictionary:
 	if str(ecran.type) == "apres_match": return await ouvrir_apres_match(vue)
 	if str(ecran.type) == "direct":
 		if is_instance_valid(equipe) and equipe.visible: equipe.fermer(false)
-		if bool(ecran.get("entracte", false)): return await ouvrir_entracte()
+		if bool(ecran.get("entracte", false)):
+			var r: Dictionary = await ouvrir_entracte()
+			if int(ecran.get("fm", 0)) > 0 and str(r.get("statut", "")) == "ok": await presser_fm(int(ecran.fm))
+			return r
 		await stabiliser()
 		return {"statut": "ok"}
 	if not is_instance_valid(equipe) or not vue.has_method("ouvrir_equipe"): return {"statut": "indisponible", "note": "fenêtre Équipe absente"}
@@ -1382,6 +1389,20 @@ func ouvrir_en_direct(ecran: Dictionary) -> Dictionary:
 	await stabiliser()
 	if not equipe.visible: return {"statut": "echec", "note": "fenêtre Équipe non ouverte (match terminé ?)"}
 	return {"statut": "ok"}
+
+## Planches FM27 : CD_FILM_FM_<n> = noms de boutons séparés par « , » pressés dans l'ordre (petites fenêtres fermées avant).
+func presser_fm(n: int) -> void:
+	for f: Node in get_nodes_in_group(&"petite_fenetre"):
+		var fermer: Variant = f.get_meta(&"petite_fenetre_fermer", Callable())
+		if fermer is Callable and (fermer as Callable).is_valid(): (fermer as Callable).call()
+	await stabiliser()
+	for nom: String in OS.get_environment("CD_FILM_FM_%d" % n).split(",", false):
+		var cible: Node = root.find_child(nom.strip_edges(), true, false)
+		print("ECRANS_FILMES fm ", n, " ", nom, " : ", cible != null)
+		if cible is BaseButton:
+			(cible as BaseButton).pressed.emit()
+			for k in 20: await process_frame
+	await stabiliser()
 
 ## Entracte 2D d'un vrai match : horloge Éclair et aucun temps fort (réglages du jeu), causeries passées comme le
 ## ferait un joueur, arrêts de jeu repris ; s'arrête à la mi-temps quand l'écran intermédiaire est affiché. Si la

@@ -1816,6 +1816,8 @@ func _ouvrir_fenetre(nom: String, titre: String, largeur: float, hauteur: float,
 	var voile_cadre := toile.find_child(nom + "Voile", true, false) as Button
 	if voile_cadre != null:
 		for etat: String in ["normal", "hover", "pressed", "focus"]: voile_cadre.add_theme_stylebox_override(etat, StyleBoxEmpty.new())
+	# Toutes les petites fenêtres du direct en ardoise claire (teinte D), comme la fenêtre d'un joueur (Léo, 23/11).
+	preload("res://ui/contextual/match_menu_joueur.gd").habiller(fond, nom)
 	director._refresh_controls()
 	return fond
 

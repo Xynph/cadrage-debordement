@@ -304,6 +304,8 @@ function pilotageSkillMod(p,k){
   if(c.apaise&&d&&d.tous<0)n=0;
   n+=Math.round(((c.tous||0)+(c[k]||0))*cri.force);
  }
+ // Cri individuel du banc (bien ou mal pris).
+ if(l.pilotage.crisJoueurs)n+=criJoueurMod(l,p,k);
  // Rôle du poste et consignes individuelles (club joué, match du manager seulement).
  if(l===(typeof S!=='undefined'&&S?S.live:null))n+=pilIndiv()?.skill(p,k)??0;
  return n;
@@ -334,7 +336,53 @@ function crier(l,id){
 function pilotageCrisProjection(l){
  const c=l.pilotage.cri,actif=c&&l.minute<c.jusqua?{id:c.id,label:CRIS[c.id].label,jusqua:c.jusqua,force:c.force}:null;
  return {actif,options:Object.entries(CRIS).map(([id,x])=>{const f=criForce(l,id),tot=l.minute>=(x.des||0);
-  return {id,label:x.label,note:!tot?'À partir de la '+x.des+'e minute':f===1?x.note:f===.5?'Déjà crié : effet réduit de moitié':'Trop répété : ils n’écoutent plus',disponible:tot&&!l.finished,usure:1-f}})};
+  return {id,label:x.label,note:!tot?'À partir de la '+x.des+'e minute':f===1?x.note:f===.5?'Déjà crié : effet réduit de moitié':'Trop répété : ils n’écoutent plus',disponible:tot&&!l.finished,usure:1-f}}),individuels:pilotageCrisJoueurProjection(l)};
+}
+// --- Cris à un joueur (idée FM27 n° 34, choix de Léo du 23/11/2026) ---
+// Un mot du banc à un joueur sur le terrain. Bien pris : un coup de fouet court (points d'attribut pendant `duree`
+// minutes) et du moral ; mal pris : l'inverse. Rien n'est chiffré à l'écran (principe d'incertitude) : la réaction se
+// découvre après coup (sens 1 bien pris, -1 mal pris, 0 il n'écoute plus). Part de hasard tirée de l'empreinte du match
+// (pilotageHash) : la suite des tirages Math.random reste inchangée.
+// `ok` : chance d'être bien pris selon son moral du moment (palier) ; CRIS_JOUEUR_ETATS la corrige selon son état
+// d'après causerie, et son mental compte un peu. `bien` / `mal` : `tous` et points par geste, `moral` (points de moral).
+// Usure : un joueur déjà interpellé dans les 15 dernières minutes écoute moitié moins, une troisième fois plus du tout ;
+// le banc qui crie sans arrêt s'use aussi (dès 4 cris individuels en 10 minutes : moitié moins, dès 6 : plus rien).
+// Valeurs de jeu étalonnées dans tests/match-cris-joueur.cjs (lots de matchs, mêmes graines : effet sur les victoires
+// négligeable, même en criant toutes les 3 minutes).
+const CRIS_JOUEUR={
+ bravo:{label:'Bien joué',duree:6,ok:{gonfle:.5,confiant:.7,concentre:.8,inquiet:.9,abattu:.85},bien:{tous:1,moral:6},mal:{tous:-1,moral:-1}},
+ niveau:{label:'Hausse le niveau',duree:8,ok:{gonfle:.75,confiant:.7,concentre:.6,inquiet:.35,abattu:.25},bien:{tous:2,moral:2},mal:{tous:-1,moral:-6}},
+ reveil:{label:'Réveille-toi',duree:8,ok:{gonfle:.3,confiant:.45,concentre:.55,inquiet:.4,abattu:.5},bien:{tous:3,moral:-1},mal:{tous:-1,discipline:-6,moral:-5}}
+};
+const CRIS_JOUEUR_ETATS={relache:{reveil:.25,bravo:-.1},indifferent:{reveil:.15},tendu:{bravo:.1,niveau:-.15,reveil:-.15},vexe:{reveil:-.2,bravo:.05},galvanise:{reveil:-.2,niveau:.05}};
+const CRIS_JOUEUR_USURE=Object.freeze({joueur:15,banc:10,bancMoitie:4,bancMuet:6});
+function criJoueurForce(l,id){
+ const log=l.pilotage.crisJoueursLog||[],U=CRIS_JOUEUR_USURE;
+ const n=log.filter(x=>x.id===id&&l.minute-x.minute<U.joueur).length,b=log.filter(x=>l.minute-x.minute<U.banc).length;
+ return (n===0?1:n===1?.5:0)*(b>=U.bancMuet?0:b>=U.bancMoitie?.5:1);
+}
+function crierJoueur(l,id,cri){
+ if(!pilotageActif(l)||l.finished)return false;
+ const c=CRIS_JOUEUR[cri],u=l.userSide;if(!c)return false;
+ const p=activePlayers(l,u).find(x=>x.id===id);if(!p)return false;
+ const force=criJoueurForce(l,id),log=l.pilotage.crisJoueursLog||[];
+ const m=l.pilotage.moral?.joueurs?.[id],palier=moralPalier(m?m.v:moralDepart(l,id))[1],etat=l.pilotage.etats?.[id]?.etat;
+ const chance=Math.max(.1,Math.min(.95,(c.ok[palier]??.6)+(CRIS_JOUEUR_ETATS[etat]?.[cri]||0)+((typeof skill==='function'?skill(p,'mental'):60)-60)*.004));
+ const tirage=pilotageHash(['crijoueur',l.worldContext?.id??'',(l.pair||[]).join('-'),id,cri,Math.floor(l.minute),log.length].join('|'))/4294967296;
+ const sens=force===0?0:tirage<chance?1:-1,e=sens>0?c.bien:sens<0?c.mal:{};
+ const fiche={cri,minute:l.minute,jusqua:l.minute+c.duree,sens};
+ for(const [k,v] of Object.entries(e))if(k!=='moral')fiche[k]=v*force;
+ if(e.moral&&l.pilotage.moral)moralBouge(l,id,e.moral*force);
+ l.pilotage.crisJoueurs={...(l.pilotage.crisJoueurs||{}),[id]:fiche};
+ l.pilotage.crisJoueursLog=[...log,{id,cri,minute:l.minute}].slice(-40);
+ return {sens};
+}
+// Bonus du cri individuel en cours pour le joueur `p` et le geste `k`.
+function criJoueurMod(l,p,k){const f=l.pilotage.crisJoueurs?.[p.id];return f&&l.minute<f.jusqua?(f.tous||0)+(f[k]||0):0}
+function pilotageCrisJoueurProjection(l){
+ const r={};
+ for(const [id,f] of Object.entries(l.pilotage.crisJoueurs||{}))r[id]={cri:f.cri,label:CRIS_JOUEUR[f.cri]?.label||f.cri,minute:f.minute,sens:f.sens,enCours:l.minute<f.jusqua};
+ return {options:Object.entries(CRIS_JOUEUR).map(([id,x])=>({id,label:x.label})),joueurs:r};
 }
 // Fatigue : le rythme et « Tout donner » usent plus vite (charge par minute, rugby.js). Même règle pour les deux
 // bancs : un adversaire qui accélère s'use aussi.
@@ -793,4 +841,4 @@ function pilotageProjection(l){
    causeries:Object.fromEntries(Object.entries(p.adversaire?.causeries||{}).map(([ph,t])=>[ph,{ton:t,label:TONS_LABELS[t]||t}]))}
  };
 }
-if(typeof module!=='undefined'&&module.exports)module.exports={MORAL_DEPART,MORAL_FAITS,MORAL_PALIERS,moralEffet,ARBITRES,arbitreDuMatch,arbitreResume,CONSIGNES,CONSIGNES_GROUPES,CONSIGNES_PLAN,CRIS,TONS_CAUSERIE,TONS_LABELS,PILOTAGE_ETATS};
+if(typeof module!=='undefined'&&module.exports)module.exports={MORAL_DEPART,MORAL_FAITS,MORAL_PALIERS,moralEffet,ARBITRES,arbitreDuMatch,arbitreResume,CONSIGNES,CONSIGNES_GROUPES,CONSIGNES_PLAN,CRIS,CRIS_JOUEUR,TONS_CAUSERIE,TONS_LABELS,PILOTAGE_ETATS};

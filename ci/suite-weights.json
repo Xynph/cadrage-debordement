@@ -112,6 +112,7 @@
       "tests/manager-mobility.cjs": 30,
       "tests/match-choregraphe.cjs": 379,
       "tests/match-courses.cjs": 12,
+      "tests/match-cris-joueur.cjs": 230,
       "tests/match-direct.cjs": 315,
       "tests/match-essai-visible.cjs": 373,
       "tests/match-highlights.cjs": 17,

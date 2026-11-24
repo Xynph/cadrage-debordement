@@ -83,6 +83,11 @@ module.exports=function nativeGestion(command,p){
  if(command==='cri'){
   // Cri de la touche (match-pilotage.js) : sans pause, effet court qui s'use si on le répète.
   requireThat(S.live&&!S.live.finished&&typeof crier==='function'&&S.live.pilotage,'Cris indisponibles pour ce match.');
+  // Cri à un joueur (`joueur` : son identifiant) : bien ou mal pris, réaction rendue après coup (sens ▲ / ▼).
+  if(p.joueur!==undefined){
+   requireThat(typeof p.joueur==='string'&&typeof crierJoueur==='function','Cri à un joueur indisponible.');
+   const r=crierJoueur(S.live,p.joueur,p.id);requireThat(r,'Cri inconnu ou joueur absent du terrain.');return {criJoueur:r};
+  }
   requireThat(crier(S.live,p.id),'Cri inconnu ou pas encore possible.');return;
  }
  if(command==='set_penalty_policy'){
