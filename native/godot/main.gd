@@ -1,4 +1,10 @@
 extends Control
+## Coque du jeu (scène principale) : état partagé de la carrière affichée et noms appelés de l'extérieur (ui/**,
+## guide, intro, audio, qa_runner, tests). Le travail est rangé par responsabilité dans des modules statiques
+## (`m` = cette coque) : main_demarrage.gd (démarrage, préférences, Gabi), main_moteur.gd (commandes et réponses
+## du moteur, Continuer, direct d'origine), main_etat.gd (panneau d'attente, ligne d'état), main_rendu.gd (rendu
+## d'un écran, rail, en-tête, bandeau du direct), main_navigation.gd (routes, presse, bouton principal) et
+## main_dialogues.gd (confirmations, avis, menu de la carrière, import et export).
 
 const G = preload("res://ui/game_skin.gd")
 const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
@@ -11,72 +17,22 @@ const Optimistic = preload("res://ui/optimistic_decisions.gd")
 const ClubMail = preload("res://ui/club_mail.gd")
 const ScreenRefresh = preload("res://ui/screen_refresh.gd")
 const PortraitWarmup = preload("res://ui/portrait_warmup.gd")
-## « Continuer » : tranche de calcul du moteur entre deux mises à jour du panneau (date qui défile, « Arrêter »).
-const CONTINUE_SLICE_MS := 700
-## Seuil unique : le panneau d’attente n’apparaît qu’au-delà de 0,5 s (sinon simple flash).
-const COMMAND_WAIT_REVEAL_SECONDS := 0.5
-const COMMAND_WAIT_MESSAGES := {
-	"new_career": "Création de la carrière…",
-	"import": "Importation de la carrière…",
-	"export": "Préparation de l’export…",
-	"save": "Sauvegarde de la carrière…",
-	"recover_profile": "Préservation et récupération du profil…",
-	"restore_checkpoint": "Reprise de la copie de sécurité…",
-	"remove_checkpoint": "Suppression de la copie de sécurité…",
-	"pack_inspect": "Analyse du pack d’identités…",
-	"pack_install": "Installation du pack d’identités…",
-	"pack_select": "Application du pack d’identités…",
-	"begin_match": "Préparation du coup d’envoi…",
-	"delegate": "Simulation de la rencontre…",
-	"finish_round": "Mise à jour de la journée…",
-	"advance_day": "Passage au jour suivant…",
-	"preseason_advance": "Avance de l’avant-saison…",
-	"next_season": "Préparation de la nouvelle saison…",
-	"advance_pacific_preparation": "Avance de la préparation…",
-	"advance_japan_preparation": "Avance de la préparation…",
-	"advance_champ_preparation": "Avance de la préparation…",
-	"population_enable": "Mise à jour de la base de joueurs…",
-	"academy_groups_enable": "Mise à jour des centres de formation…",
-	"national_play_match": "Simulation de la rencontre internationale…",
-	"league_benchmark": "Mesure de ta machine…"
-}
-## Seuls les vrais chargements ont un panneau (décision de Léo, 16/11/2026) : ouverture du jeu, création ou reprise de
-## carrière, coup d’envoi, avance du calendrier (Continuer, sauvegarde automatique comprise), fichiers et packs.
-## Décisions et menus (fiche d’un club, renforts, championnats suivis…) restent instantanés : jamais de panneau.
-## Ouverture du jeu : panneau d’attente tant que le moteur n’a pas rendu le profil (au-delà du même seuil).
-const STARTUP_WAIT_MESSAGE := "Ouverture du bureau du manager…"
-## Entrée dans le match en direct : la scène 3D se construit d’un bloc ; ce panneau est dessiné avant.
-const LIVE_VIEW_WAIT_MESSAGE := "Entrée des joueurs sur la pelouse…"
-## Avances du calendrier dont la sauvegarde complète est écrite AVANT la réponse (fréquence des Réglages). Le jour suivant
-## et Continuer sont sauvegardés après la réponse (lot 36) : le panneau ne la nomme pas, la disquette la montre.
-const AUTOSAVE_ADVANCES := ["finish_round", "next_season"]
-## Commandes de lecture pure (aucun changement d'état de carrière).
-const READ_ONLY_COMMANDS := ["club_sheet"]
-## Titre du panneau d’attente par commande (les autres : « En coulisses »).
-const COMMAND_WAIT_KICKERS := {
-	"advance_day": "Calendrier",
-	"finish_round": "Fin de journée",
-	"delegate": "Le match se joue",
-	"begin_match": "Avant le coup d’envoi",
-	"next_season": "Intersaison",
-	"new_career": "Nouvelle carrière",
-	"import": "Reprise de carrière",
-	"restore_checkpoint": "Reprise de carrière",
-	"save": "Sauvegarde",
-	"snapshot": "Ouverture",
-	"national_play_match": "Sélection nationale"
-}
-## Conseils de Gabi affichés pendant une attente (fonctions réelles du jeu).
-const GABI_TIPS := [
-	"Avant un match, passe par la Préparation : les consignes d’attaque et de défense se règlent en un clic.",
-	"Un joueur lourdement chargé peut souffler : passe sa charge en « repos » depuis le suivi de fatigue.",
-	"La composition automatique propose un XV cohérent ; tu gardes la main poste par poste ensuite.",
-	"Une observation ciblée affine la fourchette de niveau d’un joueur avant de lui faire une offre.",
-	"Le centre de formation récompense la patience : suis la progression des jeunes semaine après semaine.",
-	"En conférence de presse, tes réponses pèsent sur le moral du vestiaire et sur la confiance de la direction.",
-	"Le calendrier signale les jours de match : avance jour par jour pour ne rien manquer du courrier.",
-	"Les contrats qui arrivent à échéance apparaissent au Bureau : anticipe les prolongations."
-]
+const MainDemarrage = preload("res://main_demarrage.gd")
+const MainMoteur = preload("res://main_moteur.gd")
+const MainEtat = preload("res://main_etat.gd")
+const MainRendu = preload("res://main_rendu.gd")
+const MainNavigation = preload("res://main_navigation.gd")
+const MainDialogues = preload("res://main_dialogues.gd")
+## Constantes rangées dans les modules, gardées ici sous leur nom (Main.X, app.X).
+const CONTINUE_SLICE_MS = MainMoteur.CONTINUE_SLICE_MS
+const COMMAND_WAIT_REVEAL_SECONDS = MainEtat.COMMAND_WAIT_REVEAL_SECONDS
+const COMMAND_WAIT_MESSAGES = MainEtat.COMMAND_WAIT_MESSAGES
+const STARTUP_WAIT_MESSAGE = MainEtat.STARTUP_WAIT_MESSAGE
+const LIVE_VIEW_WAIT_MESSAGE = MainEtat.LIVE_VIEW_WAIT_MESSAGE
+const AUTOSAVE_ADVANCES = MainEtat.AUTOSAVE_ADVANCES
+const READ_ONLY_COMMANDS = MainMoteur.READ_ONLY_COMMANDS
+const COMMAND_WAIT_KICKERS = MainEtat.COMMAND_WAIT_KICKERS
+const GABI_TIPS = MainEtat.GABI_TIPS
 const Immersive = preload("res://ui/immersive08/shell.gd")
 const ImmersiveEntry = preload("res://ui/immersive08/entry_canvas.gd")
 const ImmersiveDialogs = preload("res://ui/immersive08/dialogs.gd")
@@ -195,116 +151,7 @@ func _trace_startup(stage: String) -> void:
 		print("CD_STARTUP ",JSON.stringify({"stage":stage,"pid":OS.get_process_id(),"engine_ms":Time.get_ticks_msec(),"unix_ms":int(Time.get_unix_time_from_system()*1000)}))
 
 func _ready() -> void:
-	_trace_startup("main.ready")
-	var qa_script := ""
-	var immersive_qa := OS.get_environment("CD_GODOT_IMMERSIVE_SELF_TEST") == "1"
-	if immersive_qa: qa_script = "res://ui/immersive08/acceptance.gd"
-	elif OS.get_environment("CD_GODOT_SELF_TEST") == "1": qa_script = "res://qa_runner.gd"
-	var qa_data := OS.get_environment("CD_GODOT_DATA_DIR")
-	if not qa_script.is_empty() and qa_data.is_empty():
-		printerr("La réception exige un profil temporaire explicite.")
-		get_tree().quit(2)
-		return
-	if immersive_qa:
-		var directory := DirAccess.open(qa_data)
-		if directory != null: directory.include_hidden = true
-		if not qa_data.is_absolute_path() or (directory != null and (not directory.get_files().is_empty() or not directory.get_directories().is_empty())):
-			printerr("La réception immersive exige un dossier absolu et vide.")
-			get_tree().quit(2)
-			return
-	theme = G.T.make()
-	# Retour visuel commun des tuiles et pastilles (survol, appui) : branché au premier survol de chaque bouton.
-	load("res://ui/retour_tuile.gd").installer(self)
-	_trace_startup("theme.ready")
-	interface_layout = load("res://ui/interface_layout.gd").new()
-	add_child(interface_layout)
-	interface_layout.setup(self)
-	catalogue = JSON.parse_string(FileAccess.get_file_as_string("res://assets/clubs.json"))
-	timer = Timer.new()
-	# Horloge du direct d'origine : elle surveille le rythme (match_rythme.gd), chaque fait reste à l'écran le temps d'être joué.
-	timer.wait_time = Rythme.SCRUTATION
-	timer.timeout.connect(_live_tick)
-	add_child(timer)
-	file_dialog = FileDialog.new()
-	file_dialog.theme=ImmersiveStyle.theme(accent)
-	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
-	file_dialog.filters = PackedStringArray(["*.json ; Carrière Rugby Legacy 27"])
-	file_dialog.file_selected.connect(_file_selected)
-	add_child(file_dialog)
-	ImmersiveDialogs.watch_file_picker(file_dialog)
-	_trace_startup("file_dialog.ready")
-	pack_manager = load("res://pack_manager.gd").new()
-	pack_manager.app = self
-	add_child(pack_manager)
-	pack_manager.picker.theme=ImmersiveStyle.theme(accent)
-	ImmersiveDialogs.watch_file_picker(pack_manager.picker)
-	_trace_startup("pack_manager.ready")
-	bridge = load("res://engine_bridge.gd").new()
-	add_child(bridge)
-	bridge.model_changed.connect(_receive_model)
-	bridge.command_failed.connect(_failed)
-	bridge.progressed.connect(_continue_progressed)
-	bridge.persist_changed.connect(_persist_changed)
-	_trace_startup("bridge.created")
-	navigation_controller = load("res://ui/navigation_controller.gd").new()
-	add_child(navigation_controller)
-	navigation_controller.setup(self)
-	user_preferences = load("res://ui/user_preferences.gd").new()
-	user_preferences.changed.connect(_apply_user_preferences)
-	decision_feedback = load("res://ui/decision_feedback.gd").new()
-	decision_feedback.setup(self)
-	_trace_startup("guide.setup.begin")
-	if OS.get_environment("CD_GODOT_GUIDE_MODULE_TEST") != "1":
-		coach = load("res://ui/immersive08/coach_canvas.gd").new()
-		add_child(coach)
-		coach.reserved_height_changed.connect(_reserve_coach_space)
-		coach.setup(self, false)
-	_trace_startup("guide.setup.end")
-	soundscape = preload("res://audio/soundscape.gd").new()
-	add_child(soundscape)
-	soundscape.error_changed.connect(_sound_error)
-	soundscape_ready = soundscape.setup(self)
-	if is_instance_valid(coach) and is_instance_valid(coach.speech):
-		coach.speech.speaking_changed.connect(soundscape.set_voice_active)
-		soundscape.set_voice_active(coach.speech.speaking)
-	resized.connect(func(): call_deferred("_layout_coach"))
-	if qa_script.is_empty() and DisplayServer.get_name() != "headless":
-		get_window().size_changed.connect(_keep_filled_display, CONNECT_DEFERRED)
-		get_window().focus_entered.connect(_keep_filled_display, CONNECT_DEFERRED)
-		_keep_filled_display.call_deferred()
-	contextual_director = load("res://ui/contextual/director.gd").new()
-	contextual_director.name = "ContextualDirector"
-	add_child(contextual_director)
-	contextual_director.setup(self)
-	command_wait_overlay = CommandWaitOverlay.new()
-	command_wait_overlay.name = "CommandWaitOverlay"
-	add_child(command_wait_overlay)
-	continue_progress = ContinueProgress.new()
-	add_child(continue_progress)
-	save_indicator = SaveIndicator.new()
-	add_child(save_indicator)
-	waiting = true
-	_present_startup_wait()
-	_trace_startup("render.begin")
-	_render()
-	_trace_startup("render.end")
-	_trace_startup("bridge.start.begin")
-	bridge.start(_profile_path())
-	_trace_startup("bridge.start.end")
-	# Ouverture du jeu (intro/) : cartes d'introduction pendant le démarrage du moteur, jamais en QA ni en test.
-	if qa_script.is_empty() and IntroSequence.enabled():
-		var intro: CanvasLayer = IntroSequence.new()
-		add_child(intro)
-		intro.setup(self, _profile_path())
-		# Gabi n'ouvre rien sous l'intro (coach_guide.gd) : son accueil attend l'écran révélé.
-		intro.finished.connect(func(): call_deferred("_refresh_coach"))
-	timer.start()
-	get_tree().auto_accept_quit = false
-	get_tree().root.close_requested.connect(request_quit)
-	if not qa_script.is_empty():
-		var qa: Node = load(qa_script).new()
-		qa.app = self
-		add_child(qa)
+	MainDemarrage.ready(self)
 
 func _profile_path() -> String:
 	var explicit := OS.get_environment("CD_GODOT_DATA_DIR")
@@ -326,147 +173,18 @@ func _receive_model(value: Dictionary) -> void:
 		await get_tree().process_frame
 		await get_tree().process_frame
 		if closing: return
-	var receive_us := Time.get_ticks_usec()
-	# Une lecture moteur sans changement d'état (fiche club) ne périme pas les lecteurs suspendus.
-	if is_instance_valid(navigation_controller) and not (bridge.last_response_ok and last_command in READ_ONLY_COMMANDS): navigation_controller.invalidate_readers()
-	if _startup_trace and not _startup_model_seen:
-		_startup_model_seen = true
-		_trace_startup("model.first")
-	# A queued action can replace last_command below; keep this response's identity.
-	var received_command := last_command
-	var response_ok: bool = bridge.last_response_ok
-	var route_before := route
-	var reception_id := ""
-	if received_command == CareerProgression.CONTINUE_COMMAND and is_instance_valid(continue_progress):
-		if response_ok and value.get("meta", {}).get("advanceUntilEvent") is Dictionary: continue_progress.finish(value.meta.advanceUntilEvent)
-		else: continue_progress.dismiss()
-	if received_command == CareerProgression.CONTINUE_COMMAND and _decision_due(value, response_ok): _open_reprise_decision.call_deferred()
-	if response_ok and (received_command in ["advance_day", CareerProgression.CONTINUE_COMMAND, "preseason_advance", "finish_round", "next_season", "national_play_match"] or SeasonPreparation.is_advance(received_command)):
-		reception_id = Immersive.Reception.new_priority(model, value)
-	# Keep one uninterrupted wait when the player's action follows an automatic tick
-	# or a light decision: the queued command keeps the same panel.
-	# Entrée dans le direct : le panneau reste affiché jusqu'à la fin de la construction de la scène (retiré plus bas).
-	if not live_opening and (not response_ok or queued_action.is_empty() or not (received_command == "tick" or shows_wait_panel(str(queued_action.get("command", ""))))):
-		command_wait_overlay.dismiss()
-	SquadViews.U.remember(self)
-	model = value
-	optimistic_edits = []
-	# Décision suivante déjà en file et déjà affichée : elle reste affichée jusqu'à sa propre réponse.
-	if response_ok and queued_action.get("optimistic") is Array: model = Optimistic.apply(model, queued_action.optimistic)
-	if model.get("meta", {}).has("seasonStartYear"): SeasonLabel.start_year = int(model.meta.seasonStartYear)
-	if decision_feedback != null: decision_feedback.complete(received_command, response_ok, value)
-	if not preferences_loaded and not str(model.get("meta", {}).get("dataDir", "")).is_empty():
-		preferences_loaded = true
-		user_preferences.load_profile(str(model.meta.dataDir))
-		if soundscape_ready: sound_profile_loaded = soundscape.load_profile(str(model.meta.dataDir))
-		_apply_user_preferences()
-	SquadViews.U.sync(self, bridge.last_response_ok and last_command in ["new_career","import","recover_profile","restore_checkpoint"])
-	if bridge.last_response_ok and last_command in ["new_career","import","recover_profile","restore_checkpoint"]:
-		if is_instance_valid(navigation_controller): navigation_controller.reset()
-		for key in ["press_draft_context", "press_draft_choices", "press_mail_origin"]:
-			if has_meta(key): remove_meta(key)
-	if model.get("meta", {}).get("catalogue") is Array:
-		catalogue = model.meta.catalogue.duplicate(true)
-	waiting = false
-	if SeasonPreparation.is_advance(received_command): SeasonPreparation.show_pending(self, false)
-	connection_error = false
-	if _has_career():
-		accent = Color("106d43") if Immersive.Selections.nation_only(model) else Color(G.identity(model.club).get("color", "#d43e47"))
-	if not export_path.is_empty() and not _write_export():
-		if live_opening: command_wait_overlay.dismiss()
-		if is_instance_valid(soundscape): soundscape.observe_model(model,route,received_command,_match_visible(),response_ok)
-		return
-	if bridge.last_response_ok and received_command not in ["epcr_preview", "competition_editor_preview"]: last_error = ""
-	if response_ok:
-		if not pending_route.is_empty(): route = pending_route
-		pending_route = ""
-		if _has_career() and (received_command in ["new_career", "next_season", "finish_round", "restore_checkpoint"] or not reception_id.is_empty()):
-			_reset_reception(reception_id)
-			if has_meta("press_mail_origin"): remove_meta("press_mail_origin")
-			route = "Réception"
-			# Après-match façon FM (18/11/2026) : la conférence courte s'ouvre dès la validation du résultat, sans
-			# arrêt de « Continuer » en plus.
-			if received_command == "finish_round" and _press_required(): call_deferred("_open_postmatch_press")
-		# Arrêt « À noter » de « Continuer » (façon FM) : tous les éléments du jour sont en Réception, le plus récent en tête.
-		elif received_command == CareerProgression.CONTINUE_COMMAND and _stop_kind(model) == "a_noter":
-			_reset_reception()
-			route = "Réception"
-		# Arrêt informatif (veille, rapport médical, mi-saison, marché, recruteur, courrier du club) : l'écran utile
-		# s'ouvre directement (ui/club_mail.gd), comme dans Football Manager.
-		elif received_command == CareerProgression.CONTINUE_COMMAND and _stop_kind(model) == "info":
-			var info_route := ClubMail.stop_route(self, model.meta.advanceUntilEvent.stop)
-			if not info_route.is_empty(): route = info_route
-	if bridge.last_response_ok and last_command in ["new_career","next_season","import","restore_checkpoint"] and _has_career():
-		table_division = str(model.meta.get("leagueId", "elite"))
-	if response_ok and received_command == "match_talk_continue" and _live().is_empty():
-		route = "Réception"
-	var contextual_handled: bool = is_instance_valid(contextual_director) and contextual_director.sync(received_command, response_ok)
-	if contextual_handled:
-		pass
-	elif last_command == "tick" and route not in ["Accueil", "Création"]:
-		_update_live_bar()
-		if route == "Bureau": Immersive.Office.update_live_card(self)
-		if is_instance_valid(match_screen): match_screen.update_frame(model)
-	else:
-		# Le passage de l'avant-match (hors coque) au direct (dans la coque), ou l'inverse, redessine tout l'écran.
-		var coque_change: bool = route == "Match" and Immersive.avant_match_hors_coque(self) != bool(get_meta("hors_coque", false))
-		if route == "Match" and is_instance_valid(match_screen) and not coque_change:
-			_update_live_bar()
-			_update_header_date()
-			match_screen.update_frame(model)
-		# Changement d'écran, de boîte de réception, de carrière ou avance du calendrier : toujours le rendu complet.
-		else: _refresh_after_response(response_ok, coque_change or route != route_before or not reception_id.is_empty() or received_command in ["new_career", "import", "recover_profile", "restore_checkpoint", "next_season", "finish_round", "advance_day", CareerProgression.CONTINUE_COMMAND] or SeasonPreparation.is_advance(received_command))
-	if bridge.last_response_ok:
-		if is_instance_valid(status):
-			status.text = _status_line_text()
-			status.add_theme_color_override("font_color",Color("f1b6a9") if _status_has_error() else G.MUTED)
-			_refit_status()
-		if is_instance_valid(root_content) and decision_feedback != null:
-			var feedback_button: Button = root_content.find_child("DecisionFeedbackButton", true, false)
-			if feedback_button != null: decision_feedback.refresh_control(feedback_button)
-		if last_command in ["recruit","extend_contract"] and model.get("meta",{}).get("negotiation") is Dictionary:
-			var offer: Dictionary = model.meta.negotiation
-			notice("La réponse du joueur", str(offer.get("message","La négociation est enregistrée.")))
-		if last_command=="promote_cover" and model.meta.get("coverage") is Dictionary:
-			notice("Renforts signés",str(model.meta.coverage.get("message","La feuille a été complétée.")))
-		if last_command=="recover_profile" and not str(model.meta.get("recoveryBackup","")).is_empty():
-			notice("Le profil d'origine est conservé","Copie de sécurité :\n"+str(model.meta.recoveryBackup)+"\n\nTu peux maintenant créer ou importer une carrière.")
-	# Réponse à un mail du club qui mène à un écran (négocier, prolonger, préserver un joueur).
-	if response_ok and received_command == "club_mail_reply": ClubMail.after_reply(self)
-	# Ligne « ✓ Sauvegardé <date> » du pied du rail (succès comme échec d'écriture).
-	if is_instance_valid(root_content): Immersive.refresh_save_line(self)
-	call_deferred("_refresh_coach")
-	if is_instance_valid(soundscape): soundscape.observe_model(model,route,received_command,_match_visible(),response_ok)
-	# Portraits de l'effectif fabriqués en tâche de fond, interface au repos : la 1re Composition ou le
-	# 1er Effectif n'a plus à les décoder d'un bloc (ui/portrait_warmup.gd). Rien pendant le direct.
-	if response_ok and received_command != "tick": PortraitWarmup.schedule(self)
-	_record_timing(received_command, receive_us)
-	if live_opening: command_wait_overlay.dismiss()
-	if not queued_action.is_empty() and bridge.last_response_ok:
-		var next := queued_action.duplicate(true)
-		queued_action.clear()
-		_command(next.command, next.payload, next.get("target_route", ""))
+	MainMoteur.receive(self, value, live_opening)
 
 func _record_timing(command: String, receive_us: int) -> void:
-	if not _timing_trace: return
-	var now := Time.get_ticks_usec()
-	var bridge_timing: Dictionary = bridge.last_timing
-	var entry := {"command": command, "rafraichissement": last_refresh, "rendu_ms": (now - receive_us) / 1000.0, "moteur_ms": bridge_timing.get("moteur_ms", 0.0), "analyse_ms": bridge_timing.get("analyse_ms", 0.0), "composition_ms": bridge_timing.get("composition_ms", 0.0), "sections": bridge_timing.get("sections", []).size(), "file_ms": bridge_timing.get("file_ms", 0.0), "octets": bridge_timing.get("octets", 0), "total_ms": (now - _command_sent_us) / 1000.0 if _command_sent_us > 0 else 0.0, "route": route}
-	_command_sent_us = 0
-	timing_log.append(entry)
-	print("CD_TIMING ", JSON.stringify(entry))
+	MainMoteur.record_timing(self, command, receive_us)
 
 ## Commandes légères : jamais de panneau, l’interface reste disponible et une
 ## décision supplémentaire attend son tour au lieu d’être refusée.
 static func shows_wait_panel(command: String) -> bool:
-	return COMMAND_WAIT_MESSAGES.has(command) or SeasonPreparation.is_advance(command) or command == CareerProgression.CONTINUE_COMMAND
+	return MainEtat.shows_wait_panel(command)
 
-## Décision de la préparation attendue (arrêt ou refus de « Continuer », reprise.cjs) : « La reprise » s'ouvre
-## d'elle-même, comme une décision en attente dans Football Manager.
 func _decision_due(value: Dictionary, ok: bool) -> bool:
-	var advance: Variant = value.get("meta", {}).get("advanceUntilEvent")
-	if ok and advance is Dictionary and advance.get("stop") is Dictionary and str(advance.stop.get("kind", "")) == "decision": return true
-	return not ok and not (value.get("clubLife", {}).get("reprise", {}).get("due", []) as Array).is_empty()
+	return MainMoteur.decision_due(value, ok)
 
 func _stop_kind(value: Dictionary) -> String:
 	var advance: Variant = value.get("meta", {}).get("advanceUntilEvent")
@@ -477,322 +195,76 @@ func _open_reprise_decision() -> void:
 	load("res://ui/reprise_dialog.gd").open(self)
 
 func _command(command: String, payload: Dictionary = {}, target_route: String = "") -> bool:
-	if closing: return false
-	if waiting:
-		if command == "tick": return false
-		# Bascule ou sélection simple : affichée tout de suite, envoyée après la réponse en cours. Une nouvelle
-		# valeur pour le même réglage remplace celle en file (sa charge utile est lue sur le modèle déjà retouché).
-		var early := Optimistic.edits(command, payload, model)
-		if not early.is_empty() and last_command not in ["snapshot", "tick"] and not shows_wait_panel(last_command) and (queued_action.is_empty() or (str(queued_action.get("command", "")) == command and queued_action.get("optimistic") is Array and Optimistic.same_paths(queued_action.optimistic, early))):
-			queued_action = {"command":command, "payload":payload.duplicate(true), "target_route":target_route, "optimistic":early}
-			model = Optimistic.apply(model, early)
-			call_deferred("_render_optimistic", early)
-			return true
-		# Après un tick ou une décision légère, la décision suivante attend son tour.
-		# La même décision répétée n’attend pas : sa charge utile a été lue sur le
-		# modèle d’avant la réponse en cours et écraserait celle-ci (ex. set_tactics).
-		if (last_command == "tick" or (not shows_wait_panel(last_command) and command != last_command)) and last_command != "snapshot" and queued_action.is_empty():
-			queued_action = {"command":command,"payload":payload.duplicate(true),"target_route":target_route}
-			_present_command_wait(command)
-			return true
-		if last_command == "snapshot": return false
-		var active_command := str(queued_action.get("command", last_command))
-		if not command_wait_overlay.visible or command != active_command:
-			_refuse_action("Une décision est déjà en cours. Cette nouvelle action n'a pas été retenue ; réessaie après sa réponse.")
-		return false
-	# La fiche d'un club est une lecture moteur sans changement d'état : les lecteurs suspendus
-	# (rencontre ouverte avant la fiche, etc.) restent valides et le retour arrière les restitue.
-	if is_instance_valid(navigation_controller) and command not in READ_ONLY_COMMANDS: navigation_controller.invalidate_readers()
-	waiting = true
-	last_command = command
-	if _timing_trace: _command_sent_us = Time.get_ticks_usec()
-	pending_route = target_route
-	if SeasonPreparation.is_advance(command): SeasonPreparation.show_pending(self, true)
-	var edits := Optimistic.edits(command, payload, model)
-	var shown := not edits.is_empty() and Optimistic.applied(model, edits)
-	# Avant toute retouche : la décision se mesure par rapport au modèle confirmé.
-	if decision_feedback != null: decision_feedback.begin(command, payload, bridge.model if shown and not bridge.model.is_empty() else model)
-	optimistic_edits = edits
-	if not edits.is_empty() and not shown:
-		model = Optimistic.apply(model, edits)
-		call_deferred("_render_optimistic", edits)
-	if command == CareerProgression.CONTINUE_COMMAND:
-		payload = _continue_payload(str(payload.get("fromDate", "")))
-		continue_progress.begin(_continue_context(), not user_preferences.data.reduced_motion)
-	else: _present_command_wait(command)
-	bridge.send(command, payload)
-	return waiting
+	return MainMoteur.send_command(self, command, payload, target_route)
 
-## Affichage anticipé d'une décision (ou retour au modèle confirmé après un refus) : l'écran en cours est redessiné
-## sans attendre le moteur. Les scènes contextuelles et le match gardent leur propre rafraîchissement.
-## `edits` : retouches affichées ; l'écran n'est pas redessiné s'il ne lit aucune de leurs sections (ScreenRefresh),
-## et reste alors construit hors attente, ce qui permet aussi de le garder à la confirmation.
 func _render_optimistic(edits: Array = []) -> void:
-	if closing or not _has_career() or route in ["Accueil", "Création", "Match"]: return
-	if is_instance_valid(contextual_director) and contextual_director.active(): return
-	if refresh_by_screen and not edits.is_empty() and _screen_current() and not ScreenRefresh.concerns(route, ScreenRefresh.edit_ids(edits)):
-		last_refresh = ScreenRefresh.NONE
-		return
-	_render(false)
+	MainMoteur.render_optimistic(self, edits)
 
-## Vrai si l'écran affiché est celui du dernier rendu complet noté, pour la même route et le même jour.
 func _screen_current() -> bool:
-	if _screen_stamp.is_empty() or not is_instance_valid(root_content): return false
-	var now := _screen_state()
-	return _screen_stamp.content == now.content and _screen_stamp.route == now.route and _screen_stamp.day == now.day
+	return MainMoteur.screen_current(self)
 
 func _screen_state() -> Dictionary:
-	return ScreenRefresh.stamp(root_content.get_instance_id() if is_instance_valid(root_content) else 0, route, waiting, model, last_error, connection_error, _status_has_error(), _storage_has_error())
+	return MainMoteur.screen_state(self)
 
-## Après une réponse acceptée : rendu complet, sauf si l'écran affiché ne lit aucune section changée
-## (table ui/screen_refresh.json) et a été construit dans le même état (hors attente, même jour, même erreur). Les
-## éléments vivants hors de l'écran (bandeau du direct, date, état, Gabi) sont mis à jour dans les deux cas.
 func _refresh_after_response(response_ok: bool, force_full: bool) -> void:
-	last_refresh = ScreenRefresh.FULL
-	if refresh_by_screen and response_ok and not force_full and _has_career():
-		last_refresh = ScreenRefresh.plan(route, _screen_stamp, _screen_state(), bridge.last_changes, bridge.last_full_model)
-	if last_refresh == ScreenRefresh.FULL:
-		_render(false)
-		return
-	_update_live_bar()
-	_update_header_date()
+	MainMoteur.refresh_after_response(self, response_ok, force_full)
 
-## « Continuer » : tranches partielles (le moteur répond au bout de CONTINUE_SLICE_MS avec la date atteinte),
-## arrêts réglés dans les préférences. Les arrêts obligatoires (match, rendez-vous, presse) ne se règlent pas.
 func _continue_payload(from_date: String) -> Dictionary:
-	return {"fromDate": from_date, "budgetMs": CONTINUE_SLICE_MS, "partial": true, "stops": CareerProgression.continue_stops(user_preferences.data)}
+	return MainMoteur.continue_payload(self, from_date)
 
 func _continue_context() -> Dictionary:
-	var meta: Dictionary = model.get("meta", {}) if model.get("meta") is Dictionary else {}
-	var next: Variant = model.get("next")
-	var info := {}
-	if next is Dictionary and str(next.get("date", "")).length() >= 10:
-		var club_id: Variant = model.get("club", {}).get("id") if model.get("club") is Dictionary else null
-		var home: Dictionary = next.get("home", {}) if next.get("home") is Dictionary else {}
-		var away: Dictionary = next.get("away", {}) if next.get("away") is Dictionary else {}
-		var opponent: Dictionary = away if home.get("id") == club_id else home
-		info = {"date": str(next.date).substr(0, 10), "opponent": str(opponent.get("name", ""))}
-	return {"date": str(meta.get("calendarToday", "")), "accent": accent, "next": info if not info.is_empty() else null, "notes": _command_wait_context("continue").notes, "note_seed": Time.get_ticks_msec() / 4600}
+	return MainMoteur.continue_context(self)
 
 ## Sauvegarde en arrière-plan du moteur : disquette discrète en bas de l'écran, sans jamais bloquer le joueur.
 func _persist_changed(state: String, _message: String) -> void:
 	if is_instance_valid(save_indicator): save_indicator.apply_state(state, user_preferences == null or not user_preferences.data.reduced_motion)
 
-## Tranche reçue : la date défile ; on demande la suite, ou l'arrêt si le joueur l'a demandé (les jours passés
-## sont alors écrits par le moteur avant sa réponse).
 func _continue_progressed(progress: Dictionary) -> void:
-	if not waiting or last_command != CareerProgression.CONTINUE_COMMAND or closing: return
-	continue_progress.advance_to(progress)
-	var parts := str(progress.get("today", "")).split("-")
-	if is_instance_valid(header_date) and parts.size() == 3 and int(parts[1]) in range(1, 13):
-		header_date.text = "%s %s %s" % [parts[2], ["JANV.","FÉVR.","MARS","AVR.","MAI","JUIN","JUIL.","AOÛT","SEPT.","OCT.","NOV.","DÉC."][int(parts[1])-1], parts[0]]
-	var today := str(progress.get("today", ""))
-	if continue_progress.stopping: bridge.send(CareerProgression.CONTINUE_COMMAND, {"fromDate": today, "stop": true})
-	else: bridge.send(CareerProgression.CONTINUE_COMMAND, _continue_payload(today))
+	MainMoteur.continue_progressed(self, progress)
 
 ## « Jour suivant » (petit bouton du bandeau, Ctrl+J) : un seul jour, mêmes priorités que « Continuer ».
 func next_day_available() -> bool:
-	if not _has_career() or not _live().is_empty() or _press_required(): return false
-	if not Immersive.Selections.current_fixture(model).is_empty() or model.get("meta",{}).get("canAdvanceSeason",false): return false
-	var daily := _daily_progression()
-	return daily.has("command") and not bool(daily.get("disabled", false))
+	return MainNavigation.next_day_available(self)
 
 func next_day_action() -> void:
-	if waiting: return
-	if not next_day_available():
-		primary_action()
-		return
-	var fixture: Variant = null if Immersive.Selections.nation_only(model) else model.get("next")
-	var step := CareerProgression.next_day(model.get("meta", {}), fixture)
-	if not step.is_empty(): _command(step.command, step.payload)
+	MainNavigation.next_day_action(self)
 
 func _present_command_wait(command: String) -> void:
-	var message: String = COMMAND_WAIT_MESSAGES.get(command, "")
-	if message.is_empty() and SeasonPreparation.is_advance(command): message = "Avance de la préparation…"
-	if not message.is_empty():
-		var context := _command_wait_context(command)
-		# Sauvegarde automatique attendue à la fin de cette avance : le panneau la nomme.
-		if autosave_expected(command):
-			message = message.trim_suffix("…") + " et sauvegarde…"
-			context.kicker = "Sauvegarde automatique"
-		command_wait_overlay.set_context(context)
-		command_wait_overlay.present(message, not user_preferences.data.reduced_motion, COMMAND_WAIT_REVEAL_SECONDS)
+	MainEtat.present_command_wait(self, command)
 
-## Vrai si ce modèle ouvre l’écran du match en direct (scène 3D) : rencontre en cours, aucune causerie au
-## vestiaire, direct pas encore affiché. Après le coup d’envoi ou la causerie d’avant-match.
 func _opens_live_view(value: Dictionary) -> bool:
-	var live: Variant = value.get("live")
-	if not live is Dictionary or live.is_empty(): return false
-	if is_instance_valid(contextual_director) and contextual_director.active() and contextual_director.kind == "live": return false
-	var talks: Variant = value.get("clubLife", {}).get("matchTalks", {}) if value.get("clubLife") is Dictionary else {}
-	return not (talks is Dictionary and talks.get("scene") is Dictionary)
+	return MainMoteur.opens_live_view(self, value)
 
-## Ouverture du jeu (et reconnexion) : même panneau que les autres chargements, au-delà du même seuil.
 func _present_startup_wait() -> void:
-	if not is_instance_valid(command_wait_overlay): return
-	command_wait_overlay.set_context(_command_wait_context("snapshot"))
-	command_wait_overlay.present(STARTUP_WAIT_MESSAGE, user_preferences == null or not user_preferences.data.reduced_motion, COMMAND_WAIT_REVEAL_SECONDS)
+	MainEtat.present_startup_wait(self)
 
-## Prévision : l’avance `command` doit-elle se terminer par la sauvegarde complète (même règle que `due` dans
-## native/engine/action-journal.cjs) ? Le moteur décide ; ceci ne sert qu’au libellé du panneau.
 func autosave_expected(command: String) -> bool:
-	if command not in AUTOSAVE_ADVANCES: return false
-	var info: Variant = model.get("meta", {}).get("autosave")
-	if not info is Dictionary: return false
-	if command == "next_season": return true
-	# Réglage du joueur (interface.json, relu par le moteur à chaque avance), sinon celui du dernier modèle.
-	var policy := str(user_preferences.data.get("autosave", info.get("policy", "semaine"))) if user_preferences != null else str(info.get("policy", "semaine"))
-	var today := str(model.get("meta", {}).get("calendarToday", ""))
-	var last := str(info.get("lastSave", ""))
-	if command != "advance_day" or today.length() != 10 or last.length() != 10: return command == "finish_round" and policy != "mois"
-	return CareerProgression.autosave_due(policy, last, CareerProgression.shift_day(today, 1))
+	return MainEtat.autosave_expected(self, command)
 
-## Contexte du panneau d’attente : date du jour, club et faits réels du modèle.
 func _command_wait_context(command: String) -> Dictionary:
-	var meta: Dictionary = model.get("meta", {}) if model.get("meta") is Dictionary else {}
-	var club: Dictionary = model.get("club", {}) if model.get("club") is Dictionary else {}
-	var tips: Array = []
-	for tip: String in GABI_TIPS: tips.append({"kind":"tip", "title":"Le conseil de Gabi", "text":tip})
-	var facts: Array = []
-	if not club.is_empty():
-		var rank := int(club.get("rank", 0))
-		var points := int(club.get("points", 0))
-		if rank > 0 and not str(meta.get("roundLabel", "")).is_empty():
-			facts.append("%s pointe à la %s place avec %d point%s · %s." % [str(club.get("name", "")), ("1re" if rank == 1 else str(rank) + "e"), points, "" if points <= 1 else "s", str(meta.roundLabel)])
-		var next: Variant = model.get("next")
-		if next is Dictionary and next.get("home") is Dictionary and next.get("away") is Dictionary:
-			facts.append("Prochaine rencontre : %s – %s." % [str(next.home.get("name", "")), str(next.away.get("name", ""))])
-		if meta.get("morale") is float or meta.get("morale") is int:
-			facts.append("Moral du groupe : %d / 100." % int(meta.morale))
-		if not str(club.get("goal", "")).is_empty():
-			facts.append("Objectif fixé par la direction : %s." % str(club.goal).to_lower())
-	# Les faits du club alternent avec les conseils de Gabi.
-	var notes: Array = []
-	for index in maxi(tips.size(), facts.size()):
-		if index < facts.size(): notes.append({"kind":"fact", "title":"Au club", "text":facts[index]})
-		if index < tips.size(): notes.append(tips[index])
-	return {
-		"kicker": COMMAND_WAIT_KICKERS.get(command, "En coulisses"),
-		"date": str(meta.get("calendarToday", "")),
-		"flip": command == "advance_day",
-		"accent": accent if _has_career() else Color("d43e47"),
-		"club": str(club.get("abbr", "")),
-		# Lus dans le modèle ; vides tant que la carrière n'existe pas (la ligne est alors omise, jamais inventée).
-		"club_name": G.club_name(club) if not club.is_empty() else "",
-		"division": _wait_division(),
-		"season": "saison " + G.season_label(meta.get("season", 1)) if not club.is_empty() and meta.has("season") else "",
-		"stadium": str(G.identity(club).get("stadium", "")) if not club.is_empty() else "",
-		"notes": notes,
-		"note_seed": Time.get_ticks_msec() / 4600,
-		# Vrais chargements longs : photo plein écran de la banque d'images derrière le panneau.
-		"photo": command in ["snapshot", "new_career", "import", "restore_checkpoint", "next_season", "begin_match", "national_play_match"]
-	}
+	return MainEtat.command_wait_context(self, command)
 
-## Nom du championnat du club (lu dans le modèle) ; vide si inconnu.
 func _wait_division() -> String:
-	var league_id: Variant = model.get("meta", {}).get("leagueId") if model.get("meta") is Dictionary else null
-	for league: Variant in model.get("leagues", []):
-		if league is Dictionary and league_id != null and league.get("id") == league_id: return str(league.get("name", ""))
-	return ""
+	return MainEtat.wait_division(self)
 
 func _refuse_action(message: String) -> void:
-	# A local refusal must not complete or discard the actual in-flight action.
-	if is_instance_valid(soundscape): soundscape.notify_error()
-	last_error = message
-	if is_instance_valid(status):
-		status.text = "ACTION NON EFFECTUÉE · " + message
-		status.add_theme_color_override("font_color", Color("f1b6a9"))
-	if not (is_instance_valid(contextual_director) and contextual_director.active()):
-		notice("Ta décision n'a pas été appliquée", message)
+	MainMoteur.refuse_action(self, message)
 
 func _failed(message: String) -> void:
-	command_wait_overlay.dismiss()
-	if is_instance_valid(continue_progress): continue_progress.dismiss()
-	if is_instance_valid(soundscape): soundscape.notify_error()
-	if decision_feedback != null: decision_feedback.complete(last_command, false, model)
-	waiting = false
-	if SeasonPreparation.is_advance(last_command): SeasonPreparation.show_pending(self, false)
-	var anticipated := not optimistic_edits.is_empty() or queued_action.get("optimistic") is Array
-	var reverted: Array = optimistic_edits.duplicate()
-	if queued_action.get("optimistic") is Array: reverted.append_array(queued_action.optimistic)
-	queued_action.clear()
-	pending_route = ""
-	connection_error = bridge.child_pid <= 0 or bridge._stopping
-	# Décision affichée d'avance puis refusée (ou moteur arrêté avant sa réponse) : retour au modèle confirmé.
-	optimistic_edits = []
-	if anticipated and not bridge.model.is_empty() and not is_same(model, bridge.model):
-		model = bridge.model
-		call_deferred("_render_optimistic", reverted)
-	var epcr_dialog := find_child("EpcrPreparationDialog", true, false) if last_command == "epcr_preview" else null
-	var editor_dialog := get_node_or_null("CompetitionEditorDialog") if last_command == "competition_editor_preview" else null
-	var market_dialog := get_node_or_null("InterclubMarket") if last_command in ["interclub_negotiate", "interclub_auction", "transfer_budget_extension"] else null
-	# A consultation refusal belongs to its report, never to the career decision
-	# status. Preserve an existing business error and the unsaved list.
-	if last_command in ["epcr_preview", "competition_editor_preview"] and not connection_error:
-		if is_instance_valid(status):
-			status.text = _status_line_text()
-			status.add_theme_color_override("font_color",Color("f1b6a9") if _status_has_error() else G.MUTED)
-			_refit_status()
-		return
-	last_error = message
-	if is_instance_valid(status):
-		status.text = "ACTION NON EFFECTUÉE · " + message
-		status.add_theme_color_override("font_color", Color("f1b6a9"))
-	if last_command == "tick": timer.stop()
-	# Moteur arrêté : le bouton principal devient « Relancer » (primary_action), la carrière reprend de sa sauvegarde.
-	if connection_error:
-		if is_instance_valid(primary_button): _update_live_bar()
-		message += "\n\nLe moteur du jeu s’est arrêté. Clique sur « Relancer » (bouton principal) : la carrière reprend à sa dernière sauvegarde."
-	# The immersive scene owns its visible error panel; a second modal would
-	# survive a successful retry and obscure the resumed match.
-	if is_instance_valid(contextual_director) and contextual_director.active() and not connection_error: return
-	# Transport failures remain globally visible, but keep this local draft too.
-	if epcr_dialog != null or editor_dialog != null or market_dialog != null: return
-	# A failed annotation must leave its editor and unsaved draft alive. The
-	# notebook listens to the same failure signal and presents the local refusal.
-	if last_command in ["coach_note_save","coach_note_remove"] and get_node_or_null("CoachNotebook") != null: return
-	_clear_dialogs()
-	var d := AcceptDialog.new()
-	_prepare_dialog(d, 590)
-	d.title = "Ta décision n'a pas été appliquée"
-	d.dialog_text = message
-	add_child(d)
-	d.popup_centered(Vector2i(590, 180))
-	d.confirmed.connect(d.queue_free)
-	if route == "Accueil" or not _has_career(): _render()
+	MainMoteur.failed(self, message)
 
 func _reset_reception(selected: String = "") -> void:
-	var inbox: Dictionary = Immersive.Reception._state(self)
-	inbox.merge({"folder":0, "category":"Tous", "selected":selected, "oldest_first":false, "scroll":0, "press_opened":"", "activity_filter":"all", "expanded_threads":{}, "return_focus":false}, true)
+	MainNavigation.reset_reception(self, selected)
 
 func _show_press_inbox() -> void:
 	_reset_reception()
 	_navigate("Réception", false)
 
-## Bouton « Conf. de presse » (et accès depuis les invitations bloquées) : ouvre directement la conférence attendue,
-## son courrier sélectionné et lu en Réception, au lieu de laisser la Réception sur un autre courrier
-## (recette native du 16/11/2026). Sans conférence ouverte : la Réception, comme avant.
 func _open_press_conference() -> void:
-	var id := _pending_press_invitation()
-	if id.is_empty():
-		_show_press_inbox()
-		return
-	# Le refus « Rendez-vous du club : … » demandait justement cette conférence : il ne reste pas affiché dans la salle.
-	if str(last_error).begins_with("Rendez-vous du club"): last_error = ""
-	_reset_reception(id)
-	var inbox: Dictionary = Immersive.Reception._state(self)
-	inbox.press_opened = id
-	_navigate("Réception", false)
-	_open_press_invitation(id)
+	MainNavigation.open_press_conference(self)
 
-## Après-match (18/11/2026) : la salle de presse s'ouvre directement sur la conférence d'après-match ; sans elle
-## (ancienne carrière, autre créneau), le courrier de la conférence comme avant.
 func _open_postmatch_press() -> void:
-	var id := _pending_press_invitation()
-	if id.is_empty(): return
-	set_meta("press_mail_origin", id)
-	if is_instance_valid(contextual_director) and contextual_director.sync("postmatch_press", true): return
-	_open_press_conference()
+	MainNavigation.open_postmatch_press(self)
 
 ## Identifiant du courrier de la conférence de presse ouverte cette semaine, vide s'il n'y en a pas.
 func _pending_press_invitation() -> String:
@@ -801,285 +273,39 @@ func _pending_press_invitation() -> String:
 	return str(conference.get("invitationId", "")) if conference.get("invitationId") != null else ""
 
 func _open_press_invitation(id: String) -> void:
-	var inbox: Dictionary = management_ui.get("reception", {})
-	if route != "Réception" or waiting or inbox.get("press_opened") != id: return
-	var press: Dictionary = model.get("clubLife", {}).get("press", {})
-	var conference: Dictionary = press.get("conference", {})
-	var outcome: Variant = press.get("lastOutcome")
-	var active: bool = conference.get("available", false) and conference.get("invitationId") == id
-	if not active and not (outcome is Dictionary and outcome.get("invitationId") == id): return
-	set_meta("press_mail_origin", id)
-	management_ui.press_tab = 1
-	_navigate("Presse", false)
+	MainNavigation.open_press_invitation(self, id)
 
 func _navigate(target: String, remember_ui: bool = true, keep_subview: bool = false) -> void:
-	if is_instance_valid(contextual_director) and contextual_director.active_meeting():
-		contextual_director.render_if_needed()
-		return
-	if is_instance_valid(contextual_director) and contextual_director.match_immersed() and target != "Match":
-		contextual_director.render_if_needed()
-		return
-	# Presse s'ouvre aussi depuis le rail, hors conférence (journal, archives) ; la conférence elle-même
-	# reste derrière son courrier (press_view.gd : « Ouvre l'invitation dans Réception »).
-	if target == "Sélections" and not model.get("international") is Dictionary: return
-	if not Immersive.Selections.navigation_allowed(model, target): return
-	if is_instance_valid(navigation_controller): navigation_controller.capture_current()
-	if target != "Presse" and has_meta("press_mail_origin"): remove_meta("press_mail_origin")
-	if not keep_subview:
-		if target == "Effectif": set_meta("immersive08_full_player",false)
-		# Fiche joueur d'une piste ou d'un Espoir : le menu rouvre l'écran lui-même.
-		management_ui.erase("fiche_joueur")
-		# Sous-page de la Composition (tireurs, espoir, renforts) : le menu rouvre l'écran lui-même.
-		management_ui.erase("composition_page")
-		# Onglet de la Tactique (Consignes, Phases arrêtées, Entraînement) : le menu rouvre la Composition.
-		management_ui.erase("tactique_onglet")
-		# Sous-page de Classements (rencontre, archives) : le menu rouvre l'écran lui-même.
-		management_ui.erase("competition_page")
-		# Sous-page du Recrutement (relève, entre clubs, offres, missions, négociation, rapport) : le menu rouvre l'écran lui-même.
-		if management_ui.has("recrutement_page"): load("res://ui/immersive08/recruitment_canvas.gd").oublier_page(self)
-		# Sous-page de la Formation (suivi des jeunes, revue d'effectif) : le menu rouvre l'écran lui-même.
-		if management_ui.has("formation_page"): load("res://ui/immersive08/formation_pages.gd").oublier(self)
-		# Sous-page du Staff (contrat, mentorat, engagements) : refermée en changeant d'écran.
-		management_ui.erase("club_page")
-		management_ui.erase("charge_joueur")
-		# Sous-page de l'avant-match (délégation, espoir) : refermée dès qu'on change d'écran.
-		management_ui.erase("avant_page")
-		if management_ui.get("preparation") is Dictionary: management_ui.preparation.sub = ""
-		if target == "Préparation" and management_ui.get("preparation", {}).get("tab", 0) == 2:
-			management_ui.preparation.tab = 0
-	route = target
-	for chapter: Dictionary in NAV_CHAPTERS:
-		if target in chapter.routes: chapter_routes[chapter.label] = target
-	_render(remember_ui)
-	if is_instance_valid(soundscape): soundscape.refresh_visibility(route,_match_visible())
+	MainNavigation.navigate(self, target, remember_ui, keep_subview)
 
 func _match_visible() -> bool:
 	return route == "Match" and is_instance_valid(match_screen) and match_screen.is_visible_in_tree()
 
 func _sound_error(message: String) -> void:
-	# Local audio availability never marks a career decision as failed.
-	if is_instance_valid(status):
-		status.text = _status_line_text()
-		status.add_theme_color_override("font_color",Color("f1b6a9") if _status_has_error() else G.MUTED)
-		_refit_status()
-	if not message.is_empty(): call_deferred("_show_sound_error",message)
+	MainEtat.sound_error(self, message)
 
 func _show_sound_error(message: String) -> void:
-	if not is_instance_valid(soundscape) or soundscape.last_error != message: return
-	var options := get_node_or_null("PreferencesDialog")
-	if options != null and not options.is_queued_for_deletion(): return # The options show their own reason.
-	notice("Réglages sonores indisponibles",message)
+	MainEtat.show_sound_error(self, message)
 
 func _build_subnavigation(parent: Container) -> void:
-	for chapter: Dictionary in NAV_CHAPTERS:
-		if route not in chapter.routes or chapter.routes.size() < 2: continue
-		var band:=PanelContainer.new()
-		band.name="ChapterNavigationBand"
-		var band_style:=G.T.box(Color("1c262b"),3,Color("354249"))
-		band_style.content_margin_left=4;band_style.content_margin_right=4
-		band_style.content_margin_top=3;band_style.content_margin_bottom=3
-		band.add_theme_stylebox_override("panel",band_style)
-		parent.add_child(band)
-		var row := G.h(7)
-		row.name = "ChapterSubnavigation"
-		band.add_child(row)
-		for target: String in chapter.routes:
-			var button := G.nav_button(target.to_upper(), func(): _navigate(target), accent, route == target)
-			button.name = "Section_" + target
-			button.custom_minimum_size.y = 28
-			button.add_theme_font_size_override("font_size", 12)
-			G.fill(button)
-			row.add_child(button)
-		return
+	MainRendu.build_subnavigation(self, parent)
 
 ## Rendu complet de l'écran ; note son état (ScreenRefresh.stamp) quand un nouvel arbre a été construit.
 func _render(remember_ui: bool = true) -> void:
-	var before := root_content.get_instance_id() if is_instance_valid(root_content) else 0
-	_render_screen(remember_ui)
-	var after := root_content.get_instance_id() if is_instance_valid(root_content) else 0
-	if after != before:
-		screen_renders += 1
-		_screen_stamp = _screen_state()
+	MainRendu.render(self, remember_ui)
 
 func _render_screen(remember_ui: bool) -> void:
-	if not Immersive.Selections.navigation_allowed(model, route): route = "Réception"
-	if route != "Accueil" and has_meta("accueil_sub"): remove_meta("accueil_sub")
-	call_deferred("_refresh_coach")
-	call_deferred("_observe_navigation")
-	for chapter: Dictionary in NAV_CHAPTERS:
-		if route in chapter.routes: chapter_routes[chapter.label] = route
-	if remember_ui: SquadViews.U.remember(self)
-	SquadViews.U.sync(self)
-	if is_instance_valid(contextual_director) and contextual_director.render_if_needed(): return
-	if Immersive.render(self):
-		if is_instance_valid(contextual_director): contextual_director.call_deferred("install_entrypoints")
-		return
-	if is_instance_valid(root_content):
-		remove_child(root_content)
-		root_content.queue_free()
-	match_screen = null
-	match_view = null
-	match_page = null
-	workspace_inset = null
-	body_scroll = null
-	entry_scroll = null
-	root_content = Control.new()
-	root_content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(root_content)
-	move_child(root_content, 0)
-	var bg := ColorRect.new()
-	bg.color = G.BG
-	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	root_content.add_child(bg)
-	if route == "Accueil":
-		_entry_workspace(ImmersiveEntry.home(self))
-		return
-	if route == "Création":
-		_entry_workspace(ImmersiveEntry.workspace(self,Entry.creation(self),true))
-		return
-	if route == "Packs":
-		_entry_workspace(ImmersiveEntry.workspace(self,PackViews.page(self),false))
-		return
-	if not _has_career():
-		route = "Accueil"
-		_render()
-		return
-	var shell := G.h(0)
-	shell.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	root_content.add_child(shell)
-	_build_sidebar(shell)
-	var inset := G.margin(8)
-	workspace_inset = inset
-	# Container sorting can happen after the deferred coach refresh. Reposition
-	# on its actual geometry, including the sidebar width, after every rebuild.
-	inset.item_rect_changed.connect(_layout_coach)
-	G.fill(inset, true)
-	shell.add_child(inset)
-	var content := G.v(6 if size.y <= 760 else 8)
-	content.name = "CareerContent"
-	inset.add_child(content)
-	var header:=PanelContainer.new()
-	header.name="CareerHeader"
-	var header_style:=G.T.box(Color("202a2e"),3,Color("3b494e"))
-	header_style.set_border_width_all(0)
-	header_style.border_width_top=3
-	header_style.border_color=accent
-	header_style.content_margin_left=10;header_style.content_margin_right=10
-	header_style.content_margin_top=5;header_style.content_margin_bottom=5
-	header.add_theme_stylebox_override("panel",header_style)
-	content.add_child(header)
-	var top := G.h(8)
-	header.add_child(top)
-	var chapter_label:="Bureau"
-	var chapter_number:=1
-	for i in NAV_CHAPTERS.size():
-		if route in NAV_CHAPTERS[i].routes:
-			chapter_label=NAV_CHAPTERS[i].label
-			chapter_number=i+1
-	var chapter_mark:=G.v(0)
-	chapter_mark.custom_minimum_size.x=30
-	top.add_child(chapter_mark)
-	chapter_mark.add_child(G.label("%02d"%chapter_number,27,G.INK,true))
-	chapter_mark.add_child(G.Art.glyph(chapter_label,G.MUTED,16))
-	var titles := G.v(0)
-	G.fill(titles)
-	top.add_child(titles)
-	var overline:=G.h(8)
-	titles.add_child(overline)
-	overline.add_child(G.label(chapter_label.to_upper(),11,G.INK))
-	header_date = G.label("", 11, G.MUTED)
-	overline.add_child(header_date)
-	_update_header_date()
-	heading = G.label(route.to_upper(), 35, G.INK, true)
-	heading.add_theme_font_override("font", G.T.BODY)
-	heading.add_theme_font_size_override("font_size", 20)
-	titles.add_child(heading)
-	var save_action:=G.button("SAUVEGARDER", func(): _command("save"))
-	save_action.size_flags_vertical=Control.SIZE_SHRINK_CENTER
-	top.add_child(save_action)
-	primary_button = G.button(primary_text(), primary_action, true)
-	primary_button.size_flags_vertical=Control.SIZE_SHRINK_CENTER
-	top.add_child(primary_button)
-	minibar = G.label("", 12, G.GOLD)
-	content.add_child(minibar)
-	PackViews.missing_warning(self, content, "career")
-	_build_subnavigation(content)
-	body = G.v(6)
-	G.fill(body, true)
-	body_scroll = ScrollContainer.new()
-	body_scroll.name = "CareerWorkspace"
-	body_scroll.follow_focus = true
-	body_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	G.fill(body_scroll, true)
-	content.add_child(body_scroll)
-	body_scroll.add_child(body)
-	var footer := G.h(8)
-	content.add_child(footer)
-	status = G.label(_settled_status_text(), 11, Color("f1b6a9") if _status_has_error() else G.MUTED)
-	status.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	G.fill(status)
-	footer.add_child(status)
-	if decision_feedback != null: footer.add_child(decision_feedback.control())
-	var coach_dock := Control.new()
-	coach_dock.name = "CoachCompactDock"
-	coach_dock.custom_minimum_size = Vector2(330,34)
-	coach_dock.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	coach_dock.visible = is_instance_valid(coach)
-	footer.add_child(coach_dock)
-	match route:
-		"Bureau": body.add_child(ClubViews.office(self))
-		"Club": body.add_child(ClubViews.club(self))
-		"Calendrier": body.add_child(ClubViews.calendar(self))
-		"Classements": body.add_child(ClubViews.tables(self))
-		"Finances": body.add_child(ClubViews.finance(self))
-		"Effectif": body.add_child(SquadViews.squad(self))
-		"Composition": body.add_child(SquadViews.lineup(self))
-		"Préparation": body.add_child(SquadViews.preparation(self))
-		"Plan de jeu": body.add_child(PlaybookViews.build(self))
-		"Recrutement": body.add_child(SquadViews.market(self))
-		"Staff": body.add_child(StaffViews.build(self))
-		"Formation": body.add_child(DevelopmentViews.build(self))
-		"Presse": body.add_child(PressViews.build(self))
-		"Vestiaire": body.add_child(RelationshipsViews.build(self))
-		"Rivalités": body.add_child(WorldViews.build(self))
-		"Stratégie": body.add_child(StrategyViews.build(self))
-		"Centre": body.add_child(AcademyViews.build(self))
-		"Suivi des jeunes": body.add_child(AcademyFollowUpViews.build(self))
-		"Travail du club": body.add_child(SupportViews.build(self))
-		"Carrière": body.add_child(ManagerCareerViews.build(self))
-		"Match":
-			match_screen = MatchUI.new()
-			match_screen.app = self
-			body.add_child(match_screen)
-			match_page = match_screen
-			match_screen.update_frame(model)
-	_update_live_bar()
+	MainRendu.render_screen(self, remember_ui)
 
 func _entry_workspace(page: Control) -> void:
-	entry_scroll = ScrollContainer.new()
-	entry_scroll.name = "EntryWorkspace"
-	entry_scroll.follow_focus = true
-	entry_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	entry_scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	root_content.add_child(entry_scroll)
-	page.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	page.custom_minimum_size.y = 720
-	G.fill(page, true)
-	entry_scroll.add_child(page)
+	MainRendu.entry_workspace(self, page)
 
 func _reserve_coach_space(_height: float) -> void:
 	coach_reserved_height = 0.0
 	_layout_coach()
 
 func _refresh_coach() -> void:
-	if is_instance_valid(contextual_director) and contextual_director.active():
-		if is_instance_valid(coach): coach.hide()
-		return
-	if is_instance_valid(coach):
-		coach.refresh()
-		coach.consider_context(route, model, last_command, bridge.last_response_ok)
-		if coach.has_method("observer_premiers_pas"): coach.observer_premiers_pas(route, model, last_command, bridge.last_response_ok)
-	_layout_coach()
+	MainDemarrage.refresh_coach(self)
 
 func _observe_navigation() -> void:
 	if is_instance_valid(navigation_controller): navigation_controller.observe(route, selected_player, selected_staff_club)
@@ -1089,37 +315,13 @@ func _refit_status() -> void:
 	if is_instance_valid(status) and status.has_meta("refit"): (status.get_meta("refit") as Callable).call()
 
 func _settled_status_text() -> String:
-	if not last_error.is_empty(): return "ACTION NON EFFECTUÉE · " + last_error
-	if model.get("meta",{}).get("saveError",false): return "DERNIÈRE SAUVEGARDE IMPOSSIBLE · Vérifie le stockage avant de poursuivre."
-	if user_preferences != null and not user_preferences.last_error.is_empty(): return "RÉGLAGES LOCAUX · " + user_preferences.last_error
-	if is_instance_valid(soundscape) and not soundscape.last_error.is_empty(): return "RÉGLAGES SONORES · " + soundscape.last_error
-	if decision_feedback != null and not decision_feedback.status_text().is_empty(): return decision_feedback.status_text()
-	# Reprise après une fermeture pendant un match (native/engine/worker.cjs, matchResumeNotice).
-	var resume: Variant = model.get("meta",{}).get("matchResumeNotice")
-	if resume is Dictionary and not str(resume.get("text","")).is_empty(): return "REPRISE DE CARRIÈRE · " + str(resume.text)
-	return _autosave_status()
+	return MainEtat.settled_status_text(self)
 
-## Ligne d'état affichée en pied de page. Dans la coque commune, la sauvegarde ordinaire n'y est plus répétée : la
-## ligne « ✓ Sauvegardé <date> » du rail est la seule (relectures du 19/11/2026). Erreurs, retours de décision,
-## reprise et alertes du journal de sauvegarde restent affichés ici.
 func _status_line_text() -> String:
-	var text := _settled_status_text()
-	var coque: bool = is_instance_valid(root_content) and root_content.name == "ImmersiveShell"
-	if coque and text == _autosave_status() and not _autosave_alert(): return ""
-	return text
+	return MainEtat.status_line_text(self)
 
-## Ligne d'état de la sauvegarde (meta.autosave, native/engine/action-journal.cjs) : fréquence choisie, date de la
-## dernière sauvegarde complète, reprise du journal d'actions après un arrêt imprévu.
 func _autosave_status() -> String:
-	var info: Variant = model.get("meta",{}).get("autosave")
-	if not info is Dictionary: return "Sauvegarde automatique · Profil de carrière indépendant"
-	var notice: Variant = info.get("notice")
-	if notice is Dictionary and not str(notice.get("text","")).is_empty():
-		return ("JOURNAL DE SAUVEGARDE · " if bool(notice.get("alert",false)) else "Sauvegarde automatique · ") + str(notice.text)
-	var text := "Sauvegarde automatique · " + str({"jour":"chaque jour","semaine":"chaque semaine","mois":"chaque mois"}.get(str(info.get("policy","")),"profil indépendant"))
-	var last := str(info.get("lastSave",""))
-	if last.length() == 10: text += " · dernière le %s/%s" % [last.substr(8,2), last.substr(5,2)]
-	return text
+	return MainEtat.autosave_status(self)
 
 func _autosave_alert() -> bool:
 	var info: Variant = model.get("meta",{}).get("autosave")
@@ -1134,14 +336,7 @@ func _status_has_error() -> bool:
 	return not last_error.is_empty() or model.get("meta",{}).get("saveError",false) or _autosave_alert() or (user_preferences != null and not user_preferences.last_error.is_empty()) or (is_instance_valid(soundscape) and not soundscape.last_error.is_empty())
 
 func _apply_user_preferences() -> void:
-	if user_preferences == null: return
-	user_preferences.apply_audio()
-	if is_instance_valid(coach) and is_instance_valid(coach.speech):
-		coach.speech.set_global_volume(int(user_preferences.data.volume))
-	if is_instance_valid(coach) and is_instance_valid(coach.portrait):
-		coach.portrait.set_reduced_motion(bool(user_preferences.data.reduced_motion))
-	if is_instance_valid(match_screen) and match_screen.has_method("apply_preferences"):
-		match_screen.apply_preferences()
+	MainDemarrage.apply_user_preferences(self)
 
 func _set_display_mode(mode: Window.Mode) -> void:
 	if DisplayServer.get_name() == "headless": return
@@ -1157,342 +352,61 @@ func _keep_filled_display() -> void:
 		_set_display_mode(Window.MODE_MAXIMIZED)
 
 func _layout_coach() -> void:
-	if not is_instance_valid(root_content) or not is_instance_valid(coach): return
-	root_content.offset_bottom = 0.0
-	if is_instance_valid(workspace_inset):
-		workspace_inset.add_theme_constant_override("margin_bottom", 8)
+	MainDemarrage.layout_coach(self)
 
 func _open_coach() -> void:
 	if is_instance_valid(coach): coach.open_help()
 
 func _update_header_date() -> void:
-	if not is_instance_valid(header_date): return
-	# Barre haute de la coque : « mar. 17 nov. » et « · J9 » (shell.gd, date_caption).
-	if header_date.has_meta("coque"):
-		var caption: Array = Immersive.date_caption(model)
-		header_date.text = str(caption[0])
-		var round_text: Label = header_date.get_parent().get_node_or_null("ImmersiveRound")
-		if round_text != null: round_text.text = "· " + str(caption[1]) if not str(caption[1]).is_empty() else ""
-		var date_button := header_date.get_parent() as Button
-		if date_button != null:
-			date_button.accessibility_description = str(caption[0]) + (" · " + str(caption[2]) if not str(caption[2]).is_empty() else "")
-			date_button.tooltip_text = "Ouvrir le calendrier · " + date_button.accessibility_description
-		return
-	var meta: Dictionary = model.get("meta", {})
-	var round_label := str(meta.get("roundLabel", "Journée " + G.n(int(meta.get("round", 0))+1)))
-	var planning: Dictionary = model.get("calendarPlanning", {})
-	var today: Variant = planning.get("today", meta.get("date", ""))
-	var date: String = today if today is String else ""
-	var parts := date.split("-")
-	if parts.size()==3 and parts[1].is_valid_int() and int(parts[1]) in range(1,13):
-		var months := ["JANV.","FÉVR.","MARS","AVR.","MAI","JUIN","JUIL.","AOÛT","SEPT.","OCT.","NOV.","DÉC."]
-		header_date.text = "%s %s %s" % [parts[2],months[int(parts[1])-1],parts[0]]
-		header_date.tooltip_text = round_label
-	else:
-		var short_round := round_label.get_slice(" · ",0) if round_label.begins_with("Semaine ") else round_label
-		if round_label == "Saison terminée": short_round = "Terminée"
-		header_date.text = ("SAISON %s  /  %s" % [G.season_label(meta.get("season", 1)),short_round]).to_upper()
-		header_date.tooltip_text = round_label if short_round!=round_label else ""
-	var calendar := header_date.get_parent() as Button
-	if calendar != null:
-		calendar.accessibility_description = header_date.text
-		if not header_date.tooltip_text.is_empty():
-			calendar.accessibility_description += " · " + header_date.tooltip_text
-		calendar.tooltip_text = "Ouvrir le calendrier · " + calendar.accessibility_description
+	MainRendu.update_header_date(self)
 
 func _build_sidebar(parent: Node) -> void:
-	var rail := PanelContainer.new()
-	rail.name="CareerRail"
-	rail.custom_minimum_size.x = 176
-	var rail_style:=G.T.box(Color("10181c"),0,Color("3b494e"))
-	rail_style.set_border_width_all(0)
-	rail_style.border_width_right=1
-	rail_style.content_margin_left=0;rail_style.content_margin_right=0
-	rail_style.content_margin_top=0;rail_style.content_margin_bottom=0
-	rail.add_theme_stylebox_override("panel",rail_style)
-	parent.add_child(rail)
-	var margin := G.margin(6)
-	rail.add_child(margin)
-	var left := G.v(4)
-	margin.add_child(left)
-	var logo := G.button("", pause_menu)
-	logo.tooltip_text = "Rugby Legacy 27 — Menu et sauvegardes"
-	var bitmap := TextureRect.new()
-	bitmap.texture = load("res://branding/rugby-legacy-27-logo.png")
-	bitmap.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	bitmap.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	bitmap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bitmap.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var composite := ShaderMaterial.new()
-	composite.shader = load("res://branding/black_key.gdshader")
-	bitmap.material = composite
-	logo.add_child(bitmap)
-	logo.add_theme_font_override("font", G.T.DISPLAY)
-	logo.add_theme_font_size_override("font_size", 18)
-	logo.custom_minimum_size.y = 48
-	logo.add_theme_stylebox_override("normal",G.T.box(Color("1d2a30"),3,Color("445259")))
-	left.add_child(logo)
-	left.add_child(G.separator())
-	var club_frame:=PanelContainer.new()
-	club_frame.name="SidebarClubIdentity"
-	var club_style:=G.T.box(Color("202a2e").lerp(Color(accent,1),.12),3,Color("445259"))
-	club_style.set_border_width_all(0)
-	club_style.border_width_top=3;club_style.border_color=accent
-	club_style.content_margin_top=5;club_style.content_margin_bottom=6
-	club_frame.add_theme_stylebox_override("panel",club_style)
-	left.add_child(club_frame)
-	var club_identity:=G.v(2)
-	club_frame.add_child(club_identity)
-	var club_marks:=G.h(6)
-	club_identity.add_child(club_marks)
-	club_marks.add_child(G.crest(model.club,40))
-	var club_context:=G.v(0)
-	G.fill(club_context)
-	club_marks.add_child(club_context)
-	club_context.add_child(G.label(G.club_abbr(model.club),23,G.INK,true))
-	club_context.add_child(G.label("TON CLUB",9,G.MUTED))
-	var name := G.label(G.club_name(model.club), 16, G.INK, true)
-	name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	name.max_lines_visible=2
-	name.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
-	name.tooltip_text=G.club_name(model.club)
-	club_identity.add_child(name)
-	if is_instance_valid(navigation_controller): left.add_child(navigation_controller.controls())
-	left.add_child(G.separator())
-	var navigation := G.scroll(left)
-	navigation.get_parent().name = "CareerNavigation"
-	navigation.add_child(G.label("CARNET DE L'ENTRAÎNEUR", 10, G.MUTED))
-	for chapter: Dictionary in NAV_CHAPTERS:
-		var active: bool = route in chapter.routes
-		var destination: String = str(route if active else chapter_routes.get(chapter.label, chapter.routes[0]))
-		var b := G.nav_button(str(chapter.label).to_upper(), func(): _navigate(destination), accent, active,str(chapter.label))
-		b.name = "Chapter_" + str(chapter.label)
-		b.custom_minimum_size.y = 28
-		navigation.add_child(b)
-	left.add_child(G.label("PRÉALPHA %s  /  WINDOWS" % ProjectSettings.get_setting("application/config/version"), 9, G.GOLD))
-	left.add_child(G.button("MENU & SAUVEGARDES", pause_menu))
+	MainRendu.build_sidebar(self, parent)
 
 func _update_live_bar() -> void:
-	if not is_instance_valid(minibar): return
-	var live := _live()
-	var office_status := minibar.name == "ImmersiveOfficeMatchStatus"
-	if office_status: minibar.visible = not live.is_empty()
-	if not live.is_empty():
-		var teams: Array = live.get("teams", [{},{}])
-		var score: Array = live.get("score", [0,0])
-		var score_line := "%s  %s — %s  %s" % [G.club_abbr(teams[0]),G.n(score[0]),G.n(score[1]),G.club_abbr(teams[1])]
-		var minute := G.n(live.get("minute",0)) + " min"
-		if office_status:
-			var state := "MATCH TERMINÉ" if live.get("finished",false) else ("PAUSE" if live.get("paused",false) else "EN DIRECT")
-			minibar.text = score_line + "\n" + minute + "  ·  " + state
-			minibar.tooltip_text = minibar.text
-		else:
-			minibar.text = score_line + "   ·   " + minute + ("  /  PAUSE" if live.get("paused",false) else "")
-	else:
-		var meta: Dictionary = model.get("meta", {})
-		var club_count := int(meta.get("database", {}).get("clubCount", 0))
-		match meta.get("mode"):
-			"world": minibar.text = "CARRIÈRE MONDIALE  /  %s CLUBS" % G.n(club_count)
-			"france30", "common": minibar.text = "ÉLITE & ACCESSION  /  %s CLUBS" % G.n(club_count)
-			_: minibar.text = "CARRIÈRE HISTORIQUE  /  14 CLUBS"
-	if is_instance_valid(primary_button):
-		var action := primary_text()
-		primary_button.text = "Continuer" if primary_button.name == "ImmersiveContinue" else action
-		primary_button.disabled = false
-		if live.is_empty():
-			if _press_required():
-				if primary_button.name == "ImmersiveContinue": primary_button.text = "Conf. de presse"
-			elif not Immersive.Selections.current_fixture(model).is_empty():
-				if primary_button.name == "ImmersiveContinue": primary_button.text = "Courrier match"
-			elif not model.meta.get("canAdvanceSeason", false):
-				var daily := _daily_progression()
-				if primary_button.name == "ImmersiveContinue": primary_button.text = daily.get("short", "Continuer")
-				# Coque commune : Continuer bloqué reste actif (« ! » + raison, clic = écran qui bloque).
-				primary_button.disabled = bool(daily.get("disabled", false)) and primary_button.name != "ImmersiveContinue"
-		if office_status and not live.is_empty():
-			primary_button.text = "Valider le résultat" if live.get("finished",false) else "Retour au direct"
-		if primary_button.name == "ImmersiveContinue" and live.get("finished",false) and is_instance_valid(contextual_director) and contextual_director.en_consultation():
-			primary_button.text = "Après-match"
-		if connection_error and bridge.child_pid <= 0 and primary_button.name == "ImmersiveContinue": primary_button.text = "Relancer"
-		primary_button.tooltip_text = primary_tooltip()
-		if primary_button.name == "ImmersiveContinue": Immersive.sync_continue(self)
-		else: fit_button_text(primary_button)
-	if waiting and SeasonPreparation.is_advance(last_command): SeasonPreparation.show_pending(self, true)
+	MainRendu.update_live_bar(self)
 
-## Bouton à texte rogné (clip_text) : réduit la police jusqu'à ce que le libellé tienne en entier, icône comprise
-## (recette native du 16/11/2026 : « Décision attendue » s'affichait « Décision attendu »). Plancher : 12 px.
 static func fit_button_text(button: Button) -> void:
-	if not is_instance_valid(button) or button.size.x <= 0: return
-	if not button.has_meta("fit_base_font_size"): button.set_meta("fit_base_font_size", button.get_theme_font_size("font_size"))
-	var size_px := int(button.get_meta("fit_base_font_size"))
-	var font := button.get_theme_font("font")
-	var style := button.get_theme_stylebox("normal")
-	var room := button.size.x - style.get_margin(SIDE_LEFT) - style.get_margin(SIDE_RIGHT)
-	if button.icon != null: room -= button.get_theme_constant("icon_max_width") + button.get_theme_constant("h_separation")
-	while size_px > 12 and font.get_string_size(button.text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px).x > room: size_px -= 1
-	button.add_theme_font_size_override("font_size", size_px)
+	MainRendu.fit_button_text(button)
 
 func _press_required() -> bool:
 	return not Immersive.Selections.nation_only(model) and CareerProgression.press_required(model)
 
 func _daily_progression() -> Dictionary:
-	var fixture: Variant = null if Immersive.Selections.nation_only(model) else model.get("next")
-	return CareerProgression.daily(model.get("meta", {}), fixture, route)
+	return MainNavigation.daily_progression(self)
 
-## Info-bulle du bouton principal : pour « Continuer », le prochain arrêt prévu (career_progression.gd).
 func primary_tooltip() -> String:
-	if connection_error and bridge.child_pid <= 0: return "Le moteur du jeu s’est arrêté. Clique pour le relancer : la carrière reprend à sa dernière sauvegarde."
-	if _live().is_empty() and not _press_required() and Immersive.Selections.current_fixture(model).is_empty() and not model.get("meta", {}).get("canAdvanceSeason", false):
-		var daily := _daily_progression()
-		if daily.has("tooltip"): return str(daily.tooltip)
-	return primary_text()
+	return MainNavigation.primary_tooltip(self)
 
-## Ce qui arrête Continuer, en raison courte (22 caractères au plus), ou "" quand il avance (ou passe au direct, au
-## résultat, à la préparation du jour de match). Ne dépend pas de l'état désactivé du bouton : un clic ou Espace
-## ouvre l'écran qui bloque (primary_action).
 func continue_block() -> String:
-	if connection_error and bridge.child_pid <= 0: return ""
-	if not _live().is_empty(): return ""
-	if _press_required(): return "Conférence de presse"
-	if not Immersive.Selections.current_fixture(model).is_empty(): return "Courrier de match"
-	if model.get("meta", {}).get("canAdvanceSeason", false): return ""
-	var daily := _daily_progression()
-	if daily.has("open"): return "Décision attendue"
-	if bool(daily.get("disabled", false)): return "Avance indisponible"
-	return ""
+	return MainNavigation.continue_block(self)
 
 func primary_text() -> String:
-	if connection_error and bridge.child_pid <= 0: return "RELANCER LE MOTEUR  →"
-	var live := _live()
-	if not live.is_empty():
-		if live.get("finished",false) and is_instance_valid(contextual_director) and contextual_director.en_consultation(): return "RETOUR À L’APRÈS-MATCH  →"
-		if live.get("finished",false): return "VALIDER LE RÉSULTAT  →"
-		if route == "Préparation" and live.get("paused",false): return "RETOUR AU MATCH  →"
-		return "RETOUR AU DIRECT  →"
-	if _press_required(): return "OUVRIR LA CONFÉRENCE DE PRESSE  →" if not _pending_press_invitation().is_empty() else "OUVRIR LA RÉCEPTION  →"
-	if not Immersive.Selections.current_fixture(model).is_empty(): return "OUVRIR LE COURRIER DE MATCH  →"
-	if model.get("meta",{}).get("canAdvanceSeason",false): return "SAISON SUIVANTE  →"
-	var daily := _daily_progression()
-	if not daily.is_empty(): return daily.label
-	if not SeasonPreparation.data(model.get("meta",{})).is_empty(): return "AVANCER LA PRÉPARATION  →"
-	if model.get("next") == null: return "AVANCER LA SEMAINE  →"
-	return "ALLER AU JOUR DE MATCH  →" if route == "Préparation" else "PRÉPARER LE MATCH  →"
+	return MainNavigation.primary_text(self)
 
 func primary_action() -> void:
-	if waiting and (last_command != "tick" or not queued_action.is_empty()): return
-	# Moteur arrêté (processus tué, mémoire saturée…) : « Continuer » le relance au lieu de rouvrir en boucle
-	# l'écran de l'événement en attente, dont aucune décision ne pourrait être enregistrée.
-	if connection_error and bridge.child_pid <= 0:
-		reconnect()
-		return
-	if not _live().is_empty():
-		# Après-match consulté depuis un autre écran : Continuer ramène à l'après-match (le résultat s'y valide).
-		if _live().get("finished",false) and is_instance_valid(contextual_director) and contextual_director.en_consultation(): contextual_director.revenir_apres_match()
-		elif _live().get("finished",false): _command("finish_round")
-		else: _navigate("Match")
-		return
-	if _press_required():
-		_open_press_conference()
-		return
-	var international_fixture := Immersive.Selections.current_fixture(model)
-	if not international_fixture.is_empty():
-		_reset_reception("international:match-day/" + str(international_fixture.id))
-		_navigate("Réception", false)
-		return
-	if model.meta.get("canAdvanceSeason",false):
-		confirm("Une nouvelle saison", "Les contrats arrivés à échéance sont réglés et les mouvements de division sont appliqués. Commencer la saison suivante ?", func(): _command("next_season",{"confirmed":true}))
-		return
-	var daily := _daily_progression()
-	if not daily.is_empty():
-		if daily.has("open"): _open_reprise_decision()
-		elif daily.has("route"): _navigate(daily.route)
-		elif daily.has("command"): _command(daily.command, daily.payload)
-		# Avance refusée par le calendrier : Continuer n'est jamais inerte, il ouvre le calendrier du jour.
-		elif bool(daily.get("disabled", false)) and route != "Calendrier": Immersive._open_current_calendar(self)
-		return
-	if not SeasonPreparation.data(model.meta).is_empty(): _command(SeasonPreparation.command(model.meta),{"fromWeek":int(model.meta.get("week",0))})
-	elif model.get("next") == null: _command("finish_round")
-	else: _navigate("Match" if route == "Préparation" else "Préparation")
+	MainNavigation.primary_action(self)
 
-# Recettes Godot seulement (ancien mode France 30, moteur lancé avec CD_MODES_HERITES=1).
 func create_career(id: int) -> void:
-	var action := func(): _command("new_career",{"club":id,"mode":"common"})
-	if _has_career(): confirm("Une nouvelle histoire", "La carrière actuelle sera conservée dans Copies de sécurité avant son remplacement. Si cette copie ne peut pas être écrite, le remplacement sera refusé. Prendre les rênes de %s ?" % catalogue[id].name, action)
-	else: action.call()
+	MainDialogues.create_career(self, id)
 
 func confirm_decision(command: String, payload: Dictionary, title: String, text: String, callback: Callable) -> void:
-	var preview := preload("res://ui/decision_preview.gd")
-	var detail: Dictionary = preview.describe(command,payload,model)
-	if detail.is_empty(): confirm(title,text,callback)
-	elif _confirmation_club(title, [text, _lignes_decision(detail)], "Confirmer", callback): return
-	else: preview.open(self,title,text,detail,callback)
+	MainDialogues.confirm_decision(self, command, payload, title, text, callback)
 
-## Écrans Club, Staff, Travail du club et Stratégie : la confirmation s'ouvre EN PLACE dans la page (bloc de
-## confirmation_en_place.gd), jamais dans une fenêtre (décision de Léo, 19/11/2026). Faux si la page n'a pas son hôte.
 func _confirmation_club(title: String, lignes: Array, libelle_ok: String, callback: Callable) -> bool:
-	if route not in ["Club", "Staff", "Travail du club", "Stratégie"] or not is_instance_valid(root_content): return false
-	var hote := root_content.find_child("ClubConfirmHote", true, false) as Container
-	if hote == null or not hote.is_visible_in_tree(): return false
-	_clear_dialogs()
-	preload("res://ui/confirmation_en_place.gd").ouvrir(self, hote, "ClubConfirmation", title, lignes, libelle_ok, callback)
-	return true
+	return MainDialogues.confirmation_club(self, title, lignes, libelle_ok, callback)
 
 func _lignes_decision(detail: Dictionary) -> String:
-	var parts: Array[String] = []
-	if int(detail.get("amount", 0)) != 0: parts.append(("Débit immédiat : " if str(detail.get("direction", "debit")) == "debit" else "Versement : ") + str(G.euros(detail.amount)))
-	if int(detail.get("recurring_amount", 0)) != 0: parts.append("%s : %s" % [str(detail.get("recurring_label", "Ensuite")).capitalize(), str(G.euros(detail.recurring_amount))])
-	if not str(detail.get("later", "")).is_empty(): parts.append(str(detail.later))
-	if not str(detail.get("caution", "")).is_empty(): parts.append(str(detail.caution))
-	return "\n".join(parts)
+	return MainDialogues.lignes_decision(detail)
 
 func confirm(title: String, text: String, callback: Callable, focus_cancel := false) -> void:
-	if _confirmation_club(title, [text], "Confirmer", callback): return
-	_clear_dialogs()
-	var d := ConfirmationDialog.new()
-	_prepare_dialog(d, 650)
-	d.title = title
-	d.dialog_text = text
-	d.get_ok_button().text = "CONFIRMER"
-	d.get_cancel_button().text = "ANNULER"
-	add_child(d)
-	d.confirmed.connect(func(): callback.call(); d.queue_free())
-	d.canceled.connect(d.queue_free)
-	d.popup_centered(Vector2i(650,180))
-	if focus_cancel: d.get_cancel_button().grab_focus()
+	MainDialogues.confirm(self, title, text, callback, focus_cancel)
 
 func _prepare_dialog(dialog: AcceptDialog, width: int) -> void:
-	# Configure wrapping before text/insertion can queue an oversized minimum.
-	ImmersiveDialogs.prepare(dialog,width,accent)
-	dialog.visibility_changed.connect(func():
-		if not dialog.visible: call_deferred("_refresh_coach"))
+	MainDialogues.prepare_dialog(self, dialog, width)
 
 func pause_menu() -> void:
-	_clear_dialogs()
-	if not _live().is_empty() and not _live().get("paused",false) and not _live().get("finished",false):
-		if not _command("pause",{"paused":true}): return
-	var d := AcceptDialog.new()
-	d.name = "ImmersivePauseMenu"
-	_prepare_dialog(d, 820)
-	d.title = "Ta carrière"
-	ImmersiveDialogs.pause_content(d,self)
-	for pair in [["Accueil","home"],["Mes carrières","career_slots"],["Exporter","export"],["Importer","import"],["Copies de sécurité","profile_safety"],["Paramètres","settings"],["Quitter","quit"]]:
-		var button := d.add_button(pair[0],false,pair[1])
-		if pair[1] == "profile_safety": button.name = "ProfileSafetyOpen"
-	d.custom_action.connect(func(action: String):
-		d.hide(); d.queue_free()
-		match action:
-			"home": _navigate("Accueil")
-			"export": open_file(false)
-			"import": open_file(true)
-			"career_slots": open_career_slots()
-			"profile_safety": open_profile_safety()
-			"settings": settings()
-			"quit": request_quit()
-	)
-	add_child(d)
-	d.confirmed.connect(d.queue_free)
-	d.canceled.connect(d.queue_free)
-	ImmersiveDialogs.show_centered(d,Vector2i(820,370))
+	MainDialogues.pause_menu(self)
 
 ## Réglages : en carrière, l'écran « Réglages » de la coque (règle « jamais de petite fenêtre ») ; hors carrière
 ## (accueil, création, packs), la fenêtre des paramètres.
@@ -1516,115 +430,28 @@ func open_profile_safety() -> void:
 	preload("res://ui/profile_safety_view.gd").open(self)
 
 func open_file(importing: bool) -> void:
-	import_mode = importing
-	file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE if importing else FileDialog.FILE_MODE_SAVE_FILE
-	file_dialog.title = "Importer une carrière · 8 à 24 Mio selon l’édition" if importing else "Exporter une carrière"
-	file_dialog.current_file = "" if importing else "Rugby-Legacy-27.json"
-	file_dialog.popup_centered_ratio(0.7)
+	MainDialogues.open_file(self, importing)
 
 func _file_selected(path: String) -> void:
-	file_dialog.hide()
-	if import_mode:
-		var f := FileAccess.open(path,FileAccess.READ)
-		if f == null: _refuse_action("Le fichier ne peut pas être lu : " + error_string(FileAccess.get_open_error())); return
-		var byte_count := f.get_length()
-		if byte_count > NativeEngineBridge.EXTENDED_IMPORT_LIMIT_BYTES:
-			f.close()
-			_refuse_action("Fichier trop volumineux (24 Mio UTF-8 maximum).")
-			return
-		var buffer := f.get_buffer(byte_count)
-		f.close()
-		# Le décodeur UTF-8 s'arrête au premier octet NUL.
-		var has_nul := buffer.has(0)
-		var text := "" if has_nul else buffer.get_string_from_utf8()
-		var control_characters := RegEx.create_from_string("[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f]")
-		if has_nul or control_characters.search(text) != null:
-			_refuse_action("Le fichier JSON contient un caractère de contrôle non échappé.")
-			return
-		var refusal := NativeEngineBridge.import_preflight(text, byte_count)
-		if not refusal.is_empty():
-			_refuse_action(refusal)
-			return
-		confirm("Reprendre cette carrière", "Cette carrière sera vérifiée avant sa reprise. La carrière actuelle sera conservée dans Copies de sécurité avant son remplacement ; si cette copie ne peut pas être écrite, l'importation sera refusée.", func(): _command("import", {"text":text}, "Réception"), _has_career())
-	else:
-		if waiting: _refuse_action("Une décision est en cours. Réessaie après sa réponse."); return
-		export_path = path
-		_command("export")
+	MainDialogues.file_selected(self, path)
 
 func _write_export() -> bool:
-	var destination := export_path
-	export_path = ""
-	var text := str(model.get("meta",{}).get("exportText",""))
-	if text.is_empty(): _failed("Aucun export de carrière n’a été reçu."); return false
-	var temporary := destination + ".tmp-" + str(OS.get_process_id()) + "-" + str(Time.get_ticks_usec())
-	var f := FileAccess.open(temporary,FileAccess.WRITE)
-	if f == null: _failed("L'export ne peut pas être écrit."); return false
-	f.store_string(text)
-	f.flush()
-	var error := f.get_error()
-	f.close()
-	var replacement_error := error_string(error) if error != OK else preload("res://atomic_file.gd").replace_staged(temporary, destination)
-	if not replacement_error.is_empty():
-		DirAccess.remove_absolute(temporary)
-		_failed("Écriture de l'export refusée : " + replacement_error)
-		return false
-	return true
+	return MainDialogues.write_export(self)
 
 func notice(title:String,text:String) -> void:
-	_clear_dialogs()
-	var d:=AcceptDialog.new()
-	_prepare_dialog(d, 620)
-	d.title=title
-	d.dialog_text=text
-	add_child(d)
-	d.confirmed.connect(d.queue_free)
-	d.popup_centered(Vector2i(620,190))
+	MainDialogues.notice(self, title, text)
 
 func _clear_dialogs() -> void:
-	for child in get_children():
-		if child is AcceptDialog and child!=file_dialog:
-			if is_instance_valid(navigation_controller) and navigation_controller.is_suspended_reader(child): continue
-			child.hide()
-			child.queue_free()
+	MainDialogues.clear_dialogs(self)
 
 func recover_profile() -> void:
 	confirm("Conserver et récupérer le profil", "Une copie du profil endommagé sera conservée avant sa récupération. Tu pourras ensuite créer ou importer une carrière.",func(): _command("recover_profile",{"confirmed":true}))
 
 func reconnect() -> void:
-	if waiting or bridge.child_pid > 0: return
-	connection_error = false
-	waiting = true
-	last_command = "snapshot"
-	_present_startup_wait()
-	bridge.start(_profile_path())
+	MainMoteur.reconnect(self)
 
 func _live_tick() -> void:
-	if waiting or closing: return
-	if _match_visible() and is_instance_valid(match_screen.stage) and match_screen.stage.is_presenting_extended_pass():
-		return
-	# Match en temps forts (mode de base ; repli CD_MATCH_TEMPS_FORTS=0) : la régie de la vue demande elle-même chaque minute.
-	if is_instance_valid(match_screen) and match_screen.has_method("temps_forts_actifs") and match_screen.temps_forts_actifs(): return
-	var live := _live()
-	if live.is_empty() or live.get("paused",false) or live.get("finished",false):
-		_rythme_ecoule = 0.0
-		return
-	# Rythme : le fait montré reste à l'écran selon son type (essai, mêlée, course…), divisé par la
-	# cadence choisie (×4, ×12) ; rien ne part avant qu'il ait été joué.
-	var scene: Dictionary = live.get("scene") if live.get("scene") is Dictionary else {}
-	var cle := str(scene.get("key", "")) + "|" + str((live.get("events", []) as Array).size())
-	if cle != _rythme_cle:
-		_rythme_cle = cle
-		_rythme_ecoule = 0.0
-		_rythme_place = 0.0
-	_rythme_ecoule += timer.wait_time
-	var suite := Rythme.prochain(str(scene.get("kind", "")), tick_steps)
-	if _rythme_ecoule < float(suite.secondes): return
-	# À ×1, les joueurs proches du ballon finissent d'abord leur déplacement (avec une échéance).
-	if tick_steps == 1 and _rythme_place < Rythme.ECHEANCE_PLACE and _match_visible() and is_instance_valid(match_screen.stage) and match_screen.stage.has_method("deplacement_restant") and match_screen.stage.deplacement_restant() > 0.05:
-		_rythme_place += timer.wait_time
-		return
-	_rythme_ecoule = 0.0
-	_command("tick",{"steps":int(suite.pas)})
+	MainMoteur.live_tick(self)
 
 func _update_match() -> void:
 	if is_instance_valid(match_screen): match_screen.update_frame(model)

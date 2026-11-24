@@ -21,6 +21,12 @@ func button(id: String) -> Button:
 	for item: Button in app.find_children(id, "Button", true, false):
 		if item.is_visible_in_tree() and not item.disabled: return item
 	return null
+## Club › Staff s'ouvre « par service » (choix A de Léo, idée FM27 n° 22) : le tableau des carrières est derrière le vrai
+## bouton « Tout le staff ».
+func staff_table() -> void:
+	app._navigate("Staff"); await settle()
+	var tous := button("StaffVue_tous")
+	if tous != null and not tous.button_pressed: tous.pressed.emit(); await settle()
 func own_staff() -> Array:
 	for team: Dictionary in app.model.get("staff", {}).get("teams", []):
 		if int(team.id) == int(app.model.club.id): return team.members
@@ -59,7 +65,7 @@ func run() -> void:
 	var bytes := FileAccess.get_file_as_bytes(profile)
 	for size in [Vector2i(1280, 800), Vector2i(1440, 900), Vector2i(1920, 1080)]:
 		root.size = size; await settle()
-		app._navigate("Staff"); await settle()
+		await staff_table()
 		check(app.body.find_child("StaffCareerOverview", true, false) != null, "Carrières du staff visibles dans le jeu")
 		check(app.body.find_children("*", "TextureRect", true, false).size() > 0, "Visages présents dans le staff")
 		check(app.body.find_child("StaffClub", true, false) != null, "Annuaire des clubs disponible")
@@ -89,7 +95,7 @@ func run() -> void:
 	var fallback: TextureRect = skin.portrait(0, 60, {"id":"regen-fixture","age":23,"portraitPath":"/missing/portrait.png"})
 	check(fallback.texture != null and fallback.material != null, "Image absente remplacée par un portrait composé")
 	fallback.free()
-	app._navigate("Staff"); await settle()
+	await staff_table()
 	var renew := button("StaffRenew")
 	check(renew != null, "Prolongation disponible dans le vrai staff")
 	if renew != null:
@@ -129,7 +135,7 @@ func run() -> void:
 	var old_clubs: String = JSON.stringify(JSON.parse_string(old_export).state.clubs)
 	var old_profile: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(profile))
 	root.size = Vector2i(1280, 800)
-	app._navigate("Staff"); await settle()
+	await staff_table()
 	var enable_staff := button("EnableStaffCareer")
 	check(enable_staff != null, "Ancienne carrière propose le staff sans l’imposer")
 	if enable_staff != null: enable_staff.pressed.emit(); await settle(); await confirmation(false)

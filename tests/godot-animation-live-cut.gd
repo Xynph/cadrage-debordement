@@ -4,6 +4,7 @@ const MatchView = preload("res://match_view.gd")
 const Cut = preload("res://match_cut.gd")
 const Motion = preload("res://match_motion.gd")
 const Presentation = preload("res://match_presentation.gd")
+const Impacts = preload("res://match_impacts.gd")
 
 var failures: Array[String] = []
 var measurements: Array[Dictionary] = []
@@ -83,7 +84,7 @@ func run() -> void:
 			lateral = (posed - baseline).dot(right)
 		check(lean > 0.10 and lateral * int(plan.side) > 0.06, "Inclinaison du buste dans le sens déclaré")
 		var expected := Motion.position_at(carrier.from, carrier.target, carrier.tangent,
-			Cut.live_travel(float(carrier.elapsed) / float(carrier.duree)))
+			Cut.live_travel(float(carrier.elapsed) / float(carrier.duree), float(carrier.duree)))
 		check(actor.position.is_equal_approx(expected), "L’appui reste sur le trajet de la phase")
 		var anchor := Presentation.ball_anchor(actor, rig)
 		var gap := anchor.distance_to(view._ball.global_position)
@@ -114,8 +115,15 @@ func run() -> void:
 			view.apply_frame(after)
 			step(view, 1)
 			check(carrier.cut_pose.is_empty(), "Un rafraîchissement tardif ne rejoue pas l’appui")
-			step(view, 28)
-			check(actor.position.is_equal_approx(carrier.target), "Le porteur rejoint le point d’arrivée dans le délai habituel")
+			# Délai habituel : la durée de la phase (Motion.duree, allure plafonnée depuis #911), pas
+			# davantage ; le crochet ne rallonge pas le trajet.
+			var target: Vector3 = carrier.target
+			step(view, ceili((float(carrier.duree) - float(carrier.elapsed)) * 120.0) + 1)
+			# Plaquage mis en scène (match_impacts.gd, #911) : le porteur tombe au contact du plaqueur
+			# posé au point d'arrivée, à moins de CONTACT_MAX de ce point.
+			var plaque: bool = (view._impacts.phase == "contact" and view._impacts.porteur == plan.carrier
+				and Vector2(actor.position.x - target.x, actor.position.z - target.z).length() < Impacts.CONTACT_MAX)
+			check(actor.position.is_equal_approx(target) or plaque, "Le porteur rejoint le point d’arrivée dans le délai habituel")
 
 		measurements.append({"minute": sample.event.min, "side": plan.side, "torso_angle_rad": lean,
 			"lateral_lean": lateral, "ball_gap_m": gap, "planted_frames_120hz": planted_frames,

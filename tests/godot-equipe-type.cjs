@@ -16,13 +16,30 @@ const godot = process.env.CD_GODOT_EXECUTABLE;
 const racine = path.resolve(__dirname, '..');
 const POSTES = ['Pilier gauche', 'Talonneur', 'Pilier droit', 'Deuxième ligne', 'Deuxième ligne', 'Troisième ligne', 'Troisième ligne', 'Numéro 8', 'Demi de mêlée', 'Demi d’ouverture', 'Ailier', 'Centre', 'Centre', 'Ailier', 'Arrière'];
 
-function signe(document, change) { const doc = structuredClone(document); change(doc.state); const text = JSON.stringify(doc.state); let h = 2166136261; for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619); doc.checksum = (h >>> 0).toString(16).padStart(8, '0'); return JSON.stringify(doc); }
+// Signe l'export modifié comme le jeu : l'empreinte porte sur l'état complet. Une carrière Monde trop volumineuse
+// sort au format réduit (exportVersion 2 ou 3, références au registre et au vivier) ; parseSaveDocument (dist/saves.js)
+// reconstruit alors l'état avant de vérifier l'empreinte, et la signature est calculée sur cet état reconstruit.
+function signe(document, change, vmJeu) {
+  const doc = structuredClone(document); change(doc.state);
+  if (doc.exportVersion === 1) {
+    const text = JSON.stringify(doc.state); let h = 2166136261;
+    for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619);
+    doc.checksum = (h >>> 0).toString(16).padStart(8, '0');
+  } else {
+    vmJeu.ctx.__xvExport = JSON.stringify(doc);
+    doc.checksum = vmJeu.run(`(() => { const d = JSON.parse(__xvExport); delete globalThis.__xvExport;
+      if (d.exportVersion === 3) { expandSaveReferences(d.state); if (Array.isArray(d.state.market) && d.state.market.some(p => typeof p === 'string')) d.state.market = expandChampMarket(d.state); }
+      else if (d.exportVersion === 2) d.state.market = expandChampMarket(d.state);
+      return saveChecksum(d.state); })()`);
+  }
+  return JSON.stringify(doc);
+}
 
 // Club de l'élite française dans la carrière Monde (championnat « elite » : le Top 14 avec le pack Rugby Réel).
 const CLUB = Number(process.env.CD_EQUIPE_CLUB || 0);
 
 function preparer(profil, { journees = 3, fixture = null, pack = false } = {}) {
-  const bridge = createBridge({ dataDir: profil, seed: 4242, now: 1794315600000 });
+  const bridge = createBridge({ dataDir: profil, seed: 4242, now: 1794315600000, testVm: true });
   let id = 0, model;
   const call = (command, payload = {}) => { const r = bridge.handle({ id: ++id, command, payload }); assert.equal(r.ok, true, command + ' : ' + r.error); model = r.model; return model; };
   try {
@@ -56,7 +73,7 @@ function preparer(profil, { journees = 3, fixture = null, pack = false } = {}) {
       if (!fixture) for (const [lg, eq] of Object.entries(st.equipes)) {
         st.saisons.push({ saison: s.season, ligue: lg, ids: eq.ids.slice(), moy: eq.notes.map(n => Math.max(55, n - 6)), matchs: eq.ids.map((_, k) => 14 + (k % 5)), sel: eq.ids.map((_, k) => k % 4), clubs: eq.clubs.slice(), journees: 20 });
       } else for (const f of st.saisons) if (f.ligue === maLigue) { const pris = [...f.ids]; for (const k of [3, 10]) { const p = choisir(POSTES[k], pris); if (p) { f.ids[k] = p.id; f.clubs[k] = mon; } } }
-    });
+    }, bridge.vm);
     call('import', { text: texte });
     if (pack) {
       const media = require('../native/engine/media-packs.cjs'), zlib = require('node:zlib');
