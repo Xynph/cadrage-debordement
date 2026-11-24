@@ -123,7 +123,7 @@ func run() -> void:
 		vue.add_child(ecran)
 		for i in 4: await process_frame
 		signaux.clear()
-		for nom in ["tiroir_demande", "joueur_choisi", "reprise_demandee", "pause_demandee", "horloge_choisie", "niveau_choisi", "delegation_demandee", "camera_demandee", "consigne_bonus", "fiche_ouverte", "journal_demande", "stats_demandees", "club_demande", "confier_fin_demande", "stat_demandee", "match_demande"]:
+		for nom in ["tiroir_demande", "joueur_choisi", "reprise_demandee", "pause_demandee", "horloge_choisie", "niveau_choisi", "delegation_demandee", "camera_demandee", "consigne_bonus", "fiche_ouverte", "journal_demande", "stats_demandees", "club_demande", "confier_fin_demande", "stat_demandee", "match_demande", "consignes_demandees"]:
 			var signal_nom: String = nom
 			ecran.connect(signal_nom, func(a = null, _b = null): signaux.append([signal_nom, a]))
 		# Plein écran obligatoire : un joueur cliqué ouvre sa petite fenêtre (branchée par la régie ; ici, un signal noté).
@@ -256,8 +256,10 @@ func run() -> void:
 		# Barème unique des notes (charte, 21/11/2026) : rouge, orange, citron, vert clair, vert foncé.
 		check(Between._teinte_note(5.8) == Charte.PERTE and Between._teinte_note(6.2) == Charte.INTENSIF and Between._teinte_note(6.7) == Charte.ATTRIBUT_55 and Between._teinte_note(7.2) == Charte.CONDITION and Between._teinte_note(7.8) == Charte.NOTE_EXCELLENTE and Charte.encre_note(7.8) == Color.WHITE and Charte.encre_note(6.7) == Charte.ENCRE, cadre + " : barème des notes de la charte (cinq paliers, chiffre lisible)")
 		var terrain: Control = ecran.terrain
-		check(terrain.champ().size.x >= terrain.size.x * 0.8, cadre + " : le terrain remplit sa tuile (%d sur %d px)" % [int(terrain.champ().size.x), int(terrain.size.x)])
-		check(terrain.plancher_pastilles == 0.0 and terrain.rayon() >= 4.0 and terrain.rayon() <= terrain.echelle() * 3.0, cadre + " : pastilles à l'échelle du terrain, jamais une masse (rayon %.1f px)" % terrain.rayon())
+		# La barre du banc (idée 34) prend une rangée sous la page : en 1920, le terrain garde ≈ 80 % de sa tuile (345 sur 432)
+		# et des pastilles de 3,5 px ; seuils abaissés d'un cran, à revoir à l'œil.
+		check(terrain.champ().size.x >= terrain.size.x * 0.78, cadre + " : le terrain remplit sa tuile (%d sur %d px)" % [int(terrain.champ().size.x), int(terrain.size.x)])
+		check(terrain.plancher_pastilles == 0.0 and terrain.rayon() >= 3.5 and terrain.rayon() <= terrain.echelle() * 3.0, cadre + " : pastilles à l'échelle du terrain, jamais une masse (rayon %.1f px)" % terrain.rayon())
 		# Un seul aplat doré à l'écran : le bouton principal.
 		var pleins := ecran.find_children("*", "BaseButton", true, false).filter(func(b: Control): return b.is_visible_in_tree() and aplat_or(b))
 		check(pleins.size() == 1, cadre + " : un seul aplat doré (%s)" % str(pleins.map(func(b: Control): return str(b.name))))
@@ -387,10 +389,14 @@ func run() -> void:
 				if s.bg_color.a > 0.05 and s.corner_radius_top_left < Charte.RAYON_PETIT and str(noeud.name) != "MatchBetweenMultiplexFade": carres.append("%s:%s" % [noeud.name, etat_style])
 		check(cadres.is_empty(), cadre + " : aucun cadre complet hors anneau de focus et bouton secondaire " + str(cadres.slice(0, 6)))
 		check(carres.is_empty(), cadre + " : aucun aplat à angles droits (charte finale : 18 / 12 / 6 / pilule) " + str(carres.slice(0, 6)))
-		# Menus déroulants habillés : carte opaque arrondie (12), sans ombre.
+		# Menus déroulants habillés : carte opaque arrondie (12) sans ombre, ou fond anthracite satiné des fenêtres du direct
+		# (choix B de Léo, 23/11 : opaque, arrondi, sans ombre portée).
 		for menu_style: PopupMenu in [menu_plus, ecran.menu_reglages]:
-			var fond_menu := menu_style.get_theme_stylebox("panel") as StyleBoxFlat
-			check(fond_menu != null and fond_menu.bg_color.a == 1.0 and fond_menu.corner_radius_top_left == Charte.RAYON_CARTE and fond_menu.shadow_size == 0, cadre + " : menu %s à la charte" % menu_style.name)
+			var fond_menu: StyleBox = menu_style.get_theme_stylebox("panel")
+			var plat := fond_menu as StyleBoxFlat
+			var a_la_charte: bool = plat != null and plat.bg_color.a == 1.0 and plat.corner_radius_top_left == Charte.RAYON_CARTE and plat.shadow_size == 0
+			var satine: bool = fond_menu != null and fond_menu.get_class() == "StyleBox" and fond_menu.get("bg_color") is Color and (fond_menu.get("bg_color") as Color).a == 1.0 and float(fond_menu.get("rayon")) > 0.0 and float(fond_menu.get("ombre")) == 0.0
+			check(a_la_charte or satine, cadre + " : menu %s à la charte" % menu_style.name)
 		ecran.arret_reprendre.pressed.emit()
 		for i in 2: await process_frame
 		var envois: Array = app.get("envois")

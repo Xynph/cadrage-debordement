@@ -70,7 +70,11 @@ try {
   assert.equal(fans.supporters.mood, fans.humeur, 'une seule humeur : celle de l’anneau des tribunes');
   assert.equal(fans.supporters.segments.length, 6, 'six groupes');
   assert.equal(fans.humeurPublic, Math.round(100 * (B.facteurHumeur(fans.humeur) - 1)), 'effet affiché = effet appliqué');
-  assert.equal(fans.demand, Fans.forecast({ season: 1, club: 0, clubs: [{ stadiumCapacity: fans.capacity }] }, fans.humeur).demand, 'demande lue sur l’humeur');
+  // Billetterie réelle (choix de Léo du 23/11/2026) : la demande affichée est le remplissage du prochain match à domicile,
+  // calculé comme l'affluence du match (humeur comprise) ; la recette prévue est celle du guichet de ce match.
+  assert.equal(fans.demand, Math.round(100 * fans.expectedAttendance / fans.capacity), 'demande = remplissage prévu');
+  assert.equal(fans.expectedAttendance, Number(b.inspect('budgetBilletterieVue().expectedAttendance')), 'affluence prévue = celle du moteur');
+  assert.equal(fans.expectedTicketRevenue, Number(b.inspect('budgetBilletterieVue().expectedTicketRevenue')), 'recette prévue = guichet du moteur');
   assert.equal(Number(b.inspect('nativeSystems.domain("clubStrategy").humeur()')), fans.humeur, 'humeur du moteur = humeur affichée');
   assert.equal(b.inspect('JSON.stringify(S.v111to116?.sentiment)'), undefined, 'rien de sauvegardé sous l’ancien nom');
   // Branchements : budget (billetterie), affluence des matchs et conseil lisent la même humeur.
@@ -80,7 +84,9 @@ try {
   for (let i = 0; i < 12 && !(m.clubLife.clubStrategy.finance.boardHistory || []).length; i++) m = playNextMatch(m, call);
   const bilan = m.clubLife.clubStrategy.finance.boardHistory[0];
   assert.ok(bilan && Number.isInteger(bilan.supporters), 'bilan du conseil : note des supporters ' + JSON.stringify(bilan));
-  assert.equal(bilan.score, Math.round(.6 * bilan.results + .2 * bilan.finances + .1 * bilan.youth + .1 * bilan.supporters), 'poids 60/20/10/10');
+  // Avec la note du conseil sur notre jeu (conseil-jeu.cjs, 23/11/2026) : résultats 50, finances 15, formation 10, supporters 10, jeu 15.
+  if (Number.isInteger(bilan.jeu)) assert.equal(bilan.score, Math.round(.5 * bilan.results + .15 * bilan.finances + .1 * bilan.youth + .1 * bilan.supporters + .15 * bilan.jeu), 'poids 50/15/10/10/15');
+  else assert.equal(bilan.score, Math.round(.6 * bilan.results + .2 * bilan.finances + .1 * bilan.youth + .1 * bilan.supporters), 'poids 60/20/10/10');
   // Affluence enregistrée des matchs à domicile du club : bornée par la capacité, présente.
   const domicile = JSON.parse(b.inspect('JSON.stringify(S.history.filter(r=>r.pair[0]===S.club&&!r.neutral&&r.season===S.season).map(r=>r.affluence))'));
   assert.ok(domicile.every(n => Number.isInteger(n) && n > 0 && n <= fans.capacity), 'affluence à domicile : ' + domicile.join(', '));

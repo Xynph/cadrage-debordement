@@ -56,6 +56,14 @@ declare -A suite_limits=(
   # Évolution par période et parts du direct : même préparation (carrière Monde jusqu au jour du match) ; dépassait 300 s sur runner (22/11).
   [tests/godot-planche-direct-stat-periodes.cjs]=1200
   [tests/godot-planche-direct-tableau.cjs]=1200
+  # Fenêtre d'un joueur en match (idée 32) : carrière Monde jusqu au jour du match, puis le match jusqu à la 50e à vitesse max.
+  [tests/godot-menu-joueur-match.cjs]=1200
+  # Conseils de Gabi en bulles (idée 35) : carrière Monde jusqu au jour du match, puis le match jusqu à un avis en 2e mi-temps.
+  [tests/godot-conseil-adjoint.cjs]=1200
+  # Barre du banc en direct (idée 34) : même préparation, puis le match jusqu à la 22e à vitesse max et la file du prochain arrêt.
+  [tests/godot-cris-banc.cjs]=1200
+  # Consignes en petite fenêtre (idée 33) : même préparation, match jusqu'à la 52e à vitesse max, 2 tailles.
+  [tests/godot-consignes-match.cjs]=1200
   [tests/godot-immersive08.cjs]=600
   # Panneaux de l'Effectif : une carrière Monde préparée jusqu'au jour de match (~60 s en local) puis le vrai jeu (~25 s).
   [tests/godot-panneaux-effectif.cjs]=600

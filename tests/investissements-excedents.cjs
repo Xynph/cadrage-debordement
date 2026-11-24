@@ -252,7 +252,9 @@ test('Moteur Monde : trois lignes pour un montant, chantiers aboutis, trésoreri
     // Plafond mesuré sur les recettes de match (billetterie + boutique) de la saison, comme le dit le message : l'ancien
     // dénominateur (trésorerie + dépenses) variait avec la masse salariale du club testé, donc avec son effectif
     // (19/11/2026 : 8,1 % avec les cinq postes corrigés, 7,7 % avant ; plafond 12,5 %).
-    assert.ok(sim.recettes > 0 && sim.cashJoue - sim.cashBase <= sim.recettes * 0.125, 'gain d’accueil modeste (≤ 12,5 % des recettes de match)');
+    // Billetterie réelle (23/11/2026) : les abonnés étant fixes, chaque spectateur de plus attiré par l'accueil paie au guichet ;
+    // le gain passe de 8 % à 13,3 % des recettes de match (club 102, graine du test) : plafond relevé à 15 %.
+    assert.ok(sim.recettes > 0 && sim.cashJoue - sim.cashBase <= sim.recettes * 0.15, 'gain d’accueil modeste (≤ 15 % des recettes de match) : ' + (sim.cashJoue - sim.cashBase) + ' / ' + sim.recettes);
     assert.equal(sim.valide, true);
     // Chantiers aboutis : installations et/ou staff du club joué ; le mécanisme est aussi à l'œuvre chez les clubs gérés.
     assert.ok(sim.joue.fac > sim.depart.fac || sim.joue.niv.some((n, i) => n > sim.depart.niv[i]), 'un chantier a abouti chez le club joué');

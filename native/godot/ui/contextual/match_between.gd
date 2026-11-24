@@ -27,6 +27,9 @@ const CarteSurvol = preload("res://ui/carte_joueur_survol.gd")
 const Meteo = preload("res://ui/contextual/meteo_texte.gd")
 const Zones = preload("res://ui/immersive08/standings_zones.gd")
 const Visuels = preload("res://ui/contextual/training_visuels.gd")
+const MenuJoueur = preload("res://ui/contextual/match_menu_joueur.gd")
+const BullesAdjoint = preload("res://ui/contextual/match_bulles_adjoint.gd")
+const Commune = preload("res://ui/immersive08/fiche_commune.gd")
 
 signal niveau_choisi(id: String)
 signal reprise_demandee
@@ -47,6 +50,8 @@ signal score_joue(score: Array)
 signal camera_demandee(mode: String)
 ## Consigne de fin de match choisie dans la tuile Bonus ({attack, defense, penalty}, commandes existantes).
 signal consigne_bonus(consigne: Dictionary)
+## « Consignes » (idée FM27 n° 33) ouvre la petite fenêtre des consignes, le match continue.
+signal consignes_demandees
 ## Pause demandée depuis l'entracte (Espace, Échap) : commande `pause` du jeu, branchée par la régie.
 signal pause_demandee
 ## Fiche joueur ouverte (vrai) ou refermée (faux) pendant le match : la régie met le match en pause le temps de la lire.
@@ -131,6 +136,8 @@ var lien_adverse: Button
 var adjoint: VBoxContainer
 ## Bouton « ÉQUIPE » : fenêtre plein écran (composition, banc, cris, consignes), match en pause.
 var equipe: Button
+## Lien « Consignes » de la barre (idée FM27 n° 33) : petite fenêtre des consignes, sans pause.
+var lien_consignes: Button
 var plus: MenuButton
 ## Horloge de l'entracte choisie (reprise de la régie à l'ouverture).
 var horloge := "normale"
@@ -232,6 +239,12 @@ var fiche_match: Control
 ## Dans le vrai direct (match_temps_forts.gd) : le nom d'un joueur ouvre sa petite fenêtre par-dessus le match
 ## (live_view.gd, plein écran obligatoire) au lieu de la sous-page ; vide hors du direct (tests de l'entracte seul).
 var fiche_vers: Callable = Callable()
+## Carte de Mon XV : la fenêtre du joueur en match (idée 32, match_menu_joueur.gd), sinon sa fiche.
+var menu_vers: Callable = Callable()
+## Dernier remplacement du prochain arrêt de jeu déjà montré en carte sortant / entrant (numéro de la file).
+var _changement_vu := -1
+## Vrai dès qu'un rendu a vu le match sans aucun remplacement fait : le premier à venir est donc un vrai changement du direct, jamais un ancien.
+var _changement_amorce := false
 var _fiche_id := ""
 ## Lignes du classement en direct : notre voisinage (± 3 places) et le haut du tableau.
 const CLASSEMENT_LIGNES := 9
@@ -1036,6 +1049,8 @@ func _construire() -> void:
 	_commandes()
 	_composants()
 	_page()
+	# Conseils de Gabi en bulles dans sa carte et phrase de jeu en aplat coloré (idée FM27 n° 35).
+	BullesAdjoint.poser(self)
 	_arret_decision()
 	montrer_droite(vue_droite)
 	if not _arret.is_empty(): montrer_arret(_arret)
@@ -1140,18 +1155,16 @@ func _commandes() -> void:
 ## Menu déroulant à la charte : carte `PANNEAU` opaque rayon 12, sans ombre ni cadre ; survol en case
 ## `PANNEAU_3` rayon 6 ; texte crème (grisé pour un choix indisponible).
 func _habiller_menu(menu: PopupMenu) -> void:
-	var fond := _case(Color(PANNEAU, 1.0), Charte.RAYON_CARTE)
-	fond.shadow_size = 0
-	fond.set_content_margin_all(px(8))
-	menu.add_theme_stylebox_override("panel", fond)
-	menu.add_theme_stylebox_override("hover", _case(SURVOL))
+	# Ardoise claire (teinte D) des petites fenêtres du direct (Léo, 23/11) ; survol en case plus claire.
+	menu.add_theme_stylebox_override("panel", MenuJoueur.style_ardoise(px(8), false))
+	menu.add_theme_stylebox_override("hover", _case(MenuJoueur.PAL.case))
 	var filet := StyleBoxLine.new()
-	filet.color = TRAIT
+	filet.color = MenuJoueur.PAL.filet
 	filet.thickness = 1
 	for cle in ["separator", "labeled_separator_left", "labeled_separator_right"]: menu.add_theme_stylebox_override(cle, filet)
 	for cle in ["font_color", "font_hover_color", "font_accelerator_color"]: menu.add_theme_color_override(cle, IVOIRE)
-	menu.add_theme_color_override("font_disabled_color", FAIBLE)
-	menu.add_theme_color_override("font_separator_color", DOUX)
+	menu.add_theme_color_override("font_disabled_color", MenuJoueur.PAL.encre3)
+	menu.add_theme_color_override("font_separator_color", MenuJoueur.PAL.encre2)
 	menu.add_theme_constant_override("v_separation", px(10))
 	menu.transparent_bg = true
 
@@ -1316,7 +1329,13 @@ func _page() -> void:
 		barre = S.G.h(px(12))
 		(barre as HBoxContainer).alignment = BoxContainer.ALIGNMENT_END
 		page.add_child(barre)
-	for noeud: Control in [phase, equipe, _touche("T", BARRE_HAUT), parametres, plus]: barre.add_child(noeud)
+	var noeuds_barre: Array[Control] = [phase, equipe, _touche("T", BARRE_HAUT), parametres, plus]
+	lien_consignes = _lien("Consignes", func(): consignes_demandees.emit(), "MatchBetweenConsignes")
+	lien_consignes.add_theme_font_size_override("font_size", fpx(22 * BARRE_HAUT))
+	noeuds_barre.insert(3, lien_consignes)
+	for noeud: Control in noeuds_barre: barre.add_child(noeud)
+	# Barre du banc (idée FM27 n° 34) : cris d'équipe, cris à un joueur, ajustements, permuter les ailes.
+	load("res://ui/contextual/match_banc_fm.gd").poser(self, barre, page)
 	_page_d3(page)
 
 ## Pied : les raccourcis de l'écran et où trouver ce qui n'y est pas (vitesse, autres matchs).
@@ -1982,7 +2001,7 @@ func _remplir_carte_haute(case: Button, poste: int, joueur: Dictionary, info: Di
 	haut.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	colonne.add_child(haut)
 	# Anneau d'énergie autour du visage (couleur de la jauge : vert en forme, orange, rouge).
-	haut.add_child(_visage(joueur, px(56), poste + 1, condition))
+	haut.add_child(_visage(joueur, px(56), _numero(str(info.id), poste + 1), condition))
 	var nom := _nom_joueur(abreger_prenom(str(joueur.get("name", ""))), str(info.id), "", {})
 	nom.custom_minimum_size.y = px(28)
 	# Prénom en initiale sur la carte ; le nom complet reste celui du joueur (infobulle, fenêtre, tests).
@@ -2563,7 +2582,7 @@ func _tuile_joueur(poste: int, joueur: Dictionary, info: Dictionary) -> Button:
 	case.focus_mode = Control.FOCUS_ALL
 	case.set_meta("contextual_enabled", true)
 	var id_joueur := str(info.id)
-	case.pressed.connect(func(): ouvrir_fiche(id_joueur))
+	case.pressed.connect(func(): menu_vers.call(id_joueur, case) if menu_vers.is_valid() else ouvrir_fiche(id_joueur))
 	var condition := float(info.energie)
 	var alerte := str(info.alerte)
 	var grave := alerte in ["épuisé", "blessé"]
@@ -2585,7 +2604,56 @@ func _tuile_joueur(poste: int, joueur: Dictionary, info: Dictionary) -> Button:
 	var app_carte: Object = _app()
 	if app_carte is Control: CarteSurvol.lier(app_carte, case, str(info.id), "squad", func(): return _direct_carte(str(info.id)))
 	_remplir_carte_haute(case, poste, joueur, info)
+	# Changement en attente du prochain arrêt de jeu (rôle, consignes, sortie) : pastille dorée discrète.
+	var badge: Array = MenuJoueur.texte_badge(_live_courant(), id_joueur)
+	if not str(badge[0]).is_empty(): MenuJoueur.badge_attente(case, str(badge[0]), str(badge[1]))
 	return case
+
+## Direct de la dernière image (`live`), {} avant la première.
+func _live_courant() -> Dictionary:
+	return _dernier[1] if _dernier.size() > 1 and _dernier[1] is Dictionary else {}
+
+## Vrai numéro de feuille d'un joueur (1 à 23, `live.numeros`) : un remplaçant entré garde le sien (16 à 23).
+func _numero(id: String, repli: int) -> int:
+	return MenuJoueur.numero_feuille(_live_courant(), id, repli)
+
+## Remplacement du prochain arrêt de jeu tout juste fait : carte sortant (rouge) / entrant (vert) sur la phrase de jeu,
+## jamais sur le terrain 2D, quand le direct montré (`montre` : composition d'avant la borne) l'a rejoint.
+func _montrer_changement(live: Dictionary, direct: Dictionary, montre: Array) -> void:
+	var faits: Array = MenuJoueur.arrets(live).get("appliques", []) if MenuJoueur.arrets(live).get("appliques") is Array else []
+	var dernier: Dictionary = {}
+	for f: Variant in faits:
+		if f is Dictionary and str(f.get("type", "")) == "remplacement" and bool(f.get("ok", false)): dernier = f
+	if dernier.is_empty():
+		_changement_amorce = true
+		return
+	var n := int(dernier.get("n", -1))
+	if _changement_vu < 0 and not _changement_amorce and n >= 0 and int(live.get("minute", 0)) - int(dernier.get("minute", 0)) > 2:
+		_changement_vu = n
+		return
+	if n <= _changement_vu: return
+	var slot := int(dernier.get("slot", -1))
+	var entre: Variant = montre[slot] if slot >= 0 and slot < montre.size() else null
+	if not (entre is Dictionary and str(entre.get("id", "")) == str(dernier.get("inId", ""))): return
+	_changement_vu = n
+	# Sur la bande de la phrase de jeu (même cachée pendant un temps fort 3D : la carte y reste quelques secondes).
+	if not is_instance_valid(phrase_fm): return
+	var zone: Control = phrase_fm
+	var notes: Dictionary = direct.get("notes", {}) if direct.get("notes") is Dictionary else {}
+	var sortant := {"numero": _numero(str(dernier.get("outId", "")), int(dernier.get("slot", 0)) + 1), "nom": "", "note": -1.0, "energie": 100.0}
+	var entrant := {"numero": _numero(str(dernier.get("inId", "")), 0), "nom": "", "note_poste": -1.0, "energie": 100.0}
+	for j: Variant in (live.get("lineup", []) if live.get("lineup") is Array else []) + (live.get("reserves", []) if live.get("reserves") is Array else []):
+		if not j is Dictionary: continue
+		if str(j.get("id", "")) == str(dernier.get("outId", "")):
+			sortant.nom = str(j.get("name", ""))
+			sortant.energie = float(j.get("condition", 100))
+			sortant.note = float(W.donnees_joueur(j, notes, {}, {}).note) if notes.has(str(j.id)) else -1.0
+		if str(j.get("id", "")) == str(dernier.get("inId", "")):
+			entrant.nom = str(j.get("name", ""))
+			entrant.energie = float(j.get("condition", 100))
+			var complet: Dictionary = Commune.trouver(_app(), str(j.id), "squad").get("joueur", {}) if _app() is Control else {}
+			entrant.note_poste = MenuJoueur.note_poste(complet, int(dernier.get("slot", 0)) + 1)
+	MenuJoueur.carte_changement(zone, sortant, entrant)
 
 ## Note du match en pastille à la couleur de son palier, chiffre écrit (jamais la couleur seule).
 func _pastille_note(note: float) -> PanelContainer:
@@ -2873,6 +2941,10 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	terrain.queue_redraw()
 	_etat(live, direct, equipes)
 	_pilotage = Pilotage.pilotage(live)
+	var bulles := get_node_or_null(BullesAdjoint.NOM)
+	if bulles != null: bulles.rafraichir()
+	var banc_fm := get_node_or_null("MatchFmBanc")
+	if banc_fm != null: banc_fm.rafraichir()
 	_remplir_journee(model, direct, equipes)
 	_remplir_bonus(model, live, direct)
 	_niveaux = direct.get("niveaux", [])
@@ -2910,8 +2982,10 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	var passe := _passe(model, live, direct)
 	var conseil: Variant = passe.conseil
 	var cle := JSON.stringify([direct.get("fil", []), direct.get("tableau", []), direct.get("chiffres", []), conseil, direct.get("notes", {}), direct.get("cartons", []), direct.get("feuille", {}).get("joueurs", {}) if direct.get("feuille") is Dictionary else {},
-		passe.lineup, direct.get("statsRows", []), live.get("paused", false), live.get("finished", false), terrain.couleurs, direct.get("pourquoi"), direct.get("hommeDuMatch"), direct.get("zone22"), direct.get("echantillon"), _pilotage.get("joueurs")])
+		passe.lineup, direct.get("statsRows", []), live.get("paused", false), live.get("finished", false), terrain.couleurs, direct.get("pourquoi"), direct.get("hommeDuMatch"), direct.get("zone22"), direct.get("echantillon"), _pilotage.get("joueurs"),
+		MenuJoueur.arrets(live).get("file"), live.get("numeros")])
 	_suivre_choix(live)
+	_montrer_changement(live, direct, passe.lineup)
 	if cle == _cle: return
 	_cle = cle
 	_lignes = direct.get("fil", [])
@@ -2934,6 +3008,7 @@ func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appli
 	_remplir_xv(passe.lineup, direct)
 	_remplir_compos_fm(passe.lineup, direct)
 	_remplir_adjoint(conseil, live, direct, appliquer)
+	if bulles != null: bulles.apres_adjoint()
 	_appliquer_blocage()
 
 ## Texte imposé par la régie (liaison entre deux temps forts : l'arrêt de jeu en cours) ; vide : l'état du moteur.
@@ -4060,7 +4135,7 @@ func _remplir_banc(live: Dictionary) -> void:
 	if not is_instance_valid(banc): return
 	var reserves: Array = live.get("reserves", []) if live.get("reserves") is Array else []
 	var restants: Variant = live.get("remplacementsRestants", live.get("substitutionsLeft"))
-	var cle := JSON.stringify([reserves.map(func(j: Variant): return [j.get("id"), j.get("name"), j.get("pos")] if j is Dictionary else null), restants, _densite])
+	var cle := JSON.stringify([reserves.map(func(j: Variant): return [j.get("id"), j.get("name"), j.get("pos")] if j is Dictionary else null), restants, _densite, live.get("numeros")])
 	if cle == _banc_cle: return
 	_banc_cle = cle
 	S.clear(banc)
@@ -4077,7 +4152,8 @@ func _remplir_banc(live: Dictionary) -> void:
 		case.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		var ligne: HBoxContainer = case.get_child(0)
 		case.custom_minimum_size.y = maxi(20, px(22))
-		ligne.add_child(_cellule(str(16 + n), 30, DOUX, 19, true))
+		var numero := _numero(id_banc, 16 + n)
+		ligne.add_child(_cellule(str(numero), 30, DOUX, 19, true))
 		var visage := _visage(joueur, px(32), 0, clampf(float(joueur.get("condition", 100)), 0.0, 100.0))
 		visage.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		ligne.add_child(visage)
@@ -4085,7 +4161,7 @@ func _remplir_banc(live: Dictionary) -> void:
 		var poste := _cellule(poste_court(str(joueur.get("pos", ""))), 40, DOUX, 17)
 		poste.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		ligne.add_child(poste)
-		case.tooltip_text = "%d · %s · %s\nClic : l'écran Équipe, pour le faire entrer." % [16 + n, str(joueur.get("pos", "")), str(joueur.get("name", ""))]
+		case.tooltip_text = "%d · %s · %s\nClic : l'écran Équipe, pour le faire entrer." % [numero, str(joueur.get("pos", "")), str(joueur.get("name", ""))]
 		case.set_meta("player_id", str(joueur.get("id", "")))
 		banc.add_child(case)
 
@@ -4512,7 +4588,8 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 	if remplacer >= 0:
 		var poste := remplacer
 		# Le remplaçant conseillé par le staff (`live.pilotage.conseilChangement`), s'il vise ce joueur.
-		var entrant := _entrant_conseille(live, str(alertes_xv.filter(func(a: Dictionary): return int(a.poste) == poste)[0].id) if alertes_xv.any(func(a: Dictionary): return int(a.poste) == poste) else "")
+		# Avec la file du prochain arrêt, le remplaçant conseillé est dans la bulle de Gabi (pas en double ici).
+		var entrant := "" if not MenuJoueur.arrets(live).is_empty() else _entrant_conseille(live, str(alertes_xv.filter(func(a: Dictionary): return int(a.poste) == poste)[0].id) if alertes_xv.any(func(a: Dictionary): return int(a.poste) == poste) else "")
 		var libelle := "Remplacer le %d" % (poste + 1) + (" par %s" % _nom_court(entrant) if not entrant.is_empty() else "") + " →"
 		var bouton_remplacer := _bouton(libelle, func(): joueur_choisi.emit(poste))
 		bouton_remplacer.name = "MatchBetweenReplace"
@@ -4520,7 +4597,8 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 		bouton_remplacer.set_meta("contextual_enabled", true)
 		actions.add_child(bouton_remplacer)
 		actions.add_child(_touche("Entrée"))
-	elif not fini and conseil is Dictionary and (conseil.get("attackChanged", false) or conseil.get("defenceChanged", false)):
+	# Match avec file du prochain arrêt de jeu : le plan de jeu conseillé passe par les bulles de Gabi (un clic).
+	elif not fini and conseil is Dictionary and (conseil.get("attackChanged", false) or conseil.get("defenceChanged", false)) and MenuJoueur.arrets(live).is_empty():
 		var possible: bool = conseil.get("canAct", false) and conseil.get("defenceAvailable", false)
 		var bouton := _bouton("Appliquer ses consignes →", func(): appliquer.call(conseil), possible)
 		bouton.name = "MatchBetweenApplyAdvice"
@@ -4999,7 +5077,7 @@ func _remplir_compos_fm(lineup: Array, direct: Dictionary) -> void:
 	var donnees: Array = [[], []]
 	for poste in 15:
 		var a: Dictionary = infos[poste] if poste < infos.size() and infos[poste] is Dictionary else {"vacant": true}
-		donnees[0].append({} if a.get("vacant", false) else {"nom": str(a.get("nom", "")), "note": float(a.get("note", NOTE_DEPART)), "energie": float(a.get("energie", 100)), "id": str(a.get("id", "")), "alerte": str(a.get("alerte", ""))})
+		donnees[0].append({} if a.get("vacant", false) else {"nom": str(a.get("nom", "")), "note": float(a.get("note", NOTE_DEPART)), "energie": float(a.get("energie", 100)), "id": str(a.get("id", "")), "alerte": str(a.get("alerte", "")), "num": _numero(str(a.get("id", "")), poste + 1)})
 		var o: Variant = adverse[poste] if poste < adverse.size() else null
 		donnees[1].append({} if not o is Dictionary else {"nom": str(o.get("nom", "")), "note": float(o.get("note", NOTE_DEPART)), "energie": float(o.get("energie")) if o.get("energie") != null else -1.0, "id": "", "alerte": ""})
 	for k in 2:
@@ -5037,7 +5115,7 @@ func _remplir_compos_fm(lineup: Array, direct: Dictionary) -> void:
 			var p := _pastille_note(somme / n)
 			moy.add_child(p)
 			moy.tooltip_text = "Note moyenne du XV"
-	var cle := JSON.stringify([donnees.map(func(c: Array): return c.map(func(d: Dictionary): return [d.get("nom"), d.get("note"), roundi(float(d.get("energie", 0))), d.get("alerte")])), teintes, _densite, nous])
+	var cle := JSON.stringify([donnees.map(func(c: Array): return c.map(func(d: Dictionary): return [d.get("nom"), d.get("note"), roundi(float(d.get("energie", 0))), d.get("alerte"), d.get("num")])), teintes, _densite, nous])
 	if cle == _compos_cle: return
 	_compos_cle = cle
 	for k in 2:
@@ -5140,7 +5218,8 @@ class Compo extends Control:
 			if energie >= 0.0:
 				var t: Color = Charte.CONDITION if energie >= 75.0 else (Charte.INTENSIF if energie >= 55.0 else Charte.PERTE)
 				draw_arc(c, r + 4.0, -PI / 2.0, -PI / 2.0 + TAU * clampf(energie / 100.0, 0.0, 1.0), 32, t, maxf(2.0, r * 0.18), true)
-			var num := str(n + 1)
+			# Vrai numéro de feuille (un remplaçant entré garde le sien), sinon celui du poste.
+			var num := str(int(d.get("num", n + 1))) if not d.is_empty() else str(n + 1)
 			var corps := roundi(r * 1.1)
 			var encre: Color = (Charte.ENCRE if teinte.get_luminance() > 0.55 else Charte.IVOIRE) if plein else Charte.IVOIRE
 			draw_string(CHIFFRES, c + Vector2(-CHIFFRES.get_string_size(num, HORIZONTAL_ALIGNMENT_LEFT, -1, corps).x * 0.5, corps * 0.36), num, HORIZONTAL_ALIGNMENT_LEFT, -1, corps, encre)

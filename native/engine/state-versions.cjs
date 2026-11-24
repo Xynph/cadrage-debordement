@@ -28,7 +28,7 @@ const UNTOUCHED = Object.freeze({
   snapshot: NONE, club_sheet: NONE, epcr_preview: NONE, competition_editor_preview: NONE,
   club_preview: NONE, start_challenges: NONE, academy_groups_preview: NONE, interclub_negotiate: NONE, save: NONE,
   // Réglages, consignes, rendez-vous, causeries : sections légères seulement.
-  set_tactics: NONE, set_penalty_policy: NONE, set_consignes: NONE, appliquer_staff: NONE, set_role_direct: NONE, cri: NONE, set_collective_focus: NONE, set_opponent_level: NONE,
+  set_tactics: NONE, set_penalty_policy: NONE, set_consignes: NONE, appliquer_staff: NONE, set_role_direct: NONE, cri: NONE, file_arret: NONE, set_collective_focus: NONE, set_opponent_level: NONE,
   // Postes visés du staff par service (staff-services.cjs) : S.staffServices seulement.
   staff_services_target: NONE,
   set_delegation: NONE, press_policy: NONE, club_follow: NONE, set_lineup: NONE, auto_lineup: NONE,
@@ -37,6 +37,8 @@ const UNTOUCHED = Object.freeze({
   manager_recruitment_watch: NONE, regen_shortlist: NONE,
   // Rallonge du conseil (budget-transferts.cjs) : budgetTransferts, confiance et nouvelles (sections légères).
   transfer_budget_extension: NONE,
+  // Séance d'un jour remplacée (calendar-planning.cjs swapSession) : planning des entraînements (section légère).
+  calendar_session: NONE,
   // Ton donné à l'agent d'une piste (ton-agent.cjs) : section légère tonAgent seulement.
   agent_ton: NONE, agent_question: NONE,
   // Décisions sur les joueurs du club : la section des clubs est relue.

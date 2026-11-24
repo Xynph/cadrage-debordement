@@ -99,6 +99,8 @@ budget() {
     tests/presse-dilemmes-monde.cjs) echo 420s ;;
     # Noms de compétitions du pack dans les textes générés : carrière Monde, 64 s en local mais 181 s sur le runner (délai de 180 s dépassé sur la PR #1191, suite non touchée) ; budget ≈ 3 fois.
     tests/pack-noms-competitions-textes.cjs) echo 420s ;;
+    # Rubrique talents du pack : création de carrières, 179 s sur le runner (délai de 180 s atteint sur la PR #1217, suite non touchée) ; budget ≈ 2 fois.
+    tests/pack-talents.cjs) echo 420s ;;
     # Presse rapide (#928) : carrière Monde, 192 s en local sur main (19/11) et délai de 180 s dépassé dans le train 20261118-2307 ; budget ≈ 2 fois.
     tests/presse-rapide-monde.cjs) echo 420s ;;
     # Homme du match par poste : carrière Monde hebdomadaire jusqu'à 150 matchs notés, 135 s en local sous charge.
@@ -111,6 +113,8 @@ budget() {
     tests/compte-rendu-monde.cjs) echo 600s ;;
     # Humeur des supporters : carrière Monde jouée jusqu'au premier bilan du conseil (3 matchs), 49 s en local (23/11/2026).
     tests/supporters-humeur.cjs) echo 400s ;;
+    # Avis du conseil sur le jeu : carrière Monde hebdomadaire jusqu'au premier bilan avec la note du jeu, export et import d'une ancienne sauvegarde (94 s en local, 23/11/2026).
+    tests/conseil-jeu.cjs) echo 600s ;;
     # Délégation de la composition au staff : trois carrières Monde hebdomadaires (10 journées déléguées, feuille gardée jusqu'à l'alerte de fatigue, refus), ~5 min en local sous charge.
     tests/delegue-composition-staff.cjs) echo 900s ;;
     # Courbe de niveau (lot 0 notes réalistes) : carrière Monde, 720 matchs complets et 4 000 résultats rapides, 69 s seul en local, 112 s en CI (PR #712, poids 129 = mesure +15 %).
@@ -136,7 +140,12 @@ budget() {
     # Pont natif en carrière Monde (#828) : deux workers jumeaux, un match délégué, exports de ~20 Mo, sept workers successifs ; 151 s en local avec Godot, 180 s dépassées en CI.
     tests/godot-engine.cjs) echo 600s ;;
     # Pilotage du match (#912) : carrière Monde + 11 séries de 160 matchs rejoués, 125-150 s en local ; 180 s dépassées en CI.
-    tests/match-pilotage.cjs) echo 480s ;;
+    # Arrêts de jeu (PR #1216) : carrière Monde + séries de matchs, 86 s en local, 180 s dépassées en CI (Suites 9/10) ; budget ≈ 5 fois.
+    tests/match-arrets.cjs) echo 480s ;;
+    # 23/11/2026 : 323 s en local sur main, 352 s avec les arrêts de jeu (PR #1216) ; 480 s dépassées en CI (Suites 1/10) ; budget ≈ 2,5 fois.
+    tests/match-pilotage.cjs) echo 900s ;;
+    # Cris à un joueur et permutation des ailes (idée FM27 n° 34) : carrière Monde + 5 séries de 300 matchs, ~150 s en local.
+    tests/match-cris-joueur.cjs) echo 480s ;;
     # Dilemmes rugby (#925, 18/11/2026) : la presse rapide en carrière Monde passe de 149 à 172 s en local (commotions, doublons, relâchement
     # calculés chaque jour) ; 180 s dépassées en CI. Même cause pour le test de charge natif (71 s en local, 180 s dépassées sur le runner).
     tests/presse-rapide-monde.cjs|tests/v63-2-stress-native.cjs) echo 420s ;;
@@ -200,6 +209,8 @@ budget() {
     tests/integration-cloud-complete.cjs) echo 900s ;;
     # Presse/recrutement06 en carrière Monde, 172 s seul en local et 180 s dépassé en CI (Suites 5/7) ; 420 s, assertions inchangées.
     tests/native-press-followups06-worker.cjs) echo 420s ;;
+    # Programme d'entraînement (séance remplacée, effets) : 51 s en local, 180 s dépassées sur le runner (PR #1200, Suites 7/10) ; intensité automatique : 179,9 s sur 180 au ras du cap. Budget ≈ 2-3 fois, assertions inchangées.
+    tests/programme-entrainement.cjs|tests/intensite-auto.cjs) echo 420s ;;
     # Recherche ciblée (carrière Monde, recrutement) : 83 s en local, 180 s dépassées sur le runner (PR #1201, Suites 1/10) ; budget ≈ 5 fois, assertions inchangées.
     tests/recherche-ciblee.cjs) echo 420s ;;
     # Lot 01 (Monde), paquet 3 : deux carrières Monde jouées minute par minute (essai-visible, ~20 min sous charge locale) ; carnet : 358 s.

@@ -163,6 +163,9 @@ function setConsigneAdverse(l,axe,valeur){
 
 
 // --- Effets dans le moteur (appelés depuis rugby.js, restarts.js, tactical-plans.js) ---
+// Rôles du poste et consignes individuelles du manager (native/engine/match-arrets.cjs, CDMatchArrets.effets) :
+// absents de la version web et des matchs sans pilotage (effet nul).
+const pilIndiv=()=>typeof CDMatchArrets!=='undefined'?CDMatchArrets.effets:null;
 // Probabilité de faute de l'équipe `fautif` : 'jeu' (en défense : hors-jeu, rucks), 'attaque' (ballon non libéré).
 function pilotageFoul(l,fautif,kind){
  if(!pilotageActif(l))return 1;
@@ -172,6 +175,7 @@ function pilotageFoul(l,fautif,kind){
   // Contester chaque ruck coûte plus cher devant un arbitre pointilleux sur les rucks.
   if(r==='agressive')f*=1+.22*pilSev(a.rucks,.2);else if(r==='prudente')f*=.85;
   if(d==='stricte')f*=.78;else if(d==='limite')f*=1.2;
+  f*=pilIndiv()?.foul(l,fautif,kind)??1;
  }else{
   if(y==='rapide')f*=1.15;else if(y==='lent')f*=.9;
   if(d==='stricte')f*=.85;else if(d==='limite')f*=1.1;
@@ -191,7 +195,9 @@ function pilotageHandFault(l,side){
  return (y==='rapide'?.02:y==='lent'?-.015:0)+(r==='agressive'?.025:r==='prudente'?-.01:0)+(d==='limite'?.01:d==='stricte'?-.005:0)
   +(rel==='relancer'?.012:0)+(f==='montre'?-.025:f==='tout'?.025:0)
   // Presser leur ouvreur : plus de ballons perdus chez l'attaquant, tant qu'il ne s'est pas adapté.
-  +(c==='ouvreur'?.014*cibleForce(l,1-side):0);
+  +(c==='ouvreur'?.014*cibleForce(l,1-side):0)
+  // Consignes individuelles et rôles : ballons perdus en attaque, ou arrachés par nos gratteurs.
+  +(pilIndiv()?.hand(l,side)??0);
 }
 // Avantage du porteur `side` (kind 'attack') : rythme, pression adverse sur les rucks, plateforme de touche.
 function pilotageEdge(l,side,kind){
@@ -201,7 +207,9 @@ function pilotageEdge(l,side,kind){
  return (y==='rapide'?.02:y==='lent'?-.02:0)+(r==='agressive'?-.012:r==='prudente'?.012:0)+(d==='stricte'?.012:d==='limite'?-.008:0)+(p&&p.side===side&&l.minute-p.minute<=1?.05:0)
   +(rel==='relancer'?.022:0)+(f==='montre'?-.012:f==='tout'?.025:0)
   // Attaquer leur aile la plus faible : voir AILE_FAIBLE.
-  +(c==='aile'?aileEdge(l,side):0);
+  +(c==='aile'?aileEdge(l,side):0)
+  // Consignes individuelles et rôles (attaque, ou défense du camp d'en face).
+  +(pilIndiv()?.edge(l,side)??0);
 }
 // Notre camp (là où « Relance » joue) et fin de match (dès la 70e) pour le côté `side`.
 function enCampPropre(l,side){return side===0?l.territory<50:l.territory>50}
@@ -237,27 +245,29 @@ function aileForce(l,side){const d=side===l.userSide?l.pilotage.depuis?.cible:nu
 function aileEdge(l,side){const f=aileForce(l,side);return aileFaible(l,1-side)*f-AILE_FAIBLE.previsible*(1-f)/(1-AILE_FAIBLE.residuel)}
 // Mètres en plus d'un temps de jeu réussi par `side` (tactical-plans.js, carryGain).
 function pilotageGain(l,side){
- if(!pilotageActif(l)||pilConsigne(l,side,'cible')!=='aile')return 0;
- const A=AILE_FAIBLE,f=aileForce(l,side);return aileFaible(l,1-side)>0?Math.round(A.metres*f):0;
+ if(!pilotageActif(l))return 0;
+ const indiv=pilIndiv()?.gain(l,side)??0;
+ if(pilConsigne(l,side,'cible')!=='aile')return indiv;
+ const A=AILE_FAIBLE,f=aileForce(l,side);return indiv+(aileFaible(l,1-side)>0?Math.round(A.metres*f):0);
 }
 function pilotageKick(l,side){
  const k=pilConsigne(l,side,'piedJeu'),y=pilConsigne(l,side,'rythme'),rel=enCampPropre(l,side)?pilConsigne(l,side,'relance'):null,f=finDeMatch(l,side);
- return (k==='moins'?.55:k==='plus'?1.55:1)*(y==='lent'?1.1:1)*(rel==='degager'?1.4:rel==='relancer'?.6:1)*(f==='montre'?.6:f==='tout'?.8:1);
+ return (k==='moins'?.55:k==='plus'?1.55:1)*(y==='lent'?1.1:1)*(rel==='degager'?1.4:rel==='relancer'?.6:1)*(f==='montre'?.6:f==='tout'?.8:1)*(pilIndiv()?.kick(l,side)??1);
 }
 // Ballon porté après une touche gagnée près de leur ligne : chance d'essai (rugby.js, contestSetPiece).
 function pilotageMaul(l,side,kind){
  if(kind!=='lineout')return 0;const m=pilConsigne(l,side,'maul');
- return m==='souvent'?.07:m==='jamais'?-.08:0;
+ return (m==='souvent'?.07:m==='jamais'?-.08:0)+(pilIndiv()?.maul(l,side)??0);
 }
 // Mêlée : « Pousser » fait siffler plus souvent et penche vers le pack dominant ; « Sortir vite » apaise la mêlée.
 // Rend {freq, biais} pour la mêlée introduite par `side` (tactical-plans.js, penaliteConquete) ; `a`, `b` : packs.
 function pilotageMelee(l,side,a,b){
  if(!pilotageActif(l))return {freq:1,biais:0};
  if(!(l.userSide>=0))return {freq:1,biais:0};
- const u=l.userSide,m=pilConsigne(l,u,'melee'),dom=(side===u?a-b:b-a);
- if(m==='pousser')return {freq:1.5,biais:(side===u?1:-1)*Math.max(-.15,Math.min(.15,dom*.012))};
- if(m==='vite')return {freq:.65,biais:0};
- return {freq:1,biais:0};
+ const u=l.userSide,m=pilConsigne(l,u,'melee'),dom=(side===u?a-b:b-a),indiv=pilIndiv()?.melee(l,side)??0;
+ if(m==='pousser')return {freq:1.5,biais:(side===u?1:-1)*Math.max(-.15,Math.min(.15,dom*.012))+indiv};
+ if(m==='vite')return {freq:.65,biais:indiv};
+ return {freq:1,biais:indiv};
 }
 // Mêlée gagnée en sortant vite : meilleure plateforme pour l'action suivante (comme la touche risquée).
 function pilotageScrumWon(l,side){if(pilConsigne(l,side,'melee')==='vite')l.pilotage.plateforme={side,minute:l.minute}}
@@ -266,7 +276,7 @@ function pilotageRenvoi(l,team){
  const c=pilConsigne(l,team,'coupsEnvoi');
  return c==='courts'?{distance:.6,garde:.12}:c==='longs'?{distance:1.45,garde:-.07}:{distance:1,garde:0};
 }
-function pilotageLineout(l,side){const t=pilConsigne(l,side,'touche');return t==='sure'?.06:t==='risquee'?-.06:0}
+function pilotageLineout(l,side){const t=pilConsigne(l,side,'touche');return (t==='sure'?.06:t==='risquee'?-.06:0)+(pilIndiv()?.lineout(l,side)??0)}
 // Touche gagnée en fond d'alignement : meilleure plateforme pour l'action suivante.
 function pilotageLineoutWon(l,side){if(pilConsigne(l,side,'touche')==='risquee')l.pilotage.plateforme={side,minute:l.minute}}
 
@@ -288,12 +298,16 @@ function pilotageSkillMod(p,k){
  const d=PILOTAGE_CACHE.mods.get(p.id);
  let n=d?d.tous+(d[k]||0):0;
  // Moral en match : l'écart à son départ, ±2 points au plus.
- const m=l.pilotage.moral?.joueurs?.[p.id];if(m)n+=moralEffet(m.v,m.depart);
+ const m=l.pilotage.moral?.joueurs?.[p.id];if(m)n+=moralEffet(m.v,m.ref??m.depart);
  if(cri&&l.minute<cri.jusqua&&PILOTAGE_CACHE.ids.has(p.id)){
   const c=CRIS[cri.id];
   if(c.apaise&&d&&d.tous<0)n=0;
   n+=Math.round(((c.tous||0)+(c[k]||0))*cri.force);
  }
+ // Cri individuel du banc (bien ou mal pris).
+ if(l.pilotage.crisJoueurs)n+=criJoueurMod(l,p,k);
+ // Rôle du poste et consignes individuelles (club joué, match du manager seulement).
+ if(l===(typeof S!=='undefined'&&S?S.live:null))n+=pilIndiv()?.skill(p,k)??0;
  return n;
 }
 
@@ -322,7 +336,53 @@ function crier(l,id){
 function pilotageCrisProjection(l){
  const c=l.pilotage.cri,actif=c&&l.minute<c.jusqua?{id:c.id,label:CRIS[c.id].label,jusqua:c.jusqua,force:c.force}:null;
  return {actif,options:Object.entries(CRIS).map(([id,x])=>{const f=criForce(l,id),tot=l.minute>=(x.des||0);
-  return {id,label:x.label,note:!tot?'À partir de la '+x.des+'e minute':f===1?x.note:f===.5?'Déjà crié : effet réduit de moitié':'Trop répété : ils n’écoutent plus',disponible:tot&&!l.finished,usure:1-f}})};
+  return {id,label:x.label,note:!tot?'À partir de la '+x.des+'e minute':f===1?x.note:f===.5?'Déjà crié : effet réduit de moitié':'Trop répété : ils n’écoutent plus',disponible:tot&&!l.finished,usure:1-f}}),individuels:pilotageCrisJoueurProjection(l)};
+}
+// --- Cris à un joueur (idée FM27 n° 34, choix de Léo du 23/11/2026) ---
+// Un mot du banc à un joueur sur le terrain. Bien pris : un coup de fouet court (points d'attribut pendant `duree`
+// minutes) et du moral ; mal pris : l'inverse. Rien n'est chiffré à l'écran (principe d'incertitude) : la réaction se
+// découvre après coup (sens 1 bien pris, -1 mal pris, 0 il n'écoute plus). Part de hasard tirée de l'empreinte du match
+// (pilotageHash) : la suite des tirages Math.random reste inchangée.
+// `ok` : chance d'être bien pris selon son moral du moment (palier) ; CRIS_JOUEUR_ETATS la corrige selon son état
+// d'après causerie, et son mental compte un peu. `bien` / `mal` : `tous` et points par geste, `moral` (points de moral).
+// Usure : un joueur déjà interpellé dans les 15 dernières minutes écoute moitié moins, une troisième fois plus du tout ;
+// le banc qui crie sans arrêt s'use aussi (dès 4 cris individuels en 10 minutes : moitié moins, dès 6 : plus rien).
+// Valeurs de jeu étalonnées dans tests/match-cris-joueur.cjs (lots de matchs, mêmes graines : effet sur les victoires
+// négligeable, même en criant toutes les 3 minutes).
+const CRIS_JOUEUR={
+ bravo:{label:'Bien joué',duree:6,ok:{gonfle:.5,confiant:.7,concentre:.8,inquiet:.9,abattu:.85},bien:{tous:1,moral:6},mal:{tous:-1,moral:-1}},
+ niveau:{label:'Hausse le niveau',duree:8,ok:{gonfle:.75,confiant:.7,concentre:.6,inquiet:.35,abattu:.25},bien:{tous:2,moral:2},mal:{tous:-1,moral:-6}},
+ reveil:{label:'Réveille-toi',duree:8,ok:{gonfle:.3,confiant:.45,concentre:.55,inquiet:.4,abattu:.5},bien:{tous:3,moral:-1},mal:{tous:-1,discipline:-6,moral:-5}}
+};
+const CRIS_JOUEUR_ETATS={relache:{reveil:.25,bravo:-.1},indifferent:{reveil:.15},tendu:{bravo:.1,niveau:-.15,reveil:-.15},vexe:{reveil:-.2,bravo:.05},galvanise:{reveil:-.2,niveau:.05}};
+const CRIS_JOUEUR_USURE=Object.freeze({joueur:15,banc:10,bancMoitie:4,bancMuet:6});
+function criJoueurForce(l,id){
+ const log=l.pilotage.crisJoueursLog||[],U=CRIS_JOUEUR_USURE;
+ const n=log.filter(x=>x.id===id&&l.minute-x.minute<U.joueur).length,b=log.filter(x=>l.minute-x.minute<U.banc).length;
+ return (n===0?1:n===1?.5:0)*(b>=U.bancMuet?0:b>=U.bancMoitie?.5:1);
+}
+function crierJoueur(l,id,cri){
+ if(!pilotageActif(l)||l.finished)return false;
+ const c=CRIS_JOUEUR[cri],u=l.userSide;if(!c)return false;
+ const p=activePlayers(l,u).find(x=>x.id===id);if(!p)return false;
+ const force=criJoueurForce(l,id),log=l.pilotage.crisJoueursLog||[];
+ const m=l.pilotage.moral?.joueurs?.[id],palier=moralPalier(m?m.v:moralDepart(l,id))[1],etat=l.pilotage.etats?.[id]?.etat;
+ const chance=Math.max(.1,Math.min(.95,(c.ok[palier]??.6)+(CRIS_JOUEUR_ETATS[etat]?.[cri]||0)+((typeof skill==='function'?skill(p,'mental'):60)-60)*.004));
+ const tirage=pilotageHash(['crijoueur',l.worldContext?.id??'',(l.pair||[]).join('-'),id,cri,Math.floor(l.minute),log.length].join('|'))/4294967296;
+ const sens=force===0?0:tirage<chance?1:-1,e=sens>0?c.bien:sens<0?c.mal:{};
+ const fiche={cri,minute:l.minute,jusqua:l.minute+c.duree,sens};
+ for(const [k,v] of Object.entries(e))if(k!=='moral')fiche[k]=v*force;
+ if(e.moral&&l.pilotage.moral)moralBouge(l,id,e.moral*force);
+ l.pilotage.crisJoueurs={...(l.pilotage.crisJoueurs||{}),[id]:fiche};
+ l.pilotage.crisJoueursLog=[...log,{id,cri,minute:l.minute}].slice(-40);
+ return {sens};
+}
+// Bonus du cri individuel en cours pour le joueur `p` et le geste `k`.
+function criJoueurMod(l,p,k){const f=l.pilotage.crisJoueurs?.[p.id];return f&&l.minute<f.jusqua?(f.tous||0)+(f[k]||0):0}
+function pilotageCrisJoueurProjection(l){
+ const r={};
+ for(const [id,f] of Object.entries(l.pilotage.crisJoueurs||{}))r[id]={cri:f.cri,label:CRIS_JOUEUR[f.cri]?.label||f.cri,minute:f.minute,sens:f.sens,enCours:l.minute<f.jusqua};
+ return {options:Object.entries(CRIS_JOUEUR).map(([id,x])=>({id,label:x.label})),joueurs:r};
 }
 // Fatigue : le rythme et « Tout donner » usent plus vite (charge par minute, rugby.js). Même règle pour les deux
 // bancs : un adversaire qui accélère s'use aussi.
@@ -337,18 +397,43 @@ function pilotagePrevision(l,minutes=10){
  return activePlayers(l,u).map(p=>({id:p.id,condition:Math.round(p.condition),prevue:Math.round(Math.max(12,Math.min(100,p.condition-charge*(1+(70-skill(p,'stamina'))*.009)*minutes)))}));
 }
 // Conseil de Gabi : le joueur qui sera le plus entamé dans 10 minutes, remplacé par le meilleur remplaçant possible.
+// C'est une estimation de l'adjoint (idée FM27 n° 35, principe d'incertitude) : plus il est compétent, plus il lit
+// juste la fatigue à venir et choisit le bon remplaçant. Erreur tirée du hachage du match (aucun tirage), stable
+// sur une fenêtre de 5 minutes ; un ancien direct sans contexte Monde garde la lecture exacte.
 function pilotageConseilChangement(l,prevision){
  if(l.finished||typeof eligibleChanges!=='function')return null;
- const u=l.userSide,on=l.sheets[u].on;
- for(const x of [...prevision].sort((a,b)=>a.prevue-b.prevue)){
+ const u=l.userSide,on=l.sheets[u].on,ctx=l.worldContext?.id;
+ const lv=ctx==null?100:niveauStaff(),juste=Math.max(0,Math.min(1,(lv-45)/40))*.65+.25,ecart=Math.max(0,85-lv)*.4;
+ const h=k=>pilotageHash(ctx+'|changement|'+Math.floor((Number(l.minute)||0)/5)+'|'+k);
+ const lue=prevision.map(x=>({...x,prevue:ctx==null?x.prevue:Math.round(x.prevue+((h(x.id)%1000)/1000-.5)*2*ecart)}));
+ for(const x of lue.sort((a,b)=>a.prevue-b.prevue)){
   if(x.prevue>=55)break;
   const slot=on.indexOf(x.id);if(slot<0)continue;
   const options=eligibleChanges(l,u,slot).filter(p=>p.condition>=85).sort((a,b)=>(b.rating||0)-(a.rating||0));
   if(!options.length)continue;
-  const sortant=activePlayers(l,u).find(p=>p.id===x.id),entrant=options[0];
-  return {outId:x.id,inId:entrant.id,slot,texte:`${sortant?.name||'Le n° '+(slot+1)} (${slot+1}) sera à ${x.prevue} % dans 10 minutes. ${entrant.name} est frais.`};
+  // Mauvaise appréciation : le deuxième remplaçant possible plutôt que le meilleur.
+  const entrant=ctx!=null&&options.length>1&&(h('choix:'+x.id)%1000)/1000>=juste?options[1]:options[0];
+  const sortant=activePlayers(l,u).find(p=>p.id===x.id);
+  return {outId:x.id,inId:entrant.id,slot,texte:`${sortant?.name||'Le n° '+(slot+1)} (${slot+1}) sera vers ${Math.max(12,x.prevue)} % dans 10 minutes. ${entrant.name} est frais.`};
  }
  return null;
+}
+// Conseil de plan de jeu de Gabi (attaque, défense) : la lecture du match (match-v61-advisor.js), vue ou non selon
+// la compétence de l'adjoint (même vigilance que reglesDuStaff), réévaluée toutes les 5 minutes. Rien quand il n'a pas
+// d'avis. Accepté, il part dans la file du prochain arrêt de jeu (native/engine/match-arrets.cjs, auteur 'adjoint').
+function pilotagePlanAvis(l){
+ if(l.finished||typeof matchV61Advice!=='function'||!l.worldContext)return null;
+ const a=matchV61Advice(l);if(!a||!(a.attackChanged||a.defenceChanged))return null;
+ const lv=niveauStaff(),fenetre=Math.floor((Number(l.minute)||0)/5);
+ const voit=k=>(pilotageHash(l.worldContext.id+'|plan|'+fenetre+'|'+k)%100)<Math.round(25+(lv-45)*1.5);
+ const u=l.userSide,out=[];
+ if(a.attackChanged&&typeof TACTICS!=='undefined'&&TACTICS[a.attack]&&voit('attaque:'+a.attack))
+  out.push({axe:'planAttaque',valeur:a.attack,label:CONSIGNES_PLAN.planAttaque.label,valeurLabel:TACTICS[a.attack][0],actuelLabel:TACTICS[l.tactics[u]]?.[0]||'',raison:a.attackReason});
+ if(a.defenceChanged&&typeof DEFENCES!=='undefined'&&DEFENCES[a.defence]&&voit('defense:'+a.defence))
+  out.push({axe:'systemeDefense',valeur:a.defence,label:CONSIGNES_PLAN.systemeDefense.label,valeurLabel:DEFENCES[a.defence][0],actuelLabel:DEFENCES[l.defences?.[u]||'equilibre']?.[0]||'',raison:a.defenceReason});
+ const attente=typeof CDMatchArrets!=='undefined'?CDMatchArrets.file(l):[];
+ const reste=out.filter(x=>!attente.some(e=>e.cle==='consigne:'+x.axe));
+ return reste.length?reste:null;
 }
 
 // --- Causeries : réaction de chaque joueur ---
@@ -527,16 +612,23 @@ function pilotageStaffAvis(l){
 }
 function staffAvisEnAttente(l){
  const a=l.pilotage?.staffAvis;if(!a)return [];
- return a.propositions.filter(x=>l.pilotage.consignes[x.axe]!==x.valeur);
+ const attente=typeof CDMatchArrets!=='undefined'?CDMatchArrets.file(l):[];
+ return a.propositions.filter(x=>l.pilotage.consignes[x.axe]!==x.valeur&&!attente.some(e=>e.cle==='consigne:'+x.axe&&e.valeur===x.valeur));
 }
-// Bouton « Appliquer ces consignes » : le manager prend l'avis du staff tel quel (une seule commande).
-function appliquerAvisStaff(l){
+// Bouton « Appliquer ces consignes » (fenêtre Équipe) ou bulle de Gabi (idée FM27 n° 35) : le manager prend l'avis du
+// staff, en entier ou seulement les axes cliqués (`axes`). Le changement attend le prochain arrêt de jeu (file
+// native/engine/match-arrets.cjs, auteur 'adjoint') ; sans file (ancien direct), il part tout de suite.
+function appliquerAvisStaff(l,axes){
  if(!pilotageActif(l)||l.finished)return false;
- const a=staffAvisEnAttente(l);if(!a.length)return false;
- for(const x of a)setConsigne(l,x.axe,x.valeur);
+ let a=staffAvisEnAttente(l);
+ if(Array.isArray(axes)&&axes.length)a=a.filter(x=>axes.includes(x.axe));
+ if(!a.length)return false;
+ const file=typeof CDMatchArrets!=='undefined'&&CDMatchArrets.actif(l)?CDMatchArrets:null;
+ for(const x of a){if(file)file.ajouter(l,{type:'consigne',axe:x.axe,valeur:x.valeur},'adjoint');else setConsigne(l,x.axe,x.valeur);}
  l.pilotage.journal.push({minute:l.minute,auteur:'manager',texte:`Tu suis l’avis du staff (${a.map(x=>consigneLabel(x.axe,x.valeur)).join(', ')}).`});
  l.pilotage.journal=l.pilotage.journal.slice(-30);
- l.pilotage.staffAvis=null;
+ const reste=(l.pilotage.staffAvis?.propositions||[]).filter(x=>!a.some(y=>y.axe===x.axe));
+ l.pilotage.staffAvis=reste.length?{...l.pilotage.staffAvis,propositions:reste}:null;
  return true;
 }
 function pilotageStaff(l){
@@ -600,7 +692,7 @@ function pilotageApresMinute(l){
 // départ (4 % de l'écart par minute). Effet sur le jeu : seulement l'écart au départ, ±1 point d'attribut par 10 points
 // de moral, borné à ±2 (l'état de causerie garde son propre effet, déjà compté).
 const MORAL_DEPART={galvanise:72,motive:64,serein:60,indifferent:50,tendu:40,vexe:36,relache:44};
-const MORAL_FAITS={essaiMarque:8,essaiEquipe:3,essaiEncaisse:-3,butReussi:2,butManque:-3,percee:3,battu:-3,enAvant:-3,grattage:3,carton:-12,cartonEquipe:-2,entree:4,scoreMene:1,scoreSubi:-1,retour:.04,ecart:8};
+const MORAL_FAITS={attente:-2,essaiMarque:8,essaiEquipe:3,essaiEncaisse:-3,butReussi:2,butManque:-3,percee:3,battu:-3,enAvant:-3,grattage:3,carton:-12,cartonEquipe:-2,entree:4,scoreMene:1,scoreSubi:-1,retour:.04,ecart:8};
 const MORAL_PALIERS=[[78,'gonfle','Gonflé à bloc'],[62,'confiant','Confiant'],[42,'concentre','Concentré'],[28,'inquiet','Inquiet'],[0,'abattu','Abattu']];
 function moralPalier(v){return MORAL_PALIERS.find(x=>v>=x[0])||MORAL_PALIERS[MORAL_PALIERS.length-1]}
 function moralEffet(v,depart){return Math.max(-2,Math.min(2,Math.round((v-depart)/10)))}
@@ -609,7 +701,7 @@ function moralFiche(l,id){
  const M=l.pilotage.moral,d=moralDepart(l,id);let f=M.joueurs[id];
  if(!f)f=M.joueurs[id]={v:d,depart:d,repere:d};
  // Nouvelle causerie (mi-temps) : le départ change, le moral suit du même écart.
- else if(f.depart!==d){f.v=Math.max(0,Math.min(100,f.v+d-f.depart));f.depart=d}
+ else if(f.depart!==d){f.v=Math.max(0,Math.min(100,f.v+d-f.depart));if(f.ref!==undefined)f.ref+=d-f.depart;f.depart=d}
  return f;
 }
 function moralBouge(l,id,delta){if(id==null||!delta)return;const f=moralFiche(l,id);f.v=Math.max(0,Math.min(100,f.v+delta))}
@@ -619,13 +711,19 @@ function pilotageMoral(l){
  const premier=!p.moral;
  const M=p.moral||(p.moral={joueurs:{},ev:0,jaunes:[{},{}],sur:[[],[]],minute:-1});
  const sur=[0,1].map(s=>activePlayers(l,s).map(x=>x.id));
+ // Remplaçants suivis dès le coup d'envoi (revue FM27, idée 32) : ils vivent le match depuis le banc (moral montré).
+ // À son entrée, son moral du moment devient sa référence (`ref`) : l'effet sur le jeu repart de zéro comme avant,
+ // seul le moral montré garde la trace du banc.
+ M.banc=M.banc||{};for(const s of [0,1])for(const id of l.sheets[s].bench||[])if(id&&!(l.sheets[s].used||[]).includes(id)){moralFiche(l,id);M.banc[id]=true}
  // Entrées en jeu : un remplaçant arrive avec l'envie d'en découdre.
- for(const s of [0,1]){for(const id of sur[s]){moralFiche(l,id);if(!premier&&!M.sur[s].includes(id)&&!(l.sheets[s].cards||[]).some(c=>c.id===id))moralBouge(l,id,F.entree)}M.sur[s]=sur[s]}
+ for(const s of [0,1]){for(const id of sur[s]){moralFiche(l,id);if(!premier&&!M.sur[s].includes(id)&&!(l.sheets[s].cards||[]).some(c=>c.id===id)){if(M.banc?.[id])M.joueurs[id].ref=M.joueurs[id].v;moralBouge(l,id,F.entree)}}M.sur[s]=sur[s]}
  const equipe=(s,delta,sauf)=>{for(const id of sur[s])if(id!==sauf)moralBouge(l,id,delta)};
+ // Le banc vit le match à moitié : la moitié des faits collectifs (arrondie).
+ const banc=(s,delta)=>{for(const id of l.sheets[s].bench||[])if(id&&M.joueurs[id])moralBouge(l,id,Math.sign(delta)*Math.floor(Math.abs(delta)/2))};
  const events=l.events||[];
  for(let i=premier?events.length:M.ev;i<events.length;i++){
   const e=events[i],sc=e?.scene;if(!sc)continue;const s=sc.team;
-  if(e.type==='try'&&(s===0||s===1)){moralBouge(l,sc.actor,F.essaiMarque);equipe(s,F.essaiEquipe,sc.actor);equipe(1-s,F.essaiEncaisse)}
+  if(e.type==='try'&&(s===0||s===1)){moralBouge(l,sc.actor,F.essaiMarque);equipe(s,F.essaiEquipe,sc.actor);equipe(1-s,F.essaiEncaisse);banc(s,F.essaiEquipe);banc(1-s,F.essaiEncaisse)}
   else if(sc.kind==='goal')moralBouge(l,sc.actor,F.butReussi);
   else if(sc.kind==='miss')moralBouge(l,sc.actor,F.butManque);
   else if(sc.kind==='hand-fault')moralBouge(l,sc.actor,F.enAvant);
@@ -638,9 +736,11 @@ function pilotageMoral(l){
  const minute=Math.floor(l.minute||0);
  if(minute!==M.minute){
   // Score et temps : en 2e mi-temps, toutes les 5 minutes, l'équipe qui mène nettement prend confiance, l'autre doute.
-  if(minute>=40&&minute%5===0)for(const s of [0,1]){const ecart=(l.score?.[s]||0)-(l.score?.[1-s]||0);if(ecart>=F.ecart)equipe(s,F.scoreMene);else if(ecart<=-F.ecart)equipe(s,F.scoreSubi)}
+  if(minute>=40&&minute%5===0)for(const s of [0,1]){const ecart=(l.score?.[s]||0)-(l.score?.[1-s]||0);if(ecart>=F.ecart){equipe(s,F.scoreMene);banc(s,F.scoreMene)}else if(ecart<=-F.ecart){equipe(s,F.scoreSubi);banc(s,F.scoreSubi)}}
+  // Remplaçant jamais entré : l'impatience monte doucement en fin de match (toutes les 10 minutes dès la 60e).
+  if(minute>=60&&minute%10===0)for(const s of [0,1])for(const id of l.sheets[s].bench||[])if(id&&!(l.sheets[s].used||[]).includes(id))moralBouge(l,id,F.attente);
   // Retour doux vers le départ ; repère de tendance toutes les 5 minutes.
-  for(const f of Object.values(M.joueurs)){f.v=Math.round((f.v+(f.depart-f.v)*F.retour)*10)/10;if(minute%5===0)f.repere=f.v}
+  for(const f of Object.values(M.joueurs)){f.v=Math.round((f.v+((f.ref??f.depart)-f.v)*F.retour)*10)/10;if(minute%5===0)f.repere=f.v}
   M.minute=minute;
  }
 }
@@ -648,12 +748,12 @@ function pilotageMoralProjection(l){
  const M=l.pilotage?.moral;if(!M)return {};
  const u=l.userSide,ids=new Set([...(l.sheets[u].on||[]),...(l.sheets[u].bench||[])]),r={};
  for(const [id,f] of Object.entries(M.joueurs)){if(!ids.has(id))continue;const [,cle,label]=moralPalier(f.v);
-  r[id]={valeur:Math.round(f.v),depart:f.depart,cle,label,tendance:f.v-f.repere>=3?1:f.v-f.repere<=-3?-1:0,effet:moralEffet(f.v,f.depart)}}
+  r[id]={valeur:Math.round(f.v),depart:f.depart,cle,label,tendance:f.v-f.repere>=3?1:f.v-f.repere<=-3?-1:0,effet:moralEffet(f.v,f.ref??f.depart)}}
  return r;
 }
 function pilotageMinute(l,moteur){
  const avant=PILOTAGE_EN_COURS;PILOTAGE_EN_COURS=l||null;
- try{const r=moteur(l);if(l){pilotageMoral(l);pilotageApresMinute(l)}return r}
+ try{const r=moteur(l);if(l){pilotageMoral(l);pilotageApresMinute(l);if(typeof CDMatchArrets!=='undefined')CDMatchArrets.apresMinute(l)}return r}
  finally{PILOTAGE_EN_COURS=avant}
 }
 // Branché sur la minute du moteur (rugby.js, chargé avant ce fichier).
@@ -687,6 +787,60 @@ function pilotageBilan(l,axe){
  }[axe]||[];
  return {axe,valeur:v,depuis:l.pilotage.depuis[axe],texte:`${CONSIGNES[axe].label} « ${consigneLabel(axe,v)} » depuis ${l.pilotage.depuis[axe]}′ : ${morceaux.join(', ')}.`};
 }
+// Avis du staff sur chaque cran (idée FM27 n° 33, fenêtre des consignes en direct ; choix de Léo du 23/11/2026) :
+// pour / contre de chaque cran EN TENDANCE, jamais chiffrés (principe d'incertitude). `force` : 2 net, 1 léger,
+// 0 le staff ne sait pas. Ce que le staff lit dépend de sa compétence (`niveauStaff`) : il peut grossir, minimiser ou
+// ne pas voir un effet ; la lecture est figée pour le match (hachage, aucun tirage) et tient compte de l'arbitre et de
+// la météo. Mots courts, ordres de grandeur des effets réels ci-dessus et de tactical-plans.js.
+const CONSIGNES_TENDANCES={
+ piedJeu:{moins:[[1,1,'Ballon gardé'],[-1,2,'Moins de jeu au pied'],[-1,1,'Moins de territoire']],normal:[[0,0,'Équilibre']],plus:[[1,2,'Jeu au pied'],[1,1,'Territoire'],[-1,1,'Ballons rendus']]},
+ rythme:{lent:[[1,1,'Moins d’en-avant'],[1,1,'Moins d’usure'],[-1,1,'Moins d’avancée']],normal:[[0,0,'Équilibre']],rapide:[[1,1,'Plus d’avancée'],[-1,1,'En-avant'],[-1,1,'Usure des deux XV']]},
+ relance:{degager:[[1,2,'Jeu au pied chez nous'],[-1,1,'Ballon rendu']],selon:[[0,0,'Au choix du 10']],relancer:[[1,1,'Ballon à la main'],[-1,2,'Moins de pied chez nous'],[-1,1,'Ballons perdus']]},
+ finDeMatch:{montre:[[1,2,'Ballon gardé'],[-1,1,'Moins de jeu au pied'],[0,0,'Dès 70′']],normal:[[0,0,'Sans effet']],tout:[[1,1,'Prise de risque'],[-1,2,'Ballons perdus'],[0,0,'Dès 70′']]},
+ rucks:{prudente:[[1,1,'Moins de fautes'],[-1,1,'Moins d’arrachés']],normale:[[0,0,'Équilibre']],agressive:[[1,2,'Ballons arrachés'],[-1,'arbitre-rucks','Fautes']]},
+ discipline:{stricte:[[1,2,'Moins de fautes'],[-1,1,'Défense moins mordante']],normale:[[0,0,'Équilibre']],limite:[[1,1,'Défense mordante'],[-1,2,'Fautes'],[-1,'arbitre-cartons','Cartons']]},
+ touche:{sure:[[1,2,'Touche gagnée'],[-1,1,'Plateforme moyenne']],normale:[[0,0,'Équilibre']],risquee:[[1,1,'Plateforme idéale'],[-1,2,'Touches perdues']]},
+ maul:{jamais:[[1,1,'Ballon vite sorti'],[-1,2,'Moins d’essais portés']],selon:[[0,0,'Au choix du pack']],souvent:[[1,2,'Essais portés'],[-1,1,'Jeu prévisible']]},
+ melee:{vite:[[1,2,'Moins de sifflets'],[1,1,'Plateforme']],normale:[[0,0,'Équilibre']],pousser:[[1,1,'Pénalités si pack fort'],[-1,'arbitre-melee','Coups de sifflet']]},
+ coupsEnvoi:{longs:[[1,2,'Distance'],[-1,1,'Moins de récupérés']],normaux:[[0,0,'Équilibre']],courts:[[1,2,'Ballons récupérés'],[-1,1,'Moins de distance']]},
+ cible:{aucune:[[0,0,'Sans effet']],aile:[[1,1,'Mètres sur leur aile'],[-1,1,'Ils s’adaptent']],ouvreur:[[1,1,'Ballons perdus chez eux'],[-1,1,'Plaquages en retard'],[-1,1,'Ils s’adaptent']]},
+ planAttaque:{equilibre:[[0,0,'Jeu varié']],large:[[1,2,'Gains plus longs'],[-1,1,'Fatigue'],[-1,'pluie-large','Fautes de main']],conquete:[[1,1,'Moins de fautes de main'],[1,1,'Pénaltouche'],[-1,1,'Gains plus courts']],occupation:[[1,2,'Territoire'],[1,1,'Moins d’usure'],[-1,1,'Ballons rendus'],[-1,'vent-occupation','Selon le vent']]},
+ systemeDefense:{equilibre:[[0,0,'Compromis']],pression:[[1,2,'Erreurs provoquées'],[-1,1,'Fatigue'],[-1,1,'Grands gains concédés'],[-1,1,'Pénalités']],prudente:[[1,1,'Profondeur protégée'],[1,1,'Moins de pénalités'],[-1,1,'Premiers mètres cédés']]},
+ penalites:{auto:[[0,0,'Au choix du capitaine']],points:[[1,2,'Points au pied'],[-1,1,'Moins d’occasions d’essai']],touch:[[1,1,'Ballon porté'],[-1,1,'Points laissés']],main:[[1,1,'Jeu rapide'],[-1,1,'Ballons perdus']]}
+};
+// Force qui dépend du contexte du match : l'arbitre et la météo durcissent un effet.
+function tendanceContexte(l,cle){
+ const a=l.pilotage.arbitre||{};
+ if(cle==='arbitre-rucks')return a.rucks>=4?2:1;
+ if(cle==='arbitre-cartons')return a.cartons>=4?2:1;
+ if(cle==='arbitre-melee')return a.melee>=4?2:1;
+ if(cle==='pluie-large')return l.weather==='Pluie'?2:1;
+ if(cle==='vent-occupation')return l.weather==='Vent'?2:1;
+ return 1;
+}
+// Fiabilité affichée de la lecture du staff (un mot, jamais son niveau chiffré).
+function avisFiabilite(lv){return lv>=75?'fiable':lv>=60?'correct':'approximatif'}
+function pilotageAvisCrans(l){
+ if(!pilotageActif(l))return null;
+ const lv=niveauStaff(),erreur=Math.max(.04,Math.min(.42,(95-lv)/110)),graine='avis|'+(l.worldContext?.id||'match')+'|'+(l.pair||[]).join('-')+'|';
+ const axes={};
+ for(const [axe,crans] of Object.entries(CONSIGNES_TENDANCES)){
+  axes[axe]={};
+  for(const [v,effets] of Object.entries(crans)){
+   const r={pour:[],contre:[],neutre:[]};
+   for(const [sens,f,mot] of effets){
+    if(!sens){r.neutre.push(mot);continue;}
+    let force=typeof f==='string'?tendanceContexte(l,f):f;
+    // Lecture du staff : plus il est compétent, moins il se trompe d'intensité ou passe à côté.
+    const h=pilotageHash(graine+axe+'|'+v+'|'+mot)/4294967296;
+    if(h<erreur)force=force===2?1:(h<erreur/3?0:2);
+    (sens>0?r.pour:r.contre).push({mot,force});
+   }
+   axes[axe][v]=r;
+  }
+ }
+ return {fiabilite:avisFiabilite(lv),axes};
+}
 function pilotageProjection(l){
  if(!pilotageActif(l))return null;
  const p=l.pilotage,joueurs={};
@@ -708,11 +862,17 @@ function pilotageProjection(l){
   // Avis du staff en attente (bouton « Appliquer ces consignes ») et rôles en direct (onglet Rôles).
   staff:(()=>{const a=staffAvisEnAttente(l);return {niveau:niveauStaff(),minute:p.staffAvis?.minute??null,
    propositions:a.map(x=>({...x,label:CONSIGNES[x.axe].label,valeurLabel:consigneLabel(x.axe,x.valeur),actuelLabel:consigneLabel(x.axe,p.consignes[x.axe]??CONSIGNES_NEUTRES[x.axe])}))}})(),
+  // Conseil de plan de jeu de Gabi (bulle), vu selon sa compétence ; null sans avis.
+  planAvis:pilotagePlanAvis(l),
   roles:typeof playerRolesLive==='function'?playerRolesLive(l):null,
+  // File « prochain arrêt de jeu », rôles du poste et consignes individuelles (native/engine/match-arrets.cjs).
+  ...(typeof CDMatchArrets!=='undefined'?{arrets:CDMatchArrets.projection(l)}:{}),
+  // Avis du staff sur chaque cran, en tendance (fenêtre des consignes en direct).
+  avisCrans:pilotageAvisCrans(l),
   ...(()=>{const prev=pilotagePrevision(l);return {fatigue:[...prev].sort((a,b)=>a.prevue-b.prevue).slice(0,4),conseilChangement:pilotageConseilChangement(l,prev)}})(),
   // Banc adverse : consignes en cours (ce que son jeu laisse voir), derniers changements, tons de ses causeries.
   adversaire:{consignes:{...CONSIGNES_NEUTRES,...(p.consignesAdverses||{})},derniers:(p.adversaire?.derniers||[]).slice(-5).map(x=>({...x})),
    causeries:Object.fromEntries(Object.entries(p.adversaire?.causeries||{}).map(([ph,t])=>[ph,{ton:t,label:TONS_LABELS[t]||t}]))}
  };
 }
-if(typeof module!=='undefined'&&module.exports)module.exports={MORAL_DEPART,MORAL_FAITS,MORAL_PALIERS,moralEffet,ARBITRES,arbitreDuMatch,arbitreResume,CONSIGNES,CONSIGNES_GROUPES,CONSIGNES_PLAN,CRIS,TONS_CAUSERIE,TONS_LABELS,PILOTAGE_ETATS};
+if(typeof module!=='undefined'&&module.exports)module.exports={MORAL_DEPART,MORAL_FAITS,MORAL_PALIERS,moralEffet,ARBITRES,arbitreDuMatch,arbitreResume,CONSIGNES,CONSIGNES_GROUPES,CONSIGNES_PLAN,CRIS,CRIS_JOUEUR,TONS_CAUSERIE,TONS_LABELS,PILOTAGE_ETATS};

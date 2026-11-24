@@ -280,6 +280,9 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	between.couvert = func() -> bool: return (is_instance_valid(view.get("equipe")) and view.equipe.visible) or (view.has_method("fenetre_ouverte") and view.fenetre_ouverte())
 	# Nom d'un joueur de l'entracte : sa petite fenêtre par-dessus le match (jamais une page qui remplace la vue).
 	if view.has_method("ouvrir_joueur"): between.fiche_vers = view.ouvrir_joueur
+	# Carte de Mon XV : la fenêtre du joueur (idée 32), le match continue derrière.
+	var MenuJoueur = load("res://ui/contextual/match_menu_joueur.gd")
+	if view.has_method("_ouvrir_fenetre"): between.menu_vers = func(id: String, ancre: Control): MenuJoueur.ouvrir(view, id, ancre)
 	# Repère de la domination, dernier fait, chiffre clé : le journal ou les statistiques ouverts à la bonne ligne.
 	# Plein écran obligatoire (Léo, 21/11/2026) : un fait, un chiffre ou un match du multiplex cliqué ouvre sa petite
 	# fenêtre par-dessus le match ; le journal et les statistiques s'ouvrent depuis elle (tiroirs du direct).
@@ -298,6 +301,8 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	between.joueur_choisi.connect(func(poste: int): view.ouvrir_equipe("composition", poste))
 	between.score_joue.connect(_score_joue)
 	between.consigne_bonus.connect(appliquer_consigne_bonus)
+	# Petite fenêtre des consignes (idée FM27 n° 33) : le match continue derrière, changements au prochain arrêt.
+	between.consignes_demandees.connect(func(): if view.has_method("ouvrir_fenetre_consignes"): view.ouvrir_fenetre_consignes(envoyer_consigne))
 	# « Pourquoi » d'après-match : l'action d'une raison ouvre l'écran de son levier.
 	between.levier_choisi.connect(func(route: String): app._navigate(route))
 	# Terrain 2D : il suit l'horloge de l'entracte et repart de la dernière image connue.

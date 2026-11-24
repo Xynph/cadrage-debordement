@@ -20,6 +20,7 @@ const Pilotage = preload("res://ui/contextual/match_consignes.gd")
 const W = preload("res://ui/contextual/match_tableau_widgets.gd")
 const BanqueImages = preload("res://ui/banque_images.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
+const MenuJoueur = preload("res://ui/contextual/match_menu_joueur.gd")
 
 ## Taille de la maquette : tout est écrit pour 1600×900 et mis à l'échelle (k) de la fenêtre.
 const REF := Vector2(1600, 900)
@@ -123,6 +124,10 @@ func _process(_delta: float) -> void:
 	if not _attente.is_empty() and not bool(app.waiting):
 		var erreur := str(app.get("last_error"))
 		_message = erreur if not erreur.is_empty() else _succes
+		# Match du manager : le changement attend le prochain arrêt de jeu (file du moteur, match-arrets.cjs).
+		var meta: Variant = app.model.get("meta", {}) if app.get("model") is Dictionary else {}
+		var file: Variant = meta.get("fileArret") if meta is Dictionary else null
+		if erreur.is_empty() and file is Dictionary and bool(file.get("enAttente", false)): _message = "⧗ Au prochain arrêt de jeu : " + _succes.left(1).to_lower() + _succes.substr(1)
 		_message_teinte = C.ALERT if not erreur.is_empty() else C.MINT
 		_attente = ""
 		_cle = ""
@@ -277,8 +282,8 @@ func fs(valeur: float) -> int:
 ## n'est gardé que pour les disques du terrain (`rond`), seule forme ronde admise.
 func _boite(fond: Color, bord: Color = Color.TRANSPARENT, rayon: float = 0, epaisseur: float = 1, marge: float = 0, rond: bool = false, cote: String = "bottom") -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	style.bg_color = fond
-	style.border_color = bord
+	style.bg_color = MenuJoueur.teinte_bloc(fond)
+	style.border_color = MenuJoueur.teinte_bloc(bord)
 	style.set_border_width_all(0)
 	if bord.a > 0.0: style.set("border_width_" + cote, maxi(1, px(epaisseur)))
 	style.set_corner_radius_all(maxi(2, px(rayon)) if rond else 0)
@@ -543,10 +548,12 @@ func _rafraichir() -> void:
 func _fond() -> void:
 	var fond := ColorRect.new()
 	fond.name = "TeamBackdrop"
-	fond.color = C.BG
+	# Ardoise claire (teinte D), comme toutes les fenêtres du direct (Léo, 23/11).
+	fond.color = MenuJoueur.PAL.fond
 	fond.mouse_filter = Control.MOUSE_FILTER_STOP
 	S.full(fond)
 	add_child(fond)
+	MenuJoueur.fond_plein(fond)
 
 func _horloge() -> String:
 	if view != null and view.get("clock") is Label: return str(view.clock.text)
@@ -955,7 +962,7 @@ func _terrain(centre: VBoxContainer) -> void:
 		var medaillon := Medaillon.new()
 		medaillon.name = "TeamPlayer%d" % (slot + 1)
 		medaillon.k = k
-		medaillon.numero = str(slot + 1)
+		medaillon.numero = str(MenuJoueur.numero_feuille(_live(), str(joueur.get("id", "")), slot + 1) if joueur is Dictionary else slot + 1)
 		medaillon.choisi = poste_choisi == slot
 		medaillon.cible = slot in cibles
 		medaillon.custom_minimum_size.x = px(128)
@@ -998,6 +1005,10 @@ func _terrain(centre: VBoxContainer) -> void:
 				puce_teinte = C.ALERT
 			elif bool(d.carton):
 				puce_texte = "Carton"
+				puce_teinte = C.IVORY
+			elif not str(MenuJoueur.texte_badge(_live(), id)[0]).is_empty():
+				# Changement en attente du prochain arrêt de jeu (sortie, rôle, consignes) : « ⧗ », discret.
+				puce_texte = str(MenuJoueur.texte_badge(_live(), id)[0])
 				puce_teinte = C.IVORY
 			elif not humeur.is_empty() and sens_humeur != 0:
 				puce_texte = str(humeur.label)
@@ -1189,7 +1200,7 @@ func _banc(p: Dictionary) -> void:
 		var eligible: bool = autorises.has(id) if poste_choisi >= 0 else tous.has(id)
 		var choisi := entrant_choisi == id
 		var conseille := not conseil.is_empty() and str(conseil.get("inId", "")) == id
-		grille.add_child(_tuile(joueur, 16 + n, eligible, choisi, conseille))
+		grille.add_child(_tuile(joueur, MenuJoueur.numero_feuille(_live(), id, 16 + n), eligible, choisi, conseille))
 	if not conseil.is_empty(): _carte_conseil(colonne, conseil)
 
 func _tuile(joueur: Dictionary, numero: int, eligible: bool, choisi: bool, conseille: bool) -> Button:
@@ -1697,26 +1708,20 @@ func _plan_de_jeu(colonne: VBoxContainer) -> void:
 		bloc.add_child(choix)
 		rangee.add_child(bloc)
 
-## Menu déroulant d'un choix (exception permise) habillé à la charte : fond PANNEAU à plat, angles droits, sans ombre
-## ni cadre ; ligne survolée sur PANNEAU_3 marquée d'un filet gauche ivoire ; textes ivoire.
+## Menu déroulant d'un choix (exception permise) en ardoise claire (teinte D) des fenêtres du direct, sans ombre ;
+## ligne survolée en case plus claire marquée d'un filet gauche ivoire ; textes ivoire.
 func _habiller_menu(menu: PopupMenu) -> void:
-	var fond := StyleBoxFlat.new()
-	fond.bg_color = Charte.PANNEAU
-	fond.set_corner_radius_all(0)
-	fond.set_border_width_all(0)
-	fond.shadow_size = 0
-	fond.set_content_margin_all(px(6))
-	menu.add_theme_stylebox_override("panel", fond)
+	menu.add_theme_stylebox_override("panel", MenuJoueur.style_ardoise(px(6), false))
 	var survol := StyleBoxFlat.new()
-	survol.bg_color = Charte.PANNEAU_3
+	survol.bg_color = MenuJoueur.PAL.case
 	survol.set_corner_radius_all(0)
 	survol.shadow_size = 0
 	survol.border_color = Charte.IVOIRE
 	survol.border_width_left = maxi(1, px(3))
 	menu.add_theme_stylebox_override("hover", survol)
 	for cle: String in ["font_color", "font_hover_color", "font_accelerator_color"]: menu.add_theme_color_override(cle, Charte.IVOIRE)
-	menu.add_theme_color_override("font_disabled_color", Charte.IVOIRE_3)
-	menu.add_theme_color_override("font_separator_color", Charte.IVOIRE_2)
+	menu.add_theme_color_override("font_disabled_color", MenuJoueur.PAL.encre3)
+	menu.add_theme_color_override("font_separator_color", MenuJoueur.PAL.encre2)
 	menu.add_theme_font_override("font", C.font(700))
 	menu.add_theme_font_size_override("font_size", fs(16))
 	menu.set_meta("habille", true)
