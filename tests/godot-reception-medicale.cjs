@@ -13,7 +13,7 @@ test('Réception médicale : vrai courrier de blessure, tableau et panneau « Co
   const profil = fs.mkdtempSync(path.join(os.tmpdir(), 'rl27-reception-medicale-'));
   try {
     const sortie = process.env.CD_RECEPTION_MEDICALE_OUTPUT || '';
-    const affichage = sortie ? ['--display-driver', 'x11', '--rendering-method', 'gl_compatibility', '--windowed', '--resolution', '1920x1080'] : ['--headless'];
+    const affichage = sortie ? ['--display-driver', process.platform === 'win32' ? 'windows' : 'x11', '--rendering-method', 'gl_compatibility', '--windowed', '--resolution', '1920x1080'] : ['--headless'];
     const r = spawnSync(godot, [...affichage, '--audio-driver', 'Dummy', '--path', 'native/godot', '--script', path.resolve(__dirname, 'godot-reception-medicale.gd')], {
       cwd: racine, encoding: 'utf8', timeout: 900000,
       env: { ...process.env, CD_GODOT_SELF_TEST: '0', CD_GODOT_GUIDE_MODULE_TEST: '1', CD_NODE_EXECUTABLE: process.execPath, CD_GODOT_DATA_DIR: profil, CD_RECEPTION_MEDICALE_OUTPUT: sortie ? path.resolve(sortie) : '' },
