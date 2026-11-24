@@ -13,6 +13,9 @@ uniform vec4 couleur_domicile = vec4(0.83, 0.24, 0.28, 1.0);
 uniform vec4 couleur_exterieur = vec4(0.44, 0.60, 0.79, 1.0);
 uniform vec3 debout = vec3(0.0); // part debout par tribu
 uniform vec3 bras = vec3(0.0); // part bras levés par tribu
+// Foule vivante (match_ambiance.gd) : bruit FastNoiseLite qui défile sur les tribunes ; 0 = sans bruit.
+uniform sampler2D bruit_foule : filter_linear, repeat_enable;
+uniform float bruit_force = 0.0;
 uniform float agitation = 0.2; // intensité d'ambiance 0..1 : amplitude du balancement
 
 const float HAUSSE = 0.34; // hauteur gagnée par un spectateur debout (m)
@@ -36,9 +39,14 @@ void vertex() {
 	float d = smoothstep(rang - 0.03, rang + 0.03, de_tribu(debout, tribu));
 	float b = smoothstep(rang - 0.03, rang + 0.03, de_tribu(bras, tribu)) * d;
 	// Balancement désynchronisé au repos, sautillement des bras levés.
-	float balance = sin(TIME * (1.1 + info.x * 0.7) + phase) * (0.018 + 0.05 * agitation);
+	// Poches plus vives qui se déplacent lentement : jamais tout le public en même temps.
+	vec3 lieu = MODEL_MATRIX[3].xyz;
+	float n = bruit_force > 0.0 ? textureLod(bruit_foule, lieu.xz * 0.011 + vec2(TIME * 0.045, TIME * -0.03), 0.0).r : 0.5;
+	float vif = mix(1.0, mix(0.35, 1.9, n), bruit_force);
+	float poche = smoothstep(0.66, 0.82, n) * 0.11 * bruit_force;
+	float balance = vif * sin(TIME * (1.1 + info.x * 0.7) + phase) * (0.018 + 0.05 * agitation);
 	float saut = abs(sin(TIME * 7.0 + phase)) * 0.07 * b;
-	float hausse = HAUSSE * d + saut;
+	float hausse = HAUSSE * d + saut + poche * (1.0 - d);
 	// Échelles de l'instance (rotation autour de la verticale seulement) : décalages en mètres.
 	float sx = max(length(MODEL_MATRIX[0].xyz), 0.001);
 	float sy = max(length(MODEL_MATRIX[1].xyz), 0.001);

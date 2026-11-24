@@ -200,6 +200,9 @@ func _ready() -> void:
 	set_camera(_camera_mode)
 	set_quality(_quality)
 	set_stadium_evening(_stadium_evening)
+	# Ambiance décorative (match_ambiance.gd) : foule vivante, confettis et fumigènes à l'essai, pluie.
+	_ambiance = Ambiance.new()
+	add_child(_ambiance)
 	if _has_pending:
 		apply_frame(_pending)
 		_pending = {}
@@ -438,6 +441,7 @@ func apply_frame(live: Dictionary) -> void:
 	sortie = false
 	plan_sortie = false
 	foule.observer(live) # Public : l'image montrée (22 mètres, essai, arrêt de jeu).
+	_ambiance.observer(live) # Météo annoncée par le moteur : pluie décorative.
 	var scene: Dictionary = live.get("scene", {})
 	if scene.is_empty() or not scene.get("players", null) is Array:
 		_clear_presence()
@@ -892,6 +896,8 @@ var foule_compte := {"total": 0, "domicile": 0, "visiteurs": 0, "neutres": 0, "t
 ## graphique factice (--headless) ne conserve pas les transformations des MultiMesh.
 var foule_tetes := PackedVector3Array()
 var _foule_matieres: Array[ShaderMaterial] = []
+const Ambiance = preload("res://match_ambiance.gd")
+var _ambiance: Ambiance
 ## Posé par la régie des temps forts : plan d'essai joué, essai pas encore aplati à l'écran.
 var essai_attendu_regie := false
 
