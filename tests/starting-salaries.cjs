@@ -114,7 +114,8 @@ test('Vrai moteur, carrière mondiale, drapeau allumé : chaque championnat à s
  assert.ok(x.masses.elite>x.masses.prem&&x.masses.prem>x.masses.urc&&x.masses.nationale>x.masses.champ);
  assert.equal(x.budget.clubs,116);assert.deepEqual(x.budget.divisions,Object.keys(E).sort());assert.equal(x.annonce,true);
  assert.equal(x.budget.prevision.plafondSalarial,7.5e6,'le plafond du championnat anglais s’applique à un club anglais');assert.equal(x.budget.prevision.limiteRecettes,null,'la règle des 52 % ne vaut qu’en France');
- for(const t of ['Abonnements','Cotisations','Staff et fonctionnement'])assert.ok(x.titres.includes(t),t);assert.ok(x.reimport,'export puis import : texte identique');
+ // Depuis #1211 (6d46d4c3d), un club avec staff paie « Salaires du staff » et « Fonctionnement du club » (l'ancienne ligne unique « Staff et fonctionnement » n'existe que sans staff).
+ for(const t of ['Abonnements','Cotisations','Salaires du staff','Fonctionnement du club'])assert.ok(x.titres.includes(t),t);assert.ok(!x.titres.includes('Staff et fonctionnement'),'ligne unique remplacée');assert.ok(x.reimport,'export puis import : texte identique');
  // Une semaine : aucun club ne gagne ou ne perd plus de 4 % des recettes moyennes de son championnat.
  x.deltas.forEach((d,i)=>assert.ok(Math.abs(d)<E[x.ligues[i]].recettes*0.04,'club '+i+' ('+x.ligues[i]+') : '+d));
 });
