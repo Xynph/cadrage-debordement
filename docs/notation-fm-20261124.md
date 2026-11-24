@@ -104,6 +104,8 @@ ou arrivée au club) → fourchettes de 9 points, 4 à 7 semaines → 5 points, 
   `Familiarite.poser_note`). Les tris gardent la valeur cachée (seul l'ordre se voit).
 - **Une seule erreur du staff par joueur** (celle du Niveau) : son meilleur rôle au poste principal a la même lettre que
   son Niveau ; les écarts entre postes et rôles restent ceux du moteur.
+- **Notes au poste calées sur le Niveau calculé** : au poste principal, note au poste = Niveau (même lettre) ; aux autres
+  postes, les écarts du moteur (`positionRatings` : familiarité, qualités du poste) restent (`Notation.decalage_poste`).
 - **Staff pas sûr → pastille double « B/A »** (deux moitiés aux couleurs des deux lettres) : lettre basse et haute =
   valeur ± 0,7 × demi-largeur d'incertitude. Recrue jamais publiée au poste (tout joueur d'un autre club : le moteur ne
   publie pas ses notes au poste) : estimée depuis la fourchette d'observation du Niveau, aux postes qu'il connaît

@@ -162,7 +162,7 @@ func lettre_inconnue() -> void:
 		if not x is Dictionary: continue
 		var publiees_x: Variant = x.get("positionRatings")
 		if publiees_x is Dictionary and not (publiees_x as Dictionary).is_empty(): continue
-		var rang := 2 if str(x.get("id", "")) == choisie else 1 if x.get("ratingRange") is Dictionary else 0
+		var rang := (2 if x.get("ratingRange") is Dictionary else 0) + (1 if str(x.get("id", "")) == choisie else 0)
 		if rang > rang_candidate:
 			candidate = str(x.get("id", ""))
 			rang_candidate = rang

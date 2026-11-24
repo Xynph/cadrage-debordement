@@ -219,7 +219,7 @@ static func lettre_note(model: Dictionary, p: Dictionary, note: float, notre: bo
 	var v := 0.0
 	var demi := q
 	if note >= 0.0:
-		v = note + e * _empreinte(graine)
+		v = note + e * _empreinte(graine) + (decalage_poste(p) if cle.begins_with("poste:") else 0.0)
 	else:
 		if familiarite < Familiarite.CONFIRME: return {"bas": -1, "haut": -1}
 		var bn := K.bounds(p, "rating", notre)
@@ -227,6 +227,16 @@ static func lettre_note(model: Dictionary, p: Dictionary, note: float, notre: bo
 		v = (float(bn.min) + float(bn.max)) / 2.0 + e * _empreinte(graine)
 		demi = maxf(q, (float(bn.max) - float(bn.min)) / 2.0)
 	return {"bas": indice(v - demi * 0.7, ref), "haut": indice(v + demi * 0.7, ref)}
+
+## Notes au poste calées sur le Niveau calculé : au poste principal, la note au poste vaut le Niveau (poste + rôle) ;
+## aux autres postes, les écarts du moteur (familiarité, qualités du poste) restent. 0 sans Niveau calculé.
+static func decalage_poste(p: Dictionary) -> float:
+	var nc: Variant = p.get("niveauCalcule")
+	var notes: Variant = p.get("positionRatings")
+	var principaux: Variant = p.get("primaryPositions", [p.get("primaryPosition")])
+	if not (nc is Dictionary and K.number(nc.get("niveau")) and notes is Dictionary and principaux is Array and not (principaux as Array).is_empty()): return 0.0
+	var base: Variant = (notes as Dictionary).get(str(int(principaux[0]))) if K.number(principaux[0]) else null
+	return float(nc.niveau) - float(base) if K.number(base) else 0.0
 
 ## Empreinte de l'erreur du staff au poste : une par famille de poste (11 et 14, même note → même lettre).
 static func cle_poste(numero: int) -> String:
