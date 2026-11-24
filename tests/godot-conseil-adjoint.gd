@@ -142,9 +142,13 @@ func run() -> void:
 	var essai_minute := -10
 	while Time.get_ticks_msec() - depart < 720000 and not live().get("finished", false):
 		view = surface()
-		if view == null: break
 		var scene: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
 		if scene is Dictionary and not app.waiting: await command("match_talk_continue", {"key": scene.key, "phase": scene.phase, "skip": true})
+		# Mi-temps (40e) : le direct laisse la place à la causerie et à l'entracte ; on les passe et on attend la reprise.
+		if view == null:
+			if not app.waiting and live().get("paused", false): await command("pause", {"paused": false})
+			await settle(2)
+			continue
 		relever(ecran())
 		var m := int(live().get("minute", 0))
 		if floori(m / 5.0) != palier:
