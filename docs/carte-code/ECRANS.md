@@ -41,7 +41,12 @@ Numéros de ligne approximatifs (au 24/11/2026) : relancer carte-code.cjs avant 
 ## Équipe
 | Écran | Fichier(s) | Entrée |
 |---|---|---|
-| Effectif (liste) | `ui/immersive08/squad_canvas.gd`, `ui/socle/ecran_effectif.gd`, `panneaux_effectif.gd` | `build` L66 / L41 |
+| Effectif (liste) | `ui/immersive08/squad_canvas.gd` (fichier public : `build`, `_build`, redéfinitions des statiques lus ailleurs, pastilles de poste), `ui/socle/ecran_effectif.gd`, `panneaux_effectif.gd` | `build` L19 / L41 |
+| · socle de l'Effectif | `ui/immersive08/squad_socle.gd` (constantes, état, outils de dessin, lecture et tri des joueurs en statiques : `primary_caption`, `sort_value`, `ordered_players`) | chaîne d'héritage socle ← filtres ← entête ← lignes ← tableau ← canvas |
+| · Puces, recherche, menus | `ui/immersive08/squad_filtres.gd` | `_filtres`, `_appliquer_puce`, `_choix_menu` |
+| · Titre, tuiles, onglets | `ui/immersive08/squad_entete.gd` | `_entete_page`, `_tuiles`, `_onglets` |
+| · Ligne d'un joueur | `ui/immersive08/squad_lignes.gd` | `_row`, `_cellule_joueur`, `_statut` |
+| · Tableau, tri, totaux | `ui/immersive08/squad_tableau.gd` | `_tableau`, `_colonnes`, `_refresh`, `_totaux` |
 | Fiche joueur | `ui/immersive08/player_canvas.gd`, `fiche_page.gd`, `fiche_commune.gd`, `fiche_*.gd` | `build` L97 |
 | Composition / tactique | `ui/immersive08/tactics_canvas.gd` + `tactics_*.gd` | `build` L44 |
 | Préparation (semaine) | `ui/immersive08/preparation_canvas.gd`, `preparation_*.gd` | `build` L34, `compact` L43 |
