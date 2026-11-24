@@ -14,7 +14,8 @@ const Charte = preload("res://ui/charte.gd")
 const Bulle = preload("res://ui/bulle_survol.gd")
 const Courbe = preload("res://ui/mini_courbe_survol.gd")
 
-## Hausse : vert pâle, vert (gain de la charte), vert vif. Baisse : rouge pâle, rouge (perte de la charte), rouge plein.
+## Hausse : vert pâle, vert (gain de la charte), vert vif. Baisse : rouge de perte franc (#d9634f), pleine opacité ;
+## le nombre de chevrons dit l'ampleur.
 const VIF := Color("4be08a")
 
 static var _cache: Dictionary = {}
@@ -28,8 +29,7 @@ static func teinte(cran: int) -> Color:
 		3: return VIF
 		2: return Charte.GAIN
 		1: return Color(Charte.GAIN, 0.5)
-		-1: return Color(Charte.PERTE, 0.55)
-		-2, -3: return Charte.PERTE
+		-1, -2, -3: return Charte.PERTE
 	return Color.TRANSPARENT
 
 ## {qualites: {clé: {cran, serie, libelle}}, niveau: {cran, serie}} du joueur ; {} sans relevé. Crans du moteur (0 pour
@@ -185,9 +185,10 @@ class Fleche extends Control:
 		var pas := h / 3.0
 		var epaisseur := maxf(2.5, w * 0.24)
 		var haut_c := minf(w * 0.5, pas * 0.95)
+		# Pile centrée verticalement sur le chiffre, hausse comme baisse : un chevron par cran.
+		var marge := (h - pas * nombre) / 2.0
 		for i in nombre:
-			# Pile depuis le bas (hausse) ou le haut (baisse) : un chevron par cran.
-			var centre := h - pas * (i + 0.5) if monte else pas * (i + 0.5)
+			var centre := h - marge - pas * (i + 0.5) if monte else marge + pas * (i + 0.5)
 			var a := centre + haut_c / 2.0 if monte else centre - haut_c / 2.0
 			var b := centre - haut_c / 2.0 if monte else centre + haut_c / 2.0
 			draw_polyline(PackedVector2Array([Vector2(epaisseur / 2.0, a), Vector2(w / 2.0, b), Vector2(w - epaisseur / 2.0, a)]), couleur, epaisseur, true)

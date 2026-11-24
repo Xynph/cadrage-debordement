@@ -311,7 +311,7 @@ static func _puce(parent: Control, x: float, y: float, cle: String, id: String) 
 	var chevron := Fleches.Fleche.new()
 	chevron.cran = 1
 	pilule.add_child(chevron)
-	D.place(chevron, Rect2(13, -4, 20, 30))
+	D.place(chevron, Rect2(13, 5, 20, 30))
 	D.text(pilule, 40, 28, mot, 20, Charte.IVOIRE, 700, largeur - 44).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return largeur
 

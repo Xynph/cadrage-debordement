@@ -373,7 +373,7 @@ static func _puce(parent: Control, x: float, y: float, cle: String, couleur: Col
 	chevron.cran = 1
 	chevron.modulate = Color(1, 1, 1, couleur.a)
 	pilule.add_child(chevron)
-	D.place(chevron, Rect2(11, -4, 18, 27))
+	D.place(chevron, Rect2(11, 4, 18, 27))
 	D.text(pilule, 36, 24, _libelle(cle), 18, Charte.IVOIRE if couleur.a > .9 else Charte.IVOIRE_2, 700, largeur - 40).mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 ## Saisons passées (historique du moteur : niveau en début et en fin de saison).
