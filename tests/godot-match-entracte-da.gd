@@ -83,7 +83,7 @@ func dans(r: Rect2, ecran: Vector2) -> bool:
 
 func etat(ecran: Control, app: Node) -> String:
 	var fiche: Variant = ecran.get("fiche_match")
-	return JSON.stringify([signaux.size(), ecran.vue_droite, ecran.vue_xv, fiche != null and is_instance_valid(fiche), (app.get("envois") as Array).size(), ecran.horloge, ecran.niveau_libelle(), ecran.tri_xv, ecran.tri_inverse])
+	return JSON.stringify([signaux.size(), ecran.vue_droite, ecran.vue_xv, fiche != null and is_instance_valid(fiche), (app.get("envois") as Array).size(), ecran.horloge, ecran.niveau_libelle(), ecran.tri_xv, ecran.tri_inverse, bool(ecran.get_meta("fm_menu", false))])
 
 ## Couleurs posées sur un contrôle (polices et styles) : aucune ne doit être l'or de Continuer.
 ## Aplat doré = fond (opaque) d'un bouton ou d'un panneau, dans l'un de ses états ; texte, contour et anneau permis.
@@ -256,10 +256,9 @@ func run() -> void:
 		# Barème unique des notes (charte, 21/11/2026) : rouge, orange, citron, vert clair, vert foncé.
 		check(Between._teinte_note(5.8) == Charte.PERTE and Between._teinte_note(6.2) == Charte.INTENSIF and Between._teinte_note(6.7) == Charte.ATTRIBUT_55 and Between._teinte_note(7.2) == Charte.CONDITION and Between._teinte_note(7.8) == Charte.NOTE_EXCELLENTE and Charte.encre_note(7.8) == Color.WHITE and Charte.encre_note(6.7) == Charte.ENCRE, cadre + " : barème des notes de la charte (cinq paliers, chiffre lisible)")
 		var terrain: Control = ecran.terrain
-		# La barre du banc (idée 34) prend une rangée sous la page : en 1920, le terrain garde ≈ 80 % de sa tuile (345 sur 432)
-		# et des pastilles de 3,5 px ; seuils abaissés d'un cran, à revoir à l'œil.
-		check(terrain.champ().size.x >= terrain.size.x * 0.78, cadre + " : le terrain remplit sa tuile (%d sur %d px)" % [int(terrain.champ().size.x), int(terrain.size.x)])
-		check(terrain.plancher_pastilles == 0.0 and terrain.rayon() >= 3.5 and terrain.rayon() <= terrain.echelle() * 3.0, cadre + " : pastilles à l'échelle du terrain, jamais une masse (rayon %.1f px)" % terrain.rayon())
+		# Seuils d'origine (80 %, 4 px) remis le 24/11 ; la même mesure dans un vrai match : godot-cris-banc.
+		check(terrain.champ().size.x >= terrain.size.x * 0.80, cadre + " : le terrain remplit sa tuile (%d sur %d px)" % [int(terrain.champ().size.x), int(terrain.size.x)])
+		check(terrain.plancher_pastilles == 0.0 and terrain.rayon() >= 4.0 and terrain.rayon() <= terrain.echelle() * 3.0, cadre + " : pastilles à l'échelle du terrain, jamais une masse (rayon %.1f px)" % terrain.rayon())
 		# Un seul aplat doré à l'écran : le bouton principal.
 		var pleins := ecran.find_children("*", "BaseButton", true, false).filter(func(b: Control): return b.is_visible_in_tree() and aplat_or(b))
 		check(pleins.size() == 1, cadre + " : un seul aplat doré (%s)" % str(pleins.map(func(b: Control): return str(b.name))))

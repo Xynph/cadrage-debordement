@@ -3,6 +3,7 @@ extends Control
 ## puces de filtre, tableau pleine largeur groupé Avants / Arrières. Pas de fiche à droite : le survol d'un nom
 ## (ou du « i ») montre la mini-fiche, le clic ouvre la fiche complète. Tout est dessiné sur le gabarit 2248 de large
 ## et sert à toutes les tailles de fenêtre ; en fenêtre étroite on retire des colonnes plutôt que de réduire le texte.
+const Fleches = preload("res://ui/fleches_progression.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
@@ -1172,6 +1173,8 @@ func _row(player:Dictionary,index:int) -> void:
 				var rating: Variant = player.get("rating")
 				var niveau := D.text(row,x,base,G.rating_text(player,true),21,Charte.couleur_attribut(rating),700,l,a)
 				niveau.name = "RosterLevel"
+				var fl_niveau: Dictionary = Fleches.donnees(app, player).get("niveau", {})
+				if not fl_niveau.is_empty(): Fleches.marquer(app, niveau, int(fl_niveau.cran), fl_niveau.serie, "Niveau", "Niveau_" + str(player.id).replace(":", "_"))
 			"pot":
 				var potentiel := D.text(row,x,base,G.potential_text(player),19,C.MUTED,500,l,a,true)
 				potentiel.name = "RosterPotential"
