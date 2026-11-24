@@ -129,6 +129,9 @@ const EXTRAS := [
 	{"id": "club-histoire", "libelle": "Club · onglet Histoire", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "history", "repos": "overview"},
 	{"id": "club-jeu", "libelle": "Club · onglet Notre jeu (avis du conseil sur notre jeu)", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "jeu", "repos": "overview"},
 	{"id": "club-jeu-fenetre", "libelle": "Club · Notre jeu, petite fenêtre d'un chiffre", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "jeu", "repos": "overview", "presser": "ConseilJeuLigne_0"},
+	## Organigramme du club (planche du 24/11/2026) : la carte en cercles, puis la petite fenêtre d'un membre.
+	{"id": "club-organigramme", "libelle": "Club · onglet Organigramme", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "organigramme", "repos": "overview"},
+	{"id": "club-organigramme-fenetre", "libelle": "Club · Organigramme, petite fenêtre d'un membre", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "organigramme", "repos": "overview", "presser": "OrgaMedecin"},
 	## Staff par service (23/11/2026) : un poste en plus visé (même commande que le clic « + ») dans chaque service qui a un membre en surnombre.
 	{"id": "staff-services-renfort", "libelle": "Staff par service · postes en plus visés", "type": "staff_services"},
 	{"id": "vestiaire-entretiens", "libelle": "Vestiaire · onglet Entretiens et duos", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week"},
