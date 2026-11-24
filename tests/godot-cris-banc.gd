@@ -4,6 +4,8 @@ extends SceneTree
 ## les ailes ») ; un clic part tout de suite au moteur (aucun bouton Confirmer) : cri d'équipe en cours, cri à un
 ## joueur dont la réaction ne se voit qu'après coup (▲ / ▼, jamais de chiffre), permutation des ailes en attente du
 ## prochain arrêt de jeu (« ⧗ ») puis appliquée (nos n° 11 et 14 échangés).
+## Vérificateur du 24/11 : taille du terrain 2D (80 %, 4 px) et banc entier avec une bulle de Gabi, en 1920 et 2560 ; liste
+## « À un joueur » et cartes Mon XV jamais recréées pendant 2 minutes de match. CD_VARIANTE_VISUELLE=A|B : les deux options.
 ## godot-cris-banc.cjs prépare la carrière ; captures final-*.png dans CD_PLANCHE_DIRECT_2D.
 var app: Control
 var checks := 0
@@ -62,7 +64,9 @@ func taille(t: Vector2i) -> void:
 
 ## Bouton visible de la barre (reconstruite à chaque image du modèle) : on le retrouve par son nom.
 func bouton(between: Control, nom: String) -> Button:
-	for n: Node in between.find_children(nom, "Button", true, false):
+	# Option B : la barre du banc vit dans la rangée du bandeau du haut (hors de l'écran 2D) : on cherche dans tout le direct.
+	var racine: Node = surface() if surface() != null else between
+	for n: Node in racine.find_children(nom, "Button", true, false):
 		if (n as Control).is_visible_in_tree() and not n.is_queued_for_deletion(): return n
 	return null
 
@@ -105,14 +109,18 @@ func run() -> void:
 	check(await until(func(): return surface() != null and vue_2d(surface()), 60000), "Écran 2D du direct, en pause")
 	view = surface()
 	var between: Control = view.regie.between
-	var barre := between.find_child("FmBancBarre", true, false) as Control
+	var barre := surface().find_child("FmBancBarre", true, false) as Control
 	check(barre != null and barre.is_visible_in_tree(), "barre du banc toujours visible")
 	for id: String in ["encourager", "exiger", "calmer", "defense", "toutDonner"]: check(bouton(between, "FmCri_" + id) != null, "cri d'équipe " + id)
 	check(bouton(between, "FmBancJoueur") != null, "rond « À un joueur »")
-	check(between.find_children("FmAjust_*", "Button", true, false).size() == 13, "douze ajustements + Permuter les ailes")
+	check(surface().find_children("FmAjust_*", "Button", true, false).size() == 13, "douze ajustements + Permuter les ailes")
 	check(bouton(between, "FmAjust_ailes") != null, "rond « Permuter les ailes »")
 	check(between.find_children("FmBancCris", "", true, false).is_empty() and between.find_children("FmBancAjustements", "", true, false).is_empty(), "variante A retirée")
 	if barre != null: check(Rect2(Vector2.ZERO, Vector2(root.size)).grow(1.0).encloses(barre.get_global_rect()), "barre dans l'écran en 1920")
+	# Taille du terrain 2D et banc entier DANS LE VRAI MATCH (pas une maquette), barre du banc posée (option A ou B).
+	await tailles_vrai_match()
+	view = surface()
+	between = view.regie.between
 	# Cri d'équipe : un clic, cri en cours dans le moteur.
 	var encourager := bouton(between, "FmCri_encourager")
 	if encourager != null:
@@ -149,6 +157,11 @@ func run() -> void:
 		bravo.pressed.emit()
 		await wait_command()
 	await capture_tailles(between)
+	# Liste « À un joueur » ouverte et descendue, 2 minutes de match à vitesse maximale : jamais recréée, toujours au même
+	# endroit ; les cartes de Mon XV gardent leurs nœuds (mises à jour en place).
+	await liste_en_place()
+	view = surface()
+	between = view.regie.between
 	# Toutes les petites fenêtres de l'écran 2D en anthracite satiné (choix B de Léo), captures en 1920.
 	await fenetres(view, between)
 	# Fenêtre refermée (✕) ; permuter les ailes : attente du prochain arrêt (« ⧗ »), puis nos ailiers échangés.
@@ -185,7 +198,7 @@ func capture_tailles(between: Control) -> void:
 		var ecran := Rect2(Vector2.ZERO, Vector2(root.size)).grow(1.0)
 		var panneau := between.find_child("FmBancMenuPanneau", true, false) as Control
 		check(panneau != null and ecran.encloses(panneau.get_global_rect()), "%s : fenêtre « À un joueur » dans l'écran" % str(t))
-		var barre := between.find_child("FmBancBarre", true, false) as Control
+		var barre := surface().find_child("FmBancBarre", true, false) as Control
 		check(barre != null and ecran.encloses(barre.get_global_rect()), "%s : barre du banc dans l'écran" % str(t))
 		# Liste accrochée au rond « À un joueur » : juste dessous, alignée sur lui ; le rond reste allumé.
 		var rond := bouton(between, "FmBancJoueur")
@@ -209,6 +222,102 @@ func capture_tailles(between: Control) -> void:
 		check(rond != null and bool(rond.get_meta("ouvert", false)), "%s : rond « À un joueur » allumé tant que la liste est ouverte" % str(t))
 		await capture("final-%d" % t.x)
 	await taille(Vector2i(1920, 1080))
+
+## Terrain 2D dans un vrai match, 1920 et 2560 : il remplit 80 % de sa tuile, pastilles d'au moins 4 px ; écran entier
+## (barre du banc, Mon XV) ; avec une bulle de Gabi de deux lignes, le banc garde ses 8 remplaçants entiers et les
+## événements défilent (vérificateur du 24/11).
+func tailles_vrai_match() -> void:
+	var variante: String = load("res://ui/contextual/match_banc_fm.gd").variante()
+	for t: Vector2i in [Vector2i(1920, 1080), Vector2i(2560, 1440)]:
+		await taille(t)
+		await until(func(): return surface() != null and vue_2d(surface()), 30000)
+		await settle(10)
+		var between: Control = surface().regie.between
+		var ecran := Rect2(Vector2.ZERO, Vector2(root.size)).grow(1.0)
+		var cadre := "%s (option %s)" % [str(t), variante]
+		var terrain: Control = between.terrain
+		print("CRIS_BANC taille %s : terrain %d / %d px (%.0f %%), pastilles %.2f px" % [cadre, int(terrain.champ().size.x), int(terrain.size.x), 100.0 * terrain.champ().size.x / maxf(1.0, terrain.size.x), terrain.rayon()])
+		check(terrain.champ().size.x >= terrain.size.x * 0.80, cadre + " : le terrain remplit sa tuile (%d sur %d px)" % [int(terrain.champ().size.x), int(terrain.size.x)])
+		check(terrain.rayon() >= 4.0 and terrain.rayon() <= terrain.echelle() * 3.0, cadre + " : pastilles d'au moins 4 px (rayon %.2f px)" % terrain.rayon())
+		var barre := surface().find_child("FmBancBarre", true, false) as Control
+		if barre == null: barre = surface().find_child("FmBancBarre", true, false) as Control
+		check(barre != null and barre.is_visible_in_tree() and ecran.encloses(barre.get_global_rect()), cadre + " : barre du banc entière dans l'écran")
+		var haut := surface().find_child("MatchTopRow", true, false) as Control
+		check(haut == null or ecran.encloses(haut.get_global_rect()), cadre + " : rangée du haut dans l'écran")
+		var xv := between.find_child("MatchBetweenSquadBar", true, false) as Control
+		check(xv != null and ecran.encloses(xv.get_global_rect()), cadre + " : Mon XV entier dans l'écran")
+		await capture("final-taille-%d" % t.x)
+		# Bulle de Gabi de deux lignes (deux consignes d'un même constat).
+		var bulles: Node = between.get_node_or_null("MatchBullesAdjoint")
+		check(bulles != null, cadre + " : bulles de Gabi posées")
+		if bulles == null: continue
+		bulles._dessiner([{"cle": "consigne:test", "sorte": "consigne", "axes": ["piedJeu", "rythme"], "raison": "Ils reculent : on les use au pied.",
+			"lignes": [{"axe": "piedJeu", "label": "Jeu au pied", "actuelLabel": "Normal", "valeurLabel": "Souvent"}, {"axe": "rythme", "label": "Rythme", "actuelLabel": "Normal", "valeurLabel": "Lent"}]}])
+		await settle(12)
+		var boite := between.find_child("MatchBetweenAdviceBubbles", true, false) as Control
+		check(boite != null and boite.is_visible_in_tree(), cadre + " : bulle de Gabi de deux lignes affichée")
+		var defile_banc := between.find_child("MatchBetweenBenchScroll", true, false) as Control
+		var zone: Control = between.zone_banc
+		check(defile_banc != null and zone != null and defile_banc.size.y + 1.0 >= zone.get_combined_minimum_size().y, cadre + " : le banc garde ses 8 lignes (%d / %d px)" % [int(defile_banc.size.y) if defile_banc else -1, int(zone.get_combined_minimum_size().y) if zone else -1])
+		var tuile_banc := between.find_child("MatchBetweenBenchTile", true, false) as Control
+		var colonne := between.find_child("MatchBetweenEventsColumn", true, false) as Control
+		check(tuile_banc != null and colonne != null and tuile_banc.get_global_rect().end.y <= colonne.get_global_rect().end.y + 1.0 and colonne.get_global_rect().end.y <= xv.get_global_rect().position.y, cadre + " : la tuile Banc tient dans la colonne, au-dessus de Mon XV")
+		check(xv != null and ecran.encloses(xv.get_global_rect()), cadre + " : Mon XV toujours entier avec la bulle")
+		var noms := (zone.find_children("*", "Label", true, false) if zone != null else []).filter(func(l: Label): return l.is_visible_in_tree() and l.text.contains(" "))
+		var dernier: Label = noms[-1] if not noms.is_empty() else null
+		check(dernier != null and defile_banc.get_global_rect().grow(1.0).encloses(dernier.get_global_rect()), cadre + " : le dernier remplaçant visible dans la tuile Banc")
+		await capture("final-gabi-%d" % t.x)
+		bulles.apres_adjoint()
+		await settle(6)
+	await taille(Vector2i(1920, 1080))
+	await until(func(): return surface() != null and vue_2d(surface()), 30000)
+
+## Liste « À un joueur » ouverte, descendue en bas, 2 minutes de match à vitesse maximale : même panneau, toujours
+## visible avec l'écran 2D, défilement inchangé ; la carte du n° 10 de Mon XV garde son nœud.
+func liste_en_place() -> void:
+	var between: Control = surface().regie.between
+	var panneau := between.find_child("FmBancMenuPanneau", true, false) as Control
+	check(panneau != null, "liste « À un joueur » ouverte avant le match lancé")
+	if panneau == null: return
+	var defile := panneau.find_child("FmBancMenuDefile", true, false) as ScrollContainer
+	defile.scroll_vertical = 100000
+	await settle(6)
+	var bas := defile.scroll_vertical
+	check(bas > 0, "liste descendue (%d px)" % bas)
+	var id_panneau := panneau.get_instance_id()
+	var carte := between.find_child("MatchBetweenPlayer10", true, false)
+	var id_carte := carte.get_instance_id() if carte != null else 0
+	var joueur_carte := str(carte.get_meta("player_id", "")) if carte != null else ""
+	var m0 := int(live().get("minute", 0))
+	await command("pause", {"paused": false})
+	Engine.time_scale = 16.0
+	var images := 0
+	var recree := 0
+	var cachee := 0
+	var bouge := 0
+	var cartes := 0
+	var depart := Time.get_ticks_msec()
+	while int(live().get("minute", 0)) < m0 + 2 and not live().get("finished", false) and Time.get_ticks_msec() - depart < 240000:
+		await process_frame
+		var v := surface()
+		if v == null or not vue_2d(v): continue
+		images += 1
+		var p := v.regie.between.find_child("FmBancMenuPanneau", true, false) as Control
+		if p == null or p.get_instance_id() != id_panneau: recree += 1
+		elif not p.is_visible_in_tree(): cachee += 1
+		elif defile.scroll_vertical != bas: bouge += 1
+		var c: Node = v.regie.between.find_child("MatchBetweenPlayer10", true, false)
+		if c != null and str(c.get_meta("player_id", "")) == joueur_carte and c.get_instance_id() != id_carte: cartes += 1
+	# Un temps fort 3D en cours : on le laisse finir (match lancé) avant la pause, sur l'écran 2D.
+	await until(func(): return surface() != null and vue_2d(surface()), 120000)
+	Engine.time_scale = 1.0
+	await command("pause", {"paused": true})
+	await until(func(): return surface() != null and vue_2d(surface()), 60000)
+	print("CRIS_BANC liste : minutes %d -> %d, %d images 2D" % [m0, int(live().get("minute", 0)), images])
+	check(int(live().get("minute", 0)) >= m0 + 2 and images >= 10, "2 minutes de match jouées avec la liste ouverte (%d images)" % images)
+	check(recree == 0 and cachee == 0, "liste jamais recréée ni cachée (%d recréée, %d cachée)" % [recree, cachee])
+	check(bouge == 0, "liste toujours au même endroit (%d images déplacées)" % bouge)
+	check(cartes == 0, "carte Mon XV du n° 10 mise à jour en place (%d recréations)" % cartes)
 
 ## Chaque petite fenêtre de l'écran 2D (et la fenêtre Équipe, le menu Plus) : ouverte, fond anthracite satiné, capture.
 func fenetres(view: Control, between: Control) -> void:

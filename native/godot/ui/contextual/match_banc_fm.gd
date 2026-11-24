@@ -72,16 +72,67 @@ var _menu: Control
 var _cle := ""
 var _ancre := Rect2()
 
-## Pose la barre du banc en tête de page du tableau de bord.
-static func poser(hote: Control, _barre: Control, page: Control) -> Node:
+## PLANCHE (vérificateur du 24/11 : la barre en rangée pleine rétrécit le terrain 2D) — choix visuel en attente de Léo,
+## sous CD_VARIANTE_VISUELLE :
+## - A (par défaut) : barre basse, des ronds sans mot (le mot en infobulle), toujours en rangée sous le bandeau du haut ;
+## - B : barre déplacée dans la rangée du bandeau du haut, sous Équipe / Consignes / Réglages / Plus, à droite du score.
+static func variante() -> String:
+	return "B" if OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper() == "B" else "A"
+
+## Pose la barre du banc : rangée basse en tête de page (A) ou dans la rangée du bandeau du haut (B).
+static func poser(hote: Control, barre: Control, page: Control) -> Node:
 	var banc := new()
 	banc.name = NOM
 	banc.between = hote
 	hote.add_child(banc)
-	banc._barre_b(page)
+	var dans_bandeau := variante() == "B" and is_instance_valid(barre) and barre != page and not page.is_ancestor_of(barre) and barre.get_parent() != null
+	banc._barre_b(_case_bandeau(barre) if dans_bandeau else page)
+	if dans_bandeau:
+		banc.barre_b.size_flags_horizontal = Control.SIZE_SHRINK_END
+		# La barre vit dans le bandeau du direct (hors de l'écran 2D) : elle suit l'écran 2D et part avec lui.
+		banc._bande = barre
+		hote.visibility_changed.connect(banc._suivre_bandeau)
+		barre.visibility_changed.connect(banc._suivre_bandeau)
+		banc.call_deferred("_suivre_bandeau")
 	# L'écran se reconstruit (taille, échelle) : la fenêtre « À un joueur » ouverte revient.
 	if bool(hote.get_meta("fm_joueurs", false)): banc.call_deferred("ouvrir_joueurs")
 	return banc
+
+var _bande: Control
+
+func _suivre_bandeau() -> void:
+	if is_instance_valid(barre_b) and is_instance_valid(between) and is_instance_valid(_bande):
+		barre_b.visible = between.is_visible_in_tree() and _bande.is_visible_in_tree()
+
+func _exit_tree() -> void:
+	if is_instance_valid(_bande) and is_instance_valid(barre_b):
+		if _bande.visibility_changed.is_connected(_suivre_bandeau): _bande.visibility_changed.disconnect(_suivre_bandeau)
+		if barre_b.get_parent() != null: barre_b.get_parent().remove_child(barre_b)
+		barre_b.queue_free()
+
+## B : la bande des commandes (Équipe, Consignes, Réglages, Plus) passe dans une colonne de la rangée du haut ; la barre du
+## banc se pose dessous, dans la même rangée que le score (une seule fois : l'écran 2D reconstruit la retrouve).
+static func _case_bandeau(bande: Control) -> Control:
+	var parent := bande.get_parent()
+	if parent is VBoxContainer and parent.name == "FmBancBandeau":
+		for vieux: Node in parent.get_children():
+			if vieux != bande and vieux.name.begins_with("FmBancBarre"):
+				parent.remove_child(vieux)
+				vieux.queue_free()
+		return parent
+	var colonne := VBoxContainer.new()
+	colonne.name = "FmBancBandeau"
+	colonne.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	colonne.add_theme_constant_override("separation", 6)
+	colonne.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	colonne.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var rang := bande.get_index()
+	parent.add_child(colonne)
+	parent.move_child(colonne, rang)
+	parent.remove_child(bande)
+	colonne.add_child(bande)
+	bande.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return colonne
 
 # ------------------------------------------------------------------ état (moteur + envois en attente)
 
@@ -173,11 +224,13 @@ func rafraichir(force: bool = false) -> void:
 	if consignes is Dictionary:
 		for axe: Variant in envois.keys():
 			if str((consignes as Dictionary).get(str(axe), "")) == str(envois[axe]): envois.erase(axe)
-	var cle := JSON.stringify([_pilotage().get("consignes"), _cris(), _ailes(), envois, _minute() if is_instance_valid(_menu) else 0])
+	# Liste « À un joueur » ouverte : ses lignes sont mises à jour en place (moral, réactions), jamais recréées ; le
+	# défilement et le survol restent (vérificateur du 24/11 : liste recréée à chaque minute de match).
+	if is_instance_valid(_menu): _maj_joueurs()
+	var cle := JSON.stringify([_pilotage().get("consignes"), _cris(), _ailes(), envois])
 	if cle == _cle and not force: return
 	_cle = cle
 	if is_instance_valid(barre_b): _remplir_b()
-	if is_instance_valid(_menu): _remplir_joueurs()
 
 # ------------------------------------------------------------------ dessin commun
 
@@ -338,70 +391,129 @@ func _placer(panneau: Control, essais: int = 0, suivis: int = 3) -> void:
 	if suivis < 3: panneau.visible = true
 
 ## Nos quinze : numéro, nom, moral en direct, trois cris en ronds, puis la réaction au dernier cri (après coup).
+var _liste: VBoxContainer
+var _cle_liste := ""
+
 func _liste_joueurs(col: VBoxContainer) -> void:
-	var d: Variant = between.get("_dernier")
-	var live: Dictionary = d[1] if d is Array and (d as Array).size() > 1 and d[1] is Dictionary else {}
-	var reactions := _reactions()
 	var defile := ScrollContainer.new()
+	defile.name = "FmBancMenuDefile"
 	defile.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	defile.custom_minimum_size.y = px(600)
 	col.add_child(defile)
-	var liste := VBoxContainer.new()
-	liste.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	liste.add_theme_constant_override("separation", px(2))
-	defile.add_child(liste)
+	_liste = VBoxContainer.new()
+	_liste.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_liste.add_theme_constant_override("separation", px(2))
+	defile.add_child(_liste)
+	_cle_liste = ""
+	_maj_joueurs()
+
+## Nos quinze, mis à jour EN PLACE : une ligne par poste, créée une fois ; seuls le nom, le moral, l'état des ronds et la
+## réaction changent (le joueur du poste est relu au clic, un remplaçant entré prend la ligne).
+func _maj_joueurs() -> void:
+	if not is_instance_valid(_liste): return
+	var d: Variant = between.get("_dernier")
+	var live: Dictionary = d[1] if d is Array and (d as Array).size() > 1 and d[1] is Dictionary else {}
+	var lineup: Array = live.get("lineup", []) if live.get("lineup") is Array else []
+	var reactions := _reactions()
+	var morals := lineup.map(func(j: Variant) -> Dictionary: return between.moral_joueur(_pilotage(), str(j.get("id", ""))) if j is Dictionary else {})
+	var cle := JSON.stringify([lineup.map(func(j: Variant) -> Array: return [str(j.get("id", "")), str(j.get("name", ""))] if j is Dictionary else []), morals, reactions])
+	if cle == _cle_liste: return
+	_cle_liste = cle
 	var n := 0
-	for j: Variant in live.get("lineup", []) if live.get("lineup") is Array else []:
+	for j: Variant in lineup:
 		n += 1
-		if not j is Dictionary: continue
+		var ligne := _liste.get_node_or_null("FmCriJoueur_%d" % n) as HBoxContainer
+		if not j is Dictionary:
+			if ligne != null: ligne.visible = false
+			continue
+		if ligne == null:
+			ligne = _ligne_joueur(n)
+			_liste.add_child(ligne)
+		ligne.visible = true
 		var id := str(j.get("id", ""))
-		var ligne := HBoxContainer.new()
-		ligne.name = "FmCriJoueur_%d" % n
-		ligne.add_theme_constant_override("separation", px(5))
-		ligne.custom_minimum_size.y = px(44)
-		liste.add_child(ligne)
-		var num := _texte(str(n), 18, PAL.encre2, true)
-		num.custom_minimum_size.x = px(26)
-		num.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		ligne.add_child(num)
-		var nom := _texte(str(j.get("name", "")), 18, PAL.encre)
-		nom.name = "FmCriNom"
-		nom.custom_minimum_size.x = px(160)
-		_nom_qui_tient(nom, px(160))
-		nom.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		ligne.add_child(nom)
-		var moral: Dictionary = between.moral_joueur(_pilotage(), id)
-		var pastille := PanelContainer.new()
-		pastille.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		pastille.custom_minimum_size.x = px(88)
-		pastille.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		ligne.set_meta("id", id)
+		var nom := ligne.get_node("FmCriNom") as Label
+		if nom.get_meta("nom", "") != str(j.get("name", "")):
+			nom.set_meta("nom", str(j.get("name", "")))
+			nom.text = str(j.get("name", ""))
+			nom.remove_theme_font_size_override("font_size")
+			nom.add_theme_font_size_override("font_size", between.fpx(18))
+			_nom_qui_tient(nom, px(160))
+		var moral: Dictionary = morals[n - 1]
+		var pastille := ligne.get_node("FmCriMoral") as PanelContainer
+		var etiquette := pastille.get_child(0) as Label
 		if not moral.is_empty():
 			var teinte: Color = between.teinte_moral(str(moral.get("cle", "")))
 			pastille.add_theme_stylebox_override("panel", Charte.style_pilule(Color(teinte, 0.16), Color.TRANSPARENT, px(10), px(2)))
-			pastille.add_child(_texte(str(moral.get("label", "")), 15, teinte))
+			etiquette.text = str(moral.get("label", ""))
+			etiquette.add_theme_color_override("font_color", teinte)
 		else:
 			pastille.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
-		ligne.add_child(pastille)
-		ligne.add_child(_vide())
+			etiquette.text = ""
 		var vu: Dictionary = reactions.get(id, {}) if reactions.get(id) is Dictionary else {}
 		var en_cours := bool(vu.get("enCours", false))
 		for c: Array in CRIS_JOUEUR:
+			var b := ligne.get_node("FmCriJoueur_%d_%s" % [n, str(c[0])]) as Button
 			var ici := en_cours and str(vu.get("cri", "")) == str(c[0])
-			var b := Button.new()
-			b.name = "FmCriJoueur_%d_%s" % [n, str(c[0])]
-			b.flat = true
-			b.tooltip_text = str(c[1])
-			b.focus_mode = Control.FOCUS_ALL
-			b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-			b.custom_minimum_size = Vector2(px(38), px(40))
+			if b.get_meta("allume", null) == ici: continue
+			b.set_meta("allume", ici)
+			for e in b.get_children():
+				b.remove_child(e)
+				e.queue_free()
 			var rond := _rond(str(c[2]), c[3], 36, ici, false, true)
 			rond.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 			b.add_child(rond)
-			var id_j := id
-			var id_c := str(c[0])
-			b.pressed.connect(func(): crier_joueur(id_j, id_c))
-			ligne.add_child(b)
-		ligne.add_child(_reaction(vu))
+		var reaction := ligne.get_node("FmCriReactionBox") as HBoxContainer
+		for e in reaction.get_children():
+			reaction.remove_child(e)
+			e.queue_free()
+		_reaction(vu, reaction)
+	for k in range(n + 1, _liste.get_child_count() + 1):
+		var reste := _liste.get_node_or_null("FmCriJoueur_%d" % k) as Control
+		if reste != null: reste.visible = false
+
+## Ligne vide d'un poste (numéro, nom, moral, trois cris, réaction) ; `_maj_joueurs` la remplit.
+func _ligne_joueur(n: int) -> HBoxContainer:
+	var ligne := HBoxContainer.new()
+	ligne.name = "FmCriJoueur_%d" % n
+	ligne.add_theme_constant_override("separation", px(5))
+	ligne.custom_minimum_size.y = px(44)
+	var num := _texte(str(n), 18, PAL.encre2, true)
+	num.custom_minimum_size.x = px(26)
+	num.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	ligne.add_child(num)
+	var nom := _texte("", 18, PAL.encre)
+	nom.name = "FmCriNom"
+	nom.custom_minimum_size.x = px(160)
+	nom.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	ligne.add_child(nom)
+	var pastille := PanelContainer.new()
+	pastille.name = "FmCriMoral"
+	pastille.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pastille.custom_minimum_size.x = px(88)
+	pastille.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	pastille.add_child(_texte("", 15, PAL.encre2))
+	ligne.add_child(pastille)
+	ligne.add_child(_vide())
+	for c: Array in CRIS_JOUEUR:
+		var b := Button.new()
+		b.name = "FmCriJoueur_%d_%s" % [n, str(c[0])]
+		b.flat = true
+		b.tooltip_text = str(c[1])
+		b.focus_mode = Control.FOCUS_ALL
+		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		b.custom_minimum_size = Vector2(px(38), px(40))
+		var id_c := str(c[0])
+		b.pressed.connect(func(): crier_joueur(str(ligne.get_meta("id", "")), id_c))
+		ligne.add_child(b)
+	var reaction := HBoxContainer.new()
+	reaction.name = "FmCriReactionBox"
+	reaction.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	reaction.custom_minimum_size.x = px(50)
+	reaction.add_theme_constant_override("separation", px(4))
+	reaction.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	ligne.add_child(reaction)
+	return ligne
 
 ## Nom jamais coupé (Léo, 23/11) : nom complet s'il tient, sinon prénom en initiale (« J.-C. ROYER »), sinon police
 ## légèrement réduite (12 px au plus bas).
@@ -424,13 +536,8 @@ static func nom_court(nom: String) -> String:
 
 ## Réaction au dernier cri, découverte après coup : ▲ bien pris (vert), ▼ mal pris (rouge), « — » il n'écoute plus ;
 ## la minute du cri en petit. Rien tant qu'on ne lui a rien dit.
-func _reaction(vu: Dictionary) -> Control:
-	var h := HBoxContainer.new()
-	h.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	h.custom_minimum_size.x = px(50)
-	h.add_theme_constant_override("separation", px(4))
-	h.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	if vu.is_empty(): return h
+func _reaction(vu: Dictionary, h: HBoxContainer) -> void:
+	if vu.is_empty(): return
 	var sens := int(vu.get("sens", 0))
 	var couleur: Color = Charte.GAIN if sens > 0 else Charte.PERTE if sens < 0 else PAL.encre3
 	var fleche := _texte("▲" if sens > 0 else "▼" if sens < 0 else "—", 20, couleur)
@@ -439,7 +546,6 @@ func _reaction(vu: Dictionary) -> Control:
 	var minute := _texte("%d′" % int(vu.get("minute", 0)), 15, PAL.encre if bool(vu.get("enCours", false)) else PAL.encre3)
 	minute.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	h.add_child(minute)
-	return h
 
 # ------------------------------------------------------------------ barre du banc, toujours visible
 
@@ -447,37 +553,38 @@ func _barre_b(page: Control) -> void:
 	barre_b = PanelContainer.new()
 	barre_b.name = "FmBancBarre"
 	var st: StyleBoxFlat = between.liserer(between._case(Charte.PANNEAU, Charte.RAYON_PANNEAU))
-	st.content_margin_left = px(22)
-	st.content_margin_right = px(22)
-	st.content_margin_top = px(4)
-	st.content_margin_bottom = px(4)
+	st.content_margin_left = px(16)
+	st.content_margin_right = px(16)
+	st.content_margin_top = px(1)
+	st.content_margin_bottom = px(1)
 	barre_b.add_theme_stylebox_override("panel", st)
 	page.add_child(barre_b)
 	_remplir_b()
 
+## Barre basse (planche du 24/11, options A et B) : des ronds sans mot, le mot et l'effet en infobulle ; en B (bandeau du
+## haut), plus étroits et sans les titres.
 func _remplir_b() -> void:
 	for e in barre_b.get_children():
 		barre_b.remove_child(e)
 		e.queue_free()
+	var bandeau := variante() == "B" and barre_b.get_parent() != null and barre_b.get_parent().name == "FmBancBandeau"
 	var h := HBoxContainer.new()
-	h.add_theme_constant_override("separation", px(8))
+	h.add_theme_constant_override("separation", px(2 if bandeau else 4))
 	barre_b.add_child(h)
-	var titre_cris := _texte("CRIS", 22, Charte.IVOIRE, true)
-	titre_cris.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	h.add_child(titre_cris)
+	if not bandeau: h.add_child(_titre_barre("CRIS"))
 	var actif := _cri_actif()
 	for id: String in CRIS:
 		var def: Array = CRIS[id]
 		var o := _cri_option(id)
 		var dispo := o.is_empty() or bool(o.get("disponible", true))
 		var en_cours := str(actif.get("id", "")) == id
-		var b := _bouton_rond("FmCri_" + id, str(def[0]), def[1], str(def[2]), en_cours, dispo, func(): crier(id),
-			("→ %d′" % int(actif.get("jusqua", 0))) if en_cours else "", float(o.get("usure", 0.0)))
-		b.tooltip_text = str(o.get("label", def[2]))
+		var b := _bouton_rond("FmCri_" + id, str(def[0]), def[1], en_cours, dispo, func(): crier(id), float(o.get("usure", 0.0)), false, bandeau)
+		b.tooltip_text = str(o.get("label", def[2])) + (("\n→ %d′" % int(actif.get("jusqua", 0))) if en_cours else "")
 		h.add_child(b)
 	var ouvert := is_instance_valid(_menu)
 	# Rond « À un joueur » : allumé et enfoncé (fond éclairé, liseré or) tant que sa liste est ouverte.
-	var joueur := _bouton_rond("FmBancJoueur", "people", Charte.OR if ouvert else Charte.IVOIRE_2, "À un joueur", ouvert, true, ouvrir_joueurs, "", -1.0)
+	var joueur := _bouton_rond("FmBancJoueur", "people", Charte.OR if ouvert else Charte.IVOIRE_2, ouvert, true, ouvrir_joueurs, -1.0, false, bandeau)
+	joueur.tooltip_text = "À un joueur"
 	if ouvert:
 		for etat: String in ["normal", "hover", "pressed", "hover_pressed"]:
 			var st := StyleBoxFlat.new()
@@ -490,33 +597,35 @@ func _remplir_b() -> void:
 	h.add_child(joueur)
 	var sep := ColorRect.new()
 	sep.color = Charte.FILET
-	sep.custom_minimum_size = Vector2(px(2), px(52))
+	sep.custom_minimum_size = Vector2(px(2), px(34))
 	sep.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	sep.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	h.add_child(sep)
-	var titre_aj := _texte("AJUSTEMENTS", 22, Charte.IVOIRE, true)
-	titre_aj.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	h.add_child(titre_aj)
+	if not bandeau: h.add_child(_titre_barre("AJUSTEMENTS"))
 	for aj: Array in AJUSTEMENTS:
-		var b := _bouton_rond("FmAjust_" + str(aj[0]), str(aj[2]), FAMILLES[str(aj[5])], str(aj[7]), ajustement_actif(aj), true, func(): basculer(aj), "", -1.0)
+		var b := _bouton_rond("FmAjust_" + str(aj[0]), str(aj[2]), FAMILLES[str(aj[5])], ajustement_actif(aj), true, func(): basculer(aj), -1.0, false, bandeau)
 		b.tooltip_text = str(aj[1]) + "\n" + "\n".join((aj[6] as Array).map(func(e: Array): return ("▲ " if int(e[1]) > 0 else "▼ ") + str(e[0])))
 		h.add_child(b)
-	# Permuter les ailes : au prochain arrêt de jeu (« ⧗ » tant qu'il attend), allumé une fois les ailiers échangés.
+	# Permuter les ailes : au prochain arrêt de jeu (liseré tant qu'il attend), allumé une fois les ailiers échangés.
 	var ailes := _ailes()
 	var attente := bool(ailes.get("attente", false))
 	var permutees := bool(ailes.get("permutees", false))
-	var b_ailes := _bouton_rond("FmAjust_ailes", "ailes", Charte.MORAL, "Ailes ⧗" if attente else "Ailes", permutees and not attente, true, permuter_ailes, "", -1.0, attente)
-	b_ailes.tooltip_text = "Permuter les ailes"
+	var b_ailes := _bouton_rond("FmAjust_ailes", "ailes", Charte.MORAL, permutees and not attente, true, permuter_ailes, -1.0, attente, bandeau)
+	b_ailes.tooltip_text = "Permuter les ailes" + (" ⧗" if attente else "")
 	h.add_child(b_ailes)
 
-## Rond + mot dessous ; allumé : aplat de couleur. `marque` (minute de fin) et usure du cri en petit à droite.
-func _bouton_rond(nom: String, icone: String, couleur: Color, mot: String, allume: bool, actif: bool, action: Callable, marque: String, usure: float, attente: bool = false) -> Button:
+func _titre_barre(t: String) -> Label:
+	var l := _texte(t, 18, Charte.IVOIRE, true)
+	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	return l
+
+## Rond seul (le mot en infobulle) ; allumé : aplat de couleur ; usure d'un cri en trois points sous le rond.
+func _bouton_rond(nom: String, icone: String, couleur: Color, allume: bool, actif: bool, action: Callable, usure: float, attente: bool = false, etroit: bool = false) -> Button:
 	var b := Button.new()
 	b.name = nom
 	b.flat = true
 	b.focus_mode = Control.FOCUS_ALL
 	b.disabled = not actif
-	b.tooltip_text = mot
 	b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if actif else Control.CURSOR_ARROW
 	for etat: String in ["normal", "hover", "pressed", "focus", "disabled", "hover_pressed"]:
 		var st := StyleBoxFlat.new()
@@ -526,38 +635,34 @@ func _bouton_rond(nom: String, icone: String, couleur: Color, mot: String, allum
 			st.set_border_width_all(2)
 		st.set_corner_radius_all(Charte.RAYON_PETIT)
 		b.add_theme_stylebox_override(etat, st)
-	b.custom_minimum_size = Vector2(px(92), px(66))
+	b.custom_minimum_size = Vector2(px(36 if etroit else 54), px(46 if etroit else 38))
 	b.pressed.connect(action)
-	var v := VBoxContainer.new()
+	# B (étroit) : l'usure sous le rond ; A : à droite du rond (la barre reste basse).
+	var v: BoxContainer = VBoxContainer.new() if etroit else HBoxContainer.new()
 	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	v.alignment = BoxContainer.ALIGNMENT_CENTER
 	v.add_theme_constant_override("separation", px(2))
 	v.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	b.add_child(v)
-	var haut := HBoxContainer.new()
-	haut.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	haut.alignment = BoxContainer.ALIGNMENT_CENTER
-	haut.add_theme_constant_override("separation", px(4))
-	v.add_child(haut)
-	var rond := _rond(icone, couleur if actif else Charte.IVOIRE_3, 40, allume, attente)
-	haut.add_child(rond)
-	if usure >= 0.0 and not allume: haut.add_child(_usure_vertical(usure))
-	var l := _texte(marque if not marque.is_empty() else mot, 16, (couleur if allume or attente else Charte.IVOIRE) if actif else Charte.IVOIRE_3)
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	v.add_child(l)
+	var rond := _rond(icone, couleur if actif else Charte.IVOIRE_3, 34, allume, attente)
+	rond.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	v.add_child(rond)
+	if usure >= 0.0: v.add_child(_usure(usure, allume, not etroit))
 	return b
 
 ## Usure d'un cri d'équipe en trois points (plein : intact ; à moitié ; vide : ils n'écoutent plus).
-func _usure_vertical(usure: float) -> Control:
-	var v := VBoxContainer.new()
-	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	v.add_theme_constant_override("separation", px(3))
-	v.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+func _usure(usure: float, allume: bool, vertical: bool) -> Control:
+	var h: BoxContainer = VBoxContainer.new() if vertical else HBoxContainer.new()
+	h.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	h.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	h.alignment = BoxContainer.ALIGNMENT_CENTER
+	h.add_theme_constant_override("separation", px(3))
 	var restants := 3 if usure <= 0.0 else 2 if usure <= 0.5 else 0
 	for i in 3:
 		var point := ColorRect.new()
-		point.custom_minimum_size = Vector2(px(7), px(7))
-		point.color = Charte.IVOIRE_2 if (2 - i) < restants else Charte.FILET
+		point.custom_minimum_size = Vector2(px(5), px(5))
+		point.color = Charte.IVOIRE_2 if i < restants else Charte.FILET
 		point.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		v.add_child(point)
-	return v
+		h.add_child(point)
+	h.modulate.a = 0.5 if allume else 1.0
+	return h
