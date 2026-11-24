@@ -23,6 +23,15 @@ function essaisRules(l){return tacticalRules(l)&&l.essaisVersion===1}
 // `jeu` s'ajoute à la faute du défenseur dans le jeu courant. Coefficients de jeu calés sur une saison Monde.
 let PENALITES_RULES=1;
 var PENALITES={jeu:.01,attaque:.035,melee:.3,meleeDominant:.015,touche:.07};
+// Pénaltouche contre tir au but (docs/penaltouche-20261125.md), rencontres avec pénalités réalistes. Réglages de jeu calés
+// sur la mesure scripts/mesure-buteurs.cjs (XV identiques, consignes figées), pas des probabilités mesurées du rugby.
+// risque : touche sur pénalité dans le camp adverse, la défense conteste chaque lancer ; sauteurs : par point d'écart de touche
+// (talonneur et deuxième ligne des deux camps), en plus de l'écart commun. porte : essai direct sur ballon porté (au lieu de
+// 0,18) ; porteAvants : par point d'écart entre la puissance des avants qui poussent et la défense des avants adverses
+// (puissance et plaquage) ; porteMin : plancher.
+var PENALTOUCHE={risque:.08,sauteurs:.012,porte:.14,porteAvants:.012,porteMin:.04};
+function penaltoucheRisque(l,side,a,b){if(!penalitesRules(l))return 0;return (side===0?l.territory>50:l.territory<50)?(a-b)*PENALTOUCHE.sauteurs-PENALTOUCHE.risque:0}
+function ballonPorteBase(l,side){if(!penalitesRules(l))return null;const av=p=>p.fam<=3,defense=(unit(l,1-side,'power',av)+unit(l,1-side,'tackle',av))/2;return {base:PENALTOUCHE.porte+(unit(l,side,'power',av)-defense)*PENALTOUCHE.porteAvants,min:PENALTOUCHE.porteMin}}
 const PENALITES_INCIDENTS={scrum:{id:'scrum',label:'faute en mêlée',weight:0,serious:false},maul:{id:'maul',label:'faute en touche ou sur ballon porté',weight:0,serious:false},'not-release':{id:'not-release',label:'ballon non libéré au sol',weight:0,serious:false},sealing:{id:'sealing',label:'scellement du ballon dans le ruck',weight:0,serious:false}};
 function penalitesRules(l){return essaisRules(l)&&l.penalitesVersion===1}
 // Culture du championnat sur pénalité (consigne automatique seulement) : part des tirs au but changés en
