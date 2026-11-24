@@ -50,7 +50,14 @@ Numéros de ligne approximatifs (au 24/11/2026) : relancer carte-code.cjs avant 
 |---|---|---|
 | Club, staff, stratégie, travail du club | `ui/immersive08/club_canvas.gd`, `club_pages.gd`, `staff_services.gd` | `build` L93 |
 | Fiche d'un club | `ui/immersive08/club_sheet_canvas.gd` | `open` L54, `build` L68 |
-| Finances | `ui/immersive08/finance_canvas.gd`, `finance_*.gd` | `build` L499 |
+| Finances : fichier principal (onglets, accès depuis les autres écrans, verdict, `build`, consts) | `ui/immersive08/finance_canvas.gd` ← ses morceaux ci-dessous | `build` ~L163 |
+| Finances : pièces graphiques communes (panneaux, textes, boutons, zones) | `ui/immersive08/finance_briques.gd` | `_panneau`, `_bouton`, `_zone` |
+| Finances : tracés (courbe des mouvements, solde, pictogramme) | `ui/immersive08/finance_traces.gd` | `LedgerPlot`, `SoldePlot`, `Symbole` |
+| Finances : colonne de verdict fixe (verdict, trésorerie, budget de transferts, marge, vigilances) | `ui/immersive08/finance_colonne.gd` | `_colonne`, `_verdict_panneau`, `_watch` |
+| Finances : Synthèse (bandeau, listes) et courbe « Solde sur 12 mois » | `ui/immersive08/finance_synthese.gd`, `finance_solde.gd` | `construire`, `_solde`, `_fenetre_semaine` |
+| Finances : Trésorerie (courbe, journal des flux, pagination) | `ui/immersive08/finance_journal.gd` | `_cash`, `_ledger`, `_chart` |
+| Finances : Salaires, Transferts, Classement des clubs | `ui/immersive08/finance_listes.gd`, `finance_health.gd` | `_wages`, `_transfers`, `_clubs` |
+| Finances : Budget (engagements, leviers, budget de saison, charges, échéances) | `ui/immersive08/finance_budget.gd` | `_budget`, `_season_budget`, `_allocation` |
 | Carrière du manager | `ui/immersive08/career_canvas.gd` | `build` L14 |
 
 ## Recrutement, transferts
