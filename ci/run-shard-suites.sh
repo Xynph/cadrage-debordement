@@ -132,6 +132,9 @@ budget() {
     tests/world-finance-flow-audit.cjs) echo 420s ;;
     # Audit des flux sur une saison Monde entière + « Saison suivante » + 3 semaines (intersaison) : 6 min 40 en local sous charge (20/11/2026).
     tests/world-finance-flow-audit-intersaison.cjs) echo 1500s ;;
+    # Même suite au rechargement : quatre carrières Monde hebdomadaires sur 1,5 saison (deux graines, d'une traite et
+    # rechargée cinq fois), en parallèle, mémoires du budget vérifiées : 1360 s en local sous charge (4 parties en parallèle) (24/11/2026).
+    tests/budget-rechargement.cjs) echo 3000s ;;
     # Suites Monde de 76 à 131 s (main 44443910094 et PR #943 44447171817), sans limite propre donc à 180 s : même ralentissement du runner ; budget ≈ 2,5-3 fois.
     tests/ai-roster-cycle.cjs|tests/continuer-arrets-saison.cjs|tests/essais-realistes.cjs|tests/reactivite-projection-rapide-semaines.cjs|tests/reactivite-projection-verification-direct.cjs|tests/sauvegarde-journal-plantage-monde.cjs) echo 300s ;;
     tests/avant-match-donnees.cjs|tests/reactivite-projection-verification-semaines.cjs) echo 360s ;;

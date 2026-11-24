@@ -687,6 +687,18 @@ const budgetFrance=()=>!!S.franceMode&&typeof CDFranceClubs!=='undefined'&&typeo
 const budgetMonde=()=>!S.franceMode&&typeof CDWorldCareer!=='undefined'&&CDWorldCareer.active(S);
 const budgetActif=()=>!!S&&S.startingSalaries!==undefined&&(budgetFrance()||budgetMonde());
 const budgetCopie=x=>JSON.parse(JSON.stringify(x));
+// Mémoires du budget (budget…Memo) : de simples raccourcis. Une valeur retrouvée doit être celle qu'un calcul frais
+// donnerait à cet instant, sinon les comptes dérivent pendant la partie et une sauvegarde rechargée (mémoires vides) ne
+// redonne pas la même suite (règle de Léo du 24/11/2026 : couper le jeu ne relance pas les dés). Leur clé porte donc
+// toutes leurs entrées. Vérification (tests/budget-rechargement.cjs) : budgetMemoVerifier=n recalcule une valeur retrouvée sur n
+// et note tout écart dans budgetMemoEcarts.
+// budgetMemoVerifier : nombre de valeurs retrouvées entre deux vérifications de la même mémoire (1 : toutes), false : aucune.
+let budgetMemoVerifier=false;const budgetMemoEcarts=[],budgetMemoRetrouvees=new Map();
+const budgetMemoTexte=x=>JSON.stringify(x,(k,v)=>v instanceof Map?{map:[...v]}:v);
+function budgetMemoRetrouve(nom,valeur,calcul){
+ if(budgetMemoVerifier){const n=(budgetMemoRetrouvees.get(nom)||0)+1;budgetMemoRetrouvees.set(nom,n);if((n-1)%budgetMemoVerifier)return valeur;const frais=calcul();if(budgetMemoTexte(frais)!==budgetMemoTexte(valeur)&&budgetMemoEcarts.length<200)budgetMemoEcarts.push({nom,saison:S.season,semaine:S.worldMode?.week??null});}
+ return valeur;
+}
 const budgetLigue=id=>budgetFrance()?CDFranceCompetition.leagueId(S,id):CDWorldCareer.leagueId(S,id);
 // Carrière Monde : chaque club porte la billetterie annuelle de son stade (budgetBilletterieClub), lue par ses recettes prévues.
 const budgetForces=()=>budgetFrance()?CDFranceClubs.clubs.map(c=>({id:c.id,division:CDFranceCompetition.leagueId(S,c.id),base:c.base})):S.clubs.map(c=>{const b=budgetBilletterieClub(c);return Number.isFinite(b)?{id:c.id,division:CDWorldCareer.leagueId(S,c.id),base:c.base,billetterie:b}:{id:c.id,division:CDWorldCareer.leagueId(S,c.id),base:c.base};});
@@ -719,27 +731,43 @@ let budgetLimitesMemo=null;
 // étant réparties selon le rang de niveau dans la ligue, 2 points suffisaient à retirer 25 à 30 % de la limite d'un club
 // de Championship ou de Nationale, juste après qu'il eut été recalé dessous (mesure du 20/11/2026). Sauvegarde sans niveau
 // noté : niveau actuel, comme avant.
+// La billetterie du club (budgetBilletterieClub : abonnés estimés et rang de réputation) est elle aussi lue avec ce niveau
+// noté : lue avec le niveau actuel, elle faisait bouger la limite en cours de saison ; seule l'ancienne mémoire (clé : somme
+// des niveaux notés) la figeait, à une valeur que la partie d'une traite et une sauvegarde rechargée ne notaient pas au même
+// moment (mesure du 24/11/2026 : 88 limites sur 120 différentes en saison 2, graine 2026).
 const budgetForcesLimites=creation=>{
  const f=budgetForces(),b=S.clubBudget;
  if(creation===true||S.season<=1||budgetFrance()||!budgetLisible(b)||b.saison!==S.season)return f;
- return f.map(x=>{const v=b.clubs[x.id]?.base;return Number.isFinite(v)?{...x,base:v}:x;});
+ return f.map(x=>{
+  const v=b.clubs[x.id]?.base;if(!Number.isFinite(v))return x;
+  if(x.billetterie===undefined||v===x.base)return {...x,base:v};
+  const c=S.clubs[x.id]?.id===x.id?S.clubs[x.id]:S.clubs.find(y=>y.id===x.id),billetterie=c?budgetBilletterieClub({...c,base:v}):null;
+  return Number.isFinite(billetterie)?{...x,base:v,billetterie}:{...x,base:v};
+ });
 };
 const budgetLimites=creation=>{
- const forces=budgetForcesLimites(creation);
- let bases=0;for(const f of forces)bases+=f.base;
- const m=budgetLimitesMemo,premiere=creation===true;
- if(m&&m.etat===S&&m.saison===S.season&&m.creation===premiere&&m.bases===bases&&m.club===S.club)return m.valeur;
- const remboursements={};if(typeof nativeClubOwner!=='undefined')for(const [id,p] of Object.entries(S.pretsActionnaires||{}))remboursements[id]=nativeClubOwner.remboursementSaison(p,S.season)||Math.min(p.restant||0,p.annuite||0);
- budgetLimitesMemo={etat:S,saison:S.season,creation:premiere,bases,club:S.club,valeur:nativeClubBudget.limites(forces,S.season,{creation:premiere,types:budgetTypes(),credits:budgetCredits(),remboursements})};
+ const entrees=()=>{
+  const forces=budgetForcesLimites(creation),remboursements={};
+  if(typeof nativeClubOwner!=='undefined')for(const [id,p] of Object.entries(S.pretsActionnaires||{}))remboursements[id]=nativeClubOwner.remboursementSaison(p,S.season)||Math.min(p.restant||0,p.annuite||0);
+  return {forces,types:budgetTypes(),credits:budgetCredits(),remboursements};
+ };
+ const calcul=(x=entrees())=>nativeClubBudget.limites(x.forces,S.season,{creation:creation===true,types:x.types,credits:x.credits,remboursements:x.remboursements});
+ // Clé complète : forces (division, niveau, billetterie), types de propriétaires, crédits de formation (effectifs) et
+ // remboursements. L'ancienne clé (somme des niveaux) gardait la limite d'avant un départ de jeune formé ou un prêt.
+ const x=entrees();
+ let cle=S.season+'|'+(creation===true)+'|'+S.club+'|'+JSON.stringify(x.types)+'|'+JSON.stringify(x.credits)+'|'+JSON.stringify(x.remboursements);
+ for(const f of x.forces)cle+='|'+f.id+':'+f.division+':'+f.base+':'+(f.billetterie??'');
+ const m=budgetLimitesMemo;
+ if(m&&m.etat===S&&m.cle===cle)return budgetMemoRetrouve('limites',m.valeur,()=>calcul());
+ budgetLimitesMemo={etat:S,cle,valeur:calcul(x)};
  return budgetLimitesMemo.valeur;
 };
 const budgetPlancherHebdo=()=>nativeStartingSalaries.plancherHebdo(S,budgetLigue(S.club));
 // Classement, réceptions de saison régulière et réceptions restantes de chaque club, à l'instant présent.
-// Calculé une fois par semaine : le club joué puis les clubs gérés s'en servent à la suite.
-let budgetRepereMemo=null;
+// Calculé à chaque appel (un tri par division, peu coûteux) puis passé aux clubs de la semaine (worldWeeklyEconomy) :
+// l'ancienne mémoire de la semaine (clé saison, semaine, matchs du manager) gardait le classement d'avant les
+// résultats d'une journée sans match du manager.
 function budgetRepere(){
- const cle=S.season+'|'+budgetSemaineNo()+'|'+S.history.length,memo=budgetRepereMemo;
- if(memo&&memo.etat===S&&memo.cle===cle)return memo.valeur;
  const classement={},receptions={},restantes={};
  if(budgetFrance()){
   for(const division of ['elite','accession']){
@@ -757,12 +785,11 @@ function budgetRepere(){
    receptions[f.homeId]=(receptions[f.homeId]||0)+1;if(f.week>=S.worldMode.week)restantes[f.homeId]=(restantes[f.homeId]||0)+1;
   }
  }
- budgetRepereMemo={etat:S,cle,valeur:{classement,receptions,restantes}};
- return budgetRepereMemo.valeur;
+ return {classement,receptions,restantes};
 }
 // Staff de chaque club (carrière Monde) : membres sous contrat avec le club, hors anciens membres historiques ; le club du
-// manager ne repaie pas ceux que l'emploi rémunéré (staff-employment.cjs) paie déjà. Une fois par semaine.
-let budgetStaffMemo=null;
+// manager ne repaie pas ceux que l'emploi rémunéré (staff-employment.cjs) paie déjà. Relu à chaque appel : l'ancienne mémoire
+// de la semaine (clé : nombre de membres) gardait un membre parti ou oubliait une recrue arrivée en échange.
 // Identifiants des membres du club du manager payés par Staff par service (projection services[].enPlus), sinon vide.
 function budgetStaffPostesEnPlus(){
  try{const d=typeof nativeSystems!=='undefined'?nativeSystems.domain('staffServices'):null,v=d&&typeof d.project==='function'?d.project():null;
@@ -770,9 +797,7 @@ function budgetStaffPostesEnPlus(){
 }
 function budgetStaff(c){
  if(budgetFrance()||!Array.isArray(S.staffCareer?.people))return null;
- const cle=S.season+'|'+budgetSemaineNo()+'|'+S.staffCareer.people.length,m=budgetStaffMemo;
- if(!m||m.etat!==S||m.cle!==cle){const parClub=new Map();for(const p of S.staffCareer.people.flat()){if(!p||p.historical===true||!Number.isInteger(p.clubId))continue;const l=parClub.get(p.clubId);if(l)l.push(p);else parClub.set(p.clubId,[p]);}budgetStaffMemo={etat:S,cle,parClub};}
- let gens=budgetStaffMemo.parClub.get(c.id)||[];
+ let gens=[];for(const p of S.staffCareer.people.flat())if(p&&p.historical!==true&&p.clubId===c.id)gens.push(p);
  if(!gens.length)return null;
  if(c.id===S.club&&Array.isArray(S.staffEmployment?.contracts)){const payes=new Set(S.staffEmployment.contracts.filter(k=>k&&k.clubId===c.id&&k.endSeason>=S.season).map(k=>k.staffId));if(payes.size)gens=gens.filter(p=>!payes.has(p.id));}
  // Staff par service (PR #1192, postes en plus) : les membres tenant un poste en plus y sont payés au forfait du service
@@ -783,11 +808,13 @@ function budgetStaff(c){
 }
 // Billetterie réelle (carrière Monde) : prix du billet (division et politique du club ; les clubs gérés restent à la politique
 // équilibrée), abonnés (ceux du club du manager, sinon l'estimation par la capacité et le rang), capacité réelle du stade.
-// Réceptions de saison régulière d'un club cette saison (calendrier), une fois par saison.
+// Réceptions de saison régulière d'un club cette saison (calendrier), recomptées quand le calendrier change.
 let budgetReceptionsMemo=null;
+const budgetReceptionsCompte=()=>{const n=new Map();for(const f of S.worldMode?.fixtures||[]){if(f.phase!=='league'||f.neutral)continue;n.set(f.homeId,(n.get(f.homeId)||0)+1);}return n;};
 function budgetReceptions(id){
- const m=budgetReceptionsMemo,cle=S.season+'|'+(S.worldMode?.fixtures?.length||0);
- if(!m||m.etat!==S||m.cle!==cle){const n=new Map();for(const f of S.worldMode?.fixtures||[]){if(f.phase!=='league'||f.neutral)continue;n.set(f.homeId,(n.get(f.homeId)||0)+1);}budgetReceptionsMemo={etat:S,cle,n};}
+ const fixtures=S.worldMode?.fixtures,m=budgetReceptionsMemo,cle=S.season+'|'+(fixtures?.length||0);
+ if(m&&m.etat===S&&m.fixtures===fixtures&&m.cle===cle)return budgetMemoRetrouve('receptions',m.n,budgetReceptionsCompte).get(id)||0;
+ budgetReceptionsMemo={etat:S,fixtures,cle,n:budgetReceptionsCompte()};
  return budgetReceptionsMemo.n.get(id)||0;
 }
 // Billetterie d'une saison type du club (budget voté) : stade, abonnés estimés, billet de la division au prix équilibré ;
@@ -810,13 +837,30 @@ const budgetBilletterieEtat=()=>{const b=S.billetterie;return b&&b.version===1?b
 // Prix « juste » de chaque club (précision de Léo du 23/11/2026) : celui de sa division, surtout ajusté à sa réputation (rang de
 // sa base dans la division, 0 à 1, budgetReputation : prix × 0,75 pour le plus modeste à × 1,3 pour le plus réputé). L'affluence réagit au prix autour de
 // cette référence, le conseil du staff tend vers elle ; elle n'est jamais affichée.
+// Éventail de la division : niveaux notés avec le budget de la saison (budgetOuvrir, S.clubBudget.clubs[].base et division),
+// donc le même toute la saison et relu tel quel dans une sauvegarde. Le niveau du club, lui, est l'actuel. Sans budget de la
+// saison (création, bascule), niveaux actuels. L'ancienne mémoire de saison gardait l'éventail du premier appel, que la
+// partie d'une traite et une sauvegarde rechargée ne notaient pas au même moment (affluences et recettes divergentes).
 let budgetReputationMemo=null;
+function budgetEventailCalcul(b){
+ if(budgetFrance()||!budgetLisible(b)||b.saison!==S.season||!b.clubs.every(k=>Number.isFinite(k.base)))return null;
+ const parDivision=new Map();
+ for(const k of b.clubs){const e=parDivision.get(k.division);if(e){e[0]=Math.min(e[0],k.base);e[1]=Math.max(e[1],k.base);}else parDivision.set(k.division,[k.base,k.base]);}
+ return parDivision;
+}
+function budgetEventailVote(){
+ const b=S.clubBudget,m=budgetReputationMemo;
+ if(m&&m.etat===S&&m.budget===b&&m.saison===S.season)return budgetMemoRetrouve('eventail',m.parDivision,()=>budgetEventailCalcul(b));
+ const parDivision=budgetEventailCalcul(b);
+ if(parDivision)budgetReputationMemo={etat:S,budget:b,saison:S.season,parDivision};
+ return parDivision;
+}
 function budgetReputation(c){
- const d=budgetLigue(c.id),cle=S.season+'|'+d,m=budgetReputationMemo;
- if(!m||m.etat!==S||m.saison!==S.season){budgetReputationMemo={etat:S,saison:S.season,parDivision:new Map()};}
- const memo=budgetReputationMemo.parDivision;
- if(!memo.has(d)){const bases=S.clubs.filter(x=>budgetLigue(x.id)===d).map(x=>x.base).filter(Number.isFinite);memo.set(d,bases.length?[Math.min(...bases),Math.max(...bases)]:[c.base,c.base]);}
- const [min,max]=memo.get(d);return max>min?Math.max(0,Math.min(1,(c.base-min)/(max-min))):0.5;
+ const d=budgetLigue(c.id),vote=budgetEventailVote()?.get(d);
+ let min,max;
+ if(vote)[min,max]=vote;
+ else{const bases=S.clubs.filter(x=>budgetLigue(x.id)===d).map(x=>x.base).filter(Number.isFinite);[min,max]=bases.length?[Math.min(...bases),Math.max(...bases)]:[c.base,c.base];}
+ return max>min?Math.max(0,Math.min(1,(c.base-min)/(max-min))):0.5;
 }
 // Facteur de prix d'un club : × 0,75 (le plus modeste de sa division) à × 1,3 (le plus réputé).
 const budgetFacteurReputation=c=>0.75+0.55*budgetReputation(c);
@@ -881,11 +925,16 @@ function budgetPrixOptimaux(c){
 let budgetConseilsMemo=null;
 function budgetConseils(c){
  const r=budgetResponsable(c);if(!r)return null;
- const cle=S.season+'|'+budgetSemaineNo()+'|'+S.history.length+'|'+c.id+'|'+r.id+'|'+JSON.stringify(budgetBilletterieEtat()),m=budgetConseilsMemo;
- if(m&&m.etat===S&&m.cle===cle)return m.valeur;
- const o=budgetPrixOptimaux(c);
- budgetConseilsMemo={etat:S,cle,valeur:{par:{name:r.nom,level:r.niveau,person:r.fiche},base:nativeClubBudget.conseilPrix(o.base,r.niveau,S.season+'|base|'+r.id),
-  abonnement:nativeClubBudget.conseilPrix(o.abonnement,r.niveau,S.season+'|abonnement|'+r.id),affiche:nativeClubBudget.conseilPrix(o.affiche,r.niveau,S.season+'|affiche|'+r.id)}};
+ // Clé : tout ce que lisent les meilleurs prix (budgetPrixOptimaux) et le conseil. L'ancienne clé (semaine, matchs du manager)
+ // gardait des conseils calculés avec l'humeur, les abonnés ou l'accueil d'un autre jour de la semaine.
+ const capacite=budgetCapacite(c),cle=JSON.stringify([S.season,c.id,c.base,r,budgetBilletterieEtat(),budgetPolitique(c),budgetPrixReference(c),capacite,
+  c.id===S.club?budgetHumeur():null,budgetAccueil(c.id),budgetDemande(c),c.id===S.club?S.v111to116?.subscribers??null:null]);
+ const calcul=()=>{const o=budgetPrixOptimaux(c);
+  return {par:{name:r.nom,level:r.niveau,person:r.fiche},base:nativeClubBudget.conseilPrix(o.base,r.niveau,S.season+'|base|'+r.id),
+   abonnement:nativeClubBudget.conseilPrix(o.abonnement,r.niveau,S.season+'|abonnement|'+r.id),affiche:nativeClubBudget.conseilPrix(o.affiche,r.niveau,S.season+'|affiche|'+r.id)};};
+ const m=budgetConseilsMemo;
+ if(m&&m.etat===S&&m.cle===cle)return budgetMemoRetrouve('conseils',m.valeur,calcul);
+ budgetConseilsMemo={etat:S,cle,valeur:calcul()};
  return budgetConseilsMemo.valeur;
 }
 // Prix de la saison : ceux du manager, ceux du staff si la billetterie lui est confiée, sinon ceux de la division.
@@ -1151,12 +1200,14 @@ let budgetForcesDemandeMemo=null;
 const budgetForcesDemande=()=>{
  if(budgetFrance())return budgetForces();
  const projection=typeof nativeProjectionActive==='function'?nativeProjectionActive():0,m=budgetForcesDemandeMemo;
- if(projection&&m&&m.etat===S&&m.projection===projection)return m.forces;
- const ligues=S.worldMode.leagues;let cle=String(S.clubs.length);
+ if(projection&&m&&m.etat===S&&m.projection===projection)return budgetMemoRetrouve('forcesDemande',m.forces,budgetForces);
+ // Clé : divisions, niveaux et stades des clubs, saison, budget voté (éventail des réputations) et calendrier (réceptions) :
+ // tout ce que lit la billetterie de chaque club (budgetBilletterieClub).
+ const ligues=S.worldMode.leagues,fixtures=S.worldMode.fixtures;let cle=S.season+'|'+(fixtures?.length||0)+'|'+S.clubs.length;
  for(const k of Object.keys(ligues))cle+='|'+k+':'+ligues[k].members.join(',');
- for(const c of S.clubs)cle+='|'+c.id+':'+c.base;
- if(m&&m.etat===S&&m.cle===cle){m.projection=projection;return m.forces;}
- budgetForcesDemandeMemo={etat:S,cle,forces:budgetForces(),projection};return budgetForcesDemandeMemo.forces;
+ for(const c of S.clubs)cle+='|'+c.id+':'+c.base+':'+budgetCapacite(c);
+ if(m&&m.etat===S&&m.cle===cle&&m.budget===S.clubBudget&&m.fixtures===fixtures){m.projection=projection;return budgetMemoRetrouve('forcesDemande',m.forces,budgetForces);}
+ budgetForcesDemandeMemo={etat:S,cle,budget:S.clubBudget,fixtures,forces:budgetForces(),projection};return budgetForcesDemandeMemo.forces;
 };
 // Salaire demandé au club joué : même règle que les salaires de départ, puis l'attrait du championnat pour une recrue.
 salaryDemandBreakdown=function(p,kind='renew',s=S){
