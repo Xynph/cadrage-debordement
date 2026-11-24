@@ -293,7 +293,11 @@ func capture_tailles(between: Control) -> void:
 		if panneau != null and menu != null:
 			var pr := panneau.get_global_rect()
 			var mr := menu.get_global_rect()
-			check(not pr.intersects(mr) and absf(pr.position.y - mr.position.y) < 2.0, "%s : sous-liste à côté du menu, alignée sur son haut" % str(t))
+			check(not pr.intersects(mr) and pr.position.y >= mr.end.y and pr.position.y - mr.end.y < 24.0, "%s : sous-liste juste sous le menu (%d px)" % [str(t), int(pr.position.y - mr.end.y)])
+			var terrain_2d: Control = surface().regie.between.get("terrain")
+			check(terrain_2d != null and terrain_2d.is_visible_in_tree() and not pr.intersects(terrain_2d.get_global_rect()), "%s : sous-liste sans intersection avec le rectangle du terrain" % str(t))
+			var centre := surface().regie.between.find_child("MatchBetweenCentre", true, false) as Control
+			check(centre != null and not pr.intersects(centre.get_global_rect()), "%s : sous-liste hors de la colonne du terrain" % str(t))
 			for etiquette: Node in panneau.find_children("FmCriNom", "Label", true, false):
 				var l := etiquette as Label
 				var large := l.get_theme_font("font").get_string_size(l.text, HORIZONTAL_ALIGNMENT_LEFT, -1, l.get_theme_font_size("font_size")).x
@@ -494,6 +498,16 @@ func menu_en_3d() -> void:
 		await capture("final-menu-3d-1920")
 		var ligne := bouton(null, "FmCri_exiger")
 		check(ligne != null and ligne.is_visible_in_tree(), "en 3D : les lignes du menu sont cliquables")
+		var a_un := bouton(null, "FmBancJoueur")
+		if a_un != null: a_un.pressed.emit()
+		await settle(10)
+		var sous := surface().find_child("FmBancMenuPanneau", true, false) as Control
+		var ok_sous := sous != null and sous.is_visible_in_tree() and deroulant() != null
+		if ok_sous: ok_sous = Rect2(Vector2.ZERO, Vector2(root.size)).grow(1.0).encloses(sous.get_global_rect()) and sous.get_global_rect().position.y >= deroulant().get_global_rect().end.y
+		check(ok_sous, "en 3D : sous-liste « À un joueur » sous le menu, dans l'écran")
+		await capture("final-joueurs-3d-1920")
+		if is_instance_valid(sous): bouton(null, "FmBancMenuFermer").pressed.emit()
+		await settle(6)
 		load("res://ui/petite_fenetre.gd").fermer_derniere(self)
 		await settle(8)
 		check(deroulant() == null and not bool(b.get_meta("ouvert", true)), "en 3D : Échap ferme le menu")

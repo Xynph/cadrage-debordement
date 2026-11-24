@@ -469,7 +469,7 @@ func fermer_joueurs() -> void:
 	_liste = null
 	_maj_lignes()
 
-## Sous-liste à côté du menu (à sa gauche, alignée sur son haut) : nos quinze, trois cris chacun.
+## Sous-liste sous le menu, sur la colonne de droite (jamais sur le terrain) : nos quinze, trois cris chacun.
 func ouvrir_joueurs() -> void:
 	if not menu_ouvert():
 		ouvrir_menu(true)
@@ -512,13 +512,26 @@ func ouvrir_joueurs() -> void:
 
 func _placer_joueurs() -> void:
 	if not is_instance_valid(_menu) or not is_instance_valid(_deroulant): return
-	_menu.size = _menu.get_combined_minimum_size()
 	var ecran := between.get_viewport_rect().size
 	var d := _deroulant.get_global_rect()
-	var pos := Vector2(d.position.x - _menu.size.x - px(8), d.position.y)
-	if pos.x < px(16): pos.x = d.end.x + px(8)
-	pos.x = clampf(pos.x, px(16), maxf(px(16), ecran.x - _menu.size.x - px(16)))
-	pos.y = clampf(pos.y, px(16), maxf(px(16), ecran.y - _menu.size.y - px(16)))
+	# Retouche 34 de Léo : la sous-liste ne recouvre JAMAIS le terrain 2D. Elle s'ouvre sous le menu, sur la colonne de
+	# droite (classement, multiplex), à sa largeur ; en 3D (colonne cachée), alignée sur le bord droit du menu.
+	var largeur := float(px(560))
+	var x := d.end.x - largeur
+	var colonne := between.find_child("MatchBetweenStandingsColumn", true, false) as Control
+	if colonne != null and colonne.is_visible_in_tree() and colonne.size.x > 0.0:
+		var rc := colonne.get_global_rect()
+		largeur = rc.size.x
+		x = rc.position.x
+	_menu.custom_minimum_size.x = largeur
+	# La liste défile dans la hauteur qui reste sous le menu (jamais remontée sur lui).
+	var haut := d.end.y + px(8)
+	var defile := _menu.find_child("FmBancMenuDefile", true, false) as Control
+	if defile != null:
+		var tete := _menu.get_combined_minimum_size().y - defile.custom_minimum_size.y
+		defile.custom_minimum_size.y = clampf(ecran.y - px(16) - haut - tete, float(px(160)), float(px(600)))
+	_menu.size = _menu.get_combined_minimum_size()
+	var pos := Vector2(clampf(x, px(16), maxf(px(16), ecran.x - _menu.size.x - px(16))), haut)
 	_menu.position = pos - _calque.get_global_rect().position
 
 ## Nos quinze : numéro, nom, moral en direct, trois cris en ronds, puis la réaction au dernier cri (après coup).
