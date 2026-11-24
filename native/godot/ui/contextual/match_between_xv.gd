@@ -184,7 +184,7 @@ func _montrer_changement(live: Dictionary, direct: Dictionary, montre: Array) ->
 	var zone: Control = phrase_fm
 	var notes: Dictionary = direct.get("notes", {}) if direct.get("notes") is Dictionary else {}
 	var sortant := {"numero": _numero(str(dernier.get("outId", "")), int(dernier.get("slot", 0)) + 1), "nom": "", "note": -1.0, "energie": 100.0}
-	var entrant := {"numero": _numero(str(dernier.get("inId", "")), 0), "nom": "", "note_poste": -1.0, "energie": 100.0}
+	var entrant := {"numero": _numero(str(dernier.get("inId", "")), 0), "nom": "", "lettre_poste": {}, "energie": 100.0}
 	for j: Variant in (live.get("lineup", []) if live.get("lineup") is Array else []) + (live.get("reserves", []) if live.get("reserves") is Array else []):
 		if not j is Dictionary: continue
 		if str(j.get("id", "")) == str(dernier.get("outId", "")):
@@ -195,7 +195,7 @@ func _montrer_changement(live: Dictionary, direct: Dictionary, montre: Array) ->
 			entrant.nom = str(j.get("name", ""))
 			entrant.energie = float(j.get("condition", 100))
 			var complet: Dictionary = Commune.trouver(_app(), str(j.id), "squad").get("joueur", {}) if _app() is Control else {}
-			entrant.note_poste = MenuJoueur.note_poste(complet, int(dernier.get("slot", 0)) + 1)
+			if not complet.is_empty(): entrant.lettre_poste = Notation.lettre_poste(_app().get("model"), complet, int(dernier.get("slot", 0)) + 1, true)
 	MenuJoueur.carte_changement(zone, sortant, entrant)
 
 ## Vues de la colonne Mon XV : « tableau » (Mon XV et le banc) ou « adverse » (le XV adverse).

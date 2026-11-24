@@ -7,6 +7,7 @@ extends SceneTree
 ## CD_PLAN_CAPTURES=<dossier> (+ CD_PLAN_TAILLE=LxH) : final-actuelle-<L>.png et final-prochaine-<L>.png.
 const ContextualFlow = preload("helpers/contextual_flow.gd")
 const Plan = preload("res://ui/immersive08/planificateur.gd")
+const Notation = preload("res://ui/notation_staff.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -40,6 +41,30 @@ func click_id(id: String) -> bool:
 	if control == null: return false
 	await click(control.get_global_rect().get_center())
 	return true
+
+## Texte de lettre du staff : « B », « B/A » ou « ? » (jamais un chiffre).
+func est_lettre(t: String) -> bool:
+	if t == "?": return true
+	if t.is_empty(): return false
+	for l in t.split("/"):
+		if not l in Notation.LETTRES: return false
+	return true
+
+## Lettres posées sous `noeud` par les pastilles nommées `motif` : [textes] ; chiffres = textes qui ne sont pas des lettres.
+func lettres(noeud: Node, motif: String) -> Array:
+	return noeud.find_children(motif, "", true, false).map(func(n: Node) -> String: return str(n.get_meta("lettre", "")))
+
+## Libellés de la note au poste qui contiennent un chiffre (note, écart, bulle).
+func chiffres_note(noeud: Node) -> Array:
+	var sortie: Array = []
+	for n: Node in noeud.find_children("Plan*Note*", "", true, false) + noeud.find_children("Plan*Ecart*", "", true, false):
+		var textes: Array = [(n as Control).tooltip_text if n is Control else ""]
+		if n is Label: textes.append((n as Label).text)
+		for l: Node in n.find_children("*", "Label", true, false): textes.append((l as Label).text)
+		for t: String in textes:
+			for c in t:
+				if c >= "0" and c <= "9": sortie.append(t)
+	return sortie
 
 ## Choisit un poste par l'en-tête de sa carte (les noms, dessus, ouvrent la fiche).
 func choisir_poste(i: int) -> bool:
@@ -123,7 +148,12 @@ func calculs() -> void:
 	var p2 := Plan.projection(model, 2)
 	var o2 := Plan.ordres(p2)
 	var d2: Array = o2[8].liste.filter(func(x: Dictionary): return str(x.e.p.id) == "d")
-	check(d2.size() == 1 and float(d2[0].note) > float(d2[0].actuelle) and Plan.ecart(d2[0])[0].begins_with("+"), "Jeune à fort potentiel : note estimée en hausse dans deux saisons")
+	check(d2.size() == 1 and float(d2[0].note) > float(d2[0].actuelle) and Plan.ecart(d2[0])[0] == "▲", "Jeune à fort potentiel : note estimée en hausse dans deux saisons (▲, sans chiffre)")
+	# Décision de Léo du 24/11 : la note au poste est une lettre du staff (E- à S+), jamais un chiffre ni un écart chiffré.
+	var dl := Plan.lettre_poste(model, d2[0].e.p, Plan.POSTES[8].n, float(d2[0].note), int(d2[0].niveau)) if d2.size() == 1 else {}
+	check(est_lettre(Notation.texte_note(dl)) and Notation.texte_note(dl) != "?", "Note estimée en lettre du staff (%s)" % Notation.texte_note(dl))
+	var al := Plan.lettre_poste(model, d2[0].e.p, Plan.POSTES[8].n, float(d2[0].actuelle), int(d2[0].niveau)) if d2.size() == 1 else {}
+	check(Notation.rang_lettre(dl) > Notation.rang_lettre(al), "Lettre estimée au-dessus de celle d'aujourd'hui (%s → %s)" % [Notation.texte_note(al), Notation.texte_note(dl)])
 	var b2: Array = o2[8].liste.filter(func(x: Dictionary): return str(x.e.p.id) == "b")
 	check(b2.size() == 1 and float(b2[0].note) == Plan.note_future(72, 27, 72, 74, 2), "Note estimée = note_future du joueur")
 
@@ -178,6 +208,13 @@ func jeu() -> void:
 	var liste := found("PlanListe")
 	check(terrain != null and liste != null and terrain.get_global_rect().end.x < liste.get_global_rect().position.x, "Terrain à gauche, liste du poste à droite")
 	check(found("PlanLigne_0") != null, "Liste du poste remplie")
+	# Note au poste en lettre du staff (décision de Léo du 24/11) : liste du poste et cartes du terrain, aucun chiffre.
+	var notes_liste := lettres(liste, "PlanNote") if liste != null else []
+	check(not notes_liste.is_empty() and notes_liste.all(func(t: String) -> bool: return est_lettre(t)), "Liste du poste : note au poste en lettre (%s)" % str(notes_liste))
+	# Les cartes des postes sont posées sur la page, par-dessus le panneau du terrain.
+	var notes_cartes := lettres(terrain.get_parent(), "PlanCarteNote*") if terrain != null else []
+	check(not notes_cartes.is_empty() and notes_cartes.all(func(t: String) -> bool: return est_lettre(t)), "Terrain : note au poste en lettre (%s)" % str(notes_cartes.slice(0, 6)))
+	check(chiffres_note(app).is_empty(), "Aucun chiffre de note au poste (%s)" % str(chiffres_note(app).slice(0, 4)))
 	check(etoiles(app) == 0, "Plus aucune étoile à l'écran")
 	check(boutons_valider(app) == 0, "Aucun bouton Valider / Confirmer")
 	await capture("actuelle")
@@ -198,6 +235,11 @@ func jeu() -> void:
 		for i in o.size():
 			if o[i].liste.any(func(x: Dictionary): return str(x.e.p.id) == nego): poste_nego = i; break
 		check(poste_nego >= 0, "Le joueur en négociation reste dans l'effectif de la saison prochaine")
+		var estimees := lettres(found("PlanListe"), "PlanNote") if found("PlanListe") != null else []
+		check(not estimees.is_empty() and estimees.all(func(t: String) -> bool: return est_lettre(t)), "Saison prochaine : note estimée en lettre (%s)" % str(estimees))
+		check(chiffres_note(app).is_empty(), "Saison prochaine : ni note ni écart chiffrés (%s)" % str(chiffres_note(app).slice(0, 4)))
+		var sens: Array = app.find_children("Plan*Ecart", "Label", true, false).map(func(l: Label) -> String: return l.text)
+		check(sens.all(func(t: String) -> bool: return t in ["▲", "▼"]), "Écart à aujourd'hui : ▲ / ▼ sans chiffre (%s)" % str(sens.slice(0, 6)))
 		if poste_nego >= 0 and await choisir_poste(poste_nego):
 			check(found("PlanNego") != null or found("PlanNegoFond") != null, "Pastille « En négociation » dans la liste du poste")
 		await capture("prochaine")

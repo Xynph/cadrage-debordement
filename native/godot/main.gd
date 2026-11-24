@@ -14,6 +14,7 @@ const CareerProgression = preload("res://ui/career_progression.gd")
 const ContinueProgress = preload("res://ui/continue_progress.gd")
 const SaveIndicator = preload("res://ui/save_indicator.gd")
 const Optimistic = preload("res://ui/optimistic_decisions.gd")
+const NotationStaff = preload("res://ui/notation_staff.gd")
 const ClubMail = preload("res://ui/club_mail.gd")
 const ScreenRefresh = preload("res://ui/screen_refresh.gd")
 const PortraitWarmup = preload("res://ui/portrait_warmup.gd")
@@ -292,6 +293,8 @@ func _build_subnavigation(parent: Container) -> void:
 
 ## Rendu complet de l'écran ; note son état (ScreenRefresh.stamp) quand un nouvel arbre a été construit.
 func _render(remember_ui: bool = true) -> void:
+	# Notation du staff : textes et tris de Niveau/Potentiel des vues sans modèle lisent le modèle courant.
+	NotationStaff.modele = model
 	MainRendu.render(self, remember_ui)
 
 func _render_screen(remember_ui: bool) -> void:

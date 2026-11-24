@@ -91,7 +91,7 @@ static func _squad_rows(app:Control,list:VBoxContainer,profile:VBoxContainer,cou
 		if field=="name": G.fill(label)
 		label.tooltip_text="Trier "+str(column[1])+" · valeurs inconnues en dernier"
 		header.add_child(label)
-	var players:Array=TableOrder.ordered(U.players(app.model.get("squad",[]),app.management_ui.roster,int(app.model.meta.get("season",1))),key,state.descending,func(person:Dictionary,field:String): return U.watch_reason(person) if field=="watch" else G.knowledge_sort_value(person,field,true) if field in ["rating","potential","note"] else person.get(field))
+	var players:Array=TableOrder.ordered(U.players(app.model.get("squad",[]),app.management_ui.roster,int(app.model.meta.get("season",1))),key,state.descending,func(person:Dictionary,field:String): return U.watch_reason(person) if field=="watch" else load("res://ui/notation_staff.gd").tri_champ(person,"potential" if field == "potential" else "rating",true) if field in ["rating","potential","note"] else person.get(field))
 	count.text="%d / %d joueurs · lecture seule"%[players.size(),app.model.get("squad",[]).size()]
 	compare.text="COMPARER (%d/2)"%app.management_ui.compare.size()
 	if app.selected_player.is_empty() and not players.is_empty():app.selected_player=str(players[0].id)

@@ -95,7 +95,8 @@ func _ligne_personne(parent: Control, p: Dictionary, zone: Rect2, avec_potentiel
 	Kit.texte(ligne, 360, 26, "%s · %s ans" % [str(p.get("pos", "Carrière")), G.n(p.get("age", "—"))], Charte.IVOIRE_2, zone.size.x - 520, 17)
 	if avec_potentiel:
 		var potentiel: Variant = G.knowledge_sort_value(p, "potential")
-		D.text(ligne, zone.size.x - 14, 27, ("★ " if _pepite(p) else "") + G.potential_text(p), 20, Charte.couleur_attribut(potentiel) if potentiel != null else Charte.IVOIRE_3, 700, 160, HORIZONTAL_ALIGNMENT_RIGHT)
+		var note_pot := Notation.resume(app.model, p, true)
+		D.text(ligne, zone.size.x - 14, 27, ("★ " if _pepite(p) else "") + "Pot. " + Notation.texte_lettre(int(note_pot.potentiel)), 20, Notation.couleur(int(note_pot.potentiel)).lightened(.15) if potentiel != null else Charte.IVOIRE_3, 700, 160, HORIZONTAL_ALIGNMENT_RIGHT)
 
 func _prospects() -> Array:
 	var prospects := roster.duplicate()

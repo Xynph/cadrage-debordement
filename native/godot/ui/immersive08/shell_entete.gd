@@ -66,7 +66,7 @@ static func _heading(parent: Node, app: Control) -> void:
 	var injury_caption := "%d blessé%s" % [injury_count, "s" if injury_count > 1 else ""]
 	var metrics: Array = [[(P.rank_ordinal(app.model.club) if P.standings_open(app.model.club) else "Pas classé")+" · "+G.n(app.model.club.get("points",0))+" pts","trophy",C.GOLD],[str(values.available)+" disponibles","people",C.MINT],[injury_caption,"heart",C.ALERT if injury_count > 0 else C.MUTED]]
 	# Effectif : chiffres clés en gros chiffre + légende (valeur, légende, couleur du chiffre).
-	if app.route=="Effectif": metrics=[[G.n(values.total),"joueur%s" % ("s" if int(values.total) > 1 else ""),C.IVORY],[G.n(values.available),"disponible%s" % ("s" if int(values.available) > 1 else ""),C.MINT],[G.n(injury_count),"blessé%s" % ("s" if injury_count > 1 else ""),C.ALERT if injury_count > 0 else C.IVORY],[str(values.rating),"niveau moyen",C.GOLD]]
+	if app.route=="Effectif": metrics=[[G.n(values.total),"joueur%s" % ("s" if int(values.total) > 1 else ""),C.IVORY],[G.n(values.available),"disponible%s" % ("s" if int(values.available) > 1 else ""),C.MINT],[G.n(injury_count),"blessé%s" % ("s" if injury_count > 1 else ""),C.ALERT if injury_count > 0 else C.IVORY],[str(load("res://ui/notation_staff.gd").palier_groupe(values.rating).texte),"niveau du groupe",C.GOLD]]
 	# Bureau (Affiche et Gabi) et Composition (page dédiée) n'ont plus de pastilles d'en-tête.
 	else: metrics=[]
 	if app.get_window().size.x >= 1600:

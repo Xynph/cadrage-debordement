@@ -169,10 +169,19 @@ func _row(player: Dictionary) -> void:
 	position.name = action_id("ContractPosition", id)
 	position.tooltip_text = "Poste principal · " + position_caption(player)
 	line.add_child(position)
-	var level := _fit(_cell(G.rating_text(player, true), 0, C.MINT, 16), "rating")
+	# Niveau : lettre du staff en pastille ronde (même dessin que la Vue d'ensemble), jamais le chiffre du moteur.
+	var level := CenterContainer.new()
 	level.name = action_id("ContractLevel", id)
-	level.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	level.tooltip_text = "Niveau global projeté / 100, identique à la fiche du joueur."
+	level.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fit(level, "rating")
+	var lettre := Notation.lettre_champ(player, "rating", true, app.model if app != null else {})
+	var porte := Control.new()
+	porte.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var taille := 32.0
+	porte.custom_minimum_size = Vector2(C.px(Notation.largeur_note(lettre, taille)), C.px(taille))
+	level.add_child(porte)
+	var pastille := Notation.pastille_note(porte, 0, taille / 2.0, lettre, taille, "ContractLevelLettre")
+	level.set_meta("lettre", pastille.get_meta("lettre", ""))
 	line.add_child(level)
 	line.add_child(_fit(_cell(G.n(player.age) if player.get("age") != null else "—", 0, C.MUTED, 16), "age"))
 	var salary: Variant = player.get("salary")

@@ -30,8 +30,8 @@ static func _parcours(ctx: Dictionary, parent: Node) -> void:
 			"nom": _cel_joueur(ctx, cel, p)
 			"poste": _cel(cel, col, p.pos, Charte.IVOIRE)
 			"age": _cel(cel, col, G.n(p.age), Charte.IVOIRE_2)
-			"niv": _cel(cel, col, V.niveau_txt(p), V.couleur(V.valeur(p, "rating")), Charte.TITRE_EXTRA, 17)
-			"pot": _cel(cel, col, V.potentiel_txt(p), V.couleur(V.valeur(p, "potential")), Charte.TITRE_EXTRA, 17)
+			"niv": _cel(cel, col, V.niveau_txt(p), V.couleur_champ(p, "rating"), Charte.TITRE_EXTRA, 17)
+			"pot": _cel(cel, col, V.potentiel_txt(p), V.couleur_champ(p, "potential"), Charte.TITRE_EXTRA, 17)
 			"traj":
 				var t := V.trajectoire(str(p.path))
 				_pastille(cel, str(t[1]), t[3], str(t[2]))
@@ -96,7 +96,7 @@ static func _centres(ctx: Dictionary, parent: Node) -> void:
 		var p: Dictionary = candidats[i]
 		var fee := int(p.get("fee", 0))
 		var pid := str(p.id)
-		var pt := V.couleur(V.valeur(p, "potential"))
+		var pt := V.couleur_champ(p, "potential")
 		var b := _zone(func(): V.envoyer(ctx, "academy_recruit", {"playerId": pid, "offer": fee}, fee, "Recruter " + str(p.name)), "CentresCandidat%d" % i, str(p.name), Charte.RAYON_CARTE, 46.0, Charte.PANNEAU_2)
 		b.custom_minimum_size.x = 250.0
 		var h := _dans(b, 8, 8)

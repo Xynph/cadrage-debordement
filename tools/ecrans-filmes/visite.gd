@@ -711,6 +711,8 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				await stabiliser()
 		"salle_conseil":
 			if not (app.contextual_director.active() and app.contextual_director.kind == "board"):
+				# Attention : la suite de la visite filme cette CARRIÈRE NEUVE (qualités Précises), plus la carrière exportée.
+				print("ECRANS_FILMES_CARRIERE_NEUVE ", ecran.id, " : écrans suivants = carrière neuve (club 102, qualités Précises)")
 				if not app._command("new_career", {"mode": "world-champ", "club": 102, "start": "premiers-clubs"}): return {"statut": "echec", "note": "carrière neuve refusée"}
 				while app.waiting: await process_frame
 				app.timer.stop()
@@ -1695,6 +1697,10 @@ func run() -> void:
 			if entree.statut == "ok": await capturer(entree, o, taille)
 			refermer(ecran)
 			print("ECRANS_FILMES ", entree.taille, " ", entree.id, " ", entree.statut, " debordements=", entree.get("nombre_debordements", 0), " tronques=", entree.get("nombre_textes_tronques", 0))
+			# CD_FILM_SUIVI_FOURCHETTE=1 : largeur des qualités en fourchette du premier joueur et semaine du moteur après chaque écran.
+			if OS.get_environment("CD_FILM_SUIVI_FOURCHETTE") == "1" and not app.model.get("squad", []).is_empty():
+				var premier: Dictionary = app.model.squad[0]
+				print("ECRANS_FILMES_FOURCHETTE ", entree.id, " largeur=", premier.get("knowledge", {}).get("qualitesLargeur", 0) if premier.get("knowledge") is Dictionary else "?", " jour=", app.model.get("meta", {}).get("calendarToday", "?"), " route=", app.route)
 	if not en_direct.is_empty():
 		var raison := "désactivé (--sans-direct)" if not o.direct else ("durée maximale atteinte" if Time.get_ticks_msec() > fin_au_plus_tard else "")
 		if raison.is_empty():

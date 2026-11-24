@@ -65,12 +65,24 @@ static func marquer(app: Control, label: Label, cran_: int, serie: Array, titre:
 	var droite := gauche + largeur
 	var s := float(taille) * 0.6
 	var zone := Rect2(gauche, haut, largeur, hauteur)
-	if cran_ != 0: zone = _chevrons(parent, label, cran_, gauche, droite, haut, hauteur, s, id)
+	if cran_ != 0: zone = _chevrons(parent, label, float(taille), cran_, gauche, droite, haut, hauteur, s, id)
+	_survol(app, parent, zone, serie, titre, cran_, id)
+
+## Même marque contre une pastille de lettre (Niveau en lettre, notation façon FM) : chevrons à gauche de la pastille ;
+## la bulle du Niveau ne montre aucun chiffre (lettre cachée : seulement le sens de la courbe).
+static func marquer_pastille(app: Control, pastille: Control, cran_: int, serie: Array, titre: String, id: String) -> void:
+	if pastille == null or not is_instance_valid(pastille): return
+	var parent := pastille.get_parent() as Control
+	var r := Rect2(pastille.position, pastille.size)
+	var hauteur := r.size.y * 0.8
+	var haut := r.position.y + r.size.y * 0.1
+	var zone := r
+	if cran_ != 0: zone = _chevrons(parent, pastille, r.size.y * 0.55, cran_, r.position.x, r.end.x, haut, hauteur, r.size.y * 0.42, id, false)
 	_survol(app, parent, zone, serie, titre, cran_, id)
 
 ## Chevrons empilés à gauche (1, 2 ou 3) ; point gagné ou perdu = chiffre cerclé (sa couleur de tranche reste) et
 ## « +1 » / « −1 » lisible à gauche des chevrons (rien ne déborde à droite sur la colonne voisine).
-static func _chevrons(parent: Control, label: Label, n: int, gauche: float, droite: float, haut: float, hauteur: float, s: float, id: String) -> Rect2:
+static func _chevrons(parent: Control, label: Control, taille_police: float, n: int, gauche: float, droite: float, haut: float, hauteur: float, s: float, id: String, cadre_chiffre := true) -> Rect2:
 	var f := Fleche.new()
 	f.name = "Fleche_" + id
 	f.cran = n
@@ -81,7 +93,7 @@ static func _chevrons(parent: Control, label: Label, n: int, gauche: float, droi
 	f.position = Vector2(gauche - marge - l, haut - hauteur * 0.05)
 	var debut := f.position.x
 	var fin := droite
-	if absi(n) == 3:
+	if absi(n) == 3 and cadre_chiffre:
 		var cadre := Panel.new()
 		cadre.name = "FlechePastille_" + id
 		cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -96,7 +108,7 @@ static func _chevrons(parent: Control, label: Label, n: int, gauche: float, droi
 		cadre.position = Vector2(gauche - s * 0.32, haut - hauteur * 0.14)
 		cadre.size = Vector2(droite - gauche + s * 0.64, hauteur * 1.3)
 		fin = cadre.position.x + cadre.size.x
-		var un := _petit(parent, "+1" if n > 0 else "−1", teinte(n), float(label.get_theme_font_size("font_size")) * 0.8, "FlecheUn_" + id)
+		var un := _petit(parent, "+1" if n > 0 else "−1", teinte(n), taille_police * 0.8, "FlecheUn_" + id)
 		un.position = Vector2(f.position.x - un.size.x - s * 0.15, haut + (hauteur - un.size.y) / 2.0 + hauteur * 0.05)
 		debut = un.position.x
 	return Rect2(debut, haut, fin - debut, hauteur)
@@ -144,7 +156,9 @@ static func courbe(app: Control, serie: Array, titre: String, n: int) -> Control
 	var ecart := aujourdhui - roundi(valeurs[0])
 	D.text(bulle, 22, 34, titre.to_upper(), 15, Charte.IVOIRE_3, 700, 260)
 	D.text(bulle, largeur - 22, 34, "12 MOIS", 14, Charte.IVOIRE_3, 700, 120, HORIZONTAL_ALIGNMENT_RIGHT)
-	var chiffre := D.text(bulle, 22, 80, str(aujourdhui), 40, Charte.couleur_attribut(aujourdhui), 800, 90)
+	# Niveau (lettre du staff, valeur cachée) : la bulle ne montre que le sens de la courbe, jamais de chiffre.
+	var cache := titre == "Niveau"
+	var chiffre := D.text(bulle, 22, 80, "" if cache else str(aujourdhui), 40, Charte.couleur_attribut(aujourdhui), 800, 90)
 	chiffre.add_theme_font_override("font", Charte.TITRE_EXTRA)
 	chiffre.name = "FlecheCourbeValeur"
 	if n != 0:
@@ -155,7 +169,7 @@ static func courbe(app: Control, serie: Array, titre: String, n: int) -> Control
 	var hausse := ecart >= 0
 	var pastille := D.rect(bulle, Rect2(largeur - 150, 50, 128, 34), Color(Charte.GAIN if hausse else Charte.PERTE, 0.16), Charte.RAYON_PILULE)
 	pastille.name = "FlecheCourbeEcart"
-	D.text(pastille, 64, 24, ("+%d" % ecart) if ecart > 0 else ("−%d" % -ecart) if ecart < 0 else "=", 19, Charte.GAIN if hausse else Charte.PERTE, 800, 120, HORIZONTAL_ALIGNMENT_CENTER)
+	D.text(pastille, 64, 24, ("▲" if ecart > 0 else "▼" if ecart < 0 else "=") if cache else ("+%d" % ecart) if ecart > 0 else ("−%d" % -ecart) if ecart < 0 else "=", 19, Charte.GAIN if hausse else Charte.PERTE, 800, 120, HORIZONTAL_ALIGNMENT_CENTER)
 	var trace := Courbe.Trace.new()
 	trace.name = "FlecheCourbeTrace"
 	trace.teinte = Charte.GAIN if hausse else Charte.PERTE

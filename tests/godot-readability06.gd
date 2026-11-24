@@ -448,7 +448,10 @@ func immersive_profile(player: Dictionary, resolution: Vector2i) -> void:
 	await keyboard(named("FullPlayerTab4"), "développement du joueur")
 	# Joueur de l'effectif : progression par qualité (courbe 12 mois du relevé mensuel, 36 qualités à cocher).
 	var development := labels(named("ProgressionCourbeCarte"))
-	check(inside(named("ProgressionCourbeCarte"), app.body_scroll) and G.n(player.rating) in development and G.potential_text(player) in development, "Niveau et potentiel lisibles dans Développement")
+	# Notation façon FM : Niveau et Potentiel en pastilles de lettres (jamais le chiffre du moteur).
+	var tuile_n := named("ProgressionTuileNiveauLettre")
+	var tuile_p := named("ProgressionTuilePotentielLettre")
+	check(inside(named("ProgressionCourbeCarte"), app.body_scroll) and tuile_n != null and str(tuile_n.get_meta("lettre", "")) == G.rating_text(player, true) and tuile_p != null and str(tuile_p.get_meta("lettre", "")) == G.potential_text(player), "Niveau et potentiel lisibles dans Développement (lettres)")
 	check(inside(named("ProgressionCourbe"), app.body_scroll), "Courbe des 12 mois visible")
 	var coches: Array = named("ProgressionGrille").find_children("ProgressionCoche_*", "Button", true, false) if named("ProgressionGrille") != null else []
 	check(coches.size() == 36, "Les 36 qualités à cocher")

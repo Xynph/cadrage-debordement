@@ -8,6 +8,8 @@ extends RefCounted
 
 const G = preload("res://ui/game_skin.gd")
 const Knowledge = preload("res://ui/player_knowledge_text.gd")
+const Notation = preload("res://ui/notation_staff.gd")
+const Familiarite = preload("res://ui/familiarite_poste.gd")
 
 const POSITIF := "positif"
 const NEUTRE := "neutre"
@@ -331,6 +333,18 @@ static func _note_poste(person: Dictionary, numero: int) -> float:
 		if value is int or value is float: return float(value)
 	return _nombre(person.get("rating"), 0.0)
 
+## Note au poste en LETTRE (« B », « B/A » : échelle du Niveau, comme à l'écran ; décision de Léo du 24/11/2026, jamais
+## de chiffre). `note` : valeur cachée déjà connue (proposition du moteur), sinon celle du joueur au poste.
+static func _lettre_poste(model: Dictionary, person: Dictionary, numero: int, note: Variant = null) -> String:
+	var v := float(note) if note is int or note is float else _note_poste(person, numero)
+	return Notation.texte_note(Notation.lettre_note(model, person, v, true, Notation.cle_poste(numero), Familiarite.niveau(person, numero)))
+
+## Numéro du poste d'une place de la feuille (positionNumber du moteur, sinon place + 1).
+static func _numero_du_slot(model: Dictionary, slot: int) -> int:
+	for assignment: Variant in model.get("selection", {}).get("slots", []) if model.get("selection") is Dictionary else []:
+		if assignment is Dictionary and int(_nombre(assignment.get("slot"), -1)) == slot: return int(_nombre(assignment.get("positionNumber"), slot + 1))
+	return slot + 1
+
 ## Valeur d'un joueur à un poste pour le prochain match : note au poste, forme récente (notes de match),
 ## fraîcheur. Uniquement des données du club (connues du manager).
 static func valeur(model: Dictionary, person: Dictionary, numero: int) -> float:
@@ -444,7 +458,9 @@ static func quota(model: Dictionary) -> Dictionary:
 		var entrant := _nom(joueur(model, str(change.playerId)))
 		var sortant := _nom(joueur(model, str(change.sortant)))
 		var poste := _poste_du_slot(model, int(_nombre(change.get("slot"), -1)))
-		phrases.append("%s à la place %s%s (note au poste %d contre %d)" % [entrant, _de(sortant), " en " + poste if not poste.is_empty() else "", int(_nombre(change.get("rating"), 0)), int(_nombre(change.get("sortantRating"), 0))])
+		var numero := _numero_du_slot(model, int(_nombre(change.get("slot"), -1)))
+		var lettres := [_lettre_poste(model, joueur(model, str(change.playerId)), numero, change.get("rating")), _lettre_poste(model, joueur(model, str(change.sortant)), numero, change.get("sortantRating"))]
+		phrases.append("%s à la place %s%s (%s contre %s au poste)" % [entrant, _de(sortant), " en " + poste if not poste.is_empty() else "", lettres[0], lettres[1]])
 	var resultat := _resultat("%s Je propose %d changement%s de niveau proche." % [court, changes.size(), "s" if changes.size() > 1 else ""], "mise_en_garde", NEUTRE, {"type": "composition", "changements": changes.map(func(c: Dictionary) -> Dictionary: return {"slot": int(c.slot), "playerId": str(c.playerId), "sortant": str(c.sortant)}), "libelle": "Suivre le conseil"})
 	resultat["plus"] = "%s Je mettrais : %s." % [court, "; ".join(phrases)]
 	return resultat
@@ -569,7 +585,8 @@ static func fatigue(model: Dictionary) -> Dictionary:
 	var texte := ""
 	if fatigues.size() == 1 and changes.size() == 1:
 		var change: Dictionary = changes[0]
-		texte = "%s est à %d %% de condition : je le ferais souffler. %s est frais (%d %%) et vaut %d à ce poste." % [_nom(joueur(model, str(change.sortant))), int(_nombre(change.get("condition"), 0)), entrants[0], int(_nombre(change.get("entrantCondition"), 0)), int(_nombre(change.get("rating"), 0))]
+		var lettre := _lettre_poste(model, joueur(model, str(change.playerId)), _numero_du_slot(model, int(_nombre(change.get("slot"), -1))), change.get("rating"))
+		texte = "%s est à %d %% de condition : je le ferais souffler. %s est frais (%d %%) et vaut %s à ce poste." % [_nom(joueur(model, str(change.sortant))), int(_nombre(change.get("condition"), 0)), entrants[0], int(_nombre(change.get("entrantCondition"), 0)), lettre]
 	else:
 		texte = "%s %s sous les %d %% de condition. Je les ferais souffler et je mettrais à leur place : %s." % [qui, "est" if fatigues.size() == 1 else "sont", seuil, _liste(Array(phrases))]
 	if changes.size() < fatigues.size():
@@ -600,13 +617,14 @@ static func _argument(model: Dictionary, proposal: Dictionary) -> String:
 		if f != null and float(f) < 6.3: raisons.append("tourne à %s de moyenne" % _virgule(float(f)) if raisons.size() > 0 else "%s tourne à %s de moyenne" % [_nom(sortant), _virgule(float(f))])
 		var note_sortant := _note_poste(sortant, int(proposal.numero))
 		if note_sortant + 5 <= _note_poste(entrant, int(proposal.numero)):
-			raisons.append("ne vaut que %d à ce poste" % int(roundf(note_sortant)) if raisons.size() > 0 else "%s ne vaut que %d à ce poste" % [_nom(sortant), int(roundf(note_sortant))])
+			var lettre_s := _lettre_poste(model, sortant, int(proposal.numero))
+			raisons.append("ne vaut que %s à ce poste" % lettre_s if raisons.size() > 0 else "%s ne vaut que %s à ce poste" % [_nom(sortant), lettre_s])
 		if raisons.is_empty(): raisons.append("%s fait le travail" % _nom(sortant))
 	var pour := PackedStringArray()
 	var fe: Variant = forme(model, str(entrant.get("id", "")))
 	if fe != null and float(fe) >= 6.8: pour.append("sort d'un %s" % _virgule(float(fe)))
 	pour.append("est frais (%d %%)" % int(condition(entrant)) if condition(entrant) >= 95 else "est à %d %%" % int(condition(entrant)))
-	pour.append("et vaut %d au poste" % int(roundf(_note_poste(entrant, int(proposal.numero)))))
+	pour.append("et vaut %s au poste" % _lettre_poste(model, entrant, int(proposal.numero)))
 	var texte := ""
 	if sortant.is_empty(): texte = "En %s, la place est vide : %s %s." % [poste, _nom(entrant), " ".join(pour) if pour.size() == 1 else ", ".join(pour.slice(0, pour.size() - 1)) + " " + pour[pour.size() - 1]]
 	else: texte = "En %s, %s, mais %s %s." % [poste, " et ".join(raisons), _nom(entrant), ", ".join(pour.slice(0, pour.size() - 1)) + " " + pour[pour.size() - 1]]
@@ -693,7 +711,11 @@ static func recrutement(model: Dictionary, cible: Dictionary) -> Dictionary:
 		action.verdict = "a_suivre"
 		return _resultat("Je n'ai jamais vu jouer %s : ni note, ni rapport. Mets-le dans ta liste et envoie un recruteur avant de sortir le chéquier." % nom, "question", NEUTRE, action.merged({"libelle": "Suivre le conseil"}))
 	var ecart: float = float(level) - float(average) if average != null else 0.0
-	var range_text := "%d" % int(bounds.min) if int(bounds.min) == int(bounds.max) else "entre %d et %d" % [int(bounds.min), int(bounds.max)]
+	# Niveau, potentiel et moyenne de notre effectif au poste en lettres (échelle du Niveau, comme à l'écran).
+	var lu := Notation.resume(model, cible, false)
+	var ref := Notation.reference_effectif(model)
+	var range_text := Notation.texte_lettre(int(lu.niveau))
+	var moyenne_lettre := Notation.texte_lettre(Notation.indice(average, ref)) if average != null else "?"
 	var young_promise := age <= 21 and not potential.is_empty() and float(potential.max) >= float(level) + 8
 	if places <= 0:
 		action.verdict = "passe"
@@ -705,14 +727,14 @@ static func recrutement(model: Dictionary, cible: Dictionary) -> Dictionary:
 		action.verdict = "fonce"
 		var years := clampi(int(_nombre(cible.get("maxYears"), 2)), 1, 3) if age <= 29 else clampi(int(_nombre(cible.get("minYears"), 1)), 1, 2)
 		action.annees = years
-		var texte := "%s est noté %s, au-dessus de notre moyenne au poste (%d). " % [nom, range_text, int(average)]
+		var texte := "%s est noté %s, au-dessus de notre moyenne au poste (%s). " % [nom, range_text, moyenne_lettre]
 		texte += "Il comble le trou qu'on a là. " if need else ""
 		texte += _quota_mot(cible)
 		texte += "Propose-lui %d an%s à %s, sans surenchérir." % [years, "s" if years > 1 else "", G.salary(salary)]
 		return _resultat(texte, "approbation", POSITIF, action.merged({"libelle": "Suivre le conseil"}))
 	if young_promise:
 		action.verdict = "a_suivre"
-		return _resultat("%s a %d ans et du potentiel (jusqu'à %d). Pas pour jouer demain : suis-le, et ne le presse pas, un jeune qu'on brûle ne repousse pas." % [nom, age, int(potential.max)], "question", NEUTRE, action.merged({"libelle": "Suivre le conseil"}))
+		return _resultat("%s a %d ans et du potentiel (jusqu'à %s). Pas pour jouer demain : suis-le, et ne le presse pas, un jeune qu'on brûle ne repousse pas." % [nom, age, Notation.texte_lettre(int(lu.potentiel))], "question", NEUTRE, action.merged({"libelle": "Suivre le conseil"}))
 	if need and average != null and ecart >= -2:
 		action.verdict = "a_suivre"
 		return _resultat("%s (%s) ferait un renfort honnête là où on manque. Garde-le dans ta liste, et cherche mieux avant de signer." % [nom, range_text], "question", NEUTRE, action.merged({"libelle": "Suivre le conseil"}))
@@ -720,7 +742,7 @@ static func recrutement(model: Dictionary, cible: Dictionary) -> Dictionary:
 		action.verdict = "a_suivre"
 		return _resultat("%s (%s) n'est pas un grand renfort, mais il compte pour notre quota %s et il nous en manque. Garde-le dans ta liste." % [nom, range_text, str(cible.quota.get("label", "JIFF"))], "question", NEUTRE, action.merged({"libelle": "Suivre le conseil"}))
 	action.verdict = "passe"
-	var comparaison := " ; notre moyenne au poste est de %d" % int(average) if average != null else ""
+	var comparaison := " ; notre moyenne au poste est %s" % moyenne_lettre if average != null else ""
 	return _resultat("%s est noté %s%s. Il n'apporterait rien de plus : passe ton chemin." % [nom, range_text, comparaison], "mise_en_garde", NEUTRE, action.merged({"libelle": "Passer mon chemin"}))
 
 # --- Humeur du médaillon et moments clés ---------------------------------------------------------------

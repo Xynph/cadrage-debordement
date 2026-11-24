@@ -289,8 +289,20 @@ func _tuile(joueur: Dictionary, numero: int, eligible: bool, choisi: bool, conse
 	haut.add_child(pousse)
 	var niveau := _niveau(joueur)
 	if not niveau.is_empty():
-		var badge := _titre(niveau, 16, C.IVORY, 800)
+		# Lettre du staff dans une pastille à sa couleur (comme l'Effectif), jamais le chiffre du moteur.
+		var l_niv := _lettre_niveau(joueur)
+		var badge := _titre(niveau, 16, Notation.couleur_texte(int(l_niv.haut) if int(l_niv.bas) == int(l_niv.haut) else int(l_niv.bas)), 800)
 		badge.name = "TeamBenchLevel"
+		badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		badge.custom_minimum_size = Vector2(px(28), px(28))
+		var fond_badge := StyleBoxFlat.new()
+		fond_badge.bg_color = Notation.couleur(int(l_niv.bas))
+		fond_badge.set_corner_radius_all(roundi(px(14)))
+		fond_badge.content_margin_left = px(6)
+		fond_badge.content_margin_right = px(6)
+		badge.add_theme_stylebox_override("normal", fond_badge)
+		badge.set_meta("lettre", niveau)
 		haut.add_child(badge)
 	if choisi: haut.add_child(_coche(14))
 	mots.add_child(haut)

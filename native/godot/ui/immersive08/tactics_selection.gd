@@ -2,6 +2,7 @@ extends RefCounted
 ## Notes et affectations de la Tactique : projections moteur exclusivement.
 const C = preload("res://ui/immersive08/components.gd")
 const Charte = preload("res://ui/charte.gd")
+const Notation = preload("res://ui/notation_staff.gd")
 
 class PlayerButton extends Button:
 	var drag_player := ""
@@ -161,9 +162,23 @@ static func familiarite(model: Dictionary,person: Dictionary,index: int) -> int:
 		if (secondary is int or secondary is float) and int(secondary)>=1 and int(secondary)<=15 and ROLES[int(secondary)-1]==role:return 2
 	return 1
 
+## Note au poste de la place `index` en LETTRE (Notation.lettre_poste, échelle du Niveau, jamais de chiffre) :
+## {bas, haut} ; -1 si la place n'a pas de poste ou si le moteur ne projette pas de note valide.
+static func lettre(model: Dictionary,person: Dictionary,index: int) -> Dictionary:
+	if rating(model,person,index)==null:return {"bas":-1,"haut":-1}
+	return Notation.lettre_poste(model,person,number(model,index),true)
+
+## Note au poste principal du joueur en lettre ({bas: -1} sans poste principal ni note projetée).
+static func lettre_principale(model: Dictionary,person: Dictionary) -> Dictionary:
+	var principal: Variant=person.get("primaryPosition")
+	var notes: Variant=person.get("positionRatings")
+	if not (principal is int or principal is float) or not notes is Dictionary:return {"bas":-1,"haut":-1}
+	var v: Variant=notes.get(str(int(principal)))
+	if not ((v is int or v is float) and is_finite(float(v))):return {"bas":-1,"haut":-1}
+	return Notation.lettre_poste(model,person,int(principal),true)
+
 static func rating_text(model: Dictionary,person: Dictionary,index: int) -> String:
-	var value: Variant=rating(model,person,index)
-	return "—" if value==null else str(roundi(value))
+	return Notation.texte_note(lettre(model,person,index)) if rating(model,person,index)!=null else "—"
 
 static func positions(person: Dictionary) -> String:
 	var result: PackedStringArray=[]

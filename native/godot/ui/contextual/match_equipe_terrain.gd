@@ -46,6 +46,8 @@ class Medaillon extends Button:
 	var teinte := C.MINT
 	var numero := ""
 	var niveau := ""
+	var niveau_bas := -1
+	var niveau_haut := -1
 	var choisi := false
 	var cible := false
 	var calque: Control
@@ -85,18 +87,24 @@ class Medaillon extends Button:
 		var largeur := police.get_string_size(numero, HORIZONTAL_ALIGNMENT_LEFT, -1, corps).x
 		calque.draw_string(police, rond + Vector2(-largeur / 2.0, (police.get_ascent(corps) - police.get_descent(corps)) / 2.0), numero, HORIZONTAL_ALIGNMENT_LEFT, -1, corps, C.IVORY)
 		if niveau.is_empty(): return
-		var corps_n := maxi(12, roundi(18.0 * k))
+		var corps_n := maxi(12, roundi(17.0 * k))
 		var l := police.get_string_size(niveau, HORIZONTAL_ALIGNMENT_LEFT, -1, corps_n).x
-		var large := maxf(34.0 * k, l + 10.0 * k)
-		var boite := Rect2(c + Vector2(R + 12.0, 0.0) * k - Vector2(large, (R + 7.0) * k), Vector2(large, 24.0 * k))
-		# Badge du niveau : rectangle nuit à angles droits, chiffre ivoire, ni ombre ni or.
+		var haut_b := 28.0 * k
+		var large := maxf(haut_b, l + 12.0 * k)
+		var boite := Rect2(c + Vector2(R + 12.0, 0.0) * k - Vector2(large, (R + 7.0) * k), Vector2(large, haut_b))
+		# Badge du niveau : lettre du staff en pastille ronde à sa couleur (double : deux moitiés), ni ombre ni or.
+		var Notation: Script = load("res://ui/notation_staff.gd")
 		var style := StyleBoxFlat.new()
-		style.bg_color = C.BG
-		style.set_corner_radius_all(0)
-		style.border_color = C.LINE
-		style.border_width_bottom = maxi(1, roundi(2.0 * k))
+		style.bg_color = Notation.couleur(niveau_haut)
+		style.set_corner_radius_all(roundi(haut_b / 2.0))
 		calque.draw_style_box(style, boite)
-		calque.draw_string(police, Vector2(boite.position.x + (boite.size.x - l) / 2.0, boite.position.y + (boite.size.y + police.get_ascent(corps_n) - police.get_descent(corps_n)) / 2.0), niveau, HORIZONTAL_ALIGNMENT_LEFT, -1, corps_n, C.IVORY)
+		if niveau_bas != niveau_haut:
+			var gauche := StyleBoxFlat.new()
+			gauche.bg_color = Notation.couleur(niveau_bas)
+			gauche.corner_radius_top_left = roundi(haut_b / 2.0)
+			gauche.corner_radius_bottom_left = roundi(haut_b / 2.0)
+			calque.draw_style_box(gauche, Rect2(boite.position, Vector2(boite.size.x / 2.0, haut_b)))
+		calque.draw_string(police, Vector2(boite.position.x + (boite.size.x - l) / 2.0, boite.position.y + (boite.size.y + police.get_ascent(corps_n) - police.get_descent(corps_n)) / 2.0), niveau, HORIZONTAL_ALIGNMENT_LEFT, -1, corps_n, Notation.couleur_texte(niveau_haut if niveau_bas == niveau_haut else niveau_bas))
 
 func _terrain(centre: VBoxContainer) -> void:
 	var cadre := Control.new()
@@ -152,6 +160,9 @@ func _terrain(centre: VBoxContainer) -> void:
 			medaillon.energie = float(d.energie)
 			medaillon.teinte = C.ALERT if bool(d.blesse) else teinte_energie(float(d.energie))
 			medaillon.niveau = _niveau(joueur)
+			var l_niv := _lettre_niveau(joueur)
+			medaillon.niveau_bas = int(l_niv.bas)
+			medaillon.niveau_haut = int(l_niv.haut)
 			var diametre := px(2.0 * (Medaillon.R - 6.0))
 			var portrait := _portrait(joueur, diametre, -1.0, true)
 			portrait.position = Vector2((px(128) - diametre) / 2.0, px(Medaillon.R + 7.0) - diametre / 2.0)

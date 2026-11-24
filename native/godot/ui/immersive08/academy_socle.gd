@@ -1,6 +1,7 @@
 extends Control
 ## Écran Formation, socle (découpe de academy_canvas.gd, sans changement) : constantes, état partagé, courbe de niveau, lecture des jeunes et outils (statiques).
 ## Chaîne d’héritage : socle ← filtres ← en-tête ← décision ← tableau ← passerelles ← encadrement ← academy_canvas.gd (fichier public).
+const Notation = preload("res://ui/notation_staff.gd")
 const Fleches = preload("res://ui/fleches_progression.gd")
 const Copy = preload("res://ui/management_copy.gd")
 const C = preload("res://ui/immersive08/components.gd")
@@ -23,7 +24,11 @@ const GROUPES := {"u21":"U21", "u18":"U18", "academy":"Tous les Espoirs", "profe
 const TRIS := {"decide":"À décider d’abord", "note":"Niveau", "potential":"Potentiel", "age":"Âge", "name":"Nom"}
 const WIDTH := 2248
 const HAUTEUR := 1250
-const ROW := 30.0
+## Ligne de 34 unités et pastilles de 32 : mêmes tailles que l'Effectif (écart du vérificateur, 25/11) ; DY recentre le
+## contenu dessiné pour l'ancienne ligne de 30.
+const ROW := 34.0
+const DY := 2.0
+const PASTILLE := 32.0
 const HEADER_H := 34.0
 const TABLE_TOP := 258.0
 const ROWS_H := 560.0
@@ -103,32 +108,38 @@ func _source_index(person: Dictionary) -> int:
 	return -1
 
 func _sort_value(person: Dictionary, key: String) -> Variant:
-	if key in ["note", "rating", "potential"]: return G.knowledge_sort_value(person, "rating" if key == "note" else key, true)
+	if key in ["note", "rating", "potential"]: return Notation.tri_champ(person, "rating" if key == "note" else key, true, app.model)
 	if key == "source": return _source_index(person)
 	if key == "status": return _status(person)[0]
 	if key == "decide":
 		var rang := 0.0 if _a_decider(person) else 1000.0 if float(person.get("injury", 0)) <= 0 else 1500.0
-		var niveau: Variant = G.knowledge_sort_value(person, "rating", true)
-		return rang + 100.0 - (float(niveau) if niveau != null else 0.0)
+		var niveau: Variant = Notation.tri_champ(person, "rating", true, app.model)
+		return rang + 100.0 - (float(niveau) * 5.0 if niveau != null else 0.0)
 	if key == "contract":
 		var fin: Variant = person.get("contractEnd")
 		return fin if fin is int or fin is float else null
 	if key == "start":
-		var depart: Variant = person.get("development", {}).get("seasonStart")
-		return depart if depart is int or depart is float else null
+		var r := Notation.rang_lettre(_lettre_juillet(person))
+		return r if r >= 0.0 else null
 	if key == "minutes":
 		if pathway.get("active", false) and not _professional(person): return _path(person).get("minutes", person.get("minutes"))
 		return person.get("minutes")
-	if key == "change":
-		var start: Variant = person.get("development", {}).get("seasonStart")
-		if not (start is int or start is float) or not (person.get("rating") is int or person.get("rating") is float): return null
-		return roundi(float(person.rating) - float(start))
+	if key == "change": return _delta(person)
 	return person.get(key)
 
+## Niveau de début de saison (juillet) en lettre du staff : même erreur fixe, même référence et même calage sur le
+## Niveau calculé que la colonne NIV.
+func _lettre_juillet(p: Dictionary) -> Dictionary:
+	var depart: Variant = p.get("development", {}).get("seasonStart")
+	if not (depart is int or depart is float): return {"bas": -1, "haut": -1}
+	return Notation.lettre_note(app.model, p, float(depart) + Notation.decalage_niveau(p), true, "niveau")
+
+## Progression depuis juillet en crans de lettre MONTRÉS (▲/▼ seulement à l'écran) ; null si inconnue.
 func _delta(p: Dictionary) -> Variant:
-	var baseline: Variant = p.get("development", {}).get("seasonStart")
-	if not (baseline is int or baseline is float) or not (p.get("rating") is int or p.get("rating") is float): return null
-	return roundi(float(p.rating) - float(baseline))
+	var avant := Notation.rang_lettre(_lettre_juillet(p))
+	var maintenant := Notation.rang_lettre(Notation.lettre_champ(p, "rating", true, app.model))
+	if avant < 0.0 or maintenant < 0.0: return null
+	return roundi(maintenant - avant)
 
 static func _ignorer_souris(noeud: Node) -> void:
 	for enfant in noeud.get_children():
@@ -225,8 +236,9 @@ func _portrait(parent: Node, p: Dictionary, rectangle: Rect2, _large: bool = fal
 		D.photo(parent, "player-%02d" % posmod(index, 16), rectangle)
 
 static func _potential_before(a: Dictionary, b: Dictionary) -> bool:
-	var av: Variant = G.knowledge_sort_value(a, "potential")
-	var bv: Variant = G.knowledge_sort_value(b, "potential")
+	# Ordre de la lettre de potentiel montrée ; à lettre égale, identifiant (jamais le chiffre caché).
+	var av: Variant = Notation.tri_champ(a, "potential", true)
+	var bv: Variant = Notation.tri_champ(b, "potential", true)
 	if av == null or bv == null:
 		if av != bv: return av != null
 	elif av != bv: return av > bv

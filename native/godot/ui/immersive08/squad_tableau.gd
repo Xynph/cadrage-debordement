@@ -135,7 +135,7 @@ func _players() -> Array:
 		if player is Dictionary:
 			var copie: Dictionary = player.duplicate()
 			copie.matchNotes = Notes.joueur(app.model,str(player.get("id","")))
-			copie.notePoste = Etoiles.note_poste(player, _poste)
+			copie.notePoste = Notation.rang_lettre(Notation.lettre_poste(app.model, player, _poste, true)) if _poste > 0 else -1.0
 			copie.familiarite = Familiarite.niveau(player, _poste)
 			source.append(copie)
 	source = Listes.filtrer_groupe(source, str(state.get("poste_groupe", "")))
@@ -163,7 +163,7 @@ func _sort_header_state() -> void:
 		header.label.add_theme_color_override("font_color",C.IVORY if active else C.MUTED)
 		var detail := "par famille puis poste" if key == "Poste" else "par "+key
 		header.button.tooltip_text = "Tri "+direction+" "+detail+" · cliquer pour inverser" if active else "Trier "+detail+" · valeurs inconnues en dernier"
-		if key == "Niveau": header.button.tooltip_text += "\nNiveau global du joueur / 100."
+
 		if key == "Moyenne": header.button.tooltip_text += "\nMoyenne de la saison en cours (notes de match de 1 à 10)."
 		if key == "Forme": header.button.tooltip_text += "\nCinq dernières notes de match, la plus récente à droite."
 		header.button.accessibility_name = str(header.caption)+" · "+("tri "+direction if active else "trier")
@@ -269,7 +269,8 @@ func _definitions_totaux(players: Array) -> Array:
 	return [
 		{"id": "Joueurs", "v": str(t.n), "cap": "joueurs", "c": Charte.IVOIRE, "act": func(): _tous_les_joueurs()},
 		{"id": "Lignes", "v": "%d · %d" % [t.avants, t.arrieres], "cap": "av. · arr.", "c": Charte.IVOIRE, "act": func(): _toggle_sort("Poste")},
-		{"id": "Niveau", "v": "—" if t.niveau == null else str(roundi(float(t.niveau))), "cap": "niveau moyen", "c": Charte.couleur_attribut(t.niveau) if t.niveau != null else Charte.IVOIRE, "act": func(): _toggle_sort("Niveau")},
+		# Notation façon FM : lettre moyenne de la liste, relative à notre effectif (jamais la moyenne chiffrée).
+		{"id": "Niveau", "v": "—" if t.niveau == null else Notation.texte_lettre(Notation.indice(t.niveau, Notation.reference_effectif(app.model))), "cap": "niveau moyen", "c": Notation.couleur(Notation.indice(t.niveau, Notation.reference_effectif(app.model))).lightened(.15) if t.niveau != null else Charte.IVOIRE, "act": func(): _toggle_sort("Niveau")},
 		{"id": "Condition", "v": "—" if t.condition == null else "%d %%" % roundi(float(t.condition)), "cap": "condition moy.", "c": Charte.CONDITION, "act": func(): _toggle_sort("Condition")},
 		{"id": "Moral", "v": str(roundi(float(app.model.get("meta", {}).get("morale", 0)))) if app.model.get("meta", {}).get("morale") != null else "—", "cap": "moral", "c": Charte.MORAL, "act": func(): app._navigate("Vestiaire")},
 		{"id": "Age", "v": Listes.decimal(t.age), "cap": "âge moyen", "c": Charte.IVOIRE, "act": func(): _toggle_sort("Âge")},

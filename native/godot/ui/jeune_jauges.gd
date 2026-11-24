@@ -43,13 +43,10 @@ class BarreFourchette extends Control:
 			_bande(0.0, maxf(h, _x(niveau)), y, h, Charte.couleur_attribut(niveau))
 			var x := clampf(_x(niveau), 1.0, size.x - 1.0)
 			draw_line(Vector2(x, y - 2.0), Vector2(x, y + h + 2.0), Charte.IVOIRE, 2.0, true)
-		var fonte: Font = Charte.TEXTE
 		for g: int in GRADUATIONS:
 			var gx := _x(g)
+			# Notation façon FM (24/11) : graduations sans chiffre (le Niveau reste caché, seule la lettre est écrite).
 			draw_line(Vector2(gx, y + h + 1.0), Vector2(gx, y + h + 4.0), Charte.IVOIRE_3, 1.0)
-			var texte := str(g)
-			var largeur := fonte.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, police).x
-			draw_string(fonte, Vector2(gx - largeur * 0.5, y + h + 5.0 + police), texte, HORIZONTAL_ALIGNMENT_LEFT, -1, police, Charte.IVOIRE_3)
 
 	func _bande(x: float, largeur: float, y: float, h: float, couleur: Color) -> void:
 		if largeur <= 0: return

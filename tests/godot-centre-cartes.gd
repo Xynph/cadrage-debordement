@@ -135,6 +135,15 @@ func run() -> void:
 			if bouton_suivi != null:
 				bouton_suivi.pressed.emit(); await settle(10)
 				check(app.route == "Suivi des jeunes", "Pastille Suivi des jeunes ouvre Suivi des jeunes")
+				# Notation façon FM (25/11) : Niveau et Potentiel en pastilles rondes, progression en sens (▲ ▼ =), aucun chiffre.
+				var niveaux: Array = app.root_content.find_children("FollowUpNiveau", "Control", true, false)
+				check(not niveaux.is_empty() and niveaux.all(func(n: Node) -> bool: return str(n.get_meta("lettre", "")) != ""), "Suivi des jeunes : Niveau en pastille de lettre (%d)" % niveaux.size())
+				check(not app.root_content.find_children("FollowUpPotentiel", "Control", true, false).is_empty(), "Suivi des jeunes : Potentiel en pastille de lettre")
+				var chiffres: Array[String] = []
+				for l: Node in app.body.find_children("*", "Label", true, false):
+					var t := (l as Label).text.strip_edges()
+					if (t.is_valid_int() or t.begins_with("+")) and (l.get_parent() is VBoxContainer) and (l.get_parent() as Node).get_child_count() == 2 and str(((l.get_parent() as Node).get_child(1) as Label).text if (l.get_parent() as Node).get_child(1) is Label else "") in ["cette saison", "progression moyenne"]: chiffres.append(t)
+				check(chiffres.is_empty(), "Suivi des jeunes : progression sans chiffre (%s)" % ", ".join(chiffres))
 				destinations.append("Fenêtre junior · Suivi des jeunes -> %s" % app.route)
 	# Tuile Espoirs → Formation ; places → Effectif
 	await centre()

@@ -20,7 +20,7 @@ func _heading() -> void:
 	var capacite: Variant = recruitment.get("capacity")
 	var tuiles := [
 		["ESPOIRS", G.n(roster.size()), "%d U18 · %d U21" % [u18, roster.size() - u18], "AcademyTileEspoirs", func(): _fixer("status", ""), 262.0],
-		["PÉPITES", "★ " + G.n(pepites), "potentiel ≥ 85", "AcademyTilePepites", func(): _fixer("status", "pepite"), 262.0],
+		["PÉPITES", "★ " + G.n(pepites), "gros potentiel", "AcademyTilePepites", func(): _fixer("status", "pepite"), 262.0],
 		["À DÉCIDER", G.n(decider), "contrat à trancher", "AcademyTileDecider", func(): _fixer("status", "decide"), 262.0],
 		["PLACES PRO LIBRES", G.n(places) if places is int or places is float else "—", "sur l’effectif de %s" % G.n(capacite) if capacite is int or capacite is float else "à l’effectif", "AcademyTilePlaces", func(): app._navigate("Effectif"), 300.0],
 	]

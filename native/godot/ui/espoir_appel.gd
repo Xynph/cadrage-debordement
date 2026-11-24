@@ -2,7 +2,7 @@ extends RefCounted
 ## « Appeler un espoir » : feuille de match incomplète (l'effectif pro ne suffit pas à compléter les 23).
 ## Le moteur propose, pour chaque place vide, le meilleur jeune du centre apte au poste (selection.espoirs :
 ## 18 ans au moins, non blessé, JIFF préféré quand la feuille est sous l'exigence). Les deux choix, comme en vrai :
-##  - « Appeler un espoir : nom, âge, poste, note » (choix par défaut quand il existe), prêté pour ce match seulement ;
+##  - « Appeler un espoir : nom, âge, poste, note au poste en lettre » (choix par défaut quand il existe), prêté pour ce match seulement ;
 ##  - « Jouer à 22 » quand la règle le permet (selection.reducedBench, Nationale).
 ## Commandes : begin_match { espoirs: [{slot, playerId}] } ou { reducedBench: true } ; espoir_appeler { assignments }.
 const FocusLater := preload("res://ui/focus_later.gd")
@@ -10,6 +10,7 @@ const C = preload("res://ui/immersive08/components.gd")
 const Dialogs = preload("res://ui/immersive08/dialogs.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const Charte = preload("res://ui/charte.gd")
+const Notation = preload("res://ui/notation_staff.gd")
 
 ## Offre du moteur pour la feuille actuelle, ou {} (feuille valide, match en cours, aucun jeune apte).
 static func offer(model: Dictionary) -> Dictionary:
@@ -21,8 +22,11 @@ static func offer(model: Dictionary) -> Dictionary:
 	var slots: Variant = value.get("slots")
 	return value if slots is Array and not slots.is_empty() else {}
 
-static func describe(candidate: Dictionary) -> String:
-	return "%s, %d ans, %s, note %d" % [candidate.get("name", "Jeune"), int(candidate.get("age", 0)), str(candidate.get("pos", "")).to_lower(), int(candidate.get("note", 0))]
+## « Nom, 19 ans, pilier, B au poste » : la note au poste du moteur en LETTRE (échelle du Niveau, jamais de chiffre).
+static func describe(candidate: Dictionary, model: Dictionary = {}) -> String:
+	var note: Variant = candidate.get("note")
+	var lettre := Notation.lettre_note(model, candidate, float(note) if note is int or note is float else -1.0, true, "espoir")
+	return "%s, %d ans, %s, %s au poste" % [candidate.get("name", "Jeune"), int(candidate.get("age", 0)), str(candidate.get("pos", "")).to_lower(), Notation.texte_note(lettre)]
 
 static func _by_id(slot_offer: Dictionary, id: Variant) -> Dictionary:
 	for candidate: Dictionary in slot_offer.get("candidates", []):
@@ -40,8 +44,8 @@ static func choices(model: Dictionary, with_22: bool = true) -> Array:
 			var candidates: Array = slots[0].get("candidates", [])
 			for index in candidates.size():
 				var c: Dictionary = candidates[index]
-				var label := "Appeler un espoir : %s" % describe(c)
-				if index > 0: label = "Ou plutôt : %s" % describe(c)
+				var label := "Appeler un espoir : %s" % describe(c, model)
+				if index > 0: label = "Ou plutôt : %s" % describe(c, model)
 				if c.get("jiff", false): label += " · JIFF"
 				result.append({"id": "espoir%d" % index, "label": label, "payload": {"espoirs": [{"slot": int(slots[0].slot), "playerId": c.id}]}})
 		else:
@@ -50,7 +54,7 @@ static func choices(model: Dictionary, with_22: bool = true) -> Array:
 			for slot_offer: Dictionary in slots:
 				var c := _by_id(slot_offer, slot_offer.get("proposedId"))
 				if c.is_empty(): continue
-				parts.append("n° %d %s" % [int(slot_offer.number), describe(c)])
+				parts.append("n° %d %s" % [int(slot_offer.number), describe(c, model)])
 				assignments.append({"slot": int(slot_offer.slot), "playerId": c.id})
 			if not assignments.is_empty():
 				result.append({"id": "espoir0", "label": "Appeler %d espoirs : %s" % [assignments.size(), " · ".join(parts)], "payload": {"espoirs": assignments}})

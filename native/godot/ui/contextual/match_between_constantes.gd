@@ -15,6 +15,7 @@ const Meteo = preload("res://ui/contextual/meteo_texte.gd")
 const Zones = preload("res://ui/immersive08/standings_zones.gd")
 const Visuels = preload("res://ui/contextual/training_visuels.gd")
 const MenuJoueur = preload("res://ui/contextual/match_menu_joueur.gd")
+const Notation = preload("res://ui/notation_staff.gd")
 const BullesAdjoint = preload("res://ui/contextual/match_bulles_adjoint.gd")
 const Commune = preload("res://ui/immersive08/fiche_commune.gd")
 
