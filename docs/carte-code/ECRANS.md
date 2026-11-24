@@ -79,7 +79,7 @@ Numéros de ligne approximatifs (au 24/11/2026) : relancer carte-code.cjs avant 
 ## Club et finances
 | Écran | Fichier(s) | Entrée |
 |---|---|---|
-| Club, staff, stratégie, travail du club | `ui/immersive08/club_canvas.gd`, `club_pages.gd`, `staff_services.gd` | `build` L93 |
+| Club, staff, stratégie, travail du club | `ui/immersive08/club_canvas.gd` (fichier public : `build`, `_header`, `_overview`) ← chaîne d'héritage, du bas vers le haut : `club_socle.gd` (préchargements, constantes, coche, liens, bandeau) ← `club_conseil.gd` (bandeau, conseil, objectif, bilans) ← `club_installations.gd` (installations, À décider, vestiaire, stade) ← `club_staff.gd` (Staff, Direction) ← `club_histoire.gd` (Histoire, Territoire, Infrastructures), `club_pages.gd`, `staff_services.gd` | `build` L1 (club_canvas) |
 | Fiche d'un club | `ui/immersive08/club_sheet_canvas.gd` | `open` L54, `build` L68 |
 | Finances : fichier principal (onglets, accès depuis les autres écrans, verdict, `build`, consts) | `ui/immersive08/finance_canvas.gd` ← ses morceaux ci-dessous | `build` ~L163 |
 | Finances : pièces graphiques communes (panneaux, textes, boutons, zones) | `ui/immersive08/finance_briques.gd` | `_panneau`, `_bouton`, `_zone` |
