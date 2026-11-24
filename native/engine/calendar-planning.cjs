@@ -29,6 +29,10 @@ const REGULAR = [[0,'strength','Force'],[2,'team','Ateliers par poste','Conquêt
 const CATALOGUE = Object.freeze([...new Map([...Object.values(programmes).flatMap(({slots})=>slots),...REGULAR]
  .map(([,kind,label])=>[kind+'|'+label,Object.freeze({kind,label})])).values()]);
 const inCatalogue = (kind,label) => CATALOGUE.some(item=>item.kind === kind && item.label === label);
+// Qualités travaillées par chaque séance (entraînement ciblé, 24/11/2026) : groupe des avants et des arrières,
+// montré au choix de la séance sans chiffre (tendance) ; appliqué par la VM (entrainement-cible.cjs).
+const entrainement = require('./entrainement-cible.cjs').factory();
+const qualitesSeance = session => entrainement.qualitesSeance(session);
 const isRecord = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const owns = (record,key) => Object.hasOwn(record,key);
 const validFixtureId = value => typeof value === 'string' && value.length > 0 && value.length <= 160
@@ -198,12 +202,13 @@ function weekStart(date) {
 function weekEffects(sessions, today) {
  if (!isDate(today)) return null;
  const lundi = weekStart(today), dimanche = dayOffset(lundi,6);
- const counts = Object.fromEntries(Object.keys(EFFETS).map(kind=>[kind,0]));
+ const counts = Object.fromEntries(Object.keys(EFFETS).map(kind=>[kind,0])), seances = [];
  for (const session of sessions ?? []) {
   if (!isRecord(session) || !isDate(session.date) || session.date < lundi || session.date > dimanche) continue;
-  if (owns(counts,session.kind)) counts[session.kind]++;
+  if (owns(counts,session.kind)) { counts[session.kind]++; seances.push({kind:session.kind,label:session.label,...(session.forwards ? {forwards:session.forwards,backs:session.backs} : {})}); }
  }
- return {weekStart:lundi,counts,effects:effectsOf(counts)};
+ // Séances de la semaine (famille, nom, ateliers) : groupes de qualités travaillés par la VM (entrainement-cible.cjs).
+ return {weekStart:lundi,counts,effects:effectsOf(counts),seances};
 }
 
 // Effets bornés d'une semaine comptée par famille, en écart à la semaine standard. Semaine sans aucune séance au
@@ -236,6 +241,9 @@ function project(model, state, date, {anchors = []} = {}) {
  return {
   today,
   sessions,
+  // Qualités travaillées par chaque séance du programme (identifiant → {avants, arrieres}), à part : les séances
+  // projetées restent au format du planning enregistré.
+  sessionQualities:Object.fromEntries(sessions.map(session=>[session.id,qualitesSeance(session)])),
   week:weekEffects(sessions,today),
   appliedTemplates,
   programmeByFixture,
@@ -243,7 +251,7 @@ function project(model, state, date, {anchors = []} = {}) {
   // dans Entraînement › Mois avant de choisir.
   weeks:weeksEffects(sessions),
   sessionEffects:EFFETS,
-  sessionCatalogue:CATALOGUE,
+  sessionCatalogue:CATALOGUE.map(item=>({...item,qualites:qualitesSeance(item)})),
   templates:Object.entries(programmes).map(([id,{label,slots}])=>({id,label,
    slots:slots.map(([offset,kind,name])=>({offset,kind,label:name})),
    effects:effectsOf(Object.fromEntries(Object.keys(EFFETS).map(kind=>[kind,slots.filter(slot=>slot[1]===kind).length])))}))

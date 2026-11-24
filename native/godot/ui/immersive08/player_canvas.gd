@@ -304,6 +304,10 @@ static func _bandeau(page: Control, app: Control, player: Dictionary, source: St
 	D.text(hero,1640,40,"NIVEAU",17,Charte.IVOIRE_2,700,200)
 	var niveau := _anton(D.text(hero,1640,104,G.rating_text(player,Commune.notre_joueur(source)),56,Charte.IVOIRE,800,150))
 	niveau.name = "PlayerGlobalRating"
+	# Flèche du niveau (moyenne des 36 qualités sur 4 semaines), comme dans l'Effectif et la Formation.
+	if source=="squad" or source=="academy":
+		var fl_niveau: Dictionary = load("res://ui/fleches_progression.gd").donnees(app,player).get("niveau",{})
+		if not fl_niveau.is_empty(): load("res://ui/fleches_progression.gd").marquer(app,niveau,int(fl_niveau.cran),fl_niveau.serie,"Niveau","NiveauFiche")
 	var largeur_niveau := Charte.TITRE_FICHE.get_string_size(niveau.text,HORIZONTAL_ALIGNMENT_LEFT,-1,maxi(12,C.px(56))).x/C.density
 	D.text(hero,1640+largeur_niveau+10,104,"/ 100",22,Charte.IVOIRE_2,500,80)
 	D.text(hero,1930,40,"POTENTIEL",17,Charte.IVOIRE_2,700,200)
@@ -400,7 +404,7 @@ static func _attributs(card: Panel, app: Control, player: Dictionary, source: St
 	else:
 		D.text(card,1396,38,"36 ATTRIBUTS",17,Charte.IVOIRE_2,700,240,HORIZONTAL_ALIGNMENT_RIGHT)
 	FicheRoles.bandes(card,Vector2(24,72),Vector2(1372,340),FicheRoles.role(str(FicheRoles.etat(app,player,values).role)))
-	Commune.grille_attributs(card,Vector2(24,72),Vector2(1372,340),values,"PlayerDetailedAttribute_")
+	Commune.grille_attributs(card,Vector2(24,72),Vector2(1372,340),values,"PlayerDetailedAttribute_",{"app":app,"joueur":player} if source=="squad" else {})
 
 ## Carte Postes et rôles : rôles des postes du joueur (note du rôle + familiarité au poste), qualités du rôle choisi,
 ## terrain des 15 postes coloré par familiarité (fiche_roles.gd), puis courbe des notes de match.

@@ -9,12 +9,18 @@ extends RefCounted
 ##  - intensité du jour : somme de la fatigue des séances du jour (match = jour de match).
 ## Une séance est désignée par son identifiant d'origine (`sourceId` si elle a déjà été remplacée, sinon `id`).
 ## Mise en page : bande de la semaine en haut, familles en onglets, liste à gauche, grande fiche avec jauges à droite.
+## Entraînement ciblé (choix de Léo du 24/11/2026) : chaque séance ne fait progresser que son groupe de qualités
+## (`sessionQualities` par séance et `qualites` du catalogue : avants / arrières, calendar-planning.cjs). La fiche montre ce groupe (chevrons verts, sans chiffre :
+## tendance seulement) ; le survol d'une ligne de la liste le montre aussi, avant de la choisir.
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Charte = preload("res://ui/charte.gd")
 const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
 const Agenda = preload("res://ui/immersive08/calendar_agenda.gd")
 const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
+const PlayerAttributes = preload("res://ui/player_attributes.gd")
+const Fleches = preload("res://ui/fleches_progression.gd")
+const Bulle = preload("res://ui/bulle_survol.gd")
 
 const NOM := "TrainingSessionWindow"
 const FAMILLES_ORDRE := ["intensif", "technique", "tactique", "recuperation"]
@@ -41,7 +47,7 @@ static func catalogue(page: Control) -> Array:
 	var sortie: Array = []
 	for item: Variant in brut if brut is Array else []:
 		if not item is Dictionary: continue
-		sortie.append({"kind": str(item.get("kind", "")), "label": str(item.get("label", "")), "famille": Mois.FAMILLE_DE.get(str(item.get("kind", "")), "technique")})
+		sortie.append({"kind": str(item.get("kind", "")), "label": str(item.get("label", "")), "famille": Mois.FAMILLE_DE.get(str(item.get("kind", "")), "technique"), "qualites": item.get("qualites", {}) if item.get("qualites") is Dictionary else {}})
 	sortie.sort_custom(func(a: Dictionary, b: Dictionary):
 		var fa := FAMILLES_ORDRE.find(a.famille)
 		var fb := FAMILLES_ORDRE.find(b.famille)
@@ -246,9 +252,14 @@ static func _fenetre(page: Control, data: Dictionary, date: String, rang: int, a
 		var effets: Dictionary = data.par_seance.get(s.kind, {})
 		_mini(ligne, 548, int(effets.get("fatigue", 0)), false, "train", "TrainingSessionRowFatigue%d" % i)
 		_mini(ligne, 650, int(effets.get("blessure", 0)), false, "warning", "TrainingSessionRowRisk%d" % i)
+		var cible_survol: Control = ligne
 		if ouvert_au_choix and not en_place:
 			var choix_s := s
-			Pieces.rendre_cliquable(ligne, r.size, func(): _choisir(page, actuelle, choix_s), "TrainingSessionPick%d" % i, s.label, "", Charte.RAYON_PETIT)
+			cible_survol = Pieces.rendre_cliquable(ligne, r.size, func(): _choisir(page, actuelle, choix_s), "TrainingSessionPick%d" % i, s.label, "", Charte.RAYON_PETIT)
+		var groupe_s: Dictionary = s.get("qualites", {})
+		var titre_s := str(s.label)
+		var couleur_s := couleur_f
+		Bulle.lier(cible_survol, "seance:%s|%s" % [s.kind, s.label], func(): return _bulle_qualites(titre_s, groupe_s, couleur_s))
 	# Fiche de la séance en place (droite) : nom, famille, intensité du jour, effets en jauges vert = gain / rouge = coût.
 	var fiche := D.rect(fond, Rect2(814, 378, 1116, 700), Color(Charte.PANNEAU_3, .45), Charte.RAYON_CARTE)
 	fiche.name = "TrainingSessionSheet"
@@ -271,9 +282,82 @@ static func _fenetre(page: Control, data: Dictionary, date: String, rang: int, a
 	for a in AXES.size():
 		var axe: Array = AXES[a]
 		var v := int(effets_a.get(axe[0], 0))
-		var y := 172.0 + a * 74.0
+		var y := 150.0 + a * 50.0
 		D.text(fiche, 40, y + 30, str(axe[1]), 26, Charte.IVOIRE, 700, 300)
 		_jauge(fiche, Rect2(360, y + 12, 500, 22), v, _max_axe(data, axe[0]), axe[2], "TrainingSessionGauge_" + str(axe[0]))
 		var mot := _signe(v) + (str(axe[3]) if v != 0 else "")
 		D.text(fiche, 890, y + 34, mot, 32, _couleur(v, axe[2]), 800, 180).add_theme_font_override("font", Charte.TITRE_FICHE)
-		D.line(fiche, Vector2(40, y + 58), Vector2(1076, y + 58), Charte.FILET)
+		D.line(fiche, Vector2(40, y + 46), Vector2(1076, y + 46), Charte.FILET)
+	# Qualités travaillées par la séance en place (avants / arrières), sans chiffre.
+	var par_id: Variant = page.app.model.get("calendarPlanning", {}).get("sessionQualities", {})
+	_qualites(fiche, Rect2(40, 510, 1036, 184), par_id.get(str(actuelle.get("id", "")), {}) if par_id is Dictionary else {}, "TrainingSessionQualities")
+
+# --- Qualités travaillées ---------------------------------------------------------------------------------------------
+
+## Libellé d'une qualité (36 qualités de la fiche joueur).
+static func libelle_qualite(cle: String) -> String:
+	for groupe: Array in PlayerAttributes.GROUPS:
+		for pair: Array in groupe[1]:
+			if str(pair[0]) == cle: return str(pair[1])
+	return cle
+
+## Puce d'une qualité travaillée : chevron vert (tendance, sans chiffre) + nom. Renvoie sa largeur.
+static func _puce(parent: Control, x: float, y: float, cle: String, id: String) -> float:
+	var mot := libelle_qualite(cle)
+	var largeur := largeur_puce(cle)
+	var pilule := D.rect(parent, Rect2(x, y, largeur, 40), Color(Charte.GAIN, .18), Charte.RAYON_PILULE)
+	pilule.name = id
+	pilule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var chevron := Fleches.Fleche.new()
+	chevron.cran = 1
+	pilule.add_child(chevron)
+	D.place(chevron, Rect2(13, 5, 20, 30))
+	D.text(pilule, 40, 28, mot, 20, Charte.IVOIRE, 700, largeur - 44).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return largeur
+
+static func largeur_puce(cle: String) -> float:
+	return C.font(700).get_string_size(libelle_qualite(cle), HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(20))).x / C.density + 58
+
+## Lignes « Avants » / « Arrières » (une seule « Qualités » si identiques), puces à la suite, retour à la ligne quand
+## la place manque ; « Aucune qualité travaillée » si rien n'est travaillé (récupération).
+static func _qualites(parent: Control, zone: Rect2, groupe: Variant, id: String) -> void:
+	var g: Dictionary = groupe if groupe is Dictionary else {}
+	var avants: Array = g.get("avants", []) if g.get("avants") is Array else []
+	var arrieres: Array = g.get("arrieres", []) if g.get("arrieres") is Array else []
+	var cadre := Control.new()
+	cadre.name = id
+	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(cadre)
+	D.place(cadre, zone)
+	var lignes: Array = []
+	if avants == arrieres: lignes.append(["QUALITÉS", avants])
+	else:
+		if not avants.is_empty(): lignes.append(["AVANTS", avants])
+		if not arrieres.is_empty(): lignes.append(["ARRIÈRES", arrieres])
+	if lignes.is_empty() or (lignes.size() == 1 and (lignes[0][1] as Array).is_empty()):
+		var repos := D.text(cadre, 0, 30, "Aucune qualité travaillée", 22, Charte.IVOIRE_3, 700, zone.size.x)
+		repos.name = id + "None"
+		return
+	var y := 0.0
+	for ligne: Array in lignes:
+		D.text(cadre, 0, y + 27, str(ligne[0]), 17, Charte.IVOIRE_3, 700, 130).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var x := 130.0
+		for cle: Variant in ligne[1]:
+			var l := largeur_puce(str(cle))
+			if x + l > zone.size.x and x > 130.0:
+				x = 130.0
+				y += 46.0
+			x += _puce(cadre, x, y, str(cle), "%s_%s_%s" % [id, str(ligne[0]).left(3), str(cle)]) + 10
+		y += 46.0
+
+## Bulle au survol d'une ligne de la liste : nom de la séance et qualités qu'elle travaille.
+static func _bulle_qualites(titre: String, groupe: Dictionary, couleur: Color) -> Control:
+	var bulle := Panel.new()
+	bulle.add_theme_stylebox_override("panel", Charte.ombrer(Charte.style_panneau(Charte.PANNEAU, Charte.RAYON_CARTE, 0)))
+	var taille := Vector2(1000, 250)
+	bulle.custom_minimum_size = taille * C.density
+	bulle.size = bulle.custom_minimum_size
+	D.rect(bulle, Rect2(0, 0, 8, taille.y), couleur, 4).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	D.text(bulle, 28, 38, titre.to_upper(), 20, Charte.IVOIRE, 800, 860).add_theme_font_override("font", Charte.TITRE_FICHE)
+	_qualites(bulle, Rect2(28, 62, 950, 184), groupe, "TrainingSessionHoverQualities")
+	return bulle

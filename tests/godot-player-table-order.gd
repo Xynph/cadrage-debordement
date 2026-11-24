@@ -58,7 +58,7 @@ func run() -> void:
 	var before := FileAccess.get_sha256(file)
 	var sequence: int=app.bridge._next_id
 	app._navigate("Formation"); await settle()
-	for key in ["source","name","age","pos","note","potential","change","minutes","status"]:
+	for key in ["source","name","age","pos","note","potential","minutes","status"]:
 		await activate("AcademySort_"+key)
 		var first: bool=app.management_ui.immersive_academy.table_descending
 		await activate("AcademySort_"+key)

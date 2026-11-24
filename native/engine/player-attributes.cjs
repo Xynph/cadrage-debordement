@@ -121,6 +121,16 @@ module.exports = function createNativePlayerAttributes() {
     const deltas = effectiveSkills(player).map((value, index) => value - previous.skills[index] - verse);
     if (!ratingDelta && deltas.every(delta => delta === 0)) return packed;
     const reference = referenceFor(positionOf(player));
+    // Entraînement ciblé (24/11/2026, entrainement-cible.cjs) : un gain de niveau ne monte plus les 36 qualités d'un
+    // point ; les mêmes 36 hausses vont aux qualités travaillées (séances, poste, rôle). Le reste (points ciblés,
+    // baisse) suit les compétences comme avant.
+    const cible = ratingDelta > 0 && Number.isInteger(ratingDelta) && player.academy !== true && typeof nativeSystems !== 'undefined' ? nativeSystems.domain('entrainementCible') : null;
+    if (cible && cible.poids(player)) {
+      const reste = deltas.map(delta => delta - ratingDelta);
+      const values = unpack(packed).map((value, index) => shifted(value, reference.influences[index], reste, 0));
+      for (const index of cible.tirages(player, 36 * ratingDelta, 'genere:' + player.rating)) values[index] = Math.min(97, values[index] + 1);
+      return pack(values.map(value => String(value).padStart(2, '0')));
+    }
     return pack(unpack(packed).map(
       (value, index) => shifted(value, reference.influences[index], deltas, ratingDelta)
     ));

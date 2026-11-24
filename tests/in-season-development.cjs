@@ -37,9 +37,14 @@ test('a real detailed player can receive staff mentoring with the existing share
  h.run('validateCareer(S)');
 });
 test('a saturated legacy skill baseline cannot double-count a current-level gain',()=>{
- const h=context({seed:917});h.run(`CDCommonCareer.start(0);var learner=S.clubs[0].players[0];learner.rating=98;learner.skillBase=99;learner.dev.potential=99;learner.dev.xp=0;learner.attributesV2=Object.fromEntries(Object.keys(learner.attributesV2).map(k=>[k,60]));learner.skills=Object.fromEntries(Object.keys(learner.skills).map(k=>[k,60]));var beforeSkill=skill(learner,'pass');growPlayer(learner,2,false);nativeInSeasonDevelopment.liberer(learner);`);
- assert.equal(h.run('learner.rating'),99);assert.equal(h.run('learner.attributesV2.passing'),61);
- assert.equal(h.run('skill(learner,"pass")-beforeSkill'),1);
+ const h=context({seed:917});h.run(`CDCommonCareer.start(0);var learner=S.clubs[0].players[0];learner.rating=98;learner.skillBase=99;learner.dev.potential=99;learner.dev.xp=0;learner.attributesV2=Object.fromEntries(Object.keys(learner.attributesV2).map(k=>[k,60]));learner.skills=Object.fromEntries(Object.keys(learner.skills).map(k=>[k,60]));var beforeSkills=Object.fromEntries(Object.keys(ATTR).map(k=>[k,skill(learner,k)]));growPlayer(learner,2,false);nativeInSeasonDevelopment.liberer(learner);`);
+ assert.equal(h.run('learner.rating'),99);
+ // Entraînement ciblé (24/11/2026) : le point va aux qualités travaillées, même total sur les 36 (moyenne 61) ; la
+ // note au poste (compétences pondérées du poste) gagne un point, comme avant, sans double compte.
+ assert.ok(Math.abs(h.run('Object.values(learner.attributesV2).reduce((a,b)=>a+b,0)/36')-61)<.02,'même total sur les 36 qualités');
+ assert.ok(h.run('Object.values(learner.attributesV2).some(v=>v>61.5)&&Object.values(learner.attributesV2).some(v=>v<60.5)'),'qualités travaillées seulement');
+ const gain=h.run('(()=>{const w=ROLE_WEIGHTS[learner.fam]||ROLE_WEIGHTS[7];let n=0,d=0;for(const [k,x] of Object.entries(w)){n+=x*(skill(learner,k)-beforeSkills[k]);d+=x;}return n/d;})()');
+ assert.ok(Math.abs(gain-1)<.05,'note au poste : +1 ('+gain+')');
  h.run('validateCareer(S)');
 });
 test('a hooker lineout focus updates the exact specialist attribute matrix once',()=>{

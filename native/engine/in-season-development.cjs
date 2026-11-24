@@ -45,8 +45,11 @@ module.exports=function inSeasonDevelopment(){
   const q=p.nativeAttributesV1;let r=Math.round(avant*36);const fin=Math.max(0,Math.round(apres*36));
   if(r<=fin||typeof q!=='string'||!/^\d{72}$/.test(q))return;
   const v=[];for(let i=0;i<36;i++)v.push(Number(q.slice(2*i,2*i+2)));
-  const depart=(typeof seedHash==='function'?seedHash(p.id):0)%36;
-  for(;r>fin;r--){const i=(depart+((36-r%36)%36)*ORDRE)%36;v[i]=Math.min(97,v[i]+1);}
+  // Entraînement ciblé (24/11/2026) : hausses tirées selon les qualités travaillées (poste, séances), même nombre.
+  const d=typeof nativeSystems!=='undefined'?nativeSystems.domain('entrainementCible'):null;
+  if(d&&d.poids(p)){for(const i of d.tirages(p,r-fin,'jeune:'+r))v[i]=Math.min(97,v[i]+1);}
+  else{const depart=(typeof seedHash==='function'?seedHash(p.id):0)%36;
+  for(;r>fin;r--){const i=(depart+((36-r%36)%36)*ORDRE)%36;v[i]=Math.min(97,v[i]+1);}}
   p.nativeAttributesV1=v.map(x=>String(x).padStart(2,'0')).join('');
  }
  // Verse `part` du réservoir d'un jeune (de `avant` à `apres` points en attente) : compétences et qualités.
@@ -61,6 +64,25 @@ module.exports=function inSeasonDevelopment(){
   if(!e||!(e.n||e.c))return;
   if(p.attributesV2)appliquer(p,e.n||0,e.c||{},null);else verserJeune(p,e.n||0,e.n||0,0);
  }
+ // Poids des 36 qualités pour la progression (entrainement-cible.cjs) : {clé: part} ou null (répartition égale).
+ function poidsCibles(p){
+  if(typeof nativeSystems==='undefined')return null;
+  const d=nativeSystems.domain('entrainementCible');if(!d)return null;
+  const w=d.poids(p);if(!w)return null;
+  return Object.fromEntries(d.CLES.map((k,i)=>[k,w[i]]));
+ }
+ // Part ciblée du gain de niveau projetée sur les compétences (Σ poids × hausse de chaque qualité) ; elle est ramenée
+ // d'un facteur f tel que la moyenne pondérée par le poste (ROLE_WEIGHTS) vaille `niveau`, comme un gain réparti
+ // également. Renvoie ce qu'il faut retirer à chaque compétence ((1 − f) × part ciblée) ; null si rien à corriger.
+ function correctionCible(p,niveau,cible){
+  const w=lnrProjectionWeightsV12({...p,gameplayPosition:p.gameplayPosition||p.pos});
+  const rw=(typeof ROLE_WEIGHTS!=='undefined'&&(ROLE_WEIGHTS[p.fam]||ROLE_WEIGHTS[7]))||null;if(!rw)return null;
+  const part={};for(const [k,poids] of Object.entries(w)){let t=0;for(const [q,x] of Object.entries(poids))t+=x*niveau*36*(cible[q]??1/36);part[k]=t;}
+  let num=0,den=0;for(const [k,x] of Object.entries(rw)){num+=x*(part[k]||0);den+=x;}
+  if(!den||!num)return null;
+  const f=clamp(niveau/(num/den),.2,5);
+  return Object.fromEntries(Object.entries(part).map(([k,v])=>[k,(1-f)*v]));
+ }
  function projected(p){return lnrProjectV12({...p,gameplayPosition:p.gameplayPosition||p.pos});}
  // Applique aux 36 qualités un gain de niveau (même valeur partout), des points ciblés (qualités de la compétence
  // visée) et un déclin par qualité. Les compétences suivent la projection ; niveau et base ne bougent pas.
@@ -69,14 +91,20 @@ module.exports=function inSeasonDevelopment(){
   const before=p.attributesV2,old=projected(p);
   const visees=cibles?Object.entries(cibles).filter(([,v])=>v):[];
   const weights=visees.length?lnrProjectionWeightsV12({...p,gameplayPosition:p.gameplayPosition||p.pos}):null;
+  // Entraînement ciblé (24/11/2026) : le gain de niveau va aux qualités travaillées (séances de la semaine, poste,
+  // rôle), même total sur les 36 qu'avant.
+  const cible=niveau?poidsCibles(p):null;
   p.attributesV2=Object.fromEntries(Object.entries(before).map(([key,value])=>{
-   let delta=niveau;
+   let delta=cible&&Object.hasOwn(cible,key)?niveau*36*cible[key]:niveau;
    if(weights)for(const [focus,amount] of visees)if(Object.hasOwn(weights[focus]||{},key))delta+=amount;
    if(declin)delta-=declin[key]||0;
    return [key,round(clamp(value+delta,20,97))];
   }));
   const next=projected(p);let total=0,n=0;
-  p.skills=Object.fromEntries(Object.entries(p.skills).map(([key,value])=>{const d=next[key]-old[key];total+=d;n++;return [key,round(clamp(value+d,15,99))];}));
+  // Compétences : la part ciblée du gain de niveau suit les qualités travaillées, ramenée pour que la note au poste
+  // (compétences pondérées du poste) gagne autant qu'avant : pas d'inflation, seule la répartition change.
+  const correction=cible?correctionCible(p,niveau,cible):null;
+  p.skills=Object.fromEntries(Object.entries(p.skills).map(([key,value])=>{const d=next[key]-old[key]-(correction?correction[key]||0:0);total+=d;n++;return [key,round(clamp(value+d,15,99))];}));
   return n?total/n:0;
  }
  // Déclin de l'âge de la saison par qualité (centièmes), comme LNR_V11_AGE.step à la transition (sans exposition :
