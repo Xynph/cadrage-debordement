@@ -40,6 +40,7 @@ const EXTRAS := [
 	{"id": "entrainement-mois", "libelle": "Entraînement · onglet Mois", "type": "entrainement_onglet", "onglet": 5},
 	{"id": "entrainement-mois-jour", "libelle": "Entraînement · Mois · petite fenêtre d'un jour", "type": "entrainement_onglet", "onglet": 5, "jour": true},
 	{"id": "entrainement-seance", "libelle": "Entraînement · Mois · fiche de séance (FM27 n° 25)", "type": "entrainement_onglet", "onglet": 5, "jour": true, "seance": true},
+	{"id": "entrainement-seance-qualites", "libelle": "Entraînement · choix de séance · qualités travaillées au survol", "type": "entrainement_onglet", "onglet": 5, "jour": true, "seance": true, "seance_qualites": true},
 	{"id": "entrainement-seance-choisie", "libelle": "Entraînement · Mois · séance remplacée d'un clic", "type": "entrainement_onglet", "onglet": 5, "jour": true, "seance": true, "seance_choix": true},
 	{"id": "salle-entrainement", "libelle": "Observer la préparation (salle d'entraînement)", "type": "salle_entrainement"},
 	{"id": "salle-entrainement-joueur", "libelle": "Observer la préparation · petite fenêtre d'un joueur", "type": "salle_entrainement", "joueur": true},
@@ -661,6 +662,21 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 					if seances.is_empty(): return {"statut": "echec", "note": "aucune séance dans le jour"}
 					(seances[seances.size() - 1] as Button).pressed.emit()
 					await stabiliser()
+					# Qualités travaillées : famille Technique, survol de la ligne « Ateliers par poste » (bulle avant de choisir).
+					if bool(ecran.get("seance_qualites", false)):
+						var technique := page.find_child("TrainingSessionFamilyOpen_technique", true, false) as Button
+						if technique != null:
+							technique.pressed.emit()
+							await stabiliser()
+						var cible_q: Control = null
+						for ligne_q: Node in page.find_children("TrainingSessionRow*", "", true, false):
+							var textes_q := ligne_q.find_children("*", "Label", true, false).map(func(l: Label) -> String: return l.text)
+							if "Ateliers par poste" in textes_q:
+								cible_q = ligne_q.find_child("TrainingSessionPick*", true, false) as Control
+								if cible_q == null: cible_q = ligne_q as Control
+						if cible_q == null: return {"statut": "indisponible", "note": "pas d'atelier par poste"}
+						load("res://ui/bulle_survol.gd").montrer(cible_q)
+						await stabiliser()
 					# Séance déjà remplacée (taille précédente) : la fiche montre déjà le choix, on ne revient pas en arrière.
 					if bool(ecran.get("seance_choix", false)) and page.find_child("TrainingSessionChanged", true, false) == null:
 						# Famille Intensif : jauges vertes (gains) et rouges (coûts, risque) côte à côte.

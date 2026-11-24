@@ -282,15 +282,15 @@ static func _fenetre(page: Control, data: Dictionary, date: String, rang: int, a
 	for a in AXES.size():
 		var axe: Array = AXES[a]
 		var v := int(effets_a.get(axe[0], 0))
-		var y := 160.0 + a * 58.0
+		var y := 150.0 + a * 50.0
 		D.text(fiche, 40, y + 30, str(axe[1]), 26, Charte.IVOIRE, 700, 300)
 		_jauge(fiche, Rect2(360, y + 12, 500, 22), v, _max_axe(data, axe[0]), axe[2], "TrainingSessionGauge_" + str(axe[0]))
 		var mot := _signe(v) + (str(axe[3]) if v != 0 else "")
 		D.text(fiche, 890, y + 34, mot, 32, _couleur(v, axe[2]), 800, 180).add_theme_font_override("font", Charte.TITRE_FICHE)
-		D.line(fiche, Vector2(40, y + 52), Vector2(1076, y + 52), Charte.FILET)
+		D.line(fiche, Vector2(40, y + 46), Vector2(1076, y + 46), Charte.FILET)
 	# Qualités travaillées par la séance en place (avants / arrières), sans chiffre.
 	var par_id: Variant = page.app.model.get("calendarPlanning", {}).get("sessionQualities", {})
-	_qualites(fiche, Rect2(40, 568, 1036, 120), par_id.get(str(actuelle.get("id", "")), {}) if par_id is Dictionary else {}, "TrainingSessionQualities")
+	_qualites(fiche, Rect2(40, 510, 1036, 184), par_id.get(str(actuelle.get("id", "")), {}) if par_id is Dictionary else {}, "TrainingSessionQualities")
 
 # --- Qualités travaillées ---------------------------------------------------------------------------------------------
 
@@ -304,18 +304,22 @@ static func libelle_qualite(cle: String) -> String:
 ## Puce d'une qualité travaillée : chevron vert (tendance, sans chiffre) + nom. Renvoie sa largeur.
 static func _puce(parent: Control, x: float, y: float, cle: String, id: String) -> float:
 	var mot := libelle_qualite(cle)
-	var largeur := Pieces.largeur_pastille(mot) + 22
-	var pilule := D.rect(parent, Rect2(x, y, largeur, 36), Color(Charte.GAIN, .16), Charte.RAYON_PILULE)
+	var largeur := largeur_puce(cle)
+	var pilule := D.rect(parent, Rect2(x, y, largeur, 40), Color(Charte.GAIN, .18), Charte.RAYON_PILULE)
 	pilule.name = id
 	pilule.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var chevron := Fleches.Fleche.new()
 	chevron.cran = 1
 	pilule.add_child(chevron)
-	D.place(chevron, Rect2(12, 7, 16, 22))
-	D.text(pilule, 36, 25, mot, 18, Charte.IVOIRE, 700, largeur - 40).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	D.place(chevron, Rect2(13, -4, 20, 30))
+	D.text(pilule, 40, 28, mot, 20, Charte.IVOIRE, 700, largeur - 44).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return largeur
 
-## Lignes « Avants » / « Arrières » (une seule « Tous » si identiques) ; « Récupération » si rien n'est travaillé.
+static func largeur_puce(cle: String) -> float:
+	return C.font(700).get_string_size(libelle_qualite(cle), HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(20))).x / C.density + 58
+
+## Lignes « Avants » / « Arrières » (une seule « Qualités » si identiques), puces à la suite, retour à la ligne quand
+## la place manque ; « Aucune qualité travaillée » si rien n'est travaillé (récupération).
 static func _qualites(parent: Control, zone: Rect2, groupe: Variant, id: String) -> void:
 	var g: Dictionary = groupe if groupe is Dictionary else {}
 	var avants: Array = g.get("avants", []) if g.get("avants") is Array else []
@@ -326,30 +330,34 @@ static func _qualites(parent: Control, zone: Rect2, groupe: Variant, id: String)
 	parent.add_child(cadre)
 	D.place(cadre, zone)
 	var lignes: Array = []
-	if avants == arrieres: lignes.append(["TOUS", avants])
+	if avants == arrieres: lignes.append(["QUALITÉS", avants])
 	else:
 		if not avants.is_empty(): lignes.append(["AVANTS", avants])
 		if not arrieres.is_empty(): lignes.append(["ARRIÈRES", arrieres])
 	if lignes.is_empty() or (lignes.size() == 1 and (lignes[0][1] as Array).is_empty()):
-		var repos := D.text(cadre, 0, 34, "Aucune qualité travaillée", 22, Charte.IVOIRE_3, 700, zone.size.x)
+		var repos := D.text(cadre, 0, 30, "Aucune qualité travaillée", 22, Charte.IVOIRE_3, 700, zone.size.x)
 		repos.name = id + "None"
 		return
-	for k in lignes.size():
-		var y := k * 50.0
-		D.text(cadre, 0, y + 26, str(lignes[k][0]), 16, Charte.IVOIRE_3, 700, 120).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var y := 0.0
+	for ligne: Array in lignes:
+		D.text(cadre, 0, y + 27, str(ligne[0]), 17, Charte.IVOIRE_3, 700, 130).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var x := 130.0
-		for cle: Variant in lignes[k][1]:
-			if x > zone.size.x - 120: break
-			x += _puce(cadre, x, y, str(cle), "%s_%s_%s" % [id, str(lignes[k][0]).left(3), str(cle)]) + 10
+		for cle: Variant in ligne[1]:
+			var l := largeur_puce(str(cle))
+			if x + l > zone.size.x and x > 130.0:
+				x = 130.0
+				y += 46.0
+			x += _puce(cadre, x, y, str(cle), "%s_%s_%s" % [id, str(ligne[0]).left(3), str(cle)]) + 10
+		y += 46.0
 
 ## Bulle au survol d'une ligne de la liste : nom de la séance et qualités qu'elle travaille.
 static func _bulle_qualites(titre: String, groupe: Dictionary, couleur: Color) -> Control:
 	var bulle := Panel.new()
 	bulle.add_theme_stylebox_override("panel", Charte.ombrer(Charte.style_panneau(Charte.PANNEAU, Charte.RAYON_CARTE, 0)))
-	var taille := Vector2(940, 170)
+	var taille := Vector2(1000, 250)
 	bulle.custom_minimum_size = taille * C.density
 	bulle.size = bulle.custom_minimum_size
 	D.rect(bulle, Rect2(0, 0, 8, taille.y), couleur, 4).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	D.text(bulle, 28, 38, titre.to_upper(), 20, Charte.IVOIRE, 800, 860).add_theme_font_override("font", Charte.TITRE_FICHE)
-	_qualites(bulle, Rect2(28, 58, 890, 104), groupe, "TrainingSessionHoverQualities")
+	_qualites(bulle, Rect2(28, 62, 950, 184), groupe, "TrainingSessionHoverQualities")
 	return bulle
