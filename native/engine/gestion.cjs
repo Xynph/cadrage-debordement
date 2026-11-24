@@ -70,9 +70,11 @@ module.exports=function nativeGestion(command,p){
   requireThat(setConsigne(S.live,p.axe,p.valeur),'Consigne inconnue.');return;
  }
  if(command==='appliquer_staff'){
-  // Avis du staff (match-pilotage.js) : ses consignes en attente, d'un coup, sans pause.
+  // Avis du staff (match-pilotage.js) : ses consignes, toutes ou celles d'une bulle de Gabi (`axes`), sans pause ;
+  // elles attendent le prochain arrêt de jeu (file native/engine/match-arrets.cjs, auteur 'adjoint').
   requireThat(S.live&&!S.live.finished&&typeof appliquerAvisStaff==='function'&&S.live.pilotage,'Consignes indisponibles pour ce match.');
-  requireThat(appliquerAvisStaff(S.live),'Le staff n’a rien à proposer.');return;
+  requireThat(p.axes===undefined||Array.isArray(p.axes)&&p.axes.length<=8&&p.axes.every(x=>typeof x==='string'),'Consignes du staff invalides.');
+  requireThat(appliquerAvisStaff(S.live,p.axes),'Le staff n’a rien à proposer.');return;
  }
  if(command==='set_role_direct'){
   // Rôles en direct (match-actions.js) : buteur, secours, lanceur, botteur parmi les joueurs sur le terrain.

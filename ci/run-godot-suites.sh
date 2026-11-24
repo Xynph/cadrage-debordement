@@ -58,6 +58,8 @@ declare -A suite_limits=(
   [tests/godot-planche-direct-tableau.cjs]=1200
   # Fenêtre d'un joueur en match (idée 32) : carrière Monde jusqu au jour du match, puis le match jusqu à la 50e à vitesse max.
   [tests/godot-menu-joueur-match.cjs]=1200
+  # Conseils de Gabi en bulles (idée 35) : carrière Monde jusqu au jour du match, puis le match jusqu à un avis en 2e mi-temps.
+  [tests/godot-conseil-adjoint.cjs]=1200
   # Barre du banc en direct (idée 34) : même préparation, puis le match jusqu à la 22e à vitesse max et la file du prochain arrêt.
   [tests/godot-cris-banc.cjs]=1200
   # Consignes en petite fenêtre (idée 33) : même préparation, match jusqu'à la 52e à vitesse max, 2 tailles.

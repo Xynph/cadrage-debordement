@@ -397,18 +397,43 @@ function pilotagePrevision(l,minutes=10){
  return activePlayers(l,u).map(p=>({id:p.id,condition:Math.round(p.condition),prevue:Math.round(Math.max(12,Math.min(100,p.condition-charge*(1+(70-skill(p,'stamina'))*.009)*minutes)))}));
 }
 // Conseil de Gabi : le joueur qui sera le plus entamé dans 10 minutes, remplacé par le meilleur remplaçant possible.
+// C'est une estimation de l'adjoint (idée FM27 n° 35, principe d'incertitude) : plus il est compétent, plus il lit
+// juste la fatigue à venir et choisit le bon remplaçant. Erreur tirée du hachage du match (aucun tirage), stable
+// sur une fenêtre de 5 minutes ; un ancien direct sans contexte Monde garde la lecture exacte.
 function pilotageConseilChangement(l,prevision){
  if(l.finished||typeof eligibleChanges!=='function')return null;
- const u=l.userSide,on=l.sheets[u].on;
- for(const x of [...prevision].sort((a,b)=>a.prevue-b.prevue)){
+ const u=l.userSide,on=l.sheets[u].on,ctx=l.worldContext?.id;
+ const lv=ctx==null?100:niveauStaff(),juste=Math.max(0,Math.min(1,(lv-45)/40))*.65+.25,ecart=Math.max(0,85-lv)*.4;
+ const h=k=>pilotageHash(ctx+'|changement|'+Math.floor((Number(l.minute)||0)/5)+'|'+k);
+ const lue=prevision.map(x=>({...x,prevue:ctx==null?x.prevue:Math.round(x.prevue+((h(x.id)%1000)/1000-.5)*2*ecart)}));
+ for(const x of lue.sort((a,b)=>a.prevue-b.prevue)){
   if(x.prevue>=55)break;
   const slot=on.indexOf(x.id);if(slot<0)continue;
   const options=eligibleChanges(l,u,slot).filter(p=>p.condition>=85).sort((a,b)=>(b.rating||0)-(a.rating||0));
   if(!options.length)continue;
-  const sortant=activePlayers(l,u).find(p=>p.id===x.id),entrant=options[0];
-  return {outId:x.id,inId:entrant.id,slot,texte:`${sortant?.name||'Le n° '+(slot+1)} (${slot+1}) sera à ${x.prevue} % dans 10 minutes. ${entrant.name} est frais.`};
+  // Mauvaise appréciation : le deuxième remplaçant possible plutôt que le meilleur.
+  const entrant=ctx!=null&&options.length>1&&(h('choix:'+x.id)%1000)/1000>=juste?options[1]:options[0];
+  const sortant=activePlayers(l,u).find(p=>p.id===x.id);
+  return {outId:x.id,inId:entrant.id,slot,texte:`${sortant?.name||'Le n° '+(slot+1)} (${slot+1}) sera vers ${Math.max(12,x.prevue)} % dans 10 minutes. ${entrant.name} est frais.`};
  }
  return null;
+}
+// Conseil de plan de jeu de Gabi (attaque, défense) : la lecture du match (match-v61-advisor.js), vue ou non selon
+// la compétence de l'adjoint (même vigilance que reglesDuStaff), réévaluée toutes les 5 minutes. Rien quand il n'a pas
+// d'avis. Accepté, il part dans la file du prochain arrêt de jeu (native/engine/match-arrets.cjs, auteur 'adjoint').
+function pilotagePlanAvis(l){
+ if(l.finished||typeof matchV61Advice!=='function'||!l.worldContext)return null;
+ const a=matchV61Advice(l);if(!a||!(a.attackChanged||a.defenceChanged))return null;
+ const lv=niveauStaff(),fenetre=Math.floor((Number(l.minute)||0)/5);
+ const voit=k=>(pilotageHash(l.worldContext.id+'|plan|'+fenetre+'|'+k)%100)<Math.round(25+(lv-45)*1.5);
+ const u=l.userSide,out=[];
+ if(a.attackChanged&&typeof TACTICS!=='undefined'&&TACTICS[a.attack]&&voit('attaque:'+a.attack))
+  out.push({axe:'planAttaque',valeur:a.attack,label:CONSIGNES_PLAN.planAttaque.label,valeurLabel:TACTICS[a.attack][0],actuelLabel:TACTICS[l.tactics[u]]?.[0]||'',raison:a.attackReason});
+ if(a.defenceChanged&&typeof DEFENCES!=='undefined'&&DEFENCES[a.defence]&&voit('defense:'+a.defence))
+  out.push({axe:'systemeDefense',valeur:a.defence,label:CONSIGNES_PLAN.systemeDefense.label,valeurLabel:DEFENCES[a.defence][0],actuelLabel:DEFENCES[l.defences?.[u]||'equilibre']?.[0]||'',raison:a.defenceReason});
+ const attente=typeof CDMatchArrets!=='undefined'?CDMatchArrets.file(l):[];
+ const reste=out.filter(x=>!attente.some(e=>e.cle==='consigne:'+x.axe));
+ return reste.length?reste:null;
 }
 
 // --- Causeries : réaction de chaque joueur ---
@@ -587,16 +612,23 @@ function pilotageStaffAvis(l){
 }
 function staffAvisEnAttente(l){
  const a=l.pilotage?.staffAvis;if(!a)return [];
- return a.propositions.filter(x=>l.pilotage.consignes[x.axe]!==x.valeur);
+ const attente=typeof CDMatchArrets!=='undefined'?CDMatchArrets.file(l):[];
+ return a.propositions.filter(x=>l.pilotage.consignes[x.axe]!==x.valeur&&!attente.some(e=>e.cle==='consigne:'+x.axe&&e.valeur===x.valeur));
 }
-// Bouton « Appliquer ces consignes » : le manager prend l'avis du staff tel quel (une seule commande).
-function appliquerAvisStaff(l){
+// Bouton « Appliquer ces consignes » (fenêtre Équipe) ou bulle de Gabi (idée FM27 n° 35) : le manager prend l'avis du
+// staff, en entier ou seulement les axes cliqués (`axes`). Le changement attend le prochain arrêt de jeu (file
+// native/engine/match-arrets.cjs, auteur 'adjoint') ; sans file (ancien direct), il part tout de suite.
+function appliquerAvisStaff(l,axes){
  if(!pilotageActif(l)||l.finished)return false;
- const a=staffAvisEnAttente(l);if(!a.length)return false;
- for(const x of a)setConsigne(l,x.axe,x.valeur);
+ let a=staffAvisEnAttente(l);
+ if(Array.isArray(axes)&&axes.length)a=a.filter(x=>axes.includes(x.axe));
+ if(!a.length)return false;
+ const file=typeof CDMatchArrets!=='undefined'&&CDMatchArrets.actif(l)?CDMatchArrets:null;
+ for(const x of a){if(file)file.ajouter(l,{type:'consigne',axe:x.axe,valeur:x.valeur},'adjoint');else setConsigne(l,x.axe,x.valeur);}
  l.pilotage.journal.push({minute:l.minute,auteur:'manager',texte:`Tu suis l’avis du staff (${a.map(x=>consigneLabel(x.axe,x.valeur)).join(', ')}).`});
  l.pilotage.journal=l.pilotage.journal.slice(-30);
- l.pilotage.staffAvis=null;
+ const reste=(l.pilotage.staffAvis?.propositions||[]).filter(x=>!a.some(y=>y.axe===x.axe));
+ l.pilotage.staffAvis=reste.length?{...l.pilotage.staffAvis,propositions:reste}:null;
  return true;
 }
 function pilotageStaff(l){
@@ -830,6 +862,8 @@ function pilotageProjection(l){
   // Avis du staff en attente (bouton « Appliquer ces consignes ») et rôles en direct (onglet Rôles).
   staff:(()=>{const a=staffAvisEnAttente(l);return {niveau:niveauStaff(),minute:p.staffAvis?.minute??null,
    propositions:a.map(x=>({...x,label:CONSIGNES[x.axe].label,valeurLabel:consigneLabel(x.axe,x.valeur),actuelLabel:consigneLabel(x.axe,p.consignes[x.axe]??CONSIGNES_NEUTRES[x.axe])}))}})(),
+  // Conseil de plan de jeu de Gabi (bulle), vu selon sa compétence ; null sans avis.
+  planAvis:pilotagePlanAvis(l),
   roles:typeof playerRolesLive==='function'?playerRolesLive(l):null,
   // File « prochain arrêt de jeu », rôles du poste et consignes individuelles (native/engine/match-arrets.cjs).
   ...(typeof CDMatchArrets!=='undefined'?{arrets:CDMatchArrets.projection(l)}:{}),
