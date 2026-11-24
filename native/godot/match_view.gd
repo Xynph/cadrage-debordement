@@ -493,8 +493,12 @@ func apply_frame(live: Dictionary) -> void:
 		_pass_plan = Pass.plan(scene) if play_action and _kind == "carry" else {}
 		_pass_elapsed = 0.0
 	_contact_plan = Contact.plan(scene) if not _paused and has_ball else {}
+	# Le plaqueur mis en scène (match_impacts.gd) est posé à sa place de contact dans la scène
+	# projetée : il arrive encore en courant, il n'empêche pas le crochet déclaré en début de course.
+	var plaqueur_en_course: bool = (_impacts.phase == "course"
+		and str(_contact_plan.get("opponent", "")) == _impacts.plaqueur)
 	var cut_allowed := (_action_motion and not _paused and _kind == "carry" and has_ball
-		and _contact_plan.is_empty() and _pass_plan.is_empty())
+		and (_contact_plan.is_empty() or plaqueur_en_course) and _pass_plan.is_empty())
 	var carry_cut := cut_allowed and _ball_attached and _carrier_id == previous_carrier
 	var declared_cut: Variant = scene.get("cut")
 	var cut_side := 0
