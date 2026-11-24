@@ -3,8 +3,7 @@ extends RefCounted
 ## centre, puis le staff réel du club (Staff par service, staff-services.cjs) coloré par service. Survol : le membre
 ## ressort, les autres s'estompent. Clic : petite fenêtre visuelle (portrait, rôle, compétences ESTIMÉES en crans, jamais
 ## le chiffre du moteur, et ce qu'il a fait récemment en pastilles). À droite, les services en lignes (style Effectif).
-## Deux mises en page sous CD_VARIANTE_VISUELLE : A = cercles concentriques (centre, responsables, équipe) ;
-## B = un anneau par service autour du centre.
+## Mise en page choisie par Léo (option B, 24/11/2026) : un anneau par service, tenu par son responsable, autour du centre.
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Charte = preload("res://ui/charte.gd")
@@ -33,9 +32,6 @@ const RESPONSABLES := ["director", "assistant", "fitnessLead", "doctor", "scout"
 const MOTS := ["Faible", "Moyen", "Correct", "Bon", "Excellent"]
 const SOINS := ["doctor", "physio", "rehab"]
 const ZONES := {"forwards": "Avants", "backs": "Arrières", "defence": "Défense"}
-
-static func variante() -> String:
-	return "B" if OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper() == "B" else "A"
 
 static func _service(id: String) -> Array:
 	for s: Array in SERVICES:
@@ -239,8 +235,7 @@ static func build(app: Control, corps: Control) -> void:
 	carte.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	corps.add_child(carte)
 	D.place(carte, Rect2(0, 0, CARTE_L, 1244))
-	if variante() == "B": _disposer_b(app, carte, gens)
-	else: _disposer_a(app, carte, gens)
+	_disposer(app, carte, gens)
 	_centre(app, carte)
 	_services(app, corps, carte, gens)
 
@@ -253,34 +248,8 @@ static func _centre(app: Control, carte: Carte) -> void:
 	_noeud(app, carte, toi, CENTRE + Vector2(104, 0), 132, "OrgaManager")
 	carte.liens.append([CENTRE + Vector2(-38, 0), CENTRE + Vector2(38, 0), Charte.IVOIRE, ["OrgaPresident", "OrgaManager"], "direction"])
 
-## A : cercles concentriques. Responsables sur l'anneau 1, équipe sur l'anneau 2, rangés par service.
-static func _disposer_a(app: Control, carte: Carte, gens: Array) -> void:
-	var r1 := Vector2(340, 262)
-	var r2 := Vector2(620, 452)
-	carte.guides.append([CENTRE, r1.x, r1.y, Color(Charte.IVOIRE, .10), false])
-	carte.guides.append([CENTRE, r2.x, r2.y, Color(Charte.IVOIRE, .10), false])
-	var un := gens.filter(func(e: Dictionary): return int(e.rang) == 1)
-	var deux := gens.filter(func(e: Dictionary): return int(e.rang) == 2)
-	var tetes := {}
-	for i in un.size():
-		var a := -PI / 2.0 + TAU * i / maxf(1.0, un.size())
-		var pos := CENTRE + Vector2(cos(a), sin(a)) * r1
-		var nom := _nom(gens, un[i])
-		_noeud(app, carte, un[i], pos, 100, nom)
-		if not tetes.has(un[i].service): tetes[un[i].service] = [pos, nom]
-		carte.liens.append([CENTRE, pos, _service(un[i].service)[2], [nom, "OrgaPresident", "OrgaManager"], un[i].service])
-	var decalage := PI / maxf(1.0, deux.size())
-	for i in deux.size():
-		var e: Dictionary = deux[i]
-		var a := -PI / 2.0 + decalage + TAU * i / maxf(1.0, deux.size())
-		var pos := CENTRE + Vector2(cos(a), sin(a)) * r2
-		var nom := _nom(gens, e)
-		_noeud(app, carte, e, pos, 80, nom)
-		var tete: Array = tetes.get(e.service, [CENTRE, "OrgaManager"])
-		carte.liens.append([tete[0], pos, _service(e.service)[2], [nom, tete[1]], e.service])
-
-## B : un anneau par service, tenu par son responsable, autour du centre.
-static func _disposer_b(app: Control, carte: Carte, gens: Array) -> void:
+## Un anneau par service, tenu par son responsable, autour du centre.
+static func _disposer(app: Control, carte: Carte, gens: Array) -> void:
 	var rayon := Vector2(520, 335)
 	for i in SERVICES.size():
 		var s: Array = SERVICES[i]
@@ -461,10 +430,7 @@ static func _recents(app: Control, e: Dictionary) -> Array:
 		var rapports: int = app.model.get("decisions", {}).get("recruitment", {}).get("reports", []).size()
 		out.append(["%d rapports" % rapports, Pastilles.ORANGE, "search", func(): app._navigate("Recrutement")])
 	if "billetterie" in e.tags:
-		var fans: Variant = U.strategy(app.model).get("fans", {})
-		var t: Dictionary = fans.get("ticketing", {}) if fans is Dictionary else {}
 		out.append(["Billetterie", Pastilles.ORANGE, "money", func(): app._navigate("Stratégie")])
-		if t.has("expectedAttendance"): out.append(["≈ " + G.n(t.expectedAttendance), Pastilles.BLEU, "people", func(): app._navigate("Stratégie")])
 	if "enplus" in e.tags: out.append(["En plus", Pastilles.VIOLET, "check", func(): app._navigate("Staff")])
 	if p.get("contractEnd") != null and int(p.contractEnd) <= saison: out.append(["Fin de contrat", Pastilles.ORANGE, "warning", func(): app._navigate("Staff")])
 	return out
