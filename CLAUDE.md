@@ -59,6 +59,16 @@ sans instruction ») **ne s'applique pas** ici. Léo veut un maximum d'autonomie
   remplace un Grep large.
 - Chantier touchant plusieurs écrans : lancer d'abord l'agent `eclaireur`
   (Sonnet, rapport dans `temp/eclairage-*.md`) et donner son rapport aux exécutants.
+- Un agent = une tâche : au-delà d'environ 60 tours, ou la tâche finie, il rend
+  la main avec un résumé ; la suite repart d'un agent neuf avec le rapport
+  `temp/eclairage-*.md`.
+- Grouper dans un même tour les lectures et commandes indépendantes.
+- Fichier existant : outil Edit (remplacement ciblé), jamais le fichier entier
+  réécrit (Write, Set-Content, python) pour quelques lignes.
+- Captures : réduire ou recadrer pour un détail ; avant/après avec
+  `node scripts/diff-captures.cjs <a.png> <b.png>` (rend la zone changée) ;
+  l'image entière une seule fois.
+- Chaque semaine : `node scripts/mesure-tokens.cjs` (part par catégorie, fichiers les plus lus).
 - Journaux de CI et sorties de tests longues : `log-reader` (Haiku), qui rend
   seulement les échecs.
 - 53 commandes CCGS hors sujet sont masquées au modèle
@@ -98,7 +108,7 @@ une partie du raisonnement sont perdus au changement).
   racine) ne s'appliquent pas. Commandes réelles :
   - retour rapide : `git diff --name-only origin/main > /tmp/diff.txt && node ci/quick-check.cjs /tmp/diff.txt` (un **fichier** listant les chemins, pas les chemins en arguments ; trop long sur la machine cloud : laisser la CI) ;
   - une suite JS : `node tests/<suite>.cjs` ;
-  - simulations de carrière (mesures, sondes) : `ouvrir({ testVm: true, hebdomadaire: true, simulation: true })` dans `tests/helpers/carriere-monde.cjs` (écritures différées, pas de sauvegarde à chaque commande : même carrière, ≈ un tiers de temps en moins) ; une saison Monde coûte ≈ 15 min par graine, lancer au plus 3 graines en parallèle (4 cœurs), et pour étudier une bascule sauver l'état (`scripts/sonde-bascule-masse.cjs --etat` puis `--depuis`, 20 s au lieu de 17 min) ;
+  - simulations de carrière (mesures, sondes) : `ouvrir({ testVm: true, hebdomadaire: true, rapide: true })` dans `tests/helpers/carriere-monde.cjs` (écritures différées, ni connaissance ni présentation sur le modèle rendu, ni copie d'annulation : même carrière au bit près que le jeu) ; une saison Monde (club 29) coûte ≈ 6 à 7 min par graine. Points de reprise : `ouvrirSaison({ graine, saison })` et `jouerSaison` (`tests/helpers/carriere-reprise.cjs`) partent du début de la saison demandée, gardé sur disque (`CD_REPRISES`, défaut `<tmp>/rl27-reprises`) par graine et invalidé dès que `dist/`, `native/engine/` ou `tests/helpers/` changent : la 1re sonde joue les saisons, les suivantes repartent en quelques secondes. Graines en parallèle : `node scripts/carriere-graines.cjs --graines 7,4242,99 -- <sonde> --graine {graine} …` (un processus invisible par graine). PC de Léo : 16 cœurs, jusqu'à 14 simulations node et 10 Godot en parallèle ; machine cloud : 3 graines. Contrôle d'identité avant/après une optimisation : `scripts/carriere-chrono.cjs` (`--sortie`, puis `--comparer a.json b.json` : 98 sections de S, soldes, effectifs, graine) ; ne jamais couper une étape de la projection sans ce contrôle sur 2 graines × 2 saisons (des mémoires du budget et le direct du match changent la suite de la carrière) ;
   - suites Godot (SDK 4.7.2 requis) : `bash ci/run-godot-suites.sh <liste>` ;
   - projet Godot : `godot --path native/godot`.
 - PC de Léo indisponible : voir `AGENTS.md` (tests en ligne via `bash ci/en-ligne.sh`).

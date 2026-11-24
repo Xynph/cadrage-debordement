@@ -10,7 +10,7 @@ const fs = require('node:fs');
 const { ouvrir, jouerLeMatch } = require('../tests/helpers/carriere-monde.cjs');
 const args = process.argv.slice(2), opt = (n, d) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : d; };
 const GRAINE = Number(opt('--graine', 4242)), CLUB = Number(opt('--club', 29)), SAISONS = Number(opt('--saisons', 3)), OUT = opt('--out', null);
-const jeu = ouvrir({ testVm: true, hebdomadaire: true, simulation: true, seed: GRAINE });
+const jeu = ouvrir({ testVm: true, hebdomadaire: true, rapide: true, seed: GRAINE });
 const run = src => jeu.bridge.vm.run(src);
 let model = jeu.regler(jeu.call('new_career', { mode: 'world-champ', club: CLUB }));
 const RELEVE = `(()=>{const f=budgetForces(),a=nativeClubBudget.recettes(f),out=[];

@@ -91,6 +91,12 @@ avant d'ouvrir un .gd de plus de 20 Ko, et ne lire que la plage utile ;
 plusieurs écrans : rapport de l'éclaireur (`.claude/agents/eclaireur.md`,
 `temp/eclairage-*.md`) avant les exécutants. Écran absent de la carte : l'y ajouter.
 
+Économie de tokens (tout agent) : une tâche par agent, résumé et arrêt vers
+60 tours ; lectures et commandes indépendantes groupées dans un même tour ;
+fichier existant modifié par remplacement ciblé, jamais réécrit en entier ;
+captures recadrées (`node scripts/diff-captures.cjs <a> <b>`) ; mesure
+hebdomadaire : `node scripts/mesure-tokens.cjs`.
+
 ## Esprit critique
 
 Partenaire critique, pas approbateur : dire un désaccord clairement avec ses
