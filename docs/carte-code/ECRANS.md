@@ -49,7 +49,10 @@ Numéros de ligne approximatifs (au 24/11/2026) : relancer carte-code.cjs avant 
 | · Tableau, tri, totaux | `ui/immersive08/squad_tableau.gd` | `_tableau`, `_colonnes`, `_refresh`, `_totaux` |
 | Fiche joueur | `ui/immersive08/player_canvas.gd`, `fiche_page.gd`, `fiche_commune.gd`, `fiche_*.gd` | `build` L97 |
 | Composition / tactique | `ui/immersive08/tactics_canvas.gd` + `tactics_*.gd` | `build` L44 |
-| Préparation (semaine) | `ui/immersive08/preparation_canvas.gd`, `preparation_*.gd` | `build` L34, `compact` L43 |
+| Préparation (semaine) | `ui/immersive08/preparation_canvas.gd` (fichier public : `build`, `compact`, `ouvrir_sous_page`, en-tête, onglets, `_dossier`), `preparation_adversaire.gd`, `preparation_consignes.gd` | `build` L6, `compact` L15 |
+| · socle de Préparation | `ui/immersive08/preparation_socle.gd` (constantes, état, marque, panneaux, boutons, zones, fiches club/joueur) | chaîne d'héritage socle ← dossier ← xv ← canvas |
+| · Dossier : panneaux | `ui/immersive08/preparation_dossier.gd` (danger, rapport, à faire, forme, face-à-face) | `_rapport`, `_a_faire`, `_forme` |
+| · Dossier : bas et sous-pages | `ui/immersive08/preparation_xv.gd` (à surveiller, leur XV probable, repères, conseils, planning, reprise) | `_surveiller`, `_xv_bande`, `_sous_reperes` |
 | Plan de jeu | `ui/immersive08/playbook_canvas.gd` | `build` L56 |
 | Entraînement | `ui/immersive08/training_canvas.gd`, `training_*.gd` | `build` L56 |
 | Vestiaire | `ui/immersive08/locker_canvas.gd` | `build` L20 |
