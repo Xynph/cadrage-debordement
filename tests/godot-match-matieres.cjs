@@ -37,7 +37,7 @@ test('Matières : textures importées avec mipmaps, plus de variable d’essai',
     assert.match(imp, /^mipmaps\/generate=true$/m, file + ' : mipmaps');
     assert.match(imp, /^compress\/mode=0$/m, file + ' : sans perte');
   }
-  for (const file of ['match_matieres.gd', 'match_view.gd', 'match_athlete.gd', 'shaders/stadium_surface.gdshader', 'shaders/athlete_kit.gdshader']) {
+  for (const file of ['match_matieres.gd', 'match_view.gd', 'match_vue_stade.gd', 'match_athlete.gd', 'shaders/stadium_surface.gdshader', 'shaders/athlete_kit.gdshader']) {
     assert.ok(!read(file).includes('CD_ESSAI_MATIERES'), file);
   }
 });

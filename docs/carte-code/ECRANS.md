@@ -69,7 +69,7 @@ Numéros de ligne approximatifs (au 24/11/2026) : relancer carte-code.cjs avant 
 | Écran | Fichier(s) | Entrée |
 |---|---|---|
 | Avant-match | `ui/immersive08/match_avant.gd` (+ `avant_match_pages.gd`, `avant_match_bilan.gd`, `avant_match_terrain.gd`) | `setup` L134, `_construire` L261 |
-| Match en direct (3D, HUD) | `ui/contextual/live_view.gd`, `match_view.gd`, `match_*.gd` (racine) | `_ready` L141 |
+| Match en direct (3D, HUD) | `ui/contextual/live_view.gd`, `match_view.gd` (état, `apply_frame`, façades), `match_vue_camera.gd` (caméra suivie), `match_vue_visee.gd` (bornes, poteaux, regroupement), `match_vue_joueurs.gd` (acteurs, animation, sortie), `match_vue_ballon.gd` (port, passe, trajectoire), `match_vue_stade.gd` (décor, public, ballon), autres `match_*.gd` (racine) | `_ready` L141 ; vue `_ready` L171, `apply_frame` L427, `_process` L699 ; `_fit_camera` (caméra) L115, `animer_acteur` (joueurs) L214 |
 | Temps forts (régie) | `ui/contextual/match_temps_forts.gd` | `setup` L231 |
 | Gestes du match 3D (touche, ballon porté, essai) | `match_gestes.gd` (interface, recadrage) ← `match_gestes_essai.gd` (ballon porté, essai, après-essai) ← `match_gestes_placement.gd` (mise en place, touche, coupes) ← `match_gestes_corps.gd` (poses) ← `match_gestes_etat.gd` (constantes, état) : chaîne d'héritage | `observe` L56, `advance` L176, `pose` L320 |
 | Entre-deux (2D) | `ui/contextual/match_between.gd` (5500 l.), `match_terrain_2d.gd` | `_ready` L983 |

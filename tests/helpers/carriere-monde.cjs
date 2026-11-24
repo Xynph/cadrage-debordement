@@ -17,7 +17,14 @@ const { skipMatchTalk } = require('./scene-match-talks.cjs');
 // un match = `begin_match`, `delegate`, `finish_round`, la semaine suivante s'ouvre d'elle-même. Plus rapide ;
 // le jeu, lui, tourne en cadence journalière (défaut).
 function ouvrir(options = {}) {
-  const { hebdomadaire, simulation, ...autres } = options;
+  const { hebdomadaire, rapide, ...autres } = options;
+  // rapide : simulation + modèle réduit (leanModel, worker.cjs) : ni frontière de connaissance (portraits, fourchettes)
+  // sur le modèle rendu, ni copie d'annulation de la carrière avant chaque commande.
+  // Même carrière au bit près (scripts/carriere-chrono.cjs --comparer), pour les sondes et mesures qui lisent l'état S,
+  // pas le modèle de l'interface ; une commande refusée après avoir modifié la carrière arrête la simulation.
+  const simulation = autres.simulation || rapide;
+  delete autres.simulation;
+  if (rapide) autres.leanModel = true;
   options = hebdomadaire ? { dailyCalendar: false, mandatoryPress: false, internationalCareer: false, ...autres } : autres;
   // simulation : mesures et sondes multi-saisons. Écritures différées, journal, sauvegarde mensuelle et aucune sauvegarde
   // du jeu à chaque commande (le texte complet de la carrière, ~25 Mo, était reconstruit et validé chaque semaine) :
