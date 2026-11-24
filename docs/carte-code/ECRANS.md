@@ -72,7 +72,11 @@ Numéros de ligne approximatifs (au 24/11/2026) : relancer carte-code.cjs avant 
 ## Compétition
 | Écran | Fichier(s) | Entrée |
 |---|---|---|
-| Calendrier, classements | `ui/immersive08/competition_canvas.gd`, `standings_zones.gd` | `build` L173 |
+| Calendrier, classements | `ui/immersive08/competition_canvas.gd` (fichier public : `build`, en-tête, sous-pages rencontre et archives), `standings_zones.gd` | `build` L6 |
+| · socle de Compétitions | `ui/immersive08/competition_socle.gd` (constantes, état, cibles `open_target`/`target_available`, outils partagés) | chaîne d'héritage socle ← classement ← calendrier ← colonne ← canvas |
+| · Classements (tableau) | `ui/immersive08/competition_classement.gd` (tri, tableau, menu de compétition, zones, plaque) | `_classement` |
+| · Calendrier, phases, stats | `ui/immersive08/competition_calendrier.gd` | `_calendar`, `_playoffs`, `_stats` |
+| · Colonne de droite, bande du bas | `ui/immersive08/competition_colonne.gd` | `_colonne_droite`, `_bas_gauche` |
 | Rivalités | `ui/immersive08/rivalry_canvas.gd` | `build` L35 |
 | Europe | `ui/immersive08/europe_canvas.gd` | `build` L40 |
 | Sélections / nationale | `ui/international_view.gd`, `ui/national_sheet.gd` | `build`, `calendar` |
