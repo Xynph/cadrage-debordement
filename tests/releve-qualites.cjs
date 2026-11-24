@@ -83,7 +83,12 @@ test('progression étalée : le gain de niveau arrive dans les qualités semaine
   assert.equal(r.note1, r.note0, 'note au poste inchangée au moment du gain');
   assert.equal(r.attente, 0, 'tout est libéré en fin de saison');
   assert.ok(Math.max(...r.pas) <= .5, 'plus gros pas hebdomadaire : ' + Math.max(...r.pas));
-  for (const t of r.total) assert.ok(Math.abs(t - r.gain) < .011 || t > 96, 'même total qu’avant (+' + r.gain + ') : ' + t);
+  // Entraînement ciblé (24/11/2026) : même total sur les 36 qualités qu'avant (36 × le gain), porté par les qualités
+  // travaillées (séances, poste) ; les autres ne bougent presque pas.
+  const somme = r.total.reduce((a, b) => a + b, 0);
+  assert.ok(Math.abs(somme - 36 * r.gain) < .4, 'même total qu’avant (36 × ' + r.gain + ') : ' + somme.toFixed(2));
+  assert.ok(r.total.filter(t => t < .3 * r.gain).length >= 10, 'qualités non travaillées presque immobiles : ' + r.total.join(','));
+  assert.ok(Math.max(...r.total) >= 2 * r.gain, 'qualités travaillées : ' + r.total.join(','));
   assert.ok(r.noteFin >= r.note0 + r.gain - 1, 'note au poste montée à la fin');
 });
 

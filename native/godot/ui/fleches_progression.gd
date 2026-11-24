@@ -1,13 +1,11 @@
 extends RefCounted
-## Flèches de progression façon jeu de gestion (planche du 23/11/2026, à côté de chaque qualité de la fiche, du niveau
-## dans l'Effectif et des jeunes du Centre). Trois crans selon l'évolution sur environ 4 semaines, lue dans le relevé
-## mensuel du moteur (native/engine/releve-qualites.cjs, au dixième) : léger (+0,1 à +0,3), net (+0,4 à +0,9), point
-## gagné (le chiffre affiché a monté) ; même chose en baisse (orange, puis rouge). Jamais de dixième à l'écran.
-## Survol du chiffre : bulle avec la courbe des 12 derniers mois (bulle_survol.gd, sans clic).
-## Deux variantes visuelles à trancher par Léo (CD_VARIANTE_VISUELLE=A|B, A par défaut) :
-##   A « triangle » : un triangle à droite du chiffre (pâle, vert, vert vif) ; point gagné = chiffre surligné + « +1 »
-##   devant lui.
-##   B « chevrons » : 1, 2 ou 3 chevrons empilés à gauche du chiffre ; point gagné = chiffre en pastille pleine + « +1 ».
+## Flèches de progression façon jeu de gestion (choix B de Léo du 24/11/2026), à côté des qualités de la fiche, du
+## niveau dans l'Effectif et des jeunes du Centre. Les crans viennent du moteur (native/engine/releve-qualites.cjs,
+## champ « fleches » du joueur) : écart sur 4 semaines lu dans le relevé HEBDOMADAIRE (au dixième, jamais affiché) :
+## léger (+0,1 à +0,3), net (+0,4 à +0,9), point gagné (+1 ou plus) ; même chose en baisse (orange, puis rouge).
+## Seules les qualités qui sortent du lot ont une flèche (6 au plus) ; flèche du niveau = moyenne des 36 qualités.
+## Marque : 1, 2 ou 3 chevrons empilés à gauche du chiffre ; point gagné = chiffre en pastille pleine + « +1 ».
+## Survol du chiffre : bulle avec la courbe des 12 derniers mois (relevé mensuel, bulle_survol.gd, sans clic).
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Charte = preload("res://ui/charte.gd")
@@ -25,9 +23,6 @@ static var _cache: Dictionary = {}
 static func _p() -> Script:
 	return load("res://ui/immersive08/progression_fiche.gd")
 
-static func variante() -> String:
-	return "B" if OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper() == "B" else "A"
-
 static func teinte(cran: int) -> Color:
 	match cran:
 		3: return VIF
@@ -38,52 +33,19 @@ static func teinte(cran: int) -> Color:
 		-3: return BAISSE_VIVE
 	return Color.TRANSPARENT
 
-## Place du relevé la plus proche de « il y a 4 semaines » (relevé du mois en cours s'il a au moins 3 semaines, sinon
-## celui du mois d'avant) dans la série de 13 places de progression_fiche.gd ; -1 sans relevé.
-static func _place_reference(app: Control, serie: Array) -> int:
-	var jour := 1
-	var today := str(app.model.get("meta", {}).get("calendarToday", ""))
-	if today.length() >= 10: jour = today.substr(8, 2).to_int()
-	for k: int in ([11, 10] if jour >= 22 else [10, 11]):
-		if serie.size() > k and serie[k] != null: return k
-	return -1
-
-## Cran de -3 à 3 entre la valeur de référence et celle d'aujourd'hui (dixièmes du moteur, jamais affichés) :
-## ±0,1 à 0,3 léger, ±0,4 à 0,9 net, ±1 ou plus point gagné / perdu.
-static func cran(avant: Variant, maintenant: float) -> int:
-	if avant == null: return 0
-	var dixiemes := roundi((maintenant - float(avant)) * 10.0)
-	if absi(dixiemes) >= 10: return 3 * signi(dixiemes)
-	if absi(dixiemes) >= 4: return 2 * signi(dixiemes)
-	if absi(dixiemes) >= 1: return signi(dixiemes)
-	return 0
-
-## {qualites: {clé: {cran, serie, libelle}}, niveau: {cran, serie}} du joueur ; {} sans relevé.
+## {qualites: {clé: {cran, serie, libelle}}, niveau: {cran, serie}} du joueur ; {} sans relevé. Crans du moteur (0 pour
+## une qualité qui ne sort pas du lot : pas de marque, mais la courbe au survol).
 static func donnees(app: Control, player: Dictionary) -> Dictionary:
-	if str(player.get("releve", "")).is_empty() or _p().valeurs(player).is_empty(): return {}
-	var cle := "%s|%s|%s" % [player.get("id", ""), player.get("releve", ""), app.model.get("meta", {}).get("calendarToday", "")]
+	var f: Variant = player.get("fleches")
+	if not f is Dictionary or str(player.get("releve", "")).is_empty() or _p().valeurs(player).is_empty(): return {}
+	var cle := "%s|%s|%s|%s" % [player.get("id", ""), player.get("releve", ""), JSON.stringify(f), app.model.get("meta", {}).get("calendarToday", "")]
 	if _cache.has(cle): return _cache[cle]
 	if _cache.size() > 400: _cache.clear()
+	var crans: Dictionary = f.get("q", {}) if f.get("q") is Dictionary else {}
 	var qualites := {}
-	var place := -1
-	var total := 0.0
-	var compte := 0
 	for q: Dictionary in _p().qualites(app, player):
-		var serie: Array = q.serie
-		if place < 0: place = _place_reference(app, serie)
-		var avant: Variant = serie[place] if place >= 0 else null
-		qualites[q.cle] = {"cran": cran(avant, float(q.valeur)), "serie": serie, "libelle": q.libelle}
-		if avant != null:
-			total += float(q.valeur) - float(avant)
-			compte += 1
-	# Niveau : note entière du moteur ; point gagné ou perdu si elle a bougé, sinon la dérive moyenne des 36 qualités.
-	var niveau: Array = _p().niveau(app, player)
-	var cran_niveau := 0
-	var ref: Variant = niveau[place] if place >= 0 else null
-	if ref != null:
-		var points := roundi(float(player.get("rating", 0))) - roundi(float(ref))
-		cran_niveau = 3 * signi(points) if points != 0 else cran(0.0, total / maxf(1.0, compte))
-	var sortie := {"qualites": qualites, "niveau": {"cran": cran_niveau, "serie": niveau}}
+		qualites[q.cle] = {"cran": clampi(int(crans.get(q.cle, 0)), -3, 3), "serie": q.serie, "libelle": q.libelle}
+	var sortie := {"qualites": qualites, "niveau": {"cran": clampi(int(f.get("n", 0)), -3, 3), "serie": _p().niveau(app, player)}}
 	_cache[cle] = sortie
 	return sortie
 
@@ -104,46 +66,13 @@ static func marquer(app: Control, label: Label, cran_: int, serie: Array, titre:
 	var droite := gauche + largeur
 	var s := float(taille) * 0.6
 	var zone := Rect2(gauche, haut, largeur, hauteur)
-	if cran_ != 0:
-		if variante() == "A": zone = _triangle(parent, label, cran_, gauche, droite, haut, hauteur, s, id)
-		else: zone = _chevrons(parent, label, cran_, gauche, droite, haut, hauteur, s, id)
+	if cran_ != 0: zone = _chevrons(parent, label, cran_, gauche, droite, haut, hauteur, s, id)
 	_survol(app, parent, zone, serie, titre, cran_, id)
 
-## Variante A : triangle à droite ; point gagné = bande surlignée derrière le chiffre + « +1 » devant lui.
-static func _triangle(parent: Control, label: Label, n: int, gauche: float, droite: float, haut: float, hauteur: float, s: float, id: String) -> Rect2:
-	var cote := s * (0.82 if absi(n) == 1 else 1.0)
-	var f := Fleche.new()
-	f.name = "Fleche_" + id
-	f.forme = "triangle"
-	f.cran = n
-	parent.add_child(f)
-	f.position = Vector2(droite + s * 0.3, haut + (hauteur - cote) / 2.0)
-	f.size = Vector2(cote, cote)
-	var fin := f.position.x + cote
-	if absi(n) == 3:
-		var bande := Panel.new()
-		bande.name = "FlecheSurligne_" + id
-		bande.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var style := StyleBoxFlat.new()
-		style.bg_color = Color(teinte(n), 0.26)
-		style.border_color = teinte(n)
-		style.border_width_bottom = maxi(2, C.px(3))
-		style.set_corner_radius_all(maxi(2, C.px(4)))
-		bande.add_theme_stylebox_override("panel", style)
-		parent.add_child(bande)
-		parent.move_child(bande, label.get_index())
-		bande.position = Vector2(gauche - s * 0.3, haut - hauteur * 0.1)
-		bande.size = Vector2(droite - gauche + s * 0.6, hauteur * 1.25)
-		var un := _petit(parent, "+1" if n > 0 else "−1", teinte(n), s * 1.05, "FlecheUn_" + id)
-		un.position = Vector2(bande.position.x - un.size.x - s * 0.15, haut + (hauteur - un.size.y) / 2.0)
-		gauche = un.position.x
-	return Rect2(gauche, haut, fin - gauche, hauteur)
-
-## Variante B : chevrons empilés à gauche (1, 2 ou 3) ; point gagné = chiffre en pastille pleine + « +1 » en exposant.
+## Chevrons empilés à gauche (1, 2 ou 3) ; point gagné = chiffre en pastille pleine + « +1 » en exposant.
 static func _chevrons(parent: Control, label: Label, n: int, gauche: float, droite: float, haut: float, hauteur: float, s: float, id: String) -> Rect2:
 	var f := Fleche.new()
 	f.name = "Fleche_" + id
-	f.forme = "chevrons"
 	f.cran = n
 	parent.add_child(f)
 	var l := s * 1.15
@@ -217,7 +146,6 @@ static func courbe(app: Control, serie: Array, titre: String, n: int) -> Control
 	chiffre.name = "FlecheCourbeValeur"
 	if n != 0:
 		var marque := Fleche.new()
-		marque.forme = "triangle" if variante() == "A" else "chevrons"
 		marque.cran = n
 		bulle.add_child(marque)
 		D.place(marque, Rect2(98, 48, 24, 30))
@@ -236,10 +164,9 @@ static func courbe(app: Control, serie: Array, titre: String, n: int) -> Control
 	D.text(bulle, largeur - 22, 238, "auj.", 14, Charte.IVOIRE_3, 600, 120, HORIZONTAL_ALIGNMENT_RIGHT)
 	return bulle
 
-## Marque dessinée (aucune police du jeu n'a ▲ ▼) : triangle plein ou chevrons empilés, pointe en haut pour la hausse.
+## Marque dessinée (aucune police du jeu n'a de chevron) : chevrons empilés, pointe en haut pour la hausse.
 class Fleche extends Control:
 	const F = preload("res://ui/fleches_progression.gd")
-	var forme := "triangle"
 	var cran := 0
 
 	func _init() -> void:
@@ -251,13 +178,6 @@ class Fleche extends Control:
 		var w := size.x
 		var h := size.y
 		var monte := cran > 0
-		if forme == "triangle":
-			var t := minf(w, h)
-			var y0 := (h - t * 0.86) / 2.0
-			var y1 := y0 + t * 0.86
-			var pts := PackedVector2Array([Vector2(w / 2.0, y0), Vector2(w, y1), Vector2(0, y1)]) if monte else PackedVector2Array([Vector2(0, y0), Vector2(w, y0), Vector2(w / 2.0, y1)])
-			draw_colored_polygon(pts, couleur)
-			return
 		var nombre := absi(cran)
 		var pas := h / 3.0
 		var epaisseur := maxf(2.5, w * 0.24)
