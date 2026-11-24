@@ -12,6 +12,7 @@ native/godot/**/*.uid
 native/godot/**/*.import
 # Exception : la texture du ballon reste embarquée dans le glb (pas de PNG extrait ni d'UID de texture à désynchroniser)
 !native/godot/art/office_props/ballon.glb.import
+!native/godot/art/matieres/*.import
 native/godot/fonts/*.import
 native/out/
 

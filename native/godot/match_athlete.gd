@@ -48,8 +48,8 @@ static func dress(model: Node3D, kit: Dictionary, id: String) -> void:
 		material.set_shader_parameter("socks_color", kit.shirt)
 		material.set_shader_parameter("skin_color", look.skin)
 		material.set_shader_parameter("hair_color", look.hair)
-		# ESSAI « matières » : sans CD_ESSAI_MATIERES, ne fait rien.
-		preload("res://essai_matieres.gd").maillot(material)
+		# Matière du tissu (maille et plis) ; les couleurs ci-dessus restent celles du club.
+		preload("res://match_matieres.gd").maillot(material)
 		_materials[key] = material
 	for node in model.find_children("*", "MeshInstance3D", true, false):
 		(node as MeshInstance3D).material_override = _materials[key]

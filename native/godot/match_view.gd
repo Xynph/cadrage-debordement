@@ -2085,12 +2085,12 @@ func _build_ground() -> void:
 	_box(Vector3(220, 0.4, 180), Vector3(0, -0.45, 0), dark).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_box(Vector3(135, 0.2, 96), Vector3(0, -0.2, 0), _material(Color("464c49"))).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_box(Vector3(118, 0.1, 80), Vector3(0, -0.09, 0), _material(Color("284c31"))).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	# One original shader, no external texture or time-dependent grass noise.
+	# Pelouse fixe (aucun bruit animé) : shader d'origine et textures de art/matieres/.
 	var grass := ShaderMaterial.new()
 	_grass = grass
 	grass.shader = load("res://shaders/stadium_surface.gdshader") as Shader
-	# ESSAI « matières » : sans CD_ESSAI_MATIERES, ne fait rien.
-	preload("res://essai_matieres.gd").pelouse(grass)
+	# Textures de la pelouse : touffes, taches de teinte, relief des brins.
+	preload("res://match_matieres.gd").pelouse(grass)
 	_box(Vector3(110, 0.12, 70), Vector3(0, -0.07, 0), grass).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var paint := _material(Color("efefdf"))
 	for z in [-35.0, 35.0]:
