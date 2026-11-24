@@ -23,6 +23,11 @@ Numéros de ligne approximatifs (au 24/11/2026) : relancer carte-code.cjs avant 
 | Écran | Fichier(s) | Entrée |
 |---|---|---|
 | Bureau (dessiné) | `ui/immersive08/office_canvas.gd`, `office.gd` | `build` L169 / L278 |
+| Gabi adjoint (bandeau, bulle, Bureau) : fichier public (contexte : moments clés, première visite, humeur, alertes ; `_process`, `refresh`) | `ui/immersive08/coach_canvas.gd` ← sa chaîne ci-dessous (`coach_guide.gd` ← socle ← bulle ← bandeau ← bureau ← canvas) | `consider_context` L20, `_process` L275 |
+| Gabi : socle (consts, état, portraits, habillage des boutons, placement portrait/voile/bulle, fil de la remarque, indice, petites classes de dessin) | `ui/immersive08/coach_socle.gd` | `_maj_remarque` L249, `_layout_bulle` L324, `_position_libre` L403 |
+| Gabi : bulle qui descend du bandeau (construction, affichage, fermeture, « Suivre le conseil ») | `ui/immersive08/coach_bulle.gd` | `_build_adjoint` L16, `_montrer` L87, `suivre_conseil` L200 |
+| Gabi : bandeau du haut (pose, clic) et règles de parole (bulle ou indice) | `ui/immersive08/coach_bandeau.gd` | `installer_bandeau` L11, `_clic_bandeau` L151, `_dans_le_bandeau` L185 |
+| Gabi : chez lui au Bureau (zone en pied, carnet, premiers pas) | `ui/immersive08/coach_bureau.gd` | `installer_bureau` L11, `carte_premiers_pas` L148 |
 | Réception (courrier) : fichier principal (états, ordre des courriers, `build`, `heading`, consts) | `ui/immersive08/reception_canvas.gd` ← ses morceaux ci-dessous | `build` ~L470 |
 | Réception : liste de gauche (filtres, jours, ligne d'un courrier) | `ui/immersive08/reception_liste.gd` | `_list_filters`, `_list`, `_row` |
 | Réception : lettre ouverte (texte à liens, fil de lecture, mesures) | `ui/immersive08/reception_lettre.gd` | `_detail`, `_letter`, `entities` |
