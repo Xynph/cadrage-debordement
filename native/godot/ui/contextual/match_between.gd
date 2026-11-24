@@ -1335,7 +1335,7 @@ func _page() -> void:
 	lien_consignes.add_theme_font_size_override("font_size", fpx(22 * BARRE_HAUT))
 	noeuds_barre.insert(3, lien_consignes)
 	for noeud: Control in noeuds_barre: barre.add_child(noeud)
-	# Barre du banc (idée FM27 n° 34) : cris d'équipe, cris à un joueur, ajustements, permuter les ailes.
+	# Bouton « Banc » (idée FM27 n° 34, menu déroulant comme dans FM) : cris d'équipe, à un joueur, ajustements, ailes.
 	load("res://ui/contextual/match_banc_fm.gd").poser(self, barre, page)
 	_page_d3(page)
 
@@ -1525,7 +1525,9 @@ func _colonne_centre(grille: Control) -> void:
 	meteo_pastille.visible = false
 	scene.add_child(meteo_pastille)
 	# Terrain, puis le momentum et les temps forts en pastilles dessous.
-	scene.custom_minimum_size = Vector2(px(420), maxi(150, px(200)))
+	# Hauteur du terrain tenue (vérificateur du 24/11 : 63 % de sa tuile en 2560, pastilles de 3,4 px en 1920) : en 1920 il
+	# faut ≈ 208 px pour des pastilles de 4 px et un terrain qui remplit 80 % de sa tuile.
+	scene.custom_minimum_size = Vector2(px(420), maxi(150, px(277)))
 	cadre_terrain.add_child(_bande_momentum())
 	temps_forts = S.G.h(px(8))
 	temps_forts.name = "MatchBetweenHighlights"
@@ -1804,7 +1806,13 @@ func _page_d3(page: Control) -> void:
 	var defile_ev := panneau_chiffres.find_child("MatchBetweenFiguresScroll", true, false) as ScrollContainer
 	if defile_ev != null:
 		defile_ev.size_flags_vertical = Control.SIZE_FILL
-		defile_ev.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		# Les événements cèdent leur hauteur quand Gabi grandit (bulles) : ils défilent, le banc garde ses 8 lignes
+		# (vérificateur du 24/11 : la tuile Banc était écrasée). Hauteur tenue par _tenir_gauche.
+		defile_ev.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+		_defile_ev = defile_ev
+	_colonne_gauche = gauche
+	_page_fm = page
+	if not page.resized.is_connected(_tenir_gauche): page.resized.connect(_tenir_gauche)
 	var centre := _boite(false, GOUTTIERE)
 	centre.name = "MatchBetweenCentre"
 	S.G.fill(centre, true, 1.0)
@@ -1821,7 +1829,8 @@ func _page_d3(page: Control) -> void:
 	temps_forts.visible = false
 	var rang_bas := _boite(true, GOUTTIERE)
 	rang_bas.name = "MatchBetweenDashboardRow"
-	S.G.fill(rang_bas, true, 0.62)
+	# Le terrain d'abord (vérificateur du 24/11) : la rangée du bas garde sa hauteur utile, le reste va au terrain.
+	S.G.fill(rang_bas, true, 0.3)
 	centre.add_child(rang_bas)
 	_poser_bas_fm(rang_bas)
 	# La domination prend la place du momentum, sous le terrain (sigles en légende, frise basse).
@@ -1875,6 +1884,7 @@ func _page_d3(page: Control) -> void:
 	# Le banc cède sa hauteur quand la colonne de gauche se remplit (2e mi-temps, bonus en fin de match) : il défile
 	# au lieu de pousser la barre de Mon XV hors de l'écran.
 	var defile_banc := ScrollContainer.new()
+	_defile_banc = defile_banc
 	defile_banc.name = "MatchBetweenBenchScroll"
 	defile_banc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	defile_banc.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
@@ -1891,6 +1901,34 @@ func _page_d3(page: Control) -> void:
 	pied_reglages.size_flags_horizontal = Control.SIZE_SHRINK_END
 	pied_reglages.clip_text = false
 	pied_reglages.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+
+var _defile_ev: ScrollContainer
+var _defile_banc: ScrollContainer
+var _colonne_gauche: Control
+var _page_fm: Control
+
+## Colonne de gauche (Gabi, événements, enjeu, bonus, banc) : le banc garde toujours la hauteur de ses 8 lignes ; quand
+## la colonne n'a plus la place (bulles de Gabi, bonus de fin de match), les événements cèdent leur hauteur et défilent.
+func _tenir_gauche() -> void:
+	if not is_instance_valid(_colonne_gauche) or not is_instance_valid(_page_fm) or not is_instance_valid(_defile_ev): return
+	if is_instance_valid(_defile_banc) and is_instance_valid(zone_banc):
+		var h_banc := ceilf(zone_banc.get_combined_minimum_size().y)
+		if not is_equal_approx(_defile_banc.custom_minimum_size.y, h_banc): _defile_banc.custom_minimum_size.y = h_banc
+	if _defile_ev.get_child_count() == 0 or _page_fm.size.y <= 0.0: return
+	var h_contenu := (_defile_ev.get_child(0) as Control).get_combined_minimum_size().y
+	var grille := _colonne_gauche.get_parent() as Control
+	var ecart := float(_page_fm.get_theme_constant("separation"))
+	var autres := 0.0
+	var rangs := 0
+	for e: Node in _page_fm.get_children():
+		var c := e as Control
+		if c == null or not c.visible or c.top_level: continue
+		rangs += 1
+		if c != grille: autres += c.get_combined_minimum_size().y
+	var dispo_grille := _page_fm.size.y - autres - ecart * maxf(0.0, rangs - 1)
+	var sans_ev := _colonne_gauche.get_combined_minimum_size().y - _defile_ev.get_combined_minimum_size().y
+	var hauteur := floorf(clampf(h_contenu, 0.0, maxf(0.0, dispo_grille - sans_ev)))
+	if not is_equal_approx(_defile_ev.custom_minimum_size.y, hauteur): _defile_ev.custom_minimum_size.y = hauteur
 
 ## D3 : les événements du match montrés (essais, pénalités, drops, cartons de `direct.reperes`), chaque camp de son côté
 ## autour de la minute : pictogramme cerclé à la couleur du club, auteur, score ; un clic ouvre le journal à ce fait.
@@ -1984,11 +2022,12 @@ func _remplir_evenements(reperes: Array, equipes: Array) -> void:
 
 ## D3 : carte haute d'un joueur (barre basse de Mon XV) : visage et numéro, nom, énergie (jauge et valeur ou alerte),
 ## note du match en pastille et plaquages.
-func _remplir_carte_haute(case: Button, poste: int, joueur: Dictionary, info: Dictionary) -> void:
+func _remplir_carte_haute(case: Button, poste: int, joueur: Dictionary, info: Dictionary) -> Control:
 	var condition := float(info.energie)
 	var alerte := str(info.alerte)
 	var grave := alerte in ["épuisé", "blessé"]
 	var colonne := S.G.v(px(3))
+	colonne.name = "MatchBetweenCardBody"
 	colonne.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	colonne.alignment = BoxContainer.ALIGNMENT_CENTER
 	S.full(colonne)
@@ -2004,6 +2043,7 @@ func _remplir_carte_haute(case: Button, poste: int, joueur: Dictionary, info: Di
 	# Anneau d'énergie autour du visage (couleur de la jauge : vert en forme, orange, rouge).
 	haut.add_child(_visage(joueur, px(56), _numero(str(info.id), poste + 1), condition))
 	var nom := _nom_joueur(abreger_prenom(str(joueur.get("name", ""))), str(info.id), "", {})
+	nom.set_meta("nom_carte", str(joueur.get("name", "")) + "|" + str(info.id))
 	nom.custom_minimum_size.y = px(28)
 	# Prénom en initiale sur la carte ; le nom complet reste celui du joueur (infobulle, fenêtre, tests).
 	for lien_nom: Node in nom.find_children("MatchBetweenPlayerName_*", "Button", true, false): lien_nom.set_meta("nom_complet", str(joueur.get("name", "")))
@@ -2069,6 +2109,7 @@ func _remplir_carte_haute(case: Button, poste: int, joueur: Dictionary, info: Di
 	ligne_moral.add_child(mot_moral)
 	ligne_moral.visible = not moral.is_empty()
 	case.custom_minimum_size = Vector2(px(130), px(172))
+	return colonne
 
 ## Panneaux de la journée en direct : le classement complet dans `parent_classement` (en D1 avec l'enjeu dans son
 ## en-tête), le multiplex (`colonnes` bandeaux par rangée) dans `parent_multiplex`.
@@ -2607,6 +2648,10 @@ func _tuile_joueur(poste: int, joueur: Dictionary, info: Dictionary) -> Button:
 	_remplir_carte_haute(case, poste, joueur, info)
 	# Changement en attente du prochain arrêt de jeu (rôle, consignes, sortie) : pastille dorée discrète.
 	var badge: Array = MenuJoueur.texte_badge(_live_courant(), id_joueur)
+	# Carte réutilisée tant que le joueur du poste ne change pas (_maj_tuiles_xv).
+	case.set_meta("tuile_xv", true)
+	case.set_meta("badge", str(badge[0]))
+	case.set_meta("cle_carte", JSON.stringify([joueur.get("name", ""), info, _numero(id_joueur, poste + 1), badge, moral_joueur(_pilotage, id_joueur), _densite]))
 	if not str(badge[0]).is_empty(): MenuJoueur.badge_attente(case, str(badge[0]), str(badge[1]))
 	return case
 
@@ -2928,6 +2973,7 @@ static func etat_du_deroule(item: Dictionary, equipes: Array) -> String:
 func update_frame(model: Dictionary, live: Dictionary, direct: Dictionary, appliquer: Callable) -> void:
 	if not is_node_ready(): return
 	_dernier = [model, live, direct, appliquer]
+	_tenir_gauche.call_deferred()
 	var densite := densite_pour(get_viewport_rect().size)
 	if not is_equal_approx(densite, _densite):
 		_densite = densite
@@ -3135,6 +3181,21 @@ func _poser_phase(live: Dictionary) -> void:
 	phase.text = ("%s · décision attendue" % titre) if not _arret.is_empty() else titre
 	phase.tooltip_text = "Vitesse de l’horloge : %s (menu Plus)" % vitesse
 	_poser_pied()
+	_ajuster_phase()
+
+## L'état du jeu tient dans sa place de la bande des commandes (bouton « Banc » ajouté le 24/11) : la police baisse un
+## peu plutôt que de couper le mot (« En paus »).
+func _ajuster_phase() -> void:
+	if not is_instance_valid(phase) or phase.size.x <= 1.0: return
+	if not phase.has_meta("taille_base"): phase.set_meta("taille_base", phase.get_theme_font_size("font_size"))
+	if not phase.resized.is_connected(_ajuster_phase): phase.resized.connect(_ajuster_phase)
+	var base := int(phase.get_meta("taille_base"))
+	var cadre: StyleBox = phase.get_theme_stylebox("normal")
+	var place := phase.size.x - (cadre.get_margin(SIDE_LEFT) + cadre.get_margin(SIDE_RIGHT) if cadre != null else 0.0)
+	var police: Font = phase.get_theme_font("font")
+	var taille := base
+	while taille > maxi(12, roundi(base * 0.6)) and police.get_string_size(phase.text, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x > place: taille -= 1
+	if phase.get_theme_font_size("font_size") != taille: phase.add_theme_font_size_override("font_size", taille)
 
 ## Pied : la vitesse de l'horloge (dans Réglages) et où trouver les autres matchs (menu Plus).
 func _poser_pied() -> void:
@@ -3799,6 +3860,8 @@ static func seuil_echantillon(direct: Dictionary) -> int:
 func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 	_xv_donnees = [joueurs, direct]
 	_montrer_journee_direct()
+	# Cartes de Mon XV mises à jour EN PLACE (vérificateur du 24/11 : recréées à chaque minute, survol perdu).
+	if vue_xv != "adverse" and not joueurs.is_empty() and _maj_tuiles_xv(joueurs, direct): return
 	S.clear(xv)
 	# D : Mon XV en tuiles, trois par rangée ; le XV adverse reste un tableau.
 	xv.columns = 5 if vue_xv == "adverse" else 15
@@ -3864,6 +3927,72 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 	_ligne_equipe(direct.get("feuille", {}) if direct.get("feuille") is Dictionary else {}, int(direct.get("camp", -1)), joueurs.map(func(j: Variant) -> String: return str(j.get("id", "")) if j is Dictionary else ""))
 	# Les tuiles gardent toujours leur hauteur (la zone ne défile pas) : jamais écrasées par le reste de la page.
 	_tenir_xv.call_deferred()
+
+## Mon XV en tuiles déjà posées pour les mêmes joueurs : chaque carte garde son nœud (survol, focus), seul son contenu
+## change, et seulement quand ses chiffres changent ; le nom (lien survolable) reste tant qu'il ne change pas. Renvoie
+## false s'il faut tout reposer (changement de joueur, poste vacant, autre vue).
+func _maj_tuiles_xv(joueurs: Array, direct: Dictionary) -> bool:
+	if xv.columns != 15 or xv.get_child_count() != joueurs.size(): return false
+	var infos := _infos_xv(joueurs, direct)
+	var cases := {}
+	for poste in joueurs.size():
+		var joueur: Variant = joueurs[poste]
+		var case := xv.get_node_or_null("MatchBetweenPlayer%d" % (poste + 1)) as Button
+		if not joueur is Dictionary or case == null or case.is_queued_for_deletion() or not case.has_meta("tuile_xv") or str(case.get_meta("player_id", "")) != str(infos[poste].id): return false
+		cases[poste] = case
+	if is_instance_valid(pied_xv): S.clear(pied_xv)
+	_remplir_changement(infos)
+	alertes_xv.clear()
+	var ordre := ordre_xv(joueurs, infos, tri_xv, tri_inverse)
+	for rang_ligne in ordre.size():
+		var poste: int = ordre[rang_ligne]
+		var joueur: Dictionary = joueurs[poste]
+		var info: Dictionary = infos[poste]
+		var case: Button = cases[poste]
+		if not str(info.alerte).is_empty(): alertes_xv.append({"poste": poste, "id": str(info.id), "nom": str(joueur.get("name", "")), "alerte": str(info.alerte), "condition": float(info.energie)})
+		xv.move_child(case, rang_ligne)
+		var badge: Array = MenuJoueur.texte_badge(_live_courant(), str(info.id))
+		var cle := JSON.stringify([joueur.get("name", ""), info, _numero(str(info.id), poste + 1), badge, moral_joueur(_pilotage, str(info.id)), _densite])
+		if str(case.get_meta("cle_carte", "")) == cle: continue
+		case.set_meta("cle_carte", cle)
+		var grave := str(info.alerte) in ["épuisé", "blessé"]
+		var fond := _case(Charte.VOILE_DORE if grave else RELIEF, Charte.RAYON_CARTE)
+		fond.set_content_margin_all(0)
+		case.add_theme_stylebox_override("normal", fond)
+		case.add_theme_stylebox_override("disabled", fond)
+		if grave: case.set_meta("signale", true)
+		elif case.has_meta("signale"): case.remove_meta("signale")
+		var ancien := case.get_node_or_null("MatchBetweenCardBody") as Control
+		if ancien != null: ancien.name = "MatchBetweenCardBodyOld"
+		var neuf := _remplir_carte_haute(case, poste, joueur, info)
+		if ancien != null:
+			# Le contenu neuf prend la place de l'ancien, morceau par morceau ; le nom (lien survolable) reste s'il est le même.
+			var k := 0
+			while neuf.get_child_count() > 0:
+				var morceau := neuf.get_child(0)
+				var vieux := ancien.get_child(k) if k < ancien.get_child_count() else null
+				neuf.remove_child(morceau)
+				if vieux != null and k == 1 and str(vieux.get_meta("nom_carte", "")) == str(morceau.get_meta("nom_carte", "-")):
+					morceau.queue_free()
+				else:
+					if vieux != null:
+						ancien.remove_child(vieux)
+						vieux.queue_free()
+					ancien.add_child(morceau)
+					ancien.move_child(morceau, k)
+				k += 1
+			case.remove_child(neuf)
+			neuf.queue_free()
+			ancien.name = "MatchBetweenCardBody"
+		var vieux_badge := case.find_child("MatchMenuJoueurAttenteBadge", false, false)
+		if vieux_badge != null and str(case.get_meta("badge", "")) != str(badge[0]):
+			case.remove_child(vieux_badge)
+			vieux_badge.queue_free()
+		case.set_meta("badge", str(badge[0]))
+		if not str(badge[0]).is_empty(): MenuJoueur.badge_attente(case, str(badge[0]), str(badge[1]))
+	_ligne_equipe(direct.get("feuille", {}) if direct.get("feuille") is Dictionary else {}, int(direct.get("camp", -1)), joueurs.map(func(j: Variant) -> String: return str(j.get("id", "")) if j is Dictionary else ""))
+	_tenir_xv.call_deferred()
+	return true
 
 ## Ligne de tableau (24 px à 1920) : bouton plat, filet entre les lignes (pas de bandes), survol `PANNEAU_2`,
 ## focus `PANNEAU_3` rayon 6 avec l'anneau doré ; son contenu est une rangée de cellules.
