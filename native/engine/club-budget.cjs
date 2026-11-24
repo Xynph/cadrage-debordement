@@ -332,10 +332,21 @@ function spectateurs({ capacite, resultats, cle = '', accueil = 1, phase = 'leag
 const TRAIN_DE_VIE = 0.7;
 // Épargne du championnat (league-economy.cjs, epargne) : part des recettes que le train de vie ne dépense jamais ; elle
 // sert de plancher à la marge (la plus haute des deux compte), pour le club du manager comme pour les clubs gérés.
+// depense : ce que la saison a déjà coûté hors budget (indemnités de transfert, entretien des installations ; positif) :
+// là où le championnat épargne, le train de vie ne le dépense pas une deuxième fois (24/11/2026, Pro D2, graine 4242 :
+// un club à 22 % de salaires payait 0,73 M€ d'indemnités et son train de vie dépensait encore 0,39 M€ : -33 000 €).
 const epargne = (division, annuel) => Math.max(0, (ECONOMIE.CHAMPIONNATS[division]?.epargne ?? 0) * (Number.isFinite(annuel) ? annuel : 0));
-const margeTrain = (division, annuel, marge = 0) => Math.max(Number.isFinite(marge) ? marge : 0, epargne(division, annuel));
-function ajustement(annuel, masseAnnuelle, enveloppe, marge = 0) {
-  const resultat = annuel - fonctionnementAnnuel(annuel) - masseAnnuelle * (1 + COTISATIONS);
+const margeTrain = (division, annuel, marge = 0, depense = 0) => Math.max(Number.isFinite(marge) ? marge : 0, epargne(division, annuel)) +
+  (epargne(division, annuel) > 0 && Number.isFinite(depense) ? Math.max(0, depense) : 0);
+// objectif : excédent que vise un club géré par le jeu (cibleGestion > 0 : association, entreprise d'un championnat encadré) :
+// sous cet objectif, il réduit son fonctionnement de ce qui lui manque (au plus 15 % des recettes) au lieu d'attendre que sa perte dépasse
+// l'enveloppe du propriétaire, qui reste le filet d'un coup dur (décision de Léo du 24/11/2026 ; graine 2026, Pro D2 : une
+// entreprise dont les recettes avaient baissé gardait 31 % de salaires et finissait à -0,21 M€, la perte « comblée »).
+// ecart : ce que la saison a déjà changé à ce résultat (prime de classement attendue au rang du moment moins la prime moyenne,
+// dépenses hors budget) : un club en bas du tableau ou qui a payé une indemnité se serre la ceinture pour tenir son objectif.
+function ajustement(annuel, masseAnnuelle, enveloppe, marge = 0, objectif = 0, ecart = 0) {
+  const resultat = annuel - fonctionnementAnnuel(annuel) - masseAnnuelle * (1 + COTISATIONS), connu = resultat + (Number.isFinite(ecart) ? ecart : 0);
+  if (Number.isFinite(objectif) && objectif > 0 && connu < objectif) return -Math.min(0.15 * annuel, objectif - connu);
   if (resultat > 0) return TRAIN_DE_VIE * Math.max(0, resultat - Math.max(0, Number.isFinite(marge) ? marge : 0));
   const economies = Math.min(0.15 * annuel, 0.7 * Math.max(0, -resultat - enveloppe));
   return economies > 0 ? -economies : 0;
@@ -353,7 +364,8 @@ function cibleGestion(forces, clubId, typeConnu = null) {
   if (!championnat?.encadrement || !championnat.gestion) return 0;
   const { annuel } = regleDe(forces, clubId), p = proprietaire(forces, clubId, typeConnu), regle = championnat.gestion[p.type], u = unite('gestion|' + clubId);
   if (!regle) return 0;
-  return p.type === 'association' ? rond(annuel * (regle.min + regle.ecart * u)) : -rond(p.enveloppe * (regle.min + regle.ecart * u));
+  // sur 'recettes' : excédent visé (association ; entreprise depuis le 24/11/2026) ; sur 'enveloppe' : perte que le propriétaire comble.
+  return (regle.sur ?? (p.type === 'association' ? 'recettes' : 'enveloppe')) === 'recettes' ? rond(annuel * (regle.min + regle.ecart * u)) : -rond(p.enveloppe * (regle.min + regle.ecart * u));
 }
 
 // Masse salariale annuelle qu'un club s'autorise : la plus basse de trois bornes — le plafond de la
@@ -377,7 +389,7 @@ function limites(forces, saison, { creation = false, types = null, credits = nul
     // Marge de prudence (prudence, part des recettes, league-economy.cjs) : la saison réelle coûte plus que le budget voté
     // (recrues et jokers en cours de saison) ; un championnat encadré peut demander que la masse en tienne compte.
     // Suite (#885 → ici) : la borne suit la gestion propre du club (cibleGestion) au lieu de l'enveloppe entière du propriétaire.
-    const economies = regle.encadrement ? 0 : 0.15 * annuel, prudence = (regle.prudence ?? 0) * annuel, aPerdre = regle.encadrement && regle.gestion ? -cibleGestion(forces, force.id, p.type) : p.enveloppe;
+    const economies = regle.encadrement ? 0 : 0.15 * annuel, prudence = (regle.prudence ?? 0) * annuel, aPerdre = regle.encadrement && regle.gestion?.[p.type] ? -cibleGestion(forces, force.id, p.type) : p.enveloppe;
     const rembourse = Number.isFinite(remboursements?.[force.id]) ? Math.max(0, remboursements[force.id]) : 0;
     const bornes = [['budget', (annuel - fonctionnementAnnuel(annuel) - prudence + aPerdre + economies - rembourse) / (1 + COTISATIONS)]];
     const credit = credits?.[force.id] ?? 0;
@@ -404,7 +416,7 @@ function limites(forces, saison, { creation = false, types = null, credits = nul
 //     domicile, sinon null) : Abonnements = abonnementsHebdo, Billetterie = guichet ; sans billets (anciens appels), l'ancienne part des recettes.
 //   staff : {annuel, reference} (masseStaff) : Salaires du staff (cotisations comprises dans Cotisations) et fonctionnement
 //     du club = enveloppe − staff de référence ; sans staff, une seule ligne « Staff et fonctionnement » comme avant.
-function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle, resultats, phase = 'league', neutre = false, receptions, gere = false, repere = '', formation = null, investissement = 0, accueil = 1, marge = 0, aideRelegation: aide = 0, remboursement = 0, humeur = null, billets = null, staff = null }) {
+function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle, resultats, phase = 'league', neutre = false, receptions, gere = false, repere = '', formation = null, investissement = 0, accueil = 1, marge = 0, depense = 0, classement = null, aideRelegation: aide = 0, remboursement = 0, humeur = null, billets = null, staff = null }) {
   const { force, regle, annuel, modele } = regleDe(forces, clubId);
   if (!Number.isInteger(semaines) || semaines < 1) throw Error('Budget de club : nombre de semaines invalide.');
   const salaires = rond(masseHebdo * 52 / semaines), matchs = Math.max(1, receptions ?? Math.round(semaines / 2));
@@ -428,7 +440,10 @@ function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle
   } else if (neutre) {
     ecritures.push({ title: libelle + ' · Part de recette de phase finale', amount: rond(regle.moyenne * regle.billetterie / matchs * PART_TERRAIN_NEUTRE) });
   }
-  const train = gere ? ajustement(annuel, masseHebdo * 52, proprietaire(forces, clubId).enveloppe, margeTrain(force.division, annuel, marge)) : 0;
+  // Club géré qui vise un excédent : prime attendue à son rang du moment (classement : {rang, taille}) et dépenses hors budget.
+  const rangConnu = marge > 0 && Number.isInteger(classement?.rang) && Number.isInteger(classement?.taille) && classement.taille >= 2 && classement.rang >= 1 && classement.rang <= classement.taille;
+  const ecart = (rangConnu ? primeClassement(force.division, classement.rang, classement.taille) - rond(regle.moyenne * regle.ligue * PART_PRIME) : 0) - (marge > 0 && Number.isFinite(depense) ? Math.max(0, depense) : 0);
+  const train = gere ? ajustement(annuel, masseHebdo * 52, proprietaire(forces, clubId).enveloppe, margeTrain(force.division, annuel, marge, depense), marge, ecart) : 0;
   const centre = centreFormation(annuel, force.division, formation);
   ecritures.push({ title: libelle + ' · Salaires des joueurs', amount: -salaires });
   if (staff && Number.isFinite(staff.annuel) && Number.isFinite(staff.reference)) {
@@ -578,11 +593,11 @@ function prevision({ forces, clubId, compte, tresorerie, masseHebdo, semaines, r
   const guichetMatch = (reels ? billets.attendu : modele * regle.billetterie * (1 - PART_ABONNEMENTS) / Math.max(1, receptions)) + modele * regle.boutique / Math.max(1, receptions);
   const recettesPrevues = rond(compte.recettes + fixes * reste + guichetMatch * receptionsRestantes + prime);
   const ecartStaff = staff && Number.isFinite(staff.annuel) && Number.isFinite(staff.reference) ? (staff.annuel - staff.reference) * (1 + COTISATIONS) : 0;
-  const fonctionnement = fonctionnementAnnuel(annuel) + ajustement(annuel, masseHebdo * 52, compte.enveloppe, margeTrain(division, annuel)) + (Number.isFinite(compte.investissement) ? compte.investissement : 0) + ecartStaff;
-  const chargesPrevues = rond(compte.charges + (masseHebdo * 52 / semaines * (1 + COTISATIONS) + fonctionnement / semaines) * reste);
   // Transferts, primes de signature, travaux : tout ce qui a bougé la caisse hors du budget courant.
   const rembourse = Number.isFinite(compte.rembourse) ? compte.rembourse : 0, aRembourser = Math.max(0, (Number.isFinite(compte.remboursement) ? compte.remboursement : 0) - rembourse);
   const horsBudget = rond(tresorerie - compte.depart - (compte.recettes - compte.charges) + rembourse);
+  const fonctionnement = fonctionnementAnnuel(annuel) + ajustement(annuel, masseHebdo * 52, compte.enveloppe, margeTrain(division, annuel, 0, -horsBudget)) + (Number.isFinite(compte.investissement) ? compte.investissement : 0) + ecartStaff;
+  const chargesPrevues = rond(compte.charges + (masseHebdo * 52 / semaines * (1 + COTISATIONS) + fonctionnement / semaines) * reste);
   const ligue = regles({ division, masseAnnuelle, recettes: recettesPrevues });
   const resultatPrevu = rond(recettesPrevues - chargesPrevues + horsBudget - ligue.amende);
   const apportPrevu = apportProprietaire(compte, Math.max(0, -resultatPrevu), compte.depart + resultatPrevu).apport;
@@ -990,8 +1005,11 @@ function budgetOuvrir(annoncer,nouvelleSaison=false){
 }
 function budgetEtat(){if(!budgetLisible(S.clubBudget)||S.clubBudget.saison!==S.season)budgetOuvrir(false);return S.clubBudget;}
 // rencontre : {pair:[domicile,extérieur], neutral, phase, id, affluence} ou null. Une poule européenne compte comme une journée ordinaire.
-function budgetSemaine(forces,repere,c,rencontre,libelle){
- const b=budgetEtat(),masse=budgetMasse(c),billets=budgetBillets(c,rencontre,repere);
+// caisse : trésorerie du club avant la semaine (par défaut c.cash) ; ce qui l'a fait bouger hors budget depuis l'ouverture
+// (indemnités, entretien) est la dépense que le train de vie ne refait pas (margeTrain).
+function budgetSemaine(forces,repere,c,rencontre,libelle,caisse=c.cash){
+ const b=budgetEtat(),masse=budgetMasse(c),billets=budgetBillets(c,rencontre,repere),k=b.clubs[c.id];
+ const depense=Number.isFinite(caisse)?-(caisse-k.depart-(k.recettes-k.charges)+(Number.isFinite(k.rembourse)?k.rembourse:0)):0;
  const ecritures=budgetCopie(nativeClubBudget.semaine({forces,clubId:c.id,masseHebdo:masse,semaines:wageForecastWeeks(),receptions:repere.receptions[c.id]||12,
   domicile:!!rencontre&&rencontre.pair[0]===c.id,neutre:!!rencontre&&rencontre.neutral===true,phase:!rencontre||rencontre.phase==='pool'?'league':rencontre.phase,resultats:c.form.slice(-5),
   // Même train de vie pour le club joué que pour les clubs gérés (décision de Léo du 12 novembre) :
@@ -999,7 +1017,7 @@ function budgetSemaine(forces,repere,c,rencontre,libelle){
   // au-delà de l'enveloppe du propriétaire est réduit par des économies.
   repere:S.season+'|'+budgetSemaineNo(),gere:true,libelle,formation:budgetCentre(c),investissement:b.clubs[c.id].investissement||0,aideRelegation:b.clubs[c.id].aideRelegation||0,remboursement:b.clubs[c.id].remboursement||0,
   // Clubs gérés d'un championnat encadré : l'excédent que vise leur budget n'est pas dépensé (le club joué fait ses propres choix).
-  marge:c.id===S.club?0:Math.max(0,nativeClubBudget.cibleGestion(forces,c.id,b.clubs[c.id].type)),
+  marge:c.id===S.club?0:Math.max(0,nativeClubBudget.cibleGestion(forces,c.id,b.clubs[c.id].type)),depense,classement:repere.classement[c.id]||null,
   // Accueil du stade relevé par les investissements des excédents (club-investments.cjs).
   accueil:typeof investAccueil==='function'?nativeClubInvestments.facteurAccueil(investAccueil(c.id)):1,
   // Humeur des supporters du club du manager (club-strategy.cjs) : public payant de ses réceptions.
@@ -1037,7 +1055,7 @@ worldWeeklyEconomy=function(results){
  for(const c of S.clubs){
   if(c.id===S.club)continue;
   const rencontre=results.find(r=>r.pair.includes(c.id))||null;
-  c.cash=avant[c.id]-worldUpkeep(worldClub(c.id).facilities)+budgetSemaine(forces,repere,c,rencontre,'').reduce((s,e)=>s+e.amount,0);
+  c.cash=avant[c.id]-worldUpkeep(worldClub(c.id).facilities)+budgetSemaine(forces,repere,c,rencontre,'',avant[c.id]).reduce((s,e)=>s+e.amount,0);
  }
  return true;
 };

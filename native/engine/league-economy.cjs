@@ -14,14 +14,20 @@
 // reserve    : réserve de trésorerie propre au championnat ({min, ecart} en part des recettes), sinon la règle générale.
 // prudence   : part des recettes que la masse encadrée laisse aux dépenses de la saison non votées (recrues, jokers).
 // gestion    : championnat encadré seulement : résultat que vise le budget de chaque club, selon son propriétaire.
-//              association : excédent de min à min + ecart des recettes (le « bon élève » qui reconstitue ses fonds propres) ;
-//              entreprise, mécène : part de l'enveloppe du propriétaire que le club s'autorise à perdre (min à min + ecart).
-//              Propre à chaque club et stable d'une saison à l'autre (voir club-budget.cjs, cibleGestion).
+//              sur 'recettes' (défaut de l'association) : excédent visé de min à min + ecart des recettes ;
+//              sur 'enveloppe' (défaut de l'entreprise et du mécène) : part de l'enveloppe du propriétaire que le club s'autorise
+//              à perdre (min à min + ecart). Un type absent garde la règle des championnats encadrés sans gestion (il prévoit
+//              l'enveloppe entière). Propre à chaque club et stable d'une saison à l'autre (voir club-budget.cjs, cibleGestion).
+//              Décision de Léo du 24/11/2026 (« c'est un jeu vidéo, pas un enfer ») : un club d'entreprise géré par le jeu ne vise
+//              plus de perte (Pro D2 et Nationale : équilibre à 3 % d'excédent) ; l'enveloppe de l'actionnaire reste un
+//              filet en cas de coup dur (apport du propriétaire à la clôture), pas une cible. Mesure (saisons Monde réelles,
+//              graines 4242, 7 et 2026) : une entreprise de Pro D2 visait -0,03 à -0,52 M€ et finissait jusqu'à -0,77 M€.
 // engagementMax : part des recettes qu'un club engage au plus par saison sur sa trésorerie au-delà de sa réserve
 //              (investissements et dividende) ; le reste attend les saisons suivantes. Sinon, sans limite.
 // epargne    : part des recettes que le train de vie d'un club ne dépense jamais (club du manager compris) : elle reste pour
 //              les dépenses que le budget voté ne prévoit pas (recrues et indemnités en cours de saison, prime de classement
-//              sous la moyenne). Sinon 0. Pro D2 (mesure du 24/11/2026, saison Monde réelle, graines 4242, 7 et 2026) : le train de
+//              sous la moyenne). Sinon 0. Là où elle existe, le train de vie ne dépense pas non plus ce que la saison a déjà
+//              coûté hors budget (indemnités de transfert payées, entretien des installations : club-budget.cjs, margeTrain). Pro D2 (mesure du 24/11/2026, saison Monde réelle, graines 4242, 7 et 2026) : le train de
 //              vie dépensait 70 % de l'excédent prévu d'un club à la masse prudente (salaires des joueurs sous 27 % des recettes),
 //              qui finissait dans le rouge dès qu'il recrutait en cours de saison ou finissait dans le bas du classement
 //              (-0,04 à -0,31 M€ ; club du manager, billetterie confiée au staff : -0,04 M€).
@@ -40,6 +46,10 @@
 // pas une trésorerie qu'il n'a pas, et un relégué de Pro D2 (5 à 7 M€ de recettes, 2 à 3,6 M€ en caisse) garde son
 // matelas ; marge de prudence de 2,5 % des recettes : la saison coûtait ~5 % de plus que le budget voté et
 // presque aucun club ne finissait dans le vert (réel : le meilleur à +0,02 M€, le jeu en garde quelques-uns).
+// Saison de la remontée (24/11/2026, graine 2026 : club du manager relégué de Pro D2, 2e de Nationale, -0,11 M€) : il arrivait
+// avec sa caisse de Pro D2 au-dessus de la réserve de Nationale ; 0,44 M€ en étaient engagés d'un coup (dont 0,22 M€
+// d'investissements comptés dans la saison) et le train de vie dépensait 70 % de l'excédent prévu : rien ne restait pour une
+// prime de classement ou des recrues. Même règle que la Pro D2 : 2 % des recettes engagés au plus par saison, 6 % épargnés.
 // aideRelegue : aide de la ligue à un club qui descend du championnat `depuis` : montant versé chaque saison suivant la
 //              descente (versé avec la ligue, chaque semaine). Repère réel (LNR, redistribution 2025-2026, publiée le
 //              25/08/2026) : le RC Vannes, relégué du Top 14, touche une part de solidarité de 2 M€ en Pro D2, quand le
@@ -66,11 +76,12 @@ const CHAMPIONNATS = Object.freeze({
   srp: Object.freeze({ libelle: 'Championnat du Pacifique', pays: 'pacifique', reputation: 86, billet: 13, public: 0.3, masse: 2.3e6, recettes: 7.6e6, bas: 0.8, haut: 1.25, ...parts(0.28, 0.45, 0.15, 0.05, 0.07), plafond: 2.6e6, ratio: false, espoir: 'accession', source: 'plafond et salaire moyen relevés, recettes estimées' }),
   'jlo-d1': Object.freeze({ libelle: 'Première division japonaise', pays: 'japon', reputation: 78, billet: 20, public: 0.6, masse: 6.0e6, recettes: 20e6, bas: 0.7, haut: 1.5, ...parts(0.70, 0.08, 0.10, 0.04, 0.08), plafond: null, ratio: false, espoir: 'accession', source: 'estimation' }),
   accession: Object.freeze({ libelle: 'Deuxième division française', pays: 'france', reputation: 70, billet: 15, public: 0.3, masse: 3.2e6, recettes: 10.7e6, bas: 0.62, haut: 1.55, ...parts(0.48, 0.22, 0.08, 0.04, 0.18), plafond: null, ratio: true, encadrement: true, reserve: Object.freeze({ min: 0.2, ecart: 0.1 }),
-    gestion: Object.freeze({ association: Object.freeze({ min: 0.02, ecart: 0.04 }), entreprise: Object.freeze({ min: 0, ecart: 0.6 }), mecene: Object.freeze({ min: 0.8, ecart: 0.2 }) }),
+    gestion: Object.freeze({ association: Object.freeze({ min: 0.02, ecart: 0.04 }), entreprise: Object.freeze({ sur: 'recettes', min: 0, ecart: 0.03 }), mecene: Object.freeze({ min: 0.8, ecart: 0.2 }) }),
     engagementMax: 0.02, epargne: 0.06, aideRelegue: Object.freeze({ depuis: 'elite', montants: Object.freeze([600000, 300000]) }), espoir: 'accession', source: 'relevé' }),
   guest: Object.freeze({ libelle: 'Clubs invités', pays: 'autre', reputation: 70, billet: 25, public: 0.7, masse: 4.0e6, recettes: 13e6, bas: 0.9, haut: 1.1, ...parts(0.40, 0.25, 0.18, 0.06, 0.11), plafond: null, ratio: false, espoir: 'accession', source: 'estimation' }),
   'jlo-d2': Object.freeze({ libelle: 'Deuxième division japonaise', pays: 'japon', reputation: 52, billet: 14, public: 0.4, masse: 2.0e6, recettes: 6.6e6, bas: 0.7, haut: 1.4, ...parts(0.72, 0.06, 0.08, 0.04, 0.10), plafond: null, ratio: false, espoir: 'accession', source: 'estimation' }),
-  nationale: Object.freeze({ libelle: 'Troisième division française', pays: 'france', reputation: 50, billet: 10, public: 0.3, masse: 1.4e6, recettes: 4.6e6, bas: 0.6, haut: 1.6, ...parts(0.50, 0.10, 0.08, 0.04, 0.28), plafond: null, ratio: true, encadrement: true, reserve: Object.freeze({ min: 0.3, ecart: 0.15 }), prudence: 0.025, espoir: 'accession', source: 'relevé (A2R 2022-2023), niveaux 2026-2027 estimés' }),
+  nationale: Object.freeze({ libelle: 'Troisième division française', pays: 'france', reputation: 50, billet: 10, public: 0.3, masse: 1.4e6, recettes: 4.6e6, bas: 0.6, haut: 1.6, ...parts(0.50, 0.10, 0.08, 0.04, 0.28), plafond: null, ratio: true, encadrement: true, reserve: Object.freeze({ min: 0.3, ecart: 0.15 }), prudence: 0.025,
+    gestion: Object.freeze({ entreprise: Object.freeze({ sur: 'recettes', min: 0, ecart: 0.03 }) }), engagementMax: 0.02, epargne: 0.06, espoir: 'accession', source: 'relevé (A2R 2022-2023), niveaux 2026-2027 estimés' }),
   champ: Object.freeze({ libelle: 'Deuxième division anglaise', pays: 'angleterre', reputation: 48, billet: 18, public: 0.5, masse: 1.1e6, recettes: 3.6e6, bas: 0.7, haut: 1.5, ...parts(0.50, 0.06, 0.18, 0.10, 0.16), plafond: null, ratio: false, espoir: 'accession', source: 'salaire moyen relevé, recettes estimées' }),
 });
 // Seuls ces deux championnats gardent les salaires bruts de la règle : elle a été réglée sur eux.

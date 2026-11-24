@@ -17,8 +17,9 @@ test('Limites : Pro D2 (et Nationale, tests/nationale-equilibre.cjs) encadrées,
   const R = B.recettes(forces);
   for (let saison = 1; saison <= 12; saison++) for (const [id, l] of B.limites(forces, saison)) {
     const f = forces[id], c = E.CHAMPIONNATS[f.division], p = B.proprietaire(forces, id), annuel = R.get(id);
-    // Championnat encadré : la borne suit la gestion propre du club (cibleGestion), ailleurs l'enveloppe entière.
-    const aPerdre = c.encadrement && c.gestion ? -B.cibleGestion(forces, id) : p.enveloppe;
+    // Championnat encadré : la borne suit la gestion propre du club (cibleGestion) quand son championnat en donne une pour son
+    // propriétaire, sinon l'enveloppe entière.
+    const aPerdre = c.encadrement && c.gestion?.[p.type] ? -B.cibleGestion(forces, id) : p.enveloppe;
     const budget = (annuel - B.fonctionnementAnnuel(annuel) - annuel * (c.prudence ?? 0) + aPerdre + (c.encadrement ? 0 : 0.15 * annuel)) / 1.4;
     const bornes = [budget, c.plafond ?? Infinity, c.ratio ? annuel * 0.52 : Infinity];
     const attendu = Math.min(c.plafond ?? Infinity, Math.min(...bornes) * l.tolerance);
@@ -30,18 +31,27 @@ test('Limites : Pro D2 (et Nationale, tests/nationale-equilibre.cjs) encadrées,
       assert.ok(resultat >= -p.enveloppe - 0.05 * l.limite * 1.4 - 100, 'Pro D2 ' + id + ' : perte prévue ' + Math.round(resultat));
       if (p.type === 'association') assert.ok(resultat >= 0.02 * annuel * l.tolerance - 100, 'une association vise un excédent : ' + Math.round(resultat));
     }
+    // Un club d'entreprise de championnat encadré (Pro D2, Nationale) ne vote plus de perte (décision de Léo du 24/11/2026).
+    if (c.encadrement && p.type === 'entreprise') assert.ok(annuel * 0.42 - annuel * (c.prudence ?? 0) - l.limite * 1.4 >= -100, f.division + ' ' + id + ' : une entreprise ne vise plus de perte');
   }
 });
 
 test('Gestion propre à chaque club de Pro D2 : bons élèves, clubs à l’équilibre, clubs qui perdent', () => {
   const R = B.recettes(forces), pro = forces.filter(f => f.division === 'accession');
-  for (const f of forces) if (f.division !== 'accession') assert.equal(B.cibleGestion(forces, f.id), 0, f.division + ' ' + f.id + ' : aucune cible hors Pro D2');
+  // Hors championnat encadré, aucune cible ; en Nationale, seule l'entreprise en a une (excédent, 24/11/2026).
+  for (const f of forces) if (f.division !== 'accession') {
+    const cible = B.cibleGestion(forces, f.id), annuel = R.get(f.id);
+    if (f.division === 'nationale' && B.proprietaire(forces, f.id).type === 'entreprise') assert.ok(cible >= -100 && cible <= 0.03 * annuel + 100, 'Nationale ' + f.id + ' : entreprise, équilibre à 3 % d’excédent');
+    else assert.equal(cible, 0, f.division + ' ' + f.id + ' : aucune cible hors Pro D2');
+  }
   const cibles = pro.map(f => ({ ...B.proprietaire(forces, f.id), annuel: R.get(f.id), cible: B.cibleGestion(forces, f.id) }));
   for (const c of cibles) {
     // Stable d'une saison à l'autre (même club, même propriétaire) et jamais au-delà de ce que le propriétaire comble.
     assert.ok(c.cible >= -c.enveloppe - 100, c.type + ' : ' + c.cible);
     if (c.type === 'association') assert.ok(c.cible >= 0.02 * c.annuel - 100 && c.cible <= 0.06 * c.annuel + 100, 'association : excédent de 2 à 6 %');
-    else if (c.type === 'entreprise') assert.ok(c.cible <= 100 && c.cible >= -0.6 * c.enveloppe - 100, 'entreprise : 0 à 60 % de l’enveloppe');
+    // Entreprise (décision de Léo du 24/11/2026) : plus de perte visée, l'équilibre à 3 % d'excédent ; l'enveloppe de
+    // l'actionnaire reste le filet d'un coup dur (avant : 0 à 60 % de l'enveloppe perdus).
+    else if (c.type === 'entreprise') assert.ok(c.cible >= -100 && c.cible <= 0.03 * c.annuel + 100, 'entreprise : équilibre à 3 % d’excédent (' + c.cible + ')');
     else assert.ok(c.cible <= -0.8 * c.enveloppe + 100, 'mécène : 80 à 100 % de l’enveloppe');
   }
   assert.ok(new Set(cibles.map(c => c.type)).size === 3, 'les trois sortes de propriétaires en Pro D2');
@@ -51,12 +61,13 @@ test('Gestion propre à chaque club de Pro D2 : bons élèves, clubs à l’équ
   assert.ok(Math.abs(B.ajustement(10e6, 2e6, 0) - 0.7 * 1.4e6) < 1, 'sans marge (autres championnats, club joué) : règle inchangée');
 });
 
-test('Excédents d’un club de Pro D2 : 2 % des recettes engagés au plus par saison, sans limite ailleurs', () => {
+test('Excédents d’un club de Pro D2 et de Nationale : 2 % des recettes engagés au plus par saison, sans limite ailleurs', () => {
   const R = B.recettes(forces), riche = id => ({ id, cash: B.reserveCible(R.get(id), id, forces[id].division) + 3e6, masse: 2e6 });
   const o = B.ouverture({ forces, saison: 2, clubs: forces.map(f => riche(f.id)), excedents: true });
   for (const f of forces) {
     const k = o.clubs[f.id], engage = k.investissement + k.dividende;
-    if (f.division === 'accession') assert.ok(engage <= 0.02 * R.get(f.id) + 200, 'Pro D2 ' + f.id + ' : ' + engage);
+    // Nationale depuis le 24/11/2026 : un relégué de Pro D2 n'engage plus d'un coup sa caisse au-dessus de la réserve.
+    if (f.division === 'accession' || f.division === 'nationale') assert.ok(engage <= 0.02 * R.get(f.id) + 200, f.division + ' ' + f.id + ' : ' + engage);
     else assert.ok(engage >= 1.5e6, f.division + ' ' + f.id + ' : règle générale (' + engage + ')');
   }
 });
@@ -108,5 +119,78 @@ test('Moteur Monde : aucun club de Pro D2 ne vote une perte que son propriétair
     // de la Pro D2 (6 % des recettes, league-economy.cjs) pour les recrues et une prime de classement sous la moyenne.
     for (const c of saison.filter(x => x.part < 0.27)) assert.ok(c.resultat > 0, 'club ' + c.id + ' bien géré (' + c.part.toFixed(2) + ') : ' + c.resultat);
     assert.ok(saison.some(x => x.part < 0.27), 'au moins un club bien géré dans la base');
+  } finally { jeu.fermer(); }
+});
+
+// Décision de Léo du 24/11/2026 (« c'est un jeu vidéo, pas un enfer ») : un club bien géré finit dans le vert, toujours, y compris
+// la saison de la remontée ; un club d'entreprise géré par le jeu ne vise plus de perte. Mesures (saisons Monde réelles, graines
+// 4242, 7 et 2026) : club du manager relégué puis 2e de Nationale -114 000 € (0,44 M€ de sa caisse de Pro D2 engagés d'un coup,
+// train de vie à 70 % de l'excédent) ; club d'entreprise à 22 % de salaires -33 000 € (0,73 M€ d'indemnités de transfert, train
+// de vie qui dépensait encore 0,39 M€).
+test('Saison de la remontée et club d’entreprise : un club bien géré finit dans le vert', () => {
+  const jeu = ouvrir({ hebdomadaire: true, testVm: true });
+  try {
+    creer(jeu, 29);
+    const lire = s => JSON.parse(jeu.bridge.vm.run('JSON.stringify(' + s + ')'));
+    // Saison projetée par le vrai budget du moteur, comme budgetSemaine : comptes d'une nouvelle saison (excédents engagés),
+    // dépense hors budget (indemnité payée la semaine 5), frais de match, clôture. id : club ; vers : division de la saison ;
+    // part : masse en part des recettes (sinon la limite du club dans la division) ; surplus : caisse au-dessus de la réserve
+    // de la division, en part des recettes. Le club déplacé a la billetterie du modèle de sa nouvelle division ; il reçoit une
+    // fois chaque adversaire (taille - 1 réceptions, pas une semaine sur deux de toute la saison).
+    const projeter = ({ id, vers, part = null, surplus = 0, rang, forme, indemnite = 0, joue = false }) => lire(`(()=>{
+      const id=${id},vers='${vers}',f=budgetForces().map(x=>x.id===id?{id,division:vers,base:x.base}:x),repere=budgetRepere(),n=wageForecastWeeks(),types=budgetTypes();
+      const R=nativeClubBudget.recettes(f).get(id),taille=f.filter(x=>x.division===vers).length,limite=nativeClubBudget.limites(f,2,{types}).get(id).limite,c=S.clubs.find(x=>x.id===id);
+      const masse=${part === null ? 'limite' : 'Math.round(' + part + '*R)'},depart=nativeClubBudget.reserveCible(R,id,vers)+${surplus}*R;
+      const compte=nativeClubBudget.ouverture({forces:f,saison:2,clubs:[{id,cash:depart,masse}],types,excedents:true}).clubs[0];
+      let tresor=compte.depart;for(let w=0;w<n;w++){
+        if(w===5)tresor-=${indemnite}*R;
+        const depense=-(tresor-compte.depart-(compte.recettes-compte.charges));
+        const e=nativeClubBudget.semaine({forces:f,clubId:id,masseHebdo:masse/52,semaines:n,receptions:taille-1,domicile:w%2===0&&w/2<taille-1,resultats:'${forme}'.split(''),repere:'test|'+w,gere:true,
+          formation:budgetCentre(c),investissement:compte.investissement,marge:${joue}?0:Math.max(0,nativeClubBudget.cibleGestion(f,id,compte.type)),depense,classement:{rang:${rang},taille}});
+        const fr=nativeClubBudget.fraisDeMatch(compte,nativeClubBudget.recettesImprevues(e,{forces:f,clubId:id,receptions:taille-1}),nativeClubBudget.deficitPrevu(f,id,masse));
+        compte.imprevu=fr.imprevu;compte.fraisMatch=fr.fraisMatch;if(fr.montant>0)e.push({title:'frais',amount:-fr.montant});
+        nativeClubBudget.compter(compte,e,masse);tresor+=e.reduce((s,x)=>s+x.amount,0);}
+      const r=nativeClubBudget.cloture({division:vers,compte,tresorerie:tresor,rang:${rang},taille,joue:${joue}});
+      return {id,type:compte.type,recettes:Math.round(R),masse,limite,engage:compte.investissement+compte.dividende,resultat:r.resultat};})()`);
+    // 1. Saison de la remontée (graine 2026) : le club du manager, relégué de Pro D2, arrive en Nationale avec 27 % de salaires et
+    // sa caisse de Pro D2, 10 % des recettes au-dessus de la réserve ; 2e sur 14, il remonte et finit dans le vert, sans engager
+    // sa caisse d'un coup. Avant : tout l'excédent de caisse engagé, train de vie à 70 % de l'excédent prévu, saison dans le rouge.
+    const remontee = projeter({ id: 29, vers: 'nationale', part: 0.27, surplus: 0.1, rang: 2, forme: 'VVVDV', joue: true });
+    console.log('Saison de la remontée : ' + JSON.stringify(remontee));
+    assert.ok(remontee.engage <= 0.02 * remontee.recettes + 200, 'caisse de Pro D2 engagée au plus à 2 % des recettes : ' + remontee.engage);
+    assert.ok(remontee.resultat > 0, 'remontée de Nationale dans le vert : ' + remontee.resultat);
+    // Même saison au milieu du tableau (7e sur 14) : toujours dans le vert.
+    const milieu = projeter({ id: 29, vers: 'nationale', part: 0.27, surplus: 0.1, rang: 7, forme: 'VDVDN', joue: true });
+    assert.ok(milieu.resultat > 0, 'relégué bien géré, milieu de tableau de Nationale, dans le vert : ' + milieu.resultat);
+    // 2. Première saison de Pro D2 après la montée : masse de Nationale relevée par les primes d'accession (27 % des recettes de
+    // Nationale + 20 %, le maximum des clauses), 12e sur 16 en petite forme : dans le vert.
+    const montee = projeter({ id: 29, vers: 'accession', part: 1.2 * 0.27 * remontee.recettes / lire(`nativeClubBudget.recettes(budgetForces()).get(29)`), surplus: 0.1, rang: 12, forme: 'DDVDD', joue: true });
+    console.log('Première saison en Pro D2 après la montée : ' + JSON.stringify(montee));
+    assert.ok(montee.resultat > 0, 'promu bien géré dans le vert : ' + montee.resultat);
+    // 3. Clubs d'entreprise gérés par le jeu, à leur limite de Pro D2 (ils ne visent plus de perte), 8e : dans le vert.
+    const entreprises = lire(`(()=>{const t=budgetTypes(),R=nativeClubBudget.recettes(budgetForces());return S.clubs.filter(c=>budgetLigue(c.id)==='accession'&&t[c.id]==='entreprise'&&c.id!==S.club)
+      .map(c=>[c.id,R.get(c.id)]).sort((a,b)=>Math.abs(a[1]-10.7e6)-Math.abs(b[1]-10.7e6)).map(x=>x[0]);})()`);
+    assert.ok(entreprises.length >= 3, 'des clubs d’entreprise en Pro D2');
+    for (const id of entreprises) {
+      const r = projeter({ id, vers: 'accession', rang: 8, forme: 'VDVDN' });
+      assert.ok(r.resultat > 0, 'entreprise ' + id + ' à sa limite, 8e : ' + JSON.stringify(r));
+    }
+    // 4. Club d'entreprise bien géré (22 % de salaires, recettes proches de la moyenne) qui paie en cours de saison une indemnité
+    // de transfert de 8 % de ses recettes, 10e (graine 4242, club 23 : 0,73 M€) : son train de vie ne dépense pas l'indemnité une
+    // deuxième fois, il finit dans le vert.
+    const indemnite = projeter({ id: entreprises[0], vers: 'accession', part: 0.22, rang: 10, forme: 'VDVDN', indemnite: 0.08 });
+    console.log('Entreprise à 22 % de salaires, indemnité de 8 % : ' + JSON.stringify(indemnite));
+    assert.ok(indemnite.resultat > 0, 'indemnité payée, train de vie retenu : ' + indemnite.resultat);
+    // 5. Club d'entreprise dont la masse dépasse ce qu'il s'autorise (recettes en baisse, contrats en cours : 31 %), 10e (graine
+    // 2026, club 23 : -0,21 M€) : il réduit son fonctionnement pour viser l'équilibre au lieu de perdre l'enveloppe de l'actionnaire.
+    const lourd = projeter({ id: entreprises[0], vers: 'accession', part: 0.31, rang: 10, forme: 'VDVDN' });
+    console.log('Entreprise à 31 % de salaires : ' + JSON.stringify(lourd));
+    assert.ok(lourd.resultat > 0, 'entreprise au-dessus de sa limite, ramenée dans le vert : ' + lourd.resultat);
+    // 6. Clubs d'entreprise à leur limite, derniers (16e, la plus petite prime de classement : -0,47 M€ par rapport à la moyenne) :
+    // ils voient leur rang et réduisent leur fonctionnement ; l'enveloppe de l'actionnaire n'est qu'un filet.
+    for (const id of entreprises) {
+      const r = projeter({ id, vers: 'accession', rang: 16, forme: 'DDDDD' });
+      assert.ok(r.resultat > 0, 'entreprise ' + id + ' à sa limite, dernière : ' + JSON.stringify(r));
+    }
   } finally { jeu.fermer(); }
 });
