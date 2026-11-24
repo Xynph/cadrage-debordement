@@ -5,11 +5,17 @@ Numéros de ligne approximatifs (au 24/11/2026) : relancer carte-code.cjs avant 
 ## Navigation et coque
 | Écran | Fichier(s) | Entrée |
 |---|---|---|
-| Routes, historique | `main.gd` (NAV_CHAPTERS ~L101) | `_navigate` L815, `_render_screen` L904 |
+| Coque : état, noms publics (façades) | `main.gd` (NAV_CHAPTERS ~L59, variables ~L67) | façades d'une ligne vers les modules `main_*.gd` |
+| Routes, historique | `main_navigation.gd` | `navigate` L9 (façade `main.gd` `_navigate`) |
+| Rendu d'un écran, rail, en-tête | `main_rendu.gd` | `render_screen` L37, `build_sidebar` L271, `update_live_bar` L343 |
+| Bouton principal « Continuer » | `main_navigation.gd` | `primary_text` L133, `primary_action` L150 |
+| Commandes et réponses du moteur | `main_moteur.gd` | `receive` L23, `send_command` L161, `failed` L290, `live_tick` L354 |
+| Panneau d'attente, ligne d'état | `main_etat.gd` | `command_wait_context` L109, `settled_status_text` L170 |
+| Démarrage de la coque | `main_demarrage.gd` | `ready` L14 |
 | Coque : rail + barre haute | `ui/immersive08/shell.gd` | `render` L85, `_topbar` ~L910, `_dedicated_page` L322 |
 | Page par route | `ui/immersive08/shell.gd` | `_existing_page` ~L1505 (match sur `app.route`) |
 | Raccourcis clavier | `ui/navigation_controller.gd`, `ui/raccourcis_clavier.gd` | `handle_shortcut` |
-| Menu pause, réglages | `ui/preferences_dialog.gd`, `main.gd` | `pause_menu` |
+| Menu pause, réglages | `ui/preferences_dialog.gd`, `main_dialogues.gd` | `pause_menu` L60, `confirm` L39, `file_selected` L96 |
 | Recherche (Ctrl K) | `ui/immersive08/search_canvas.gd` | `build` L17 |
 | Calendrier du mois | `ui/immersive08/training_mois.gd`, `calendar_agenda.gd` | `ouvrir` L75 |
 
@@ -76,7 +82,7 @@ Numéros de ligne approximatifs (au 24/11/2026) : relancer carte-code.cjs avant 
 | Consignes / banc / équipe en direct | `ui/contextual/match_consignes_fenetre.gd`, `match_banc_fm.gd`, `match_equipe.gd` | `ouvrir_fenetre_consignes` (live_view L1861) |
 | Après-match | `ui/contextual/apres_match.gd` | `_ready` L71 |
 | Chef de scène (pièces, direct) | `ui/contextual/director.gd` | `open_room` L254 |
-| Presse après match | `ui/immersive08/conference_presse.gd` | `main.gd` `_open_postmatch_press` |
+| Presse après match | `ui/immersive08/conference_presse.gd` | `main_navigation.gd` `open_postmatch_press` L72 |
 
 ## Hors coque
 | Écran | Fichier(s) | Entrée |
