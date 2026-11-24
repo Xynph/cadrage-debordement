@@ -307,7 +307,7 @@ static func _gabi(view: Control, page: Control) -> void:
 	if not delegation.is_empty():
 		if bool(delegation.get("allowed", false)):
 			var w := Pieces.pastille(page, x, y, "Laisser Gabi répondre", "people", "PressDelegateCard", "", Charte.IVOIRE_2)
-			Pieces.rendre_cliquable(page.get_node("PressDelegateCard"), Vector2(w, 34), func(): view._delegate(), "PressDelegate", "Laisser Gabi répondre", "", Charte.RAYON_PILULE)
+			Pieces.rendre_cliquable(page.get_node("PressDelegateCard"), Vector2(w, 34), func(): view._delegate(), "PressDelegate", "Laisser Gabi répondre", "", Charte.RAYON_PILULE).set_meta("contextual_enabled", true)
 			x += w + 24
 		else:
 			x += Pieces.pastille(page, x, y, "En personne", "warning", "PressDelegateReason", "", Charte.DORE) + 24
@@ -319,7 +319,7 @@ static func _gabi(view: Control, page: Control) -> void:
 		var cle: String = option[0]
 		var actif: bool = str(reglage.get("ordinary", "moi")) == cle
 		var w := Pieces.pastille(page, x, y, option[1], option[2], "PressPolicyChip_" + cle, "", Charte.ENCRE if actif else Charte.IVOIRE_2, Charte.GAIN if actif else Charte.PANNEAU_3)
-		if not actif: Pieces.rendre_cliquable(page.get_node("PressPolicyChip_" + cle), Vector2(w, 34), func(): view._set_policy(cle), "PressPolicy_" + cle, option[1], "", Charte.RAYON_PILULE)
+		if not actif: Pieces.rendre_cliquable(page.get_node("PressPolicyChip_" + cle), Vector2(w, 34), func(): view._set_policy(cle), "PressPolicy_" + cle, option[1], "", Charte.RAYON_PILULE).set_meta("contextual_enabled", true)
 		x += w + 10
 
 # --- Droite : réponses -----------------------------------------------------------------------------------------------
@@ -352,7 +352,7 @@ static func _reponses(view: Control, page: Control, q: Dictionary, choix: Dictio
 			elif dite.is_empty():
 				var qid := str(q.get("id", ""))
 				var rid := str(r.get("id", ""))
-				Pieces.rendre_cliquable(carte, Vector2(1102, h), func(): view._choose_answer(qid, rid), "PressAnswer_%s_%s" % [qid, rid], str(ton[0]), "", Charte.RAYON_CARTE)
+				Pieces.rendre_cliquable(carte, Vector2(1102, h), func(): view._choose_answer(qid, rid), "PressAnswer_%s_%s" % [qid, rid], str(ton[0]), "", Charte.RAYON_CARTE).set_meta("contextual_enabled", true)
 			y += h + 8
 		y += 10
 

@@ -266,13 +266,29 @@ func press_flow() -> bool:
 	await refused("press_conference",stale)
 	check(director.view.choices.size() == payload.answers.size() - 1,"Worker refusal preserves the prepared answers")
 	var last: Dictionary = payload.answers[payload.answers.size() - 1]
+	# Envoi fiable (Léo, 24/11/2026) : disque réellement bloqué au premier envoi ; le jeu relance seul les mêmes
+	# réponses dès que le disque répond, sans bouton, et la conférence n'est publiée qu'une fois.
+	var history_before: int = app.model.clubLife.press.history.size()
+	var blocked := block_disk()
 	press_button("PressAnswer_" + str(last.questionId) + "_" + str(last.answerId))
 	check(app.waiting and app.last_command == "press_conference","Publish uses actual public command bookkeeping")
 	var all_disabled := true
 	for control in director.overlay.find_children("*","BaseButton",true,false):
 		if control.has_meta("contextual_enabled") and not control.disabled: all_disabled = false
 	check(all_disabled,"Conference actions disable while the real worker is pending")
-	await wait_command("press_conference")
+	await wait_command("press_conference", true)
+	check(not app.bridge.last_response_ok and not meeting().completed,"Real disk failure refuses the first send")
+	var answer_enabled := false
+	for control in director.view.find_children("PressAnswer_*","BaseButton",true,false):
+		if not control.disabled: answer_enabled = true
+	check(director.view._request_in_flight and not answer_enabled,"Refused send stays pending, with no button to press")
+	unblock_disk(blocked)
+	var retry_deadline := Time.get_ticks_msec() + 20000
+	while not (meeting().get("completed", false) and not app.waiting) and Time.get_ticks_msec() < retry_deadline: await process_frame
+	await settle()
+	check(app.bridge.last_response_ok and app.last_command == "press_conference","The game resends the conference by itself")
+	check(app.model.clubLife.press.history.size() == history_before + payload.answers.size(),"Answers are published exactly once")
+	check(str(director.error_label.text).is_empty() or not director.error_label.is_visible_in_tree(),"No refusal phrase remains after the automatic resend")
 	check(str(meeting().id) == id and meeting().completed,"Accepted conference authoritatively completes the persisted press appointment")
 	check(app.model.clubLife.press.lastOutcome.context == payload.context,"Outcome is from this real career context")
 	var history_size: int = app.model.clubLife.press.history.size()
@@ -508,3 +524,24 @@ func run() -> void:
 	await medical_flow()
 	await priorities_and_context()
 	await finish()
+
+## Disque bloqué pour de vrai : dossiers à la place du secours et du journal d'actions (originaux mis à l'abri).
+func block_disk() -> Dictionary:
+	var dir := str(app.model.meta.dataDir)
+	var saved := {}
+	for name in ["donnees-precedentes.json", "journal-actions.jsonl"]:
+		var path := dir.path_join(name)
+		if FileAccess.file_exists(path):
+			saved[path] = FileAccess.get_file_as_bytes(path)
+			check(DirAccess.remove_absolute(path) == OK, "Disk fixture sets aside " + name)
+		check(DirAccess.make_dir_absolute(path) == OK, "Disk fixture blocks " + name)
+	return {"dir":dir, "saved":saved}
+
+func unblock_disk(blocked: Dictionary) -> void:
+	for name in ["donnees-precedentes.json", "journal-actions.jsonl"]:
+		var path := str(blocked.dir).path_join(name)
+		check(DirAccess.remove_absolute(path) == OK, "Disk fixture unblocks " + name)
+		if blocked.saved.has(path):
+			var file := FileAccess.open(path, FileAccess.WRITE)
+			file.store_buffer(blocked.saved[path])
+			file.close()

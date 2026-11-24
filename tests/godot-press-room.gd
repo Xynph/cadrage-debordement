@@ -161,19 +161,33 @@ func run() -> void:
 	check(sent.payload.answers.size() == questions.size() and not sent.payload.has("tone"), "complete ordered answers and no tone parameter")
 	for index in questions.size():
 		check(sent.payload.answers[index] == {"questionId":questions[index].id,"answerId":questions[index].answers[1].id}, "actual question order preserved in payload")
-	# Boutons de la conférence en un clic (#1202) : ceux qui agissent (réponse, adjoint, réglage) sont refusés pendant
-	# l'envoi ; les petites fenêtres d'information (…Open) restent consultables.
+	# Pendant l'envoi, tout ce qui agit est grisé, adjoint et réglage compris (Léo, 24/11/2026). Projection de rendu où
+	# l'adjoint est proposé, pour voir ses deux pastilles pendant l'envoi.
+	var with_delegate := career.duplicate(true)
+	with_delegate.clubLife.press.conference.delegation = {"allowed":true}
+	with_delegate.clubLife.press.policy = {"ordinary":"moi"}
+	view.update_frame(with_delegate, metadata)
+	await settle()
+	for name_: String in ["PressDelegate", "PressPolicy_adjoint"]:
+		var grey: BaseButton = view.find_child(name_, true, false)
+		check(grey != null and grey.disabled, name_ + " greyed while the conference is being sent")
 	for button: BaseButton in view.find_children("*", "BaseButton", true, false):
-		if not button.disabled and not button.name.ends_with("Open"): button.pressed.emit()
+		if button.has_meta("contextual_enabled"): check(button.disabled, "in-flight request disables " + button.name)
+		if not button.name.ends_with("Open"): button.pressed.emit()
 	check(director.commands.size() == 1, "in-flight request disables repeated input")
+	view.update_frame(career, metadata)
+	# Envoi refusé (disque, moteur) : aucun bouton, aucune phrase ; le jeu relance seul les mêmes réponses, une fois.
 	host.waiting = false
 	host.last_error = "Refus serveur de la préparation périmée"
 	view.update_frame(career, metadata)
-	check(view.choices.size() == questions.size() and not view._request_in_flight, "server refusal preserves draft and enables retry")
-	view._publish()
-	check(director.commands.size() == 2 and director.commands[1].payload == sent.payload, "retry resends the same preserved answers once")
+	check(view.choices.size() == questions.size() and view._request_in_flight, "server refusal preserves draft and keeps the send pending")
+	var retry_deadline := Time.get_ticks_msec() + 5000
+	while director.commands.size() < 2 and Time.get_ticks_msec() < retry_deadline: await process_frame
+	check(director.commands.size() == 2 and director.commands[1].payload == sent.payload, "automatic retry resends the same preserved answers")
+	check(host.last_error.is_empty(), "automatic retry leaves no refusal phrase in the room")
+	for frame in 90: await process_frame
+	check(director.commands.size() == 2, "no second send while the retry is pending")
 	host.waiting = false
-	check(not host.last_error.is_empty(), "component does not erase the director's visible server error")
 	# Controlled response fixture: receipt rendering is tested separately from
 	# the real domain effects exercised by godot-three-rooms-flow.gd.
 	var response := career.duplicate(true)
