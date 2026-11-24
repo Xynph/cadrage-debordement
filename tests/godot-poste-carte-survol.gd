@@ -93,6 +93,9 @@ func survoler(ecran_nom: String, controle: Control, nom_capture: String) -> void
 	if is_instance_valid(app.coach) and app.coach.has_method("fermer_bulle"): app.coach.fermer_bulle()
 	souris(Vector2(2, 2))
 	await settle(4)
+	# Joueur visé lu AVANT le survol : l'écran peut se redessiner pendant l'attente (données arrivées après coup) et libérer
+	# le contrôle survolé (1 lancement sur 4 : « get_meta on a previously freed instance », 24/11) ; la carte, elle, reste.
+	var joueur_vise := str(controle.get_meta("carte_joueur"))
 	var debut := Time.get_ticks_msec()
 	souris(controle.get_global_rect().get_center())
 	var apparue := await until(func(): return Carte.actuelle(app) != null, 3000)
@@ -103,7 +106,8 @@ func survoler(ecran_nom: String, controle: Control, nom_capture: String) -> void
 	var carte := Carte.actuelle(app)
 	if carte != null:
 		check(Rect2(Vector2.ZERO, Vector2(root.size)).grow(1.0).encloses(carte.get_global_rect()), ecran_nom + " : carte entière dans l'écran")
-		check(str(carte.get_meta("player_id", "")) == str(controle.get_meta("carte_joueur")), ecran_nom + " : carte du joueur survolé")
+		if not is_instance_valid(controle): print("ETOILES_FICHE %s : écran redessiné pendant le survol" % ecran_nom)
+		check(str(carte.get_meta("player_id", "")) == joueur_vise, ecran_nom + " : carte du joueur survolé")
 		check(carte.find_child("CarteJoueurPolyvalence", true, false) != null and carte.find_child("CarteJoueurEtoilesPoste_*", true, false) == null, ecran_nom + " : postes de la carte, sans étoiles")
 		check(carte.find_child("CarteJoueurEtoilesNiveau", true, false) == null, ecran_nom + " : jamais d'étoiles pour le niveau")
 		check(app.get_node_or_null("MiniFicheJoueur") == null, ecran_nom + " : plus de mini-fiche par-dessus")

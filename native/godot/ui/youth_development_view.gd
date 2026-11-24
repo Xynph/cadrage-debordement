@@ -9,6 +9,8 @@ const Charte = preload("res://ui/charte.gd")
 const Champs = preload("res://ui/immersive08/champs_charte.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const Jauges = preload("res://ui/jeune_jauges.gd")
+const Notation = preload("res://ui/notation_staff.gd")
+const K = preload("res://ui/player_knowledge_text.gd")
 const PAGE_SIZE := 20
 const ATTRIBUTES := {"scrum":"Mêlée","lineout":"Touche","tackle":"Plaquage","speed":"Vitesse","pass":"Passe","kick":"Jeu au pied","goal":"But","power":"Puissance","stamina":"Endurance","mental":"Mental","discipline":"Discipline"}
 const REASONS := {"enable":"Référence initiale","plan":"Objectif révisé","trainWeek":"Séance","recordDevelopmentMatch":"Match","rollDevelopmentYear":"Bilan annuel","advanceSeason":"Nouvelle saison","promoteYouth":"Passage professionnel","managerMobilityOnSeasonStart":"Changement de club"}
@@ -619,11 +621,13 @@ func _tuile_jeune(person: Dictionary) -> void:
 	_identite(identite,person)
 	var etat := C.h(6); identite.add_child(etat)
 	var chiffres := C.v(0); tete.add_child(chiffres)
-	var niveau: Variant = G.knowledge_sort_value(person,"rating",true)
+	# Niveau et Potentiel MONTRÉS (lettres du staff) : couleurs et jauge posées sur l'estimation affichée, jamais sur la
+	# valeur cachée du moteur (écart du vérificateur, 25/11).
+	var niveau: Variant = Notation.valeur_montree(person,"rating",K.owned(person,true))
 	var gros := Jauges.chiffre(G.rating_text(person,true),64,Charte.couleur_attribut(niveau) if niveau != null else Charte.IVOIRE_3)
 	gros.name = "YouthLevel"; gros.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; gros.tooltip_text = "Niveau général"
 	chiffres.add_child(gros)
-	var potentiel: Variant = G.knowledge_sort_value(person,"potential")
+	var potentiel: Variant = Notation.valeur_montree(person,"potential",K.owned(person))
 	var ligne_pot := C.h(6); ligne_pot.alignment = BoxContainer.ALIGNMENT_END; chiffres.add_child(ligne_pot)
 	ligne_pot.add_child(Jauges.legende("Potentiel",15))
 	var pot := Jauges.chiffre(G.potential_text(person),26,Charte.couleur_attribut(potentiel) if potentiel != null else Charte.IVOIRE_3)
@@ -632,7 +636,7 @@ func _tuile_jeune(person: Dictionary) -> void:
 	chiffres.name = "YouthLevelBlock"
 	chiffres.tooltip_text = G.potential_tooltip(person)
 	_cliquable(chiffres, func(): _ouvrir_fiche(person, 4))
-	var barre_niveau := Jauges.barre_niveau_potentiel(G.knowledge_bounds(person,"rating",true),G.knowledge_bounds(person,"potential"),G.rating_text(person,true),G.potential_text(person))
+	var barre_niveau := Jauges.barre_niveau_potentiel({"min": niveau} if niveau != null else {},{"min": float(potentiel) - Notation.PAS / 2.0, "max": float(potentiel) + Notation.PAS / 2.0} if potentiel != null else {},G.rating_text(person,true),G.potential_text(person))
 	card.add_child(barre_niveau)
 	_cliquable(barre_niveau, func(): _ouvrir_fiche(person, 4))
 	if annual:

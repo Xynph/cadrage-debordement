@@ -74,10 +74,12 @@ func run() -> void:
 	for row: Node in app.find_child("CarnetSquad",true,false).rows.get_children():
 		if not row.has_meta("player_id"):continue
 		var person: Dictionary=original.squad.filter(func(p:Dictionary):return str(p.id)==str(row.get_meta("player_id")))[0]
-		var level:=row.find_child("RosterLevel",true,false) as Label
-		var potential:=row.find_child("RosterPotential",true,false) as Label
-		check(potential!=null and potential.text==G.potential_text(person),"Colonne propre reprend sa fourchette")
-		check(potential.get_theme_color("font_color")==preload("res://ui/charte.gd").IVOIRE_2,"Potentiel en ivoire secondaire")
+		# Notation façon FM (option B, 24/11) : Potentiel en pastille ronde de la lettre du staff, à sa couleur.
+		var potential:=row.find_child("RosterPotential",true,false) as Control
+		check(potential!=null and str(potential.get_meta("lettre",""))==G.potential_text(person),"Colonne propre reprend la lettre du potentiel")
+		var i_pot:=Notation.LETTRES.find(G.potential_text(person))
+		var fond: Variant=potential.get_theme_stylebox("panel") if potential!=null else null
+		check(fond is StyleBoxFlat and (fond as StyleBoxFlat).bg_color==Notation.couleur(i_pot),"Potentiel à la couleur de sa lettre")
 	await capture("effectif-connaissance-modele-reel-1440")
 	var own: Dictionary=original.squad[0]
 	for candidate: Dictionary in original.squad:

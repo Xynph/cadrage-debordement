@@ -272,6 +272,14 @@ static func lettre_champ(p: Dictionary, champ: String, notre: bool, model: Dicti
 		return {"bas": i, "haut": i}
 	return lettre_niveau(m, p, notre)
 
+## Valeur MONTRÉE d'un Niveau ou d'un Potentiel sur l'échelle 15-99 : centre de la lettre affichée (milieu d'une double),
+## d'après la référence de l'effectif. Pour poser une jauge ou une couleur sans trahir le chiffre du moteur ; null si inconnue.
+static func valeur_montree(p: Dictionary, champ: String, notre: bool, model: Dictionary = {}) -> Variant:
+	var m := _modele(model)
+	var r := rang_lettre(lettre_champ(p, champ, notre, m))
+	if r < 0.0: return null
+	return reference_effectif(m) + (r - REFERENCE) * PAS
+
 ## Valeur de tri d'un Niveau ou d'un Potentiel : la lettre MONTRÉE (milieu d'une double), null si inconnue. À lettre égale,
 ## les listes départagent par nom ou identifiant : l'ordre ne trahit jamais le chiffre caché.
 static func tri_champ(p: Dictionary, champ: String, notre: bool, model: Dictionary = {}) -> Variant:

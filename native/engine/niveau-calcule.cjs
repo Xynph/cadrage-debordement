@@ -6,10 +6,11 @@
 // Le Niveau doit être CALCULÉ selon les qualités qui comptent au POSTE et au RÔLE (comme le CA de Football Manager),
 // avec quelques qualités cachées, au lieu d'être une valeur posée à côté des qualités.
 //
-// Calcul (docs/notation-fm-20261124.md) :
-//   poids(q) = poidsPoste[famille][q] (défaut 0,5 pour la lecture du jeu, 0,25 sinon) + 2 si q est clé du rôle, + 1 si utile
-//   qualitésPondérées = Σ poids(q) × q / Σ poids(q)                      (36 qualités, 20-97)
-//   brut = 0,92 × qualitésPondérées + 0,04 × régularité + 0,04 × grandsMatchs   (qualités cachées hiddenTraitsV2)
+// Calcul (docs/notation-fm-20261124.md, § 1 ; révisé le 25/11 : le rôle compte, écart 4 du vérificateur) :
+//   poste  = Σ poidsPoste(q) × q / Σ poidsPoste(q)   (36 qualités 20-97 ; défaut 0,5 lecture du jeu, 0,25 sinon)
+//   note(rôle) = (2 × Σ clés + Σ utiles) / 12          (les 8 qualités du rôle, comme la fiche)
+//   profil(rôle) = clamp(note(rôle) − moyenne des notes des rôles du poste − CENTRE_ROLE[rôle], ±5)
+//   brut = 0,92 × (poste + 1,5 × profil(rôle)) + 0,04 × régularité + 0,04 × grandsMatchs   (hiddenTraitsV2)
 //   Niveau = clamp(round(A × brut + B), 15, 99)   A, B : calage unique (tous postes) sur la base mondiale, pour garder
 //            l'échelle actuelle de `rating` (moyenne et dispersion identiques sur les 116 clubs du Monde).
 //   Niveau du joueur = meilleur rôle de son poste principal (le rôle choisi par le club quand il existera).
@@ -76,14 +77,36 @@ const ROLES = Object.freeze([
   ['arriere-botteur', 'arriere', 'Botteur', ['kickDistance', 'kickAccuracy', 'aerialAbility', 'positioning'], ['goalAccuracy', 'decisions', 'composure', 'kickChase']]
 ].map(r => Object.freeze(r)));
 
+
+// Note d'un rôle = moyenne de ses 8 qualités (clé × 2, utile × 1), comme la fiche.
 const CLE_ROLE = 2, UTILE_ROLE = 1;
+// Part du PROFIL au rôle (25/11, écart 4 du vérificateur) : le Niveau au rôle = Niveau au poste + PART_ROLE × écart de
+// profil, l'écart de profil étant « note du rôle − moyenne des notes des rôles du poste », recentré sur la base
+// mondiale (CENTRE_ROLE). Les qualités partagées par les rôles s'annulent ; seul compte ce qui distingue le joueur
+// d'un joueur typique de son poste. Moyenne des rôles d'un joueur = Niveau au poste (aucune dérive par rôle).
+const PART_ROLE = 1.5;
+const PROFIL_MAX = 5;      // écart de profil borné à ± 5 (≈ ± 8 points de Niveau) : un rôle ne remplace pas le poste
 const PART_CACHEES = 0.08; // 4 % régularité + 4 % grands matchs
 const CACHEES = Object.freeze(['consistency', 'bigMatches']);
 const CACHEE_DEFAUT = 61;  // médiane mondiale (jeunes et joueurs générés sans trait)
 
-// Calage unique (tous postes) : brut → échelle de `rating`. Recalculé par tools/notation/ecart-niveau.cjs (--caler) sur
-// la base mondiale du 24/11/2026 (5 959 joueurs, Alder Fen XV, export du 21/11) ; valeurs reportées ici et dans la doc.
-const CALAGE = Object.freeze({ A: 1.108, B: -5.86 });
+// Calage (tools/notation/ecart-roles.cjs --caler, base mondiale des tests : monde-champ-102, 5 958 joueurs, 25/11/2026).
+// A, B : brut → échelle de `rating` (même moyenne et même dispersion sur tout le Monde, tous postes).
+// CENTRE_ROLE : écart de profil moyen de chaque rôle sur les joueurs de son poste (somme nulle par poste) ; sans lui,
+// le rôle dont les qualités sont naturellement hautes au poste gagnerait toujours (92 % de « Plaqueur » avant).
+const CALAGE = Object.freeze({ A: 1.1133, B: -6.49 });
+const CENTRE_ROLE = Object.freeze({
+  'pilier-conquerant': 4.33, 'pilier-mobile': -5.95, 'pilier-deblayeur': 1.62,
+  'talon-lanceur': 4.46, 'talon-gratteur': -2.82, 'talon-perforateur': -1.64,
+  'deux-sauteur': 1.29, 'deux-pousseur': 1.99, 'deux-mobile': -3.27,
+  'aile-gratteur': 0.84, 'aile-perforateur': -2.6, 'aile-plaqueur': 1.76,
+  'huit-porteur': 0.86, 'huit-liant': -2.08, 'huit-meneur': 1.22,
+  'demi-eclaireur': -1.46, 'demi-animateur': 1.66, 'demi-tacticien': -0.2,
+  'ouvreur-stratege': 1.2, 'ouvreur-attaquant': -1.91, 'ouvreur-buteur': 0.72,
+  'centre-perceur': 1.73, 'centre-distributeur': -1.27, 'centre-verrou': -0.46,
+  'ailier-finisseur': 2.9, 'ailier-chasseur': -1.12, 'ailier-perforateur': -1.78,
+  'arriere-relanceur': 0.44, 'arriere-rempart': -0.24, 'arriere-botteur': -0.21
+});
 
 // Famille de jeu d'un joueur (gameplayPosition ou pos).
 const FAMILLE_POSTE = Object.freeze({
@@ -111,25 +134,38 @@ function qualites(p) {
   return null;
 }
 
-function poids(famille, role) {
+// Poids au poste des 36 qualités (défaut 0,5 pour la lecture du jeu, 0,25 sinon).
+function poids(famille) {
   const base = POIDS_POSTE[famille] || {};
   const w = {};
   for (const k of CLES) w[k] = base[k] ?? (LECTURE.has(k) ? DEFAUT_LECTURE : DEFAUT);
-  if (role) {
-    for (const k of role[3]) w[k] += CLE_ROLE;
-    for (const k of role[4]) w[k] += UTILE_ROLE;
-  }
   return w;
 }
 
 function rolesDe(famille) { return ROLES.filter(r => r[1] === famille); }
 
-// Moyenne pondérée des 36 qualités pour un poste (famille) et un rôle (objet de ROLES, ou null = poste seul).
-function qualitesPonderees(q, famille, role = null) {
-  const w = poids(famille, role);
+// Moyenne pondérée des 36 qualités au poste (famille).
+function qualitesPonderees(q, famille) {
+  const w = poids(famille);
   let total = 0, somme = 0;
   for (const k of CLES) { total += w[k] * q[k]; somme += w[k]; }
   return total / somme;
+}
+
+// Note d'un rôle (objet de ROLES) : ses 4 qualités clés × 2 et 4 utiles × 1.
+function noteRole(q, role) {
+  let total = 0;
+  for (const k of role[3]) total += CLE_ROLE * q[k];
+  for (const k of role[4]) total += UTILE_ROLE * q[k];
+  return total / (4 * CLE_ROLE + 4 * UTILE_ROLE);
+}
+
+// Écart de profil de chaque rôle du poste (non recentré) : note du rôle − moyenne des notes des rôles du poste.
+function profilsBruts(q, famille) {
+  const roles = rolesDe(famille);
+  const notes = roles.map(r => noteRole(q, r));
+  const m = notes.reduce((s, v) => s + v, 0) / (notes.length || 1);
+  return Object.fromEntries(roles.map((r, i) => [r[0], notes[i] - m]));
 }
 
 function cachees(p) {
@@ -137,20 +173,21 @@ function cachees(p) {
   return CACHEES.map(k => nombre(h[k]) ? h[k] : CACHEE_DEFAUT);
 }
 
-function brut(p, q, famille, role) {
-  const [regularite, grandsMatchs] = cachees(p);
-  return (1 - PART_CACHEES) * qualitesPonderees(q, famille, role) + (PART_CACHEES / 2) * (regularite + grandsMatchs);
-}
-
 const echelle = (b, calage = CALAGE) => clamp(Math.round(calage.A * b + calage.B), 15, 99);
 
 // Niveau d'un joueur à un rôle donné (id de ROLES) ou au meilleur rôle de son poste principal.
-// Retour : {niveau, role, famille, roles: [{id, nom, niveau}]} ou null si qualités/poste inconnus.
-function niveauJoueur(p, { roleId = null, famille = null, calage = CALAGE } = {}) {
+// Retour : {niveau, brut, role, roleNom, famille, roles: [{id, nom, niveau}]} ou null si qualités/poste inconnus.
+function niveauJoueur(p, { roleId = null, famille = null, calage = CALAGE, centres = CENTRE_ROLE } = {}) {
   const q = qualites(p);
   const f = famille || familleDe(p);
   if (!q || !f) return null;
-  const roles = rolesDe(f).map(r => ({ id: r[0], nom: r[2], brut: brut(p, q, f, r) }));
+  const [regularite, grandsMatchs] = cachees(p);
+  const poste = qualitesPonderees(q, f);
+  const profils = profilsBruts(q, f);
+  const roles = rolesDe(f).map(r => {
+    const profil = clamp(profils[r[0]] - (centres[r[0]] || 0), -PROFIL_MAX, PROFIL_MAX);
+    return { id: r[0], nom: r[2], profil, brut: (1 - PART_CACHEES) * (poste + PART_ROLE * profil) + (PART_CACHEES / 2) * (regularite + grandsMatchs) };
+  });
   roles.forEach(r => { r.niveau = echelle(r.brut, calage); });
   roles.sort((a, b) => b.brut - a.brut);
   const choisi = roleId ? roles.find(r => r.id === roleId) : roles[0];
@@ -158,11 +195,20 @@ function niveauJoueur(p, { roleId = null, famille = null, calage = CALAGE } = {}
   return { niveau: choisi.niveau, brut: choisi.brut, role: choisi.id, roleNom: choisi.nom, famille: f, roles: roles.map(({ id, nom, niveau }) => ({ id, nom, niveau })) };
 }
 
-// Calage A, B (moindres carrés sur moyenne/écart-type) d'une population : même moyenne et même dispersion que `rating`.
+// Calage d'une population (base mondiale) : 1) CENTRE_ROLE = écart de profil moyen de chaque rôle chez les joueurs de
+// son poste ; 2) A, B (moyenne et écart-type) pour que le Niveau (meilleur rôle) ait la moyenne et la dispersion de
+// `rating`.
 function caler(joueurs) {
+  const sommes = {}, comptes = {};
+  for (const p of joueurs) {
+    const q = qualites(p), f = familleDe(p);
+    if (!q || !f) continue;
+    for (const [id, v] of Object.entries(profilsBruts(q, f))) { sommes[id] = (sommes[id] || 0) + v; comptes[id] = (comptes[id] || 0) + 1; }
+  }
+  const centres = Object.fromEntries(Object.keys(sommes).map(id => [id, Math.round(100 * sommes[id] / comptes[id]) / 100]));
   const xs = [], ys = [];
   for (const p of joueurs) {
-    const n = niveauJoueur(p, { calage: { A: 1, B: 0 } });
+    const n = niveauJoueur(p, { calage: { A: 1, B: 0 }, centres });
     if (!n || !nombre(p.rating)) continue;
     xs.push(n.brut); ys.push(p.rating);
   }
@@ -170,7 +216,7 @@ function caler(joueurs) {
   const mx = m(xs), my = m(ys);
   const sx = Math.sqrt(m(xs.map(v => (v - mx) ** 2))), sy = Math.sqrt(m(ys.map(v => (v - my) ** 2)));
   const A = sy / sx, B = my - A * mx;
-  return { A: Math.round(A * 10000) / 10000, B: Math.round(B * 100) / 100, n: xs.length };
+  return { A: Math.round(A * 10000) / 10000, B: Math.round(B * 100) / 100, n: xs.length, centres };
 }
 
-module.exports = Object.freeze({ CLES, POIDS_POSTE, ROLES, FAMILLES, FAMILLE_POSTE, CALAGE, PART_CACHEES, familleDe, qualites, poids, qualitesPonderees, niveauJoueur, caler });
+module.exports = Object.freeze({ CLES, POIDS_POSTE, ROLES, FAMILLES, FAMILLE_POSTE, CALAGE, CENTRE_ROLE, PART_CACHEES, PART_ROLE, PROFIL_MAX, CLE_ROLE, UTILE_ROLE, familleDe, qualites, poids, qualitesPonderees, noteRole, niveauJoueur, caler });

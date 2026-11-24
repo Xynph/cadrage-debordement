@@ -17,11 +17,11 @@ Jamais un chiffre du moteur. L'estimation vient du **staff** : sa justesse dépe
 ## 1. Niveau calculé (`native/engine/niveau-calcule.cjs`, branché à l'écran le 24/11)
 
 ```
-poids(q)  = poidsPoste[famille][q]  (défaut : 0,5 pour la lecture du jeu, 0,25 sinon)
-          + 2 si q est une qualité clé du rôle, + 1 si q est utile au rôle      (rôles de la fiche : fiche_roles.gd)
-QP        = Σ poids(q) × q / Σ poids(q)                                         (36 qualités)
-brut      = 0,92 × QP + 0,04 × régularité + 0,04 × grands matchs                (hiddenTraitsV2 ; 61 si absent)
-Niveau    = clamp(round(A × brut + B), 15, 99)        A = 1,108  B = −5,86  (calage unique tous postes)
+poste       = Σ poidsPoste(q) × q / Σ poidsPoste(q)   (36 qualités ; défaut : 0,5 lecture du jeu, 0,25 sinon)
+note(rôle)  = (2 × Σ 4 clés + Σ 4 utiles) / 12         (rôles de la fiche : fiche_roles.gd)
+profil(rôle)= clamp(note(rôle) − moyenne des notes des 3 rôles du poste − CENTRE_ROLE[rôle], −5, +5)
+brut        = 0,92 × (poste + 1,5 × profil(rôle)) + 0,04 × régularité + 0,04 × grands matchs   (hiddenTraitsV2 ; 61 si absent)
+Niveau      = clamp(round(A × brut + B), 15, 99)        A = 1,1133  B = −6,49  (calage unique tous postes)
 Niveau du joueur = meilleur rôle de son poste principal (le rôle choisi par le club quand il existera)
 ```
 
@@ -31,6 +31,8 @@ Niveau du joueur = meilleur rôle de son poste principal (le rôle choisi par le
 | poidsPoste | réel | 0,25-4 | importance de la qualité au poste (10 familles) |
 | régularité, grands matchs | entier | 41-80 | qualités cachées `consistency`, `bigMatches` |
 | A, B | réel | — | calage : même moyenne et même dispersion que `rating` sur les 116 clubs du Monde |
+| CENTRE_ROLE | réel | −6 à +4,5 | profil moyen du rôle chez les joueurs de son poste (somme nulle par poste), calé sur le Monde |
+| profil | réel | −5 à +5 | ce qui distingue le joueur d'un joueur typique de son poste, vu par le rôle |
 | Niveau | entier | 15-99 (borné) | nouvelle valeur cachée ; bornes atteintes seulement par des qualités hors base |
 
 Poids au poste (4 = cœur du poste) : pilier → mêlée 4, force 3 ; talonneur → lancer 4, talonnage 3, mêlée 3 ;
@@ -43,7 +45,42 @@ Exemple (Kyle FAIRCLOUGH, pilier gauche d'Alder Fen, Conquérant) : Niveau 63. +
 +10 en plaquage → 64 ; +10 en distance au pied ou en vitesse de pointe → 63 (la mêlée pèse 14 % du calcul, le jeu au
 pied 0,6 %).
 
-### Écart avec l'actuel (export Monde d'Alder Fen XV, 21/11)
+### Le rôle compte (25/11, 20e conversation : écart 4 du vérificateur)
+
+Avant, le rôle ajoutait +2/+1 aux poids de ses 8 qualités parmi ~34 points de poids du poste : dilué, et le rôle
+dont les qualités sont naturellement hautes au poste gagnait toujours (92 % de « Plaqueur » chez les 3e ligne aile,
+100 % de « Conquérant » chez les piliers, Gratteur et Plaqueur jamais à plus d'1 point). Maintenant le Niveau au rôle
+= Niveau au poste + 1,5 × profil : les qualités partagées par les rôles s'annulent, le recentrage (CENTRE_ROLE) retire
+le profil du joueur typique du poste, la borne ±5 empêche un rôle de remplacer le poste. La moyenne des 3 rôles d'un
+joueur reste son Niveau au poste ; le Niveau du joueur (meilleur rôle) est recalé (A, B) sur `rating`.
+
+`node tools/notation/ecart-roles.cjs [<monde.json>] [--module <ancien.cjs>] [--caler]` (défaut : sauvegarde Monde des
+tests, 5 958 joueurs ; `--caler` recalcule CENTRE_ROLE, A et B à reporter dans le module).
+
+| Mesure (Monde, 5 958 joueurs) | Avant | Après |
+| --- | --- | --- |
+| Écart meilleur/moins bon rôle, moyen · max | 1,5 · 9 | 2,8 · 16 |
+| 3e ligne aile : Gratteur/Plaqueur moyen · max · ≥ 2 points | 0,3 · 1 · 0 % | 0,8 · 5 · 14 % |
+| Meilleur rôle, 3e ligne aile | Plaqueur 92 %, Gratteur 7 %, Perforateur 1 % | Perforateur 48 %, Gratteur 29 %, Plaqueur 23 % |
+| Meilleur rôle, piliers | Conquérant 100 % | Mobile 45 %, Conquérant 34 %, Déblayeur 21 % |
+| Meilleur rôle, ailiers / demis / talonneurs | Finisseur 100 % / Animateur 98 % / Lanceur 99 % | 35-35-30 % / 47-31-22 % / 36-35-29 % |
+| Lettre qui change selon le rôle (réf. B = 15 meilleurs du club) | 53 % | 67 % |
+| Niveau moyen par poste (pilier, aile, ailier, n° 8) | 64,8 · 67,3 · 67,8 · 63,3 | 64,4 · 67,3 · 67,4 · 64,4 (écart ≤ 1,1) |
+| Lettres du meilleur rôle (E- · C · B · A) | 19,2 · 8,5 · 7,8 · 1,3 % | 19,9 · 8,6 · 6,5 · 1,4 % |
+| Niveau calculé / `rating` : écart moyen absolu · corrélation | 1,2 · 0,988 | 1,5 · 0,980 |
+
+Profils de test (joueur typique du poste ± qualités) : 3e ligne aile « gratteur » (grattage +12, ruck +10,
+anticipation +6, plaquage −5) → Gratteur 70, Plaqueur 67 ; « plaqueur » (plaquage +12, placement +8, endurance +8,
+grattage −5) → Plaqueur 72, Gratteur 67. Dans chaque poste, +10 sur les 4 clés d'un rôle (−5 sur les clés propres aux
+autres) donne au moins 2 points (1 cran) d'avance à ce rôle (`tests/niveau-calcule.cjs`).
+
+**Limite de la base** : les 36 qualités de la base sont déduites de la note avec un gabarit par poste ; chez les
+3e ligne aile, grattage − plaquage a un écart-type de 2,8 points. Gratteur et Plaqueur partagent plaquage et activité
+(clés) : sur les vrais joueurs ils restent proches (0,8 point en moyenne). L'écart grandira avec l'entraînement ciblé
+(entrainement-cible.cjs) qui fait progresser certaines qualités. Les rôles sont aussi définis dans
+entrainement-cible.cjs, recherche-ciblee.cjs et match-arrets.cjs (moteur du match) : on ne les a pas modifiés.
+
+### Écart avec l'actuel (export Monde d'Alder Fen XV, 21/11, formule du 24/11)
 
 `node tools/notation/ecart-niveau.cjs <carriere.json> [--caler] [--md]`
 
@@ -113,7 +150,7 @@ ou arrivée au club) → fourchettes de 9 points, 4 à 7 semaines → 5 points, 
   même règle et la même estimation que « son rôle » (`Notation.lettre_niveau`) : mêmes lettres sur la fiche. Recrue jamais publiée au poste (tout joueur d'un autre club : le moteur ne
   publie pas ses notes au poste) : estimée depuis la fourchette d'observation du Niveau, aux postes qu'il connaît
   (Naturel, Confirmé) ; ailleurs ou sans fourchette : « ? ».
-- **Niveau au rôle** (colonne NOTE de Postes et rôles, rôles du menu en match) = `niveauCalcule.roles[rôle]` ; « Son
+- **Niveau au rôle** (colonne NOTE de Postes et rôles, rôles du menu en match) = `niveauCalcule.roles[rôle]` (profil recentré, § 1) ; « Son
   rôle » = rôle du Niveau calculé (`niveauCalcule.role`).
 - Carte au survol : Niveau et Potentiel en lettres (palier en pilule, phrase de potentiel), plus de jauges ni de « ▲ +3 ».
   Mini-fiche : lettres. Bulle de la flèche du Niveau : sens de la courbe seulement (▲/▼), sans chiffre.
@@ -151,9 +188,25 @@ du menu en match.
 - **Tris** : Niveau, Potentiel et note au poste trient sur la lettre MONTRÉE (`Notation.tri_champ`, `rang_lettre`) ; à
   lettre égale, ordre stable (nom ou identifiant) : l'ordre ne trahit jamais la valeur cachée.
 
+## 8. Restes du vérificateur (25/11, 20e conversation)
+
+- Formation : lignes de 34 unités et pastilles de 32 (comme l'Effectif ; 24 px en 1920 au lieu de 20).
+- Suivi des jeunes : jauge niveau/potentiel et couleurs des lettres posées sur la lettre MONTRÉE
+  (`Notation.valeur_montree` : centre du cran affiché d'après la référence de l'effectif), plus sur la valeur cachée.
+- `godot-poste-carte-survol` intermittent (1 fois sur 4, « get_meta on a previously freed instance ») : l'écran se
+  redessinait pendant l'attente de la carte et libérait le contrôle survolé ; le test lit le joueur visé avant le
+  survol (aucun seuil touché) et signale « écran redessiné pendant le survol ».
+
 ## Reste à faire
 
 Bascule de `rating` (moteur du match) sur le Niveau calculé, rôle choisi par le club enregistré au moteur, estimation du
-staff calculée dans le moteur (projection `notation` par joueur). Poids Clé/Utile du Niveau au rôle (écart 4, autre
-chantier). Jauge de position niveau/potentiel des vues héritées du suivi des jeunes (sans chiffre, mais à la position
-de la valeur).
+staff calculée dans le moteur (projection `notation` par joueur). Fiche d'un joueur dont les qualités sont connues sans
+`niveauCalcule` (observé mais pas en profondeur) : les rôles y sont classés par la note brute des 8 qualités, sans
+recentrage. Suivi des jeunes : « cette saison +3 » reste un écart chiffré du Niveau.
+
+**Brancher le moteur du match sur le Niveau calculé** (non fait, chantier à part) demanderait : 1) enregistrer le rôle
+choisi par le club pour chaque joueur (aujourd'hui « Son rôle » = meilleur rôle, rien dans S) ; 2) remplacer `rating`
+par `niveauJoueur(p, {roleId})` partout où le moteur lit la note (sélection automatique, match-arrets, IA des clubs,
+progression, valeur marchande, salaires) ou écrire le Niveau calculé dans `rating` à chaque progression ; 3) recaler
+l'économie et l'équilibre (suites de saison, ligues-modestes-equilibre) puisque la moyenne des clubs bouge (pilier
+−2,5, arrière +1,5) ; 4) régénérer les données figées qui portent `rating`.
