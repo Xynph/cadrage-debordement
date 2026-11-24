@@ -55,6 +55,12 @@ Numéros de ligne approximatifs (au 24/11/2026) : relancer carte-code.cjs avant 
 | · Titre, tuiles, onglets | `ui/immersive08/squad_entete.gd` | `_entete_page`, `_tuiles`, `_onglets` |
 | · Ligne d'un joueur | `ui/immersive08/squad_lignes.gd` | `_row`, `_cellule_joueur`, `_statut` |
 | · Tableau, tri, totaux | `ui/immersive08/squad_tableau.gd` | `_tableau`, `_colonnes`, `_refresh`, `_totaux` |
+| Vues génériques Effectif / Composition / Recrutement, fenêtres de contrat et de comparaison | `ui/squad_views.gd` (fichier public : redéfinitions d'une ligne de `squad`, `lineup`, `preparation`, `market`, `contract`, `comparison`, `position_label`, `bleus_resume`, `quota_line`…) | chaîne d'héritage socle ← fiche ← liste ← composition ← marché ← squad_views |
+| · socle des vues génériques | `ui/squad_views_socle.gd` (constantes, pagination, recherche, libellés de poste, `contract`, `comparison`) | `position_label`, `contract`, `_pagination` |
+| · fiche joueur générique | `ui/squad_views_fiche.gd` | `_profile`, `_profile_overview`, `_profile_contexts` |
+| · liste de l'Effectif générique | `ui/squad_views_liste.gd` | `squad`, `_squad_rows` |
+| · Composition, Préparation, quotas | `ui/squad_views_composition.gd` | `lineup`, `preparation`, `bleus_resume`, `quota_line` |
+| · Recrutement générique | `ui/squad_views_marche.gd` | `market`, `_market_rows` |
 | Fiche joueur | `ui/immersive08/player_canvas.gd`, `fiche_page.gd`, `fiche_commune.gd`, `fiche_*.gd` | `build` L97 |
 | Composition / tactique | `ui/immersive08/tactics_canvas.gd` + `tactics_*.gd` | `build` L44 |
 | Préparation (semaine) | `ui/immersive08/preparation_canvas.gd` (fichier public : `build`, `compact`, `ouvrir_sous_page`, en-tête, onglets, `_dossier`), `preparation_adversaire.gd`, `preparation_consignes.gd` | `build` L6, `compact` L15 |
