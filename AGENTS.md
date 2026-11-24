@@ -84,6 +84,13 @@ Avant toute recherche d'assets, bibliothèques ou inspirations, consulter le
 (provenance, utilité, coût/licence, statut, date, preuve). Ne pas prétendre
 avoir lu ou intégré un contenu sur la seule présence de son URL.
 
+Code du jeu (tout agent, Claude comme Codex) : lire `docs/carte-code/ECRANS.md`
+d'abord, puis `node scripts/carte-code.cjs <fichier.gd>` (fonctions et lignes)
+avant d'ouvrir un .gd de plus de 20 Ko, et ne lire que la plage utile ;
+`node scripts/carte-code.cjs --cherche <motif>` pour chercher. Chantier sur
+plusieurs écrans : rapport de l'éclaireur (`.claude/agents/eclaireur.md`,
+`temp/eclairage-*.md`) avant les exécutants. Écran absent de la carte : l'y ajouter.
+
 ## Esprit critique
 
 Partenaire critique, pas approbateur : dire un désaccord clairement avec ses
