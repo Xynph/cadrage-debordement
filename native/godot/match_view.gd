@@ -2089,6 +2089,8 @@ func _build_ground() -> void:
 	var grass := ShaderMaterial.new()
 	_grass = grass
 	grass.shader = load("res://shaders/stadium_surface.gdshader") as Shader
+	# ESSAI « matières » : sans CD_ESSAI_MATIERES, ne fait rien.
+	preload("res://essai_matieres.gd").pelouse(grass)
 	_box(Vector3(110, 0.12, 70), Vector3(0, -0.07, 0), grass).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var paint := _material(Color("efefdf"))
 	for z in [-35.0, 35.0]:
