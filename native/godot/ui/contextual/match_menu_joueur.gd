@@ -211,16 +211,7 @@ static func ouvrir(view: Control, id: String, _ancre: Control) -> void:
 	var poste := int(d.poste)
 	var fond: Panel = view._ouvrir_fenetre(NOM, "", LARGEUR, HAUTEUR, false)
 	fond.set_meta("player_id", id)
-	var style := Charte.style_panneau(p.fond, Charte.RAYON_PANNEAU)
-	style.border_color = p.bord
-	style.set_border_width_all(maxi(1, C.px(2)))
-	style.shadow_color = Color(0, 0, 0, .65)
-	style.shadow_size = maxi(8, C.px(36))
-	fond.add_theme_stylebox_override("panel", style)
-	var croix := fond.find_child(NOM + "Fermer", false, false) as Button
-	if croix != null:
-		croix.add_theme_color_override("font_color", p.encre2)
-		croix.add_theme_color_override("font_hover_color", p.encre)
+	habiller(fond, NOM)
 	# Veille : la fenêtre suit le match (arrêt de jeu, énergie, moral) sans le mettre en pause.
 	var veille := Timer.new()
 	veille.name = "MatchMenuJoueurVeille"
@@ -238,6 +229,20 @@ static func ouvrir(view: Control, id: String, _ancre: Control) -> void:
 	_deco(fond, Rect2(528 + 300 + 14, 28, 2, HAUTEUR - 56), p.filet)
 	_colonne_role(view, fond, d, p)
 	view.director._refresh_controls()
+
+## Cadre commun des petites fenêtres du direct en ardoise claire (teinte D) : fenêtre d'un joueur, consignes (idée 33).
+static func habiller(fond: Panel, nom: String) -> void:
+	var p := PAL
+	var style := Charte.style_panneau(p.fond, Charte.RAYON_PANNEAU)
+	style.border_color = p.bord
+	style.set_border_width_all(maxi(1, C.px(2)))
+	style.shadow_color = Color(0, 0, 0, .65)
+	style.shadow_size = maxi(8, C.px(36))
+	fond.add_theme_stylebox_override("panel", style)
+	var croix := fond.find_child(nom + "Fermer", false, false) as Button
+	if croix != null:
+		croix.add_theme_color_override("font_color", p.encre2)
+		croix.add_theme_color_override("font_hover_color", p.encre)
 
 ## Colonne 1 : la mini-fiche du joueur.
 static func _colonne_fiche(view: Control, fond: Panel, d: Dictionary, p: Dictionary) -> void:
