@@ -4,6 +4,7 @@ extends RefCounted
 ## Centre : grand schéma de la phase, pastilles lettrées des joueurs (clic = fiche du joueur).
 ## Droite : étapes (un choix par ligne, appliqué au clic, ▲/▼ de l'effet), effet sur le match en barres, qui fait quoi.
 const C = preload("res://ui/immersive08/components.gd")
+const PlayerAttributes = preload("res://ui/player_attributes.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Charte = preload("res://ui/charte.gd")
 const Kit = preload("res://ui/immersive08/tactics_kit.gd")
@@ -231,4 +232,5 @@ static func _ligne_qui(app: Control, parent: Control, rect: Rect2, l: Dictionary
 	Kit.nom(app, b, Rect2(108, 10, minf(170, Kit.largeur(nom, 18) + 6), 30), nom, str(p.get("id", "")), "CombiQuiNom_" + str(l.id), Charte.IVOIRE, 18)
 	D.text(b, 290, 33, K.role(e.phase, e.scenario, choix, l), 17, couleur, 700, 190).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var v: Variant = K.valeur(p, l.attr)
-	Kit.puce(b, Rect2(rect.size.x - 56, 12, 44, 28), "—" if v == null else str(int(v)), Charte.couleur_attribut(v) if v != null else Charte.PANNEAU_3, Charte.ENCRE).tooltip_text = str(l.attr_nom)
+	var en_plage := v != null and not PlayerAttributes.plage(p, str(l.attr)).is_empty()
+	Kit.puce(b, Rect2(rect.size.x - (76 if en_plage else 56), 12, 64 if en_plage else 44, 28), "—" if v == null else PlayerAttributes.caption_joueur(p, str(l.attr), v), Charte.couleur_attribut(v) if v != null else Charte.PANNEAU_3, Charte.ENCRE).tooltip_text = str(l.attr_nom)

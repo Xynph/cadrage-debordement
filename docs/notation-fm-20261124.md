@@ -212,6 +212,15 @@ Deuxième revue (NO-GO sur d86095b49) :
   13/07 dès « salle-conseil »). Dans une vraie partie, S.qualitesJoueurs reste (sauvegarde, rechargement, export
   vérifiés) ; la fourchette s'arrête seulement au bout de 8 semaines de suivi, comme prévu.
 
+Troisième revue (qualités en fourchette) : tout écran qui écrit une qualité passe par la fourchette « 45-49 » (même
+format que la fiche) tant que le staff n'est pas sûr — `PlayerAttributes.plage` / `caption_joueur` :
+- Fiche › Développement › Progression : 36 qualités en fourchette, sans écart sur 12 mois, courbe sans chiffres ;
+- comparateur en radar : axes (moyenne des bornes), point fort / faible, fenêtre d'un axe (`plage_axe`) ;
+- comparateur en tableau (lignes des attributs), menu du joueur en match (qualités du rôle), Composition › combinaisons
+  (qualité du joueur choisi), ancienne vue Profil › Attributs.
+Déjà en fourchette avant : grille de la fiche, qualités du rôle, points forts, carte au survol, mini-fiche.
+Contrôles : `tests/godot-creation-da.gd` (Progression 36 fourchettes, axes du radar, fenêtre d'un axe).
+
 ## Reste à faire
 
 Bascule de `rating` (moteur du match) sur le Niveau calculé, rôle choisi par le club enregistré au moteur, estimation du

@@ -12,6 +12,7 @@ extends RefCounted
 ## La carte sortant (rouge) / entrant (vert) d'un remplacement s'affiche sur la phrase de jeu, jamais sur le terrain 2D,
 ## avec le vrai numéro de feuille de l'entrant (16 à 23).
 const C = preload("res://ui/immersive08/components.gd")
+const PlayerAttributes = preload("res://ui/player_attributes.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const S = preload("res://ui/contextual/skin.gd")
 const Charte = preload("res://ui/charte.gd")
@@ -434,7 +435,9 @@ static func _colonne_fiche(view: Control, fond: Panel, d: Dictionary, p: Diction
 				var ligne := D.rect(fond, Rect2(x1 + k * 241.0, 354 + i * 42.0, 229, 38), p.case if i % 2 == 0 else Color.TRANSPARENT, Charte.RAYON_PETIT)
 				ligne.name = "MatchMenuJoueurAttribut_" + cle
 				D.text(ligne, 12, 26, Roles.libelle(cle), 16, p.encre if k == 0 else p.encre2, 700 if k == 0 else 600, 160)
-				if v is int or v is float: _plein(ligne, Rect2(229 - 52, 4, 46, 30), str(roundi(float(v))), Charte.couleur_attribut(float(v)), 18, "Valeur")
+				# Qualités en fourchette : « 45-49 » (pilule plus large), jamais le milieu comme un chiffre sûr.
+				var en_plage := not PlayerAttributes.plage(j, cle).is_empty()
+				if v is int or v is float: _plein(ligne, Rect2(229 - (72 if en_plage else 52), 4, 66 if en_plage else 46, 30), PlayerAttributes.caption_joueur(j, cle, v), Charte.couleur_attribut(float(v)), 16 if en_plage else 18, "Valeur")
 	# Responsabilités en direct (buteur, lanceur, botteur…) : au prochain arrêt.
 	_surtitre(fond, x1, 554, "En charge", p)
 	var resp: Array = []

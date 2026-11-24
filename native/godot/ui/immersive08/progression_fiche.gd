@@ -424,6 +424,7 @@ static func _cadre_y(courbe: Courbe, vals: Array) -> void:
 ## Courbe 12 mois en haut (qualités cochées ou niveau), grille des 36 qualités à cocher en dessous.
 static func construire(page: Control, app: Control, player: Dictionary, top: float) -> void:
 	var liste := qualites(app, player)
+	var plages: Dictionary = player.get("attributesV2Range") if player.get("attributesV2Range") is Dictionary else {}
 	var e := etat(app, player, liste)
 	var courant := mois_courant(app, releve(player))
 	var haut := D.panel(page, Rect2(0, top, 2248, 480), "", "", "", "ProgressionCourbeCarte")
@@ -449,6 +450,8 @@ static func construire(page: Control, app: Control, player: Dictionary, top: flo
 		D.place(courbe, Rect2(24, 96, 1700, 370))
 		_saisons(haut, app, player, 1780, 140, 440)
 	else:
+		# Qualités en fourchette (option de carrière) : la courbe part du milieu des fourchettes, jamais un chiffre écrit.
+		if not plages.is_empty(): courbe.sans_chiffres = true
 		var vals: Array = []
 		for q: Dictionary in liste:
 			if q.cle in e.coches:
@@ -480,6 +483,14 @@ static func construire(page: Control, app: Control, player: Dictionary, top: flo
 			if coche: D.rect(grille, Rect2(x + 4, y + 8, 20, 20), c, 10)
 			else: D.rect(grille, Rect2(x + 4, y + 8, 20, 20), Color.TRANSPARENT, 10, Color(Charte.CREME, .45))
 			D.text(grille, x + 36, y + 25, q.libelle, 20, Charte.IVOIRE if coche else Charte.IVOIRE_2, 600 if coche else 500, colonne - 160, HORIZONTAL_ALIGNMENT_LEFT, true)
-			_ecart(grille, x + colonne - 56, y + 25, int(q.ecart), 18, 70, "ProgressionEcart_" + cle)
-			D.text(grille, x + colonne, y + 26, G.n(roundi(float(q.valeur))), 23, Charte.couleur_attribut(q.valeur), 700, 46, HORIZONTAL_ALIGNMENT_RIGHT).name = "ProgressionNote_" + cle
+			# Staff pas encore sûr (qualités en fourchette) : « 45-49 » comme la fiche, sans écart sur 12 mois.
+			var plage: Variant = plages.get(cle)
+			if plage is Dictionary and plage.has("min") and plage.has("max"):
+				var texte_plage := "%d-%d" % [int(plage.min), int(plage.max)]
+				var en_plage := D.text(grille, x + colonne, y + 26, texte_plage, 21, Charte.couleur_attribut((float(plage.min) + float(plage.max)) / 2.0), 700, 84, HORIZONTAL_ALIGNMENT_RIGHT)
+				en_plage.name = "ProgressionNote_" + cle
+				en_plage.set_meta("fourchette", true)
+			else:
+				_ecart(grille, x + colonne - 56, y + 25, int(q.ecart), 18, 70, "ProgressionEcart_" + cle)
+				D.text(grille, x + colonne, y + 26, G.n(roundi(float(q.valeur))), 23, Charte.couleur_attribut(q.valeur), 700, 46, HORIZONTAL_ALIGNMENT_RIGHT).name = "ProgressionNote_" + cle
 			j += 1

@@ -379,6 +379,7 @@ static func _row(parent: Node, title: String, key: String, pair: Array[Dictionar
 		values.append(datum)
 		var caption := "Non communiqué" if datum == null else G.salary_amount(datum) if key == "salary" and numeric(datum) else G.euros(datum) if key == "fee" and numeric(datum) else G.contract_year(datum) if key == "contractEnd" else NotesMatch.texte_note(datum) if key == "seasonNote" else A.caption(datum) + unit if numeric(datum) else str(datum)
 		if key == "fee" and datum == null and own(player): caption = "Sous contrat"
+		elif key.begins_with("attribute:") and datum != null: caption = A.caption_joueur(player, key.trim_prefix("attribute:"), datum)
 		elif key == "rating": caption = G.rating_text(player, own(player))
 		elif key == "potential": caption = G.potential_text(player)
 		var text := C.wrap(caption, 20, G.POTENTIAL_COLOR if key == "potential" else C.IVORY, true)

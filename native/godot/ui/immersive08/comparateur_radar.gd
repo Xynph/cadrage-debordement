@@ -56,6 +56,29 @@ static func axe(joueur: Dictionary, indice: int) -> Variant:
 		somme += float(v)
 	return roundf(somme / cles.size())
 
+## Qualités en fourchette (option de carrière, player-knowledge.cjs) : {min, max} d'un attribut, {} sinon.
+static func plage_attribut(joueur: Dictionary, cle: String) -> Dictionary:
+	var plages: Variant = joueur.get("attributesV2Range")
+	var p: Variant = plages.get(cle) if plages is Dictionary else null
+	return p if p is Dictionary and Base.numeric(p.get("min")) and Base.numeric(p.get("max")) else {}
+
+## Fourchette d'un axe : moyennes des bornes de ses attributs (arrondies), {} si l'un d'eux n'est pas en fourchette.
+static func plage_axe(joueur: Dictionary, indice: int) -> Dictionary:
+	var cles: Array = AXES[indice][1]
+	var bas := 0.0
+	var haut := 0.0
+	for cle: String in cles:
+		var p := plage_attribut(joueur, cle)
+		if p.is_empty(): return {}
+		bas += float(p.min)
+		haut += float(p.max)
+	return {"min": roundi(bas / cles.size()), "max": roundi(haut / cles.size())}
+
+## Texte d'une valeur : « 45-49 » si le staff n'est pas encore sûr (même format que la fiche), le chiffre sinon.
+static func texte_valeur(v: Variant, plage: Dictionary) -> String:
+	if not plage.is_empty(): return "%d-%d" % [int(plage.min), int(plage.max)]
+	return _texte(v)
+
 static func axes(joueur: Dictionary) -> Array:
 	var sortie: Array = []
 	for i in AXES.size(): sortie.append(axe(joueur, i))
@@ -178,7 +201,9 @@ static func construire(app: Control, page: Control, joueurs: Array, y0: float) -
 		titre.add_theme_font_override("font", C.EXTRA_BOLD)
 		titre.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var gagnant := _meilleur(a, b)
-		var morceaux := [[_texte(a) + (" ▲" if gagnant == 0 else ""), COULEURS[0]], [_texte(b) + (" ▲" if gagnant == 1 else ""), COULEURS[1]]]
+		var pa := plage_axe(joueurs[0], i) if joueurs.size() > 0 else {}
+		var pb := plage_axe(joueurs[1], i) if joueurs.size() > 1 else {}
+		var morceaux := [[texte_valeur(a, pa) + (" ▲" if gagnant == 0 else ""), COULEURS[0]], [texte_valeur(b, pb) + (" ▲" if gagnant == 1 else ""), COULEURS[1]]]
 		var largeurs := [Kit.largeur(morceaux[0][0], 26) + 8.0, Kit.largeur(morceaux[1][0], 26)]
 		var total: float = largeurs[0] + 18.0 + largeurs[1]
 		var depart := tx - total / 2.0 if aligne == HORIZONTAL_ALIGNMENT_CENTER else (tx if aligne == HORIZONTAL_ALIGNMENT_LEFT else tx - total)
@@ -186,6 +211,7 @@ static func construire(app: Control, page: Control, joueurs: Array, y0: float) -
 			if joueurs.size() <= k or (joueurs[k] as Dictionary).is_empty(): continue
 			var chiffre := D.text(bouton, depart, 66, morceaux[k][0], 26, morceaux[k][1], 800)
 			chiffre.name = "RadarAxe%dValeur%d" % [i, k]
+			if not (pa if k == 0 else pb).is_empty(): chiffre.set_meta("fourchette", true)
 			chiffre.add_theme_font_override("font", C.EXTRA_BOLD)
 			chiffre.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			depart += largeurs[k] + 18.0
@@ -259,7 +285,7 @@ static func _colonne_synthese(app: Control, page: Control, joueurs: Array, k: in
 	for paire: Array in [["Point fort", meilleur, Charte.GAIN, "▲"], ["Point faible", faible, Charte.PERTE, "▼"]]:
 		if int(paire[1]) < 0: continue
 		D.text(panneau, zone.size.x - marge if droite else marge, y + 34, str(paire[0]), 19, Charte.IVOIRE_2, 500, 200, HORIZONTAL_ALIGNMENT_RIGHT if droite else HORIZONTAL_ALIGNMENT_LEFT, true)
-		var texte := "%s %s %d" % [str(paire[3]), str(AXES[int(paire[1])][0]), int(valeurs[int(paire[1])])]
+		var texte := "%s %s %s" % [str(paire[3]), str(AXES[int(paire[1])][0]), texte_valeur(valeurs[int(paire[1])], plage_axe(joueur, int(paire[1])))]
 		var lien := Kit.lien(panneau, Rect2(marge if droite else zone.size.x - marge - 300, y + 4, 300, 44), texte, func(): fenetre_axe(page, joueurs, int(paire[1]), null), "RadarSynthese%d_%s" % [k, str(paire[0]).replace(" ", "")], 22, false)
 		lien.add_theme_color_override("font_color", paire[2])
 		lien.alignment = HORIZONTAL_ALIGNMENT_LEFT if droite else HORIZONTAL_ALIGNMENT_RIGHT
@@ -278,18 +304,20 @@ static func fenetre_axe(page: Control, joueurs: Array, i: int, retour: Control) 
 		nom.add_theme_font_override("font", C.EXTRA_BOLD)
 	y += 56.0
 	var lignes: Array = []
-	for cle: String in cles: lignes.append([libelle(cle), attribut(joueurs[0], cle) if joueurs.size() > 0 else null, attribut(joueurs[1], cle) if joueurs.size() > 1 else null, "RadarFenetreLigne_" + cle])
-	lignes.append(["Moyenne", axe(joueurs[0], i) if joueurs.size() > 0 else null, axe(joueurs[1], i) if joueurs.size() > 1 else null, "RadarFenetreMoyenne"])
+	var j0: Dictionary = joueurs[0] if joueurs.size() > 0 else {}
+	var j1: Dictionary = joueurs[1] if joueurs.size() > 1 else {}
+	for cle: String in cles: lignes.append([libelle(cle), attribut(j0, cle), attribut(j1, cle), "RadarFenetreLigne_" + cle, plage_attribut(j0, cle), plage_attribut(j1, cle)])
+	lignes.append(["Moyenne", axe(j0, i) if not j0.is_empty() else null, axe(j1, i) if not j1.is_empty() else null, "RadarFenetreMoyenne", plage_axe(j0, i) if not j0.is_empty() else {}, plage_axe(j1, i) if not j1.is_empty() else {}])
 	for n in lignes.size():
 		var ligne: Array = lignes[n]
 		if n == lignes.size() - 1:
 			D.line(fond, Vector2(40, y + 2), Vector2(1000, y + 2), Charte.FILET, 2)
 			y += 10.0
-		_ligne_miroir(fond, Rect2(40, y, 960, 56), str(ligne[0]), ligne[1], ligne[2], str(ligne[3]), n == lignes.size() - 1)
+		_ligne_miroir(fond, Rect2(40, y, 960, 56), str(ligne[0]), ligne[1], ligne[2], str(ligne[3]), n == lignes.size() - 1, ligne[4], ligne[5])
 		y += 64.0
 
 ## Ligne miroir : libellé au centre, barre du premier joueur vers la gauche, du second vers la droite.
-static func _ligne_miroir(parent: Control, zone: Rect2, titre: String, a: Variant, b: Variant, nom: String, gras: bool) -> void:
+static func _ligne_miroir(parent: Control, zone: Rect2, titre: String, a: Variant, b: Variant, nom: String, gras: bool, pa: Dictionary = {}, pb: Dictionary = {}) -> void:
 	var milieu := zone.position.x + zone.size.x / 2.0
 	var demi := 250.0
 	var hb := 14.0
@@ -305,9 +333,9 @@ static func _ligne_miroir(parent: Control, zone: Rect2, titre: String, a: Varian
 		D.rect(parent, Rect2(milieu + 110, yb, lb, hb), Color(COULEURS[1], 1.0 if gagnant != 0 else .55), 4)
 	var etiquette := D.text(parent, milieu, zone.position.y + 36, titre, 20 if not gras else 22, Charte.IVOIRE if gras else Charte.IVOIRE_2, 700 if gras else 500, 210, HORIZONTAL_ALIGNMENT_CENTER, not gras)
 	etiquette.name = nom
-	var va := D.text(parent, milieu - 110 - demi - 14, zone.position.y + 38, ("▲ " if gagnant == 0 else "") + _texte(a), 26, Charte.couleur_attribut(a) if a != null else Charte.IVOIRE_3, 800, 120, HORIZONTAL_ALIGNMENT_RIGHT)
+	var va := D.text(parent, milieu - 110 - demi - 14, zone.position.y + 38, ("▲ " if gagnant == 0 else "") + texte_valeur(a, pa), 26, Charte.couleur_attribut(a) if a != null else Charte.IVOIRE_3, 800, 120, HORIZONTAL_ALIGNMENT_RIGHT)
 	va.add_theme_font_override("font", C.EXTRA_BOLD)
 	va.name = nom + "_0"
-	var vb := D.text(parent, milieu + 110 + demi + 14, zone.position.y + 38, _texte(b) + (" ▲" if gagnant == 1 else ""), 26, Charte.couleur_attribut(b) if b != null else Charte.IVOIRE_3, 800, 120)
+	var vb := D.text(parent, milieu + 110 + demi + 14, zone.position.y + 38, texte_valeur(b, pb) + (" ▲" if gagnant == 1 else ""), 26, Charte.couleur_attribut(b) if b != null else Charte.IVOIRE_3, 800, 120)
 	vb.add_theme_font_override("font", C.EXTRA_BOLD)
 	vb.name = nom + "_1"
