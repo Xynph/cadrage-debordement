@@ -180,19 +180,25 @@ func capture_room(kind: String, continue_name: String) -> void:
 	root.size = dimensions_to_check[0]
 	await settle()
 
+## Conférence en un clic par question (choix A de Léo, 23/11/2026, #1202) : chaque réponse est dite au clic et la
+## dernière publie. On répond à toutes les questions sauf la dernière ; la dernière reste à cliquer par l'appelant.
 func answer_press() -> Dictionary:
 	var data: Dictionary = app.model.clubLife.press
 	var answers: Array = []
-	for index in data.conference.questions.size():
-		var question: Dictionary = data.conference.questions[index]
+	var questions: Array = data.conference.questions
+	for index in questions.size():
+		var question: Dictionary = questions[index]
 		check(not str(question.journalist.id).is_empty() and not str(question.journalist.name).is_empty(),"Question has its actual projected journalist")
 		director.view._select_question(index)
 		await settle()
-		check(str(director.view.question_label.text).contains(str(question.question)),"Current full question is the real worker projection")
+		var shown: Label = director.view.find_child("PressQuestion", true, false)
+		check(shown != null and str(shown.text).contains(str(question.question)),"Current full question is the real worker projection")
 		var answer: Dictionary = question.answers[0]
-		press_button("PressAnswer_" + str(question.id) + "_" + str(answer.id))
 		answers.append({"questionId":question.id,"answerId":answer.id})
-	check(director.view.choices.size() == data.conference.questions.size(),"Every real question has one permitted answer")
+		if index < questions.size() - 1:
+			press_button("PressAnswer_" + str(question.id) + "_" + str(answer.id))
+			await settle()
+	check(director.view.choices.size() == questions.size() - 1,"Every real question but the last has one said answer")
 	return {"context":data.context.duplicate(true),"answers":answers,"invitationId":data.conference.invitationId}
 
 func visible_confirmation() -> ConfirmationDialog:
@@ -244,7 +250,7 @@ func press_flow() -> bool:
 	var id := str(meeting().id)
 	var invitation_id := str(app.model.clubLife.press.conference.invitationId)
 	if not await open_press_mail(invitation_id): return false
-	await capture_room("press","PressPublish")
+	await capture_room("press","PressAnswer_" + str(app.model.clubLife.press.conference.questions[0].id) + "_" + str(app.model.clubLife.press.conference.questions[0].answers[0].id))
 	var before := await checkpoint()
 	await ask("snapshot")
 	await same_checkpoint(before,"Viewing/reading the press room")
@@ -258,8 +264,9 @@ func press_flow() -> bool:
 	var stale: Dictionary = payload.duplicate(true)
 	stale.context.week = int(stale.context.week) + 1
 	await refused("press_conference",stale)
-	check(director.view.choices.size() == payload.answers.size(),"Worker refusal preserves the prepared answers")
-	press_button("PressPublish")
+	check(director.view.choices.size() == payload.answers.size() - 1,"Worker refusal preserves the prepared answers")
+	var last: Dictionary = payload.answers[payload.answers.size() - 1]
+	press_button("PressAnswer_" + str(last.questionId) + "_" + str(last.answerId))
 	check(app.waiting and app.last_command == "press_conference","Publish uses actual public command bookkeeping")
 	var all_disabled := true
 	for control in director.overlay.find_children("*","BaseButton",true,false):
