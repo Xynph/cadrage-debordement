@@ -201,7 +201,8 @@ func run() -> void:
 		print("MENU_JOUEUR remplacement attendu : ", etat_direct(surface()))
 		print("MENU_JOUEUR remplacement parti : minute %d -> %d en %d s (fini %s, pause %s, file %d, fenêtre %s)" % [m0, int(live().get("minute", 0)), (Time.get_ticks_msec() - t0) / 1000, str(live().get("finished", false)), str(live().get("paused", false)), file().size(), str(surface() != null and surface().fenetre_ouverte())])
 		Engine.time_scale = 4.0
-		check(await until_vivant(func(): return bt() != null and bt().find_child("MatchChangementCarte", true, false) != null, 120000), "carte sortant / entrant affichée quand le direct montre le changement")
+		# Attendre aussi l'écran 2D : une pause pendant l'action 3D laisserait Mon XV caché.
+		check(await until_vivant(func(): return bt() != null and bt().find_child("MatchChangementCarte", true, false) != null and vue_2d(surface()), 120000), "carte sortant / entrant affichée quand le direct montre le changement")
 		# Le match touche à sa fin (80e) : pause dès que le changement s'affiche, sinon le coup de sifflet final ferme le
 		# direct pendant les vérifications (runner lent, vu en CI). L'écran reste vivant en pause.
 		await command("pause", {"paused": true})
