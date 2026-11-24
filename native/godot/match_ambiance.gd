@@ -27,7 +27,10 @@ const FUMEE_RANG_MAX := 5.0
 const PLUIE_PROCHE := [0, 500, 1000]
 const PLUIE_LOINTAINE := [0, 800, 1500]
 ## Distance (m) du centre de chaque nappe devant la caméra.
-const PLUIE_PROCHE_DISTANCE := 8.0
+const PLUIE_PROCHE_DISTANCE := 10.0
+## Fondu des gouttes près de la caméra (m) : aucune goutte ne couvre l'image de haut en bas.
+const PLUIE_FONDU_MIN := 3.0
+const PLUIE_FONDU_MAX := 6.0
 const PLUIE_LOINTAINE_DISTANCE := 30.0
 ## Ciel couvert de jour sous la pluie : énergie du soleil gardée et opacité des ombres.
 const SOLEIL_CRACHIN := 0.55
@@ -347,6 +350,11 @@ func _creer_nappe(nom: String, nombre: int, taille: Vector2, opacite: float, ete
 	matiere.billboard_keep_scale = true
 	matiere.albedo_color = Color(0.86, 0.9, 0.97, opacite)
 	matiere.cull_mode = BaseMaterial3D.CULL_DISABLED
+	# Fondu près de l'objectif : une goutte collée à la caméra traçait une bande pâle sur toute la
+	# hauteur de l'image (« poteau fantôme »). Invisible avant PLUIE_FONDU_MIN m, pleine après PLUIE_FONDU_MAX.
+	matiere.distance_fade_mode = BaseMaterial3D.DISTANCE_FADE_PIXEL_ALPHA
+	matiere.distance_fade_min_distance = PLUIE_FONDU_MIN
+	matiere.distance_fade_max_distance = PLUIE_FONDU_MAX
 	goutte.material = matiere
 	var processus := ParticleProcessMaterial.new()
 	processus.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
