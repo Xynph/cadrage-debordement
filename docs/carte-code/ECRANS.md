@@ -23,6 +23,11 @@ Numéros de ligne approximatifs (au 24/11/2026) : relancer carte-code.cjs avant 
 | Écran | Fichier(s) | Entrée |
 |---|---|---|
 | Bureau (dessiné) | `ui/immersive08/office_canvas.gd`, `office.gd` | `build` L169 / L278 |
+| Gabi adjoint (bandeau, bulle, Bureau) : fichier public (contexte : moments clés, première visite, humeur, alertes ; `_process`, `refresh`) | `ui/immersive08/coach_canvas.gd` ← sa chaîne ci-dessous (`coach_guide.gd` ← socle ← bulle ← bandeau ← bureau ← canvas) | `consider_context` L20, `_process` L275 |
+| Gabi : socle (consts, état, portraits, habillage des boutons, placement portrait/voile/bulle, fil de la remarque, indice, petites classes de dessin) | `ui/immersive08/coach_socle.gd` | `_maj_remarque` L249, `_layout_bulle` L324, `_position_libre` L403 |
+| Gabi : bulle qui descend du bandeau (construction, affichage, fermeture, « Suivre le conseil ») | `ui/immersive08/coach_bulle.gd` | `_build_adjoint` L16, `_montrer` L87, `suivre_conseil` L200 |
+| Gabi : bandeau du haut (pose, clic) et règles de parole (bulle ou indice) | `ui/immersive08/coach_bandeau.gd` | `installer_bandeau` L11, `_clic_bandeau` L151, `_dans_le_bandeau` L185 |
+| Gabi : chez lui au Bureau (zone en pied, carnet, premiers pas) | `ui/immersive08/coach_bureau.gd` | `installer_bureau` L11, `carte_premiers_pas` L148 |
 | Réception (courrier) : fichier principal (états, ordre des courriers, `build`, `heading`, consts) | `ui/immersive08/reception_canvas.gd` ← ses morceaux ci-dessous | `build` ~L470 |
 | Réception : liste de gauche (filtres, jours, ligne d'un courrier) | `ui/immersive08/reception_liste.gd` | `_list_filters`, `_list`, `_row` |
 | Réception : lettre ouverte (texte à liens, fil de lecture, mesures) | `ui/immersive08/reception_lettre.gd` | `_detail`, `_letter`, `entities` |
@@ -36,7 +41,12 @@ Numéros de ligne approximatifs (au 24/11/2026) : relancer carte-code.cjs avant 
 ## Équipe
 | Écran | Fichier(s) | Entrée |
 |---|---|---|
-| Effectif (liste) | `ui/immersive08/squad_canvas.gd`, `ui/socle/ecran_effectif.gd`, `panneaux_effectif.gd` | `build` L66 / L41 |
+| Effectif (liste) | `ui/immersive08/squad_canvas.gd` (fichier public : `build`, `_build`, redéfinitions des statiques lus ailleurs, pastilles de poste), `ui/socle/ecran_effectif.gd`, `panneaux_effectif.gd` | `build` L19 / L41 |
+| · socle de l'Effectif | `ui/immersive08/squad_socle.gd` (constantes, état, outils de dessin, lecture et tri des joueurs en statiques : `primary_caption`, `sort_value`, `ordered_players`) | chaîne d'héritage socle ← filtres ← entête ← lignes ← tableau ← canvas |
+| · Puces, recherche, menus | `ui/immersive08/squad_filtres.gd` | `_filtres`, `_appliquer_puce`, `_choix_menu` |
+| · Titre, tuiles, onglets | `ui/immersive08/squad_entete.gd` | `_entete_page`, `_tuiles`, `_onglets` |
+| · Ligne d'un joueur | `ui/immersive08/squad_lignes.gd` | `_row`, `_cellule_joueur`, `_statut` |
+| · Tableau, tri, totaux | `ui/immersive08/squad_tableau.gd` | `_tableau`, `_colonnes`, `_refresh`, `_totaux` |
 | Fiche joueur | `ui/immersive08/player_canvas.gd`, `fiche_page.gd`, `fiche_commune.gd`, `fiche_*.gd` | `build` L97 |
 | Composition / tactique | `ui/immersive08/tactics_canvas.gd` + `tactics_*.gd` | `build` L44 |
 | Préparation (semaine) | `ui/immersive08/preparation_canvas.gd`, `preparation_*.gd` | `build` L34, `compact` L43 |
@@ -92,7 +102,7 @@ Numéros de ligne approximatifs (au 24/11/2026) : relancer carte-code.cjs avant 
 | Écran | Fichier(s) | Entrée |
 |---|---|---|
 | Avant-match | `ui/immersive08/match_avant.gd` (+ `avant_match_pages.gd`, `avant_match_bilan.gd`, `avant_match_terrain.gd`) | `setup` L134, `_construire` L261 |
-| Match en direct (3D, HUD) | `ui/contextual/live_view.gd`, `match_view.gd` (état, `apply_frame`, façades), `match_vue_camera.gd` (caméra suivie), `match_vue_visee.gd` (bornes, poteaux, regroupement), `match_vue_joueurs.gd` (acteurs, animation, sortie), `match_vue_ballon.gd` (port, passe, trajectoire), `match_vue_stade.gd` (décor, public, ballon), autres `match_*.gd` (racine) | `_ready` L141 ; vue `_ready` L171, `apply_frame` L427, `_process` L699 ; `_fit_camera` (caméra) L115, `animer_acteur` (joueurs) L214 |
+| Match en direct (3D, HUD) | `ui/contextual/live_view.gd`, `match_view.gd` (état, `apply_frame`, façades), `match_vue_camera.gd` (caméra suivie), `match_vue_visee.gd` (bornes, poteaux, regroupement), `match_vue_joueurs.gd` (acteurs, animation, sortie), `match_vue_ballon.gd` (port, passe, trajectoire), `match_vue_stade.gd` (décor, public, ballon), `match_ambiance.gd` (foule vivante, confettis, fumigènes, pluie), autres `match_*.gd` (racine) | `_ready` L141 ; vue `_ready` L171, `apply_frame` L427, `_process` L699 ; `_fit_camera` (caméra) L115, `animer_acteur` (joueurs) L214 |
 | Temps forts (régie) | `ui/contextual/match_temps_forts.gd` | `setup` L231 |
 | Gestes du match 3D (touche, ballon porté, essai) | `match_gestes.gd` (interface, recadrage) ← `match_gestes_essai.gd` (ballon porté, essai, après-essai) ← `match_gestes_placement.gd` (mise en place, touche, coupes) ← `match_gestes_corps.gd` (poses) ← `match_gestes_etat.gd` (constantes, état) : chaîne d'héritage | `observe` L56, `advance` L176, `pose` L320 |
 | Entre-deux (2D) | `ui/contextual/match_between.gd` (écran : `_ready`, `_construire`, colonnes, `update_frame`) ← chaîne d’héritage, du bas vers le haut : `match_between_constantes.gd` (préchargements, constantes) ← `_widgets.gd` (Domination, Momentum, Jauge…) ← `_etat.gd` (signaux, variables, Compo, Cumul) ← `_outils.gd` (échelle, cases, boutons, textes) ← `_fiche.gd` (fiche joueur, état du terrain, phase, légende) ← `_joueurs.gd` (visages, noms, lignes) ← `_multiplex.gd` (écussons, cartes de match) ← `_journee.gd` (classement en direct, journée, météo, vue de droite) ← `_xv.gd` (Mon XV, banc, changements) ← `_fil.gd` (fil, chiffres, bonus, tableau FM) ← `_adjoint.gd` (Gabi, pourquoi, arrêts) ; `match_terrain_2d.gd` | `_ready` L18 |
