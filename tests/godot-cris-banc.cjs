@@ -1,8 +1,9 @@
 'use strict';
-// Barre du banc en direct (idée FM27 n° 34, choix B de Léo) : cris d'équipe, cris à un joueur qui agissent (réaction
-// découverte après coup), ajustements et « Permuter les ailes » au prochain arrêt de jeu ; un clic = action, aucun
-// bouton Confirmer ; vrai match à vitesse maximale. CD_PLANCHE_DIRECT_2D=<dossier> reçoit final-1920.png,
-// final-2560.png et final-ailes-1920.png. Jeu rendu : à lancer sous godot-slot.ps1 (jeu invisible).
+// Bouton « Cris » du direct (idée FM27 n° 34, menu déroulant comme dans FM) : cris d'équipe, cris à un joueur qui
+// agissent (réaction découverte après coup), ajustements et « Permuter les ailes » au prochain arrêt de jeu ; un clic =
+// action, aucun bouton Confirmer ; vrai match à vitesse maximale. CD_PLANCHE_DIRECT_2D=<dossier> reçoit
+// final-ferme-*, final-menu-*, final-joueurs-*, final-gabi-* (1920 et 2560) et final-ailes-1920.png. Jeu rendu : à
+// lancer sous godot-slot.ps1 (jeu invisible).
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path'), assert = require('node:assert/strict');
 const {spawnSync} = require('node:child_process');
 const godot = process.env.CD_GODOT_EXECUTABLE || process.env.CD_GODOT_EXE;
@@ -29,8 +30,7 @@ let echecs = 0;
   fs.copyFileSync(path.join(directory, 'monde.json'), path.join(dossier, 'monde.json'));
   const env = {...process.env, CD_GODOT_SELF_TEST: '0', CD_NODE_EXECUTABLE: process.env.CD_NODE_EXECUTABLE || process.execPath, CD_GODOT_DATA_DIR: path.join(process.env.CD_PLANCHE_PROFIL || directory, 'jeu', 'PrototypeGodot'),
     CD_PLANCHE_DIRECT_2D: dossier, CD_MATCH_TEMPS_FORTS: '1', CD_MATCH_TEMPS_FORTS_HORLOGE: 'eclair', CD_MATCH_TEMPS_FORTS_VITESSE: '8', CD_MATCH_TEMPS_FORTS_NIVEAU: 'cles', CD_GODOT_SEED: '3', CD_CARTE_CHANGEMENT_S: '120'};
-  // CD_VARIANTE_VISUELLE=A|B passe (planche « barre du banc » du 24/11 : le test doit passer avec les deux options).
-  for (const name of ['CD_MATCH_GESTES', 'CD_MATCH_CHOREGRAPHE', 'CD_MATCH_TEMPS_FORTS_ENTRACTE', 'CD_MATCH_SORTIE']) delete env[name];
+  for (const name of ['CD_MATCH_GESTES', 'CD_MATCH_CHOREGRAPHE', 'CD_MATCH_TEMPS_FORTS_ENTRACTE', 'CD_MATCH_SORTIE', 'CD_VARIANTE_VISUELLE']) delete env[name];
   const result = spawnSync(godot, ['--audio-driver', 'Dummy', '--max-fps', '60', '--path', path.resolve(__dirname, '../native/godot'), '--script', path.resolve(__dirname, 'godot-cris-banc.gd')],
     {env, encoding: 'utf8', windowsHide: true, timeout: 900000});
   const output = (result.stdout || '') + (result.stderr || '');

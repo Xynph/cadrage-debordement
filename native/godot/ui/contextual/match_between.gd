@@ -1828,7 +1828,8 @@ func _page_d3(page: Control) -> void:
 	temps_forts.visible = false
 	var rang_bas := _boite(true, GOUTTIERE)
 	rang_bas.name = "MatchBetweenDashboardRow"
-	S.G.fill(rang_bas, true, 0.62)
+	# Le terrain d'abord (vérificateur du 24/11) : la rangée du bas garde sa hauteur utile, le reste va au terrain.
+	S.G.fill(rang_bas, true, 0.3)
 	centre.add_child(rang_bas)
 	_poser_bas_fm(rang_bas)
 	# La domination prend la place du momentum, sous le terrain (sigles en légende, frise basse).
@@ -3179,6 +3180,21 @@ func _poser_phase(live: Dictionary) -> void:
 	phase.text = ("%s · décision attendue" % titre) if not _arret.is_empty() else titre
 	phase.tooltip_text = "Vitesse de l’horloge : %s (menu Plus)" % vitesse
 	_poser_pied()
+	_ajuster_phase()
+
+## L'état du jeu tient dans sa place de la bande des commandes (bouton « Banc » ajouté le 24/11) : la police baisse un
+## peu plutôt que de couper le mot (« En paus »).
+func _ajuster_phase() -> void:
+	if not is_instance_valid(phase) or phase.size.x <= 1.0: return
+	if not phase.has_meta("taille_base"): phase.set_meta("taille_base", phase.get_theme_font_size("font_size"))
+	if not phase.resized.is_connected(_ajuster_phase): phase.resized.connect(_ajuster_phase)
+	var base := int(phase.get_meta("taille_base"))
+	var cadre: StyleBox = phase.get_theme_stylebox("normal")
+	var place := phase.size.x - (cadre.get_margin(SIDE_LEFT) + cadre.get_margin(SIDE_RIGHT) if cadre != null else 0.0)
+	var police: Font = phase.get_theme_font("font")
+	var taille := base
+	while taille > maxi(12, roundi(base * 0.6)) and police.get_string_size(phase.text, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x > place: taille -= 1
+	if phase.get_theme_font_size("font_size") != taille: phase.add_theme_font_size_override("font_size", taille)
 
 ## Pied : la vitesse de l'horloge (dans Réglages) et où trouver les autres matchs (menu Plus).
 func _poser_pied() -> void:

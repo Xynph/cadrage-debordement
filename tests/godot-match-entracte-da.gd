@@ -83,7 +83,7 @@ func dans(r: Rect2, ecran: Vector2) -> bool:
 
 func etat(ecran: Control, app: Node) -> String:
 	var fiche: Variant = ecran.get("fiche_match")
-	return JSON.stringify([signaux.size(), ecran.vue_droite, ecran.vue_xv, fiche != null and is_instance_valid(fiche), (app.get("envois") as Array).size(), ecran.horloge, ecran.niveau_libelle(), ecran.tri_xv, ecran.tri_inverse])
+	return JSON.stringify([signaux.size(), ecran.vue_droite, ecran.vue_xv, fiche != null and is_instance_valid(fiche), (app.get("envois") as Array).size(), ecran.horloge, ecran.niveau_libelle(), ecran.tri_xv, ecran.tri_inverse, bool(ecran.get_meta("fm_menu", false))])
 
 ## Couleurs posées sur un contrôle (polices et styles) : aucune ne doit être l'or de Continuer.
 ## Aplat doré = fond (opaque) d'un bouton ou d'un panneau, dans l'un de ses états ; texte, contour et anneau permis.

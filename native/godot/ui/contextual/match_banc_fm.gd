@@ -1,5 +1,5 @@
 extends Node
-## Banc en direct (revue FM27, idée 34) : bouton « Banc » dans la bande des commandes (à côté d'Équipe, Consignes,
+## Banc en direct (revue FM27, idée 34) : bouton « Cris » dans la bande des commandes (à côté d'Équipe, Consignes,
 ## Réglages, Plus), menu déroulant comme dans FM (choix de Léo du 24/11/2026, il remplace la barre de ronds).
 ## Le bouton reste allumé tant que le menu est ouvert ; Échap ou un clic à côté le ferment. Fond anthracite satiné commun
 ## aux fenêtres du match. Un clic sur une ligne applique tout de suite : aucun bouton Confirmer.
@@ -70,7 +70,7 @@ const CRIS := {
 const CRIS_JOUEUR := [["bravo", "Bien joué", "pouce", Charte.CONDITION], ["niveau", "Hausse le niveau", "haut", Charte.INTENSIF], ["reveil", "Réveille-toi", "reveil", Charte.PERTE]]
 
 var between: Control
-## Bouton « Banc » de la bande des commandes.
+## Bouton « Cris » de la bande des commandes.
 var bouton_banc: Button
 ## Calque du menu ouvert (clic à côté = fermer) ; il porte le menu déroulant et la sous-liste « À un joueur ».
 var _calque: Control
@@ -78,13 +78,20 @@ var _deroulant: PanelContainer
 var _menu: PanelContainer
 var _cle := ""
 
-## Pose le bouton « Banc » dans la bande des commandes, juste avant « Consignes ».
+## Pose le bouton « Cris » dans la bande des commandes, juste avant « Consignes ».
 static func poser(hote: Control, barre: Control, _page: Control) -> Node:
+	# Un seul banc par écran : celui d'une pose précédente part (update_frame retrouve le banc par son nom).
+	var ancien := hote.get_node_or_null(NOM)
+	if ancien != null:
+		var vieux_calque: Variant = ancien.get("_calque")
+		if vieux_calque is Node and is_instance_valid(vieux_calque): (vieux_calque as Node).queue_free()
+		hote.remove_child(ancien)
+		ancien.queue_free()
 	var banc := new()
 	banc.name = NOM
 	banc.between = hote
 	hote.add_child(banc)
-	var b: Button = hote._lien("Banc", banc.basculer_menu, "MatchBetweenBench")
+	var b: Button = hote._lien("Cris", banc.basculer_menu, "MatchBetweenShouts")
 	b.add_theme_font_size_override("font_size", hote.fpx(22 * float(hote.get_script().get_script_constant_map().get("BARRE_HAUT", 1.28))))
 	b.tooltip_text = "Cris, ajustements, permuter les ailes"
 	b.set_meta("ouvert", false)
@@ -215,15 +222,12 @@ func _icone(id: String, couleur: Color, cote: float) -> TextureRect:
 
 ## Rond coloré portant une icône (allumé : aplat de la couleur, icône sombre ; éteint : voile de la couleur). `attente` :
 ## liseré pointillé de la couleur (changement demandé, pas encore en place).
-## `vif` : rond éteint mieux lisible sur l'anthracite des fenêtres (voile plus dense, liseré, icône éclaircie).
+## `vif` : rond éteint mieux lisible sur l'anthracite des fenêtres (voile plus dense, icône éclaircie).
 func _rond(id: String, couleur: Color, cote: float, allume: bool, attente: bool = false, vif: bool = false) -> PanelContainer:
 	var rond := PanelContainer.new()
 	rond.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var st := StyleBoxFlat.new()
-	st.bg_color = couleur if allume else Color(couleur, 0.26 if vif else 0.16)
-	if vif and not allume and not attente:
-		st.border_color = Color(couleur, 0.55)
-		st.set_border_width_all(maxi(1, px(1.5)))
+	st.bg_color = couleur if allume else Color(couleur, 0.30 if vif else 0.16)
 	st.set_corner_radius_all(Charte.RAYON_PILULE)
 	st.anti_aliasing = true
 	if attente:
@@ -250,7 +254,7 @@ func _vide() -> Control:
 	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	return v
 
-# ------------------------------------------------------------------ menu déroulant « Banc »
+# ------------------------------------------------------------------ menu déroulant « Cris »
 
 func menu_ouvert() -> bool: return is_instance_valid(_deroulant)
 
@@ -258,7 +262,7 @@ func basculer_menu() -> void:
 	if menu_ouvert(): fermer_menu()
 	else: ouvrir_menu()
 
-## Menu sous le bouton « Banc » : à gauche les cris d'équipe, « À un joueur », permuter les ailes ; à droite les
+## Menu sous le bouton « Cris » : à gauche les cris d'équipe, « À un joueur », permuter les ailes ; à droite les
 ## ajustements. Le bouton reste allumé tant qu'il est ouvert.
 func ouvrir_menu(avec_joueurs: bool = false) -> void:
 	if menu_ouvert():
@@ -306,7 +310,7 @@ func fermer_menu() -> void:
 	_liste = null
 	_allumer(false)
 
-## Bouton « Banc » allumé (fond éclairé, liseré or, texte or) tant que le menu est ouvert.
+## Bouton « Cris » allumé (fond éclairé, trait or, texte or) tant que le menu est ouvert.
 func _allumer(ouvert: bool) -> void:
 	if not is_instance_valid(bouton_banc): return
 	bouton_banc.set_meta("ouvert", ouvert)
@@ -316,8 +320,9 @@ func _allumer(ouvert: bool) -> void:
 			continue
 		var st := StyleBoxFlat.new()
 		st.bg_color = Charte.PANNEAU_3
+		# Allumé : fond éclairé et trait or sous le mot (jamais un cadre complet, charte finale).
 		st.border_color = Charte.OR
-		st.set_border_width_all(maxi(1, px(2)))
+		st.border_width_bottom = maxi(2, px(3))
 		st.set_corner_radius_all(Charte.RAYON_PETIT)
 		st.content_margin_left = px(10)
 		st.content_margin_right = px(10)
