@@ -8,6 +8,7 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const Charte = preload("res://ui/charte.gd")
+const Fleches = preload("res://ui/fleches_progression.gd")
 const PlayerAttributes = preload("res://ui/player_attributes.gd")
 const Knowledge = preload("res://ui/player_knowledge_text.gd")
 const NotesMatch = preload("res://ui/notes_match.gd")
@@ -166,6 +167,8 @@ static func grille_attributs(parent: Control, origine: Vector2, dimension: Vecto
 	var pas := float(tailles.get("pas", 33))
 	var ecart := float(tailles.get("ecart", 28))
 	var colonne := (dimension.x - ecart * 3.0) / 4.0
+	var fleches: Dictionary = {}
+	if tailles.has("app") and tailles.has("joueur"): fleches = Fleches.donnees(tailles.app, tailles.joueur).get("qualites", {})
 	for i in PlayerAttributes.GROUPS.size():
 		var group: Array = PlayerAttributes.GROUPS[i]
 		var x := origine.x + i * (colonne + ecart)
@@ -198,6 +201,10 @@ static func grille_attributs(parent: Control, origine: Vector2, dimension: Vecto
 			var number := D.text(parent, x + colonne, y, PlayerAttributes.caption(value), valeur, Charte.couleur_attribut(value), 700, 46, HORIZONTAL_ALIGNMENT_RIGHT)
 			number.name = prefixe + str(pair[0])
 			number.tooltip_text = "%s · %s / 100" % [pair[1], PlayerAttributes.caption(value)] if value != null else "%s · inconnu" % pair[1]
+			# Flèche de progression sur 4 semaines + courbe 12 mois au survol (planche du 23/11/2026).
+			if fleches.has(pair[0]):
+				var f: Dictionary = fleches[pair[0]]
+				Fleches.marquer(tailles.app, number, int(f.cran), f.serie, str(pair[1]), "Qualite_" + str(pair[0]))
 
 ## Légende du barème : six libellés colorés, alignés à droite sur `droite` (unités). Renvoie la largeur occupée.
 static func legende(parent: Control, droite: float, ligne: float, taille: int = 18) -> Control:

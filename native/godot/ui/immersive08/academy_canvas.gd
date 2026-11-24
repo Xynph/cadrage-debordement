@@ -4,6 +4,7 @@ extends Control
 ## mini-fiche, clic = fiche complète ; jamais de fiche fixe ni de petite fenêtre (sous-pages : formation_pages.gd).
 ## Coordonnées en unités du gabarit (2248 de large), couleurs uniquement depuis ui/charte.gd, aucun or.
 const Notation = preload("res://ui/notation_staff.gd")
+const Fleches = preload("res://ui/fleches_progression.gd")
 const Copy = preload("res://ui/management_copy.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
@@ -432,13 +433,13 @@ func _columns() -> Array:
 		return [{"id":"num", "titre":"#", "tri":"source", "x":22.0, "w":40.0, "align":1}, {"id":"name", "titre":"JOUEUR", "tri":"name", "x":132.0, "w":420.0, "align":0},
 			{"id":"pos", "titre":"POSTE", "tri":"pos", "x":580.0, "w":200.0, "align":0}, {"id":"age", "titre":"ÂGE", "tri":"age", "x":800.0, "w":70.0, "align":2},
 			{"id":"start", "titre":"NIV. EN JUILLET", "tri":"start", "x":890.0, "w":170.0, "align":2}, {"id":"note", "titre":"NIV.", "tri":"note", "x":1080.0, "w":80.0, "align":2},
-			{"id":"change", "titre":"PROG. DEPUIS JUILLET", "tri":"change", "x":1180.0, "w":260.0, "align":2}, {"id":"trend", "titre":"SAISONS PASSÉES", "tri":"", "x":1480.0, "w":260.0, "align":0},
+			{"id":"trend", "titre":"SAISONS PASSÉES", "tri":"", "x":1220.0, "w":520.0, "align":0},
 			{"id":"minutes", "titre":"MINUTES", "tri":"minutes", "x":1780.0, "w":140.0, "align":2}, {"id":"status", "titre":"STATUT", "tri":"status", "x":1950.0, "w":290.0, "align":0}]
 	return [{"id":"num", "titre":"#", "tri":"source", "x":22.0, "w":40.0, "align":1}, {"id":"name", "titre":"JOUEUR", "tri":"name", "x":132.0, "w":420.0, "align":0},
 		{"id":"pos", "titre":"POSTE", "tri":"pos", "x":580.0, "w":190.0, "align":0}, {"id":"age", "titre":"ÂGE", "tri":"age", "x":790.0, "w":70.0, "align":2},
 		{"id":"note", "titre":"NIV.", "tri":"note", "x":880.0, "w":80.0, "align":1}, {"id":"potential", "titre":"POTENTIEL", "tri":"potential", "x":990.0, "w":330.0, "align":0},
-		{"id":"change", "titre":"PROG.", "tri":"change", "x":1330.0, "w":100.0, "align":2}, {"id":"minutes", "titre":"MINUTES", "tri":"minutes", "x":1440.0, "w":120.0, "align":2},
-		{"id":"contract", "titre":"FIN DU CONTRAT", "tri":"contract", "x":1580.0, "w":170.0, "align":2}, {"id":"status", "titre":"STATUT", "tri":"status", "x":1790.0, "w":450.0, "align":0}]
+		{"id":"minutes", "titre":"MINUTES", "tri":"minutes", "x":1340.0, "w":130.0, "align":2},
+		{"id":"contract", "titre":"FIN DU CONTRAT", "tri":"contract", "x":1500.0, "w":170.0, "align":2}, {"id":"status", "titre":"STATUT", "tri":"status", "x":1700.0, "w":540.0, "align":0}]
 
 func _col(columns: Array, id: String) -> Dictionary:
 	for col: Dictionary in columns:
@@ -564,7 +565,10 @@ func _draw_rows(columns: Array) -> void:
 		# Notation façon FM (planche 24/11) : lettres du staff relatives à notre effectif pro, phrase de potentiel.
 		var note := Notation.resume(app.model, p, true)
 		var col_n := _col(columns, "note")
-		if not col_n.is_empty(): Notation.pastille(hit, col_n.x + col_n.w / 2.0 - 16, ROW / 2.0, int(note.niveau), 27, "AcademyLettreNiveau")
+		if not col_n.is_empty():
+			var pastille_n := Notation.pastille_noeud(hit, col_n.x + col_n.w / 2.0 - 13.5, ROW / 2.0, int(note.niveau), 27, "AcademyLettreNiveau")
+			var fl_niv: Dictionary = Fleches.donnees(app, p).get("niveau", {})
+			if not fl_niv.is_empty(): Fleches.marquer_pastille(app, pastille_n, int(fl_niv.cran), fl_niv.serie, "Niveau", "Niveau_" + str(p.id).replace(":", "_"))
 		var col_p := _col(columns, "potential")
 		if not col_p.is_empty():
 			var lp := Notation.pastille(hit, col_p.x, ROW / 2.0, int(note.potentiel), 27, "AcademyLettrePotentiel")
@@ -590,13 +594,14 @@ func _draw_rows(columns: Array) -> void:
 		var largeur_nom: float = police_nom.get_string_size(nom.text, HORIZONTAL_ALIGNMENT_LEFT, -1, nom.get_theme_font_size("font_size")).x / C.density if police_nom != null else Kit.largeur(str(p.name), 20)
 		_lien_nom(hit, p, Rect2(60, 0, 520, ROW), largeur_nom)
 
-func _cellule(row: Control, col: Dictionary, texte: String, couleur: Color, gras: bool = false) -> void:
-	if col.is_empty(): return
+func _cellule(row: Control, col: Dictionary, texte: String, couleur: Color, gras: bool = false) -> Label:
+	if col.is_empty(): return null
 	var align := HORIZONTAL_ALIGNMENT_RIGHT if col.align == 2 else HORIZONTAL_ALIGNMENT_CENTER if col.align == 1 else HORIZONTAL_ALIGNMENT_LEFT
 	# D.text prend le bord droit pour un texte aligné à droite et le centre pour un texte centré.
 	var ancre: float = col.x + col.w if col.align == 2 else col.x + col.w / 2.0 if col.align == 1 else col.x
 	var cellule := D.text(row, ancre, 21, texte, 20, couleur, 700 if gras else 500, col.w, align)
 	cellule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return cellule
 
 ## Statut écrit, jamais la couleur seule : puce (symbole) + mot ; une blessure s'ajoute avec sa durée.
 func _statut(row: Control, p: Dictionary, x: float) -> void:

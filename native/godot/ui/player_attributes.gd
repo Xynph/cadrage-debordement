@@ -40,6 +40,6 @@ static func detail(player: Dictionary, own_context: bool = false) -> Dictionary:
 	return values if values is Dictionary and values.size() == 36 else {}
 
 static func caption(value: Variant) -> String:
-	if value is int or value is float:
-		return str(value).trim_suffix(".0").replace(".", ",")
+	# Le moteur garde les qualités au dixième (progression étalée, #1196) : l'écran n'affiche que l'entier.
+	if value is int or value is float: return str(roundi(float(value)))
 	return "—"

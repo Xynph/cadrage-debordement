@@ -306,7 +306,12 @@ static func _bandeau(page: Control, app: Control, player: Dictionary, source: St
 	# potentiel en lettre + phrase. Aucun chiffre du moteur.
 	var note := Notation.resume(app.model,player,Commune.notre_joueur(source))
 	D.text(hero,1640,40,"NIVEAU",17,Charte.IVOIRE_2,700,200)
-	var lettre_l := Notation.pastille(hero,1640,88,int(note.niveau),64,"PlayerGlobalRating")
+	var pastille_n := Notation.pastille_noeud(hero,1640,88,int(note.niveau),64,"PlayerGlobalRating")
+	var lettre_l := 64.0
+	# Flèche du niveau (moyenne des 36 qualités sur 4 semaines), comme dans l'Effectif et la Formation.
+	if source=="squad" or source=="academy":
+		var fl_niveau: Dictionary = load("res://ui/fleches_progression.gd").donnees(app,player).get("niveau",{})
+		if not fl_niveau.is_empty(): load("res://ui/fleches_progression.gd").marquer_pastille(app,pastille_n,int(fl_niveau.cran),fl_niveau.serie,"Niveau","NiveauFiche")
 	Notation.poser_palier(hero,1640+lettre_l+14,88,note.palier,19,1950-(1640+lettre_l+14),"PlayerPalier")
 	D.text(hero,1966,40,"POTENTIEL",17,Charte.IVOIRE_2,700,200)
 	var lettre_p := Notation.pastille(hero,1966,88,int(note.potentiel),64,"PlayerGlobalPotential")
@@ -405,7 +410,7 @@ static func _attributs(card: Panel, app: Control, player: Dictionary, source: St
 	else:
 		D.text(card,1396,38,"36 ATTRIBUTS",17,Charte.IVOIRE_2,700,240,HORIZONTAL_ALIGNMENT_RIGHT)
 	FicheRoles.bandes(card,Vector2(24,72),Vector2(1372,340),FicheRoles.role(str(FicheRoles.etat(app,player,values).role)))
-	Commune.grille_attributs(card,Vector2(24,72),Vector2(1372,340),values,"PlayerDetailedAttribute_",{"fourchettes":Commune.fourchettes(player)})
+	Commune.grille_attributs(card,Vector2(24,72),Vector2(1372,340),values,"PlayerDetailedAttribute_",({"app":app,"joueur":player} if source=="squad" else {}).merged({"fourchettes":Commune.fourchettes(player)}))
 
 ## Carte Postes et rôles : rôles des postes du joueur (note du rôle + familiarité au poste), qualités du rôle choisi,
 ## terrain des 15 postes coloré par familiarité (fiche_roles.gd), puis courbe des notes de match.

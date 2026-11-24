@@ -3,6 +3,8 @@
 // native/engine/in-season-development.cjs). Un point de niveau d'un jeune ne monte plus d'un coup ses 11 compétences
 // et ses 36 qualités : le niveau monte tout de suite, le reste arrive semaine après semaine (0,1 point au moins),
 // une qualité à la fois, sans rien perdre ni compter deux fois. Carrière Monde (world-champ), déterministe.
+// Entraînement ciblé (24/11/2026, entrainement-cible.cjs) : les 36 hausses d'un point vont aux qualités travaillées
+// (poste, séances) au lieu d'une par qualité : même total, répartition différente.
 const test = require('node:test'), assert = require('node:assert/strict');
 const { context } = require('./monde-harness.cjs');
 
@@ -36,7 +38,8 @@ test('centre du club : le niveau monte tout de suite, compétences et qualités 
   assert.ok(sauts.length >= 9 && sauts.length <= 10, 'un point en 10 semaines au plus : ' + sauts.length);
   assert.ok(Math.max(...sauts) <= .12, 'plus gros saut hebdomadaire des qualités : ' + Math.max(...sauts).toFixed(3));
   const fin = json('(()=>{const q=qual(j),e=effectives(j);return {q:Object.keys(q).map(k=>q[k]-q0[k]),e:Object.keys(e).map(k=>Math.round((e[k]-e0[k])*100)/100)};})()');
-  assert.ok(fin.q.every(d => d === 1), 'chaque qualité +1, une seule fois : ' + fin.q.join(','));
+  assert.equal(fin.q.reduce((a, b) => a + b, 0), 36, '36 hausses en tout, une seule fois : ' + fin.q.join(','));
+  assert.ok(fin.q.every(d => d >= 0) && fin.q.filter(d => d === 0).length >= 8 && Math.max(...fin.q) >= 2, 'qualités travaillées seulement : ' + fin.q.join(','));
   assert.ok(fin.e.every(d => d === 1), 'chaque compétence +1 : ' + fin.e.join(','));
   run('validateCareer(S)');
 });
@@ -50,20 +53,20 @@ test('centre d\'un club géré : le gain de l\'accueil est étalé de la même f
   assert.ok(run('moy36(g)-Object.values(gq0).reduce((a,b)=>a+b,0)/36') > 0, 'première part versée');
   run('validateCareer(S)');
   run('commande(()=>nativeInSeasonDevelopment.liberer(g))');
-  assert.ok(json('(()=>{const q=qual(g);return Object.keys(q).every(k=>q[k]===gq0[k]+1);})()'), 'tout versé : chaque qualité +1');
+  assert.equal(json('(()=>{const q=qual(g);return Object.keys(q).reduce((t,k)=>t+q[k]-gq0[k],0);})()'), 36, 'tout versé : 36 hausses');
 });
 
 test('intersaison et ancienne sauvegarde : le reste est versé d\'un coup, rien n\'est perdu', () => {
   run(`var v=choisir(S.development.academy);var vq0=qual(v);v.dev.xp=0;commande(()=>growPlayer(v,1.2,false));semaineJeune();semaineJeune();
    commande(()=>ageDevelopmentPlayer(v,S.season));`);
   assert.equal(run('v.dev.etale'), undefined);
-  assert.ok(json('(()=>{const q=qual(v);return Object.keys(q).every(k=>q[k]===vq0[k]+1);})()'), 'reste versé à la transition');
+  assert.equal(json('(()=>{const q=qual(v);return Object.keys(q).reduce((t,k)=>t+q[k]-vq0[k],0);})()'), 36, 'reste versé à la transition');
   // Ancienne sauvegarde : aucun jeune n'a d'état ; une partie relue telle quelle reste valide.
   run('for(const p of S.development.academy)delete p.dev.etale;validateCareer(S);');
   // État d'une saison close sans transition : versé à la semaine suivante.
   run(`var w=choisir(S.development.academy);var wq0=qual(w);w.dev.xp=0;commande(()=>growPlayer(w,1.2,false));w.dev.etale.s=S.season+1;semaineJeune();`);
   assert.equal(run('w.dev.etale'), undefined);
-  assert.ok(json('(()=>{const q=qual(w);return Object.keys(q).every(k=>q[k]===wq0[k]+1);})()'), 'reste d\'une saison close versé');
+  assert.equal(json('(()=>{const q=qual(w);return Object.keys(q).reduce((t,k)=>t+q[k]-wq0[k],0);})()'), 36, 'reste d\'une saison close versé');
 });
 
 test('semaines réelles du moteur : les qualités d\'un jeune ne sautent plus d\'un point', () => {

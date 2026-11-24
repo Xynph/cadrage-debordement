@@ -4,6 +4,7 @@ extends Control
 ## (ou du « i ») montre la mini-fiche, le clic ouvre la fiche complète. Tout est dessiné sur le gabarit 2248 de large
 ## et sert à toutes les tailles de fenêtre ; en fenêtre étroite on retire des colonnes plutôt que de réduire le texte.
 const Notation = preload("res://ui/notation_staff.gd")
+const Fleches = preload("res://ui/fleches_progression.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
@@ -1176,7 +1177,9 @@ func _row(player:Dictionary,index:int) -> void:
 			"niveau":
 				# Notation façon FM (planche 24/11) : lettre du staff, relative à notre effectif.
 				var note_n := Notation.resume(app.model,player,true)
-				Notation.pastille(row,x+l/2.0-19,h/2.0,int(note_n.niveau),32,"RosterLevel")
+				var pastille_n := Notation.pastille_noeud(row,x+l/2.0-16,h/2.0,int(note_n.niveau),32,"RosterLevel")
+				var fl_niveau: Dictionary = Fleches.donnees(app, player).get("niveau", {})
+				if not fl_niveau.is_empty(): Fleches.marquer_pastille(app, pastille_n, int(fl_niveau.cran), fl_niveau.serie, "Niveau", "Niveau_" + str(player.id).replace(":", "_"))
 			"pot":
 				var note_p := Notation.resume(app.model,player,true)
 				Notation.pastille(row,x+l/2.0-19,h/2.0,int(note_p.potentiel),32,"RosterPotential")

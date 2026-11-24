@@ -145,6 +145,8 @@ domains.familiarite=require('./familiarite-poste.cjs');
 domains.staffServices=require('./staff-services.cjs');
 // Relevé mensuel des qualités (12 mois glissants, courbe de l'onglet Développement) : native/engine/releve-qualites.cjs.
 domains.releveQualites=require('./releve-qualites.cjs');
+// Entraînement ciblé : chaque séance et l'entraînement au poste / au rôle font progresser leurs qualités (native/engine/entrainement-cible.cjs).
+domains.entrainementCible=require('./entrainement-cible.cjs');
 // Rôle promis au contrat (titulaire, rotation, espoir, appoint), enregistré à la signature (native/engine/role-contrat.cjs).
 domains.roleContrat=require('./role-contrat.cjs');
 // Discussion avec un joueur : phrases selon la situation, effet selon le caractère (native/engine/discussion-joueur.cjs).
