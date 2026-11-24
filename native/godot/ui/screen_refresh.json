@@ -39,7 +39,7 @@
       ],
       "lecteurs": [
         "ui/immersive08/club_sheet_canvas.gd",
-        "ui/immersive08/match_avant.gd",
+        "ui/immersive08/match_avant_socle.gd",
         "ui/navigation_controller.gd",
         "ui/optimistic_decisions.gd"
       ],
@@ -75,7 +75,8 @@
         "ui/immersive08/avant_match_pages.gd",
         "ui/immersive08/conference_presse.gd",
         "ui/immersive08/intensite_auto.gd",
-        "ui/immersive08/match_avant.gd",
+        "ui/immersive08/match_avant_bandeau.gd",
+        "ui/immersive08/match_avant_socle.gd",
         "ui/immersive08/match_canvas.gd",
         "ui/immersive08/organigramme.gd",
         "ui/immersive08/press_canvas.gd",
