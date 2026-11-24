@@ -376,6 +376,7 @@ function createBridge(options={}){
   // Dilemme du bonus en fin de match (match-bonus.cjs) : barème lu dans les classements, décision des clubs IA.
   run(`const nativeMatchBonus=(${matchBonus.factory.toString()})();nativeMatchBonus.installHooks();`);
   let matchHighlights=options.matchHighlights??null;
+  const leanModel=options.testVm===true&&options.leanModel===true;let leanBroken=false;const LEAN_UNDO=new Set(['begin_match','delegate','interclub_negotiate','academy_groups_preview','new_career','import','restore_checkpoint']);
   // Chorégraphe des temps forts (présentation seule, éteint par défaut) : CD_MATCH_CHOREGRAPHE=1.
   const matchChoreography=options.matchChoreography??process.env.CD_MATCH_CHOREGRAPHE==='1';
   const matchDirectReader={profils:ids=>JSON.parse(run('JSON.stringify(nativeMatchDirect.profils('+JSON.stringify(ids)+'))')),scenes:indices=>JSON.parse(run('JSON.stringify(nativeMatchDirect.scenes('+JSON.stringify(indices)+'))')),transformation:(index,made)=>JSON.parse(run('JSON.stringify(nativeMatchDirect.transformation('+Number(index)+','+(made===true)+'))')),etat:()=>JSON.parse(run('JSON.stringify(nativeMatchDirect.etat())')),
@@ -476,7 +477,13 @@ function createBridge(options={}){
   // reparcouru et comparé au texte mémorisé.
   const KNOWLEDGE_MEMO=['interclubMarket','staffCareer','coachNotebook','regenScouting','managerCareer','youthDevelopment'];
   const knowledgeMemo=new Map(),knowledgeMemoOn=memoDomains,knowledgeVerify=options.verifyMemo===true||process.env.CD_VERIFIER_MEMO==='1';
+  // Modèle réduit des simulations (harnais testVm, option leanModel) : la frontière de connaissance (portraits, fourchettes,
+  // tendances, planification) n'est pas appliquée au modèle rendu, ni la présentation faite hors de la VM (carrière
+  // internationale, staff, packs d'identité, préparation européenne). Le reste de la projection est gardé tel quel : le relevé
+  // des décisions, le direct du match et les domaines de la vie du club remplissent des mémoires du moteur (budget,
+  // dossier d'avant-match) que la suite de la carrière relit ; sans eux, elle diverge (mesures du 24/11/2026).
   const projectKnowledge=model=>{
+   if(leanModel)return model;
    if(projectionState?.result===model&&projectionState.sections)return projectKnowledgeSections(model);
    // Cibles du carnet personnel (tous les joueurs du monde : identifiant, nom, poste, disponibilité) : elles ne
    // portent aucune note ni aucun potentiel et l'écran du carnet n'en lit que le nom. Les tenir hors des parcours
@@ -683,7 +690,7 @@ function createBridge(options={}){
    }
   };
   const snapshotProjection=(operation,bypass=true)=>{updatePressPolicy();projectionState=null;const [m,catalogueTokens]=sub('model',()=>sectionsOn?JSON.parse(run('nativeCatalogueSections.read()')):[readProjection('nativeModel()'),null]);if(sectionsOn&&peek('!!S'))projectionState={sections:true,bypass,live:!!operation&&LIVE_COMMANDS.has(operation.command)&&!!m.live&&!m.live.finished&&!(operation.command==='match_talk_continue'&&operation.payload?.phase==='post'),staff:null,result:null};if(projectionState){sub('versions',()=>refreshVersions(operation));sub('visibility',()=>beginSections(m));}if(catalogueTokens)sub('catalogues',()=>carryCatalogues(m,catalogueTokens));sub('france',()=>projectFranceCalendar(m));if(projectionState)m.decisions=sub('decisions',()=>projectDecisionSections());else{m.decisions=sub('decisions',()=>readProjection('nativeDecisions()'));if(m.decisions?.recruitment)sub('reports',()=>m.decisions.recruitment.reports.push(...readProjection('nativeKnowledge.reports(S)')));}if(projectionState){try{m.clubLife=sub('clubLife',()=>projectLifeSections(m,operation));}catch(error){if(ctx.nativeVerifyMemo||verifyProjection)throw error;/* Repli : calcul complet comme avant (la mémoire ne fait jamais perdre une réponse). */sectionMemo.abort();projectionState=null;run('nativeSystems.clearMemo();nativeStateVersions.reset();');m.decisions=readProjection('nativeDecisions()');if(m.decisions?.recruitment)m.decisions.recruitment.reports.push(...readProjection('nativeKnowledge.reports(S)'));m.clubLife=readProjection('nativeSystems.project()');}}else m.clubLife=sub('clubLife',()=>memoDomains?projectClubLife():readProjection('nativeSystems.project()'));
-   const keptInternational=projectionState?.live?sectionMemo.keep('international'):null;if(keptInternational)m.international=keptInternational;else{nationalRaw=null;sub('national',()=>national.project(m,projectionState?{roster:()=>JSON.parse(run('nativeStateVersions.memoText("roster",()=>nativeInternationalRoster())')),memo:memoNational}:{}));if(projectionState&&m.international!==undefined&&nationalRaw===null)sectionMemo.note('international');}m.meta.profileError=profileError;m.meta.legacyPurgeNotice=legacyPurgeNotice;m.meta.matchResumeNotice=matchResumeNotice;m.meta.legacyModes=legacyModes;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;m.meta.profileSafety=profileSafety.project();if(journal)m.meta.autosave=autosaveMeta();m.meta.academyGroupPolicy=peek('S?.academyGroupPolicy??0');m.meta.repriseCreation=JSON.parse(run('JSON.stringify(CDReprise.creation())'));m.meta.careerVariation=JSON.parse(peek('JSON.stringify(S?.careerVariation??null)'));const result=sub('packs',()=>packs.project(sub('staff',()=>projectionState?.staff?{...m,staff:projectionState.staff}:staff.project(m)),JSON.parse(peek('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'),projectionState?{nested:modelDelta.NESTED,carriedOf:sectionMemo.carriedOf,recordCarried:sectionMemo.recordCarried,signature:sectionMemo.packSignature}:null));if(projectionState)projectionState.result=result;sub('presentation',()=>staff.applyCareerPresentation(result));const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}result.epcrPreparation=sub('epcr',()=>epcrPreparation.project(result));sub('calendar',()=>projectCalendar(result,operation));if(matchHighlights&&result.live){/* Présentation seule : si la projection échoue, le match reste jouable dans le direct d'origine et la raison est jointe. */try{result.live.direct=sub('direct',()=>matchDirect.project(result,matchHighlights,matchDirectReader,{choregraphe:matchChoreography}));}catch(error){result.live.directError=String(error?.message||error);}}return result;};
+   const keptInternational=projectionState?.live?sectionMemo.keep('international'):null;if(leanModel){}else if(keptInternational)m.international=keptInternational;else{nationalRaw=null;sub('national',()=>national.project(m,projectionState?{roster:()=>JSON.parse(run('nativeStateVersions.memoText("roster",()=>nativeInternationalRoster())')),memo:memoNational}:{}));if(projectionState&&m.international!==undefined&&nationalRaw===null)sectionMemo.note('international');}m.meta.profileError=profileError;m.meta.legacyPurgeNotice=legacyPurgeNotice;m.meta.matchResumeNotice=matchResumeNotice;m.meta.legacyModes=legacyModes;m.meta.recoveryRequired=!!profileError;m.meta.recoveryBackup=recoveryBackup;m.meta.profileSafety=profileSafety.project();if(journal)m.meta.autosave=autosaveMeta();m.meta.academyGroupPolicy=peek('S?.academyGroupPolicy??0');m.meta.repriseCreation=JSON.parse(run('JSON.stringify(CDReprise.creation())'));m.meta.careerVariation=JSON.parse(peek('JSON.stringify(S?.careerVariation??null)'));const result=leanModel?m:sub('packs',()=>packs.project(sub('staff',()=>projectionState?.staff?{...m,staff:projectionState.staff}:staff.project(m)),JSON.parse(peek('JSON.stringify(S?.identityPack||null)')),creation(),creation('world'),creation('world-pacific'),creation('world-japan'),creation('world-nationale'),creation('world-champ'),projectionState?{nested:modelDelta.NESTED,carriedOf:sectionMemo.carriedOf,recordCarried:sectionMemo.recordCarried,signature:sectionMemo.packSignature}:null));if(projectionState)projectionState.result=result;if(!(leanModel))sub('presentation',()=>staff.applyCareerPresentation(result));const custom=result.clubLife?.customCompetition;if(custom&&result.leagues?.length===1){result.leagues[0].name=custom.name;result.leagues[0].notice=custom.notice;}if(!(leanModel))result.epcrPreparation=sub('epcr',()=>epcrPreparation.project(result));sub('calendar',()=>projectCalendar(result,operation));if(matchHighlights&&result.live){/* Présentation seule : si la projection échoue, le match reste jouable dans le direct d'origine et la raison est jointe. */try{result.live.direct=sub('direct',()=>matchDirect.project(result,matchHighlights,matchDirectReader,{choregraphe:matchChoreography}));}catch(error){result.live.directError=String(error?.message||error);}}return result;};
   // Raw models stay private; every protocol path still applies the final
   // knowledge boundary after attaching receipts, previews or export metadata.
   const snapshot=operation=>{const m=snapshotRaw(operation);continuePlan(m);return projectKnowledge(m);};
@@ -965,6 +972,7 @@ function createBridge(options={}){
     if(!(Number.isSafeInteger(request.id)&&request.id>=0||typeof request.id==='string'&&request.id.length>0&&request.id.length<=100&&!/[\r\n]/.test(request.id)))throw Error('Identifiant de commande invalide.');
     id=request.id;if(closed)throw Error('Le moteur est fermé.');
     if(!COMMANDS.has(request.command))throw Error('Commande inconnue ou interdite.');
+    if(leanBroken)throw Error('Simulation rapide arrêtée par un échec précédent : rouvre la carrière.');
     let payload=request.payload??{};if(typeof payload!=='object'||payload===null||Array.isArray(payload))throw Error('Paramètres de commande invalides.');
     let command=request.command,restoring=null;
     // Budget réaliste des carrières aux salaires liés au niveau : branché avant toute commande,
@@ -1053,8 +1061,10 @@ function createBridge(options={}){
     let dayCheck=false;
     // Rejeu : pas de copie d'annulation (un échec reprend toute la reprise depuis le profil), sauf pour la délégation
     // qui la relit elle-même pendant la commande.
-    const priorStateText=priorFromSave?cleanSave:sessionDay||replay&&command!=='delegate'?null:run('JSON.stringify(S)'),priorExtra=JSON.parse(run('JSON.stringify({playback:S?.live?playback(S.live):null,saveError:lastSaveError})'));
-    const priorState=()=>({state:priorStateText===undefined?undefined:JSON.parse(priorStateText),...priorExtra});
+    // Modèle réduit (simulations) : pas de copie d'annulation (texte complet de la carrière, ~25 Mo) avant une commande que
+    // le harnais exige réussie ; si elle échoue après avoir modifié la carrière, la simulation s'arrête (leanBroken).
+    const leanNoUndo=leanModel&&!priorFromSave&&!LEAN_UNDO.has(command);const priorStateText=priorFromSave?cleanSave:sessionDay||replay&&command!=='delegate'||leanNoUndo?null:run('JSON.stringify(S)'),priorExtra=JSON.parse(run('JSON.stringify({playback:S?.live?playback(S.live):null,saveError:lastSaveError})'));
+    const priorState=()=>{if(leanNoUndo){leanBroken=true;throw Error('Simulation rapide arrêtée : '+command+' a échoué après avoir modifié la carrière (aucune copie d’annulation).');}return {state:priorStateText===undefined?undefined:JSON.parse(priorStateText),...priorExtra};};
     const priorStore=copyStore(store),priorSeed=seed,priorClock=clock;mark('copie_annulation');
     // Reprise avant le match : copie d'avant le coup d'envoi en cours (rétablie si la commande échoue).
     const preMatchBefore=preMatch,noticeBefore=matchResumeNotice,openBefore=matchOpenNow();let closesMatch=false;
@@ -1683,7 +1693,37 @@ function createBridge(options={}){
   if(!matchResumeNotice&&!profileError)matchResumeNotice=legacyMatchNotice();
   // Harnais de tests en processus (tests/monde-harness.cjs) : accès direct à la VM de la carrière.
   // Jamais exposé par le protocole stdio (options fixées par le code appelant).
-  if(options.testVm===true)return {handle,close,flush,pending,vm:{ctx,run:(source,timeout=180000)=>vm.runInContext(source,ctx,{timeout}),seed:()=>seed,setSeed:value=>{seed=value>>>0;},store:()=>store}};
+  // Points de reprise des simulations (tests/helpers/carriere-reprise.cjs) : état de la carrière (texte de S), graine
+  // et magasin, relevés hors de tout match en cours ; la reprise les pose comme le retour arrière d'une commande
+  // refusée, puis vide les mémoires de projection (simples caches).
+  // Mémoires du budget (club-budget.cjs, budget…Memo) : valides tant que la carrière est le même objet et que leur clé
+  // (saison, semaine, effectifs…) ne change pas, elles gardent des valeurs calculées plus tôt dans la semaine ou la
+  // saison. Elles sont donc relevées avec le point de reprise et reposées sur la carrière reprise (membres du staff
+  // relus par leur place dans S, ou copiés s'ils n'y sont plus) : sinon la reprise recalcule des charges et des
+  // affluences que la partie d'une traite gardait (écart dès la première journée suivante).
+  const MEMOS_REPRISE=`({
+   noms:['budgetLimitesMemo','budgetRepereMemo','budgetStaffMemo','budgetReceptionsMemo','budgetReputationMemo','budgetConseilsMemo','budgetForcesDemandeMemo'],
+   lire(){const gens=(S?.staffCareer?.people||[]).flat(),place=new Map(gens.map((p,i)=>[p,i])),out={};
+    for(const nom of this.noms){let m;try{m=eval(nom);}catch(e){continue;}if(!m||m.etat!==S){out[nom]=null;continue;}
+     const c={...m};delete c.etat;
+     if(nom==='budgetStaffMemo')c.parClub=[...m.parClub].map(([id,l])=>[id,l.map(p=>place.has(p)?{i:place.get(p)}:{copie:p})]);
+     if(nom==='budgetForcesDemandeMemo')c.projection=-1;
+     out[nom]=c;}
+    return JSON.stringify(out,(k,v)=>Object.prototype.toString.call(v)==='[object Map]'?{nativeMap:[...v]}:v);},
+   poser(texte){const memos=JSON.parse(texte,(k,v)=>v&&typeof v==='object'&&Array.isArray(v.nativeMap)?new Map(v.nativeMap):v),gens=(S?.staffCareer?.people||[]).flat();
+    for(const [nom,c] of Object.entries(memos)){if(!this.noms.includes(nom))continue;let m=null;
+     if(c){m={...c,etat:S};
+      if(nom==='budgetStaffMemo')m.parClub=new Map(c.parClub.map(([id,l])=>[id,l.map(x=>x.copie??gens[x.i])]));}
+     globalThis.nativeMemoReprise=m;try{eval(nom+'=globalThis.nativeMemoReprise');}finally{delete globalThis.nativeMemoReprise;}}}
+  })`;
+  const etatReprise=()=>{flush();if(preMatch||pendingCommit)throw Error('Point de reprise impossible : match ou écriture en cours.');return {seed,clock,store:copyStore(store),state:run('JSON.stringify(S)'),memos:run(MEMOS_REPRISE+'.lire()')};};
+  const reprendre=etat=>{
+   flush();seed=etat.seed>>>0;clock=etat.clock;store=copyStore(etat.store);cleanSave=null;preMatch=null;undoPending=false;
+   ctx.nativeRepriseTexte=etat.state;ctx.nativeRepriseMemos=etat.memos??'{}';
+   try{run('S=JSON.parse(nativeRepriseTexte);pendingSave=null;nativeSaveSections=null;nativeSectionsFresh=false;nativeSystems.clearTransient(false);if(typeof nativeStateVersions!=="undefined")nativeStateVersions.reset();'+MEMOS_REPRISE+'.poser(nativeRepriseMemos);');}finally{delete ctx.nativeRepriseTexte;delete ctx.nativeRepriseMemos;}
+   projectionCache.clear();sectionMemo.abort();knowledgeMemo.clear();projectionState=null;versionsSynced=false;stateEpoch++;
+  };
+  if(options.testVm===true)return {handle,close,flush,pending,vm:{ctx,run:(source,timeout=180000)=>vm.runInContext(source,ctx,{timeout}),seed:()=>seed,setSeed:value=>{seed=value>>>0;},store:()=>store,etat:etatReprise,reprendre}};
   return {handle,close};
  }catch(e){close();throw e;}
 }
