@@ -19,14 +19,16 @@ const walk = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry =
   const full = path.join(dir, entry.name);
   return entry.isDirectory() ? walk(full) : entry.name.endsWith('.gd') ? [path.relative(godot, full).split(path.sep).join('/')] : [];
 });
-const scripts = walk(godot).filter(file => !EXCLUS.has(file)).map(file => ({ file, text: fs.readFileSync(path.join(godot, file), 'utf8') }));
+// La coque main.gd est découpée en modules statiques main_*.gd (même lecteur : la coque) ; ils comptent pour main.gd.
+const COQUE = /^main_[a-z_]+\.gd$/;
+const scripts = walk(godot).filter(file => !EXCLUS.has(file)).map(file => ({ file: COQUE.test(file) ? 'main.gd' : file, text: fs.readFileSync(path.join(godot, file), 'utf8') }));
 const nested = (moduleGodot.match(/const NESTED := \[([^\]]*)\]/) || [])[1] || '';
 const nestedGodot = [...nested.matchAll(/"([^"]+)"/g)].map(m => m[1]);
 
 test('la table du rafraîchissement par écran se lit et nomme des écrans existants', () => {
   assert.ok(table.sections && typeof table.sections === 'object', 'sections');
   assert.ok(Array.isArray(table.toujours_complet), 'toujours_complet');
-  const routes = ['main.gd', 'ui/immersive08/shell.gd', 'ui/immersive08/club_sheet_canvas.gd'].map(f => fs.readFileSync(path.join(godot, f), 'utf8')).join('\n');
+  const routes = ['main.gd', ...fs.readdirSync(godot).filter(f => COQUE.test(f)), 'ui/immersive08/shell.gd', 'ui/immersive08/club_sheet_canvas.gd'].map(f => fs.readFileSync(path.join(godot, f), 'utf8')).join('\n');
   const known = screen => screen === '*' || routes.includes('"' + screen + '"');
   for (const screen of table.toujours_complet) assert.ok(known(screen), 'écran inconnu : ' + screen);
   for (const [id, entry] of Object.entries(table.sections)) {
@@ -46,7 +48,7 @@ test('chaque section de la table a exactement les lecteurs notés (sinon revoir 
   for (const [id, entry] of Object.entries(table.sections)) {
     const token = id.split('.').pop();
     const pattern = new RegExp('\\b' + token + '\\b');
-    const found = scripts.filter(s => pattern.test(s.text)).map(s => s.file).sort();
+    const found = [...new Set(scripts.filter(s => pattern.test(s.text)).map(s => s.file))].sort();
     const noted = [...entry.lecteurs].sort();
     if (JSON.stringify(found) !== JSON.stringify(noted)) drift.push(id + '\n  lu par : ' + found.join(', ') + '\n  noté   : ' + noted.join(', '));
   }

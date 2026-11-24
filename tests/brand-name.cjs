@@ -35,7 +35,7 @@ for (const asset of ['rugby-legacy-27-logo.png', 'rugby-legacy-27-icon.png'])
   assert.ok(fs.statSync(path.join(root, 'native/godot/branding', asset)).size > 10000, asset);
 for (const old of ['oval-legacy-27-logo.png', 'oval-legacy-27-icon.png'])
   assert.ok(!fs.existsSync(path.join(root, 'native/godot/branding', old)), old + ' doit avoir disparu');
-for (const file of ['native/godot/main.gd', 'native/godot/ui/entry_screens.gd', 'native/godot/windows-release.cfg'])
+for (const file of ['native/godot/main.gd', 'native/godot/main_rendu.gd', 'native/godot/ui/entry_screens.gd', 'native/godot/windows-release.cfg'])
   assert.ok(!/oval-legacy-27-(logo|icon)/.test(read(file)), file + ' ne doit plus citer l’ancienne image');
 assert.match(read('native/godot/windows-release.cfg'), /^application\/product_name="Rugby Legacy 27"$/m);
 const build = read('scripts/build-godot-prototype.py');
@@ -50,7 +50,8 @@ assert.match(read('ci/run-windows-build.ps1'), /RugbyLegacy27-PrototypeGodot-Win
 assert.match(build, /RUGBY LEGACY 27 — PRÉALPHA/);
 const scene = read('native/godot/ui/immersive08/entry_canvas.gd');
 assert.ok(scene.includes('"RUGBY LEGACY 27"') && !/OVAL LEGACY/.test(scene), 'L’accueil affiche le nouveau nom');
-assert.match(read('native/godot/main.gd'), /logo\.tooltip_text = "Rugby Legacy 27 — Menu et sauvegardes"/);
+// Rail de la coque (main.gd) : construit par main_rendu.gd, build_sidebar.
+assert.match(read('native/godot/main_rendu.gd'), /logo\.tooltip_text = "Rugby Legacy 27 — Menu et sauvegardes"/);
 
 // 3. Invariants de sauvegarde : même dossier de profil, mêmes formats.
 assert.match(project, /^config\/use_custom_user_dir=true$/m);
