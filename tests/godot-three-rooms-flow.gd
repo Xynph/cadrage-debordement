@@ -457,6 +457,14 @@ func room_check(kind: String, resolution: Vector2i) -> void:
 	check(not app.root_content.is_visible_in_tree(), "Management shell hidden during " + kind)
 	check(not app.coach.is_visible_in_tree(), "Coach hidden during " + kind)
 	check(director.overlay.get_global_rect().size.distance_to(Vector2(resolution)) < 1.0, "Meeting covers the full application")
+	if kind == "press":
+		# Salle de presse : la photo de la page Presse, plein cadre, sans salle 3D (Léo, 25/11/2026).
+		var photo: TextureRect = director.view.find_child("PressRoomPhoto", true, false)
+		check(photo != null and photo.texture != null and photo.get_meta("immersive_art", "") == "press-room", "Press meeting stands on the press-room photograph")
+		if photo != null: check(photo.get_global_rect().position.distance_to(Vector2.ZERO) < 1.0 and photo.size.distance_to(Vector2(resolution)) < 1.0, "Press photograph covers the full client area")
+		check(director.view.find_children("*", "SubViewport", true, false).is_empty(), "No 3D room behind the press conference")
+		no_global_modal()
+		return
 	var container: SubViewportContainer = director.view.find_child("ContextualRoomViewport", true, false)
 	check(container != null and container.stretch, "Meeting renders an actual native room viewport")
 	if container != null:

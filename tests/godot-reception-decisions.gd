@@ -151,7 +151,7 @@ func run() -> void:
 	await activate("InboxPressInvitation")
 	var press_selected := str(state.selected)
 	await activate("InboxOpenPressInvitation")
-	check(app.contextual_director.active() and app.contextual_director.kind == "press", "La décision ouvre la conférence 3D existante")
+	check(app.contextual_director.active() and app.contextual_director.kind == "press", "La décision ouvre la conférence existante")
 	check(FileAccess.get_sha256(file) == before and app.bridge._next_id == sequence, "Entrer dans la salle ne commande et ne sauvegarde rien")
 	await key(KEY_ESCAPE)
 	app._navigate("Bureau"); await settle()

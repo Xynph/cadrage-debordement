@@ -70,15 +70,20 @@ static func _fleche_a(parent: Control, r: Rect2, valeur: float, bien_si_plus: bo
 	D.place(f, r)
 	return f
 
-## Salle de presse : remplace son panneau tant qu'une conférence est à répondre. Voile sombre sur la salle 3D, contenu
-## dans un gabarit 2248 × 1300 (écran plein : 2560 × 1440 unités).
+## Voile sombre posé sur la photo de la salle de presse : le même pour les questions et pour le compte-rendu.
+static func voile(view: Control) -> ColorRect:
+	var rideau := ColorRect.new()
+	rideau.name = "PressFmVoile"
+	rideau.color = Color(Charte.NOIR_PANNEAU, .86)
+	rideau.mouse_filter = Control.MOUSE_FILTER_STOP
+	view.ui.add_child(rideau)
+	rideau.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	return rideau
+
+## Salle de presse : remplace son panneau tant qu'une conférence est à répondre. Voile sombre sur la photo de la salle,
+## contenu dans un gabarit 2248 × 1300 (écran plein : 2560 × 1440 unités).
 static func construire(view: Control) -> void:
-	var voile := ColorRect.new()
-	voile.name = "PressFmVoile"
-	voile.color = Color(Charte.NOIR_PANNEAU, .86)
-	voile.mouse_filter = Control.MOUSE_FILTER_STOP
-	view.ui.add_child(voile)
-	voile.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	voile(view)
 	var page := Control.new()
 	page.name = "PressFmPage"
 	page.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -87,7 +92,6 @@ static func construire(view: Control) -> void:
 	var questions: Array = view._questions()
 	var index: int = clampi(view.question_index, 0, questions.size() - 1)
 	var q: Dictionary = questions[index]
-	if view.room != null and view.room.has_method("ask"): view.room.ask(index)
 	var titre := D.text(page, 0, 64, "CONFÉRENCE DE PRESSE", 64, Charte.IVOIRE, 800, 1060)
 	titre.add_theme_font_override("font", Charte.TITRE_FICHE)
 	var x := _progression(view, page, questions, view.choices, index, Vector2(1090, 26))

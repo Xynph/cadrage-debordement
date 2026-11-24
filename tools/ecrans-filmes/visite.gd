@@ -67,6 +67,7 @@ const EXTRAS := [
 	{"id": "presse-ouverte", "libelle": "Presse : conférence avec questions ouvertes", "type": "presse_ouverte"},
 	{"id": "presse-conference-fm", "libelle": "Presse : conférence de presse (salle, une question à la fois)", "type": "presse_ouverte", "fm": true},
 	{"id": "presse-conference-fm-suite", "libelle": "Presse : conférence après une réponse (réaction en flèches)", "type": "presse_ouverte", "fm": true, "repondre": true},
+	{"id": "presse-conference-fm-compte-rendu", "libelle": "Presse : compte-rendu après la dernière réponse (même photo)", "type": "presse_ouverte", "fm": true, "tout": true},
 	{"id": "presse-conference-fm-joueur", "libelle": "Presse : conférence, petite fenêtre du joueur concerné", "type": "presse_ouverte", "fm": true, "clic": "PressPlayerOpen"},
 	{"id": "presse-conference", "libelle": "Presse : Conférence", "type": "presse_onglet", "onglet": 1},
 	{"id": "presse-historique", "libelle": "Presse : Historique", "type": "presse_onglet", "onglet": 2},
@@ -768,6 +769,19 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 					if reponses.is_empty(): return {"statut": "echec", "note": "aucune réponse"}
 					(reponses[0] as Button).pressed.emit()
 					await stabiliser()
+				if ecran.get("tout", false):
+					# Toutes les questions répondues (première réponse) : la dernière publie, le compte-rendu s'affiche.
+					for tour in 8:
+						var vue: Control = app.contextual_director.view
+						if vue == null or not vue._available(): break
+						var restantes: Array = vue.find_children("PressAnswer_*", "Button", true, false)
+						if restantes.is_empty(): break
+						(restantes[0] as Button).pressed.emit()
+						while app.waiting: await process_frame
+						await stabiliser()
+					app.contextual_director.sync()
+					await stabiliser()
+					if app.find_child("PressOutcomeHeadline", true, false) == null: return {"statut": "echec", "note": "compte-rendu absent"}
 				if ecran.has("clic"):
 					var cible: Button = app.contextual_director.view.find_child(str(ecran.clic), true, false) as Button
 					if cible == null: return {"statut": "echec", "note": "%s absent" % ecran.clic}

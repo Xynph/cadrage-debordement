@@ -10,6 +10,7 @@ const Charte = preload("res://ui/charte.gd")
 const SeasonLabel = preload("res://ui/season_label.gd")
 const Press = preload("res://ui/press_view.gd")
 const Fm = preload("res://ui/immersive08/conference_presse.gd")
+const C = preload("res://ui/immersive08/components.gd")
 var director: Node
 var app: Control
 var model: Dictionary = {}
@@ -17,7 +18,7 @@ var data: Dictionary = {}
 var meeting: Dictionary = {}
 var choices: Dictionary = {}
 var question_index := 0
-var room: Node3D
+var photo: TextureRect
 var ui: Control
 var _context := ""
 var _fingerprint := ""
@@ -35,7 +36,12 @@ var promise_choice := ""
 func _ready() -> void:
 	name = "ContextualPress"
 	app = director.app
-	room = S.room(self, "press", app.model.get("club", {}))
+	# Décor : la photo de la salle de presse (art/immersive08/press-room, celle de la page Presse), questions comme
+	# compte-rendu (Léo, 25/11/2026 : plus de salle 3D).
+	photo = C.photo("press-room")
+	photo.name = "PressRoomPhoto"
+	S.full(photo)
+	add_child(photo)
 	ui = Control.new()
 	ui.name = "PressRoomInterface"
 	S.full(ui)
@@ -91,6 +97,8 @@ func _render_ui() -> void:
 		Fm.construire(self)
 		_refresh_buttons()
 		return
+	# Compte-rendu sur la même photo, sous le même voile que les questions.
+	Fm.voile(self)
 	var column := S.frame(ui, 20)
 	var context: Dictionary = data.get("context", {})
 	var top := S.G.h(16)

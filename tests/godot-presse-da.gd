@@ -81,7 +81,7 @@ func conference_ouverte() -> void:
 	if not arrived or not conference.get("available", false):
 		return finish()
 	# Écran Presse de la coque avec l'origine du courrier posée (comme « Ouvrir la conférence » de la Réception).
-	# La salle de presse 3D prend la main dès que l'origine du courrier est posée avant la navigation : on ouvre
+	# La salle de presse prend la main dès que l'origine du courrier est posée avant la navigation : on ouvre
 	# d'abord la page, puis on pose l'origine et on monte l'onglet (cas d'une conférence sans rendez-vous de salle).
 	app.management_ui.press_tab = 0
 	if app.has_meta("press_mail_origin"): app.remove_meta("press_mail_origin")
