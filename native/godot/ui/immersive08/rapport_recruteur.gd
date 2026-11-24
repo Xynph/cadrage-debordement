@@ -6,6 +6,7 @@ extends RefCounted
 ## Mise en page choisie par Léo (planche A/B du 22/11/2026, option A) : identité et avis en tête, puis trois colonnes
 ## (qualités clés, pour / contre, notre effectif au poste).
 ## Coordonnées en unités du gabarit (2248 de large), jetons de la charte.
+const Notation = preload("res://ui/notation_staff.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Charte = preload("res://ui/charte.gd")
@@ -245,16 +246,19 @@ static func _identite(app: Control, cadre: Control, r: Dictionary, x: float, y: 
 ## Lettre de l'avis : carré coloré, clic = barème en petite fenêtre.
 static func _lettre(app: Control, cadre: Control, r: Dictionary, zone: Rect2, taille: int) -> Button:
 	var couleur: Color = r.couleur
+	var plein := r.has("indice")
+	if plein: couleur = Notation.couleur(int(r.indice))
 	var bouton := Button.new()
 	bouton.name = "RapportRecruteurLettre"
 	bouton.focus_mode = Control.FOCUS_ALL
 	bouton.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	bouton.accessibility_name = "Avis du recruteur " + str(r.lettre)
-	for etat in ["normal", "pressed", "focus"]: bouton.add_theme_stylebox_override(etat, C.box(Charte.PANNEAU_2.lerp(couleur, .22), Color.TRANSPARENT, Charte.RAYON_CARTE, 0))
-	bouton.add_theme_stylebox_override("hover", C.box(Charte.PANNEAU_3.lerp(couleur, .32), Color.TRANSPARENT, Charte.RAYON_CARTE, 0))
+	var rayon: int = (int(zone.size.y / 2.0) if Notation.variante() == "B" else 6) if plein else Charte.RAYON_CARTE
+	for etat in ["normal", "pressed", "focus"]: bouton.add_theme_stylebox_override(etat, C.box(couleur if plein else Charte.PANNEAU_2.lerp(couleur, .22), Color.TRANSPARENT, rayon, 0))
+	bouton.add_theme_stylebox_override("hover", C.box(couleur.lightened(.12) if plein else Charte.PANNEAU_3.lerp(couleur, .32), Color.TRANSPARENT, rayon, 0))
 	cadre.add_child(bouton)
 	D.place(bouton, zone)
-	var texte := D.text(bouton, zone.size.x / 2.0, zone.size.y * 0.5 + taille * 0.36, str(r.lettre), taille, couleur, 800, zone.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+	var texte := D.text(bouton, zone.size.x / 2.0, zone.size.y * 0.5 + taille * 0.36, str(r.lettre), taille, Notation.couleur_texte(int(r.indice)) if plein else couleur, 800, zone.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 	texte.add_theme_font_override("font", Charte.TITRE_FICHE)
 	texte.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bouton.pressed.connect(func(): _bareme(app, cadre, r, bouton))
@@ -315,9 +319,21 @@ static func _tuiles(app: Control, cadre: Control, r: Dictionary, x: float, y: fl
 	var pas := Vector2(0, h + 12) if verticales else Vector2(l + 12, 0)
 	var note := G.n(roundi(r.note)) if float(r.note) >= 0 else "—"
 	Pieces.tuile(cadre, Rect2(x, y, l, h), note, "Note au poste", Charte.couleur_attribut(r.note), "RapportRecruteurNote", 38, "", "rating", false, func(): app.navigation_controller.open_entity({"kind": "market", "id": id}))
-	Pieces.tuile(cadre, Rect2(x + pas.x, y + pas.y, l, h), K.potential_text(p), "Potentiel", K.POTENTIAL_COLOR, "RapportRecruteurPotentiel", 38, "", "renew", false, func(): app.navigation_controller.open_entity({"kind": "market", "id": id}))
+	if not r.has("indice"): Pieces.tuile(cadre, Rect2(x + pas.x, y + pas.y, l, h), K.potential_text(p), "Potentiel", K.POTENTIAL_COLOR, "RapportRecruteurPotentiel", 38, "", "renew", false, func(): app.navigation_controller.open_entity({"kind": "market", "id": id}))
 	Pieces.tuile(cadre, Rect2(x + 2 * pas.x, y + 2 * pas.y, l, h), _compact(p.get("fee", p.get("price"))), "Indemnité", Pieces.ORANGE, "RapportRecruteurIndemnite", 38, "", "money", true, offre)
 	Pieces.tuile(cadre, Rect2(x + 3 * pas.x, y + 3 * pas.y, l, h), G.salary_amount(p.get("salary")), "Salaire " + G.salary_period(true), Pieces.BLEU, "RapportRecruteurSalaire", 38, "", "money", true, offre)
+
+## Tuile Potentiel de la notation : lettre du staff + phrase (aucun chiffre).
+static func _tuile_potentiel(cadre: Control, note: Dictionary, zone: Rect2) -> void:
+	var fond := D.rect(cadre, zone, Charte.PANNEAU_2, Charte.RAYON_CARTE)
+	fond.name = "RapportRecruteurPotentiel"
+	D.text(fond, 14, 26, "POTENTIEL", 14, Charte.IVOIRE_3, 700, 120)
+	var lp := Notation.pastille(fond, 14, 66, int(note.potentiel), 50)
+	var phrase := D.text(fond, 14 + lp + 10, 58, str(note.phrase.texte), 17, note.phrase.couleur, 700, zone.size.x - lp - 34, HORIZONTAL_ALIGNMENT_LEFT, true)
+	phrase.name = "RapportRecruteurPhrase"
+	phrase.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	phrase.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+	phrase.size.y *= 3.0
 
 static func _compact(v: Variant) -> String:
 	if not _nombre(v): return "—"
@@ -426,6 +442,11 @@ static func _liste(app: Control, cadre: Control, r: Dictionary, zone: Rect2, col
 				Familiarite.poser(bouton, cx, base, Familiarite.niveau(joueur, int(r.numero)), 17, "RapportRecruteurFamiliarite_%d" % i)
 				cx += float(colonne[1])
 				continue
+			if str(colonne[2]) == "potentiel":
+				# Notation façon FM (planche 24/11) : lettre de potentiel estimée par le staff, relative à notre effectif.
+				Notation.pastille(bouton, cx, (hauteur_ligne - 4) / 2.0, int(Notation.resume(app.model, joueur, not est_piste).potentiel), 30, "RapportRecruteurLettrePot_%d" % i)
+				cx += float(colonne[1])
+				continue
 			var valeur: Array = _cellule(colonne, joueur, ligne, est_piste)
 			var t := D.text(bouton, cx, base + 1, str(valeur[0]), 22, valeur[1], 700, float(colonne[1]) - 10)
 			t.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
@@ -467,14 +488,19 @@ static func _cellule(colonne: Array, j: Dictionary, l: Dictionary, p: bool) -> A
 # --- Mise en page (option A de la planche) ------------------------------------------------------------------------
 
 static func _mise_en_page(app: Control, cadre: Control, r: Dictionary) -> void:
+	# Notation façon FM (planche 24/11) : la grande lettre devient le Niveau estimé (E- à S+, relatif à notre effectif),
+	# avec le palier vague ; la tuile Potentiel devient lettre + phrase du staff.
+	var note := Notation.resume(app.model, r.piste, false)
+	r.indice = int(note.niveau)
+	r.lettre = Notation.texte_lettre(int(note.niveau))
 	_identite(app, cadre, r, 28, 24, 110)
-	_lettre(app, cadre, r, Rect2(760, 22, 124, 116), 78)
-	Kit.etiquette(cadre, 900, 58, "AVIS", 140)
-	var rang := D.text(cadre, 900, 104, "n° %d / %d" % [r.rang, r.total], 30, Charte.IVOIRE, 800, 200)
-	rang.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
+	_lettre(app, cadre, r, Rect2(760, 22, 124 if Notation.variante() == "A" else 116, 116), 70)
+	Kit.etiquette(cadre, 900, 50, "NIVEAU · AVIS n° %d / %d" % [r.rang, r.total], 300)
+	Notation.poser_palier(cadre, 900, 86, note.palier, 21, 400, "RapportRecruteurPalier")
 	_transfert(app, cadre, r, 900, 116)
 	_connaissance(app, cadre, r, 160, 124)
 	_tuiles(app, cadre, r, 1310, 28, 220, 112, false)
+	_tuile_potentiel(cadre, note, Rect2(1310 + 232, 28, 220, 112))
 	D.line(cadre, Vector2(28, 172), Vector2(LARGEUR - 28, 172), Charte.FILET)
 	# Colonne 1 : qualités clés.
 	_qualites(cadre, r, 28, 196, 600)

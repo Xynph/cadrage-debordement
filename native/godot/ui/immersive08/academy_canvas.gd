@@ -3,6 +3,7 @@ extends Control
 ## choisi (promouvoir, avec confirmation EN PLACE) et file « À décider » aux raisons écrites. Nom d'un jeune : survol =
 ## mini-fiche, clic = fiche complète ; jamais de fiche fixe ni de petite fenêtre (sous-pages : formation_pages.gd).
 ## Coordonnées en unités du gabarit (2248 de large), couleurs uniquement depuis ui/charte.gd, aucun or.
+const Notation = preload("res://ui/notation_staff.gd")
 const Copy = preload("res://ui/management_copy.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
@@ -435,8 +436,8 @@ func _columns() -> Array:
 			{"id":"minutes", "titre":"MINUTES", "tri":"minutes", "x":1780.0, "w":140.0, "align":2}, {"id":"status", "titre":"STATUT", "tri":"status", "x":1950.0, "w":290.0, "align":0}]
 	return [{"id":"num", "titre":"#", "tri":"source", "x":22.0, "w":40.0, "align":1}, {"id":"name", "titre":"JOUEUR", "tri":"name", "x":132.0, "w":420.0, "align":0},
 		{"id":"pos", "titre":"POSTE", "tri":"pos", "x":580.0, "w":190.0, "align":0}, {"id":"age", "titre":"ÂGE", "tri":"age", "x":790.0, "w":70.0, "align":2},
-		{"id":"note", "titre":"NIV.", "tri":"note", "x":880.0, "w":80.0, "align":2}, {"id":"potential", "titre":"POTENTIEL", "tri":"potential", "x":980.0, "w":150.0, "align":2},
-		{"id":"change", "titre":"PROG. DEPUIS JUILLET", "tri":"change", "x":1150.0, "w":240.0, "align":2}, {"id":"minutes", "titre":"MINUTES", "tri":"minutes", "x":1420.0, "w":130.0, "align":2},
+		{"id":"note", "titre":"NIV.", "tri":"note", "x":880.0, "w":80.0, "align":1}, {"id":"potential", "titre":"POTENTIEL", "tri":"potential", "x":990.0, "w":330.0, "align":0},
+		{"id":"change", "titre":"PROG.", "tri":"change", "x":1330.0, "w":100.0, "align":2}, {"id":"minutes", "titre":"MINUTES", "tri":"minutes", "x":1440.0, "w":120.0, "align":2},
 		{"id":"contract", "titre":"FIN DU CONTRAT", "tri":"contract", "x":1580.0, "w":170.0, "align":2}, {"id":"status", "titre":"STATUT", "tri":"status", "x":1790.0, "w":450.0, "align":0}]
 
 func _col(columns: Array, id: String) -> Dictionary:
@@ -560,12 +561,14 @@ func _draw_rows(columns: Array) -> void:
 		nom.name = "AcademyNom"
 		_cellule(hit, _col(columns, "pos"), str(p.pos), Charte.IVOIRE_2)
 		_cellule(hit, _col(columns, "age"), G.n(p.age), Charte.IVOIRE)
-		var niveau: Variant = G.knowledge_sort_value(p, "rating")
-		_cellule(hit, _col(columns, "note"), G.rating_text(p, true), Charte.couleur_attribut(niveau) if niveau != null else Charte.IVOIRE_3, true)
-		var potentiel: Variant = G.knowledge_sort_value(p, "potential")
-		if not _col(columns, "potential").is_empty():
-			var texte_pot := ("★ " if _pepite(p) else "") + G.potential_text(p)
-			_cellule(hit, _col(columns, "potential"), texte_pot, Charte.couleur_attribut(potentiel) if potentiel != null else Charte.IVOIRE_3, true)
+		# Notation façon FM (planche 24/11) : lettres du staff relatives à notre effectif pro, phrase de potentiel.
+		var note := Notation.resume(app.model, p, true)
+		var col_n := _col(columns, "note")
+		if not col_n.is_empty(): Notation.pastille(hit, col_n.x + col_n.w / 2.0 - 16, ROW / 2.0, int(note.niveau), 27, "AcademyLettreNiveau")
+		var col_p := _col(columns, "potential")
+		if not col_p.is_empty():
+			var lp := Notation.pastille(hit, col_p.x, ROW / 2.0, int(note.potentiel), 27, "AcademyLettrePotentiel")
+			D.text(hit, col_p.x + lp + 10, 21, str(note.phrase.texte), 17, note.phrase.couleur, 600, 300, HORIZONTAL_ALIGNMENT_LEFT, true).name = "AcademyPhrasePotentiel"
 		var gain: Variant = _delta(p)
 		if not _col(columns, "change").is_empty():
 			var colonne_gain := _col(columns, "change")

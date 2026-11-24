@@ -6,6 +6,7 @@ const C = preload("res://ui/immersive08/components.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const Editorial = preload("res://ui/entry_editorial.gd")
 const Kit = preload("res://ui/creation_options/kit.gd")
+const Charte = preload("res://ui/charte.gd")
 const ROLES := [["leader", "Le cadre", "Il tient le vestiaire."], ["best", "Le meilleur", "Ta référence sur le terrain."], ["prospect", "La pépite", "L’avenir du club."]]
 
 ## `on_vary(value)` : appelé quand la case du niveau de départ change (bulle de Gabi).
@@ -39,6 +40,47 @@ static func build(app: Control, parent: Node, selected: Dictionary, data: Dictio
 	Kit.entry().call("_career_variation_controls", app, controls, true)
 	var option := controls.find_child("CreationVaryCurrent", true, false) as CheckBox
 	if option != null and on_vary.is_valid(): option.toggled.connect(func(value: bool) -> void: on_vary.call(value))
+	_qualites(app, column)
+
+## Option façon FM (planche notation 24/11) : qualités des joueurs « Précises » (défaut) ou « En fourchette » tant que
+## le joueur n'est pas assez observé. Un clic choisit et valide. Planche : choix gardé à l'écran, pas encore envoyé au moteur.
+const QUALITES := [["precises", "Précises", "check"], ["fourchette", "En fourchette tant que pas observé", "search"]]
+
+static func _qualites(app: Control, column: Node) -> void:
+	var ligne := C.h(10)
+	ligne.name = "CreationQualitesSection"
+	column.add_child(ligne)
+	var caption := Kit.caps("Qualités des joueurs", 17)
+	caption.custom_minimum_size.y = C.px(40)
+	caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	ligne.add_child(caption)
+	var boutons: Array[Button] = []
+	var choix := str(app.management_ui.get("creation_qualites", "precises"))
+	for q: Array in QUALITES:
+		var b := Button.new()
+		b.name = "CreationQualites_" + str(q[0])
+		b.text = str(q[1])
+		b.focus_mode = Control.FOCUS_ALL
+		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		b.add_theme_font_override("font", C.font(700))
+		b.add_theme_font_size_override("font_size", C.px(19))
+		b.custom_minimum_size.y = C.px(40)
+		b.set_meta("cle", str(q[0]))
+		ligne.add_child(b)
+		boutons.append(b)
+	var styler := func(actif: String) -> void:
+		for b: Button in boutons:
+			var on := str(b.get_meta("cle")) == actif
+			var fond := C.box(Charte.DORE if on else Color(0, 0, 0, 0), Color(Charte.CREME, .0 if on else .35), C.px(20), 0)
+			fond.content_margin_left = C.px(16); fond.content_margin_right = C.px(16)
+			for etat in ["normal", "hover", "pressed", "focus"]: b.add_theme_stylebox_override(etat, fond)
+			for etat in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+				b.add_theme_color_override(etat, Charte.ENCRE if on else Charte.CREME)
+	styler.call(choix)
+	for b: Button in boutons:
+		b.pressed.connect(func() -> void:
+			app.management_ui.creation_qualites = str(b.get_meta("cle"))
+			styler.call(str(b.get_meta("cle"))))
 
 static func _frame(row: HBoxContainer, id: String) -> VBoxContainer:
 	var frame := PanelContainer.new()

@@ -3,6 +3,7 @@ extends Control
 ## puces de filtre, tableau pleine largeur groupé Avants / Arrières. Pas de fiche à droite : le survol d'un nom
 ## (ou du « i ») montre la mini-fiche, le clic ouvre la fiche complète. Tout est dessiné sur le gabarit 2248 de large
 ## et sert à toutes les tailles de fenêtre ; en fenêtre étroite on retire des colonnes plutôt que de réduire le texte.
+const Notation = preload("res://ui/notation_staff.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const P = preload("res://ui/immersive08/projection.gd")
@@ -1169,14 +1170,12 @@ func _row(player:Dictionary,index:int) -> void:
 				autres.accessibility_name = "Autres postes · "+autres.tooltip_text.replace("\n"," ; ")
 				row.accessibility_name += " · autres postes " + autres.tooltip_text.replace("\n"," ; ")
 			"niveau":
-				var rating: Variant = player.get("rating")
-				var niveau := D.text(row,x,base,G.rating_text(player,true),21,Charte.couleur_attribut(rating),700,l,a)
-				niveau.name = "RosterLevel"
+				# Notation façon FM (planche 24/11) : lettre du staff, relative à notre effectif.
+				var note_n := Notation.resume(app.model,player,true)
+				Notation.pastille(row,x+l/2.0-19,h/2.0,int(note_n.niveau),32,"RosterLevel")
 			"pot":
-				var potentiel := D.text(row,x,base,G.potential_text(player),19,C.MUTED,500,l,a,true)
-				potentiel.name = "RosterPotential"
-				potentiel.mouse_filter = Control.MOUSE_FILTER_PASS
-				potentiel.tooltip_text = G.potential_tooltip(player)
+				var note_p := Notation.resume(app.model,player,true)
+				Notation.pastille(row,x+l/2.0-19,h/2.0,int(note_p.potentiel),32,"RosterPotential")
 			"cond":
 				var condition: float = float(player.get("condition",0))
 				var ton := C.MINT if condition >= 85 else (C.AMBER if condition >= 60 else C.ALERT)

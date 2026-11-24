@@ -27,6 +27,7 @@ const Sort = preload("res://ui/recruitment_sort.gd")
 const Sales = preload("res://ui/player_sales_view.gd")
 const FicheCharge = preload("res://ui/immersive08/fiche_charge.gd")
 const FicheRoles = preload("res://ui/immersive08/fiche_roles.gd")
+const Notation = preload("res://ui/notation_staff.gd")
 const TempsJeu = preload("res://ui/immersive08/fiche_temps_jeu.gd")
 const Progression = preload("res://ui/immersive08/progression_fiche.gd")
 const AgentJoueur = preload("res://ui/agent_joueur.gd")
@@ -301,16 +302,20 @@ static func _bandeau(page: Control, app: Control, player: Dictionary, source: St
 	_verdict(hero,app,player,source)
 	# Niveau et potentiel, à droite du bandeau.
 	D.line(hero,Vector2(1600,22),Vector2(1601,188),Color(Charte.FILET,.9))
+	# Notation façon FM (planche 24/11) : estimation du staff, lettre relative à notre effectif + palier vague ;
+	# potentiel en lettre + phrase. Aucun chiffre du moteur.
+	var note := Notation.resume(app.model,player,Commune.notre_joueur(source))
 	D.text(hero,1640,40,"NIVEAU",17,Charte.IVOIRE_2,700,200)
-	var niveau := _anton(D.text(hero,1640,104,G.rating_text(player,Commune.notre_joueur(source)),56,Charte.IVOIRE,800,150))
-	niveau.name = "PlayerGlobalRating"
-	var largeur_niveau := Charte.TITRE_FICHE.get_string_size(niveau.text,HORIZONTAL_ALIGNMENT_LEFT,-1,maxi(12,C.px(56))).x/C.density
-	D.text(hero,1640+largeur_niveau+10,104,"/ 100",22,Charte.IVOIRE_2,500,80)
-	D.text(hero,1930,40,"POTENTIEL",17,Charte.IVOIRE_2,700,200)
-	var potential := _anton(D.text(hero,1930,104,G.potential_text(player),56,Charte.IVOIRE,800,300))
-	potential.name = "PlayerGlobalPotential"
-	potential.mouse_filter = Control.MOUSE_FILTER_PASS
-	potential.tooltip_text = G.potential_tooltip(player)
+	var lettre_l := Notation.pastille(hero,1640,88,int(note.niveau),64,"PlayerGlobalRating")
+	Notation.poser_palier(hero,1640+lettre_l+14,88,note.palier,19,1950-(1640+lettre_l+14),"PlayerPalier")
+	D.text(hero,1966,40,"POTENTIEL",17,Charte.IVOIRE_2,700,200)
+	var lettre_p := Notation.pastille(hero,1966,88,int(note.potentiel),64,"PlayerGlobalPotential")
+	var phrase := D.text(hero,1966+lettre_p+14,96,str(note.phrase.texte),20,note.phrase.couleur,700,2240-(1966+lettre_p+14),HORIZONTAL_ALIGNMENT_LEFT,false)
+	phrase.name = "PlayerPotentielPhrase"
+	phrase.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	phrase.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+	phrase.size.y *= 2.1
+	phrase.position.y -= phrase.size.y * 0.25
 	var dispo := Commune.disponibilite(app,player,source)
 	var etat := "Disponible" if dispo.etat == "apte" else str(dispo.texte)
 	D.text(hero,1640,150,etat,20,dispo.couleur,600,580,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerHeroAvailability"
