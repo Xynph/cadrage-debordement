@@ -13,19 +13,19 @@ extends Node3D
 ## le soir et le crachin (captures seulement) ; CD_AMBIANCE_MESURE=1 écrit les images/seconde au journal.
 
 const BRUIT_FREQUENCE := 0.018
-const CONFETTIS := 650
-const CONFETTIS_POINTS := 450
+const CONFETTIS := 400
+const CONFETTIS_POINTS := 300
 const CONFETTIS_DUREE := 7.0
 const FUMIGENES := 2
 const FUMEE_DUREE := 30.0
-const FUMEE_PARTICULES := 90
+const FUMEE_PARTICULES := 45
 ## Échelle finale d'une bouffée (m) : le panache s'élargit en montant.
 const FUMEE_TAILLE_MAX := 6.0
 ## Hauteur maximale (m) des foyers : rangs bas, pour que le panache reste dans la tribune filmée.
 const FUMEE_RANG_MAX := 5.0
 ## Gouttes par niveau de pluie du moteur (1 : pluie, 2 : forte pluie), nappe proche et lointaine.
-const PLUIE_PROCHE := [0, 600, 1200]
-const PLUIE_LOINTAINE := [0, 1600, 3000]
+const PLUIE_PROCHE := [0, 500, 1000]
+const PLUIE_LOINTAINE := [0, 800, 1500]
 ## Distance (m) du centre de chaque nappe devant la caméra.
 const PLUIE_PROCHE_DISTANCE := 8.0
 const PLUIE_LOINTAINE_DISTANCE := 30.0
@@ -44,6 +44,8 @@ var _confettis: CPUParticles3D
 var _fumees: Array[CPUParticles3D] = []
 var _fumee_restante := 0.0
 var _fumee_texture: ImageTexture
+var _points_cote: Dictionary = {}
+var _foyers_cote: Dictionary = {}
 var _essai_montre := false
 var _essais := 0
 var _pluies: Array[GPUParticles3D] = []
@@ -103,6 +105,8 @@ func _process(delta: float) -> void:
 	if not matieres.is_empty() and (matieres[0] as ShaderMaterial).get_shader_parameter("bruit_foule") != _bruit_texture or _bruit_texture == null:
 		_foule_vivante(matieres)
 	var essai := bool(_vue.get("foule").etat().get("essai", false))
+	if _points_cote.is_empty() and not (_vue.get("foule_tetes") as PackedVector3Array).is_empty():
+		_preparer_tetes()
 	if essai and not _essai_montre:
 		_feter_essai()
 	_essai_montre = essai
@@ -151,6 +155,15 @@ func _tetes(filtre: Callable, nombre: int, graine: int) -> PackedVector3Array:
 	return choix
 
 
+## Tirage décoratif à graine fixe, fait une fois quand le public existe : points des confettis et
+## foyers des fumigènes pour chaque bout du stade (-1, 1) et pour un essai sans côté connu (0).
+func _preparer_tetes() -> void:
+	for cote in [-1, 0, 1]:
+		var pres := func(p: Vector3) -> bool: return cote == 0 or p.x * cote > 20.0
+		_points_cote[cote] = _tetes(pres, CONFETTIS_POINTS, 4100 + cote)
+		_foyers_cote[cote] = _tetes(func(p: Vector3) -> bool: return cote != 0 and p.x * cote > 58.0 and absf(p.z) < 30.0 and p.y < FUMEE_RANG_MAX, FUMIGENES * 6, 5200 + cote)
+
+
 func _feter_essai() -> void:
 	_essais += 1
 	var camp := int(_vue.get("foule").essai_camp)
@@ -159,8 +172,8 @@ func _feter_essai() -> void:
 	# Côté de l'en-but où le ballon est aplati : tribunes de ce bout du stade.
 	var ballon := _vue.get("_ball") as Node3D
 	var cote := signf(ballon.global_position.x) if ballon else 0.0
-	var pres := func(p: Vector3) -> bool: return cote == 0.0 or p.x * cote > 20.0
-	var points := _tetes(pres, CONFETTIS_POINTS, 4100 + _essais)
+	# Points et foyers tirés une fois pour toutes (_preparer_tetes) : rien n'est cherché à l'essai.
+	var points: PackedVector3Array = _points_cote.get(int(cote), PackedVector3Array())
 	if not points.is_empty():
 		var rampe := Gradient.new()
 		rampe.interpolation_mode = Gradient.GRADIENT_INTERPOLATE_CONSTANT
@@ -172,7 +185,10 @@ func _feter_essai() -> void:
 		_confettis.emitting = true
 	# Fumigènes : rares (deux, à l'essai seulement) et localisés, dans la tribune derrière l'en-but
 	# (celle que montrent le ralenti et la célébration).
-	var foyers := _tetes(func(p: Vector3) -> bool: return cote != 0.0 and p.x * cote > 58.0 and absf(p.z) < 30.0 and p.y < FUMEE_RANG_MAX, FUMIGENES, 5200 + _essais)
+	var candidats: PackedVector3Array = _foyers_cote.get(int(cote), PackedVector3Array())
+	var foyers := PackedVector3Array()
+	for i in mini(FUMIGENES, candidats.size()):
+		foyers.append(candidats[(_essais * FUMIGENES + i) % candidats.size()])
 	for i in mini(foyers.size(), _fumees.size()):
 		var fumee := _fumees[i]
 		var rampe_fumee := Gradient.new()
@@ -261,7 +277,7 @@ func _creer_fumigene() -> CPUParticles3D:
 	matiere.albedo_texture = _fumee_texture
 	matiere.cull_mode = BaseMaterial3D.CULL_DISABLED
 	var quad := QuadMesh.new()
-	quad.size = Vector2(1.6, 1.6)
+	quad.size = Vector2(2.2, 2.2)
 	quad.material = matiere
 	var taille := Curve.new()
 	taille.max_value = FUMEE_TAILLE_MAX
