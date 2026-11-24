@@ -1334,7 +1334,7 @@ func _page() -> void:
 	lien_consignes.add_theme_font_size_override("font_size", fpx(22 * BARRE_HAUT))
 	noeuds_barre.insert(3, lien_consignes)
 	for noeud: Control in noeuds_barre: barre.add_child(noeud)
-	# Barre du banc (idée FM27 n° 34) : cris d'équipe, cris à un joueur, ajustements, permuter les ailes.
+	# Bouton « Banc » (idée FM27 n° 34, menu déroulant comme dans FM) : cris d'équipe, à un joueur, ajustements, ailes.
 	load("res://ui/contextual/match_banc_fm.gd").poser(self, barre, page)
 	_page_d3(page)
 
@@ -1478,11 +1478,11 @@ func _colonne_xv(grille: Control) -> void:
 	_montrer_vue_xv()
 ## Colonne centrale : le terrain 2D (où est le ballon, qui attaque), le dernier fait joué en une ligne.
 func _colonne_centre(grille: Control) -> void:
-	var cadre_terrain := _panneau(grille, px(12))
+	var cadre_terrain := _panneau(grille, px(14))
 	var tuile: Control = cadre_terrain.get_parent().get_parent()
 	tuile.name = "MatchBetweenPitchTile"
 	S.G.fill(tuile, true, 1.0)
-	cadre_terrain.add_theme_constant_override("separation", px(4))
+	cadre_terrain.add_theme_constant_override("separation", px(6))
 	var tete := S.G.h(px(14))
 	tete.name = "MatchBetweenPitchHeader"
 	cadre_terrain.add_child(tete)
@@ -1823,13 +1823,6 @@ func _page_d3(page: Control) -> void:
 	for cote in 2:
 		if cote == 1: _colonne_centre(rangee)
 		_poser_compo_fm(rangee, cote)
-	# Le dernier fait joué (minute, pictogramme) monte dans l'en-tête du terrain, à droite du titre : une ligne de moins
-	# au-dessus du terrain, qui garde sa hauteur malgré la barre du banc (vérificateur du 24/11).
-	var tete_terrain := rangee.find_child("MatchBetweenPitchHeader", true, false) as Control
-	if tete_terrain != null and is_instance_valid(bandeau) and bandeau.get_parent() != tete_terrain:
-		bandeau.get_parent().remove_child(bandeau)
-		tete_terrain.add_child(bandeau)
-		bandeau.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_poser_phrase_fm(centre)
 	# Les temps forts en pastilles sont déjà dans les événements et la phrase de jeu : la ligne laisse la place.
 	temps_forts.visible = false
