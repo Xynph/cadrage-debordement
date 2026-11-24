@@ -46,7 +46,7 @@ func capture(name_: String) -> void:
 	check(root.get_texture().get_image().save_png(artifacts.path_join(name_ + ".png")) == OK, "capture " + name_)
 func all_within(node: Node) -> void:
 	var screen := Rect2(Vector2.ZERO, Vector2(root.size))
-	for name_: String in ["PressPublish", "PressPrevious", "PressNext", "PressReturn"]:
+	for name_: String in ["PressQuestion", "PressAnswers", "PressReturn"]:
 		var control: Control = node.find_child(name_, true, false)
 		if control != null: check(screen.encloses(control.get_global_rect()), name_ + " fits " + str(root.size))
 func run() -> void:
@@ -90,6 +90,8 @@ func run() -> void:
 	director = StubDirector.new()
 	director.app = host
 	host.add_child(director)
+	# Densité de l'interface posée par la coque pour la fenêtre réelle (les écrans immersive08 sont en coordonnées 2560).
+	load("res://ui/immersive08/components.gd").configure(root.size.y, root.size.x)
 	view = View.new()
 	view.director = director
 	view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -116,16 +118,21 @@ func run() -> void:
 			view._select_question(index)
 			await settle()
 			var question: Dictionary = questions[index]
-			check(view.question_label.text == question.question, "actual question text retained")
+			# Conférence « option A » (choix de Léo du 23/11/2026, #1202) : question en bulle, journaliste en carte,
+			# réponses en cartes cliquables (un clic dit la réponse).
+			check(view.find_child("PressQuestion", true, false).text == question.question, "actual question text retained")
 			check(view.find_child("PressJournalistName", true, false).text == question.journalist.name, "actual reporter name retained")
-			check(view.find_child("PressJournalistSource", true, false).text.contains(question.journalist.outlet), "actual outlet retained")
-			var badge := view.find_child("PressJournalistInitials", true, false)
-			check(badge.find_children("*", "TextureRect", true, false).is_empty(), "initial badge adds no invented journalist photograph")
-			var answers := view.find_child("PressAnswers", true, false).find_children("*", "Button", true, false)
+			var card: Control = view.find_child("PressJournalistCard", true, false)
+			check(card.find_children("*", "Label", true, false).any(func(l: Label): return l.text.contains(str(question.journalist.outlet))), "actual outlet retained")
+			var initials := load("res://ui/immersive08/conference_presse.gd")._initiales(str(question.journalist.name)) as String
+			var badge: Array = card.find_children("*", "Label", true, false).filter(func(l: Label): return l.text == initials)
+			check(badge.size() == 1 and badge[0].get_parent().find_children("*", "TextureRect", true, false).is_empty(), "initial badge adds no invented journalist photograph")
+			var answers := view.find_child("PressAnswers", true, false).find_children("PressAnswer_*", "Button", true, false)
 			check(answers.size() == question.answers.size() and answers.size() == 5, "exactly the five authoritative answers")
 			for answer: Dictionary in question.answers:
 				var button: Button = view.find_child("PressAnswer_" + str(question.id) + "_" + str(answer.id), true, false)
-				check(button != null and button.text == answer.text, "permitted answer text and ID retained")
+				var answer_card: Control = view.find_child("PressAnswerCard_" + str(answer.id), true, false)
+				check(button != null and answer_card != null and answer_card.find_children("*", "Label", true, false).any(func(l: Label): return l.text == str(answer.text)), "permitted answer text and ID retained")
 			check(view.find_children("*", "OptionButton", true, false).is_empty(), "no independent tone selector")
 			check(view.room.asking_journalist() == posmod(index, 7), "the asking journalist of the 3D room follows the question (%d)" % index)
 		await capture("press-room-" + str(resolution.x))
@@ -135,15 +142,15 @@ func run() -> void:
 	var selected: Dictionary = view.choices.duplicate(true)
 	# Conférence rapide : un clic retient la réponse et affiche la question suivante sans réponse.
 	check(view.question_index == 1, "one click answers and shows the next question")
-	var question_node: Label = view.question_label
+	var question_node: Label = view.find_child("PressQuestion", true, false)
 	view.update_frame(career.duplicate(true), metadata)
-	check(view.choices == selected and view.question_label == question_node and view.question_index == 1, "snapshot preserves draft and focused question controls")
+	check(view.choices == selected and view.find_child("PressQuestion", true, false) == question_node and view.question_index == 1, "snapshot preserves draft and focused question controls")
 	check(view.room.get_instance_id() == world_id, "snapshots and question navigation preserve native 3D world")
 	check(director.commands.is_empty() and FileAccess.get_file_as_bytes(saved_path) == saved_before, "drafting changes no career facts or save")
 	view._publish()
 	check(director.commands.is_empty(), "partial answers cannot publish")
 	for question: Dictionary in questions: view._choose_answer(str(question.id), str(question.answers[1].id))
-	check(not view.publish_button.disabled, "all actual questions enable publication")
+	check(director.commands.size() == 1, "the last actual answer publishes the conference")
 	check(view.find_child("PressReturn", true, false) == null, "complete local draft still cannot exit")
 	view._publish()
 	view._publish()
@@ -154,12 +161,33 @@ func run() -> void:
 	check(sent.payload.answers.size() == questions.size() and not sent.payload.has("tone"), "complete ordered answers and no tone parameter")
 	for index in questions.size():
 		check(sent.payload.answers[index] == {"questionId":questions[index].id,"answerId":questions[index].answers[1].id}, "actual question order preserved in payload")
-	for button in view.find_children("*", "BaseButton", true, false): check(button.disabled, "in-flight request disables repeated input")
+	# Pendant l'envoi, tout ce qui agit est grisé, adjoint et réglage compris (Léo, 24/11/2026). Projection de rendu où
+	# l'adjoint est proposé, pour voir ses deux pastilles pendant l'envoi.
+	var with_delegate := career.duplicate(true)
+	with_delegate.clubLife.press.conference.delegation = {"allowed":true}
+	with_delegate.clubLife.press.policy = {"ordinary":"moi"}
+	view.update_frame(with_delegate, metadata)
+	await settle()
+	for name_: String in ["PressDelegate", "PressPolicy_adjoint"]:
+		var grey: BaseButton = view.find_child(name_, true, false)
+		check(grey != null and grey.disabled, name_ + " greyed while the conference is being sent")
+	for button: BaseButton in view.find_children("*", "BaseButton", true, false):
+		if button.has_meta("contextual_enabled"): check(button.disabled, "in-flight request disables " + button.name)
+		if not button.name.ends_with("Open"): button.pressed.emit()
+	check(director.commands.size() == 1, "in-flight request disables repeated input")
+	view.update_frame(career, metadata)
+	# Envoi refusé (disque, moteur) : aucun bouton, aucune phrase ; le jeu relance seul les mêmes réponses, une fois.
 	host.waiting = false
 	host.last_error = "Refus serveur de la préparation périmée"
 	view.update_frame(career, metadata)
-	check(view.choices.size() == questions.size() and not view.publish_button.disabled, "server refusal preserves draft and enables retry")
-	check(not host.last_error.is_empty(), "component does not erase the director's visible server error")
+	check(view.choices.size() == questions.size() and view._request_in_flight, "server refusal preserves draft and keeps the send pending")
+	var retry_deadline := Time.get_ticks_msec() + 5000
+	while director.commands.size() < 2 and Time.get_ticks_msec() < retry_deadline: await process_frame
+	check(director.commands.size() == 2 and director.commands[1].payload == sent.payload, "automatic retry resends the same preserved answers")
+	check(host.last_error.is_empty(), "automatic retry leaves no refusal phrase in the room")
+	for frame in 90: await process_frame
+	check(director.commands.size() == 2, "no second send while the retry is pending")
+	host.waiting = false
 	# Controlled response fixture: receipt rendering is tested separately from
 	# the real domain effects exercised by godot-three-rooms-flow.gd.
 	var response := career.duplicate(true)
@@ -180,7 +208,7 @@ func run() -> void:
 	await settle()
 	var continuation: Button = view.find_child("PressReturn", true, false)
 	check(continuation != null and not continuation.disabled, "authoritative completed meeting enables Continue")
-	check(view.find_child("PressPublish", true, false) == null, "published conference is read only")
+	check(view.find_child("PressAnswer_*", true, false) == null, "published conference is read only")
 	var count := director.commands.size()
 	view._publish()
 	check(director.commands.size() == count, "receipt cannot publish a second command")

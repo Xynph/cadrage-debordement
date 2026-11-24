@@ -106,7 +106,8 @@ func run() -> void:
 	# 2. Composition : lien « Appeler un espoir » → sous-page de la Composition (jamais une fenêtre, sans coup d'envoi).
 	app._navigate("Composition")
 	await settle(40)
-	var appel := app.find_child("LineupCallEspoir", true, false) as Button
+	# La pastille « LineupCallEspoir » porte son bouton plat « LineupCallEspoirLien » (Pieces.pastille, en-tête visuel #1143).
+	var appel := app.find_child("LineupCallEspoirLien", true, false) as Button
 	check(appel != null and appel.is_visible_in_tree(), "Composition : lien « Appeler un espoir »")
 	if appel == null: fin(); return
 	await capture("composition-espoir")

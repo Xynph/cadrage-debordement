@@ -287,9 +287,11 @@ func _process(_delta: float) -> void:
 func _refresh_controls() -> void:
 	if not active(): return
 	_waiting = bool(app.waiting)
+	# Une salle qui envoie encore sa décision (conférence relancée seule) garde ses actions grisées entre deux envois.
+	var sending: bool = is_instance_valid(view) and view.has_method("envoi_en_cours") and view.envoi_en_cours()
 	for control in overlay.find_children("*", "BaseButton", true, false):
 		if control.has_meta("contextual_enabled"):
-			control.disabled = _waiting or not bool(control.get_meta("contextual_enabled"))
+			control.disabled = _waiting or sending or not bool(control.get_meta("contextual_enabled"))
 
 func _input(event: InputEvent) -> void:
 	if not active() or not event is InputEventKey or not event.pressed: return

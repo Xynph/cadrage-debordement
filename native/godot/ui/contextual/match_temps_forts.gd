@@ -836,7 +836,9 @@ func _habiller_horloge() -> void:
 func _image(scene: Dictionary, fige: bool, jusque: int) -> Dictionary:
 	# Le journal est tronqué à l'action montrée : les gestes de la vue le lisent.
 	var journal: Array = _events.slice(0, jusque + 1) if jusque >= 0 and jusque < _events.size() else _events
-	return {"scene": scene, "teams": _teams, "events": journal, "paused": fige, "finished": false, "atBreak": false}
+	# Météo du direct transmise telle quelle : la vue en tire la pluie décorative (match_ambiance.gd).
+	return {"scene": scene, "teams": _teams, "events": journal, "paused": fige, "finished": false, "atBreak": false,
+		"meteo": _live.get("meteo"), "weather": _live.get("weather", "")}
 
 static func _positions(scene: Dictionary) -> Dictionary:
 	var places: Dictionary = {}

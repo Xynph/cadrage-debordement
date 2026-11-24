@@ -18,8 +18,8 @@ function fixture(size){
  h.run('validateCareer(S)');return {h,text:h.run('JSON.stringify(createSaveDocument())'),opponent:h.run('opponent')};
 }
 for(const size of [40,42]){
- const f=fixture(size),b=createBridge({dataDir:path.join(root,'roster-'+size),seed:827381,now:1700000000000});
- try{good(b,'import',{text:f.text});const before=JSON.parse(good(b,'export').meta.exportText).state,model=good(b,'begin_match'),after=JSON.parse(good(b,'export').meta.exportText).state;
+ const f=fixture(size),b=createBridge({dataDir:path.join(root,'roster-'+size),seed:827381,now:1700000000000,testVm:true});
+ try{good(b,'import',{text:f.text});const before=JSON.parse(good(b,'export').meta.exportText).state,model=good(b,'begin_match'),after=JSON.parse(b.vm.run('JSON.stringify(S)')); // L'export en plein match décrit la carrière d'avant le coup d'envoi (#836) : l'état du match en cours se lit dans le moteur.
   assert.ok(model.live);const sh=after.live.sheets[after.live.pair.indexOf(f.opponent)];assert.equal(sh.nominated.length,23);assert.equal(sh.bench.filter(Boolean).length,8);
   const prior=before.clubs[f.opponent],next=after.clubs[f.opponent];assert.equal(prior.players.length,size);assert.equal(next.players.length,prior.players.length+1);const added=next.players.find(p=>!prior.players.some(x=>x.id===p.id));assert.equal(added.pos,'Talonneur');assert.equal(added.salary,2000);assert.equal(added.contractEnd,after.season+2);assert.equal(added.injury,0);assert.equal(added.academy,false);
   good(b,'save');good(b,'import',{text:good(b,'export').meta.exportText});
