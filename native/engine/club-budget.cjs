@@ -330,6 +330,10 @@ function spectateurs({ capacite, resultats, cle = '', accueil = 1, phase = 'leag
 // marge : excédent que le budget voté vise (championnat encadré, cibleGestion) : ce n'est pas un surplus imprévu,
 // le train de vie n'y touche pas ; seul ce qui le dépasse est réinvesti.
 const TRAIN_DE_VIE = 0.7;
+// Épargne du championnat (league-economy.cjs, epargne) : part des recettes que le train de vie ne dépense jamais ; elle
+// sert de plancher à la marge (la plus haute des deux compte), pour le club du manager comme pour les clubs gérés.
+const epargne = (division, annuel) => Math.max(0, (ECONOMIE.CHAMPIONNATS[division]?.epargne ?? 0) * (Number.isFinite(annuel) ? annuel : 0));
+const margeTrain = (division, annuel, marge = 0) => Math.max(Number.isFinite(marge) ? marge : 0, epargne(division, annuel));
 function ajustement(annuel, masseAnnuelle, enveloppe, marge = 0) {
   const resultat = annuel - fonctionnementAnnuel(annuel) - masseAnnuelle * (1 + COTISATIONS);
   if (resultat > 0) return TRAIN_DE_VIE * Math.max(0, resultat - Math.max(0, Number.isFinite(marge) ? marge : 0));
@@ -424,7 +428,7 @@ function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle
   } else if (neutre) {
     ecritures.push({ title: libelle + ' · Part de recette de phase finale', amount: rond(regle.moyenne * regle.billetterie / matchs * PART_TERRAIN_NEUTRE) });
   }
-  const train = gere ? ajustement(annuel, masseHebdo * 52, proprietaire(forces, clubId).enveloppe, marge) : 0;
+  const train = gere ? ajustement(annuel, masseHebdo * 52, proprietaire(forces, clubId).enveloppe, margeTrain(force.division, annuel, marge)) : 0;
   const centre = centreFormation(annuel, force.division, formation);
   ecritures.push({ title: libelle + ' · Salaires des joueurs', amount: -salaires });
   if (staff && Number.isFinite(staff.annuel) && Number.isFinite(staff.reference)) {
@@ -574,7 +578,7 @@ function prevision({ forces, clubId, compte, tresorerie, masseHebdo, semaines, r
   const guichetMatch = (reels ? billets.attendu : modele * regle.billetterie * (1 - PART_ABONNEMENTS) / Math.max(1, receptions)) + modele * regle.boutique / Math.max(1, receptions);
   const recettesPrevues = rond(compte.recettes + fixes * reste + guichetMatch * receptionsRestantes + prime);
   const ecartStaff = staff && Number.isFinite(staff.annuel) && Number.isFinite(staff.reference) ? (staff.annuel - staff.reference) * (1 + COTISATIONS) : 0;
-  const fonctionnement = fonctionnementAnnuel(annuel) + ajustement(annuel, masseHebdo * 52, compte.enveloppe) + (Number.isFinite(compte.investissement) ? compte.investissement : 0) + ecartStaff;
+  const fonctionnement = fonctionnementAnnuel(annuel) + ajustement(annuel, masseHebdo * 52, compte.enveloppe, margeTrain(division, annuel)) + (Number.isFinite(compte.investissement) ? compte.investissement : 0) + ecartStaff;
   const chargesPrevues = rond(compte.charges + (masseHebdo * 52 / semaines * (1 + COTISATIONS) + fonctionnement / semaines) * reste);
   // Transferts, primes de signature, travaux : tout ce qui a bougé la caisse hors du budget courant.
   const rembourse = Number.isFinite(compte.rembourse) ? compte.rembourse : 0, aRembourser = Math.max(0, (Number.isFinite(compte.remboursement) ? compte.remboursement : 0) - rembourse);

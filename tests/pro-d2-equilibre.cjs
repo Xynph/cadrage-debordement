@@ -104,9 +104,9 @@ test('Moteur Monde : aucun club de Pro D2 ne vote une perte que son propriétair
     for (const c of saison) assert.ok(c.resultat >= -c.enveloppe - 150000, 'club ' + c.id + ' (' + c.type + ') : perte ' + c.resultat + ' pour ' + c.enveloppe + ' comblés');
     const resultats = saison.map(c => c.resultat).sort((a, b) => a - b);
     assert.ok(resultats.filter(r => r > 0).length >= 4, 'des clubs dans le vert : ' + JSON.stringify(resultats));
-    // Un club bien géré (salaires des joueurs sous 27 % des recettes) finit dans le vert, à la marge près de la vraie billetterie
-    // (23/11/2026 : le dernier du classement, en forme DDVDD, remplit moins son stade ; -71 100 € sur ~10 M€ de recettes).
-    for (const c of saison.filter(x => x.part < 0.27)) assert.ok(c.resultat > -150000, 'club ' + c.id + ' bien géré (' + c.part.toFixed(2) + ') : ' + c.resultat);
+    // Un club bien géré (salaires des joueurs sous 27 % des recettes) finit dans le vert : son train de vie garde l'épargne
+    // de la Pro D2 (6 % des recettes, league-economy.cjs) pour les recrues et une prime de classement sous la moyenne.
+    for (const c of saison.filter(x => x.part < 0.27)) assert.ok(c.resultat > 0, 'club ' + c.id + ' bien géré (' + c.part.toFixed(2) + ') : ' + c.resultat);
     assert.ok(saison.some(x => x.part < 0.27), 'au moins un club bien géré dans la base');
   } finally { jeu.fermer(); }
 });
