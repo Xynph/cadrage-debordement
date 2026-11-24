@@ -383,7 +383,9 @@ func liste_en_place() -> void:
 	var bouge := 0
 	var cartes := 0
 	var depart := Time.get_ticks_msec()
-	while int(live().get("minute", 0)) < m0 + 2 and not live().get("finished", false) and Time.get_ticks_msec() - depart < 240000:
+	# Sur un poste lent (CI sans carte graphique), les 2 minutes passent en peu d'images 2D : on continue de jouer
+	# jusqu'à avoir observé assez d'images, sans rien baisser du seuil de 10 images.
+	while (int(live().get("minute", 0)) < m0 + 2 or images < 10) and not live().get("finished", false) and Time.get_ticks_msec() - depart < 240000:
 		await process_frame
 		var v := surface()
 		if v == null or not vue_2d(v): continue
