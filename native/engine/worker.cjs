@@ -215,7 +215,8 @@ function createBridge(options={}){
   const engineIntl=Object.create(Intl,{NumberFormat:{value:NumberFormat,writable:true,configurable:true}});
   ctx=vm.createContext({console:{log(){},warn(){},error(){}},Intl:engineIntl,Math:math,Date:EngineDate,Set,JSON,CDNativeHeadless:true,document:{querySelector:()=>element},window:{CDNativeHeadless:true,CDOfflineStorage:storage,CDOfflineError:true},localStorage:storage,setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},nativeDataDirectory:dataDir});
   // Harnais de test (testVm) : les commandes lourdes (relecture des sections, passage de saison) dépassent 15 s sur un runner lent.
-  const vmLimit=options.testVm===true?120000:15000;
+  // Harnais testVm : garde contre une boucle sans fin seulement (carriere-monde-fin-de-saison et carriere-chrono la relèvent déjà à 600 s) ; un « Saison suivante » sur un runner chargé dépassait 120 s.
+  const vmLimit=options.testVm===true?600000:15000;
   const run=(source,filename)=>vm.runInContext(source,ctx,filename?{timeout:vmLimit,filename}:{timeout:vmLimit});
   // Visage affiché d'un joueur (même calcul que la projection des portraits) : repris tel quel par la reconversion en staff.
   ctx.nativePortraitLook=process.env.CD_PORTRAIT_CARRURE==='0'?undefined:(player,world)=>{
