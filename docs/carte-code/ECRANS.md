@@ -23,7 +23,13 @@ Numéros de ligne approximatifs (au 24/11/2026) : relancer carte-code.cjs avant 
 | Écran | Fichier(s) | Entrée |
 |---|---|---|
 | Bureau (dessiné) | `ui/immersive08/office_canvas.gd`, `office.gd` | `build` L169 / L278 |
-| Réception (courrier) | `ui/immersive08/reception_canvas.gd`, `reception_messages.gd`, `reception_reading.gd` | `build` L469 |
+| Réception (courrier) : fichier principal (états, ordre des courriers, `build`, `heading`, consts) | `ui/immersive08/reception_canvas.gd` ← ses morceaux ci-dessous | `build` ~L470 |
+| Réception : liste de gauche (filtres, jours, ligne d'un courrier) | `ui/immersive08/reception_liste.gd` | `_list_filters`, `_list`, `_row` |
+| Réception : lettre ouverte (texte à liens, fil de lecture, mesures) | `ui/immersive08/reception_lettre.gd` | `_detail`, `_letter`, `entities` |
+| Réception : coupure de presse et infirmerie | `ui/immersive08/reception_coupure_infirmerie.gd` | `_clipping`, `_infirmary`, `infirmary_rows` |
+| Réception : panneau « Concerné » et pièces jointes | `ui/immersive08/reception_concerne.gd` | `_concerned_row`, `_attachments` |
+| Réception : cartes d'action (réponses, ouvertures, politique de presse) | `ui/immersive08/reception_reponses.gd` | `_actions` |
+| Réception : tuiles de réponse, statuts de lecture | `ui/immersive08/reception_messages.gd`, `reception_reading.gd` | `bande`, `status` |
 | Compte rendu de match (carte) | `ui/immersive08/compte_rendu_carte.gd` | `carte` L28 |
 | Presse, conférence | `ui/immersive08/press_canvas.gd`, `conference_presse.gd` | `build` L65 / `construire` L75 |
 
