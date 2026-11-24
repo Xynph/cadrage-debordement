@@ -5,7 +5,7 @@ extends RefCounted
 ## Fiche complète (option A choisie par Léo le 21/11/2026, à 75 % de sa taille d'essai) : en-tête, grille des 36
 ## attributs, rapport du staff (niveau et potentiel en chiffres et jauges), état, postes.
 ## Dans le direct, l'état du joueur dans le match (note, énergie, plaquages…) passe en tête.
-## Postes : note au poste sur 100 (moteur, colorée) + familiarité au poste en barres 5 crans (familiarite_poste.gd,
+## Postes : note au poste en lettre E- à S+ comme le Niveau (notation_staff.gd, jamais de chiffre) + familiarité au poste en barres 5 crans (familiarite_poste.gd,
 ## choix de Léo du 23/11/2026 : plus aucune étoile de poste) ; la note du joueur reste son niveau de base.
 ## Exemple : `CarteJoueurSurvol.lier(app, bouton_du_nom, str(player.id), "squad", func(): return infos_du_match)`.
 const C = preload("res://ui/immersive08/components.gd")
@@ -447,36 +447,31 @@ static func _corps(carte: Panel, app: Control, player: Dictionary, source: Strin
 	var w3 := largeur - 48.0 - w1 - w2 - 36.0
 	_rapport_staff(carte, app, player, source, Rect2(24, y, w1, h))
 	_etat(carte, app, player, source, Rect2(24 + w1 + 18, y, w2, h))
-	_polyvalence(carte, player, Rect2(24 + w1 + w2 + 36, y, w3, h), 3)
+	_polyvalence(carte, app, player, Rect2(24 + w1 + w2 + 36, y, w3, h), 3)
 	return y + h
 
-## Rapport du staff : niveau actuel et potentiel en tuile colorée au barème (chiffre, ou fourchette si le staff hésite)
-## et jauge ; jamais d'étoiles (réservées aux postes). Progression de la saison (flèche) quand elle est connue.
+## Rapport du staff (notation façon FM, choix B de Léo) : Niveau et Potentiel en LETTRE du staff (pastille ronde,
+## relative à notre effectif), palier écrit dans une pilule, phrase de potentiel ; jamais de chiffre ni de jauge.
+## Progression de la saison : flèche seule.
 static func _rapport_staff(carte: Panel, app: Control, player: Dictionary, source: String, zone: Rect2) -> void:
+	var Notation: Script = load("res://ui/notation_staff.gd")
 	var bloc := _panneau(carte, zone, Charte.PANNEAU)
 	bloc.name = "CarteJoueurRapport"
 	var w := zone.size.x
 	_titre(bloc, 20, 38, "Rapport du staff", w - 40)
 	var propre: bool = _commune().notre_joueur(source)
-	var niveau := Knowledge.bounds(player, "rating", propre)
-	var potentiel := Knowledge.bounds(player, "potential", propre)
-	var lignes := [["Niveau actuel", niveau, G.rating_text(player, propre)], ["Potentiel", potentiel, G.potential_text(player)]]
-	for i in lignes.size():
+	var note: Dictionary = Notation.resume(app.model, player, propre)
+	for i in 2:
 		var by := 92.0 + i * 78.0
-		var bornes: Dictionary = lignes[i][1]
 		var suffixe := "Niveau" if i == 0 else "Potentiel"
-		D.text(bloc, 20, by, lignes[i][0], 19, Charte.IVOIRE_2, 600, w - 170)
-		if bornes.is_empty():
-			D.text(bloc, w - 20, by, "—", 26, Charte.IVOIRE_3, 800, 100, HORIZONTAL_ALIGNMENT_RIGHT)
-			continue
-		var milieu := (float(bornes.min) + float(bornes.max)) / 2.0
-		var teinte := Charte.couleur_attribut(milieu)
-		var tuile := _panneau(bloc, Rect2(w - 20 - 112, by - 32, 112, 42), teinte, Charte.RAYON_PETIT)
-		tuile.name = "CarteJoueurTuile" + suffixe
-		D.text(tuile, 56, 32, str(lignes[i][2]), 26, Charte.ENCRE, 800, 112, HORIZONTAL_ALIGNMENT_CENTER).name = "CarteJoueurChiffre" + suffixe
-		var jauge := Rect2(20, by + 20, w - 40, 10)
-		D.bar(bloc, jauge, float(bornes.max), Color(teinte, .35))
-		D.bar(bloc, jauge, float(bornes.min), teinte)
+		D.text(bloc, 20, by - 8, "Niveau actuel" if i == 0 else "Potentiel", 19, Charte.IVOIRE_2, 600, w - 100)
+		var pastille: Control = Notation.pastille_noeud(bloc, w - 20 - 46, by - 4, int(note.niveau if i == 0 else note.potentiel), 46, "CarteJoueurTuile" + suffixe)
+		pastille.get_child(0).name = "CarteJoueurChiffre" + suffixe
+		if i == 0:
+			Notation.poser_palier(bloc, 20, by + 22, note.palier, 15, w - 100, "CarteJoueurPalier")
+		else:
+			var phrase := D.text(bloc, 20, by + 28, str(note.phrase.texte), 17, note.phrase.couleur, 700, w - 100)
+			phrase.name = "CarteJoueurPhrasePotentiel"
 	# Progression de la saison (suivi individuel du moteur) : flèche et écart.
 	var gain: Variant = null
 	for person: Variant in app.model.get("decisions", {}).get("development", {}).get("professionals", []):
@@ -485,7 +480,7 @@ static func _rapport_staff(carte: Panel, app: Control, player: Dictionary, sourc
 			if dev is Dictionary and _nombre(dev.get("seasonStart")) and _nombre(player.get("rating")): gain = roundi(float(player.rating) - float(dev.seasonStart))
 	if gain != null and int(gain) != 0:
 		var hausse := int(gain) > 0
-		D.text(bloc, w - 20, 38, ("▲ +%d" if hausse else "▼ %d") % int(gain), 22, Charte.GAIN if hausse else Charte.PERTE, 800, 120, HORIZONTAL_ALIGNMENT_RIGHT).name = "CarteJoueurProgression"
+		D.text(bloc, w - 20, 38, "▲" if hausse else "▼", 22, Charte.GAIN if hausse else Charte.PERTE, 800, 120, HORIZONTAL_ALIGNMENT_RIGHT).name = "CarteJoueurProgression"
 
 ## État : condition (jauge verte), charge de travail, forme (cinq dernières notes), moral du groupe (bleu).
 static func _etat(carte: Panel, app: Control, player: Dictionary, _source: String, zone: Rect2) -> void:
@@ -517,7 +512,7 @@ static func _etat(carte: Panel, app: Control, player: Dictionary, _source: Strin
 
 ## Polyvalence : les postes les plus familiers (numéros, rôle, note au poste, barres de familiarité) et le
 ## mini-terrain des 15 postes coloré par familiarité.
-static func _polyvalence(carte: Panel, player: Dictionary, zone: Rect2, combien: int) -> void:
+static func _polyvalence(carte: Panel, app: Control, player: Dictionary, zone: Rect2, combien: int) -> void:
 	var bloc := _panneau(carte, zone, Charte.PANNEAU)
 	bloc.name = "CarteJoueurPolyvalence"
 	var w := zone.size.x
@@ -539,7 +534,8 @@ static func _polyvalence(carte: Panel, player: Dictionary, zone: Rect2, combien:
 		# Note au poste + barres de familiarité (sans le mot : le nom du poste garde sa place).
 		var x_note := droite - 100.0
 		D.text(bloc, 96, by + 8, str(p.poste), 20, Charte.IVOIRE, 600, maxf(40.0, x_note - 96.0 - 8.0))
-		Familiarite.poser_note(bloc, x_note, by + 9, float(p.note), 24, 44, "CarteJoueurNotePoste_%d" % int(p.numeros[0]))
+		var lettre: Dictionary = load("res://ui/notation_staff.gd").lettre_poste(app.model, player, int(p.numeros[0]), Knowledge.owned(player))
+		Familiarite.poser_note(bloc, x_note, by + 9, lettre, 24, 44, "CarteJoueurNotePoste_%d" % int(p.numeros[0]))
 		Familiarite.poser(bloc, x_note + 54.0, by + 8, int(p.niveau), 19, "CarteJoueurFamiliarite_%d" % int(p.numeros[0]), false)
 	var terrain := MiniTerrain.new()
 	terrain.name = "CarteJoueurMiniTerrain"

@@ -4,7 +4,7 @@ extends RefCounted
 ## détache nettement du direct ; le match CONTINUE derrière (aucune pause). Contenu :
 ## - la mini-fiche : portrait, drapeau et nationalité, âge, taille, poids, note du match, énergie, moral, qualités clés et
 ##   utiles du rôle, responsabilités « En charge » (buteur, lanceur, botteur…) ;
-## - le poste : familiarité en barres + note au poste /100, petit terrain des 15 postes coloré en familiarité ;
+## - le poste : familiarité en barres + note au poste en lettre E- à S+ (échelle du Niveau, jamais de chiffre), petit terrain des 15 postes coloré en familiarité ;
 ## - le rôle (trois rôles du poste) et les consignes individuelles (deux au plus).
 ## Un clic choisit et valide (aucun bouton Confirmer) : le changement part dans la file du prochain arrêt de jeu du
 ## moteur (`file_arret`, `set_role_direct`, native/engine/match-arrets.cjs) ; « ⧗ » le signale discrètement jusqu'à
@@ -17,6 +17,7 @@ const S = preload("res://ui/contextual/skin.gd")
 const Charte = preload("res://ui/charte.gd")
 const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 const Familiarite = preload("res://ui/familiarite_poste.gd")
+const Notation = preload("res://ui/notation_staff.gd")
 const Roles = preload("res://ui/immersive08/fiche_roles.gd")
 const Commune = preload("res://ui/immersive08/fiche_commune.gd")
 const Tableau = preload("res://ui/contextual/match_tableau_widgets.gd")
@@ -228,10 +229,10 @@ static func donnees(view: Control, id: String) -> Dictionary:
 	var file := attentes(live, id)
 	var roles: Array = []
 	for r: Array in Roles.roles_famille(Roles.FAMILLE[slot]):
-		roles.append({"id": r[0], "nom": r[2], "note": Roles.note_role(valeurs, r)})
+		roles.append({"id": r[0], "nom": r[2], "note": Roles.note_role(valeurs, r), "lettre": Notation.lettre_role(view.app.model, joueur, str(r[0]), poste, true)})
 	var moteur: Dictionary = a.get("roles", {}).get(id, {}) if a.get("roles") is Dictionary and a.roles.get(id) is Dictionary else {}
 	var role := str(moteur.get("role", "")) if moteur.get("role") != null else ""
-	if role.is_empty(): role = Roles.meilleur_role(valeurs, poste)
+	if role.is_empty(): role = Roles.meilleur_role(valeurs, poste, joueur)
 	var role_attente := ""
 	if file.has("role:" + id): role_attente = str(file["role:" + id].get("role", "")) if file["role:" + id].get("role") != null else str(moteur.get("naturel", ""))
 	var siennes: Array = a.get("consignes", {}).get(id, []) if a.get("consignes") is Dictionary and a.consignes.get(id) is Array else []
@@ -253,7 +254,7 @@ static func donnees(view: Control, id: String) -> Dictionary:
 		if str(e.get("type", "")) == "remplacement": sortie = e
 	return {"id": id, "slot": slot, "poste": poste, "numero": numero_feuille(live, id, poste), "joueur": joueur,
 		"energie": clampf(float(d.energie), 0.0, 100.0), "moral": moral(pilotage, id), "note": float(d.note), "note_connue": notes.has(id),
-		"familiarite": Familiarite.niveau(joueur, poste), "note_poste": note_poste(joueur, poste), "roles": roles, "role": role,
+		"familiarite": Familiarite.niveau(joueur, poste), "note_poste": note_poste(joueur, poste), "lettre_poste": Notation.lettre_poste(view.app.model, joueur, poste, true), "roles": roles, "role": role,
 		"role_attente": role_attente, "consignes": siennes, "voulues": voulues, "consignes_attente": file.has("consignes:" + id),
 		"catalogue": catalogue, "exclusions": (a.get("exclusions", {}).get(famille_consignes(poste), []) if a.get("exclusions") is Dictionary else []),
 		"max": int(a.get("maxConsignes", 2)), "responsabilites": resp, "sortie": sortie, "file": file, "actif": not a.is_empty()}
@@ -448,7 +449,7 @@ static func _colonne_poste(fond: Panel, d: Dictionary, p: Dictionary) -> void:
 	var w2 := 300.0
 	_surtitre(fond, x2, 50, "Au poste · " + POSTES[int(d.poste) - 1], p, 220)
 	_familiarite_c(fond, x2, 92, int(d.familiarite), 22, "MatchMenuJoueurFamiliarite", p)
-	_note_c(fond, Rect2(x2 + w2 - 72, 56, 72, 42), float(d.note_poste), 28, "MatchMenuJoueurNotePoste", p)
+	_note_c(fond, Rect2(x2 + w2 - 72, 56, 72, 42), d.lettre_poste, "MatchMenuJoueurNotePoste", p)
 	_petit_terrain(fond, Rect2(x2, 118, w2, 380), d.joueur, int(d.poste))
 
 ## Colonne 3 : le rôle (trois rôles du poste) et les consignes individuelles.
@@ -466,7 +467,7 @@ static func _colonne_role(view: Control, fond: Panel, d: Dictionary, p: Dictiona
 		var l := _clic(fond, Rect2(x3, y, w3, 46), "MatchMenuJoueurRole_" + rid, func(): choisir_role(view, d, rid), p.choisi if actif else Color.TRANSPARENT, p, p.accent if voulu else Color.TRANSPARENT)
 		if actif: _deco(l, Rect2(0, 8, 5, 30), p.accent, 2)
 		D.text(l, 16, 31, ("⧗ " if voulu else "") + str(ro.nom), 19, p.accent if voulu else (p.encre if actif else p.encre2), 800 if actif or voulu else 600, w3 - 84)
-		_note_c(l, Rect2(w3 - 58, 7, 52, 32), float(ro.note), 20, "Note", p)
+		_note_c(l, Rect2(w3 - 58, 7, 52, 32), ro.lettre, "Note", p)
 		y += 52.0
 	var ty := y + 34.0
 	_surtitre(fond, x3, ty, "Consignes", p, 160).name = "MatchMenuJoueurConsignesTitre"
@@ -517,9 +518,16 @@ static func _plein(parent: Control, zone: Rect2, texte: String, fond: Color, tai
 	l.add_theme_font_override("font", Charte.TITRE_EXTRA)
 	return c
 
-static func _note_c(parent: Control, zone: Rect2, note: float, taille: int, nom: String, p: Dictionary) -> Panel:
-	if note < 0.0: return _plein(parent, zone, "?", p.rail, taille, nom, p.encre2)
-	return _plein(parent, zone, str(roundi(note)), Charte.couleur_attribut(note), taille, nom)
+## Note au poste ou au rôle en LETTRE (Notation : pastille ronde, double « B/A » si le staff n'est pas sûr), alignée à
+## droite de `zone` et centrée sur sa hauteur ; « ? » sur le rail si inconnue. Méta « lettre ».
+static func _note_c(parent: Control, zone: Rect2, lettre: Dictionary, nom: String, p: Dictionary) -> Control:
+	if int(lettre.get("bas", -1)) < 0:
+		var inconnue := _plein(parent, zone, "?", p.rail, int(zone.size.y * .66), nom, p.encre2)
+		inconnue.set_meta("lettre", "?")
+		return inconnue
+	var d := zone.size.y
+	var w: float = Notation.largeur_note(lettre, d)
+	return Notation.pastille_note(parent, zone.end.x - w, zone.position.y + d / 2.0, lettre, d, nom)
 
 ## Familiarité : barres de signal 5 crans + mot en petit. Renvoie la largeur posée.
 static func _familiarite_c(parent: Control, x: float, base: float, n: int, taille: int, nom: String, p: Dictionary) -> float:
@@ -703,9 +711,22 @@ static func carte_changement(zone: Control, sortant: Dictionary, entrant: Dictio
 		carte.add_child(ligne)
 		var morceaux: Array = [["▼" if k == 0 else "▲", 26, t], [str(int(p.numero)), 32, Charte.IVOIRE], [Tableau_nom(str(p.nom)), 24, Charte.IVOIRE]]
 		if k == 0 and float(p.get("note", -1.0)) >= 0.0: morceaux.append([("%.1f" % float(p.note)).replace(".", ","), 24, Charte.couleur_note(float(p.note))])
-		if k == 1 and float(p.get("note_poste", -1.0)) >= 0.0: morceaux.append([str(roundi(float(p.note_poste))), 24, Charte.couleur_attribut(float(p.note_poste))])
+		# Entrant : sa note au poste en lettre (pastille du Niveau, jamais de chiffre).
+		var lettre: Dictionary = p.get("lettre_poste", {}) if p.get("lettre_poste") is Dictionary else {}
+		if k == 1 and int(lettre.get("bas", -1)) >= 0: morceaux.append(lettre)
 		morceaux.append(["%d %%" % roundi(float(p.energie)), 20, teinte_energie(float(p.energie))])
-		for m: Array in morceaux:
+		for m: Variant in morceaux:
+			if m is Dictionary:
+				var cote := 34.0
+				var boite := Control.new()
+				boite.name = "EntrantLettrePoste"
+				boite.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				boite.custom_minimum_size = Vector2(C.px(Notation.largeur_note(m, cote)), C.px(cote))
+				boite.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+				ligne.add_child(boite)
+				Notation.pastille_note(boite, 0, cote / 2.0, m, cote, "Pastille")
+				boite.set_meta("lettre", Notation.texte_note(m))
+				continue
 			var l := C.label(str(m[0]), int(m[1]), m[2], true, 800)
 			if int(m[1]) >= 24: l.add_theme_font_override("font", Charte.TITRE_EXTRA)
 			l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER

@@ -219,6 +219,35 @@ function factory(){
   for(const [pid,r]of known)if(!out[pid])out[pid]={rating:null,ratingRange:r.ratingRange,potential:null,potentialRange:r.potentialRange,knowledge:{version:VERSION,owned:false,stage:r.stage,observedAt:{season:r.season,week:r.week,date:null}}};
   return out;
  }
+ // Notation façon FM (24/11/2026) : tout ce que l'écran calcule à partir des qualités part de ce que le staff en sait.
+ // 1) Qualités en fourchette (option de carrière) : l'écran reçoit le MILIEU de chaque fourchette, jamais la vraie
+ //    valeur ; la note au poste suit (décalée de l'écart pondéré par les poids du poste), le relevé hebdomadaire et les
+ //    flèches (vraies valeurs au dixième) ne partent pas. 2) Niveau calculé selon le poste et le rôle
+ //    (niveau-calcule.cjs) : `niveauCalcule` = {niveau, role, roles:{id: niveau}} pour nos joueurs et les joueurs
+ //    observés en profondeur (qualités connues). Rien n'est écrit dans S : copie projetée seulement.
+ const MAILLOT_FAMILLE=['pilier','talonneur','pilier','deuxieme','deuxieme','aile','aile','huit','demi','ouvreur','ailier','centre','centre','ailier','arriere'];
+ const niveauOutil=()=>typeof niveauCalculeModule!=='undefined'?niveauCalculeModule:null;
+ function derive(value,person){
+  const nc=niveauOutil();if(!nc||!person)return;
+  const plages=value.attributesV2Range;
+  if(object(plages)&&object(value.attributesV2)){
+   const vrai=value.attributesV2,milieu={...vrai};
+   for(const [k,r] of Object.entries(plages))if(object(r)&&number(r.min)&&number(r.max))milieu[k]=(r.min+r.max)/2;
+   if(object(value.positionRatings))for(const [n,v] of Object.entries(value.positionRatings)){
+    const f=MAILLOT_FAMILLE[Number(n)-1];if(!f||!number(v))continue;
+    const w=nc.poids(f,null);let t=0,somme=0;for(const k of nc.CLES)if(number(vrai[k])&&number(milieu[k])){t+=w[k]*(milieu[k]-vrai[k]);somme+=w[k];}
+    value.positionRatings[n]=Math.round(v+(somme?t/somme:0));
+   }
+   value.attributesV2=milieu;
+   for(const k of ['nativeAttributesV1','fleches','releve'])delete value[k];
+  }
+  if(!(person.knowledge?.owned||person.knowledge?.stage==='deep')||!nc.qualites(value))return;
+  const principal=nc.niveauJoueur(value);if(!principal)return;
+  const familles=new Set([principal.famille]);
+  for(const cle of ['primaryPositions','secondaryPositions'])if(Array.isArray(value[cle]))for(const n of value[cle])if(MAILLOT_FAMILLE[n-1])familles.add(MAILLOT_FAMILLE[n-1]);
+  const roles={};for(const f of familles)for(const r of nc.niveauJoueur(value,{famille:f})?.roles||[])roles[r.id]=r.niveau;
+  value.niveauCalcule={niveau:principal.niveau,role:principal.role,roles};
+ }
  function project(model,visible){
   if(!object(model))return model;
   const attrs=['attributes','attributesV2','skills','nativeAttributesV1','rosterProfile','worldProfile','lnrProfile','skillBase'];
@@ -247,6 +276,7 @@ function factory(){
     for(const k of levels)if(Object.hasOwn(value,k)&&!ownPerson.knowledge.owned)value[k]=null;
     if(!ownPerson.knowledge.owned){if(Object.hasOwn(value,'positionRatings'))value.positionRatings={};for(const k of ['_familyNotes','positionNotes'])if(Object.hasOwn(value,k))value[k]={};}
     if(!ownPerson.knowledge.owned&&ownPerson.knowledge.stage!=='deep')for(const k of attrs)if(Object.hasOwn(value,k))value[k]=k==='skillBase'?null:{};
+    derive(value,ownPerson);
     if(value.assessment){
      const fmt=r=>r?r.min+'–'+r.max+' / 100':'inconnu';
      value.assessment.observed=(value.assessment.observed||[]).filter(x=>!/^Niveau(?: au poste(?: relevé)?)?\s*:/.test(x));
@@ -275,4 +305,6 @@ function factory(){
  }
  return {VERSION,LIMIT,hash,interval,players,validate,before,observe,captureMatch,visibility,project,scouting,plan,advanceJobs,installHooks,reports};
 }
+// Hors VM seulement (la projection détachée du worker) : le module du Niveau calculé.
+const niveauCalculeModule=require('./niveau-calcule.cjs');
 module.exports={factory};

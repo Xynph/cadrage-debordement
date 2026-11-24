@@ -2,9 +2,10 @@ extends RefCounted
 ## Fiche joueur : rôles du poste → qualités clés (idée n° 1 de la revue FM27, option A choisie par Léo le 22/11/2026).
 ## Le moteur ne connaît pas de rôles : cette table rugby (trois rôles par poste) n'est lue que par l'écran. Chaque rôle
 ## a quatre qualités clés (vert) et quatre utiles (bleu), prises dans les 36 attributs (attributesV2).
-## Note du rôle = capacité au rôle : moyenne pondérée (clé × 2, utile × 1) sur 100, colorée avec le barème des
-## attributs, la même pour tous les clubs ; à côté, la familiarité au poste du rôle (barres 5 crans, familiarite_poste.gd).
-## Qualités inconnues (joueur non observé) : rôles affichés, note « ? ». Terrain : couleur de la familiarité au poste.
+## Note du rôle = NIVEAU AU RÔLE (niveau-calcule.cjs, projection `niveauCalcule.roles` : poids du poste + qualités clés
+## et utiles du rôle), montré en LETTRE E- à S+ comme le Niveau (décision de Léo du 24/11/2026 : jamais de chiffre) ;
+## à côté, la familiarité au poste du rôle (barres 5 crans, familiarite_poste.gd). « Son rôle » = rôle du Niveau.
+## Qualités inconnues (joueur non observé) : lettre estimée par le staff, incertaine (« B/A »), ou « ? ». Terrain : couleur de la familiarité au poste.
 ## Carte Postes : liste des rôles triée par note (style Effectif), qualités du rôle choisi, terrain des 15 postes
 ## coloré par familiarité ; un clic sur un rôle surligne ses qualités dans la grille des attributs (bandes).
 const C = preload("res://ui/immersive08/components.gd")
@@ -17,6 +18,8 @@ const Liste = preload("res://ui/immersive08/liste_etoiles.gd")
 const Familiarite = preload("res://ui/familiarite_poste.gd")
 const R = preload("res://ui/immersive08/reperes.gd")
 const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
+const Notation = preload("res://ui/notation_staff.gd")
+const K = preload("res://ui/player_knowledge_text.gd")
 
 const CLE := Charte.CONDITION
 const UTILE := Charte.MORAL
@@ -103,17 +106,28 @@ static func roles_joueur(player: Dictionary, values: Dictionary) -> Array:
 		for r: Array in roles_famille(FAMILLE[n - 1]):
 			if vus.has(r[0]): continue
 			vus[r[0]] = true
-			liste.append({"role": r, "note": note_role(values, r), "numero": n, "rang": rang})
+			liste.append({"role": r, "note": _note(player, values, r), "numero": n, "rang": rang})
 			rang += 1
 	liste.sort_custom(func(a: Dictionary, b: Dictionary): return a.note > b.note or (a.note == b.note and a.rang < b.rang))
 	return liste
 
+## Valeur cachée qui classe les rôles : Niveau au rôle (projection `niveauCalcule`), sinon note des 8 qualités.
+static func _note(player: Dictionary, values: Dictionary, r: Array) -> float:
+	var nc: Variant = player.get("niveauCalcule")
+	if nc is Dictionary and nc.get("roles") is Dictionary and K.number(nc.roles.get(r[0])): return float(nc.roles[r[0]])
+	return note_role(values, r)
+
 ## Meilleur rôle d'un poste (premier du poste si les qualités sont inconnues).
-static func meilleur_role(values: Dictionary, numero: int) -> String:
+static func meilleur_role(values: Dictionary, numero: int, player: Dictionary = {}) -> String:
+	# Rôle du Niveau calculé par le moteur quand il est de ce poste (mêmes arrondis et égalités que le Niveau).
+	var nc: Variant = player.get("niveauCalcule")
+	if nc is Dictionary and numero >= 1 and numero <= 15:
+		var r_nc := role(str(nc.get("role", "")))
+		if not r_nc.is_empty() and r_nc[1] == FAMILLE[numero - 1]: return str(r_nc[0])
 	var choix := ""
 	var meilleur := -2.0
 	for r: Array in roles_famille(FAMILLE[numero - 1]):
-		var s := note_role(values, r)
+		var s := _note(player, values, r)
 		if s > meilleur:
 			meilleur = s
 			choix = r[0]
@@ -126,7 +140,7 @@ static func etat(app: Control, player: Dictionary, values: Dictionary) -> Dictio
 	if e is Dictionary and str(e.get("joueur", "")) == id and not role(str(e.get("role", ""))).is_empty(): return e
 	var principaux := Roster.primary_numbers(player)
 	if principaux.is_empty(): return {"joueur": id, "role": "", "numero": 0}
-	return {"joueur": id, "role": meilleur_role(values, principaux[0]), "numero": principaux[0]}
+	return {"joueur": id, "role": meilleur_role(values, principaux[0], player), "numero": principaux[0]}
 
 static func choisir(app: Control, player: Dictionary, role_id: String, numero: int) -> void:
 	app.management_ui["fiche_roles"] = {"joueur": str(player.get("id", "")), "role": role_id, "numero": numero}
@@ -181,7 +195,8 @@ static func _qualite(parent: Control, x: float, y: float, cle: String, valeur: V
 	var en_plage: bool = plage is Dictionary and plage.has("min") and plage.has("max")
 	D.text(parent, x + 20, y, libelle(cle), 18, Charte.IVOIRE, 500, largeur - 66, HORIZONTAL_ALIGNMENT_LEFT, true)
 	var texte := "%d-%d" % [int(plage.min), int(plage.max)] if en_plage else PlayerAttributes.caption(valeur)
-	var chiffre := D.text(parent, x + largeur, y, texte, 17 if en_plage else 20, Charte.couleur_attribut(valeur), 700, 46, HORIZONTAL_ALIGNMENT_RIGHT)
+	var teinte: Variant = (float(plage.min) + float(plage.max)) / 2.0 if en_plage else valeur
+	var chiffre := D.text(parent, x + largeur, y, texte, 17 if en_plage else 20, Charte.couleur_attribut(teinte), 700, 46, HORIZONTAL_ALIGNMENT_RIGHT)
 	chiffre.name = "PlayerRoleQuality_" + cle
 
 ## Haut de la carte (zone 0-1420 × 60-280) ; la courbe des notes reste dessous.
@@ -193,7 +208,8 @@ static func carte(card: Control, app: Control, player: Dictionary, values: Dicti
 	D.text(card, 556, 86, "FAMILIARITÉ", 16, Charte.IVOIRE_2, 700, 110)
 	# Son rôle : meilleur rôle au poste principal (qualités connues seulement), marqué en permanence.
 	var principaux := Roster.primary_numbers(player)
-	var son_role := meilleur_role(values, principaux[0]) if not principaux.is_empty() and not values.is_empty() else ""
+	var son_role := meilleur_role(values, principaux[0], player) if not principaux.is_empty() and not values.is_empty() else ""
+	var notre := K.owned(player)
 	var liste := roles_joueur(player, values).slice(0, LIGNES_MAX)
 	var y := 92.0
 	for item: Dictionary in liste:
@@ -211,8 +227,9 @@ static func carte(card: Control, app: Control, player: Dictionary, values: Dicti
 			var pastille := D.rect(card, Rect2(398, y + 4, 92, 20), Charte.CREME, 10)
 			pastille.name = "PlayerRoleSien"
 			D.text(card, 444, y + 19, "SON RÔLE", 13, Charte.ENCRE, 800, 92, HORIZONTAL_ALIGNMENT_CENTER).mouse_filter = Control.MOUSE_FILTER_IGNORE
-		# Note du rôle sur 100 (barème des attributs, la même pour tous les clubs) puis familiarité au poste du rôle.
-		Familiarite.poser_note(card, 500, y + 22, float(item.note), 21, 44, "PlayerRoleNote_" + str(r[0])).tooltip_text = "Note au rôle · %s" % r[2]
+		# Niveau au rôle en lettre (même échelle que le Niveau, jamais de chiffre) puis familiarité au poste du rôle.
+		var lettre := Notation.lettre_role(app.model, player, str(r[0]), int(item.numero), notre)
+		Familiarite.poser_note(card, 500, y + 22, lettre, 21, 44, "PlayerRoleNote_" + str(r[0])).tooltip_text = "%s · %s" % [r[2], Notation.texte_note(lettre)]
 		Familiarite.poser(card, 556, y + 20, Familiarite.niveau(player, int(item.numero)), 17, "PlayerRoleFamiliarite_" + str(r[0]))
 		y += 29
 	var r: Array = role(str(e.role))
@@ -246,9 +263,8 @@ static func _terrain(card: Control, app: Control, player: Dictionary, values: Di
 		var n := i + 1
 		var centre := zone.position + Vector2(places[i].x * zone.size.x, places[i].y * zone.size.y)
 		var b := _bouton(card, Rect2(centre - Vector2(rayon, rayon), Vector2(rayon, rayon) * 2), "PlayerRolePitchPost%d" % n, false,
-			func(): choisir(app, player, meilleur_role(values, n), n))
-		var note := Liste.note_poste(player, n)
-		b.tooltip_text = "%d · %s · %s · %s" % [n, POSTE[FAMILLE[i]], Familiarite.mot(Familiarite.niveau(player, n)), str(int(note)) if note >= 0.0 else "?"]
+			func(): choisir(app, player, meilleur_role(values, n, player), n))
+		b.tooltip_text = "%d · %s · %s · %s" % [n, POSTE[FAMILLE[i]], Familiarite.mot(Familiarite.niveau(player, n)), Notation.texte_note(Notation.lettre_poste(app.model, player, n, K.owned(player)))]
 
 # --- Apprendre un poste ----------------------------------------------------------------------------------------------
 
@@ -302,7 +318,7 @@ static func apprendre(card: Control, app: Control, player: Dictionary, fin: floa
 	card.add_child(arret)
 	D.place(arret, Rect2(fin - 38.0, 15, 38, 34))
 
-## Petite fenêtre des postes : numéro et poste, note au poste colorée, barres de familiarité ; la cible en vert.
+## Petite fenêtre des postes : numéro et poste, note au poste en lettre, barres de familiarité ; la cible en vert.
 static func fenetre_apprendre(page: Control, app: Control, player: Dictionary, declencheur: Control = null) -> void:
 	if page == null: return
 	var postes := postes_a_apprendre(player)
@@ -323,7 +339,7 @@ static func fenetre_apprendre(page: Control, app: Control, player: Dictionary, d
 		num.add_theme_font_override("font", Charte.TITRE_EXTRA)
 		num.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		D.text(ligne, 66, base, Liste.nom_poste(n), 20, Charte.CREME if choisi else Charte.IVOIRE, 700 if choisi else 600, 260).mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var note := Familiarite.poser_note(ligne, 330, base + 1, Liste.note_poste(player, n), 22, 44, "ApprendreNote_%d" % n)
+		var note := Familiarite.poser_note(ligne, 330, base + 1, Notation.lettre_poste(app.model, player, n, true), 22, 44, "ApprendreNote_%d" % n)
 		note.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		Familiarite.poser(ligne, 392, base, Familiarite.niveau(player, n), 17, "ApprendreFamiliarite_%d" % n)
 		for enfant in ligne.get_children():

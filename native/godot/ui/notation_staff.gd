@@ -7,12 +7,15 @@ extends RefCounted
 ##   • le potentiel en PHRASE par cran de marge (beaucoup / de la marge / peu / en déclin / staff incertain), tournure
 ##     tirée selon le staff et le joueur (empreinte fixe, jamais de hasard à l'affichage).
 ## Aucun chiffre du moteur n'est affiché. Le calcul du Niveau par poste et rôle (native/engine/niveau-calcule.cjs) n'est
-## pas encore branché : l'estimation part de la valeur cachée actuelle. Affichage choisi par Léo (24/11, option B) :
-## lettre dans une pastille ronde, palier écrit dans une pilule.
+## branché à l'écran (projection `niveauCalcule`) : l'estimation part du Niveau au meilleur rôle du poste principal.
+## Affichage choisi par Léo (24/11, option B) : lettre dans une pastille ronde, palier écrit dans une pilule.
+## Note au poste et note au rôle (décision de Léo du 24/11) : même échelle E- à S+, même référence, même palette ;
+## jamais de chiffre. Staff pas sûr (joueur pas encore observé, qualités en fourchette) : pastille double « B/A ».
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Charte = preload("res://ui/charte.gd")
 const K = preload("res://ui/player_knowledge_text.gd")
+const Familiarite = preload("res://ui/familiarite_poste.gd")
 
 const LETTRES := ["E-", "E", "E+", "D-", "D", "D+", "C-", "C", "C+", "B-", "B", "B+", "A-", "A", "A+", "S-", "S", "S+"]
 ## Palette validée par Léo : « - » sourd et sombre, lettre = couleur franche, « + » poussée à fond.
@@ -73,6 +76,10 @@ static func estimation(model: Dictionary, p: Dictionary, notre: bool) -> Diction
 	var e := erreur(model)
 	var cle := str(model.get("club", {}).get("id", "")) + "|" + str(p.get("id", ""))
 	var bn := K.bounds(p, "rating", notre)
+	# Niveau calculé selon le poste et le rôle (niveau-calcule.cjs, projection `niveauCalcule`) : il remplace la valeur
+	# posée quand le staff connaît les qualités ; en mode fourchette il part déjà du milieu des fourchettes.
+	var calcule: Variant = p.get("niveauCalcule", {}).get("niveau") if p.get("niveauCalcule") is Dictionary else null
+	if K.number(calcule): bn = {"min": float(calcule) - qualites_largeur(p) / 2.0, "max": float(calcule) + qualites_largeur(p) / 2.0}
 	var bp := K.bounds(p, "potential", notre)
 	var n: Variant = _milieu(bn)
 	var pot: Variant = _milieu(bp)
@@ -189,3 +196,103 @@ static func poser_palier(parent: Control, x: float, centre_y: float, pal: Dictio
 static func palier_groupe(moyenne: Variant) -> Dictionary:
 	if not K.number(moyenne) or float(moyenne) <= 0.0: return {"texte": "Palier inconnu", "bas": -1, "haut": -1}
 	return palier({"niveau": float(moyenne), "largeur": 2.0 / 0.7})
+
+# --- Note au poste et note au rôle en lettre (décision de Léo, 24/11/2026) -----------------------------------------
+
+## Largeur des fourchettes de qualités (option de carrière « En fourchette ») : 0 si précises.
+static func qualites_largeur(p: Dictionary) -> float:
+	var k: Variant = p.get("knowledge")
+	var l: Variant = k.get("qualitesLargeur") if k is Dictionary else null
+	return float(l) if K.number(l) else 0.0
+
+## Lettre d'une note sur l'échelle du Niveau : {bas, haut} (indices de LETTRES, -1 si inconnue ; bas < haut = staff
+## pas sûr). `note` : valeur cachée (note au poste, Niveau au rôle) ou -1 si le staff ne la connaît pas ; il l'estime
+## alors d'après la fourchette d'observation du joueur, aux postes qu'il connaît seulement (`familiarite` ≥ Confirmé).
+## `cle` : nom de la note (sans effet sur l'erreur : une seule erreur fixe du staff par joueur, celle du Niveau).
+static func lettre_note(model: Dictionary, p: Dictionary, note: float, notre: bool, cle: String, familiarite: int = Familiarite.NATUREL) -> Dictionary:
+	var e := erreur(model)
+	var ref := reference_effectif(model)
+	# Une seule erreur du staff par joueur (celle du Niveau) : son meilleur rôle au poste principal a la même lettre que
+	# son Niveau, et les écarts entre postes et rôles restent ceux du moteur. `cle` reste pour les appels existants.
+	var graine := str(model.get("club", {}).get("id", "")) + "|" + str(p.get("id", "")) + "|n"
+	var q := qualites_largeur(p) / 2.0
+	var v := 0.0
+	var demi := q
+	if note >= 0.0:
+		v = note + e * _empreinte(graine)
+	else:
+		if familiarite < Familiarite.CONFIRME: return {"bas": -1, "haut": -1}
+		var bn := K.bounds(p, "rating", notre)
+		if bn.is_empty(): return {"bas": -1, "haut": -1}
+		v = (float(bn.min) + float(bn.max)) / 2.0 + e * _empreinte(graine)
+		demi = maxf(q, (float(bn.max) - float(bn.min)) / 2.0)
+	return {"bas": indice(v - demi * 0.7, ref), "haut": indice(v + demi * 0.7, ref)}
+
+## Empreinte de l'erreur du staff au poste : une par famille de poste (11 et 14, même note → même lettre).
+static func cle_poste(numero: int) -> String:
+	return "poste:%d" % (Familiarite.FAMILLES[numero - 1] if numero >= 1 and numero <= 15 else 0)
+
+## Note au poste `numero` (positionRatings du moteur) en lettre.
+static func lettre_poste(model: Dictionary, p: Dictionary, numero: int, notre: bool) -> Dictionary:
+	var note := -1.0
+	var notes: Variant = p.get("positionRatings")
+	if notes is Dictionary:
+		var x: Variant = (notes as Dictionary).get(str(numero))
+		if K.number(x) and float(x) >= 0.0: note = float(x)
+	return lettre_note(model, p, note, notre, cle_poste(numero), Familiarite.niveau(p, numero))
+
+## Niveau au rôle (niveau-calcule.cjs : poids du poste + qualités clés et utiles du rôle) en lettre ; `numero` : maillot
+## du rôle (familiarité pour l'estimation d'un joueur pas observé).
+static func lettre_role(model: Dictionary, p: Dictionary, role_id: String, numero: int, notre: bool) -> Dictionary:
+	var nc: Variant = p.get("niveauCalcule")
+	var note := -1.0
+	if nc is Dictionary and nc.get("roles") is Dictionary and K.number(nc.roles.get(role_id)): note = float(nc.roles[role_id])
+	return lettre_note(model, p, note, notre, "role:" + role_id, Familiarite.niveau(p, numero) if numero > 0 else Familiarite.NATUREL)
+
+## Lettre au milieu (tri, comparaisons) ; -1 si inconnue.
+static func rang_lettre(l: Dictionary) -> float:
+	var b := int(l.get("bas", -1))
+	var h := int(l.get("haut", -1))
+	return -1.0 if b < 0 else (b + h) / 2.0
+
+static func texte_note(l: Dictionary) -> String:
+	var b := int(l.get("bas", -1))
+	var h := int(l.get("haut", -1))
+	if b < 0: return "?"
+	return texte_lettre(b) if b == h else texte_lettre(b) + "/" + texte_lettre(h)
+
+## Largeur que prend `pastille_note` pour une `taille`.
+static func largeur_note(l: Dictionary, taille: float) -> float:
+	return taille * (1.9 if int(l.get("bas", -1)) >= 0 and int(l.get("bas", -1)) != int(l.get("haut", -1)) else 1.0)
+
+## Pastille de la note : ronde (lettre sûre, même dessin que le Niveau) ou double (« B/A » : deux moitiés aux couleurs
+## des deux lettres, staff pas sûr). Méta « lettre » = texte_note. Renvoie le nœud posé.
+static func pastille_note(parent: Control, x: float, centre_y: float, l: Dictionary, taille: float, nom: String = "") -> Control:
+	var b := int(l.get("bas", -1))
+	var h := int(l.get("haut", -1))
+	if b == h or b < 0:
+		pastille(parent, x, centre_y, b, taille, nom)
+		var rond := parent.get_child(parent.get_child_count() - 1) as Control
+		rond.set_meta("lettre", texte_note(l))
+		return rond
+	var w := largeur_note(l, taille)
+	var fond := D.rect(parent, Rect2(x, centre_y - taille / 2.0, w, taille), couleur(h), int(taille / 2.0))
+	if not nom.is_empty(): fond.name = nom
+	fond.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fond.set_meta("lettre", texte_note(l))
+	fond.set_meta("incertaine", true)
+	var gauche := D.rect(fond, Rect2(0, 0, w / 2.0 + taille * 0.25, taille), couleur(b), int(taille / 2.0))
+	gauche.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	D.rect(fond, Rect2(w / 2.0, 0, taille * 0.3, taille), couleur(b)).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	D.rect(fond, Rect2(w / 2.0 - 1.0, taille * 0.18, 2.0, taille * 0.64), Color(Charte.ENCRE, .55)).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for k in 2:
+		var i := b if k == 0 else h
+		var t := D.text(fond, w * (0.27 + 0.46 * k), taille * 0.72, texte_lettre(i), int(taille * 0.5), couleur_texte(i), 800, w / 2.0, HORIZONTAL_ALIGNMENT_CENTER)
+		t.add_theme_font_override("font", Charte.TITRE_FICHE)
+		t.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return fond
+
+## Pastille ronde posée, renvoie le nœud (flèche de progression du Niveau).
+static func pastille_noeud(parent: Control, x: float, centre_y: float, i: int, taille: float, nom: String = "") -> Control:
+	pastille(parent, x, centre_y, i, taille, nom)
+	return parent.get_child(parent.get_child_count() - 1) as Control

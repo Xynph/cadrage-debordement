@@ -12,6 +12,7 @@ const Charte = preload("res://ui/charte.gd")
 const Kit = preload("res://ui/immersive08/tactics_kit.gd")
 const Selection = preload("res://ui/immersive08/tactics_selection.gd")
 const Poste = preload("res://ui/immersive08/tactics_poste.gd")
+const Notation = preload("res://ui/notation_staff.gd")
 const Impact = preload("res://ui/immersive08/tactics_impact.gd")
 const Candidats = preload("res://ui/immersive08/tactics_candidats.gd")
 const Visuels = preload("res://ui/contextual/training_visuels.gd")
@@ -106,9 +107,9 @@ static func _reperes(page: Control, pelouse: Pelouse) -> void:
 	var legende := Control.new()
 	legende.name = "TacticsPitchLegend"
 	legende.mouse_filter = Control.MOUSE_FILTER_PASS
-	legende.tooltip_text = "Note au poste /100 · 2e poste · dépanne · Espace prendre / poser"
+	legende.tooltip_text = "Note au poste · 2e poste · dépanne · Espace prendre / poser"
 	page.add_child(legende)
-	var entrees := [["72", Charte.couleur_attribut(72), Charte.ENCRE], ["2e poste", Color(Charte.V_DALTONIEN, .22), Charte.V_DALTONIEN], ["Dépanne", Color(Charte.PERTE, .22), Charte.PERTE]]
+	var entrees := [["B", Notation.couleur(Notation.REFERENCE), Notation.couleur_texte(Notation.REFERENCE)], ["2e poste", Color(Charte.V_DALTONIEN, .22), Charte.V_DALTONIEN], ["Dépanne", Color(Charte.PERTE, .22), Charte.PERTE]]
 	var total := Kit.largeur("au poste", 15) + 4
 	for entree: Array in entrees: total += Kit.largeur(str(entree[0]), 15) + 22 + 8
 	D.place(legende, Rect2(BANDEAU.end.x - total, BANDEAU.position.y + 6, total, 28))
@@ -223,7 +224,7 @@ static func carte(app: Control, page: Control, zone: Rect2, slot: int, choisir: 
 		var taille := _taille_nom(court, w - 16, 17)
 		var largeur_nom := minf(w - 12, Kit.largeur(court, taille) + 6)
 		Kit.nom(app, bouton, Rect2((w - largeur_nom) / 2.0, bas_y + 1, largeur_nom, 26), court, id, "TacticsName%02d" % (slot + 1), Charte.IVOIRE, taille)
-		var note: Variant = Selection.rating(app.model, person, slot)
+		var note := Selection.lettre(app.model, person, slot)
 		var familiarite := Selection.familiarite(app.model, person, slot)
 		var forme: Variant = person.get("condition")
 		var faible := (forme is int or forme is float) and float(forme) < 80
@@ -513,20 +514,13 @@ static func apercu_depot(app: Control, bouton: Control, data: Variant) -> void:
 	if person.is_empty(): return
 	var w := bouton.size.x / C.density
 	var h := bouton.size.y / C.density
-	var note: Variant = Selection.rating(app.model, person, slot) if slot < 15 else _note_principale(person)
+	var note := Selection.lettre(app.model, person, slot) if slot < 15 else Selection.lettre_principale(app.model, person)
 	var familiarite := Selection.familiarite(app.model, person, slot) if slot < 15 else 3
 	var l := minf(w - 8, Poste.largeur(note, familiarite, 22, true) + 16)
 	var cadre := D.rect(bouton, Rect2((w - l) / 2.0, h / 2.0 - 18, l, 36), Color(Charte.PANNEAU, .94), Charte.RAYON_PILULE, Charte.CONDITION)
 	cadre.name = "TacticsDropPreview"
 	cadre.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	Poste.poser(cadre, Rect2(8, 7, l - 16, 22), note, familiarite, "TacticsDropRating", false, true)
-
-static func _note_principale(person: Dictionary) -> Variant:
-	var principal: Variant = person.get("primaryPosition")
-	var notes: Variant = person.get("positionRatings")
-	if not (principal is int or principal is float) or not notes is Dictionary: return null
-	var v: Variant = notes.get(str(int(principal)))
-	return v if (v is int or v is float) and is_finite(float(v)) else null
 
 ## Branche l'aperçu du glisser et la pastille de dépôt sur une place (terrain, banc) ou une tuile.
 static func glisser(app: Control, bouton: Control, person: Dictionary, place: bool) -> void:
@@ -746,7 +740,7 @@ static func _tuile_hors_groupe(app: Control, parent: Control, zone: Rect2, perso
 		bouton.tooltip_text = str(dispo.texte)
 		accessible += " · " + str(dispo.texte)
 	else:
-		Poste.poser(contenu, Rect2(76, 64, 60, 22), _note_principale(person), 3, "TacticsOutsideRating")
+		Poste.poser(contenu, Rect2(76, 64, 60, 22), Selection.lettre_principale(app.model, person), 3, "TacticsOutsideRating")
 		var forme: Variant = person.get("condition")
 		if forme is int or forme is float:
 			D.text(contenu, w - 8, 82, "%d %%" % roundi(float(forme)), 15, Visuels.couleur_condition(float(forme)), 700, 60, HORIZONTAL_ALIGNMENT_RIGHT, true).name = "TacticsOutsideCondition"

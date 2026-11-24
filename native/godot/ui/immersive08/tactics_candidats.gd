@@ -1,6 +1,6 @@
 extends RefCounted
 ## Candidats pour le poste choisi (maquette 10-composition-1, sous le terrain) : tout l'effectif dans un tableau dense
-## trié par note au poste (chiffre coloré par paliers + familiarité naturel / 2e poste / dépanne, « — » si inconnue), condition (repère
+## trié par note au poste (lettre E- à S+ comme le Niveau + familiarité naturel / 2e poste / dépanne, « — » si inconnue), condition (repère
 ## 80 %), statut en mots et action (Choisir, Échanger, Libérer). Les joueurs non qualifiés ou indisponibles restent
 ## visibles en bas, grisés, avec leur raison. Filtre « Hors feuille seulement », recherche par nom, tri par en-tête.
 ## Emprunt de la variante 3 : sur les n° 1-3 et 16-18, l'encart « Première ligne formée » (loi 3) se place à droite.
@@ -217,8 +217,9 @@ static func _ligne(app: Control, parent: Control, rang: int, person: Dictionary,
 	Kit.nom(app, bouton, Rect2(colonnes.name[0] + 36, 3, colonnes.name[1] - 40, 27), str(person.get("name", "")), id, "TacticsCandidateName_" + id.validate_node_name(), encre)
 	Kit.texte(bouton, colonnes.positions[0], 23, Selection.positions(person), Charte.IVOIRE_3 if gris else Charte.IVOIRE_2, colonnes.positions[1], 16)
 	var non_qualifie := str(s.texte) == "Non qualifié au poste"
-	# Note au poste chiffrée + familiarité (les étoiles ont été rejetées par Léo le 21/11/2026) ; le tri reste sur la note.
-	var note: Variant = null if non_qualifie else Selection.rating(app.model, person, slot)
+	# Note au poste en lettre + familiarité (les étoiles ont été rejetées par Léo le 21/11/2026, le chiffre le 24/11) ;
+	# le tri reste sur la note cachée.
+	var note: Dictionary = {"bas": -1, "haut": -1} if non_qualifie else Selection.lettre(app.model, person, slot)
 	var familiarite := -1 if non_qualifie else Selection.familiarite(app.model, person, slot)
 	Poste.poser(bouton, Rect2(colonnes.note[0], 8, colonnes.note[1], 18), note, familiarite, "TacticsCandidateRating", true, false, gris)
 	# Colonne Condition : barre + pourcentage tiennent dans la colonne (la barre rétrécit quand le tableau est étroit),

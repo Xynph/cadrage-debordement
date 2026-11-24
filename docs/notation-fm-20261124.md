@@ -2,7 +2,8 @@
 
 Branche `claude/fm-notation`. Planche du 24/11 puis **intégration de l'option B** choisie par Léo (17e conversation) :
 lettre dans une pastille ronde, palier écrit dans une pilule, partout (fiche joueur, Effectif, Formation, rapport du
-recruteur, discussion avec l'agent). Le Niveau calculé (§ 1) reste un module isolé, non branché.
+recruteur, discussion avec l'agent). 18e conversation : note au poste et note au rôle en lettre partout, mode fourchette
+sans fuite par les chiffres dérivés, Niveau calculé selon le poste et le rôle branché à l'écran (§ 1, § 5).
 
 ## Ce qui est caché, ce qui est montré
 
@@ -13,7 +14,7 @@ recruteur, discussion avec l'agent). Le Niveau calculé (§ 1) reste un module i
 
 Jamais un chiffre du moteur. L'estimation vient du **staff** : sa justesse dépend de son jugement (45-85).
 
-## 1. Niveau calculé (module isolé `native/engine/niveau-calcule.cjs`)
+## 1. Niveau calculé (`native/engine/niveau-calcule.cjs`, branché à l'écran le 24/11)
 
 ```
 poids(q)  = poidsPoste[famille][q]  (défaut : 0,5 pour la lecture du jeu, 0,25 sinon)
@@ -94,8 +95,45 @@ ou arrivée au club) → fourchettes de 9 points, 4 à 7 semaines → 5 points, 
 
 **B** (Léo, 24/11) : lettre en pastille ronde ; palier en mot dans une pilule. Variante A et `CD_VARIANTE_VISUELLE` retirés.
 
+## 5. Note au poste et note au rôle en lettre (décision de Léo, 24/11, 18e conversation)
+
+- **Plus aucun chiffre de note au poste** : Postes et rôles, rapport du recruteur, Composition (terrain, candidats,
+  glisser-déposer), carte et mini-fiche au survol, comparateur, recherche ciblée, planificateur, discussion avec l'agent,
+  Préparation (joueurs à surveiller), menu du joueur en match, avis de Gabi. Même échelle E- à S+ que le Niveau
+  (référence = nos 15 meilleurs = B, 2 points par cran), même palette, même pastille ronde (`Notation.pastille_note`,
+  `Familiarite.poser_note`). Les tris gardent la valeur cachée (seul l'ordre se voit).
+- **Une seule erreur du staff par joueur** (celle du Niveau) : son meilleur rôle au poste principal a la même lettre que
+  son Niveau ; les écarts entre postes et rôles restent ceux du moteur.
+- **Staff pas sûr → pastille double « B/A »** (deux moitiés aux couleurs des deux lettres) : lettre basse et haute =
+  valeur ± 0,7 × demi-largeur d'incertitude. Recrue jamais publiée au poste (tout joueur d'un autre club : le moteur ne
+  publie pas ses notes au poste) : estimée depuis la fourchette d'observation du Niveau, aux postes qu'il connaît
+  (Naturel, Confirmé) ; ailleurs ou sans fourchette : « ? ».
+- **Niveau au rôle** (colonne NOTE de Postes et rôles, rôles du menu en match) = `niveauCalcule.roles[rôle]` ; « Son
+  rôle » = rôle du Niveau calculé (`niveauCalcule.role`).
+- Carte au survol : Niveau et Potentiel en lettres (palier en pilule, phrase de potentiel), plus de jauges ni de « ▲ +3 ».
+  Mini-fiche : lettres. Bulle de la flèche du Niveau : sens de la courbe seulement (▲/▼), sans chiffre.
+
+## 6. Mode fourchette : tout ce qui est dérivé part de la fourchette
+
+Projection (`player-knowledge.cjs`, `derive`, copie envoyée à l'écran seulement, rien dans S) pour nos joueurs encore
+en fourchette :
+- `attributesV2` = **milieu de chaque fourchette** (jamais la vraie valeur ; radar, moyennes « ~ », points forts,
+  qualités du rôle, entraînement, Niveau au rôle en dérivent) ;
+- `positionRatings` décalées de l'écart pondéré (poids du poste) entre milieux et vraies qualités, arrondies ;
+- ni `releve` (relevé hebdomadaire au dixième), ni `fleches`, ni `nativeAttributesV1` ;
+- incertitude `qualitesLargeur / 2` ajoutée aux lettres (notes au poste et au rôle en « B/A »).
+
+Le Niveau calculé (`niveauCalcule` = {niveau, role, roles}) est ajouté pour nos joueurs et les joueurs observés en
+profondeur ; l'estimation du staff part de lui au lieu de `rating`. Le moteur du match garde `rating` (bascule : § Reste).
+
+Tests : `tests/qualites-fourchette.cjs` (milieux, notes au poste décalées, Niveau calculé par poste et rôle),
+`tests/godot-creation-da.gd` (fiche en fourchette : lettres doubles, aucune flèche), `tests/godot-immersive08.gd`
+(Postes et rôles en lettres, « Son rôle », aucune décimale), suites de la Composition, du recrutement, du planificateur,
+du menu en match.
+
 ## Reste à faire
 
-Brancher le Niveau calculé (après la progression par qualités : chantier des flèches de progression), passer
-l'estimation du staff dans le moteur (projection `notation` par joueur : jamais de valeur cachée vers l'écran), retirer
-les derniers chiffres de niveau (mini-fiche, carte au survol, comparateur, recrutement, vues héritées).
+Bascule de `rating` (moteur du match) sur le Niveau calculé, rôle choisi par le club enregistré au moteur, estimation du
+staff calculée dans le moteur (projection `notation` par joueur). Chiffres de Niveau restants hors note au poste
+(comparateur Niveau/Potentiel, « Niveau / 100 » de la comparaison du recrutement, colonne niveau des vues héritées,
+« NIV. EN JUILLET » de la Formation, bureau).

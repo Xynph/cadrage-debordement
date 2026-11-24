@@ -2,7 +2,8 @@ extends RefCounted
 ## Effectif › Planificateur (revue FM27, idée 11 ; choix de Léo du 23/11/2026 : les deux options réunies).
 ## À gauche, le terrain du XV : à chaque poste, ses 3 ou 4 premiers joueurs (titulaire, doublure, 3e) avec leurs
 ## signes (▲ espoir, ⧗ dernière année, DÉP dépanne, NÉGO prolongation en négociation, pastille orange = titulaire à
-## deux postes), la familiarité au poste en barres et la note au poste /100. Un clic sur un poste affiche à droite la
+## deux postes), la familiarité au poste en barres et la note au poste en lettre du staff (E- à S+, jamais de chiffre :
+## décision de Léo du 24/11). Un clic sur un poste affiche à droite la
 ## liste complète du poste, classée (un clic suffit, rien à valider). Saisons actuelle / prochaine / suivante.
 ## Projection faite avec les seules données du moteur : fin de contrat (contractEnd : le joueur quitte la saison d'après,
 ## sauf prolongation en négociation), départ vendu, âge (+1 par saison), espoirs du centre (19 ans et plus cette
@@ -16,6 +17,7 @@ const R = preload("res://ui/immersive08/reperes.gd")
 const Charte = preload("res://ui/charte.gd")
 const Familiarite = preload("res://ui/familiarite_poste.gd")
 const CarteSurvol = preload("res://ui/carte_joueur_survol.gd")
+const Notation = preload("res://ui/notation_staff.gd")
 
 ## Postes du XV regroupés (paires : 2 titulaires) : nom, sigle, numéros, place sur le terrain (colonne 0-1, rangée 0-3).
 const POSTES := [
@@ -60,6 +62,15 @@ static func note_groupe(p: Dictionary, numeros: Array) -> float:
 	var meilleure := -1.0
 	for n: int in numeros: meilleure = maxf(meilleure, CarteSurvol.note_poste(p, n))
 	return meilleure
+
+## Lettre du staff (Notation.lettre_note, échelle du Niveau) d'une note au poste du groupe : `note` = note d'aujourd'hui
+## ou estimée pour la saison affichée (-1 : estimée d'après la fourchette d'observation). Même empreinte que la note au
+## poste ailleurs dans le jeu (numéro du groupe où il est le meilleur). Jamais de chiffre à l'écran.
+static func lettre_poste(model: Dictionary, p: Dictionary, numeros: Array, note: float, niveau: int) -> Dictionary:
+	var meilleur: int = int(numeros[0])
+	for n: int in numeros:
+		if CarteSurvol.note_poste(p, n) > CarteSurvol.note_poste(p, meilleur): meilleur = n
+	return Notation.lettre_note(model, p, note, true, Notation.cle_poste(meilleur), niveau)
 
 ## Familiarité au poste (la meilleure des numéros du groupe) ; -1 si inconnue.
 static func niveau_groupe(p: Dictionary, numeros: Array) -> int:
@@ -148,7 +159,7 @@ static func ordre(proj: Dictionary, i: int) -> Dictionary:
 	var partis: Array = []
 	for d: Dictionary in proj.partis:
 		if niveau_groupe(d.p, numeros) == Familiarite.NATUREL:
-			partis.append({"d": d, "note": note_groupe(d.p, numeros), "niveau": Familiarite.NATUREL})
+			partis.append({"d": d, "note": note_groupe(d.p, numeros), "niveau": Familiarite.NATUREL, "numeros": numeros})
 	return {"liste": gardes, "partis": partis, "titulaires": numeros.size()}
 
 static func ordres(proj: Dictionary) -> Array:
@@ -192,12 +203,13 @@ static func couleur_age(age: int) -> Color:
 	if age >= AGE_VETERAN: return R.ORANGE
 	return Charte.IVOIRE
 
-## Écart estimé à aujourd'hui (note future - note actuelle) : texte « +3 » / « −2 » et couleur ; "" si nul ou inconnu.
+## Sens estimé par rapport à aujourd'hui (note future - note actuelle) : « ▲ » / « ▼ » et couleur, jamais l'écart
+## chiffré (décision de Léo du 24/11) ; "" si nul ou inconnu.
 static func ecart(item: Dictionary) -> Array:
 	if float(item.actuelle) < 0.0 or float(item.note) < 0.0: return ["", Charte.IVOIRE_3]
 	var d := roundi(float(item.note) - roundf(float(item.actuelle)))
 	if d == 0: return ["", Charte.IVOIRE_3]
-	return ["+%d" % d if d > 0 else "−%d" % absi(d), R.VERT if d > 0 else R.ROUGE]
+	return ["▲" if d > 0 else "▼", R.VERT if d > 0 else R.ROUGE]
 
 # ---------------------------------------------------------------- entrée
 
@@ -413,13 +425,15 @@ static func _carte(page: Control, app: Control, o: Dictionary, doubles: Dictiona
 		var noeud_barres := carte.get_child(carte.get_child_count() - 1) as Control
 		noeud_barres.tooltip_text = "Familiarité au poste · " + Familiarite.mot(int(item.niveau))
 		var nx := 256.0 + barres + 4.0
-		Familiarite.poser_note(carte, nx, base, float(item.note), 18, 322.0 - nx, "PlanCarteNote")
+		var lettre := lettre_poste(app.model, e.p, POSTES[i].n, float(item.note), int(item.niveau))
+		var ln := maxf(322.0 - nx, Notation.largeur_note(lettre, 18 * 1.35))
+		Familiarite.poser_note(carte, nx, base, lettre, 18, ln, "PlanCarteNote")
 		if decalage > 0:
 			var ec := ecart(item)
 			if not str(ec[0]).is_empty():
-				var fl := D.text(carte, 324, base - 1, str(ec[0]), 12, ec[1], 800, 28)
+				var fl := D.text(carte, maxf(324.0, nx + ln + 2.0), base - 1, str(ec[0]), 12, ec[1], 800, 28)
 				fl.name = "PlanCarteEcart"
-				fl.tooltip_text = "Aujourd’hui · %d" % roundi(float(item.actuelle))
+				fl.tooltip_text = "Aujourd’hui · " + Notation.texte_note(lettre_poste(app.model, e.p, POSTES[i].n, float(item.actuelle), int(item.niveau)))
 				fl.mouse_filter = Control.MOUSE_FILTER_PASS
 		y += h
 		lignes += 1
@@ -510,13 +524,13 @@ static func _ligne(parent: Control, app: Control, item: Dictionary, rang: int, t
 	_nom(ligne, app, p, 154, base, r.size.y - 8, 220, 20, Charte.IVOIRE, "PlanNom_", bool(e.espoir))
 	D.text(ligne, 380, base, str(e.age) if int(e.age) >= 0 else "—", 20, couleur_age(int(e.age)), 700, 50)
 	Familiarite.poser(ligne, 444, base, int(item.niveau), 17, "PlanFamiliarite")
-	Familiarite.poser_note(ligne, 626, base, float(item.note), 22, 40, "PlanNote")
+	Familiarite.poser_note(ligne, 626, base, lettre_poste(app.model, p, POSTES[i].n, float(item.note), int(item.niveau)), 22, 40, "PlanNote")
 	if decalage > 0:
 		var ec := ecart(item)
 		if not str(ec[0]).is_empty():
 			var d := D.text(ligne, 672, base - 2, str(ec[0]), 15, ec[1], 800, 50)
 			d.name = "PlanEcart"
-			d.tooltip_text = "Aujourd’hui · %d" % roundi(float(item.actuelle))
+			d.tooltip_text = "Aujourd’hui · " + Notation.texte_note(lettre_poste(app.model, p, POSTES[i].n, float(item.actuelle), int(item.niveau)))
 			d.mouse_filter = Control.MOUSE_FILTER_PASS
 	if not e.espoir:
 		var cc := R.BLEU if e.nego else R.ORANGE if e.derniere else Charte.IVOIRE_2
@@ -550,7 +564,7 @@ static func _ligne_partie(parent: Control, app: Control, d: Dictionary, r: Rect2
 	var l := _nom(ligne, app, p, 154, base, r.size.y - 8, 220, 20, Charte.IVOIRE_3, "PlanPartiNom_")
 	D.line(ligne, Vector2(150, base - 7), Vector2(158 + l, base - 7), Color(Charte.IVOIRE_3, .9), 2)
 	Familiarite.poser(ligne, 444, base, int(d.niveau), 17, "PlanPartiFamiliarite")
-	Familiarite.poser_note(ligne, 626, base, float(d.note), 22, 40, "PlanPartiNote")
+	Familiarite.poser_note(ligne, 626, base, lettre_poste(app.model, p, d.numeros, float(d.note), int(d.niveau)), 22, 40, "PlanPartiNote")
 	var texte := "Vendu" if d.d.vente else "Fin de contrat " + G.contract_year(d.d.fin)
 	var pp := R.pastille(ligne, 744, base, texte, R.ROUGE, "", "PlanPartiMotif", 17)
 	R.cliquable(pp, _fiche.bind(app, str(p.get("id", "")), "contract"), "PlanPartiOuvrir", "Contrat · " + str(p.get("name", "")))

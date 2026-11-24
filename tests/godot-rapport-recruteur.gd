@@ -67,6 +67,34 @@ func ouvrir_rapport() -> void:
 	Pages.ouvrir(app, "recruteur", {"player_id": piste_id})
 	await settle(10)
 
+## Texte de lettre du staff : « B », « B/A » ou « ? » (jamais un chiffre).
+func est_lettre(t: String) -> bool:
+	if t == "?": return true
+	if t.is_empty(): return false
+	for l in t.split("/"):
+		if not l in Notation.LETTRES: return false
+	return true
+
+func lettre_de(nom: String) -> String:
+	var n := trouver(nom)
+	return str(n.get_meta("lettre", "")) if n != null else ""
+
+## Textes visibles (libellés, bulles, noms accessibles) des nœuds de note au poste qui contiennent un chiffre.
+func chiffres_note() -> Array:
+	var sortie: Array = []
+	var noeuds: Array = []
+	for motif in ["RapportRecruteurNote*", "BaremeNote*", "RapportRecruteurLettrePoste_*", "AgentNotePoste*"]: noeuds += root.find_children(motif, "", true, false)
+	for n: Node in noeuds:
+		var textes: Array = []
+		if n is Control: textes += [(n as Control).tooltip_text, (n as Control).accessibility_name]
+		for l: Node in [n] + n.find_children("*", "", true, false):
+			if l is Label and (l as Label).is_visible_in_tree(): textes.append((l as Label).text)
+			if l is Button: textes.append((l as Button).accessibility_name)
+		for t: String in textes:
+			for c in t:
+				if c >= "0" and c <= "9": sortie.append(t)
+	return sortie
+
 func piste() -> Dictionary:
 	for p: Variant in app.model.get("market", []):
 		if p is Dictionary and str(p.get("id", "")) == piste_id: return p
@@ -123,15 +151,38 @@ func lien_depuis_la_liste() -> void:
 	check(node("RapportRecruteurNom") != null and str((node("RapportRecruteurNom") as Button).text) == str(piste().get("name", "")), "Le rapport suit la piste choisie")
 	check(await press("RecrutementRetour") and page_kind().is_empty(), "Retour : la liste du recrutement")
 
-## Note au poste inconnue (piste jamais observée) : lettre « ? », pas de note pour la piste.
+## Recrue pas encore observée (note au poste jamais publiée) : la piste choisie si elle l'est, sinon une autre du marché
+## (de préférence avec une première fourchette de niveau : le cas « à observer » relevé par le vérificateur le 24/11).
 func lettre_inconnue() -> void:
 	if piste_id.is_empty(): return
+	var choisie := piste_id
+	var candidate := ""
+	var rang_candidate := -1
+	for x: Variant in app.model.get("market", []):
+		if not x is Dictionary: continue
+		var publiees_x: Variant = x.get("positionRatings")
+		if publiees_x is Dictionary and not (publiees_x as Dictionary).is_empty(): continue
+		var rang := 2 if str(x.get("id", "")) == choisie else 1 if x.get("ratingRange") is Dictionary else 0
+		if rang > rang_candidate:
+			candidate = str(x.get("id", ""))
+			rang_candidate = rang
+	check(not candidate.is_empty(), "Au moins une recrue du marché sans note au poste publiée")
+	if candidate.is_empty(): return
+	piste_id = candidate
 	var p := piste()
-	if str(p.get("knowledge", {}).get("stage", "")) != "unobserved": return
 	await ouvrir_rapport()
 	var meta: Dictionary = node("RecrutementSubpage_recruteur").get_meta("rapport", {})
-	check(str(meta.get("lettre", "")) == "?", "Piste non observée : lettre « ? » (%s)" % meta.get("lettre", ""))
-	check(node("RapportRecruteurConnaissance") != null, "Pastille de connaissance")
+	if str(p.get("knowledge", {}).get("stage", "")) == "unobserved":
+		check(str(meta.get("lettre", "")) == "?", "Piste non observée : lettre « ? » (%s)" % meta.get("lettre", ""))
+		check(node("RapportRecruteurConnaissance") != null, "Pastille de connaissance")
+	# Note au poste d'une recrue à observer : lettre ESTIMÉE par le staff (double « B/A ») ou « ? », jamais la vraie valeur.
+	var note := lettre_de("RapportRecruteurNoteLettre")
+	check(est_lettre(note), "Piste non observée : note au poste en lettre (%s)" % note)
+	check(note == "?" or note.contains("/"), "Piste non observée : note au poste incertaine, « ? » ou double (%s)" % note)
+	if p.get("ratingRange") is Dictionary and float(p.ratingRange.max) - float(p.ratingRange.min) >= 8.0: check(note.contains("/"), "Fourchette de niveau large : lettre estimée double (%s)" % note)
+	check(chiffres_note().is_empty(), "Piste non observée : aucun chiffre de note au poste (%s)" % str(chiffres_note().slice(0, 4)))
+	shot("rapport-recruteur-a-observer-" + ("2560x1440" if root.size.x >= 2560 else "1920x1080"))
+	piste_id = choisie
 
 ## Note connue (piste rendue « bien connue » dans la projection de l'écran) : lettre du staff de l'échelle unique, rang 1.
 func lettre_connue() -> void:
@@ -152,6 +203,12 @@ func lettre_connue() -> void:
 	check(node("RapportRecruteurPotentiel") != null and node("RapportRecruteurPhrase") != null, "Potentiel : lettre + phrase du staff")
 	check(node("RapportRecruteurLignePiste") != null, "La piste est insérée dans la liste comparée")
 	check(node("RapportRecruteurFamiliarite_0") != null, "Familiarité au poste dans la liste")
+	# Note au poste en lettre du staff (décision de Léo du 24/11) : tuile, ligne de la piste et nos joueurs, aucun chiffre.
+	var attendue_poste := Notation.texte_note(Notation.lettre_poste(app.model, p, numero, false))
+	check(lettre_de("RapportRecruteurNoteLettre") == attendue_poste and attendue_poste != "?" and not attendue_poste.contains("/"), "Piste bien connue : note au poste en lettre sûre %s (%s)" % [attendue_poste, lettre_de("RapportRecruteurNoteLettre")])
+	var lignes_lettres: Array = app.root_content.find_children("RapportRecruteurLettrePoste_*", "", true, false).map(func(n: Node) -> String: return str(n.get_meta("lettre", "")))
+	check(not lignes_lettres.is_empty() and lignes_lettres.all(func(t: String) -> bool: return est_lettre(t) and t != "?"), "Liste comparée : note au poste en lettres (%s)" % str(lignes_lettres))
+	check(chiffres_note().is_empty(), "Aucun chiffre de note au poste dans le rapport (%s)" % str(chiffres_note().slice(0, 4)))
 	check(app.root_content.find_children("RapportRecruteurEtoiles*", "", true, false).is_empty(), "Plus d'étoiles de poste dans la liste")
 	var pour: Array = app.root_content.find_children("RapportRecruteurPour_*", "Button", true, false)
 	check(not pour.is_empty(), "Au moins un « Pour »")
@@ -164,6 +221,8 @@ func bareme() -> void:
 	for l: String in Notation.LETTRES:
 		if node("Bareme_" + l.replace("+", "plus").replace("-", "moins")) != null: pastilles += 1
 	check(node("RapportRecruteurBareme") != null and pastilles == 18 and node("BaremeRang") != null, "Lettre → petite fenêtre du barème E- à S+ (%d pastilles)" % pastilles)
+	check(est_lettre(lettre_de("BaremeNoteLettre")) and lettre_de("BaremeNoteLettre") == lettre_de("RapportRecruteurNoteLettre"), "Barème : note au poste en lettre, la même que la tuile (%s)" % lettre_de("BaremeNoteLettre"))
+	check(chiffres_note().is_empty(), "Barème : aucun chiffre de note au poste (%s)" % str(chiffres_note().slice(0, 4)))
 	check(await press("RapportRecruteurBaremeFermer"), "✕ de la petite fenêtre")
 	await settle(4)
 	check(node("RapportRecruteurBareme") == null, "✕ ferme le barème")
@@ -233,6 +292,8 @@ func agent() -> void:
 	for ton in ["tout_prix", "enthousiaste", "curieux"]: check(trouver("AgentTon_" + ton) != null, "Ton proposé : " + ton)
 	check(trouver("AgentRapportLigne") != null and trouver("AgentRapportLettre") != null, "Rapport du recruteur à gauche")
 	check(trouver("AgentRelationCran_2") != null and trouver("AgentFamiliarite") != null and trouver("AgentNotePoste") != null, "Relation en crans, familiarité, note au poste")
+	check(est_lettre(lettre_de("AgentNotePoste")) and lettre_de("AgentNotePoste") == Notation.texte_note(Rapport.lire(app, piste()).lettre_poste), "Agent : note au poste en lettre du staff (%s)" % lettre_de("AgentNotePoste"))
+	check(chiffres_note().is_empty(), "Agent : aucun chiffre de note au poste (%s)" % str(chiffres_note().slice(0, 4)))
 	check(trouver("AgentRelationValeur") == null and trouver("AgentEffetRelationNeutre") == null and trouver("AgentPropositions") == null, "Ni valeur de relation, ni effet, ni ronds de propositions")
 	var observe := str(piste().get("knowledge", {}).get("stage", "")) in ["observed", "deep"]
 	check(observe or texte("AgentCaractere") == "?", "Caractère inconnu : « ? » (%s)" % texte("AgentCaractere"))

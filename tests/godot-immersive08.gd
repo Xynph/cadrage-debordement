@@ -1576,6 +1576,27 @@ func run() -> void:
 				check(full.find_child("PlayerGlobalPotential",true,false) != null and full.find_child("PlayerPotentielPhrase",true,false) != null, "Potentiel : lettre + phrase du staff")
 				var hero_chiffres := (full.find_child("PlayerGlobalRating",true,false).get_parent() as Control).find_children("*","Label",true,false).filter(func(l: Label): return l.text == str(int(target.rating)) or l.text == "/ 100")
 				check(hero_chiffres.is_empty(), "Aucun chiffre du moteur à côté de la lettre (niveau ou « / 100 »)")
+				# Postes et rôles (décision de Léo du 24/11) : Niveau au rôle en LETTRE E- à S+ (niveau-calcule.cjs),
+				# « Son rôle » = rôle du Niveau calculé, aucun chiffre de note dans la carte, aucune décimale sur la fiche.
+				var notes_role: Array = full.find_children("PlayerRoleNote_*", "", true, false)
+				check(not notes_role.is_empty(), "Notes des rôles présentes dans Postes et rôles")
+				var lettres_ok := true
+				var chiffre_re := RegEx.create_from_string("\\d")
+				for n: Node in notes_role:
+					var lettre_role := str(n.get_meta("lettre", ""))
+					if not (lettre_role in Notation.LETTRES or "/" in lettre_role): lettres_ok = false
+					for l: Node in n.find_children("*", "Label", true, false):
+						if chiffre_re.search((l as Label).text) != null: lettres_ok = false
+				check(lettres_ok, "Notes des rôles en lettres, sans chiffre")
+				var nc: Variant = target.get("niveauCalcule")
+				check(nc is Dictionary and nc.get("roles") is Dictionary and not (nc.roles as Dictionary).is_empty(), "Niveau calculé selon le poste et le rôle reçu du moteur")
+				if nc is Dictionary and full.find_child("PlayerRole_" + str(nc.get("role", "")), true, false) != null:
+					var sien := full.find_child("PlayerRoleSien", true, false) as Control
+					var bouton_sien := full.find_child("PlayerRole_" + str(nc.get("role", "")), true, false) as Control
+					check(sien != null and absf(sien.global_position.y - bouton_sien.global_position.y) < bouton_sien.size.y, "« Son rôle » = rôle du Niveau calculé (%s)" % str(nc.get("role", "")))
+				var decimales := RegEx.create_from_string("(^|[^\\d])\\d{2},\\d($|[^\\d])")
+				var avec_decimale: Array = full.find_children("*", "Label", true, false).filter(func(l: Label): return l.is_visible_in_tree() and decimales.search(l.text) != null)
+				check(avec_decimale.is_empty(), "Aucune décimale de note sur la fiche : " + ", ".join(avec_decimale.map(func(l: Label): return l.text)))
 				check(app.find_child("ProfilePlayerName",true,false).text.to_lower()==str(target.name).to_lower(),"Identité exacte dans la fiche complète")
 				check(app.find_child("OpenPlayerCoachNote",true,false)!=null,"Carnet personnel conservé sur la fiche")
 				await capture("04-fiche-joueur-2560x1440")

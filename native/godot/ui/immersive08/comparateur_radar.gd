@@ -3,8 +3,8 @@ extends RefCounted
 ## radar à 8 axes rugby en deux couleurs (turquoise ● pour le premier, orange ■ pour le second : la forme du repère
 ## double toujours la couleur). Chaque axe est la moyenne d'attributs existants du moteur (attributesV2, 36 clés,
 ## chacune dans un seul axe), rien de nouveau n'est calculé par le moteur.
-## Grand radar entre deux colonnes de synthèse (note au poste principal chiffrée sur 100, jamais d'étoiles : décision
-## de Léo du 23/11/2026) ; clic sur un axe ou sur le point fort / faible = petite fenêtre visuelle des attributs de
+## Grand radar entre deux colonnes de synthèse (note au poste principal en lettre du staff E- à S+, jamais de chiffre ni
+## d'étoiles : décisions de Léo des 23 et 24/11/2026) ; clic sur un axe ou sur le point fort / faible = petite fenêtre visuelle des attributs de
 ## l'axe en barres miroir.
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
@@ -15,6 +15,7 @@ const Commune = preload("res://ui/immersive08/fiche_commune.gd")
 const Attributs = preload("res://ui/player_attributes.gd")
 const Base = preload("res://ui/immersive08/recruitment_comparison.gd")
 const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
+const Notation = preload("res://ui/notation_staff.gd")
 
 ## Axes dans l'ordre des aiguilles d'une montre depuis le haut : le haut du radar parle des avants (conquête, défense,
 ## physique), le bas des trois-quarts (vitesse, attaque, jeu au pied, technique).
@@ -67,6 +68,13 @@ static func note_poste(joueur: Dictionary) -> Variant:
 	if not postes is Array or (postes as Array).is_empty() or not notes is Dictionary: return null
 	var v: Variant = (notes as Dictionary).get(str(int((postes as Array)[0])))
 	return float(v) if Base.numeric(v) else null
+
+## Note au poste principal en lettre du staff ({bas, haut}, double « B/A » si le staff n'est pas sûr ; jamais de chiffre).
+static func lettre_poste(app: Control, joueur: Dictionary) -> Dictionary:
+	if joueur.is_empty(): return {"bas": -1, "haut": -1}
+	var postes: Variant = joueur.get("primaryPositions")
+	var numero := int((postes as Array)[0]) if postes is Array and not (postes as Array).is_empty() and Base.numeric((postes as Array)[0]) else 0
+	return Notation.lettre_poste(app.model, joueur, numero, bool(joueur.get("__own", false)))
 
 static func _texte(v: Variant) -> String:
 	return str(int(v)) if v != null else "?"
@@ -206,9 +214,12 @@ static func _colonne_synthese(app: Control, page: Control, joueurs: Array, k: in
 	lignes.append(["Potentiel", G.potential_text(joueur), Base.value(joueur, "potential"), Base.value(autre, "potential") if not autre.is_empty() else null, true])
 	var forme: Variant = Commune.condition(joueur)
 	lignes.append(["Condition", "%d %%" % roundi(float(forme)) if forme != null else "—", forme, Commune.condition(autre) if not autre.is_empty() else null, true])
-	var poste: Variant = note_poste(joueur)
-	var poste_autre: Variant = note_poste(autre) if not autre.is_empty() else null
-	lignes.append(["Au poste", _texte(poste), poste, poste_autre, true])
+	# Au poste : lettre du staff en pastille, ▲ comparé sur les lettres montrées (aucun chiffre).
+	var lettre := lettre_poste(app, joueur)
+	var rang_poste: Variant = Notation.rang_lettre(lettre) if Notation.rang_lettre(lettre) >= 0.0 else null
+	var rang_autre: Variant = null
+	if not autre.is_empty() and Notation.rang_lettre(lettre_poste(app, autre)) >= 0.0: rang_autre = Notation.rang_lettre(lettre_poste(app, autre))
+	lignes.append(["Au poste", "", rang_poste, rang_autre, true])
 	lignes.append(["Âge", G.n(joueur.get("age", "—")) + " ans", null, null, false])
 	lignes.append(["Contrat", Commune.echeance(app, joueur), null, null, false])
 	var valeurs := axes(joueur)
@@ -222,7 +233,7 @@ static func _colonne_synthese(app: Control, page: Control, joueurs: Array, k: in
 	for ligne: Array in lignes:
 		D.line(panneau, Vector2(marge, y + 50), Vector2(zone.size.x - marge, y + 50), Color(Charte.FILET, .8))
 		var mieux: bool = bool(ligne[4]) and Base.numeric(ligne[2]) and Base.numeric(ligne[3]) and float(ligne[2]) > float(ligne[3])
-		var couleur: Color = Charte.couleur_attribut(ligne[2]) if bool(ligne[4]) and str(ligne[0]) != "Condition" and Base.numeric(ligne[2]) else Charte.IVOIRE
+		var couleur: Color = Charte.couleur_attribut(ligne[2]) if bool(ligne[4]) and not (str(ligne[0]) in ["Condition", "Au poste"]) and Base.numeric(ligne[2]) else Charte.IVOIRE
 		if str(ligne[0]) == "Condition" and Base.numeric(ligne[2]): couleur = Charte.CONDITION
 		D.text(panneau, zone.size.x - marge if droite else marge, y + 34, str(ligne[0]), 19, Charte.IVOIRE_2, 500, 200, HORIZONTAL_ALIGNMENT_RIGHT if droite else HORIZONTAL_ALIGNMENT_LEFT, true)
 		var valeur := D.text(panneau, marge if droite else zone.size.x - marge, y + 36, (("▲ " if mieux else "") + str(ligne[1])) if droite else (str(ligne[1]) + (" ▲" if mieux else "")), 26, couleur, 800, zone.size.x - 2 * marge - 210, HORIZONTAL_ALIGNMENT_LEFT if droite else HORIZONTAL_ALIGNMENT_RIGHT)
@@ -230,6 +241,11 @@ static func _colonne_synthese(app: Control, page: Control, joueurs: Array, k: in
 		if droite: valeur.position.x = C.px(marge)
 		valeur.add_theme_font_override("font", C.EXTRA_BOLD)
 		if str(ligne[0]) == "Au poste":
+			valeur.add_theme_color_override("font_color", Charte.GAIN)
+			var taille := 40.0
+			var w := Notation.largeur_note(lettre, taille)
+			var decale := 34.0 if mieux else 0.0
+			Notation.pastille_note(panneau, marge + decale if droite else zone.size.x - marge - decale - w, y + 26, lettre, taille, "RadarSynthese%d_AuposteLettre" % k)
 			# Emplacement réservé au futur mot de familiarité au poste (système en préparation) : vide pour l'instant.
 			var familiarite := D.text(panneau, zone.size.x - marge - 96 if droite else marge + 96, y + 34, "", 19, Charte.IVOIRE_2, 600, 160, HORIZONTAL_ALIGNMENT_RIGHT if droite else HORIZONTAL_ALIGNMENT_LEFT, true)
 			familiarite.name = "RadarFamiliarite%d" % k

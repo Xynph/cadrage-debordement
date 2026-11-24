@@ -1159,13 +1159,16 @@ func _row(player:Dictionary,index:int) -> void:
 				poste.tooltip_text = "Poste principal · %s · %s" % ["·".join(principaux),primary_caption(player)] if not principaux.is_empty() else primary_caption(player)
 				if not secondary_numbers(player).is_empty(): poste.tooltip_text += "\nAutres postes · " + secondary_tooltip(player,app.model).replace("\n"," ; ")
 			"etoiles":
-				# Note au poste (sur 100, barème des attributs) puis familiarité au poste (barres 5 crans + mot).
-				var note := Familiarite.poser_note(row, x, base, float(player.get("notePoste", -1.0)), 22, 36, "RosterNotePoste")
-				note.tooltip_text = "Note au poste · %s" % Etoiles.nom_poste(_poste)
+				# Note au poste en lettre (même échelle que le Niveau, jamais de chiffre) puis familiarité (barres 5 crans + mot).
+				var lettre := Notation.lettre_poste(app.model, player, _poste, true)
+				var lw := Notation.largeur_note(lettre, 22 * 1.4)
+				var note := Familiarite.poser_note(row, x, base, lettre, 22, lw, "RosterNotePoste")
+				note.tooltip_text = "%s · %s" % [Etoiles.nom_poste(_poste), Notation.texte_note(lettre)]
+				var xf := x + maxf(48.0, lw + 10.0)
 				var fam := int(player.get("familiarite", -1))
-				var lf := Familiarite.poser(row, x + 48, base, fam, 17, "RosterFamiliarite")
+				var lf := Familiarite.poser(row, xf, base, fam, 17, "RosterFamiliarite")
 				var court := Etoiles.abrege(player)
-				var xc := x + 48 + maxf(lf, Familiarite.largeur(Familiarite.CONFIRME, 17)) + 10
+				var xc := xf + maxf(lf, Familiarite.largeur(Familiarite.CONFIRME, 17)) + 10
 				D.text(row, xc, base, court if not court.is_empty() else primary_caption(player), 17, C.MUTED, 600, maxf(20.0, l - (xc - x)), HORIZONTAL_ALIGNMENT_LEFT, true).name = "RosterPostePrincipal"
 			"autres":
 				var autres := D.text(row,x,base,secondary_caption(player),18,C.MUTED,600,l,HORIZONTAL_ALIGNMENT_LEFT,true)

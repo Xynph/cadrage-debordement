@@ -15,6 +15,7 @@ const Link = preload("res://ui/entity_link.gd")
 const Charte = preload("res://ui/charte.gd")
 const SurvolLigne = preload("res://ui/survol_ligne.gd")
 const Savoir = preload("res://ui/player_knowledge_text.gd")
+const Notation = preload("res://ui/notation_staff.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const ClubSheet = preload("res://ui/immersive08/club_sheet_canvas.gd")
 const RapportAdverse = preload("res://ui/immersive08/preparation_adversaire.gd")
@@ -930,34 +931,17 @@ func _surveiller(section: Control, rectangle: Rect2) -> void:
 		var age := "  ·  %d ans" % int(menace.get("age", 0)) if _nombre(menace.get("age")) else ""
 		_texte(carte, 126, 60, "%s%s" % [str(menace.get("pos", "")), age], 16, Charte.IVOIRE_2, 205)
 		var note: Variant = menace.get("note")
-		# Danger du joueur (les étoiles ont été rejetées par Léo le 21/11/2026) : sa note au poste en chiffre si elle est
-		# connue, sinon la fourchette de niveau publiée par le recrutement, sinon « ? » non observé ; pastille colorée par
-		# paliers, chiffre ou mot toujours écrit.
+		# Danger du joueur (les étoiles ont été rejetées par Léo le 21/11/2026, le chiffre le 24/11) : sa note au poste en
+		# LETTRE E- à S+ (échelle du Niveau, double « B/A » si le staff n'est pas sûr) si elle est connue, sinon le Niveau
+		# estimé d'après l'observation du recrutement, sinon « ? » non observé ; mot toujours écrit dessous.
 		var fourchette := Savoir.bounds(menace, "rating")
-		var valeur := ""
-		var legende := "Au poste"
-		var fond := Charte.PANNEAU_3
-		var encre := Charte.IVOIRE_2
-		if _nombre(note):
-			valeur = str(roundi(float(note)))
-			fond = Charte.couleur_attribut(note)
-			encre = Charte.ENCRE
-		elif not fourchette.is_empty():
-			valeur = "%d–%d" % [roundi(float(fourchette.min)), roundi(float(fourchette.max))]
-			legende = "Niveau"
-			fond = Charte.couleur_attribut((float(fourchette.min) + float(fourchette.max)) / 2.0)
-			encre = Charte.ENCRE
-		else:
-			valeur = "?"
-			legende = "Non observé"
-		var large := 68.0 if valeur.length() <= 3 else 92.0
-		var pastille := D.rect(carte, Rect2(408 - large, 12, large, 38), fond, Charte.RAYON_PILULE)
-		pastille.name = "PreparationThreatLevel%d" % i
-		pastille.set_meta("valeur", valeur)
-		if _nombre(note): pastille.set_meta("note", roundi(float(note)))
-		var chiffre := D.text(pastille, large / 2.0, 28, valeur, 24 if large < 80 else 20, encre, 700, large, HORIZONTAL_ALIGNMENT_CENTER)
-		chiffre.name = "Chiffre"
-		_etiquette(carte, 408 - large / 2.0, 72, legende, 110, HORIZONTAL_ALIGNMENT_CENTER).name = "PreparationThreatLevelLabel%d" % i
+		var lettre := Notation.lettre_note(app.model, menace, float(note) if _nombre(note) else -1.0, false, "poste" if _nombre(note) else "niveau")
+		var legende := "Au poste" if _nombre(note) else "Niveau" if not fourchette.is_empty() and int(lettre.bas) >= 0 else "Non observé"
+		var taille_p := 44.0
+		var large := Notation.largeur_note(lettre, taille_p)
+		var pastille := Notation.pastille_note(carte, 400 - large, 32, lettre, taille_p, "PreparationThreatLevel%d" % i)
+		pastille.set_meta("valeur", Notation.texte_note(lettre))
+		_etiquette(carte, 400 - large / 2.0, 72, legende, 110, HORIZONTAL_ALIGNMENT_CENTER).name = "PreparationThreatLevelLabel%d" % i
 		_texte(carte, 126, 112, str(menace.get("role", "")), 16, Charte.IVOIRE, 285)
 		if _nombre(menace.get("fitness")) and not C.dense(): _texte(carte, 126, 130, "Condition %d %%" % int(menace.fitness), 15, Charte.IVOIRE_2, 285)
 	var signaux: Array = reports.get("signals", [])

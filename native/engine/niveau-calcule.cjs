@@ -1,5 +1,6 @@
 'use strict';
-// Niveau calculé (planche « notation façon FM », 24/11/2026) — MODULE ISOLÉ, PAS ENCORE BRANCHÉ AU MOTEUR.
+// Niveau calculé (planche « notation façon FM », 24/11/2026) — branché à l'écran (player-knowledge.cjs, projection
+// `niveauCalcule`) ; le moteur du match garde `rating` tant que la bascule n'est pas faite.
 //
 // Choix de Léo : deux vrais chiffres cachés, « Niveau » (aujourd'hui `rating` 15-99) et « Potentiel » (`dev.potential`).
 // Le Niveau doit être CALCULÉ selon les qualités qui comptent au POSTE et au RÔLE (comme le CA de Football Manager),

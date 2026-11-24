@@ -343,10 +343,15 @@ func run() -> void:
 	check(app.find_children("RadarAxe?", "Button", true, false).size() == 8, "Huit axes cliquables")
 	check(app.find_child("ComparateurJoueur2", true, false) == null, "Deux joueurs au plus : pas de troisième colonne")
 	var poste := app.find_child("RadarSynthese0_Auposte", true, false) as Label
-	check(poste != null and not poste.text.contains("★"), "Note au poste chiffrée, sans étoiles")
-	var chiffre_poste := poste.text.replace("▲", "").strip_edges() if poste != null else ""
-	if chiffre_poste.is_valid_int():
-		check(poste.get_theme_color("font_color").is_equal_approx(Charte.couleur_attribut(chiffre_poste.to_int())), "Note au poste colorée au barème")
+	check(poste != null and not poste.text.contains("★"), "Note au poste sans étoiles")
+	# Décision de Léo du 24/11 : la note au poste est une lettre du staff (E- à S+, « B/A » s'il n'est pas sûr), jamais un chiffre.
+	var chiffre_poste := poste.text.replace("▲", "").strip_edges() if poste != null else "?"
+	check(chiffre_poste.is_empty(), "Note au poste : aucun chiffre à côté de la lettre (« %s »)" % chiffre_poste)
+	var lettre_poste := app.find_child("RadarSynthese0_AuposteLettre", true, false) as Control
+	var texte_lettre := str(lettre_poste.get_meta("lettre", "")) if lettre_poste != null else ""
+	var lettres: Array = (load("res://ui/notation_staff.gd") as Script).get_script_constant_map().get("LETTRES", [])
+	check(lettre_poste != null and (texte_lettre == "?" or Array(texte_lettre.split("/")).all(func(l: String) -> bool: return l in lettres)), "Note au poste en lettre du staff (%s)" % texte_lettre)
+	check(not texte_lettre.is_empty() and not texte_lettre.lstrip("+-").is_valid_float(), "Lettre au poste, pas un chiffre (%s)" % texte_lettre)
 	check(app.find_child("RadarFamiliarite0", true, false) != null, "Emplacement de la familiarité au poste")
 	await press("RadarAxe0")
 	var fenetre_axe := app.find_child("RadarAxeFenetre", true, false)

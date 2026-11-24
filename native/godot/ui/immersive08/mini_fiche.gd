@@ -146,8 +146,12 @@ static func construire(app: Control, player: Dictionary, source: String) -> Pane
 	if player.get("age") is int or player.get("age") is float: origine.append(G.n(player.age) + " ans")
 	D.text(fiche, x, 128, " · ".join(origine), 20, Charte.IVOIRE_2, 500, 640 - x).name = "MiniFicheOrigine"
 	D.text(fiche, 840, 42, "NIVEAU", 16, Charte.IVOIRE_2, 700, 160, HORIZONTAL_ALIGNMENT_RIGHT)
-	_italique(D.text(fiche, 840, 100, G.rating_text(player, commune.notre_joueur(source)), 56, Charte.IVOIRE, 800, 200, HORIZONTAL_ALIGNMENT_RIGHT)).name = "MiniFicheNiveau"
-	D.text(fiche, 840, 132, "pot. " + G.potential_text(player), 19, Charte.IVOIRE_2, 500, 200, HORIZONTAL_ALIGNMENT_RIGHT).name = "MiniFichePotentiel"
+	# Notation façon FM : lettres du staff (Niveau, Potentiel), jamais de chiffre.
+	var Notation: Script = load("res://ui/notation_staff.gd")
+	var note: Dictionary = Notation.resume(app.model, player, commune.notre_joueur(source))
+	Notation.pastille(fiche, 840 - 54, 82, int(note.niveau), 54, "MiniFicheNiveau")
+	D.text(fiche, 840 - 34, 138, "pot.", 17, Charte.IVOIRE_2, 500, 60, HORIZONTAL_ALIGNMENT_RIGHT)
+	Notation.pastille(fiche, 840 - 28, 132, int(note.potentiel), 28, "MiniFichePotentiel")
 	D.line(fiche, Vector2(20, 158), Vector2(LARGEUR - 20, 158), Charte.FILET)
 	# Forme, ou la raison de l'absence (blessé, suspendu, en sélection) avec le retour connu.
 	var dispo: Dictionary = commune.disponibilite(app, player, source)

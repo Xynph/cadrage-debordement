@@ -300,3 +300,15 @@ func qualites_en_fourchette() -> void:
 	var forts: Array = app.find_children("PlayerStrength_*", "Label", true, false)
 	check(not forts.is_empty() and forts.all(func(l: Label) -> bool: return l.text.count("-") == 1), "Fiche : points forts en fourchette")
 	await shot("fiche-qualites-fourchette")
+	# Tout ce qui est calculé à partir des qualités part de la fourchette (vérificateur, 24/11) : qualités reçues = milieu
+	# de chaque fourchette (radar, entraînement, Niveau au rôle), notes au poste et au rôle en lettre DOUBLE (staff pas sûr),
+	# ni relevé ni flèches de progression (vraies valeurs au dixième).
+	var plages: Dictionary = joueur.get("attributesV2Range", {})
+	var valeurs: Dictionary = joueur.get("attributesV2", {})
+	check(not plages.is_empty() and plages.keys().all(func(k: String) -> bool: return is_equal_approx(float(valeurs.get(k, -1)), (float(plages[k].min) + float(plages[k].max)) / 2.0)), "Qualités reçues par l’écran = milieu des fourchettes, jamais la vraie valeur")
+	var notes_role: Array = app.find_children("PlayerRoleNote_*", "", true, false)
+	check(not notes_role.is_empty() and notes_role.all(func(n: Node) -> bool: return str(n.get_meta("lettre", "")).contains("/")), "Fiche : Niveau au rôle en lettre double, incertaine (%s)" % str(notes_role.map(func(n: Node): return n.get_meta("lettre", ""))))
+	check(app.find_children("Fleche_*", "", true, false).is_empty() and joueur.get("fleches") == null, "Fiche : aucune flèche de progression tant que les qualités sont en fourchette")
+	var Notation = preload("res://ui/notation_staff.gd")
+	var principal: int = int((joueur.get("primaryPositions", [0]) as Array)[0]) if joueur.get("primaryPositions") is Array and not (joueur.primaryPositions as Array).is_empty() else 0
+	if principal > 0: check(Notation.texte_note(Notation.lettre_poste(app.model, joueur, principal, true)).contains("/"), "Note au poste principal : lettre double tant que les qualités sont en fourchette")

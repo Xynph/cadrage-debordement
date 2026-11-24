@@ -46,7 +46,7 @@ class FondIncline extends Control:
 		var decalage := size.y * tan(deg_to_rad(Charte.INCLINAISON_DEGRES))
 		draw_colored_polygon(PackedVector2Array([Vector2.ZERO, Vector2(size.x, 0), Vector2(size.x - decalage, size.y), Vector2(0, size.y)]), couleur)
 
-## DM Sans graisse 700 (chiffres des ovales, notes au poste).
+## DM Sans graisse 700 (chiffres des ovales).
 static func texte_gras() -> Font:
 	if _gras == null:
 		_gras = FontVariation.new()

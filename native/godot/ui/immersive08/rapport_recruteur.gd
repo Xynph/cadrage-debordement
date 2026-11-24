@@ -86,7 +86,8 @@ static func _equivalents(numero: int) -> Array:
 		if POSTES[i] == POSTES[numero - 1]: liste.append(i + 1)
 	return liste
 
-## Note d'un joueur du marché au poste : note au poste publiée, sinon milieu de la fourchette de niveau.
+## Valeur cachée d'un joueur du marché au poste (tri et rang seulement, jamais affichée) : note au poste publiée, sinon
+## milieu de la fourchette de niveau. À l'écran : `Notation.lettre_poste` (lettre estimée, double tant qu'il est à observer).
 static func _note_marche(p: Dictionary, numero: int) -> float:
 	if p.is_empty(): return -1.0
 	var notes: Variant = p.get("positionRatings")
@@ -113,7 +114,7 @@ static func comparaison(app: Control, numero: int) -> Array:
 				for n: Variant in valeurs:
 					if _nombre(n) and int(n) in postes: joue = true
 		if not joue and str(p.get("pos", "")) == POSTES[numero - 1]: joue = true
-		if joue: liste.append({"joueur": p, "note": _note_effectif(p, numero)})
+		if joue: liste.append({"joueur": p, "note": _note_effectif(p, numero), "lettre": Notation.lettre_poste(app.model, p, numero, true)})
 	liste.sort_custom(func(a: Dictionary, b: Dictionary): return float(a.note) > float(b.note))
 	return liste
 
@@ -136,7 +137,7 @@ static func lire(app: Control, p: Dictionary) -> Dictionary:
 		for cle: String in QUALITES.get(FAMILLE_QUALITES.get(numero, 0), []):
 			if _nombre(attributs.get(cle)): qualites.append([cle, float(attributs.get(cle))])
 	var r := {"piste": p, "numero": numero, "poste": POSTES[numero - 1] if numero > 0 else str(p.get("pos", "—")), "note": note,
-		"rang": rang, "total": autres.size() + 1, "ecart": ecart, "indice": indice, "lettre": Notation.texte_lettre(indice),
+		"lettre_poste": Notation.lettre_poste(app.model, p, numero, false), "rang": rang, "total": autres.size() + 1, "ecart": ecart, "indice": indice, "lettre": Notation.texte_lettre(indice),
 		"couleur": Notation.couleur(indice), "notation": notation, "autres": autres, "qualites": qualites}
 	r.pour = _pour(app, r)
 	r.contre = _contre(app, r)
@@ -273,7 +274,7 @@ static func _bareme(app: Control, cadre: Control, r: Dictionary, origine: Contro
 		Notation.pastille(fond, x, 136.0, i, taille, "Bareme_" + str(Notation.LETTRES[i]).replace("+", "plus").replace("-", "moins"))
 		x += taille + 8.0
 	Pieces.tuile(fond, Rect2(28, 220, 200, 96), "%d / %d" % [r.rang, r.total], "rang au poste", Charte.IVOIRE, "BaremeRang", 34)
-	Pieces.tuile(fond, Rect2(244, 220, 200, 96), G.n(roundi(r.note)) if float(r.note) >= 0 else "—", "note au poste", Charte.couleur_attribut(r.note), "BaremeNote", 34)
+	_tuile_lettre(fond, Rect2(244, 220, 200, 96), r.lettre_poste, "note au poste", "BaremeNote", 50.0)
 	if not r.autres.is_empty():
 		var premier: Dictionary = r.autres[0].joueur
 		var case_ := D.rect(fond, Rect2(460, 220, 320, 96), Charte.PANNEAU_2, Charte.RAYON_CARTE)
@@ -316,10 +317,18 @@ static func _tuiles(app: Control, cadre: Control, r: Dictionary, x: float, y: fl
 	var id := str(p.get("id", ""))
 	var offre := func(): load("res://ui/immersive08/recruitment_pages.gd").ouvrir(app, "negociation", {"player_id": id})
 	var pas := Vector2(0, h + 12) if verticales else Vector2(l + 12, 0)
-	var note := G.n(roundi(r.note)) if float(r.note) >= 0 else "—"
-	Pieces.tuile(cadre, Rect2(x, y, l, h), note, "Note au poste", Charte.couleur_attribut(r.note), "RapportRecruteurNote", 38, "", "rating", false, func(): app.navigation_controller.open_entity({"kind": "market", "id": id}))
+	_tuile_lettre(cadre, Rect2(x, y, l, h), r.lettre_poste, "Note au poste", "RapportRecruteurNote", 56.0, "rating", func(): app.navigation_controller.open_entity({"kind": "market", "id": id}))
 	Pieces.tuile(cadre, Rect2(x + 2 * pas.x, y + 2 * pas.y, l, h), _compact(p.get("fee", p.get("price"))), "Indemnité", Pieces.ORANGE, "RapportRecruteurIndemnite", 38, "", "money", true, offre)
 	Pieces.tuile(cadre, Rect2(x + 3 * pas.x, y + 3 * pas.y, l, h), G.salary_amount(p.get("salary")), "Salaire " + G.salary_period(true), Pieces.BLEU, "RapportRecruteurSalaire", 38, "", "money", true, offre)
+
+## Tuile à lettre (note au poste, décision de Léo du 24/11) : pastille ronde ou double « B/A » à la place du chiffre,
+## légende dessous. Méta « lettre » sur la pastille `<id>Lettre` ; le texte de la tuile (accessibilité) est la lettre.
+static func _tuile_lettre(parent: Control, zone: Rect2, lettre: Dictionary, legende: String, id: String, taille: float, icone := "", action := Callable()) -> Panel:
+	var carte := Pieces.tuile(parent, zone, Notation.texte_note(lettre), legende, Charte.IVOIRE, id, 30, "", icone, false, action)
+	var valeur := carte.get_node_or_null(NodePath(id + "Valeur")) as Label
+	if valeur != null: valeur.visible = false
+	Notation.pastille_note(carte, 12, (zone.size.y - 24.0) / 2.0, lettre, taille, id + "Lettre")
+	return carte
 
 ## Tuile Potentiel de la notation : lettre du staff + phrase (aucun chiffre) ; clic = fiche de la piste.
 static func _tuile_potentiel(app: Control, cadre: Control, r: Dictionary, zone: Rect2) -> void:
@@ -395,17 +404,17 @@ static func _qualites(cadre: Control, r: Dictionary, x: float, y: float, l: floa
 		ly += 58
 	return ly
 
-## Liste comparée façon Effectif : rang, visage, nom (fiche + carte au survol), note au poste colorée, colonnes au choix.
+## Liste comparée façon Effectif : rang, visage, nom (fiche + carte au survol), note au poste en lettre, colonnes au choix.
 ## La piste est insérée à son rang, ligne détachée (fond vert de sélection + marqueur).
 static func _liste(app: Control, cadre: Control, r: Dictionary, zone: Rect2, colonnes: Array, hauteur_ligne := 46.0, max_lignes := 12) -> void:
 	var lignes: Array = []
 	var place := false
 	for ligne: Dictionary in r.autres:
 		if not place and float(r.note) > float(ligne.note):
-			lignes.append({"joueur": r.piste, "note": r.note, "piste": true})
+			lignes.append({"joueur": r.piste, "note": r.note, "lettre": r.lettre_poste, "piste": true})
 			place = true
 		lignes.append(ligne)
-	if not place: lignes.append({"joueur": r.piste, "note": r.note, "piste": true})
+	if not place: lignes.append({"joueur": r.piste, "note": r.note, "lettre": r.lettre_poste, "piste": true})
 	# Colonnes : [titre, largeur, sorte, paramètre] (voir _cellule).
 	var x0 := zone.position.x
 	var y := zone.position.y
@@ -451,6 +460,12 @@ static func _liste(app: Control, cadre: Control, r: Dictionary, zone: Rect2, col
 				Notation.pastille(bouton, cx, (hauteur_ligne - 4) / 2.0, int(Notation.resume(app.model, joueur, not est_piste).potentiel), 30, "RapportRecruteurLettrePot_%d" % i)
 				cx += float(colonne[1])
 				continue
+			if str(colonne[2]) == "note":
+				# Note au poste en lettre (décision de Léo du 24/11) : pastille ronde, double « B/A » si le staff n'est pas sûr.
+				var lettre: Dictionary = ligne.get("lettre", {})
+				Notation.pastille_note(bouton, cx, (hauteur_ligne - 4) / 2.0, lettre, 30, "RapportRecruteurLettrePoste_%d" % i)
+				cx += float(colonne[1])
+				continue
 			var valeur: Array = _cellule(colonne, joueur, ligne, est_piste)
 			var t := D.text(bouton, cx, base + 1, str(valeur[0]), 22, valeur[1], 700, float(colonne[1]) - 10)
 			t.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
@@ -479,7 +494,7 @@ static func _col_familiarite() -> Array: return ["FAMILIARITÉ", 130, "familiari
 static func _cellule(colonne: Array, j: Dictionary, l: Dictionary, p: bool) -> Array:
 	match str(colonne[2]):
 		"note":
-			return [G.n(roundi(float(l.note))) if float(l.note) >= 0 else "—", Charte.couleur_attribut(l.note)]
+			return [Notation.texte_note(l.get("lettre", {})), Charte.IVOIRE_2]
 		"age":
 			return [G.n(j.get("age", "—")), Charte.IVOIRE_2]
 		"potentiel":

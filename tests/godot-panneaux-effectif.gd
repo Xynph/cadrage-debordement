@@ -105,8 +105,13 @@ func etoiles_au_poste(xv: Dictionary) -> void:
 	# Note au poste (sur 100, la même pour tous les clubs) : la meilleure du groupe en tête de liste.
 	check(connues.size() >= 10 and classe and is_equal_approx(float(connues[0]), meilleure), "Liste classée par note au poste décroissante (%s)" % str(connues.slice(0, 6)))
 	var premiere: Control = lignes[0] if not lignes.is_empty() else null
-	var note: Label = premiere.find_child("RosterNotePoste", true, false) as Label if premiere != null else null
-	check(note != null and note.text == str(int(roundf(float(connues[0])))), "Note au poste écrite sur la ligne (%s)" % (note.text if note != null else "—"))
+	# Note au poste en LETTRE du staff (décision de Léo du 24/11), jamais le chiffre du moteur.
+	var note: Control = premiere.find_child("RosterNotePoste", true, false) as Control if premiere != null else null
+	var Notation = preload("res://ui/notation_staff.gd")
+	var lettre_attendue: String = Notation.texte_note(Notation.lettre_poste(app.model, par_id.get(str(premiere.get_meta("player_id")), {}), numero, true)) if premiere != null else "?"
+	var textes_note: Array = note.find_children("*", "Label", true, false).map(func(l: Label): return l.text) if note != null else []
+	check(note != null and str(note.get_meta("lettre", "")) == lettre_attendue and lettre_attendue != "?", "Note au poste en lettre sur la ligne (%s)" % (str(note.get_meta("lettre", "")) if note != null else "—"))
+	check(note != null and not textes_note.is_empty() and textes_note.all(func(t: String): return RegEx.create_from_string("\\d").search(t) == null), "Aucun chiffre de note au poste sur la ligne (%s)" % str(textes_note))
 	var marque: Control = premiere.find_child("RosterFamiliarite*", true, false) as Control if premiere != null else null
 	var attendu_f := Familiarite.niveau(par_id.get(str(premiere.get_meta("player_id")), {}), numero) if premiere != null else -1
 	check(marque != null and (attendu_f < 0 or int(marque.get_meta("familiarite", -2)) == attendu_f or (marque.get_parent() != null and int(marque.get_parent().get_meta("familiarite", -2)) == attendu_f)), "Familiarité au poste sur la ligne (%s)" % Familiarite.mot(attendu_f))

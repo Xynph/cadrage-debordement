@@ -14,6 +14,19 @@ test('Précises (défaut) : aucune fourchette sur nos joueurs', () => {
     assert.ok(model.squad.length > 20);
     assert.ok(model.squad.every(p => p.attributesV2Range === undefined), 'pas de fourchette sans l’option');
     assert.ok(model.squad.every(p => p.knowledge?.qualitesLargeur === undefined));
+    // Niveau calculé selon le poste et le rôle (niveau-calcule.cjs) : rôles de la fiche, meilleur rôle du poste principal.
+    const niveau = require('../native/engine/niveau-calcule.cjs');
+    const ids = new Set(niveau.ROLES.map(r => r[0]));
+    for (const p of model.squad) {
+      const n = p.niveauCalcule;
+      assert.ok(n && Number.isInteger(n.niveau) && n.niveau >= 15 && n.niveau <= 99, p.id);
+      assert.ok(ids.has(n.role) && n.roles[n.role] === n.niveau, p.id);
+      assert.ok(Object.keys(n.roles).length >= 3 && Object.keys(n.roles).every(id => ids.has(id)), p.id);
+      assert.equal(n.niveau, niveau.niveauJoueur(p).niveau, 'qualités précises : niveau des vraies qualités');
+    }
+    // Deux 3e ligne aile, l'un Plaqueur l'autre Gratteur : leur Niveau dépend du rôle (poids clé/utile).
+    const aile = model.squad.find(p => niveau.familleDe(p) === 'aile');
+    if (aile) assert.notEqual(aile.niveauCalcule.roles['aile-plaqueur'], undefined);
   } finally { jeu.fermer(); }
 });
 
@@ -32,6 +45,21 @@ test('En fourchette : qualités de nos joueurs en fourchette, option sauvegardé
     }
     const etat = JSON.parse(jeu.call('export').meta.exportText).state;
     assert.equal(etat.qualitesJoueurs.mode, 'fourchette');
+    // Tout ce que l'écran calcule part de la fourchette (vérificateur, 24/11) : qualités = milieu de la fourchette,
+    // jamais la vraie valeur ; note au poste décalée d'autant ; ni relevé ni flèches (vraies valeurs au dixième).
+    const vrais = new Map(etat.clubs[etat.club].players.map(p => [p.id, p]));
+    let differentes = 0;
+    for (const p of avec) {
+      const vrai = vrais.get(p.id);
+      assert.ok(vrai, p.id);
+      for (const [cle, r] of Object.entries(p.attributesV2Range)) {
+        assert.equal(p.attributesV2[cle], (r.min + r.max) / 2, cle);
+        if (p.attributesV2[cle] !== vrai.attributesV2?.[cle]) differentes++;
+      }
+      for (const k of ['releve', 'fleches', 'nativeAttributesV1']) assert.equal(p[k], undefined, k);
+      assert.ok(p.niveauCalcule && Number.isInteger(p.niveauCalcule.niveau), 'niveau calculé selon le poste et le rôle');
+    }
+    assert.ok(differentes > avec.length * 20, 'les qualités montrées ne sont pas les vraies');
     // Rechargement : même option, mêmes fourchettes.
     const avant = JSON.stringify(model.squad[0].attributesV2Range);
     jeu.bridge.close();
@@ -84,4 +112,25 @@ test('En fourchette, au fil des semaines : 9 puis 5 points puis précises (proje
     assert.equal(largeur(model), 0);
     assert.ok(model.squad.every(p => p.attributesV2Range === undefined), 'précises une fois le joueur bien suivi');
   } finally { jeu.fermer(); }
+});
+
+test('En fourchette : la note au poste suit le milieu des fourchettes (poids du poste), jamais la vraie note', () => {
+  const k = factory();
+  const qualites = Object.fromEntries(require('../native/engine/niveau-calcule.cjs').CLES.map(c => [c, 60]));
+  const etat = { season: 1, round: 0, worldMode: { week: 0 }, club: 0, careerVariation: { seed: 3 },
+    qualitesJoueurs: { version: 1, mode: 'fourchette', debut: { season: 1, week: 0 } },
+    clubs: [{ id: 0, players: [{ id: 'j1', name: 'A', pos: 'Pilier gauche', rating: 60, attributesV2: qualites }] }] };
+  const model = { squad: [{ id: 'j1', name: 'A', pos: 'Pilier gauche', primaryPositions: [1], rating: 60, attributesV2: { ...qualites }, positionRatings: { 1: 60, 11: 40 }, releve: 'x', fleches: { n: 1 } }] };
+  k.project(model, k.visibility(etat));
+  const p = model.squad[0];
+  const milieux = Object.values(p.attributesV2Range).map(r => (r.min + r.max) / 2);
+  assert.ok(milieux.some(m => m !== 60), 'des milieux différents de la vraie valeur');
+  // Attendu : vraie note + écart pondéré (poids du poste) entre milieux et vraies qualités, arrondi.
+  const nc = require('../native/engine/niveau-calcule.cjs');
+  const attendu = (note, famille) => { const w = nc.poids(famille, null); let t = 0, s = 0; for (const c of nc.CLES) { t += w[c] * (p.attributesV2[c] - 60); s += w[c]; } return Math.round(note + t / s); };
+  assert.deepEqual(p.positionRatings, { 1: attendu(60, 'pilier'), 11: attendu(40, 'ailier') });
+  assert.ok(nc.CLES.every(c => p.attributesV2[c] !== 60 || p.attributesV2Range[c].min + 4 === 60), 'qualités montrées = milieux');
+  assert.equal(p.releve, undefined);
+  assert.equal(p.fleches, undefined);
+  assert.equal(p.niveauCalcule.role.startsWith('pilier-'), true);
 });
