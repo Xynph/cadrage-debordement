@@ -28,6 +28,7 @@ const SERVICES := [
 	["medical", "Médical", Color("d9634f"), "heart"],
 	["club", "Recrutement et club", Color("e0a04a"), "search"],
 ]
+const RECRUTEMENT := "Responsable du recrutement"
 const RESPONSABLES := ["director", "assistant", "fitnessLead", "doctor", "scout"]
 const MOTS := ["Faible", "Moyen", "Correct", "Bon", "Excellent"]
 const SOINS := ["doctor", "physio", "rehab"]
@@ -86,10 +87,13 @@ static func membres(app: Control) -> Array:
 	var ajouter := func(p: Dictionary, cle: String, service: String, role: String, tags: Array) -> void:
 		var id := str(p.get("id", ""))
 		if id.is_empty() or vus.has(id): return
-		# Le directeur sportif est celui de la direction du club (fiche, courriers) : un membre du staff qui en porte le
-		# titre n'en fait pas un second.
-		if str(role).strip_edges().to_lower() == "directeur sportif": return
 		vus[id] = true
+		# Un seul directeur sportif, celui de la direction du club : le membre du staff qui en portait le titre est affiché
+		# « Responsable du recrutement » par le moteur (projection seulement) et rangé au Recrutement sur la carte.
+		if str(p.get("roleLabel", "")) == RECRUTEMENT and cle != "scout":
+			cle = ""
+			service = "club"
+			role = RECRUTEMENT
 		var rang := 1 if cle in RESPONSABLES and not out.any(func(e: Dictionary): return e.cle == cle) else 2
 		var t := tags.duplicate()
 		if id == billet:
@@ -260,7 +264,8 @@ static func _disposer(app: Control, carte: Carte, gens: Array) -> void:
 		var a := -PI / 2.0 + TAU * i / SERVICES.size()
 		var centre := CENTRE + Vector2(cos(a), sin(a)) * rayon
 		var autour := membres_s.size() - 1
-		var r := 140.0
+		# Anneau chargé (six membres autour ou plus) : rayon plus grand, les étiquettes ne passent pas sous les voisins.
+		var r := 140.0 if autour <= 5 else 172.0
 		var d := 64.0 if autour <= 6 else 56.0
 		var bord := r + d / 2.0 + 16.0
 		carte.guides.append([centre, bord, bord, Color(s[2], .10), true])
@@ -270,7 +275,9 @@ static func _disposer(app: Control, carte: Carte, gens: Array) -> void:
 		carte.liens.append([CENTRE, centre, s[2], [nom_tete, "OrgaPresident", "OrgaManager"], s[0]])
 		for j in autour:
 			# Membres en haut et sur les côtés de la bulle : le bas reste aux mots du responsable.
-			var b := -PI / 2.0 + (0.0 if autour == 1 else deg_to_rad(-135.0 + 270.0 * j / (autour - 1)))
+			# Anneau chargé : arc resserré (±120°), les derniers membres restent au-dessus de l'anneau voisin.
+			var demi := 135.0 if autour <= 5 else 120.0
+			var b := -PI / 2.0 + (0.0 if autour == 1 else deg_to_rad(-demi + 2.0 * demi * j / (autour - 1)))
 			var pos := centre + Vector2(cos(b), sin(b)) * r
 			var nom := _nom(gens, membres_s[j + 1])
 			_noeud(app, carte, membres_s[j + 1], pos, d, nom, true)
@@ -319,7 +326,9 @@ static func _noeud(app: Control, carte: Carte, e: Dictionary, pos: Vector2, d: f
 	var largeur := 190.0 if not compact else 156.0
 	var nom_court := Kit.casse(str(e.p.get("name", "")), true) if str(e.cle) != "manager" else ""
 	# Alignement centré : x est le milieu du texte.
-	var role := D.text(n, d / 2.0, d + taille_role + 6, str(e.role).to_upper() if d >= 120 else str(e.role), taille_role, couleur, 800, largeur, HORIZONTAL_ALIGNMENT_CENTER)
+	# Sur la carte, le titre long du recrutement tient en un mot ; la fenêtre du membre garde le titre entier.
+	var titre := "Recrutement" if str(e.role) == RECRUTEMENT else str(e.role)
+	var role := D.text(n, d / 2.0, d + taille_role + 6, titre.to_upper() if d >= 120 else titre, taille_role, couleur, 800, largeur, HORIZONTAL_ALIGNMENT_CENTER)
 	role.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var mots: Array[Label] = [role]
 	if not nom_court.is_empty():
