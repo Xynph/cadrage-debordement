@@ -99,6 +99,8 @@ func stable() -> void:
 func directeur() -> void:
 	var ds: Array = noeuds().filter(func(n: Control) -> bool: return str(n.accessibility_name).begins_with("Directeur sportif ·"))
 	check(ds.size() == 1, "Un seul directeur sportif sur la carte (%s)" % ", ".join(ds.map(func(n: Control) -> String: return "%s [%s]" % [n.accessibility_name, n.get("service")])))
+	# Tout le staff du club (Club › Staff) est sur la carte, en plus du président, du directeur sportif et de « Toi ».
+	check(noeuds().size() - 3 == StaffServices.membres(app).size(), "Carte : tout le staff (%d membres, %d au Staff)" % [noeuds().size() - 3, StaffServices.membres(app).size()])
 	var direction: Dictionary = StaffServices.projection(app).get("direction", {})
 	var nom := str(direction.get("director", ""))
 	check(not nom.is_empty(), "Direction du club projetée par le moteur")
@@ -177,7 +179,10 @@ func niveau_du(nom: String) -> Variant:
 ## Pastilles de la fenêtre : aucune ne recouvre une autre ; celles d'une même ligne ont le même centre vertical.
 func pastilles_propres(f: Node, qui: String) -> void:
 	var rects: Array = []
-	for p: Node in f.find_children("OrgaPastille_*", "", true, false): rects.append((p as Control).get_global_rect())
+	# L'aplat visible : « Contenu » pour une pastille cliquable (bouton plus haut), sinon la pastille elle-même.
+	for p: Node in f.find_children("OrgaPastille_*", "", true, false):
+		var aplat: Control = p.get_node_or_null("Contenu") if p.get_node_or_null("Contenu") != null else p
+		rects.append(aplat.get_global_rect())
 	check(rects.size() >= 2, "%s : pastilles posées (%d)" % [qui, rects.size()])
 	var soucis: PackedStringArray = []
 	for i in rects.size():
@@ -185,7 +190,9 @@ func pastilles_propres(f: Node, qui: String) -> void:
 			var a: Rect2 = rects[i]
 			var b: Rect2 = rects[j]
 			if a.grow(-1).intersects(b.grow(-1)): soucis.append("chevauche %d/%d" % [i, j])
-			elif absf(a.get_center().y - b.get_center().y) < a.size.y / 2.0 and absf(a.get_center().y - b.get_center().y) > 1.5: soucis.append("décalées %d/%d" % [i, j])
+			# Même ligne : même haut et même bas, au pixel près (la pastille est un aplat, son bord se voit).
+			elif absf(a.get_center().y - b.get_center().y) < a.size.y / 2.0 and (absf(a.position.y - b.position.y) > 1.0 or absf(a.end.y - b.end.y) > 1.0):
+				soucis.append("décalées %d/%d (haut %.1f/%.1f, bas %.1f/%.1f)" % [i, j, a.position.y, b.position.y, a.end.y, b.end.y])
 	check(soucis.is_empty(), "%s : pastilles alignées sans chevauchement (%s)" % [qui, ", ".join(soucis)])
 
 ## Étiquettes des membres : au moins 12 px, entières (pas de « … »).
@@ -198,6 +205,14 @@ func etiquettes() -> void:
 			var largeur := label.get_theme_font("font").get_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
 			if px < 12 or largeur > label.size.x + 1: petits.append("%s %s (%d px)" % [n.name, label.text, px])
 	check(petits.is_empty(), "Étiquettes lisibles et entières : %s" % ", ".join(petits))
+	# Le fond sombre sous les mots ne passe sous aucun portrait voisin.
+	var sous_portrait: PackedStringArray = []
+	for n: Control in noeuds():
+		var sous := n.get_node_or_null("OrgaSousTexte") as Control
+		if sous == null: continue
+		for autre: Control in noeuds():
+			if autre != n and sous.get_global_rect().grow(-1).intersects(autre.get_global_rect().grow(-1)): sous_portrait.append("%s sous %s" % [n.name, autre.name])
+	check(sous_portrait.is_empty(), "Fond des étiquettes hors des portraits voisins : %s" % ", ".join(sous_portrait))
 
 func clics() -> void:
 	var manieres := ["Échap", "✕", "clic à côté"]

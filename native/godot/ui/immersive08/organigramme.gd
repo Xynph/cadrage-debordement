@@ -318,17 +318,25 @@ static func _noeud(app: Control, carte: Carte, e: Dictionary, pos: Vector2, d: f
 	var taille_role := 17 if d >= 90 else 16
 	var largeur := 190.0 if not compact else 156.0
 	var nom_court := Kit.casse(str(e.p.get("name", "")), true) if str(e.cle) != "manager" else ""
-	# Sous les membres des anneaux : fond sombre sous les mots, lisibles même posés sur le contour de l'anneau.
-	if d < 120:
-		var lignes := 2 if not nom_court.is_empty() else 1
-		var sous := D.rect(n, Rect2(d / 2.0 - largeur / 2.0 + 6, d + 3, largeur - 12, taille_role * lignes + 4 * lignes + 8), Color(Charte.NOIR_PANNEAU, .82), 8)
-		sous.name = "OrgaSousTexte"
 	# Alignement centré : x est le milieu du texte.
 	var role := D.text(n, d / 2.0, d + taille_role + 6, str(e.role).to_upper() if d >= 120 else str(e.role), taille_role, couleur, 800, largeur, HORIZONTAL_ALIGNMENT_CENTER)
 	role.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var mots: Array[Label] = [role]
 	if not nom_court.is_empty():
 		var l := D.text(n, d / 2.0, d + taille_role * 2 + 10, nom_court, taille_role - 1, Charte.IVOIRE_2, 600, largeur, HORIZONTAL_ALIGNMENT_CENTER)
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		mots.append(l)
+	# Sous les membres des anneaux : fond sombre à la largeur des mots (jamais sous un portrait voisin), lisibles même
+	# posés sur le contour de l'anneau.
+	if d < 120:
+		var texte := 0.0
+		for m: Label in mots:
+			var px := m.get_theme_font_size("font_size")
+			texte = maxf(texte, m.get_theme_font("font").get_string_size(m.text, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x / C.density)
+		var large := minf(largeur, texte + 14.0)
+		var sous := D.rect(n, Rect2(d / 2.0 - large / 2.0, d + 3, large, taille_role * mots.size() + 4 * mots.size() + 8), Color(Charte.NOIR_PANNEAU, .82), 8)
+		sous.name = "OrgaSousTexte"
+		n.move_child(sous, role.get_index())
 	n.accessibility_name = "%s · %s" % [e.role, e.p.get("name", "")]
 	if str(e.cle) == "manager": n.pressed.connect(func(): app._navigate("Carrière"))
 	else: n.pressed.connect(func(): fenetre(app, e))
@@ -397,20 +405,33 @@ static func _services(app: Control, corps: Control, carte: Carte, gens: Array) -
 static func _page(app: Control) -> Control:
 	return app.find_child("ImmersiveClub", true, false) as Control
 
-## Pastilles en ligne, mesurées une fois posées (thème et police appliqués), centrées sur une même hauteur de ligne ;
-## retour à la ligne quand la largeur est atteinte.
+## Pastilles en ligne, mesurées une fois posées (thème et police appliqués) : toutes de même hauteur, leur aplat centré
+## sur la ligne (une pastille cliquable est un bouton plus haut qui porte l'aplat « Contenu ») ; retour à la ligne quand
+## la largeur est atteinte.
 static func _pastilles(parent: Control, x: float, y: float, items: Array, largeur: float) -> float:
 	const LIGNE := 36.0
+	const HAUT := 28.0
 	var cx := x
 	for it: Array in items:
 		var action: Callable = it[3] if it.size() > 3 else Callable()
 		var p := Pastilles.pastille(str(it[0]), it[1], str(it[2]), "", 18, "", action)
 		p.name = "OrgaPastille_%d" % parent.get_child_count()
+		var aplat: Control = p.get_node_or_null("Contenu") if p.get_node_or_null("Contenu") != null else p
+		aplat.custom_minimum_size.y = HAUT * C.density
+		for l: Node in aplat.find_children("*", "Label", true, false): (l as Label).vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		var l := Pastilles.poser(parent, p, cx, y)
+		if aplat != p:
+			var m := aplat.get_combined_minimum_size()
+			p.size = Vector2(maxf(p.size.x, m.x), maxf(p.size.y, m.y))
+			p.custom_minimum_size = p.size
+			aplat.size = m
+			aplat.position = Vector2(0, roundf((p.size.y - m.y) / 2.0))
+			l = p.size.x / C.density
 		if cx + l > x + largeur and cx > x:
 			cx = x
 			y += 44
-		p.position = Vector2(cx * C.density, y * C.density + maxf(0.0, LIGNE * C.density - p.size.y) / 2.0)
+		var milieu := aplat.position.y + aplat.size.y / 2.0 if aplat != p else p.size.y / 2.0
+		p.position = Vector2(cx * C.density, roundf((y + LIGNE / 2.0) * C.density - milieu))
 		cx += l + 10
 	return y + 44
 
