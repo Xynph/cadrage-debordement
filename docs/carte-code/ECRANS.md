@@ -26,7 +26,11 @@ Numéros de ligne approximatifs (au 24/11/2026) : relancer carte-code.cjs avant 
 ## Bureau, réception
 | Écran | Fichier(s) | Entrée |
 |---|---|---|
-| Bureau (dessiné) | `ui/immersive08/office_canvas.gd`, `office.gd` | `build` L169 / L278 |
+| Bureau (dessiné) | `ui/immersive08/office_canvas.gd` (fichier public : `build`, `_titree`, redéfinitions des statiques lus ailleurs : `noms_cliquables`, `message_ids`, `open_message`, `short_rows`…), `office.gd` | `build` L29 / `office.gd` L278 |
+| · socle du Bureau | `ui/immersive08/office_socle.gd` (préloads, constantes, plaque, titre, liens, zones cliquables, pastilles, noms de joueurs cliquables, `short_rows`) | chaîne d'héritage socle ← affiche ← priorités et groupe ← rangée du bas ← canvas |
+| · Affiche du prochain match | `ui/immersive08/office_affiche.gd` | `_fixture`, `_prochain`, `_face_a_face`, `_sans_prochain`, `_live_content`, `compte_a_rebours` |
+| · Priorités, objectif, état du groupe | `ui/immersive08/office_priorites_groupe.gd` | `_priorities`, `_objectif`, `_group`, `_blesses`, `objective_status` |
+| · Classement court, courrier, prochains matchs | `ui/immersive08/office_rangee_basse.gd` | `_standings`, `_zone_legend`, `_journal`, `message_ids`, `_timeline` |
 | Gabi adjoint (bandeau, bulle, Bureau) : fichier public (contexte : moments clés, première visite, humeur, alertes ; `_process`, `refresh`) | `ui/immersive08/coach_canvas.gd` ← sa chaîne ci-dessous (`coach_guide.gd` ← socle ← bulle ← bandeau ← bureau ← canvas) | `consider_context` L20, `_process` L275 |
 | Gabi : socle (consts, état, portraits, habillage des boutons, placement portrait/voile/bulle, fil de la remarque, indice, petites classes de dessin) | `ui/immersive08/coach_socle.gd` | `_maj_remarque` L249, `_layout_bulle` L324, `_position_libre` L403 |
 | Gabi : bulle qui descend du bandeau (construction, affichage, fermeture, « Suivre le conseil ») | `ui/immersive08/coach_bulle.gd` | `_build_adjoint` L16, `_montrer` L87, `suivre_conseil` L200 |
