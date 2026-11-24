@@ -12,8 +12,12 @@ Numéros de ligne approximatifs (au 24/11/2026) : relancer carte-code.cjs avant 
 | Commandes et réponses du moteur | `main_moteur.gd` | `receive` L23, `send_command` L161, `failed` L290, `live_tick` L354 |
 | Panneau d'attente, ligne d'état | `main_etat.gd` | `command_wait_context` L109, `settled_status_text` L170 |
 | Démarrage de la coque | `main_demarrage.gd` | `ready` L14 |
-| Coque : rail + barre haute | `ui/immersive08/shell.gd` | `render` L85, `_topbar` ~L910, `_dedicated_page` L322 |
-| Page par route | `ui/immersive08/shell.gd` | `_existing_page` ~L1505 (match sur `app.route`) |
+| Coque : fichier principal (consts, `render`, mise à l'échelle, choix de la page, fonds d'écran, passerelles publiques) ← ses morceaux ci-dessous | `ui/immersive08/shell.gd` | `render` L90, `_dedicated_page` L327, `fond_ecran` L486 |
+| Coque : briques (aplat, pictogramme, bouton, étiquette, touche, plancher de texte) | `ui/immersive08/shell_outils.gd` | `_shell_button` L115, `_label` L140, `_picto` L170 |
+| Coque : rail de gauche (en-tête du club, entrées, pied : Carrière, Réglages, sauvegarde) | `ui/immersive08/shell_rail.gd` | `_sidebar` L47, `_rail_header` L103, `_rail_dock` L234 |
+| Coque : sauvegarde et barre haute (fil d'Ariane, recherche, date, Gabi, Continuer) | `ui/immersive08/shell_barre.gd` | `_topbar` L68, `date_caption` L216, `sync_continue` L394 |
+| Coque : en-tête de page, onglets, pied de page, ligne d'état | `ui/immersive08/shell_entete.gd` | `_heading` L43, `onglet` L136, `_footer` L162 |
+| Page par route | `ui/immersive08/shell.gd` | `_existing_page` L414 (match sur `app.route`) |
 | Raccourcis clavier | `ui/navigation_controller.gd`, `ui/raccourcis_clavier.gd` | `handle_shortcut` |
 | Menu pause, réglages | `ui/preferences_dialog.gd`, `main_dialogues.gd` | `pause_menu` L60, `confirm` L39, `file_selected` L96 |
 | Recherche (Ctrl K) | `ui/immersive08/search_canvas.gd` | `build` L17 |
