@@ -250,7 +250,7 @@ static func animer_acteur(v: NativeMatchView, id: String, entry: Dictionary, del
 		entry.velocity = Vector3.ZERO
 		entry.tangent = Vector3.ZERO
 	elif not in_pass and not staged:
-		var travel := Cut.live_travel(progress) if live_cut else progress
+		var travel := Cut.live_travel(progress, float(entry.duree)) if live_cut else progress
 		actor.position = Motion.position_at(entry.from, entry.target, entry.tangent, travel)
 		entry.velocity = ((actor.position - previous) / maxf(delta, 0.001) if live_cut
 			else Motion.velocity_at(entry.from, entry.target, entry.tangent, progress, entry.duree))
