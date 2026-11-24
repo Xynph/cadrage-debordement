@@ -9,6 +9,7 @@ extends SceneTree
 const Flow = preload("helpers/contextual_flow.gd")
 const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 const StaffServices = preload("res://ui/immersive08/staff_services.gd")
+const Kit = preload("res://ui/immersive08/tactics_kit.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -75,13 +76,40 @@ func run() -> void:
 	await command("new_career", {"mode": "world-champ", "club": 102, "start": "veille"})
 	await Flow.settle_club_meetings(app, self, check)
 	await ouvrir_organigramme()
+	await stable()
 	await carte()
+	await etiquettes()
+	await directeur()
 	await survol()
 	await clics()
 	await toi()
 	if not capture_dir.is_empty(): await captures()
 	print("CLUB_ORGANIGRAMME ", JSON.stringify({"checks": checks, "failures": failures}))
 	quit(0 if failures.is_empty() else 1)
+
+## La carte n'est pas reconstruite après l'ouverture (une reconstruction fermerait la fenêtre qu'on vient d'ouvrir).
+func stable() -> void:
+	var avant := node("OrgaCarte")
+	var fin := Time.get_ticks_msec() + 3500
+	while Time.get_ticks_msec() < fin: await process_frame
+	await settle(4)
+	check(avant != null and is_instance_valid(avant) and node("OrgaCarte") == avant, "Carte stable 3,5 s après l'ouverture (aucune reconstruction)")
+
+## Un seul directeur sportif, le même sur la carte et dans la fenêtre du président (direction du club du moteur).
+func directeur() -> void:
+	var ds: Array = noeuds().filter(func(n: Control) -> bool: return str(n.accessibility_name).begins_with("Directeur sportif ·"))
+	check(ds.size() == 1, "Un seul directeur sportif sur la carte (%s)" % ", ".join(ds.map(func(n: Control) -> String: return "%s [%s]" % [n.accessibility_name, n.get("service")])))
+	var direction: Dictionary = StaffServices.projection(app).get("direction", {})
+	var nom := str(direction.get("director", ""))
+	check(not nom.is_empty(), "Direction du club projetée par le moteur")
+	if ds.size() == 1: check(str(ds[0].accessibility_name).ends_with(nom), "Carte : le directeur sportif de la direction du club (%s)" % ds[0].accessibility_name)
+	(node("OrgaPresident") as Button).pressed.emit()
+	await settle(4)
+	var f := fenetre()
+	var textes := textes_fenetre(f) if f != null else PackedStringArray()
+	check(textes.has("DS · " + Kit.casse(nom, true)), "Fenêtre du président : même directeur sportif (%s)" % ", ".join(textes))
+	if f != null: echap()
+	await settle(4)
 
 func carte() -> void:
 	check(node("ClubTab_organigramme") != null and node("ClubTab_organigramme").button_pressed, "Onglet Organigramme choisi")
@@ -146,6 +174,31 @@ func niveau_du(nom: String) -> Variant:
 		if p is Dictionary and str(p.get("name", "")).to_upper() == nom: return p.get("level")
 	return null
 
+## Pastilles de la fenêtre : aucune ne recouvre une autre ; celles d'une même ligne ont le même centre vertical.
+func pastilles_propres(f: Node, qui: String) -> void:
+	var rects: Array = []
+	for p: Node in f.find_children("OrgaPastille_*", "", true, false): rects.append((p as Control).get_global_rect())
+	check(rects.size() >= 2, "%s : pastilles posées (%d)" % [qui, rects.size()])
+	var soucis: PackedStringArray = []
+	for i in rects.size():
+		for j in range(i + 1, rects.size()):
+			var a: Rect2 = rects[i]
+			var b: Rect2 = rects[j]
+			if a.grow(-1).intersects(b.grow(-1)): soucis.append("chevauche %d/%d" % [i, j])
+			elif absf(a.get_center().y - b.get_center().y) < a.size.y / 2.0 and absf(a.get_center().y - b.get_center().y) > 1.5: soucis.append("décalées %d/%d" % [i, j])
+	check(soucis.is_empty(), "%s : pastilles alignées sans chevauchement (%s)" % [qui, ", ".join(soucis)])
+
+## Étiquettes des membres : au moins 12 px, entières (pas de « … »).
+func etiquettes() -> void:
+	var petits: PackedStringArray = []
+	for n: Control in noeuds():
+		for l: Node in n.find_children("*", "Label", true, false):
+			var label := l as Label
+			var px := label.get_theme_font_size("font_size")
+			var largeur := label.get_theme_font("font").get_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
+			if px < 12 or largeur > label.size.x + 1: petits.append("%s %s (%d px)" % [n.name, label.text, px])
+	check(petits.is_empty(), "Étiquettes lisibles et entières : %s" % ", ".join(petits))
+
 func clics() -> void:
 	var manieres := ["Échap", "✕", "clic à côté"]
 	var k := 0
@@ -166,6 +219,7 @@ func clics() -> void:
 			if "%" in t: fautifs.append(t)
 			if niveau != null and String.num_int64(roundi(float(niveau))) in t.split(" "): fautifs.append(t)
 		check(fautifs.is_empty(), "%s : aucun chiffre exact du moteur (%s)" % [n.name, ", ".join(fautifs)])
+		pastilles_propres(f, str(n.name))
 		var maniere: String = manieres[k % 3]
 		k += 1
 		match maniere:
@@ -189,6 +243,7 @@ func captures() -> void:
 	for t: Vector2i in [Vector2i(1920, 1080), Vector2i(2560, 1440)]:
 		await taille(t.x, t.y)
 		await ouvrir_organigramme()
+		await etiquettes()
 		shot("final-%d" % t.x)
 		var m := node("OrgaMedecin")
 		m.mouse_entered.emit()
@@ -201,6 +256,7 @@ func captures() -> void:
 		node("OrgaService_coaching").mouse_exited.emit()
 		(m as Button).pressed.emit()
 		await settle(4)
+		if fenetre() != null: pastilles_propres(fenetre(), "fenêtre %d" % t.x)
 		shot("final-%d-fenetre" % t.x)
 		echap()
 		await settle(3)

@@ -45,12 +45,19 @@ static func _rang_service(id: String) -> int:
 
 # --- Données ---------------------------------------------------------------------------------------------------------
 
-## Fiche du club (président, directeur sportif) : lecture seule, demandée une fois si absente.
+## Direction du club (président, directeur sportif) : la même que la fiche du club et les courriers (moteur
+## club-directions.cjs), lue dans la projection Staff par service, déjà là au premier affichage. Aucune lecture
+## demandée au moteur : sa réponse reconstruirait la page et fermerait une fenêtre ouverte. La forme récente vient de la
+## fiche du club si elle est déjà en mémoire.
 static func _fiche(app: Control) -> Dictionary:
-	var id := int(app.model.club.id)
-	var fiche := ClubSheet.cached(app, id)
-	if fiche.is_empty(): ClubSheet.request(app, id)
-	return fiche
+	var direction: Variant = StaffServices.projection(app).get("direction", {})
+	if not direction is Dictionary: direction = {}
+	var fiche := ClubSheet.cached(app, int(app.model.club.id))
+	var nom := func(cle: String) -> String:
+		var v: Variant = direction.get(cle)
+		if v == null or str(v).strip_edges().is_empty(): v = fiche.get(cle)
+		return str(v).strip_edges() if v != null else ""
+	return {"president": nom.call("president"), "director": nom.call("director"), "table": fiche.get("table") if fiche.get("table") is Dictionary else {}}
 
 static func _billetterie_id(app: Control) -> String:
 	var fans: Variant = U.strategy(app.model).get("fans", {})
@@ -71,7 +78,7 @@ static func membres(app: Control) -> Array:
 	var out: Array = []
 	var fiche := _fiche(app)
 	var club_id := int(app.model.club.id)
-	var directeur := str(fiche.get("director", "")).strip_edges() if fiche.get("director") != null else ""
+	var directeur: String = fiche.director
 	if not directeur.is_empty():
 		out.append({"p": {"id": "ds-%d" % club_id, "name": directeur, "age": 52}, "cle": "director", "service": "direction", "role": "Directeur sportif", "rang": 1, "tags": [], "direction": true})
 	var billet := _billetterie_id(app)
@@ -79,6 +86,9 @@ static func membres(app: Control) -> Array:
 	var ajouter := func(p: Dictionary, cle: String, service: String, role: String, tags: Array) -> void:
 		var id := str(p.get("id", ""))
 		if id.is_empty() or vus.has(id): return
+		# Le directeur sportif est celui de la direction du club (fiche, courriers) : un membre du staff qui en porte le
+		# titre n'en fait pas un second.
+		if str(role).strip_edges().to_lower() == "directeur sportif": return
 		vus[id] = true
 		var rang := 1 if cle in RESPONSABLES and not out.any(func(e: Dictionary): return e.cle == cle) else 2
 		var t := tags.duplicate()
@@ -95,14 +105,6 @@ static func membres(app: Control) -> Array:
 				for p: Dictionary in par.get(cle_plus + str(s.id), []): ajouter.call(p, "", str(s.id), str(p.get("roleLabel", "")), ["enplus"])
 	for p: Dictionary in StaffServices.membres(app):
 		ajouter.call(p, "", _service_du_role(str(p.get("role", ""))), str(p.get("roleLabel", "")), [])
-	# Un membre du staff qui porte le titre de directeur sportif rejoint la Direction (pas de doublon avec la fiche).
-	var ds_staff := out.filter(func(e: Dictionary): return not e.has("direction") and "directeur sportif" in str(e.role).to_lower())
-	if not ds_staff.is_empty():
-		out = out.filter(func(e: Dictionary): return not (e.has("direction") and e.cle == "director"))
-		for e: Dictionary in ds_staff:
-			e.service = "direction"
-			e.cle = "director"
-			e.rang = 1 if e == ds_staff[0] else 2
 	out.sort_custom(func(a: Dictionary, b: Dictionary): return _rang_service(a.service) < _rang_service(b.service) if a.service != b.service else int(a.rang) < int(b.rang))
 	return out
 
@@ -241,7 +243,7 @@ static func build(app: Control, corps: Control) -> void:
 
 static func _centre(app: Control, carte: Carte) -> void:
 	var fiche := _fiche(app)
-	var nom := str(fiche.get("president", "")) if fiche.get("president") != null else ""
+	var nom: String = fiche.president
 	var president := {"p": {"id": "pres-%d" % int(app.model.club.id), "name": nom if not nom.is_empty() else "Président", "age": 61}, "cle": "president", "service": "direction", "role": "Président", "rang": 0, "tags": [], "direction": true}
 	_noeud(app, carte, president, CENTRE + Vector2(-104, 0), 132, "OrgaPresident")
 	var toi := {"p": {"id": "", "name": "Toi"}, "cle": "manager", "service": "", "role": "Manager", "rang": 0, "tags": []}
@@ -313,12 +315,17 @@ static func _noeud(app: Control, carte: Carte, e: Dictionary, pos: Vector2, d: f
 		icone.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		pastille.add_child(icone)
 		D.place(icone, Rect2(d * .06, d * .06, d * .22, d * .22))
-	var taille_role := 17 if d >= 120 else 15 if d >= 90 else 13
-	var largeur := 190.0 if not compact else 132.0
+	var taille_role := 17 if d >= 90 else 16
+	var largeur := 190.0 if not compact else 156.0
+	var nom_court := Kit.casse(str(e.p.get("name", "")), true) if str(e.cle) != "manager" else ""
+	# Sous les membres des anneaux : fond sombre sous les mots, lisibles même posés sur le contour de l'anneau.
+	if d < 120:
+		var lignes := 2 if not nom_court.is_empty() else 1
+		var sous := D.rect(n, Rect2(d / 2.0 - largeur / 2.0 + 6, d + 3, largeur - 12, taille_role * lignes + 4 * lignes + 8), Color(Charte.NOIR_PANNEAU, .82), 8)
+		sous.name = "OrgaSousTexte"
 	# Alignement centré : x est le milieu du texte.
 	var role := D.text(n, d / 2.0, d + taille_role + 6, str(e.role).to_upper() if d >= 120 else str(e.role), taille_role, couleur, 800, largeur, HORIZONTAL_ALIGNMENT_CENTER)
 	role.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var nom_court := Kit.casse(str(e.p.get("name", "")), true) if str(e.cle) != "manager" else ""
 	if not nom_court.is_empty():
 		var l := D.text(n, d / 2.0, d + taille_role * 2 + 10, nom_court, taille_role - 1, Charte.IVOIRE_2, 600, largeur, HORIZONTAL_ALIGNMENT_CENTER)
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -346,7 +353,7 @@ static func _services(app: Control, corps: Control, carte: Carte, gens: Array) -
 		var membres_s := gens.filter(func(e: Dictionary): return e.service == id)
 		if id == "direction":
 			var fiche := _fiche(app)
-			membres_s.push_front({"p": {"id": "pres-%d" % int(app.model.club.id), "name": str(fiche.get("president", "Président"))}})
+			membres_s.push_front({"p": {"id": "pres-%d" % int(app.model.club.id), "name": fiche.president if not str(fiche.president).is_empty() else "Président"}})
 		var y := 276.0 + i * (h + 6)
 		var ligne := Button.new()
 		ligne.name = "OrgaService_" + id
@@ -390,16 +397,20 @@ static func _services(app: Control, corps: Control, carte: Carte, gens: Array) -
 static func _page(app: Control) -> Control:
 	return app.find_child("ImmersiveClub", true, false) as Control
 
+## Pastilles en ligne, mesurées une fois posées (thème et police appliqués), centrées sur une même hauteur de ligne ;
+## retour à la ligne quand la largeur est atteinte.
 static func _pastilles(parent: Control, x: float, y: float, items: Array, largeur: float) -> float:
+	const LIGNE := 36.0
 	var cx := x
 	for it: Array in items:
 		var action: Callable = it[3] if it.size() > 3 else Callable()
 		var p := Pastilles.pastille(str(it[0]), it[1], str(it[2]), "", 18, "", action)
-		var l := p.get_combined_minimum_size().x / C.density
+		p.name = "OrgaPastille_%d" % parent.get_child_count()
+		var l := Pastilles.poser(parent, p, cx, y)
 		if cx + l > x + largeur and cx > x:
 			cx = x
 			y += 44
-		Pastilles.poser(parent, p, cx, y)
+		p.position = Vector2(cx * C.density, y * C.density + maxf(0.0, LIGNE * C.density - p.size.y) / 2.0)
 		cx += l + 10
 	return y + 44
 
@@ -476,13 +487,13 @@ static func _fenetre_president(app: Control) -> void:
 	var page := _page(app)
 	if page == null: return
 	var fiche := _fiche(app)
-	var nom := str(fiche.get("president", "")) if fiche.get("president") != null else ""
+	var nom: String = fiche.president
 	var p := {"id": "pres-%d" % int(app.model.club.id), "name": nom if not nom.is_empty() else "Président"}
 	var fond := FenetreVisuelle.ouvrir(page, "OrgaFenetre", str(p.name).to_upper(), "shield", 960, 430)
 	disque(fond, Rect2(40, 96, 210, 210), p, Pastilles.VIOLET, 6.0).name = "OrgaFenetrePortrait"
 	D.text(fond, 145, 352, "Direction", 17, Pastilles.VIOLET, 700, 260, HORIZONTAL_ALIGNMENT_CENTER)
 	var infos: Array = [["Président", Pastilles.VIOLET, "shield", func(): app._navigate("Stratégie")]]
-	var directeur := str(fiche.get("director", "")) if fiche.get("director") != null else ""
+	var directeur: String = fiche.director
 	if not directeur.is_empty(): infos.append(["DS · " + Kit.casse(directeur, true), Pastilles.VIOLET, "people", func(): app._navigate("Stratégie")])
 	_pastilles(fond, 290, 92, infos, 640)
 	Kit.texte(fond, 290, 196, "CONSEIL", Charte.IVOIRE_3, 400, 14)
@@ -491,7 +502,8 @@ static func _fenetre_president(app: Control) -> void:
 		var n := clampi(roundi(float(confiance) / 20.0), 1, 5)
 		_crans(fond, 290, 212, "Confiance en toi", [n, n], Pastilles.VIOLET)
 	Kit.texte(fond, 290, 336, "RÉCEMMENT", Charte.IVOIRE_3, 400, 14)
-	var forme: Array = fiche.get("table", {}).get("form", []) if fiche.get("table") is Dictionary else []
+	var forme: Variant = fiche.table.get("form", [])
+	if not forme is Array: forme = []
 	var recents: Array = []
 	for r: Variant in forme:
 		var lettre := str(r)
