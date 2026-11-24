@@ -19,6 +19,8 @@ const Animations = preload("res://match_animations.gd")
 const Choregraphie = preload("res://match_choregraphie.gd")
 const Formations = preload("res://match_formations.gd")
 const Impacts = preload("res://match_impacts.gd")
+const ChutePhysique = preload("res://match_chute_physique.gd")
+const Plancher = preload("res://match_plancher.gd")
 const Tactique = preload("res://match_tactique.gd")
 const ApresEssai = preload("res://match_apres_essai.gd")
 const Rejeu = preload("res://match_rejeu.gd")
@@ -153,6 +155,10 @@ var _sortie_vise := Vector3.ZERO
 ## sous un autre angle pendant laquelle la vue est suspendue ; `rejeu_fini` à sa fin (ou abrégé).
 signal rejeu_fini
 var _rejeu: RefCounted = Rejeu.new(self)
+## Essai CD_ESSAI_PLAQUAGES (B ou C) : chute physique partielle au plaquage ; null sans la variable.
+var _chute_physique: RefCounted = ChutePhysique.new(self)
+## Plancher : aucune partie du corps sous la pelouse (dernière pose de l'image, match_plancher.gd).
+var _plancher: RefCounted = Plancher.new()
 
 
 func set_club_identity(club: Dictionary) -> void:
@@ -656,7 +662,13 @@ func reperer_rejeu() -> bool:
 func commencer_rejeu(vitesse: float = Rejeu.VITESSE) -> bool:
 	if not is_node_ready() or _camera_mode == "tactical" or _plan_large or sortie:
 		return false
-	return _rejeu.commencer(vitesse)
+	# Poses de présentation retirées avant la capture de l'état d'avant (remis à la fin), puis reposées.
+	for id: String in _actors:
+		_plancher.restaurer(id, _actors[id])
+	_chute_physique.annuler()
+	var lance: bool = _rejeu.commencer(vitesse)
+	_poser_plancher()
+	return lance
 
 
 func rejeu_actif() -> bool:
@@ -668,6 +680,9 @@ func finir_rejeu() -> void:
 	if not _rejeu.actif:
 		return
 	_rejeu.finir()
+	# État d'avant remis (sans plancher) : le plancher repart de lui.
+	_plancher.oublier()
+	_poser_plancher()
 	rejeu_fini.emit()
 
 
@@ -708,9 +723,15 @@ func _process(delta: float) -> void:
 	dernier_delta = delta
 	_animer_foule(delta) # Le public vit en temps réel, même pendant le ralenti.
 	if _rejeu.actif:
+		_chute_physique.annuler()
 		# Ralenti de l'essai rejoué : la vue est suspendue, seules les poses enregistrées sont montrées ;
-		# à sa fin, l'état d'avant est remis tel quel.
-		if not _rejeu.lire(delta):
+		# à sa fin, l'état d'avant est remis tel quel. Le plancher vaut aussi pour les poses rejouées
+		# (interpolées entre deux images enregistrées).
+		for id: String in _actors:
+			_plancher.restaurer(id, _actors[id])
+		var encore: bool = _rejeu.lire(delta)
+		_poser_plancher()
+		if not encore:
 			rejeu_fini.emit()
 		return
 	# Ralenti de l'essai : tout ce que la vue anime avance moins vite (présentation seule).
@@ -731,6 +752,8 @@ func _process(delta: float) -> void:
 	# Poses des pistes avant le ballon : les mains du porteur sont à leur place quand il y est mis.
 	if choregraphie_active():
 		_choregraphie.pose()
+	# Chute physique du plaqué : après les poses du corps, avant le ballon (il suit les mains).
+	_chute_physique.poser(delta)
 	VueBallon._update_ball(self, delta)
 	mise_en_scene().pose()
 	_poser_tenues(delta)
@@ -779,9 +802,21 @@ func _process(delta: float) -> void:
 		_ball_marker.global_basis = Basis.IDENTITY.scaled(Vector3.ONE * (1.45 if tenu_en_main else 1.0))
 		((_ball_marker as MeshInstance3D).material_override as StandardMaterial3D).albedo_color = Color("ffe680") if tenu_en_main else Color("e9bf5a")
 	# Poses définitives de l'image : enregistrées pour le ralenti de l'essai (une coupe le recommence).
+	# Plancher : dernière pose de l'image (après le ballon et les formations), enregistrée par le rejeu.
+	_poser_plancher()
 	_rejeu.enregistrer(delta, _camera_cut)
 	_fit_camera(delta, _camera_cut)
 	_camera_cut = false
+
+## Plancher de tous les joueurs (match_plancher.gd) ; le ballon tenu suit les mains relevées.
+func _poser_plancher() -> void:
+	for id: String in _actors:
+		var tenu: bool = _ball_attached and id == _carrier_id and _actors[id].rig != null
+		var mains := Plancher.mains(_actors[id].rig) if tenu else Vector3.ZERO
+		_plancher.poser(id, _actors[id])
+		if tenu:
+			_ball.global_position += Plancher.mains(_actors[id].rig) - mains
+
 
 func _is_pass_player(id: String) -> bool:
 	return not _pass_plan.is_empty() and (id == _pass_plan.passer or id == _pass_plan.receiver)
