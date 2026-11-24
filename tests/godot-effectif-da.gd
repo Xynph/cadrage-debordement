@@ -133,6 +133,11 @@ func run() -> void:
 	check(tile_values.call("Aptes") == str(squad.size() - unavailable), "Tuile Aptes : nombre exact d'aptes")
 	check(tile_values.call("Indisponibles") == str(unavailable), "Tuile Indisponibles : nombre exact")
 	check(tile_values.call("Contrats") == str(expiring), "Tuile Fins de contrat : nombre exact")
+	# Notation façon FM (choix B de Léo, 24/11) : niveau du XV en palier écrit (absolu, vague), jamais une moyenne chiffrée.
+	var palier_xv: String = tile_values.call("Niveau")
+	check((palier_xv in preload("res://ui/notation_staff.gd").PALIERS or palier_xv.begins_with("Entre ")) and not palier_xv.replace(",", ".").is_valid_float(), "Tuile Niveau du XV : palier écrit (%s)" % palier_xv)
+	var lettres_niveau: Array = app.find_children("RosterLevel", "", true, false)
+	check(not lettres_niveau.is_empty() and lettres_niveau.all(func(n: Node) -> bool: return str(n.get_meta("lettre", "")) in preload("res://ui/notation_staff.gd").LETTRES and absf((n as Control).size.x - (n as Control).size.y) < 1.0), "Colonne Niveau : lettre du staff en pastille ronde (%d lignes)" % lettres_niveau.size())
 
 	# Infobulle « Équilibre par poste » : un Control (pas une fenêtre), disparaît à la sortie.
 	var aptes := app.find_child("EffectifTuileAptes", true, false) as Button

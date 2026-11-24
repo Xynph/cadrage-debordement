@@ -1,7 +1,8 @@
 # Notation façon FM — planche du 24/11/2026
 
-Branche `claude/fm-notation`, **planche** (rien n'est branché au moteur). Choix de Léo : PASSATION.md de la revue
-FM27 (16e conversation), section « RESTE » point 0 et lignes « CHOIX DE LÉO ».
+Branche `claude/fm-notation`. Planche du 24/11 puis **intégration de l'option B** choisie par Léo (17e conversation) :
+lettre dans une pastille ronde, palier écrit dans une pilule, partout (fiche joueur, Effectif, Formation, rapport du
+recruteur, discussion avec l'agent). Le Niveau calculé (§ 1) reste un module isolé, non branché.
 
 ## Ce qui est caché, ce qui est montré
 
@@ -68,21 +69,33 @@ l'inverse. Ordre conseillé : 1) progression par qualités, 2) Niveau calculé �
   fourchette trop large : staff incertain. 3-4 tournures par cran, tirées par empreinte (staff, joueur).
 - Palette des lettres validée par Léo (texte clair sur les sombres, foncé sur C/C+/B+, blanc sur E+/D+/A+/S+).
 
-## 3. Option de nouvelle carrière
+## 3. Option de nouvelle carrière (branchée)
 
-« Qualités des joueurs » : **Précises** (défaut) / **En fourchette tant que pas observé** (deux pilules, un clic
-choisit). Planche : le choix reste à l'écran ; à brancher sur player-knowledge (attributs en fourchette pour nos
-propres joueurs tant que le staff ne les a pas assez vus).
+« Qualités des joueurs » : **Précises** (défaut) / **En fourchette tant que pas observé** (deux pilules, un clic choisit
+et valide). Envoyée avec `new_career` (`qualites: 'fourchette'`, toute autre valeur refusée), sauvegardée dans la
+carrière : `S.qualitesJoueurs = {version: 1, mode: 'fourchette', debut: {season, week}}` (absent = Précises, carrières
+d'avant inchangées). `player-knowledge.cjs` (`suivi`) : nos joueurs suivis depuis moins de 4 semaines (début de carrière
+ou arrivée au club) → fourchettes de 9 points, 4 à 7 semaines → 5 points, ensuite précises ; la projection ajoute
+`attributesV2Range` (36 qualités) et `knowledge.qualitesLargeur`. Fiche, carte au survol et mini-fiche montrent
+« 58-66 » (moyennes de famille « ~62 »). Test : `tests/qualites-fourchette.cjs`, `tests/godot-creation-da.gd`.
 
-## Variantes à trancher (CD_VARIANTE_VISUELLE)
+## 4. Une seule échelle, plus de chiffres
 
-- **A** : lettre en case arrondie (rayon 6) ; palier en jauge 4 crans dorés + mot.
-- **B** : lettre en pastille ronde ; palier en mot dans une pilule.
+- Rapport du recruteur : l'ancienne lettre d'avis A+ … D (écart avec notre n° 1) est remplacée par la lettre du staff
+  E- … S+ ; barème = les 18 pastilles, rang et note au poste, lettre de notre n° 1. « Marge de progression +17 » →
+  phrase de potentiel du staff (sans chiffre).
+- Effectif : tuile « Niveau moyen du XV » → « Niveau du XV » en palier écrit (tendance ▲/▼ sans écart) ; total de liste
+  « niveau moyen » → lettre moyenne relative à l'effectif ; en-tête « niveau du groupe » en palier.
+- Création : « note moyenne » / niveau chiffré du club → palier écrit (`Notation.palier_groupe`).
+- La lettre du conseil (Club › Vue d'ensemble, A+ … E, barème validé le 22/11) est une note de confiance, pas un
+  joueur : non touchée.
 
-## Reste à faire après le choix
+## Variante retenue
 
-Brancher le Niveau calculé (après la progression par qualités), passer l'estimation du staff dans le moteur
-(projection `notation` par joueur : jamais de valeur cachée vers l'écran), retirer les chiffres restants (tuile
-« Niveau moyen du XV », « note moyenne » de la création, mini-fiche, carte au survol, comparateur), aligner la lettre
-d'avis du recruteur (ancienne échelle A+ … D) sur la nouvelle, mettre à jour tests/godot-immersive08.gd
-(`PlayerGlobalRating` n'est plus un Label).
+**B** (Léo, 24/11) : lettre en pastille ronde ; palier en mot dans une pilule. Variante A et `CD_VARIANTE_VISUELLE` retirés.
+
+## Reste à faire
+
+Brancher le Niveau calculé (après la progression par qualités : chantier des flèches de progression), passer
+l'estimation du staff dans le moteur (projection `notation` par joueur : jamais de valeur cachée vers l'écran), retirer
+les derniers chiffres de niveau (mini-fiche, carte au survol, comparateur, recrutement, vues héritées).

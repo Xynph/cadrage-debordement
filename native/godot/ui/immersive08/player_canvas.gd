@@ -119,10 +119,10 @@ static func build(app:Control,player:Dictionary,source:String="squad") -> Contro
 			_postes(D.panel(page,Rect2(0,top+446,GAUCHE,HAUTEUR-top-446-50),"","","","PlayerPositionsCard"),app,player,source)
 			if source=="market":
 				_recrutement(D.panel(page,Rect2(DROITE_X,top,DROITE,500),"","","","PlayerRecruitmentCard"),app,player)
-				_valeur(D.panel(page,Rect2(DROITE_X,top+516,DROITE,210),"","","","PlayerValueCard"),detailed)
+				_valeur(D.panel(page,Rect2(DROITE_X,top+516,DROITE,210),"","","","PlayerValueCard"),detailed,Commune.fourchettes(player))
 			else:
 				_disponibilite(D.panel(page,Rect2(DROITE_X,top,DROITE,300),"","","","PlayerAvailabilityCard"),app,player,source)
-				_valeur(D.panel(page,Rect2(DROITE_X,top+316,DROITE,210),"","","","PlayerValueCard"),detailed)
+				_valeur(D.panel(page,Rect2(DROITE_X,top+316,DROITE,210),"","","","PlayerValueCard"),detailed,Commune.fourchettes(player))
 				if source=="squad": _contrat_resume(D.panel(page,Rect2(DROITE_X,top+542,DROITE,HAUTEUR-top-542-50),"","","","PlayerContractCard"),app,player)
 				else: _formation(D.panel(page,Rect2(DROITE_X,top+542,DROITE,HAUTEUR-top-542-50),"","","","PlayerAcademyCard"),app,player)
 		2:
@@ -405,7 +405,7 @@ static func _attributs(card: Panel, app: Control, player: Dictionary, source: St
 	else:
 		D.text(card,1396,38,"36 ATTRIBUTS",17,Charte.IVOIRE_2,700,240,HORIZONTAL_ALIGNMENT_RIGHT)
 	FicheRoles.bandes(card,Vector2(24,72),Vector2(1372,340),FicheRoles.role(str(FicheRoles.etat(app,player,values).role)))
-	Commune.grille_attributs(card,Vector2(24,72),Vector2(1372,340),values,"PlayerDetailedAttribute_")
+	Commune.grille_attributs(card,Vector2(24,72),Vector2(1372,340),values,"PlayerDetailedAttribute_",{"fourchettes":Commune.fourchettes(player)})
 
 ## Carte Postes et rôles : rôles des postes du joueur (note du rôle + familiarité au poste), qualités du rôle choisi,
 ## terrain des 15 postes coloré par familiarité (fiche_roles.gd), puis courbe des notes de match.
@@ -491,7 +491,7 @@ static func _ligne(card: Panel, y: float, libelle: String, valeur: String, coule
 	return texte
 
 ## Trois points forts et trois points à travailler sur les 36 attributs.
-static func _valeur(card: Panel, values: Dictionary) -> void:
+static func _valeur(card: Panel, values: Dictionary, fourchettes: Dictionary = {}) -> void:
 	_titre(card,"VALEUR","SUR 36 ATTRIBUTS")
 	var paires := Commune.points(values)
 	if values.is_empty():
@@ -506,7 +506,10 @@ static func _valeur(card: Panel, values: Dictionary) -> void:
 			var y := 124.0 + i * 30
 			D.text(card,x,y,str(entree[1]),19,Charte.IVOIRE,500,200,HORIZONTAL_ALIGNMENT_LEFT,true)
 			D.bar(card,Rect2(x+214,y-10,90,5),float(entree[2]),Charte.IVOIRE_2)
-			D.text(card,x+360,y,PlayerAttributes.caption(entree[2]),20,Charte.couleur_attribut(entree[2]),700,46,HORIZONTAL_ALIGNMENT_RIGHT).name = ("PlayerStrength_" if k == 0 else "PlayerWeakness_") + str(entree[0])
+			# Qualité encore en fourchette (option de carrière) : la fourchette, jamais la valeur exacte.
+			var plage: Variant = fourchettes.get(entree[0])
+			var texte_valeur := "%d-%d" % [int(plage.min), int(plage.max)] if plage is Dictionary else PlayerAttributes.caption(entree[2])
+			D.text(card,x+360,y,texte_valeur,20,Charte.couleur_attribut(entree[2]),700,80,HORIZONTAL_ALIGNMENT_RIGHT).name = ("PlayerStrength_" if k == 0 else "PlayerWeakness_") + str(entree[0])
 
 ## Contrat en résumé (Vue d'ensemble) : salaire, échéance, prolongation, action.
 static func _contrat_resume(card: Panel, app: Control, player: Dictionary) -> void:

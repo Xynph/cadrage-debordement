@@ -1074,6 +1074,7 @@ function createBridge(options={}){
      if(command==='new_career'){
       if(!legacyModes&&payload.mode!==WORLD_ONLY_MODE)throw Error('Seul le mode Monde est disponible pour une nouvelle carrière.');
       if(payload.varyCurrent!==undefined&&typeof payload.varyCurrent!=='boolean')throw Error('Option de variation du niveau actuel invalide.');
+      if(payload.qualites!==undefined&&!['precises','fourchette'].includes(payload.qualites))throw Error('Option « Qualités des joueurs » invalide.');
       if(payload.varyPotential!==undefined||payload.careerVariation!==undefined||payload.seed!==undefined)throw Error('Le potentiel varie à chaque nouvelle carrière ; paramètres de variation non autorisés.');
       if(payload.start!==undefined&&!repriseStarts.includes(payload.start))throw Error('Départ de partie invalide.');
       // Défi de départ : {id, club}, recalculé sur le catalogue (jamais repris tel quel du client).
@@ -1129,9 +1130,9 @@ function createBridge(options={}){
      }else if(command==='pack_select'){
       if(payload.scope!=='career'||!run('!!S?.commonDatabase'))throw Error('Sélection réservée à une carrière de base commune.');const pack=payload.id==='base'?null:packs.get(payload.id);if(payload.id!=='base'&&!pack)throw Error('Pack non installé.');if(pack&&pack.meta.databaseId!==run('S.commonDatabase.id'))throw Error('Pack incompatible avec cette édition.');ctx.nativeBinding=pack?{id:pack.meta.id,digest:pack.meta.digest}:null;run('if(nativeBinding)S.identityPack=nativeBinding;else delete S.identityPack');
      }else if(command==='new_career'&&payload.mode==='custom'){
-      run("nativeSystems.domain('customCompetition').prepareCreation((({varyCurrent,...custom})=>custom)(nativePayload))");
+      run("nativeSystems.domain('customCompetition').prepareCreation((({varyCurrent,qualites,...custom})=>custom)(nativePayload))");
       protectCurrent('nouvelle-carriere',priorSeed,priorClock);
-      run("nativeSystems.domain('customCompetition').create((({varyCurrent,...custom})=>custom)(nativePayload))");
+      run("nativeSystems.domain('customCompetition').create((({varyCurrent,qualites,...custom})=>custom)(nativePayload))");
       if(run("typeof aiRosterPopulationActive==='function'&&aiRosterPopulationActive(S)"))run('CDStaffCareer.initialize(S)');
      }else if(command==='new_career'){
        const mode=payload.mode??'fiction',worldEdition=worldEditions.forMode(mode),selectedClub=payload.nationalRole==='nation'?0:payload.club;if(!worldEdition&&!['fiction','france','common'].includes(mode))throw Error('Mode de carrière invalide.');if(!Number.isInteger(selectedClub)||selectedClub<0||(worldEdition?!worldEdition.playable.includes(selectedClub):selectedClub>=(mode==='fiction'?14:30)))throw Error('Club invalide pour ce mode.');ctx.nativePayload.club=selectedClub;protectCurrent('nouvelle-carriere',priorSeed,priorClock);if(worldEdition){/* Rubrique « talents » du pack de création (potentiels relevés, joueurs ajoutés) : lue par CDWorldCareer.start, par identifiants seulement. */const talentPack=creation(mode)!=='base'?packs.get(creation(mode)):null;ctx.nativePackTalents=talentPack?.meta.databaseId===edition(mode)&&talentPack.talents?talentPack.talents:null;try{run('CDWorldCareer.start(nativePayload.club,nativePayload.mode,'+(options.dailyCalendar===true)+')');}finally{ctx.nativePackTalents=null;}}if(payload.detailedLeagues!==undefined){if(!worldEdition)throw Error('Championnats actifs : réservé à la carrière Monde.');run('CDLeagueDetail.create(S,nativePayload.detailedLeagues)');}else run("if(nativePayload.mode==='common')CDCommonCareer.start(nativePayload.club);else start(nativePayload.club,nativePayload.mode??'fiction')");if(ctx.nativeDefi)run(defisDepart.VM_APPLIQUER);if(worldEdition)run('nativeSystems.domain("clubStrategy").presidentObjective()');if((worldEdition||mode==='common')&&creation(mode)!=='base'){const selected=packs.get(creation(mode));if(!selected)throw Error('Pack de création absent ; réimporte-le ou choisis Base.');if(selected.meta.databaseId!==edition(mode))throw Error('Pack incompatible avec cette édition.');ctx.nativeBinding={id:selected.meta.id,digest:selected.meta.digest};run('S.identityPack=nativeBinding');}
@@ -1285,6 +1286,9 @@ function createBridge(options={}){
       run('CDNativeAcademyGroups.start(S)');
       ctx.nativeCreationVariation={version:1,seed:priorSeed,varyCurrent:payload.varyCurrent??true};
       run('nativeProfessionalDepth.fill(S);nativeCareerVariation.apply(S,nativeCreationVariation);nativeAttributeStore.complete(S);');
+      // Option « Qualités des joueurs » (notation façon FM) : en fourchette tant que le staff ne les a pas assez suivis
+      // (player-knowledge.cjs, suivi). Absente = « Précises » (défaut, carrières d'avant).
+      if(payload.qualites==='fourchette')run("S.qualitesJoueurs={version:1,mode:'fourchette',debut:{season:S.season,week:S.worldMode?.week??S.franceMode?.week??S.round??0}}");
       // Budget de saison réaliste (salaires par niveau, budget du club, centre de formation) : activé par défaut
       // pour les carrières créées (décision de Léo du 13 novembre). CD_SALAIRES_PAR_NIVEAU=0 le coupe (tests,
       // comparaisons). Les carrières déjà commencées gardent leur économie : la marque S.startingSalaries ne se

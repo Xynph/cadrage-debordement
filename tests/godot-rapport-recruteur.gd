@@ -1,8 +1,10 @@
 extends SceneTree
 ## Rapport du recruteur (option A choisie par Léo le 22/11/2026), Godot réel + worker réel, carrière Monde :
 ## - lien « Rapport du recruteur → » de la piste choisie → sous-page « recruteur » (retour + Échap) ;
-## - lettre de l'avis : « ? » tant que la note au poste est inconnue ; note connue → lettre du barème, rang dans notre effectif ;
-## - clic sur la lettre → petite fenêtre visuelle du barème, fermée par ✕ ou Échap ;
+## - lettre de l'avis : « ? » tant que le niveau est inconnu ; connu → lettre du staff sur l'échelle unique E- à S+ (notation
+##   façon FM, choix B de Léo : pastille ronde, palier écrit en pilule), rang dans notre effectif ;
+## - clic sur la lettre → petite fenêtre visuelle du barème (18 pastilles E- à S+), fermée par ✕ ou Échap ;
+## - aucun chiffre de marge de progression : le potentiel est une lettre + une phrase du staff ;
 ## - clic sur une ligne de la liste comparée → fiche (la piste ou notre joueur) ;
 ## - tuiles : indemnité et salaire → offre au joueur, note et potentiel → fiche de la piste ;
 ## - pastilles : transfert (offre au joueur), prêt possible / non (lu dans le moteur, clic = fiche).
@@ -12,6 +14,7 @@ extends SceneTree
 const Flow = preload("helpers/contextual_flow.gd")
 const Pages = preload("res://ui/immersive08/recruitment_pages.gd")
 const Rapport = preload("res://ui/immersive08/rapport_recruteur.gd")
+const Notation = preload("res://ui/notation_staff.gd")
 const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 var app: Control
 var checks := 0
@@ -130,28 +133,37 @@ func lettre_inconnue() -> void:
 	check(str(meta.get("lettre", "")) == "?", "Piste non observée : lettre « ? » (%s)" % meta.get("lettre", ""))
 	check(node("RapportRecruteurConnaissance") != null, "Pastille de connaissance")
 
-## Note connue (piste rendue « bien connue » dans la projection de l'écran) : la meilleure note du poste donne A+ et le rang 1.
+## Note connue (piste rendue « bien connue » dans la projection de l'écran) : lettre du staff de l'échelle unique, rang 1.
 func lettre_connue() -> void:
 	var p := piste()
 	if p.is_empty(): return
 	var numero := Rapport._poste(p)
 	p.knowledge = {"stage": "deep", "owned": false, "version": 1}
 	p.positionRatings = {str(numero): 99}
+	p.ratingRange = {"min": 88, "max": 92}
 	await ouvrir_rapport()
 	var meta: Dictionary = node("RecrutementSubpage_recruteur").get_meta("rapport", {})
-	check(str(meta.get("lettre", "")) == "A+" and int(meta.get("rang", 0)) == 1, "Note connue la meilleure : A+ et rang 1 (%s)" % meta)
+	var attendue := Notation.texte_lettre(int(Notation.resume(app.model, p, false).niveau))
+	check(str(meta.get("lettre", "")) == attendue and attendue in Notation.LETTRES and int(meta.get("rang", 0)) == 1, "Niveau connu : lettre du staff %s (échelle E- à S+) et rang 1 (%s)" % [attendue, meta])
+	var palier := node("RapportRecruteurPalier")
+	check(palier != null and str(palier.get_meta("palier", "")) == str(Notation.resume(app.model, p, false).palier.texte), "Palier écrit en pilule à côté de la lettre")
+	var textes := node("RecrutementSubpage_recruteur").find_children("*", "Label", true, false).map(func(l: Label): return l.text)
+	check(not textes.has("Marge de progression") and not textes.any(func(t: String): return t.begins_with("+") and t.trim_prefix("+").is_valid_int()), "Plus de « Marge de progression +N » chiffrée")
+	check(node("RapportRecruteurPotentiel") != null and node("RapportRecruteurPhrase") != null, "Potentiel : lettre + phrase du staff")
 	check(node("RapportRecruteurLignePiste") != null, "La piste est insérée dans la liste comparée")
 	check(node("RapportRecruteurFamiliarite_0") != null, "Familiarité au poste dans la liste")
 	check(app.root_content.find_children("RapportRecruteurEtoiles*", "", true, false).is_empty(), "Plus d'étoiles de poste dans la liste")
 	var pour: Array = app.root_content.find_children("RapportRecruteurPour_*", "Button", true, false)
 	check(not pour.is_empty(), "Au moins un « Pour »")
-	# Barème validé par Léo : écart avec notre n° 1.
-	for cas: Array in [[5.0, "A+"], [0.0, "A"], [-3.0, "B+"], [-8.0, "B"], [-12.0, "C+"], [-16.0, "C"], [-17.0, "D"]]:
-		check(str(Rapport.lettre(cas[0])[0]) == cas[1], "Barème : écart %s → %s" % cas)
+	# Une seule échelle dans le jeu : plus de barème A+ … D propre au recruteur.
+	check(not "lettre" in (Rapport as Script).get_script_method_list().map(func(m: Dictionary): return str(m.name)) and Notation.LETTRES.size() == 18, "Ancienne échelle A+ … D retirée")
 
 func bareme() -> void:
 	check(await press("RapportRecruteurLettre"), "Lettre cliquable")
-	check(node("RapportRecruteurBareme") != null and node("Bareme_Aplus") != null, "Lettre → petite fenêtre du barème")
+	var pastilles := 0
+	for l: String in Notation.LETTRES:
+		if node("Bareme_" + l.replace("+", "plus").replace("-", "moins")) != null: pastilles += 1
+	check(node("RapportRecruteurBareme") != null and pastilles == 18 and node("BaremeRang") != null, "Lettre → petite fenêtre du barème E- à S+ (%d pastilles)" % pastilles)
 	check(await press("RapportRecruteurBaremeFermer"), "✕ de la petite fenêtre")
 	await settle(4)
 	check(node("RapportRecruteurBareme") == null, "✕ ferme le barème")

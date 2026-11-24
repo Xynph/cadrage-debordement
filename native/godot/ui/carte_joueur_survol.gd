@@ -439,7 +439,7 @@ static func _corps(carte: Panel, app: Control, player: Dictionary, source: Strin
 	var valeurs: Dictionary = commune.valeurs(player, source)
 	var grille := _panneau(carte, Rect2(24, y, largeur - 48, 384), Charte.PANNEAU)
 	grille.name = "CarteJoueurAttributs"
-	commune.grille_attributs(grille, Vector2(20, 14), Vector2(largeur - 88, 350), valeurs, "CarteJoueurAttribut_", {"titre": 22, "libelle": 19, "valeur": 26, "pas": 36, "ecart": 30, "corps": false, "mot_moyenne": false})
+	commune.grille_attributs(grille, Vector2(20, 14), Vector2(largeur - 88, 350), valeurs, "CarteJoueurAttribut_", {"titre": 22, "libelle": 19, "valeur": 26, "pas": 36, "ecart": 30, "corps": false, "mot_moyenne": false, "fourchettes": commune.fourchettes(player)})
 	y += 384.0 + 18.0
 	var h := 236.0
 	var w1 := 330.0

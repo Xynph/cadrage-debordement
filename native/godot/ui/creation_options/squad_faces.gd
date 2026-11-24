@@ -43,7 +43,8 @@ static func build(app: Control, parent: Node, selected: Dictionary, data: Dictio
 	_qualites(app, column)
 
 ## Option façon FM (planche notation 24/11) : qualités des joueurs « Précises » (défaut) ou « En fourchette » tant que
-## le joueur n'est pas assez observé. Un clic choisit et valide. Planche : choix gardé à l'écran, pas encore envoyé au moteur.
+## le joueur n'est pas assez observé. Un clic choisit et valide ; envoyé avec la création (option `qualites`), sauvegardé
+## dans la carrière (player-knowledge.cjs : qualités de nos joueurs peu suivis en fourchette).
 const QUALITES := [["precises", "Précises", "check"], ["fourchette", "En fourchette tant que pas observé", "search"]]
 
 static func _qualites(app: Control, column: Node) -> void:
@@ -159,7 +160,7 @@ static func _ghost_card(row: HBoxContainer, role: Array) -> void:
 	big.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	card.add_child(big)
 
-## Sans visages du moteur : l'effectif agrégé du catalogue (note moyenne, avants, arrières, atout).
+## Sans visages du moteur : l'effectif agrégé du catalogue (niveau en palier écrit, avants, arrières, atout).
 static func _aggregate(row: HBoxContainer, selected: Dictionary) -> void:
 	var roster: Dictionary = selected.get("startingRoster", {}) if selected.get("startingRoster") is Dictionary else {}
 	var card := _frame(row, "CreationSquadAggregate")
@@ -173,7 +174,7 @@ static func _aggregate(row: HBoxContainer, selected: Dictionary) -> void:
 		vide.mouse_filter = Control.MOUSE_FILTER_PASS
 		card.add_child(vide)
 		return
-	Kit.figure(figures, String.num(float(roster.get("average", 0)), 1).replace(".", ","), "note moyenne", Editorial.RAIL_GOLD, 38)
+	Kit.figure(figures, str(Kit.entry().call("_rating", roster)), "niveau", Editorial.RAIL_GOLD, 26)
 	Kit.divider(figures)
 	Kit.figure(figures, str(int(roster.get("forwards", 0))), "avants", C.IVORY, 38)
 	Kit.divider(figures)

@@ -279,13 +279,16 @@ func _tuiles(joueurs: Array, saison: int) -> void:
 	var tendance := ""
 	if xv.has("evolution"):
 		var e: float = xv.evolution
-		tendance = "—" if absf(e) < .05 else ("▲ +" if e > 0 else "▼ −") + _decimal(absf(e))
+		# Notation façon FM : sens de l'évolution seulement, jamais l'écart chiffré.
+		tendance = "—" if absf(e) < .05 else ("▲" if e > 0 else "▼")
 	var etroit := _etroit()
 	var definitions := [
 		{"id": "Aptes", "cap": "APTES ▾", "val": str(joueurs.size() - indispos), "suf": "/ %d" % joueurs.size(), "l": 250.0 if not etroit else 210.0, "act": "aptes", "aide": "Joueurs aptes : survol pour l’équilibre par poste, clic pour ne garder qu’eux."},
 		{"id": "Indisponibles", "cap": "INDISPONIBLES", "val": str(indispos), "suf": " · ".join(detail) if not etroit else "", "l": 330.0 if not etroit else 250.0, "act": "indisponibles", "aide": "Indisponibles : " + (" · ".join(detail) if not detail.is_empty() else "aucun")},
 		{"id": "Contrats", "cap": "FINS DE CONTRAT", "val": str(fins), "suf": "cette saison", "l": 290.0 if not etroit else 250.0, "act": "fin", "aide": "Contrats qui s’achèvent cette saison."},
-		{"id": "Niveau", "cap": "NIVEAU MOYEN DU XV", "val": _decimal(xv.moyenne) if xv.has("moyenne") else "—", "suf": tendance if not etroit else "", "l": 360.0 if not etroit else 270.0, "act": "niveau", "aide": "Niveau moyen des quinze titulaires (clic : trier par niveau)." + ("\n" + ("Stable cette saison" if tendance == "—" else tendance + " cette saison") if not tendance.is_empty() else "")},
+		# Notation façon FM (choix B de Léo) : palier du XV écrit (absolu, vague), jamais la moyenne chiffrée.
+		{"id": "Niveau", "cap": "NIVEAU DU XV", "val": str(Notation.palier_groupe(xv.moyenne).texte) if xv.has("moyenne") else "—", "taille": 36, "suf": tendance if not etroit else "", "l": 470.0 if not etroit else 340.0, "act": "niveau", "aide": "Niveau des quinze titulaires (clic : trier par niveau)." + ("
+" + ("Stable cette saison" if tendance == "—" else ("En progrès" if tendance == "▲" else "En baisse") + " cette saison") if not tendance.is_empty() else "")},
 	]
 	var x := LARGEUR
 	for i in range(definitions.size() - 1, -1, -1):
@@ -309,9 +312,10 @@ func _tuile(zone: Rect2, d: Dictionary) -> void:
 	D.place(tuile, zone)
 	load("res://ui/retour_tuile.gd").brancher(tuile, tuile, C.px(16))
 	D.text(tuile, 16, 28, d.cap, 17, C.MUTED, 700, zone.size.x - 28)
-	var valeur := _italique(D.text(tuile, 16, 72, d.val, 48, C.IVORY, 800, 200), false)
+	var taille := int(d.get("taille", 48))
+	var valeur := _italique(D.text(tuile, 16, 72 if taille >= 40 else 70, d.val, taille, C.IVORY, 800, zone.size.x - 60 if taille < 40 else 200.0), false)
 	valeur.name = "EffectifTuileValeur"
-	var l := _largeur(str(d.val), 48, false, 800)
+	var l := _largeur(str(d.val), taille, false, 800)
 	if not str(d.suf).is_empty():
 		D.text(tuile, 16 + l + 12, 68, d.suf, 18, C.MUTED, 500, zone.size.x - l - 40, HORIZONTAL_ALIGNMENT_LEFT, true).name = "EffectifTuileDetail"
 	var marque_active := _marqueur(tuile, Rect2(0, 0, 6, zone.size.y))
@@ -1425,7 +1429,8 @@ func _definitions_totaux(players: Array) -> Array:
 	return [
 		{"id": "Joueurs", "v": str(t.n), "cap": "joueurs", "c": Charte.IVOIRE, "act": func(): _tous_les_joueurs()},
 		{"id": "Lignes", "v": "%d · %d" % [t.avants, t.arrieres], "cap": "av. · arr.", "c": Charte.IVOIRE, "act": func(): _toggle_sort("Poste")},
-		{"id": "Niveau", "v": "—" if t.niveau == null else str(roundi(float(t.niveau))), "cap": "niveau moyen", "c": Charte.couleur_attribut(t.niveau) if t.niveau != null else Charte.IVOIRE, "act": func(): _toggle_sort("Niveau")},
+		# Notation façon FM : lettre moyenne de la liste, relative à notre effectif (jamais la moyenne chiffrée).
+		{"id": "Niveau", "v": "—" if t.niveau == null else Notation.texte_lettre(Notation.indice(t.niveau, Notation.reference_effectif(app.model))), "cap": "niveau moyen", "c": Notation.couleur(Notation.indice(t.niveau, Notation.reference_effectif(app.model))).lightened(.15) if t.niveau != null else Charte.IVOIRE, "act": func(): _toggle_sort("Niveau")},
 		{"id": "Condition", "v": "—" if t.condition == null else "%d %%" % roundi(float(t.condition)), "cap": "condition moy.", "c": Charte.CONDITION, "act": func(): _toggle_sort("Condition")},
 		{"id": "Moral", "v": str(roundi(float(app.model.get("meta", {}).get("morale", 0)))) if app.model.get("meta", {}).get("morale") != null else "—", "cap": "moral", "c": Charte.MORAL, "act": func(): app._navigate("Vestiaire")},
 		{"id": "Age", "v": Listes.decimal(t.age), "cap": "âge moyen", "c": Charte.IVOIRE, "act": func(): _toggle_sort("Âge")},

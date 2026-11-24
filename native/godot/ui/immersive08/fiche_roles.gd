@@ -175,10 +175,13 @@ static func _bouton(parent: Control, zone: Rect2, id: String, choisi: bool, acti
 	D.place(b, zone)
 	return b
 
-static func _qualite(parent: Control, x: float, y: float, cle: String, valeur: Variant, couleur: Color, largeur: float) -> void:
+## `plage` : {min, max} quand la qualité est encore en fourchette (option de carrière) : « 58-66 », jamais la valeur.
+static func _qualite(parent: Control, x: float, y: float, cle: String, valeur: Variant, couleur: Color, largeur: float, plage: Variant = null) -> void:
 	D.rect(parent, Rect2(x, y - 13, 12, 12), couleur, 6)
+	var en_plage: bool = plage is Dictionary and plage.has("min") and plage.has("max")
 	D.text(parent, x + 20, y, libelle(cle), 18, Charte.IVOIRE, 500, largeur - 66, HORIZONTAL_ALIGNMENT_LEFT, true)
-	var chiffre := D.text(parent, x + largeur, y, PlayerAttributes.caption(valeur), 20, Charte.couleur_attribut(valeur), 700, 44, HORIZONTAL_ALIGNMENT_RIGHT)
+	var texte := "%d-%d" % [int(plage.min), int(plage.max)] if en_plage else PlayerAttributes.caption(valeur)
+	var chiffre := D.text(parent, x + largeur, y, texte, 17 if en_plage else 20, Charte.couleur_attribut(valeur), 700, 46, HORIZONTAL_ALIGNMENT_RIGHT)
 	chiffre.name = "PlayerRoleQuality_" + cle
 
 ## Haut de la carte (zone 0-1420 × 60-280) ; la courbe des notes reste dessous.
@@ -213,12 +216,13 @@ static func carte(card: Control, app: Control, player: Dictionary, values: Dicti
 		Familiarite.poser(card, 556, y + 20, Familiarite.niveau(player, int(item.numero)), 17, "PlayerRoleFamiliarite_" + str(r[0]))
 		y += 29
 	var r: Array = role(str(e.role))
+	var plages: Dictionary = player.get("attributesV2Range") if player.get("attributesV2Range") is Dictionary else {}
 	if not r.is_empty():
 		D.text(card, 690, 86, "%s · %s" % [str(r[2]).to_upper(), POSTE[r[1]].to_upper()], 16, Charte.IVOIRE_2, 700, 460).name = "PlayerRoleChoisi"
 		for k in 2:
 			var ligne := 116.0
 			for cle: String in r[3 + k]:
-				_qualite(card, 690 + k * 262, ligne, cle, values.get(cle), CLE if k == 0 else UTILE, 240)
+				_qualite(card, 690 + k * 262, ligne, cle, values.get(cle), CLE if k == 0 else UTILE, 240, plages.get(cle))
 				ligne += 30
 		D.rect(card, Rect2(690, 254, 12, 12), CLE, 6)
 		D.text(card, 708, 266, "Clé", 16, CLE, 700, 60)

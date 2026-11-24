@@ -172,7 +172,7 @@ static func construire(app: Control, player: Dictionary, source: String) -> Pane
 	D.line(fiche, Vector2(20, 250), Vector2(LARGEUR - 20, 250), Charte.FILET)
 	# Les 36 attributs (familles réelles du jeu), « — » s'ils sont inconnus.
 	var valeurs: Dictionary = commune.valeurs(player, source)
-	commune.grille_attributs(fiche, Vector2(26, 262), Vector2(808, 300), valeurs, "MiniFicheAttribut_", {"titre":15, "libelle":17, "valeur":19, "pas":28, "ecart":16, "corps":false, "mot_moyenne":false})
+	commune.grille_attributs(fiche, Vector2(26, 262), Vector2(808, 300), valeurs, "MiniFicheAttribut_", {"titre":15, "libelle":17, "valeur":19, "pas":28, "ecart":16, "corps":false, "mot_moyenne":false, "fourchettes":commune.fourchettes(player)})
 	D.line(fiche, Vector2(20, 566), Vector2(LARGEUR - 20, 566), Charte.FILET)
 	# Aucune phrase d'aide (règle du 21/11) : ni « 36 attributs, note de 1 à 100 », ni « Clic : … », ni « I : aperçu… ».
 	if valeurs.is_empty():

@@ -1,5 +1,6 @@
 extends SceneTree
 const ContextualFlow = preload("helpers/contextual_flow.gd")
+const Notation = preload("res://ui/notation_staff.gd")
 
 var checks := 0
 var failures: Array[String] = []
@@ -921,8 +922,11 @@ func families() -> void:
 			check(matches.size()==1 and app.find_child("AcademyImmersiveDossier",true,false)==null and app.find_child("AcademyName_"+str(selected).validate_node_name(),true,false)!=null,"Formation : nom de l'Espoir cliquable, sans dossier fixe")
 			if matches.size()==1 and app.navigation_controller.open_entity({"kind":"academy","id":str(selected)}):
 				await settle()
-				var general := app.find_child("PlayerGlobalRating",true,false) as Label
-				check(app.route=="Formation" and general!=null and general.text==str(int(matches[0].rating)),"La fiche d'un Espoir montre son vrai niveau général, pas la note au poste")
+				# Notation façon FM (choix B de Léo, 24/11) : lettre du staff en pastille ronde, estimée sur le niveau général
+				# (jamais la note au poste), aucun chiffre du moteur.
+				var general := app.find_child("PlayerGlobalRating",true,false) as Control
+				var attendue := Notation.texte_lettre(int(Notation.resume(app.model,matches[0],true).niveau))
+				check(app.route=="Formation" and general!=null and str(general.get_meta("lettre",""))==attendue and general.find_children("*","Label",true,false).all(func(l: Label): return not l.text.is_valid_int()),"La fiche d'un Espoir montre la lettre du staff sur son niveau général, sans chiffre : "+(str(general.get_meta("lettre","")) if general!=null else "absente")+" / "+attendue)
 				check(app.find_child("FullPlayerTab4",true,false)!=null,"Fiche d'un Espoir : onglet Développement (suivi individuel sans fenêtre)")
 				app._navigate("Formation")
 				await settle()
@@ -1563,8 +1567,15 @@ func run() -> void:
 					check(not choisi.is_empty() and app.find_child("RoleCle_"+str(choisi[3][0]),true,false)!=null and app.find_child("RoleUtile_"+str(choisi[4][0]),true,false)!=null,"Clic sur un rôle : qualités clés (vert) et utiles (bleu) surlignées dans la grille")
 					check(app.find_child("PlayerRoleSelection",true,false)!=null and app.find_child("PlayerRoleSien",true,false)!=null,"Rôle choisi bien marqué, et « Son rôle » reste visible après un autre choix")
 					full=app.find_child("ImmersivePlayerFull",true,false)
-				var global_rating := full.find_child("PlayerGlobalRating",true,false) as Label
-				check(global_rating != null and global_rating.text.to_int() == int(target.rating), "Note globale exacte dans la fiche complète")
+				# Notation façon FM (choix B) : lettre du staff ronde + palier écrit en pilule + phrase de potentiel, aucun chiffre.
+				var global_rating := full.find_child("PlayerGlobalRating",true,false) as Control
+				var note_attendue := Notation.resume(app.model,target,true)
+				check(global_rating != null and str(global_rating.get_meta("lettre","")) == Notation.texte_lettre(int(note_attendue.niveau)), "Lettre du staff dans la fiche complète")
+				var palier := full.find_child("PlayerPalier",true,false) as Control
+				check(palier != null and str(palier.get_meta("palier","")) == str(note_attendue.palier.texte) and palier.size.y > palier.size.x * .1, "Palier écrit dans une pilule : " + (str(palier.get_meta("palier","")) if palier != null else "absent"))
+				check(full.find_child("PlayerGlobalPotential",true,false) != null and full.find_child("PlayerPotentielPhrase",true,false) != null, "Potentiel : lettre + phrase du staff")
+				var hero_chiffres := (full.find_child("PlayerGlobalRating",true,false).get_parent() as Control).find_children("*","Label",true,false).filter(func(l: Label): return l.text == str(int(target.rating)) or l.text == "/ 100")
+				check(hero_chiffres.is_empty(), "Aucun chiffre du moteur à côté de la lettre (niveau ou « / 100 »)")
 				check(app.find_child("ProfilePlayerName",true,false).text.to_lower()==str(target.name).to_lower(),"Identité exacte dans la fiche complète")
 				check(app.find_child("OpenPlayerCoachNote",true,false)!=null,"Carnet personnel conservé sur la fiche")
 				await capture("04-fiche-joueur-2560x1440")

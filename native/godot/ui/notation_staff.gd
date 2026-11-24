@@ -7,7 +7,8 @@ extends RefCounted
 ##   • le potentiel en PHRASE par cran de marge (beaucoup / de la marge / peu / en déclin / staff incertain), tournure
 ##     tirée selon le staff et le joueur (empreinte fixe, jamais de hasard à l'affichage).
 ## Aucun chiffre du moteur n'est affiché. Le calcul du Niveau par poste et rôle (native/engine/niveau-calcule.cjs) n'est
-## pas encore branché : l'estimation part de la valeur cachée actuelle. Variante d'affichage : CD_VARIANTE_VISUELLE=A|B.
+## pas encore branché : l'estimation part de la valeur cachée actuelle. Affichage choisi par Léo (24/11, option B) :
+## lettre dans une pastille ronde, palier écrit dans une pilule.
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const Charte = preload("res://ui/charte.gd")
@@ -34,9 +35,6 @@ const PHRASES := {
 	"incertain": ["Le staff hésite", "Difficile à cerner", "À revoir avant de juger"],
 }
 const COULEUR_PHRASE := {"beaucoup": Color("14D24A"), "marge": Color("7fbf7a"), "peu": Color("d4aa1c"), "declin": Color("d9634f"), "incertain": Color("abb7b1")}
-
-static func variante() -> String:
-	return "B" if OS.get_environment("CD_VARIANTE_VISUELLE").strip_edges().to_upper() == "B" else "A"
 
 static func _empreinte(texte: String) -> float:
 	# FNV-1a 32 bits → [-1, 1] : fixe pour un couple (staff, joueur), comme l'erreur du jugement du staff.
@@ -162,42 +160,32 @@ static func resume(model: Dictionary, p: Dictionary, notre: bool) -> Dictionary:
 static func texte_lettre(i: int) -> String:
 	return LETTRES[i] if i >= 0 else "?"
 
-## Pastille lettre. A : case arrondie (rayon 6) ; B : pastille ronde. Renvoie la largeur posée.
+## Pastille lettre ronde (choix B de Léo). Renvoie la largeur posée.
 static func pastille(parent: Control, x: float, centre_y: float, i: int, taille: float, nom: String = "") -> float:
-	var rond := variante() == "B"
-	var h := taille
-	var l := taille if rond else taille * 1.18
-	var fond := D.rect(parent, Rect2(x, centre_y - h / 2.0, l, h), couleur(i), int(h / 2.0) if rond else 6)
+	var fond := D.rect(parent, Rect2(x, centre_y - taille / 2.0, taille, taille), couleur(i), int(taille / 2.0))
 	if not nom.is_empty(): fond.name = nom
 	fond.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var t := D.text(fond, l / 2.0, h * 0.74, texte_lettre(i), int(h * 0.6), couleur_texte(i), 800, l, HORIZONTAL_ALIGNMENT_CENTER)
+	fond.set_meta("lettre", texte_lettre(i))
+	var t := D.text(fond, taille / 2.0, taille * 0.74, texte_lettre(i), int(taille * 0.6), couleur_texte(i), 800, taille, HORIZONTAL_ALIGNMENT_CENTER)
 	t.add_theme_font_override("font", Charte.TITRE_FICHE)
 	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	return l
+	return taille
 
-## Palier. A : jauge 4 crans (famille(s) allumée(s)) + mot ; B : mot seul dans une pilule. Renvoie la largeur posée.
+## Palier écrit dans une pilule (choix B de Léo). Renvoie la largeur posée.
 static func poser_palier(parent: Control, x: float, centre_y: float, pal: Dictionary, taille: int, largeur_max: float, nom: String = "") -> float:
 	var texte := str(pal.texte)
-	if variante() == "B":
-		var police: Font = C.font(700)
-		var lt := police.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(taille + 3))).x / C.density + 32
-		lt = minf(lt, largeur_max)
-		var h := taille * 1.9
-		var fond := D.rect(parent, Rect2(x, centre_y - h / 2.0, lt, h), Charte.PANNEAU_2, int(h / 2.0), Color(Charte.CREME, .35))
-		if not nom.is_empty(): fond.name = nom
-		D.text(fond, lt / 2.0, h * 0.70, texte, taille + 3, Charte.CREME, 700, lt, HORIZONTAL_ALIGNMENT_CENTER)
-		return lt
-	var cran_l := taille * 0.9
-	var cran_h := taille * 0.9
-	var g := Control.new()
-	g.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if not nom.is_empty(): g.name = nom
-	parent.add_child(g)
-	D.place(g, Rect2(x, centre_y - cran_h / 2.0, 4 * (cran_l + 4), cran_h))
-	for f in 4:
-		var allume: bool = int(pal.bas) >= 0 and f >= int(pal.bas) and f <= int(pal.haut)
-		var c := Charte.DORE if allume else Color(Charte.CREME, .14)
-		D.rect(g, Rect2(f * (cran_l + 4), cran_h * (0.55 - 0.15 * f), cran_l, cran_h * (0.45 + 0.15 * f)), c, 2)
-	var x_texte := x + 4 * (cran_l + 4) + 8
-	D.text(parent, x_texte, centre_y + taille * 0.36, texte, taille, Charte.CREME, 700, largeur_max - (x_texte - x), HORIZONTAL_ALIGNMENT_LEFT, true)
-	return largeur_max
+	var police: Font = C.font(700)
+	var lt := police.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(taille + 3))).x / C.density + 32
+	lt = minf(lt, largeur_max)
+	var h := taille * 1.9
+	var fond := D.rect(parent, Rect2(x, centre_y - h / 2.0, lt, h), Charte.PANNEAU_2, int(h / 2.0), Color(Charte.CREME, .35))
+	if not nom.is_empty(): fond.name = nom
+	fond.set_meta("palier", texte)
+	D.text(fond, lt / 2.0, h * 0.70, texte, taille + 3, Charte.CREME, 700, lt, HORIZONTAL_ALIGNMENT_CENTER)
+	return lt
+
+## Palier d'un groupe (création de carrière, XV de l'Effectif) : même échelle absolue et vague que celui d'un joueur,
+## à partir d'un niveau moyen ; « Entre … et … » à moins de 2 points d'une frontière. Aucun chiffre montré.
+static func palier_groupe(moyenne: Variant) -> Dictionary:
+	if not K.number(moyenne) or float(moyenne) <= 0.0: return {"texte": "Palier inconnu", "bas": -1, "haut": -1}
+	return palier({"niveau": float(moyenne), "largeur": 2.0 / 0.7})

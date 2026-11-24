@@ -294,9 +294,8 @@ static func _sujet(app: Control, page: Control, f: Control, zone: Rect2, d: Dict
 	f.add_child(ligne)
 	D.place(ligne, Rect2(x0, y + 96, zone.size.x - 28, 74))
 	ligne.pressed.connect(_fermer(page))
-	var lettre := D.text(ligne, 40, 56, str(r.lettre), 50, r.couleur, 800, 80, HORIZONTAL_ALIGNMENT_CENTER)
-	lettre.add_theme_font_override("font", Charte.TITRE_FICHE)
-	lettre.name = "AgentRapportLettre"
+	# Lettre du staff en pastille ronde (échelle unique E- à S+, notation_staff.gd).
+	load("res://ui/notation_staff.gd").pastille(ligne, 12, 37, int(r.indice), 56, "AgentRapportLettre")
 	Kit.etiquette(ligne, 100, 26, "Note au poste", 160)
 	Familiarite.poser_note(ligne, 100, 62, float(r.note), 30, 60, "AgentNotePoste").add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 	Kit.etiquette(ligne, 270, 26, "Familiarité", 200)

@@ -141,7 +141,7 @@ func _heading() -> void:
 	var capacite: Variant = recruitment.get("capacity")
 	var tuiles := [
 		["ESPOIRS", G.n(roster.size()), "%d U18 · %d U21" % [u18, roster.size() - u18], "AcademyTileEspoirs", func(): _fixer("status", ""), 262.0],
-		["PÉPITES", "★ " + G.n(pepites), "potentiel ≥ 85", "AcademyTilePepites", func(): _fixer("status", "pepite"), 262.0],
+		["PÉPITES", "★ " + G.n(pepites), "gros potentiel", "AcademyTilePepites", func(): _fixer("status", "pepite"), 262.0],
 		["À DÉCIDER", G.n(decider), "contrat à trancher", "AcademyTileDecider", func(): _fixer("status", "decide"), 262.0],
 		["PLACES PRO LIBRES", G.n(places) if places is int or places is float else "—", "sur l’effectif de %s" % G.n(capacite) if capacite is int or capacite is float else "à l’effectif", "AcademyTilePlaces", func(): app._navigate("Effectif"), 300.0],
 	]
@@ -693,11 +693,18 @@ func _drapeau(parent: Control, p: Dictionary, zone: Rect2) -> void:
 
 # --- Décision du jeune choisi ------------------------------------------------------------------------------------------
 
+## Lettres du staff d'un jeune : [niveau, potentiel] (échelle E- à S+, relative à notre effectif).
+func _lettres(p: Dictionary) -> Array:
+	var note := Notation.resume(app.model, p, true)
+	return [Notation.texte_lettre(int(note.niveau)), Notation.texte_lettre(int(note.potentiel))]
+
 ## Raison écrite de chaque ligne de la file « À décider » (données réelles du jeune uniquement).
 func _raison(p: Dictionary) -> String:
 	var parts: Array[String] = []
-	var niveau := G.rating_text(p, true)
-	var potentiel := G.potential_text(p)
+	# Notation façon FM : lettres du staff (E- à S+), jamais les chiffres du moteur.
+	var lettres := _lettres(p)
+	var niveau: String = lettres[0]
+	var potentiel: String = lettres[1]
 	if _a_decider(p):
 		parts.append("Contrat d’espoir à trancher cette saison : %s avant qu’un autre club ne s’y intéresse." % ("le promouvoir" if development.get("promotionAvailable", false) else "décide de son avenir"))
 	if _pepite(p): parts.append("Pépite : potentiel estimé %s, niveau %s." % [potentiel, niveau])
@@ -858,8 +865,10 @@ func _pastilles_raison(p: Dictionary) -> HFlowContainer:
 	var flux := HFlowContainer.new()
 	flux.add_theme_constant_override("h_separation", C.px(8))
 	flux.add_theme_constant_override("v_separation", C.px(6))
-	var niveau := G.rating_text(p, true)
-	var potentiel := G.potential_text(p)
+	# Notation façon FM : lettres du staff (E- à S+), jamais les chiffres du moteur.
+	var lettres := _lettres(p)
+	var niveau: String = lettres[0]
+	var potentiel: String = lettres[1]
 	if _a_decider(p):
 		var bulle := "Contrat d’espoir à trancher cette saison : %s avant qu’un autre club ne s’y intéresse." % ("le promouvoir" if development.get("promotionAvailable", false) else "décide de son avenir")
 		flux.add_child(Pastilles.pastille("À trancher", Pastilles.ORANGE, "clock", bulle, 18))
@@ -1014,7 +1023,8 @@ func _ligne_personne(parent: Control, p: Dictionary, zone: Rect2, avec_potentiel
 	Kit.texte(ligne, 360, 26, "%s · %s ans" % [str(p.get("pos", "Carrière")), G.n(p.get("age", "—"))], Charte.IVOIRE_2, zone.size.x - 520, 17)
 	if avec_potentiel:
 		var potentiel: Variant = G.knowledge_sort_value(p, "potential")
-		D.text(ligne, zone.size.x - 14, 27, ("★ " if _pepite(p) else "") + G.potential_text(p), 20, Charte.couleur_attribut(potentiel) if potentiel != null else Charte.IVOIRE_3, 700, 160, HORIZONTAL_ALIGNMENT_RIGHT)
+		var note_pot := Notation.resume(app.model, p, true)
+		D.text(ligne, zone.size.x - 14, 27, ("★ " if _pepite(p) else "") + "Pot. " + Notation.texte_lettre(int(note_pot.potentiel)), 20, Notation.couleur(int(note_pot.potentiel)).lightened(.15) if potentiel != null else Charte.IVOIRE_3, 700, 160, HORIZONTAL_ALIGNMENT_RIGHT)
 
 func _prospects() -> Array:
 	var prospects := roster.duplicate()

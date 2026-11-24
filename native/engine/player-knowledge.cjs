@@ -43,7 +43,7 @@ function factory(){
  }
  function players(s){
   const found=new Map();
-  const add=(p,owned=false)=>{if(!p||!id(p.id)||!number(p.rating))return;const old=found.get(p.id);if(!old||owned)found.set(p.id,{id:p.id,name:p.name??p.id,pos:p.pos??null,age:p.age??null,clubId:p.clubId??null,family:p.fam??null,rating:p.rating,potential:potential(p),owned:owned||old?.owned===true});};
+  const add=(p,owned=false)=>{if(!p||!id(p.id)||!number(p.rating))return;const old=found.get(p.id);if(!old||owned)found.set(p.id,{id:p.id,name:p.name??p.id,pos:p.pos??null,age:p.age??null,clubId:p.clubId??null,family:p.fam??null,rating:p.rating,potential:potential(p),owned:owned||old?.owned===true,joinedSeason:Number.isSafeInteger(p.joinedSeason)?p.joinedSeason:null,joinedRound:Number.isSafeInteger(p.joinedRound)?p.joinedRound:null});};
   const clubOwned=s?.national?.role?.club!==false;
   const ownedLoans=new Set([s?.v78to81,...Object.values(s?.nativeAcademy?.offices||{}).map(o=>o.v78to81)].flatMap(o=>o?.loans||[]).filter(l=>l.from===s.club&&l.season===s.season).map(l=>l.id));
   for(const c of s?.clubs||[])for(const p of c.players||[])add(p,clubOwned&&(c.id===s.club||ownedLoans.has(p.id)));
@@ -190,6 +190,23 @@ function factory(){
     assessment:{source:'Observation ciblée · saison '+(typeof libelleSaison==='function'?libelleSaison:String)(j.completedSeason)+' · semaine '+j.completedWeek,age:null,stale:null,available:true,availability:'Joueur identifié dans son effectif actuel. Conditions et accord à vérifier avant toute signature.',fit:'Observation individuelle ciblée.',observed:[],estimates:[],limits:['Salaires et coûts à vérifier dans la négociation actuelle.'],caution:'Le suivi indique les dernières informations de ton staff.'}}];
   });
  }
+ // Option de nouvelle carrière « Qualités des joueurs » (notation façon FM, 24/11/2026) : « En fourchette tant que pas
+ // observé » pose S.qualitesJoueurs = {version, mode:'fourchette', debut:{season, week}}. Nos joueurs arrivés depuis
+ // peu (ou tous, en début de carrière) montrent alors leurs qualités en fourchette : 9 points de large les 4 premières
+ // semaines sous notre staff, 5 jusqu'à la 8e, puis précises. Sans l'option (défaut « Précises ») : rien ne change.
+ const SEMAINES_SAISON=60;
+ function suivi(s,p){
+  const q=s?.qualitesJoueurs;if(!object(q)||q.mode!=='fourchette'||!object(q.debut))return 0;
+  const now=(s.season??0)*SEMAINES_SAISON+week(s),debut=(q.debut.season??0)*SEMAINES_SAISON+(q.debut.week??0);
+  let semaines=now-debut;
+  if(Number.isSafeInteger(p.joinedSeason)){
+   // Recrue de l'intersaison : suivie depuis le début de sa première saison ; recrue en cours de saison : depuis
+   // la journée de son arrivée (une journée ≈ une semaine).
+   if(p.joinedSeason===s.season&&p.joinedRound>0&&number(s.round))semaines=Math.min(semaines,s.round-p.joinedRound);
+   else semaines=Math.min(semaines,now-p.joinedSeason*SEMAINES_SAISON);
+  }
+  return semaines>=8?0:semaines>=4?5:9;
+ }
  function visibility(s){
   const known=records(s),out=Object.create(null),staff=scout(s);
   for(const p of players(s).values()){
@@ -197,6 +214,7 @@ function factory(){
    out[p.id]={rating:owned?p.rating:null,ratingRange:owned?null:r?.ratingRange??null,potential:null,
     potentialRange:owned?interval(p.potential,5,salt(s)+':'+p.id+':club:potential:'+p.potential):r?.potentialRange??null,
     knowledge:{version:VERSION,owned,stage,observedAt:owned?null:r?{season:r.season,week:r.week,date:null}:null},scouting:scouting(s,p,staff)};
+   const largeur=owned?suivi(s,p):0;if(largeur>0)out[p.id].knowledge.qualitesLargeur=largeur;
   }
   for(const [pid,r]of known)if(!out[pid])out[pid]={rating:null,ratingRange:r.ratingRange,potential:null,potentialRange:r.potentialRange,knowledge:{version:VERSION,owned:false,stage:r.stage,observedAt:{season:r.season,week:r.week,date:null}}};
   return out;
@@ -222,6 +240,10 @@ function factory(){
    const ownPerson=pid?visible[pid]:looksLikePlayer?{rating:null,ratingRange:null,potential:null,potentialRange:null,knowledge:{version:VERSION,owned:false,stage:'unobserved',observedAt:null}}:person;
    if(pid&&hasPlayerData||looksLikePlayer){
     Object.assign(value,plainCopy(ownPerson));
+    // Qualités en fourchette (option de carrière) : nos joueurs encore peu suivis par le staff.
+    const largeur=ownPerson.knowledge.owned?ownPerson.knowledge.qualitesLargeur:0;
+    if(largeur>0&&object(value.attributesV2))value.attributesV2Range=Object.fromEntries(Object.entries(value.attributesV2).filter(([,v])=>number(v)&&v>=0&&v<=100).map(([k,v])=>[k,interval(v,largeur,pid+':qualite:'+k)]));
+    else if(Object.hasOwn(value,'attributesV2Range'))delete value.attributesV2Range;
     for(const k of levels)if(Object.hasOwn(value,k)&&!ownPerson.knowledge.owned)value[k]=null;
     if(!ownPerson.knowledge.owned){if(Object.hasOwn(value,'positionRatings'))value.positionRatings={};for(const k of ['_familyNotes','positionNotes'])if(Object.hasOwn(value,k))value[k]={};}
     if(!ownPerson.knowledge.owned&&ownPerson.knowledge.stage!=='deep')for(const k of attrs)if(Object.hasOwn(value,k))value[k]=k==='skillBase'?null:{};
