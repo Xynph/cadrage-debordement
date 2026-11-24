@@ -76,7 +76,13 @@ Numéros de ligne approximatifs (au 24/11/2026) : relancer carte-code.cjs avant 
 ## Recrutement, transferts
 | Écran | Fichier(s) | Entrée |
 |---|---|---|
-| Recrutement (marché) | `ui/immersive08/recruitment_canvas.gd`, `recruitment_pages.gd`, `rapport_recruteur.gd` | `build` L113 |
+| Recrutement (marché) | `ui/immersive08/recruitment_canvas.gd` (fichier public : `build`, `_build`, `target_available`, `open_report`, redéfinitions des statiques lus ailleurs), `recruitment_pages.gd`, `rapport_recruteur.gd` | `build` L57 / L65 |
+| · socle du Recrutement | `ui/immersive08/recruitment_socle.gd` (constantes, état, aides en statiques, actions de navigation, stub `_refresh`) | chaîne d'héritage socle ← entête ← filtres ← coût ← lignes ← tableau ← canvas |
+| · Titre, tuiles, besoins, onglets | `ui/immersive08/recruitment_entete.gd` | `_header`, `_tuiles`, `_needs`, `_tabs`, `fenetre_courte` |
+| · Filtres, pastilles de poste | `ui/immersive08/recruitment_filtres.gd` | `_filters`, `_choice`, `_pastilles_postes` |
+| · Coût de l'offre, observation | `ui/immersive08/recruitment_cout.gd` | `_cout`, `_confirmer_observation`, `_observer` |
+| · Ligne d'une piste | `ui/immersive08/recruitment_lignes.gd` | `_row`, `_cellule`, `_observation_text` |
+| · Tableau, tri, rafraîchissement | `ui/immersive08/recruitment_tableau.gd` | `_table`, `_columns_for`, `_entetes`, `_filtered`, `_refresh`, `_input` |
 | Fiche piste / Espoir | `ui/immersive08/fiche_page.gd` | `build` L19 |
 | Négociation contrat, offres | `ui/contract_negotiation.gd`, `negociation_agent.gd`, `offre_guidee.gd`, `offre_visuelle.gd` | `open` L71 |
 | Marché inter-clubs | `ui/interclub_market_view.gd` | `open` L44 |
