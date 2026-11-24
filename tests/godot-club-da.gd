@@ -522,7 +522,7 @@ func names() -> void:
 
 ## Chaque onglet s'affiche sans fenêtre ni or (hors anneau de focus des pilules de la charte).
 func tabs() -> void:
-	for cle in ["jeu", "infrastructure", "history", "direction", "staff", "overview"]:
+	for cle in ["jeu", "infrastructure", "history", "direction", "staff", "organigramme", "overview"]:
 		var onglet := node("ClubTab_" + cle) as Button
 		check(onglet != null, "Onglet " + cle + " cliquable")
 		if onglet == null: continue

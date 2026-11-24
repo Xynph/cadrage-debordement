@@ -105,7 +105,10 @@ function factory(){
     bonus:{type:sv.bonus,parPoste:sv.parPoste,total:Math.round(x.enPlus.length*sv.parPoste*1000)/1000},
     salaire:{parPoste:sv.salaire,semaine:x.enPlus.filter(p=>!paye(s,p)).length*sv.salaire},avis:avis(s,sv,x,attendu)};
   });
-  return {available:true,max:MAX,services,salaireSemaine:salaireSemaine(s,r),coutObservation:coutObservation(s),locked:!!(s.live&&!s.live.finished)};
+  // Direction du club (club-directions.cjs) : mêmes noms que la fiche du club et les courriers, pour l'organigramme.
+  const d=s.clubDirections?.clubs?.[s.club],nom=p=>typeof p?.name==='string'&&p.name?p.name:null;
+  return {available:true,max:MAX,services,salaireSemaine:salaireSemaine(s,r),coutObservation:coutObservation(s),locked:!!(s.live&&!s.live.finished),
+   direction:{president:nom(d?.president),director:nom(d?.director)}};
  }
  function assurer(s){
   if(!object(s.staffServices)||s.staffServices.club!==s.club)s.staffServices={version:VERSION,club:s.club,cibles:Object.fromEntries(IDS.map(id=>[id,0])),soins:{},paie:null};
