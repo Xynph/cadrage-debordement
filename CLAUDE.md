@@ -53,6 +53,12 @@ sans instruction ») **ne s'applique pas** ici. Léo veut un maximum d'autonomie
   `README.md` en entier : chercher la section.
 - `.ignore` exclut des recherches les bases du monde et données d'une ligne
   (jusqu'à 11 Mo) : les interroger avec `node -e` ou `jq`, pas avec Grep.
+- Écran à modifier : lire `docs/carte-code/ECRANS.md` d'abord, puis
+  `node scripts/carte-code.cjs <fichier>` (fonctions et lignes) avant tout Read
+  d'un .gd de plus de 20 Ko, puis Read `offset`/`limit` ; `--cherche <motif>`
+  remplace un Grep large.
+- Chantier touchant plusieurs écrans : lancer d'abord l'agent `eclaireur`
+  (Sonnet, rapport dans `temp/eclairage-*.md`) et donner son rapport aux exécutants.
 - Journaux de CI et sorties de tests longues : `log-reader` (Haiku), qui rend
   seulement les échecs.
 - 53 commandes CCGS hors sujet sont masquées au modèle
