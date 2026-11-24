@@ -82,7 +82,14 @@ Numéros de ligne approximatifs (au 24/11/2026) : relancer carte-code.cjs avant 
 ## Formation
 | Écran | Fichier(s) | Entrée |
 |---|---|---|
-| Formation (développement) | `ui/immersive08/academy_canvas.gd`, `formation_pages.gd` | `build` L68 |
+| Formation (développement) | `ui/immersive08/academy_canvas.gd` (fichier public : `build`, `oublier_page`, `_build`), `formation_pages.gd` | `build` L14 |
+| · socle de la Formation | `ui/immersive08/academy_socle.gd` (constantes, état, courbe `Trend`, lecture des jeunes, outils statiques : `professional_progress`, `_option`) | chaîne d'héritage socle ← filtres ← entête ← décision ← tableau ← passerelles ← encadrement ← canvas |
+| · filtres | `ui/immersive08/academy_filtres.gd` (recherche, puces, listes de filtre et de tri) | `_filters` |
+| · entête et onglets | `ui/immersive08/academy_entete.gd` (titre, tuiles, onglets) | `_heading`, `_tabs` |
+| · décision du jeune | `ui/immersive08/academy_decision.gd` (promotion, file « À décider », pied) | `_strip`, `_cartes` |
+| · tableau des jeunes | `ui/immersive08/academy_tableau.gd` (colonnes, lignes, noms, drapeaux, courbes) | `_table`, `_draw_rows` |
+| · onglet Passerelles | `ui/immersive08/academy_passerelles.gd` | `_pathways` |
+| · onglet Encadrement | `ui/immersive08/academy_encadrement.gd` | `_staff_page` |
 | Centre de formation | `ui/immersive08/centre_canvas.gd`, `centre_*.gd` | `build` L21 |
 | Suivi des jeunes | `ui/academy_follow_up_view.gd` | — |
 
