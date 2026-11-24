@@ -115,7 +115,7 @@ function project(model){
  const mode=model.meta?.mode,id=model.meta?.database?.id,selected=mode==='world'?forDatabase(id??WORLD_ID).registry:mode==='common'?forDatabase(COMMON_ID).registry:null;
  const career=model.clubLife?.staffCareer;
  if(career?.active&&Array.isArray(career.teams))return {...model,staff:{version:career.version,observedAt:null,teams:career.teams.map(c=>({...c,name:model.meta.catalogue.find(x=>x.id===c.id)?.name||'Club '+c.id,members:c.members.map(p=>({...p,personState:'career',portraitStatus:p.portraitStatus??'anonymous',identityStatus:p.identityStatus??'base'}))})),notice:career.notice||'Encadrement de carrière : contrats et passages de saison suivis. Aucun bonus sportif ni salaire ajouté au budget.'}};
- const teams=selected?selected.clubs.map(c=>({id:c.id,name:model.meta.catalogue.find(x=>x.id===c.id)?.name||'Club '+c.id,members:c.members.map(p=>({...p}))})):[];
+ const teams=selected?selected.clubs.map(c=>({id:c.id,name:model.meta.catalogue.find(x=>x.id===c.id)?.name||'Club '+c.id,members:c.members.map(p=>/^\s*directeur sportif\s*$/i.test(String(p.roleLabel??p.role??''))?{...p,roleLabel:'Responsable du recrutement'}:{...p})})):[];
  return {...model,staff:{version:registry.version,observedAt:[PACIFIC_ID,JAPAN_ID,NATIONALE_ID,CHAMP_ID].includes(id)?selected.observedAt:registry.observedAt,teams,notice:'Retrouve les membres du staff et leurs fonctions. Les anciens membres restent consultables dans les archives.'}};
 }
 function applyCareerPresentation(model){
