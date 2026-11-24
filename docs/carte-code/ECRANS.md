@@ -84,6 +84,13 @@ Numéros de ligne approximatifs (au 24/11/2026) : relancer carte-code.cjs avant 
 |---|---|---|
 | Formation (développement) | `ui/immersive08/academy_canvas.gd`, `formation_pages.gd` | `build` L68 |
 | Centre de formation | `ui/immersive08/centre_canvas.gd`, `centre_*.gd` | `build` L21 |
+| Centre de formation, affichage compact (fenêtre sous 1280 × 720, parcours actifs) : fichier public (`build`, `_remplir`) ← sa chaîne ci-dessous | `ui/immersive08/centre_compact.gd` | `build` L13, `_remplir` L39 |
+| Centre compact : socle (préchargements, consts, toile des petites fenêtres, petites pièces de dessin) | `ui/immersive08/centre_compact_socle.gd` | `_preparer`, `_fenetre`, `_zone` |
+| Centre compact : pièces composées (pilule, panneau, jauges, blason), tuile, en-tête, onglets | `ui/immersive08/centre_compact_pieces.gd` | `_pilule` L7, `_panneau` L39, `_entete` L184, `_onglets` L210 |
+| Centre compact : listes à lignes et chemin en étapes | `ui/immersive08/centre_compact_listes.gd` | `_liste` L10, `_chemin` L163 |
+| Centre compact : onglet Centre (détection, centre, rencontres, équipe première) | `ui/immersive08/centre_compact_page_centre.gd` | `_centre` L6 |
+| Centre compact : onglets Parcours et Centres | `ui/immersive08/centre_compact_parcours_centres.gd` | `_parcours` L7, `_centres` L73 |
+| Centre compact : onglets Filières, Passerelle pro, Générations | `ui/immersive08/centre_compact_filieres_passerelle.gd` | `_filieres` L6, `_passerelle` L106, `_generations` L171 |
 | Suivi des jeunes | `ui/academy_follow_up_view.gd` | — |
 
 ## Compétition
