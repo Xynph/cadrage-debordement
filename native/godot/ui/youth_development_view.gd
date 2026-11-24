@@ -624,13 +624,15 @@ func _tuile_jeune(person: Dictionary) -> void:
 	# Niveau et Potentiel MONTRÉS (lettres du staff) : couleurs et jauge posées sur l'estimation affichée, jamais sur la
 	# valeur cachée du moteur (écart du vérificateur, 25/11).
 	var niveau: Variant = Notation.valeur_montree(person,"rating",K.owned(person,true))
-	var gros := Jauges.chiffre(G.rating_text(person,true),64,Charte.couleur_attribut(niveau) if niveau != null else Charte.IVOIRE_3)
-	gros.name = "YouthLevel"; gros.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; gros.tooltip_text = "Niveau général"
-	chiffres.add_child(gros)
+	# Pastilles rondes des lettres (comme l'Effectif) : Niveau en grand, Potentiel dessous (25/11, revue du vérificateur).
+	var ligne_niv := C.h(0); ligne_niv.alignment = BoxContainer.ALIGNMENT_END; chiffres.add_child(ligne_niv)
+	var gros := Notation.porte_pastille(Notation.lettre_champ(person,"rating",K.owned(person,true)),56.0,"YouthLevelLettre")
+	gros.name = "YouthLevel"; gros.tooltip_text = "Niveau général"
+	ligne_niv.add_child(gros)
 	var potentiel: Variant = Notation.valeur_montree(person,"potential",K.owned(person))
 	var ligne_pot := C.h(6); ligne_pot.alignment = BoxContainer.ALIGNMENT_END; chiffres.add_child(ligne_pot)
 	ligne_pot.add_child(Jauges.legende("Potentiel",15))
-	var pot := Jauges.chiffre(G.potential_text(person),26,Charte.couleur_attribut(potentiel) if potentiel != null else Charte.IVOIRE_3)
+	var pot := Notation.porte_pastille(Notation.lettre_champ(person,"potential",K.owned(person)),32.0,"YouthPotentialLettre")
 	pot.tooltip_text = G.potential_tooltip(person)
 	ligne_pot.add_child(pot)
 	chiffres.name = "YouthLevelBlock"

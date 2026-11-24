@@ -197,6 +197,21 @@ du menu en match.
   redessinait pendant l'attente de la carte et libérait le contrôle survolé ; le test lit le joueur visé avant le
   survol (aucun seuil touché) et signale « écran redessiné pendant le survol ».
 
+Deuxième revue (NO-GO sur d86095b49) :
+- Suivi des jeunes (Formation › Suivi des jeunes et « Suivre les objectifs ») : Niveau et Potentiel en pastilles rondes
+  de la lettre (`Notation.porte_pastille`, pastille dans un conteneur) ; « cette saison », « depuis le dernier
+  rapport » et « progression moyenne » en sens ▲ / ▼ / = (`Notation.sens`), plus d'écart chiffré.
+- Fiche › Développement › Progression : tuiles Niveau et Potentiel en pastilles. Formation, « À décider » : puce
+  « pépite » puis pastilles « pot. » / « niv. » (plus de « S+ · niv. B ») ; « 0 progrès » → « Stagne ».
+- Composition, candidats : choisissables triés, puis séparateur « INDISPONIBLES OU NON QUALIFIÉS » et les autres
+  dessous (un B blessé n'apparaît plus sous des D sans explication).
+- Mode fourchette perdu dans la visite filmée : artefact de l'outil. L'écran « salle-conseil » de
+  tools/ecrans-filmes/visite.gd lance une CARRIÈRE NEUVE (club 102, qualités Précises) pour atteindre le rendez-vous
+  de la direction ; tous les écrans suivants (Presse, contre-offre, création, Contrats, Développement) sont ceux de
+  cette nouvelle carrière. Trace : `CD_FILM_SUIVI_FOURCHETTE=1` (largeur 5 jusqu'à « radar-axe », 0 et date du
+  13/07 dès « salle-conseil »). Dans une vraie partie, S.qualitesJoueurs reste (sauvegarde, rechargement, export
+  vérifiés) ; la fourchette s'arrête seulement au bout de 8 semaines de suivi, comme prévu.
+
 ## Reste à faire
 
 Bascule de `rating` (moteur du match) sur le Niveau calculé, rôle choisi par le club enregistré au moteur, estimation du

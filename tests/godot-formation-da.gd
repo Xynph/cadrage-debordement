@@ -273,7 +273,16 @@ func notation_tailles_et_jauge() -> void:
 	check(not pastilles.is_empty(), "Pastilles de Niveau dans le tableau de la Formation")
 	for rond: Control in pastilles.slice(0, 5):
 		check(absf(rond.get_global_rect().size.y - 32.0 * densite) <= 1.0, "Pastille de la Formation à la taille de l'Effectif (%.1f px, attendu %.1f)" % [rond.get_global_rect().size.y, 32.0 * densite])
+	# « À décider » : niveau et potentiel en pastilles rondes, plus en puce texte « S+ · niv. B ».
+	var textes: Array = []
+	for l: Node in app.root_content.find_children("*", "Label", true, false):
+		var t := (l as Label).text
+		if t.contains("niv. ") or t.begins_with("Niv. "): textes.append(t)
+	check(textes.is_empty(), "Formation : lettres en pastilles, pas en puce texte (%s)" % ", ".join(textes.slice(0, 3)))
 	check(await open_youth_page(), "Jauge du suivi : sous-page ouverte")
+	for nom in ["YouthLevelLettre", "YouthPotentialLettre"]:
+		var ronds: Array = app.root_content.find_children(nom, "Control", true, false)
+		check(not ronds.is_empty() and ronds.all(func(n: Node) -> bool: return str(n.get_meta("lettre", "")) != ""), "Suivi : %s en pastille ronde (%d)" % [nom, ronds.size()])
 	var ref: float = NotationStaff.reference_effectif(app.model)
 	var barres: Array = app.root_content.find_children("YouthLevelRange", "Control", true, false)
 	check(not barres.is_empty(), "Jauges niveau / potentiel du suivi")

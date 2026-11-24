@@ -179,11 +179,23 @@ static func _remplir(app: Control, lignes: Control, compte: Label, slot: int, la
 	autres.sort_custom(tri)
 	var toutes: Array = qualifies + autres
 	compte.text = ("%d candidat%s · %d plus bas" % [qualifies.size(), "s" if qualifies.size() > 1 else "", autres.size()] if C.dense() else "%d candidat%s · %d non qualifié%s plus bas" % [qualifies.size(), "s" if qualifies.size() > 1 else "", autres.size(), "s" if autres.size() > 1 else ""]).to_upper()
-	lignes.custom_minimum_size = Vector2(C.px(largeur), C.px(maxf(LIGNE, toutes.size() * LIGNE)))
+	# Choisissables d'abord (triés), puis les indisponibles et non qualifiés sous un séparateur visible : le tri ne paraît
+	# jamais contradictoire (une lettre B blessée sous des D, revue du vérificateur du 25/11).
+	var separateur := not qualifies.is_empty() and not autres.is_empty()
+	lignes.custom_minimum_size = Vector2(C.px(largeur), C.px(maxf(LIGNE, (toutes.size() + (1 if separateur else 0)) * LIGNE)))
 	if toutes.is_empty():
 		Kit.texte(lignes, 8, 23, "Aucun joueur ne correspond.", Charte.IVOIRE_2, largeur - 16)
+	if separateur:
+		var bande := Control.new()
+		bande.name = "TacticsCandidatesSeparateur"
+		bande.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		lignes.add_child(bande)
+		D.place(bande, Rect2(0, qualifies.size() * LIGNE, largeur, LIGNE))
+		D.rect(bande, Rect2(0, LIGNE / 2.0 - 1.0, largeur, 2.0), Color(Charte.IVOIRE_3, .45))
+		var titre := D.text(bande, 16, LIGNE / 2.0 + 6.0, "  INDISPONIBLES OU NON QUALIFIÉS  ", 15, Charte.IVOIRE_2, 700, 420)
+		titre.add_theme_stylebox_override("normal", Charte.sans_ombre(C.box(Charte.PANNEAU, Color.TRANSPARENT, 0, 0)))
 	for i in toutes.size():
-		_ligne(app, lignes, i, toutes[i].person, toutes[i].statut, slot, largeur, colonnes)
+		_ligne(app, lignes, i + (1 if separateur and i >= qualifies.size() else 0), toutes[i].person, toutes[i].statut, slot, largeur, colonnes)
 
 static func _valeur(app: Control, person: Dictionary, slot: int, cle: String) -> Variant:
 	match cle:
@@ -210,6 +222,7 @@ static func _ligne(app: Control, parent: Control, rang: int, person: Dictionary,
 	Selection.wire(bouton, app, id, source, -1, str(person.get("name", "")))
 	if actuel: Kit.marqueur(bouton, Rect2(1, 5, 4, LIGNE - 10))
 	var gris := not bool(s.eligible)
+	bouton.set_meta("eligible", not gris)
 	var encre := Charte.IVOIRE_3 if gris else Charte.IVOIRE
 	var portrait := G.portrait(int(person.get("portraitIndex", 0)), C.px(26), person)
 	portrait.name = "TacticsPortrait_" + id.validate_node_name()

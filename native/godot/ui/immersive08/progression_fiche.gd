@@ -10,6 +10,8 @@ const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
 const Charte = preload("res://ui/charte.gd")
+const Notation = preload("res://ui/notation_staff.gd")
+const K = preload("res://ui/player_knowledge_text.gd")
 const PlayerAttributes = preload("res://ui/player_attributes.gd")
 const Academy = preload("res://ui/immersive08/academy_canvas.gd")
 
@@ -292,12 +294,16 @@ static func _ecart(parent: Control, x: float, y: float, ecart_: int, taille: int
 	var l := D.text(parent, x, y, ecart_texte(ecart_), taille, Charte.GAIN if ecart_ > 0 else Charte.PERTE, 800, largeur, HORIZONTAL_ALIGNMENT_RIGHT)
 	l.name = id
 
-static func _tuile(parent: Control, zone: Rect2, titre: String, chiffre: String, couleur: Color, sous: String, sous_couleur: Color, id: String, action: Callable) -> void:
+## `lettre` ({bas, haut}, notation_staff) : Niveau ou Potentiel en pastille ronde de la lettre du staff, comme l'Effectif.
+static func _tuile(parent: Control, zone: Rect2, titre: String, chiffre: String, couleur: Color, sous: String, sous_couleur: Color, id: String, action: Callable, lettre: Dictionary = {}) -> void:
 	var b := _ligne_bouton(parent, zone, id, false, action, titre)
 	b.add_theme_stylebox_override("normal", Charte.sans_ombre(C.box(Color(couleur, .12), Color.TRANSPARENT, Charte.RAYON_CARTE, 0)))
 	D.text(parent, zone.position.x + 16, zone.position.y + 26, titre, 15, Charte.IVOIRE_2, 700, zone.size.x - 32)
-	var n := D.text(parent, zone.position.x + 16, zone.position.y + zone.size.y - 14, chiffre, 38, couleur, 800, 110)
-	n.add_theme_font_override("font", Charte.TITRE_FICHE)
+	if not lettre.is_empty():
+		Notation.pastille_note(parent, zone.position.x + 16, zone.position.y + zone.size.y - 22, lettre, 34, id + "Lettre")
+	else:
+		var n := D.text(parent, zone.position.x + 16, zone.position.y + zone.size.y - 14, chiffre, 38, couleur, 800, 110)
+		n.add_theme_font_override("font", Charte.TITRE_FICHE)
 	if not sous.is_empty(): D.text(parent, zone.position.x + zone.size.x - 16, zone.position.y + zone.size.y - 18, sous, 21, sous_couleur, 800, 120, HORIZONTAL_ALIGNMENT_RIGHT)
 
 static func _specialisation(card: Control, app: Control, player: Dictionary, zone: Rect2) -> void:
@@ -428,8 +434,8 @@ static func construire(page: Control, app: Control, player: Dictionary, top: flo
 	var niv := niveau(app, player)
 	var gain := ecart(niv)
 	# Niveau : lettre du staff et sens de la courbe (▲/▼), jamais le chiffre du moteur.
-	_tuile(haut, Rect2(1290, 10, 220, 74), "NIVEAU", G.rating_text(player, true), Charte.IVOIRE, "▲" if gain > 0 else "▼" if gain < 0 else "", Charte.GAIN if gain >= 0 else Charte.PERTE, "ProgressionTuileNiveau", func(): _vue(app, e, "niveau"))
-	_tuile(haut, Rect2(1522, 10, 220, 74), "POTENTIEL", G.potential_text(player), Charte.CONFIANCE, "", Charte.IVOIRE, "ProgressionTuilePotentiel", func(): _vue(app, e, "niveau"))
+	_tuile(haut, Rect2(1290, 10, 220, 74), "NIVEAU", G.rating_text(player, true), Charte.IVOIRE, "▲" if gain > 0 else "▼" if gain < 0 else "", Charte.GAIN if gain >= 0 else Charte.PERTE, "ProgressionTuileNiveau", func(): _vue(app, e, "niveau"), Notation.lettre_champ(player, "rating", K.owned(player, true)))
+	_tuile(haut, Rect2(1522, 10, 220, 74), "POTENTIEL", G.potential_text(player), Charte.CONFIANCE, "", Charte.IVOIRE, "ProgressionTuilePotentiel", func(): _vue(app, e, "niveau"), Notation.lettre_champ(player, "potential", K.owned(player)))
 	_specialisation(haut, app, player, Rect2(1760, 24, 466, 46))
 	var courbe := Courbe.new()
 	courbe.name = "ProgressionCourbe"

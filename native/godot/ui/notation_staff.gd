@@ -367,6 +367,26 @@ static func pastille_note(parent: Control, x: float, centre_y: float, l: Diction
 		t.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return fond
 
+## Pastille dans un conteneur (HBox, VBox) : « porte » à la taille de la pastille (ronde ou double), pastille dedans.
+static func porte_pastille(l: Dictionary, taille: float, nom: String = "") -> Control:
+	var porte := Control.new()
+	porte.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	porte.custom_minimum_size = Vector2(C.px(largeur_note(l, taille)), C.px(taille))
+	porte.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var rond := pastille_note(porte, 0, taille / 2.0, l, taille, nom)
+	porte.set_meta("lettre", rond.get_meta("lettre", ""))
+	# Couleurs de la palette des lettres : les re-teintures des vues héritées (recruitment_pages._teindre,
+	# legacy_style) ne doivent pas les griser.
+	for noeud: Node in [porte] + porte.find_children("*", "", true, false):
+		noeud.set_meta("style_charte", true)
+		noeud.set_meta("immersive_style_applied", true)
+	return porte
+
+## Sens d'une évolution de Niveau sans chiffre : ▲, ▼ ou =.
+static func sens(valeur: Variant) -> String:
+	if not (valeur is int or valeur is float): return "="
+	return "▲" if float(valeur) > 0.0 else "▼" if float(valeur) < 0.0 else "="
+
 ## Pastille ronde posée, renvoie le nœud (flèche de progression du Niveau).
 static func pastille_noeud(parent: Control, x: float, centre_y: float, i: int, taille: float, nom: String = "") -> Control:
 	pastille(parent, x, centre_y, i, taille, nom)
