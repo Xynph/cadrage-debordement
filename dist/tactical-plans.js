@@ -16,6 +16,30 @@ let ESSAIS_RULES=1;
 // Écart de niveau : 1 = pas d'amplification supplémentaire (la courbe de niveau commune du 14/11, matchLevelEdge, la fournit désormais).
 var ESSAIS={porte:.63,ecart:1,finition:.51,but:.6};
 function essaisRules(l){return tacticalRules(l)&&l.essaisVersion===1}
+// Jeu au pied réaliste (docs/jeu-au-pied-20261125.md), rencontres aux essais réalistes : on tape surtout depuis son camp
+// (dégagement en touche depuis ses 22, occupation, chandelle), plus rarement dans le camp adverse (rasant, par-dessus) ;
+// le « poussé en touche » devient rare. Coefficients de jeu calés sur des matchs Monde (une action couvre plusieurs temps
+// de jeu), pas des probabilités mesurées du rugby. JEU_PIED_RULES=0 : ancien jeu au pied (comparaisons).
+// pousse : porteur poussé en touche par action (base + bord : près de son en-but ou de la ligne adverse, à moins de 10 m).
+// zone : probabilité de taper par action, selon la zone (ses 22, son camp, camp adverse, 22 adverses) ; style : par plan ;
+// botteur : effet par point de jeu au pied des arrières au-delà de 60 ; score : à partir de la 60e (mène, mené de 8+, mené de 1 à 7).
+// types : répartition des coups de pied par zone (touche, long, chandelle, rasant = rasant ou par-dessus dans le dos).
+// touche : touche trouvée ; directe22 : touche directe depuis ses 22 ; cinquante : tentative de 50:22 depuis son camp et réussite ;
+// pluie : jeu au pied en plus par niveau de pluie (au lieu de METEO_MATCH.piedJeu, fait pour l'ancien jeu au pied rare).
+// recup : ballon repris par l'équipe qui botte (chandelle, rasant) ; enAvant : en-avant du receveur sous la chandelle.
+let JEU_PIED_RULES=1;
+var JEU_PIED={
+ pousse:{base:.022,bord:.02},
+ zone:{own22:.85,ownHalf:.55,oppHalf:.12,opp22:.04},
+ style:{equilibre:1,conquete:.85,large:.7,occupation:2.2},pluie:.15,
+ botteur:.008,score:{mene:1.2,menePlus:.5,meneMoins:.8},
+ types:{own22:{touche:.82,long:.1,chandelle:.08,rasant:0},ownHalf:{touche:.64,long:.2,chandelle:.16,rasant:0},oppHalf:{touche:.36,long:.2,chandelle:.18,rasant:.26},opp22:{touche:0,long:0,chandelle:.25,rasant:.75}},
+ touche:.8,directe22:.8,cinquante:{tente:.03,reussite:.35},
+ recup:{chandelle:.28,rasant:.32},enAvant:.07,adverseTape:12
+};
+function jeuPiedRules(l){return !!JEU_PIED_RULES&&essaisRules(l)}
+function jeuPiedZone(l,side){const d=Math.abs(ownGoal(side)-l.territory);return d<=22?'own22':d<50?'ownHalf':d<78?'oppHalf':'opp22'}
+function poussEnTouche(l,side){if(!jeuPiedRules(l))return .12;const d=Math.abs(ownGoal(side)-l.territory);return JEU_PIED.pousse.base+(d<10||d>90?JEU_PIED.pousse.bord:0)}
 // Pénalités réalistes (docs/hierarchie-penalites-20261114.md) : rencontres créées avec `penalitesVersion`.
 // Le moteur ne sifflait qu'une faute de défenseur dans le jeu courant (~10 par match, réel ~20) : on ajoute
 // les fautes de l'attaquant au sol (`attaque`, par temps de jeu), les pénalités de mêlée (`melee`, par
@@ -124,8 +148,15 @@ function failedCarryError(l,side){const base=meteoActive(l)?METEO_MATCH.ballonPe
 function carryGain(l,side){const g=carryGainBase(l,side)+(contreEdge(l,side)>0?CONTRE.metres:0)+(l.pilotage&&typeof pilotageGain==='function'?pilotageGain(l,side):0);return meteoNiveau(l,'terrain')==='lourd'?Math.max(1,Math.round(g*METEO_MATCH.terrainLourd.gain)):g}
 function carryGainBase(l,side){if(!tacticalRules(l))return rand(12,25);const range=ATTACK_EFFECTS[effectiveAttack(l,side)].gain,d=defensivePlan(l,1-side),shift=d==='pression'?4:d==='prudente'?-4:0;return rand(Math.max(3,range[0]+shift),range[1]+shift)}
 function tacticalFinishAdjustment(l,side){return !tacticalRules(l)?0:ATTACK_EFFECTS[effectiveAttack(l,side)].finish+(defensivePlan(l,1-side)==='pression'?.04:defensivePlan(l,1-side)==='prudente'?-.055:0)}
-function openKickProbability(l,side){return clamp(openKickBase(l,side)*(1+METEO_MATCH.piedJeu.pluie*meteoNiveau(l,'pluie'))*(typeof pilotageKick==='function'&&l.pilotage?pilotageKick(l,side):1),0,.85)}
-function openKickBase(l,side){if(!tacticalRules(l))return l.tactics[side]==='occupation'?.5:0;const distance=Math.abs(attackingGoal(side)-l.territory),style=effectiveAttack(l,side);if(style==='occupation')return distance>50?.65:distance>22?.35:.08;return distance>50?(style==='conquete'?.04:style==='large'?.06:.08):distance>22?.025:.01}
+function openKickProbability(l,side){return clamp(openKickBase(l,side)*(1+(jeuPiedRules(l)?JEU_PIED.pluie:METEO_MATCH.piedJeu.pluie)*meteoNiveau(l,'pluie'))*(typeof pilotageKick==='function'&&l.pilotage?pilotageKick(l,side):1),0,.85)}
+function openKickBase(l,side){if(!tacticalRules(l))return l.tactics[side]==='occupation'?.5:0;if(jeuPiedRules(l))return jeuPiedBase(l,side);const distance=Math.abs(attackingGoal(side)-l.territory),style=effectiveAttack(l,side);if(style==='occupation')return distance>50?.65:distance>22?.35:.08;return distance>50?(style==='conquete'?.04:style==='large'?.06:.08):distance>22?.025:.01}
+function jeuPiedBase(l,side){
+ const J=JEU_PIED,zone=jeuPiedZone(l,side),style=effectiveAttack(l,side);
+ const botteur=clamp(1+(unit(l,side,'kick',p=>p.fam>=4)-60)*J.botteur,.8,1.25);
+ const m=Number(l.minute)||0,d=l.score?l.score[side]-l.score[1-side]:0;
+ const score=m<60||d===0?1:d>0?J.score.mene:d<=-8?J.score.menePlus:J.score.meneMoins;
+ return J.zone[zone]*(J.style[style]??1)*botteur*score;
+}
 function tacticalLoad(l,side){if(!tacticalRules(l))return l.tactics[side]==='large'?.49:l.tactics[side]==='conquete'?.44:.39;return l.possession===side?ATTACK_EFFECTS[effectiveAttack(l,side)].load:defensivePlan(l,side)==='pression'?.53:defensivePlan(l,side)==='prudente'?.31:.37}
 function tacticalCount(l,side,key,n=1){if(tacticalRules(l))l.tacticalStats[side][key]+=n}
 // V63: l'IA observe les courses adverses et ses erreurs, sans anticiper les tirages futurs.
@@ -596,7 +627,7 @@ function opponentAttackDecision(l,side){
  else if(margin<=-7&&remaining<=22&&fitness>=68&&speed+pass>power*1.65){plan='large';reason='tenter des espaces avant la fin';}
  else if(margin>=7&&remaining<=24){plan='occupation';reason='protéger le terrain et limiter le risque';}
  else if(attempts>=6&&advances/attempts<.35){plan=power>=pass?'conquete':'large';reason='corriger un manque de progression';}
- else if(other?.kicks>=5&&power>pass+7){plan='conquete';reason='reprendre la maîtrise au près';}
+ else if(other?.kicks>=(jeuPiedRules(l)?JEU_PIED.adverseTape:5)&&power>pass+7){plan='conquete';reason='reprendre la maîtrise au près';}
  return {plan,reason,remaining,margin,fitness};
 }
 function adaptOpponentAttack(l,side){

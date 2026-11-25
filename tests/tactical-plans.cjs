@@ -52,7 +52,8 @@ assert.ok(kicking.kicks>balanced.kicks*1.4,'Occupation must actually kick more')
 // « Rush must stop more initial advances » se lit sur la phase de jeu (mêmes joueurs, mêmes tirages, seule la défense change) :
 // sur un match entier, la fatigue plus forte de la défense qui monte vite rend l'avance du camp attaquant à peu près égale (z ≈ 1), et l'ancien
 // test ne tenait que parce que deux taux voisins se classaient dans le bon sens.
-function avanceContre(defence,n=6000){const x=profil('backs','equilibre');x.run(`l.defences=['equilibre','${defence}']`);x.run(`var __ph=JSON.stringify(l),__a=0,__c=0;for(let i=0;i<${n};i++){var __s=(i*2654435761+12345)>>>0;Math.random=()=>{__s=(Math.imul(__s,1664525)+1013904223)>>>0;return __s/4294967296};l=JSON.parse(__ph);l.possession=0;l.territory=40;advanceCausalPlay(l);const s=l.tacticalStats[0];if(s.carries){__c++;if(s.advances)__a++}}`);return [x.run('__a'),x.run('__c')]}
+// 12 000 phases (6 000 avant le jeu au pied réaliste) : à 40 m de son en-but, une phase sur deux finit au pied, il faut autant de courses qu'avant.
+function avanceContre(defence,n=12000){const x=profil('backs','equilibre');x.run(`l.defences=['equilibre','${defence}']`);x.run(`var __ph=JSON.stringify(l),__a=0,__c=0;for(let i=0;i<${n};i++){var __s=(i*2654435761+12345)>>>0;Math.random=()=>{__s=(Math.imul(__s,1664525)+1013904223)>>>0;return __s/4294967296};l=JSON.parse(__ph);l.possession=0;l.territory=40;advanceCausalPlay(l);const s=l.tacticalStats[0];if(s.carries){__c++;if(s.advances)__a++}}`);return [x.run('__a'),x.run('__c')]}
 {const [aD,cD]=avanceContre('prudente'),[aR,cR]=avanceContre('pression');T.plusGrand('Rush must stop more initial advances (par phase de jeu)',T.zProportions(aD,cD,aR,cR))}
 T.plusGrand('A beaten rush must expose longer gains',T.zProportions(rush.longGains,rush.carries,drift.longGains,drift.carries));
 T.plusGrand('Rush pressure must carry discipline risk',T.zMoyennes(rush.penaltiesByGame,drift.penaltiesByGame));
