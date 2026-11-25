@@ -23,6 +23,10 @@ const PHASES := ["melee", "maul", "plaquage", "touche", "ruck_sol", "debout"]
 ## épaules au contact sont voulus ; seuls les bustes et les têtes qui se confondent sont des fautes.
 const TRONC_TETE := ["Hips", "Abdomen", "Torso", "Head"]
 const CAPTURES_PAR_PHASE := 2
+## Vitrines (25/11/2026) : mêlée et ballon porté photographiés formés, VITRINE_DELAI s après leur début,
+## au plus VITRINES fois chacun, quels que soient les contacts (pour juger l'allure, pas une faute).
+const VITRINE_DELAI := 1.6
+const VITRINES := 2
 const PIRES_MAX := 80
 
 var vue: Node
@@ -40,6 +44,8 @@ var _capture_due := -1
 var _capture_info: Dictionary = {}
 ## Mêlée : épisodes de bustes ou têtes confondus, avec l'état de chaque joueur (diagnostic).
 var melee_tt: Array = []
+var _vitrine_debut: Dictionary = {}
+var _vitrines: Dictionary = {}
 var _precedents_tt: Dictionary = {}
 
 
@@ -223,6 +229,11 @@ func _process(delta: float) -> void:
 				continue
 			var phase := _phase(a, b, couches)
 			par_phase[phase].images_couples += 1
+			if phase in ["melee", "maul"]:
+				var v: Array = vus_phase.get(phase, [Vector3.ZERO, 0, a, b])
+				v[0] = (v[0] as Vector3) + (racines[a] as Vector3) + (racines[b] as Vector3)
+				v[1] = int(v[1]) + 2
+				vus_phase[phase] = v
 			var max_p := -INF
 			var detail := ""
 			var point := Vector3.ZERO
@@ -281,6 +292,18 @@ func _process(delta: float) -> void:
 		par_phase[phase].images_franc += 1
 	_precedents = vus
 	_precedents_tt = vus_tt
+	for phase: String in ["melee", "maul"]:
+		if not vus_phase.has(phase):
+			_vitrine_debut.erase(phase)
+			continue
+		if not _vitrine_debut.has(phase):
+			_vitrine_debut[phase] = temps
+		elif temps - float(_vitrine_debut[phase]) >= VITRINE_DELAI and int(_vitrines.get(phase, 0)) < VITRINES and _capture_due < 0 and not vues.is_empty():
+			var v: Array = vus_phase[phase]
+			_vitrines[phase] = int(_vitrines.get(phase, 0)) + 1
+			_vitrine_debut[phase] = INF
+			_photographier({"phase": "vitrine-" + phase, "t": snappedf(temps, 0.01), "image": images, "a": v[2], "b": v[3],
+				"point": (v[0] as Vector3) / float(v[1]) + Vector3.UP * 0.9})
 
 
 func bilan() -> Dictionary:
