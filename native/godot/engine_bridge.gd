@@ -64,6 +64,10 @@ static func import_preflight(text: String, byte_count: int) -> String:
 	if byte_count > EXTENDED_IMPORT_LIMIT_BYTES: return "Fichier trop volumineux (24 Mio UTF-8 maximum)."
 	var parser := JSON.new()
 	if parser.parse(text) == OK and parser.data is Dictionary:
+		# Export compressé (exportVersion 4) : l'édition n'est lisible qu'après décompression ; le moteur compare alors
+		# le fichier au plafond de l'édition (24 Mio au plus, déjà vérifié ci-dessus).
+		if parser.data.get("exportVersion") == 4 and parser.data.get("compression") == "gzip" and parser.data.get("data") is String:
+			return ""
 		var state: Variant = parser.data.get("state")
 		if state is Dictionary:
 			var mode: Variant = state.get("worldMode")
