@@ -235,7 +235,9 @@ function createStore(dataDir,database,worldDatabase=null,pacificDatabase=null,ja
   if(chosen)for(const [from,to]of pressIdentities.replacements(chosen.press,pressBank))replacements.set(from,to);
   // Présidents et directeurs sportifs de départ : nom inventé de la base → nom du pack.
   if(chosen)for(const [from,to]of boardIdentities.replacements(chosen.boards,edition))replacements.set(from,to);
-  if(hooks)hooks.signature(chosen?chosen.meta.id+'|'+chosen.meta.digest+'|'+JSON.stringify([...replacements]):'base');
+  // Les catalogues de création repris dépendent aussi des packs de création réellement lus (un média corrompu les écarte).
+  const creations=[legacyCreation,internationalCreation,pacificPack,japanPack,nationalePack,champPack].map(p=>p?p.meta.id:'-').join(',');
+  if(hooks)hooks.signature((chosen?chosen.meta.id+'|'+chosen.meta.digest+'|'+JSON.stringify([...replacements]):'base')+'|'+creations);
   const escaped=[...replacements.keys()].filter(Boolean).sort((a,b)=>b.length-a.length).map(s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));const pattern=escaped.length?new RegExp(escaped.join('|'),'gu'):null;
   function projectTerritory(club,pack){
    const photos=pack.clubs[club.id]?.photos;
