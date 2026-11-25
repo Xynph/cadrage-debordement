@@ -169,6 +169,10 @@ module.exports={
     st=S.contextualMatch=st||{version:1,current:null,receipts:[]};
     const context=identity(S,l),key=matchKey(context);
     check(!st.receipts.some(x=>x.key===key),'rencontre déjà traitée');
+    // Le pronostic lit le Niveau calculé (niveauMatch), donc les qualités détaillées. Un joueur de complément sans
+    // qualités (youth-…) n'en reçoit qu'en fin de commande (nativeAttributeStore.complete) : le pronostic figé ici
+    // différait alors de celui recalculé à la validation. Les qualités des deux feuilles sont donc posées avant.
+    if(typeof nativeAttributeStore!=='undefined')nativeAttributeStore.complete(S,null,true);
     r=st.current={key,context,participants:initialParticipants(S,l),phases:[{phase:'pre',context:phaseContext(S,l,'pre'),decision:null,closed:false,status:null}]};l.paused=true;
     adverse(l,'pre',r.phases[0].context,key);
    }
@@ -190,6 +194,20 @@ module.exports={
     }
     close(r,p,'delegated');
    }
+  }
+  // Fin de commande, une fois les qualités des joueurs réglées (worker : après la complétion) : tant que la causerie d'avant-
+  // match n'est ni décidée ni passée, son contexte est le contexte RÉEL du match (la validation le recalcule). Le pronostic
+  // lit le Niveau des deux feuilles (qualités détaillées, condition) et la composition : tout ce qui bouge entre le
+  // coup d'envoi et la fin de la commande (progression de l'entraînement lancé par le coup d'envoi, qualités posées en fin de
+  // commande, remplacement avant la causerie…) le déplace. Une fois la phase close, son contexte reste celui du reçu.
+  function settle(){
+   const r=S?.contextualMatch?.current,l=S?.live;
+   if(!r||!l||!matches(S,r))return false;
+   const p=pending(r);
+   if(!p||p.phase!=='pre'||p.decision!==null||l.minute!==0||l.finished)return false;
+   const fresh=phaseContext(S,l,'pre');
+   if(equal(p.context,fresh))return false;
+   p.context=fresh;return true;
   }
   function guard(command,payload={}){
    const r=S?.contextualMatch?.current,p=r&&matches(S,r)?pending(r):null;
@@ -231,6 +249,6 @@ module.exports={
   }
   function setDelegating(value){check(typeof value==='boolean','délégation');delegating=value;}
   function clearTransient(){delegating=false;}
-  return {project,execute,validate,installHooks,observe,setDelegating,clearTransient,guard};
+  return {project,execute,validate,installHooks,observe,settle,setDelegating,clearTransient,guard};
  }
 };

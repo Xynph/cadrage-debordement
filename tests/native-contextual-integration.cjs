@@ -13,8 +13,9 @@ const {signerExport} = require('./helpers/signature-export.cjs');
 const {refuseSavePublication} = require('./helpers/save-publication-refusal.cjs');
 
 function fixture(t) {
+  // Ce test lit la partie en cours dans l'export (live) : on reste dans l'ancien format, où l'export décrit le match ouvert ; la reprise avant le match a ses propres suites (tests/reprise-avant-match.cjs).
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-contextual-qa-'));
-  let bridge = createBridge({dataDir:directory, seed:13, now:1700000000000, testVm:true}), sequence = 0;
+  let bridge = createBridge({dataDir:directory, seed:13, now:1700000000000, testVm:true, matchResume:false}), sequence = 0;
   const send = (command, payload={}) => bridge.handle({id:++sequence, command, payload});
   const good = (command, payload={}) => {
     const response = send(command, payload);
@@ -38,7 +39,7 @@ function fixture(t) {
   };
   const reopen = () => {
     const before = checkpoint(); bridge.close();
-    bridge = createBridge({dataDir:directory, seed:999, now:1, testVm:true});
+    bridge = createBridge({dataDir:directory, seed:999, now:1, testVm:true, matchResume:false});
     exact(before); return good('snapshot');
   };
   t.after(() => {bridge.close();fs.rmSync(directory,{recursive:true,force:true});});

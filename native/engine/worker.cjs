@@ -842,7 +842,21 @@ function createBridge(options={}){
    persist();
   }
   // Ligne du journal pour la commande qui vient de réussir (graine avant/après, horloge utilisée).
-  const journalAppend=(command,payload,priorSeed)=>{if(preMatch)return;try{if(!journal.exists()&&journal.count()===0&&loadedSha)journal.reset(loadedSha);journal.append({c:command,p:payload,k:clock,s:priorSeed,e:seed});}catch(e){const failure=Error('Décision non notée dans le journal de sauvegarde : '+e.message);failure.storageFailure=true;throw failure;}};
+  // Séances de la semaine (nativeProgrammeEffets) : posées dans la VM par la projection du calendrier (projectCalendar),
+  // hors de l'état S, et lues par la séance du club (programme-semaine.cjs, entrainement-cible.cjs : progression,
+  // fatigue, moral, tirage de blessure). Dans le jeu, la commande s'exécute donc avec celles de la dernière projection.
+  // Un rejeu (journal, avance « Continuer » reprise) ne projette pas : chaque action garde celles qu'elle a trouvées
+  // (`w`), reposées avant de la rejouer. Ligne d'un ancien journal, sans `w` : la projection qui la précédait dans le
+  // jeu est refaite (sinon la séance du coup d'envoi tirait autrement et la reprise s'arrêtait sur « résultat différent »).
+  const programmeEnVigueur=()=>ctx.nativeProgrammeEffets?JSON.parse(JSON.stringify(ctx.nativeProgrammeEffets)):null;
+  const poserProgramme=action=>{
+   if(Object.hasOwn(action,'w')){ctx.nativeProgrammeEffets=action.w?JSON.parse(JSON.stringify(action.w)):null;return;}
+   // Pendant un match, aucune séance ne se joue (faite avant le coup d'envoi) : projection inutile (direct compris).
+   if(peek('!!S?.live'))return;
+   try{projectionCache.clear();snapshotRaw();}catch{ctx.nativeProgrammeEffets=null;}finally{projectionCache.clear();}
+  };
+  // `w` : séances de la semaine en vigueur au début de la commande (programmeEnVigueur).
+  const journalAppend=(command,payload,priorSeed,programme)=>{if(preMatch)return;try{if(!journal.exists()&&journal.count()===0&&loadedSha)journal.reset(loadedSha);journal.append({c:command,p:payload,k:clock,s:priorSeed,e:seed,w:programme});}catch(e){const failure=Error('Décision non notée dans le journal de sauvegarde : '+e.message);failure.storageFailure=true;throw failure;}};
   // `planned` : sauvegarde complète prévue juste après la réponse (jour différé, voir dayAfter) : annoncée comme faite ;
   // si elle échoue, la commande suivante le dit.
   const autosaveMeta=(planned=null)=>journal?{policy:savePolicy(),lastSave:(planned??lastSavedKey)?.date??null,pending:planned?0:journal.count(),saved:planned?true:savedNow,notice:journalNotice}:null;
@@ -1069,7 +1083,7 @@ function createBridge(options={}){
     // le harnais exige réussie ; si elle échoue après avoir modifié la carrière, la simulation s'arrête (leanBroken).
     const leanNoUndo=leanModel&&!priorFromSave&&!LEAN_UNDO.has(command);const priorStateText=priorFromSave?cleanSave:sessionDay||replay&&command!=='delegate'||leanNoUndo?null:run('JSON.stringify(S)'),priorExtra=JSON.parse(run('JSON.stringify({playback:S?.live?playback(S.live):null,saveError:lastSaveError})'));
     const priorState=(cause)=>{if(leanNoUndo){leanBroken=true;throw Error('Simulation rapide arrêtée : '+command+' a échoué après avoir modifié la carrière (aucune copie d’annulation)'+(cause?.message?' — erreur d’origine : '+cause.message:'')+'.',{cause});}return {state:priorStateText===undefined?undefined:JSON.parse(priorStateText),...priorExtra};};
-    const priorStore=copyStore(store),priorSeed=seed,priorClock=clock;mark('copie_annulation');
+    const priorStore=copyStore(store),priorSeed=seed,priorClock=clock,priorProgramme=journal&&!replay?programmeEnVigueur():null;mark('copie_annulation');
     // Reprise avant le match : copie d'avant le coup d'envoi en cours (rétablie si la commande échoue).
     const preMatchBefore=preMatch,noticeBefore=matchResumeNotice,openBefore=matchOpenNow();let closesMatch=false;
     // Décision courante (n'avance pas le calendrier). En mode journal, elle n'est ni sérialisée ni validée ni écrite :
@@ -1382,7 +1396,7 @@ function createBridge(options={}){
      // de saison ; entre deux, les sections dont le texte sauvegardé n'a pas changé ne sont pas reparcourues.
      // Joueurs de complément créés ici, après les observateurs : fragilité et familiarité posées tout de suite (sinon la
      // commande suivante, même sans effet sur les joueurs, les ajouterait au document sauvegardé).
-     else{run('budgetAvantProfondeur();nativeProfessionalDepth.fill(S);budgetProfondeur();nativeAttributeStore.complete(S,nativeAttributeBaseline,'+liveOnly+');nativeSystems.domain("fragilite").observe();nativeSystems.domain("familiarite").observe();');mark('completion');
+     else{run('budgetAvantProfondeur();nativeProfessionalDepth.fill(S);budgetProfondeur();nativeAttributeStore.complete(S,nativeAttributeBaseline,'+liveOnly+');nativeSystems.domain("fragilite").observe();nativeSystems.domain("familiarite").observe();nativeSystems.domain("matchTalks").settle();');mark('completion');
       // Décision différée : seul l'effet visible de save() sur la projection (indicateur d'échec) est appliqué ici.
       if(defer)peek('if(S&&!validatingStartup)lastSaveError=false;');
       // Jour différé : validation stricte après la réponse ; le texte assemblé ici sert à la projection et à la copie
@@ -1396,7 +1410,7 @@ function createBridge(options={}){
      // que « Jour suivant » ; la projection pour l'interface et l'écriture du profil sont faites une fois, à l'arrêt.
      // Rejeu : l'état suffit, ni projection ni écriture (le journal décrit déjà cette commande).
      if(replay){if(defer)unvalidated=true;cleanSave=null;return {id,ok:true,light:true};}
-     if(light){if(sectionsOn)run('nativeStateVersions.markDirty('+JSON.stringify(stateVersions.HEAVY)+')');if(journal)journalAppend(command,request.payload??{},priorSeed);cleanSave=!sessionDay&&typeof store['bdt-v1']==='string'?store['bdt-v1']:null;return {id,ok:true,light:true,check:dayCheck,deferred:sessionDay};}
+     if(light){if(sectionsOn)run('nativeStateVersions.markDirty('+JSON.stringify(stateVersions.HEAVY)+')');if(journal)journalAppend(command,request.payload??{},priorSeed,priorProgramme);cleanSave=!sessionDay&&typeof store['bdt-v1']==='string'?store['bdt-v1']:null;return {id,ok:true,light:true,check:dayCheck,deferred:sessionDay};}
      const model=snapshotRaw({command,payload});mark('projection');if(extra)Object.assign(model.meta,JSON.parse(JSON.stringify(extra)));
      if(journalMode){
       savedNow=false;
@@ -1408,7 +1422,7 @@ function createBridge(options={}){
       let planned=null;
       if(dayAfter){
        // Jour différé : noté avant la réponse ; validation et sauvegarde complète due après (flushStep).
-       const at={offset:journal.size(),count:journal.count()};journalAppend(command,request.payload??{},priorSeed);undoPending=false;
+       const at={offset:journal.size(),count:journal.count()};journalAppend(command,request.payload??{},priorSeed,priorProgramme);undoPending=false;
        const due=fullSaveDue();if(due)planned=dateKey();
        if(dayCheck)unvalidated=true;
        if(dayCheck||due)pendingCommit={command,day:true,stage:1,validate:dayCheck,save:due,journalAt:at,prior:{seed:priorSeed,clock:priorClock,store:priorStore,state:priorState,text:priorStateText,fromSave:priorFromSave}};
@@ -1416,7 +1430,7 @@ function createBridge(options={}){
       // Pendant un match (preMatch), rien n'est noté ; « Sauvegarder » écrit le profil d'avant le coup d'envoi. Le match
       // validé n'étant pas au journal, sa validation est suivie d'une sauvegarde complète.
       else if(closesMatch||(preMatch?SYNC_COMMANDS.has(command)||!!restoring:!defer&&(SYNC_COMMANDS.has(command)||restoring||resumeCheckpoint)||fullSaveDue())){fullSave();undoPending=false;}
-      else journalAppend(command,request.payload??{},priorSeed);
+      else journalAppend(command,request.payload??{},priorSeed,priorProgramme);
       cleanSave=undoPending?null:typeof store['bdt-v1']==='string'?store['bdt-v1']:null;
       model.meta.autosave=autosaveMeta(planned);
      }else if(defer){
@@ -1522,7 +1536,7 @@ function createBridge(options={}){
    restorePrior({...session.start,state:()=>({state:JSON.parse(session.start.text),playback:null,saveError:false})});
    const actions=session.actions||[];
    for(let i=0;i<actions.length;i++){
-    const a=actions[i];seed=a.s>>>0;run('nativeSectionsFresh=false');projectionCache.clear();
+    const a=actions[i];poserProgramme(a);seed=a.s>>>0;run('nativeSectionsFresh=false');projectionCache.clear();
     try{handleCommand({id:'continuer-'+(i+1),command:a.c,payload:a.p},false,a);}catch(error){restorePrior({...session.start,state:()=>({state:JSON.parse(session.start.text),playback:null,saveError:false})});session.days=0;return {ok:false,error:'Reprise impossible : '+error.message};}
     if(seed!==a.e){restorePrior({...session.start,state:()=>({state:JSON.parse(session.start.text),playback:null,saveError:false})});session.days=0;return {ok:false,error:'Reprise impossible : résultat différent.'};}
    }
@@ -1561,7 +1575,7 @@ function createBridge(options={}){
    // sans rien écrire ; « Jour suivant », lui, la confie au staff.
    if(current.days===0&&before?.decisions?.length)return {id,ok:false,model:snapshot(),error:continuer.decisionText(before.decisions)};
    for(;;){
-    const seedBefore=seed,r=handleCommand({id,command:'advance_day',payload:{fromDate:today}},true);
+    const seedBefore=seed,programmeJour=programmeEnVigueur(),r=handleCommand({id,command:'advance_day',payload:{fromDate:today}},true);
     if(!r.ok){
      // Jour différé en échec après modification (sans copie d'annulation) : retour au début de l'avance et rejeu des
      // jours déjà passés, puis comme avant.
@@ -1575,7 +1589,7 @@ function createBridge(options={}){
      stop={kind:'blocage',label:continuer.STOPS.blocage.label,detail:r.error};break;
     }
     if(r.check)current.check=true;
-    if(r.deferred){current.deferred=true;(current.actions??=[]).push({c:'advance_day',p:{fromDate:today},k:clock,s:seedBefore,e:seed});}
+    if(r.deferred){current.deferred=true;(current.actions??=[]).push({c:'advance_day',p:{fromDate:today},k:clock,s:seedBefore,e:seed,w:programmeJour});}
     current.days++;n++;current.lastFrom=today;
     // Décision en attente regroupée : sérialisée et validée avec le premier jour ; les jours suivants de la même
     // semaine retrouvent le chemin léger de « Jour suivant » (sans revalidation complète à chaque jour).
@@ -1662,7 +1676,7 @@ function createBridge(options={}){
    let reason='';
    const apply=count=>{
     for(let i=0;i<count;i++){
-     const a=actions[i];seed=a.s>>>0;peek('nativeSectionsFresh=false');projectionCache.clear();
+     const a=actions[i];poserProgramme(a);seed=a.s>>>0;peek('nativeSectionsFresh=false');projectionCache.clear();
      try{handleCommand({id:'journal-'+(i+1),command:a.c,payload:a.p},false,a);}catch(error){reason=a.c+' : '+error.message;return i;}
      if(seed!==a.e){reason=a.c+' : résultat différent de celui noté';return i;}
     }
