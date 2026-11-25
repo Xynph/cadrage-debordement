@@ -107,5 +107,13 @@ Saisons Monde (6 graines au moteur complet), réel / avant / après :
 
 Essais réels : moyenne des saisons comptées et saison 2024-25 (docs/essais-realistes-20261114.md). Résultat rapide
 (2 graines) : points 50,5 / 49,0 / 55,9 / 47,9 / 54,9 / 61,9, essais 6,0 / 5,9 / 7,7 / 6,3 / 7,7 / 8,5.
-Reste : les matchs serrés (écart ≤ 7, bonus défensif) restent 5 à 10 points sous le réel ; l'écart moyen est juste,
-mais le moteur laisse moins de fins de match à un score (gestion du score du vainqueur, pénalités de fin de match).
+Vérificateur (graine neuve 3003, complet et rapide) : points à moins de 3 du réel partout.
+
+Restes :
+- Essais du Top 14 encore hauts (6,0-6,1 contre 5,2 sur 2022-24 et 5,9 en 2024-25), Pro D2 et URC +0,4 : à points
+  égaux, un peu trop d'essais et pas assez de pénalités.
+- Matchs serrés : écart ≤ 7 et bonus défensif 5 à 11 points sous le réel au moteur complet, jusqu'à 13-14 points au
+  résultat rapide (Top 14 : 27,5 % d'écarts ≤ 7 contre 40 %, 17,6 % de bonus défensifs contre 31,7 %). L'écart moyen
+  est juste : le moteur laisse moins de fins de match à un score (gestion du score, pénalités de fin de match), et le
+  résultat rapide tire les essais des deux camps indépendamment.
+- Hiérarchie du Super Rugby un peu basse (14 contre 18).

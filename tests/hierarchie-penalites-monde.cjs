@@ -62,9 +62,10 @@ test('Hiérarchie et pénalités sur de vrais effectifs Monde (moteur complet)',
     const pourDominant = domine.reduce((a, m) => a + m.meleePour[m.melee[0] > m.melee[1] ? 0 : 1], 0), totalMelee = domine.reduce((a, m) => a + m.meleePour[0] + m.meleePour[1], 0);
     assert.ok(totalMelee > 50 && pourDominant / totalMelee > 0.55, `pénalités de mêlée au pack dominant : ${pourDominant}/${totalMelee}`);
 
-    // Avantage du terrain entre clubs du même championnat : net, sans être écrasant.
+    // Avantage du terrain entre clubs du même championnat : net, sans être écrasant. Top 14 réel 2022-23 à 2025-26 :
+    // 72,5 à 79,7 % selon la saison (tests/fixtures/realite-matchs-20261125.json) ; 200 matchs tirés = ± 3 points d'échantillon.
     const domicile = moy(meme.map(m => gagne(m, 0)));
-    assert.ok(domicile >= 0.52 && domicile <= 0.8, `victoires à domicile en Top 14 : ${(100 * domicile).toFixed(1)} %`);
+    assert.ok(domicile >= 0.52 && domicile <= 0.85, `victoires à domicile en Top 14 : ${(100 * domicile).toFixed(1)} %`);
 
     // Grand écart de niveau : le favori gagne nettement, à domicile comme à l'extérieur, mais pas toujours.
     const favori = ecart.map(m => gagne(m, m.niveau[0] >= m.niveau[1] ? 0 : 1));
