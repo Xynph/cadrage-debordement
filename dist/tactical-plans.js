@@ -20,7 +20,7 @@ function essaisRules(l){return tacticalRules(l)&&l.essaisVersion===1}
 // change par action à peu près autant qu'avec l'ancien moteur (sinon l'équipe qui attaque dans le camp adverse ne perd plus
 // le ballon, les points arrivent par séries et les matchs serrés deviennent rares) ; seule la forme change. L'ancien
 // « poussé en touche » à 12 % par action devient surtout un coup de pied raté ou perdu (même effet de terrain), le vrai poussé
-// en touche devient rare ; le jeu au pied choisi garde les fréquences de l'ancien moteur (triplées depuis ses 22) mais raconte
+// en touche devient rare ; le jeu au pied choisi garde les fréquences de l'ancien moteur (×3 depuis ses 22) mais raconte
 // des dégagements en touche, des chandelles, des coups de pied longs, rasants, par-dessus ou croisés. Coefficients de jeu calés
 // sur des matchs Monde (une action couvre plusieurs temps de jeu). JEU_PIED_RULES=0 : ancien jeu au pied (comparaisons).
 // pousse : porteur poussé en touche par action (base + bord : près de son en-but ou de la ligne adverse, à moins de 10 m).
@@ -35,19 +35,22 @@ function essaisRules(l){return tacticalRules(l)&&l.essaisVersion===1}
 // pluie : jeu au pied en plus par niveau de pluie (au lieu de METEO_MATCH.piedJeu, fait pour l'ancien jeu au pied rare).
 // recup : ballon repris par l'équipe qui botte (chandelle, rasant, croisé) ; enAvant : en-avant du receveur sous la chandelle ;
 // enButDefense : rasant ou par-dessus qui file vers l'en-but, couvert par la défense devant sa ligne ; croiseTouche : croisé
-// directement en touche.
+// directement en touche ; longueur : facteur sur la longueur des coups de pied (dégagements comme occupation).
+// zone.own22 0,25 et longueur 0,7 (25/11) : avec 0,35 et 0,85, les dégagements gagnants depuis ses 22 changeaient la
+// possession plus souvent qu'avant (0,44 contre 0,37 par action) et creusaient l'écart moyen (+1 point) ; 3 600 matchs
+// URC / Premiership / Top 14 : matchs à 7 points ou moins +0,3 point, écart moyen +0,4 par rapport à l'ancien moteur.
 let JEU_PIED_RULES=1;
 var JEU_PIED={
  pousse:{base:.022,bord:.02},
  perdu:{own22:.12,ownHalf:.12,oppHalf:.12,opp22:.12},perduMetres:{camp:[2,8],adverse:[2,8]},
  perdus:{camp:[.8,.05,.15],adverse:[.4,.3,.15,.15]},
- zone:{own22:.35,ownHalf:.1,oppHalf:.025,opp22:.01},
+ zone:{own22:.25,ownHalf:.1,oppHalf:.025,opp22:.01},
  style:{equilibre:1,conquete:.5,large:.75},occupation:{own22:.85,ownHalf:.65,oppHalf:.35,opp22:.08},pluie:.15,
  score:{mene:1.2,menePlus:.5,meneMoins:.8},
  types:{own22:{touche:.82,long:.1,chandelle:.08,rasant:0,croise:0},ownHalf:{touche:.64,long:.2,chandelle:.16,rasant:0,croise:0},oppHalf:{touche:.3,long:.15,chandelle:.15,rasant:.25,croise:.15},opp22:{touche:0,long:0,chandelle:.2,rasant:.55,croise:.25}},
  touche:.8,directe22:.8,cinquante:{tente:.03,reussite:.35},
  recup:{chandelle:.28,rasant:.32,croise:.35},enAvant:.07,adverseTape:12,
- enButDefense:.5,croiseTouche:.12,longueur:.85
+ enButDefense:.5,croiseTouche:.12,longueur:.7
 };
 function jeuPiedPerdu(l,side){return jeuPiedRules(l)?Math.max(0,JEU_PIED.perdu[jeuPiedZone(l,side)]-poussEnTouche(l,side)):0}
 function jeuPiedScore(l,side,zone){
