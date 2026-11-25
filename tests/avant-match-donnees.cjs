@@ -113,6 +113,9 @@ test('Clés de Gabi : une phrase et trois clés, sans doublon', () => {
 test('Clés de Gabi : « Pas de relâchement » (gros favori) tient sur une ligne, quel que soit l’effectif', () => {
   const sauve = run(`(()=>{const f=CDWorldCareer.userFixture(S),eux=f.homeId===S.club?f.awayId:f.homeId,r=[];
     S.clubs[S.club].players.forEach(p=>{r.push([p,p.rating]);p.rating=90;});S.clubs[eux].players.forEach(p=>{r.push([p,p.rating]);p.rating=40;});
+    // Le match lit le Niveau au rôle (niveauMatch), plus la note : on impose aussi l'écart à ce niveau.
+    const nous=new Set(S.clubs[S.club].players),leur=new Set(S.clubs[eux].players),orig=globalThis.niveauMatch;
+    globalThis.__niveauTri=orig;if(typeof orig==='function')globalThis.niveauMatch=p=>nous.has(p)?90:leur.has(p)?40:orig(p);
     globalThis.__ratingsTri=r;return true;})()`);
   try {
     const cles = jeu.call('snapshot').clubLife.avantMatch.gabi.cles;
@@ -120,7 +123,7 @@ test('Clés de Gabi : « Pas de relâchement » (gros favori) tient sur une lign
     assert.ok(relachement, 'gros favori : la clé est annoncée ' + JSON.stringify(cles));
     assert.ok(relachement.detail.length <= 60, relachement.detail + ' (' + relachement.detail.length + ' signes)');
   } finally {
-    run('globalThis.__ratingsTri.forEach(([p,v])=>{p.rating=v;});delete globalThis.__ratingsTri;');
+    run('globalThis.__ratingsTri.forEach(([p,v])=>{p.rating=v;});delete globalThis.__ratingsTri;if(globalThis.__niveauTri)globalThis.niveauMatch=globalThis.__niveauTri;delete globalThis.__niveauTri;');
   }
   assert.ok(sauve);
 });

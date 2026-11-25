@@ -47,7 +47,7 @@ for(const population of ['generated','released-source'])for(const [mode,club,lim
  const text=ok('export').meta.exportText,bytes=Buffer.byteLength(text);
  assert.ok(bytes<limit,bytes+' bytes exceed '+limit+' byte save budget');
  const exported=JSON.parse(text);
- if(Buffer.byteLength(profile.store['bdt-v1'])>=limit)assert.equal(exported.exportVersion,2);
+ if(Buffer.byteLength(profile.store['bdt-v1'])>=limit)assert.ok([2,3].includes(exported.exportVersion),"export réduit attendu (v2 ou v3), reçu v"+exported.exportVersion);
  ok('import',{text});
  const imported=JSON.parse(JSON.parse(fs.readFileSync(file,'utf8')).store['bdt-v1']);
  assert.equal(imported.economy.freeAgents.length,capacity);
