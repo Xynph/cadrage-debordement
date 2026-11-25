@@ -157,8 +157,8 @@ function factory(){
  // réglé comme les championnats aussi ouverts ; coupes d'Europe non mesurées : écart et terrain inchangés. Autres : 1.
  // §14 quinquies (18/11) : poids de l'écart de l'URC ×0,84, Premiership et Championship ×0,86, Japon D1 ×0,90, Japon D2 ×0,91
  // (rapport pente du score / bruit, rapide contre complet, encore 10 à 16 % trop fort après §14 quater).
- const VOLUME=Object.freeze({elite:[1.02,.87,1.2,.8],accession:[1,.85,.8,.72],nationale:[.99,.9,.8,.56],prem:[1.32,.49,.58,.64],
-  champ:[1.45,.56,.58,.6],urc:[1.08,.55,.77,.75],srp:[1.34,.39,.62,.55],'jlo-d1':[1.5,.52,.61,.58],'jlo-d2':[1.38,.6,.6,.54],
+ const VOLUME=Object.freeze({elite:[.97,.87,1.2,.8],accession:[.95,.85,.8,.72],nationale:[.99,.9,.8,.56],prem:[1.25,.49,.58,.64],
+  champ:[1.45,.56,.58,.6],urc:[1.03,.55,.77,.75],srp:[1.27,.39,.62,.55],'jlo-d1':[1.43,.52,.61,.58],'jlo-d2':[1.38,.6,.6,.54],
   champions:[1.24,.67,1,1],challenge:[1.2,.69,1,1]});
  const volume=id=>VOLUME[id]||[1,1,1,1];
  function sideStats(tries,edge,competitionId){
@@ -232,6 +232,11 @@ function factory(){
   const stats=[sideStats(tries[0],edge,f.competitionId),sideStats(tries[1],-edge,f.competitionId)];
   const points=i=>tries[i]*5+stats[i].conversions*2+stats[i].goals*3;
   let score=[points(0),points(1)];
+  // Fin de match (gestion du score, GESTION_SCORE / FIN_MATCH_RAPIDE de dist/rugby.js) : l'équipe menée à portée recolle.
+  if(typeof FIN_MATCH_RAPIDE==='object'&&!f.neutral){const fm=FIN_MATCH_RAPIDE,d=score[0]-score[1],L=d>0?1:0,ad=Math.abs(d);
+   if(ad>=8&&ad<=fm.portee&&roll()<fm.essai){tries[L]++;stats[L].conversionAttempts++;if(roll()<.7)stats[L].conversions++;}
+   else if(ad>=6&&ad<=12&&roll()<fm.penalite){stats[L].goalAttempts++;stats[L].goals++;}
+   score=[points(0),points(1)];}
   // Super Rugby Pacific : pas de nul en saison régulière (le moteur complet joue le point en or).
   if(score[0]===score[1]&&f.competitionId==='srp'){const side=edge>=0?0:1;stats[side].goalAttempts++;stats[side].goals++;score=[points(0),points(1)];}
   pair.forEach((id,i)=>{const minutes=playerEffects(s,s.clubs[id],teams[i]);commotion()?.quickMatch(s,f,id,minutes);});

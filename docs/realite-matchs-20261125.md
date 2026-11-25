@@ -117,3 +117,30 @@ Restes :
   est juste : le moteur laisse moins de fins de match à un score (gestion du score, pénalités de fin de match), et le
   résultat rapide tire les essais des deux camps indépendamment.
 - Hiérarchie du Super Rugby un peu basse (14 contre 18).
+
+## Fins de match serrées (25/11, 3e étape, branche `claude/fins-serrees`)
+
+Le moteur laissait trop peu de matchs à un score d'écart (écart ≤ 7 et bonus défensif 5 à 14 points sous le réel).
+Nouveau terme de « gestion du score » (`GESTION_SCORE`, `gestionScore` de dist/rugby.js, matchs de compétition Monde) :
+à partir de la 60e minute, effet croissant jusqu'à la 80e, l'équipe qui mène de 8 points ou plus gère (attaque −0,15 ×
+part de l'écart au-delà de 7, plein à 21) et l'équipe menée de 4 à 15 points pousse (attaque +0,3). Résultat rapide
+(`FIN_MATCH_RAPIDE`, league-detail.cjs) : l'équipe menée de 8 à 21 points marque un essai de fin de match une fois sur
+deux, sinon, menée de 6 à 12, une pénalité une fois sur deux (jamais de quoi passer devant : favoris inchangés).
+Volume d'essais légèrement baissé pour compenser (ouverture −0,01 partout, `VOLUME` −5 %). Super Rugby plus étagé
+(facteur 3,5 → 4,2 au complet, 1,89 → 2,4 au rapide ; hiérarchie mesurée 13 à 15 contre 18 au réel).
+
+Saisons Monde (6 graines au complet, réglage final sauf Super Rugby ; 3 graines au rapide pour la fin de match rapide),
+réel / avant / après :
+
+| Championnat | Écart ≤ 7 | Bonus défensif | Écart ≥ 21 | Nuls | Points | Hiérarchie |
+| --- | --- | --- | --- | --- | --- | --- |
+| Top 14 | 40 / 35 / 39 % | 32 / 24 / 28 % | 26 / 26 / 23 % | 2,2 / 2,2 / 2,7 % | 51 / 50 / 49 | 8 / 9 / 8 |
+| Pro D2 | 42 / 36 / 45 % | 32 / 25 / 31 % | 25 / 23 / 19 % | 2,4 / 1,9 / 2,3 % | 48 / 47 / 47 | 9 / 8 / 8 |
+| Premiership | 36 / 28 / 34 % | 35 / 26 / 32 % | 29 / 30 / 30 % | 0,8 / 1,9 / 2,4 % | 55 / 56 / 55 | 15 / 13 / 15 |
+| URC | 41 / 30 / 37 % | 38 / 28 / 35 % | 28 / 34 / 29 % | 2,8 / 2,1 / 2,5 % | 49 / 50 / 50 | 17 / 17 / 16 |
+| Super Rugby | 35 / 33 / 39 % | 35 / 32 / 39 % | 31 / 29 / 25 % | 0,3 / 1,3 / 0,2 % | 57 / 56 / 56 | 18 / 14 / 13 |
+| Japon D1 | 30 / 26 / 32 % | 28 / 26 / 29 % | 36 / 40 / 37 % | 2,5 / 0,5 / 2,8 % | 61 / 60 / 60 | 23 / 20 / 22 |
+
+Résultat rapide (3 graines, avant la petite baisse de volume) : écart ≤ 7 41 / 47 / 40 / 41 / 43 / 39 %, bonus
+défensif 31 / 35 / 38 / 38 / 43 / 37 % (Top 14 avant : 27,5 % et 17,6 %). Sondes au banc (300 à 400 matchs, URC et
+Top 14) : la réussite des favoris ne bouge pas (+6 : 85-86 % URC, 66-67 % Top 14).
