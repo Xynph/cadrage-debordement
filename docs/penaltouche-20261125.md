@@ -16,7 +16,8 @@ Rencontres avec pénalités réalistes (`penalitesRules`), `dist/tactical-plans.
   sauteurs chez soi la sécurisent.
 - **Touche près de la ligne** (2e tour, `ligne`, `risqueLigne`, `sauteursLigne`) : à moins de 22 m de la ligne (plein effet
   à 5 m), la défense regroupée et en place met tous ses sauteurs au contre : risque +6 points et écart de touche
-  +1,2 point par point de note en plus, à proportion de la proximité : à 5 m, une équipe neutre perd encore ~6 points de réussite ; de bons sauteurs la\n  sécurisent davantage, de mauvais la ratent davantage.
+  +1,2 point par point de note en plus, à proportion de la proximité : à 5 m, une équipe neutre perd encore ~6 points de réussite ; de bons sauteurs la
+  sécurisent davantage, de mauvais la ratent davantage.
 - **Essai direct sur ballon porté après une touche gagnée près de la ligne** (`ballonPorteBase`) : base 0,14 au lieu de
   0,18 ; l'écart se mesure entre la puissance des avants qui poussent et la défense des avants adverses (moyenne
   puissance et plaquage des n° 1 à 8, 1,2 point par point de note) au lieu du plaquage de toute l'équipe (0,3 point) ;
@@ -34,7 +35,8 @@ Rencontres avec pénalités réalistes (`penalitesRules`), `dist/tactical-plans.
 consigne figée, l'autre en « Selon le contexte » ; `--pres=30` limite la consigne aux pénalités à moins de 30 m (au-delà :
 « Selon le contexte ») ; `--profil` / `--profil-adverse` modifient la copie (sauteurs : touche +15 du talonneur et des 2e
 et 3e lignes ; avants : puissance, mêlée et plaquage +10 des avants ; buteur : but +15) ; `--graine` change la graine
-du harnais ; mêmes graines (1 à 6) avant et après. Diagnostic par consigne : points et essais marqués et encaissés,\ncartons jaunes des deux camps, renvois reçus. Résultats : voir le tableau ci-dessous.
+du harnais ; mêmes graines (1 à 6) avant et après. Diagnostic par consigne : points et essais marqués et encaissés,
+cartons jaunes des deux camps, renvois reçus. Résultats : voir le tableau ci-dessous.
 
 ## Résultats (graines 1 à 6, 3000 matchs par cas, intervalle à 95 %)
 
@@ -78,7 +80,8 @@ casserait le réalisme :
   près de la ligne ne suffit pas à faire pencher vers le tir, pour la même raison (une touche perdue coûte peu).
 - **Décision « Selon le contexte » :** au but dès que la pénalité est à portée (sauf consigne « conquête » au-delà de
   28 m) ; culture du championnat (touche plus souvent hors Top 14 et PRO D2) ; score et temps pris en compte seulement
-  pour l'équipe du manager et l'IA « expert » à partir de la 65e minute (touche si on est mené de plus de 3 points ou\n  pour aller chercher le bonus offensif, au but à 3 points près). Raisonnable ; une IA standard qui ne regarde pas le score en fin de match reste une piste
+  pour l'équipe du manager et l'IA « expert » à partir de la 65e minute (touche si on est mené de plus de 3 points ou
+  pour aller chercher le bonus offensif, au but à 3 points près). Raisonnable ; une IA standard qui ne regarde pas le score en fin de match reste une piste
   séparée.
 
 Prochaine étape possible (décision de Léo) : levier 4, le renvoi après des points (repris plus souvent par l'équipe qui
