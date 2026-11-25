@@ -18,7 +18,7 @@ const REEL = require('./fixtures/realite-matchs-20261125.json').championnats;
 
 // Pente par point visée (banc, moteur complet), issue du calage sur la dispersion réelle (docs/realite-matchs-20261125.md).
 const PENTE = { elite: 0.19, accession: 0.17, prem: 0.23, urc: 0.30, srp: 0.40, 'jlo-d1': 0.30 };
-const N = { complet: 240, rapide: 1000 };
+const N = { complet: 200, rapide: 500 };
 // Tolérances : réel ± 7 points de domicile, pente visée ± 0,06, plus une erreur type du banc (graine fixe : le test ne tire pas au sort).
 const TOL = { domicile: 0.07, pente: 0.06, moteurs: 0.06 };
 

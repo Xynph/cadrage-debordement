@@ -20,11 +20,24 @@ test('Un espoir au niveau du moins bon pro de son poste, ou un crack, est promu 
     const floor = Math.min(...c.players.map(q => q.salary));
     c.players.sort((x, y) => x.rating - y.rating); c.players.splice(0, 2);
     const [ready, crack, plain] = a.players;
-    const weakest = Math.min(...c.players.filter(q => q.fam === ready.fam).map(q => q.rating));
+    // Niveau du match (niveauMatch : Niveau au rôle, calculé sur les qualités, 25/11/2026) : l'espoir prêt reprend les
+    // qualités du moins bon pro de son poste, l'espoir ordinaire les mêmes moins 15 points.
+    const peers = c.players.filter(q => q.fam === ready.fam);
+    const weakestPro = peers.reduce((m, q) => niveauMatch(q) < niveauMatch(m) ? q : m, peers[0]);
+    const aligne = (p, k) => {
+      const src = JSON.parse(JSON.stringify(weakestPro));
+      for (const f of ['pos', 'fam', 'skills', 'attributesV2', 'nativeAttributesV1']) if (src[f] !== undefined) p[f] = src[f]; else delete p[f];
+      p.rating = src.rating + k; p.skillBase = (src.skillBase ?? src.rating) + k;
+      if (k) { for (const s in p.skills || {}) p.skills[s] = Math.max(1, p.skills[s] + k);
+        if (p.attributesV2) for (const s in p.attributesV2) if (typeof p.attributesV2[s] === 'number') p.attributesV2[s] = Math.max(1, p.attributesV2[s] + k);
+        if (typeof p.nativeAttributesV1 === 'string' && /^\d{72}$/.test(p.nativeAttributesV1)) p.nativeAttributesV1 = p.nativeAttributesV1.match(/\d\d/g).map(v => String(Math.max(20, +v + k)).padStart(2, '0')).join(''); }
+      delete p.roleId;
+    };
     for (const p of [ready, crack, plain]) { p.age = 19; p.injury = 0; p.salary = floor; }
-    ready.rating = weakest;
+    aligne(ready, 0); aligne(plain, -15);
     crack.rating = 40; crack.dev.potential = 92;
-    plain.rating = 30; plain.dev.potential = 70;
+    plain.dev.potential = 70;
+    if (!(niveauMatch(ready) >= niveauMatch(weakestPro) - 2) || !(niveauMatch(plain) < niveauMatch(weakestPro) - 2)) throw Error('banc des espoirs mal préparé');
     for (const p of a.players.slice(3)) { p.age = 17; }
     const count = aiRosterMeritPromotions(c);
     const pro = new Set(c.players.map(p => p.id));
