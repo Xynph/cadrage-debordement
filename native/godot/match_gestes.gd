@@ -53,6 +53,20 @@ func stages(id: String) -> bool:
 	return cast.has(id) and cast[id].get("staged", true)
 
 
+## Joueur lié au ballon porté à cette image (contact voulu, que la séparation des joueurs debout laisse) :
+## membre du regroupement arrivé à sa place ; ni celui qui le rejoint encore, ni le marqueur qui s'en
+## détache, ni ceux qui se replient après l'essai (25/11/2026, sonde des contacts du match filmé).
+func lie(id: String) -> bool:
+	if not cast.has(id) or phase not in ["maul", "essai_maul"]:
+		return false
+	var member: Dictionary = cast[id]
+	if str(member.get("role", "")) not in ["pack", "opp_pack", "tail"]:
+		return false
+	if phase == "maul":
+		return time >= float(member.get("join", MAUL_FORM))
+	return id != carrier and time < drive + 0.5
+
+
 func observe(live: Dictionary, scene: Dictionary, new_action: bool, enabled: bool) -> void:
 	var kind := str(scene.get("kind", ""))
 	if kind == "lineout":

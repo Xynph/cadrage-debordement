@@ -91,6 +91,8 @@ const RAMPE := 0.4
 const ARRIVE := 0.6
 ## Rotation vers le cap de la phase, à l'arrêt (rad/s).
 const VIRAGE := 6.0
+## Écart de cap (rad) sous lequel un joueur arrivé à sa place se lie (prend sa posture).
+const FACE := 0.15
 const ARMS := ["UpperArm.L", "LowerArm.L", "Palm.L", "UpperArm.R", "LowerArm.R", "Palm.R"]
 const LEGS := ["UpperLeg.L", "LowerLeg.L", "Foot.L", "UpperLeg.R", "LowerLeg.R", "Foot.R"]
 
@@ -193,6 +195,15 @@ static func _melee(scene: Dictionary, centre: Vector2, introduit: int, sortie: b
 			f.roles[id] = "demi_sortie"
 			if str(f.porteur).is_empty():
 				f.porteur = id
+		elif slot == 8 and sortie and introduit in [0, 1]:
+			# Demi adverse : il reste à sa place, hors des paquets, tant qu'ils sont liés (25/11/2026 :
+			# parti vers sa place de la scène dès l'annonce, il traversait son propre paquet penché).
+			var si := 1.0 if introduit == 0 else -1.0
+			var d: Vector2 = DEMI_INTRO if side == introduit else DEMI_ADVERSE
+			var place := centre + Vector2(-si * d.x, COTE_INTRO * absf(d.y))
+			f.places[id] = place
+			f.caps[id] = atan2(centre.x - place.x, centre.y - place.y)
+			f.roles[id] = "demi_adverse"
 		elif not sortie and player.has("x") and player.has("y"):
 			# Arrières : places du moteur, ramenées derrière la ligne de hors-jeu si besoin.
 			var limite := MELEE[7].x + PIEDS_N8 + HORS_JEU
@@ -337,10 +348,14 @@ func poser(delta: float) -> void:
 		var nom := str(formation.postures.get(id, "")) if actif else ""
 		var gap: Vector3 = entry.target - actor.position
 		var arrive := Vector2(gap.x, gap.z).length() < ARRIVE
-		var poids := move_toward(float(_poids.get(id, 0.0)), 1.0 if not nom.is_empty() and arrive else 0.0, (delta / RAMPE) if not view._paused else 0.0)
 		if actif and formation.caps.has(id) and float(entry.elapsed) >= float(entry.duree):
 			var change := angle_difference(actor.rotation.y, float(formation.caps[id]))
 			actor.rotation.y += clampf(change, -VIRAGE * delta, VIRAGE * delta)
+		# 25/11/2026 (sonde des contacts du match filmé) : il ne se penche qu'une fois tourné vers
+		# l'adversaire ; penché de travers en arrivant, sa tête entrait dans celles de ses voisins.
+		var face: bool = not formation.caps.has(id) or absf(angle_difference(actor.rotation.y, float(formation.caps[id]))) < FACE
+		var lie: bool = not nom.is_empty() and arrive and (face or float(_poids.get(id, 0.0)) > 0.0)
+		var poids := move_toward(float(_poids.get(id, 0.0)), 1.0 if lie else 0.0, (delta / RAMPE) if not view._paused else 0.0)
 		if not nom.is_empty():
 			_posture[id] = nom
 		if poids <= 0.0:
