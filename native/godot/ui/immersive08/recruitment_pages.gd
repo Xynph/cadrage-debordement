@@ -248,6 +248,13 @@ static func _dossier(app: Control, cadre: Control, titre: Label, courant: Dictio
 	var observation: VBoxContainer = G.scroll(onglets)
 	observation.get_parent().name = "Observation"
 	Prospect._observation(observation, personne)
+	# Marché entre clubs : qualités lues dans la fiche du club vendeur (demandée à l'ouverture, la réponse reconstruit la page).
+	if source == "interclub":
+		if Prospect.qualites_visibles(personne):
+			var qualites: VBoxContainer = G.scroll(onglets)
+			qualites.get_parent().name = "Qualités"
+			Prospect.qualites(app, qualites, personne)
+		else: Prospect.demander_qualites(app, personne)
 	var contrat: VBoxContainer = G.scroll(onglets)
 	contrat.get_parent().name = "Contrat"
 	Prospect._contract(contrat, personne, source)

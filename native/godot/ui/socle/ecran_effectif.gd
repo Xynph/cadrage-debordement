@@ -99,10 +99,18 @@ static func _potentiel(joueur: Dictionary) -> Dictionary:
 		return {"min": float(joueur.potential), "max": float(joueur.potential)}
 	return {}
 
+## Potentiel en LETTRE du staff (E- à S+, jamais le chiffre du moteur).
 static func _texte_potentiel(joueur: Dictionary) -> String:
-	var p := _potentiel(joueur)
-	if p.is_empty(): return "—"
-	return str(int(p.min)) if p.min == p.max else "%d à %d" % [int(p.min), int(p.max)]
+	if _potentiel(joueur).is_empty(): return "—"
+	return load("res://ui/notation_staff.gd").texte_champ(joueur, "potential", true)
+
+## Marge en crans de lettre entre le Niveau et le Potentiel montrés (null si l'un des deux est inconnu).
+static func _marge(joueur: Dictionary) -> Variant:
+	if _potentiel(joueur).is_empty() or not _nombre(joueur.get("rating")): return null
+	var Notation: Variant = load("res://ui/notation_staff.gd")
+	var resume: Dictionary = Notation.resume(Notation.modele, joueur, true)
+	if int(resume.niveau) < 0 or int(resume.potentiel) < 0: return null
+	return maxi(0, int(resume.potentiel) - int(resume.niveau))
 
 func _fin_cette_saison(joueur: Dictionary) -> bool:
 	return _nombre(joueur.get("contractEnd")) and int(joueur.contractEnd) <= saison
@@ -236,12 +244,12 @@ func _colonnes(vue: int) -> Array:
 		3:
 			return [numero, joueur, age, niveau,
 				{"id": "potentiel", "titre": "Potentiel estimé", "largeur": 130, "decroissant_d_abord": true,
-					"valeur": func(j: Dictionary) -> Variant: return _potentiel(j).get("max"), "texte": _texte_potentiel,
+					"valeur": func(j: Dictionary) -> Variant: return load("res://ui/notation_staff.gd").tri_champ(j, "potential", true), "texte": _texte_potentiel,
 					"couleur": func(_j: Dictionary) -> Color: return J.OR},
 				{"id": "marge", "titre": "Marge", "largeur": 70, "priorite": 2, "align": HORIZONTAL_ALIGNMENT_RIGHT, "decroissant_d_abord": true,
 					"aide": "Écart entre le niveau actuel et le haut du potentiel estimé.",
-					"valeur": func(j: Dictionary) -> Variant: return _potentiel(j).max - float(j.rating) if not _potentiel(j).is_empty() and _nombre(j.get("rating")) else null,
-					"texte": func(j: Dictionary) -> String: return "+%d" % maxi(0, int(_potentiel(j).max - float(j.rating))) if not _potentiel(j).is_empty() and _nombre(j.get("rating")) else "—"},
+					"valeur": func(j: Dictionary) -> Variant: return _marge(j),
+					"texte": func(j: Dictionary) -> String: return "+%d" % int(_marge(j)) if _marge(j) != null else "—"},
 				{"id": "minutes", "titre": "Minutes", "largeur": 70, "priorite": 3, "align": HORIZONTAL_ALIGNMENT_RIGHT, "decroissant_d_abord": true,
 					"valeur": func(j: Dictionary) -> Variant: return j.get("minutes"), "texte": func(j: Dictionary) -> String: return str(int(j.minutes)) if _nombre(j.get("minutes")) else "—"}]
 	return [numero, joueur, age, niveau, condition, salaire, contrat]

@@ -1,7 +1,10 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict'),{factory}=require('../native/engine/player-knowledge.cjs');
 const k=factory(),clone=x=>JSON.parse(JSON.stringify(x));
-function fixture(){return {season:1,round:0,club:0,careerVariation:{version:1,seed:123,varyCurrent:true},clubs:[{id:0,cash:100000,players:[{id:'own',rating:76,dev:{potential:88}}]},{id:1,players:[{id:'foreign',rating:74,dev:{potential:86}},{id:'unused',rating:70,dev:{potential:80}}]}],manager:{serial:0,reports:[],missions:[]},market:[],development:{academy:[]}};}
+// Mode « fourchette » (option de carrière, 25/11/2026) : les autres clubs ne montrent AUCUNE qualité exacte ; `debut` assez ancien
+// pour que nos propres joueurs soient déjà bien suivis (exacts). Mode « Précises » (défaut) : fixturePrecise().
+function fixture(){return {season:1,round:0,club:0,careerVariation:{version:1,seed:123,varyCurrent:true},qualitesJoueurs:{version:1,mode:'fourchette',debut:{season:0,week:0}},clubs:[{id:0,cash:100000,players:[{id:'own',rating:76,dev:{potential:88}}]},{id:1,players:[{id:'foreign',rating:74,dev:{potential:86}},{id:'unused',rating:70,dev:{potential:80}}]}],manager:{serial:0,reports:[],missions:[]},market:[],development:{academy:[]}};}
+function fixturePrecise(){const s=fixture();delete s.qualitesJoueurs;return s;}
 const mission=(s,n)=>s.manager.reports.unshift({playerId:'foreign',mission:'mission-'+n,note:74,potential:86,season:1,week:s.round});
 function external(s){return k.visibility(s).foreign;}
 test('club exact rating, five inclusive potential values, unknown foreign and pure reads',()=>{
@@ -29,8 +32,46 @@ test('all player copies, report prose, aliases, nested potential, international 
  const s=fixture(),v=k.visibility(s);const raw={squad:[{id:'own',rating:76,potential:91,positionRatings:{1:66},dev:{potential:88}}],market:[{id:'foreign',rating:74,potential:86,note:72,roleNote:71,positionRatings:{1:70},attributesV2:{tackling:74},skills:{power:73},rosterProfile:{rating:74},dev:{potential:86,rating:74},evidence:{noteMin:70,noteMax:76,potentialMin:80,potentialMax:90,label:'foo'}}],international:{players:[{id:'foreign',rating:74}]},meta:{preview:{playerId:'foreign',note:74,potential:86}},reports:[{playerId:'foreign',note:74,potential:86,assessment:{observed:['Niveau au poste relevé : 74 / 100 à cette date.','Prime relevée : 3000 € à cette date.'],estimates:['Potentiel au poste : 86 / 100.']}}]};
  k.project(raw,v);assert.equal(raw.squad[0].rating,76);assert.equal(raw.squad[0].potential,null);assert.equal(raw.squad[0].dev.potential,null);assert.equal(raw.market[0].rating,null);assert.equal(raw.market[0].note,null);assert.deepEqual(raw.market[0].positionRatings,{});assert.deepEqual(raw.market[0].attributesV2,{});assert.equal(raw.market[0].dev.rating,null);assert.equal(raw.international.players[0].rating,null);assert.equal(raw.meta.preview.note,null);assert.ok(!JSON.stringify(raw.reports).includes('74 / 100'));assert.equal(raw.market[0].evidence.noteMin,null);const once=clone(raw);k.project(raw,v);assert.deepEqual(raw,once,'final boundary is idempotent');
 });
-test('observed attrs remain hidden until deep, position ratings always hidden foreign',()=>{
- const s=fixture();let b=k.before(s);mission(s,1);k.observe(s,b,'advance_day');const doc=()=>({players:[{id:'foreign',attributesV2:{tackling:70},positionRatings:{1:60}}]});let m=doc();k.project(m,k.visibility(s));assert.deepEqual(m.players[0].attributesV2,{});b=k.before(s);mission(s,2);k.observe(s,b,'advance_day');m=doc();k.project(m,k.visibility(s));assert.deepEqual(m.players[0].attributesV2,{tackling:70});assert.deepEqual(m.players[0].positionRatings,{});
+test('mode fourchette : qualités cachées tant que non observé, fourchette de 9 si observé, de 5 si suivi en profondeur, jamais la vraie valeur',()=>{
+ const s=fixture();const vrai=70,doc=()=>({players:[{id:'foreign',rating:74,attributesV2:{tackling:vrai,passing:vrai,kicking:vrai,speed:vrai},positionRatings:{1:60},nativeAttributesV1:{a:1},fleches:{n:1},releve:'x'}]});
+ const largeurs=p=>Object.values(p.attributesV2Range).map(r=>r.max-r.min);
+ let m=doc();k.project(m,k.visibility(s));assert.deepEqual(m.players[0].attributesV2,{},'non observé : aucune qualité');assert.equal(m.players[0].attributesV2Range,undefined);assert.deepEqual(m.players[0].positionRatings,{});assert.equal(m.players[0].rating,null);
+ let b=k.before(s);mission(s,1);k.observe(s,b,'advance_day');m=doc();k.project(m,k.visibility(s));let p=m.players[0];
+ assert.equal(k.visibility(s).foreign.knowledge.qualitesLargeur,9);assert.ok(largeurs(p).length===4&&largeurs(p).every(w=>w===8),'observé : fourchettes de 9 valeurs');
+ for(const [c,r] of Object.entries(p.attributesV2Range)){assert.ok(r.min<=vrai&&r.max>=vrai,c);assert.equal(p.attributesV2[c],(r.min+r.max)/2,c+' : milieu');}
+ assert.ok(Object.values(p.attributesV2).some(v=>v!==vrai),'au moins une qualité montrée n’est pas la vraie');
+ assert.equal(p.rating,null);assert.deepEqual(Object.keys(p.positionRatings),['1'],'note au poste gardée (décalée)');for(const x of ['nativeAttributesV1','fleches','releve'])assert.equal(p[x],undefined,x);
+ b=k.before(s);mission(s,2);k.observe(s,b,'advance_day');m=doc();k.project(m,k.visibility(s));p=m.players[0];
+ assert.equal(k.visibility(s).foreign.knowledge.qualitesLargeur,5);assert.ok(largeurs(p).every(w=>w===4),'en profondeur : fourchettes de 5 valeurs');
+ for(const [c,r] of Object.entries(p.attributesV2Range)){assert.ok(r.min<=vrai&&r.max>=vrai,c);}
+ assert.ok(Object.values(p.attributesV2).some(v=>v!==vrai),'en profondeur aussi : au moins une qualité montrée n’est pas la vraie');
+ assert.equal(p.rating,null);assert.ok(p.positionRatings[1]!==undefined);
+ // Nos joueurs (suivi ancien) restent exacts dans ce mode.
+ const own=[{id:'own',rating:76,attributesV2:{tackling:61},positionRatings:{1:66}}];const mo={players:own};k.project(mo,k.visibility(s));assert.equal(mo.players[0].rating,76);assert.deepEqual(mo.players[0].attributesV2,{tackling:61});assert.equal(mo.players[0].attributesV2Range,undefined);
+});
+test('mode fourchette : aucune qualité exacte d’un autre club dans aucune copie (sous-objets, notes par rôle)',()=>{
+ const s=fixture(),b=k.before(s);mission(s,1);k.observe(s,b,'advance_day');
+ const raw={players:[{id:'foreign',rating:74,potential:86,attributesV2:{tackling:73},positionRatings:{1:70},positionNotes:{1:70},_familyNotes:{pilier:70},roleRatings:{x:71},details:{attributesV2:{tackling:73},rating:74}}]};
+ k.project(raw,k.visibility(s));const p=raw.players[0];
+ assert.equal(p.rating,null);assert.equal(p.potential,null);assert.deepEqual(p.positionNotes,{});assert.deepEqual(p._familyNotes,{});assert.deepEqual(p.roleRatings,{});assert.deepEqual(p.details.attributesV2,{});assert.equal(p.details.rating,null);
+ assert.ok(!JSON.stringify(p).includes('"tackling":73'),'la vraie valeur 73 ne sort nulle part');
+});
+test('mode Précises (défaut) : autres clubs exacts (note, niveaux, qualités, notes au poste), potentiel toujours estimé',()=>{
+ const s=fixturePrecise(),v=k.visibility(s);
+ assert.equal(v.foreign.rating,74);assert.equal(v.foreign.knowledge.exact,true);assert.equal(v.foreign.knowledge.owned,false);assert.equal(v.foreign.knowledge.qualitesLargeur,undefined);assert.equal(v.foreign.potential,null);assert.equal(v.foreign.potentialRange,null,'non observé : potentiel inconnu');
+ const doc=()=>({players:[{id:'foreign',rating:74,potential:86,attributesV2:{tackling:70,passing:55},positionRatings:{1:60},positionNotes:{1:60},_familyNotes:{pilier:60},roleRatings:{x:71},evidence:{noteMin:70,noteMax:76,potentialMin:80,potentialMax:90,label:'foo'},assessment:{observed:['Niveau : 74 / 100.','Prime relevée : 3000 € à cette date.'],estimates:['Potentiel : 80–90 / 100.','Autre estimation.']}}]});
+ let m=doc();k.project(m,k.visibility(s));let p=m.players[0];
+ assert.equal(p.rating,74);assert.deepEqual(p.attributesV2,{tackling:70,passing:55});assert.equal(p.attributesV2Range,undefined);assert.deepEqual(p.positionRatings,{1:60});assert.equal(p.potential,null,'potentiel jamais exact');
+ assert.ok(!JSON.stringify(p.assessment).includes('/ 100')||!/Niveau : \d|Potentiel : \d/.test(JSON.stringify(p.assessment)));
+ assert.ok(!/Niveau : d|Potentiel : d/.test(JSON.stringify(p.assessment)));
+ assert.equal(p.evidence.noteMin,null,'les bornes d’observation restent celles du staff');
+ // Observé : potentiel = fourchette du staff, jamais la valeur exacte.
+ const b=k.before(s);mission(s,1);k.observe(s,b,'advance_day');const vo=k.visibility(s).foreign;assert.equal(vo.rating,74);assert.equal(vo.potential,null);assert.ok(vo.potentialRange&&vo.potentialRange.max-vo.potentialRange.min===10);
+ m=doc();k.project(m,k.visibility(s));assert.equal(m.players[0].potential,null);assert.equal(m.players[0].attributesV2.tackling,70);assert.equal(m.players[0].attributesV2Range,undefined);
+});
+test('mode Précises : joueur parti ou revenu et archive inconnue ; l’ID inconnu reste masqué',()=>{
+ const s=fixturePrecise(),b=k.before(s),p=s.clubs[0].players.pop();s.clubs[1].players.push(p);k.observe(s,b,'interclub_accept');const v=k.visibility(s).own;assert.equal(v.rating,76,'joueur d’un autre club : exact');assert.equal(v.knowledge.owned,false);assert.equal(v.knowledge.exact,true);assert.equal(v.potential,null);
+ const model={players:[{id:'old-gone',name:'Archive',pos:'Centre',rating:76,attributesV2:{passing:75},positionRatings:{1:70}}]};k.project(model,k.visibility(s));assert.equal(model.players[0].rating,null);assert.deepEqual(model.players[0].attributesV2,{});
 });
 test('strict validation rejects corrupt ranges, duplicates, version, future and extra keys',()=>{
  const s=fixture(),b=k.before(s);mission(s,1);k.observe(s,b,'advance_day');for(const mutate of [x=>x.playerKnowledge.version=2,x=>x.playerKnowledge.evil=true,x=>x.playerKnowledge.records[0].push(clone(x.playerKnowledge.records[0][0])),x=>x.playerKnowledge.records[0][0][8]++,x=>x.playerKnowledge.records[0][0][2]=2]){const bad=clone(s);mutate(bad);assert.throws(()=>k.validate(bad));}

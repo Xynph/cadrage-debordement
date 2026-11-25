@@ -7,6 +7,7 @@ const Charte = preload("res://ui/charte.gd")
 const PlayerAttributes = preload("res://ui/player_attributes.gd")
 const Identity = preload("res://ui/player_identity.gd")
 const Commune = preload("res://ui/immersive08/fiche_commune.gd")
+const Notation = preload("res://ui/notation_staff.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const Carte = preload("res://ui/carte_joueur_survol.gd")
 var app: Control
@@ -247,13 +248,30 @@ func run() -> void:
 	await settle(6)
 	check(not app.get_meta("immersive08_full_player", false) and app.route == "Effectif", "Retour à l'effectif")
 
-	# Piste du marché aux attributs inconnus : « — » en ivoire-3, phrase d'observation, fiche complète au clic.
+	# Option « Précises » (défaut, 25/11/2026) : une piste d'un autre club montre ses 36 qualités en chiffres et sa note au poste en lettre.
+	var visible_piste: Dictionary = {}
+	for player: Dictionary in app.model.get("market", []):
+		if Commune.valeurs(player, "market").size() == 36:
+			visible_piste = player
+			break
+	check(not visible_piste.is_empty(), "Précises : une piste du marché montre ses 36 qualités")
+	if not visible_piste.is_empty():
+		check(PlayerAttributes.detail(visible_piste).size() == 36 and not Notation.texte_champ(visible_piste, "rating", false, app.model).is_valid_int() and Notation.texte_champ(visible_piste, "rating", false, app.model) != "?", "Précises : Niveau de la piste en lettre")
+		var principaux: Array = visible_piste.get("primaryPositions", [])
+		if not principaux.is_empty(): check(int(Notation.lettre_poste(app.model, visible_piste, int(principaux[0]), false).bas) >= 0, "Précises : note au poste de la piste en lettre")
+	# Option « En fourchette », joueur pas observé : le moteur ne publie aucune qualité, on retire ce qu'il ne publierait pas.
 	var piste: Dictionary = {}
 	for player: Dictionary in app.model.get("market", []):
-		if Commune.valeurs(player, "market").is_empty():
+		if player != visible_piste:
 			piste = player
 			break
-	check(not piste.is_empty(), "Une piste du marché aux attributs inconnus")
+	if not piste.is_empty():
+		piste.attributesV2 = {}
+		piste.positionRatings = {}
+		piste.erase("niveauCalcule")
+		piste.erase("attributesV2Range")
+		piste.knowledge = {"owned": false, "stage": "unobserved"}
+	check(not piste.is_empty() and Commune.valeurs(piste, "market").is_empty(), "Une piste du marché aux attributs inconnus (En fourchette, pas observée)")
 	if not piste.is_empty():
 		check(app.navigation_controller.open_entity({"kind":"market", "id":str(piste.id)}), "Lien de la piste disponible")
 		await settle(10)

@@ -249,7 +249,7 @@ static func lettre_niveau(model: Dictionary, p: Dictionary, notre: bool) -> Dict
 	var nc: Variant = p.get("niveauCalcule")
 	var note := -1.0
 	if nc is Dictionary and K.number(nc.get("niveau")): note = float(nc.niveau)
-	elif K.owned(p, notre) and K.number(p.get("rating")): note = float(p.rating)
+	elif K.exact(p, notre) and K.number(p.get("rating")): note = float(p.rating)
 	return lettre_note(model, p, note, notre, "niveau")
 
 # --- Modèle courant (posé par main.gd à chaque réponse du moteur) : textes et tris des vues qui n'ont pas le modèle ---
@@ -302,6 +302,22 @@ static func decalage_niveau(p: Dictionary) -> float:
 	var nc: Variant = p.get("niveauCalcule")
 	if nc is Dictionary and K.number(nc.get("niveau")) and K.number(p.get("rating")): return float(nc.niveau) - float(p.rating)
 	return 0.0
+
+## Niveau d'une date passée (niveau de juillet, bilan annuel) en lettre {bas, haut}, recalé sur l'échelle du Niveau montré.
+static func lettre_passee(model: Dictionary, p: Dictionary, valeur: Variant, notre: bool = true) -> Dictionary:
+	if not K.number(valeur): return {"bas": -1, "haut": -1}
+	return lettre_note(model, p, float(valeur) + decalage_niveau(p), notre, "niveau")
+
+## Niveau passé en texte de lettre (« B », « B/B+ »), « — » si inconnu.
+static func texte_passe(model: Dictionary, p: Dictionary, valeur: Variant, notre: bool = true) -> String:
+	var l := lettre_passee(model, p, valeur, notre)
+	return "—" if int(l.bas) < 0 else texte_note(l)
+
+## Sens ▲ ▼ = du Niveau montré depuis une date passée, d'après les lettres (jamais un écart chiffré).
+static func sens_depuis(model: Dictionary, p: Dictionary, valeur: Variant, notre: bool = true) -> String:
+	var avant := rang_lettre(lettre_passee(model, p, valeur, notre))
+	var maintenant := rang_lettre(lettre_niveau(model, p, notre))
+	return "=" if avant < 0.0 or maintenant < 0.0 else sens(maintenant - avant)
 
 ## Empreinte de l'erreur du staff au poste : une par famille de poste (11 et 14, même note → même lettre).
 static func cle_poste(numero: int) -> String:

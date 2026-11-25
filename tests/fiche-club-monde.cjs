@@ -169,7 +169,10 @@ test('Fiche club en carrière Monde : feuilles réelles, XV type recalculé, lec
     assert.equal(fiche.rapport.probable.length, 15, 'XV probable');
     assert.ok(['conquete', 'large', 'occupation', 'equilibre'].includes(fiche.coachStyle), 'style de l’entraîneur');
     assert.equal(jeu.bridge.vm.run('nativeSystems.domain("clubSheet").validate(S)'), true, 'état valide avec les derniers XV');
-    assert.ok(fiche.squad.every(p => p.rating === null || p.knowledge?.owned), 'niveau des joueurs adverses masqué selon la connaissance');
+    // Mode « Précises » (défaut, décision de Léo du 25/11/2026) : niveau et qualités des joueurs adverses visibles (exacts) ; le potentiel reste une estimation.
+    // Le masquage en mode « fourchette » est couvert par tests/qualites-fourchette.cjs.
+    assert.ok(fiche.squad.every(p => p.knowledge?.owned || (p.knowledge?.exact === true && Number.isFinite(p.rating))), 'niveau des joueurs adverses exact en mode Précises');
+    assert.ok(fiche.squad.every(p => p.knowledge?.owned || p.potential === null), 'potentiel adverse jamais exact');
     // Votre club : niveau exact connu.
     const mien = jeu.brut('club_sheet', { club: 0 }).model.clubSheet;
     assert.ok(mien.own && mien.squad.some(p => Number.isFinite(p.rating)), 'votre effectif : niveaux connus');

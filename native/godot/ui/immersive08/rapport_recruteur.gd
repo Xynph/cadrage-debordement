@@ -199,7 +199,7 @@ static func _contre(app: Control, r: Dictionary) -> Array:
 	if _nombre(p.get("salary")) and plafond > 0 and float(p.salary) > plafond * 1.15:
 		liste.append(["money", "Salaire au-dessus du groupe", "+%d %%" % int(100.0 * (float(p.salary) / plafond - 1.0)), finances])
 	var stade := str(p.get("knowledge", {}).get("stage", "")) if p.get("knowledge") is Dictionary else ""
-	if stade != "deep": liste.append(["search", "Qualités à confirmer", "", fiche])
+	if stade != "deep" and not K.exact(p): liste.append(["search", "Qualités à confirmer", "", fiche])
 	var quota: Variant = p.get("quota")
 	if quota is Dictionary and quota.has("counts") and not bool(quota.counts): liste.append(["shield", "Non JIFF", "", fiche])
 	return liste
