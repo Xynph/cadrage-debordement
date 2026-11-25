@@ -301,7 +301,7 @@ function awardPenalty(l,side,options={}){
   jeuDeloyal=fautifSousAvantage&&!!decision.sanction;sousAvantage=fautifSousAvantage&&!decision.sanction;
   // Arbitrage fin (dist/arbitrage.js) : cause détaillée de l'incident tiré, sans tirage de plus.
   const fin=typeof arbitrageFaute==='function'?arbitrageFaute(l,foul,side,incident,decision.repeated,options):null;
-  addEvent(l,sousAvantage?`${S.clubs[l.pair[foul]].abbr} sanctionné pour ${incident.label}${decision.repeated?' (fautes répétées)':''} pendant son avantage : retour à la faute initiale de ${S.clubs[l.pair[side]].abbr}, ${sanctionInitiale} pour ${S.clubs[l.pair[foul]].abbr}.`:fin?fin.texte:`${S.clubs[l.pair[foul]].abbr} sanctionné pour ${incident.label}${decision.repeated?' (fautes répétées)':''}. Pénalité pour ${S.clubs[l.pair[side]].abbr}.`,'penalty',{team:side,cause:incident.id,...(fin?{detail:fin.id}:{})});
+  addEvent(l,sousAvantage?`${S.clubs[l.pair[foul]].abbr} sanctionné pour ${incident.label}${decision.repeated?' (fautes répétées)':''}, pénalité écartée pendant son avantage : retour à la faute initiale de ${S.clubs[l.pair[side]].abbr}, ${sanctionInitiale} pour ${S.clubs[l.pair[foul]].abbr}.`:fin?fin.texte:`${S.clubs[l.pair[foul]].abbr} sanctionné pour ${incident.label}${decision.repeated?' (fautes répétées)':''}. Pénalité pour ${S.clubs[l.pair[side]].abbr}.`,'penalty',{team:side,cause:incident.id,...(fin?{detail:fin.id}:{})});
   if(decision.sanction){
    const eligible=activePlayers(l,foul);
    if(eligible.length){
