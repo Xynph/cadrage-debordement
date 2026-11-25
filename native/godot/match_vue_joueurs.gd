@@ -351,10 +351,15 @@ static func _make_actor(v: NativeMatchView, id: String, side: int, target: Vecto
 	# Foulée relative à l'ancien athlète de 1,90 m (paliers et allures des clips calés dessus).
 	var foulee := 1.0
 	var profil := ""
+	var gabarit: PackedScene = null
 	if JoueurV5.disponible():
-		# Joueurs v5 : gabarit du poste, à la taille du gabarit ; peau et coupe tirées de l'identifiant.
 		profil = JoueurV5.profil_pour(id, slot)
-		model = JoueurV5.scene(profil).instantiate() as Node3D
+		gabarit = JoueurV5.scene(profil)
+		if gabarit == null:
+			profil = ""
+	if gabarit != null:
+		# Joueurs v5 : gabarit du poste, à la taille du gabarit ; peau et coupe tirées de l'identifiant.
+		model = gabarit.instantiate() as Node3D
 		actor.add_child(model)
 		model.set_meta("athlete_id", id)
 		model.set_meta("joueur_v5", profil)
@@ -401,12 +406,22 @@ static func _make_actor(v: NativeMatchView, id: String, side: int, target: Vecto
 			idle = v._animations_adaptees.repos()
 		if not idle.is_empty():
 			animation.play(idle)
-	return {"node": actor, "model": model, "side": side, "profil": profil, "foulee": foulee, "from": target, "target": target,
+	return {"node": actor, "model": model, "side": side, "profil": profil, "foulee": foulee, "tete_m": _hauteur_tete(model), "from": target, "target": target,
 		"elapsed": NativeMatchView.BLEND_SECONDS, "duree": NativeMatchView.BLEND_SECONDS, "velocity": Vector3.ZERO, "tangent": Vector3.ZERO, "running": false,
 		"feet": {}, "cut_direction": 0, "cut_idle": NativeMatchView.BLEND_SECONDS, "cut_beat": -1.0, "cut_normal_speed": false, "cut_pose": {}, "cut_plant": {},
 		"contact_base": {}, "contact_weight": 0.0,
 		"animation": animation, "idle": idle, "run": run, "walk": walk, "adapted": adapted, "pace": -1, "geste": {}, "rig": Presentation.rig_for(model), "holding": false, "grip": 0.0,
 		"allure": 0.0, "tenu": 0.0, "tuck": 0.0, "cote_ballon": 0.0, "porte": 0.0}
+
+
+## Hauteur de l'os de la tête au repos, en mètres au-dessus des pieds (corps calibré, hors arbre de
+## scène) : 1,66 m pour l'ancien athlète de 1,90 m, 1,57 à 1,88 m pour les gabarits v5.
+static func _hauteur_tete(model: Node3D) -> float:
+	var rig := Presentation.rig_for(model)
+	var os := rig.find_bone("Head") if rig else -1
+	if os < 0:
+		return Presentation.HAUTEUR_TETE_REFERENCE
+	return (model.transform * JoueurV5._relatif(rig, model) * rig.get_bone_global_rest(os)).origin.y
 
 
 static func _model_bounds(node: Node3D, origin: Node3D) -> AABB:
