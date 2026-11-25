@@ -9,6 +9,7 @@ extends SceneTree
 ## Imprime une ligne FORMATION_DA {checks, failures}. Captures (rendu graphique) : CD_FORMATION_DA_CAPTURES=<dossier>.
 const Flow = preload("helpers/contextual_flow.gd")
 const Charte = preload("res://ui/charte.gd")
+const NotationStaff = preload("res://ui/notation_staff.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -95,6 +96,7 @@ func run() -> void:
 	await decision_strip()
 	await tabs()
 	await subpages()
+	await notation_tailles_et_jauge()
 	await youth_clicks()
 	await colors()
 	shot("formation-1920x1080")
@@ -131,7 +133,7 @@ func layout() -> void:
 	check(node("AcademyImmersiveDossier") == null, "Plus de fiche fixe à droite")
 	var table := node("AcademyImmersiveTable")
 	check(table != null and table.size.x >= app.root_content.size.x * .6, "Le tableau prend toute la largeur")
-	for key in ["source", "name", "pos", "age", "note", "potential", "change", "minutes", "contract", "status"]:
+	for key in ["source", "name", "pos", "age", "note", "potential", "minutes", "contract", "status"]:
 		check(node("AcademySort_" + key) != null, "Tri par colonne · " + key)
 	for index in 4: check(node("AcademyImmersiveTab" + str(index)) != null, "Onglet " + str(index))
 	for id in ["AcademyTileEspoirs", "AcademyTilePepites", "AcademyTileDecider", "AcademyTilePlaces", "OpenYouthDevelopment", "AcademyDecision", "AcademyDecisions"]:
@@ -215,7 +217,7 @@ func decision_strip() -> void:
 
 func tabs() -> void:
 	check(await press("AcademyImmersiveTab1"), "Onglet Progression")
-	check(node("AcademySort_start") != null and node("AcademySort_change") != null, "Progression : niveau de départ et gain triables")
+	check(node("AcademySort_start") != null and node("AcademySort_note") != null and node("AcademySort_change") == null, "Progression : niveau de départ et niveau (flèche) triables, plus de colonne « depuis juillet »")
 	check(await press("AcademyImmersiveTab2"), "Onglet Passerelles")
 	check(node("AcademyPathwayPane") != null, "Passerelles : panneau")
 	for id in ["AcademyStage0", "AcademyStage1", "AcademyStage2", "AcademyOpenCentre", "AcademyFollowUp", "AcademyJuniorCompetition"]:
@@ -260,6 +262,35 @@ func click(control: Control) -> void:
 	event.pressed = false
 	control.gui_input.emit(event)
 	await settle(10)
+
+## Notation façon FM (25/11) : pastilles de la Formation à la taille de l'Effectif (32 unités) ; jauge du suivi des jeunes
+## posée sur la lettre MONTRÉE (centre d'un cran de l'échelle du staff), jamais sur la valeur cachée.
+func notation_tailles_et_jauge() -> void:
+	app._navigate("Formation", false)
+	await settle(8)
+	var densite: float = load("res://ui/immersive08/components.gd").density
+	var pastilles: Array = app.root_content.find_children("AcademyLettreNiveau", "Control", true, false)
+	check(not pastilles.is_empty(), "Pastilles de Niveau dans le tableau de la Formation")
+	for rond: Control in pastilles.slice(0, 5):
+		check(absf(rond.get_global_rect().size.y - 32.0 * densite) <= 1.0, "Pastille de la Formation à la taille de l'Effectif (%.1f px, attendu %.1f)" % [rond.get_global_rect().size.y, 32.0 * densite])
+	# « À décider » : niveau et potentiel en pastilles rondes, plus en puce texte « S+ · niv. B ».
+	var textes: Array = []
+	for l: Node in app.root_content.find_children("*", "Label", true, false):
+		var t := (l as Label).text
+		if t.contains("niv. ") or t.begins_with("Niv. "): textes.append(t)
+	check(textes.is_empty(), "Formation : lettres en pastilles, pas en puce texte (%s)" % ", ".join(textes.slice(0, 3)))
+	check(await open_youth_page(), "Jauge du suivi : sous-page ouverte")
+	for nom in ["YouthLevelLettre", "YouthPotentialLettre"]:
+		var ronds: Array = app.root_content.find_children(nom, "Control", true, false)
+		check(not ronds.is_empty() and ronds.all(func(n: Node) -> bool: return str(n.get_meta("lettre", "")) != ""), "Suivi : %s en pastille ronde (%d)" % [nom, ronds.size()])
+	var ref: float = NotationStaff.reference_effectif(app.model)
+	var barres: Array = app.root_content.find_children("YouthLevelRange", "Control", true, false)
+	check(not barres.is_empty(), "Jauges niveau / potentiel du suivi")
+	for barre: Control in barres:
+		var n: float = barre.get("niveau")
+		if n < 0: continue
+		var crans: float = (n - ref) / NotationStaff.PAS * 2.0
+		check(absf(crans - roundf(crans)) < 0.01, "Jauge du suivi posée sur une lettre montrée (%.2f, référence %.2f)" % [n, ref])
 
 func open_youth_page() -> bool:
 	app._navigate("Formation", false)

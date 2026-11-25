@@ -40,6 +40,7 @@ const EXTRAS := [
 	{"id": "entrainement-mois", "libelle": "Entraînement · onglet Mois", "type": "entrainement_onglet", "onglet": 5},
 	{"id": "entrainement-mois-jour", "libelle": "Entraînement · Mois · petite fenêtre d'un jour", "type": "entrainement_onglet", "onglet": 5, "jour": true},
 	{"id": "entrainement-seance", "libelle": "Entraînement · Mois · fiche de séance (FM27 n° 25)", "type": "entrainement_onglet", "onglet": 5, "jour": true, "seance": true},
+	{"id": "entrainement-seance-qualites", "libelle": "Entraînement · choix de séance · qualités travaillées au survol", "type": "entrainement_onglet", "onglet": 5, "jour": true, "seance": true, "seance_qualites": true},
 	{"id": "entrainement-seance-choisie", "libelle": "Entraînement · Mois · séance remplacée d'un clic", "type": "entrainement_onglet", "onglet": 5, "jour": true, "seance": true, "seance_choix": true},
 	{"id": "salle-entrainement", "libelle": "Observer la préparation (salle d'entraînement)", "type": "salle_entrainement"},
 	{"id": "salle-entrainement-joueur", "libelle": "Observer la préparation · petite fenêtre d'un joueur", "type": "salle_entrainement", "joueur": true},
@@ -49,6 +50,12 @@ const EXTRAS := [
 	{"id": "fiche-joueur-apprendre-fenetre", "libelle": "Fiche joueur · Apprendre un poste (petite fenêtre)", "type": "joueur", "apprendre": true, "ouvrir": "PlayerLearnPosition"},
 	{"id": "mini-fiche", "libelle": "Mini-fiche au survol (Effectif)", "type": "mini_fiche"},
 	{"id": "progression", "libelle": "Fiche joueur · progression par qualité", "type": "progression"},
+	{"id": "fleches-fiche", "libelle": "Flèches de progression · fiche joueur", "type": "fleches", "vue": "fiche"},
+	{"id": "fleches-survol", "libelle": "Flèches de progression · courbe 12 mois au survol", "type": "fleches", "vue": "survol"},
+	{"id": "fleches-effectif", "libelle": "Flèches de progression · Effectif", "type": "fleches", "vue": "effectif"},
+	{"id": "fleches-centre", "libelle": "Flèches de progression · Centre (parcours)", "type": "fleches", "vue": "centre"},
+	{"id": "fleches-fiche-baisses", "libelle": "Flèches de progression · fiche d'un joueur âgé (baisses)", "type": "fleches", "vue": "fiche", "baisses": true},
+	{"id": "fleches-developpement", "libelle": "Flèches de progression · fiche, onglet Développement (entraînement individuel)", "type": "fleches", "vue": "developpement"},
 	{"id": "progression-niveau", "libelle": "Fiche joueur · progression, vue Niveau", "type": "progression", "autre": true},
 	{"id": "equilibre-postes", "libelle": "Équilibre par poste (infobulle Aptes)", "type": "equilibre_postes"},
 	{"id": "comparateur", "libelle": "Comparateur (deux joueurs)", "type": "comparateur"},
@@ -60,6 +67,7 @@ const EXTRAS := [
 	{"id": "presse-ouverte", "libelle": "Presse : conférence avec questions ouvertes", "type": "presse_ouverte"},
 	{"id": "presse-conference-fm", "libelle": "Presse : conférence de presse (salle, une question à la fois)", "type": "presse_ouverte", "fm": true},
 	{"id": "presse-conference-fm-suite", "libelle": "Presse : conférence après une réponse (réaction en flèches)", "type": "presse_ouverte", "fm": true, "repondre": true},
+	{"id": "presse-conference-fm-compte-rendu", "libelle": "Presse : compte-rendu après la dernière réponse (même photo)", "type": "presse_ouverte", "fm": true, "tout": true},
 	{"id": "presse-conference-fm-joueur", "libelle": "Presse : conférence, petite fenêtre du joueur concerné", "type": "presse_ouverte", "fm": true, "clic": "PressPlayerOpen"},
 	{"id": "presse-conference", "libelle": "Presse : Conférence", "type": "presse_onglet", "onglet": 1},
 	{"id": "presse-historique", "libelle": "Presse : Historique", "type": "presse_onglet", "onglet": 2},
@@ -129,6 +137,9 @@ const EXTRAS := [
 	{"id": "club-histoire", "libelle": "Club · onglet Histoire", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "history", "repos": "overview"},
 	{"id": "club-jeu", "libelle": "Club · onglet Notre jeu (avis du conseil sur notre jeu)", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "jeu", "repos": "overview"},
 	{"id": "club-jeu-fenetre", "libelle": "Club · Notre jeu, petite fenêtre d'un chiffre", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "jeu", "repos": "overview", "presser": "ConseilJeuLigne_0"},
+	## Organigramme du club (planche du 24/11/2026) : la carte en cercles, puis la petite fenêtre d'un membre.
+	{"id": "club-organigramme", "libelle": "Club · onglet Organigramme", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "organigramme", "repos": "overview"},
+	{"id": "club-organigramme-fenetre", "libelle": "Club · Organigramme, petite fenêtre d'un membre", "type": "onglet_cle", "route": "Club", "cle": "immersive08_club_tab", "onglet": "organigramme", "repos": "overview", "presser": "OrgaMedecin"},
 	## Staff par service (23/11/2026) : un poste en plus visé (même commande que le clic « + ») dans chaque service qui a un membre en surnombre.
 	{"id": "staff-services-renfort", "libelle": "Staff par service · postes en plus visés", "type": "staff_services"},
 	{"id": "vestiaire-entretiens", "libelle": "Vestiaire · onglet Entretiens et duos", "type": "onglet_cle", "route": "Vestiaire", "cle": "immersive08_locker_tab", "onglet": "people", "repos": "week"},
@@ -657,6 +668,21 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 					if seances.is_empty(): return {"statut": "echec", "note": "aucune séance dans le jour"}
 					(seances[seances.size() - 1] as Button).pressed.emit()
 					await stabiliser()
+					# Qualités travaillées : famille Technique, survol de la ligne « Ateliers par poste » (bulle avant de choisir).
+					if bool(ecran.get("seance_qualites", false)):
+						var technique := page.find_child("TrainingSessionFamilyOpen_technique", true, false) as Button
+						if technique != null:
+							technique.pressed.emit()
+							await stabiliser()
+						var cible_q: Control = null
+						for ligne_q: Node in page.find_children("TrainingSessionRow*", "", true, false):
+							var textes_q := ligne_q.find_children("*", "Label", true, false).map(func(l: Label) -> String: return l.text)
+							if "Ateliers par poste" in textes_q:
+								cible_q = ligne_q.find_child("TrainingSessionPick*", true, false) as Control
+								if cible_q == null: cible_q = ligne_q as Control
+						if cible_q == null: return {"statut": "indisponible", "note": "pas d'atelier par poste"}
+						load("res://ui/bulle_survol.gd").montrer(cible_q)
+						await stabiliser()
 					# Séance déjà remplacée (taille précédente) : la fiche montre déjà le choix, on ne revient pas en arrière.
 					if bool(ecran.get("seance_choix", false)) and page.find_child("TrainingSessionChanged", true, false) == null:
 						# Famille Intensif : jauges vertes (gains) et rouges (coûts, risque) côte à côte.
@@ -685,6 +711,8 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				await stabiliser()
 		"salle_conseil":
 			if not (app.contextual_director.active() and app.contextual_director.kind == "board"):
+				# Attention : la suite de la visite filme cette CARRIÈRE NEUVE (qualités Précises), plus la carrière exportée.
+				print("ECRANS_FILMES_CARRIERE_NEUVE ", ecran.id, " : écrans suivants = carrière neuve (club 102, qualités Précises)")
 				if not app._command("new_career", {"mode": "world-champ", "club": 102, "start": "premiers-clubs"}): return {"statut": "echec", "note": "carrière neuve refusée"}
 				while app.waiting: await process_frame
 				app.timer.stop()
@@ -743,6 +771,19 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 					if reponses.is_empty(): return {"statut": "echec", "note": "aucune réponse"}
 					(reponses[0] as Button).pressed.emit()
 					await stabiliser()
+				if ecran.get("tout", false):
+					# Toutes les questions répondues (première réponse) : la dernière publie, le compte-rendu s'affiche.
+					for tour in 8:
+						var vue: Control = app.contextual_director.view
+						if vue == null or not vue._available(): break
+						var restantes: Array = vue.find_children("PressAnswer_*", "Button", true, false)
+						if restantes.is_empty(): break
+						(restantes[0] as Button).pressed.emit()
+						while app.waiting: await process_frame
+						await stabiliser()
+					app.contextual_director.sync()
+					await stabiliser()
+					if app.find_child("PressOutcomeHeadline", true, false) == null: return {"statut": "echec", "note": "compte-rendu absent"}
 				if ecran.has("clic"):
 					var cible: Button = app.contextual_director.view.find_child(str(ecran.clic), true, false) as Button
 					if cible == null: return {"statut": "echec", "note": "%s absent" % ecran.clic}
@@ -960,6 +1001,61 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 					if bouton == null: return {"statut": "echec", "note": "élément introuvable : " + str(ecran.ouvrir)}
 					bouton.pressed.emit()
 					await stabiliser()
+		"fleches":
+			# Joueur de l'effectif aux crans les plus variés, puis aux flèches les plus nombreuses ; jeu invisible sans souris :
+			# la bulle de courbe est montrée par programme (même appel que le survol).
+			var F = load("res://ui/fleches_progression.gd")
+			var effectif_f: Array = app.model.get("squad", [])
+			if effectif_f.is_empty(): return {"statut": "indisponible", "note": "effectif vide"}
+			var choisi_f: Dictionary = effectif_f[0]
+			var meilleur_f := -1
+			for p: Variant in effectif_f:
+				if not p is Dictionary: continue
+				var n_f := 0
+				var crans_f := {}
+				var baisses_f := 0
+				var hausses_f := 0
+				for q: Dictionary in F.donnees(app, p).get("qualites", {}).values():
+					crans_f[int(q.cran)] = true
+					if int(q.cran) != 0: n_f += 1
+					if int(q.cran) < 0: baisses_f += 1
+					if int(q.cran) > 0: hausses_f += 1
+				n_f += 100 * crans_f.size()
+				# Hausses ET baisses d'abord ; « baisses » : le joueur aux baisses les plus nombreuses (âge).
+				if baisses_f > 0 and hausses_f > 0: n_f += 10000
+				if bool(ecran.get("baisses", false)): n_f = baisses_f * 1000 + crans_f.size() * 10 + hausses_f
+				if n_f > meilleur_f:
+					meilleur_f = n_f
+					choisi_f = p
+			match str(ecran.vue):
+				"effectif":
+					app.management_ui.roster.immersive_tab = 0
+					app._navigate("Effectif")
+					await stabiliser()
+				"centre":
+					# Parcours actifs : liste du Centre ; sinon, liste des jeunes de la Formation.
+					if bool(app.model.get("clubLife", {}).get("academyPathways", {}).get("active", false)):
+						app.management_ui.immersive_centre = {"club": app.model.get("club", {}).get("id"), "tab": "Parcours", "scroll": {}}
+						app._navigate("Centre")
+					else:
+						app.management_ui.erase("formation_page")
+						app._navigate("Formation")
+					await stabiliser()
+				_:
+					app.management_ui.immersive_player_tab = 4 if str(ecran.vue) == "developpement" else 0
+					app._navigate("Effectif")
+					await stabiliser()
+					if not app.navigation_controller.open_entity({"kind": "player", "id": ident(choisi_f.get("id"))}): return {"statut": "echec", "note": "fiche joueur non ouverte"}
+					await stabiliser()
+					if str(ecran.vue) == "survol":
+						var qualites_f: Dictionary = F.donnees(app, choisi_f).get("qualites", {})
+						var cible_f := ""
+						for cle: String in qualites_f:
+							if cible_f.is_empty() or absi(int(qualites_f[cle].cran)) > absi(int(qualites_f[cible_f].cran)): cible_f = cle
+						var ancre_f := app.find_child("FlecheSurvol_Qualite_" + cible_f, true, false) as Control
+						if ancre_f == null: return {"statut": "indisponible", "note": "pas de courbe sur " + cible_f}
+						load("res://ui/bulle_survol.gd").montrer(ancre_f)
+						await stabiliser()
 		"progression":
 			var effectif_p: Array = app.model.get("squad", [])
 			if effectif_p.is_empty(): return {"statut": "indisponible", "note": "effectif vide"}
@@ -1601,6 +1697,10 @@ func run() -> void:
 			if entree.statut == "ok": await capturer(entree, o, taille)
 			refermer(ecran)
 			print("ECRANS_FILMES ", entree.taille, " ", entree.id, " ", entree.statut, " debordements=", entree.get("nombre_debordements", 0), " tronques=", entree.get("nombre_textes_tronques", 0))
+			# CD_FILM_SUIVI_FOURCHETTE=1 : largeur des qualités en fourchette du premier joueur et semaine du moteur après chaque écran.
+			if OS.get_environment("CD_FILM_SUIVI_FOURCHETTE") == "1" and not app.model.get("squad", []).is_empty():
+				var premier: Dictionary = app.model.squad[0]
+				print("ECRANS_FILMES_FOURCHETTE ", entree.id, " largeur=", premier.get("knowledge", {}).get("qualitesLargeur", 0) if premier.get("knowledge") is Dictionary else "?", " jour=", app.model.get("meta", {}).get("calendarToday", "?"), " route=", app.route)
 	if not en_direct.is_empty():
 		var raison := "désactivé (--sans-direct)" if not o.direct else ("durée maximale atteinte" if Time.get_ticks_msec() > fin_au_plus_tard else "")
 		if raison.is_empty():

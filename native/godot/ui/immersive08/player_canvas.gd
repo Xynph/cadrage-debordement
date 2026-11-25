@@ -27,6 +27,7 @@ const Sort = preload("res://ui/recruitment_sort.gd")
 const Sales = preload("res://ui/player_sales_view.gd")
 const FicheCharge = preload("res://ui/immersive08/fiche_charge.gd")
 const FicheRoles = preload("res://ui/immersive08/fiche_roles.gd")
+const Notation = preload("res://ui/notation_staff.gd")
 const TempsJeu = preload("res://ui/immersive08/fiche_temps_jeu.gd")
 const Progression = preload("res://ui/immersive08/progression_fiche.gd")
 const AgentJoueur = preload("res://ui/agent_joueur.gd")
@@ -118,10 +119,10 @@ static func build(app:Control,player:Dictionary,source:String="squad") -> Contro
 			_postes(D.panel(page,Rect2(0,top+446,GAUCHE,HAUTEUR-top-446-50),"","","","PlayerPositionsCard"),app,player,source)
 			if source=="market":
 				_recrutement(D.panel(page,Rect2(DROITE_X,top,DROITE,500),"","","","PlayerRecruitmentCard"),app,player)
-				_valeur(D.panel(page,Rect2(DROITE_X,top+516,DROITE,210),"","","","PlayerValueCard"),detailed)
+				_valeur(D.panel(page,Rect2(DROITE_X,top+516,DROITE,210),"","","","PlayerValueCard"),detailed,Commune.fourchettes(player))
 			else:
 				_disponibilite(D.panel(page,Rect2(DROITE_X,top,DROITE,300),"","","","PlayerAvailabilityCard"),app,player,source)
-				_valeur(D.panel(page,Rect2(DROITE_X,top+316,DROITE,210),"","","","PlayerValueCard"),detailed)
+				_valeur(D.panel(page,Rect2(DROITE_X,top+316,DROITE,210),"","","","PlayerValueCard"),detailed,Commune.fourchettes(player))
 				if source=="squad": _contrat_resume(D.panel(page,Rect2(DROITE_X,top+542,DROITE,HAUTEUR-top-542-50),"","","","PlayerContractCard"),app,player)
 				else: _formation(D.panel(page,Rect2(DROITE_X,top+542,DROITE,HAUTEUR-top-542-50),"","","","PlayerAcademyCard"),app,player)
 		2:
@@ -301,16 +302,26 @@ static func _bandeau(page: Control, app: Control, player: Dictionary, source: St
 	_verdict(hero,app,player,source)
 	# Niveau et potentiel, à droite du bandeau.
 	D.line(hero,Vector2(1600,22),Vector2(1601,188),Color(Charte.FILET,.9))
+	# Notation façon FM (planche 24/11) : estimation du staff, lettre relative à notre effectif + palier vague ;
+	# potentiel en lettre + phrase. Aucun chiffre du moteur.
+	var note := Notation.resume(app.model,player,Commune.notre_joueur(source))
 	D.text(hero,1640,40,"NIVEAU",17,Charte.IVOIRE_2,700,200)
-	var niveau := _anton(D.text(hero,1640,104,G.rating_text(player,Commune.notre_joueur(source)),56,Charte.IVOIRE,800,150))
-	niveau.name = "PlayerGlobalRating"
-	var largeur_niveau := Charte.TITRE_FICHE.get_string_size(niveau.text,HORIZONTAL_ALIGNMENT_LEFT,-1,maxi(12,C.px(56))).x/C.density
-	D.text(hero,1640+largeur_niveau+10,104,"/ 100",22,Charte.IVOIRE_2,500,80)
-	D.text(hero,1930,40,"POTENTIEL",17,Charte.IVOIRE_2,700,200)
-	var potential := _anton(D.text(hero,1930,104,G.potential_text(player),56,Charte.IVOIRE,800,300))
-	potential.name = "PlayerGlobalPotential"
-	potential.mouse_filter = Control.MOUSE_FILTER_PASS
-	potential.tooltip_text = G.potential_tooltip(player)
+	# Staff pas sûr (qualités en fourchette) : pastille double, la même que « son rôle ».
+	var pastille_n := Notation.pastille_note(hero,1640,88,note.niveau_note,64,"PlayerGlobalRating")
+	var lettre_l := Notation.largeur_note(note.niveau_note,64)
+	# Flèche du niveau (moyenne des 36 qualités sur 4 semaines), comme dans l'Effectif et la Formation.
+	if source=="squad" or source=="academy":
+		var fl_niveau: Dictionary = load("res://ui/fleches_progression.gd").donnees(app,player).get("niveau",{})
+		if not fl_niveau.is_empty(): load("res://ui/fleches_progression.gd").marquer_pastille(app,pastille_n,int(fl_niveau.cran),fl_niveau.serie,"Niveau","NiveauFiche")
+	Notation.poser_palier(hero,1640+lettre_l+14,88,note.palier,19,1950-(1640+lettre_l+14),"PlayerPalier")
+	D.text(hero,1966,40,"POTENTIEL",17,Charte.IVOIRE_2,700,200)
+	var lettre_p := Notation.pastille(hero,1966,88,int(note.potentiel),64,"PlayerGlobalPotential")
+	var phrase := D.text(hero,1966+lettre_p+14,96,str(note.phrase.texte),20,note.phrase.couleur,700,2240-(1966+lettre_p+14),HORIZONTAL_ALIGNMENT_LEFT,false)
+	phrase.name = "PlayerPotentielPhrase"
+	phrase.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	phrase.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+	phrase.size.y *= 2.1
+	phrase.position.y -= phrase.size.y * 0.25
 	var dispo := Commune.disponibilite(app,player,source)
 	var etat := "Disponible" if dispo.etat == "apte" else str(dispo.texte)
 	D.text(hero,1640,150,etat,20,dispo.couleur,600,580,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerHeroAvailability"
@@ -400,7 +411,7 @@ static func _attributs(card: Panel, app: Control, player: Dictionary, source: St
 	else:
 		D.text(card,1396,38,"36 ATTRIBUTS",17,Charte.IVOIRE_2,700,240,HORIZONTAL_ALIGNMENT_RIGHT)
 	FicheRoles.bandes(card,Vector2(24,72),Vector2(1372,340),FicheRoles.role(str(FicheRoles.etat(app,player,values).role)))
-	Commune.grille_attributs(card,Vector2(24,72),Vector2(1372,340),values,"PlayerDetailedAttribute_")
+	Commune.grille_attributs(card,Vector2(24,72),Vector2(1372,340),values,"PlayerDetailedAttribute_",({"app":app,"joueur":player} if source=="squad" else {}).merged({"fourchettes":Commune.fourchettes(player)}))
 
 ## Carte Postes et rôles : rôles des postes du joueur (note du rôle + familiarité au poste), qualités du rôle choisi,
 ## terrain des 15 postes coloré par familiarité (fiche_roles.gd), puis courbe des notes de match.
@@ -486,7 +497,7 @@ static func _ligne(card: Panel, y: float, libelle: String, valeur: String, coule
 	return texte
 
 ## Trois points forts et trois points à travailler sur les 36 attributs.
-static func _valeur(card: Panel, values: Dictionary) -> void:
+static func _valeur(card: Panel, values: Dictionary, fourchettes: Dictionary = {}) -> void:
 	_titre(card,"VALEUR","SUR 36 ATTRIBUTS")
 	var paires := Commune.points(values)
 	if values.is_empty():
@@ -501,7 +512,10 @@ static func _valeur(card: Panel, values: Dictionary) -> void:
 			var y := 124.0 + i * 30
 			D.text(card,x,y,str(entree[1]),19,Charte.IVOIRE,500,200,HORIZONTAL_ALIGNMENT_LEFT,true)
 			D.bar(card,Rect2(x+214,y-10,90,5),float(entree[2]),Charte.IVOIRE_2)
-			D.text(card,x+360,y,PlayerAttributes.caption(entree[2]),20,Charte.couleur_attribut(entree[2]),700,46,HORIZONTAL_ALIGNMENT_RIGHT).name = ("PlayerStrength_" if k == 0 else "PlayerWeakness_") + str(entree[0])
+			# Qualité encore en fourchette (option de carrière) : la fourchette, jamais la valeur exacte.
+			var plage: Variant = fourchettes.get(entree[0])
+			var texte_valeur := "%d-%d" % [int(plage.min), int(plage.max)] if plage is Dictionary else PlayerAttributes.caption(entree[2])
+			D.text(card,x+360,y,texte_valeur,20,Charte.couleur_attribut(entree[2]),700,80,HORIZONTAL_ALIGNMENT_RIGHT).name = ("PlayerStrength_" if k == 0 else "PlayerWeakness_") + str(entree[0])
 
 ## Contrat en résumé (Vue d'ensemble) : salaire, échéance, prolongation, action.
 static func _contrat_resume(card: Panel, app: Control, player: Dictionary) -> void:

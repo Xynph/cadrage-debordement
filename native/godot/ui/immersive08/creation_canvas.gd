@@ -501,12 +501,12 @@ static func _format(app: Control, parent: Container, division: String, heading: 
 	block.add_child(_etiquette("Format et enjeux" if not heading else "Format de la division et enjeux"))
 	for detail: String in format: block.add_child(C.wrap(detail, 17, C.IVORY))
 
-static func _chiffre(parent: HBoxContainer, caption: String, value: String, detail: String, id: String = "") -> VBoxContainer:
+static func _chiffre(parent: HBoxContainer, caption: String, value: String, detail: String, id: String = "", taille: int = 37) -> VBoxContainer:
 	var column := C.v(0)
 	if not id.is_empty(): column.name = id
 	parent.add_child(C.fill(column))
 	column.add_child(_etiquette(caption))
-	var figure := C.label(value, 37, C.IVORY, true, 800)
+	var figure := C.label(value, taille, C.IVORY, true, 800)
 	figure.name = "Valeur"
 	column.add_child(figure)
 	if not detail.is_empty(): column.add_child(C.wrap(detail, 17, C.MUTED))
@@ -520,8 +520,8 @@ static func _chiffres_club(app: Control, content: VBoxContainer, ctx: Dictionary
 	var facts := C.h(0)
 	content.add_child(facts)
 	if _niveau(selected) > 0:
-		var level := _chiffre(facts, "Niveau", Entry._rating(selected.get("startingRoster", {})), "%s sur %d" % [_ordinal(_rang(clubs, selected, _niveau)), total], "CreationRosterSummary")
-		level.tooltip_text = "Note moyenne de l’effectif de départ · clic : trier la grille par niveau"
+		var level := _chiffre(facts, "Niveau", Entry._rating(selected.get("startingRoster", {})), "%s sur %d" % [_ordinal(_rang(clubs, selected, _niveau)), total], "CreationRosterSummary", 26)
+		level.tooltip_text = "Niveau de l’effectif de départ · clic : trier la grille par niveau"
 		_trier_au_clic(app, level, "niveau")
 	if selected.has("cashMillions"):
 		var cash := _chiffre(facts, "Trésorerie", _millions(float(selected.cashMillions)), "%s sur %d" % [_ordinal(_rang(clubs, selected, func(c: Dictionary): return float(c.get("cashMillions", 0)))), total], "CreationCash")
@@ -934,13 +934,13 @@ static func _carte(app: Control, club: Dictionary, order: int, ctx: Dictionary, 
 	var figures := C.h(12)
 	figures.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	stack.add_child(figures)
-	if _niveau(club) > 0: _chiffre_carte(figures, "Niveau", Entry._rating(club.get("startingRoster", {})))
+	if _niveau(club) > 0: _chiffre_carte(figures, "Niveau", Entry._rating(club.get("startingRoster", {})), 22)
 	if club.has("cashMillions"): _chiffre_carte(figures, "Trésorerie", _millions(float(club.cashMillions)))
 	var rail := Jauge.new()
 	rail.value = _niveau(club)
 	rail.custom_minimum_size.y = maxi(2, C.px(5))
 	rail.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	rail.accessibility_name = "Niveau %s sur 100" % Entry._rating(club.get("startingRoster", {}))
+	rail.accessibility_name = "Niveau : %s" % Entry._rating(club.get("startingRoster", {}))
 	stack.add_child(rail)
 	var goal := str(club.get("goal", "")).strip_edges()
 	if not goal.is_empty():
@@ -962,12 +962,12 @@ static func _carte(app: Control, club: Dictionary, order: int, ctx: Dictionary, 
 	card.accessibility_description += " · Niveau %s · %d joueurs" % [Entry._rating(club.get("startingRoster", {})), _joueurs(club)]
 	return card
 
-static func _chiffre_carte(parent: HBoxContainer, caption: String, value: String) -> void:
+static func _chiffre_carte(parent: HBoxContainer, caption: String, value: String, taille: int = 37) -> void:
 	var column := C.v(0)
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(C.fill(column))
 	column.add_child(_etiquette(caption))
-	var figure := C.label(value, 37, C.IVORY, true, 800)
+	var figure := C.label(value, taille, C.IVORY, true, 800)
 	figure.clip_text = true
 	column.add_child(figure)
 

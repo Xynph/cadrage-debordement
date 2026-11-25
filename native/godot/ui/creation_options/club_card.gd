@@ -1,6 +1,6 @@
 extends RefCounted
 ## Écran « Options de carrière » · rappel du club choisi : photo du stade en fond, écusson, nom, territoire,
-## fondation, puis la note moyenne et l'effectif de départ en grand.
+## fondation, puis le niveau (palier écrit) et l'effectif de départ en grand.
 const C = preload("res://ui/immersive08/components.gd")
 const G = preload("res://ui/carnet_skin.gd")
 const Editorial = preload("res://ui/entry_editorial.gd")
@@ -63,7 +63,7 @@ static func build(app: Control, parent: Node, selected: Dictionary, base_identit
 	stack.add_child(facts)
 	var roster: Dictionary = selected.get("startingRoster", {}) if selected.get("startingRoster") is Dictionary else {}
 	if not roster.is_empty():
-		var rating := Kit.figure(facts, str(Kit.entry().call("_rating", roster)), "note moyenne", C.IVORY, 36)
+		var rating := Kit.figure(facts, str(Kit.entry().call("_rating", roster)), "niveau", C.IVORY, 26)
 		rating.name = "CreationRosterSummary"
 		Kit.divider(facts)
 		Kit.figure(facts, str(int(roster.get("forwards", 0)) + int(roster.get("backs", 0))), "joueurs", C.IVORY, 36)

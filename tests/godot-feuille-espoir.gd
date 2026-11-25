@@ -73,7 +73,9 @@ func run() -> void:
 	check(P.reduced_bench_number(app.model) == 17, "Le match à 22 reste offert (n° 17)")
 	if offre.is_empty(): fin(); return
 	var propose: Dictionary = offre.slots[0].candidates[0]
-	var attendu := "Appeler un espoir : " + Espoir.describe(propose)
+	var attendu := "Appeler un espoir : " + Espoir.describe(propose, app.model)
+	# Note au poste en lettre (décision de Léo du 24/11/2026) : jamais le chiffre du moteur.
+	check(attendu.ends_with(" au poste") and not attendu.contains("note %d" % int(propose.get("note", -1))) and not attendu.contains(", note "), "Espoir : note au poste en lettre, sans chiffre : " + attendu)
 	print("ESPOIR proposé : ", attendu)
 
 	# 1. Écran Match : les deux choix, défaut sur l'espoir.
@@ -104,7 +106,8 @@ func run() -> void:
 	# 2. Composition : lien « Appeler un espoir » → sous-page de la Composition (jamais une fenêtre, sans coup d'envoi).
 	app._navigate("Composition")
 	await settle(40)
-	var appel := app.find_child("LineupCallEspoir", true, false) as Button
+	# La pastille « LineupCallEspoir » porte son bouton plat « LineupCallEspoirLien » (Pieces.pastille, en-tête visuel #1143).
+	var appel := app.find_child("LineupCallEspoirLien", true, false) as Button
 	check(appel != null and appel.is_visible_in_tree(), "Composition : lien « Appeler un espoir »")
 	if appel == null: fin(); return
 	await capture("composition-espoir")

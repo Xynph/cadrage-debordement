@@ -16,7 +16,14 @@ assert.equal(source.split(start).length,2,'Unique delegate branch required');
 assert.equal(source.split(end).length,2,'Unique following branch required');
 assert.equal(crypto.createHash('sha256').update(LEGACY_DELEGATE).digest('hex'),LEGACY_SHA256,'Historical witness must remain verbatim');
 const left=source.indexOf(start),right=source.indexOf(end,left),current=source.slice(left,right);
-const historical=source.slice(0,left)+LEGACY_DELEGATE+source.slice(right);
+// Depuis le 14/11 (délégation du match : causeries déléguées, adjoint, homme du match par poste) la commande entoure sa boucle
+// d'un état « délégué » activé puis désactivé. Le témoin garde sa boucle historique verbatim (empreinte ci-dessus) mais
+// dans ces mêmes enveloppes, sinon l'écart de comportement voulu serait pris pour une régression de transaction.
+const wrapOpen=current.split('\n').find(line=>line.includes('setDelegating(true)')),wrapClose=current.split('\n').find(line=>line.includes('setDelegating(false)'));
+assert.ok(wrapOpen&&wrapClose&&wrapOpen!==wrapClose,'Unique delegate state wrappers required');
+const legacyLines=LEGACY_DELEGATE.split('\n');
+const historicalDelegate=legacyLines.slice(0,2).join('\n')+'\n'+wrapOpen+'\n      try{\n'+legacyLines[2]+'\n      '+wrapClose.trim()+'\n';
+const historical=source.slice(0,left)+historicalDelegate+source.slice(right);
 const loop="for(let steps=0;!S.live.finished;steps++){if(steps>=3000)throw Error('Limite de délégation atteinte.');if(S.live.paused)continueMatch();else tick();}";
 const hooks={
  ordinary:'',
@@ -67,9 +74,9 @@ test('Delegate : transactions JSON, repli de lecture, erreurs et reprises exacts
   let text=variant==='historical'?historical:source;
   if(hooks[name]){assert.ok(text.includes(loop));text=text.replaceAll(loop,loop.slice(0,-1)+hooks[name]+'}');}
   if(name==='vm_timeout'){
-   const marker='vm.runInContext(source,ctx,{timeout:15000})';assert.equal(text.split(marker).length,2);
+   const marker='vm.runInContext(source,ctx,filename?{timeout:vmLimit,filename}:{timeout:vmLimit})';assert.equal(text.split(marker).length,2);
    // Genuine interruption, shorter only inside this disposable delegate fixture.
-   text=text.replace(marker,"vm.runInContext(source,ctx,{timeout:source.startsWith('for(let steps=0;')?25:15000})");
+   text=text.replace(marker,"vm.runInContext(source,ctx,{timeout:source.startsWith('for(let steps=0;')?25:vmLimit,filename})");
   }
   const loaded=new Module(fixtureWorker,module);loaded.filename=fixtureWorker;loaded.paths=Module._nodeModulePaths(engine);loaded._compile(text,fixtureWorker);return loaded.exports;
  }
@@ -88,18 +95,32 @@ test('Delegate : transactions JSON, repli de lecture, erreurs et reprises exacts
    // validator; never weaken the new causerie guards or rewrite the witness.
    const legacy=JSON.parse(send('export').meta.exportText);delete legacy.state.contextualMatch;delete legacy.state.clubMeetings;legacy.checksum=checksum(legacy.state);
    checkpointModel=send('import',{text:JSON.stringify(legacy)});
+   // Depuis #836 un match en cours n'est jamais sauvegardé : un export restitue la carrière d'avant le coup d'envoi.
+   // Le profil de départ est donc la sauvegarde ancienne importée avant le match ; le match est relancé par les vraies
+   // commandes dans chaque scénario (reachLate) pour atteindre le même point tardif.
    assert.equal(JSON.parse(send('export').meta.exportText).state.contextualMatch,undefined);assert.equal(JSON.parse(send('export').meta.exportText).state.clubMeetings,undefined);
-   for(let steps=0;checkpointModel.live.minute<72&&steps<40;steps++){
-    if(checkpointModel.live.paused)checkpointModel=send('pause',{paused:false});
-    checkpointModel=send('tick',{steps:Math.min(16,72-checkpointModel.live.minute)});
-   }
-   assert.equal(checkpointModel.live.finished,false);assert.ok(checkpointModel.live.minute>=72,JSON.stringify({minute:checkpointModel.live.minute,paused:checkpointModel.live.paused,period:checkpointModel.live.period,atBreak:checkpointModel.live.atBreak,commands:setupCommands}));assert.equal(checkpointModel.live.period,2);
-  }finally{setup.close();}
+   assert.equal(checkpointModel.live,null,'La sauvegarde ancienne importée repart avant le match');
+    }finally{setup.close();}
+ }
+ // Atteint la 72e minute de la 2e période par les vraies commandes. Le témoin historique de « delegate » vise une ancienne
+ // sauvegarde en plein match, sans causerie : le moteur actuel n'en écrit plus (un match n'est jamais sauvegardé), alors
+ // seul ce profil jetable retire l'état des causeries du match qui vient de commencer. Aucun garde-fou du moteur n'est modifié.
+ let late=null;
+ function reachLate(send,bridge){
+  let model=send('begin_match');
+  bridge.vm.run('delete S.contextualMatch;');
+  model=send('snapshot');
+  for(let steps=0;model.live.minute<72&&steps<40;steps++){
+   if(model.live.paused)model=send('pause',{paused:false});
+   model=send('tick',{steps:Math.min(16,72-model.live.minute)});
+  }
+  assert.equal(model.live.finished,false);assert.ok(model.live.minute>=72,JSON.stringify({minute:model.live.minute,paused:model.live.paused,period:model.live.period,atBreak:model.live.atBreak}));assert.equal(model.live.period,2);
+  late={minute:model.live.minute,period:model.live.period};return model;
  }
  function scenario(variant,name,profile,out){
   fs.mkdirSync(out,{recursive:true});const worker=load(variant,name),responses=path.join(out,'responses.jsonl');
   const actualNow=Date.now;let wall=1700000000000,clockFrozen=false,b=null,n=0,lastExport='';Date.now=()=>wall;
-  const options={dataDir:profile,seed:411};if(name!=='dynamic_clock')options.now=1700000000000;
+  const options={dataDir:profile,seed:411,testVm:true};if(name!=='dynamic_clock')options.now=1700000000000;
   const request=(command,payload={})=>{if(!clockFrozen)wall+=1000;const r=b.handle({id:++n,command,payload});fs.appendFileSync(responses,JSON.stringify(r)+'\n');if(command==='export'&&r.ok)lastExport=r.model.meta.exportText;return r;};
   const good=(command,payload)=>{const r=request(command,payload);assert.equal(r.ok,true,name+'/'+variant+'/'+command+': '+r.error);return r.model;};
   const exportNow=()=>good('export').meta.exportText;
@@ -113,18 +134,21 @@ test('Delegate : transactions JSON, repli de lecture, erreurs et reprises exacts
      assert.equal(request('import',{text:JSON.stringify(doc)}).ok,false);assert.equal(exportNow(),original);assert.equal({}.polluted,undefined);
     }else{doc.state.contractText={toJSON:'Une donnée, pas une fonction',note:'Texte importé'};doc.checksum=checksum(doc.state);good('import',{text:JSON.stringify(doc)});}
    }
-   assert.equal(good('snapshot').live.finished,false);
+   assert.equal(reachLate(good,b).live.finished,false);
    const before=exportNow(),file=path.join(profile,'PrototypeGodot/donnees.json'),disk=fs.readFileSync(file);
-   if(name.startsWith('persist_fault')){
-    assert.equal(refuseSavePublication(file,()=>request('delegate')).ok,false);
-    assert.equal(exportNow(),before);assert.deepEqual(fs.readFileSync(file),disk);
-   }
    const delegated=request('delegate');
    if(name==='vm_timeout'){
     assert.equal(delegated.ok,false);assert.match(delegated.error,/timed out after 25ms/);assert.equal(exportNow(),before);assert.deepEqual(fs.readFileSync(file),disk);
     good('tick',{steps:1});good('pause',{paused:true});exportNow();
    }else{
-    assert.equal(delegated.ok,true,name+'/'+variant+': '+delegated.error);good('finish_round');
+    assert.equal(delegated.ok,true,name+'/'+variant+': '+delegated.error);settleClubMeetings(good('snapshot'),good);
+    // Un match en cours n'est jamais écrit sur le disque : la publication de la sauvegarde n'a lieu qu'à la validation du résultat.
+    // Le refus injecté vise donc cette commande ; elle doit échouer sans rien changer, puis réussir au second essai.
+    if(name.startsWith('persist_fault')){
+     assert.equal(refuseSavePublication(file,()=>request('finish_round')).ok,false);
+     assert.equal(exportNow(),before);assert.deepEqual(fs.readFileSync(file),disk);
+    }
+    good('finish_round');
     // First exercise real command-clock changes and fallback. Freeze only the
     // following roundtrip so its exportedAt legitimately stays unchanged.
     if(name==='dynamic_clock'){wall=JSON.parse(fs.readFileSync(file,'utf8')).clock;clockFrozen=true;}
@@ -172,6 +196,6 @@ test('Delegate : transactions JSON, repli de lecture, erreurs et reprises exacts
   if(firstOutput){sameFile(stdoutFile,firstOutput);assert.deepEqual(profileBytes,firstProfile,'Complete stdio profile');}else{firstOutput=stdoutFile;firstProfile=profileBytes;}
   const moved=own(path.join(cliRoot,variant+'-profile'));assert.equal(fs.existsSync(moved),false);fs.renameSync(own(profile),moved);
  }
- fs.writeFileSync(path.join(scratch,'report.json'),JSON.stringify({cases:rows,stdio:true,stdioCapture:'file',stdioBytes,checkpointCopiesBytewise:true,fixtureCheckpointEntropy:true,checkpointModuleSha256:sha(safetySource),fixtureCheckpointModuleSha256:sha(fixtureSafety),checkpoint:{minute:checkpointModel.live.minute,period:checkpointModel.live.period,setupCommands},historicalOrigin:'f88e16fdbbffec38c1259f21a156ac6217374b12',historicalBranchSha256:LEGACY_SHA256,currentWorkerSha256:sha(source),currentDelegateSha256:sha(current)},null,2));
- console.log('Delegate transaction : '+rows.length+' cas appariés complets + stdio, checkpoint réel '+checkpointModel.live.minute+'min, aucune normalisation des réponses/exports/profils ; '+scratch);
+ fs.writeFileSync(path.join(scratch,'report.json'),JSON.stringify({cases:rows,stdio:true,stdioCapture:'file',stdioBytes,checkpointCopiesBytewise:true,fixtureCheckpointEntropy:true,checkpointModuleSha256:sha(safetySource),fixtureCheckpointModuleSha256:sha(fixtureSafety),checkpoint:{minute:late.minute,period:late.period,setupCommands},historicalOrigin:'f88e16fdbbffec38c1259f21a156ac6217374b12',historicalBranchSha256:LEGACY_SHA256,currentWorkerSha256:sha(source),currentDelegateSha256:sha(current)},null,2));
+ console.log('Delegate transaction : '+rows.length+' cas appariés complets + stdio, checkpoint réel '+late.minute+'min, aucune normalisation des réponses/exports/profils ; '+scratch);
 });

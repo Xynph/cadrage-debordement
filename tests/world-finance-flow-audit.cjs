@@ -9,9 +9,10 @@ const {reconcile, reconcileInterseason, billingReplay, upkeep} = require('../nat
 const budget = require('../native/engine/club-budget.cjs'), owner = require('../native/engine/club-owner.cjs');
 const {run} = require('../ci/world-finance-flow-audit.cjs');
 
-// Semaines 0 à 12 de la saison 1 (graine 4242, club 102) : la semaine 12 porte le premier accord entre
-// deux clubs gérés (indemnité payée à l'accord, hors facturation).
-const WEEKS = 13;
+// Semaines 0 à 19 de la saison 1 (graine 4242, club 102) : la semaine 19 porte les premiers accords entre
+// deux clubs gérés (indemnité payée à l'accord, hors facturation). Avant la trésorerie de départ réaliste des clubs de
+// Championship, de Super Rugby et de D2 japonaise (24/11/2026), le premier accord tombait en semaine 12.
+const WEEKS = 20;
 let report = null;
 const audit = () => report ??= run({seed: 4242, weeks: WEEKS, club: 102});
 

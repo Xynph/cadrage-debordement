@@ -195,11 +195,22 @@ func run_main() -> void:
 	var primary := str(app.model.meta.dataDir).path_join("donnees.json")
 	var before_refusal := FileAccess.get_file_as_bytes(primary)
 	check(blocker_path.begins_with(OS.get_environment("CD_GODOT_DATA_DIR")) and DirAccess.make_dir_absolute(blocker_path) == OK,"Blocage disque réellement installé")
+	# Sauvegarde par journal d'actions (#762) : une décision courante est notée dans journal-actions.jsonl sans réécrire
+	# le profil ; le disque est donc aussi bloqué à cet endroit (dossier à la place du journal).
+	var journal_path: String = str(app.model.meta.dataDir).path_join("journal-actions.jsonl")
+	var journal_aside := journal_path + ".fixture-original"
+	var has_journal := FileAccess.file_exists(journal_path)
+	var original_journal := FileAccess.get_file_as_bytes(journal_path) if has_journal else PackedByteArray()
+	if has_journal: check(DirAccess.rename_absolute(journal_path, journal_aside) == OK,"Journal d’actions mis à l’abri")
+	check(DirAccess.make_dir_absolute(journal_path) == OK,"Blocage du journal d’actions réellement installé")
 	var attack: String = app.model.tactics.attacks[1].id
 	await command("set_tactics",{"attack":attack,"defense":app.model.tactics.defense},false)
 	check(app.decision_feedback.receipts().size() == count and app.status.text.begins_with("ACTION NON EFFECTUÉE"),"Erreur disque ne crée aucun faux succès")
 	check(FileAccess.get_file_as_bytes(primary) == before_refusal,"Sauvegarde intacte après le refus")
-	check(DirAccess.remove_absolute(blocker_path) == OK,"Fixture refus disque levée")
+	check(DirAccess.remove_absolute(blocker_path) == OK and DirAccess.remove_absolute(journal_path) == OK,"Fixture refus disque levée")
+	if has_journal:
+		check(DirAccess.rename_absolute(journal_aside, journal_path) == OK,"Journal d’actions remis en place")
+		check(FileAccess.get_file_as_bytes(journal_path) == original_journal,"Journal restauré octet pour octet")
 	if has_backup:
 		check(DirAccess.rename_absolute(preserved, blocker_path) == OK,"Original secondaire remis en place")
 		check(FileAccess.get_file_as_bytes(blocker_path) == original_backup,"Secondaire restauré octet pour octet")

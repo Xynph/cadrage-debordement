@@ -39,7 +39,19 @@ static func detail(player: Dictionary, own_context: bool = false) -> Dictionary:
 	var values: Variant = player.get("attributesV2")
 	return values if values is Dictionary and values.size() == 36 else {}
 
+## Qualités en fourchette (option de carrière, player-knowledge.cjs) : {min, max} d'une qualité, {} sinon.
+static func plage(player: Dictionary, key: String) -> Dictionary:
+	var plages: Variant = player.get("attributesV2Range")
+	var p: Variant = plages.get(key) if plages is Dictionary else null
+	return p if p is Dictionary and (p.get("min") is int or p.get("min") is float) and (p.get("max") is int or p.get("max") is float) else {}
+
+## Texte d'une qualité d'un joueur : « 45-49 » tant que le staff n'est pas sûr (même format que la fiche), sinon le chiffre.
+static func caption_joueur(player: Dictionary, key: String, value: Variant) -> String:
+	var p := plage(player, key)
+	if not p.is_empty(): return "%d-%d" % [int(p.min), int(p.max)]
+	return caption(value)
+
 static func caption(value: Variant) -> String:
-	if value is int or value is float:
-		return str(value).trim_suffix(".0").replace(".", ",")
+	# Le moteur garde les qualités au dixième (progression étalée, #1196) : l'écran n'affiche que l'entier.
+	if value is int or value is float: return str(roundi(float(value)))
 	return "—"

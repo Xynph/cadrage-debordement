@@ -1,6 +1,6 @@
 extends RefCounted
 ## Candidats pour le poste choisi (maquette 10-composition-1, sous le terrain) : tout l'effectif dans un tableau dense
-## trié par note au poste (chiffre coloré par paliers + familiarité naturel / 2e poste / dépanne, « — » si inconnue), condition (repère
+## trié par note au poste (lettre E- à S+ comme le Niveau + familiarité naturel / 2e poste / dépanne, « — » si inconnue), condition (repère
 ## 80 %), statut en mots et action (Choisir, Échanger, Libérer). Les joueurs non qualifiés ou indisponibles restent
 ## visibles en bas, grisés, avec leur raison. Filtre « Hors feuille seulement », recherche par nom, tri par en-tête.
 ## Emprunt de la variante 3 : sur les n° 1-3 et 16-18, l'encart « Première ligne formée » (loi 3) se place à droite.
@@ -17,6 +17,7 @@ const PersonName = preload("res://ui/person_name.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const Carte = preload("res://ui/carte_joueur_survol.gd")
 const Poste = preload("res://ui/immersive08/tactics_poste.gd")
+const Notation = preload("res://ui/notation_staff.gd")
 const LIGNE := 33.0
 const ENCART := 720.0
 
@@ -178,15 +179,30 @@ static func _remplir(app: Control, lignes: Control, compte: Label, slot: int, la
 	autres.sort_custom(tri)
 	var toutes: Array = qualifies + autres
 	compte.text = ("%d candidat%s · %d plus bas" % [qualifies.size(), "s" if qualifies.size() > 1 else "", autres.size()] if C.dense() else "%d candidat%s · %d non qualifié%s plus bas" % [qualifies.size(), "s" if qualifies.size() > 1 else "", autres.size(), "s" if autres.size() > 1 else ""]).to_upper()
-	lignes.custom_minimum_size = Vector2(C.px(largeur), C.px(maxf(LIGNE, toutes.size() * LIGNE)))
+	# Choisissables d'abord (triés), puis les indisponibles et non qualifiés sous un séparateur visible : le tri ne paraît
+	# jamais contradictoire (une lettre B blessée sous des D, revue du vérificateur du 25/11).
+	var separateur := not qualifies.is_empty() and not autres.is_empty()
+	lignes.custom_minimum_size = Vector2(C.px(largeur), C.px(maxf(LIGNE, (toutes.size() + (1 if separateur else 0)) * LIGNE)))
 	if toutes.is_empty():
 		Kit.texte(lignes, 8, 23, "Aucun joueur ne correspond.", Charte.IVOIRE_2, largeur - 16)
+	if separateur:
+		var bande := Control.new()
+		bande.name = "TacticsCandidatesSeparateur"
+		bande.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		lignes.add_child(bande)
+		D.place(bande, Rect2(0, qualifies.size() * LIGNE, largeur, LIGNE))
+		D.rect(bande, Rect2(0, LIGNE / 2.0 - 1.0, largeur, 2.0), Color(Charte.IVOIRE_3, .45))
+		var titre := D.text(bande, 16, LIGNE / 2.0 + 6.0, "  INDISPONIBLES OU NON QUALIFIÉS  ", 15, Charte.IVOIRE_2, 700, 420)
+		titre.add_theme_stylebox_override("normal", Charte.sans_ombre(C.box(Charte.PANNEAU, Color.TRANSPARENT, 0, 0)))
 	for i in toutes.size():
-		_ligne(app, lignes, i, toutes[i].person, toutes[i].statut, slot, largeur, colonnes)
+		_ligne(app, lignes, i + (1 if separateur and i >= qualifies.size() else 0), toutes[i].person, toutes[i].statut, slot, largeur, colonnes)
 
 static func _valeur(app: Control, person: Dictionary, slot: int, cle: String) -> Variant:
 	match cle:
-		"note": return Selection.rating(app.model, person, slot)
+		"note":
+			# Lettre MONTRÉE (à égalité : nom), jamais la note cachée.
+			var r := Notation.rang_lettre(Selection.lettre(app.model, person, slot))
+			return r if r >= 0.0 else null
 		"condition":
 			var v: Variant = person.get("condition")
 			return float(v) if v is int or v is float else null
@@ -206,6 +222,7 @@ static func _ligne(app: Control, parent: Control, rang: int, person: Dictionary,
 	Selection.wire(bouton, app, id, source, -1, str(person.get("name", "")))
 	if actuel: Kit.marqueur(bouton, Rect2(1, 5, 4, LIGNE - 10))
 	var gris := not bool(s.eligible)
+	bouton.set_meta("eligible", not gris)
 	var encre := Charte.IVOIRE_3 if gris else Charte.IVOIRE
 	var portrait := G.portrait(int(person.get("portraitIndex", 0)), C.px(26), person)
 	portrait.name = "TacticsPortrait_" + id.validate_node_name()
@@ -217,8 +234,10 @@ static func _ligne(app: Control, parent: Control, rang: int, person: Dictionary,
 	Kit.nom(app, bouton, Rect2(colonnes.name[0] + 36, 3, colonnes.name[1] - 40, 27), str(person.get("name", "")), id, "TacticsCandidateName_" + id.validate_node_name(), encre)
 	Kit.texte(bouton, colonnes.positions[0], 23, Selection.positions(person), Charte.IVOIRE_3 if gris else Charte.IVOIRE_2, colonnes.positions[1], 16)
 	var non_qualifie := str(s.texte) == "Non qualifié au poste"
-	# Note au poste chiffrée + familiarité (les étoiles ont été rejetées par Léo le 21/11/2026) ; le tri reste sur la note.
-	var note: Variant = null if non_qualifie else Selection.rating(app.model, person, slot)
+	# Note au poste en lettre + familiarité (les étoiles ont été rejetées par Léo le 21/11/2026, le chiffre le 24/11) ;
+	# le tri reste sur la note cachée.
+	# Non qualifié : sa lettre reste visible (grisée), jamais une pastille vide.
+	var note: Dictionary = Selection.lettre(app.model, person, slot)
 	var familiarite := -1 if non_qualifie else Selection.familiarite(app.model, person, slot)
 	Poste.poser(bouton, Rect2(colonnes.note[0], 8, colonnes.note[1], 18), note, familiarite, "TacticsCandidateRating", true, false, gris)
 	# Colonne Condition : barre + pourcentage tiennent dans la colonne (la barre rétrécit quand le tableau est étroit),

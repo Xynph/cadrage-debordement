@@ -41,12 +41,19 @@ func geometry(id: String) -> void:
 	var rect: Rect2 = guide.get_global_rect()
 	check(guide.expanded, "Conseil visible : " + id)
 	if not guide.expanded: return
-	check(rect.size.x <= 420, "Largeur courte <=420 : " + id)
+	# Conseil automatique (ou fenêtre basse) : bulle courte ; aide explicite : plus ample sur les grandes fenêtres.
+	var short_layout: bool = guide.mode == "context" or app.size.y <= 760
+	check(rect.size.x <= (420 if short_layout else 492), "Largeur courte <=420 (aide explicite <=492) : " + id)
 	check(contained(Rect2(Vector2.ZERO,app.size),rect), "Guide entier dans l'app : " + id)
-	check(rect.position.y >= app.size.y * .55, "Guide reste en bas, loin des titres : " + id)
+	# Placement (13/11) : la place basse libre, sinon la meilleure place de l'écran sans jamais monter dans les
+	# titres (20 % du haut) ; un conseil automatique ne recouvre pas le texte ni les boutons de la page.
+	check(rect.position.y >= app.size.y * .2, "Guide reste en bas, loin des titres : " + id)
+	if guide.mode == "context":
+		var overlap: float = guide._content_overlap(guide._painted_offsets(),guide.global_position,guide._content_rects())
+		check(overlap < 1.0, "Conseil automatique sans recouvrir le texte de la page : " + id)
 	var balloon: Control = guide.find_child("GuideSpeechBalloon",true,false)
 	var scroll: ScrollContainer = guide.find_child("GuideTextScroll",true,false)
-	check(balloon.size.x <= 302 and guide.portrait.size.x <= 112, "Bulle et portrait compacts : " + id)
+	check(balloon.size.x <= (302 if short_layout else 356) and guide.portrait.size.x <= (112 if short_layout else 136), "Bulle et portrait compacts : " + id)
 	check(guide.bubble.get_theme_font_size("font_size") >= 15, "Texte à 15 unités au moins : " + id)
 	check(scroll.size.y + 1 >= guide.bubble.get_minimum_size().y, "Fragment intégral sans scroll : " + id)
 	check(contained(rect,balloon.get_global_rect()), "Bulle non coupée : " + id)
@@ -67,6 +74,15 @@ func geometry(id: String) -> void:
 			if clipped.has_area():
 				for painted in guide._painted_controls(): check(not painted.get_global_rect().intersects(clipped),"Action métier indépendante dégagée : "+name+id)
 	metrics.append({"case":id,"app":str(app.size),"guide":str(rect),"balloon":str(balloon.size),"text":guide.bubble.text,"textHeight":guide.bubble.get_minimum_size().y,"readHeight":scroll.size.y})
+## Écrans denses (charte finale) : sans place basse libre, le conseil automatique se replie en invitation
+## (13/11) sans consommer la visite ni demander de voix ; la même aide reste lisible sur demande explicite.
+func invitation_or_advice(page: String, id: String) -> void:
+	await settle()
+	if guide.expanded: return
+	if not page.is_empty(): check(guide.find_child("GuideHelp",true,false).text.contains("conseil") and page not in guide.profile.data.seen, "Sans place libre : invitation au conseil, visite gardée : " + id)
+	check(voice_requests.is_empty(), "Sans place libre : aucune parole pour un conseil caché : " + id)
+	guide.open_help(); await settle()
+
 func run() -> void:
 	app = load("res://main.tscn").instantiate(); root.add_child(app); await wait_model(); app.timer.stop()
 	app._command("new_career",{"club":0,"mode":"common"}); await wait_model()
@@ -86,11 +102,14 @@ func run() -> void:
 		if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(resolution)
 		await settle()
 		for route in ["Bureau","Préparation","Composition"]:
-			guide.close(); app._navigate(route); await settle()
+			# Une navigation peut interroger le moteur : le contexte se lit sur le modèle rendu, comme main.gd.
+			guide.close(); app._navigate(route); await settle(); await wait_model(); await settle()
 			var page := Content.for_route(route,app.model)
 			guide.profile.data.seen.erase(page)
 			guide.consider_context(route,app.model,"snapshot",true)
 			var id := str(resolution.x) + "-" + page
+			await invitation_or_advice(page, id)
+			if not guide.expanded: id += "-aide"
 			await geometry(id)
 			if (OS.get_environment("CD_GUIDE_LAYOUT_MODE") == "stretch" and resolution.x == 1280 and route == "Bureau") or (OS.get_environment("CD_GUIDE_LAYOUT_MODE") == "native" and ((resolution.x == 1440 and route == "Bureau") or (resolution.x == 1280 and route == "Préparation"))): await capture(id)
 		# The longest real fragment, not synthetic repeated content.
@@ -101,8 +120,9 @@ func run() -> void:
 		if longest.is_empty():
 			for f in Content.fragments("bienvenue"):
 				if str(f.text).length() > str(longest.get("text","")).length(): longest = f
-		guide.close(); app._navigate("Bureau"); await settle(); guide._show_context("bienvenue",longest)
-		await geometry(str(resolution.x)+"-longest")
+		guide.close(); app._navigate("Bureau"); await settle(); guide.profile.data.seen.erase("bienvenue"); guide._show_context("bienvenue",longest)
+		await invitation_or_advice("", str(resolution.x)+"-longest")
+		await geometry(str(resolution.x)+"-longest"+("" if guide.mode == "context" else "-aide"))
 		if OS.get_environment("CD_GUIDE_LAYOUT_MODE") == "native" and resolution.x == 1280: await capture("1280-longest")
 		guide._settings_open = true; guide._layout(); await settle()
 		check(contained(Rect2(Vector2.ZERO,app.size),guide._settings_panel.get_global_rect()),"Panneau options entier dans la fenêtre : "+str(resolution.x))
@@ -199,7 +219,9 @@ func dock_cases() -> void:
 		app._navigate("Bureau"); await settle(); guide.close(); await settle()
 		var dock: Control = app.root_content.find_child("CoachCompactDock",true,false)
 		var target: Button = app.root_content.find_child("DecisionFeedbackButton",true,false)
-		check(is_instance_valid(dock),"Emplacement Gabi fourni par le vrai footer : "+str(resolution))
+		# Gabi vit dans le bandeau (choix A + C de Léo, 14/11) : le pied des écrans de carrière n'a plus
+		# d'emplacement ; les commandes compactes restent entières dans la fenêtre, hors de N10.
+		check(dock == null and contained(Rect2(Vector2.ZERO,app.size),guide.get_global_rect()),"Pied de carrière sans emplacement Gabi, Gabi entier : "+str(resolution))
 		check(target != null and not target.disabled,"N10 activé : "+str(resolution))
 		if target == null: continue
 		if resolution.x in [1280,1920]: await capture("dock-"+str(resolution.x)+"-compact")

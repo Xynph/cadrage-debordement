@@ -5,6 +5,7 @@ var checks := 0
 var failures: Array[String] = []
 var output := OS.get_environment("CD_TACTICS_DRAG_OUTPUT")
 var Selection = load("res://ui/immersive08/tactics_selection.gd")
+var Notation = load("res://ui/notation_staff.gd")
 func _initialize() -> void:call_deferred("run")
 func check(ok: bool,message: String) -> void:
 	checks+=1
@@ -46,8 +47,21 @@ func drag(from: Control,to: Control,cancel: bool=false) -> void:
 	check(not root.gui_is_dragging(),"Glisser terminé")
 func labels(node: Node) -> Array[String]:
 	var result:Array[String]=[]
+	if node==null:return result
 	for label:Label in node.find_children("*","Label",true,false):result.append(label.text)
 	return result
+## Note au poste montrée en LETTRE (décision de Léo du 24/11/2026) : méta « lettre » = lettre du staff, écrite dans la
+## pastille, et aucun chiffre dans la valeur au poste.
+func lettre_montree(node: Node,lettre: Dictionary) -> bool:
+	if node==null:return false
+	var attendu:String=Notation.texte_note(lettre)
+	var pastille:=node.find_child("Pastille",true,false)
+	var ecrit:="".join(labels(pastille))
+	var sans_chiffre:=true
+	for label:Label in node.find_children("*","Label",true,false):
+		if label.name=="MarqueMot":continue
+		for c in label.text:if c>="0" and c<="9":sans_chiffre=false
+	return str(node.get_meta("lettre",""))==attendu and attendu!="?" and ecrit!="" and sans_chiffre and ecrit.begins_with(attendu.split("/")[0])
 func capture(id: String) -> void:
 	if DisplayServer.get_name()=="headless":return
 	await RenderingServer.frame_post_draw
@@ -93,7 +107,7 @@ func run() -> void:
 		check(portrait!=null and not photo.is_empty(),"Portrait chargé au poste "+str(i+1))
 		var person:Dictionary=Selection.player(app.model,str(assignment(i).get("playerId","")))
 		check(Selection.rating(app.model,person,i)!=null,"Projection moteur présente au poste "+str(i+1))
-		check(str(int(person.get("positionRatings",{}).get(str(i+1),-1))) in labels(named("TacticsPositionRating%02d" % (i+1))),"Note projetée au poste "+str(i+1))
+		check(lettre_montree(named("TacticsPositionRating%02d" % (i+1)),Selection.lettre(app.model,person,i)),"Note projetée au poste en lettre, sans chiffre "+str(i+1)+" "+str(labels(named("TacticsPositionRating%02d" % (i+1)))))
 		var card:=named("TacticsCardPlate%02d" % (i+1))
 		for j in range(i+1,15):check(not card.get_global_rect().intersects(named("TacticsCardPlate%02d" % (j+1)).get_global_rect()),"Plaques de nom distinctes %d/%d" % [i+1,j+1])
 	var pillar_id:=str(assignment(0).get("playerId"))
@@ -197,7 +211,9 @@ func run() -> void:
 		check(str(assignment(9).playerId)==pillar_id,"Pilier1 vers10 : affectation réelle")
 		if swap_back:check(str(assignment(0).playerId)==displaced_id,"Déplacé qualifié au n°1 : échange réel")
 		else:check(assignment(0).playerId==null,"Déplacé non qualifié au n°1 : source libérée")
-		check(str(int(wrong_note)) in labels(named("TacticsPositionRating10")),"La carte10 affiche la faible note réelle du pilier")
+		var lettre_10:Dictionary=Selection.lettre(app.model,Selection.player(app.model,pillar_id),9)
+		check(lettre_montree(named("TacticsPositionRating10"),lettre_10),"La carte10 affiche la faible note réelle du pilier en lettre "+str(labels(named("TacticsPositionRating10"))))
+		check(Notation.rang_lettre(lettre_10)<Notation.rang_lettre(Notation.lettre_poste(app.model,Selection.player(app.model,pillar_id),1,true)),"Lettre du pilier au n°10 sous celle de son poste")
 		check(Selection.player(app.model,pillar_id).get("note")==pillar.get("note"),"Note principale du joueur inchangée après déplacement")
 		if not swap_back:check(app.model.meta.get("lineupChange",{}).get("vacatedSlot")==0,"Reçu moteur explicite la place source laissée vacante")
 		partition()

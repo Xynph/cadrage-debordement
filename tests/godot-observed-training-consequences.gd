@@ -37,7 +37,8 @@ func run() -> void:
 	check(not captured.people.has("market") and not captured.people.has("academy"),"Marché et académie ne deviennent pas l’effectif professionnel observé")
 	check(not JSON.stringify(captured).contains("potential") and not JSON.stringify(captured).contains("SECRET"),"La whitelist ne copie ni potentiel ni personnes cachées")
 	var observed: Dictionary=feedback._training_changes(captured,after)
-	check(observed.lines==["Condition moyenne de 2 joueurs présents avant et après : 70 → 73 %.","Charge moyenne de 2 joueurs présents avant et après : 40 → 30 / 100.","Niveau moyen de 2 joueurs présents avant et après : 65 → 66 / 100."],"Trois comparaisons de mêmes IDs, valeurs publiques exactes et texte naturel")
+	# Le Niveau reste caché (notation façon FM, 24/11) : plus de « Niveau moyen » chiffré dans le reçu.
+	check(observed.lines==["Condition moyenne de 2 joueurs présents avant et après : 70 → 73 %.","Charge moyenne de 2 joueurs présents avant et après : 40 → 30 / 100."],"Deux comparaisons de mêmes IDs, valeurs publiques exactes, jamais le Niveau caché")
 	check(observed.targets.map(func(item):return item.target.id)==["b","a"],"Deux variations significatives reliées par ID malgré les homonymes")
 	check(JSON.stringify(before)==before_text and JSON.stringify(after)==after_text,"Observer ne modifie aucune projection")
 	var reordered:=after.duplicate(true);reordered.squad.reverse()
@@ -76,7 +77,7 @@ func run() -> void:
 	var enriched:=receipt(before,after,"intense")
 	var old: Dictionary=baseline.receipts()[0];var current: Dictionary=enriched.receipts()[0]
 	check(current.text.begins_with(old.text+"\n") and current.title==old.title and current.summary==old.summary and current.before==old.before and current.after==old.after,"Coûts, titre, pied de page et préfixe du reçu strictement inchangés")
-	check(current.text.trim_prefix(old.text+"\n").split("\n").size()==3 and current.targets.size()==2,"Au plus trois lignes compactes et deux fiches")
+	check(current.text.trim_prefix(old.text+"\n").split("\n").size()==2 and current.targets.size()==2,"Au plus deux lignes compactes (condition, charge ; le Niveau reste caché) et deux fiches")
 	check(not current.text.to_lower().contains("potentiel") and not current.text.to_lower().contains("grâce") and not current.text.to_lower().contains("garanti"),"Aucune fuite de potentiel ou assurance causale")
 	check(receipt(before,after,"normal",false).receipts().is_empty(),"Refus réel sans conséquence annoncée")
 	var already:=before.duplicate(true);already.meta.trained=true
@@ -95,7 +96,7 @@ func run() -> void:
 		var old_prefix: String=old_receipt.receipts()[0].text
 		var expected_lines: Array[String]=[]
 		for metric: Dictionary in case.expected:
-			if not metric.visible:continue
+			if not metric.visible or metric.field=="rating":continue
 			var label: String={"condition":"Condition moyenne","physicalLoad":"Charge moyenne","rating":"Niveau moyen"}[metric.field]
 			var ending: String=" %" if metric.field=="condition" else " / 100"
 			expected_lines.append("%s de %d joueur%s présent%s avant et après : %s → %s%s." % [label,int(metric.count),"s" if metric.count>1 else "","s" if metric.count>1 else "",metric.beforeText,metric.afterText,ending])

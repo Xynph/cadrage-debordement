@@ -2,16 +2,18 @@ extends SceneTree
 ## Carte joueur au survol sur les écrans joueurs, valeur au poste en Tactique et danger en Préparation (Léo, 21/11/2026) :
 ## - Effectif, Composition, Recrutement, Entraînement, Vestiaire : la vraie souris passe sur un nom ou un portrait, la
 ##   carte (même composant que le direct) apparaît après le délai, entière dans l'écran ; la souris part, elle disparaît ;
-## - Tactique : plus d'étoiles ; note au poste chiffrée + familiarité (naturel / 2e poste / dépanne) sur les 15 cartes du
-##   terrain et dans la liste des candidats, tri sur la vraie note ; un joueur dépanne et un joueur à son 2e poste sont
-##   placés exprès dans le XV. Choix de Léo : pastille chiffrée + « 2e poste » / « Dépanne » seulement hors poste naturel ;
-## - Préparation : plus d'étoiles ; chaque joueur à surveiller porte sa note au poste en chiffre dans une pastille colorée.
+## - Tactique : plus d'étoiles ; note au poste en LETTRE E- à S+ (décision de Léo du 24/11/2026 : jamais de chiffre) +
+##   familiarité (naturel / 2e poste / dépanne) sur les 15 cartes du terrain et dans la liste des candidats, tri sur la
+##   vraie note ; un joueur dépanne et un joueur à son 2e poste sont placés exprès dans le XV. Choix de Léo : pastille
+##   lettre + « 2e poste » / « Dépanne » seulement hors poste naturel ;
+## - Préparation : plus d'étoiles ; chaque joueur à surveiller porte sa note au poste en lettre dans une pastille colorée.
 ## Captures 2560 × 1440 et 1920 × 1080 dans CD_ETOILES_FICHE_CAPTURES. godot-poste-carte-survol.cjs prépare la carrière ;
 ## CD_POSTE_SEUL=1 ne rejoue que la Tactique.
 const Carte = preload("res://ui/carte_joueur_survol.gd")
 const Selection = preload("res://ui/immersive08/tactics_selection.gd")
 const Poste = preload("res://ui/immersive08/tactics_poste.gd")
 const Savoir = preload("res://ui/player_knowledge_text.gd")
+const Notation = preload("res://ui/notation_staff.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -56,6 +58,23 @@ func souris(position: Vector2) -> void:
 func named(id: String) -> Control:
 	return app.find_child(id, true, false) as Control
 
+## Aucun chiffre écrit dans `noeud` (hors mot « 2e poste » de la familiarité).
+func sans_chiffre(noeud: Node) -> bool:
+	if noeud == null: return false
+	for n: Node in [noeud] + noeud.find_children("*", "Label", true, false):
+		if not n is Label or n.name == "MarqueMot": continue
+		for c in (n as Label).text:
+			if c >= "0" and c <= "9": return false
+	return true
+
+## Lettre écrite dans la pastille (une ou deux lettres : « B », « B-A »).
+func lettre_ecrite(noeud: Node) -> String:
+	var pastille: Node = noeud.find_child("Pastille", true, false) if noeud != null else null
+	if pastille == null and noeud != null and noeud.has_meta("lettre"): pastille = noeud
+	var t := ""
+	for n: Node in (pastille.find_children("*", "Label", true, false) if pastille != null else []): t += (n as Label).text
+	return t
+
 ## Premier contrôle visible et entier à l'écran qui porte la carte joueur (motif de nom facultatif).
 func cible(motif: String = "*") -> Control:
 	var ecran := Rect2(Vector2.ZERO, Vector2(root.size))
@@ -74,6 +93,9 @@ func survoler(ecran_nom: String, controle: Control, nom_capture: String) -> void
 	if is_instance_valid(app.coach) and app.coach.has_method("fermer_bulle"): app.coach.fermer_bulle()
 	souris(Vector2(2, 2))
 	await settle(4)
+	# Joueur visé lu AVANT le survol : l'écran peut se redessiner pendant l'attente (données arrivées après coup) et libérer
+	# le contrôle survolé (1 lancement sur 4 : « get_meta on a previously freed instance », 24/11) ; la carte, elle, reste.
+	var joueur_vise := str(controle.get_meta("carte_joueur"))
 	var debut := Time.get_ticks_msec()
 	souris(controle.get_global_rect().get_center())
 	var apparue := await until(func(): return Carte.actuelle(app) != null, 3000)
@@ -84,7 +106,8 @@ func survoler(ecran_nom: String, controle: Control, nom_capture: String) -> void
 	var carte := Carte.actuelle(app)
 	if carte != null:
 		check(Rect2(Vector2.ZERO, Vector2(root.size)).grow(1.0).encloses(carte.get_global_rect()), ecran_nom + " : carte entière dans l'écran")
-		check(str(carte.get_meta("player_id", "")) == str(controle.get_meta("carte_joueur")), ecran_nom + " : carte du joueur survolé")
+		if not is_instance_valid(controle): print("ETOILES_FICHE %s : écran redessiné pendant le survol" % ecran_nom)
+		check(str(carte.get_meta("player_id", "")) == joueur_vise, ecran_nom + " : carte du joueur survolé")
 		check(carte.find_child("CarteJoueurPolyvalence", true, false) != null and carte.find_child("CarteJoueurEtoilesPoste_*", true, false) == null, ecran_nom + " : postes de la carte, sans étoiles")
 		check(carte.find_child("CarteJoueurEtoilesNiveau", true, false) == null, ecran_nom + " : jamais d'étoiles pour le niveau")
 		check(app.get_node_or_null("MiniFicheJoueur") == null, ecran_nom + " : plus de mini-fiche par-dessus")
@@ -182,10 +205,11 @@ func tactique(suffixe: String) -> void:
 		var e := named("TacticsPositionRating%02d" % (i + 1))
 		var note: Variant = Selection.rating(app.model, person, i)
 		var fam := Selection.familiarite(app.model, person, i)
-		if e != null and note != null and int(e.get_meta("note", -1)) == roundi(float(note)) and int(e.get_meta("familiarite", 0)) == fam: poses += 1
+		var attendue := Notation.texte_note(Selection.lettre(app.model, person, i))
+		if e != null and note != null and str(e.get_meta("lettre", "")) == attendue and int(e.get_meta("familiarite", 0)) == fam: poses += 1
 		if e != null and note != null:
-			var chiffre := e.find_child("Chiffre", true, false) as Label
-			check(chiffre != null and chiffre.text == str(roundi(float(note))), "Terrain : chiffre de la note au poste (n° %d)" % (i + 1))
+			check(attendue != "?" and lettre_ecrite(e).begins_with(attendue.split("/")[0]), "Terrain : lettre de la note au poste (n° %d : %s, écrit « %s »)" % [i + 1, attendue, lettre_ecrite(e)])
+			check(e.find_child("Chiffre", true, false) == null and sans_chiffre(e), "Terrain : aucun chiffre de note au poste (n° %d)" % (i + 1))
 			var carte := named("LineupSlot%02d" % (i + 1))
 			if carte != null: check(carte.get_global_rect().grow(1.0).encloses(e.get_global_rect()), "Terrain : valeur au poste dans la carte n° %d" % (i + 1))
 			if fam in [1, 2]:
@@ -197,14 +221,23 @@ func tactique(suffixe: String) -> void:
 	check(poses >= 14, "Terrain : note au poste et familiarité sur les cartes (%d/15)" % poses)
 	check(hors >= 1, "Terrain : au moins un joueur hors de son poste naturel visible (%d)" % hors)
 	var notes: Array = []
+	var lettres_ok := true
 	for ligne: Node in app.root_content.find_children("TacticsCandidate_*", "Control", true, false):
 		var r := ligne.find_child("TacticsCandidateRating", false, false)
-		if r != null and r.has_meta("note") and r.modulate.a > 0.9: notes.append(int(r.get_meta("note")))
-	check(notes.size() >= 3, "Candidats : note au poste chiffrée (%d lignes)" % notes.size())
+		var joueur := Selection.player(app.model, str(ligne.get_meta("player_id", "")))
+		var vraie: Variant = Selection.rating(app.model, joueur, 12)
+		if r != null and str(r.get_meta("lettre", "—")) != "—" and r.modulate.a > 0.9 and vraie != null:
+			notes.append(Notation.rang_lettre(Selection.lettre(app.model, joueur, 12)))
+			if str(r.get_meta("lettre")) != Notation.texte_note(Selection.lettre(app.model, joueur, 12)) or not sans_chiffre(r): lettres_ok = false
+	check(notes.size() >= 3, "Candidats : note au poste en lettre (%d lignes)" % notes.size())
+	check(lettres_ok, "Candidats : lettre du staff, aucun chiffre de note au poste")
 	var trie := notes.duplicate()
 	trie.sort()
 	trie.reverse()
-	check(notes == trie, "Candidats : triés sur la vraie note au poste " + str(notes))
+	check(notes == trie, "Candidats : triés sur la lettre montrée (revue du 24/11, écart 5) " + str(notes))
+	# Revue du 24/11 (écart 6) : plus aucune pastille vide dans la liste (non qualifié : lettre grisée).
+	var vides: Array = app.root_content.find_children("TacticsCandidateRating", "", true, false).filter(func(n: Node) -> bool: return str(n.get_meta("lettre", "—")) == "—")
+	check(vides.is_empty(), "Candidats : aucune pastille vide (%d)" % vides.size())
 	check(app.root_content.find_children("TacticsCandidateStars", "Control", true, false).is_empty(), "Candidats : plus d'étoiles")
 	check(app.root_content.find_children("CarteJoueurEtoiles*", "Control", true, false).is_empty(), "Tactique : aucune étoile hors carte joueur")
 	if is_instance_valid(app.coach) and app.coach.has_method("fermer_bulle"): app.coach.fermer_bulle()
@@ -242,15 +275,15 @@ func preparation(suffixe: String) -> void:
 	check(app.root_content.find_children("PreparationThreatStars*", "Control", true, false).is_empty(), "Préparation : plus d'étoiles")
 	for i in mini(3, menaces.size()):
 		var m: Dictionary = menaces[i]
-		# Danger publié seulement : note au poste si connue, sinon fourchette de niveau, sinon « ? » (jamais une valeur cachée).
-		var attendu := "?"
-		if m.get("note") is int or m.get("note") is float: attendu = str(roundi(float(m.note)))
-		elif not Savoir.bounds(m, "rating").is_empty(): attendu = "%d–%d" % [roundi(float(Savoir.bounds(m, "rating").min)), roundi(float(Savoir.bounds(m, "rating").max))]
+		# Danger publié seulement, en LETTRE : note au poste si connue, sinon Niveau estimé d'après l'observation, sinon
+		# « ? » (jamais une valeur cachée, jamais un chiffre).
+		var connue: bool = m.get("note") is int or m.get("note") is float
+		var attendu := Notation.texte_note(Notation.lettre_note(app.model, m, float(m.note) if connue else -1.0, false, "poste" if connue else "niveau"))
+		if not connue and Savoir.bounds(m, "rating").is_empty(): attendu = "?"
 		var pastille := named("PreparationThreatLevel%d" % i)
-		check(pastille != null and str(pastille.get_meta("valeur", "")) == attendu, "Préparation : pastille du joueur %d = %s" % [i, attendu])
+		check(pastille != null and str(pastille.get_meta("valeur", "")) == attendu and str(pastille.get_meta("lettre", "")) == attendu, "Préparation : pastille du joueur %d = %s" % [i, attendu])
 		if pastille != null:
-			var chiffre := pastille.find_child("Chiffre", true, false) as Label
-			check(chiffre != null and chiffre.text == attendu, "Préparation : valeur écrite dans la pastille %d" % i)
+			check(lettre_ecrite(pastille).begins_with(attendu.split("/")[0]) and pastille.find_child("Chiffre", true, false) == null and sans_chiffre(pastille), "Préparation : lettre écrite dans la pastille %d, sans chiffre (« %s »)" % [i, lettre_ecrite(pastille)])
 			var legende := named("PreparationThreatLevelLabel%d" % i) as Label
 			check(legende != null and not legende.text.is_empty(), "Préparation : mot sous la pastille %d" % i)
 			var carte := named("PreparationThreat%d" % i)

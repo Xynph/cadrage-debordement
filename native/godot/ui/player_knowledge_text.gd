@@ -38,11 +38,12 @@ static func text(person: Dictionary, field: String, own_context: bool = false) -
 	if value.min == value.max: return _n(value.min)
 	return _n(value.min)+"–"+_n(value.max)
 
+## Niveau et Potentiel : lettre du staff E- à S+ (notation façon FM, choix de Léo du 24/11), jamais le chiffre du moteur.
 static func rating_text(person: Dictionary, own_context: bool = false) -> String:
-	return text(person,"rating",own_context)
+	return load("res://ui/notation_staff.gd").texte_champ(person,"rating",owned(person,own_context))
 
 static func potential_text(person: Dictionary) -> String:
-	return text(person,"potential")
+	return load("res://ui/notation_staff.gd").texte_champ(person,"potential",owned(person))
 
 static func potential_tooltip(person: Dictionary) -> String:
 	var result := "Potentiel évolutif : un plafond possible, sans garantie de l’atteindre. Réévaluation à l’intersaison selon le travail, les performances, la progression et la personnalité."

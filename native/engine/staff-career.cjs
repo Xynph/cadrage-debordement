@@ -212,9 +212,12 @@ function factory(){
   const canEnable=!s.live&&(!s.commonDatabase?.id||Array.isArray(sources?.[s.commonDatabase.id]));
   if(!active(s))return {active:false,enabled:false,canEnable,reason:canEnable?'Activation explicite requise pour cette carrière.':'Source de staff indisponible ou match actif.',context:context(s),policy:POLICY,financialPolicy:FINANCE,maxYears:3,teams:[],candidates:[],market:[],retired:[],archives:[],notice:'Cycle désactivé : encadrement de carrière inchangé.'};
   const st=s.staffCareer,base=s.season+(s.phase==='ended'?1:0);
+  // Un seul directeur sportif dans le jeu, celui de la direction du club (choix de Léo, 24/11/2026) : un membre du staff
+  // titré « Directeur sportif » s'affiche « Responsable du recrutement ». Affichage seulement : rôle et sauvegarde inchangés.
+  const AFFICHE_DS=/^\s*directeur sportif\s*$/i;
   const display=p=>{
    const maxYears=Math.max(0,Math.min(3,p.retireAge-p.age-(base-s.season))),minYears=p.clubId===s.club?Math.max(1,p.contractEnd-base+2):1;
-   return {...copy(p),...(p.sourceKind==='generated'?{identityStatus:'fictional',portraitStatus:'synthetic'}:{}),identity:{id:p.sourcePlayerId??p.sourceStaffId??p.appearanceId??p.id,name:p.name,...(p.sourceKind==='generated'?{identityStatus:'fictional',portraitStatus:'synthetic'}:{})},maxYears,minYears,
+   return {...copy(p),...(AFFICHE_DS.test(String(p.roleLabel||''))?{roleLabel:'Responsable du recrutement'}:{}),...(p.sourceKind==='generated'?{identityStatus:'fictional',portraitStatus:'synthetic'}:{}),identity:{id:p.sourcePlayerId??p.sourceStaffId??p.appearanceId??p.id,name:p.name,...(p.sourceKind==='generated'?{identityStatus:'fictional',portraitStatus:'synthetic'}:{})},maxYears,minYears,
     canHire:!s.live&&p.clubId===null&&maxYears>=1,canRenew:!s.live&&p.clubId===s.club&&maxYears>=minYears,
     canRelease:!s.live&&p.clubId===s.club,canRetire:!s.live&&p.clubId===s.club&&p.age>=60};
   };

@@ -1,6 +1,7 @@
 extends RefCounted
 ## Bloc « Impact face à l'adversaire » de la Composition (maquette 10-composition-1) : six duels projetés par le staff
-## (moteur : decisions.preparation.domains, own / opponent), écart chiffré avec ▲ / ▼ (jamais la couleur seule),
+## (moteur : decisions.preparation.domains, own / opponent) en LETTRES du staff (échelle du Niveau, relative à notre
+## effectif ; jamais le chiffre du moteur), écart en ▲ / ▼ / = (jamais la couleur seule),
 ## vigilance physique de la feuille, lecture « au près » et « au large », lien vers le dossier adverse, bulle de Gabi
 ## qui porte l'avis du staff sur la feuille (selection.staffAdvice).
 ## Exemple : `Impact.build(app, page, Rect2(1684, 200, 564, 696), "Northmere Blues")`.
@@ -11,6 +12,7 @@ const Charte = preload("res://ui/charte.gd")
 const Kit = preload("res://ui/immersive08/tactics_kit.gd")
 const Selection = preload("res://ui/immersive08/tactics_selection.gd")
 const PersonName = preload("res://ui/person_name.gd")
+const Notation = preload("res://ui/notation_staff.gd")
 const PORTRAIT = preload("res://guide/coach_portrait.gd")
 ## Duels dans l'ordre de la maquette : [clé du moteur, libellé, libellé court].
 const DUELS := [["scrum", "Mêlée", "mêlée"], ["lineout", "Touche", "touche"], ["power", "Puissance des avants", "puissance"],
@@ -62,20 +64,21 @@ static func _duel(app: Control, bloc: Control, rang: int, y: float, w: float, du
 	if rang > 0: D.line(ligne, Vector2(8, 0), Vector2(w - 36, 0), Charte.PANNEAU_2)
 	var barre := 100.0
 	var gras := Kit.texte_gras()
-	var a := D.text(ligne, 48, 25, G.n(roundi(nous)) if nous != null else "—", 18, Charte.IVOIRE, 700, 38, HORIZONTAL_ALIGNMENT_RIGHT, true)
-	a.add_theme_font_override("font", gras)
-	a.name = "TacticsDomainOwn"
-	if nous != null: D.rect(ligne, Rect2(56 + barre * (1.0 - clampf(nous, 0, 100) / 100.0), 12, barre * clampf(nous, 0, 100) / 100.0, 13), (Charte.couleur_attribut(nous) if colore else Charte.club_trait(app.accent)), Charte.RAYON_PILULE)
+	# Lettres du staff (échelle du Niveau, relative à notre effectif), barres au cran de la lettre : aucun chiffre.
+	var ref := Notation.reference_effectif(app.model)
+	var i_nous := Notation.indice(nous, ref)
+	var i_eux := Notation.indice(eux, ref)
+	var part := func(i: int) -> float: return float(i + 1) / float(Notation.LETTRES.size())
+	Notation.pastille_noeud(ligne, 14, 19, i_nous, 30, "TacticsDomainOwn")
+	if nous != null: D.rect(ligne, Rect2(56 + barre * (1.0 - part.call(i_nous)), 12, barre * part.call(i_nous), 13), (Notation.couleur(i_nous) if colore else Charte.club_trait(app.accent)), Charte.RAYON_PILULE)
 	Kit.texte(ligne, 256, 25, str(duel[1]), Charte.IVOIRE, 190, 18, HORIZONTAL_ALIGNMENT_CENTER)
 	var barre_eux := 76.0 if colore else barre
-	if eux != null: D.rect(ligne, Rect2(358, 12, barre_eux * clampf(eux, 0, 100) / 100.0, 13), Charte.IVOIRE_2, Charte.RAYON_PILULE)
-	var b := D.text(ligne, 442.0 if colore else 466.0, 25, G.n(roundi(eux)) if eux != null else "—", 18, Charte.IVOIRE, 700, 40, HORIZONTAL_ALIGNMENT_LEFT, true)
-	b.add_theme_font_override("font", gras)
-	b.name = "TacticsDomainOpponent"
-	var libelle := "%s : %s contre %s" % [duel[1], a.text, b.text]
+	if eux != null: D.rect(ligne, Rect2(358, 12, barre_eux * part.call(i_eux), 13), Charte.IVOIRE_2, Charte.RAYON_PILULE)
+	Notation.pastille_noeud(ligne, (442.0 if colore else 466.0) - 4.0, 19, i_eux, 30, "TacticsDomainOpponent")
+	var libelle := "%s : %s contre %s" % [duel[1], Notation.texte_lettre(i_nous), Notation.texte_lettre(i_eux)]
 	if nous != null and eux != null:
-		var ecart := roundi(nous) - roundi(eux)
-		var texte := "▲ +%d" % ecart if ecart > 0 else ("▼ −%d" % -ecart if ecart < 0 else "= 0")
+		var ecart := i_nous - i_eux
+		var texte := "▲" if ecart > 0 else ("▼" if ecart < 0 else "=")
 		var teinte := (Charte.GAIN if ecart > 0 else (Charte.PERTE if ecart < 0 else Charte.IVOIRE_2)) if colore else (Charte.IVOIRE if ecart >= 0 else Charte.IVOIRE_2)
 		if colore: D.rect(ligne, Rect2(w - 36 - 70, 7, 74, 24), Color(teinte, .18), Charte.RAYON_PILULE).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var e := D.text(ligne, w - 36 - (4.0 if colore else 0.0), 25, texte, 18, teinte, 700, 70, HORIZONTAL_ALIGNMENT_RIGHT, true)
@@ -161,8 +164,9 @@ static func _resume(valeurs: Dictionary, cles: Array) -> String:
 		var nous: Variant = _nombre(domaine.get("own"))
 		var eux: Variant = _nombre(domaine.get("opponent"))
 		if nous == null or eux == null: continue
-		var ecart := roundi(nous) - roundi(eux)
-		morceaux.append("%s %s" % [duel[2], ("+%d" % ecart) if ecart > 0 else ("−%d" % -ecart if ecart < 0 else "0")])
+		var ref := Notation.reference_effectif(Notation.modele)
+		var ecart := Notation.indice(nous, ref) - Notation.indice(eux, ref)
+		morceaux.append("%s %s" % [duel[2], "▲" if ecart > 0 else ("▼" if ecart < 0 else "=")])
 	if morceaux.is_empty(): return "—"
 	var texte := " · ".join(morceaux)
 	return texte.left(1).to_upper() + texte.substr(1)

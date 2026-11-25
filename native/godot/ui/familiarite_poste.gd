@@ -3,7 +3,7 @@ extends RefCounted
 ## Léo le 23/11/2026 : barres de signal 5 crans + mot en petit). Deux informations séparées :
 ## - familiarité : 5 niveaux (mot + couleur franche de la charte), lue dans le moteur (positionFamiliarityLevels,
 ##   15 entiers 0-4, indice 0 = maillot 1) ; à défaut, déduite des postes du joueur (règle ci-dessous) ;
-## - note au poste sur 100 (positionRatings du moteur), colorée avec le barème des attributs, la même pour tous les clubs.
+## - note au poste en lettre E- à S+ (positionRatings du moteur estimés par le staff, notation_staff.gd), comme le Niveau.
 ## Règle de repli de la familiarité au maillot n (1-15) :
 ##   Naturel   = poste principal (primaryPositions) ;
 ##   Confirmé  = autre poste maîtrisé (secondaryPositions : même famille, famille voisine maîtrisée, 1re ligne qualifiée) ;
@@ -63,13 +63,17 @@ static func mot(n: int) -> String:
 static func couleur(n: int) -> Color:
 	return COULEURS[n] if n >= 0 and n <= 4 else Charte.IVOIRE_3
 
-## Note au poste (0-100) écrite et colorée (barème des attributs) ; « ? » si inconnue.
-static func poser_note(parent: Control, x: float, base: float, note: float, taille: int, largeur: float, nom: String) -> Label:
-	var connue := note >= 0.0
-	var l := D.text(parent, x + largeur, base, str(int(roundf(note))) if connue else "?", taille, Charte.couleur_attribut(note) if connue else Charte.IVOIRE_3, 800, largeur, HORIZONTAL_ALIGNMENT_RIGHT)
-	l.name = nom
-	l.mouse_filter = Control.MOUSE_FILTER_PASS
-	return l
+## Note au poste (ou au rôle) en LETTRE (décision de Léo du 24/11/2026 : même échelle E- à S+ que le Niveau, relative à
+## notre effectif, même palette, même pastille ronde ; double « B/A » quand le staff n'est pas sûr). `lettre` :
+## Notation.lettre_poste / lettre_role / lettre_note. Pastille alignée à droite sur `x + largeur`, centrée sur la ligne
+## de base `base` du texte de la rangée. Jamais de chiffre.
+static func poser_note(parent: Control, x: float, base: float, lettre: Dictionary, taille: int, largeur: float, nom: String) -> Control:
+	var Notation: Script = load("res://ui/notation_staff.gd")
+	var d := float(taille) * 1.4
+	var w: float = Notation.largeur_note(lettre, d)
+	var p: Control = Notation.pastille_note(parent, x + largeur - w, base - float(taille) * 0.36, lettre, d, nom)
+	p.mouse_filter = Control.MOUSE_FILTER_PASS
+	return p
 
 ## Barres de signal 5 crans : `niveau + 1` crans pleins à la couleur du niveau. Renvoie la largeur posée.
 static func poser_barres(parent: Control, x: float, bas: float, n: int, hauteur: float, nom: String) -> float:

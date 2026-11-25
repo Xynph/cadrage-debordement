@@ -9,6 +9,8 @@ const Charte = preload("res://ui/charte.gd")
 const Champs = preload("res://ui/immersive08/champs_charte.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const Jauges = preload("res://ui/jeune_jauges.gd")
+const Notation = preload("res://ui/notation_staff.gd")
+const K = preload("res://ui/player_knowledge_text.gd")
 const PAGE_SIZE := 20
 const ATTRIBUTES := {"scrum":"Mêlée","lineout":"Touche","tackle":"Plaquage","speed":"Vitesse","pass":"Passe","kick":"Jeu au pied","goal":"But","power":"Puissance","stamina":"Endurance","mental":"Mental","discipline":"Discipline"}
 const REASONS := {"enable":"Référence initiale","plan":"Objectif révisé","trainWeek":"Séance","recordDevelopmentMatch":"Match","rollDevelopmentYear":"Bilan annuel","advanceSeason":"Nouvelle saison","promoteYouth":"Passage professionnel","managerMobilityOnSeasonStart":"Changement de club"}
@@ -274,7 +276,7 @@ func _person(person: Dictionary) -> void:
 	if not baseline is Dictionary or not deltas is Dictionary:
 		info.add_child(_t("Pas encore de référence suivie : aucun gain passé n’est attribué à cet objectif.",13))
 	else:
-		info.add_child(_t("Depuis %s · semaine %s : niveau %s · minutes %s" % [G.season_label(baseline.get("season","—")),G.n(baseline.get("week","—")),_signed(deltas.get("rating",0)),_signed(deltas.get("minutes",0))],13))
+		info.add_child(_t("Depuis %s · semaine %s : niveau %s · minutes %s" % [G.season_label(baseline.get("season","—")),G.n(baseline.get("week","—")),("▲" if float(deltas.get("rating",0)) > 0 else "▼" if float(deltas.get("rating",0)) < 0 else "="),_signed(deltas.get("minutes",0))],13))
 		var changes: Array[String] = []
 		for key in ATTRIBUTES:
 			var delta: float = float(deltas.get("attributes",{}).get(key,0))
@@ -282,7 +284,7 @@ func _person(person: Dictionary) -> void:
 		info.add_child(_t(" · ".join(changes) if not changes.is_empty() else "Aucun changement de qualité observé depuis cette référence.",12))
 	_review(info,person)
 	for observation: Dictionary in person.get("observations",[]):
-		info.add_child(_t("%s · semaine %s · %s · niveau %s · minutes %s" % [G.season_label(observation.get("season","—")),G.n(observation.get("week","—")),REASONS.get(str(observation.get("reason","")),"Observation"),_signed(observation.get("ratingDelta",0)),_signed(observation.get("minutesDelta",0))],12))
+		info.add_child(_t("%s · semaine %s · %s · niveau %s · minutes %s" % [G.season_label(observation.get("season","—")),G.n(observation.get("week","—")),REASONS.get(str(observation.get("reason","")),"Observation"),_sens(observation.get("ratingDelta",0)),_signed(observation.get("minutesDelta",0))],12))
 	for step: Dictionary in person.get("nextSteps",[]): info.add_child(_t(("✓ " if step.get("done",false) else "À préparer · ")+str(step.get("label",""))+" · "+Copy.notice("youth", step.get("detail","")),12))
 	if not str(person.get("planReason","")).is_empty(): info.add_child(_t(str(person.planReason),13,G.ALERT))
 	_objectif(card,person,annual)
@@ -376,7 +378,7 @@ func _review(parent: Container,person: Dictionary,boutons: Container = null,tete
 	var recent_line := _t("",13)
 	recent_line.name = "YouthRecentReview"
 	if recent.get("available",false):
-		recent_line.text = ("Période récente · %s semaine %s → semaine %s · %s semaines · %s minutes · niveau %s" if _court() else "Période récente observée · %s semaine %s → semaine %s · %s semaines · %s minutes · niveau %s. Fenêtre visée : quatre semaines, bornes réelles conservées.") % [G.season_label(recent.from.season),G.n(recent.from.week),G.n(recent.to.week),G.n(recent.weeks),_signed(recent.minutesDelta),_signed(recent.ratingDelta)]
+		recent_line.text = ("Période récente · %s semaine %s → semaine %s · %s semaines · %s minutes · niveau %s" if _court() else "Période récente observée · %s semaine %s → semaine %s · %s semaines · %s minutes · niveau %s. Fenêtre visée : quatre semaines, bornes réelles conservées.") % [G.season_label(recent.from.season),G.n(recent.from.week),G.n(recent.to.week),G.n(recent.weeks),_signed(recent.minutesDelta),_sens(recent.ratingDelta)]
 	else:
 		var reasons := {"untracked":"Démarrer le suivi.","insufficient":"Attendre deux mesures comparables de cette saison et de ce stade.","club":"Référence provenant d’un autre club.","counter":"Continuité du compteur à vérifier.","context":"Continuité du parcours à vérifier."}
 		var raison := str(reasons.get(str(recent.get("reason","insufficient")),"Observations comparables insuffisantes."))
@@ -559,7 +561,7 @@ func _faits(parent: Container, person: Dictionary) -> void:
 		sans.tooltip_text = "Pas encore de référence suivie : aucun gain passé n’est attribué à cet objectif."; sans.mouse_filter = Control.MOUSE_FILTER_STOP
 		parent.add_child(sans)
 		return
-	parent.add_child(_t("Depuis %s · semaine %s : niveau %s · minutes %s" % [G.season_label(baseline.get("season","—")),G.n(baseline.get("week","—")),_signed(deltas.get("rating",0)),_signed(deltas.get("minutes",0))],13))
+	parent.add_child(_t("Depuis %s · semaine %s : niveau %s · minutes %s" % [G.season_label(baseline.get("season","—")),G.n(baseline.get("week","—")),("▲" if float(deltas.get("rating",0)) > 0 else "▼" if float(deltas.get("rating",0)) < 0 else "="),_signed(deltas.get("minutes",0))],13))
 	var changes: Array[String] = []
 	for key in ATTRIBUTES:
 		var delta: float = float(deltas.get("attributes",{}).get(key,0))
@@ -568,7 +570,7 @@ func _faits(parent: Container, person: Dictionary) -> void:
 
 func _suites(parent: Container, person: Dictionary) -> void:
 	for observation: Dictionary in person.get("observations",[]):
-		parent.add_child(_t("%s · semaine %s · %s · niveau %s · minutes %s" % [G.season_label(observation.get("season","—")),G.n(observation.get("week","—")),REASONS.get(str(observation.get("reason","")),"Observation"),_signed(observation.get("ratingDelta",0)),_signed(observation.get("minutesDelta",0))],12))
+		parent.add_child(_t("%s · semaine %s · %s · niveau %s · minutes %s" % [G.season_label(observation.get("season","—")),G.n(observation.get("week","—")),REASONS.get(str(observation.get("reason","")),"Observation"),_sens(observation.get("ratingDelta",0)),_signed(observation.get("minutesDelta",0))],12))
 	for step: Dictionary in person.get("nextSteps",[]):
 		var etape := _t(("✓ " if step.get("done",false) else "À préparer · ")+str(step.get("label","")),12)
 		etape.tooltip_text = Copy.notice("youth", step.get("detail","")); etape.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -619,20 +621,24 @@ func _tuile_jeune(person: Dictionary) -> void:
 	_identite(identite,person)
 	var etat := C.h(6); identite.add_child(etat)
 	var chiffres := C.v(0); tete.add_child(chiffres)
-	var niveau: Variant = G.knowledge_sort_value(person,"rating",true)
-	var gros := Jauges.chiffre(G.rating_text(person,true),64,Charte.couleur_attribut(niveau) if niveau != null else Charte.IVOIRE_3)
-	gros.name = "YouthLevel"; gros.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; gros.tooltip_text = "Niveau général"
-	chiffres.add_child(gros)
-	var potentiel: Variant = G.knowledge_sort_value(person,"potential")
+	# Niveau et Potentiel MONTRÉS (lettres du staff) : couleurs et jauge posées sur l'estimation affichée, jamais sur la
+	# valeur cachée du moteur (écart du vérificateur, 25/11).
+	var niveau: Variant = Notation.valeur_montree(person,"rating",K.owned(person,true))
+	# Pastilles rondes des lettres (comme l'Effectif) : Niveau en grand, Potentiel dessous (25/11, revue du vérificateur).
+	var ligne_niv := C.h(0); ligne_niv.alignment = BoxContainer.ALIGNMENT_END; chiffres.add_child(ligne_niv)
+	var gros := Notation.porte_pastille(Notation.lettre_champ(person,"rating",K.owned(person,true)),56.0,"YouthLevelLettre")
+	gros.name = "YouthLevel"; gros.tooltip_text = "Niveau général"
+	ligne_niv.add_child(gros)
+	var potentiel: Variant = Notation.valeur_montree(person,"potential",K.owned(person))
 	var ligne_pot := C.h(6); ligne_pot.alignment = BoxContainer.ALIGNMENT_END; chiffres.add_child(ligne_pot)
 	ligne_pot.add_child(Jauges.legende("Potentiel",15))
-	var pot := Jauges.chiffre(G.potential_text(person),26,Charte.couleur_attribut(potentiel) if potentiel != null else Charte.IVOIRE_3)
+	var pot := Notation.porte_pastille(Notation.lettre_champ(person,"potential",K.owned(person)),32.0,"YouthPotentialLettre")
 	pot.tooltip_text = G.potential_tooltip(person)
 	ligne_pot.add_child(pot)
 	chiffres.name = "YouthLevelBlock"
 	chiffres.tooltip_text = G.potential_tooltip(person)
 	_cliquable(chiffres, func(): _ouvrir_fiche(person, 4))
-	var barre_niveau := Jauges.barre_niveau_potentiel(G.knowledge_bounds(person,"rating",true),G.knowledge_bounds(person,"potential"),G.rating_text(person,true),G.potential_text(person))
+	var barre_niveau := Jauges.barre_niveau_potentiel({"min": niveau} if niveau != null else {},{"min": float(potentiel) - Notation.PAS / 2.0, "max": float(potentiel) + Notation.PAS / 2.0} if potentiel != null else {},G.rating_text(person,true),G.potential_text(person))
 	card.add_child(barre_niveau)
 	_cliquable(barre_niveau, func(): _ouvrir_fiche(person, 4))
 	if annual:
@@ -697,4 +703,8 @@ func _confirm_plan(person: Dictionary,plan: String,focus: Variant) -> void:
 
 static func _pourcent(value: Variant) -> String: return "%d %%" % roundi(float(value)*100)
 static func _decimal(value: Variant) -> String: return "%.2f" % float(value)
+## Sens de variation du Niveau (caché) : ▲ / ▼ / =, jamais l'écart chiffré.
+static func _sens(v: Variant) -> String:
+	return "▲" if float(v) > 0 else "▼" if float(v) < 0 else "="
+
 static func _signed(value: Variant) -> String: return ("+" if float(value)>0 else "")+_decimal(value)

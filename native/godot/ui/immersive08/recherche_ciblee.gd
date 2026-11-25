@@ -1,8 +1,8 @@
 extends RefCounted
 ## Recherche ciblée (revue FM27, idée 26 ; option B choisie par Léo le 23/11/2026) : une seule page pour confier au
 ## recruteur une recherche sur un poste du XV. Terrain des postes + rôles du poste à gauche, critères en pastilles en
-## haut, liste des joueurs DÉJÀ OBSERVÉS qui collent (filtrée en direct, estimations du recruteur : note au poste /100 +
-## familiarité, note du rôle, potentiel), priorité et recruteurs en bas. Chaque clic choisit et s'applique tout de suite
+## haut, liste des joueurs DÉJÀ OBSERVÉS qui collent (filtrée en direct, estimations du recruteur en lettres E- à S+ : note
+## au poste + familiarité, note du rôle, potentiel ; jamais de chiffre, décision de Léo du 24/11), priorité et recruteurs en bas. Chaque clic choisit et s'applique tout de suite
 ## (aucun bouton Confirmer) ; seule action payante : « Envoyer le recruteur · 5 000 € » (commande `scout_mission` avec
 ## les critères : le moteur cherche ensuite chez les libres et dans les autres clubs, puis repropose les profils connus
 ## et de nouveaux joueurs, qui deviennent observés). Données : clubLife.rechercheCiblee (native/engine/recherche-ciblee.cjs).
@@ -18,10 +18,11 @@ const Familiarite = preload("res://ui/familiarite_poste.gd")
 const Liste = preload("res://ui/immersive08/liste_etoiles.gd")
 const Salary = preload("res://ui/salary_display.gd")
 const Visuel = preload("res://ui/immersive08/centre_visuel.gd")
+const Notation = preload("res://ui/notation_staff.gd")
 
 const NOM := "RechercheCibleeFenetre"
-const NOTES := [0, 40, 50, 60, 70, 80]
-const POTENTIELS := [0, 50, 60, 70, 80, 90]
+## Seuils de note au poste et de potentiel en lettres (indices de Notation.LETTRES ; -1 = tous) : D, C, B, A, S.
+const SEUILS := [-1, 4, 7, 10, 13, 16]
 const AGES := [[18, 40, "Tous"], [18, 23, "18-23"], [21, 26, "21-26"], [24, 29, "24-29"], [27, 33, "27-33"]]
 const INDEMNITES := [[0, "Libre"], [100000, "100 k€"], [400000, "400 k€"], [1000000, "1 M€"], [10000000, "Sans limite"]]
 const LIGNES := 13
@@ -30,7 +31,7 @@ const PRIORITES := [["prioritaire", "Prioritaire", Charte.PERTE, "warning"], ["s
 
 static func _etat(app: Control) -> Dictionary:
 	if not app.management_ui.get("recherche_ciblee") is Dictionary:
-		app.management_ui.recherche_ciblee = {"poste": -1, "role": "", "note": 50, "pot": 0, "age": 0, "indemnite": 2, "priorite": "standard", "recruteurs": []}
+		app.management_ui.recherche_ciblee = {"poste": -1, "role": "", "note_l": 4, "pot_l": -1, "age": 0, "indemnite": 2, "priorite": "standard", "recruteurs": []}
 	return app.management_ui.recherche_ciblee
 
 static func _donnees(app: Control) -> Dictionary:
@@ -83,15 +84,21 @@ static func _affectes(app: Control, e: Dictionary) -> Array:
 	if choisis.is_empty() and not ids.is_empty(): choisis = [ids[0]]
 	return choisis
 
-## Estimation du recruteur pour un joueur observé : [note au poste, familiarité] au maillot n (meilleur poste si n = 0).
+## Estimation du recruteur pour un joueur observé : [note au poste, familiarité, maillot] au maillot n (meilleur poste
+## si n = 0).
 static func _note(x: Dictionary, n: int) -> Array:
 	var postes: Dictionary = x.get("estime", {}).get("postes", {})
 	var fam: Array = x.get("familiarite", [])
-	if n > 0: return [float(postes.get(str(n), -1)), int(fam[n - 1]) if fam.size() == 15 else -1]
-	var meilleur := [-1.0, -1]
+	if n > 0: return [float(postes.get(str(n), -1)), int(fam[n - 1]) if fam.size() == 15 else -1, n]
+	var meilleur := [-1.0, -1, 0]
 	for k: String in postes:
-		if float(postes[k]) > float(meilleur[0]): meilleur = [float(postes[k]), int(fam[int(k) - 1]) if fam.size() == 15 else -1]
+		if float(postes[k]) > float(meilleur[0]): meilleur = [float(postes[k]), int(fam[int(k) - 1]) if fam.size() == 15 else -1, int(k)]
 	return meilleur
+
+## Valeur cachée minimale qui donne au moins la lettre `i` (moteur : minNote, minPotential) ; 0 = pas de seuil.
+static func _seuil(app: Control, i: int) -> int:
+	if i < 0: return 0
+	return maxi(0, floori(Notation.reference_effectif(app.model) + (float(i - Notation.REFERENCE) - 0.5) * Notation.PAS))
 
 ## Joueurs déjà observés qui passent les critères, filtrés en direct (rôle choisi : classés par la note du rôle).
 static func pistes(app: Control, e: Dictionary) -> Array:
@@ -107,19 +114,28 @@ static func pistes(app: Control, e: Dictionary) -> Array:
 		var a := int(x.get("age", 0))
 		if a < int(age[0]) or a > int(age[1]): continue
 		if float(x.get("indemnite", 0)) > plafond: continue
-		if int(e.note) > 0 and float(na[0]) < int(e.note): continue
+		# Lettres du staff (même échelle que le Niveau) : les seuils portent sur la lettre montrée, jamais sur un chiffre.
+		var lettre := Notation.lettre_note(app.model, x, float(na[0]), false, Notation.cle_poste(int(na[2])), int(na[1]) if int(na[1]) >= 0 else Familiarite.NATUREL)
+		if int(e.get("note_l", -1)) >= 0 and Notation.rang_lettre(lettre) < int(e.get("note_l", -1)): continue
 		var pot := float(x.get("estime", {}).get("potentiel", -1))
-		if int(e.pot) > 0 and pot < int(e.pot): continue
+		var lettre_pot: Dictionary = Notation.lettre_note(app.model, x, pot, false, "pot") if pot >= 0.0 else {"bas": -1, "haut": -1}
+		if int(e.get("pot_l", -1)) >= 0 and Notation.rang_lettre(lettre_pot) < int(e.get("pot_l", -1)): continue
 		var nr := float(x.get("estime", {}).get("roles", {}).get(role, -1)) if not role.is_empty() else -1.0
-		sortie.append({"x": x, "note": float(na[0]), "fam": int(na[1]), "pot": pot, "role": nr, "tri": nr * .6 + float(na[0]) * .4 if nr >= 0.0 else float(na[0])})
+		var lettre_role: Dictionary = Notation.lettre_note(app.model, x, nr, false, "role:" + role) if nr >= 0.0 else {"bas": -1, "haut": -1}
+		sortie.append({"x": x, "note": float(na[0]), "lettre": lettre, "fam": int(na[1]), "pot": pot, "lettre_pot": lettre_pot, "role": nr, "lettre_role": lettre_role,
+			"tri": nr * .6 + float(na[0]) * .4 if nr >= 0.0 else float(na[0])})
 	sortie.sort_custom(func(p: Dictionary, q: Dictionary): return float(p.tri) > float(q.tri))
 	return sortie
 
-static func _meilleur_chez_nous(app: Control, numero: int) -> float:
+## Notre meilleur joueur au poste (valeur cachée pour le choisir seulement) : sa lettre au poste ; {} si aucun connu.
+static func _meilleur_chez_nous(app: Control, numero: int) -> Dictionary:
 	var m := -1.0
+	var meilleur: Dictionary = {}
 	for p: Variant in app.model.get("squad", []):
-		if p is Dictionary: m = maxf(m, Liste.note_poste(p, numero))
-	return m
+		if p is Dictionary and Liste.note_poste(p, numero) > m:
+			m = Liste.note_poste(p, numero)
+			meilleur = p
+	return Notation.lettre_poste(app.model, meilleur, numero, true) if not meilleur.is_empty() else {}
 
 static func _argent(montant: int) -> String:
 	if montant >= 1000000: return ("%.1f M€" % (montant / 1000000.0)).replace(".", ",")
@@ -131,7 +147,7 @@ static func lancer(app: Control, e: Dictionary) -> bool:
 	if n <= 0: return false
 	var age: Array = AGES[int(e.age)]
 	return app._command("scout_mission", {"family": int(Familiarite.FAMILLES[n - 1]), "maxAge": int(age[1]), "budget": int(INDEMNITES[int(e.indemnite)][0]),
-		"maxWage": 100000, "confirmed": true, "position": n, "role": str(e.role), "minNote": int(e.note), "minPotential": int(e.pot),
+		"maxWage": 100000, "confirmed": true, "position": n, "role": str(e.role), "minNote": _seuil(app, int(e.get("note_l", -1))), "minPotential": _seuil(app, int(e.get("pot_l", -1))),
 		"minAge": int(age[0]), "priority": str(e.priorite), "scouts": _affectes(app, e)})
 
 # --- Page --------------------------------------------------------------------------------------------------------------
@@ -166,10 +182,8 @@ static func _terrain(app: Control, page: Control, fond: Control, zone: Rect2, e:
 		sigle.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		D.text(carte, 14, hc - 12, str(poste.nom), 15, Charte.ENCRE_2 if choisi else Charte.IVOIRE_2, 600, lc - 20).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var nous := _meilleur_chez_nous(app, int(poste.n[0]))
-		if nous >= 0:
-			var l := Familiarite.poser_note(carte, lc - 66, hc * .48, nous, 26, 52, "RecherchePosteNous_%d" % i)
-			l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			if choisi: l.add_theme_color_override("font_color", Charte.ENCRE)
+		if Notation.rang_lettre(nous) >= 0.0:
+			Familiarite.poser_note(carte, lc - 66, hc * .48, nous, 26, 52, "RecherchePosteNous_%d" % i).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var index := i
 		Pieces.rendre_cliquable(carte, r.size, func():
 			e.poste = index
@@ -191,7 +205,7 @@ static func _roles(app: Control, page: Control, fond: Control, e: Dictionary) ->
 static func _rangee(app: Control, page: Control, parent: Control, x: float, y: float, cle: String, valeurs: Array, mots: Array, couleur: Color, prefixe: String) -> float:
 	var e := _etat(app)
 	for k in valeurs.size():
-		var actif: bool = e.get(cle) == valeurs[k]
+		var actif: bool = e.get(cle, -1) == valeurs[k]
 		var w := Pieces.pastille(parent, x, y, str(mots[k]), "", "%s_%d" % [prefixe, k], "", Charte.ENCRE if actif else couleur, couleur if actif else Charte.PANNEAU_3)
 		var valeur: Variant = valeurs[k]
 		Pieces.rendre_cliquable(parent.get_node("%s_%d" % [prefixe, k]), Vector2(w, 34), func(): _changer(app, page, cle, valeur), "%sChoisir_%d" % [prefixe, k], str(mots[k]), "", Charte.RAYON_PILULE)
@@ -199,13 +213,13 @@ static func _rangee(app: Control, page: Control, parent: Control, x: float, y: f
 	return x
 
 static func _mots_notes(liste: Array, zero: String) -> Array:
-	return liste.map(func(v: int): return zero if v == 0 else "≥ %d" % v)
+	return liste.map(func(v: int): return zero if v < 0 else "≥ " + Notation.texte_lettre(v))
 
 ## Critères en pastilles, deux par rangée.
 static func _criteres(app: Control, page: Control, fond: Control) -> void:
 	var criteres := [
-		["NOTE", "note", NOTES, _mots_notes(NOTES, "Toutes"), Charte.ATTRIBUT_65],
-		["POTENTIEL", "pot", POTENTIELS, _mots_notes(POTENTIELS, "Tous"), Charte.CONFIANCE],
+		["NOTE", "note_l", SEUILS, _mots_notes(SEUILS, "Toutes"), Charte.ATTRIBUT_65],
+		["POTENTIEL", "pot_l", SEUILS, _mots_notes(SEUILS, "Tous"), Charte.CONFIANCE],
 		["ÂGE", "age", range(AGES.size()), AGES.map(func(a: Array): return str(a[2])), Charte.MORAL],
 		["INDEMNITÉ", "indemnite", range(INDEMNITES.size()), INDEMNITES.map(func(a: Array): return str(a[1])), Charte.INTENSIF],
 	]
@@ -241,12 +255,12 @@ static func _liste(app: Control, fond: Control, e: Dictionary) -> void:
 		if club is Dictionary: D.text(ligne, 414, 32, str(club.get("nom", "")), 18, Charte.IVOIRE_2, 600, 210)
 		else: Pieces.pastille(ligne, 414, 7, "Libre", "", "RecherchePisteLibre_%d" % i, "", Charte.GAIN)
 		D.text(ligne, 634, 32, str(int(x.get("age", 0))), 20, Charte.IVOIRE_2, 700, 60)
-		Familiarite.poser_note(ligne, 714, 33, float(t.note), 24, 50, "RecherchePisteNote_%d" % i)
+		Familiarite.poser_note(ligne, 714, 33, t.lettre, 24, 50, "RecherchePisteNote_%d" % i)
 		Familiarite.poser(ligne, 780, 32, int(t.fam), 18, "RecherchePisteFam_%d" % i)
-		if not role.is_empty() and float(t.role) >= 0.0:
-			D.text(ligne, 974, 32, str(int(t.role)), 22, Charte.couleur_attribut(float(t.role)), 800, 60)
-		var pot := float(t.pot)
-		D.text(ligne, 1064, 32, str(int(pot)) if pot >= 0 else "—", 20, Charte.couleur_attribut(pot) if pot >= 0 else Charte.IVOIRE_3, 800, 80)
+		if not role.is_empty() and Notation.rang_lettre(t.lettre_role) >= 0.0:
+			Notation.pastille_note(ligne, 974, (h - 2) / 2.0, t.lettre_role, 32, "RecherchePisteRole_%d" % i)
+		if Notation.rang_lettre(t.lettre_pot) >= 0.0: Notation.pastille_note(ligne, 1064, (h - 2) / 2.0, t.lettre_pot, 32, "RecherchePistePot_%d" % i)
+		else: D.text(ligne, 1064, 32, "—", 20, Charte.IVOIRE_3, 800, 80)
 		D.text(ligne, 1154, 32, _argent(int(x.get("indemnite", 0))), 20, Charte.INTENSIF, 700, 140)
 		D.text(ligne, 1294, 32, Salary.amount(x.get("salaire", 0)), 20, Charte.IVOIRE_2, 700, 160)
 		var id := str(x.get("id", ""))

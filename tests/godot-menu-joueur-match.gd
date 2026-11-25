@@ -65,6 +65,17 @@ func vue_2d(view: Control) -> bool:
 	if view == null or view.regie == null or not is_instance_valid(view.regie.between): return false
 	return view.regie != null and view.regie.etat == view.regie.INTER and view.regie.between.is_visible_in_tree() and view.regie.between._journee_montree() and not view.regie.between.panneaux_direct.is_empty() and view.regie.between.panneaux_direct[0].is_visible_in_tree()
 
+## Note au poste / au rôle en LETTRE (décision de Léo du 24/11/2026) : méta « lettre » E- à S+ (« B/A » si le staff
+## hésite) et aucun chiffre écrit.
+func en_lettre(noeud: Node) -> bool:
+	if noeud == null: return false
+	var l := str(noeud.get_meta("lettre", ""))
+	if l.is_empty() or l == "?": return false
+	for n: Node in noeud.find_children("*", "Label", true, false):
+		for c in (n as Label).text:
+			if c >= "0" and c <= "9": return false
+	return not l.contains("0") and l.substr(0, 1) in ["E", "D", "C", "B", "A", "S"]
+
 func live() -> Dictionary:
 	return app.model.get("live", {}) if app.model.get("live") is Dictionary else {}
 
@@ -137,6 +148,9 @@ func run() -> void:
 	for nom: String in ["MatchMenuJoueurNom", "MatchMenuJoueurOrigine", "MatchMenuJoueurGabarit", "MatchMenuJoueurNoteMatch", "MatchMenuJoueurEnergie", "MatchMenuJoueurMoral", "MatchMenuJoueurFamiliarite", "MatchMenuJoueurNotePoste", "MatchMenuJoueurTerrain"]:
 		check(view.fenetre_hote.find_child(nom, true, false) != null, "mini-fiche : " + nom)
 	check(view.fenetre_hote.find_children("MatchMenuJoueurRole_*Lien", "Button", true, false).size() == 3, "trois rôles du poste")
+	check(en_lettre(view.fenetre_hote.find_child("MatchMenuJoueurNotePoste", true, false)), "note au poste en lettre, sans chiffre")
+	var roles_lettre: Array = view.fenetre_hote.find_children("MatchMenuJoueurRole_*", "Control", true, false).filter(func(n: Node): return not str(n.name).ends_with("Lien") and n.find_child("Note", false, false) != null)
+	check(roles_lettre.size() == 3 and roles_lettre.all(func(n: Node): return en_lettre(n.find_child("Note", false, false))), "note de chaque rôle en lettre, sans chiffre")
 	check(view.fenetre_hote.find_children("Consigne_*Lien", "Button", true, false).size() == 4, "quatre consignes individuelles")
 	check(view.fenetre_hote.find_children("*Confirmer*", "", true, false).is_empty() and view.fenetre_hote.find_children("*Valider*", "", true, false).is_empty(), "aucun bouton Confirmer")
 	# Un clic sur un autre rôle : la commande part tout de suite et le moteur la garde jusqu'à l'arrêt (ou l'applique).
@@ -215,6 +229,7 @@ func run() -> void:
 			for l: Node in carte_ch.find_children("*", "Label", true, false):
 				if (l as Label).text == str(numero): entrant_label = true
 		check(entrant_label, "l'entrant garde son vrai numéro (%d) sur la carte" % numero)
+		check(carte_ch != null and en_lettre(carte_ch.find_child("EntrantLettrePoste", true, false)), "l'entrant : note au poste en lettre, sans chiffre")
 		check(int(live().get("numeros", {}).get(entrant, 0)) == numero, "numéro gardé par le moteur")
 		var nom_tuile := "MatchBetweenPlayer%d" % (int(choix.slot) + 1)
 		# Capture sur l'écran 2D posé (pas pendant le fondu vers un temps fort 3D).

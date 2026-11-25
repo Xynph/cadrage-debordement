@@ -1,8 +1,9 @@
 'use strict';
-// Barre du banc en direct (idée FM27 n° 34, choix B de Léo) : cris d'équipe, cris à un joueur qui agissent (réaction
-// découverte après coup), ajustements et « Permuter les ailes » au prochain arrêt de jeu ; un clic = action, aucun
-// bouton Confirmer ; vrai match à vitesse maximale. CD_PLANCHE_DIRECT_2D=<dossier> reçoit final-1920.png,
-// final-2560.png et final-ailes-1920.png. Jeu rendu : à lancer sous godot-slot.ps1 (jeu invisible).
+// Bouton « Cris » du direct (idée FM27 n° 34, menu déroulant comme dans FM) : cris d'équipe, cris à un joueur qui
+// agissent (réaction découverte après coup), ajustements et « Permuter les ailes » au prochain arrêt de jeu ; un clic =
+// action, aucun bouton Confirmer ; vrai match à vitesse maximale. CD_PLANCHE_DIRECT_2D=<dossier> reçoit
+// final-ferme-*, final-menu-*, final-joueurs-*, final-gabi-* (1920 et 2560) et final-ailes-1920.png. Jeu rendu : à
+// lancer sous godot-slot.ps1 (jeu invisible).
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path'), assert = require('node:assert/strict');
 const {spawnSync} = require('node:child_process');
 const godot = process.env.CD_GODOT_EXECUTABLE || process.env.CD_GODOT_EXE;

@@ -8,6 +8,7 @@ const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const Charte = preload("res://ui/charte.gd")
+const Fleches = preload("res://ui/fleches_progression.gd")
 const PlayerAttributes = preload("res://ui/player_attributes.gd")
 const Knowledge = preload("res://ui/player_knowledge_text.gd")
 const NotesMatch = preload("res://ui/notes_match.gd")
@@ -125,6 +126,11 @@ static func echeance(app: Control, player: Dictionary) -> String:
 static func valeurs(player: Dictionary, source: String) -> Dictionary:
 	return PlayerAttributes.detail(player, notre_joueur(source))
 
+## Qualités encore en fourchette (option de carrière, player-knowledge.cjs) : {clé: {min, max}}, vide sinon.
+static func fourchettes(player: Dictionary) -> Dictionary:
+	var plages: Variant = player.get("attributesV2Range")
+	return plages if plages is Dictionary else {}
+
 static func moyenne_famille(values: Dictionary, entries: Array) -> Variant:
 	if values.is_empty(): return null
 	var total := 0.0
@@ -151,14 +157,18 @@ static func points(values: Dictionary) -> Array:
 
 ## Grille 4 familles × 9 attributs, en unités du gabarit (2560 × 1440) relatives à `parent`.
 ## Chaque valeur est un Label nommé `prefixe + clé` : chiffre coloré au barème, « — » en ivoire-3 si inconnu.
-## `tailles` : {titre, libelle, valeur, pas} (unités).
+## `tailles` : {titre, libelle, valeur, pas} (unités) ; `fourchettes` (facultatif) : {clé: {min, max}} des qualités encore
+## en fourchette (option de carrière « En fourchette tant que pas observé ») : « 58-66 » et moyenne de famille « ~62 ».
 static func grille_attributs(parent: Control, origine: Vector2, dimension: Vector2, values: Dictionary, prefixe: String, tailles: Dictionary = {}) -> void:
+	var fourchettes: Dictionary = tailles.get("fourchettes", {}) if tailles.get("fourchettes") is Dictionary else {}
 	var titre := int(tailles.get("titre", 20))
 	var libelle := int(tailles.get("libelle", 21))
 	var valeur := int(tailles.get("valeur", 25))
 	var pas := float(tailles.get("pas", 33))
 	var ecart := float(tailles.get("ecart", 28))
 	var colonne := (dimension.x - ecart * 3.0) / 4.0
+	var fleches: Dictionary = {}
+	if tailles.has("app") and tailles.has("joueur"): fleches = Fleches.donnees(tailles.app, tailles.joueur).get("qualites", {})
 	for i in PlayerAttributes.GROUPS.size():
 		var group: Array = PlayerAttributes.GROUPS[i]
 		var x := origine.x + i * (colonne + ecart)
@@ -169,18 +179,32 @@ static func grille_attributs(parent: Control, origine: Vector2, dimension: Vecto
 		var moyenne: Variant = moyenne_famille(values, group[1])
 		if moyenne != null:
 			if mot_moy: D.text(parent, x + colonne - 38, origine.y + titre, "moy.", titre - 3, Charte.IVOIRE_2, 500, 56, HORIZONTAL_ALIGNMENT_RIGHT)
-			var chiffre := D.text(parent, x + colonne, origine.y + titre, G.n(moyenne), titre + 2, Charte.couleur_attribut(moyenne), 700, 34, HORIZONTAL_ALIGNMENT_RIGHT)
+			var texte_moy := ("~" if not fourchettes.is_empty() else "") + G.n(moyenne)
+			var chiffre := D.text(parent, x + colonne, origine.y + titre, texte_moy, titre + 2, Charte.couleur_attribut(moyenne), 700, 50 if not fourchettes.is_empty() else 34, HORIZONTAL_ALIGNMENT_RIGHT)
 			chiffre.name = prefixe.trim_suffix("_") + "Moyenne" + str(i)
 		D.line(parent, Vector2(x, origine.y + titre + 10), Vector2(x + colonne, origine.y + titre + 10), Color(Charte.FILET, .9))
 		var entries: Array = group[1]
 		for j in entries.size():
 			var pair: Array = entries[j]
 			var y := origine.y + titre + 10 + pas * (j + 1) - pas * .28
-			D.text(parent, x, y, pair[1], libelle, Charte.IVOIRE, 500, colonne - 46, HORIZONTAL_ALIGNMENT_LEFT, bool(tailles.get("corps", true)))
+			D.text(parent, x, y, pair[1], libelle, Charte.IVOIRE, 500, colonne - (80.0 if fourchettes.has(pair[0]) else 46.0), HORIZONTAL_ALIGNMENT_LEFT, bool(tailles.get("corps", true)))
 			var value: Variant = values.get(pair[0])
+			var plage: Variant = fourchettes.get(pair[0])
+			if plage is Dictionary and plage.has("min") and plage.has("max"):
+				var texte_plage := "%d-%d" % [int(plage.min), int(plage.max)]
+				var milieu := (float(plage.min) + float(plage.max)) / 2.0
+				var en_plage := D.text(parent, x + colonne, y, texte_plage, valeur - 4, Charte.couleur_attribut(milieu), 700, 84, HORIZONTAL_ALIGNMENT_RIGHT)
+				en_plage.name = prefixe + str(pair[0])
+				en_plage.set_meta("fourchette", true)
+				en_plage.tooltip_text = "%s · %s / 100" % [pair[1], texte_plage]
+				continue
 			var number := D.text(parent, x + colonne, y, PlayerAttributes.caption(value), valeur, Charte.couleur_attribut(value), 700, 46, HORIZONTAL_ALIGNMENT_RIGHT)
 			number.name = prefixe + str(pair[0])
 			number.tooltip_text = "%s · %s / 100" % [pair[1], PlayerAttributes.caption(value)] if value != null else "%s · inconnu" % pair[1]
+			# Flèche de progression sur 4 semaines + courbe 12 mois au survol (planche du 23/11/2026).
+			if fleches.has(pair[0]):
+				var f: Dictionary = fleches[pair[0]]
+				Fleches.marquer(tailles.app, number, int(f.cran), f.serie, str(pair[1]), "Qualite_" + str(pair[0]))
 
 ## Légende du barème : six libellés colorés, alignés à droite sur `droite` (unités). Renvoie la largeur occupée.
 static func legende(parent: Control, droite: float, ligne: float, taille: int = 18) -> Control:

@@ -6,6 +6,8 @@ const LIVE_PLANT_START := 0.145
 const LIVE_PLANT_END := 0.345
 const LIVE_REJOIN := 0.54
 const LIVE_PLANT_POSITION := 0.225
+## Durée de phase (s) sur laquelle l'appui est réglé : NativeMatchView.BLEND_SECONDS.
+const LIVE_REFERENCE := 0.55
 
 static func direction(incoming: Vector3, displacement: Vector3, duration: float) -> int:
 	if duration <= 0.0 or not is_finite(duration) or not incoming.is_finite() or not displacement.is_finite():
@@ -29,7 +31,14 @@ static func restore(rig: Skeleton3D, saved: Dictionary) -> void:
 		rig.set_bone_pose_rotation(index, pose[1])
 	saved.clear()
 
-static func live_travel(progress: float) -> float:
+## `duree` : durée de la phase (s). L'appui est réglé sur une phase de LIVE_REFERENCE secondes ;
+## depuis l'allure plafonnée (#911), un long portage dure plus longtemps : freinage, appui et
+## reprise gardent leur durée en secondes, au début du trajet, puis la courbe d'origine reprend.
+static func live_travel(progress: float, duree: float = LIVE_REFERENCE) -> float:
+	var echelle := minf(1.0, LIVE_REFERENCE / duree) if duree > 0.0 else 1.0
+	return echelle * _live_travel(progress / echelle)
+
+static func _live_travel(progress: float) -> float:
 	# Freinage, appui puis reprise de la courbe originale avec la même vitesse.
 	# Ces deux segments cubiques ont une pente nulle de part et d’autre de l’appui.
 	if progress < LIVE_PLANT_START:
