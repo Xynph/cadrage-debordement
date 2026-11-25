@@ -10,6 +10,7 @@ const Presentation = preload("res://match_presentation.gd")
 const Motion = preload("res://match_motion.gd")
 const Kit = preload("res://match_kit.gd")
 const Athlete = preload("res://match_athlete.gd")
+const JoueurV5 = preload("res://match_joueur_v5.gd")
 const Contact = preload("res://match_contact.gd")
 const Cut = preload("res://match_cut.gd")
 const Pass = preload("res://match_pass.gd")
@@ -471,6 +472,7 @@ func apply_frame(live: Dictionary) -> void:
 		# A home-colour change can also change the away contrast decision.
 		_refresh_kits()
 		Athlete.clear_palette()
+		JoueurV5.vider_palette()
 		for entry: Dictionary in _actors.values():
 			_recolor(entry.model, entry.side)
 			Tactique.colorer(entry.node, _kits[entry.side].marker)
@@ -521,7 +523,7 @@ func apply_frame(live: Dictionary) -> void:
 		present[id] = true
 		var target: Vector3 = _formations.place(id, _world(player))
 		if not _actors.has(id):
-			_actors[id] = VueJoueurs._make_actor(self, id, side, target)
+			_actors[id] = VueJoueurs._make_actor(self, id, side, target, int(player.get("slot", -1)))
 			Tactique.poser_repere(_actors[id].node, player, _kits[side].marker)
 		var entry: Dictionary = _actors[id]
 		entry.holding = id == _carrier_id
@@ -812,16 +814,27 @@ func _process(delta: float) -> void:
 	_fit_camera(delta, _camera_cut)
 	_camera_cut = false
 
-## Joueurs liés dans une mêlée ou un ballon porté (contact voulu) : la séparation les laisse.
+## Joueurs liés dans une mêlée ou un ballon porté (contact voulu) : la séparation ne les écarte pas
+## entre eux, ils restent des obstacles pour les autres. 25/11/2026 : seuls les avants liés du paquet
+## et les deux demis tenus au tunnel, arrivés à leur place ; le demi qui ramasse à la sortie, l'arrière, le joueur qui
+## rejoint le ballon porté et ceux qui se replient après l'essai sont écartés des liés qu'ils frôlent.
 func _lies() -> Dictionary:
 	var lies := {}
 	if _formations != null and _formations.active() and str(_formations.formation.type) in ["melee", "sortie_melee"]:
+		var roles: Array = ["pack", "demi_intro", "demi_adverse"] if str(_formations.formation.type) == "melee" else ["pack"]
 		for id: String in _formations.formation.places:
-			lies[id] = true
+			# Lié une fois à sa place (posture prise) ; en course vers elle, il contourne les autres.
+			if str(_formations.formation.roles.get(id, "")) in roles and float(_formations.posture_de(id)[1]) > 0.0:
+				lies[id] = true
+		# Avant qui se détache du paquet avec le ballon à la sortie : laissé tel quel (le ballon reste
+		# dans ses mains, à sa place).
+		var detache := str(_formations.formation.get("porteur", ""))
+		if not detache.is_empty() and not _formations.formation.places.has(detache):
+			lies[detache] = true
 	var scene_gestes: RefCounted = mise_en_scene()
-	if str(scene_gestes.get("phase")) in ["maul", "essai_maul"]:
+	if str(scene_gestes.get("phase")) in ["maul", "essai_maul"] and scene_gestes.has_method("lie"):
 		for id: String in _actors:
-			if scene_gestes.stages(id):
+			if scene_gestes.lie(id):
 				lies[id] = true
 	if choregraphie_active():
 		for id: String in _actors:
@@ -943,6 +956,9 @@ func alternative_kit_colors() -> Array[Color]:
 
 
 func _recolor(model: Node3D, side: int) -> void:
+	if model.has_meta("joueur_v5"):
+		JoueurV5.habiller(model, _kits[side])
+		return
 	Athlete.dress(model, _kits[side], str(model.get_meta("athlete_id", "")))
 
 

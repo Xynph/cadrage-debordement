@@ -30,7 +30,7 @@ function factory(){
  // (médias −2, relation −1 avec chaque journaliste). Réglage « Conférences ordinaires : y aller / envoyer l'adjoint ».
  const ORDINARY_MAX=3,MAJOR_COUNT=4,delegationLimit=60,POLICIES=['moi','adjoint'];
  const delegationCost=Object.freeze({mediaTrust:-2,relation:-1});
- const delegationNotice='Gabi répond à ta place sur un ton prudent : ni moral ni confiance gagnés. Coût : médias −2 et relation −1 avec chaque journaliste présent.';
+ const delegationNotice='Gabi répond à ta place sur un ton prudent : ni moral ni confiance gagnés.';
  const policyOf=s=>s?.pressDelegation?.ordinary==='adjoint'?'adjoint':'moi';
  const sameContext=(a,b)=>!!a&&!!b&&a.season===b.season&&a.week===b.week&&a.club===b.club&&slotOf(a)===slotOf(b);
  const delegatedAt=(s,c)=>(s.pressDelegation?.delegated||[]).some(d=>sameContext(d,c));
@@ -642,7 +642,7 @@ function factory(){
   if(!questions)return {allowed:false,reason:'Aucune conférence à confier.'};
   if(m)return {allowed:false,reason:m.label+' : la presse attend le manager en personne.'};
   const run=delegatedRun(s),penalty=delegationPenalty(run+1);
-  return {allowed:true,reason:penalty?delegationNotice+' '+(run+1)+'e conférence de suite confiée à l’adjoint : confiance de la direction −'+penalty+'.':delegationNotice,streak:run,trustPenalty:penalty};
+  return {allowed:true,reason:penalty?delegationNotice+' '+(run+1)+'e conférence de suite confiée à l’adjoint : la direction n’aime pas ça.':delegationNotice,streak:run,trustPenalty:penalty};
  }
  function execute(command,payload){
   check(['press_conference','press_delegate','press_policy'].includes(command),'Commande de presse inconnue.');check(!!S,'Crée ou importe une carrière.');

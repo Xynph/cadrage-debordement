@@ -9,9 +9,8 @@
 // Deuxième cause, Championship et D2 japonaise (saisons 2 et 3) : la masse autorisée comptait sur 15 % d'économies de
 // fonctionnement en plus de l'enveloppe du propriétaire (39 à 47 % des recettes) ; les clubs gérés la remplissaient à
 // l'intersaison et toute la division restait dans le rouge (-0,3 à -0,7 M€). Marge de prudence (league-economy.cjs) :
-// 15 % en Championship, 10 % en D2 japonaise (ses deux plus petits clubs ont dès la création un effectif payé 38 à 43 % de
-// leurs recettes ; au-delà, leurs contrats de départ seraient amputés et la masse de la division quitterait son niveau,
-// tests/starting-salaries.cjs).
+// 15 % en Championship ; D2 japonaise : 10 % à la création, 21 % dès la saison 2 (league-economy.cjs, prudenceDepart, masseDepart,
+// soutien ; mesure du 25/11/2026 : plus aucun club de la division dans le rouge hors enveloppe en trois saisons).
 // Le Super Rugby garde sa borne : son plafond salarial (2,6 M€) passe avant.
 const assert = require('node:assert/strict');
 const { test } = require('node:test');

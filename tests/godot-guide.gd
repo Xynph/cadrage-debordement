@@ -256,6 +256,12 @@ func run() -> void:
 		app._navigate(route); guide.refresh(); guide.open_help()
 		for i in 3: await process_frame
 		check(not guide.bubble.text.is_empty(), "Aide de la vraie route : " + route)
+		# Page dense sans place libre : l'aide demandée s'ouvre quand même, en petite fenêtre dans l'écran (Léo, 25/11/2026).
+		if route == "Calendrier":
+			while app.waiting: await process_frame
+			guide.open_help()
+			for i in 3: await process_frame
+			check(guide.expanded and Rect2(Vector2.ZERO, app.size).encloses(guide.get_global_rect()), "Calendrier dense : l'aide demandée s'ouvre dans l'écran")
 		var count := spoken.size()
 		for i in 10: guide.refresh()
 		check(spoken.size() == count, "Pas de répétition sur les snapshots : " + route)

@@ -64,7 +64,7 @@ func _start_maul() -> void:
 					continue
 				keep[id] = _walker(id, member)
 				continue
-			next.merge({"role": "opp_pack", "slot": front[member.role] + Vector2(1.3, 0.0)})
+			next.merge({"role": "opp_pack", "slot": front[member.role] + MAUL_FACE})
 		elif front.has(member.role):
 			next.merge({"role": "pack", "slot": front[member.role]})
 		elif member.role == "half":
@@ -92,7 +92,7 @@ func _start_maul() -> void:
 	# Durée de jonction : pointe de smoothstep = 1,5 × distance / durée, au plus MAUL_JOIN_PACE.
 	for id: String in cast:
 		if cast[id].has("slot"):
-			var spot: Vector3 = center_from + u * (cast[id].slot as Vector2).x + r * (cast[id].slot as Vector2).y
+			var spot := _maul_spot(id, center_from, u, r, cast[id].slot)
 			cast[id].join = clampf(1.5 * (cast[id].from as Vector3).distance_to(spot) / MAUL_JOIN_PACE, MAUL_FORM, 2.5)
 	phase = "maul"
 	time = 0.0

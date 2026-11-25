@@ -75,26 +75,24 @@ rallonge n'est proposée.
 1. **Quand** : une offre (prime d'une recrue libre ou indemnité entre clubs) dépasse le **reste** de l'enveloppe, mais
    pas la caisse : reste < offre ≤ caisse − matelas. Sous le refus, un bouton « Demander X € au conseil ».
 2. **Combien** : X = offre − reste, arrondi au millier supérieur.
-3. **Confirmation** (motif W1 : libellé = action, focus par défaut sur Annuler) : elle annonce l'effet sur la confiance
-   (−3 si accordée, −1 si refusée) et le nombre de rallonges déjà accordées.
-4. **Réponse immédiate, sans hasard** : accordée si (a) moins de 2 rallonges déjà accordées cette saison, (b) confiance
-   du président ≥ 55, (c) X ≤ 50 % de l'enveloppe fixée en début de saison. Sinon refusée, avec la première raison
-   manquée, dans cet ordre : « Le président refuse : le conseil a déjà accordé 2 rallonges cette saison. » ; « … sa
-   confiance (40/100) est trop basse pour rouvrir l'enveloppe ; il en faut 55. » ; « … 600 000 € dépassent 50 % de
-   l'enveloppe fixée en début de saison (500 000 € au plus). »
-5. **Effets** : accordée, X s'ajoute à l'enveloppe de la saison (champ `rallonge`) et la confiance baisse de 3 ;
-   refusée, la confiance baisse de 1. Chaque demande est comptée (`demandes`, `rallongesAccordees`) et écrite dans les
-   nouvelles du club (« Budget de transferts : le conseil accorde une rallonge de X €. » / « Budget de transferts :
-   demande de rallonge de X € refusée. Le président refuse : … »).
+3. **Clic direct, rien d'annoncé avant** (décision de Léo du 25/11/2026, comme Football Manager) : ni coût en confiance,
+   ni risque, ni chiffre. Un clic sur « Demander X au conseil » envoie la demande.
+4. **Réponse immédiate, sans hasard**, oui ou non avec un motif court : accordée si (a) moins de 2 rallonges déjà
+   accordées cette saison, (b) confiance du président ≥ 55, (c) X ≤ 50 % de l'enveloppe. Sinon refusée, première raison
+   manquée : « Assez de rallonges cette saison » ; « Résultats d'abord » ; « Finances serrées ». Aucun chiffre affiché.
+5. **Effets** : accordée, X s'ajoute à l'enveloppe (champ `rallonge`) et la confiance baisse de 3 ; refusée, elle baisse
+   de 1 (coûts internes, jamais montrés). **Insister agace** : après un refus, le conseil ne veut plus en entendre parler
+   pendant `rallonge.moisSilence` (3) mois ; le bouton est grisé « Conseil fermé jusqu'au … » avec la date, et la
+   commande est refusée jusque-là. Nouvelles du club : « … rallonge de X € refusée : résultats d'abord. »
 6. **Après la réponse**, le devis est rafraîchi : accordée, l'offre devient possible ; le disponible reste plafonné par
    caisse − matelas (R6).
 7. La rallonge n'est pas une dépense : la caisse ne bouge pas. Elle ne crée pas non plus de dette (≠ prêt de
    l'actionnaire) ; elle ne fait que desserrer l'enveloppe dans la limite de la caisse.
 
 Contrat moteur : commande `transfer_budget_extension {amount, confirmed:true}` (montant entier, multiple de 1 000) ;
-réponse dans `meta.transferBudgetExtension = {accordee, montant, message, confiance, coutConfiance}`. La vue
+réponse dans `meta.transferBudgetExtension = {accordee, montant, message, raison, bloqueJusqu, bloqueLabel}`. La vue
 `finance.transferBudget` expose `enveloppe, report, rallonge, depense, reconstitue, reste, caisseLibre, disponible,
-matelas, demandes, rallongesAccordees, rallongeMax, rallongeArrondi, rallongeCout{accordee,refusee}, saison` : une
+matelas, demandes, rallongesAccordees, rallongeMax, rallongeArrondi, rallongeBloqueJusqu, rallongeBloqueLabel, saison` : une
 rallonge est possible pour une offre m si `reste < m ≤ caisseLibre` (calcul repris par `ui/transfer_budget.gd`,
 `extension_amount`, pour les deux négociations, l'indemnité entre clubs étant modifiable).
 

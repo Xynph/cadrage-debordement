@@ -74,11 +74,17 @@ test('Rallonge (R3 bis) et report (R5) : montant demandé, décision du préside
   assert.equal(T.total(f), 1070000); assert.equal(T.reste(f), 170000);
   assert.match(T.refus(f, 200000, 9e6, 1.89e6), /il reste 170 000 € sur l’enveloppe de 1 070 000 €/);
   // Décision : nombre de rallonges, puis confiance, puis part de l'enveloppe fixée.
-  const part = Math.round(Q.partEnveloppe * 100), maxPart = Math.floor(Q.partEnveloppe * e.enveloppe), pluriel = Q.maxParSaison > 1 ? 's' : '';
+  const maxPart = Math.floor(Q.partEnveloppe * e.enveloppe);
   assert.equal(T.decisionRallonge(e, maxPart, Q.confianceMin), null, 'seuil et part pile : accordée');
-  assert.equal(T.decisionRallonge(e, 1000, Q.confianceMin - 1), `Le président refuse : sa confiance (${Q.confianceMin - 1}/100) est trop basse pour rouvrir l’enveloppe ; il en faut ${Q.confianceMin}.`);
-  assert.equal(T.decisionRallonge(e, maxPart + 1000, 100), `Le président refuse : ${T.euros(maxPart + 1000)} dépassent ${part} % de l’enveloppe fixée en début de saison (${T.euros(maxPart)} au plus).`);
-  assert.equal(T.decisionRallonge({ ...e, rallongesAccordees: Q.maxParSaison }, 1000, 100), `Le président refuse : le conseil a déjà accordé ${Q.maxParSaison} rallonge${pluriel} cette saison.`);
+  assert.equal(T.decisionRallonge(e, 1000, Q.confianceMin - 1), 'Résultats d’abord');
+  assert.equal(T.decisionRallonge(e, maxPart + 1000, 100), 'Finances serrées');
+  assert.equal(T.decisionRallonge({ ...e, rallongesAccordees: Q.maxParSaison }, 1000, 100), 'Assez de rallonges cette saison');
+  // Aucun chiffre dans les motifs de refus.
+  for (const m of ['Résultats d’abord', 'Finances serrées', 'Assez de rallonges cette saison']) assert.doesNotMatch(m, /[0-9]/);
+  assert.equal(T.plusMois('2026-11-30', 3), '2027-03-02');
+  assert.equal(T.rallongeFermee({ bloqueJusqu: '2027-02-01' }, '2027-01-31'), true);
+  assert.equal(T.rallongeFermee({ bloqueJusqu: '2027-02-01' }, '2027-02-01'), false);
+  assert.equal(T.rallongeFermee({}, '2027-02-01'), false);
   assert.equal(T.decisionRallonge({ ...e, rallongesAccordees: Q.maxParSaison - 1 }, 1000, 100), null);
   // Report : part du reste non dépensé (enveloppe + report + rallonge + reconstitué − dépensé), millier inférieur, plafonné.
   const fin = { enveloppe: 640000, report: 40000, rallonge: 30000, reconstitue: 10000, depense: 300000 };
@@ -120,7 +126,7 @@ test('Moteur Monde : enveloppe, refus, débits, matelas, président, recettes, s
 
     // 1. Enveloppe fixée à la création, lue dans finance.transferBudget, entre 0,5 % et 6 % des recettes.
     let v = m.finance.transferBudget;
-    assert.deepEqual(Object.keys(v).sort(), ['actif', 'caisseLibre', 'demandes', 'depense', 'disponible', 'enveloppe', 'matelas', 'rallonge', 'rallongeArrondi', 'rallongeCout', 'rallongeMax', 'rallongesAccordees', 'reconstitue', 'report', 'reste', 'saison']);
+    assert.deepEqual(Object.keys(v).sort(), ['actif', 'caisseLibre', 'demandes', 'depense', 'disponible', 'enveloppe', 'matelas', 'rallonge', 'rallongeArrondi', 'rallongeBloqueJusqu', 'rallongeBloqueLabel', 'rallongeMax', 'rallongesAccordees', 'reconstitue', 'report', 'reste', 'saison']);
     assert.equal(v.report, 0, 'pas de report à la création'); assert.equal(v.rallonge, 0);
     assert.equal(v.reste, v.enveloppe); assert.equal(v.disponible, Math.min(v.reste, v.caisseLibre));
     assert.equal(v.actif, true);
@@ -295,10 +301,19 @@ test('Moteur Monde : rallonge accordée, refusée (confiance, part, plafond), ca
     r = demander(2000);
     assert.equal(r.ok, true, r.error);
     let rep = r.model.meta.transferBudgetExtension;
-    assert.deepEqual(rep, { accordee: false, montant: 2000, message: `Le président refuse : sa confiance (${bas}/100) est trop basse pour rouvrir l’enveloppe ; il en faut ${Q.confianceMin}.`, confiance: bas - cR, coutConfiance: cR });
+    assert.equal(rep.accordee, false); assert.equal(rep.raison, 'Résultats d’abord');
+    assert.match(rep.message, /^Refusé : résultats d’abord · plus de demande avant le /);
+    assert.doesNotMatch(rep.message, /100|point/);
+    assert.ok(rep.bloqueJusqu && rep.bloqueLabel, 'le conseil prévient : fermé quelques mois');
+    assert.equal(r.model.finance.transferBudget.rallongeBloqueJusqu, rep.bloqueJusqu);
+    // Insister est refusé tant que le conseil est fermé ; rien n'est écrit.
+    const insiste = demander(2000);
+    assert.equal(insiste.ok, false); assert.match(insiste.error, /plus en entendre parler/);
+    assert.equal(etat().demandes, 1);
+    run('delete S.budgetTransferts.bloqueJusqu');
     assert.equal(lire('S.trust'), bas - cR);
     assert.deepEqual([etat().demandes, etat().rallongesAccordees, etat().rallonge], [1, 0, 0]);
-    assert.match(nouvelles(), /Budget de transferts : demande de rallonge de 2 000 € refusée\. Le président refuse : sa confiance/);
+    assert.match(nouvelles(), /Budget de transferts : demande de rallonge de 2 000 € refusée : résultats d’abord\./);
     assert.equal(r.model.market.find(p => p.id === libre.id).available, false);
 
     // Accordée : −3 de confiance, la rallonge s'ajoute à l'enveloppe de la saison, l'offre devient possible.
@@ -306,7 +321,7 @@ test('Moteur Monde : rallonge accordée, refusée (confiance, part, plafond), ca
     r = demander(2000);
     assert.equal(r.ok, true, r.error);
     rep = r.model.meta.transferBudgetExtension;
-    assert.deepEqual(rep, { accordee: true, montant: 2000, message: 'Le conseil accorde une rallonge de 2 000 € au budget de transferts.', confiance: 72 - cA, coutConfiance: cA });
+    assert.deepEqual(rep, { accordee: true, montant: 2000, message: 'Le conseil accorde une rallonge de 2 000 € au budget de transferts.', raison: null, bloqueJusqu: null, bloqueLabel: null });
     v = r.model.finance.transferBudget;
     assert.deepEqual([v.rallonge, v.demandes, v.rallongesAccordees, v.reste], [2000, 2, 1, libre.fee + 500]);
     assert.equal(v.disponible, Math.min(v.reste, v.caisseLibre));
@@ -324,7 +339,8 @@ test('Moteur Monde : rallonge accordée, refusée (confiance, part, plafond), ca
     r = demander(trop);
     assert.equal(r.ok, true, r.error);
     assert.equal(r.model.meta.transferBudgetExtension.accordee, false);
-    assert.match(r.model.meta.transferBudgetExtension.message, new RegExp(`dépassent ${Math.round(Q.partEnveloppe * 100)} % de l’enveloppe fixée en début de saison`));
+    assert.equal(r.model.meta.transferBudgetExtension.raison, 'Finances serrées');
+    run('delete S.budgetTransferts.bloqueJusqu');
     assert.equal(lire('S.trust'), 72 - cA - cR);
 
     // Plafond : le nombre de rallonges accordées par saison est limité, la suivante est refusée.
@@ -332,10 +348,11 @@ test('Moteur Monde : rallonge accordée, refusée (confiance, part, plafond), ca
     assert.equal(etat().rallongesAccordees, 2);
     r = demander(1000);
     assert.equal(r.model.meta.transferBudgetExtension.accordee, false);
-    assert.equal(r.model.meta.transferBudgetExtension.message, `Le président refuse : le conseil a déjà accordé ${Q.maxParSaison} rallonges cette saison.`);
+    assert.equal(r.model.meta.transferBudgetExtension.message, 'Refusé : assez de rallonges cette saison' + (r.model.meta.transferBudgetExtension.bloqueLabel ? ' · plus de demande avant le ' + r.model.meta.transferBudgetExtension.bloqueLabel : ''));
     assert.deepEqual([etat().demandes, etat().rallongesAccordees, etat().rallonge], [5, 2, 3000]);
     assert.equal(lire('S.trust'), 72 - cA - cR - cA - cR, 'part refusée, accordée, plafond refusé');
 
+    run('delete S.budgetTransferts.bloqueJusqu');
     // Caisse limitante : pas de rallonge possible, la commande est refusée sans rien écrire.
     v = vue();
     run(`club().cash=${v.matelas + v.reste}`);
