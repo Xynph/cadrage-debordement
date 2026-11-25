@@ -112,18 +112,11 @@ func executer() -> void:
 			verifier(demande != null and demande.is_visible_in_tree() and not demande.disabled, "bouton de rallonge visible sur un refus de budget")
 			if demande != null:
 				verifier(demande.text == Budget.extension_button(montant), "libellé « %s »" % demande.text)
-				demande.pressed.emit(); await poser(8)
-				# Confirmation EN PLACE (deux temps, aucune fenêtre) sous le bouton de la page d'offre.
-				var confirmation := app.find_child("TransferBudgetExtensionConfirm", true, false) as Control
-				verifier(confirmation != null and confirmation.is_visible_in_tree(), "confirmation de la demande ouverte en place")
-				if confirmation != null:
-					var oui := app.find_child("TransferBudgetExtensionConfirmOk", true, false) as Button
-					var non := app.find_child("TransferBudgetExtensionConfirmAnnuler", true, false) as Button
-					verifier(non != null and (root.gui_get_focus_owner() == non or (is_instance_valid(dialogue) and dialogue.gui_get_focus_owner() == non)), "focus par défaut sur Annuler")
-					verifier(oui != null and oui.text == ("Confirmer la demande de " + G.euros(montant)).to_upper(), "bouton de confirmation = action : " + (oui.text if oui != null else ""))
-					verifier(texte("TransferBudgetExtensionQuestion").contains("confiance"), "effet sur la confiance annoncé : " + texte("TransferBudgetExtensionQuestion"))
-					await capturer("budget-rallonge-confirmation.png")
-					oui.pressed.emit()
+				verifier(not demande.text.contains("confiance") and not demande.tooltip_text.contains("confiance"), "aucun coût en confiance annoncé avant la demande")
+				demande.pressed.emit()
+				# Clic direct : aucune confirmation, la demande part tout de suite.
+				verifier(app.find_child("TransferBudgetExtensionConfirm", true, false) == null, "aucun bloc de confirmation")
+				if true:
 					await poser(2); await attendre_moteur(); await poser(12)
 					var rouvert := app.find_child("ContractOffer", true, false) as ConfirmationDialog
 					verifier(rouvert != null and not is_instance_valid(dialogue), "devis rouvert après la réponse du conseil")

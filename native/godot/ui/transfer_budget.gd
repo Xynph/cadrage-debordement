@@ -65,21 +65,22 @@ static func extension_for_refusal(budget: Dictionary, fee: Variant, reason: Vari
 	if not str(reason).begins_with(REFUSAL): return 0
 	return extension_amount(budget, fee)
 
-static func extension_button(amount: int) -> String:
+## Rien n'est annoncé avant la demande (ni coût en confiance, ni risque) : seulement le montant, ou la date de réouverture
+## après un refus (le président ne veut plus en entendre parler avant).
+static func extension_closed(budget: Dictionary) -> String:
+	return str(budget.get("rallongeBloqueLabel", "")) if budget.get("rallongeBloqueJusqu") != null else ""
+
+static func extension_button(amount: int, budget: Dictionary = {}) -> String:
+	var ferme := extension_closed(budget)
+	if ferme != "": return "Conseil fermé jusqu’au %s" % ferme
 	return "Demander %s au conseil" % G.euros(amount)
 
-static func extension_question(budget: Dictionary, amount: int) -> String:
-	var cost: Dictionary = budget.get("rallongeCout", {}) if budget.get("rallongeCout") is Dictionary else {}
-	return "Demander %s au conseil pour compléter le budget de transferts ?\nLe président répond tout de suite. Accordée, la rallonge s’ajoute à l’enveloppe de la saison et coûte %d points de confiance ; refusée, elle en coûte %d.\nRallonges accordées cette saison : %d sur %d." % [G.euros(amount), int(cost.get("accordee", 0)), int(cost.get("refusee", 0)), int(budget.get("rallongesAccordees", 0)), int(budget.get("rallongeMax", 0))]
+## Un clic envoie la demande (décision de Léo : clic direct, sans confirmation). `on_sent` est appelé si la commande part ;
+## la réponse arrive ensuite par le modèle et s'affiche dans la page.
+static func send_extension(app: Control, amount: int, on_sent: Callable) -> void:
+	if app.waiting or amount <= 0: return
+	if app._command(EXTENSION_COMMAND, {"amount": amount, "confirmed": true}): on_sent.call()
 
-## Confirmation EN PLACE (deux temps, aucune fenêtre ; motif W1 : libellé = action, focus sur Annuler) puis envoi de la commande.
-## Le bloc s'insère dans `conteneur`, juste après `apres` s'il est donné. `on_sent` est appelé si la commande part (la réponse
-## arrive ensuite par le modèle et s'affiche dans la page).
-static func confirm_extension(app: Control, conteneur: Node, budget: Dictionary, amount: int, on_sent: Callable, apres: Node = null) -> Control:
-	var lignes: Array = [{"id":"TransferBudgetExtensionQuestion", "text":extension_question(budget, amount)}]
-	var envoyer := func():
-		if not app.waiting and app._command(EXTENSION_COMMAND, {"amount": amount, "confirmed": true}): on_sent.call()
-	return preload("res://ui/confirmation_en_place.gd").ouvrir(app, conteneur, "TransferBudgetExtensionConfirm", "Rallonge du budget de transferts", lignes, "Confirmer la demande de %s" % G.euros(amount), envoyer, apres)
 ## Réponse du conseil lue dans la réponse du moteur (meta.transferBudgetExtension), ou l’erreur de la commande.
 static func extension_answer(app: Control) -> String:
 	if not app.bridge.last_response_ok: return "Demande non transmise : " + str(app.last_error)

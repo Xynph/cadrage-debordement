@@ -58,7 +58,9 @@ const PRISE := 0.25
 const TRONC_DEBOUT := [["Hips", "Abdomen", 0.13], ["Abdomen", "Torso", 0.14], ["Torso", "Neck", 0.14], ["Head", 0.22, 0.1],
 	["UpperLeg.L", "LowerLeg.L", 0.08], ["UpperLeg.R", "LowerLeg.R", 0.08]]
 const JEU_DEBOUT := 0.01
-const PORTEE_DEBOUT := 1.8
+## 25/11/2026 : 2,6 m (comme la sonde des contacts) au lieu de 1,8 m : penché en mêlée, un avant a la
+## tête 1,1 m devant ses pieds ; à 1,8 m, le demi qui se tourne contre un flanker n'était pas vu.
+const PORTEE_DEBOUT := 2.6
 const PASSES_SEPARATION := 4
 
 ## id -> {"rotations": {os: Quaternion}, "positions": {os: Vector3}, "y": float}
@@ -211,7 +213,10 @@ func degager(actors: Dictionary, delta: float, porteur: String = "", ballon: Nod
 ## celui du porteur) : deux joueurs debout dont le tronc, les cuisses ou la tête se pénètrent ont
 ## leurs modèles (pas leurs racines) écartés à l'horizontale, chacun de la moitié, juste assez ;
 ## l'écart revient à zéro à RETOUR m/s. Bras exclus (liaisons, plaquages : contact voulu).
-## `exclus` : joueurs liés à une phase où le contact est voulu (mêlée, ballon porté), jamais écartés.
+## `exclus` : joueurs liés à une phase où le contact est voulu (mêlée, ballon porté), jamais écartés
+## entre eux ni déplacés ; 25/11/2026 : ils restent des obstacles pour les autres (demi qui longe le
+## paquet à la sortie de mêlée, joueur qui rejoint le ballon porté, repli après l'essai), qui sont
+## écartés seuls, de tout l'écart.
 ## Le ballon tenu suit l'écart de son porteur. Présentation seule.
 func separer(actors: Dictionary, delta: float, exclus: Dictionary = {}, porteur: String = "", ballon: Node3D = null) -> void:
 	var ids: Array = []
@@ -223,7 +228,9 @@ func separer(actors: Dictionary, delta: float, exclus: Dictionary = {}, porteur:
 		var model: Node3D = entry.get("model")
 		var ecart: Vector3 = (_separations.get(id, Vector3.ZERO) as Vector3).move_toward(Vector3.ZERO, RETOUR * delta)
 		_separations[id] = ecart
-		if exclus.has(id) or model == null or rig == null or not rig.is_visible_in_tree():
+		if exclus.has(id):
+			_separations.erase(id)
+		if model == null or rig == null or not rig.is_visible_in_tree():
 			_separations.erase(id)
 			continue
 		var torse := rig.find_bone("Torso")
@@ -243,19 +250,22 @@ func separer(actors: Dictionary, delta: float, exclus: Dictionary = {}, porteur:
 			for j in range(i + 1, ids.size()):
 				var a: String = ids[i]
 				var b: String = ids[j]
-				if (racines[a] as Vector3).distance_to(racines[b]) > PORTEE_DEBOUT:
+				var fixe_a := exclus.has(a)
+				var fixe_b := exclus.has(b)
+				if (fixe_a and fixe_b) or (racines[a] as Vector3).distance_to(racines[b]) > PORTEE_DEBOUT:
 					continue
 				var p := _poussee_mutuelle(volumes[a], poussees[a], volumes[b], poussees[b], racines[a] - racines[b])
 				if p.is_zero_approx():
 					continue
-				poussees[a] += p * 0.5
-				poussees[b] -= p * 0.5
+				var part_a := 0.0 if fixe_a else (1.0 if fixe_b else 0.5)
+				poussees[a] += p * part_a
+				poussees[b] -= p * (1.0 - part_a)
 				bouge = true
 		if not bouge:
 			break
 	for id: String in ids:
 		var ecart: Vector3 = poussees[id]
-		if ecart.is_zero_approx():
+		if exclus.has(id) or ecart.is_zero_approx():
 			_separations.erase(id)
 			continue
 		_separations[id] = ecart

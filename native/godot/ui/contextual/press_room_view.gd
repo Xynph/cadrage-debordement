@@ -11,6 +11,7 @@ const SeasonLabel = preload("res://ui/season_label.gd")
 const Press = preload("res://ui/press_view.gd")
 const Fm = preload("res://ui/immersive08/conference_presse.gd")
 const C = preload("res://ui/immersive08/components.gd")
+const CompteRendu = preload("res://ui/immersive08/compte_rendu_presse.gd")
 var director: Node
 var app: Control
 var model: Dictionary = {}
@@ -99,6 +100,10 @@ func _render_ui() -> void:
 		return
 	# Compte-rendu sur la même photo, sous le même voile que les questions.
 	Fm.voile(self)
+	if not _current_outcome().is_empty():
+		CompteRendu.construire(self, _current_outcome())
+		_refresh_buttons()
+		return
 	var column := S.frame(ui, 20)
 	var context: Dictionary = data.get("context", {})
 	var top := S.G.h(16)
@@ -109,13 +114,11 @@ func _render_ui() -> void:
 	var title := "Conférence d’après-match" if meeting.get("postmatch", false) else "La conférence de presse"
 	S.heading(heading, model.get("club", {}), title, "Saison %s · semaine %d" % [SeasonLabel.label(context.get("season", 0)), int(context.get("week", 0)) + 1])
 	_render_promise_banner(column)
-	if not _current_outcome().is_empty(): _render_outcome(column, _current_outcome())
-	else:
-		var space := Control.new()
-		S.G.fill(space, true)
-		column.add_child(space)
-		var note := S.panel(column, 16)
-		note.add_child(S.wrap(str(data.get("conference", {}).get("reason", "Aucune conférence disponible dans ce contexte.")), 18, S.TEXT))
+	var space := Control.new()
+	S.G.fill(space, true)
+	column.add_child(space)
+	var note := S.panel(column, 16)
+	note.add_child(S.wrap(str(data.get("conference", {}).get("reason", "Aucune conférence disponible dans ce contexte.")), 18, S.TEXT))
 	var footer := S.G.h(16)
 	column.add_child(footer)
 	var notice_surface := S.panel(footer, 8)
@@ -131,73 +134,6 @@ func _render_ui() -> void:
 		close.name = "PressReturn"
 		footer.add_child(close)
 	_refresh_buttons()
-
-## Bilan après publication : une flèche par domaine (vert favorable, rouge défavorable, = sans effet), jamais de
-## chiffres ; moral de chaque joueur visé, relation avec chaque journaliste, puis les déclarations.
-func _render_outcome(column: VBoxContainer, outcome: Dictionary) -> void:
-	var content := S.G.h(20)
-	S.G.fill(content, true)
-	column.add_child(content)
-	var air := Control.new()
-	air.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	S.G.fill(air, true)
-	content.add_child(air)
-	var surface := S.panel(content, 18)
-	surface.get_parent().custom_minimum_size.x = 610
-	surface.get_parent().size_flags_horizontal = Control.SIZE_FILL
-	var list := S.G.scroll(surface)
-	var delegated: bool = outcome.get("delegated", false)
-	list.add_child(S.label("Gabi a tenu la conférence" if delegated else "Conférence publiée", 25, S.GOLD))
-	var delta: Dictionary = outcome.get("delta", {})
-	var headline := S.G.h(10)
-	headline.name = "PressOutcomeHeadline"
-	list.add_child(headline)
-	for entry: Array in [["morale", "Groupe", true], ["mediaTrust", "Médias", true], ["fanTrust", "Supporters", true], ["boardPressure", "Pression", false], ["trust", "Direction", true]]:
-		if not delta.has(entry[0]): continue
-		var card := PanelContainer.new()
-		card.name = "PressOutcome_" + str(entry[0])
-		card.add_theme_stylebox_override("panel", Charte.ombrer(Charte.style_panneau(Charte.PANNEAU_2, Charte.RAYON_CARTE, 0), Charte.RAYON_CARTE))
-		S.G.fill(card)
-		headline.add_child(card)
-		var margin := S.G.margin(10)
-		card.add_child(margin)
-		var words := S.G.v(6)
-		margin.add_child(words)
-		words.add_child(S.label(str(entry[1]).to_upper(), 13, S.MUTED))
-		words.add_child(Fm.fleche(float(delta[entry[0]]), entry[2], 26))
-	for player: Dictionary in outcome.get("players", []):
-		_outcome_line(list, "PressOutcomePlayer_" + str(player.get("id", "")).validate_node_name(), str(player.get("name", "")), "Moral", float(player.get("delta", 0)))
-	for promise: Dictionary in _promises().get("active", []):
-		if _context_key(promise) != _context: continue
-		var announce: Dictionary = promise.get("announce", {})
-		var row := S.G.h(10)
-		row.name = "PressPromiseAnnounced"
-		list.add_child(row)
-		row.add_child(S.label("« %s »" % str(promise.get("label", "")), 15, S.GOLD))
-		for key: Array in [["fanTrust", "Supporters", true], ["mediaTrust", "Médias", true], ["trust", "Direction", true], ["boardPressure", "Pression", false]]:
-			row.add_child(S.label(str(key[1]), 13, S.MUTED))
-			row.add_child(Fm.fleche(float(announce.get(key[0], 0)), key[2], 16))
-	for exchange: Dictionary in outcome.get("exchanges", []):
-		var name_label := "Identité indisponible"
-		for person: Dictionary in data.get("people", []):
-			if person.get("id") == exchange.get("journalistId"): name_label = str(person.get("name", "")); break
-		_outcome_line(list, "PressOutcomeRelation_" + str(exchange.get("journalistId", "")).validate_node_name(), name_label, "Relation", float(exchange.get("delta", 0)))
-	for record: Dictionary in data.get("history", []):
-		if _context_key(record) != _context: continue
-		var reporter: Dictionary = record.get("journalist", {})
-		list.add_child(S.label(str(reporter.get("name", "Identité indisponible")) + " · " + str(reporter.get("outlet", "")), 14, S.GOLD))
-		var question: Variant = record.get("question", record.get("questionText"))
-		var answer: Variant = record.get("answer", record.get("answerText"))
-		if question is String: list.add_child(S.wrap(question, 14))
-		if answer is String: list.add_child(S.wrap(("Gabi : " if record.get("delegated", false) else "") + answer, 15, S.TEXT))
-
-func _outcome_line(list: Control, id: String, who: String, what: String, value: float) -> void:
-	var row := S.G.h(10)
-	row.name = id
-	list.add_child(row)
-	row.add_child(S.label(who, 15, S.TEXT))
-	row.add_child(S.label(what, 13, S.MUTED))
-	row.add_child(Fm.fleche(value, true, 16))
 
 func _promises() -> Dictionary:
 	var value: Variant = model.get("clubLife", {}).get("pressPromises")
