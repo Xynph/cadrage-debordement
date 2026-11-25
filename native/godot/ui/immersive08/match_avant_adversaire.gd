@@ -39,7 +39,7 @@ func _adversaire(model: Dictionary, next: Dictionary, data: Dictionary, nous: in
 		ligne.add_child(numero)
 		var id := str(joueur.get("id", ""))
 		# Clic : le XV de son club (fiche du club adverse) ; survol : ce que le jeu connaît de lui.
-		var lien := _bouton_lien(str(joueur.get("name", "")), _ouvrir_joueur_adverse.bind(id, str(joueur.get("name", "")), eux), "SurveilleNom_" + str(joueur.get("categorie", "")), 13, true)
+		var lien := _bouton_lien(str(joueur.get("name", "")), _ouvrir_club.bind(eux), "SurveilleNom_" + str(joueur.get("categorie", "")), 13, true)
 		lien.set_meta("joueur_id", id)
 		_lier_mini_adverse(lien, joueur, eux)
 		ligne.add_child(lien)
@@ -62,10 +62,6 @@ func _adversaire(model: Dictionary, next: Dictionary, data: Dictionary, nous: in
 
 ## Mini-fiche d'un joueur adverse : survol du bouton (i) posé près du nom pendant 0,5 s (rien au survol du nom), ou touche I
 ## au clavier ; ce que le jeu connaît de lui, sans inventer.
-## Clic sur un joueur adverse : son dossier (comme depuis la page club), sinon l'XV de son club.
-func _ouvrir_joueur_adverse(id: String, nom: String, club: Dictionary) -> void:
-	if not load("res://ui/prospect_profile.gd").ouvrir_dossier_adverse(app, id, nom): _ouvrir_club(club)
-
 func _lier_mini_adverse(controle: Control, joueur: Dictionary, club: Dictionary) -> void:
 	controle.tooltip_text = ""
 	var info := C.icon("info", 18, Charte.IVOIRE_2)

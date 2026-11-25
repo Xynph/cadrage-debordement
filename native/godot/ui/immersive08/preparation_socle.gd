@@ -323,8 +323,6 @@ func _ouvrir_joueur(joueur: Dictionary, club_id: int) -> void:
 		if Link.available(app, genre, pid):
 			app.navigation_controller.open_entity({"kind":genre, "id":pid})
 			return
-	# Joueur d'un autre club : son dossier (comme depuis l'effectif de la page club), sinon l'XV de son club.
-	if load("res://ui/prospect_profile.gd").ouvrir_dossier_adverse(app, pid, str(joueur.get("name", ""))): return
 	if club_id >= 0: _ouvrir_club_xv(club_id)
 
 ## Joueur adverse ou du club ouvrable (fiche ou XV de son club) ; jamais un bouton factice.
@@ -332,7 +330,6 @@ func _joueur_ouvrable(joueur: Dictionary, club_id: int) -> bool:
 	var pid := str(joueur.get("id", ""))
 	for genre: String in ["player", "market"]:
 		if Link.available(app, genre, pid): return true
-	if load("res://ui/prospect_profile.gd").target_available(app, "interclub", pid): return true
 	return club_id >= 0 and Link.available(app, "club", str(club_id))
 
 ## Zone cliquable pour toute une carte ou une case (posée avant le texte) : clic = fiche, survol = mini-fiche.
