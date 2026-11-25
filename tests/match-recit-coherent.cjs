@@ -45,14 +45,19 @@ test('« Avantage sur en-avant » : l’en-avant est raconté juste avant, par l
     const ok = prec && prec.scene && prec.scene.kind === 'hand-fault' && /en-avant/.test(prec.text) && !prec.text.startsWith(a[1] + ' ');
     if (!ok) fautes.push(`match ${m.k} [${j}] ${e.text} <- ${prec ? prec.text : 'rien'}`);
   });
-  // Le récit suit ce qui arrive : la faute n'annonce pas un avantage que la ligne suivante annule.
-  const contradictions = [];
+  // Le récit suit ce qui arrive : la faute dit seulement la faute, puis vient l’avantage, le retour à la mêlée ou la mêlée.
+  const incoherents = []; let racontes = 0;
   for (const m of jouer()) m.events.forEach((e, j) => {
-    if (!(e.type === 'play' && e.scene.kind === 'hand-fault' && /laisse jouer/.test(e.text))) return;
-    const suite = m.events[j + 1];
-    if (!suite || !/^Avantage sur en-avant/.test(suite.text)) contradictions.push(`match ${m.k} [${j}] ${e.text} -> ${suite ? suite.text : 'rien'}`);
+    if (!(e.type === 'play' && e.scene.kind === 'hand-fault')) return;
+    racontes++;
+    let q = j + 1; while (q < m.events.length && BRUIT.has(m.events[q].type)) q++;
+    const suite = m.events[q]; if (!suite) return;
+    const promet = /laisse jouer/.test(e.text) && !/^Avantage sur en-avant/.test(suite.text); // promettre un avantage que la ligne suivante annule
+    const ok = !promet && (/ : introduction adverse.$/.test(e.text) ? /prépare la mêlée|^Mi-temps|^Coup de sifflet final/.test(suite.text) : /^(Avantage sur en-avant|Aucun avantage obtenu : retour à la mêlée)/.test(suite.text) || suite.text === `Aucun avantage obtenu : retour à la pénalité pour ${m.abbr[e.scene.team]}.`);
+    if (!ok) incoherents.push(`match ${m.k} [${j}] ${e.text} -> ${suite.text}`);
   });
-  assert.deepEqual(contradictions.slice(0, 5), [], `${contradictions.length} « laisse jouer l’avantage » non suivis d’un avantage`);
+  assert.ok(racontes >= 100, `assez d’en-avants racontés (${racontes})`);
+  assert.deepEqual(incoherents.slice(0, 5), [], `${incoherents.length}/${racontes} en-avants suivis d’une ligne incohérente`);
   assert.ok(avantages >= 20, `assez d’avantages observés (${avantages})`);
   assert.deepEqual(fautes.slice(0, 5), [], `${fautes.length}/${avantages} avantages sur en-avant sans en-avant raconté`);
 });
@@ -65,7 +70,7 @@ test('Faute pendant l’avantage : retour à la première faute, jamais de péna
       if (!r) return;
       retours++;
       // La dernière pénalité annoncée avant ce retour doit être celle de l’équipe qui reprend l’avantage.
-      let p = j - 1; while (p >= 0 && !(m.events[p].type === 'penalty' && !/pendant l’avantage/.test(m.events[p].text))) p--;
+      let p = j - 1; while (p >= 0 && !(m.events[p].type === 'penalty' && !/pendant son avantage/.test(m.events[p].text))) p--;
       const ann = p >= 0 ? /Pénalité pour (\S+?)[ .]/.exec(m.events[p].text + ' ') : null;
       const benef = p >= 0 ? m.abbr[m.events[p].scene.team] : null;
       if (p < 0 || benef !== r[1] || (ann && ann[1] !== r[1])) fautes.push(`match ${m.k} [${p}-${j}] ${p >= 0 ? m.events[p].text : '?'} / ${e.text}`);
@@ -76,6 +81,23 @@ test('Faute pendant l’avantage : retour à la première faute, jamais de péna
       assert.equal(m.stats[side].penalties, journal, `match ${m.k} équipe ${side} : pénalités de la feuille et du journal`);
     }
   }
+  // Loi 7 : faute ordinaire de l’équipe qui a l’avantage = retour à la faute initiale, pénalité pour elle, sans carton ;
+  // jeu déloyal sanctionné (carton) = pénalité maintenue contre elle, jamais de retour à la pénalité pour l’équipe carton.
+  let sousAvantage = 0, cartons = 0; const loi = [];
+  for (const m of jouer()) m.events.forEach((e, j) => {
+    if (e.type === 'penalty' && / pendant son avantage : retour à la faute initiale de /.test(e.text)) {
+      sousAvantage++;
+      const club = m.abbr[1 - e.scene.team];
+      if (!e.text.endsWith(`pénalité pour ${club}.`)) loi.push(`match ${m.k} [${j}] ${e.text}`);
+      if (m.events[j + 1] && m.events[j + 1].type === 'card') loi.push(`match ${m.k} [${j}] carton sur une faute racontée sans sanction`);
+    } else if (e.type === 'penalty' && m.events[j + 1] && m.events[j + 1].type === 'card') {
+      cartons++;
+      const fautif = m.abbr[1 - e.scene.team], apres = m.events[j + 2];
+      if (apres && apres.text === `Aucun avantage obtenu : retour à la pénalité pour ${fautif}.`) loi.push(`match ${m.k} [${j}] carton puis pénalité rendue à l’équipe sanctionnée : ${e.text}`);
+    }
+  });
+  assert.ok(sousAvantage >= 20 && cartons >= 20, `assez de cas observés (${sousAvantage} sous avantage, ${cartons} cartons)`);
+  assert.deepEqual(loi.slice(0, 5), [], `${loi.length} cas contraires à la loi de l’avantage`);
   assert.ok(retours >= 20, `assez de retours d’avantage observés (${retours})`);
   assert.deepEqual(fautes.slice(0, 5), [], `${fautes.length}/${retours} retours à la pénalité contredits par la pénalité annoncée juste avant`);
 });

@@ -282,10 +282,11 @@ function disciplineDecision(l,foul,incident){
 /* `options.incident` (pénalités réalistes) : faute de mêlée, de touche ou de l'attaquant au sol, au lieu de l'incident tiré ; `options.phase` sert à la mesure. Le bénéficiaire reprend le ballon s'il ne l'avait pas. */
 function awardPenalty(l,side,options={}){
  const foul=1-side;
- // Faute de l'équipe qui bénéficie déjà d'un avantage : l'arbitre revient à la première faute (matchflow.js). La faute
- // reste comptée et peut valoir un carton (même suite de tirages), mais elle est racontée comme telle, sans annoncer
- // une pénalité pour le mauvais camp.
- const sousAvantage=flowRules(l)&&!l.flow.resolvingAward&&l.flow.advantage&&l.flow.advantage.team===foul;
+ // Faute de l'équipe qui bénéficie déjà d'un avantage (loi 7) : faute ordinaire, l'arbitre revient à la faute initiale
+ // de l'adversaire (matchflow.js), qui profite donc de la pénalité de l'équipe fautive, racontée comme telle ; jeu déloyal
+ // sanctionné (carton), l'avantage est annulé et la nouvelle pénalité est maintenue contre l'équipe fautive.
+ const fautifSousAvantage=flowRules(l)&&!l.flow.resolvingAward&&l.flow.advantage&&l.flow.advantage.team===foul;
+ let jeuDeloyal=false,sousAvantage=false;
  l.stats[foul].penalties++;
  if(options.incident&&l.possession!==side)ballPossession(l,side,l.territory);
  if(revisedRules(l)){
@@ -297,9 +298,10 @@ function awardPenalty(l,side,options={}){
   history.last=l.minute;
   const decision=disciplineDecision(l,foul,incident);
   history.count++;history.recent++;
+  jeuDeloyal=fautifSousAvantage&&!!decision.sanction;sousAvantage=fautifSousAvantage&&!decision.sanction;
   // Arbitrage fin (dist/arbitrage.js) : cause détaillée de l'incident tiré, sans tirage de plus.
   const fin=typeof arbitrageFaute==='function'?arbitrageFaute(l,foul,side,incident,decision.repeated,options):null;
-  addEvent(l,sousAvantage?`${S.clubs[l.pair[foul]].abbr} sanctionné pour ${incident.label}${decision.repeated?' (fautes répétées)':''} pendant l’avantage adverse : l’arbitre revient à la première faute.`:fin?fin.texte:`${S.clubs[l.pair[foul]].abbr} sanctionné pour ${incident.label}${decision.repeated?' (fautes répétées)':''}. Pénalité pour ${S.clubs[l.pair[side]].abbr}.`,'penalty',{team:side,cause:incident.id,...(fin?{detail:fin.id}:{})});
+  addEvent(l,sousAvantage?`${S.clubs[l.pair[foul]].abbr} sanctionné pour ${incident.label}${decision.repeated?' (fautes répétées)':''} pendant son avantage : retour à la faute initiale de ${S.clubs[l.pair[side]].abbr}, pénalité pour ${S.clubs[l.pair[foul]].abbr}.`:fin?fin.texte:`${S.clubs[l.pair[foul]].abbr} sanctionné pour ${incident.label}${decision.repeated?' (fautes répétées)':''}. Pénalité pour ${S.clubs[l.pair[side]].abbr}.`,'penalty',{team:side,cause:incident.id,...(fin?{detail:fin.id}:{})});
   if(decision.sanction){
    const eligible=activePlayers(l,foul);
    if(eligible.length){
@@ -315,6 +317,7 @@ function awardPenalty(l,side,options={}){
    if(eligible.length){const p=eligible[rand(0,eligible.length-1)];s.yellowCounts[p.id]=(s.yellowCounts[p.id]||0)+1;l.stats[foul].yellows++;if(s.yellowCounts[p.id]>=2){s.on=s.on.map(id=>id===p.id?null:id);s.sentOff.push(p.id);addEvent(l,`${p.name} reçoit un second jaune et quitte définitivement le terrain (règle simplifiée du jeu).`,'card')}else{s.cards.push({id:p.id,until:l.minute+10});addEvent(l,`Carton jaune pour ${p.name} : 10 minutes à quatorze.`,'card')}}
   }
  }
+ if(jeuDeloyal){clearAdvantage(l,'Avantage annulé : jeu déloyal sanctionné, la nouvelle pénalité est maintenue.');executePenaltyChoice(l,side);return}
  if(flowRules(l)&&offerAdvantage(l,'penalty',side,foul,l.territory,{unsafe:l.events.at(-1)?.type==='card'}))return;
  executePenaltyChoice(l,side);
 }
