@@ -85,3 +85,27 @@ pente par point complet / rapide et domicile à niveau égal complet / rapide :
 
 Outils de mesure (hors dépôt, dossier temp/realite-match) : relevé des matchs réels, saison Monde complète par graine
 (`scripts/mesure-essais-monde.cjs`, fonction `mesurer`), analyses identiques pour le réel et le moteur.
+
+## Scores calés sur la réalité (25/11, 2e étape, branche `claude/scores-realistes`)
+
+Le moteur marquait environ un essai de trop. Réglages : ouverture du jeu au moteur complet (`OUVERTURE_CHAMPIONNATS`,
+dist/tactical-plans.js) Top 14 0 → −0,045, Pro D2 −0,03 → −0,045, URC 0,025 → −0,025, Premiership 0,11 → 0,03,
+Super Rugby 0,115 → 0,035, Japon D1 0,125 → 0,095 ; volume d'essais du résultat rapide (`VOLUME`, league-detail.cjs)
+Top 14 1,09 → 1,02, Premiership 1,53 → 1,32, URC 1,22 → 1,08, Super Rugby 1,57 → 1,34 ; poids de l'écart du résultat
+rapide en Premiership 1,19 → 1,35 (moins d'essais = moins de hiérarchie, ramenée à celle du complet).
+
+Saisons Monde (6 graines au moteur complet), réel / avant / après :
+
+| Championnat | Points / match | Essais / match | Écart ≤ 7 | Bonus offensif | Bonus défensif | Hiérarchie |
+| --- | --- | --- | --- | --- | --- | --- |
+| Top 14 | 51,0 / 54,3 / 49,9 | 5,2-5,9 / 6,8 / 6,1 | 40 / 32 / 35 % | 15 / 21 / 17 % | 32 / 21 / 24 % | 8 / 6 / 9 |
+| Pro D2 | 48,0 / 48,8 / 46,9 | 5,5 / 6,2 / 5,9 | 42 / 34 / 36 % | 17 / 19 / 16 % | 32 / 24 / 25 % | 9 / 10 / 8 |
+| Premiership | 54,9 / 64,4 / 56,1 | 7,1-8,0 / 8,9 / 7,6 | 36 / 30 / 28 % | 44-59 / 67 / 53 % | 35 / 28 / 26 % | 15 / 13 / 13 |
+| URC | 49,4 / 54,4 / 49,9 | 6,3-6,6 / 7,3 / 6,6 | 41 / 29 / 30 % | 35-42 / 50 / 43 % | 38 / 27 / 28 % | 17 / 18 / 17 |
+| Super Rugby | 56,9 / 65,3 / 56,1 | 7,8-8,3 / 9,1 / 7,7 | 35 / 31 / 33 % | 52 / 70 / 56 % | 35 / 31 / 32 % | 18 / 13 / 14 |
+| Japon D1 | 60,8 / 64,0 / 60,3 | 8,5 / 9,0 / 8,5 | 30 / 28 / 26 % | 24 / 25 / 27 % | 28 / 26 / 26 % | 23 / 20 / 21 |
+
+Essais réels : moyenne des saisons comptées et saison 2024-25 (docs/essais-realistes-20261114.md). Résultat rapide
+(2 graines) : points 50,5 / 49,0 / 55,9 / 47,9 / 54,9 / 61,9, essais 6,0 / 5,9 / 7,7 / 6,3 / 7,7 / 8,5.
+Reste : les matchs serrés (écart ≤ 7, bonus défensif) restent 5 à 10 points sous le réel ; l'écart moyen est juste,
+mais le moteur laisse moins de fins de match à un score (gestion du score du vainqueur, pénalités de fin de match).
