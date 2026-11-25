@@ -467,6 +467,10 @@ function limites(forces, saison, { creation = false, types = null, credits = nul
 // Mesure du 25/11/2026 (carrière Monde réelle, graines 4242 et 7, saison 3, recettes lues au statut) : des associations
 // finissaient encore à -10/-930 k€ en encaissant moins que leur budget voté, leur train de vie ignorant ce retard.
 const SEMAINES_AVANT_MANQUE = 6;
+// Marge du plancher du club du manager (part des recettes) : son train de vie s'arrête 3 % au-dessus de l'équilibre, ce que la
+// fin de saison peut encore coûter (prime de classement du bas du tableau, recettes de guichet en retard). Mesure du 25/11/2026
+// (carrière Monde réelle, graine 4242, saison 3, plancher 0) : train de vie de 0,38 M€, saison finie à -53 k€.
+const MARGE_PLANCHER = 0.03;
 // Charges au-dessus de leur référence que le résultat du budget (ajustement) ne voit pas : staff payé plus que le staff de
 // référence (cotisations comprises) et centre de formation net d'aide plus cher que sa référence nette. Seulement à la hausse.
 // Mesure du 25/11/2026 (carrière Monde réelle, graine 4242, saison 3, club du manager en Pro D2) : budget voté à +1,17 M€,
@@ -507,7 +511,7 @@ function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle
   }
   // Club géré qui a un objectif (objectif, sinon la marge visée) ou un plancher (club du manager) : prime attendue à son rang du
   // moment (classement : {rang, taille}), dépenses hors budget et excédents réinvestis cette saison (investissement, annuel).
-  const vise = objectif !== null && Number.isFinite(objectif) ? objectif : marge > 0 ? marge : null, borne = vise ?? (plancher !== null && Number.isFinite(plancher) ? plancher : null);
+  const vise = objectif !== null && Number.isFinite(objectif) ? objectif : marge > 0 ? marge : null, borne = vise ?? (plancher !== null && Number.isFinite(plancher) ? plancher + MARGE_PLANCHER * annuel : null);
   const rangConnu = borne !== null && Number.isInteger(classement?.rang) && Number.isInteger(classement?.taille) && classement.taille >= 2 && classement.rang >= 1 && classement.rang <= classement.taille;
   const centre = centreFormation(annuel, force.division, formation);
   const ecart = (rangConnu ? primeClassement(force.division, classement.rang, classement.taille) - rond(regle.moyenne * regle.ligue * PART_PRIME) : 0) -
@@ -574,7 +578,9 @@ function ouverture({ forces, saison, clubs, types = null, excedents = false, aid
     const annuel = annuels.get(club.id), aide = Number.isFinite(aides?.[club.id]) && aides[club.id] > 0 ? aides[club.id] : 0;
     const projete = annuel - fonctionnementAnnuel(annuel) - (Number.isFinite(club.masse) ? club.masse : 0) * (1 + COTISATIONS) + aide;
     const vise = club.id === joue ? epargne(division, annuel) : objectifGestion(forces, club.id, p.type) ?? 0;
-    const investissement = Math.min(engage.investissement, rond(Math.max(0, projete - vise)));
+    // Jamais réinvesti dans une perte prévue (entreprise ou mécène dont l'objectif est une perte comblée) : 25/11/2026, graine
+    // 4242, saison 3, Premiership, une entreprise réinvestissait 1,07 M€ et finissait à 133 % de l'enveloppe de son propriétaire.
+    const investissement = Math.min(engage.investissement, rond(Math.max(0, projete - Math.max(0, vise))));
     return { type: p.type, enveloppe: p.enveloppe, ...(p.rallonge ? { rallonge: p.rallonge } : {}), depart: club.cash - dividende, recettes: 0, charges: 0, salaires: 0, semainesComptees: 0, masse: Math.round(club.masse), division, rang: Math.ceil(taille / 2), taille,
       reserve, investissement, dividende, aideRelegation: Number.isFinite(aides?.[club.id]) && aides[club.id] > 0 ? rond(aides[club.id]) : 0 };
   }) };
@@ -683,7 +689,7 @@ function prevision({ forces, clubId, compte, tresorerie, masseHebdo, semaines, r
   const manque = manqueRecettes({ annuel, modele, regle, semaines, aide: compte.aideRelegation, aideCentre: centreFormation(annuel, division, formation).aide, encaisse: compte.recettes,
     ecoulees: Number.isInteger(compte.semainesComptees) ? compte.semainesComptees : 0 });
   const ecartTrain = prime - rond(regle.moyenne * regle.ligue * PART_PRIME) - Math.max(0, -horsBudget) - Math.max(0, investi) + manque - surcoutReference(centreFormation(annuel, division, formation), staff);
-  const fonctionnement = fonctionnementAnnuel(annuel) + ajustement(annuel, masseHebdo * 52, compte.enveloppe, margeTrain(division, annuel, 0, -horsBudget), null, ecartTrain, 0) + investi + ecartStaff;
+  const fonctionnement = fonctionnementAnnuel(annuel) + ajustement(annuel, masseHebdo * 52, compte.enveloppe, margeTrain(division, annuel, 0, -horsBudget), null, ecartTrain, MARGE_PLANCHER * annuel) + investi + ecartStaff;
   const chargesPrevues = rond(compte.charges + (masseHebdo * 52 / semaines * (1 + COTISATIONS) + fonctionnement / semaines) * reste);
   const ligue = regles({ division, masseAnnuelle, recettes: recettesPrevues });
   const resultatPrevu = rond(recettesPrevues - chargesPrevues + horsBudget - ligue.amende);
