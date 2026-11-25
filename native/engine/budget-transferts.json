@@ -10,6 +10,6 @@
   "matelas": { "fixe": 400000, "partReserve": 0.5 },
   "partVentes": 0.5,
   "arrondi": 10000,
-  "rallonge": { "confianceMin": 55, "partEnveloppe": 0.5, "maxParSaison": 2, "coutAccordee": 3, "coutRefusee": 1, "arrondi": 1000 },
+  "rallonge": { "confianceMin": 55, "partEnveloppe": 0.5, "maxParSaison": 2, "coutAccordee": 3, "coutRefusee": 1, "arrondi": 1000, "moisSilence": 3 },
   "partReport": 0.25
 }
