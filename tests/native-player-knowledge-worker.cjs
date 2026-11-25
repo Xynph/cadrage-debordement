@@ -4,13 +4,15 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const {createBridge}=require('../native/engine/worker.cjs');
 const {signerExport}=require('./helpers/signature-export.cjs');
 const {advanceToNextMatch}=require('./helpers/monde-matchs.cjs');
-test('canonical worker: exact internals, pure reads, paid targeted reports, weekly completion, deep replay and failures',t=>{
+// Option de carrière « En fourchette » (25/11/2026) : les autres clubs ne montrent aucune qualité exacte ; en « Précises »
+// (défaut) ils sont exacts, test ci-dessous.
+test('canonical worker (mode fourchette): exact internals, pure reads, paid targeted reports, weekly completion, deep replay and failures',t=>{
  const dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'oval-knowledge-worker-')),options={dataDir,seed:12345,now:1794178800000,testVm:true};let bridge=createBridge(options),id=0;
  t.after(()=>{bridge.close();fs.rmSync(dataDir,{recursive:true,force:true});});
  const request=(command,payload={})=>bridge.handle({id:++id,command,payload}),good=(command,payload)=>{const r=request(command,payload);assert.equal(r.ok,true,r.error);return r.model;};
  const file=path.join(dataDir,'PrototypeGodot','donnees.json'),bytes=()=>fs.readFileSync(file),state=()=>JSON.parse(JSON.parse(bytes()).store['bdt-v1']);
  const find=(m,pid)=>{let result=null;function visit(x){if(!x||typeof x!=='object')return;if(x.id===pid&&x.knowledge)result=x;for(const y of Object.values(x))if(y&&typeof y==='object')visit(y);}visit(m);return result;};
- let model=settleClubMeetings(good('new_career',{club:4,mode:'world-champ'}),good),raw=state();assert.equal(raw.playerKnowledge,undefined);assert.equal(model.squad[0].potential,null);assert.equal(model.squad[0].potentialRange.max-model.squad[0].potentialRange.min,4);
+ let model=settleClubMeetings(good('new_career',{club:4,mode:'world-champ',qualites:'fourchette'}),good),raw=state();assert.equal(raw.playerKnowledge,undefined);assert.equal(model.squad[0].potential,null);assert.equal(model.squad[0].potentialRange.max-model.squad[0].potentialRange.min,4);
  // Keep the two-week observation contract with the club's actual level-69 recruiter.
  const scouts=raw.staffCareer.people.flat().filter(p=>p.clubId===4&&p.role==='scout');assert.ok(scouts.length&&scouts.every(p=>p.level<70));
  const foreign=raw.clubs[29].players[0],target=foreign.id;assert.ok(Number.isFinite(foreign.rating));assert.ok(Number.isFinite(foreign.dev.potential));
@@ -34,4 +36,18 @@ test('canonical worker: exact internals, pure reads, paid targeted reports, week
  let denied;try{denied=request('observe_player',{playerId:state().clubs[28].players[0].id,confirmed:true,context:{season:model.meta.season,week:model.meta.week,club:4}});}finally{fs.renameSync=rename;}
  assert.equal(denied.ok,false);assert.match(denied.error,/Écriture de sauvegarde impossible/);assert.deepEqual(bytes(),stable);assert.equal(denied.model.finance.cash,money);
  console.log('weekly target completed twice; source',target,'profile',dataDir);
+});
+test('canonical worker (mode Précises, défaut): qualités des autres clubs exactes, Niveau et potentiel cachés, aucun chiffre de Niveau dans le rapport',t=>{
+ const dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'oval-knowledge-precise-')),bridge=createBridge({dataDir,seed:12345,now:1794178800000});let id=0;
+ t.after(()=>{bridge.close();fs.rmSync(dataDir,{recursive:true,force:true});});
+ const good=(command,payload={})=>{const r=bridge.handle({id:++id,command,payload});assert.equal(r.ok,true,r.error);return r.model;};
+ const model=settleClubMeetings(good('new_career',{club:4,mode:'world-champ'}),good);
+ const raw=JSON.parse(JSON.parse(fs.readFileSync(path.join(dataDir,'PrototypeGodot','donnees.json'))).store['bdt-v1']);assert.equal(raw.qualitesJoueurs,undefined);
+ const source=model.market[0];assert.ok(source,'une piste de recrutement');
+
+ assert.equal(source.knowledge.owned,false);assert.equal(source.knowledge.exact,true);assert.equal(source.knowledge.qualitesLargeur,undefined);
+ assert.equal(source.rating,null,'Niveau caché');const vrai=raw.clubs.flatMap(c=>c.players).find(p=>p.id===source.id);if(vrai){assert.deepEqual(source.attributesV2,vrai.attributesV2);}assert.equal(Object.keys(source.attributesV2).length,36);assert.equal(source.attributesV2Range,undefined);
+ assert.ok(Object.keys(source.positionRatings).length>0);assert.ok(source.niveauCalcule&&Number.isInteger(source.niveauCalcule.niveau));
+ assert.equal(source.potential,null,'le potentiel reste une estimation du staff');
+ assert.ok(!JSON.stringify(source.assessment||{}).match(/Niveau : d|Potentiel : d/));
 });

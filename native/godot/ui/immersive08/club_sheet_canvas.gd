@@ -724,6 +724,15 @@ func _squad_row(body: Control, index: int, p: Dictionary) -> void:
 		var color := C.IVORY
 		if key == "state": color = C.ALERT if int(p.get("injury", 0)) > 0 else C.BLUE if p.get("onInternationalDuty", false) else C.MUTED
 		if key == "potential": color = Knowledge.POTENTIAL_COLOR
+		if key == "rating":
+			# Pastille ronde de la lettre du staff (double « B|B+ » si pas sûr), comme l'Effectif ; « ? » si Niveau inconnu.
+			var Notation: Variant = load("res://ui/notation_staff.gd")
+			var lettre: Dictionary = Notation.lettre_champ(p, "rating", Knowledge.owned(p), app.model)
+			if int(lettre.get("bas", -1)) >= 0:
+				var d := 34.0
+				var pastille: Control = Notation.pastille_note(body, column[2] + column[3] - 20 - Notation.largeur_note(lettre, d), y + 27, lettre, d, "ClubSheetNiveau%d" % index)
+				pastille.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				continue
 		D.text(body, x, y + 36, values[key], 24, color, 600 if key != "fam" else 500, column[3], align)
 
 static func _player_state(p: Dictionary) -> String:

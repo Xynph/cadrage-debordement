@@ -50,6 +50,21 @@ static func adverse(app: Control, id: String) -> Dictionary:
 			return {"joueur":joueur, "source":"adverse"}
 	return {}
 
+## Fiche d'un joueur d'un autre club (décision de Léo du 25/11/2026 : toutes les qualités visibles, Niveau et Potentiel en lettre du
+## staff) : quand la ligne passée n'a pas les qualités, on lit celle de la fiche de son club (commande `club_sheet`, demandée une fois,
+## la réponse reconstruit la page) comme le dossier de transfert (prospect_profile.gd). Notre joueur ou joueur déjà complet : inchangé.
+static func completer(app: Control, player: Dictionary, source: String) -> Dictionary:
+	if notre_joueur(source) or not PlayerAttributes.detail(player, false).is_empty() or int(float(str(player.get("clubId", -1)))) < 0: return player
+	var savoir: Variant = player.get("knowledge")
+	if savoir is Dictionary and savoir.get("stage", "") == "unobserved" and savoir.get("exact", false) != true: return player
+	var Prospect: Script = load("res://ui/prospect_profile.gd")
+	if not Prospect.qualites_chargees(app, player):
+		Prospect.demander_qualites(app, player)
+		return player
+	var complet: Dictionary = player.duplicate()
+	Prospect.enrichir_interclub(app, complet)
+	return complet
+
 ## Contexte du club : les joueurs de l'effectif et les Espoirs sont connus en détail ; une piste du marché suit le
 ## brouillard de connaissance (ui/player_knowledge_text.gd).
 static func notre_joueur(source: String) -> bool:

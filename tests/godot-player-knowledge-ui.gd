@@ -103,10 +103,16 @@ func run() -> void:
 	app.set_meta("immersive08_full_player",false)
 	app._navigate("Recrutement");await settle()
 	var target: Dictionary=original.market.filter(func(p:Dictionary):return p.get("scouting",{}).get("available",false))[0]
-	check(G.rating_text(target)=="?" and G.potential_text(target)=="?","Étranger non observé : niveau et potentiel inconnus")
-	check(A.detail(target).is_empty(),"Attributs étrangers non observés masqués")
+	# Option « Précises » (défaut, 25/11/2026) : un joueur d'un autre club, même pas observé, montre ses 36 qualités et son Niveau
+	# en lettre ; seul son potentiel reste inconnu.
+	check(K.exact(target) and G.rating_text(target)!="?" and not G.rating_text(target).is_valid_int() and G.potential_text(target)=="?","Étranger non observé (Précises) : Niveau en lettre, potentiel inconnu")
+	check(A.detail(target).size()==36,"Étranger non observé (Précises) : 36 qualités visibles en chiffres")
 	var fiche_roles_inconnus = preload("res://ui/immersive08/fiche_roles.gd")
-	check(fiche_roles_inconnus.note_role(A.detail(target),fiche_roles_inconnus.ROLES[0])==-1.0,"Qualités inconnues : note du rôle en « ? », jamais inventée")
+	check(fiche_roles_inconnus.note_role(A.detail(target),fiche_roles_inconnus.ROLES[0])>=0.0,"Qualités visibles : note du rôle calculée")
+	check(fiche_roles_inconnus.note_role(A.detail({}),fiche_roles_inconnus.ROLES[0])==-1.0,"Qualités inconnues : note du rôle en « ? », jamais inventée")
+	var masque: Dictionary=target.duplicate(true)
+	masque.attributesV2={};masque.positionRatings={};masque.rating=null;masque.erase("niveauCalcule");masque.knowledge={"owned":false,"stage":"unobserved"}
+	check(A.detail(masque).is_empty() and G.rating_text(masque)=="?","Option « En fourchette », pas observé : aucune qualité exacte ni Niveau")
 	var page: Control=app.find_child("CarnetMarket",true,false)
 	page.state.player_id=str(target.id)
 	page.state.immersive_tab=1;app._render(false);await settle()

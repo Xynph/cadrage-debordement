@@ -157,6 +157,10 @@ func run() -> void:
 	var valeur_niveau := summary.find_child("Valeur", true, false) as Label if summary != null else null
 	check(valeur_niveau != null and (valeur_niveau.text in Notation.PALIERS or valeur_niveau.text.begins_with("Entre ")) and not valeur_niveau.text.replace(",", ".").is_valid_float(), "Niveau du club en palier écrit : " + (valeur_niveau.text if valeur_niveau != null else "absent"))
 	check(not app.root_content.find_children("*", "Label", true, false).any(func(l: Label) -> bool: return l.text.to_lower() == "note moyenne"), "Plus de « note moyenne » à la création")
+	# Cartes du vestiaire (le cadre, le meilleur, la pépite) : note et potentiel en lettre du staff, jamais en chiffre.
+	for figure: Node in app.root_content.find_children("CreationFigure_*", "Control", true, false):
+		var lettre_carte := str(figure.get_meta("lettre", ""))
+		check(lettre_carte != "" and not lettre_carte.is_valid_int(), "Carte du vestiaire : %s en lettre (%s)" % [figure.name, lettre_carte])
 	var chosen_card := node("CreationClub%d" % chosen_id)
 	check(chosen_card != null and chosen_card.find_child("CreationCardChosen", true, false) != null and chosen_card.find_child("CreationCardMarker", true, false) != null, "La carte choisie porte « ✓ Choisi » et un marqueur incliné (pas la couleur seule)")
 	start = node("CreationNext") as Button

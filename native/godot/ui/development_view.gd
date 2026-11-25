@@ -67,7 +67,7 @@ static func build(app: Control) -> Control:
 		G.trend(card, levels, "Niveau en fin de saison · historique conservé", app.accent)
 		if history.is_empty(): card.add_child(G.wrap("L'historique annuel apparaîtra à l'intersaison.", 12))
 		for year: Dictionary in history.slice(maxi(0, history.size() - 3)):
-			card.add_child(G.wrap("%s · niveau %s → %s · %s minutes / %s apparitions" % [G.season_label(year.get("season", "—")), G.n(year.get("start", "—")), G.n(year.get("end", "—")), G.n(year.get("minutes", 0)), G.n(year.get("appearances", 0))], 13))
+			card.add_child(G.wrap("%s · niveau %s → %s · %s minutes / %s apparitions" % [G.season_label(year.get("season", "—")), load("res://ui/notation_staff.gd").texte_passe(app.model, person, year.get("start")), load("res://ui/notation_staff.gd").texte_passe(app.model, person, year.get("end")), G.n(year.get("minutes", 0)), G.n(year.get("appearances", 0))], 13))
 		var controls := G.h(12)
 		card.add_child(controls)
 		var focus := OptionButton.new()

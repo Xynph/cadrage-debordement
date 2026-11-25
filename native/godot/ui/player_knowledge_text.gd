@@ -14,13 +14,23 @@ static func owned(person: Dictionary, own_context: bool = false) -> bool:
 	if knowledge is Dictionary and knowledge.get("owned") is bool: return knowledge.owned
 	return own_context
 
+## Joueur d'un autre club vu en clair (option de carrière « Précises », défaut, décision de Léo du 25/11/2026) :
+## qualités et notes au poste comme pour les nôtres ; Niveau et Potentiel restent l’estimation du staff (25/11).
+static func exact(person: Dictionary, own_context: bool = false) -> bool:
+	return owned(person,own_context) or _metadata(person).get("exact",false) == true
+
+## Qualités visibles (exactes, ou en fourchette : knowledge.qualitesLargeur).
+static func qualities_visible(person: Dictionary, own_context: bool = false) -> bool:
+	var largeur: Variant = _metadata(person).get("qualitesLargeur")
+	return exact(person,own_context) or (number(largeur) and float(largeur) > 0.0)
+
 static func _unobserved(person: Dictionary, own_context: bool) -> bool:
-	return not owned(person,own_context) and _metadata(person).get("stage","") == "unobserved"
+	return not exact(person,own_context) and _metadata(person).get("stage","") == "unobserved"
 
 static func bounds(person: Dictionary, field: String, own_context: bool = false) -> Dictionary:
-	if field in ["rating","note","roleNote"] and owned(person,own_context):
-		var exact: Variant = person.get(field)
-		if number(exact): return {"min":exact,"max":exact}
+	if field in ["rating","note","roleNote"] and exact(person,own_context):
+		var valeur_exacte: Variant = person.get(field)
+		if number(valeur_exacte): return {"min":valeur_exacte,"max":valeur_exacte}
 	if _unobserved(person,own_context): return {}
 	var value: Variant = person.get("potentialRange" if field == "potential" else "ratingRange")
 	if not value is Dictionary: return {}
@@ -57,7 +67,7 @@ static func sort_value(person: Dictionary, field: String, own_context: bool = fa
 	return value.min if not value.is_empty() else null
 
 static func attributes_known(person: Dictionary, own_context: bool = false) -> bool:
-	return owned(person,own_context) or _metadata(person).get("stage","") == "deep"
+	return qualities_visible(person,own_context)
 
 static func range_delta(left: Dictionary, right: Dictionary, field: String, own_context: bool = false, right_own_context: Variant = null) -> String:
 	var first := bounds(left,field,own_context)
