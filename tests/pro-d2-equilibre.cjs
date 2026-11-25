@@ -62,6 +62,13 @@ test('Gestion propre à chaque club de Pro D2 : bons élèves, clubs à l’équ
   assert.equal(manque(attendu * 10 * 1.2, 10), 0, 'en avance : rien de plus à dépenser');
   assert.equal(manque(attendu * 3 * 0.5, 3), 0, 'trop tôt dans la saison');
   assert.equal(manque(attendu * 10 * 0.9, 10) < 0 && B.manqueRecettes({ annuel, modele: annuel, regle, semaines, encaisse: null, ecoulees: 10 }) === 0, true, 'sauvegarde d’avant : pas d’écart');
+  // Charges au-dessus de leur référence (25/11/2026, graine 4242, saison 3 : centre de formation à 0,73 M€ pour 0,50 M€ de
+  // référence, club du manager à -102 k€ après 0,42 M€ de train de vie) : elles comptent dans la saison connue.
+  const centre = B.centreFormation(9094451, 'accession', null), cher = { ...centre, cout: 726400, aide: 726400 * (centre.aide / centre.cout) };
+  assert.ok(Math.abs(B.surcoutReference(centre, null)) < 1, 'centre à sa référence : rien');
+  assert.ok(Math.abs(B.surcoutReference(cher, null) - (cher.cout - cher.aide - centre.referenceNette)) < 1, 'centre plus cher : le surcoût net d’aide');
+  assert.ok(Math.abs(B.surcoutReference(centre, { annuel: 1.3e6, reference: 1.1e6 }) - 0.2e6 * (1 + B.COTISATIONS)) < 1, 'staff plus cher : cotisations comprises');
+  assert.equal(B.surcoutReference(centre, { annuel: 0.9e6, reference: 1.1e6 }), 0, 'staff moins cher : jamais à la hausse');
 });
 
 test('Excédents d’un club de Pro D2 et de Nationale : 2 % des recettes engagés au plus par saison, sans limite ailleurs', () => {

@@ -463,6 +463,15 @@ function limites(forces, saison, { creation = false, types = null, credits = nul
 // Mesure du 25/11/2026 (carrière Monde réelle, graines 4242 et 7, saison 3, recettes lues au statut) : des associations
 // finissaient encore à -10/-930 k€ en encaissant moins que leur budget voté, leur train de vie ignorant ce retard.
 const SEMAINES_AVANT_MANQUE = 6;
+// Charges au-dessus de leur référence que le résultat du budget (ajustement) ne voit pas : staff payé plus que le staff de
+// référence (cotisations comprises) et centre de formation net d'aide plus cher que sa référence nette. Seulement à la hausse.
+// Mesure du 25/11/2026 (carrière Monde réelle, graine 4242, saison 3, club du manager en Pro D2) : budget voté à +1,17 M€,
+// train de vie de 0,42 M€ dépensé sur cette base, saison finie à -102 k€ ; ces charges manquaient à la saison connue.
+function surcoutReference(centre, staff) {
+  const surStaff = staff && Number.isFinite(staff.annuel) && Number.isFinite(staff.reference) ? (staff.annuel - staff.reference) * (1 + COTISATIONS) : 0;
+  const surCentre = centre ? centre.cout - centre.aide - centre.referenceNette : 0;
+  return Math.max(0, surStaff) + Math.max(0, Number.isFinite(surCentre) ? surCentre : 0);
+}
 function manqueRecettes({ annuel, modele, regle, semaines, aide = 0, aideCentre = 0, encaisse = null, ecoulees = 0 }) {
   if (!Number.isFinite(encaisse) || !Number.isInteger(ecoulees) || ecoulees < SEMAINES_AVANT_MANQUE || !(semaines > 0)) return 0;
   const attendu = (annuel - modele * regle.ligue * PART_PRIME + Math.max(0, Number.isFinite(aide) ? aide : 0) + Math.max(0, Number.isFinite(aideCentre) ? aideCentre : 0)) / semaines;
@@ -499,7 +508,7 @@ function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle
   const centre = centreFormation(annuel, force.division, formation);
   const ecart = (rangConnu ? primeClassement(force.division, classement.rang, classement.taille) - rond(regle.moyenne * regle.ligue * PART_PRIME) : 0) -
     (borne !== null ? (Number.isFinite(depense) ? Math.max(0, depense) : 0) + (Number.isFinite(investissement) ? Math.max(0, investissement) : 0) : 0) +
-    (borne !== null ? manqueRecettes({ annuel, modele, regle, semaines, aide, aideCentre: centre.aide, encaisse, ecoulees }) : 0);
+    (borne !== null ? manqueRecettes({ annuel, modele, regle, semaines, aide, aideCentre: centre.aide, encaisse, ecoulees }) - surcoutReference(centre, staff) : 0);
   const train = gere ? ajustement(annuel, masseHebdo * 52, proprietaire(forces, clubId).enveloppe, margeTrain(force.division, annuel, marge, depense), vise, ecart, vise === null ? borne : null) : 0;
   ecritures.push({ title: libelle + ' · Salaires des joueurs', amount: -salaires });
   if (staff && Number.isFinite(staff.annuel) && Number.isFinite(staff.reference)) {
@@ -669,7 +678,7 @@ function prevision({ forces, clubId, compte, tresorerie, masseHebdo, semaines, r
   const investi = Number.isFinite(compte.investissement) ? compte.investissement : 0;
   const manque = manqueRecettes({ annuel, modele, regle, semaines, aide: compte.aideRelegation, aideCentre: centreFormation(annuel, division, formation).aide, encaisse: compte.recettes,
     ecoulees: Number.isInteger(compte.semainesComptees) ? compte.semainesComptees : 0 });
-  const ecartTrain = prime - rond(regle.moyenne * regle.ligue * PART_PRIME) - Math.max(0, -horsBudget) - Math.max(0, investi) + manque;
+  const ecartTrain = prime - rond(regle.moyenne * regle.ligue * PART_PRIME) - Math.max(0, -horsBudget) - Math.max(0, investi) + manque - surcoutReference(centreFormation(annuel, division, formation), staff);
   const fonctionnement = fonctionnementAnnuel(annuel) + ajustement(annuel, masseHebdo * 52, compte.enveloppe, margeTrain(division, annuel, 0, -horsBudget), null, ecartTrain, 0) + investi + ecartStaff;
   const chargesPrevues = rond(compte.charges + (masseHebdo * 52 / semaines * (1 + COTISATIONS) + fonctionnement / semaines) * reste);
   const ligue = regles({ division, masseAnnuelle, recettes: recettesPrevues });
@@ -1548,5 +1557,5 @@ module.exports = Object.freeze({ fonctionnementAnnuel, SEUIL_FONCTIONNEMENT, FON
   PART_FORMATION, FORMATION, CREDIT_ACADEMIE, centreFormation, creditAcademie, ECONOMIE, DIVISIONS, COTISATIONS, FONCTIONNEMENT, PART_PRIME, PART_ABONNEMENTS, PLAFOND_SALARIAL, RATIO_SALAIRES, PROPRIETAIRES, BRANCHEMENT, VALIDATION,
   aideRelegation, annonceAideRelegation, LIBELLE_AIDE_RELEGATION, LIBELLE_REMBOURSEMENT,
   RESERVE, EXCEDENTS, EXCEDENT_DORMANT, TRAIN_DE_VIE, reserveCible, engagement, apportProprietaire, annonceDividende, annonceInvestissement,
-  recettesImprevues, fraisDeMatch, PART_FRAIS_IMPREVUS, deficitPrevu, LIBELLE_FRAIS_MATCH, SEMAINES_AVANT_MANQUE, manqueRecettes,
+  recettesImprevues, fraisDeMatch, PART_FRAIS_IMPREVUS, deficitPrevu, LIBELLE_FRAIS_MATCH, SEMAINES_AVANT_MANQUE, manqueRecettes, surcoutReference,
   recettes, semaine, proprietaire, cibleGestion, objectifGestion, limites, annonceClauses, forme, affluence, spectateurs, ajustement, primeClassement, regles, ouverture, compter, annonce, prevision, cloture, leviers, euros, facteurHumeur, HUMEUR_PUBLIC });
