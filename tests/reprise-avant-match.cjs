@@ -7,7 +7,8 @@
 //   2. export pendant le match : carrière d'avant le coup d'envoi ;
 //   3. anciennes sauvegardes (format d'avant, produites avec matchResume:false) : journal contenant le coup d'envoi ->
 //      reprise avant le match ; profil enregistré en plein match -> lu sans erreur, match repris en pause à la minute
-//      enregistrée avec un avis explicite, puis validé normalement.
+//      enregistrée avec un avis explicite, puis validé normalement ;
+//   4. séance du jour notée au journal (séances de la semaine jointes) : reprise identique après une coupure.
 // Une seule carrière ouverte à la fois, tas plafonné comme dans le jeu.
 if (!process.execArgv.some(a => a.startsWith('--max-old-space-size'))) {
   const r = require('node:child_process').spawnSync(process.execPath, ['--max-old-space-size=2048', ...process.execArgv, __filename, ...process.argv.slice(2)], { stdio: 'inherit' });
@@ -127,21 +128,49 @@ test('Export pendant le match : le fichier décrit la carrière d’avant le cou
 test('Ancien format : journal contenant le coup d’envoi -> reprise avant le match', { timeout: 1500000 }, () => {
   const C = copie(jourDeMatch);
   let coupure;
-  const ancien = ouvrir(C, { matchResume: false });
+  // Carrières fermées puis lâchées (une seule carrière en mémoire à la fois, tas plafonné comme dans le jeu).
+  let ancien = ouvrir(C, { matchResume: false });
   try {
     lancerLeMatch(ancien, ancien.call('snapshot'));
     coupure = copie(C);
-    assert.ok(lignes(coupure).some(l => l.c === 'begin_match'), 'ancien format : coup d’envoi noté au journal');
-  } finally { ancien.bridge.close(); }
-  const jeu = ouvrir(coupure);
+    const notees = lignes(coupure);
+    assert.ok(notees.some(l => l.c === 'begin_match'), 'ancien format : coup d’envoi noté au journal');
+    // Journal des vraies sauvegardes d'avant (séances de la semaine non notées, sans `w`) : la reprise refait la
+    // projection qui les posait. Sans elle, la séance du coup d'envoi tirait autrement (« résultat différent »).
+    assert.ok(notees.some(l => l.c === 'begin_match' && l.w?.effects), 'séances de la semaine notées avec le coup d’envoi');
+    fs.writeFileSync(path.join(dossier(coupure), J.FILE), notees.map(l => { const { w, ...reste } = l; return JSON.stringify(reste) + '\n'; }).join(''));
+  } finally { ancien.bridge.close(); ancien = null; }
+  let jeu = ouvrir(coupure);
   try {
     const model = jeu.call('snapshot');
     assert.ok(!model.live, 'aucun match en cours');
     assert.match(model.meta.matchResumeNotice?.text || '', /avant le coup d’envoi/);
-    assert.equal(model.meta.autosave.notice.alert, false, 'reprise du journal sans alerte');
-  } finally { jeu.bridge.close(); }
+    assert.equal(model.meta.autosave.notice.alert, false, 'reprise du journal sans alerte : ' + model.meta.autosave.notice.text);
+  } finally { jeu.bridge.close(); jeu = null; }
   assert.ok(fs.readdirSync(dossier(coupure)).some(f => f.startsWith('journal-avant-match-')), 'lignes du match interrompu conservées à part');
   verifierAvantMatch(coupure, 'ancien journal');
+});
+
+// La séance du club lit les séances de la semaine posées par la dernière projection (hors de l'état S) : le journal
+// les note avec l'action, la reprise les repose avant de la rejouer (même graine, même carrière).
+test('Séance du jour notée au journal : coupure, reprise identique', { timeout: 1500000 }, () => {
+  const F = copie(jourDeMatch);
+  let coupure, apres;
+  let jeu = ouvrir(F);
+  try {
+    jeu.call('snapshot');
+    jeu.call('train');
+    apres = exporter(jeu);
+    coupure = copie(F);
+    assert.ok(lignes(coupure).some(l => l.c === 'train' && l.w?.effects), 'séance notée avec les séances de la semaine');
+  } finally { jeu.bridge.close(); jeu = null; }
+  const relu = ouvrir(coupure);
+  try {
+    const model = relu.call('snapshot');
+    assert.equal(model.meta.autosave.notice.alert, false, 'reprise du journal sans alerte : ' + model.meta.autosave.notice.text);
+    assert.equal(model.meta.autosave.notice.replayed, model.meta.autosave.notice.total, 'toutes les actions reprises');
+    assert.equal(exporter(relu), apres, 'carrière reprise identique à celle d’avant la coupure');
+  } finally { relu.bridge.close(); }
 });
 
 test('Ancien format : profil enregistré en plein match -> lu sans erreur, repris en pause avec un avis', { timeout: 1500000 }, () => {
