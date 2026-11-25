@@ -39,14 +39,28 @@ static func disponible() -> bool:
 	return not catalogue().is_empty()
 
 
+## Manifeste lu une fois. Il ne compte que si chaque gabarit qu'il nomme est une ressource importée :
+## manifeste copié sans import Godot (ou GLB manquant), la vue garde l'ancien athlète, sans erreur
+## de chargement.
 static func catalogue() -> Dictionary:
 	if not _lu:
 		_lu = true
 		if FileAccess.file_exists(MANIFESTE):
 			var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(MANIFESTE))
-			if data is Dictionary and (data as Dictionary).get("profils") is Dictionary and (data as Dictionary).get("peaux") is Array:
+			if data is Dictionary and (data as Dictionary).get("profils") is Dictionary and (data as Dictionary).get("peaux") is Array and _gabarits_importes((data as Dictionary).profils):
 				_catalogue = data
 	return _catalogue
+
+
+static func _fichier(profil: String, fiche: Dictionary) -> String:
+	return DOSSIER + str(fiche.get("fichier", "joueur-" + profil + ".glb"))
+
+
+static func _gabarits_importes(profils: Dictionary) -> bool:
+	for profil: String in GABARIT_PAR_SLOT + ARRIERE:
+		if not profil.is_empty() and not (profils.get(profil) is Dictionary and ResourceLoader.exists(_fichier(profil, profils[profil]), "PackedScene")):
+			return false
+	return true
 
 
 static func _tirage(id: String, sel: String) -> int:
@@ -82,7 +96,8 @@ static func taille(profil: String) -> float:
 static func scene(profil: String) -> PackedScene:
 	if not _scenes.has(profil):
 		var fiche: Dictionary = (catalogue().profils as Dictionary).get(profil, {})
-		_scenes[profil] = load(DOSSIER + str(fiche.get("fichier", "joueur-" + profil + ".glb"))) as PackedScene
+		var chemin := _fichier(profil, fiche)
+		_scenes[profil] = load(chemin) as PackedScene if ResourceLoader.exists(chemin, "PackedScene") else null
 	return _scenes[profil]
 
 
@@ -171,6 +186,9 @@ static func appliquer_apparence(model: Node3D, look: Dictionary) -> void:
 		if source == null or source.resource_name != "Skin":
 			continue
 		var cle := "peau|" + str(look.peau)
+		# Peau non importée : la peau d'origine du gabarit reste.
+		if _texture(str(look.peau)) == null:
+			continue
 		if not _materiaux.has(cle):
 			var m := (source.duplicate() if source is StandardMaterial3D else StandardMaterial3D.new()) as StandardMaterial3D
 			m.albedo_texture = _texture(str(look.peau))
@@ -182,7 +200,8 @@ static func appliquer_apparence(model: Node3D, look: Dictionary) -> void:
 
 static func _texture(peau: String) -> Texture2D:
 	if not _textures.has(peau):
-		_textures[peau] = load(DOSSIER + "peaux/" + peau) as Texture2D
+		var chemin := DOSSIER + "peaux/" + peau
+		_textures[peau] = load(chemin) as Texture2D if ResourceLoader.exists(chemin, "Texture2D") else null
 	return _textures[peau]
 
 
