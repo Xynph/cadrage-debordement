@@ -53,7 +53,9 @@ test('Gestion propre à chaque club de Pro D2 : bons élèves, clubs à l’équ
 });
 
 test('Excédents d’un club de Pro D2 et de Nationale : 2 % des recettes engagés au plus par saison, sans limite ailleurs', () => {
-  const R = B.recettes(forces), riche = id => ({ id, cash: B.reserveCible(R.get(id), id, forces[id].division) + 3e6, masse: 2e6 });
+  // Masse nulle : la saison laisse toute la place au réinvestissement (depuis le 25/11/2026, il ne prend que ce que le budget de
+  // la saison laisse au-dessus du résultat visé, club-budget.cjs, ouverture) ; seule la limite d'engagement du championnat joue ici.
+  const R = B.recettes(forces), riche = id => ({ id, cash: B.reserveCible(R.get(id), id, forces[id].division) + 3e6, masse: 0 });
   const o = B.ouverture({ forces, saison: 2, clubs: forces.map(f => riche(f.id)), excedents: true });
   for (const f of forces) {
     const k = o.clubs[f.id], engage = k.investissement + k.dividende;
