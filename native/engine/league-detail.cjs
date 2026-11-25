@@ -233,9 +233,9 @@ function factory(){
   const points=i=>tries[i]*5+stats[i].conversions*2+stats[i].goals*3;
   let score=[points(0),points(1)];
   // Fin de match (gestion du score, GESTION_SCORE / FIN_MATCH_RAPIDE de dist/rugby.js) : l'équipe menée à portée recolle.
-  if(typeof FIN_MATCH_RAPIDE==='object'&&!f.neutral){const fm=FIN_MATCH_RAPIDE,d=score[0]-score[1],L=d>0?1:0,ad=Math.abs(d);
-   if(ad>=8&&ad<=fm.portee&&roll()<fm.essai){tries[L]++;stats[L].conversionAttempts++;if(roll()<.7)stats[L].conversions++;}
-   else if(ad>=6&&ad<=12&&roll()<fm.penalite){stats[L].goalAttempts++;stats[L].goals++;}
+  if(typeof FIN_MATCH_RAPIDE==='object'&&!f.neutral){const fm=FIN_MATCH_RAPIDE,part=fm.championnat?.[f.competitionId]??1,d=score[0]-score[1],L=d>0?1:0,ad=Math.abs(d);
+   if(ad>=8&&ad<=fm.portee&&roll()<fm.essai*part){tries[L]++;stats[L].conversionAttempts++;if(roll()<.7)stats[L].conversions++;}
+   else if(ad>=6&&ad<=12&&roll()<fm.penalite*part){stats[L].goalAttempts++;stats[L].goals++;}
    score=[points(0),points(1)];}
   // Super Rugby Pacific : pas de nul en saison régulière (le moteur complet joue le point en or).
   if(score[0]===score[1]&&f.competitionId==='srp'){const side=edge>=0?0:1;stats[side].goalAttempts++;stats[side].goals++;score=[points(0),points(1)];}

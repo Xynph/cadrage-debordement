@@ -187,7 +187,9 @@ b+=matchLevelEdge(l,side);if(l.franceContext?!l.franceContext.neutral:l.worldCon
 var GESTION_SCORE={debut:60,mene:.15,poursuit:.3,proche:4,portee:15};
 // Résultat rapide (native/engine/league-detail.cjs) : même fin de match en un tirage, l'équipe menée de 8 à « portee » points
 // marque un essai de fin de match avec la probabilité « essai », sinon, menée de 6 à 12, une pénalité avec « penalite ».
-var FIN_MATCH_RAPIDE={essai:.5,penalite:.5,portee:21};
+// « championnat » : part de ces tirages selon le championnat (mesures au rapide contre le réel : Pro D2, Premiership,
+// Super Rugby et Japon, plus étagés ou plus prolifiques, finissent moins souvent à un score).
+var FIN_MATCH_RAPIDE={essai:.5,penalite:.5,portee:21,championnat:{accession:.62,prem:.7,srp:.4,'jlo-d1':.3}};
 function gestionScore(l,side){const g=GESTION_SCORE,m=Number(l.minute)||0;if(!l.worldContext||m<g.debut||!l.score)return 0;const d=l.score[side]-l.score[1-side],r=Math.min(1,(m-g.debut)/(80-g.debut));if(d>=8)return -g.mene*r*Math.min(1,(d-7)/14);if(d<=-g.proche&&d>=-g.portee)return g.poursuit*r;return 0}
 function changePossession(l){if(restartRules(l))ballPossession(l,1-l.possession);else l.possession=1-l.possession}
 // The field is modelled as 70 m wide (y=0..70), with the posts at y=35.
