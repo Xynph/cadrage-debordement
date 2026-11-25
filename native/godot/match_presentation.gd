@@ -4,6 +4,10 @@ extends RefCounted
 ## are clamped, never stretched. Source locomotion supplies the swing phases;
 ## short ground-support locks reduce visible skating without moving any actor.
 
+## Hauteur de la tête de l'ancien athlète de 1,90 m (os Head au repos, en mètres) : les places des
+## regroupements (match_gestes.gd) sont calées sur ce corps.
+const HAUTEUR_TETE_REFERENCE := 1.66
+
 static func rig_for(model: Node3D) -> Skeleton3D:
 	for child in model.find_children("*", "Skeleton3D", true, false):
 		return child as Skeleton3D

@@ -79,7 +79,9 @@ test('resumed national-only saves hide and expire old club work without replayin
  }
 });
 
-function signed(doc){let h=2166136261;for(const ch of JSON.stringify(doc.state))h=Math.imul(h^ch.charCodeAt(0),16777619);doc.checksum=(h>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);}
+// Empreinte comme le jeu, export réduit compris : tests/helpers/signature-export.cjs.
+const {signerExport}=require('./helpers/signature-export.cjs');
+function signed(doc,vmJeu){return signerExport(doc,vmJeu);}
 function sameExport(actual,expected,message){
  if(actual===expected)return;
  const actualDoc=JSON.parse(actual),expectedDoc=JSON.parse(expected);
@@ -97,7 +99,7 @@ function sameExport(actual,expected,message){
 test('public worker: selector creation, role exit with queued club work, legacy resume and daily advance',()=>{
  const {createBridge}=require('../native/engine/worker.cjs');
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'native-nation-meetings-'));
- const options={dataDir:root,seed:13,now:1700000000000,dailyCalendar:true,mandatoryPress:true,internationalCareer:true};
+ const options={dataDir:root,seed:13,now:1700000000000,dailyCalendar:true,mandatoryPress:true,internationalCareer:true,testVm:true};
  let bridge,sequence=0,model;
  const call=(command,payload={})=>bridge.handle({id:++sequence,command,payload});
  const good=(command,payload={})=>{const r=call(command,payload);assert.equal(r.ok,true,command+': '+r.error);model=r.model;return model;};
@@ -131,7 +133,7 @@ test('public worker: selector creation, role exit with queued club work, legacy 
   assert.equal(model.international.role,'nation');noRooms();
   assert.deepEqual(room().receipts,oldWork.receipts,'Taking national office keeps completed club receipts');
   const legacy=JSON.parse(exported());legacy.state.clubMeetings=oldWork;
-  good('import',{text:signed(legacy)});noRooms();
+  good('import',{text:signed(legacy,bridge.vm)});noRooms();
   const pending=exported();reopen();noRooms();sameExport(exported(),pending,'Legacy queued work stays inert during import and restart');
   good('advance_day',{fromDate:model.meta.calendarToday});noRooms();
   const state=JSON.parse(exported()).state;

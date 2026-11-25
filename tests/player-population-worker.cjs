@@ -3,7 +3,8 @@ const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs');
-const checksum=state=>{let h=2166136261;const s=JSON.stringify(state);for(let i=0;i<s.length;i++)h=Math.imul(h^s.charCodeAt(i),16777619);return (h>>>0).toString(16).padStart(8,'0');};
+const {signerExport}=require('./helpers/signature-export.cjs');
+// Empreinte comme le jeu, export réduit compris : tests/helpers/signature-export.cjs.
 
 test('native population state survives import/reopen and rejects corruption or failed persistence atomically',t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-player-population-'));
@@ -18,7 +19,7 @@ test('native population state survives import/reopen and rejects corruption or f
  assert.equal(s.market.length,s.economy.freeAgents.length);
  assert.ok(Buffer.byteLength(before)<24*1024*1024); // limite d'import du Monde (CHAMP_IMPORT_LIMIT_BYTES)
  ok('import',{text:before});assert.equal(archive(),before);
- const bad=JSON.parse(before);bad.state.aiRoster.population.lastPoolSeason=2;bad.checksum=checksum(bad.state);
+ const bad=JSON.parse(before);bad.state.aiRoster.population.lastPoolSeason=2;signerExport(bad,b.vm);
  assert.equal(call('import',{text:JSON.stringify(bad)}).ok,false);assert.equal(archive(),before);
  const primary=path.join(model.meta.dataDir,'donnees.json'),profile=fs.readFileSync(primary),rename=fs.renameSync;
  fs.renameSync=(from,to)=>{if(path.resolve(to)===primary&&path.basename(from).startsWith('donnees.tmp')){const e=Error('population persistence test');e.code='EACCES';throw e;}return rename(from,to);};
@@ -37,5 +38,5 @@ test('native population state survives import/reopen and rejects corruption or f
  assert.equal(after.clubs[0].players.some(p=>p.id===candidate.id),true);
  assert.equal(after.economy.freeAgents.some(p=>p.id===candidate.id),false);
  assert.equal(after.clubs[0].cash,cash-counter.meta.negotiation.fee);
- const final=archive();b.close();b=createBridge({dataDir:root,seed:991,now:1794178800000});assert.equal(archive(),final);
+ const final=archive();b.close();b=createBridge({dataDir:root,seed:991,now:1794178800000,testVm:true});assert.equal(archive(),final);
 });

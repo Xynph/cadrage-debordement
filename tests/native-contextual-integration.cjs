@@ -9,11 +9,12 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const {createBridge} = require('../native/engine/worker.cjs');
+const {signerExport} = require('./helpers/signature-export.cjs');
 const {refuseSavePublication} = require('./helpers/save-publication-refusal.cjs');
 
 function fixture(t) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-contextual-qa-'));
-  let bridge = createBridge({dataDir:directory, seed:13, now:1700000000000}), sequence = 0;
+  let bridge = createBridge({dataDir:directory, seed:13, now:1700000000000, testVm:true}), sequence = 0;
   const send = (command, payload={}) => bridge.handle({id:++sequence, command, payload});
   const good = (command, payload={}) => {
     const response = send(command, payload);
@@ -37,20 +38,18 @@ function fixture(t) {
   };
   const reopen = () => {
     const before = checkpoint(); bridge.close();
-    bridge = createBridge({dataDir:directory, seed:999, now:1});
+    bridge = createBridge({dataDir:directory, seed:999, now:1, testVm:true});
     exact(before); return good('snapshot');
   };
   t.after(() => {bridge.close();fs.rmSync(directory,{recursive:true,force:true});});
   settleClubMeetings(good('new_career',{mode:'common',club:29}),good);
-  return {send,good,bad,exported,bytes,state,file,checkpoint,exact,reopen};
+  return {send,good,bad,exported,bytes,state,file,checkpoint,exact,reopen,get vm(){return bridge.vm;}};
 }
 
-function editDocument(text, mutate) {
+// Empreinte comme le jeu, export réduit compris : tests/helpers/signature-export.cjs.
+function editDocument(text, mutate, vm) {
   const document = JSON.parse(text); mutate(document.state);
-  const body = JSON.stringify(document.state); let checksum = 2166136261;
-  for (let i=0;i<body.length;i++) checksum = Math.imul(checksum^body.charCodeAt(i),16777619);
-  document.checksum = (checksum>>>0).toString(16).padStart(8,'0');
-  return JSON.stringify(document);
+  return signerExport(document, vm);
 }
 const talks = model => {
   assert.ok(model.clubLife.matchTalks, 'matchTalks is registered in the real model');
@@ -190,9 +189,9 @@ test('Delegation skips pending pre/half/post scenes and preserves existing deleg
 test('Closed imported namespaces refuse malformed fields atomically; absent old live namespaces stay absent',t=>{
   const f=fixture(t);start(f);const text=f.exported();
   for(const mutate of [s=>s.contextualMatch.version=99,s=>s.contextualMatch.extra=true,s=>s.contextualMatch.current.participants[1].id=s.contextualMatch.current.participants[0].id,s=>s.contextualMatch.current.phases[0].phase='half',s=>s.sceneInvitations.version=99,s=>s.sceneInvitations.invitations[0].extra=true,s=>s.sceneInvitations.activeId='unknown']) {
-    f.bad('import',{text:editDocument(text,mutate)});
+    f.bad('import',{text:editDocument(text,mutate,f.vm)});
   }
-  const old=editDocument(text,s=>{delete s.contextualMatch;delete s.sceneInvitations;s.live.paused=true;});
+  const old=editDocument(text,s=>{delete s.contextualMatch;delete s.sceneInvitations;s.live.paused=true;},f.vm);
   f.good('import',{text:old});
   assert.equal(f.exported(),old,'Old import is not silently migrated by a read');
   f.reopen();assert.equal(talks(f.good('snapshot')).scene,null);
@@ -214,7 +213,7 @@ test('Invitation context is revalidated after club change, participant departure
   // manager mobility season or fabricating a sporting result.
   settleClubMeetings(f.good('new_career',{mode:'common',club:28}),(command,payload)=>f.good(command,payload));
   const former=JSON.parse(base).state.sceneInvitations;
-  f.good('import',{text:editDocument(f.exported(),s=>s.sceneInvitations=former)});
+  f.good('import',{text:editDocument(f.exported(),s=>s.sceneInvitations=former,f.vm)});
   assert.equal(f.state().club,28);
   for(const entry of invitations(f.good('snapshot')).invitations){assert.equal(entry.available,false);f.bad('scene_invitation_open',{id:entry.id});}
   // These are save-boundary fixtures, not invented invitation IDs. Sport events
@@ -223,7 +222,7 @@ test('Invitation context is revalidated after club change, participant departure
     ['participant',s=>{const e=s.sceneInvitations.invitations.find(e=>e.id===first.id);e.participantId='departed-person-contextual-qa';}],
     ['window',s=>{const e=s.sceneInvitations.invitations.find(e=>e.id===first.id);s.economy.week=e.expires.week;}]
   ]) {
-    f.good('import',{text:editDocument(base,mutate)});
+    f.good('import',{text:editDocument(base,mutate,f.vm)});
     const entries=invitations(f.good('snapshot')).invitations;
     const target=entries.find(e=>e.id===first.id);
     assert.equal(target.available,false,name+' invitation is visibly unavailable');

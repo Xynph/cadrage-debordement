@@ -139,7 +139,7 @@ function venteSpontanee(){
   const p=cands[(h+k)%cands.length];
   const fee=Math.round(transferValue(p)*(R.fourchette[0]+(h%(ecart+1))/100)/pas)*pas;
   const buyers=S.clubs.filter(c=>c.id!==S.club&&c.cash>=fee+R.reserveAcheteur&&professionalPlaces(c)>0).map(c=>({c,b:venteBesoin(c,p)})).filter(x=>x.b>=R.besoinMin)
-   .sort((x,y)=>y.b-x.b||Math.abs(x.c.base-p.rating)-Math.abs(y.c.base-p.rating)||x.c.id-y.c.id);
+   .sort((x,y)=>y.b-x.b||Math.abs(x.c.base-(typeof niveauMatch==='function'?niveauMatch(p):p.rating))-Math.abs(y.c.base-(typeof niveauMatch==='function'?niveauMatch(p):p.rating))||x.c.id-y.c.id);
   if(!buyers.length)continue;
   const o={id:'offre-spontanee-'+e.week+'-'+p.id,playerId:p.id,buyer:buyers[h%Math.min(3,buyers.length)].c.id,fee,expires:e.week+1,spontaneous:true};
   e.offers.push(o);return o;

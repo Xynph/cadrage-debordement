@@ -3,18 +3,14 @@ process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : te
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const {createBridge}=require('../native/engine/worker.cjs');
+const {signerExport}=require('./helpers/signature-export.cjs');
 const {context}=require('./france-harness.cjs');
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'cd-france-cover-'));
-const b=createBridge({dataDir:dir,seed:827381,now:1700000000000});
+const b=createBridge({dataDir:dir,seed:827381,now:1700000000000,testVm:true});
 let id=0;
 const call=(command,payload={})=>b.handle({id:++id,command,payload});
 const good=(c,p)=>{const r=call(c,p);assert.equal(r.ok,true,r.error);return r.model;};
-const checksum=s=>{
- let h=2166136261;
- const t=JSON.stringify(s);
- for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619);}
- return(h>>>0).toString(16).padStart(8,'0');
-};
+// Empreinte comme le jeu, export réduit compris : tests/helpers/signature-export.cjs.
 
 try{
  let m=settleClubMeetings(good('new_career',{club:29,mode:'france'}),good);
@@ -26,7 +22,7 @@ try{
  // Leave one healthy starter per specialist position, including the expanded depth.
  for(const p of players)if(frontRow.has(p.pos)&&!starters.includes(p.id))p.injury=2;
  recovering.injury=1;
- doc.checksum=checksum(doc.state);
+ signerExport(doc,b.vm);
  good('import',{text:JSON.stringify(doc)});
  const recoveryQuote=good('snapshot').selection.coverage;
  assert.deepEqual(recoveryQuote?.slots,[16,17,18]);
@@ -57,7 +53,7 @@ try{
  assert.equal(trainedFull.squad.length,fullModel.squad.length);
  assert.equal(trainedFull.finance.wage,fullModel.finance.wage);
  recovering.injury=2;
- doc.checksum=checksum(doc.state);
+ signerExport(doc,b.vm);
  good('import',{text:JSON.stringify(doc)});
  m=settleClubMeetings(good('auto_lineup'),good);
  assert.equal(m.lineup.filter(Boolean).length,15,'XV complet malgré blessures des doublures');
@@ -71,7 +67,7 @@ try{
  assert.equal(call('promote_cover',{confirmed:true,expectedSlots:blocked.slots}).ok,false);
  assert.deepEqual(blockedFiles.map(file=>fs.readFileSync(file,'utf8')),blockedPrior,'aucune promotion partielle au plafond');
  recovering.injury=0;
- doc.checksum=checksum(doc.state);
+ signerExport(doc,b.vm);
  good('import',{text:JSON.stringify(doc)});
  m=settleClubMeetings(good('auto_lineup'),good);
  const before=m.squad.length,wage=m.finance.wage;

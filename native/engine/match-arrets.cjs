@@ -22,7 +22,7 @@
 // Rôles du poste (trois par poste, mêmes identifiants que native/godot/ui/immersive08/fiche_roles.gd) et consignes
 // individuelles agissent VRAIMENT : chaque rôle et chaque consigne déplacent l'accent du joueur (attributs du moteur,
 // jeu au pied, réussite des temps de jeu, ballons perdus ou arrachés, fautes, mètres, touche, mêlée, fatigue). Le rôle
-// « naturel » (meilleure note du poste) est la référence du moteur : seul l'écart avec lui compte, et un rôle moins
+// « naturel » (rôle choisi par le club s'il est de ce poste, sinon meilleure note du poste) est la référence du moteur : seul l'écart avec lui compte, et un rôle moins
 // adapté au joueur coûte un peu d'efficacité. Effets modérés (étalonnés dans tests/match-arrets.cjs sur des lots de
 // matchs, mêmes graines), avec une part de hasard : chaque joueur applique la consigne plus ou moins bien (réceptivité
 // tirée de l'empreinte du match, sans toucher au flux Math.random). Rien n'est chiffré à l'écran (principe
@@ -175,7 +175,9 @@ function factory(){
   return w?t/w:-1;
  }
  function rolesDuPoste(slot){return ROLES.filter(r=>r[1]===FAMILLE[slot]);}
- function roleNaturel(p,slot){let best=null,note=-2;for(const r of rolesDuPoste(slot)){const n=noteRole(p,r);if(n>note){note=n;best=r;}}return best;}
+ // Rôle de départ au poste : celui que le club a choisi pour le joueur (p.roleId, role-joueur.cjs) quand il est de ce
+ // poste, sinon le meilleur rôle du poste (note des 8 qualités).
+ function roleNaturel(p,slot){const choisi=typeof p?.roleId==='string'?ROLE.get(p.roleId):null;if(choisi&&choisi[1]===FAMILLE[slot])return choisi;let best=null,note=-2;for(const r of rolesDuPoste(slot)){const n=noteRole(p,r);if(n>note){note=n;best=r;}}return best;}
  // --- Effets : un joueur, puis l'équipe (cache par minute et par version des choix) ---
  function ajout(acc,e,f){if(!e)return;for(const k of CLES)if(e[k])acc[k]=(acc[k]||0)+e[k]*f;if(e.fatigue)acc.fatigue=(acc.fatigue||0)+e.fatigue*f;if(e.skills)for(const [k,v] of Object.entries(e.skills))acc.skills[k]=(acc.skills[k]||0)+v*f;}
  // Réceptivité d'un joueur à un choix : entre 0,7 et 1,3, tirée de l'empreinte du match (jamais montrée).

@@ -2,6 +2,9 @@
 const academyGroups=require('./academy-groups.cjs'),matchNotes=require('./match-notes.cjs');
 // Feuille de statistiques réaliste (match-stats.cjs) : la même que l'écran de match, enregistrée par les notes.
 const matchStats=require('./match-stats.cjs');
+// Niveau calculé selon le poste et le rôle (niveau-calcule.cjs, fonctions pures sans require) : son texte est injecté
+// tel quel dans la VM (CDNiveauCalcule), lu par le Niveau du match (role-joueur.cjs).
+const niveauCalculeSource=require('node:fs').readFileSync(require('node:path').join(__dirname,'niveau-calcule.cjs'),'utf8');
 // Closed production manifest. Each domain owns its rules and strict validator;
 // the worker remains the only disk transaction and save authority.
 const domains={clubMeetings:require('./club-meetings.cjs'),matchTalks:require('./match-talks.cjs'),matchDelegation:require('./match-delegation.cjs'),sceneInvitations:require('./scene-invitations.cjs'),playerMatchHistory:require('./player-match-history.cjs'),staffEmployment:require('./staff-employment.cjs'),customCompetition:require('./custom-competition.cjs'),interclubMarket:require('./interclub-market.cjs'),staffMentoring:require('./staff-mentoring.cjs'),performanceAnalysis:require('./performance-analysis.cjs'),press:require('./press.cjs'),relationships:require('./relationships.cjs'),clubWorld:require('./club-world.cjs'),academyPathways:require('./academy.cjs'),clubStrategy:require('./club-strategy.cjs'),clubSupport:require('./club-support.cjs'),managerCareer:require('./manager-career.cjs'),playbook:require('./playbook.cjs'),coachNotebook:require('./coach-notes.cjs'),staffCareer:require('./staff-career.cjs'),regenScouting:require('./regen-scouting.cjs'),youthDevelopment:require('./youth-development.cjs'),academyIntake:require('./academy-intake.cjs'),jiff:require('./jiff.cjs'),youthNational:require('./youth-national.cjs'),formationFees:require('./formation-fees.cjs'),academyFollowUp:require('./academy-follow-up.cjs'),youthMatches:require('./youth-matches.cjs'),matchNotes,espoirsMatch:require('./espoirs-match.cjs'),preseason:require('./avant-saison.cjs'),reprise:require('./reprise.cjs'),leagueDetail:require('./league-detail.cjs')};
@@ -13,6 +16,8 @@ function bootstrap(){
  return `${domains.clubMail.prelude}
  const nativeStaffCareerSources=(()=>{const freeze=value=>{if(value&&typeof value==='object'){Object.values(value).forEach(freeze);Object.freeze(value);}return value;};return freeze(typeof nativeStaffCareerSourcesText==='string'?JSON.parse(nativeStaffCareerSourcesText):{});})();
  let nativeStaffTransition=null;
+ const CDNiveauCalcule=(()=>{const module={exports:{}};${niveauCalculeSource}
+ return module.exports;})();
  const CDMatchNotesMoteur=(${matchNotes.moteur.toString()})();
  const CDMatchStats=(${matchStats.fabrique.toString()})();
  const nativeSystems=(()=>{
@@ -165,7 +170,9 @@ domains.matchArrets=require('./match-arrets.cjs');
 domains.conseilJeu=require('./conseil-jeu.cjs');
 // Tests physiques avant le match et historique des blessures (native/engine/tests-physiques.cjs).
 domains.testsPhysiques=require('./tests-physiques.cjs');
+// Rôle choisi par le club (p.roleId) et Niveau du match au rôle (niveauMatch) : native/engine/role-joueur.cjs.
+domains.roleJoueur=require('./role-joueur.cjs');
 const allFiles=Object.freeze([...new Set([...files,...domains.managerPlanning.files,...domains.clubSheet.files,...domains.pressPromises.files,...domains.clubMail.files,...domains.multiplex.files,...domains.avantMatch.files,...domains.doublons.files,...domains.matchIncidents.files,...domains.weekProgram.files])]);
-const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands,...domains.clubMail.commands,...domains.multiplex.commands,...domains.avantMatch.commands,...domains.doublons.commands,...domains.matchIncidents.commands,...domains.weekProgram.commands,...domains.familiarite.commands,...domains.tonAgent.commands,...domains.staffServices.commands,...domains.matchArrets.commands]);
+const allCommands=Object.freeze([...commands,...domains.managerPlanning.commands,...domains.clubSheet.commands,...domains.pressPromises.commands,...domains.clubMail.commands,...domains.multiplex.commands,...domains.avantMatch.commands,...domains.doublons.commands,...domains.matchIncidents.commands,...domains.weekProgram.commands,...domains.familiarite.commands,...domains.tonAgent.commands,...domains.staffServices.commands,...domains.matchArrets.commands,...domains.roleJoueur.commands]);
 if(new Set(allCommands).size!==allCommands.length)throw Error('Commandes natives de domaine en double.');
 module.exports={files:allFiles,commands:allCommands,bootstrap};

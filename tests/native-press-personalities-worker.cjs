@@ -3,13 +3,14 @@ process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : te
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
-const {createBridge}=require('../native/engine/worker.cjs'),root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'cd-press-personalities-worker-'));let bridge,seq=0;
-const open=()=>bridge=createBridge({dataDir:root,seed:13,now:1700000000000});
+const {createBridge}=require('../native/engine/worker.cjs'),{signerExport}=require('./helpers/signature-export.cjs'),root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'cd-press-personalities-worker-'));let bridge,seq=0;
+const open=()=>bridge=createBridge({testVm:true,dataDir:root,seed:13,now:1700000000000});
 const call=(command,payload={})=>bridge.handle({id:++seq,command,payload});
 const good=(command,payload={})=>{const r=call(command,payload);assert.equal(r.ok,true,command+': '+r.error);return r.model;};
 const exported=()=>good('export').meta.exportText;
 const choose=m=>({context:m.clubLife.press.context,answers:m.clubLife.press.conference.questions.map(q=>({questionId:q.id,answerId:'r4'}))});
-function sign(doc){let h=2166136261;const raw=JSON.stringify(doc.state);for(let i=0;i<raw.length;i++)h=Math.imul(h^raw.charCodeAt(i),16777619);doc.checksum=(h>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);}
+// Empreinte comme le jeu, export réduit compris : tests/helpers/signature-export.cjs.
+function sign(doc){return signerExport(doc,bridge.vm);}
 try{
  open();let m=good('new_career',{mode:'common',club:0}),before=exported(),disk=path.join(m.meta.dataDir,'donnees.json'),bytes=fs.readFileSync(disk);
  for(let i=0;i<3;i++)good('snapshot');assert.equal(exported(),before);assert.deepEqual(fs.readFileSync(disk),bytes);assert.equal(JSON.parse(before).state.pressPeople,undefined);

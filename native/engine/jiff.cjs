@@ -270,13 +270,13 @@ function factory(){
    const current=players.get(list[i]);if(!current||yes(current))return false;
    const options=c.players.filter(p=>!p.injury&&!used.has(p.id)&&yes(p)&&eligible(p,i)&&!released(p));
    if(!options.length)return false;
-   const best=options.sort((a,b)=>(b.rating||0)-(a.rating||0)||(a.id<b.id?-1:1))[0];
+   const best=options.sort((a,b)=>(typeof niveauMatch==='function'?niveauMatch(b):b.rating||0)-(typeof niveauMatch==='function'?niveauMatch(a):a.rating||0)||(a.id<b.id?-1:1))[0];
    used.delete(list[i]);used.add(best.id);list[i]=best.id;count++;return true;
   };
   const lineup=sheet.lineup.slice(),bench=sheet.bench.slice();
-  const benchOrder=bench.map((x,i)=>i).sort((a,b)=>(players.get(bench[a])?.rating||0)-(players.get(bench[b])?.rating||0));
+  const benchOrder=bench.map((x,i)=>i).sort((a,b)=>(typeof niveauMatch==='function'&&players.get(bench[a])?niveauMatch(players.get(bench[a])):players.get(bench[a])?.rating||0)-(typeof niveauMatch==='function'&&players.get(bench[b])?niveauMatch(players.get(bench[b])):players.get(bench[b])?.rating||0));
   for(const i of benchOrder){if(count>=target)break;swap(bench,i,(p,j)=>typeof benchEligible!=='function'||benchEligible(p,j));}
-  const lineupOrder=lineup.map((x,i)=>i).sort((a,b)=>(players.get(lineup[a])?.rating||0)-(players.get(lineup[b])?.rating||0));
+  const lineupOrder=lineup.map((x,i)=>i).sort((a,b)=>(typeof niveauMatch==='function'&&players.get(lineup[a])?niveauMatch(players.get(lineup[a])):players.get(lineup[a])?.rating||0)-(typeof niveauMatch==='function'&&players.get(lineup[b])?niveauMatch(players.get(lineup[b])):players.get(lineup[b])?.rating||0));
   for(const i of lineupOrder){if(count>=target)break;swap(lineup,i,(p,j)=>typeof slotEligible!=='function'||slotEligible(p,j));}
   return {...sheet,lineup,bench};
  }
@@ -368,7 +368,7 @@ function factory(){
   const q=quota(s,clubId);if(!q)return 0;
   const c=s.clubs[clubId],sig=s.season+':'+(s.worldMode?.week??s.round)+':'+c.players.length+':'+c.players[0]?.id+':'+c.players[c.players.length-1]?.id+':'+(s.jiff.counts[clubId]||[0,0]).join(',');
   const hit=pressureMemo.get(clubId);if(hit&&hit.sig===sig)return hit.value;
-  const yes=qualifier(s,q),best=c.players.filter(p=>!p.injury).sort((a,b)=>(b.rating||0)-(a.rating||0)||(a.id<b.id?-1:1)).slice(0,SHEET);
+  const yes=qualifier(s,q),best=c.players.filter(p=>!p.injury).sort((a,b)=>(typeof niveauMatch==='function'?niveauMatch(b):b.rating||0)-(typeof niveauMatch==='function'?niveauMatch(a):a.rating||0)||(a.id<b.id?-1:1)).slice(0,SHEET);
   let gap=q.target-best.filter(yes).length;
   const row=s.jiff.counts[clubId]||[0,0];
   if(row[0]>=3)gap=Math.max(gap,q.target-row[1]/row[0]);

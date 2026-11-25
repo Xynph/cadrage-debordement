@@ -39,7 +39,8 @@ const hooks={
  vm_timeout:"if(steps===2){for(;;){}}"
 };
 function sha(value){return crypto.createHash('sha256').update(value).digest('hex');}
-function checksum(state){const text=JSON.stringify(state);let h=2166136261;for(let i=0;i<text.length;i++)h=Math.imul(h^text.charCodeAt(i),16777619);return (h>>>0).toString(16).padStart(8,'0');}
+// Empreinte comme le jeu, export réduit compris : tests/helpers/signature-export.cjs.
+const {signerExport}=require('./helpers/signature-export.cjs');
 function sameFile(a,b){
  const aa=fs.openSync(a,'r'),bb=fs.openSync(b,'r'),ba=Buffer.alloc(1024*1024),bc=Buffer.alloc(ba.length);
  try{assert.equal(fs.fstatSync(aa).size,fs.fstatSync(bb).size);for(;;){const n=fs.readSync(aa,ba,0,ba.length,null),m=fs.readSync(bb,bc,0,bc.length,null);assert.equal(n,m);if(!n)break;assert.equal(ba.subarray(0,n).equals(bc.subarray(0,m)),true,'Complete JSON/file bytes must match');}}
@@ -85,7 +86,7 @@ test('Delegate : transactions JSON, repli de lecture, erreurs et reprises exacts
  // targets transaction boundaries without replaying eleven whole matches.
  const checkpoint=path.join(scratch,'checkpoint');let checkpointModel,setupCommands=0;
  {
-  const setup=load('historical','ordinary').createBridge({dataDir:checkpoint,seed:411,now:1700000000000});
+  const setup=load('historical','ordinary').createBridge({dataDir:checkpoint,seed:411,now:1700000000000,testVm:true});
   const send=(command,payload={})=>{const r=setup.handle({id:++setupCommands,command,payload});assert.equal(r.ok,true,command+': '+r.error);return r.model;};
   try{
    settleClubMeetings(send('new_career',{mode:'common',club:29}),send);send('train');send('auto_lineup');
@@ -93,7 +94,7 @@ test('Delegate : transactions JSON, repli de lecture, erreurs et reprises exacts
    // This byte-for-byte witness exercises the historical delegate branch on
    // an old live save. Import that explicit legacy fixture through the real
    // validator; never weaken the new causerie guards or rewrite the witness.
-   const legacy=JSON.parse(send('export').meta.exportText);delete legacy.state.contextualMatch;delete legacy.state.clubMeetings;legacy.checksum=checksum(legacy.state);
+   const legacy=JSON.parse(send('export').meta.exportText);delete legacy.state.contextualMatch;delete legacy.state.clubMeetings;signerExport(legacy,setup.vm);
    checkpointModel=send('import',{text:JSON.stringify(legacy)});
    // Depuis #836 un match en cours n'est jamais sauvegardé : un export restitue la carrière d'avant le coup d'envoi.
    // Le profil de départ est donc la sauvegarde ancienne importée avant le match ; le match est relancé par les vraies
@@ -130,9 +131,9 @@ test('Delegate : transactions JSON, repli de lecture, erreurs et reprises exacts
     const original=exportNow(),doc=JSON.parse(original);
     if(name==='invalid_import'){
      assert.equal(request('import',{text:'{invalid'}).ok,false);assert.equal(exportNow(),original);
-     Object.defineProperty(doc.state,'__proto__',{value:{polluted:true},enumerable:true});doc.checksum=checksum(doc.state);
+     Object.defineProperty(doc.state,'__proto__',{value:{polluted:true},enumerable:true});signerExport(doc,b.vm);
      assert.equal(request('import',{text:JSON.stringify(doc)}).ok,false);assert.equal(exportNow(),original);assert.equal({}.polluted,undefined);
-    }else{doc.state.contractText={toJSON:'Une donnée, pas une fonction',note:'Texte importé'};doc.checksum=checksum(doc.state);good('import',{text:JSON.stringify(doc)});}
+    }else{doc.state.contractText={toJSON:'Une donnée, pas une fonction',note:'Texte importé'};signerExport(doc,b.vm);good('import',{text:JSON.stringify(doc)});}
    }
    assert.equal(reachLate(good,b).live.finished,false);
    const before=exportNow(),file=path.join(profile,'PrototypeGodot/donnees.json'),disk=fs.readFileSync(file);
