@@ -18,7 +18,42 @@ static func projected_person(app: Control, source: String, id: String) -> Dictio
 	var found: Array = people.filter(func(person: Dictionary):
 		return str(person.get("playerId", person.get("id", ""))) == id)
 	if found.size() != 1 or not found[0].get("name") is String or str(found[0].name).is_empty(): return {}
-	return found[0].duplicate(true)
+	var personne: Dictionary = found[0].duplicate(true)
+	if source == "interclub": enrichir_interclub(app, personne)
+	return personne
+
+## Qualités visibles (décision de Léo du 25/11/2026) : les ~5900 candidats du marché entre clubs n'en portent aucune ; la
+## fiche du club vendeur (commande de lecture seule `club_sheet`, gardée par club_sheet_canvas.gd) les donne avec la
+## projection de connaissance. Rien n'est copié si la fiche n'est pas chargée (voir demander_qualites).
+const CLES_QUALITES := ["attributesV2", "attributesV2Range", "positionRatings", "niveauCalcule", "knowledge", "rating", "potential",
+	"ratingRange", "potentialRange", "primaryPosition", "primaryPositions", "secondaryPositions", "qualifiedFrontRowPositions",
+	"positionFamiliarity", "positionFamiliarityLevels"]
+
+static func _ligne_fiche_club(app: Control, personne: Dictionary) -> Dictionary:
+	var club := int(float(str(personne.get("clubId", -1))))
+	if club < 0: return {}
+	var fiche: Dictionary = load("res://ui/immersive08/club_sheet_canvas.gd").cached(app, club)
+	var id := str(personne.get("playerId", personne.get("id", "")))
+	for ligne: Variant in fiche.get("squad", []):
+		if ligne is Dictionary and str(ligne.get("id", "")) == id: return ligne
+	return {}
+
+static func enrichir_interclub(app: Control, personne: Dictionary) -> void:
+	var ligne := _ligne_fiche_club(app, personne)
+	if ligne.is_empty(): return
+	for cle: String in CLES_QUALITES:
+		if ligne.has(cle): personne[cle] = ligne[cle]
+
+static func qualites_visibles(personne: Dictionary) -> bool:
+	return not load("res://ui/player_attributes.gd").detail(personne, false).is_empty()
+
+static func qualites_chargees(app: Control, personne: Dictionary) -> bool:
+	return not _ligne_fiche_club(app, personne).is_empty()
+
+## Demande la fiche du club vendeur (une fois par instant de carrière) à l'ouverture du dossier : la réponse reconstruit la page.
+static func demander_qualites(app: Control, personne: Dictionary) -> void:
+	var club := int(float(str(personne.get("clubId", -1))))
+	if club >= 0 and not qualites_chargees(app, personne): load("res://ui/immersive08/club_sheet_canvas.gd").request(app, club)
 
 static func target_available(app: Control, source: String, id: String) -> bool:
 	return not projected_person(app, source, id).is_empty()
@@ -91,6 +126,11 @@ static func open_target(app: Control, source: String, id: String, owner: Window)
 	var observation := G.scroll(tabs)
 	observation.get_parent().name = "Observation"
 	_observation(observation, person)
+	if source == "interclub":
+		if qualites_visibles(person):
+			var qualites_zone := G.scroll(tabs)
+			qualites_zone.get_parent().name = "Qualités"
+			qualites(app, qualites_zone, person)
 	var terms := G.scroll(tabs)
 	terms.get_parent().name = "Contrat"
 	_contract(terms, person, source)
@@ -168,3 +208,24 @@ static func _squad(parent: Container, squad: Array, person: Dictionary) -> void:
 	for member: Dictionary in peers:
 		parent.add_child(G.section(str(member.get("name", "")), "%s ans · niveau %s" % [G.n(member.get("age", "—")), G.rating_text(member, true)]))
 		parent.add_child(G.wrap("Contrat jusqu’à la saison %s · %s" % [G.season_label(member.get("contractEnd", "—")), _salary(member.get("salary"))], 14))
+
+## Onglet Qualités du dossier d'un joueur d'un autre club : ses 36 qualités (chiffres, ou fourchettes si l'option de
+## carrière « En fourchette » est active) et sa note au poste en lettre, comme sur la fiche d'un de nos joueurs.
+static func qualites(app: Control, parent: Container, person: Dictionary) -> bool:
+	var C: Variant = load("res://ui/immersive08/components.gd")
+	var Commune: Variant = load("res://ui/immersive08/fiche_commune.gd")
+	var D: Variant = load("res://ui/immersive08/primitives.gd")
+	var Notation: Variant = load("res://ui/notation_staff.gd")
+	var valeurs: Dictionary = load("res://ui/player_attributes.gd").detail(person, false)
+	if valeurs.is_empty(): return false
+	var zone := Control.new()
+	zone.name = "ProspectQualites"
+	zone.custom_minimum_size = Vector2(C.px(1480.0), C.px(420.0))
+	parent.add_child(zone)
+	var principaux: Variant = person.get("primaryPositions", [person.get("primaryPosition")])
+	var numero := int(principaux[0]) if principaux is Array and not (principaux as Array).is_empty() and (principaux[0] is int or principaux[0] is float) else 0
+	if numero >= 1 and numero <= 15:
+		D.text(zone, 0, 34, "Au poste", 21, load("res://ui/charte.gd").IVOIRE_2, 600, 160)
+		Notation.pastille_note(zone, 170.0, 24.0, Notation.lettre_poste(app.model, person, numero, false), 34.0, "ProspectNotePoste")
+	Commune.grille_attributs(zone, Vector2(0, 52), Vector2(1480, 340), valeurs, "ProspectAttribute_", {"fourchettes": Commune.fourchettes(person)})
+	return true

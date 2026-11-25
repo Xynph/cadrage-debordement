@@ -141,7 +141,7 @@ réel / avant / après :
 | Super Rugby | 35 / 33 / 39 % | 35 / 32 / 39 % | 31 / 29 / 25 % | 0,3 / 1,3 / 0,2 % | 57 / 56 / 56 | 18 / 14 / 13 |
 | Japon D1 | 30 / 26 / 32 % | 28 / 26 / 29 % | 36 / 40 / 37 % | 2,5 / 0,5 / 2,8 % | 61 / 60 / 60 | 23 / 20 / 22 |
 
-Résultat rapide, après dosage par championnat ( : Pro D2 0,62, Premiership 0,7, Super
+Résultat rapide, après dosage par championnat (part des tirages : Pro D2 0,62, Premiership 0,7, Super
 Rugby 0,4, Japon 0,3 ; 2 graines) : écart ≤ 7 43 / 41 / 38 / 45 / 35 / 29 % (réel 40 / 42 / 36 / 41 / 35 / 30), bonus
 défensif 32 / 29 / 36 / 42 / 35 / 27 % (réel 32 / 32 / 35 / 38 / 35 / 28), points 50 / 48 / 54 / 48 / 53 / 60 (Top 14 avant :
 27,5 % d'écarts ≤ 7 et 17,6 % de bonus défensifs). Vérificateur (graines neuves 8128 et 9317) : complet conforme ; un club

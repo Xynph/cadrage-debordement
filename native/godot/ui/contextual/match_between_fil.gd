@@ -292,7 +292,7 @@ func _ligne_fil(entree: Dictionary, dernier: bool, en_bandeau: bool) -> Control:
 	if _acteurs.has(i_fait) and app_fil is Control:
 		texte.mouse_filter = Control.MOUSE_FILTER_PASS
 		texte.set_meta("player_id", _acteurs[i_fait])
-		MiniFiche.lier(app_fil, texte, str(_acteurs[i_fait]), "squad")
+		load("res://ui/carte_joueur_survol.gd").lier_clic(app_fil, texte, str(_acteurs[i_fait]), "squad")
 	return ligne
 
 ## Valeur affichée d'un chiffre clé pour un côté (0 ou 1 du moteur) ; « — » tant que la donnée est vide.

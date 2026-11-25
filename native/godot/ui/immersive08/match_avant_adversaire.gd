@@ -60,10 +60,34 @@ func _adversaire(model: Dictionary, next: Dictionary, data: Dictionary, nous: in
 	_liens(column, liens)
 	return _tile_of(column)
 
-## Mini-fiche d'un joueur adverse au survol (ou touche I au clavier) : ce que le jeu connaît de lui, sans inventer.
+## Mini-fiche d'un joueur adverse : survol du bouton (i) posé près du nom pendant 0,5 s (rien au survol du nom), ou touche I
+## au clavier ; ce que le jeu connaît de lui, sans inventer.
 func _lier_mini_adverse(controle: Control, joueur: Dictionary, club: Dictionary) -> void:
 	controle.tooltip_text = ""
-	controle.mouse_entered.connect(func(): _montrer_mini_adverse(joueur, club, controle))
+	var info := C.icon("info", 18, Charte.IVOIRE_2)
+	var taille := maxf(14.0, info.custom_minimum_size.x)
+	info.name = "CarteJoueurInfo_adverse_" + str(joueur.get("categorie", "")).validate_node_name()
+	info.mouse_filter = Control.MOUSE_FILTER_STOP
+	info.mouse_default_cursor_shape = Control.CURSOR_HELP
+	info.custom_minimum_size = Vector2(taille, taille)
+	info.size = Vector2(taille, taille)
+	info.z_index = 1
+	info.set_meta("carte_info", true)
+	controle.add_child(info)
+	var poser := func():
+		if is_instance_valid(info) and is_instance_valid(controle): info.position = Vector2(controle.size.x + 4.0, (controle.size.y - taille) / 2.0)
+	controle.resized.connect(poser)
+	poser.call()
+	var delai := Timer.new()
+	delai.one_shot = true
+	delai.wait_time = 0.5
+	info.add_child(delai)
+	delai.timeout.connect(func(): _montrer_mini_adverse(joueur, club, info))
+	info.mouse_entered.connect(func(): delai.start())
+	info.mouse_exited.connect(func():
+		delai.stop()
+		MiniFiche.cacher(app, info))
+	info.tree_exiting.connect(func(): MiniFiche.cacher(app, info))
 	controle.mouse_exited.connect(func(): MiniFiche.cacher(app, controle))
 	controle.focus_exited.connect(func(): MiniFiche.cacher(app, controle))
 	controle.tree_exiting.connect(func(): MiniFiche.cacher(app, controle))

@@ -134,3 +134,93 @@ test('En fourchette : la note au poste suit le milieu des fourchettes (poids du 
   assert.equal(p.fleches, undefined);
   assert.equal(p.niveauCalcule.role.startsWith('pilier-'), true);
 });
+// Décision de Léo (25/11/2026) : par défaut les qualités des joueurs des autres clubs sont visibles (comme FM) ;
+// l'option « fourchette » les cache (non observés) ou les met en fourchette (observés), jamais exactes.
+const CLES_36 = require('../native/engine/niveau-calcule.cjs').CLES;
+function autreClub(model, propre = 102) {
+  const id = model.leagues.flatMap(l => l.rows.map(r => r.id)).find(x => x !== propre && x !== model.club?.id);
+  assert.ok(id !== undefined, 'club adverse trouvé');
+  return id;
+}
+const vraisJoueurs = jeu => {
+  const etat = JSON.parse(jeu.call('export').meta.exportText).state;
+  return new Map(etat.clubs.flatMap(c => c.players.map(p => [String(p.id), p])));
+};
+
+test('Précises (défaut) : joueur du marché et fiche d’un club adverse montrent qualités, notes au poste et Niveau', () => {
+  const jeu = ouvrir({ hebdomadaire: true, testVm: true });
+  try {
+    const model = creer(jeu);
+    const vrais = vraisJoueurs(jeu);
+    const marche = model.market.slice(0, 5);
+    assert.ok(marche.length > 0, 'des pistes au marché');
+    for (const m of marche) {
+      assert.equal(m.knowledge.owned, false);
+      assert.equal(m.knowledge.exact, true);
+      assert.equal(Object.keys(m.attributesV2).length, 36, m.id);
+      assert.deepEqual(Object.keys(m.attributesV2).sort(), [...CLES_36].sort());
+      assert.ok(Object.keys(m.positionRatings).length > 0, 'notes au poste');
+      assert.ok(m.niveauCalcule && Number.isInteger(m.niveauCalcule.niveau), 'niveau calculé');
+      assert.equal(m.attributesV2Range, undefined);
+      const vrai = vrais.get(String(m.id));
+      if (vrai) assert.deepEqual(m.attributesV2, vrai.attributesV2, 'qualités exactes');
+      assert.ok(Object.values(m.attributesV2).every(Number.isFinite));
+      assert.equal(m.potential, null, 'le potentiel reste une estimation');
+      assert.doesNotMatch(JSON.stringify(m.assessment || {}), /Niveau : \d|Potentiel : \d/);
+    }
+    const fiche = jeu.call('club_sheet', { club: autreClub(model) }).clubSheet;
+    assert.ok(fiche.squad.length > 20);
+    for (const p of fiche.squad) {
+      assert.equal(p.knowledge.exact, true, p.id);
+      assert.equal(Object.keys(p.attributesV2).length, 36, p.id);
+      assert.ok(Object.keys(p.positionRatings).length > 0, p.id);
+      assert.ok(p.niveauCalcule && Number.isInteger(p.niveauCalcule.niveau), p.id);
+      assert.equal(p.attributesV2Range, undefined);
+      assert.deepEqual(p.attributesV2, vrais.get(String(p.id)).attributesV2, 'qualités exactes');
+      assert.equal(p.potential, null);
+    }
+  } finally { jeu.fermer(); }
+});
+
+test('En fourchette : aucune qualité exacte chez les autres clubs (non observés vides, observés en fourchette de 9)', () => {
+  const jeu = ouvrir({ hebdomadaire: true, testVm: true });
+  try {
+    const model = jeu.regler(jeu.call('new_career', { mode: 'world-champ', club: 102, qualites: 'fourchette' }));
+    const vrais = vraisJoueurs(jeu);
+    for (const m of model.market.slice(0, 5)) {
+      assert.equal(m.knowledge.exact, undefined);
+      assert.deepEqual(m.attributesV2, {}, 'marché non observé : aucune qualité');
+      assert.deepEqual(m.positionRatings, {});
+      assert.equal(m.niveauCalcule, undefined);
+      assert.equal(m.rating, null);
+    }
+    const adverse = autreClub(model);
+    const fiche = jeu.call('club_sheet', { club: adverse }).clubSheet;
+    assert.ok(fiche.squad.length > 20);
+    for (const p of fiche.squad) {
+      assert.deepEqual(p.attributesV2 || {}, {}, 'fiche adverse non observée : aucune qualité');
+      assert.deepEqual(p.positionRatings || {}, {});
+      assert.equal(p.niveauCalcule, undefined);
+      assert.equal(p.attributesV2Range, undefined);
+    }
+    // Un joueur de ce club observé (rapport de mission) : fourchette de 9, milieu montré, jamais la vraie valeur seule.
+    const cible = fiche.squad[0].id;
+    jeu.bridge.vm.run(`S.manager.reports.unshift({playerId:${JSON.stringify(cible)},mission:'mission-test',note:70,potential:80,season:S.season,week:S.round})`);
+    const vu = jeu.call('club_sheet', { club: adverse }).clubSheet.squad.find(p => String(p.id) === String(cible));
+    assert.equal(vu.knowledge.stage, 'observed');
+    assert.equal(vu.knowledge.qualitesLargeur, 9);
+    assert.equal(Object.keys(vu.attributesV2Range).length, 36);
+    const vrai = vrais.get(String(cible)).attributesV2;
+    let differentes = 0;
+    for (const [cle, r] of Object.entries(vu.attributesV2Range)) {
+      assert.equal(r.max - r.min, 8, cle);
+      assert.ok(r.min <= vrai[cle] && r.max >= vrai[cle], cle);
+      assert.equal(vu.attributesV2[cle], (r.min + r.max) / 2, cle);
+      if (vu.attributesV2[cle] !== vrai[cle]) differentes++;
+    }
+    assert.ok(differentes > 0, 'au moins une qualité montrée diffère de la vraie');
+    assert.equal(vu.rating, null);
+    assert.ok(vu.niveauCalcule && Number.isInteger(vu.niveauCalcule.niveau), 'niveau calculé sur les milieux');
+    for (const k of ['releve', 'fleches', 'nativeAttributesV1']) assert.equal(vu[k], undefined, k);
+  } finally { jeu.fermer(); }
+});

@@ -340,7 +340,7 @@ func _zone_joueur(parent: Node, rectangle: Rect2, joueur: Dictionary, club_id: i
 	var pid := str(joueur.get("id", ""))
 	var zone := _zone(parent, C.reach_rect(rectangle), _ouvrir_joueur.bind(joueur, club_id), id, "Ouvrir · " + str(joueur.get("name", "")))
 	var source := "squad" if not P.player(app.model, pid).is_empty() else "market" if Link.available(app, "market", pid) else "adverse"
-	MiniFiche.lier(app, zone, pid, source)
+	load("res://ui/carte_joueur_survol.gd").lier(app, zone, pid, source)
 	return zone
 
 ## Nom de joueur adverse ou du club : clic = fiche (la sienne si elle existe, sinon l'XV de son club), survol = mini-fiche.
@@ -352,7 +352,7 @@ func _lien_joueur(parent: Node, rectangle: Rect2, joueur: Dictionary, taille: in
 		if Link.available(app, genre, pid):
 			var lien := Link.name_link(app, parent, rectangle, genre, pid, nom, taille, Charte.IVOIRE, id)
 			var source := "squad" if not P.player(app.model, pid).is_empty() else "market"
-			MiniFiche.lier(app, lien, pid, source)
+			load("res://ui/carte_joueur_survol.gd").lier_info(app, lien, pid, source, Callable(), true)
 			return lien
 	if not _joueur_ouvrable(joueur, club_id):
 		# Aucune fiche ni club ouvrable : simple texte, jamais un nom qui ressemble à un lien.
@@ -370,5 +370,5 @@ func _lien_joueur(parent: Node, rectangle: Rect2, joueur: Dictionary, taille: in
 	bouton.set_meta("entity_kind", "player")
 	bouton.set_meta("entity_id", pid)
 	bouton.pressed.connect(_ouvrir_joueur.bind(joueur, club_id))
-	MiniFiche.lier(app, bouton, pid, "adverse")
+	load("res://ui/carte_joueur_survol.gd").lier_info(app, bouton, pid, "adverse", Callable(), true)
 	return bouton

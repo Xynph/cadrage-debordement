@@ -614,7 +614,9 @@ func compact_context(player: Dictionary) -> void:
 		check(same.any(func(member: Dictionary): return str(member.id) == str(action.get_meta("peer_id"))), "Cible du même poste par identifiant")
 	var professional: Array = app.model.decisions.development.professionals.filter(func(record: Dictionary): return record.id == player.id)
 	var delta := named("ProfileDevelopmentDelta") as Label
-	check(not professional.is_empty() and delta != null and delta.text.to_int() == int(professional[0].rating-professional[0].development.seasonStart), "Développement comparé au début de saison")
+	var Notation_dev: Script = load("res://ui/notation_staff.gd")
+	var depart := named("ProfileDevelopmentStart") as Label
+	check(not professional.is_empty() and delta != null and depart != null and delta.text == Notation_dev.sens_depuis(app.model, player, professional[0].development.seasonStart) and depart.text == Notation_dev.texte_passe(app.model, player, professional[0].development.seasonStart) and not depart.text.is_valid_int(), "Développement comparé au début de saison (lettre de départ, sens ▲ ▼ =)")
 	if actions.is_empty(): return
 	var peer := actions[0] as Button
 	var requested := [str(player.id), str(peer.get_meta("peer_id"))]

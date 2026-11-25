@@ -57,6 +57,11 @@ const PRISE := 0.25
 ## portée (m) entre racines, passes au plus.
 const TRONC_DEBOUT := [["Hips", "Abdomen", 0.13], ["Abdomen", "Torso", 0.14], ["Torso", "Neck", 0.14], ["Head", 0.22, 0.1],
 	["UpperLeg.L", "LowerLeg.L", 0.08], ["UpperLeg.R", "LowerLeg.R", 0.08]]
+## Corps entier (bras et bas des jambes compris, rayons de la sonde des contacts) : pour un joueur que
+## personne ne doit toucher (n° 8 qui sort de la mêlée avec le ballon, 25/11/2026 : des avant-bras
+## d'avants qui se déliaient entraient de 13 à 18 cm dans son buste).
+const CORPS_ENTIER := TRONC_DEBOUT + [["LowerLeg.L", "Foot.L", 0.06], ["LowerLeg.R", "Foot.R", 0.06],
+	["UpperArm.L", "LowerArm.L", 0.06], ["UpperArm.R", "LowerArm.R", 0.06], ["LowerArm.L", "Palm.L", 0.05], ["LowerArm.R", "Palm.R", 0.05]]
 const JEU_DEBOUT := 0.01
 ## 25/11/2026 : 2,6 m (comme la sonde des contacts) au lieu de 1,8 m : penché en mêlée, un avant a la
 ## tête 1,1 m devant ses pieds ; à 1,8 m, le demi qui se tourne contre un flanker n'était pas vu.
@@ -217,10 +222,13 @@ func degager(actors: Dictionary, delta: float, porteur: String = "", ballon: Nod
 ## entre eux ni déplacés ; 25/11/2026 : ils restent des obstacles pour les autres (demi qui longe le
 ## paquet à la sortie de mêlée, joueur qui rejoint le ballon porté, repli après l'essai), qui sont
 ## écartés seuls, de tout l'écart.
+## `entiers` : joueurs que personne ne traverse, bras et jambes compris (CORPS_ENTIER, pour tout couple
+## où l'un d'eux figure).
 ## Le ballon tenu suit l'écart de son porteur. Présentation seule.
-func separer(actors: Dictionary, delta: float, exclus: Dictionary = {}, porteur: String = "", ballon: Node3D = null) -> void:
+func separer(actors: Dictionary, delta: float, exclus: Dictionary = {}, porteur: String = "", ballon: Node3D = null, entiers: Dictionary = {}) -> void:
 	var ids: Array = []
 	var volumes: Dictionary = {}
+	var complets: Dictionary = {}
 	var racines: Dictionary = {}
 	for id: String in actors:
 		var entry: Dictionary = actors[id]
@@ -239,28 +247,41 @@ func separer(actors: Dictionary, delta: float, exclus: Dictionary = {}, porteur:
 			continue
 		ids.append(id)
 		volumes[id] = _volumes(rig, TRONC_DEBOUT)
+		if not entiers.is_empty():
+			complets[id] = _volumes(rig, CORPS_ENTIER)
 		racines[id] = (entry.node as Node3D).global_position
 	# Écart de cette image : l'écart précédent (qui revient doucement) puis les poussées.
 	var poussees: Dictionary = {}
 	for id: String in ids:
 		poussees[id] = _separations.get(id, Vector3.ZERO)
-	for passe in PASSES_SEPARATION:
+	# Couples proches ; ceux d'un joueur gardé entier en dernier : à chaque passe, c'est lui qui a le
+	# dernier mot (ses voisins ne repoussent pas dans lui celui qu'il vient d'écarter).
+	var couples: Array = []
+	var couples_entiers: Array = []
+	for i in ids.size():
+		for j in range(i + 1, ids.size()):
+			var a: String = ids[i]
+			var b: String = ids[j]
+			if (exclus.has(a) and exclus.has(b)) or (racines[a] as Vector3).distance_to(racines[b]) > PORTEE_DEBOUT:
+				continue
+			(couples_entiers if entiers.has(a) or entiers.has(b) else couples).append([a, b])
+	couples.append_array(couples_entiers)
+	for passe in PASSES_SEPARATION * (2 if not couples_entiers.is_empty() else 1):
 		var bouge := false
-		for i in ids.size():
-			for j in range(i + 1, ids.size()):
-				var a: String = ids[i]
-				var b: String = ids[j]
-				var fixe_a := exclus.has(a)
-				var fixe_b := exclus.has(b)
-				if (fixe_a and fixe_b) or (racines[a] as Vector3).distance_to(racines[b]) > PORTEE_DEBOUT:
-					continue
-				var p := _poussee_mutuelle(volumes[a], poussees[a], volumes[b], poussees[b], racines[a] - racines[b])
-				if p.is_zero_approx():
-					continue
-				var part_a := 0.0 if fixe_a else (1.0 if fixe_b else 0.5)
-				poussees[a] += p * part_a
-				poussees[b] -= p * (1.0 - part_a)
-				bouge = true
+		for couple: Array in couples:
+			var a: String = couple[0]
+			var b: String = couple[1]
+			var fixe_a := exclus.has(a)
+			var fixe_b := exclus.has(b)
+			var entier := entiers.has(a) or entiers.has(b)
+			var p := _poussee_mutuelle(complets[a] if entier else volumes[a], poussees[a], complets[b] if entier else volumes[b], poussees[b], racines[a] - racines[b])
+			if p.is_zero_approx():
+				continue
+			# Lié (exclu) : jamais déplacé ; gardé entier : l'autre s'écarte de tout l'écart.
+			var part_a := 0.0 if fixe_a else (1.0 if fixe_b else (0.0 if entiers.has(a) and not entiers.has(b) else (1.0 if entiers.has(b) and not entiers.has(a) else 0.5)))
+			poussees[a] += p * part_a
+			poussees[b] -= p * (1.0 - part_a)
+			bouge = true
 		if not bouge:
 			break
 	for id: String in ids:

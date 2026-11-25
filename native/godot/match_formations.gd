@@ -72,7 +72,29 @@ const DEMI_HORS_PAQUET := 0.8
 ## Avant : le ballon partait seul vers le point du fait (5 à 11 m plus loin que la mêlée, « avance »)
 ## et restait posé sur l'herbe, loin de tout joueur, quand le porteur désigné était un arrière
 ## éloigné (ou absent).
-const DEMI_SORTIE := Vector2(0.9, 0.9)
+## 25/11/2026 (joueurs v5, plus larges) : à (0,9 ; 0,9), le demi allait en ligne droite de l'entrée du
+## tunnel au pied du n° 8, à travers le flanc de son paquet lié ; la séparation sortait son corps du
+## paquet (jusqu'à 3 m de sa place) et le ballon suivait son corps. Il ramasse désormais au coin
+## arrière de sa mêlée, côté caméra, et longe le flanc pour y aller (2 m de l'axe : flanker à 1,2 m,
+## bras liés vers 1,5 m, plus la largeur de son buste).
+const DEMI_SORTIE := Vector2(1.2, 2.0)
+## N° 8 qui se détache avec le ballon (25/11/2026, accord de Léo) : parti aussitôt vers sa place du
+## moteur, droit devant, il traversait les deux paquets encore liés. Comme dans la réalité, il ramasse
+## au pied de sa mêlée puis la contourne : d'abord sur le côté de son paquet (CONTOUR_COTE : [recul
+## derrière le ballon, écart du centre]), tant que les paquets sont liés ; puis, déliés, il longe le
+## paquet adverse jusqu'à CONTOUR_AVANT m devant le ballon, au même écart, avant de rejoindre sa course.
+## Écart : flanker à 1,0 m + décalage des têtes, plus deux demi-largeurs d'épaules (≈ 0,9 m).
+## Côté caméra (celui des deux demis, DEMI_ADVERSE à 2,4 m du centre), l'écart passe à CONTOUR_CAMERA m.
+## Le côté est celui de sa course ; course droit devant : côté opposé à la caméra (loin des demis).
+## Le contour cesse s'il n'a plus le ballon, s'il est pris dans un geste (plaquage…) ou après CONTOUR_MAX s.
+const CONTOUR_COTE := Vector2(3.4, 2.3)
+const CONTOUR_CAMERA := 3.4
+const CONTOUR_AVANT := 4.2
+const CONTOUR_MAX := 4.0
+## Durée (s) depuis la sortie pendant laquelle personne ne traverse le n° 8 (bras compris).
+const PROTEGE := 3.0
+## Distance (m) sous laquelle un point de passage est atteint.
+const CONTOUR_ATTEINT := 0.35
 ## Hors-jeu de mêlée (loi 19) : arrières à 5 m au moins derrière les pieds du dernier avant.
 const HORS_JEU := 5.0
 const PIEDS_N8 := 0.6
@@ -117,6 +139,21 @@ var _posture: Dictionary = {}
 var _attente: Dictionary = {}
 var _cibles_moteur: Dictionary = {}
 var _saved: Dictionary = {}
+## Contour du n° 8 détaché : {"id", "points": [Vector2 du terrain], "i", "temps"} (vide sinon). Il survit
+## aux images suivantes du moteur : le n° 8 finit de contourner même si le fait d'après arrive.
+var contour: Dictionary = {}
+## N° 8 détaché que personne ne traverse, bras et jambes compris (match_plancher.gd `separer`,
+## `entiers`), PROTEGE s depuis la sortie : {"id", "temps"} (vide sinon).
+var protege: Dictionary = {}
+## Demis qui se relèvent de l'introduction avant de partir (voir `place`).
+var _releve: Dictionary = {}
+
+
+## Joueurs que la séparation garde entiers (voir `protege`).
+func entiers() -> Dictionary:
+	if protege.is_empty() or not view._actors.has(str(protege.id)) or _mis_en_scene(str(protege.id)):
+		return {}
+	return {str(protege.id): true}
 
 
 func _init(owner: Node3D) -> void:
@@ -174,8 +211,20 @@ static func _melee(scene: Dictionary, centre: Vector2, introduit: int, sortie: b
 		# Sens de poussée du paquet : le camp 0 pousse vers les x croissants (scène du moteur).
 		var s := 1.0 if side == 0 else -1.0
 		if slot < 8:
-			# Le joueur que le moteur désigne à la sortie (n° 8, talonneur…) se détache avec le ballon.
+			# Le joueur que le moteur désigne à la sortie (n° 8, talonneur…) se détache avec le ballon :
+			# il contourne la mêlée (CONTOUR_COTE), jamais à travers les paquets.
 			if sortie and id == porteur:
+				var course := Vector2(float(player.get("x", centre.x)), float(player.get("y", centre.y)))
+				var cote := signf(course.y - centre.y) if absf(course.y - centre.y) > 0.5 else -COTE_INTRO
+				var ecart := CONTOUR_CAMERA if cote == COTE_INTRO else CONTOUR_COTE.y
+				var flanc := centre + Vector2(-s * CONTOUR_COTE.x, cote * ecart)
+				f.places[id] = flanc
+				f.caps[id] = atan2(s, 0.0)
+				f.roles[id] = "n8_sortie"
+				f.contour = [flanc]
+				var devant := centre + Vector2(s * CONTOUR_AVANT, cote * ecart)
+				if _traverse(flanc, course, centre, ecart):
+					f.contour.append(devant)
 				continue
 			var m: Vector2 = MELEE[slot]
 			# Paquet décalé vers la gauche de ses joueurs : têtes adverses emboîtées en alternance.
@@ -223,6 +272,16 @@ static func _melee(scene: Dictionary, centre: Vector2, introduit: int, sortie: b
 				f.places[id] = Vector2(centre.x - s * limite, float(player.y))
 			f.roles[id] = "arriere"
 	return f
+
+
+## Vrai si le trajet `a` -> `b` passe dans l'emprise des deux paquets (CONTOUR_AVANT m de part et
+## d'autre du ballon, moins de `ecart` − 0,4 m de l'axe de la mêlée).
+static func _traverse(a: Vector2, b: Vector2, centre: Vector2, ecart: float) -> bool:
+	for k in 21:
+		var p := a.lerp(b, k / 20.0)
+		if absf(p.x - centre.x) < CONTOUR_AVANT and absf(p.y - centre.y) < ecart - 0.4:
+			return true
+	return false
 
 
 static func _touche(scene: Dictionary, marque: Vector2) -> Dictionary:
@@ -274,6 +333,12 @@ func preparer(scene: Dictionary, nouvelle: bool) -> void:
 	temps = 0.0
 	libere = false
 	_cibles_moteur.clear()
+	if formation.has("contour"):
+		contour = {"id": str(formation.porteur), "points": formation.contour, "i": 0, "temps": 0.0}
+		protege = {"id": str(formation.porteur), "temps": 0.0}
+	elif formation.type in ["melee", "touche"]:
+		contour = {}
+		protege = {}
 	if formation.type == "melee":
 		precedente = {"type": "melee", "centre": formation.centre, "introduit": formation.introduit}
 	elif formation.type != "sortie_melee":
@@ -282,10 +347,22 @@ func preparer(scene: Dictionary, nouvelle: bool) -> void:
 
 ## Place du joueur dans la vue : celle de la formation, sinon celle du moteur.
 func place(id: String, moteur: Vector3) -> Vector3:
+	if not contour.is_empty() and id == str(contour.id):
+		_cibles_moteur[id] = moteur
+		return _terrain(contour.points[int(contour.i)])
 	if libere or not formation.places.has(id):
 		return moteur
 	_cibles_moteur[id] = moteur
 	var p: Vector2 = formation.places[id]
+	# 25/11/2026 (joueurs v5) : le demi qui vient d'introduire se relève sur place avant de partir ;
+	# parti accroupi, il pivotait vers sa course et son buste penché balayait son flanker.
+	if str(formation.type) == "sortie_melee" and str(_posture.get(id, "")) == "introduction" and float(_poids.get(id, 0.0)) > 0.0 and view._actors.has(id):
+		_releve[id] = true
+		return (view._actors[id].node as Node3D).position
+	return _terrain(p)
+
+
+static func _terrain(p: Vector2) -> Vector3:
 	return Vector3(p.x - 50.0, 0.0, p.y - 35.0)
 
 
@@ -318,14 +395,62 @@ func avancer(delta: float) -> void:
 		for id: String in _cibles_moteur:
 			if not view._actors.has(id) or _mis_en_scene(id):
 				continue
-			var entry: Dictionary = view._actors[id]
-			var at: Vector3 = (entry.node as Node3D).position
-			entry.from = at
-			entry.target = _cibles_moteur[id]
-			entry.duree = Motion.duree(at, entry.target)
-			entry.elapsed = 0.0
-			entry.tangent = Vector3.ZERO
-			entry.velocity = Vector3.ZERO
+			if not contour.is_empty() and id == str(contour.id):
+				continue
+			_viser(id, _cibles_moteur[id])
+	for id: String in _releve.keys():
+		if float(_poids.get(id, 0.0)) > 0.0 and view._actors.has(id):
+			continue
+		_releve.erase(id)
+		if not view._actors.has(id) or _mis_en_scene(id):
+			continue
+		if not libere and formation.places.has(id):
+			_viser(id, _terrain(formation.places[id]))
+		elif _cibles_moteur.has(id):
+			_viser(id, _cibles_moteur[id])
+	_contourner(delta)
+
+
+## N° 8 détaché : point de passage suivant dès que le précédent est atteint, puis sa course du moteur.
+## 25/11/2026 (vérificateur) : il n'attend plus sur le flanc que les paquets se délient (1 s planté,
+## ballon en main) ; il longe aussitôt le paquet adverse, encore lié donc immobile, à l'écart.
+func _contourner(delta: float) -> void:
+	if not protege.is_empty():
+		protege.temps = float(protege.temps) + delta
+		# Pris dans un geste (plaquage…) : le contact est voulu, le plaqueur doit l'atteindre.
+		if float(protege.temps) >= PROTEGE or not view._actors.has(str(protege.id)) or _mis_en_scene(str(protege.id)):
+			protege = {}
+	if contour.is_empty():
+		return
+	var id := str(contour.id)
+	contour.temps = float(contour.temps) + delta
+	if not view._actors.has(id) or _mis_en_scene(id):
+		contour = {}
+		return
+	var fini: bool = view._carrier_id != id or float(contour.temps) >= CONTOUR_MAX
+	var entry: Dictionary = view._actors[id]
+	var at: Vector3 = (entry.node as Node3D).position
+	var vise := _terrain(contour.points[int(contour.i)])
+	if not fini and Vector2(vise.x - at.x, vise.z - at.z).length() > CONTOUR_ATTEINT:
+		return
+	contour.i = int(contour.i) + 1
+	if not fini and int(contour.i) < (contour.points as Array).size():
+		_viser(id, _terrain(contour.points[int(contour.i)]))
+		return
+	contour = {}
+	if _cibles_moteur.has(id):
+		_viser(id, _cibles_moteur[id])
+
+
+func _viser(id: String, cible: Vector3) -> void:
+	var entry: Dictionary = view._actors[id]
+	var at: Vector3 = (entry.node as Node3D).position
+	entry.from = at
+	entry.target = cible
+	entry.duree = Motion.duree(at, cible)
+	entry.elapsed = 0.0
+	entry.tangent = Vector3.ZERO
+	entry.velocity = Vector3.ZERO
 
 
 ## Rend le squelette et le modèle d'avant la posture (avant la nouvelle animation de l'image).
@@ -360,7 +485,8 @@ func poser(delta: float) -> void:
 		var gap: Vector3 = entry.target - actor.position
 		var arrive := Vector2(gap.x, gap.z).length() < ARRIVE
 		var arrete: bool = float(entry.elapsed) >= float(entry.duree) or Vector2(gap.x, gap.z).length() < EN_PLACE
-		if actif and formation.caps.has(id) and arrete:
+		# Demi qui se relève de l'introduction : il garde son cap (accroupi, il balayait son flanker).
+		if actif and formation.caps.has(id) and arrete and not _releve.has(id):
 			var change := angle_difference(actor.rotation.y, float(formation.caps[id]))
 			actor.rotation.y += clampf(change, -VIRAGE * delta, VIRAGE * delta)
 		# 25/11/2026 (sonde des contacts du match filmé) : il ne se penche qu'une fois arrêté à sa place

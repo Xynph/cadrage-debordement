@@ -310,5 +310,5 @@ static func nom(app: Control, parent: Control, zone: Rect2, valeur: String, play
 	bouton.mouse_filter = Control.MOUSE_FILTER_PASS
 	bouton.accessibility_name = valeur + " · fiche joueur"
 	bouton.pressed.connect(func(): app.navigation_controller.open_entity({"kind":"player", "id":player_id}))
-	Carte.lier(app, bouton, player_id, "squad")
+	Carte.lier_info(app, bouton, player_id, "squad")
 	return bouton

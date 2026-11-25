@@ -181,7 +181,7 @@ func _remplir_adjoint(conseil: Variant, live: Dictionary, direct: Dictionary, ap
 			etiquette.gui_input.connect(func(evenement: InputEvent):
 				var clic := evenement as InputEventMouseButton
 				if clic != null and clic.pressed and clic.button_index == MOUSE_BUTTON_LEFT: ouvrir_fiche(id_phrase))
-			if app_phrase is Control: MiniFiche.lier(app_phrase, etiquette, id_phrase, "squad")
+			if app_phrase is Control: load("res://ui/carte_joueur_survol.gd").lier(app_phrase, etiquette, id_phrase, "squad")
 		colonne.add_child(etiquette)
 		# Lignes réservées (un texte à la ligne tronqué n'en réserve qu'une) : la carte garde la hauteur
 		# du portrait et la phrase n'est jamais coupée à mi-hauteur.
@@ -366,7 +366,7 @@ func montrer_arret(valeur: Dictionary) -> void:
 		# Le nom du joueur proposé : sa mini-fiche au survol (il faut savoir qui entre ou sort).
 		var app_arret: Object = _app()
 		if app_arret is Control and id != null and not str(id).is_empty():
-			MiniFiche.lier(app_arret, bouton, str(id), "squad")
+			load("res://ui/carte_joueur_survol.gd").lier(app_arret, bouton, str(id), "squad")
 			# « i » à droite de la ligne : la fiche complète (le clic sur la ligne reste le choix).
 			var info := _lien("i", ouvrir_fiche.bind(str(id)), "MatchBetweenStopInfo")
 			info.tooltip_text = "Sa fiche complète (le choix attend) · survol de la ligne : sa mini-fiche"
