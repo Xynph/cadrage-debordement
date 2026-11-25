@@ -1396,7 +1396,7 @@ function createBridge(options={}){
      // de saison ; entre deux, les sections dont le texte sauvegardé n'a pas changé ne sont pas reparcourues.
      // Joueurs de complément créés ici, après les observateurs : fragilité et familiarité posées tout de suite (sinon la
      // commande suivante, même sans effet sur les joueurs, les ajouterait au document sauvegardé).
-     else{run('budgetAvantProfondeur();nativeProfessionalDepth.fill(S);budgetProfondeur();nativeAttributeStore.complete(S,nativeAttributeBaseline,'+liveOnly+');nativeSystems.domain("fragilite").observe();nativeSystems.domain("familiarite").observe();');mark('completion');
+     else{run('budgetAvantProfondeur();nativeProfessionalDepth.fill(S);budgetProfondeur();nativeAttributeStore.complete(S,nativeAttributeBaseline,'+liveOnly+');nativeSystems.domain("fragilite").observe();nativeSystems.domain("familiarite").observe();nativeSystems.domain("matchTalks").settle();');mark('completion');
       // Décision différée : seul l'effet visible de save() sur la projection (indicateur d'échec) est appliqué ici.
       if(defer)peek('if(S&&!validatingStartup)lastSaveError=false;');
       // Jour différé : validation stricte après la réponse ; le texte assemblé ici sert à la projection et à la copie
