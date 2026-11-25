@@ -95,6 +95,10 @@ const VIRAGE := 6.0
 ## sa tête est 1,1 m devant ses pieds ; à 0,05 rad elle dévie de 5 cm au plus, dans la marge de
 ## l'alternance des têtes (2 × DECALAGE_TETES moins deux rayons de tête : 11 cm à deux).
 const FACE := 0.05
+## À moins de EN_PLACE m de sa place, un joueur est arrêté (il se tourne vers le cap) ; arrivé, il se
+## lie au plus tard après ATTENTE_MAX s.
+const EN_PLACE := 0.05
+const ATTENTE_MAX := 0.5
 const ARMS := ["UpperArm.L", "LowerArm.L", "Palm.L", "UpperArm.R", "LowerArm.R", "Palm.R"]
 const LEGS := ["UpperLeg.L", "LowerLeg.L", "Foot.L", "UpperLeg.R", "LowerLeg.R", "Foot.R"]
 
@@ -106,6 +110,8 @@ var temps := 0.0
 var libere := false
 var _poids: Dictionary = {}
 var _posture: Dictionary = {}
+## Temps passé arrivé à sa place sans être lié (s), par joueur.
+var _attente: Dictionary = {}
 var _cibles_moteur: Dictionary = {}
 var _saved: Dictionary = {}
 
@@ -350,14 +356,17 @@ func poser(delta: float) -> void:
 		var nom := str(formation.postures.get(id, "")) if actif else ""
 		var gap: Vector3 = entry.target - actor.position
 		var arrive := Vector2(gap.x, gap.z).length() < ARRIVE
-		if actif and formation.caps.has(id) and float(entry.elapsed) >= float(entry.duree):
+		var arrete: bool = float(entry.elapsed) >= float(entry.duree) or Vector2(gap.x, gap.z).length() < EN_PLACE
+		if actif and formation.caps.has(id) and arrete:
 			var change := angle_difference(actor.rotation.y, float(formation.caps[id]))
 			actor.rotation.y += clampf(change, -VIRAGE * delta, VIRAGE * delta)
 		# 25/11/2026 (sonde des contacts du match filmé) : il ne se penche qu'une fois arrêté à sa place
 		# et tourné vers l'adversaire ; penché de travers en arrivant, sa tête entrait dans celle d'en face.
+		# Arrivé, il se lie au plus tard après ATTENTE_MAX s, même mal tourné (jamais de mêlée debout).
 		var face: bool = not formation.caps.has(id) or absf(angle_difference(actor.rotation.y, float(formation.caps[id]))) < FACE
-		var arrete: bool = float(entry.elapsed) >= float(entry.duree)
-		var lie: bool = not nom.is_empty() and arrive and ((arrete and face) or float(_poids.get(id, 0.0)) > 0.0)
+		var attente: float = float(_attente.get(id, 0.0)) + delta if arrive and not nom.is_empty() else 0.0
+		_attente[id] = attente
+		var lie: bool = not nom.is_empty() and arrive and ((arrete and face) or attente >= ATTENTE_MAX or float(_poids.get(id, 0.0)) > 0.0)
 		var poids := move_toward(float(_poids.get(id, 0.0)), 1.0 if lie else 0.0, (delta / RAMPE) if not view._paused else 0.0)
 		if not nom.is_empty():
 			_posture[id] = nom
