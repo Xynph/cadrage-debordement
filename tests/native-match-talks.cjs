@@ -62,11 +62,12 @@ console.log('Native match talks VM: contextual phases, six choices, audience aut
 function workerTests(){
  const {createBridge}=require('../native/engine/worker.cjs');
  const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
+ const {signerExport}=require('./helpers/signature-export.cjs');
  const root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'native-match-talks-'));
  // Reprises et exports en plein match (scène de causerie retrouvée après redémarrage) : chemin des carrières enregistrées
  // en plein match par une version précédente, toujours suivi pour elles (matchResume:false). Une carrière actuelle
  // reprend avant le coup d'envoi (tests/reprise-avant-match.cjs).
- let b=createBridge({dataDir:root,seed:371,now:1700000000000,matchResume:false}),seq=0,m;
+ let b=createBridge({dataDir:root,seed:371,now:1700000000000,matchResume:false,testVm:true}),seq=0,m;
  const good=(command,payload={})=>{const out=b.handle({id:++seq,command,payload});assert.equal(out.ok,true,command+': '+out.error);m=out.model;return m;};
  const bad=(command,payload={})=>{const out=b.handle({id:++seq,command,payload});assert.equal(out.ok,false,command+' should fail');return out;};
  const scene=()=>m.clubLife.matchTalks.scene;
@@ -78,8 +79,9 @@ function workerTests(){
  };
  const continuation=s=>good('match_talk_continue',{key:s.key,phase:s.phase,skip:true});
  const decision=s=>({key:s.key,phase:s.phase,choiceId:s.options[0].id,audience:'group',playerIds:[]});
- const restart=()=>{b.close();b=createBridge({dataDir:root,matchResume:false});good('snapshot');};
- const checksum=doc=>{let hash=2166136261;for(const ch of JSON.stringify(doc.state))hash=Math.imul(hash^ch.charCodeAt(0),16777619);doc.checksum=(hash>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);};
+ const restart=()=>{b.close();b=createBridge({dataDir:root,matchResume:false,testVm:true});good('snapshot');};
+ // Empreinte comme le jeu, export réduit compris (état reconstruit dans la VM du pont) : tests/helpers/signature-export.cjs.
+ const checksum=doc=>signerExport(doc,b.vm);
  try{
   settleClubMeetings(good('new_career',{mode:'world-champ',club:29}),(command,payload)=>good(command,payload));assert.ok(m.clubLife.matchTalks);assert.equal(scene(),null);
   let before=exported();good('snapshot');assert.equal(exported(),before,'fresh reads do not initialize the domain');

@@ -258,6 +258,11 @@ func _plaquer(ecart: float) -> void:
 	# Le plaqueur, pris sous la chute, se dégage côté défense et reste penché sur le ballon.
 	var place := centre + axe * RUCK_PLAQUEUR
 	var tackler: Dictionary = view._actors[plaqueur]
+	# Chute physique (match_chute_physique.gd) : le haut du corps du porteur part vers l'avant, loin du plaqueur.
+	if view.get("_chute_physique") != null:
+		var oppose: Vector3 = (entry.node as Node3D).position - (tackler.node as Node3D).position
+		oppose.y = 0.0
+		view._chute_physique.declencher(porteur, axe + oppose.normalized() * 0.5, plaqueur)
 	_rejoindre(tackler, place)
 	ruck[plaqueur] = {"place": place, "poids": 0.0, "base": (tackler.model as Node3D).transform, "lache": false}
 

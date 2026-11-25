@@ -377,6 +377,8 @@ func _gestes_de_l_etat(id: String) -> void:
 				view.jouer_geste(id, clip, maxf(0.0, fin - 0.12), fin)
 		return
 	_etat_vu[id] = nom
+	if nom == "plaque" and view.get("_chute_physique") != null:
+		_declencher_chute(id)
 	if not view.has_method("jouer_geste"):
 		return
 	match nom:
@@ -433,6 +435,17 @@ func _gestes_de_l_etat(id: String) -> void:
 			if _chute.has(id) and str(_chute[id]) == "poussee":
 				view.arreter_geste(id)
 			_chute.erase(id)
+
+
+## Chute physique (match_chute_physique.gd) : le porteur plaqué des pistes part dans le sens de
+## sa course, à l'opposé du plaqueur (présentation seule, racine sur sa piste).
+func _declencher_chute(id: String) -> void:
+	for k: Dictionary in _plaquages:
+		if k.porteur == id and absf(float(k.t) - temps) < 0.6:
+			var avant := Vector3(cos(float(k.cap)), 0.0, sin(float(k.cap)))
+			var oppose := -Vector3(-avant.z, 0.0, avant.x) * float(k.cote)
+			view._chute_physique.declencher(id, avant + oppose * 0.5, str(k.plaqueur))
+			return
 
 
 ## Pose procédurale des états sans geste adapté ; appelée après l'animation source.

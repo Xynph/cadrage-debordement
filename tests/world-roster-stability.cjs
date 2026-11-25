@@ -24,7 +24,16 @@ try{
  const start=state(),sizes=new Map(start.clubs.map(c=>[c.id,c.players.length])),targets=new Map(start.clubs.map(c=>[c.id,Math.min(58,Math.max(40,c.players.length))]));
  const leagueOf=(s,id)=>Object.entries(s.worldMode?.leagues??{}).find(([,l])=>l.members.includes(id))?.[0]??'guest';
  const sales=[];let seen=new Set();
- const track=s=>{for(const e of s.aiRoster.events)if(e.kind==='sell'){const k=JSON.stringify(e);if(!seen.has(k)){seen.add(k);sales.push(e);}}};
+ // Calendrier des mutations v2 (#1018) : en saison, un achat entre clubs gérés est un accord (calendrierMutations.accordsIA,
+ // indemnité payée tout de suite) ; le joueur ne change de club qu'à la bascule de saison (vente « sell » de aiRoster).
+ const track=s=>{
+  for(const e of s.aiRoster.events)if(e.kind==='sell'){const k=JSON.stringify(e);if(!seen.has(k)){seen.add(k);sales.push(e);}}
+  for(const a of s.calendrierMutations?.accordsIA??[]){
+   const k='accord:'+a.id;if(seen.has(k))continue;seen.add(k);
+   assert.ok(a.vendeurId!==a.acheteurId&&a.vendeurId!==s.club&&a.acheteurId!==s.club&&a.montant>=0,'Accord entre deux clubs gérés distincts : '+JSON.stringify(a));
+   sales.push({season:a.saison,kind:'accord',clubId:a.vendeurId,playerId:a.playerId,fee:a.montant});
+  }
+ };
  for(let season=1;season<=SEASONS;season++){
   for(let week=model.meta.week;week<WEEKS;week++){
    if(model.next){if(!model.selection.valid)go('auto_lineup');if(!model.selection.valid)go('promote_cover',{confirmed:true});go('begin_match');go('delegate');}

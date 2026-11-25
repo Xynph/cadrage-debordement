@@ -274,6 +274,21 @@ func run() -> void:
 	# demandée (le retour différé lit `closing` et ne fait rien pendant la première image).
 	app.closing = true
 	root.add_child(app)
+	# Sonde du sol (CD_MESURE_SOL=1) : hauteur des os de tous les joueurs à chaque image.
+	var sonde_sol: Node = null
+	if OS.get_environment("CD_MESURE_SOL") == "1":
+		sonde_sol = (load((get_script() as Script).resource_path.get_base_dir().path_join("sonde_sol.gd")) as GDScript).new()
+		root.add_child(sonde_sol)
+	# Sonde du ruck (CD_MESURE_RUCK=1) : jambes des joueurs debout qui entrent dans un joueur couché.
+	var sonde_ruck: Node = null
+	if OS.get_environment("CD_MESURE_RUCK") == "1":
+		sonde_ruck = (load((get_script() as Script).resource_path.get_base_dir().path_join("sonde_ruck.gd")) as GDScript).new()
+		root.add_child(sonde_ruck)
+	# Sonde des contacts (CD_MESURE_CONTACTS=1) : corps qui entrent dans d'autres corps, par phase.
+	var sonde_contacts: Node = null
+	if OS.get_environment("CD_MESURE_CONTACTS") == "1":
+		sonde_contacts = (load((get_script() as Script).resource_path.get_base_dir().path_join("sonde_contacts.gd")) as GDScript).new()
+		root.add_child(sonde_contacts)
 	for signal_fenetre: Signal in [root.size_changed, root.focus_entered]:
 		if signal_fenetre.is_connected(app._keep_filled_display): signal_fenetre.disconnect(app._keep_filled_display)
 	await process_frame
@@ -481,6 +496,15 @@ func run() -> void:
 	# duree_s : temps de jeu simulé ; duree_reelle_s : horloge murale du direct.
 	report["duree_s"] = snappedf(temps, 0.1)
 	report["duree_reelle_s"] = snappedf(duree_murale, 0.1)
+	if sonde_sol != null:
+		report["sol"] = sonde_sol.bilan()
+		print("MATCH_FILME_SOL ", JSON.stringify(report.sol))
+	if sonde_ruck != null:
+		report["ruck"] = sonde_ruck.bilan()
+		print("MATCH_FILME_RUCK ", JSON.stringify(report.ruck))
+	if sonde_contacts != null:
+		report["contacts"] = sonde_contacts.bilan()
+		print("MATCH_FILME_CONTACTS ", JSON.stringify(report.contacts.resume))
 	report["pas_fixe"] = pas
 	report["attente"] = o.attente
 	report["images_rendues"] = images_rendues

@@ -215,10 +215,12 @@ static func animer_acteur(v: NativeMatchView, id: String, entry: Dictionary, del
 	var actor: Node3D = entry.node
 	var suivi: bool = v._choregraphie != null and v._choregraphie.stages(id)
 	var staged: bool = suivi or v.mise_en_scene().stages(id)
-	# Postures rendues dans l'ordre inverse de leur pose : formation (posée en dernier), puis gestes.
+	# Postures rendues dans l'ordre inverse de leur pose : plancher (posé en dernier), formation, puis gestes.
+	v._plancher.restaurer(id, entry)
 	if v._formations:
 		v._formations.restaurer(id, entry)
 	v.mise_en_scene().restore(id, entry)
+	v._chute_physique.restaurer(id, entry)
 	if entry.rig:
 		Presentation.restore_contact(entry.rig, entry.contact_base)
 		Cut.restore(entry.rig, entry.cut_pose)
@@ -358,6 +360,8 @@ static func _make_actor(v: NativeMatchView, id: String, side: int, target: Vecto
 	var squelette := Presentation.rig_for(model)
 	if squelette:
 		squelette.set_meta("repos_relatif", actor.global_basis.inverse() * squelette.global_basis)
+		# Squelettes physiques de la chute au plaquage, préparés une fois (aucun pic au plaquage).
+		v._chute_physique.preparer(squelette)
 	var animation := _find_animation(model)
 	var idle := StringName()
 	var run := StringName()

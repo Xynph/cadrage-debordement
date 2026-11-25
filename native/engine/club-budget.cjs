@@ -808,20 +808,31 @@ const budgetForcesLimites=creation=>{
  });
 };
 const budgetLimites=creation=>{
- const entrees=()=>{
-  const forces=budgetForcesLimites(creation),remboursements={};
-  if(typeof nativeClubOwner!=='undefined')for(const [id,p] of Object.entries(S.pretsActionnaires||{}))remboursements[id]=nativeClubOwner.remboursementSaison(p,S.season)||Math.min(p.restant||0,p.annuite||0);
-  return {forces,types:budgetTypes(),credits:budgetCredits(),remboursements};
- };
+ const remboursementsCalcul=()=>{const r={};if(typeof nativeClubOwner!=='undefined')for(const [id,p] of Object.entries(S.pretsActionnaires||{}))r[id]=nativeClubOwner.remboursementSaison(p,S.season)||Math.min(p.restant||0,p.annuite||0);return r;};
+ const entrees=()=>({forces:budgetForcesLimites(creation),types:budgetTypes(),credits:budgetCredits(),remboursements:remboursementsCalcul()});
  const calcul=(x=entrees())=>nativeClubBudget.limites(x.forces,S.season,{creation:creation===true,types:x.types,credits:x.credits,remboursements:x.remboursements});
  // Clé complète : forces (division, niveau, billetterie), types de propriétaires, crédits de formation (effectifs) et
  // remboursements. L'ancienne clé (somme des niveaux) gardait la limite d'avant un départ de jeune formé ou un prêt.
- const x=entrees();
+ // Carrière Monde : clé « brute », relevée sans calculer la billetterie des clubs (budgetBilletterieClub, jusqu'à deux fois
+ // par club et par appel : next_season passait de 10-13 s à 16-17 s, au-delà des 15 s de garde de la VM, mesure du
+ // 25/11/2026). Elle porte tout ce que lisent ces forces : divisions, niveaux actuels, niveaux et divisions notés au vote
+ // (niveau des limites et éventail des réputations), stades, réceptions, nom du club (abonnés estimés), puis types,
+ // crédits et remboursements. Vérifiée comme les autres mémoires (budgetMemoVerifier).
+ const m=budgetLimitesMemo,types=budgetTypes(),credits=budgetCredits(),remboursements=remboursementsCalcul();
+ let brute=null;
+ if(!budgetFrance()){
+  const b=S.clubBudget,ligues=S.worldMode.leagues;
+  brute=S.season+'|'+(creation===true)+'|'+S.club+'|'+(S.worldMode.fixtures?.length||0)+'|'+JSON.stringify(types)+'|'+JSON.stringify(credits)+'|'+JSON.stringify(remboursements);
+  for(const k of Object.keys(ligues))brute+='|'+k+':'+ligues[k].members.join(',');
+  if(budgetLisible(b)&&b.saison===S.season)for(const k of b.clubs)brute+='|v'+k.division+':'+k.base;else brute+='|sans vote';
+  for(const c of S.clubs)brute+='|'+c.id+':'+c.base+':'+budgetCapacite(c)+':'+budgetReceptions(c.id)+':'+String(c.abbr??c.name??c.id);
+  if(m&&m.etat===S&&m.brute===brute)return budgetMemoRetrouve('limites',m.valeur,()=>calcul());
+ }
+ const x={forces:budgetForcesLimites(creation),types,credits,remboursements};
  let cle=S.season+'|'+(creation===true)+'|'+S.club+'|'+JSON.stringify(x.types)+'|'+JSON.stringify(x.credits)+'|'+JSON.stringify(x.remboursements);
  for(const f of x.forces)cle+='|'+f.id+':'+f.division+':'+f.base+':'+(f.billetterie??'');
- const m=budgetLimitesMemo;
- if(m&&m.etat===S&&m.cle===cle)return budgetMemoRetrouve('limites',m.valeur,()=>calcul());
- budgetLimitesMemo={etat:S,cle,valeur:calcul(x)};
+ if(m&&m.etat===S&&m.cle===cle){m.brute=brute;return budgetMemoRetrouve('limites',m.valeur,()=>calcul());}
+ budgetLimitesMemo={etat:S,cle,brute,valeur:calcul(x)};
  return budgetLimitesMemo.valeur;
 };
 const budgetPlancherHebdo=()=>nativeStartingSalaries.plancherHebdo(S,budgetLigue(S.club));
