@@ -357,7 +357,10 @@ func run() -> void:
 		var ouvertes := open_windows()
 		var dossier := ouvertes.has("ProspectProfile")
 		check(dossier or app.route != "Préparation" or avant != app.route, "Nom « %s » ouvre un écran ou le dossier du joueur (%s)" % [id, summary])
-		check(ouvertes == windows_before or (dossier and ouvertes.all(func(w: String): return w in windows_before or w in ["InterclubMarket", "ProspectProfile"])), "Seul le dossier du joueur ouvre une fenêtre (« %s » : %s)" % [id, str(ouvertes)])
+		var etrangeres := 0
+		for fenetre: String in ouvertes:
+			if not (fenetre in windows_before) and not (fenetre in ["InterclubMarket", "ProspectProfile"]): etrangeres += 1
+		check(etrangeres == 0 and (ouvertes == windows_before or dossier), "Seul le dossier du joueur ouvre une fenêtre (« %s » : %s)" % [id, str(ouvertes)])
 	# Consignes : or interdit aussi, et onglet Entraînement atteignable.
 	await reset()
 	await press(named("PreparationTabConsignes") as Button)
