@@ -15,7 +15,12 @@ module.exports = function createNativePlayerAttributes() {
   const fullProfiles = new WeakSet();
   const valid = value => Number.isFinite(value) && value >= 20 && value <= 97;
   const positionOf = player => player.gameplayPosition || player.pos;
-  const effectiveSkills = player => skills.map(key => skill(player, key));
+  // Compétences qui servent à dériver les qualités détaillées : skill() SANS le modificateur de pilotage du match
+  // (pilotageSkillMod : confiance, nervosité… posés par le match en cours, transitoires). Avec lui, le coup d'envoi (aucun
+  // état de pilotage avant, un état après) comptait ce modificateur comme une progression et l'écrivait dans les qualités
+  // des joueurs de complément (-3 sur toutes leurs qualités) : leur Niveau, donc le pronostic d'avant-match, changeait.
+  const intrinsicSkill = (player, key) => { ensureSkills(player); return clamp(player.skills[key] + player.rating - player.skillBase + focusedBonus(player, key), 15, 99); };
+  const effectiveSkills = player => skills.map(key => intrinsicSkill(player, key));
   const etalement = () => typeof nativeInSeasonDevelopment !== 'undefined' && typeof nativeInSeasonDevelopment.verse === 'function';
 
   function referenceFor(position) {
