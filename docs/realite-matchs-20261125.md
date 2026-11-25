@@ -148,3 +148,8 @@ défensif 32 / 29 / 36 / 42 / 35 / 27 % (réel 32 / 32 / 35 / 38 / 35 / 28), poi
 qui mène de 8 à 15 points à la 60e gagne 88 % du temps (100 % sans la gestion du score), à 16 points ou plus il ne perd
 jamais. Sondes au banc (300 à 400 matchs, URC et
 Top 14) : la réussite des favoris ne bouge pas (+6 : 85-86 % URC, 66-67 % Top 14).
+
+## Jeu au pied réaliste (25/11, branche `claude/jeu-au-pied-realiste`, en cours)
+
+Dégagements, occupation, 50:22 et renvois aux 22 m : voir [docs/jeu-au-pied-20261125.md](jeu-au-pied-20261125.md) (avant / après par
+championnat ; sur la graine 4242, écart ≤ 7 en baisse de 8 à 10 points en Top 14, Premiership et URC, à recaler avant fusion).
