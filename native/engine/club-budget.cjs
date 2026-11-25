@@ -158,7 +158,7 @@ const cibleDe = compte => Number.isFinite(compte?.reserve) ? compte.reserve : In
 // ce qui fait passer la caisse sous la réserve du club. fin : caisse avant son versement.
 function apportProprietaire(compte, deficit, fin) {
   const besoin = Math.min(deficit, Math.max(0, cibleDe(compte) - fin));
-  const apport = Math.min(compte.enveloppe, besoin);
+  const apport = Math.min(compte.enveloppe + (Number.isFinite(compte.rallonge) && compte.rallonge > 0 ? compte.rallonge : 0), besoin);
   return { apport, besoin, decouvert: besoin - apport, absorbe: deficit - besoin };
 }
 
@@ -234,7 +234,10 @@ function proprietaire(forces, clubId, typeConnu = null) {
   // Le type ne change pas d'une saison à l'autre : celui de la saison passée est repris.
   const type = Object.hasOwn(PROPRIETAIRES, typeConnu ?? '') ? typeConnu : tirage < 0.3 + 0.15 * poids ? 'mecene' : tirage < 0.6 + 0.4 * poids ? 'entreprise' : 'association';
   const enveloppe = Math.round(annuel * PROPRIETAIRES[type].part * (0.8 + 0.4 * unite('enveloppe|' + clubId)) / 50000) * 50000;
-  return { type, libelle: PROPRIETAIRES[type].libelle, enveloppe };
+  // Soutien du championnat (league-economy.cjs) : en plus de l'enveloppe promise, le propriétaire comble ce supplément à la clôture ;
+  // le budget voté (limites) n'y compte pas, sinon le club dépenserait aussi ce supplément.
+  const soutien = ECONOMIE.CHAMPIONNATS[force.division]?.soutien ?? 1, rallonge = soutien > 1 ? Math.round(enveloppe * (soutien - 1) / 50000) * 50000 : 0;
+  return { type, libelle: PROPRIETAIRES[type].libelle, enveloppe, ...(rallonge > 0 ? { rallonge } : {}) };
 }
 
 // Résultats récents ('V', 'N', 'D') -> forme dans [0;1] ; 0,5 sans match joué.
@@ -430,12 +433,13 @@ function limites(forces, saison, { creation = false, types = null, credits = nul
     // Marge de prudence (prudence, part des recettes, league-economy.cjs) : la saison réelle coûte plus que le budget voté
     // (recrues et jokers en cours de saison) ; un championnat encadré peut demander que la masse en tienne compte.
     // Suite (#885 → ici) : la borne suit la gestion propre du club (cibleGestion) au lieu de l'enveloppe entière du propriétaire.
-    const economies = regle.encadrement ? 0 : 0.15 * annuel, prudence = (regle.prudence ?? 0) * annuel, aPerdre = regle.encadrement && regle.gestion?.[p.type] ? -cibleGestion(forces, force.id, p.type) : p.enveloppe;
+    const economies = regle.encadrement ? 0 : 0.15 * annuel, prudence = ((creation && regle.prudenceDepart !== undefined ? regle.prudenceDepart : regle.prudence) ?? 0) * annuel, aPerdre = regle.encadrement && regle.gestion?.[p.type] ? -cibleGestion(forces, force.id, p.type) : p.enveloppe;
     const rembourse = Number.isFinite(remboursements?.[force.id]) ? Math.max(0, remboursements[force.id]) : 0;
     const bornes = [['budget', (annuel - fonctionnementAnnuel(annuel) - prudence + aPerdre + economies - rembourse) / (1 + COTISATIONS)]];
     const credit = credits?.[force.id] ?? 0;
     if (regle.plafond !== null) bornes.push(['plafond', regle.plafond + credit]);
     if (regle.ratio) bornes.push(['recettes', annuel * RATIO_SALAIRES]);
+    if (creation && regle.masseDepart) bornes.push(['budget', annuel * regle.masseDepart]);
     bornes.sort((x, y) => x[1] - y[1]);
     const rigueur = unite('rigueur|' + force.id + '|' + saison), audace = !creation && p.type === 'mecene' && unite('audace|' + force.id + '|' + saison) < 0.12;
     const tolerance = audace ? 1.01 + 0.04 * rigueur : 0.93 + 0.065 * rigueur;
@@ -571,7 +575,7 @@ function ouverture({ forces, saison, clubs, types = null, excedents = false, aid
     const projete = annuel - fonctionnementAnnuel(annuel) - (Number.isFinite(club.masse) ? club.masse : 0) * (1 + COTISATIONS) + aide;
     const vise = club.id === joue ? epargne(division, annuel) : objectifGestion(forces, club.id, p.type) ?? 0;
     const investissement = Math.min(engage.investissement, rond(Math.max(0, projete - vise)));
-    return { type: p.type, enveloppe: p.enveloppe, depart: club.cash - dividende, recettes: 0, charges: 0, salaires: 0, semainesComptees: 0, masse: Math.round(club.masse), division, rang: Math.ceil(taille / 2), taille,
+    return { type: p.type, enveloppe: p.enveloppe, ...(p.rallonge ? { rallonge: p.rallonge } : {}), depart: club.cash - dividende, recettes: 0, charges: 0, salaires: 0, semainesComptees: 0, masse: Math.round(club.masse), division, rang: Math.ceil(taille / 2), taille,
       reserve, investissement, dividende, aideRelegation: Number.isFinite(aides?.[club.id]) && aides[club.id] > 0 ? rond(aides[club.id]) : 0 };
   }) };
 }

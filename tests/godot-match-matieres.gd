@@ -52,6 +52,24 @@ func run() -> void:
 	var kits: Array = view._kits
 	var dressed := 0
 	for entry: Dictionary in view._actors.values():
+		# Joueurs v5 (match_joueur_v5.gd) : matériaux par tissu, couleurs du club, tissu mat.
+		if (entry.model as Node).has_meta("joueur_v5"):
+			var corps := (entry.model as Node).find_child("Corps", true, false) as MeshInstance3D
+			var kit_v5: Dictionary = kits[int(entry.side)]
+			var attendu := {"Shirt2": kit_v5.shirt, "Shirt": (kit_v5.shirt as Color).darkened(0.16), "Collar": kit_v5.detail,
+				"SockTurn": kit_v5.detail, "Pants": kit_v5.get("shorts", Color("202b35")), "Socks": kit_v5.shirt}
+			var vus := 0
+			for i in corps.mesh.get_surface_count():
+				var nom: String = corps.mesh.surface_get_material(i).resource_name
+				if not attendu.has(nom):
+					continue
+				var porte := corps.get_surface_override_material(i) as StandardMaterial3D
+				check(porte != null and porte.albedo_color == attendu[nom], "tenue v5 : " + nom)
+				check(porte != null and porte.roughness >= 0.85, "tenue v5 : tissu mat " + nom)
+				vus += 1
+			if vus == attendu.size():
+				dressed += 1
+			continue
 		for mesh: MeshInstance3D in (entry.node as Node).find_children("*", "MeshInstance3D", true, false):
 			var material := mesh.material_override as ShaderMaterial
 			if material == null or material.shader == null or not material.shader.resource_path.ends_with("athlete_kit.gdshader"):
