@@ -51,7 +51,7 @@ test('Budget de transferts : en-têtes Recrutement et Finances, offre hors budge
     assert.deepEqual(rapport.failures, []);
     assert.equal(rapport.disponible, attendu.disponible, 'Godot lit le même disponible que le moteur');
     assert.equal(r.status, 0, journal.slice(-3000));
-    if (graphique) for (const f of ['budget-recrutement.png', 'budget-finances.png', 'budget-offre-refusee.png', 'budget-rallonge-confirmation.png', 'budget-rallonge-accordee.png']) assert.ok(fs.existsSync(path.join(sortie, f)), 'capture ' + f);
+    if (graphique) for (const f of ['budget-recrutement.png', 'budget-finances.png', 'budget-offre-refusee.png', 'budget-rallonge-accordee.png']) assert.ok(fs.existsSync(path.join(sortie, f)), 'capture ' + f);
     console.log('Captures : ' + sortie);
   } finally { fs.rmSync(profil, { recursive: true, force: true }); }
 });

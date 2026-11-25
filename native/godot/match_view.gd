@@ -10,6 +10,7 @@ const Presentation = preload("res://match_presentation.gd")
 const Motion = preload("res://match_motion.gd")
 const Kit = preload("res://match_kit.gd")
 const Athlete = preload("res://match_athlete.gd")
+const JoueurV5 = preload("res://match_joueur_v5.gd")
 const Contact = preload("res://match_contact.gd")
 const Cut = preload("res://match_cut.gd")
 const Pass = preload("res://match_pass.gd")
@@ -471,6 +472,7 @@ func apply_frame(live: Dictionary) -> void:
 		# A home-colour change can also change the away contrast decision.
 		_refresh_kits()
 		Athlete.clear_palette()
+		JoueurV5.vider_palette()
 		for entry: Dictionary in _actors.values():
 			_recolor(entry.model, entry.side)
 			Tactique.colorer(entry.node, _kits[entry.side].marker)
@@ -521,7 +523,7 @@ func apply_frame(live: Dictionary) -> void:
 		present[id] = true
 		var target: Vector3 = _formations.place(id, _world(player))
 		if not _actors.has(id):
-			_actors[id] = VueJoueurs._make_actor(self, id, side, target)
+			_actors[id] = VueJoueurs._make_actor(self, id, side, target, int(player.get("slot", -1)))
 			Tactique.poser_repere(_actors[id].node, player, _kits[side].marker)
 		var entry: Dictionary = _actors[id]
 		entry.holding = id == _carrier_id
@@ -952,6 +954,9 @@ func alternative_kit_colors() -> Array[Color]:
 
 
 func _recolor(model: Node3D, side: int) -> void:
+	if model.has_meta("joueur_v5"):
+		JoueurV5.habiller(model, _kits[side])
+		return
 	Athlete.dress(model, _kits[side], str(model.get_meta("athlete_id", "")))
 
 

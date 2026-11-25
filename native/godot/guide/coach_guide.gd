@@ -477,8 +477,12 @@ func _avoid_primary_controls() -> void:
 		global_position = best
 		_placement_key = key; _placed_x = best.x; _placed_y = best.y
 		return
-	# Crowded windows keep the compact manual invitation, never a floating title cover.
-	if expanded: close()
+	# Écran dense sans place libre : le conseil automatique reste en invitation compacte, mais une aide demandée
+	# (clic sur « Gabi · ? », F1) s'ouvre quand même, en petite fenêtre au centre de l'écran (Léo, 25/11/2026).
+	if expanded and mode == "context": close()
+	elif expanded:
+		global_position = ((app.size - size) / 2.0).floor()
+		_placement_key = key; _placed_x = global_position.x; _placed_y = global_position.y
 
 ## Rectangles de texte et de boutons de la page (globaux), au plus près de ce qui est peint : un libellé
 ## n'occupe que la largeur de son texte, un panneau sans texte ne compte pas.
