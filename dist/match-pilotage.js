@@ -409,7 +409,7 @@ function pilotageConseilChangement(l,prevision){
  for(const x of lue.sort((a,b)=>a.prevue-b.prevue)){
   if(x.prevue>=55)break;
   const slot=on.indexOf(x.id);if(slot<0)continue;
-  const options=eligibleChanges(l,u,slot).filter(p=>p.condition>=85).sort((a,b)=>(b.rating||0)-(a.rating||0));
+  const options=eligibleChanges(l,u,slot).filter(p=>p.condition>=85).sort((a,b)=>niveauMatch(b)-niveauMatch(a));
   if(!options.length)continue;
   // Mauvaise appréciation : le deuxième remplaçant possible plutôt que le meilleur.
   const entrant=ctx!=null&&options.length>1&&(h('choix:'+x.id)%1000)/1000>=juste?options[1]:options[0];

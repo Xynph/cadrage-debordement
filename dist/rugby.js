@@ -163,7 +163,11 @@ const MATCH_LEVEL_CURVE=Object.freeze({version:2,cible:Object.freeze({pente:.183
 const TERRAIN_CHAMPIONNAT=Object.freeze({elite:2.1,accession:1.7});
 function terrainFactor(competitionId){return TERRAIN_CHAMPIONNAT[competitionId]??1}
 function matchTrapOffset(gap,rnd=Math.random){const c=MATCH_LEVEL_CURVE.piege,d=Math.abs(Number(gap)||0),q=Math.min(c.max,c.parPoint*(d-c.seuil));if(!(q>0)||rnd()>=q)return 0;return -Math.sign(gap)*c.part*d}
-function teamLevel(players){const c=MATCH_LEVEL_CURVE.forme,list=(players||[]).filter(Boolean);return list.length?mean(list.map(p=>(Number(p.rating)||50)*(c[0]+clamp(Number(p.condition)||80,0,100)*c[1]))):40}
+// Niveau du joueur pour le match (25/11/2026) : `rating` ici ; la carrière le remplace par le Niveau calculé au poste et
+// au rôle choisi par le club (native/engine/role-joueur.cjs, même échelle). Lu par teamLevel, le résultat rapide, la
+// sélection et l'IA des clubs là où ils lisaient `rating` comme niveau du joueur.
+function niveauMatch(p){return Number(p?.rating)||50}
+function teamLevel(players){const c=MATCH_LEVEL_CURVE.forme,list=(players||[]).filter(Boolean);return list.length?mean(list.map(p=>niveauMatch(p)*(c[0]+clamp(Number(p.condition)||80,0,100)*c[1]))):40}
 // Écart de niveau atténué par championnat (17/11/2026, docs/top14-dispute-20261117.md §9) : au-delà de `seuil` points,
 // chaque point d'écart ne compte que pour `pente`. Le moteur additionne beaucoup de petites actions : un gros écart y
 // pèse plus que dans un vrai Top 14, où même un leader très au-dessus (Toulouse, +5 sur la moyenne) plafonne à

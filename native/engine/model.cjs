@@ -57,7 +57,7 @@ module.exports=function nativeModel(){
   if(Number.isFinite(p.age)&&p.age<=23)return {possible:true,reason:'jeune'};
   const ci=p.population?.clubId,c=Number.isInteger(ci)?S.clubs[ci]:null;
   if(c&&Array.isArray(c.players)&&Number.isFinite(p.rating)){
-   const meilleurs=c.players.filter(x=>x.id!==p.id&&Number.isFinite(x.rating)&&x.rating>p.rating).length;
+   const meilleurs=c.players.filter(x=>x.id!==p.id&&Number.isFinite(x.rating)&&(typeof niveauMatch==='function'?niveauMatch(x):x.rating)>(typeof niveauMatch==='function'?niveauMatch(p):p.rating)).length;
    if(meilleurs>=23)return {possible:true,reason:'hors-23'};
   }
   return {possible:false,reason:'cadre'};

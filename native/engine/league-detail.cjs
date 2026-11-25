@@ -119,7 +119,8 @@ function factory(){
  // l'effectif dans les divisions basses (Spearman rang/effectif Japon D2 0,73 → 0,88, Nationale 0,75 → 0,84).
  // La puissance reste celle du moteur complet (teamLevel : note × forme des 15 titulaires).
  const form=()=>MATCH_LEVEL_CURVE.forme;
- const score=p=>(Number(p.rating)||50)*(form()[0]+clamp(Number(p.condition)||80,0,100)*form()[1]);
+ // Niveau du joueur : niveauMatch (Niveau au rôle en carrière, role-joueur.cjs), comme teamLevel.
+ const score=p=>(typeof niveauMatch==='function'?niveauMatch(p):Number(p.rating)||50)*(form()[0]+clamp(Number(p.condition)||80,0,100)*form()[1]);
  function squad(s,id,away,f,opponentId,weather){
   const club=s.clubs[id];
   const pool=club.players.filter(p=>!p.injury&&!(p.suspension>0)&&!away(p.id));
