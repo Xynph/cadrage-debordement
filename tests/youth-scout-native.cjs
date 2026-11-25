@@ -6,6 +6,7 @@ const profiling=process.env.CD_YOUTH_SCOUT_PROFILE==='1';
 const suiteStarted=profiling?process.hrtime.bigint():null,suiteCPU=profiling?process.cpuUsage():null;
 if(profiling)process.once('exit',()=>console.log('YOUTH_SCOUT_PROFILE '+JSON.stringify({scope:'suite',wallMs:Number(process.hrtime.bigint()-suiteStarted)/1e6,cpu:process.cpuUsage(suiteCPU)})));
 const {createBridge}=require('../native/engine/worker.cjs');
+const {signerExport}=require('./helpers/signature-export.cjs');
 function fixture(t,mode='world',club=0){
  const started=profiling?process.hrtime.bigint():null,cpu=profiling?process.cpuUsage():null,metrics=new Map();
  function measure(operation,run){
@@ -18,7 +19,7 @@ function fixture(t,mode='world',club=0){
   }
  }
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-youth-scout-native-'));
- let bridge=measure('createBridge',()=>createBridge({dataDir:root,seed:827381,now:1794178800000})),id=0;
+ let bridge=measure('createBridge',()=>createBridge({dataDir:root,seed:827381,now:1794178800000,testVm:true})),id=0;
  t.after(()=>{
   try{measure('cleanup',()=>{bridge.close();fs.rmSync(root,{recursive:true,force:true});});}finally{
    if(profiling)console.log('YOUTH_SCOUT_PROFILE '+JSON.stringify({scope:'scenario',name:t.name,mode,club,wallMs:Number(process.hrtime.bigint()-started)/1e6,cpu:process.cpuUsage(cpu),operations:[...metrics.values()]}));
@@ -27,7 +28,7 @@ function fixture(t,mode='world',club=0){
  const send=(command,payload={})=>measure('command:'+command,()=>bridge.handle({id:++id,command,payload}));
  const go=(command,payload)=>{const r=send(command,payload);a.equal(r.ok,true,command+': '+r.error);return r.model;};
  settleClubMeetings(go('new_career',{mode,club}),(command,payload)=>go(command,payload));
- return {send,go,root,file:path.join(root,'PrototypeGodot/donnees.json'),export:()=>go('export').meta.exportText,state:()=>JSON.parse(go('export').meta.exportText).state,legacyAnnual:()=>measure('legacyAnnualFixture',legacyAnnualFixture),restart:()=>measure('restart',()=>{bridge.close();bridge=createBridge({dataDir:root,seed:1,now:1});})};
+ return {send,go,root,get vm(){return bridge.vm;},file:path.join(root,'PrototypeGodot/donnees.json'),export:()=>go('export').meta.exportText,state:()=>JSON.parse(go('export').meta.exportText).state,legacyAnnual:()=>measure('legacyAnnualFixture',legacyAnnualFixture),restart:()=>measure('restart',()=>{bridge.close();bridge=createBridge({dataDir:root,seed:1,now:1,testVm:true});})};
 }
 const bytes=f=>fs.readFileSync(f.file),profile=f=>JSON.parse(bytes(f));
 test('Registered regen domain exposes real adult supply while repeated projection preserves the entire career and profile',t=>{
@@ -47,7 +48,8 @@ test('Youth observations require explicit opt-in and activation preserves game d
 const confirmed=data=>({context:data.context,confirmed:true});
 function youth(f){return f.go('snapshot').clubLife.youthDevelopment;}
 function activated(f){return f.go('youth_development_enable',confirmed(youth(f))).clubLife.youthDevelopment;}
-function documentWith(text,change){const doc=JSON.parse(text);change(doc.state);const value=JSON.stringify(doc.state);let hash=2166136261;for(let i=0;i<value.length;i++)hash=Math.imul(hash^value.charCodeAt(i),16777619);doc.checksum=(hash>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);}
+// Empreinte comme le jeu, export réduit compris : tests/helpers/signature-export.cjs.
+function documentWith(f,text,change){const doc=JSON.parse(text);change(doc.state);return signerExport(doc,f.vm);}
 function legacyAnnualFixture(){
  const h=require('./france-harness.cjs').context(),r=h.run;
  // Use the established annual-model fixture with unchanged sourced players.
@@ -77,7 +79,7 @@ test('Stale, foreign, unconfirmed and invalid youth decisions preserve public an
  unchangedRefusal(f,'youth_development_plan',{...confirmed(data),playerId:professional.id,plan:'unknown-plan',focus:null});
  const legacy=f.legacyAnnual(),imported=f.go('import',{text:legacy.text}),annual=imported.clubLife.youthDevelopment.players.find(p=>p.id===legacy.playerId);a.ok(annual);
  const row=f.state().youthDevelopment.rows.find(row=>row.id===legacy.playerId);a.equal(JSON.stringify(row.baseline),legacy.baseline,'import preserves the actual annual reference');a.equal(row.latest.model,'annual-v11','loading does not rewrite historical observations');a.equal(annual.model,'xp','current sourced players use the weekly engine after a legacy import');a.ok(annual.availablePlans.includes('specialist'));
- const accepted=f.export(),invalid=documentWith(accepted,s=>{const row=s.youthDevelopment.rows.find(row=>row.id===legacy.playerId);row.plan='specialist';row.focus=null;});
+ const accepted=f.export(),invalid=documentWith(f,accepted,s=>{const row=s.youthDevelopment.rows.find(row=>row.id===legacy.playerId);row.plan='specialist';row.focus=null;});
  const refusal=unchangedRefusal(f,'import',{text:invalid});a.match(refusal.error,/ciblage incompatible/,'an annual historical plan cannot claim a specialist without a targeted quality');
  const migrated=f.go('youth_development_plan',{...confirmed(imported.clubLife.youthDevelopment),playerId:legacy.playerId,plan:'specialist',focus:annual.defaultFocus});a.equal(migrated.clubLife.youthDevelopment.players.find(p=>p.id===legacy.playerId).plan,'specialist');
  const updated=f.state().youthDevelopment.rows.find(row=>row.id===legacy.playerId);a.equal(JSON.stringify(updated.baseline),legacy.baseline,'a real weekly plan preserves the annual baseline');a.equal(updated.latest.model,'xp','the actual new decision records the weekly model');
@@ -87,7 +89,7 @@ test('A refused disk publication rolls back a youth plan and the exact request c
  const reply=refuseSavePublication(f.file,()=>f.send('youth_development_plan',payload));a.equal(reply.ok,false);a.match(reply.error,/sauvegarde/);a.equal(f.export(),before);a.deepEqual(bytes(f),disk);const m=f.go('youth_development_plan',payload);a.equal(m.clubLife.youthDevelopment.players.find(q=>q.id===p.id).plan,'integration');
 });
 test('Forged youth clocks, impossible metrics and duplicate tracked IDs are rejected atomically',t=>{
- const f=fixture(t);activated(f);const before=f.export();for(const mutate of [s=>s.youthDevelopment.rows[0].latest.season=s.season+1,s=>s.youthDevelopment.rows[0].latest.rating=999,s=>s.youthDevelopment.rows.push(JSON.parse(JSON.stringify(s.youthDevelopment.rows[0])))])unchangedRefusal(f,'import',{text:documentWith(before,mutate)});
+ const f=fixture(t);activated(f);const before=f.export();for(const mutate of [s=>s.youthDevelopment.rows[0].latest.season=s.season+1,s=>s.youthDevelopment.rows[0].latest.rating=999,s=>s.youthDevelopment.rows.push(JSON.parse(JSON.stringify(s.youthDevelopment.rows[0])))])unchangedRefusal(f,'import',{text:documentWith(f,before,mutate)});
 });
 
 test('A real recruit arriving after opt-in keeps the first training variation against its pre-session baseline',t=>{

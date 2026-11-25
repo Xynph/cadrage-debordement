@@ -7,16 +7,13 @@ const test = require('node:test');
 
 const os = require('node:os');
 const { createBridge } = require('../native/engine/worker.cjs');
+const { signerExport } = require('./helpers/signature-export.cjs');
 
-function encode(doc) {
-  let h = 2166136261;
-  for (const c of JSON.stringify(doc.state)) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
-  doc.checksum = (h >>> 0).toString(16).padStart(8, '0');
-  return JSON.stringify(doc);
-}
+// Empreinte comme le jeu, export réduit compris : tests/helpers/signature-export.cjs.
+const encode = (doc, vm) => signerExport(doc, vm);
 function worker(t) {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-prevision-'));
-  const bridge = createBridge({ dataDir: profile, seed: 409, now: 1700000000000 });
+  const bridge = createBridge({ dataDir: profile, seed: 409, now: 1700000000000, testVm: true });
   t.after(() => { bridge.close(); fs.rmSync(profile, { recursive: true, force: true }); });
   let id = 0;
   const call = (command, payload = {}, expected = true) => {
@@ -25,7 +22,7 @@ function worker(t) {
     return response.model;
   };
   const read = () => JSON.parse(call('export').meta.exportText);
-  return { call, read };
+  return { call, read, vm: bridge.vm };
 }
 const support = model => model.clubLife.clubSupport;
 const roster = state => state.clubs[state.club].players;
@@ -43,7 +40,7 @@ function staged(w, {condition=70, delegated=true, highLoad=false}={}) {
   }
   const [starter, exception] = state.lineup;
   if (highLoad) player(state, exception).physicalLoad.fatigue = 50;
-  const model = w.call('import', { text: encode(doc) });
+  const model = w.call('import', { text: encode(doc, w.vm) });
   return { model, starter, exception };
 }
 
@@ -112,7 +109,7 @@ test('les joueurs blessés et la relève gardent leur mode individuel sous dél�
   old.condition=85;old.physicalLoad.fatigue=0;
   const injured = player(doc.state,doc.state.lineup[0]);
   injured.injury=1;injured.condition=58;
-  const model = w.call('import',{text:encode(doc)});
+  const model = w.call('import',{text:encode(doc,w.vm)});
   const option = plan(model,'relever');
   assert.equal(option.players.find(p=>p.id===old.id).effectiveMode,'intense');
   assert.equal(option.players.find(p=>p.id===injured.id).effectiveMode,'repos');

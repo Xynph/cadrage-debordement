@@ -2,10 +2,9 @@
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
-// Diagnostic local : le vrai worker, avec un accès d'inspection ajouté en mémoire seulement (comme native-club-support-effects).
-const Module=require('node:module'),workerPath=path.resolve(__dirname,'../native/engine/worker.cjs'),workerSource=fs.readFileSync(workerPath,'utf8'),needle='return {handle,close};';assert.equal(workerSource.split(needle).length,2);
-const instrumentedWorker=new Module(workerPath,module);instrumentedWorker.filename=workerPath;instrumentedWorker.paths=Module._nodeModulePaths(path.dirname(workerPath));instrumentedWorker._compile(workerSource.replace(needle,'return {handle,close,inspect:run};'),workerPath);
-const {createBridge}=instrumentedWorker.exports;
+// Diagnostic local : le vrai worker en banc de test (testVm), avec accès à sa VM (b.vm.run) pour les sondes d'état.
+const {createBridge}=require('../native/engine/worker.cjs');
+const {signerExport}=require('./helpers/signature-export.cjs');
 const {advanceToNextMatch}=require('./helpers/monde-matchs.cjs');
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-strategy-'));let b,seq=0,m;
 // Une sauvegarde Monde pèse plusieurs Mio : chaque import garde une copie de sécurité (limite 256 Mio). Le banc libère
@@ -14,7 +13,7 @@ const call=(command,payload={})=>{let r=b.handle({id:++seq,command,payload});for
 const act=(command,payload={})=>call(command,{context:m.clubLife.clubStrategy.context,confirmed:true,...payload});
 const bad=(command,payload={})=>assert.equal(b.handle({id:++seq,command,payload:{context:m.clubLife.clubStrategy.context,confirmed:true,...payload}}).ok,false);
 try{
- b=createBridge({dataDir:root,seed:31,now:1700000000000});settleClubMeetings(call('new_career',{mode:'world-champ',club:29}),call);
+ b=createBridge({dataDir:root,seed:31,now:1700000000000,testVm:true});settleClubMeetings(call('new_career',{mode:'world-champ',club:29}),call);
  assert.ok(m.clubLife.clubStrategy,'Les décisions financières doivent être accessibles.');
  const seasonWeeks=m.clubLife.clubStrategy.finance.weeksPerSeason;assert.ok(seasonWeeks>34,'Saison Monde : plus longue que les 34 semaines de l’ancien mode');
  assert.equal(m.clubLife.clubStrategy.finance.remainingWeeks,seasonWeeks,'Toutes les échéances de la saison restent à payer avant la première journée.');
@@ -29,15 +28,16 @@ try{
  assert.equal(call('export').meta.exportText,before);assert.deepEqual(fs.readFileSync(profile),bytes);
  const oldContext={...m.clubLife.clubStrategy.context,week:99};bad('club_board_priority',{context:oldContext,key:'performance'});
  settleClubMeetings(call('train'),call);assert.ok(m.finance.cash<=communityCash-1500-12000,'Investissement appliqué par la vraie séance.');
- const saved=call('export').meta.exportText;call('shutdown');b=createBridge({dataDir:root});assert.equal(call('export').meta.exportText,saved);
+ const saved=call('export').meta.exportText;call('shutdown');b=createBridge({dataDir:root,testVm:true});assert.equal(call('export').meta.exportText,saved);
  console.log('Stratégie native : sponsors, formation, projets, supporters, devis34semaines et rollback/reprise PASS.');
 }finally{b?.close();}
 
 // Signed imports must reject future reviews before they can block finish_round.
 // Somme de contrôle par unités UTF-16 (comme le moteur) : une sauvegarde Monde contient des caractères hors plan de base.
-function signed(doc){const raw=JSON.stringify(doc.state);let h=2166136261;for(let i=0;i<raw.length;i++){h^=raw.charCodeAt(i);h=Math.imul(h,16777619);}doc.checksum=(h>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);}
+// Empreinte comme le jeu, export réduit compris : tests/helpers/signature-export.cjs.
+function signed(doc){return signerExport(doc,b.vm);}
 for(const mode of ['world-champ']){
- const dataDir=path.join(root,'calendar-'+mode);b=createBridge({dataDir,seed:13,now:1700000000000});
+ const dataDir=path.join(root,'calendar-'+mode);b=createBridge({dataDir,seed:13,now:1700000000000,testVm:true});
  try{
   settleClubMeetings(call('new_career',{mode,club:0}),call);act('club_board_objective',{type:'wins',target:1,deadline:1});
   const initial=call('export').meta.exportText,legacy=JSON.parse(initial);delete legacy.state.nativeBoardCalendar;call('import',{text:signed(legacy)});assert.equal(JSON.parse(call('export').meta.exportText).state.nativeBoardCalendar,undefined,'Ancien export sans namespace conseil accepté');call('import',{text:initial});
@@ -59,7 +59,7 @@ for(const mode of ['world-champ']){
   settleClubMeetings(call('next_season',{confirmed:true}),call);
   // Export réduit du Monde : l'empreinte porte sur l'état développé à l'import ; l'archive d'un autre club est donc posée dans l'état
   // du worker (accès d'inspection en mémoire seulement), puis exportée, signée par le moteur, et réimportée.
-  const other=structuredClone(old);other.clubId='club-1';b.inspect('S.nativeStrategyOffices='+JSON.stringify({version:1,clubs:{1:{nativeBoardCalendar:other}}}));
+  const other=structuredClone(old);other.clubId='club-1';b.vm.run('S.nativeStrategyOffices='+JSON.stringify({version:1,clubs:{1:{nativeBoardCalendar:other}}}));
   call('import',{text:call('export').meta.exportText});assert.equal(JSON.parse(call('export').meta.exportText).state.nativeStrategyOffices.clubs[1].nativeBoardCalendar.week,maximum,'Archives antérieures conservées au-delà de la semaine courante');
   const current=call('export').meta.exportText,currentBytes=fs.readFileSync(profile);
   for(const season of [1,3]){const stale=JSON.parse(current);stale.state.nativeBoardCalendar=structuredClone(old);stale.state.nativeBoardCalendar.clubId='club-'+stale.state.club;stale.state.nativeBoardCalendar.season=season;stale.state.nativeBoardCalendar.archived=true;const refused=b.handle({id:++seq,command:'import',payload:{text:signed(stale)}});assert.equal(refused.ok,false,'Conseil actif hors saison courante refusé malgré marqueur importé : '+season);assert.match(refused.error,/direction/i);assert.equal(call('export').meta.exportText,current);assert.deepEqual(fs.readFileSync(profile),currentBytes,'Saison active incorrecte : état/RNG/disque conservés');}

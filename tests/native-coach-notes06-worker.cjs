@@ -1,15 +1,15 @@
 'use strict';
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
-const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{createBridge}=require('../native/engine/worker.cjs');
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{createBridge}=require('../native/engine/worker.cjs'),{signerExport}=require('./helpers/signature-export.cjs');
 const root=fs.mkdtempSync(path.join(process.env.TEMP||require('node:os').tmpdir(),'cd-coach-notes06-'));let b,seq=0;
-const open=()=>b=createBridge({dataDir:root,seed:506,now:1700000000000});
+const open=()=>b=createBridge({dataDir:root,seed:506,now:1700000000000,testVm:true});
 const call=(command,payload={})=>b.handle({id:++seq,command,payload});
 // Une sauvegarde Monde pèse plusieurs Mio : chaque import garde une copie de sécurité (limite 256 Mio). Le banc libère
 // explicitement la plus ancienne copie par l'API confirmée quand la limite est atteinte, sans contourner le quota.
 const good=(command,payload={})=>{let r=call(command,payload);for(let i=0;!r.ok&&(command==='import'||command==='new_career')&&/Copie de sécurité : limite/.test(r.error)&&i<12;i++){const entries=call('snapshot').model.meta.profileSafety.entries;assert.equal(call('remove_checkpoint',{id:entries.at(-1).id,confirmed:true}).ok,true);r=call(command,payload);}assert.equal(r.ok,true,command+': '+r.error);return r.model;};
 const exported=()=>good('export').meta.exportText;
-function sign(doc){const raw=JSON.stringify(doc.state);let hash=2166136261;for(let i=0;i<raw.length;i++)hash=Math.imul(hash^raw.charCodeAt(i),16777619);doc.checksum=(hash>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);}
+function sign(doc){return signerExport(doc,b.vm);}
 try{
  open();let m=settleClubMeetings(good('new_career',{mode:'world-champ',club:0}),good),legacy=exported(),prior=JSON.parse(legacy),file=path.join(m.meta.dataDir,'donnees.json'),disk=fs.readFileSync(file),context=m.clubLife.coachNotebook.context,id=m.squad.find(p=>![...prior.state.lineup,...prior.state.reserves].includes(p.id)).id;
  // Joueur témoin hors de la feuille de match : il est retiré de l'effectif plus bas, et une feuille qui nomme un joueur absent
