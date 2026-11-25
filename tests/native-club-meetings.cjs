@@ -59,6 +59,7 @@ console.log('Native club meetings VM: mandatory pure projection, authoritative c
 // Production worker, using its real validation, command controllers and disk transaction.
 const {createBridge}=require('../native/engine/worker.cjs');
 const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
+const {signerExport}=require('./helpers/signature-export.cjs');
 const root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'native-club-meetings-'));
 let bridge,sequence=0,model;
 const call=(command,payload={})=>bridge.handle({id:++sequence,command,payload});
@@ -69,22 +70,23 @@ function bad(command,payload={}){const r=call(command,payload);assert.equal(r.ok
 function importGood(payload){for(let i=0;i<12;i++){const r=call('import',payload);if(r.ok){model=r.model;return model;}if(!/Copie de sécurité : limite/.test(r.error))assert.fail('import: '+r.error);const entries=good('snapshot').meta.profileSafety.entries;good('remove_checkpoint',{id:entries.at(-1).id,confirmed:true});}assert.fail('import : limite de copies');}
 const exported=()=>good('export').meta.exportText;
 const room=()=>model.clubLife.clubMeetings.scene;
-function signed(doc){let h=2166136261;for(const ch of JSON.stringify(doc.state))h=Math.imul(h^ch.charCodeAt(0),16777619);doc.checksum=(h>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);}
+// Empreinte comme le jeu, export réduit compris (état reconstruit dans la VM du pont) : tests/helpers/signature-export.cjs.
+const signed=doc=>signerExport(doc,bridge.vm);
 function conference(){const p=model.clubLife.press;return {context:p.context,answers:p.conference.questions.map(q=>({questionId:q.id,answerId:q.answers[0].id}))};}
 function settle(){let count=0;while(room()){assert.ok(++count<85,'The bounded queue must terminate');const e=room();if(!e.completed){if(e.kind==='press')good('press_conference',conference());else if(e.kind==='medical'&&!e.ackAllowed)good('medical_protocol',{context:e.context,id:e.playerId,protocol:'standard'});else good('club_meeting_ack',{meetingId:e.id});}good('club_meeting_continue',{meetingId:e.id});}}
 try{
- bridge=createBridge({dataDir:root,seed:13,now:1700000000000});good('new_career',{mode:'world-champ',club:29});
+ bridge=createBridge({dataDir:root,seed:13,now:1700000000000,testVm:true});good('new_career',{mode:'world-champ',club:29});
  assert.equal(room().kind,'press');assert.deepEqual(model.clubLife.clubMeetings.queue.map(e=>e.kind),['board']);
  const file=path.join(model.meta.dataDir,'donnees.json'),pending=exported(),pendingDisk=fs.readFileSync(file);
  for(let i=0;i<3;i++)good('snapshot');good('save');assert.equal(exported(),pending,'Snapshot, export and explicit save preserve obligations exactly');
- good('shutdown');bridge=createBridge({dataDir:root});good('snapshot');assert.equal(exported(),pending,'Pending meeting survives process restart');
+ good('shutdown');bridge=createBridge({dataDir:root,testVm:true});good('snapshot');assert.equal(exported(),pending,'Pending meeting survives process restart');
  for(const command of ['train','auto_lineup','begin_match','delegate','finish_round','next_season','set_tactics'])bad(command,{});
  bad('scene_invitation_open',{id:model.clubLife.sceneInvitations.invitations[0].id});bad('club_meeting_ack',{meetingId:room().id});bad('club_meeting_continue',{meetingId:room().id});bad('club_meeting_continue',{meetingId:room().id,completed:true});
  const payload=conference();bad('press_conference',{...payload,answers:[]});assert.equal(exported(),pending);
  const before=exported(),diskBefore=fs.readFileSync(file);
  refuseSavePublication(file,()=>bad('press_conference',payload));assert.equal(exported(),before);assert.deepEqual(fs.readFileSync(file),diskBefore,'Failed publication restores conference effects, pending obligation, disk and saved RNG');
  good('press_conference',payload);assert.equal(room().completed,true);const completed=exported();bad('press_conference',payload);bad('train');assert.equal(exported(),completed);
- good('shutdown');bridge=createBridge({dataDir:root});good('snapshot');assert.equal(room().completed,true);assert.equal(exported(),completed,'Completed meeting also survives restart and still requires continue');
+ good('shutdown');bridge=createBridge({dataDir:root,testVm:true});good('snapshot');assert.equal(room().completed,true);assert.equal(exported(),completed,'Completed meeting also survives restart and still requires continue');
  const pressId=room().id,priorContinue=exported(),continueDisk=fs.readFileSync(file);
  refuseSavePublication(file,()=>bad('club_meeting_continue',{meetingId:pressId}));assert.equal(exported(),priorContinue);assert.deepEqual(fs.readFileSync(file),continueDisk);
  good('club_meeting_continue',{meetingId:pressId});assert.equal(room().kind,'board');assert.equal(model.clubLife.clubMeetings.receipts.length,1);bad('club_meeting_continue',{meetingId:pressId});
