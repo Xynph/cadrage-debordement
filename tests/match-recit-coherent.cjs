@@ -45,6 +45,14 @@ test('« Avantage sur en-avant » : l’en-avant est raconté juste avant, par l
     const ok = prec && prec.scene && prec.scene.kind === 'hand-fault' && /en-avant/.test(prec.text) && !prec.text.startsWith(a[1] + ' ');
     if (!ok) fautes.push(`match ${m.k} [${j}] ${e.text} <- ${prec ? prec.text : 'rien'}`);
   });
+  // Le récit suit ce qui arrive : la faute n'annonce pas un avantage que la ligne suivante annule.
+  const contradictions = [];
+  for (const m of jouer()) m.events.forEach((e, j) => {
+    if (!(e.type === 'play' && e.scene.kind === 'hand-fault' && /laisse jouer/.test(e.text))) return;
+    const suite = m.events[j + 1];
+    if (!suite || !/^Avantage sur en-avant/.test(suite.text)) contradictions.push(`match ${m.k} [${j}] ${e.text} -> ${suite ? suite.text : 'rien'}`);
+  });
+  assert.deepEqual(contradictions.slice(0, 5), [], `${contradictions.length} « laisse jouer l’avantage » non suivis d’un avantage`);
   assert.ok(avantages >= 20, `assez d’avantages observés (${avantages})`);
   assert.deepEqual(fautes.slice(0, 5), [], `${fautes.length}/${avantages} avantages sur en-avant sans en-avant raconté`);
 });
