@@ -230,6 +230,9 @@ func run() -> void:
 	root.add_child(app)
 	await wait_model(); app.timer.stop()
 	if OS.get_environment("CD_GUIDE_CASE") == "write-error": await write_error_cases(); return
+	# Fenêtre de jeu réelle : à 64 x 64 (taille par défaut du script) le placement du conseil juge la page trop chargée et referme le guide en pleine recette.
+	root.content_scale_size = Vector2i(1280,800); root.size = Vector2i(1280,800)
+	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(Vector2i(1280,800))
 	attach()
 	check(not guide.expanded and named(guide, "GuideTour") != null, "Invitation compacte sans ouverture ni parole automatiques")
 	await press("GuideTour")
@@ -253,11 +256,20 @@ func run() -> void:
 		app._navigate(route); guide.refresh(); guide.open_help()
 		for i in 3: await process_frame
 		check(not guide.bubble.text.is_empty(), "Aide de la vraie route : " + route)
+		# Page dense sans place libre : l'aide demandée s'ouvre quand même, en petite fenêtre dans l'écran (Léo, 25/11/2026).
+		if route == "Calendrier":
+			while app.waiting: await process_frame
+			guide.open_help()
+			for i in 3: await process_frame
+			check(guide.expanded and Rect2(Vector2.ZERO, app.size).encloses(guide.get_global_rect()), "Calendrier dense : l'aide demandée s'ouvre dans l'écran")
 		var count := spoken.size()
 		for i in 10: guide.refresh()
 		check(spoken.size() == count, "Pas de répétition sur les snapshots : " + route)
 		if spoken.size() > previous_requests:
 			check(spoken.back() == guide.bubble.text, "Bulle identique à la nouvelle chaîne TTS : " + route)
+		elif route == "Calendrier" and not guide.expanded:
+			# Calendrier (page dense qui défile toute la saison) : pas de place libre, Gabi reste en invitation compacte et ne dit rien.
+			check(guide.visible and spoken.size() == previous_requests, "Page dense sans place libre : invitation compacte conservée, aucune parole : " + route)
 		else:
 			check(guide.speech.voice_id.is_empty() and not guide.speech.has_recording(guide.bubble.text), "Bulle sans enregistrement : aucune ancienne prise réutilisée : " + route)
 	var after: Dictionary = await state_export()

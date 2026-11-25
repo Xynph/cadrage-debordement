@@ -680,7 +680,7 @@ func _sort(key: String) -> void:
 func _value(p: Dictionary, key: String) -> Variant:
 	match key:
 		"rating", "potential":
-			var v: Variant = Knowledge.sort_value(p, key)
+			var v: Variant = load("res://ui/notation_staff.gd").tri_champ(p, key, Knowledge.owned(p), app.model)
 			return v if v != null else -1.0
 		"name": return str(p.get("name", ""))
 		"fam": return float(POSITION_ORDER.get(str(p.get("pos", "")), 20 + int(p.get("fam", 0))))

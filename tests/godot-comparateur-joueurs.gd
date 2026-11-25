@@ -56,7 +56,13 @@ func _initialize() -> void:
 	check(Comparison.leader("condition",[a,b])==-1,"Valeur inconnue : aucun écart mis en évidence")
 	var x:=person("x","Talonneur",99,{"ratingRange":{"min":70,"max":78},"knowledge":{"owned":false,"stage":"observed"}})
 	var y:=person("y","Talonneur",99,{"ratingRange":{"min":74,"max":82},"knowledge":{"owned":false,"stage":"observed"}})
-	check(Comparison.leader("rating",[x,y])==-1,"Fourchettes qui se chevauchent : pas de vainqueur")
+	# Notation façon FM (24/11) : le meilleur se juge sur les LETTRES montrées (jamais sur les chiffres cachés) ; lettres
+	# qui se chevauchent : pas de vainqueur.
+	var N: Script = load("res://ui/notation_staff.gd")
+	var lx: Dictionary = N.lettre_champ(x, "rating", false)
+	var ly: Dictionary = N.lettre_champ(y, "rating", false)
+	var attendu := -1 if int(lx.haut) >= int(ly.bas) and int(ly.haut) >= int(lx.bas) else (0 if int(lx.bas) > int(ly.haut) else 1)
+	check(Comparison.leader("rating",[x,y])==attendu,"Lettres montrées qui se chevauchent : pas de vainqueur, sinon le mieux noté (%s / %s)" % [N.texte_note(lx), N.texte_note(ly)])
 	y.ratingRange={"min":80,"max":86}
 	check(Comparison.leader("rating",[x,y])==1,"Fourchettes disjointes : le mieux classé est désigné")
 	print("COMPARATEUR JOUEURS : %d contrôles ; %d échecs" % [checks,failures])

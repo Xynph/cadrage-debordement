@@ -1,6 +1,7 @@
 extends Control
 ## Écran Effectif, socle (découpe de squad_canvas.gd, sans changement) : constantes, état partagé, outils de dessin, lecture des joueurs (statiques).
 ## Chaîne d'héritage : socle ← puces et filtres ← titre, tuiles et onglets ← lignes ← tableau ← squad_canvas.gd (fichier public).
+const Notation = preload("res://ui/notation_staff.gd")
 const Fleches = preload("res://ui/fleches_progression.gd")
 const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
@@ -218,11 +219,11 @@ static func _compare_secondary(left: Array, right: Array) -> int:
 
 static func sort_value(player: Dictionary, key: String) -> Variant:
 	if key == "Note au poste":
-		# Note au poste choisi, puis familiarité, puis niveau ; inconnues en dernier.
+		# Lettre MONTRÉE au poste choisi, puis familiarité (à égalité : identifiant, jamais le chiffre caché) ; inconnues en dernier.
 		var e := float(player.get("notePoste", -1.0))
 		if e < 0.0: return null
-		return e * 1000.0 + float(player.get("familiarite", 0)) * 100.0 + (float(player.rating) if _known_number(player.get("rating")) else 0.0)
-	if key in ["Niveau","Potentiel"]: return G.knowledge_sort_value(player,"rating" if key == "Niveau" else "potential",true)
+		return e * 100.0 + float(player.get("familiarite", 0))
+	if key in ["Niveau","Potentiel"]: return Notation.tri_champ(player,"rating" if key == "Niveau" else "potential",true)
 	if key == "Autres postes":
 		var order: Array[int] = []
 		var roles: Array = ["PG","PD","T","2E L","3E L","8","DM","DO","C","AL","AR"]

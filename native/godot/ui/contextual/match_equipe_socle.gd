@@ -14,6 +14,7 @@ const W = preload("res://ui/contextual/match_tableau_widgets.gd")
 const BanqueImages = preload("res://ui/banque_images.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const MenuJoueur = preload("res://ui/contextual/match_menu_joueur.gd")
+const Notation = preload("res://ui/notation_staff.gd")
 ## Taille de la maquette : tout est écrit pour 1600×900 et mis à l'échelle (k) de la fenêtre.
 const REF := Vector2(1600, 900)
 ## Place de chaque numéro sur le terrain (% de la largeur, % de la hauteur), avants à gauche, attaque ▸.
@@ -100,10 +101,16 @@ func _joueur_complet(joueur: Dictionary) -> Dictionary:
 	complet.merge(joueur, true)
 	return complet
 
-## Niveau du joueur (live.lineup[].rating, sinon la fiche de l'effectif) ; "" s'il manque.
+## Niveau du joueur en lettre du staff (notation façon FM : jamais le chiffre du moteur) : {bas, haut}, bas -1 s'il manque.
+func _lettre_niveau(joueur: Dictionary) -> Dictionary:
+	var fiche := _fiche(str(joueur.get("id", "")))
+	if fiche.is_empty(): return {"bas": -1, "haut": -1}
+	return Notation.lettre_champ(fiche, "rating", true, _model)
+
+## Texte de la lettre du Niveau ; "" s'il manque.
 func _niveau(joueur: Dictionary) -> String:
-	var valeur: Variant = joueur.get("rating", _fiche(str(joueur.get("id", ""))).get("rating"))
-	return str(roundi(float(valeur))) if valeur is float or valeur is int else ""
+	var l := _lettre_niveau(joueur)
+	return Notation.texte_note(l) if int(l.bas) >= 0 else ""
 
 func _entrants(slot: int) -> Array:
 	for option: Variant in _live().get("substitutions", []):

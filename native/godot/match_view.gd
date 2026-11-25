@@ -10,6 +10,7 @@ const Presentation = preload("res://match_presentation.gd")
 const Motion = preload("res://match_motion.gd")
 const Kit = preload("res://match_kit.gd")
 const Athlete = preload("res://match_athlete.gd")
+const JoueurV5 = preload("res://match_joueur_v5.gd")
 const Contact = preload("res://match_contact.gd")
 const Cut = preload("res://match_cut.gd")
 const Pass = preload("res://match_pass.gd")
@@ -19,6 +20,8 @@ const Animations = preload("res://match_animations.gd")
 const Choregraphie = preload("res://match_choregraphie.gd")
 const Formations = preload("res://match_formations.gd")
 const Impacts = preload("res://match_impacts.gd")
+const ChutePhysique = preload("res://match_chute_physique.gd")
+const Plancher = preload("res://match_plancher.gd")
 const Tactique = preload("res://match_tactique.gd")
 const ApresEssai = preload("res://match_apres_essai.gd")
 const Rejeu = preload("res://match_rejeu.gd")
@@ -153,6 +156,10 @@ var _sortie_vise := Vector3.ZERO
 ## sous un autre angle pendant laquelle la vue est suspendue ; `rejeu_fini` à sa fin (ou abrégé).
 signal rejeu_fini
 var _rejeu: RefCounted = Rejeu.new(self)
+## Essai CD_ESSAI_PLAQUAGES (B ou C) : chute physique partielle au plaquage ; null sans la variable.
+var _chute_physique: RefCounted = ChutePhysique.new(self)
+## Plancher : aucune partie du corps sous la pelouse (dernière pose de l'image, match_plancher.gd).
+var _plancher: RefCounted = Plancher.new()
 
 
 func set_club_identity(club: Dictionary) -> void:
@@ -465,6 +472,7 @@ func apply_frame(live: Dictionary) -> void:
 		# A home-colour change can also change the away contrast decision.
 		_refresh_kits()
 		Athlete.clear_palette()
+		JoueurV5.vider_palette()
 		for entry: Dictionary in _actors.values():
 			_recolor(entry.model, entry.side)
 			Tactique.colorer(entry.node, _kits[entry.side].marker)
@@ -515,7 +523,7 @@ func apply_frame(live: Dictionary) -> void:
 		present[id] = true
 		var target: Vector3 = _formations.place(id, _world(player))
 		if not _actors.has(id):
-			_actors[id] = VueJoueurs._make_actor(self, id, side, target)
+			_actors[id] = VueJoueurs._make_actor(self, id, side, target, int(player.get("slot", -1)))
 			Tactique.poser_repere(_actors[id].node, player, _kits[side].marker)
 		var entry: Dictionary = _actors[id]
 		entry.holding = id == _carrier_id
@@ -656,7 +664,13 @@ func reperer_rejeu() -> bool:
 func commencer_rejeu(vitesse: float = Rejeu.VITESSE) -> bool:
 	if not is_node_ready() or _camera_mode == "tactical" or _plan_large or sortie:
 		return false
-	return _rejeu.commencer(vitesse)
+	# Poses de présentation retirées avant la capture de l'état d'avant (remis à la fin), puis reposées.
+	for id: String in _actors:
+		_plancher.restaurer(id, _actors[id])
+	_chute_physique.annuler()
+	var lance: bool = _rejeu.commencer(vitesse)
+	_poser_plancher()
+	return lance
 
 
 func rejeu_actif() -> bool:
@@ -668,6 +682,9 @@ func finir_rejeu() -> void:
 	if not _rejeu.actif:
 		return
 	_rejeu.finir()
+	# État d'avant remis (sans plancher) : le plancher repart de lui.
+	_plancher.oublier()
+	_poser_plancher()
 	rejeu_fini.emit()
 
 
@@ -708,9 +725,15 @@ func _process(delta: float) -> void:
 	dernier_delta = delta
 	_animer_foule(delta) # Le public vit en temps réel, même pendant le ralenti.
 	if _rejeu.actif:
+		_chute_physique.annuler()
 		# Ralenti de l'essai rejoué : la vue est suspendue, seules les poses enregistrées sont montrées ;
-		# à sa fin, l'état d'avant est remis tel quel.
-		if not _rejeu.lire(delta):
+		# à sa fin, l'état d'avant est remis tel quel. Le plancher vaut aussi pour les poses rejouées
+		# (interpolées entre deux images enregistrées).
+		for id: String in _actors:
+			_plancher.restaurer(id, _actors[id])
+		var encore: bool = _rejeu.lire(delta)
+		_poser_plancher()
+		if not encore:
 			rejeu_fini.emit()
 		return
 	# Ralenti de l'essai : tout ce que la vue anime avance moins vite (présentation seule).
@@ -731,6 +754,8 @@ func _process(delta: float) -> void:
 	# Poses des pistes avant le ballon : les mains du porteur sont à leur place quand il y est mis.
 	if choregraphie_active():
 		_choregraphie.pose()
+	# Chute physique du plaqué : après les poses du corps, avant le ballon (il suit les mains).
+	_chute_physique.poser(delta)
 	VueBallon._update_ball(self, delta)
 	mise_en_scene().pose()
 	_poser_tenues(delta)
@@ -779,9 +804,54 @@ func _process(delta: float) -> void:
 		_ball_marker.global_basis = Basis.IDENTITY.scaled(Vector3.ONE * (1.45 if tenu_en_main else 1.0))
 		((_ball_marker as MeshInstance3D).material_override as StandardMaterial3D).albedo_color = Color("ffe680") if tenu_en_main else Color("e9bf5a")
 	# Poses définitives de l'image : enregistrées pour le ralenti de l'essai (une coupe le recommence).
+	# Plancher : dernière pose de l'image (après le ballon et les formations), enregistrée par le rejeu.
+	_poser_plancher()
+	# Puis les jambes des joueurs debout sortent du corps des joueurs couchés (ruck), à l'horizontale.
+	_plancher.degager(_actors, delta, _carrier_id, _ball if _ball_attached and _ball.visible else null)
+	# Et les joueurs debout ne se traversent plus entre eux (sauf mêlée et ballon porté, liés exprès).
+	_plancher.separer(_actors, delta, _lies(), _carrier_id, _ball if _ball_attached and _ball.visible else null)
 	_rejeu.enregistrer(delta, _camera_cut)
 	_fit_camera(delta, _camera_cut)
 	_camera_cut = false
+
+## Joueurs liés dans une mêlée ou un ballon porté (contact voulu) : la séparation ne les écarte pas
+## entre eux, ils restent des obstacles pour les autres. 25/11/2026 : seuls les avants liés du paquet
+## et les deux demis tenus au tunnel, arrivés à leur place ; le demi qui ramasse à la sortie, l'arrière, le joueur qui
+## rejoint le ballon porté et ceux qui se replient après l'essai sont écartés des liés qu'ils frôlent.
+func _lies() -> Dictionary:
+	var lies := {}
+	if _formations != null and _formations.active() and str(_formations.formation.type) in ["melee", "sortie_melee"]:
+		var roles: Array = ["pack", "demi_intro", "demi_adverse"] if str(_formations.formation.type) == "melee" else ["pack"]
+		for id: String in _formations.formation.places:
+			# Lié une fois à sa place (posture prise) ; en course vers elle, il contourne les autres.
+			if str(_formations.formation.roles.get(id, "")) in roles and float(_formations.posture_de(id)[1]) > 0.0:
+				lies[id] = true
+		# Avant qui se détache du paquet avec le ballon à la sortie : laissé tel quel (le ballon reste
+		# dans ses mains, à sa place).
+		var detache := str(_formations.formation.get("porteur", ""))
+		if not detache.is_empty() and not _formations.formation.places.has(detache):
+			lies[detache] = true
+	var scene_gestes: RefCounted = mise_en_scene()
+	if str(scene_gestes.get("phase")) in ["maul", "essai_maul"] and scene_gestes.has_method("lie"):
+		for id: String in _actors:
+			if scene_gestes.lie(id):
+				lies[id] = true
+	if choregraphie_active():
+		for id: String in _actors:
+			if _choregraphie.stages(id) and str(_choregraphie.etat(id)) in ["melee", "maul"]:
+				lies[id] = true
+	return lies
+
+
+## Plancher de tous les joueurs (match_plancher.gd) ; le ballon tenu suit les mains relevées.
+func _poser_plancher() -> void:
+	for id: String in _actors:
+		var tenu: bool = _ball_attached and id == _carrier_id and _actors[id].rig != null
+		var mains := Plancher.mains(_actors[id].rig) if tenu else Vector3.ZERO
+		_plancher.poser(id, _actors[id])
+		if tenu:
+			_ball.global_position += Plancher.mains(_actors[id].rig) - mains
+
 
 func _is_pass_player(id: String) -> bool:
 	return not _pass_plan.is_empty() and (id == _pass_plan.passer or id == _pass_plan.receiver)
@@ -886,6 +956,9 @@ func alternative_kit_colors() -> Array[Color]:
 
 
 func _recolor(model: Node3D, side: int) -> void:
+	if model.has_meta("joueur_v5"):
+		JoueurV5.habiller(model, _kits[side])
+		return
 	Athlete.dress(model, _kits[side], str(model.get_meta("athlete_id", "")))
 
 

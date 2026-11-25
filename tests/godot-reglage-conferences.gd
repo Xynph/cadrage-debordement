@@ -106,7 +106,7 @@ func run() -> void:
 	check(toggle != null and toggle.is_visible_in_tree(), "Réception : bascule présente sur une conférence ordinaire (après-match)")
 	if toggle != null:
 		check(toggle.text == "Les prochaines fois, envoyer Gabi aux conférences ordinaires", "Réception : libellé « envoyer Gabi » (« %s »)" % toggle.text)
-		check(toggle.tooltip_text.contains("médias −2") and toggle.tooltip_text.contains("relation −1"), "Réception : infobulle du coût")
+		check(not toggle.tooltip_text.contains("−2") and not toggle.tooltip_text.contains("−1"), "Réception : infobulle sans chiffre de coût")
 		await settle(240) # laisse l'annonce « Rendez-vous obligatoire » se retirer
 		await capture("courrier-conference-adjoint")
 		toggle.pressed.emit()

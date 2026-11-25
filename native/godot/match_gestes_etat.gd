@@ -44,6 +44,11 @@ const STRIDE_CYCLE := 0.6  # ballon porté : un cycle de deux petits pas couvre 
 const STANCE := 0.65       # part du cycle où le pied pousse au sol
 const CROUCH := 0.12       # abaissement du bassin des pousseurs, en mètres
 const PUSH_PITCH := 0.38   # inclinaison des pousseurs
+## Ballon porté (25/11/2026, « pas d'interpénétration franche ») : l'adversaire qui fait face au bloc
+## de saut se lie MAUL_FACE.x m devant lui, décalé de MAUL_FACE.y m sur le côté (moitié de l'écart de
+## 0,6 m du bloc) : têtes en alternance comme en mêlée, épaule contre épaule, au lieu de deux bustes
+## penchés l'un dans l'autre (sonde des contacts : bustes et têtes confondus à 1,3 m face à face).
+const MAUL_FACE := Vector2(1.3, 0.3)
 const LEGS := ["UpperLeg.L", "LowerLeg.L", "Foot.L", "UpperLeg.R", "LowerLeg.R", "Foot.R"]
 const DIVE_REACH := 1.95   # distance pieds -> ballon d'un plongeon bras tendus
 const DIVE_SECONDS := 0.95

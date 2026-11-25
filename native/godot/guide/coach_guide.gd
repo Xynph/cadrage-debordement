@@ -299,7 +299,14 @@ func _dock_ready(dock: Control) -> bool:
 
 func _footer_top() -> float:
 	var dock := _compact_dock()
-	return dock.get_parent().get_global_rect().position.y if _dock_ready(dock) else app.size.y - 10.0
+	if _dock_ready(dock): return dock.get_parent().get_global_rect().position.y
+	# Sans emplacement dans le pied (écrans de carrière : Gabi vit dans le bandeau), la ligne d'état du pied
+	# (dont « DERNIÈRE SAUVEGARDE IMPOSSIBLE ») reste lisible : rien de Gabi ne se peint dessus.
+	var status: Variant = app.get("status")
+	if is_instance_valid(status) and status is Control and status.is_visible_in_tree():
+		var top: float = status.get_global_rect().position.y
+		if top >= app.size.y * .5 and top < app.size.y: return top
+	return app.size.y - 10.0
 
 func _left_edge() -> float:
 	if is_instance_valid(app.workspace_inset): return app.workspace_inset.get_global_rect().position.x + 12.0
@@ -342,7 +349,8 @@ func _layout() -> void:
 	anchor_left = 0.0 if _corner_left else 1.0; anchor_right = anchor_left
 	offset_left = _left_edge() if _corner_left else -width - 18.0
 	offset_right = offset_left + width
-	offset_top = -height - 18; offset_bottom = -18
+	var bottom_gap := 18.0 if docked else maxf(18.0, app.size.y - _footer_top() + 8.0)
+	offset_top = -height - bottom_gap; offset_bottom = -bottom_gap
 	_compact.position = Vector2(0, extra); _compact.size = Vector2(width,34)
 	_expanded.position = Vector2(0,extra); _expanded.size = Vector2(width,expanded_height)
 	_settings_panel.position = Vector2.ZERO; _settings_panel.size = Vector2(width,settings_height)
@@ -414,7 +422,7 @@ func _avoid_primary_controls() -> void:
 	var rects := _priority_rects()
 	var left := _left_edge()
 	var right := app.size.x - size.x - 18
-	var bottom := (_footer_top() - 8.0 if _dock_ready(dock) else app.size.y - 18.0) - size.y
+	var bottom := minf(_footer_top() - 8.0, app.size.y - 18.0) - size.y
 	var key := str(app.route) + ":" + str(app.size) + ":" + str(size) + ":" + str(_corner_left) + ":" + str(bottom) + ":" + str(app.root_content.get_instance_id() if is_instance_valid(app.root_content) else 0)
 	# Reuse the chosen horizontal position through snapshots and layout refreshes.
 	# Never climb into page titles merely to avoid a secondary command.
@@ -469,8 +477,12 @@ func _avoid_primary_controls() -> void:
 		global_position = best
 		_placement_key = key; _placed_x = best.x; _placed_y = best.y
 		return
-	# Crowded windows keep the compact manual invitation, never a floating title cover.
-	if expanded: close()
+	# Écran dense sans place libre : le conseil automatique reste en invitation compacte, mais une aide demandée
+	# (clic sur « Gabi · ? », F1) s'ouvre quand même, en petite fenêtre au centre de l'écran (Léo, 25/11/2026).
+	if expanded and mode == "context": close()
+	elif expanded:
+		global_position = ((app.size - size) / 2.0).floor()
+		_placement_key = key; _placed_x = global_position.x; _placed_y = global_position.y
 
 ## Rectangles de texte et de boutons de la page (globaux), au plus près de ce qui est peint : un libellé
 ## n'occupe que la largeur de son texte, un panneau sans texte ne compte pas.

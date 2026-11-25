@@ -67,6 +67,7 @@ const EXTRAS := [
 	{"id": "presse-ouverte", "libelle": "Presse : conférence avec questions ouvertes", "type": "presse_ouverte"},
 	{"id": "presse-conference-fm", "libelle": "Presse : conférence de presse (salle, une question à la fois)", "type": "presse_ouverte", "fm": true},
 	{"id": "presse-conference-fm-suite", "libelle": "Presse : conférence après une réponse (réaction en flèches)", "type": "presse_ouverte", "fm": true, "repondre": true},
+	{"id": "presse-conference-fm-compte-rendu", "libelle": "Presse : compte-rendu après la dernière réponse (même photo)", "type": "presse_ouverte", "fm": true, "tout": true},
 	{"id": "presse-conference-fm-joueur", "libelle": "Presse : conférence, petite fenêtre du joueur concerné", "type": "presse_ouverte", "fm": true, "clic": "PressPlayerOpen"},
 	{"id": "presse-conference", "libelle": "Presse : Conférence", "type": "presse_onglet", "onglet": 1},
 	{"id": "presse-historique", "libelle": "Presse : Historique", "type": "presse_onglet", "onglet": 2},
@@ -710,6 +711,8 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 				await stabiliser()
 		"salle_conseil":
 			if not (app.contextual_director.active() and app.contextual_director.kind == "board"):
+				# Attention : la suite de la visite filme cette CARRIÈRE NEUVE (qualités Précises), plus la carrière exportée.
+				print("ECRANS_FILMES_CARRIERE_NEUVE ", ecran.id, " : écrans suivants = carrière neuve (club 102, qualités Précises)")
 				if not app._command("new_career", {"mode": "world-champ", "club": 102, "start": "premiers-clubs"}): return {"statut": "echec", "note": "carrière neuve refusée"}
 				while app.waiting: await process_frame
 				app.timer.stop()
@@ -768,6 +771,19 @@ func ouvrir(ecran: Dictionary) -> Dictionary:
 					if reponses.is_empty(): return {"statut": "echec", "note": "aucune réponse"}
 					(reponses[0] as Button).pressed.emit()
 					await stabiliser()
+				if ecran.get("tout", false):
+					# Toutes les questions répondues (première réponse) : la dernière publie, le compte-rendu s'affiche.
+					for tour in 8:
+						var vue: Control = app.contextual_director.view
+						if vue == null or not vue._available(): break
+						var restantes: Array = vue.find_children("PressAnswer_*", "Button", true, false)
+						if restantes.is_empty(): break
+						(restantes[0] as Button).pressed.emit()
+						while app.waiting: await process_frame
+						await stabiliser()
+					app.contextual_director.sync()
+					await stabiliser()
+					if app.find_child("PressOutcomeHeadline", true, false) == null: return {"statut": "echec", "note": "compte-rendu absent"}
 				if ecran.has("clic"):
 					var cible: Button = app.contextual_director.view.find_child(str(ecran.clic), true, false) as Button
 					if cible == null: return {"statut": "echec", "note": "%s absent" % ecran.clic}
@@ -1681,6 +1697,10 @@ func run() -> void:
 			if entree.statut == "ok": await capturer(entree, o, taille)
 			refermer(ecran)
 			print("ECRANS_FILMES ", entree.taille, " ", entree.id, " ", entree.statut, " debordements=", entree.get("nombre_debordements", 0), " tronques=", entree.get("nombre_textes_tronques", 0))
+			# CD_FILM_SUIVI_FOURCHETTE=1 : largeur des qualités en fourchette du premier joueur et semaine du moteur après chaque écran.
+			if OS.get_environment("CD_FILM_SUIVI_FOURCHETTE") == "1" and not app.model.get("squad", []).is_empty():
+				var premier: Dictionary = app.model.squad[0]
+				print("ECRANS_FILMES_FOURCHETTE ", entree.id, " largeur=", premier.get("knowledge", {}).get("qualitesLargeur", 0) if premier.get("knowledge") is Dictionary else "?", " jour=", app.model.get("meta", {}).get("calendarToday", "?"), " route=", app.route)
 	if not en_direct.is_empty():
 		var raison := "désactivé (--sans-direct)" if not o.direct else ("durée maximale atteinte" if Time.get_ticks_msec() > fin_au_plus_tard else "")
 		if raison.is_empty():

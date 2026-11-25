@@ -250,9 +250,9 @@ static func _revue(app: Control, cadre: Control) -> void:
 		D.place(bloc, Rect2(470, 112, 900, 10)))
 
 static func _ligne(p: Dictionary) -> String:
-	var niveau := "niveau %s" % str(p.rating) if p.get("rating") != null else "niveau inconnu"
-	var fourchette: Variant = p.get("potentialRange")
-	var plafond_potentiel := " · potentiel %d–%d" % [int(fourchette.min), int(fourchette.max)] if fourchette is Dictionary else ""
+	# Notation façon FM : lettres du staff, jamais les chiffres du moteur.
+	var niveau := "niveau %s" % G.rating_text(p, true)
+	var plafond_potentiel := " · potentiel %s" % G.potential_text(p)
 	var prodige := " · prodige" if p.get("prodigy", false) else ""
 	return "%s · %s · %d ans · %s%s%s" % [p.name, p.pos, int(p.age), niveau, plafond_potentiel, prodige]
 

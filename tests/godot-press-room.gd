@@ -102,17 +102,16 @@ func run() -> void:
 	check(director.commands.is_empty() and JSON.stringify(career) == before, "opening press room is pure")
 	check(FileAccess.get_file_as_bytes(saved_path) == saved_before, "opening does not write career save")
 	check(view.find_child("PressReturn", true, false) == null, "mandatory interview has no premature exit")
-	var viewport: SubViewportContainer = view.find_child("ContextualRoomViewport", true, false)
-	check(viewport != null and viewport.stretch and viewport.get_child(0).own_world_3d, "native press world and stretched viewport")
-	check(view.room != null and view.room.find_child("PressRoomCamera", true, false) != null, "actual 3D press set and camera")
-	check(view.room.get_meta("identity").get("name") == G.club_name(career.club), "3D room uses actual active club identity")
-	check(view.room.get_meta("primary_color") == Color(G.identity(career.club).get("color", "#596368")), "3D room uses actual club palette")
-	check(view.room.crest_texture != null and club_crest_matches(view.room.crest_texture, career.club), "physical crest uses production resolver (pack, official, else recoloured club crest)")
-	var world_id: int = view.room.get_instance_id()
+	# Plus de salle 3D (Léo, 25/11/2026) : la conférence se tient sur la photo de la salle de presse de la page Presse.
+	check(view.find_child("ContextualRoomViewport", true, false) == null and view.find_children("*", "SubViewport", true, false).is_empty(), "no 3D press room behind the conference")
+	var photo: TextureRect = view.find_child("PressRoomPhoto", true, false)
+	check(photo != null and photo.texture != null and photo.get_meta("immersive_art", "") == "press-room", "conference photograph is the press-room art of the Presse page")
+	check(photo != null and photo.get_index() < view.ui.get_index() and photo.stretch_mode == TextureRect.STRETCH_KEEP_ASPECT_COVERED, "photograph sits behind the interface and covers the room")
+	var world_id: int = photo.get_instance_id() if photo != null else 0
 	for resolution in [Vector2i(1280,720), Vector2i(1600,900)]:
 		root.size = resolution
 		await settle()
-		check(root.size == resolution and viewport.size == Vector2(resolution), "exact full viewport at " + str(resolution))
+		check(root.size == resolution and photo.size == Vector2(resolution) and photo.get_global_rect().position == Vector2.ZERO, "photograph fills the full window at " + str(resolution))
 		all_within(view)
 		for index in questions.size():
 			view._select_question(index)
@@ -134,7 +133,7 @@ func run() -> void:
 				var answer_card: Control = view.find_child("PressAnswerCard_" + str(answer.id), true, false)
 				check(button != null and answer_card != null and answer_card.find_children("*", "Label", true, false).any(func(l: Label): return l.text == str(answer.text)), "permitted answer text and ID retained")
 			check(view.find_children("*", "OptionButton", true, false).is_empty(), "no independent tone selector")
-			check(view.room.asking_journalist() == posmod(index, 7), "the asking journalist of the 3D room follows the question (%d)" % index)
+			check(view.find_child("PressFmVoile", true, false) != null, "questions keep their veil over the photograph (%d)" % index)
 		await capture("press-room-" + str(resolution.x))
 	view._select_question(0)
 	var first: Dictionary = questions[0]
@@ -145,7 +144,7 @@ func run() -> void:
 	var question_node: Label = view.find_child("PressQuestion", true, false)
 	view.update_frame(career.duplicate(true), metadata)
 	check(view.choices == selected and view.find_child("PressQuestion", true, false) == question_node and view.question_index == 1, "snapshot preserves draft and focused question controls")
-	check(view.room.get_instance_id() == world_id, "snapshots and question navigation preserve native 3D world")
+	check(view.find_child("PressRoomPhoto", true, false).get_instance_id() == world_id, "snapshots and question navigation preserve the photograph")
 	check(director.commands.is_empty() and FileAccess.get_file_as_bytes(saved_path) == saved_before, "drafting changes no career facts or save")
 	view._publish()
 	check(director.commands.is_empty(), "partial answers cannot publish")
@@ -161,19 +160,33 @@ func run() -> void:
 	check(sent.payload.answers.size() == questions.size() and not sent.payload.has("tone"), "complete ordered answers and no tone parameter")
 	for index in questions.size():
 		check(sent.payload.answers[index] == {"questionId":questions[index].id,"answerId":questions[index].answers[1].id}, "actual question order preserved in payload")
-	# Boutons de la conférence en un clic (#1202) : ceux qui agissent (réponse, adjoint, réglage) sont refusés pendant
-	# l'envoi ; les petites fenêtres d'information (…Open) restent consultables.
+	# Pendant l'envoi, tout ce qui agit est grisé, adjoint et réglage compris (Léo, 24/11/2026). Projection de rendu où
+	# l'adjoint est proposé, pour voir ses deux pastilles pendant l'envoi.
+	var with_delegate := career.duplicate(true)
+	with_delegate.clubLife.press.conference.delegation = {"allowed":true}
+	with_delegate.clubLife.press.policy = {"ordinary":"moi"}
+	view.update_frame(with_delegate, metadata)
+	await settle()
+	for name_: String in ["PressDelegate", "PressPolicy_adjoint"]:
+		var grey: BaseButton = view.find_child(name_, true, false)
+		check(grey != null and grey.disabled, name_ + " greyed while the conference is being sent")
 	for button: BaseButton in view.find_children("*", "BaseButton", true, false):
-		if not button.disabled and not button.name.ends_with("Open"): button.pressed.emit()
+		if button.has_meta("contextual_enabled"): check(button.disabled, "in-flight request disables " + button.name)
+		if not button.name.ends_with("Open"): button.pressed.emit()
 	check(director.commands.size() == 1, "in-flight request disables repeated input")
+	view.update_frame(career, metadata)
+	# Envoi refusé (disque, moteur) : aucun bouton, aucune phrase ; le jeu relance seul les mêmes réponses, une fois.
 	host.waiting = false
 	host.last_error = "Refus serveur de la préparation périmée"
 	view.update_frame(career, metadata)
-	check(view.choices.size() == questions.size() and not view._request_in_flight, "server refusal preserves draft and enables retry")
-	view._publish()
-	check(director.commands.size() == 2 and director.commands[1].payload == sent.payload, "retry resends the same preserved answers once")
+	check(view.choices.size() == questions.size() and view._request_in_flight, "server refusal preserves draft and keeps the send pending")
+	var retry_deadline := Time.get_ticks_msec() + 5000
+	while director.commands.size() < 2 and Time.get_ticks_msec() < retry_deadline: await process_frame
+	check(director.commands.size() == 2 and director.commands[1].payload == sent.payload, "automatic retry resends the same preserved answers")
+	check(host.last_error.is_empty(), "automatic retry leaves no refusal phrase in the room")
+	for frame in 90: await process_frame
+	check(director.commands.size() == 2, "no second send while the retry is pending")
 	host.waiting = false
-	check(not host.last_error.is_empty(), "component does not erase the director's visible server error")
 	# Controlled response fixture: receipt rendering is tested separately from
 	# the real domain effects exercised by godot-three-rooms-flow.gd.
 	var response := career.duplicate(true)
@@ -194,6 +207,10 @@ func run() -> void:
 	await settle()
 	var continuation: Button = view.find_child("PressReturn", true, false)
 	check(continuation != null and not continuation.disabled, "authoritative completed meeting enables Continue")
+	# Compte-rendu sur la même photo et sous le même voile que les questions.
+	check(view.find_child("PressRoomPhoto", true, false).get_instance_id() == world_id and view.find_child("PressFmVoile", true, false) != null, "report keeps the questions' photograph and veil")
+	check(view.find_child("PressFmPage", true, false) == null, "report replaces the question page")
+	await capture("press-report-" + str(root.size.x))
 	check(view.find_child("PressAnswer_*", true, false) == null, "published conference is read only")
 	var count := director.commands.size()
 	view._publish()
@@ -218,20 +235,3 @@ func finish() -> void:
 	await settle()
 	print("PRESS_ROOM_CHECKS ", JSON.stringify({"checks":checks,"failures":failures,"real_projection":true,"commands_stubbed":true}))
 	quit(0 if failures.is_empty() else 1)
-
-## Blason attendu sur une surface 3D : celui du pack ou l'écusson officiel s'il existe, sinon l'écusson recoloré du
-## club rendu depuis le contrôle de l'interface (ses initiales, sa couleur), jamais le bouclier gris de la banque.
-func club_crest_matches(texture: Texture2D, club: Dictionary) -> bool:
-	var Skin = load("res://ui/game_skin.gd")
-	var real: Texture2D = Skin.crest_texture(club)
-	if real != null: return texture == real
-	var shown: Control = Skin.crest_render_control(texture)
-	if shown == null or shown.name != "ClubCrestRecolored" or not shown.material is ShaderMaterial: return false
-	var identity: Dictionary = club.get("presentation", club) if club.get("presentation") is Dictionary else club
-	var initials := false
-	for label in shown.find_children("*", "Label", true, false):
-		if label.text == str(identity.get("abbr", "XV")): initials = true
-	var primary: Color = load("res://ui/contextual/rooms/room_identity.gd").primary(identity)
-	var material := shown.material as ShaderMaterial
-	var tinted: bool = (material.get_shader_parameter("couleur_base") as Color).is_equal_approx(primary) or (material.get_shader_parameter("couleur_motif") as Color).is_equal_approx(primary)
-	return initials and tinted

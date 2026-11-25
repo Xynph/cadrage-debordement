@@ -191,7 +191,8 @@ func _training_changes(before: Dictionary, model: Dictionary) -> Dictionary:
 	var previous: Dictionary = before.get("people",{})
 	var current: Dictionary = after.people
 	var impact: Dictionary = {}
-	for metric in [["condition","Condition moyenne"," %"],["physicalLoad","Charge moyenne"," / 100"],["rating","Niveau moyen"," / 100"]]:
+	# Le Niveau reste caché (notation façon FM) : pas de « niveau moyen » chiffré après l'entraînement.
+	for metric in [["condition","Condition moyenne"," %"],["physicalLoad","Charge moyenne"," / 100"]]:
 		var field: String = metric[0]
 		var count := 0
 		var old_total := 0.0

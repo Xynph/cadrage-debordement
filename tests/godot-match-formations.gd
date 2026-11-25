@@ -36,6 +36,31 @@ func head_centre(view, id: String) -> Vector3:
 	return head + (head - neck).normalized() * 0.09
 
 
+## Bustes et têtes (capsules de la sonde des contacts du match filmé) : [os, os d'arrivée ou longueur, rayon].
+const BUSTES := [["Hips", "Abdomen", 0.13], ["Abdomen", "Torso", 0.14], ["Torso", "Neck", 0.14], ["Head", 0.22, 0.1]]
+const BUST_OVERLAP_MAX := 0.08
+
+
+static func _busts(rig: Skeleton3D) -> Array:
+	var g := rig.global_transform
+	var out: Array = []
+	for v: Array in BUSTES:
+		var a := g * rig.get_bone_global_pose(rig.find_bone(v[0]))
+		var b: Vector3 = (g * rig.get_bone_global_pose(rig.find_bone(v[1]))).origin if v[1] is String else a.origin + a.basis.y.normalized() * float(v[1])
+		out.append([a.origin, b, float(v[2])])
+	return out
+
+
+## Plus forte pénétration (m) entre les bustes et têtes de deux joueurs.
+func busts_overlap(view, a: String, b: String) -> float:
+	var worst := -INF
+	for s1: Array in _busts(view._actors[a].rig):
+		for s2: Array in _busts(view._actors[b].rig):
+			var r := Geometry3D.get_closest_points_between_segments(s1[0], s1[1], s2[0], s2[1])
+			worst = maxf(worst, float(s1[2]) + float(s2[2]) - (r[0] as Vector3).distance_to(r[1]))
+	return worst
+
+
 func _initialize() -> void:
 	call_deferred("run")
 
@@ -235,6 +260,13 @@ func check_view(view: Node3D) -> void:
 			if h >= 1.35 or (view._actors[id].model as Node3D).rotation.x <= 0.4 or formations.posture_de(id)[0] not in ["premiere_ligne", "poussee"]:
 				upright += " %s (%.2f m)" % [id, h]
 	check(upright.is_empty(), "Every forward of both packs is bent over, head low (%.2f m at most);%s" % [pack_head, upright])
+	# Liés, jamais fondus : entre deux avants de la mêlée formée, aucun buste ni tête dans un autre.
+	var pack_fondu := 0.0
+	for a in 16:
+		for b in range(a + 1, 16):
+			pack_fondu = maxf(pack_fondu, busts_overlap(view, "s%d_%d" % [a / 8, a % 8], "s%d_%d" % [b / 8, b % 8]))
+	check(pack_fondu <= BUST_OVERLAP_MAX, "Bound scrum: no bust or head inside another (%.3f m, %.2f m allowed)" % [pack_fondu, BUST_OVERLAP_MAX])
+	metrics.scrum_bust_overlap_m = snappedf(pack_fondu, 0.001)
 	metrics.scrum_pack_head_max_m = snappedf(pack_head, 0.01)
 	metrics.scrum_head_gap_m = snappedf(head_gap, 0.001)
 	metrics.scrum_head_height_m = snappedf(head_height, 0.01)
@@ -265,10 +297,19 @@ func check_view(view: Node3D) -> void:
 	# Ballon gagné : les paquets restent liés SORTIE s, puis rejoignent les places de la scène.
 	var sortie := scrum(60.0, 0, "setpiece-win", "sortie", "s0_7")
 	view.apply_frame({"scene": sortie})
-	view._process(Formations.SORTIE * 0.5)
-	check((view._actors.s1_0.model as Node3D).rotation.x > 0.4, "Packs stay bound while the ball comes out")
-	for frame in 150:
+	# 25/11/2026 (Léo : liés, jamais fondus) : à la sortie, ni le demi qui ramasse ni le demi adverse
+	# ne traversent un paquet penché (buste ou tête dans un buste ou une tête), image par image.
+	var demi_fondu := 0.0
+	for frame in 180:
 		view._process(1.0 / 60.0)
+		if frame == 29:
+			check((view._actors.s1_0.model as Node3D).rotation.x > 0.4, "Packs stay bound while the ball comes out")
+		for demi_id in ["s0_8", "s1_8"]:
+			for side in 2:
+				for slot in 8:
+					demi_fondu = maxf(demi_fondu, busts_overlap(view, demi_id, "s%d_%d" % [side, slot]))
+	check(demi_fondu <= BUST_OVERLAP_MAX, "Scrum exit: no scrum-half walks through a bound pack (%.3f m bust overlap, %.2f m allowed)" % [demi_fondu, BUST_OVERLAP_MAX])
+	metrics.exit_half_bust_overlap_m = snappedf(demi_fondu, 0.001)
 	var moteur: Vector3 = view._world(sortie.players.filter(func(p: Dictionary) -> bool: return p.id == "s1_0")[0])
 	check((view._actors.s1_0.target as Vector3).is_equal_approx(moteur), "After the exit, forwards head for their engine places")
 	for frame in 60:

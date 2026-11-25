@@ -14,6 +14,7 @@ const potentialEvolution=require('./potential-evolution.cjs'),potentialEvolution
 const inSeasonDevelopment=require('./in-season-development.cjs');
 const clubTransfers=require('./club-transfers.cjs'),clubDirections=require('./club-directions.cjs'),boardNames=require('./staff-completion.cjs');
 const profileSafetyFactory=require('./profile-safety.cjs');
+const saveCompression=require('./save-compression.cjs');
 const makePlayerFacts=require('./player-facts.cjs');
 const makePortraitLooks=require('./portrait-looks.cjs').createLooks;
 const makeNational=require('./international-native.cjs');
@@ -215,7 +216,8 @@ function createBridge(options={}){
   const engineIntl=Object.create(Intl,{NumberFormat:{value:NumberFormat,writable:true,configurable:true}});
   ctx=vm.createContext({console:{log(){},warn(){},error(){}},Intl:engineIntl,Math:math,Date:EngineDate,Set,JSON,CDNativeHeadless:true,document:{querySelector:()=>element},window:{CDNativeHeadless:true,CDOfflineStorage:storage,CDOfflineError:true},localStorage:storage,setTimeout:()=>0,clearTimeout(){},setInterval:()=>0,clearInterval(){},nativeDataDirectory:dataDir});
   // Harnais de test (testVm) : les commandes lourdes (relecture des sections, passage de saison) dépassent 15 s sur un runner lent.
-  const vmLimit=options.testVm===true?120000:15000;
+  // Harnais testVm : garde contre une boucle sans fin seulement (carriere-monde-fin-de-saison et carriere-chrono la relèvent déjà à 600 s) ; un « Saison suivante » sur un runner chargé dépassait 120 s.
+  const vmLimit=options.testVm===true?600000:15000;
   const run=(source,filename)=>vm.runInContext(source,ctx,filename?{timeout:vmLimit,filename}:{timeout:vmLimit});
   // Visage affiché d'un joueur (même calcul que la projection des portraits) : repris tel quel par la reconversion en staff.
   ctx.nativePortraitLook=process.env.CD_PORTRAIT_CARRURE==='0'?undefined:(player,world)=>{
@@ -231,6 +233,8 @@ function createBridge(options={}){
   ctx.nativeMandatoryPress=options.mandatoryPress===true;
   // Essais seulement : plafond d'export abaissé pour exercer la réduction sans perte des grands exports.
   if(Number.isInteger(options.saveBytes)&&options.saveBytes>0)ctx.nativeSaveBytes=options.saveBytes;
+  // Export compressé sans perte (exportVersion 4, dist/saves.js) : gzip + base64 quand le document dépasse le plafond.
+  saveCompression.install(ctx);
   ctx.nativeLegacyModes=legacyModes;ctx.nativeLegacyCareerMessage=LEGACY_CAREER_MESSAGE;
   const calendarState=(source='S')=>JSON.parse(run(`JSON.stringify({planning:${source}?.calendarPlanning,mail:${source}?.calendarMail})`));
   function validateCalendarState(state){
@@ -1064,7 +1068,7 @@ function createBridge(options={}){
     // Modèle réduit (simulations) : pas de copie d'annulation (texte complet de la carrière, ~25 Mo) avant une commande que
     // le harnais exige réussie ; si elle échoue après avoir modifié la carrière, la simulation s'arrête (leanBroken).
     const leanNoUndo=leanModel&&!priorFromSave&&!LEAN_UNDO.has(command);const priorStateText=priorFromSave?cleanSave:sessionDay||replay&&command!=='delegate'||leanNoUndo?null:run('JSON.stringify(S)'),priorExtra=JSON.parse(run('JSON.stringify({playback:S?.live?playback(S.live):null,saveError:lastSaveError})'));
-    const priorState=()=>{if(leanNoUndo){leanBroken=true;throw Error('Simulation rapide arrêtée : '+command+' a échoué après avoir modifié la carrière (aucune copie d’annulation).');}return {state:priorStateText===undefined?undefined:JSON.parse(priorStateText),...priorExtra};};
+    const priorState=(cause)=>{if(leanNoUndo){leanBroken=true;throw Error('Simulation rapide arrêtée : '+command+' a échoué après avoir modifié la carrière (aucune copie d’annulation)'+(cause?.message?' — erreur d’origine : '+cause.message:'')+'.',{cause});}return {state:priorStateText===undefined?undefined:JSON.parse(priorStateText),...priorExtra};};
     const priorStore=copyStore(store),priorSeed=seed,priorClock=clock;mark('copie_annulation');
     // Reprise avant le match : copie d'avant le coup d'envoi en cours (rétablie si la commande échoue).
     const preMatchBefore=preMatch,noticeBefore=matchResumeNotice,openBefore=matchOpenNow();let closesMatch=false;
@@ -1084,6 +1088,7 @@ function createBridge(options={}){
      if(command==='new_career'){
       if(!legacyModes&&payload.mode!==WORLD_ONLY_MODE)throw Error('Seul le mode Monde est disponible pour une nouvelle carrière.');
       if(payload.varyCurrent!==undefined&&typeof payload.varyCurrent!=='boolean')throw Error('Option de variation du niveau actuel invalide.');
+      if(payload.qualites!==undefined&&!['precises','fourchette'].includes(payload.qualites))throw Error('Option « Qualités des joueurs » invalide.');
       if(payload.varyPotential!==undefined||payload.careerVariation!==undefined||payload.seed!==undefined)throw Error('Le potentiel varie à chaque nouvelle carrière ; paramètres de variation non autorisés.');
       if(payload.start!==undefined&&!repriseStarts.includes(payload.start))throw Error('Départ de partie invalide.');
       // Défi de départ : {id, club}, recalculé sur le catalogue (jamais repris tel quel du client).
@@ -1139,9 +1144,9 @@ function createBridge(options={}){
      }else if(command==='pack_select'){
       if(payload.scope!=='career'||!run('!!S?.commonDatabase'))throw Error('Sélection réservée à une carrière de base commune.');const pack=payload.id==='base'?null:packs.get(payload.id);if(payload.id!=='base'&&!pack)throw Error('Pack non installé.');if(pack&&pack.meta.databaseId!==run('S.commonDatabase.id'))throw Error('Pack incompatible avec cette édition.');ctx.nativeBinding=pack?{id:pack.meta.id,digest:pack.meta.digest}:null;run('if(nativeBinding)S.identityPack=nativeBinding;else delete S.identityPack');
      }else if(command==='new_career'&&payload.mode==='custom'){
-      run("nativeSystems.domain('customCompetition').prepareCreation((({varyCurrent,...custom})=>custom)(nativePayload))");
+      run("nativeSystems.domain('customCompetition').prepareCreation((({varyCurrent,qualites,...custom})=>custom)(nativePayload))");
       protectCurrent('nouvelle-carriere',priorSeed,priorClock);
-      run("nativeSystems.domain('customCompetition').create((({varyCurrent,...custom})=>custom)(nativePayload))");
+      run("nativeSystems.domain('customCompetition').create((({varyCurrent,qualites,...custom})=>custom)(nativePayload))");
       if(run("typeof aiRosterPopulationActive==='function'&&aiRosterPopulationActive(S)"))run('CDStaffCareer.initialize(S)');
      }else if(command==='new_career'){
        const mode=payload.mode??'fiction',worldEdition=worldEditions.forMode(mode),selectedClub=payload.nationalRole==='nation'?0:payload.club;if(!worldEdition&&!['fiction','france','common'].includes(mode))throw Error('Mode de carrière invalide.');if(!Number.isInteger(selectedClub)||selectedClub<0||(worldEdition?!worldEdition.playable.includes(selectedClub):selectedClub>=(mode==='fiction'?14:30)))throw Error('Club invalide pour ce mode.');ctx.nativePayload.club=selectedClub;protectCurrent('nouvelle-carriere',priorSeed,priorClock);if(worldEdition){/* Rubrique « talents » du pack de création (potentiels relevés, joueurs ajoutés) : lue par CDWorldCareer.start, par identifiants seulement. */const talentPack=creation(mode)!=='base'?packs.get(creation(mode)):null;ctx.nativePackTalents=talentPack?.meta.databaseId===edition(mode)&&talentPack.talents?talentPack.talents:null;try{run('CDWorldCareer.start(nativePayload.club,nativePayload.mode,'+(options.dailyCalendar===true)+')');}finally{ctx.nativePackTalents=null;}}if(payload.detailedLeagues!==undefined){if(!worldEdition)throw Error('Championnats actifs : réservé à la carrière Monde.');run('CDLeagueDetail.create(S,nativePayload.detailedLeagues)');}else run("if(nativePayload.mode==='common')CDCommonCareer.start(nativePayload.club);else start(nativePayload.club,nativePayload.mode??'fiction')");if(ctx.nativeDefi)run(defisDepart.VM_APPLIQUER);if(worldEdition)run('nativeSystems.domain("clubStrategy").presidentObjective()');if((worldEdition||mode==='common')&&creation(mode)!=='base'){const selected=packs.get(creation(mode));if(!selected)throw Error('Pack de création absent ; réimporte-le ou choisis Base.');if(selected.meta.databaseId!==edition(mode))throw Error('Pack incompatible avec cette édition.');ctx.nativeBinding={id:selected.meta.id,digest:selected.meta.digest};run('S.identityPack=nativeBinding');}
@@ -1295,6 +1300,9 @@ function createBridge(options={}){
       run('CDNativeAcademyGroups.start(S)');
       ctx.nativeCreationVariation={version:1,seed:priorSeed,varyCurrent:payload.varyCurrent??true};
       run('nativeProfessionalDepth.fill(S);nativeCareerVariation.apply(S,nativeCreationVariation);nativeAttributeStore.complete(S);');
+      // Option « Qualités des joueurs » (notation façon FM) : en fourchette tant que le staff ne les a pas assez suivis
+      // (player-knowledge.cjs, suivi). Absente = « Précises » (défaut, carrières d'avant).
+      if(payload.qualites==='fourchette')run("S.qualitesJoueurs={version:1,mode:'fourchette',debut:{season:S.season,week:S.worldMode?.week??S.franceMode?.week??S.round??0}}");
       // Budget de saison réaliste (salaires par niveau, budget du club, centre de formation) : activé par défaut
       // pour les carrières créées (décision de Léo du 13 novembre). CD_SALAIRES_PAR_NIVEAU=0 le coupe (tests,
       // comparaisons). Les carrières déjà commencées gardent leur économie : la marque S.startingSalaries ne se
@@ -1442,7 +1450,7 @@ function createBridge(options={}){
      }
      // Jour de « Continuer » sans copie d'annulation : l'avance reprend la carrière (advanceUntilEvent, restoreSession).
      if(sessionDay){error.sessionRestore=true;throw error;}
-     seed=priorSeed;clock=priorClock;store=copyStore(priorStore);ctx.nativePrior=priorState();cleanSave=priorFromSave?priorStateText:null;run('nativeSystems.clearTransient('+(syncedAtStart&&sectionsOn&&error.storageFailure!==true)+')');ctx.nativePrior.saveError=ctx.nativePrior.saveError||error.storageFailure===true;
+     seed=priorSeed;clock=priorClock;store=copyStore(priorStore);ctx.nativePrior=priorState(error);cleanSave=priorFromSave?priorStateText:null;run('nativeSystems.clearTransient('+(syncedAtStart&&sectionsOn&&error.storageFailure!==true)+')');ctx.nativePrior.saveError=ctx.nativePrior.saveError||error.storageFailure===true;
      run('S=nativePrior.state;if(S?.live&&nativePrior.playback)MATCH_PLAYBACK.set(S.live,nativePrior.playback);pendingSave=null;lastSaveError=nativePrior.saveError;nativeSaveSections=null;');
      if(syncedAtStart&&sectionsOn&&!error.storageFailure)run('nativeStateVersions.adopt()');
      throw error;
@@ -1735,7 +1743,7 @@ if(require.main===module){
  const input=readline.createInterface({input:process.stdin,crlfDelay:Infinity}),delta=require('./model-delta.cjs').createEncoder();
  input.on('line',line=>{
   // L'interface Godot annonce la révision du modèle qu'elle détient : réponse différentielle.
-  let result,base=null;try{const bytes=Buffer.byteLength(line);if(bytes>CHAMP_REQUEST_LIMIT_BYTES)throw Error('Message trop volumineux.');const request=JSON.parse(line);if(bytes>REQUEST_LIMIT_BYTES){if(request.command!=='import'||typeof request.payload?.text!=='string'||Buffer.byteLength(request.payload.text,'utf8')>CHAMP_IMPORT_LIMIT_BYTES)throw Error('Message trop volumineux.');const state=JSON.parse(request.payload.text)?.state,edition=worldEditions.forState(state);if(!edition||bytes>edition.limits.requestBytes||Buffer.byteLength(request.payload.text,'utf8')>edition.limits.saveBytes)throw Error('Message trop volumineux.');}if(Number.isSafeInteger(request?.base))base=request.base;if(request?.command==='career_slots'){result=careerSlotCommand(request);if(result.reopened&&base!==null)base=-1;}else result=bridge.handle(request);}catch(e){result={id:null,ok:false,model:null,error:e.message};}
+  let result,base=null;try{const bytes=Buffer.byteLength(line);if(bytes>CHAMP_REQUEST_LIMIT_BYTES)throw Error('Message trop volumineux.');const request=JSON.parse(line);if(bytes>REQUEST_LIMIT_BYTES){if(request.command!=='import'||typeof request.payload?.text!=='string'||Buffer.byteLength(request.payload.text,'utf8')>CHAMP_IMPORT_LIMIT_BYTES)throw Error('Message trop volumineux.');const document=JSON.parse(request.payload.text),edition=worldEditions.forState(document?.state);/* Export compressé (v4) : son édition n'est connue qu'après décompression ; parseSaveDocument compare alors le fichier au plafond de l'édition. */const compressed=document?.exportVersion===4&&typeof document.data==='string';if(!compressed&&(!edition||bytes>edition.limits.requestBytes||Buffer.byteLength(request.payload.text,'utf8')>edition.limits.saveBytes))throw Error('Message trop volumineux.');}if(Number.isSafeInteger(request?.base))base=request.base;if(request?.command==='career_slots'){result=careerSlotCommand(request);if(result.reopened&&base!==null)base=-1;}else result=bridge.handle(request);}catch(e){result={id:null,ok:false,model:null,error:e.message};}
   // La réponse part d'abord ; la décision courante en attente est écrite ensuite, pendant que l'interface affiche.
   // Par étapes (voir flushStep) : une commande arrivée entre deux étapes est lue sans attendre la fin de l'écriture.
   const step=()=>{let done=true;try{done=bridge.handle.flushStep();}catch{}if(!done)setImmediate(step);};

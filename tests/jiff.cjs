@@ -9,16 +9,12 @@ const path = require('node:path');
 const vm = require('node:vm');
 const { createBridge } = require('../native/engine/worker.cjs');
 const { settleClubMeetings } = require('./helpers/club-meetings.cjs');
+const { signerExport } = require('./helpers/signature-export.cjs');
 const { factory } = require('../native/engine/jiff.cjs');
 
-// Réécrit l'empreinte d'un export modifié (même calcul que dist/saves.js).
-function encoded(doc) {
-  const text = JSON.stringify(doc.state);
-  let h = 2166136261;
-  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619);
-  doc.checksum = (h >>> 0).toString(16).padStart(8, '0');
-  return JSON.stringify(doc);
-}
+// Réécrit l'empreinte d'un export modifié comme le jeu la vérifie, export réduit compris (état reconstruit
+// dans la VM du pont de la carrière partagée) : tests/helpers/signature-export.cjs.
+const encoded = doc => signerExport(doc, shared.vm);
 const copy = x => JSON.parse(JSON.stringify(x));
 const local = factory(); // getStatus / setStatus / isJiff n'utilisent que l'état passé.
 const sheets = s => s.jiff.counts;
@@ -28,7 +24,7 @@ let shared = null;
 function career() {
   if (shared) return shared;
   const dataDir = fs.mkdtempSync(path.join(path.resolve(os.tmpdir()), 'cd-jiff-monde-'));
-  const bridge = createBridge({ dataDir, seed: 607655, now: 1794178800000 });
+  const bridge = createBridge({ dataDir, seed: 607655, now: 1794178800000, testVm: true });
   let id = 0;
   const ask = (command, payload = {}) => bridge.handle({ id: ++id, command, payload });
   const ok = (command, payload) => { const r = ask(command, payload); assert.equal(r.ok, true, `${command}: ${r.error}`); return r.model; };
@@ -43,7 +39,7 @@ function career() {
     return go('finish_round');
   };
   go('new_career', { mode: 'world-champ', club: 0 });
-  shared = { ask, ok, go, exported, round, close() { bridge.close(); fs.rmSync(dataDir, { recursive: true, force: true }); } };
+  shared = { ask, ok, go, exported, round, vm: bridge.vm, close() { bridge.close(); fs.rmSync(dataDir, { recursive: true, force: true }); } };
   process.on('exit', () => shared.close());
   return shared;
 }

@@ -378,9 +378,9 @@ func _budget_check() -> void:
 	var extension := Budget.extension_amount(transfer, offer_fee)
 	if is_instance_valid(extension_button):
 		extension_button.visible = extension > 0
-		extension_button.text = Budget.extension_button(extension).to_upper() if extension > 0 else ""
+		extension_button.text = Budget.extension_button(extension, transfer).to_upper() if extension > 0 else ""
 		extension_button.set_meta("amount", extension)
-		extension_button.disabled = pending or app.waiting
+		extension_button.disabled = pending or app.waiting or Budget.extension_closed(transfer) != ""
 	if transfer.is_empty():
 		examine_button.disabled = false
 		return
@@ -399,7 +399,7 @@ func _ask_extension() -> void:
 		pending = true
 		extension_button.disabled = true
 		local_message.text = "Demande transmise au conseil…"
-	Sales.lisible(Budget.confirm_extension(app, rows, Budget.data(app.model), amount, envoyee, extension_button))
+	Budget.send_extension(app, amount, envoyee)
 ## Bande du recruteur sous les champs, redessinée à chaque changement d'indemnité ou de salaire.
 func _guidee() -> void:
 	if not is_instance_valid(rows) or selected_person.is_empty() or not is_instance_valid(fee_input): return

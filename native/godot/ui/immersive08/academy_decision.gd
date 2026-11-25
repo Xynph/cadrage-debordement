@@ -13,11 +13,18 @@ func _select(p: Dictionary) -> void:
 
 # --- Décision du jeune choisi ------------------------------------------------------------------------------------------
 
+## Lettres du staff d'un jeune : [niveau, potentiel] (échelle E- à S+, relative à notre effectif).
+func _lettres(p: Dictionary) -> Array:
+	var note := Notation.resume(app.model, p, true)
+	return [Notation.texte_lettre(int(note.niveau)), Notation.texte_lettre(int(note.potentiel))]
+
 ## Raison écrite de chaque ligne de la file « À décider » (données réelles du jeune uniquement).
 func _raison(p: Dictionary) -> String:
 	var parts: Array[String] = []
-	var niveau := G.rating_text(p, true)
-	var potentiel := G.potential_text(p)
+	# Notation façon FM : lettres du staff (E- à S+), jamais les chiffres du moteur.
+	var lettres := _lettres(p)
+	var niveau: String = lettres[0]
+	var potentiel: String = lettres[1]
 	if _a_decider(p):
 		parts.append("Contrat d’espoir à trancher cette saison : %s avant qu’un autre club ne s’y intéresse." % ("le promouvoir" if development.get("promotionAvailable", false) else "décide de son avenir"))
 	if _pepite(p): parts.append("Pépite : potentiel estimé %s, niveau %s." % [potentiel, niveau])
@@ -178,18 +185,37 @@ func _pastilles_raison(p: Dictionary) -> HFlowContainer:
 	var flux := HFlowContainer.new()
 	flux.add_theme_constant_override("h_separation", C.px(8))
 	flux.add_theme_constant_override("v_separation", C.px(6))
-	var niveau := G.rating_text(p, true)
-	var potentiel := G.potential_text(p)
+	# Notation façon FM : lettres du staff (E- à S+), jamais les chiffres du moteur.
+	var lettres := _lettres(p)
+	var niveau: String = lettres[0]
+	var potentiel: String = lettres[1]
 	if _a_decider(p):
 		var bulle := "Contrat d’espoir à trancher cette saison : %s avant qu’un autre club ne s’y intéresse." % ("le promouvoir" if development.get("promotionAvailable", false) else "décide de son avenir")
 		flux.add_child(Pastilles.pastille("À trancher", Pastilles.ORANGE, "clock", bulle, 18))
-	if _pepite(p): flux.add_child(Pastilles.pastille("%s · niv. %s" % [potentiel, niveau], Pastilles.TURQUOISE, "star", "Pépite : potentiel estimé %s, niveau %s." % [potentiel, niveau], 18))
+	# Pépite : puce étoile puis les deux lettres en pastilles rondes (potentiel, niveau), comme le tableau (25/11).
+	if _pepite(p):
+		flux.add_child(Pastilles.pastille("pépite", Pastilles.TURQUOISE, "star", "Pépite : potentiel estimé %s, niveau %s." % [potentiel, niveau], 18))
+		flux.add_child(_duo_lettres(p, true))
 	var blessure := float(p.get("injury", 0))
 	if blessure > 0: flux.add_child(Pastilles.pastille("%d sem." % ceili(blessure), Pastilles.ROUGE, "warning", "Blessé %s ; il manque les prochains matchs." % P.plural(ceili(blessure), "semaine", "semaines"), 18))
 	var gain: Variant = _delta(p)
-	if gain != null and int(gain) == 0 and int(p.get("age", 0)) >= 20: flux.add_child(Pastilles.pastille("0 progrès", Pastilles.ORANGE, "clock", "Aucune progression cette saison à %d ans." % int(p.age), 18))
-	if flux.get_child_count() == 0: flux.add_child(Pastilles.pastille("Niv. %s · pot. %s" % [niveau, potentiel], Pastilles.BLEU, "", "Niveau %s, potentiel %s." % [niveau, potentiel], 18))
+	if gain != null and int(gain) == 0 and int(p.get("age", 0)) >= 20: flux.add_child(Pastilles.pastille("Stagne", Pastilles.ORANGE, "clock", "Aucune progression cette saison à %d ans." % int(p.age), 18))
+	if flux.get_child_count() == 0: flux.add_child(_duo_lettres(p, false))
 	return flux
+
+## Niveau et Potentiel du jeune en pastilles rondes (« niv. » / « pot. » en petit), dans l'ordre voulu.
+func _duo_lettres(p: Dictionary, potentiel_d_abord: bool) -> HBoxContainer:
+	var duo := HBoxContainer.new()
+	duo.name = "AcademyDuoLettres"
+	duo.add_theme_constant_override("separation", C.px(6))
+	duo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var paires := [["pot.", "potential"], ["niv.", "rating"]] if potentiel_d_abord else [["niv.", "rating"], ["pot.", "potential"]]
+	for paire: Array in paires:
+		var mot := C.label(str(paire[0]), 15, Charte.IVOIRE_2, false, 600)
+		mot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		duo.add_child(mot)
+		duo.add_child(Notation.porte_pastille(Notation.lettre_champ(p, str(paire[1]), true, app.model), 28.0, "AcademyDuo_" + str(paire[1])))
+	return duo
 
 func _ouvrir_fiche(p: Dictionary) -> void:
 	app.navigation_controller.open_entity({"kind": "player" if _professional(p) else "academy", "id": str(p.id)})

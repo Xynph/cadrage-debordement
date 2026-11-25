@@ -7,6 +7,7 @@ extends RefCounted
 const Presentation = preload("res://match_presentation.gd")
 const Motion = preload("res://match_motion.gd")
 const Athlete = preload("res://match_athlete.gd")
+const JoueurV5 = preload("res://match_joueur_v5.gd")
 const Cut = preload("res://match_cut.gd")
 const Impacts = preload("res://match_impacts.gd")
 const VueBallon = preload("res://match_vue_ballon.gd")
@@ -215,10 +216,12 @@ static func animer_acteur(v: NativeMatchView, id: String, entry: Dictionary, del
 	var actor: Node3D = entry.node
 	var suivi: bool = v._choregraphie != null and v._choregraphie.stages(id)
 	var staged: bool = suivi or v.mise_en_scene().stages(id)
-	# Postures rendues dans l'ordre inverse de leur pose : formation (posée en dernier), puis gestes.
+	# Postures rendues dans l'ordre inverse de leur pose : plancher (posé en dernier), formation, puis gestes.
+	v._plancher.restaurer(id, entry)
 	if v._formations:
 		v._formations.restaurer(id, entry)
 	v.mise_en_scene().restore(id, entry)
+	v._chute_physique.restaurer(id, entry)
 	if entry.rig:
 		Presentation.restore_contact(entry.rig, entry.contact_base)
 		Cut.restore(entry.rig, entry.cut_pose)
@@ -310,6 +313,8 @@ static func animer_acteur(v: NativeMatchView, id: String, entry: Dictionary, del
 		# the hand contact after the pose solver has run.
 		animation.speed_scale = 1.0
 		# Advance by travelled distance; no minimum cadence while the root creeps.
+		# Jambes plus longues (gabarits v5) : foulée plus longue, cadence plus basse, pieds sans glisser.
+		stride *= float(entry.get("foulee", 1.0))
 		var pose_delta := movement.length() / stride if pose_moving else delta
 		animation.advance(0.0 if v._paused else pose_delta)
 	if entry.rig and not v._paused:
@@ -334,7 +339,7 @@ static func animer_acteur(v: NativeMatchView, id: String, entry: Dictionary, del
 				Cut.apply(actor, entry.rig, entry.cut_direction, cut_progress, entry.cut_pose, entry.cut_plant)
 
 
-static func _make_actor(v: NativeMatchView, id: String, side: int, target: Vector3) -> Dictionary:
+static func _make_actor(v: NativeMatchView, id: String, side: int, target: Vector3, slot: int = -1) -> Dictionary:
 	var actor := Node3D.new()
 	actor.name = "Athlete_" + id.validate_node_name()
 	v._players.add_child(actor)
@@ -342,22 +347,38 @@ static func _make_actor(v: NativeMatchView, id: String, side: int, target: Vecto
 	actor.rotation.y = PI * 0.5 if side == 0 else -PI * 0.5
 	# Aucun repère au sol (anneau aux couleurs de l'équipe) : retiré à la demande de Léo
 	# (12 novembre 2026), « ça fait pas réaliste ». Les maillots suffisent à distinguer les équipes.
-	var model := v._athlete_scene.instantiate() as Node3D
-	actor.add_child(model)
-	model.set_meta("athlete_id", id)
-	# Imported source contains a 100x mesh transform; calibrate its real rest bounds.
-	var bounds := _model_bounds(model, model)
-	if bounds.size.y > 0.001:
-		var calibration := 1.9 / bounds.size.y
-		model.scale = Vector3.ONE * calibration
-		model.position.y = -bounds.position.y * calibration
-	Athlete.prepare(model)
+	var model: Node3D
+	# Foulée relative à l'ancien athlète de 1,90 m (paliers et allures des clips calés dessus).
+	var foulee := 1.0
+	var profil := ""
+	if JoueurV5.disponible():
+		# Joueurs v5 : gabarit du poste, à la taille du gabarit ; peau et coupe tirées de l'identifiant.
+		profil = JoueurV5.profil_pour(id, slot)
+		model = JoueurV5.scene(profil).instantiate() as Node3D
+		actor.add_child(model)
+		model.set_meta("athlete_id", id)
+		model.set_meta("joueur_v5", profil)
+		foulee = JoueurV5.calibrer(model, JoueurV5.taille(profil))
+		JoueurV5.appliquer_apparence(model, JoueurV5.apparence(id))
+	else:
+		model = v._athlete_scene.instantiate() as Node3D
+		actor.add_child(model)
+		model.set_meta("athlete_id", id)
+		# Imported source contains a 100x mesh transform; calibrate its real rest bounds.
+		var bounds := _model_bounds(model, model)
+		if bounds.size.y > 0.001:
+			var calibration := 1.9 / bounds.size.y
+			model.scale = Vector3.ONE * calibration
+			model.position.y = -bounds.position.y * calibration
+		Athlete.prepare(model)
 	v._recolor(model, side)
 	if v._rendu:
 		v._rendu.equiper_joueur(actor)
 	var squelette := Presentation.rig_for(model)
 	if squelette:
 		squelette.set_meta("repos_relatif", actor.global_basis.inverse() * squelette.global_basis)
+		# Squelettes physiques de la chute au plaquage, préparés une fois (aucun pic au plaquage).
+		v._chute_physique.preparer(squelette)
 	var animation := _find_animation(model)
 	var idle := StringName()
 	var run := StringName()
@@ -380,7 +401,7 @@ static func _make_actor(v: NativeMatchView, id: String, side: int, target: Vecto
 			idle = v._animations_adaptees.repos()
 		if not idle.is_empty():
 			animation.play(idle)
-	return {"node": actor, "model": model, "side": side, "from": target, "target": target,
+	return {"node": actor, "model": model, "side": side, "profil": profil, "foulee": foulee, "from": target, "target": target,
 		"elapsed": NativeMatchView.BLEND_SECONDS, "duree": NativeMatchView.BLEND_SECONDS, "velocity": Vector3.ZERO, "tangent": Vector3.ZERO, "running": false,
 		"feet": {}, "cut_direction": 0, "cut_idle": NativeMatchView.BLEND_SECONDS, "cut_beat": -1.0, "cut_normal_speed": false, "cut_pose": {}, "cut_plant": {},
 		"contact_base": {}, "contact_weight": 0.0,

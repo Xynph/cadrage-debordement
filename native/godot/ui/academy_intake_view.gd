@@ -12,9 +12,9 @@ static func entry(app: Control, parent: Node) -> void:
 	parent.add_child(G.wrap("Sans décision avant la première journée, le responsable de la formation choisira pour toi.", 13))
 
 static func _line(p: Dictionary) -> String:
-	var level := "niveau %s" % str(p.rating) if p.get("rating") != null else "niveau inconnu"
-	var span: Variant = p.get("potentialRange")
-	var ceiling := " · potentiel %d–%d" % [int(span.min), int(span.max)] if span is Dictionary else ""
+	# Notation façon FM : lettres du staff, jamais les chiffres du moteur.
+	var level := "niveau %s" % G.rating_text(p, true)
+	var ceiling := " · potentiel %s" % G.potential_text(p)
 	var prodigy := " · PRODIGE" if p.get("prodigy", false) else ""
 	return "%s · %s · %d ans · %s%s%s" % [p.name, p.pos, int(p.age), level, ceiling, prodigy]
 

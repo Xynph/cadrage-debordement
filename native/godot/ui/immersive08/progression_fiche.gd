@@ -10,6 +10,8 @@ const C = preload("res://ui/immersive08/components.gd")
 const D = preload("res://ui/immersive08/primitives.gd")
 const G = preload("res://ui/game_skin.gd")
 const Charte = preload("res://ui/charte.gd")
+const Notation = preload("res://ui/notation_staff.gd")
+const K = preload("res://ui/player_knowledge_text.gd")
 const PlayerAttributes = preload("res://ui/player_attributes.gd")
 const Academy = preload("res://ui/immersive08/academy_canvas.gd")
 
@@ -191,6 +193,8 @@ class Courbe extends Control:
 	var bas := 20.0
 	var haut := 100.0
 	var pas := 10.0
+	## Courbe du Niveau (valeur cachée) : forme seule, ni graduation ni valeur en bout de courbe.
+	var sans_chiffres := false
 
 	func _y(v: float, top: float, bottom: float) -> float:
 		return lerpf(bottom, top, inverse_lerp(bas, haut, v))
@@ -206,7 +210,7 @@ class Courbe extends Control:
 		while v <= haut + .01:
 			var y := _y(v, top, bottom)
 			draw_line(Vector2(left, y), Vector2(right, y), Color(Charte.FILET, .9), 1.0)
-			draw_string(font, Vector2(0, y + px * .35), str(roundi(v)), HORIZONTAL_ALIGNMENT_RIGHT, left - C.px(12), px, Charte.IVOIRE_3)
+			if not sans_chiffres: draw_string(font, Vector2(0, y + px * .35), str(roundi(v)), HORIZONTAL_ALIGNMENT_RIGHT, left - C.px(12), px, Charte.IVOIRE_3)
 			v += pas
 		for k in etiquettes.size():
 			var x := lerpf(left, right, float(k) / 12.0)
@@ -236,7 +240,7 @@ class Courbe extends Control:
 			for autre: float in fin_y:
 				if absf(autre - ey) < px * 1.15: ey = autre + px * 1.15
 			fin_y.append(ey)
-			var libelle := "%s %s" % [str(s.get("court", "")), str(roundi(float(vals[-1])))]
+			var libelle := str(s.get("court", "")) if sans_chiffres else "%s %s" % [str(s.get("court", "")), str(roundi(float(vals[-1])))]
 			draw_string(font, Vector2(right + C.px(16), ey + px * .35), libelle, HORIZONTAL_ALIGNMENT_LEFT, C.px(134), px, couleur)
 
 	func _trait(points: PackedVector2Array, couleur: Color, epais: float) -> void:
@@ -290,12 +294,16 @@ static func _ecart(parent: Control, x: float, y: float, ecart_: int, taille: int
 	var l := D.text(parent, x, y, ecart_texte(ecart_), taille, Charte.GAIN if ecart_ > 0 else Charte.PERTE, 800, largeur, HORIZONTAL_ALIGNMENT_RIGHT)
 	l.name = id
 
-static func _tuile(parent: Control, zone: Rect2, titre: String, chiffre: String, couleur: Color, sous: String, sous_couleur: Color, id: String, action: Callable) -> void:
+## `lettre` ({bas, haut}, notation_staff) : Niveau ou Potentiel en pastille ronde de la lettre du staff, comme l'Effectif.
+static func _tuile(parent: Control, zone: Rect2, titre: String, chiffre: String, couleur: Color, sous: String, sous_couleur: Color, id: String, action: Callable, lettre: Dictionary = {}) -> void:
 	var b := _ligne_bouton(parent, zone, id, false, action, titre)
 	b.add_theme_stylebox_override("normal", Charte.sans_ombre(C.box(Color(couleur, .12), Color.TRANSPARENT, Charte.RAYON_CARTE, 0)))
 	D.text(parent, zone.position.x + 16, zone.position.y + 26, titre, 15, Charte.IVOIRE_2, 700, zone.size.x - 32)
-	var n := D.text(parent, zone.position.x + 16, zone.position.y + zone.size.y - 14, chiffre, 38, couleur, 800, 110)
-	n.add_theme_font_override("font", Charte.TITRE_FICHE)
+	if not lettre.is_empty():
+		Notation.pastille_note(parent, zone.position.x + 16, zone.position.y + zone.size.y - 22, lettre, 34, id + "Lettre")
+	else:
+		var n := D.text(parent, zone.position.x + 16, zone.position.y + zone.size.y - 14, chiffre, 38, couleur, 800, 110)
+		n.add_theme_font_override("font", Charte.TITRE_FICHE)
 	if not sous.is_empty(): D.text(parent, zone.position.x + zone.size.x - 16, zone.position.y + zone.size.y - 18, sous, 21, sous_couleur, 800, 120, HORIZONTAL_ALIGNMENT_RIGHT)
 
 static func _specialisation(card: Control, app: Control, player: Dictionary, zone: Rect2) -> void:
@@ -390,8 +398,14 @@ static func _saisons(card: Control, app: Control, player: Dictionary, x: float, 
 		var debut := int(an.get("start", 0))
 		var fin := int(an.get("end", 0))
 		D.text(card, x, y + 34 + i * 32, G.season_label(an.get("season", "—")), 19, Charte.IVOIRE_2, 600, 140)
-		D.text(card, x + 150, y + 34 + i * 32, "%d → %d" % [debut, fin], 19, Charte.IVOIRE, 700, 120)
-		_ecart(card, x + largeur, y + 34 + i * 32, fin - debut, 19, 70, "ProgressionSaison%d" % i)
+		# Début → fin de saison en lettres du staff (échelle du Niveau), sens ▲/▼ : jamais le chiffre du moteur.
+		var Notation: Script = load("res://ui/notation_staff.gd")
+		var recale: float = Notation.decalage_niveau(player)
+		var l_debut: Dictionary = Notation.lettre_note(app.model, player, debut + recale, true, "niveau")
+		var l_fin: Dictionary = Notation.lettre_note(app.model, player, fin + recale, true, "niveau")
+		D.text(card, x + 150, y + 34 + i * 32, "%s → %s" % [Notation.texte_note(l_debut), Notation.texte_note(l_fin)], 19, Charte.IVOIRE, 700, 160)
+		var sens := fin - debut
+		if sens != 0: D.text(card, x + largeur, y + 34 + i * 32, "▲" if sens > 0 else "▼", 19, Charte.GAIN if sens > 0 else Charte.PERTE, 800, 70, HORIZONTAL_ALIGNMENT_RIGHT).name = "ProgressionSaison%d" % i
 
 static func _court(libelle: String) -> String:
 	return libelle if libelle.length() <= 11 else libelle.substr(0, 10).strip_edges() + "."
@@ -410,6 +424,7 @@ static func _cadre_y(courbe: Courbe, vals: Array) -> void:
 ## Courbe 12 mois en haut (qualités cochées ou niveau), grille des 36 qualités à cocher en dessous.
 static func construire(page: Control, app: Control, player: Dictionary, top: float) -> void:
 	var liste := qualites(app, player)
+	var plages: Dictionary = player.get("attributesV2Range") if player.get("attributesV2Range") is Dictionary else {}
 	var e := etat(app, player, liste)
 	var courant := mois_courant(app, releve(player))
 	var haut := D.panel(page, Rect2(0, top, 2248, 480), "", "", "", "ProgressionCourbeCarte")
@@ -419,8 +434,9 @@ static func construire(page: Control, app: Control, player: Dictionary, top: flo
 	_pilule(haut, Rect2(720, 16, 150, 40), "Niveau", e.vue == "niveau", "ProgressionVue_niveau", func(): _vue(app, e, "niveau"))
 	var niv := niveau(app, player)
 	var gain := ecart(niv)
-	_tuile(haut, Rect2(1290, 10, 220, 74), "NIVEAU", G.n(roundi(float(niv[12]))), Charte.IVOIRE, ecart_texte(gain), Charte.GAIN if gain >= 0 else Charte.PERTE, "ProgressionTuileNiveau", func(): _vue(app, e, "niveau"))
-	_tuile(haut, Rect2(1522, 10, 220, 74), "POTENTIEL", G.potential_text(player), Charte.CONFIANCE, "", Charte.IVOIRE, "ProgressionTuilePotentiel", func(): _vue(app, e, "niveau"))
+	# Niveau : lettre du staff et sens de la courbe (▲/▼), jamais le chiffre du moteur.
+	_tuile(haut, Rect2(1290, 10, 220, 74), "NIVEAU", G.rating_text(player, true), Charte.IVOIRE, "▲" if gain > 0 else "▼" if gain < 0 else "", Charte.GAIN if gain >= 0 else Charte.PERTE, "ProgressionTuileNiveau", func(): _vue(app, e, "niveau"), Notation.lettre_champ(player, "rating", K.owned(player, true)))
+	_tuile(haut, Rect2(1522, 10, 220, 74), "POTENTIEL", G.potential_text(player), Charte.CONFIANCE, "", Charte.IVOIRE, "ProgressionTuilePotentiel", func(): _vue(app, e, "niveau"), Notation.lettre_champ(player, "potential", K.owned(player)))
 	_specialisation(haut, app, player, Rect2(1760, 24, 466, 46))
 	var courbe := Courbe.new()
 	courbe.name = "ProgressionCourbe"
@@ -428,11 +444,14 @@ static func construire(page: Control, app: Control, player: Dictionary, top: flo
 	courbe.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if e.vue == "niveau":
 		courbe.series.append({"valeurs": niv, "couleur": Charte.IVOIRE, "court": "Niveau"})
+		courbe.sans_chiffres = true
 		_cadre_y(courbe, niv)
 		haut.add_child(courbe)
 		D.place(courbe, Rect2(24, 96, 1700, 370))
 		_saisons(haut, app, player, 1780, 140, 440)
 	else:
+		# Qualités en fourchette (option de carrière) : la courbe part du milieu des fourchettes, jamais un chiffre écrit.
+		if not plages.is_empty(): courbe.sans_chiffres = true
 		var vals: Array = []
 		for q: Dictionary in liste:
 			if q.cle in e.coches:
@@ -464,6 +483,14 @@ static func construire(page: Control, app: Control, player: Dictionary, top: flo
 			if coche: D.rect(grille, Rect2(x + 4, y + 8, 20, 20), c, 10)
 			else: D.rect(grille, Rect2(x + 4, y + 8, 20, 20), Color.TRANSPARENT, 10, Color(Charte.CREME, .45))
 			D.text(grille, x + 36, y + 25, q.libelle, 20, Charte.IVOIRE if coche else Charte.IVOIRE_2, 600 if coche else 500, colonne - 160, HORIZONTAL_ALIGNMENT_LEFT, true)
-			_ecart(grille, x + colonne - 56, y + 25, int(q.ecart), 18, 70, "ProgressionEcart_" + cle)
-			D.text(grille, x + colonne, y + 26, G.n(roundi(float(q.valeur))), 23, Charte.couleur_attribut(q.valeur), 700, 46, HORIZONTAL_ALIGNMENT_RIGHT).name = "ProgressionNote_" + cle
+			# Staff pas encore sûr (qualités en fourchette) : « 45-49 » comme la fiche, sans écart sur 12 mois.
+			var plage: Variant = plages.get(cle)
+			if plage is Dictionary and plage.has("min") and plage.has("max"):
+				var texte_plage := "%d-%d" % [int(plage.min), int(plage.max)]
+				var en_plage := D.text(grille, x + colonne, y + 26, texte_plage, 21, Charte.couleur_attribut((float(plage.min) + float(plage.max)) / 2.0), 700, 84, HORIZONTAL_ALIGNMENT_RIGHT)
+				en_plage.name = "ProgressionNote_" + cle
+				en_plage.set_meta("fourchette", true)
+			else:
+				_ecart(grille, x + colonne - 56, y + 25, int(q.ecart), 18, 70, "ProgressionEcart_" + cle)
+				D.text(grille, x + colonne, y + 26, G.n(roundi(float(q.valeur))), 23, Charte.couleur_attribut(q.valeur), 700, 46, HORIZONTAL_ALIGNMENT_RIGHT).name = "ProgressionNote_" + cle
 			j += 1

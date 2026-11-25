@@ -10,6 +10,7 @@ const Sales = preload("res://ui/player_sales_view.gd")
 const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 const Bandeau = preload("res://ui/bandeau_filtres.gd")
 const Role = preload("res://ui/role_contrat.gd")
+const Notation = preload("res://ui/notation_staff.gd")
 const STATUS_OPTIONS := ["Tous","Prolongation accessible","Discussion en cours","Échanges clos","Sans contrat renseigné"]
 var app: Control
 var state: Dictionary
@@ -167,7 +168,7 @@ static func filtered(players: Array, filters: Dictionary) -> Array:
 	return result
 
 static func sort_value(player: Dictionary, key: String, live: bool = false) -> Variant:
-	if key in ["rating","potential"]: return G.knowledge_sort_value(player,key,true)
+	if key in ["rating","potential"]: return Notation.tri_champ(player,key,true)
 	if key == "pos": return load("res://ui/immersive08/squad_canvas.gd").sort_value(player, "Poste")
 	if key == "contractEnd": return horizon(player) if horizon(player) >= 0 else null
 	if key == "share": key = "salary"

@@ -171,6 +171,7 @@ static func begin_creation(app: Control) -> void:
 	app.management_ui.erase("creation_role")
 	app.management_ui.erase("creation_nation")
 	app.management_ui.erase("creation_vary_current")
+	app.management_ui.erase("creation_qualites")
 	app.management_ui.erase("creation_start")
 	app.management_ui.erase(Defis.CHOIX)
 	app.management_ui.erase("creation_connu")
@@ -243,8 +244,9 @@ static func _competition_summary(app: Control, parent: VBoxContainer, division: 
 		parent.add_child(C.label("FORMAT ET ENJEUX", 21, Editorial.BRASS))
 		for detail: String in format: parent.add_child(C.wrap(detail, 23, C.IVORY))
 
+## Niveau d'un effectif de départ : palier écrit (notation façon FM, choix B de Léo), jamais la moyenne chiffrée.
 static func _rating(roster: Dictionary) -> String:
-	return String.num(float(roster.get("average", 0)), 1).replace(".", ",")
+	return str(load("res://ui/notation_staff.gd").palier_groupe(roster.get("average")).texte)
 
 static func _creation_crest(club: Dictionary, width: int, use_mockup: bool) -> Control:
 	if use_mockup and int(club.id) == 0:
@@ -297,7 +299,7 @@ static func _club_preview(app: Control, parent: VBoxContainer, club: Dictionary,
 	var metrics := C.h(12)
 	parent.add_child(metrics)
 	if not roster.is_empty():
-		var summary := _dossier_fact(metrics, "Note moyenne", _rating(roster), "rating", compact)
+		var summary := _dossier_fact(metrics, "Niveau", _rating(roster), "rating", compact)
 		summary.name = "CreationRosterSummary"
 		_rating_rail(summary, float(roster.average), Editorial.RAIL_GOLD)
 	_dossier_fact(metrics, "Objectif du conseil", str(club.get("goal", "Développer le projet sportif")), "target", compact)
@@ -575,6 +577,8 @@ static func _show_creation_waiting(app: Control, workspace: Control) -> void:
 static func _create(app: Control, selected: Dictionary, mode: String) -> void:
 	var role: String = app.management_ui.get("creation_role", "club") if mode == "world-champ" else "club"
 	var payload := {"mode":mode,"varyCurrent":bool(app.management_ui.get("creation_vary_current",true))}
+	# Option « Qualités des joueurs » (notation façon FM) : en fourchette tant que pas observé ; « Précises » = défaut.
+	if str(app.management_ui.get("creation_qualites", "precises")) == "fourchette": payload.qualites = "fourchette"
 	if mode == "world-champ" and role != "nation": payload.start = str(app.management_ui.get("creation_start", "premiers-clubs"))
 	if role != "nation": payload.club = int(selected.id)
 	# Défi de départ choisi pour ce club : objectif du président et du conseil fixés par le moteur.

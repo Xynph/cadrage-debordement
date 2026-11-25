@@ -308,10 +308,10 @@ static func _parcours(ctx: Dictionary, zone: Rect2) -> void:
 			"poste": V.texte(ligne, x, base, str(p.pos), 19, Charte.IVOIRE, w, a, 500)
 			"age": V.texte(ligne, x, base, G.n(p.age), 19, Charte.IVOIRE_2, w, a, 500)
 			"niv":
-				var niv_l := V.texte(ligne, x, base, V.niveau_txt(p), 21, V.couleur(V.valeur(p, "rating")), w, a, 700, false)
+				var niv_l := V.texte(ligne, x, base, V.niveau_txt(p), 21, V.couleur_champ(p, "rating"), w, a, 700, false)
 				var fl_niv: Dictionary = Fleches.donnees(ctx.app, p).get("niveau", {})
 				if not fl_niv.is_empty(): Fleches.marquer(ctx.app, niv_l, int(fl_niv.cran), fl_niv.serie, "Niveau", "Niveau_" + str(p.id).replace(":", "_"))
-			"pot": V.texte(ligne, x, base, V.potentiel_txt(p), 21, V.couleur(V.valeur(p, "potential")), w, a, 700, false)
+			"pot": V.texte(ligne, x, base, V.potentiel_txt(p), 21, V.couleur_champ(p, "potential"), w, a, 700, false)
 			"traj":
 				var t := V.trajectoire(str(p.path))
 				R.pastille(ligne, x, base, str(t[1]), t[3], str(t[2]), "", 18)
@@ -378,7 +378,7 @@ static func _centres(ctx: Dictionary, zone: Rect2) -> void:
 		var p: Dictionary = candidats[i]
 		var fee := int(p.get("fee", 0))
 		var pid := str(p.id)
-		var pt := V.couleur(V.valeur(p, "potential"))
+		var pt := V.couleur_champ(p, "potential")
 		var b := V.zone_cliquable(cand, Rect2(12, yk, GAUCHE - 24, 80), func(): V.envoyer(ctx, "academy_recruit", {"playerId": pid, "offer": fee}, fee, "Recruter " + str(p.name)), "CentresCandidat%d" % i, str(p.name), Charte.RAYON_CARTE)
 		V.portrait(b, Rect2(10, 10, 60, 60), p, pt, true)
 		V.texte(b, 84, 34, str(p.name), 20, Charte.IVOIRE, 220, HORIZONTAL_ALIGNMENT_LEFT, 700)
@@ -413,7 +413,7 @@ static func _centres(ctx: Dictionary, zone: Rect2) -> void:
 			"cand":
 				var k := 0
 				for p: Dictionary in c.get("candidates", []).slice(0, 7):
-					V.portrait(ligne, Rect2(x + k * 40, (h - 34) / 2.0, 34, 34), p, V.couleur(V.valeur(p, "potential")), true)
+					V.portrait(ligne, Rect2(x + k * 40, (h - 34) / 2.0, 34, 34), p, V.couleur_champ(p, "potential"), true)
 					k += 1
 			"pot":
 				var m: float = meilleur.call(c)
@@ -440,7 +440,7 @@ static func _centres(ctx: Dictionary, zone: Rect2) -> void:
 static func _fenetre_candidats(ctx: Dictionary, c: Dictionary) -> void:
 	var elements: Array = []
 	for p: Dictionary in c.get("candidates", []):
-		elements.append({"id": str(p.id), "libelle": str(p.name), "sous": "%s · pot. %s · %s" % [p.pos, V.potentiel_txt(p), V.euros(p.get("fee", 0))], "couleur": V.couleur(V.valeur(p, "potential"))})
+		elements.append({"id": str(p.id), "libelle": str(p.name), "sous": "%s · pot. %s · %s" % [p.pos, V.potentiel_txt(p), V.euros(p.get("fee", 0))], "couleur": V.couleur_champ(p, "potential")})
 	V.fenetre_liste(ctx, "CentresCandidatsFenetre", str(c.name), "people", elements, func(id: Variant):
 		for p: Dictionary in c.get("candidates", []):
 			if str(p.id) == str(id): V.envoyer(ctx, "academy_recruit", {"playerId": str(p.id), "offer": int(p.fee)}, int(p.fee), "Recruter " + str(p.name)))
@@ -529,7 +529,7 @@ static func _filieres(ctx: Dictionary, zone: Rect2) -> void:
 			"poste": V.texte(ligne, x, base, str(p.pos), 19, Charte.IVOIRE, w, a, 500)
 			"pot":
 				var vu := int(p.scouted) > 0
-				V.texte(ligne, x, base, V.potentiel_txt(p) if vu else "?", 21, V.couleur(V.valeur(p, "potential")) if vu else Charte.IVOIRE_3, w, a, 700, false)
+				V.texte(ligne, x, base, V.potentiel_txt(p) if vu else "?", 21, V.couleur_champ(p, "potential") if vu else Charte.IVOIRE_3, w, a, 700, false)
 			"obs":
 				V.crans(ligne, x, h / 2.0 - 5, int(p.scouted), 3, V.MINUTES, 30, 10)
 				V.texte(ligne, x + 112, base, "%d/3" % int(p.scouted), 18, V.MINUTES if int(p.scouted) > 0 else Charte.IVOIRE_3, 50, HORIZONTAL_ALIGNMENT_LEFT, 700, false)
@@ -575,7 +575,7 @@ static func _fenetre_prospect(ctx: Dictionary, p: Dictionary) -> void:
 	var L := 1100.0
 	var fond := Fenetre.ouvrir(ctx.page, "FilieresProspectFenetre", str(p.name).to_upper(), "search", L, 330.0)
 	var vu := int(p.scouted) > 0
-	var pt := V.couleur(V.valeur(p, "potential")) if vu else Charte.IVOIRE_3
+	var pt := V.couleur_champ(p, "potential") if vu else Charte.IVOIRE_3
 	V.portrait(fond, Rect2(30, 78, 84, 84), p, pt, true)
 	V.texte(fond, 134, 104, "%s · %s ans · %s" % [p.pos, G.n(p.age), p.clubName], 20, Charte.IVOIRE_2, 560)
 	V.crans(fond, 134, 128, int(p.scouted), 3, V.MINUTES, 34, 10)
@@ -634,8 +634,8 @@ static func _passerelle(ctx: Dictionary, zone: Rect2) -> void:
 			"nom": V.cellule_joueur(ctx, ligne, x, h, base, e, w, "" if pret else "squad")
 			"poste": V.texte(ligne, x, base, str(e.get("pos", "—")), 19, Charte.IVOIRE, w, a, 500)
 			"age": V.texte(ligne, x, base, G.n(e.get("age", "—")), 19, Charte.IVOIRE_2, w, a, 500)
-			"niv": V.texte(ligne, x, base, V.niveau_txt(e) if not pret else "—", 21, V.couleur(V.valeur(e, "rating")), w, a, 700, false)
-			"pot": V.texte(ligne, x, base, V.potentiel_txt(e) if not pret else "—", 21, V.couleur(V.valeur(e, "potential")), w, a, 700, false)
+			"niv": V.texte(ligne, x, base, V.niveau_txt(e) if not pret else "—", 21, V.couleur_champ(e, "rating"), w, a, 700, false)
+			"pot": V.texte(ligne, x, base, V.potentiel_txt(e) if not pret else "—", 21, V.couleur_champ(e, "potential"), w, a, 700, false)
 			"statut":
 				if pret: R.pastille(ligne, x, base, "En prêt · " + str(e.hote), V.REPUTATION, "bus", "", 18)
 				elif e.get("loanEligible", false): R.pastille(ligne, x, base, "Prêtable", V.MINUTES, "bus", "", 18)
@@ -733,10 +733,10 @@ static func _generations(ctx: Dictionary, zone: Rect2) -> void:
 			"poste": V.texte(ligne, x, base, str(p.pos), 19, Charte.IVOIRE, w, a, 500)
 			"age": V.texte(ligne, x, base, G.n(p.age), 19, Charte.IVOIRE_2, w, a, 500)
 			"niv":
-				var niv_l := V.texte(ligne, x, base, V.niveau_txt(p), 21, V.couleur(V.valeur(p, "rating")), w, a, 700, false)
+				var niv_l := V.texte(ligne, x, base, V.niveau_txt(p), 21, V.couleur_champ(p, "rating"), w, a, 700, false)
 				var fl_niv: Dictionary = Fleches.donnees(ctx.app, p).get("niveau", {})
 				if not fl_niv.is_empty(): Fleches.marquer(ctx.app, niv_l, int(fl_niv.cran), fl_niv.serie, "Niveau", "Niveau_" + str(p.id).replace(":", "_"))
-			"pot": V.texte(ligne, x, base, V.potentiel_txt(p), 21, V.couleur(V.valeur(p, "potential")), w, a, 700, false)
+			"pot": V.texte(ligne, x, base, V.potentiel_txt(p), 21, V.couleur_champ(p, "potential"), w, a, 700, false)
 			"min": V.texte(ligne, x, base, V.mille(p.get("minutes", 0)), 19, V.MINUTES, w, a, 700, false)
 			"traj":
 				var t := V.trajectoire(str(p.get("path", p.get("strategy", "equilibre"))))

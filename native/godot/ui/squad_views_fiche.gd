@@ -265,7 +265,7 @@ static func _profile_attributes(parent: VBoxContainer, player: Dictionary, detai
 			var row := G.h(5)
 			card.add_child(row)
 			row.add_child(G.fill(G.wrap(pair[1], 12, G.MUTED)))
-			var caption := G.label(PlayerAttributes.caption(details.get(pair[0])), 13, G.INK)
+			var caption := G.label(PlayerAttributes.caption_joueur(player, pair[0], details.get(pair[0])), 13, G.INK)
 			caption.name = "PlayerDetailedAttribute_" + pair[0]
 			caption.accessibility_name = "%s : %s sur 100" % [pair[1], caption.text]
 			caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT

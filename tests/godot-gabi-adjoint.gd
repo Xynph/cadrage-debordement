@@ -108,6 +108,9 @@ func _composition() -> void:
 	_check(changes.any(func(c: Dictionary) -> bool: return int(c.slot) == target), "Composition : le titulaire à 58 % est remplacé : " + str(advice.texte))
 	_check(str(advice.get("action", {}).get("libelle", "")) == "Suivre le conseil", "Composition : bouton « Suivre le conseil »")
 	_check(str(advice.texte).contains("58 %"), "Composition : l'argument cite la condition réelle : " + str(advice.texte))
+	# Note au poste en lettre (décision de Léo du 24/11/2026) : « vaut B au poste », jamais « vaut 72 au poste ».
+	var vaut := RegEx.create_from_string("vaut (que )?[0-9]")
+	_check(vaut.search(str(advice.texte)) == null and RegEx.create_from_string("vaut (que )?(E|D|C|B|A|S)").search(str(advice.texte)) != null, "Composition : note au poste citée en lettre, sans chiffre : " + str(advice.texte))
 	for change: Dictionary in changes:
 		_check(_valid_change(tired, change), "Composition : changement valide " + str(change))
 	_check(Avis.composition(tired) == advice, "Composition : conseil déterministe")

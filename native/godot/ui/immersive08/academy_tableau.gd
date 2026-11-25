@@ -12,9 +12,9 @@ func _columns() -> Array:
 			{"id":"minutes", "titre":"MINUTES", "tri":"minutes", "x":1780.0, "w":140.0, "align":2}, {"id":"status", "titre":"STATUT", "tri":"status", "x":1950.0, "w":290.0, "align":0}]
 	return [{"id":"num", "titre":"#", "tri":"source", "x":22.0, "w":40.0, "align":1}, {"id":"name", "titre":"JOUEUR", "tri":"name", "x":132.0, "w":420.0, "align":0},
 		{"id":"pos", "titre":"POSTE", "tri":"pos", "x":580.0, "w":190.0, "align":0}, {"id":"age", "titre":"ÂGE", "tri":"age", "x":790.0, "w":70.0, "align":2},
-		{"id":"note", "titre":"NIV.", "tri":"note", "x":880.0, "w":80.0, "align":2}, {"id":"potential", "titre":"POTENTIEL", "tri":"potential", "x":980.0, "w":150.0, "align":2},
-		{"id":"minutes", "titre":"MINUTES", "tri":"minutes", "x":1180.0, "w":130.0, "align":2},
-		{"id":"contract", "titre":"FIN DU CONTRAT", "tri":"contract", "x":1350.0, "w":170.0, "align":2}, {"id":"status", "titre":"STATUT", "tri":"status", "x":1570.0, "w":670.0, "align":0}]
+		{"id":"note", "titre":"NIV.", "tri":"note", "x":880.0, "w":80.0, "align":1}, {"id":"potential", "titre":"POTENTIEL", "tri":"potential", "x":990.0, "w":330.0, "align":0},
+		{"id":"minutes", "titre":"MINUTES", "tri":"minutes", "x":1340.0, "w":130.0, "align":2},
+		{"id":"contract", "titre":"FIN DU CONTRAT", "tri":"contract", "x":1500.0, "w":170.0, "align":2}, {"id":"status", "titre":"STATUT", "tri":"status", "x":1700.0, "w":540.0, "align":0}]
 
 func _col(columns: Array, id: String) -> Dictionary:
 	for col: Dictionary in columns:
@@ -102,28 +102,37 @@ func _draw_rows(columns: Array) -> void:
 		hit.pressed.connect(func(): _select(p))
 		load("res://ui/survol_ligne.gd").appliquer(hit, p.id == selected.get("id"), Color.TRANSPARENT, app.accent)
 		_cellule(hit, _col(columns, "num"), G.n(_source_index(p) + 1), Charte.IVOIRE_2)
-		_portrait(hit, p, Rect2(64, 1, 28, 28))
-		_drapeau(hit, p, Rect2(98, 6, 26, 18))
-		var nom := D.text(hit, 132, 21, str(p.name), 20, Charte.IVOIRE, 700, 340)
+		_portrait(hit, p, Rect2(64, 1 + DY, 28, 28))
+		_drapeau(hit, p, Rect2(98, 6 + DY, 26, 18))
+		var nom := D.text(hit, 132, 21 + DY, str(p.name), 20, Charte.IVOIRE, 700, 340)
 		nom.name = "AcademyNom"
 		_cellule(hit, _col(columns, "pos"), str(p.pos), Charte.IVOIRE_2)
 		_cellule(hit, _col(columns, "age"), G.n(p.age), Charte.IVOIRE)
-		var niveau: Variant = G.knowledge_sort_value(p, "rating")
-		var niv_cellule := _cellule(hit, _col(columns, "note"), G.rating_text(p, true), Charte.couleur_attribut(niveau) if niveau != null else Charte.IVOIRE_3, true)
-		var fl_niv: Dictionary = Fleches.donnees(app, p).get("niveau", {})
-		if niv_cellule != null and not fl_niv.is_empty(): Fleches.marquer(app, niv_cellule, int(fl_niv.cran), fl_niv.serie, "Niveau", "Niveau_" + str(p.id).replace(":", "_"))
-		var potentiel: Variant = G.knowledge_sort_value(p, "potential")
-		if not _col(columns, "potential").is_empty():
-			var texte_pot := ("★ " if _pepite(p) else "") + G.potential_text(p)
-			_cellule(hit, _col(columns, "potential"), texte_pot, Charte.couleur_attribut(potentiel) if potentiel != null else Charte.IVOIRE_3, true)
+		# Notation façon FM (planche 24/11) : lettres du staff relatives à notre effectif pro, phrase de potentiel.
+		var note := Notation.resume(app.model, p, true)
+		var col_n := _col(columns, "note")
+		if not col_n.is_empty():
+			var w_n := Notation.largeur_note(note.niveau_note, PASTILLE)
+			var pastille_n := Notation.pastille_note(hit, col_n.x + col_n.w / 2.0 - w_n / 2.0, ROW / 2.0, note.niveau_note, PASTILLE, "AcademyLettreNiveau")
+			var fl_niv: Dictionary = Fleches.donnees(app, p).get("niveau", {})
+			if not fl_niv.is_empty(): Fleches.marquer_pastille(app, pastille_n, int(fl_niv.cran), fl_niv.serie, "Niveau", "Niveau_" + str(p.id).replace(":", "_"))
+		var col_p := _col(columns, "potential")
+		if not col_p.is_empty():
+			var lp := Notation.pastille(hit, col_p.x, ROW / 2.0, int(note.potentiel), PASTILLE, "AcademyLettrePotentiel")
+			D.text(hit, col_p.x + lp + 10, 21 + DY, str(note.phrase.texte), 17, note.phrase.couleur, 600, 300, HORIZONTAL_ALIGNMENT_LEFT, true).name = "AcademyPhrasePotentiel"
 		var gain: Variant = _delta(p)
 		if not _col(columns, "change").is_empty():
 			var colonne_gain := _col(columns, "change")
-			var mot := "—" if gain == null else ("▲ +%d" % int(gain)) if int(gain) > 0 else ("▼ %d" % int(gain)) if int(gain) < 0 else "—"
+			var mot := "—" if gain == null else "▲" if int(gain) > 0 else "▼" if int(gain) < 0 else "—"
 			_cellule(hit, colonne_gain, mot, Charte.V if gain != null and int(gain) > 0 else Charte.D if gain != null and int(gain) < 0 else Charte.IVOIRE_3, true)
 		if not _col(columns, "start").is_empty():
-			var depart: Variant = p.get("development", {}).get("seasonStart")
-			_cellule(hit, _col(columns, "start"), G.n(depart) if depart is int or depart is float else "—", Charte.IVOIRE_2)
+			# Niveau en juillet : lettre du staff (même échelle que la colonne NIV.), jamais le chiffre du moteur.
+			var col_s := _col(columns, "start")
+			var l_juillet := _lettre_juillet(p)
+			if int(l_juillet.bas) >= 0:
+				var w_s := Notation.largeur_note(l_juillet, PASTILLE)
+				Notation.pastille_note(hit, col_s.x + col_s.w - w_s - 20, ROW / 2.0, l_juillet, PASTILLE, "AcademyLettreJuillet")
+			else: _cellule(hit, col_s, "—", Charte.IVOIRE_2)
 		if not _col(columns, "trend").is_empty(): _courbe(hit, p, _col(columns, "trend"))
 		_cellule(hit, _col(columns, "minutes"), G.n(_minutes(p)) + " min", Charte.IVOIRE_2)
 		if not _col(columns, "contract").is_empty():
@@ -142,7 +151,7 @@ func _cellule(row: Control, col: Dictionary, texte: String, couleur: Color, gras
 	var align := HORIZONTAL_ALIGNMENT_RIGHT if col.align == 2 else HORIZONTAL_ALIGNMENT_CENTER if col.align == 1 else HORIZONTAL_ALIGNMENT_LEFT
 	# D.text prend le bord droit pour un texte aligné à droite et le centre pour un texte centré.
 	var ancre: float = col.x + col.w if col.align == 2 else col.x + col.w / 2.0 if col.align == 1 else col.x
-	var cellule := D.text(row, ancre, 21, texte, 20, couleur, 700 if gras else 500, col.w, align)
+	var cellule := D.text(row, ancre, 21 + DY, texte, 20, couleur, 700 if gras else 500, col.w, align)
 	cellule.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return cellule
 
@@ -151,18 +160,18 @@ func _statut(row: Control, p: Dictionary, x: float) -> void:
 	var courant := x
 	var principal := _status(p)
 	if _a_decider(p):
-		Kit.puce(row, Rect2(courant, 5, 20, 20), "!", Charte.IVOIRE, Charte.ENCRE)
-		D.text(row, courant + 28, 21, "À décider", 20, Charte.IVOIRE, 700, 140)
+		Kit.puce(row, Rect2(courant, 5 + DY, 20, 20), "!", Charte.IVOIRE, Charte.ENCRE)
+		D.text(row, courant + 28, 21 + DY, "À décider", 20, Charte.IVOIRE, 700, 140)
 		courant += 170
 	var blessure := float(p.get("injury", 0))
 	if blessure > 0:
-		Kit.puce(row, Rect2(courant, 5, 20, 20), "✕", Charte.VOILE_DORE, Charte.D)
-		D.text(row, courant + 28, 21, "Blessé · %d sem." % ceili(blessure), 20, Charte.D, 700, 200)
+		Kit.puce(row, Rect2(courant, 5 + DY, 20, 20), "✕", Charte.VOILE_DORE, Charte.D)
+		D.text(row, courant + 28, 21 + DY, "Blessé · %d sem." % ceili(blessure), 20, Charte.D, 700, 200)
 		return
 	if _a_decider(p): return
 	var symbole := "✓" if principal[1] == Charte.V else "!" if principal[1] == Charte.N else "•"
-	Kit.puce(row, Rect2(courant, 5, 20, 20), symbole, principal[1] if principal[1] != Charte.IVOIRE else Charte.IVOIRE_2, Charte.ENCRE)
-	D.text(row, courant + 28, 21, str(principal[0]), 20, Charte.IVOIRE_2 if principal[1] == Charte.IVOIRE or principal[1] == Charte.V else principal[1], 600, 280)
+	Kit.puce(row, Rect2(courant, 5 + DY, 20, 20), symbole, principal[1] if principal[1] != Charte.IVOIRE else Charte.IVOIRE_2, Charte.ENCRE)
+	D.text(row, courant + 28, 21 + DY, str(principal[0]), 20, Charte.IVOIRE_2 if principal[1] == Charte.IVOIRE or principal[1] == Charte.V else principal[1], 600, 280)
 
 func _courbe(parent: Control, p: Dictionary, col: Dictionary) -> void:
 	var history: Array = p.get("development", {}).get("history", [])
@@ -173,7 +182,7 @@ func _courbe(parent: Control, p: Dictionary, col: Dictionary) -> void:
 		if value is float or value is int: courbe.levels.append(float(value))
 	if p.get("rating") is float or p.get("rating") is int: courbe.levels.append(float(p.rating))
 	if courbe.levels.size() < 2:
-		D.text(parent, col.x, 21, "Historique à l’intersaison", 17, Charte.IVOIRE_3, 500, col.w)
+		D.text(parent, col.x, 21 + DY, "Historique à l’intersaison", 17, Charte.IVOIRE_3, 500, col.w)
 		courbe.queue_free()
 		return
 	courbe.minimum = maxf(0, floorf((float(courbe.levels.min()) - 2) / 5.0) * 5.0)

@@ -64,7 +64,7 @@ func _start_maul() -> void:
 					continue
 				keep[id] = _walker(id, member)
 				continue
-			next.merge({"role": "opp_pack", "slot": front[member.role] + Vector2(1.3, 0.0)})
+			next.merge({"role": "opp_pack", "slot": front[member.role] + MAUL_FACE})
 		elif front.has(member.role):
 			next.merge({"role": "pack", "slot": front[member.role]})
 		elif member.role == "half":
