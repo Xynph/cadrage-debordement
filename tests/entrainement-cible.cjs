@@ -82,7 +82,7 @@ test('relevé chaque semaine : 5 semaines glissantes, référence d’il y a 4 s
   assert.match(debut.s, /^\d{4}-\d{2}-\d{2}$/, 'lundi du premier relevé');
   h.week(6);
   run('delete S.clubMeetings');
-  const r = json(`(()=>{const R=nativeSystems.domain('releveQualites')._tests,p=S.clubs[S.club].players[0],l=R.decoder(p.rh,R.SEMAINE);
+  const r = json(`(()=>{const R=nativeSystems.domain('releveQualites')._tests,p=S.clubs[S.club].players[0],l=R.decoder(CDReleveQualites.texteHebdo(p),R.SEMAINE);
     return {points:l.points.length,lundi:S.releveQualites.s,debut:l.debut};})()`);
   assert.equal(r.points, 5, '5 relevés hebdomadaires');
   assert.equal(r.debut, json(`nativeSystems.domain('releveQualites')._tests.lundiSuivant(${JSON.stringify(r.lundi)},-4)`));
