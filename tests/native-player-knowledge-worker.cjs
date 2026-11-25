@@ -2,9 +2,10 @@
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs');
+const {signerExport}=require('./helpers/signature-export.cjs');
 const {advanceToNextMatch}=require('./helpers/monde-matchs.cjs');
 test('canonical worker: exact internals, pure reads, paid targeted reports, weekly completion, deep replay and failures',t=>{
- const dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'oval-knowledge-worker-')),options={dataDir,seed:12345,now:1794178800000};let bridge=createBridge(options),id=0;
+ const dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'oval-knowledge-worker-')),options={dataDir,seed:12345,now:1794178800000,testVm:true};let bridge=createBridge(options),id=0;
  t.after(()=>{bridge.close();fs.rmSync(dataDir,{recursive:true,force:true});});
  const request=(command,payload={})=>bridge.handle({id:++id,command,payload}),good=(command,payload)=>{const r=request(command,payload);assert.equal(r.ok,true,r.error);return r.model;};
  const file=path.join(dataDir,'PrototypeGodot','donnees.json'),bytes=()=>fs.readFileSync(file),state=()=>JSON.parse(JSON.parse(bytes()).store['bdt-v1']);
@@ -27,7 +28,7 @@ test('canonical worker: exact internals, pure reads, paid targeted reports, week
  model=good('observe_player',{playerId:target,confirmed:true,context:{season:model.meta.season,week:model.meta.week,club:4}});week();week();record=state().playerKnowledge.records.flat().find(r=>r[0]===target);assert.equal(record[1],'deep');assert.equal(record[8]-record[7],4);assert.equal(record[10]-record[9],4);const deep=find(model,target);assert.equal(deep.rating,null);assert.equal(deep.ratingRange.max-deep.ratingRange.min,4);fs.writeFileSync('/tmp/oval-knowledge-models/deep.json',JSON.stringify(model));
  const replay=bytes();bridge.close();bridge=createBridge(options);model=good('snapshot');assert.deepEqual(bytes(),replay);assert.deepEqual(state().playerKnowledge.records.flat().find(r=>r[0]===target),record);
  // Corrupted manifest is refused before checkpoint creation or persistent RNG.
- const document=JSON.parse(good('export').meta.exportText);document.state.playerKnowledge.records[0][0][8]++;{let h=2166136261;const text=JSON.stringify(document.state);for(let i=0;i<text.length;i++)h=Math.imul(h^text.charCodeAt(i),16777619);document.checksum=(h>>>0).toString(16).padStart(8,'0');}const pristine=bytes();const refused=request('import',{text:JSON.stringify(document)});assert.equal(refused.ok,false);assert.match(refused.error,/Connaissance des joueurs/);assert.deepEqual(bytes(),pristine);
+ const document=JSON.parse(good('export').meta.exportText);document.state.playerKnowledge.records[0][0][8]++;signerExport(document,bridge.vm);const pristine=bytes();const refused=request('import',{text:JSON.stringify(document)});assert.equal(refused.ok,false);assert.match(refused.error,/Connaissance des joueurs/);assert.deepEqual(bytes(),pristine);
  const rename=fs.renameSync,stable=bytes(),money=model.finance.cash;
  fs.renameSync=function(from,to){if(to===file&&String(from).includes('donnees.tmp-'))throw Error('test disk full');return rename.apply(this,arguments);};
  let denied;try{denied=request('observe_player',{playerId:state().clubs[28].players[0].id,confirmed:true,context:{season:model.meta.season,week:model.meta.week,club:4}});}finally{fs.renameSync=rename;}
