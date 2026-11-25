@@ -14,6 +14,7 @@ const potentialEvolution=require('./potential-evolution.cjs'),potentialEvolution
 const inSeasonDevelopment=require('./in-season-development.cjs');
 const clubTransfers=require('./club-transfers.cjs'),clubDirections=require('./club-directions.cjs'),boardNames=require('./staff-completion.cjs');
 const profileSafetyFactory=require('./profile-safety.cjs');
+const saveCompression=require('./save-compression.cjs');
 const makePlayerFacts=require('./player-facts.cjs');
 const makePortraitLooks=require('./portrait-looks.cjs').createLooks;
 const makeNational=require('./international-native.cjs');
@@ -232,6 +233,8 @@ function createBridge(options={}){
   ctx.nativeMandatoryPress=options.mandatoryPress===true;
   // Essais seulement : plafond d'export abaissé pour exercer la réduction sans perte des grands exports.
   if(Number.isInteger(options.saveBytes)&&options.saveBytes>0)ctx.nativeSaveBytes=options.saveBytes;
+  // Export compressé sans perte (exportVersion 4, dist/saves.js) : gzip + base64 quand le document dépasse le plafond.
+  saveCompression.install(ctx);
   ctx.nativeLegacyModes=legacyModes;ctx.nativeLegacyCareerMessage=LEGACY_CAREER_MESSAGE;
   const calendarState=(source='S')=>JSON.parse(run(`JSON.stringify({planning:${source}?.calendarPlanning,mail:${source}?.calendarMail})`));
   function validateCalendarState(state){
@@ -1740,7 +1743,7 @@ if(require.main===module){
  const input=readline.createInterface({input:process.stdin,crlfDelay:Infinity}),delta=require('./model-delta.cjs').createEncoder();
  input.on('line',line=>{
   // L'interface Godot annonce la révision du modèle qu'elle détient : réponse différentielle.
-  let result,base=null;try{const bytes=Buffer.byteLength(line);if(bytes>CHAMP_REQUEST_LIMIT_BYTES)throw Error('Message trop volumineux.');const request=JSON.parse(line);if(bytes>REQUEST_LIMIT_BYTES){if(request.command!=='import'||typeof request.payload?.text!=='string'||Buffer.byteLength(request.payload.text,'utf8')>CHAMP_IMPORT_LIMIT_BYTES)throw Error('Message trop volumineux.');const state=JSON.parse(request.payload.text)?.state,edition=worldEditions.forState(state);if(!edition||bytes>edition.limits.requestBytes||Buffer.byteLength(request.payload.text,'utf8')>edition.limits.saveBytes)throw Error('Message trop volumineux.');}if(Number.isSafeInteger(request?.base))base=request.base;if(request?.command==='career_slots'){result=careerSlotCommand(request);if(result.reopened&&base!==null)base=-1;}else result=bridge.handle(request);}catch(e){result={id:null,ok:false,model:null,error:e.message};}
+  let result,base=null;try{const bytes=Buffer.byteLength(line);if(bytes>CHAMP_REQUEST_LIMIT_BYTES)throw Error('Message trop volumineux.');const request=JSON.parse(line);if(bytes>REQUEST_LIMIT_BYTES){if(request.command!=='import'||typeof request.payload?.text!=='string'||Buffer.byteLength(request.payload.text,'utf8')>CHAMP_IMPORT_LIMIT_BYTES)throw Error('Message trop volumineux.');const document=JSON.parse(request.payload.text),edition=worldEditions.forState(document?.state);/* Export compressé (v4) : son édition n'est connue qu'après décompression ; parseSaveDocument compare alors le fichier au plafond de l'édition. */const compressed=document?.exportVersion===4&&typeof document.data==='string';if(!compressed&&(!edition||bytes>edition.limits.requestBytes||Buffer.byteLength(request.payload.text,'utf8')>edition.limits.saveBytes))throw Error('Message trop volumineux.');}if(Number.isSafeInteger(request?.base))base=request.base;if(request?.command==='career_slots'){result=careerSlotCommand(request);if(result.reopened&&base!==null)base=-1;}else result=bridge.handle(request);}catch(e){result={id:null,ok:false,model:null,error:e.message};}
   // La réponse part d'abord ; la décision courante en attente est écrite ensuite, pendant que l'interface affiche.
   // Par étapes (voir flushStep) : une commande arrivée entre deux étapes est lue sans attendre la fin de l'écriture.
   const step=()=>{let done=true;try{done=bridge.handle.flushStep();}catch{}if(!done)setImmediate(step);};

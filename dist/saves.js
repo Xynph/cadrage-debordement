@@ -517,13 +517,53 @@ function createSaveDocument(state=S){
  // Taille exacte de JSON.stringify(doc) sans le re-sérialiser : enveloppe ASCII (état remplacé par « 0 ») plus l'état.
  const envelope=JSON.stringify({...doc,state:0}).length-1;
  if(envelope+text.length<=cap&&envelope+saveUtf8Bytes(text)<=cap)return doc;
+ let compact=null;
  if(champPortableSave(snapshot)){
-  const compact=compactChampDocument(doc);
+  compact=compactChampDocument(doc);
   if(compact&&saveDocumentFits(compact,cap))return compact;
  }
- const reduced=compactSaveDocument(doc);
- if(reduced&&saveDocumentFits(reduced,cap))return reduced;
+ const reduced=compactSaveDocument(doc),reducedText=reduced?JSON.stringify(reduced):null;
+ if(reducedText&&reducedText.length<=cap&&saveUtf8Bytes(reducedText)<=cap)return reduced;
+ // Dernier recours, sans perte : le meilleur document ci-dessus (v3, sinon v2, sinon v1), compressé (exportVersion 4).
+ const packed=reduced?compressSaveDocument(reduced,reducedText):compressSaveDocument(compact??doc);
+ if(packed&&saveDocumentFits(packed,cap))return packed;
  saveError('Le fichier est trop volumineux ('+(cap/1048576)+' Mio UTF-8 maximum pour cette édition).');
+}
+// Export v4 (carrières mondiales, jeu natif) : enveloppe JSON qui garde en clair format, version, date et empreinte, et
+// porte le document d'export complet (v1, v2 ou v3) compressé en gzip puis codé en base64 (`data`). La compression est
+// faite par le moteur natif (native/engine/save-compression.cjs : nativeSaveCompress / nativeSaveInflate) ; sans lui
+// (version web), pas de v4. Sans perte : la lecture décompresse le texte exact du document, puis le relit comme un
+// fichier v1 à v3 (reconstruction, empreinte de l'état reconstitué, validation complète). Le plafond de l'édition
+// s'applique au fichier compressé ; le texte décompressé est borné par SAVE_INFLATED_LIMIT.
+const SAVE_COMPRESSED_VERSION=4,SAVE_COMPRESSION='gzip';
+// 96 Mio : près de trois fois l'état d'une carrière du Champ en fin de saison 2 (33,8 Mio), une fois et demie le profil
+// le plus gros dont le jeu garde une copie de sécurité (64 Mio, profile-safety.cjs) ; au-delà, le moteur (2 Go de
+// mémoire) ne pourrait de toute façon plus lire, valider et installer la carrière. Contre les bombes de décompression.
+const SAVE_INFLATED_LIMIT=96*1024*1024;
+// `text` : JSON.stringify(doc) déjà calculé, le cas échéant.
+function compressSaveDocument(doc,text=null){
+ if(typeof nativeSaveCompress!=='function'||!worldCareerActive(doc?.state))return null;
+ return {format:SAVE_FORMAT,exportVersion:SAVE_COMPRESSED_VERSION,exportedAt:doc.exportedAt,checksum:doc.checksum,compression:SAVE_COMPRESSION,data:nativeSaveCompress(text??JSON.stringify(doc))};
+}
+function compressedSaveEnvelope(doc){
+ return saveObject(doc)&&doc.exportVersion===SAVE_COMPRESSED_VERSION&&doc.compression===SAVE_COMPRESSION&&typeof doc.data==='string';
+}
+// `bytes` : taille du fichier compressé (octets UTF-8), comparée au plafond de l'édition de la carrière qu'il contient.
+function parseCompressedSaveDocument(envelope,bytes){
+ saveCheck(envelope.format===SAVE_FORMAT,'Ce fichier n’est pas un export Cadrage Débordement.');
+ saveCheck(typeof envelope.exportedAt==='string'&&Number.isFinite(Date.parse(envelope.exportedAt))&&typeof envelope.checksum==='string');
+ saveCheck(typeof nativeSaveInflate==='function','Cette sauvegarde compressée se lit avec le jeu installé.');
+ let text,doc;
+ const damaged='Le fichier a été modifié ou endommagé depuis son export.';
+ try{text=nativeSaveInflate(envelope.data,SAVE_INFLATED_LIMIT);}
+ catch(e){saveError(/volumineux/.test(String(e?.message))?'Le fichier est trop volumineux une fois décompressé ('+(SAVE_INFLATED_LIMIT/1048576)+' Mio UTF-8 maximum).':damaged);}
+ try{doc=JSON.parse(text);}catch(e){saveError(damaged);}
+ // Pas d'enveloppe dans l'enveloppe : le contenu est un export v1, v2 ou v3 d'une carrière mondiale.
+ saveCheck(saveObject(doc)&&doc.format===SAVE_FORMAT&&doc.exportVersion!==SAVE_COMPRESSED_VERSION&&saveObject(doc.state)&&worldCareerActive(doc.state),'Cette version d’export n’est pas prise en charge.');
+ saveCheck(doc.checksum===envelope.checksum,damaged);
+ const cap=worldSaveLimits(doc.state)?.saveBytes??WORLD_SAVE_LIMIT;
+ saveCheck(bytes<=cap,'Le fichier est trop volumineux ('+(cap/1048576)+' Mio UTF-8 maximum pour cette édition).');
+ return parseSaveObject(doc,null);
 }
 function parseSaveDocument(text){
  saveCheck(typeof text==='string'&&text.length<=CHAMP_WORLD_SAVE_LIMIT,'Le fichier est trop volumineux (24 Mio UTF-8 maximum).');
@@ -535,8 +575,14 @@ function parseSaveDocument(text){
   saveCheck(text.length<=SAVE_LIMIT&&bytes<=SAVE_LIMIT,'Le fichier est trop volumineux (8 Mio UTF-8 maximum).');
   saveError('Le fichier JSON est incomplet ou illisible.');
  }
+ if(compressedSaveEnvelope(doc))return parseCompressedSaveDocument(doc,bytes);
+ return parseSaveObject(doc,bytes);
+}
+// Lecture d'un document v1 à v3 déjà analysé. `bytes` : taille du fichier, comparée au plafond de l'édition ; null pour
+// le contenu d'un export compressé (plafond déjà vérifié sur le fichier compressé).
+function parseSaveObject(doc,bytes){
  const cap=worldCareerActive(doc?.state)?(worldSaveLimits(doc.state)?.saveBytes??WORLD_SAVE_LIMIT):SAVE_LIMIT;
- saveCheck(bytes<=cap,'Le fichier est trop volumineux ('+(cap/1048576)+' Mio UTF-8 maximum pour cette édition).');
+ if(bytes!==null)saveCheck(bytes<=cap,'Le fichier est trop volumineux ('+(cap/1048576)+' Mio UTF-8 maximum pour cette édition).');
  saveCheck(saveObject(doc)&&doc.format===SAVE_FORMAT,'Ce fichier n’est pas un export Cadrage Débordement.');
  const compact=doc.exportVersion===2&&champPortableSave(doc.state);
  const reduced=doc.exportVersion===3&&saveObject(doc.state)&&worldCareerActive(doc.state);
