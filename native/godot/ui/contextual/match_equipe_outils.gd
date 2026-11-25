@@ -85,7 +85,8 @@ func _nom_joueur(id: String, texte: String, taille: float, nom_noeud: String, la
 	lien.set_meta("lien", true)
 	lien.set_meta("fiche_joueur", id)
 	lien.pressed.connect(ouvrir_fiche.bind(id))
-	load("res://ui/carte_joueur_survol.gd").lier(app as Control, lien, id, "squad")
+	# Survol du nom = rien ; le bouton (i) à sa droite (0,5 s) ouvre la carte joueur ; le clic garde la fiche complète.
+	load("res://ui/carte_joueur_survol.gd").lier_info(app as Control, lien, id, "squad")
 	# Mini-fiche posée sur l'application : au-dessus de la scène du match, comme celles du direct.
 	lien.mouse_entered.connect(_mini_fiche_devant)
 	return lien

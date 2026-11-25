@@ -271,7 +271,7 @@ func run() -> void:
 	souris.pressed = true
 	ecran._input(souris)
 	check(cadre_focus != null and not cadre_focus.visible, "Bouton or : cadre retiré dès la souris")
-	check(ecran.find_child("ApresMatchJoueur_p9", true, false) != null and ecran.find_child("ApresMatchJoueur_p9", true, false).has_meta("mini_fiche_joueur"), "Homme du match : fiche au clic, mini-fiche au survol")
+	check(ecran.find_child("ApresMatchJoueur_p9", true, false) != null and ecran.find_child("ApresMatchJoueur_p9", true, false).has_meta("carte_joueur") and not ecran.find_child("ApresMatchJoueur_p9", true, false).find_children("CarteJoueurInfo_*", "Control", true, false).is_empty(), "Homme du match : fiche au clic, carte au survol du bouton (i)")
 	var club_ligne := ecran.find_child("ApresMatchClubLigne5", true, false) as Button
 	directeur.cibles.clear()
 	if club_ligne != null: club_ligne.pressed.emit()

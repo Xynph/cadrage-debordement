@@ -256,33 +256,33 @@ func controler_charte(contexte: String) -> void:
 		verifier(teinte is Color and (teinte as Color).is_equal_approx(load("res://ui/contextual/match_menu_joueur.gd").PAL.fond) and float(fond.get("ombre")) == 0.0, contexte + " : menu de « %s » habillé (anthracite satiné, sans ombre)" % choix.name)
 	verifier(fenetre.name == "MatchTeamPage", contexte + " : calque nommé MatchTeamPage (%s)" % fenetre.name)
 
-const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
+const Carte = preload("res://ui/carte_joueur_survol.gd")
 
-## Lien du nom d'un de nos joueurs sous `racine` : mini-fiche au survol (`MiniFiche.lier`) et fiche au clic.
+## Lien du nom d'un de nos joueurs sous `racine` : carte au survol du bouton (i) (`lier_info`) et fiche au clic.
 static func lien_fiche(racine: Node) -> Button:
 	if racine == null: return null
 	for b: Button in racine.find_children("*", "Button", true, false):
-		if b.has_meta("mini_fiche_joueur") and b.has_meta("fiche_joueur"): return b
+		if b.has_meta("carte_joueur") and b.has_meta("fiche_joueur"): return b
 	return null
 
 ## Règle de Léo sur les noms de nos joueurs : chaque médaillon, tuile du banc, bloc « Dans 10 minutes » et la carte
-## de Gabi portent un nom lié (mini-fiche au survol, fiche complète au clic), lié au bon joueur.
+## de Gabi portent un nom lié (carte au survol du (i), fiche complète au clic), lié au bon joueur.
 func controler_noms(contexte: String) -> void:
 	var lineup: Array = fenetre._lineup()
 	for slot: int in fenetre.medaillons:
 		var lien := lien_fiche(fenetre.medaillons[slot])
 		var attendu := str(lineup[slot].get("id", "")) if slot < lineup.size() and lineup[slot] is Dictionary else ""
-		verifier(lien != null and str(lien.get_meta("mini_fiche_joueur")) == attendu and str(lien.get_meta("fiche_joueur")) == attendu, contexte + " : nom lié du médaillon %d" % (slot + 1))
+		verifier(lien != null and str(lien.get_meta("carte_joueur")) == attendu and str(lien.get_meta("fiche_joueur")) == attendu, contexte + " : nom lié du médaillon %d" % (slot + 1))
 	for id: String in fenetre.tuiles:
 		var lien := lien_fiche(fenetre.tuiles[id])
-		verifier(lien != null and str(lien.get_meta("mini_fiche_joueur")) == id, contexte + " : nom lié du remplaçant " + id)
+		verifier(lien != null and str(lien.get_meta("carte_joueur")) == id, contexte + " : nom lié du remplaçant " + id)
 	var blocs := fenetre.find_children("TeamFatigue_*", "", true, false)
 	verifier(not blocs.is_empty(), contexte + " : blocs « Dans 10 minutes »")
 	for bloc: Control in blocs:
 		var lien := lien_fiche(bloc)
-		verifier(lien != null and bloc.has_meta("fiche_joueur") and str(lien.get_meta("mini_fiche_joueur")) == str(bloc.get_meta("fiche_joueur")) and bloc.mouse_filter == Control.MOUSE_FILTER_STOP, contexte + " : bloc fatigue %s lié à la fiche" % bloc.name)
+		verifier(lien != null and bloc.has_meta("fiche_joueur") and str(lien.get_meta("carte_joueur")) == str(bloc.get_meta("fiche_joueur")) and bloc.mouse_filter == Control.MOUSE_FILTER_STOP, contexte + " : bloc fatigue %s lié à la fiche" % bloc.name)
 	var conseil: Control = fenetre.find_child("TeamAdvice", true, false)
-	var liens_conseil := conseil.find_children("*", "Button", true, false).filter(func(b: Button) -> bool: return b.has_meta("mini_fiche_joueur")) if conseil != null else []
+	var liens_conseil := conseil.find_children("*", "Button", true, false).filter(func(b: Button) -> bool: return b.has_meta("carte_joueur")) if conseil != null else []
 	verifier(liens_conseil.size() >= 2, contexte + " : sortant et entrant nommés en liens dans le conseil de Gabi (%d)" % liens_conseil.size())
 
 func source_fiche(sorte: String, id_banc: String) -> Control:
@@ -323,11 +323,16 @@ func controler_fiches() -> void:
 	var id := str(lien.get_meta("fiche_joueur"))
 	lien.mouse_entered.emit()
 	await poser(2)
-	var mini: Control = MiniFiche.actuelle(app)
-	verifier(mini != null and str(mini.get_meta("player_id", "")) == id, "survol du nom : mini-fiche du joueur")
+	verifier(Carte.actuelle(app) == null, "survol du nom : aucune carte")
+	var info := lien.find_child("CarteJoueurInfo_*", true, false) as Control
+	verifier(info != null and info.has_meta("carte_info") and info.is_visible_in_tree(), "bouton (i) présent près du nom")
+	var carte: Control = Carte.montrer(app, id, "squad", info) if info != null else null
+	await poser(2)
+	verifier(carte != null and Carte.actuelle(app) != null and str(Carte.actuelle(app).get_meta("player_id", "")) == id, "carte du joueur depuis le bouton (i)")
+	Carte.cacher(app)
 	lien.mouse_exited.emit()
 	await poser(2)
-	verifier(MiniFiche.actuelle(app) == null, "la souris part : mini-fiche cachée")
+	verifier(Carte.actuelle(app) == null, "la souris part : carte cachée")
 	# Chaque source est recherchée après reconstruction de la page (les nœuds d'avant peuvent avoir été libérés).
 	for paire: Array in [["nom du médaillon", "medaillon"], ["nom du banc", "banc"], ["bloc fatigue", "fatigue"], ["nom dans le conseil de Gabi", "conseil"]]:
 		var source := source_fiche(str(paire[1]), id_banc)
@@ -630,7 +635,7 @@ func executer() -> void:
 		await roles_enrichis(nom)
 		if t.x != 2560: await capturer("equipe-roles-" + nom)
 	await taille(1920, 1080)
-	# Noms de nos joueurs : mini-fiche au survol, fiche complète au clic, page Équipe retrouvée au retour.
+	# Noms de nos joueurs : carte au survol du (i), fiche complète au clic, page Équipe retrouvée au retour.
 	await controler_fiches()
 	# Joueur choisi puis remplaçant (état sélectionné) pour la capture.
 	fenetre.choisir_onglet("composition")

@@ -159,11 +159,10 @@ func names_open_sheets() -> void:
 	var lien := noms[0] as Button
 	lien.mouse_entered.emit()
 	await settle(4)
-	check(app.get_node_or_null("MiniFicheJoueur") != null, "Survol du nom : mini-fiche")
+	check(app.get_node_or_null("MiniFicheJoueur") == null and app.get_node_or_null("CarteJoueurSurvol") == null, "Survol du nom : rien")
 	lien.mouse_exited.emit()
 	await settle(3)
-	check(app.get_node_or_null("MiniFicheJoueur") == null, "La souris part : la mini-fiche disparaît")
-	check(not app.root_content.find_children("MiniFicheInfo_*", "Control", true, false).is_empty(), "Un « i » suit chaque nom")
+	check(not app.root_content.find_children("CarteJoueurInfo_*", "Control", true, false).is_empty(), "Un « i » suit chaque nom")
 	lien.pressed.emit()
 	await settle(10)
 	check(app.management_ui.get("fiche_joueur") is Dictionary, "Clic sur le nom : fiche complète")
@@ -242,7 +241,7 @@ func subpages() -> void:
 	var jeunes: Array = app.model.get("clubLife", {}).get("youthDevelopment", {}).get("players", [])
 	var noms := app.find_children("YouthName_*", "Button", true, false)
 	check(jeunes.is_empty() or not noms.is_empty(), "Suivi des jeunes : chaque nom de jeune est un lien")
-	check(noms.all(func(b: Button): return str(b.get_meta("mini_fiche_joueur", "")) != ""), "Suivi des jeunes : survol d'un nom = mini-fiche")
+	check(noms.all(func(b: Button): return str(b.get_meta("carte_joueur", "")) != "" and not b.find_children("CarteJoueurInfo_*", "Control", true, false).is_empty()), "Suivi des jeunes : nom de jeune = bouton (i) pour la carte")
 	var retour := node("FormationRetour") as Button
 	if retour != null: retour.pressed.emit()
 	await settle(8)
@@ -323,7 +322,7 @@ func youth_clicks() -> void:
 		var control := (app.root_content.find_children(target, "Control", true, false).front() if target.ends_with("*") else node(target)) as Control
 		check(control != null and control.mouse_default_cursor_shape == Control.CURSOR_POINTING_HAND, "Cliquable · " + target)
 		if control == null: continue
-		if target.ends_with("*"): check(str(control.get_meta("mini_fiche_joueur", "")) != "", "Survol de la tuile = mini-fiche")
+		if target.ends_with("*"): check(str(control.get_meta("carte_joueur", "")) != "", "Tuile du jeune liée à la carte (bouton (i))")
 		app.management_ui.immersive_player_tab = -1
 		await click(control)
 		check(windows().is_empty() and node("YouthReviewFilter") == null, "Clic → fiche du joueur en plein écran, sans fenêtre · " + target)

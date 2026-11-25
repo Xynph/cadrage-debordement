@@ -193,7 +193,7 @@ func links_open_screens() -> void:
 	app._navigate("Réception", false)
 	await settle(10)
 	var link := node("InboxConcernedName") as Button
-	check(link != null and link.has_meta("mini_fiche_joueur"), "Joueur lié : nom en lien avec mini-fiche (%s, mail %s, route %s)" % [str(node("InboxConcernedName")), str(holder.get("id")), app.route])
+	check(link != null and link.has_meta("carte_joueur") and not link.find_children("CarteJoueurInfo_*", "Control", true, false).is_empty(), "Joueur lié : nom en lien avec bouton (i) (%s, mail %s, route %s)" % [str(node("InboxConcernedName")), str(holder.get("id")), app.route])
 	if link == null: return
 	check(link.text == str(star.name), "Le lien porte le nom du joueur lié (%s / %s)" % [link.text, str(star.name)])
 	var body := node("InboxMessageText") as RichTextLabel
