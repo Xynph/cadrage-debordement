@@ -197,6 +197,31 @@ func run() -> void:
 	check(not vues_2d.any(func(t: String) -> bool: return t.contains("a le ballon")), "Écran intermédiaire, en-avant, pénalité puis carton : jamais la possession du moteur (%s)" % str(vues_2d))
 	check(entracte.etat.text == "Carton jaune pour Paul DURAND", "Écran intermédiaire, carton joué : la ligne dit le carton (" + entracte.etat.text + ")")
 	terrain_arret.free()
+	# Film 4 (club 102, graine 123, 68′) : arrêt-décision d'un carton ouvert (`_arret`) pendant que le terrain 2D rejoue
+	# d'autres faits (jeu courant, touche) : la ligne alternait carton / possession / carton. Elle garde le carton
+	# à chaque rafraîchissement, jusqu'à la reprise du match.
+	var terrain_rejeu = Terrain2D.new()
+	var rejeu_2d := [
+		{"i": 20, "minute": 68, "horloge": "68′", "kind": "card", "equipe": 1, "texte": "Carton jaune pour Paul DURAND : exclusion de 10 minutes de jeu.", "scene": {"kind": "card", "possession": 1, "ballon": [60.0, 30.0], "origine": [60.0, 30.0], "joueurs": []}},
+		{"i": 21, "minute": 68, "horloge": "68′", "kind": "carry", "equipe": 1, "texte": "Visiteurs XV avance.", "scene": {"kind": "carry", "possession": 1, "ballon": [65.0, 30.0], "origine": [60.0, 30.0], "joueurs": []}},
+		{"i": 22, "minute": 69, "horloge": "69′", "kind": "lineout", "equipe": 0, "texte": "Touche.", "scene": {"kind": "lineout", "possession": 0, "ballon": [90.0, 5.0], "origine": [90.0, 5.0], "joueurs": []}},
+		{"i": 23, "minute": 69, "horloge": "69′", "kind": "carry", "equipe": 0, "texte": "Domicile XV avance.", "scene": {"kind": "carry", "possession": 0, "ballon": [80.0, 30.0], "origine": [90.0, 5.0], "joueurs": []}},
+	]
+	entracte.terrain = terrain_rejeu
+	entracte._arret = {"raison": "carton", "cle": "c68", "horloge": "68′", "texte": "Carton jaune pour Paul DURAND : exclusion de 10 minutes de jeu."}
+	var direct_rejeu := {"possession": 0, "zone": {"x": 80.0, "kind": "carry"}, "borne": 24}
+	var vues_rejeu: Array = []
+	terrain_rejeu.alimenter(rejeu_2d, 24)
+	for k in 40:
+		terrain_rejeu.avancer(0.5)
+		entracte._etat(vu_live, direct_rejeu, equipes)
+		if vues_rejeu.is_empty() or vues_rejeu[-1] != entracte.etat.text: vues_rejeu.append(entracte.etat.text)
+	check(terrain_rejeu.joue_i == 23, "Fixture : le terrain a rejoué tous les faits pendant l'arrêt (%d)" % terrain_rejeu.joue_i)
+	check(vues_rejeu == ["Carton jaune pour Paul DURAND"], "Arrêt-décision du carton : la ligne reste sur le carton à chaque rafraîchissement (%s)" % str(vues_rejeu))
+	entracte._arret = {}
+	entracte._etat(vu_live, direct_rejeu, equipes)
+	check(not entracte.etat.text.begins_with("Carton"), "Match repris : la ligne suit de nouveau le jeu (" + entracte.etat.text + ")")
+	terrain_rejeu.free()
 	entracte.etat.free()
 	entracte.free()
 	terrain.free()

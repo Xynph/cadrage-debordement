@@ -41,6 +41,10 @@ func _etat(live: Dictionary, direct: Dictionary, equipes: Array) -> void:
 	if not etat_force.is_empty(): etat.text = etat_force
 	elif live.get("finished", false): etat.text = "Match terminé"
 	elif live.get("atBreak", false): etat.text = "Mi-temps · on change de camp" if live.get("meteo") is Dictionary and live.meteo.get("ventDos") is Array else "Mi-temps"
+	elif not _arret.is_empty() and str(_arret.get("raison", "carton")) == "carton" and not str(_arret.get("texte", "")).is_empty():
+		# Arrêt-décision d'un carton ouvert : la ligne garde le carton à chaque rafraîchissement, même si le
+		# terrain 2D rejoue d'autres faits (film 4, 68′ : carton / possession / carton), jusqu'à la reprise.
+		etat.text = str(_arret.texte).get_slice(" :", 0).trim_suffix(".").strip_edges()
 	elif terrain != null and terrain.en_retard():
 		# Le terrain rejoue des faits en retard sur la borne : la ligne suit le dernier fait joué
 		# (celui du bandeau du fil), pas le dernier fait de la borne.

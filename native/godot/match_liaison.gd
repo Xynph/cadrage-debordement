@@ -549,6 +549,8 @@ static func construire(info: Dictionary, joueurs: Dictionary, ballon: Dictionary
 	var arret_a := remise
 	if forcee: arret_a = libelle_arret(fin_tf)
 	elif not str(info.choix).is_empty(): arret_a = {"libelle": "Pénalité", "equipe": equipe}
+	# En-avant suivi d'une mêlée (sans coupe forcée) : le premier plan dit l'en-avant (équipe fautive), la mêlée vient au second.
+	elif type == "melee" and str(info.get("arret_kind", "")) == "hand-fault" and equipe in [0, 1]: arret_a = {"libelle": "En-avant", "equipe": 1 - equipe}
 	var textes: Array = [str(fin_tf.get("texte", "")) if forcee else str(info.get("texte", ""))]
 	var arrets: Array = [int(fin_tf.get("index", -1)) if forcee else int(info.get("arret", -1))]
 	var bandeaux: Array = [arret_a]
