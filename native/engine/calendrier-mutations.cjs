@@ -319,7 +319,7 @@ function calSemaine(){
  for(let k=0;k<cands.length;k++){
   const p=cands[(h+k)%cands.length];
   const buyers=S.clubs.filter(c=>c.id!==S.club&&c.cash>=A.reserveAcheteur&&professionalPlaces(c)>0).map(c=>({c,b:venteBesoin(c,p)})).filter(x=>x.b>=A.besoinMin)
-   .sort((x,y)=>y.b-x.b||Math.abs(x.c.base-p.rating)-Math.abs(y.c.base-p.rating)||x.c.id-y.c.id);
+   .sort((x,y)=>y.b-x.b||Math.abs(x.c.base-(typeof niveauMatch==='function'?niveauMatch(p):p.rating))-Math.abs(y.c.base-(typeof niveauMatch==='function'?niveauMatch(p):p.rating))||x.c.id-y.c.id);
   if(!buyers.length)continue;
   const b=buyers[h%Math.min(3,buyers.length)].c,st=calEtat(true),d=calPreDates(p);st.seq++;
   st.preContrats.push({id:'pre-'+st.seq,sens:'depart',etat:'approche',clubId:S.club,playerId:p.id,nom:p.name,pos:p.pos,autreId:b.id,autre:b.name,
@@ -584,7 +584,7 @@ function calIAPreContrats(){
   if(signes>=n&&rumeurs>=nr)break;
   if((departs.get(c.id)||0)>=P.parVendeur)continue;
   const buyers=clubs.filter(b=>b.id!==c.id&&!fausses.has(p.id+':'+b.id)&&(achats.get(b.id)||0)<P.parAcheteur&&jlo(b.id)===jlo(c.id)).map(b=>({b,n:venteBesoin(b,p)})).filter(x=>x.n>=P.besoinMin)
-   .sort((x,y)=>y.n-x.n||Math.abs(x.b.base-p.rating)-Math.abs(y.b.base-p.rating)||x.b.id-y.b.id).slice(0,3);
+   .sort((x,y)=>y.n-x.n||Math.abs(x.b.base-(typeof niveauMatch==='function'?niveauMatch(p):p.rating))-Math.abs(y.b.base-(typeof niveauMatch==='function'?niveauMatch(p):p.rating))||x.b.id-y.b.id).slice(0,3);
   const salaire=b=>Math.max(270,Math.min(100000,Math.round(Math.max(p.salary,nativeClubTransfers.demand(p,c,b))*P.majorationSalaire/100)*100));
   const rumeur=suivis.get(p.id),ordre=rumeur?[...buyers.filter(x=>x.b.id===rumeur.interesseId),...buyers.filter(x=>x.b.id!==rumeur.interesseId)]:buyers.slice(k%Math.max(1,buyers.length)).concat(buyers.slice(0,k%Math.max(1,buyers.length)));
   const pick=ordre.find(x=>calIAPeutAcheter(x.b,salaire(x.b)));if(!pick)continue;

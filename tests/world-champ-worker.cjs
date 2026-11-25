@@ -8,21 +8,17 @@ const path=require('node:path');
 const test=require('node:test');
 const {spawnSync}=require('node:child_process');
 const {createBridge,CHAMP_IMPORT_LIMIT_BYTES,CHAMP_REQUEST_LIMIT_BYTES}=require('../native/engine/worker.cjs');
+const {signerExport}=require('./helpers/signature-export.cjs');
 
 const MODE='world-champ',DATABASE='rugby-world-2026-11-09-champ-v5';
 const CLUBS=Array.from({length:14},(_,i)=>102+i);
 const EXPECTED_PLAYABLE=114;
-function checksum(state){
- let h=2166136261;
- const text=JSON.stringify(state);
- for(let i=0;i<text.length;i++)h=Math.imul(h^text.charCodeAt(i),16777619);
- return (h>>>0).toString(16).padStart(8,'0');
-}
+// Empreinte comme le jeu, export réduit compris : tests/helpers/signature-export.cjs.
 
 test('Champ v5 — création, calendrier, worker et sauvegarde',()=>{
  const root=fs.mkdtempSync(path.join(process.env.CD_WORLD_TEST_ROOT||os.tmpdir(),'cd-champ-worker-'));
  let serial=0,bridge;
- const open=()=>createBridge({dataDir:root,seed:827381,now:1794178800000});
+ const open=()=>createBridge({dataDir:root,seed:827381,now:1794178800000,testVm:true});
  const raw=(command,payload={})=>bridge.handle({id:++serial,command,payload});
  const go=(command,payload={})=>{
   const reply=raw(command,payload);
@@ -53,7 +49,7 @@ test('Champ v5 — création, calendrier, worker et sauvegarde',()=>{
   assert.deepEqual(initial.doc.state.worldMode.leagues.champ.members,CLUBS);
   assert.equal(initial.doc.state.worldMode.leagues.nationale.members.length,14);
   assert.equal(initial.doc.state.worldMode.leagues.prem.members.length,10);
-  const bad=JSON.parse(initial.text);bad.state.worldMode.champ.premExchange=true;bad.checksum=checksum(bad.state);
+  const bad=JSON.parse(initial.text);bad.state.worldMode.champ.premExchange=true;signerExport(bad,bridge.vm);
   assert.equal(raw('import',{text:JSON.stringify(bad)}).ok,false);
   assert.deepEqual(checkpoint().doc.state,initial.doc.state);
   assert.equal(raw('advance_champ_preparation',{fromWeek:1}).ok,false);
@@ -85,7 +81,7 @@ test('Champ v5 — création, calendrier, worker et sauvegarde',()=>{
   assert.ok(state.history.some(r=>r.competitionId==='champ'));
   const badLeagueProof=JSON.parse(current.text);
   badLeagueProof.state.history.find(r=>r.competitionId==='champ'&&r.phase==='league').champExtra={version:1};
-  badLeagueProof.checksum=checksum(badLeagueProof.state);
+  signerExport(badLeagueProof,bridge.vm);
   assert.equal(raw('import',{text:JSON.stringify(badLeagueProof)}).ok,false);
   go('shutdown');bridge=open();assert.deepEqual(checkpoint().doc.state,state);
   if(full){
@@ -109,7 +105,7 @@ test('Champ v5 — création, calendrier, worker et sauvegarde',()=>{
    assert.equal(s2.doc.state.history.length,0);
    assert.equal(s2.doc.state.worldMode.fixtures.filter(f=>f.competitionId==='champ'&&f.scheduleSource==='generated-frozen-format').length,182);
    const badArchive=JSON.parse(s2.text),archive=badArchive.state.worldMode.yearbook[0];
-   archive.champions.champ=archive.standings.champ.at(-1);badArchive.checksum=checksum(badArchive.state);
+   archive.champions.champ=archive.standings.champ.at(-1);signerExport(badArchive,bridge.vm);
    assert.equal(raw('import',{text:JSON.stringify(badArchive)}).ok,false);
    assert.deepEqual(checkpoint().doc.state,s2.doc.state);
    const over=current.text.padEnd(CHAMP_IMPORT_LIMIT_BYTES+1,' ');

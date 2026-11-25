@@ -51,7 +51,7 @@ function factory(){
   for(const c of s.clubs)for(const p of c.players){
    if((p.age||0)<18||typeof nativeFacts==='undefined'||!nativeFacts.eligible(p.id,NATION))continue;
    const f=nativeFacts.source(p.id)||{},caps=Number.isInteger(f.seniorCaps)?f.seniorCaps:0;
-   pool.push({id:p.id,fam:p.fam,documented:f.seniorNation===NATION?1:0,score:(p.rating||0)+0.1*Math.min(caps,80)});
+   pool.push({id:p.id,fam:p.fam,documented:f.seniorNation===NATION?1:0,score:(typeof niveauMatch==='function'?niveauMatch(p):p.rating||0)+0.1*Math.min(caps,80)});
   }
   const order=(a,b)=>b.documented-a.documented||b.score-a.score||(a.id<b.id?-1:a.id>b.id?1:0);
   pool.sort(order);
@@ -213,7 +213,7 @@ function factory(){
  function xvType(club){
   const taken=new Set(),xv=[];
   for(let slot=0;slot<15;slot++){
-   const best=club.players.filter(p=>!p.injury&&!taken.has(p.id)&&eligibleAt(p,slot)).sort((a,b)=>(b.rating||0)-(a.rating||0)||(a.id<b.id?-1:1))[0];
+   const best=club.players.filter(p=>!p.injury&&!taken.has(p.id)&&eligibleAt(p,slot)).sort((a,b)=>(typeof niveauMatch==='function'?niveauMatch(b):b.rating||0)-(typeof niveauMatch==='function'?niveauMatch(a):a.rating||0)||(a.id<b.id?-1:1))[0];
    if(best){taken.add(best.id);xv.push(best);}
   }
   return xv;
@@ -229,7 +229,7 @@ function factory(){
   if(absent.length<(seuils.absents??3)&&titulaires.length<(seuils.titulaires??1))return null;
   const families=[...new Set(absent.map(p=>FAMILY_LABELS[p.fam]).filter(Boolean))];
   const nations=[...new Set(camps.filter(c=>c.from<=date&&date<=c.through&&c.playerIds.some(pid=>gone.has(pid))).map(c=>nationName(c.nation)))];
-  const noms=absent.slice().sort((a,b)=>(b.rating||0)-(a.rating||0)||(a.id<b.id?-1:1)).slice(0,3).map(p=>p.name);
+  const noms=absent.slice().sort((a,b)=>(typeof niveauMatch==='function'?niveauMatch(b):b.rating||0)-(typeof niveauMatch==='function'?niveauMatch(a):a.rating||0)||(a.id<b.id?-1:1)).slice(0,3).map(p=>p.name);
   const opponent=fixture.homeId===s.club?fixture.awayId:fixture.homeId;
   return {n:absent.length,titulaires:titulaires.length,postes:families.join(', ')||'tout le groupe',nations:nations.join(', ')||'leur sélection',
    joueurs:noms.join(', ')+(absent.length>3?' et '+(absent.length-3)+' autre'+(absent.length>4?'s':''):''),adversaire:s.clubs[opponent]?.name||'l’adversaire',
@@ -241,7 +241,7 @@ function factory(){
   if(!active(s)||!fixture)return null;
   const club=s.clubs[s.club];
   const rest=club.players.filter(p=>ids(s).has(p.id)&&!p.injury&&!released(s,p,fixture.date)&&mustRest(s,p.id,fixture))
-   .sort((a,b)=>(b.rating||0)-(a.rating||0)||(a.id<b.id?-1:1));
+   .sort((a,b)=>(typeof niveauMatch==='function'?niveauMatch(b):b.rating||0)-(typeof niveauMatch==='function'?niveauMatch(a):a.rating||0)||(a.id<b.id?-1:1));
   if(!rest.length)return null;
   const p=rest[0],last=history(s,p.id).slice(-(WINDOW-1));
   return {player:p,matchs:last.length,repos:restCount(last),opponent:s.clubs[fixture.homeId===s.club?fixture.awayId:fixture.homeId]?.name||'l’adversaire',jour:dayText(fixture.date)};
@@ -270,7 +270,7 @@ function factory(){
   return '';
  }
  function cadresFatigues(s,club,f){
-  return club.players.filter(p=>!p.injury&&!released(s,p,f.date)).sort((a,b)=>(b.rating||0)-(a.rating||0)||(a.id<b.id?-1:1)).slice(0,20)
+  return club.players.filter(p=>!p.injury&&!released(s,p,f.date)).sort((a,b)=>(typeof niveauMatch==='function'?niveauMatch(b):b.rating||0)-(typeof niveauMatch==='function'?niveauMatch(a):a.rating||0)||(a.id<b.id?-1:1)).slice(0,20)
    .filter(p=>fatigueOf(p)>=20||conditionOf(p)<80).sort((a,b)=>fatigueOf(b)-fatigueOf(a)||conditionOf(a)-conditionOf(b)||(a.id<b.id?-1:1)).slice(0,6);
  }
  // Jeunes du centre (18 ans et plus, aptes) qui occupent un poste d'un titulaire absent, un par poste, deux au plus.
@@ -299,7 +299,7 @@ function factory(){
    let best=null;
    slots.forEach((pid,slot)=>{
     if(!eligibleAt(y,slot))return;
-    const q=pid?byId.get(pid):null,rank=q?(q.rating||0):-1;
+    const q=pid?byId.get(pid):null,rank=q?(typeof niveauMatch==='function'?niveauMatch(q):q.rating||0):-1;
     if(!best||rank<best.rank||(rank===best.rank&&slot>best.slot))best={slot,rank};
    });
    if(best){if(best.slot<15)s.lineup[best.slot]=yid;else s.reserves[best.slot-15]=yid;}

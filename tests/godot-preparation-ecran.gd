@@ -352,8 +352,15 @@ func run() -> void:
 		if button == null or button.disabled: continue
 		var avant: String = app.route
 		var summary := await press(button)
-		check(app.route != "Préparation" or avant != app.route, "Nom « %s » ouvre un écran (%s)" % [id, summary])
-		check(open_windows() == windows_before, "Aucune fenêtre ouverte par « %s » : %s" % [id, str(open_windows())])
+		# Joueur adverse (décision de Léo, 25/11) : le clic ouvre SA fiche = le dossier du marché entre clubs (fenêtre), comme
+		# depuis l'effectif de la page club ; clubs et autres noms : un écran, jamais une fenêtre.
+		var ouvertes := open_windows()
+		var dossier_ouvert := ouvertes.has("ProspectProfile")
+		check(dossier_ouvert or app.route != "Préparation" or avant != app.route, "Nom « %s » ouvre un écran ou le dossier du joueur (%s)" % [id, summary])
+		var etrangeres := 0
+		for fenetre: String in ouvertes:
+			if not (fenetre in windows_before) and not (fenetre in ["InterclubMarket", "ProspectProfile"]): etrangeres += 1
+		check(etrangeres == 0 and (ouvertes == windows_before or dossier_ouvert), "Seul le dossier du joueur ouvre une fenêtre (« %s » : %s)" % [id, str(ouvertes)])
 	# Consignes : or interdit aussi, et onglet Entraînement atteignable.
 	await reset()
 	await press(named("PreparationTabConsignes") as Button)

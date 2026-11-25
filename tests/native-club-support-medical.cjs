@@ -1,10 +1,10 @@
 'use strict';
 process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : test à migrer vers le mode Monde.
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
-const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{createBridge}=require('../native/engine/worker.cjs');
-const root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'cd-support-medical-'));let b=createBridge({dataDir:root,seed:409,now:1700000000000}),n=0;
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{createBridge}=require('../native/engine/worker.cjs'),{signerExport}=require('./helpers/signature-export.cjs');
+const root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'cd-support-medical-'));let b=createBridge({dataDir:root,seed:409,now:1700000000000,testVm:true}),n=0;
 const good=(command,payload={})=>{const r=b.handle({id:++n,command,payload});assert.equal(r.ok,true,command+': '+r.error);return r.model;},bad=(command,payload={})=>{const r=b.handle({id:++n,command,payload});assert.equal(r.ok,false,command);return r;};
-const exported=()=>JSON.parse(good('export').meta.exportText),encode=doc=>{let h=2166136261;for(const c of JSON.stringify(doc.state))h=Math.imul(h^c.charCodeAt(0),16777619);doc.checksum=(h>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);};
+const exported=()=>JSON.parse(good('export').meta.exportText),encode=doc=>signerExport(doc,b.vm);
 try{
  settleClubMeetings(good('new_career',{mode:'common',club:29}),good);const base=exported(),id=base.state.clubs[29].players[25].id;
  for(const protocol of ['prudent','standard','accelere']){
@@ -17,7 +17,7 @@ try{
   if(protocol==='prudent'){assert.equal(after.injury,1);assert.equal(after.condition,60);assert.equal(after.physicalLoad.fatigue,20);}
   if(protocol==='standard'){assert.equal(after.injury,1);assert.equal(after.condition,55);assert.equal(after.physicalLoad.fatigue,26);}
   const trained=good('export').meta.exportText;settleClubMeetings(good('train'),good);assert.equal(good('export').meta.exportText,trained,'Deuxième train ne réapplique pas le médical.');
-  good('shutdown');b=createBridge({dataDir:root,now:1700000000000});assert.equal(good('export').meta.exportText,trained,'Reprise médicale exacte.');
+  good('shutdown');b=createBridge({dataDir:root,now:1700000000000,testVm:true});assert.equal(good('export').meta.exportText,trained,'Reprise médicale exacte.');
  }
  for(const choice of ['progressif','complet']){
   const doc=structuredClone(base),p=doc.state.clubs[29].players.find(p=>p.id===id);p.injury=0;p.condition=70;p.physicalLoad={version:1,fatigue:40,plan:'normal'};p.medicalV68={version:1,protocol:'standard',stage:'reprise'};
@@ -28,7 +28,7 @@ try{
  for(const modify of [s=>s.nativeSupport.version=2,s=>s.nativeSupport.meeting.context.club=30,s=>s.nativeSupport.meeting.plan='faux']){const invalid=structuredClone(doc);modify(invalid.state);assert.match(bad('import',{text:encode(invalid)}).error,/staff/);}
  m=good('import',{text:encode(structuredClone(base))});let count=0;
  for(const p of m.clubLife.clubSupport.agents.players){const q=p.quotes.find(q=>q.policy==='ferme'&&q.affordable);if(!q)continue;for(let attempt=0;attempt<3&&count<27;attempt++){m=good('agent_negotiate',{context,id:q.id,years:q.years,policy:q.policy});count++;}if(count>=27)break;}
- assert.equal(count,27);assert.equal(m.clubLife.clubSupport.agents.history.length,24);doc=exported();good('shutdown');b=createBridge({dataDir:root,now:1700000000000});assert.deepEqual(good('snapshot').clubLife.clubSupport.agents.history,doc.state.v71AgentDesk.history);
+ assert.equal(count,27);assert.equal(m.clubLife.clubSupport.agents.history.length,24);doc=exported();good('shutdown');b=createBridge({dataDir:root,now:1700000000000,testVm:true});assert.deepEqual(good('snapshot').clubLife.clubSupport.agents.history,doc.state.v71AgentDesk.history);
  // This bench deliberately reuses its own temporary profile across many imports.
  // Release one QA checkpoint through the confirmed API; never bypass the player quota.
  const safety=good('snapshot').meta.profileSafety;

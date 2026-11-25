@@ -28,20 +28,22 @@ console.log('Native invitations: pure reads, typed participants, receipts, repla
 // Production worker: command registration, disk authority, unchanged read paths,
 // real relationship quota and persistent active state (the VM above covers triggers).
 const {createBridge}=require('../native/engine/worker.cjs');
+const {signerExport}=require('./helpers/signature-export.cjs');
 const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'native-scene-invitations-'));
 let bridge,sequence=0;
 function good(command,payload={}){const r=bridge.handle({id:++sequence,command,payload});assert.equal(r.ok,true,command+': '+r.error);return r.model;}
-function rechecksum(doc){let hash=2166136261;for(const ch of JSON.stringify(doc.state))hash=Math.imul(hash^ch.charCodeAt(0),16777619);doc.checksum=(hash>>>0).toString(16).padStart(8,'0');return doc;}
+// Empreinte comme le jeu, export réduit compris : tests/helpers/signature-export.cjs.
+function rechecksum(doc){signerExport(doc,bridge.vm);return doc;}
 function bad(command,payload={}){const r=bridge.handle({id:++sequence,command,payload});assert.equal(r.ok,false,command+' must reject');return r;}
 try{
- bridge=createBridge({dataDir:root,seed:371,now:1700000000000});
+ bridge=createBridge({testVm:true,dataDir:root,seed:371,now:1700000000000});
  let m=settleClubMeetings(good('new_career',{mode:'common',club:29}),(command,payload)=>good(command,payload)),inv=()=>m.clubLife.sceneInvitations;
  assert.ok(inv(),'The real worker registers sceneInvitations');assert.equal(inv().invitations.length,2);
  const file=path.join(m.meta.dataDir,'donnees.json'),disk=fs.readFileSync(file),initial=good('export').meta.exportText;
  for(let i=0;i<3;i++)good('snapshot');assert.equal(good('export').meta.exportText,initial);assert.deepEqual(fs.readFileSync(file),disk,'Snapshots and export cannot publish invitations');
  const person=inv().invitations.find(x=>x.kind==='private_player');m=good('scene_invitation_open',{id:person.id});assert.equal(inv().active.id,person.id);bad('begin_match');
- const activeSave=good('export').meta.exportText;good('shutdown');bridge=createBridge({dataDir:root});m=good('snapshot');assert.equal(good('export').meta.exportText,activeSave);assert.equal(inv().active.id,person.id);
+ const activeSave=good('export').meta.exportText;good('shutdown');bridge=createBridge({testVm:true,dataDir:root});m=good('snapshot');assert.equal(good('export').meta.exportText,activeSave);assert.equal(inv().active.id,person.id);
  const listen=inv().active.options.find(x=>x.intent==='autonomy');assert.ok(listen);const score=m.clubLife.relationships.players.find(x=>x.id===person.participantId).score;
  const beforeReply=good('export').meta.exportText,beforeBytes=fs.readFileSync(file);
  refuseSavePublication(file,()=>bad('scene_invitation_reply',{id:person.id,choiceId:listen.id}));assert.equal(good('export').meta.exportText,beforeReply);assert.deepEqual(fs.readFileSync(file),beforeBytes,'Failed publication restores receipt and effects');
@@ -51,7 +53,7 @@ try{
  const member=inv().invitations.find(x=>x.kind==='private_staff');assert.ok(member.participantSourceId);m=good('scene_invitation_open',{id:member.id});const staffChoice=inv().active.options[0].id,stats={morale:m.meta.morale,trust:m.meta.trust};m=good('scene_invitation_reply',{id:member.id,choiceId:staffChoice});assert.deepEqual({morale:m.meta.morale,trust:m.meta.trust},stats);assert.equal(inv().active.decision.effect,'staff_receipt');m=good('scene_invitation_close',{id:member.id});
  const final=good('export').meta.exportText;
  const hostile=JSON.parse(final);hostile.state.sceneInvitations.invitations[0].decision.choiceId='forged';assert.match(bad('import',{text:JSON.stringify(hostile)}).error,/invitation/i);assert.equal(good('export').meta.exportText,final);
- good('shutdown');bridge=createBridge({dataDir:root});m=good('snapshot');assert.equal(good('export').meta.exportText,final);assert.equal(inv().history.length,2);
+ good('shutdown');bridge=createBridge({testVm:true,dataDir:root});m=good('snapshot');assert.equal(good('export').meta.exportText,final);assert.equal(inv().history.length,2);
  const old=JSON.parse(final);delete old.state.sceneInvitations;rechecksum(old);m=good('import',{text:JSON.stringify(old)});assert.equal(JSON.parse(good('export').meta.exportText).state.sceneInvitations,undefined);good('snapshot');assert.equal(JSON.parse(good('export').meta.exportText).state.sceneInvitations,undefined,'Old saves do not gain invented invitation history');
  m=settleClubMeetings(good('new_career',{mode:'common',club:29}),(command,payload)=>good(command,payload));const departing=inv().invitations.find(x=>x.kind==='private_staff');m=good('staff_release',{context:m.clubLife.staffCareer.context,confirmed:true,staffId:departing.participantId});assert.equal(inv().invitations.find(x=>x.id===departing.id).status,'expired');bad('scene_invitation_open',{id:departing.id});const departed=good('export').meta.exportText;m=good('import',{text:departed});assert.equal(inv().invitations.find(x=>x.id===departing.id).status,'expired','Historical staff departure remains importable');
  console.log('Native invitations production worker: typed introduction, pure reads, command guard, real relationship quota, saved visit and receipts, disk rollback and replay refusal PASS.');

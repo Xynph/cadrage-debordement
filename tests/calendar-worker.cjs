@@ -7,9 +7,10 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const {createBridge} = require('../native/engine/worker.cjs');
+const {signerExport} = require('./helpers/signature-export.cjs');
 
 const directory = fs.mkdtempSync(path.join(os.tmpdir(),'oval-calendar-worker-'));
-const options = {dataDir:directory,seed:248,now:1700000000000};
+const options = {dataDir:directory,seed:248,now:1700000000000,testVm:true};
 let bridge = createBridge(options);
 let sequence = 0;
 const request = (command,payload={}) => bridge.handle({id:++sequence,command,payload});
@@ -19,11 +20,9 @@ const good = (command,payload) => {
   return result.model;
 };
 
+// Empreinte comme le jeu, export réduit compris : tests/helpers/signature-export.cjs.
 function signed(document) {
-  const state = JSON.stringify(document.state);
-  let checksum = 2166136261;
-  for (let index = 0; index < state.length; index++) checksum = Math.imul(checksum ^ state.charCodeAt(index),16777619);
-  return JSON.stringify({...document,checksum:(checksum>>>0).toString(16).padStart(8,'0')});
+  return signerExport(document,bridge.vm);
 }
 
 function reopen() {

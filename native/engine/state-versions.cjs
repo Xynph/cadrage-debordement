@@ -45,6 +45,8 @@ const UNTOUCHED = Object.freeze({
   set_player_load: except('clubs'), appliquer_avis_kine: except('clubs'), set_development_focus: except('clubs'), training_plan: except('clubs'),
   // Poste à apprendre (familiarite-poste.cjs) : un champ du joueur du club, appliqué aux prochaines séances.
   set_position_learning: except('clubs'),
+  // Rôle choisi par le club (role-joueur.cjs) : un champ du joueur du club (p.roleId).
+  set_player_role: except('clubs'),
   staff_meeting: except('clubs'), relationship_conversation: except('clubs'), observe_player: except('clubs'),
   scout_mission: except('clubs'), extend_contract: except('clubs'), press_conference: except('clubs'),
   recruit: except('clubs', 'aiRoster', 'potentialEvolution'), league_detail_set: except('worldMode'),
@@ -65,12 +67,12 @@ function untouched(command, payload) {
 // du manager dans `clubs` (S.clubs[S.club], S.club inchangé). Les autres clubs (~13,8 Mo) ne sont alors pas
 // resérialisés ; le club du manager l'est, joueur par joueur et champ par champ (voir SOURCE, parties de la section des
 // clubs). Vérifié en mode vérification (les autres clubs sont relus et comparés).
-const OWN_CLUB = Object.freeze(new Set(['set_player_load', 'appliquer_avis_kine', 'set_development_focus', 'set_position_learning', 'training_plan', 'extend_contract', 'staff_meeting', 'observe_player', 'club_mail_reply']));
+const OWN_CLUB = Object.freeze(new Set(['set_player_load', 'appliquer_avis_kine', 'set_development_focus', 'set_position_learning', 'set_player_role', 'training_plan', 'extend_contract', 'staff_meeting', 'observe_player', 'club_mail_reply']));
 const ownClubOnly = command => OWN_CLUB.has(command);
 
 // Commandes sans effet sur la note et les qualités des joueurs, même si elles touchent la section des clubs (consigne de
 // charge, axe de progression : appliqués à la prochaine séance).
-const PLAYERS_STABLE = Object.freeze(new Set(['set_player_load', 'appliquer_avis_kine', 'set_development_focus', 'set_position_learning']));
+const PLAYERS_STABLE = Object.freeze(new Set(['set_player_load', 'appliquer_avis_kine', 'set_development_focus', 'set_position_learning', 'set_player_role']));
 
 // Commande sans effet sur aucune section lourde (clubs et centres compris), ou déclarée sans effet sur les qualités : la
 // note et les qualités des joueurs ne bougent pas ; la complétion des attributs détaillés n'a pas à relever leurs
