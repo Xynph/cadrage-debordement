@@ -91,8 +91,10 @@ const RAMPE := 0.4
 const ARRIVE := 0.6
 ## Rotation vers le cap de la phase, à l'arrêt (rad/s).
 const VIRAGE := 6.0
-## Écart de cap (rad) sous lequel un joueur arrivé à sa place se lie (prend sa posture).
-const FACE := 0.15
+## Écart de cap (rad) sous lequel un joueur arrêté à sa place se lie (prend sa posture) : penché,
+## sa tête est 1,1 m devant ses pieds ; à 0,05 rad elle dévie de 5 cm au plus, dans la marge de
+## l'alternance des têtes (2 × DECALAGE_TETES moins deux rayons de tête : 11 cm à deux).
+const FACE := 0.05
 const ARMS := ["UpperArm.L", "LowerArm.L", "Palm.L", "UpperArm.R", "LowerArm.R", "Palm.R"]
 const LEGS := ["UpperLeg.L", "LowerLeg.L", "Foot.L", "UpperLeg.R", "LowerLeg.R", "Foot.R"]
 
@@ -351,10 +353,11 @@ func poser(delta: float) -> void:
 		if actif and formation.caps.has(id) and float(entry.elapsed) >= float(entry.duree):
 			var change := angle_difference(actor.rotation.y, float(formation.caps[id]))
 			actor.rotation.y += clampf(change, -VIRAGE * delta, VIRAGE * delta)
-		# 25/11/2026 (sonde des contacts du match filmé) : il ne se penche qu'une fois tourné vers
-		# l'adversaire ; penché de travers en arrivant, sa tête entrait dans celles de ses voisins.
+		# 25/11/2026 (sonde des contacts du match filmé) : il ne se penche qu'une fois arrêté à sa place
+		# et tourné vers l'adversaire ; penché de travers en arrivant, sa tête entrait dans celle d'en face.
 		var face: bool = not formation.caps.has(id) or absf(angle_difference(actor.rotation.y, float(formation.caps[id]))) < FACE
-		var lie: bool = not nom.is_empty() and arrive and (face or float(_poids.get(id, 0.0)) > 0.0)
+		var arrete: bool = float(entry.elapsed) >= float(entry.duree)
+		var lie: bool = not nom.is_empty() and arrive and ((arrete and face) or float(_poids.get(id, 0.0)) > 0.0)
 		var poids := move_toward(float(_poids.get(id, 0.0)), 1.0 if lie else 0.0, (delta / RAMPE) if not view._paused else 0.0)
 		if not nom.is_empty():
 			_posture[id] = nom
