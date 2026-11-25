@@ -114,7 +114,7 @@ static func open(app: Control, player: Dictionary, recruiting: bool, answer: Str
 	progress.name = "ContractNegotiationProgress"
 	body.add_child(progress)
 	if not answer.is_empty():
-		var reply := C.wrap(answer,18,C.MINT if answer.begins_with("Le conseil accorde") else C.ALERT,true,700)
+		var reply := C.wrap(answer,28,C.MINT if answer.begins_with("Le conseil accorde") else C.ALERT,true,700)
 		reply.name = "ContractTransferBudgetAnswer"
 		body.add_child(reply)
 	var columns := C.h(16)
