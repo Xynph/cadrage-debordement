@@ -277,7 +277,7 @@ static func _sujet(app: Control, page: Control, f: Control, zone: Rect2, d: Dict
 	var nom := Link.styled_button(f, Rect2(xn, y - 2, l - 200, 42), Kit.casse(str(d.p.get("name", "—"))), 28, Charte.IVOIRE, "AgentJoueurNom")
 	nom.add_theme_font_override("font", Charte.TITRE_FICHE)
 	nom.pressed.connect(fiche)
-	CarteSurvol.lier(app, nom, str(d.id), "market")
+	CarteSurvol.lier_info(app, nom, str(d.id), "market")
 	var x := xn
 	x += Pastilles.poser(f, Pastilles.pastille(str(d.r.poste), Charte.IVOIRE_2, "people", "Poste", 16, "AgentPoste", fiche), x, y + 46) + 8
 	x += Pastilles.poser(f, Pastilles.pastille("%s ans" % G.n(d.p.get("age", "—")), Charte.IVOIRE_2, "calendar", "Âge", 16, "AgentAge", fiche), x, y + 46) + 8

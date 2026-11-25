@@ -155,7 +155,7 @@ static func _cel_joueur(ctx: Dictionary, cel: Control, p: Dictionary, source: St
 	var nom := _txt(colonne, p.get("name", ""), CORPS, Charte.IVOIRE, C.BODY, HORIZONTAL_ALIGNMENT_LEFT, true)
 	nom.name = "CentreNom"
 	if not sous.is_empty(): _txt(colonne, sous, PETIT, Charte.IVOIRE_3, C.BODY, HORIZONTAL_ALIGNMENT_LEFT, true)
-	if not source.is_empty() and not str(p.get("id", "")).is_empty(): CarteSurvol.lier(ctx.app, nom, str(p.id), source)
+	if not source.is_empty() and not str(p.get("id", "")).is_empty(): CarteSurvol.lier_info(ctx.app, nom, str(p.id), source)
 
 # --- Étapes (le chemin) ------------------------------------------------------------------------------------------------
 

@@ -1,6 +1,8 @@
 extends RefCounted
-## Carte joueur au survol (demande de Léo du 21/11/2026) : survol d'un nom ou d'un visage de joueur, la carte apparaît
-## après un court délai à côté de lui ; la souris part, elle disparaît ; Échap la ferme ; un clic garde son effet
+## Carte joueur (demande de Léo du 21/11/2026, revue le 25/11/2026) : le survol d'un NOM ne fait rien (la ligne se démarque
+## seulement) ; le survol du bouton (i) à côté du nom, pendant DELAI (0,5 s), ouvre la carte ; un clic sur le nom ouvre la
+## fiche complète (action propre à chaque écran). Exception, l'écran de match (pas de (i)) : `lier_clic` = un clic sur le
+## nom ouvre la carte, rien au survol. Après son délai, la carte apparaît à côté de l'ancre ; la souris part, elle disparaît ; Échap la ferme ; un clic garde son effet
 ## habituel (petite fenêtre du joueur) et range la carte. Elle ne met jamais le match en pause.
 ## Fiche complète (option A choisie par Léo le 21/11/2026, à 75 % de sa taille d'essai) : en-tête, grille des 36
 ## attributs, rapport du staff (niveau et potentiel en chiffres et jauges), état, postes.
@@ -20,7 +22,7 @@ const Familiarite = preload("res://ui/familiarite_poste.gd")
 const NOM := "CarteJoueurSurvol"
 const GUETTEUR := "CarteJoueurSurvolGuetteur"
 ## Délai avant l'apparition (secondes) : un passage rapide de la souris n'ouvre rien.
-const DELAI := 0.35
+const DELAI := 0.5
 const MARGE := 8.0
 ## Échelle de la carte par rapport au gabarit 2560 × 1440 (choix de Léo : 75 % de la taille d'essai).
 const ECHELLE := 0.75
@@ -88,7 +90,48 @@ static func icone(app: Control, parent: Control, zone: Rect2, player_id: String,
 	parent.add_child(info)
 	D.place(info, zone)
 	lier(app, info, player_id, source)
+	info.set_meta("carte_info", true)
 	return info
+
+## Nom lié + bouton (i) posé juste à sa droite (enfant du nom, donc il le suit) : survol du (i) 0,5 s = carte joueur.
+## `dedans` : (i) dans le coin haut droit du contrôle (portrait, tuile) au lieu d'à droite. Le clic sur le nom garde son
+## effet (fiche complète).
+static func lier_info(app: Control, controle: Control, player_id: String, source: String = "squad", direct: Callable = Callable(), dedans: bool = false) -> Control:
+	if player_id.is_empty() or not is_instance_valid(app) or not is_instance_valid(controle): return null
+	lier(app, controle, player_id, source, direct)
+	var info := C.icon("info", 18, Charte.IVOIRE_2)
+	var taille := maxf(14.0, info.custom_minimum_size.x)
+	info.name = "CarteJoueurInfo_" + player_id.validate_node_name()
+	info.mouse_filter = Control.MOUSE_FILTER_STOP
+	info.mouse_default_cursor_shape = Control.CURSOR_HELP
+	info.custom_minimum_size = Vector2(taille, taille)
+	info.size = Vector2(taille, taille)
+	info.z_index = 1
+	controle.add_child(info)
+	var poser := func():
+		if not is_instance_valid(info) or not is_instance_valid(controle): return
+		var x := controle.size.x - taille - 2.0 if dedans else controle.size.x + 4.0
+		var y := 2.0 if dedans else (controle.size.y - taille) / 2.0
+		info.position = Vector2(x, y)
+	controle.resized.connect(poser)
+	poser.call()
+	lier(app, info, player_id, source, direct)
+	info.set_meta("carte_info", true)
+	return info
+
+## Écran de match (pas de bouton (i)) : un clic sur le nom ouvre la carte (re-clic ou clic ailleurs la ferme), rien au survol.
+static func lier_clic(app: Control, controle: Control, player_id: String, source: String = "squad", direct: Callable = Callable()) -> void:
+	if player_id.is_empty() or not is_instance_valid(app): return
+	lier(app, controle, player_id, source, direct)
+	controle.set_meta("carte_clic", true)
+	if controle.mouse_filter == Control.MOUSE_FILTER_IGNORE: controle.mouse_filter = Control.MOUSE_FILTER_PASS
+	controle.gui_input.connect(func(event: InputEvent):
+		var clic := event as InputEventMouseButton
+		if clic == null or not clic.pressed or clic.button_index != MOUSE_BUTTON_LEFT: return
+		var ouverte := actuelle(app)
+		if ouverte != null and ouverte.get_meta("ancre", null) == controle: cacher(app)
+		else: montrer(app, player_id, source, controle, (direct.call() if direct.is_valid() else {}) as Dictionary)
+		controle.accept_event())
 
 ## Le guetteur vit à la racine de l'arbre (dernier enfant quand la carte s'ouvre) : il reçoit Échap avant l'écran
 ## en cours (menu du match).
@@ -225,7 +268,7 @@ class Guetteur extends Node:
 		var id := ""
 		var n: Node = controle
 		while n != null and n != app:
-			if n is Control and n.has_meta("carte_joueur"):
+			if n is Control and n.has_meta("carte_joueur") and n.has_meta("carte_info"):
 				if trouve == null: id = str(n.get_meta("carte_joueur"))
 				if str(n.get_meta("carte_joueur")) == id: trouve = n
 			n = n.get_parent()
