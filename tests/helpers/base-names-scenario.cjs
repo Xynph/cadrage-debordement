@@ -5,7 +5,7 @@ process.env.CD_MODES_HERITES='1'; // Anciens modes de carrière (non-Monde) : te
 // and keeps its names.
 const {settleClubMeetings}=require('./club-meetings.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
-const media=require('../../native/engine/media-packs.cjs'),{createBridge}=require('../../native/engine/worker.cjs'),baseNames=require('../../scripts/base-names.cjs');
+const media=require('../../native/engine/media-packs.cjs'),{createBridge}=require('../../native/engine/worker.cjs'),{signerExport}=require('./signature-export.cjs'),baseNames=require('../../scripts/base-names.cjs');
 let root=null,seq=0;
 const playerNames=baseNames.players(),staffNames=baseNames.staff(),clone=value=>JSON.parse(JSON.stringify(value));
 // Stored ZIP with a single manifest: the smallest archive the pack reader accepts.
@@ -16,14 +16,15 @@ function archive(manifest){
  end.writeUInt32LE(0x06054b50);end.writeUInt16LE(1,8);end.writeUInt16LE(1,10);end.writeUInt32LE(46+name.length,12);end.writeUInt32LE(30+name.length+data.length,16);
  const file=path.join(root,'pack-'+(++seq)+'.zip');fs.writeFileSync(file,Buffer.concat([local,name,data,central,name,end]));return file;
 }
-function sign(doc){const raw=JSON.stringify(doc.state);let hash=2166136261;for(let i=0;i<raw.length;i++)hash=Math.imul(hash^raw.charCodeAt(i),16777619);doc.checksum=(hash>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);}
+// Empreinte comme le jeu, export réduit compris : tests/helpers/signature-export.cjs.
+function sign(doc,vm){return signerExport(doc,vm);}
 const strings=model=>{const found=[];(function walk(value){if(typeof value==='string')found.push(value);else if(Array.isArray(value))value.forEach(walk);else if(value&&typeof value==='object')for(const [key,item] of Object.entries(value))if(key!=='exportText')walk(item);})(model);return found;};
 const sourced=state=>[...state.clubs.flatMap(club=>club.players),...state.market,...state.economy.freeAgents].filter(p=>playerNames.has(p.id));
 const references=state=>state.staffCareer.people.flat().filter(p=>p.sourceKind==='reference');
 
 function scenario(directory,mode,club,expectedPlayers){
  root=directory;
- const b=createBridge({dataDir:path.join(root,mode),seed:20261111,now:1794178800000});
+ const b=createBridge({dataDir:path.join(root,mode),seed:20261111,now:1794178800000,testVm:true});
  const raw=(command,payload={})=>b.handle({id:++seq,command,payload});
  const good=(command,payload={})=>{const r=raw(command,payload);assert.equal(r.ok,true,mode+' '+command+' : '+r.error);return r.model;};
  const settled=(command,payload={})=>settleClubMeetings(good(command,payload),good);
@@ -67,7 +68,7 @@ function scenario(directory,mode,club,expectedPlayers){
   const formerPlayer=renamed.get(player.id),formerStaff=renamed.get(member.sourceStaffId),quote=formerPlayer+' reprend l’entraînement collectif.';
   earlier.state.news.unshift(quote);
   const press=clone(earlier.state.pressConference);assert.ok(press.history.length>0,'des réponses de presse déjà archivées');
-  m=settled('import',{text:sign(earlier)});
+  m=settled('import',{text:sign(earlier,b.vm)});
   assert.deepEqual(exported().state,earlier.state,'la carrière se charge et garde ses noms, ses identifiants et ses archives');
   assert.deepEqual(exported().state.pressConference,press,'questions et réponses de presse archivées intactes');
   assert.deepEqual(shown(m),{player:formerPlayer,staff:formerStaff});
@@ -91,7 +92,7 @@ function scenario(directory,mode,club,expectedPlayers){
   for(const value of ['<b>Nom</b>','']){
    const unsafe=clone(fresh);sourced(unsafe.state)[0].name=value;
    const check=createBridge({dataDir:path.join(root,mode+'-refus-'+(++seq)),seed:1,now:1794178800000});
-   try{assert.equal(check.handle({id:++seq,command:'import',payload:{text:sign(unsafe)}}).ok,false,'nom refusé : '+JSON.stringify(value));}finally{check.close();}
+   try{assert.equal(check.handle({id:++seq,command:'import',payload:{text:sign(unsafe,b.vm)}}).ok,false,'nom refusé : '+JSON.stringify(value));}finally{check.close();}
   }
   return {mode,players:sourced(state).length,staff:references(state).length,saved};
  }finally{b.close();}

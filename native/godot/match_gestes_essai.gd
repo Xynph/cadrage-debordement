@@ -92,7 +92,7 @@ func _start_maul() -> void:
 	# Durée de jonction : pointe de smoothstep = 1,5 × distance / durée, au plus MAUL_JOIN_PACE.
 	for id: String in cast:
 		if cast[id].has("slot"):
-			var spot: Vector3 = center_from + u * (cast[id].slot as Vector2).x + r * (cast[id].slot as Vector2).y
+			var spot := _maul_spot(id, center_from, u, r, cast[id].slot)
 			cast[id].join = clampf(1.5 * (cast[id].from as Vector3).distance_to(spot) / MAUL_JOIN_PACE, MAUL_FORM, 2.5)
 	phase = "maul"
 	time = 0.0

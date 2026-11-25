@@ -10,12 +10,13 @@ const { test } = require('node:test');
 const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
 const vm = require('node:vm');
 const M = require('./helpers/carriere-monde.cjs');
+const { signerExport } = require('./helpers/signature-export.cjs');
 const N = require('../native/engine/match-notes.cjs');
 const H = require('../native/engine/match-highlights.cjs');
 
 // Carrière Monde (`world-champ`, seul mode autorisé) : mêmes options que le jeu, voir tests/helpers/carriere-monde.cjs.
 function ouvrir(options = {}) {
-  const jeu = M.ouvrir(options);
+  const jeu = M.ouvrir({ testVm: true, ...options });
   const etat = () => JSON.parse(jeu.call('export').meta.exportText).state;
   const disque = () => JSON.parse(fs.readFileSync(path.join(jeu.dataDir, 'PrototypeGodot', 'donnees.json'), 'utf8'));
   return { ...jeu, etat, disque };
@@ -33,8 +34,8 @@ function domaine(effets) {
 }
 
 // Journal synthétique : un porteur, un plaqueur, un essai.
-// Document d'export re-signé après modification (même empreinte que saves.js).
-function signe(document, change) { const doc = structuredClone(document); change(doc.state); const text = JSON.stringify(doc.state); let h = 2166136261; for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619); doc.checksum = (h >>> 0).toString(16).padStart(8, '0'); return JSON.stringify(doc); }
+// Document d'export re-signé après modification (même empreinte que saves.js, export réduit compris : tests/helpers/signature-export.cjs).
+function signe(document, change, vmJeu) { const doc = structuredClone(document); change(doc.state); return signerExport(doc, vmJeu); }
 const sc = (kind, team, actor, extra = {}) => ({ min: 1, type: 'play', scene: { kind, team, actor, on: [['a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'a10', 'a11', 'a12', 'a13', 'a14', 'a15'], ['b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10', 'b11', 'b12', 'b13', 'b14', 'b15']], from: { x: 40, y: 30 }, to: { x: 48, y: 30 }, score: [0, 0], ...extra } });
 
 test('Calcul : déterministe, sans tirage, base 6,5, bornes 1–10, remplaçant à 6,5', () => {
@@ -487,18 +488,18 @@ test('Sauvegarde (Monde) : aller-retour, migration d’une ancienne sauvegarde s
     jeu.call('import', { text: texte });
     assert.deepEqual(jeu.etat().matchNotes, doc.state.matchNotes, 'aller-retour exact');
     // Ancienne sauvegarde : pas de notes, historique vide puis rempli au match suivant.
-    const sansNotes = jeu.call('import', { text: signe(doc, state => { delete state.matchNotes; }) });
+    const sansNotes = jeu.call('import', { text: signe(doc, state => { delete state.matchNotes; }, jeu.bridge.vm) });
     assert.deepEqual(sansNotes.clubLife.matchNotes.joueurs, {}, 'ancienne sauvegarde : historique vide');
     assert.equal(jeu.etat().matchNotes, undefined, 'rien n’est inventé pour le passé');
     // Monde : plus de 2 000 joueurs notés (limite générique des tables de la sauvegarde) acceptés
     // jusqu'au nombre de joueurs du monde, refusés au-delà.
-    const plus = (n, base) => signe(doc, state => { for (let k = 0; k < n; k++) state.matchNotes.joueurs['x' + base + k] = { s: [1, 65, 80, 0, 0, 0, 0], f: [65] }; });
+    const plus = (n, base) => signe(doc, state => { for (let k = 0; k < n; k++) state.matchNotes.joueurs['x' + base + k] = { s: [1, 65, 80, 0, 0, 0, 0], f: [65] }; }, jeu.bridge.vm);
     assert.equal(jeu.brut('import', { text: plus(2100, 'a') }).ok, true, 'plus de 2 000 joueurs notés : accepté');
     const trop = jeu.brut('import', { text: plus(40000, 'b') });
     assert.equal(trop.ok, false, 'table démesurée refusée');
     // Un état corrompu est refusé.
     const id = Object.keys(doc.state.matchNotes.joueurs)[0];
-    const casse = jeu.brut('import', { text: signe(doc, state => { state.matchNotes.joueurs[id].f = [999]; }) });
+    const casse = jeu.brut('import', { text: signe(doc, state => { state.matchNotes.joueurs[id].f = [999]; }, jeu.bridge.vm) });
     assert.equal(casse.ok, false, 'note hors échelle refusée');
     assert.match(casse.error, /Notes de match/);
   } finally { fermerPartage(); }

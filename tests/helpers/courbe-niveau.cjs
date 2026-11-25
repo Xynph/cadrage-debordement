@@ -15,7 +15,10 @@ const VM_SOURCE = String.raw`globalThis.__bancCourbe=function(o){
   c.id=s.id;c.name=s.name;c.abbr=s.abbr;c.color=s.color;c.morale=75;
   for(const p of c.players){p.id=p.id+'#'+tag;p.condition=100;p.injury=0;p.suspension=0;
    if(k){p.rating+=k;p.skillBase=(p.skillBase??p.rating-k)+k;for(const s in p.skills)p.skills[s]=Math.min(99,p.skills[s]+k);
-    if(p.attributesV2)for(const s in p.attributesV2)if(typeof p.attributesV2[s]==='number')p.attributesV2[s]=Math.min(99,p.attributesV2[s]+k);}}
+    if(p.attributesV2)for(const s in p.attributesV2)if(typeof p.attributesV2[s]==='number')p.attributesV2[s]=Math.min(99,p.attributesV2[s]+k);
+    // Qualités compactes (joueurs générés) : même hausse, pour que le Niveau du match (niveauMatch, calculé sur les
+    // qualités) suive l'écart voulu comme la note.
+    if(typeof p.nativeAttributesV1==='string'&&/^\d{72}$/.test(p.nativeAttributesV1))p.nativeAttributesV1=p.nativeAttributesV1.match(/\d\d/g).map(v=>String(Math.max(20,Math.min(97,+v+k))).padStart(2,'0')).join('');}}
   return c;};
  const out=[];
  try{
@@ -88,8 +91,8 @@ function tableau(titre, resumes, fit) {
 }
 
 // Série complète : pour chaque écart, n matchs dans le mode demandé.
-// Championnat du banc : URC, à l'avantage du terrain commun (TERRAIN_CHAMPIONNAT de dist/rugby.js vaut 1) ; le Top 14 et
-// la Pro D2 renforcent le terrain (×1,7, 17/11/2026) et ne mesurent donc pas la courbe commune.
+// Championnat du banc : URC par défaut (courbe calée sur l'URC réelle, TERRAIN_CHAMPIONNAT et ECART_CHAMPIONNAT de dist/rugby.js) ; le Top 14 et
+// la Pro D2 ont leurs propres réglages (tests/match-realite-championnats.cjs).
 function mesurer(h, { mode, ecarts, n, base = 4, slots = [7, 11], competitionId = 'urc' }) {
   installer(h);
   const series = ecarts.map(k => ({ k, matchs: jouer(h, { mode, k, n, base, slots, competitionId }) }));

@@ -289,7 +289,7 @@ func place(id: String, actor: Node3D) -> void:
 			var slot: Vector2 = member.slot
 			if member.has("slot_from"):
 				slot = (member.slot_from as Vector2).lerp(slot, smoothstep(0.0, float(member.get("swap", 0.5)), time))
-			var spot: Vector3 = frame.center + frame.u * slot.x + frame.r * slot.y
+			var spot := _maul_spot(id, frame.center, frame.u, frame.r, slot)
 			var facing := atan2(frame.u.x, frame.u.z) + (PI if member.role == "opp_pack" else 0.0)
 			if phase == "maul":
 				# Chacun rejoint le regroupement à allure de course : les plus éloignés se lient après.

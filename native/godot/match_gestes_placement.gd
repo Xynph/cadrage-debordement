@@ -18,6 +18,20 @@ func _frame() -> Dictionary:
 	return {"center": center_from.lerp(center_to, k), "u": u, "r": r}
 
 
+## Place d'un joueur dans le ballon porté. Les places (slot, en mètres) sont calées sur l'athlète de
+## 1,90 m ; un corps penché pour pousser (pivot aux pieds) avance sa tête d'autant plus qu'elle est
+## haute : l'écart avant / arrière au centre suit la hauteur de tête du gabarit (1,57 à 1,88 m pour
+## les joueurs v5, 1,66 m pour l'ancien athlète), l'écart de côté reste celui des épaules liées. Sans
+## cela, deux deuxième-ligne de 2,04 m de part et d'autre du sauteur ont la tête l'une dans l'autre
+## (sonde des contacts, 25/11/2026). Le porteur en queue (buste à peine penché, personne derrière lui)
+## garde sa place : son plongeon part du même endroit.
+func _maul_spot(id: String, center: Vector3, u: Vector3, r: Vector3, slot: Vector2) -> Vector3:
+	var corps := 1.0
+	if view._actors.has(id) and not (cast.has(id) and cast[id].get("role", "") == "tail"):
+		corps = float((view._actors[id] as Dictionary).get("tete_m", Presentation.HAUTEUR_TETE_REFERENCE)) / Presentation.HAUTEUR_TETE_REFERENCE
+	return center + u * slot.x * corps + r * slot.y
+
+
 ## Course ou poussée : mise en mouvement, allure tenue, arrêt ; vitesse de pointe 1,25 fois la moyenne.
 static func _drive_curve(t: float) -> float:
 	const RAMP := DRIVE_RAMP

@@ -8,20 +8,14 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { createBridge } = require('../native/engine/worker.cjs');
-
-// Réécrit l'empreinte d'un export modifié (même calcul que dist/saves.js).
-function encoded(doc) {
-  const text = JSON.stringify(doc.state);
-  let h = 2166136261;
-  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619);
-  doc.checksum = (h >>> 0).toString(16).padStart(8, '0');
-  return JSON.stringify(doc);
-}
+const { signerExport } = require('./helpers/signature-export.cjs');
 
 test('Suivi du centre · carrière', t => {
   const dataDir = fs.mkdtempSync(path.join(path.resolve(os.tmpdir()), 'oval-academy-follow-up-'));
-  const options = { dataDir, seed: 615616, now: 1794178800000 };
+  const options = { dataDir, seed: 615616, now: 1794178800000, testVm: true };
   let bridge = createBridge(options);
+  // Réécrit l'empreinte d'un export modifié comme le jeu la vérifie (tests/helpers/signature-export.cjs).
+  const encoded = doc => signerExport(doc, bridge.vm);
   t.after(() => { bridge.close(); fs.rmSync(dataDir, { recursive: true, force: true }); });
   let id = 0;
   const ask = (command, payload = {}) => bridge.handle({ id: ++id, command, payload });
