@@ -129,12 +129,24 @@ function dsStaffObserver(forcee){
   }
  }
  if(!lot.prolonges.length&&!lot.departs.length&&!lot.recrues.length)return false;
- bureau.lots=bureau.lots.concat(lot).slice(-12);
+ // Gros staffs (clubs japonais : jusqu'à 70 membres) : un lot dépasse vite 40 noms ; découpé en séries de 40 pour rester
+ // dans la forme de sauvegarde (sinon la carrière refuse sa propre sauvegarde).
+ bureau.lots=bureau.lots.concat(nativeStaffRenouvellement.decouperLot(lot)).slice(-12);
  const n=lot.prolonges.length+lot.recrues.length;
  if(n)news('Staff : le directeur sportif a '+[lot.prolonges.length?lot.prolonges.length+' prolongation'+(lot.prolonges.length>1?'s':''):'',lot.recrues.length?lot.recrues.length+' arrivée'+(lot.recrues.length>1?'s':''):''].filter(Boolean).join(' et ')+' à son actif.');
  return true;
 }
 `;
+
+// Un lot de courrier tient au plus LOT_MAX noms par liste (forme validée) : au-delà, séries successives de même date ;
+// les signatures refusées restent sur la première série.
+const LOT_MAX = 40;
+function decouperLot(lot, max = LOT_MAX) {
+  const n = Math.max(1, ...['prolonges', 'departs', 'recrues'].map(k => Math.ceil(lot[k].length / max)));
+  if (n === 1) return [lot];
+  return Array.from({ length: n }, (_, i) => ({ ...lot, id: i ? lot.id + '.' + (i + 1) : lot.id, refus: i ? 0 : lot.refus,
+    prolonges: lot.prolonges.slice(i * max, (i + 1) * max), departs: lot.departs.slice(i * max, (i + 1) * max), recrues: lot.recrues.slice(i * max, (i + 1) * max) }));
+}
 
 const short = (x, n) => typeof x === 'string' && x.length <= n;
 // Validation de sauvegarde du bureau staff du directeur sportif.
@@ -147,9 +159,9 @@ function valider(m, saison) {
     && b.decisions.every(e => e && short(e.id, 240) && short(e.name, 160) && ROLES.includes(e.role) && ['prolonge', 'libere'].includes(e.d) && RAISONS[e.raison] !== undefined && short(e.date, 10))
     && Array.isArray(b.lots) && b.lots.length <= 12
     && b.lots.every(l => l && short(l.id, 60) && short(l.date, 10) && Number.isSafeInteger(l.refus) && l.refus >= 0
-      && ['prolonges', 'departs', 'recrues'].every(k => Array.isArray(l[k]) && l[k].length <= 40 && l[k].every(entree)));
+      && ['prolonges', 'departs', 'recrues'].every(k => Array.isArray(l[k]) && l[k].length <= LOT_MAX && l[k].every(entree)));
   if (!ok) throw Error('Sauvegarde invalide : décisions du directeur sportif sur le staff.');
   return true;
 }
 
-module.exports = Object.freeze({ FENETRE, ROLES, RAISONS, plafondNiveau, planifier, recruter, valider, BRANCHEMENT });
+module.exports = Object.freeze({ FENETRE, ROLES, RAISONS, LOT_MAX, plafondNiveau, planifier, recruter, decouperLot, valider, BRANCHEMENT });

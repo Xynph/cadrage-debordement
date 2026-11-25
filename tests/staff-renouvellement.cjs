@@ -95,3 +95,28 @@ test('Carrière Monde : sans délégation le staff tombe à zéro, avec le direc
     assert.throws(() => r('{const s=JSON.parse(JSON.stringify(S));s.manager.staffDesk.decisions.push({id:"x",name:"x",role:"chef",d:"prolonge",raison:"solide",date:"2027-03-10"});nativeStaffRenouvellement.valider(s.manager,s.season)}'), /staff/);
   } finally { jeu.fermer(); }
 });
+
+// Régression (24/11/2026) : gros staff japonais (Lances de la Baie, 70 membres) dont tous les contrats échoient ensemble ;
+// le directeur sportif laissait partir 49 personnes dans un seul lot de courrier, au-delà des 40 noms admis par la forme de
+// sauvegarde : la carrière refusait sa propre sauvegarde (« décisions du directeur sportif sur le staff »).
+test('Gros staff : les décisions du directeur sportif restent dans une sauvegarde valide', () => {
+  const jeu = M.ouvrir({ hebdomadaire: true, testVm: true, seed: 2026 });
+  const r = x => jeu.bridge.vm.run(x);
+  try {
+    M.creer(jeu, 71);
+    assert.ok(r('S.staffCareer.people.flat().filter(p=>p.clubId===S.club).length') > 60, 'gros staff attendu');
+    r('for(const p of S.staffCareer.people.flat())if(p.clubId===S.club)p.contractEnd=S.season;');
+    assert.equal(r('dsStaffObserver("2027-03-10")'), true);
+    assert.doesNotThrow(() => r('nativeStaffRenouvellement.valider(S.manager,S.season)'), 'fins de contrat en masse');
+    r(BASCULE);
+    r('dsStaffObserver("2027-08-10")');
+    assert.doesNotThrow(() => r('nativeStaffRenouvellement.valider(S.manager,S.season)'), 'recrues en masse');
+    const lots = JSON.parse(r('JSON.stringify(S.manager.staffDesk.lots)'));
+    assert.ok(lots.every(l => ['prolonges', 'departs', 'recrues'].every(k => l[k].length <= R.LOT_MAX)));
+    assert.ok(lots.reduce((n, l) => n + l.departs.length, 0) > R.LOT_MAX, 'aucun départ perdu dans le découpage');
+  } finally { jeu.fermer(); }
+  const lot = { id: '2:2027-03-10:1', date: '2027-03-10', prolonges: [], departs: Array.from({ length: 49 }, (_, i) => ({ name: 'n' + i, role: 'r', raison: 'mieux' })), recrues: [], refus: 2 };
+  const series = R.decouperLot(lot);
+  assert.deepEqual(series.map(l => [l.id, l.departs.length, l.refus]), [['2:2027-03-10:1', 40, 2], ['2:2027-03-10:1.2', 9, 0]]);
+  assert.deepEqual(R.decouperLot({ ...lot, departs: lot.departs.slice(0, 40) }).length, 1);
+});
