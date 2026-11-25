@@ -111,6 +111,8 @@ func run() -> void:
 	vus = ecran(melee, Vector2(-2.5, 1.5), Vector2(1.5, 0.0))
 	lien = Liaison.construire(info, vus, {"p": Vector3(9.0, 0.1, -3.0), "porteur": ""}, Vector2(55, 25), 77)
 	check(not bool(lien.coupe) and (lien.plans as Array).size() == 1, "Mise en place courte : liaison continue")
+	# Film du 25/11 (68′) : en-avant suivi d'une mêlée, la légende disait l'en-avant et le bandeau « Mêlée pour X » seul.
+	check(str(lien.bandeaux[0].libelle) == "En-avant" and int(lien.bandeaux[0].equipe) == 0, "Liaison en-avant puis mêlée : le bandeau dit « En-avant » (équipe fautive) (%s)" % str(lien.bandeaux))
 	check(float(lien.duree) >= 3.0 and float(lien.duree) <= 4.7, "Liaison continue de 3 à 4,6 s : %.1f s" % float(lien.duree))
 	var pointe := sans_saut(lien.plans[0], "Mêlée continue")
 	check(pointe <= 6.5, "Mise en place au trot, jamais en sprint (%.1f m/s)" % pointe)
