@@ -78,13 +78,24 @@ function masseStaff(membres, division, base) {
 // d'un club riche (un club du championnat celte de 8 700 places à 30 M€ de recettes) perdait 4 M€ par saison sur son budget
 // voté, et le grand stade d'un club modeste en gagnait autant : la masse autorisée, le fonctionnement et la prévision suivent
 // maintenant les vraies recettes de son stade.
+// statut (carrière Monde, budgetStatuts) : rang du club dans sa division pour ses recettes, à la place de son niveau du moment.
+// Les recettes sont réparties entre le plus modeste (bas) et le plus riche (haut) de la division selon ce rang ; dans un
+// championnat serré (Premiership, championnat celte, Super Rugby : niveaux de 72 à 74 à la création), 1 point de niveau
+// faisait passer un club de 7 à 17 M€ de recettes. Le niveau bouge chaque saison (vieillissement, espoirs, recrues) : mesure
+// du 25/11/2026 (carrière Monde réelle, graines 4242, 7 et 2026), recettes d'un même club de -67 % à +146 % entre la saison 1
+// et la saison 3 du championnat celte, -25 % à +36 % en Pro D2, et jusqu'à -39 % / +76 % en cours de saison, quand sa masse
+// salariale et l'enveloppe de son propriétaire restaient celles du budget voté : la cause commune des clubs dans le rouge
+// (associations jusqu'à -2,2 M€, entreprises et mécènes jusqu'à 2,6 fois leur enveloppe, club du manager à -0,57 M€ en
+// saison 3). Le statut, lui, ne bouge qu'à l'intersaison et d'un quart de l'écart (budgetStatutsAvancer) : sponsors, public
+// et droits suivent la réputation d'un club, pas l'état de son effectif d'une semaine à l'autre. Sans statut, le niveau.
+const rangRecettes = club => Number.isFinite(club.statut) ? club.statut : club.base;
 function recettes(forces) {
   const resultat = new Map();
   for (const [division, regle] of Object.entries(DIVISIONS)) {
     const groupe = forces.filter(club => club.division === division);
     if (!groupe.length) continue;
-    const min = Math.min(...groupe.map(club => club.base)), max = Math.max(...groupe.map(club => club.base));
-    const brut = groupe.map(club => regle.bas + (regle.haut - regle.bas) * (max === min ? 0.5 : (club.base - min) / (max - min)));
+    const min = Math.min(...groupe.map(rangRecettes)), max = Math.max(...groupe.map(rangRecettes));
+    const brut = groupe.map(club => regle.bas + (regle.haut - regle.bas) * (max === min ? 0.5 : (rangRecettes(club) - min) / (max - min)));
     const correction = groupe.length / brut.reduce((somme, valeur) => somme + valeur, 0);
     groupe.forEach((club, i) => { const modele = regle.moyenne * brut[i] * correction; resultat.set(club.id, Number.isFinite(club.billetterie) && club.billetterie >= 0 ? modele * (1 - regle.billetterie) + club.billetterie : modele); });
   }
@@ -763,7 +774,24 @@ function budgetMemoRetrouve(nom,valeur,calcul){
 }
 const budgetLigue=id=>budgetFrance()?CDFranceCompetition.leagueId(S,id):CDWorldCareer.leagueId(S,id);
 // Carrière Monde : chaque club porte la billetterie annuelle de son stade (budgetBilletterieClub), lue par ses recettes prévues.
-const budgetForces=()=>budgetFrance()?CDFranceClubs.clubs.map(c=>({id:c.id,division:CDFranceCompetition.leagueId(S,c.id),base:c.base})):S.clubs.map(c=>{const b=budgetBilletterieClub(c);return Number.isFinite(b)?{id:c.id,division:CDWorldCareer.leagueId(S,c.id),base:c.base,billetterie:b}:{id:c.id,division:CDWorldCareer.leagueId(S,c.id),base:c.base};});
+// Statut de chaque club (recettes, nativeClubBudget.recettes) : S.clubStatuts = {id: statut}, avancé une fois par intersaison
+// (budgetStatutsAvancer) ; sans lui, le niveau noté au vote du budget (saison 1, anciennes sauvegardes), sinon le niveau.
+// Il ne change donc jamais en cours de saison : les recettes du budget restent celles du vote.
+const budgetStatuts=()=>{const s=S.clubStatuts,b=budgetLisible(S.clubBudget)?S.clubBudget.clubs:null;
+ return S.clubs.map(c=>{const x=s?.[c.id];if(Number.isFinite(x))return x;const v=b?.[c.id]?.base;return Number.isFinite(v)?v:c.base;});};
+// Intersaison : chaque statut fait un quart du chemin vers le niveau actuel du club (arrondi au centième).
+const STATUT_LISSAGE=0.25;
+function budgetStatutsAvancer(){
+ if(budgetFrance())return;
+ const avant=budgetStatuts(),statuts={};
+ S.clubs.forEach((c,i)=>{statuts[c.id]=Math.round((avant[i]+STATUT_LISSAGE*(c.base-avant[i]))*100)/100;});
+ S.clubStatuts=statuts;
+}
+const budgetForces=()=>{
+ if(budgetFrance())return CDFranceClubs.clubs.map(c=>({id:c.id,division:CDFranceCompetition.leagueId(S,c.id),base:c.base}));
+ const statuts=budgetStatuts(),ligues=S.clubs.map(c=>CDWorldCareer.leagueId(S,c.id));
+ return S.clubs.map((c,i)=>{const f={id:c.id,division:ligues[i],base:c.base,statut:statuts[i]},b=budgetBilletterieClub(c,{statuts,ligues,i});if(Number.isFinite(b))f.billetterie=b;return f;});
+};
 const budgetSemaineNo=()=>S.franceMode?S.franceMode.week:S.worldMode.week;
 const budgetMasse=c=>c.players.reduce((s,p)=>s+p.salary,0);
 // Source unique des masses salariales affichées (Finances, Club, Bureau) : trois mesures nommées, jamais confondues.
@@ -797,16 +825,9 @@ let budgetLimitesMemo=null;
 // noté : lue avec le niveau actuel, elle faisait bouger la limite en cours de saison ; seule l'ancienne mémoire (clé : somme
 // des niveaux notés) la figeait, à une valeur que la partie d'une traite et une sauvegarde rechargée ne notaient pas au même
 // moment (mesure du 24/11/2026 : 88 limites sur 120 différentes en saison 2, graine 2026).
-const budgetForcesLimites=creation=>{
- const f=budgetForces(),b=S.clubBudget;
- if(creation===true||S.season<=1||budgetFrance()||!budgetLisible(b)||b.saison!==S.season)return f;
- return f.map(x=>{
-  const v=b.clubs[x.id]?.base;if(!Number.isFinite(v))return x;
-  if(x.billetterie===undefined||v===x.base)return {...x,base:v};
-  const c=S.clubs[x.id]?.id===x.id?S.clubs[x.id]:S.clubs.find(y=>y.id===x.id),billetterie=c?budgetBilletterieClub({...c,base:v}):null;
-  return Number.isFinite(billetterie)?{...x,base:v,billetterie}:{...x,base:v};
- });
-};
+// Depuis le 25/11/2026, ses recettes et sa billetterie sont lues avec son statut (budgetStatuts), qui ne bouge qu'à
+// l'intersaison : les forces du budget sont celles des limites, saison 1 comprise.
+const budgetForcesLimites=()=>budgetForces();
 const budgetLimites=creation=>{
  const remboursementsCalcul=()=>{const r={};if(typeof nativeClubOwner!=='undefined')for(const [id,p] of Object.entries(S.pretsActionnaires||{}))r[id]=nativeClubOwner.remboursementSaison(p,S.season)||Math.min(p.restant||0,p.annuite||0);return r;};
  const entrees=()=>({forces:budgetForcesLimites(creation),types:budgetTypes(),credits:budgetCredits(),remboursements:remboursementsCalcul()});
@@ -824,13 +845,14 @@ const budgetLimites=creation=>{
   const b=S.clubBudget,ligues=S.worldMode.leagues;
   brute=S.season+'|'+(creation===true)+'|'+S.club+'|'+(S.worldMode.fixtures?.length||0)+'|'+JSON.stringify(types)+'|'+JSON.stringify(credits)+'|'+JSON.stringify(remboursements);
   for(const k of Object.keys(ligues))brute+='|'+k+':'+ligues[k].members.join(',');
-  if(budgetLisible(b)&&b.saison===S.season)for(const k of b.clubs)brute+='|v'+k.division+':'+k.base;else brute+='|sans vote';
+  if(budgetLisible(b)){brute+='|vote'+b.saison;for(const k of b.clubs)brute+='|v'+k.division+':'+k.base;}else brute+='|sans vote';
+  brute+='|statuts'+JSON.stringify(S.clubStatuts??null);
   for(const c of S.clubs)brute+='|'+c.id+':'+c.base+':'+budgetCapacite(c)+':'+budgetReceptions(c.id)+':'+String(c.abbr??c.name??c.id);
   if(m&&m.etat===S&&m.brute===brute)return budgetMemoRetrouve('limites',m.valeur,()=>calcul());
  }
  const x={forces:budgetForcesLimites(creation),types,credits,remboursements};
  let cle=S.season+'|'+(creation===true)+'|'+S.club+'|'+JSON.stringify(x.types)+'|'+JSON.stringify(x.credits)+'|'+JSON.stringify(x.remboursements);
- for(const f of x.forces)cle+='|'+f.id+':'+f.division+':'+f.base+':'+(f.billetterie??'');
+ for(const f of x.forces)cle+='|'+f.id+':'+f.division+':'+f.base+':'+(f.statut??'')+':'+(f.billetterie??'');
  if(m&&m.etat===S&&m.cle===cle){m.brute=brute;return budgetMemoRetrouve('limites',m.valeur,()=>calcul());}
  budgetLimitesMemo={etat:S,cle,brute,valeur:calcul(x)};
  return budgetLimitesMemo.valeur;
@@ -892,11 +914,19 @@ function budgetReceptions(id){
 }
 // Billetterie d'une saison type du club (budget voté) : stade, abonnés estimés, billet de la division au prix équilibré ;
 // null pour un club sans réception de championnat (clubs invités) : il garde la part « billetterie » du modèle.
-function budgetBilletterieClub(c){
- const division=CDWorldCareer.leagueId(S,c.id);if(!nativeClubBudget.DIVISIONS[division])return null;
+// statut : {statuts, ligues, i} (budgetForces) : billetterie du budget, lue avec le statut du club (abonnés estimés) et son rang
+// de statut dans sa division (réputation : prix de référence et appétit du public), comme ses autres recettes ; sans lui, le niveau.
+function budgetBilletterieClub(c,statut=null){
+ const division=statut?statut.ligues[statut.i]:CDWorldCareer.leagueId(S,c.id);if(!nativeClubBudget.DIVISIONS[division])return null;
  const receptions=budgetReceptions(c.id);if(!receptions)return null;
  const capacite=budgetCapacite(c);
- return nativeClubBudget.billetterieAnnuelle({capacite,abonnes:nativeClubBudget.abonnesEstimes(capacite,c.base,String(c.abbr??c.name??c.id)),prix:budgetPrixReference(c).base,receptions,demande:budgetDemande(c)});
+ let base=c.base,rep;
+ if(statut){
+  base=statut.statuts[statut.i];let min=base,max=base;
+  statut.ligues.forEach((d,j)=>{if(d===division){min=Math.min(min,statut.statuts[j]);max=Math.max(max,statut.statuts[j]);}});
+  rep=max>min?(base-min)/(max-min):0.5;
+ }
+ return nativeClubBudget.billetterieAnnuelle({capacite,abonnes:nativeClubBudget.abonnesEstimes(capacite,base,String(c.abbr??c.name??c.id)),prix:budgetPrixReference(c,rep).base,receptions,demande:budgetDemande(c,rep)});
 }
 const budgetPolitique=c=>c.id===S.club&&S.v111to116&&typeof S.v111to116.price==='string'?S.v111to116.price:'equilibree';
 const budgetCapacite=c=>Number.isInteger(c.stadiumCapacity)&&c.stadiumCapacity>0?c.stadiumCapacity:typeof CDWorldStadiumCapacities!=='undefined'&&Number.isInteger(CDWorldStadiumCapacities[c.id])?CDWorldStadiumCapacities[c.id]:12000;
@@ -936,11 +966,12 @@ function budgetReputation(c){
  return max>min?Math.max(0,Math.min(1,(c.base-min)/(max-min))):0.5;
 }
 // Facteur de prix d'un club : × 0,75 (le plus modeste de sa division) à × 1,3 (le plus réputé).
-const budgetFacteurReputation=c=>0.75+0.55*budgetReputation(c);
+// rep : réputation déjà connue (billetterie du budget, budgetBilletterieClub), sinon budgetReputation.
+const budgetFacteurReputation=(c,rep)=>0.75+0.55*(Number.isFinite(rep)?rep:budgetReputation(c));
 // Appétit du public occasionnel : celui de la division (league-economy.cjs, public), × 0,8 à × 1,2 selon la réputation.
-const budgetDemande=c=>(nativeLeagueEconomy.CHAMPIONNATS[budgetLigue(c.id)]?.public??1)*(0.8+0.4*budgetReputation(c));
-function budgetPrixReference(c){
- const billet=Math.max(1,Math.round(nativeClubBudget.prixBillet(budgetLigue(c.id),'equilibree')*budgetFacteurReputation(c)));
+const budgetDemande=(c,rep)=>(nativeLeagueEconomy.CHAMPIONNATS[budgetLigue(c.id)]?.public??1)*(0.8+0.4*(Number.isFinite(rep)?rep:budgetReputation(c)));
+function budgetPrixReference(c,rep){
+ const billet=Math.max(1,Math.round(nativeClubBudget.prixBillet(budgetLigue(c.id),'equilibree')*budgetFacteurReputation(c,rep)));
  return {base:billet,abonnement:Math.round(billet*nativeClubBudget.REMISE_ABONNEMENT*Math.max(1,budgetReceptions(c.id))),affiche:Math.round(billet*1.5)};
 }
 // Membre du staff qui tient la billetterie (le club n'a pas de directeur financier) : le meilleur de l'encadrement du club
@@ -1248,6 +1279,8 @@ worldNewSeason=function(fundingAlreadyPaid){
   }
   w.upgrades=w.upgrades.slice(-30);
  }
+ // Statut des clubs (recettes de la saison qui s'ouvre) : un quart du chemin vers leur niveau, avant les limites du recalage.
+ budgetStatutsAvancer();
  // Montées et descentes : la division de la saison passée est dans les comptes, la nouvelle dans la compétition.
  const mouvements=new Map(),E=nativeLeagueEconomy.CHAMPIONNATS;
  if(budgetLisible(S.clubBudget))for(const c of S.clubs){const avant=S.clubBudget.clubs[c.id].division,apres=budgetLigue(c.id);if(avant!==apres&&E[avant]&&E[apres]&&E[avant].reputation!==E[apres].reputation)mouvements.set(c.id,E[apres].reputation>E[avant].reputation?1:-1);}
@@ -1283,6 +1316,8 @@ const budgetForcesDemande=()=>{
  const ligues=S.worldMode.leagues,fixtures=S.worldMode.fixtures;let cle=S.season+'|'+(fixtures?.length||0)+'|'+S.clubs.length;
  for(const k of Object.keys(ligues))cle+='|'+k+':'+ligues[k].members.join(',');
  for(const c of S.clubs)cle+='|'+c.id+':'+c.base+':'+budgetCapacite(c);
+ // Statuts des clubs (recettes et billetterie, budgetStatuts) : avancés à l'intersaison, avant le vote du nouveau budget.
+ cle+='|'+JSON.stringify(S.clubStatuts??null);
  if(m&&m.etat===S&&m.cle===cle&&m.budget===S.clubBudget&&m.fixtures===fixtures){m.projection=projection;return budgetMemoRetrouve('forcesDemande',m.forces,budgetForces);}
  budgetForcesDemandeMemo={etat:S,cle,budget:S.clubBudget,fixtures,forces:budgetForces(),projection};return budgetForcesDemandeMemo.forces;
 };
