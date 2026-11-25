@@ -809,7 +809,8 @@ func _process(delta: float) -> void:
 	# Puis les jambes des joueurs debout sortent du corps des joueurs couchés (ruck), à l'horizontale.
 	_plancher.degager(_actors, delta, _carrier_id, _ball if _ball_attached and _ball.visible else null)
 	# Et les joueurs debout ne se traversent plus entre eux (sauf mêlée et ballon porté, liés exprès).
-	_plancher.separer(_actors, delta, _lies(), _carrier_id, _ball if _ball_attached and _ball.visible else null)
+	_plancher.separer(_actors, delta, _lies(), _carrier_id, _ball if _ball_attached and _ball.visible else null,
+		_formations.entiers() if _formations != null else {})
 	_rejeu.enregistrer(delta, _camera_cut)
 	_fit_camera(delta, _camera_cut)
 	_camera_cut = false
@@ -826,11 +827,12 @@ func _lies() -> Dictionary:
 			# Lié une fois à sa place (posture prise) ; en course vers elle, il contourne les autres.
 			if str(_formations.formation.roles.get(id, "")) in roles and float(_formations.posture_de(id)[1]) > 0.0:
 				lies[id] = true
-		# Avant qui se détache du paquet avec le ballon à la sortie : laissé tel quel (le ballon reste
-		# dans ses mains, à sa place).
-		var detache := str(_formations.formation.get("porteur", ""))
-		if not detache.is_empty() and not _formations.formation.places.has(detache):
-			lies[detache] = true
+			# 25/11/2026 (joueurs v5) : à la sortie, le demi encore accroupi de l'introduction reste lié
+			# le temps de se relever ; sinon la séparation l'éjectait du pilier (1 m) et le ballon suivait.
+			elif str(_formations.formation.type) == "sortie_melee" and str(_formations.posture_de(id)[0]) == "introduction" and float(_formations.posture_de(id)[1]) > 0.0:
+				lies[id] = true
+		# N° 8 qui se détache avec le ballon (rôle « n8_sortie ») : pas lié, il contourne la mêlée
+		# (match_formations.gd, CONTOUR_COTE) et la séparation l'écarte des paquets qu'il frôle.
 	var scene_gestes: RefCounted = mise_en_scene()
 	if str(scene_gestes.get("phase")) in ["maul", "essai_maul"] and scene_gestes.has_method("lie"):
 		for id: String in _actors:

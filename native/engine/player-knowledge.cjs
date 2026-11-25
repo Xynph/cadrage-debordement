@@ -207,18 +207,29 @@ function factory(){
   }
   return semaines>=8?0:semaines>=4?5:9;
  }
+ // Qualités des joueurs des autres clubs (décision de Léo du 25/11/2026, « comme FM ») :
+ //  • « Précises » (défaut) : qualités et notes au poste de TOUS les joueurs visibles, autres clubs compris
+ //    (knowledge.exact) ; Niveau et Potentiel restent cachés (précision de Léo, 25/11) : lettre estimée par le staff.
+ //  • « En fourchette » : aucun chiffre exact hors de notre club ; joueur pas observé = qualités inconnues ; observé =
+ //    qualités en fourchette de 9 points ; suivi en profondeur = fourchette de 5 (knowledge.qualitesLargeur).
+ const fourchette=s=>object(s?.qualitesJoueurs)&&s.qualitesJoueurs.mode==='fourchette';
  function visibility(s){
-  const known=records(s),out=Object.create(null),staff=scout(s);
+  const known=records(s),out=Object.create(null),staff=scout(s),masque=fourchette(s);
   for(const p of players(s).values()){
-   const r=known.get(p.id),owned=p.owned,stage=owned?'club':r?.stage??'unobserved';
+   const r=known.get(p.id),owned=p.owned,stage=owned?'club':r?.stage??'unobserved',exact=owned||!masque;
    out[p.id]={rating:owned?p.rating:null,ratingRange:owned?null:r?.ratingRange??null,potential:null,
     potentialRange:owned?interval(p.potential,5,salt(s)+':'+p.id+':club:potential:'+p.potential):r?.potentialRange??null,
     knowledge:{version:VERSION,owned,stage,observedAt:owned?null:r?{season:r.season,week:r.week,date:null}:null},scouting:scouting(s,p,staff)};
-   const largeur=owned?suivi(s,p):0;if(largeur>0)out[p.id].knowledge.qualitesLargeur=largeur;
+   if(exact&&!owned)out[p.id].knowledge.exact=true;
+   const largeur=owned?suivi(s,p):masque?(stage==='deep'?5:stage==='observed'?9:0):0;if(largeur>0)out[p.id].knowledge.qualitesLargeur=largeur;
   }
-  for(const [pid,r]of known)if(!out[pid])out[pid]={rating:null,ratingRange:r.ratingRange,potential:null,potentialRange:r.potentialRange,knowledge:{version:VERSION,owned:false,stage:r.stage,observedAt:{season:r.season,week:r.week,date:null}}};
+  for(const [pid,r]of known)if(!out[pid]){out[pid]={rating:null,ratingRange:r.ratingRange,potential:null,potentialRange:r.potentialRange,knowledge:{version:VERSION,owned:false,stage:r.stage,observedAt:{season:r.season,week:r.week,date:null}}};}
   return out;
  }
+ // Ce que l'écran peut montrer d'un joueur projeté : `voit` = qualités et notes au poste (exactes ou en fourchette),
+ // `exact` = Niveau et notes au poste exacts.
+ const voit=k=>!!k&&(k.owned||k.exact===true||(k.qualitesLargeur??0)>0);
+ const exacte=k=>!!k&&(k.owned||k.exact===true);
  // Notation façon FM (24/11/2026) : tout ce que l'écran calcule à partir des qualités part de ce que le staff en sait.
  // 1) Qualités en fourchette (option de carrière) : l'écran reçoit le MILIEU de chaque fourchette, jamais la vraie
  //    valeur ; la note au poste suit (décalée de l'écart pondéré par les poids du poste), le relevé hebdomadaire et les
@@ -241,7 +252,7 @@ function factory(){
    value.attributesV2=milieu;
    for(const k of ['nativeAttributesV1','fleches','releve'])delete value[k];
   }
-  if(!(person.knowledge?.owned||person.knowledge?.stage==='deep')||!nc.qualites(value))return;
+  if(!voit(person.knowledge)||!nc.qualites(value))return;
   const principal=nc.niveauJoueur(value);if(!principal)return;
   const familles=new Set([principal.famille]);
   for(const cle of ['primaryPositions','secondaryPositions'])if(Array.isArray(value[cle]))for(const n of value[cle])if(MAILLOT_FAMILLE[n-1])familles.add(MAILLOT_FAMILLE[n-1]);
@@ -269,24 +280,32 @@ function factory(){
    const ownPerson=pid?visible[pid]:looksLikePlayer?{rating:null,ratingRange:null,potential:null,potentialRange:null,knowledge:{version:VERSION,owned:false,stage:'unobserved',observedAt:null}}:person;
    if(pid&&hasPlayerData||looksLikePlayer){
     Object.assign(value,plainCopy(ownPerson));
-    // Qualités en fourchette (option de carrière) : nos joueurs encore peu suivis par le staff.
-    const largeur=ownPerson.knowledge.owned?ownPerson.knowledge.qualitesLargeur:0;
+    // Qualités en fourchette (option de carrière) : nos joueurs encore peu suivis par le staff, joueurs des autres
+    // clubs observés (9 points) ou suivis en profondeur (5 points).
+    const largeur=ownPerson.knowledge.qualitesLargeur??0;
     if(largeur>0&&object(value.attributesV2))value.attributesV2Range=Object.fromEntries(Object.entries(value.attributesV2).filter(([,v])=>number(v)&&v>=0&&v<=100).map(([k,v])=>[k,interval(v,largeur,pid+':qualite:'+k)]));
     else if(Object.hasOwn(value,'attributesV2Range'))delete value.attributesV2Range;
     for(const k of levels)if(Object.hasOwn(value,k)&&!ownPerson.knowledge.owned)value[k]=null;
-    if(!ownPerson.knowledge.owned){if(Object.hasOwn(value,'positionRatings'))value.positionRatings={};for(const k of ['_familyNotes','positionNotes'])if(Object.hasOwn(value,k))value[k]={};}
-    if(!ownPerson.knowledge.owned&&ownPerson.knowledge.stage!=='deep')for(const k of attrs)if(Object.hasOwn(value,k))value[k]=k==='skillBase'?null:{};
+    if(!voit(ownPerson.knowledge)){if(Object.hasOwn(value,'positionRatings'))value.positionRatings={};for(const k of ['_familyNotes','positionNotes'])if(Object.hasOwn(value,k))value[k]={};}
+    else if(!exacte(ownPerson.knowledge))for(const k of ['_familyNotes','positionNotes'])if(Object.hasOwn(value,k))value[k]={};
+    if(!voit(ownPerson.knowledge))for(const k of attrs)if(Object.hasOwn(value,k))value[k]=k==='skillBase'?null:{};
+    else if(largeur>0&&!ownPerson.knowledge.owned)for(const k of attrs)if(k!=='attributesV2'&&Object.hasOwn(value,k))value[k]=k==='skillBase'?null:{};
     derive(value,ownPerson);
     if(value.assessment){
-     const fmt=r=>r?r.min+'–'+r.max+' / 100':'inconnu';
+     // Niveau et Potentiel jamais en chiffre (notation en lettres, 24-25/11/2026) : la fiche montre la lettre du staff ;
+     // les lignes chiffrées du rapport (« Niveau : 63 / 100 », « Potentiel : 79–89 / 100 ») partent.
      value.assessment.observed=(value.assessment.observed||[]).filter(x=>!/^Niveau(?: au poste(?: relevé)?)?\s*:/.test(x));
-     value.assessment.observed.push('Niveau : '+(ownPerson.knowledge.owned?ownPerson.rating+' / 100':fmt(ownPerson.ratingRange))+'.');
-     value.assessment.estimates=(value.assessment.estimates||[]).filter(x=>!/^Potentiel/.test(x));value.assessment.estimates.unshift('Potentiel : '+fmt(ownPerson.potentialRange)+'.');
+     value.assessment.estimates=(value.assessment.estimates||[]).filter(x=>!/^Potentiel/.test(x));
     }
    }
-   if(ownPerson&&!ownPerson.knowledge.owned){
-    for(const key of ['positionRatings','positionNotes','_familyNotes','roleRatings'])if(Object.hasOwn(value,key))value[key]={};
-    if(ownPerson.knowledge.stage!=='deep')for(const key of attrs)if(Object.hasOwn(value,key))value[key]=key==='skillBase'?null:{};
+   if(ownPerson&&!exacte(ownPerson.knowledge)){
+    const k=ownPerson.knowledge,porte=pid&&hasPlayerData||looksLikePlayer;
+    // Joueur vu en fourchette : ses notes au poste (décalées vers le milieu des fourchettes par derive) restent sur sa
+    // fiche ; toute autre copie chiffrée (sous-objets, notes par rôle) part.
+    for(const key of ['positionRatings','positionNotes','_familyNotes','roleRatings'])if(Object.hasOwn(value,key)&&!(key==='positionRatings'&&porte&&voit(k)))value[key]={};
+    if(!voit(k))for(const key of attrs)if(Object.hasOwn(value,key))value[key]=key==='skillBase'?null:{};
+    else for(const key of attrs)if(key!=='attributesV2'&&Object.hasOwn(value,key))value[key]=key==='skillBase'?null:{};
+    if(voit(k)&&!porte&&Object.hasOwn(value,'attributesV2'))value.attributesV2={};
    }
    for(const key of Object.keys(value)){
     if(key==='knowledge'||key==='ratingRange'||key==='potentialRange')continue;

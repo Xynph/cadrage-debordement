@@ -24,7 +24,8 @@ static func build(app: Control, parent: Node, selected: Dictionary, data: Dictio
 	if state == "pending" and not any:
 		for role: Array in ROLES: _ghost_card(row, role)
 	elif any:
-		for role: Array in ROLES: _card(row, role, faces.get(role[0]))
+		var reference := float(selected.get("startingRoster", {}).get("average", 0.0)) if selected.get("startingRoster") is Dictionary else 0.0
+		for role: Array in ROLES: _card(row, role, faces.get(role[0]), reference)
 	else:
 		_aggregate(row, selected)
 	var level := C.h(10)
@@ -95,7 +96,7 @@ static func _frame(row: HBoxContainer, id: String) -> VBoxContainer:
 	frame.add_child(card)
 	return card
 
-static func _card(row: HBoxContainer, role: Array, face: Variant) -> void:
+static func _card(row: HBoxContainer, role: Array, face: Variant, reference: float = 0.0) -> void:
 	var card := _frame(row, "CreationFace_" + str(role[0]))
 	var head := Kit.caps(str(role[1]), 17)
 	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -128,17 +129,20 @@ static func _card(row: HBoxContainer, role: Array, face: Variant) -> void:
 	var figures := C.h(10)
 	figures.alignment = BoxContainer.ALIGNMENT_CENTER
 	card.add_child(figures)
-	_figure(figures, person.get("rating"), "note", C.IVORY)
+	_figure(figures, person.get("rating"), "note", reference)
 	if str(role[0]) == "prospect" and person.get("potential") != null:
 		Kit.divider(figures)
-		_figure(figures, person.get("potential"), "potentiel", C.MINT)
+		_figure(figures, person.get("potential"), "potentiel", reference)
 
-static func _figure(parent: HBoxContainer, value: Variant, caption: String, color: Color) -> void:
+## Note et potentiel en LETTRE du staff (E- à S+, jamais le chiffre du moteur) : l'échelle part du niveau moyen du club.
+static func _figure(parent: HBoxContainer, value: Variant, caption: String, reference: float) -> void:
 	var column := C.v(0)
 	parent.add_child(column)
-	var number := C.label(str(roundi(float(value))) if value is float or value is int else "—", 32, color, true, 800)
-	number.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	column.add_child(number)
+	var Notation: Variant = load("res://ui/notation_staff.gd")
+	var indice: int = Notation.indice(float(value), reference if reference > 0.0 else 65.0) if value is float or value is int else -1
+	var porte: Control = Notation.porte_pastille({"bas": indice, "haut": indice}, 40.0, "CreationFigure_" + caption)
+	porte.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	column.add_child(porte)
 	var label := C.label(caption, 15, C.MUTED, false)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	column.add_child(label)

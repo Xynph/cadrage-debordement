@@ -25,6 +25,12 @@ static func _roster() -> Script:
 ## la mini-fiche la remplace ; le nom accessible reste.
 static func lier(app: Control, controle: Control, player_id: String, source: String = "") -> void:
 	if player_id.is_empty(): return
+	# Règle de Léo du 25/11/2026 : plus de carte au survol du nom ; la carte joueur (carte_joueur_survol.gd) s'ouvre au
+	# survol du bouton (i) posé près du nom (0,5 s) ; le clic garde son effet (fiche complète). Ancienne mécanique ci-dessous
+	# conservée pour `montrer` / `cacher` (touche I, appels directs) mais plus branchée au survol.
+	var texte_lie: bool = controle is Label or (controle is Button and not (controle as Button).text.is_empty())
+	load("res://ui/carte_joueur_survol.gd").lier_info(app, controle, player_id, source if not source.is_empty() else "squad", Callable(), not texte_lie)
+	if true: return
 	controle.tooltip_text = ""
 	controle.set_meta("mini_fiche_joueur", player_id)
 	controle.set_meta("mini_fiche_source", source)
@@ -43,6 +49,7 @@ static func lier(app: Control, controle: Control, player_id: String, source: Str
 
 ## Petit « i » placé juste après le nom (unités du gabarit) : survol = mini-fiche.
 static func icone(app: Control, parent: Control, zone: Rect2, player_id: String, source: String = "") -> Control:
+	if true: return load("res://ui/carte_joueur_survol.gd").icone(app, parent, zone, player_id, source if not source.is_empty() else "squad")
 	var info := C.icon("info", int(zone.size.x), Charte.IVOIRE_2)
 	info.name = "MiniFicheInfo_" + player_id.validate_node_name()
 	info.mouse_filter = Control.MOUSE_FILTER_STOP

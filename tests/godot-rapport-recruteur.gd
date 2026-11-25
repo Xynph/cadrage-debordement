@@ -166,7 +166,18 @@ func lettre_inconnue() -> void:
 		if rang > rang_candidate:
 			candidate = str(x.get("id", ""))
 			rang_candidate = rang
-	check(not candidate.is_empty(), "Au moins une recrue du marché sans note au poste publiée")
+	# Option « Précises » (défaut, 25/11) : toutes les recrues publient leur note au poste. Le cas « à observer » est celui de
+	# l'option « En fourchette » : on masque la piste choisie comme le moteur le fait dans ce mode (rien d'exact, pas de Niveau calculé).
+	if candidate.is_empty():
+		var masquee := piste()
+		if not masquee.is_empty():
+			masquee.positionRatings = {}
+			masquee.attributesV2 = {}
+			masquee.rating = null
+			masquee.erase("niveauCalcule")
+			masquee.knowledge = {"owned": false, "stage": "unobserved"}
+			candidate = str(masquee.get("id", ""))
+	check(not candidate.is_empty(), "Au moins une recrue du marché sans note au poste publiée (en fourchette)")
 	if candidate.is_empty(): return
 	piste_id = candidate
 	var p := piste()

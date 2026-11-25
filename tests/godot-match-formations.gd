@@ -39,12 +39,16 @@ func head_centre(view, id: String) -> Vector3:
 ## Bustes et têtes (capsules de la sonde des contacts du match filmé) : [os, os d'arrivée ou longueur, rayon].
 const BUSTES := [["Hips", "Abdomen", 0.13], ["Abdomen", "Torso", 0.14], ["Torso", "Neck", 0.14], ["Head", 0.22, 0.1]]
 const BUST_OVERLAP_MAX := 0.08
+## Corps entier (bras et jambes compris, rayons de la sonde des contacts du match filmé).
+const CORPS := BUSTES + [["UpperLeg.L", "LowerLeg.L", 0.08], ["UpperLeg.R", "LowerLeg.R", 0.08], ["LowerLeg.L", "Foot.L", 0.06],
+	["LowerLeg.R", "Foot.R", 0.06], ["UpperArm.L", "LowerArm.L", 0.06], ["UpperArm.R", "LowerArm.R", 0.06], ["LowerArm.L", "Palm.L", 0.05],
+	["LowerArm.R", "Palm.R", 0.05]]
 
 
-static func _busts(rig: Skeleton3D) -> Array:
+static func _busts(rig: Skeleton3D, liste: Array = BUSTES) -> Array:
 	var g := rig.global_transform
 	var out: Array = []
-	for v: Array in BUSTES:
+	for v: Array in liste:
 		var a := g * rig.get_bone_global_pose(rig.find_bone(v[0]))
 		var b: Vector3 = (g * rig.get_bone_global_pose(rig.find_bone(v[1]))).origin if v[1] is String else a.origin + a.basis.y.normalized() * float(v[1])
 		out.append([a.origin, b, float(v[2])])
@@ -52,10 +56,10 @@ static func _busts(rig: Skeleton3D) -> Array:
 
 
 ## Plus forte pénétration (m) entre les bustes et têtes de deux joueurs.
-func busts_overlap(view, a: String, b: String) -> float:
+func busts_overlap(view, a: String, b: String, liste: Array = BUSTES) -> float:
 	var worst := -INF
-	for s1: Array in _busts(view._actors[a].rig):
-		for s2: Array in _busts(view._actors[b].rig):
+	for s1: Array in _busts(view._actors[a].rig, liste):
+		for s2: Array in _busts(view._actors[b].rig, liste):
 			var r := Geometry3D.get_closest_points_between_segments(s1[0], s1[1], s2[0], s2[1])
 			worst = maxf(worst, float(s1[2]) + float(s2[2]) - (r[0] as Vector3).distance_to(r[1]))
 	return worst
@@ -189,7 +193,10 @@ func check_scrum_exit() -> void:
 	var avant := {"type": "melee", "centre": f.centre, "introduit": f.introduit}
 	var sortie: Dictionary = Formations.calculer(scrum(60.0, 1, "setpiece-win", "sortie", "s1_7"), avant)
 	check(sortie.type == "sortie_melee", "The ball won right after a scrum keeps the packs bound for a moment")
-	check(not sortie.places.has("s1_7"), "The engine's carrier (number 8) leaves the scrum with the ball")
+	# 25/11/2026 (Léo) : le n° 8 qui se détache contourne sa mêlée par le flanc, hors des deux paquets.
+	check(str(sortie.roles.get("s1_7", "")) == "n8_sortie", "The engine's carrier (number 8) leaves the scrum with the ball")
+	var flanc: Vector2 = sortie.places.get("s1_7", Vector2.ZERO)
+	check(absf(flanc.y - sortie.centre.y) >= Formations.CONTOUR_COTE.y - 0.01, "The number 8 goes round his scrum, outside both packs (%.2f m from its axis)" % absf(flanc.y - sortie.centre.y))
 	check(sortie.places.has("s0_0") and sortie.places.has("s1_0"), "Both packs stay in the scrum while the ball comes out")
 	var loin := scrum(30.0, 1, "setpiece-win", "ailleurs")
 	check(Formations.calculer(loin, avant).type == "", "A set piece won elsewhere is not a scrum exit")
@@ -300,6 +307,7 @@ func check_view(view: Node3D) -> void:
 	# 25/11/2026 (Léo : liés, jamais fondus) : à la sortie, ni le demi qui ramasse ni le demi adverse
 	# ne traversent un paquet penché (buste ou tête dans un buste ou une tête), image par image.
 	var demi_fondu := 0.0
+	var demi_qui := ""
 	for frame in 180:
 		view._process(1.0 / 60.0)
 		if frame == 29:
@@ -307,8 +315,12 @@ func check_view(view: Node3D) -> void:
 		for demi_id in ["s0_8", "s1_8"]:
 			for side in 2:
 				for slot in 8:
-					demi_fondu = maxf(demi_fondu, busts_overlap(view, demi_id, "s%d_%d" % [side, slot]))
-	check(demi_fondu <= BUST_OVERLAP_MAX, "Scrum exit: no scrum-half walks through a bound pack (%.3f m bust overlap, %.2f m allowed)" % [demi_fondu, BUST_OVERLAP_MAX])
+					var o := busts_overlap(view, demi_id, "s%d_%d" % [side, slot])
+					if o > demi_fondu:
+						demi_fondu = o
+						var pos: Vector3 = (view._actors[demi_id].node as Node3D).position
+						demi_qui = "%s in s%d_%d, frame %d, root (%.2f, %.2f), model offset %.2f m" % [demi_id, side, slot, frame, pos.x, pos.z, ((view._actors[demi_id].model as Node3D).global_position - pos).length()]
+	check(demi_fondu <= BUST_OVERLAP_MAX, "Scrum exit: no scrum-half walks through a bound pack (%.3f m bust overlap, %.2f m allowed; %s)" % [demi_fondu, BUST_OVERLAP_MAX, demi_qui])
 	metrics.exit_half_bust_overlap_m = snappedf(demi_fondu, 0.001)
 	var moteur: Vector3 = view._world(sortie.players.filter(func(p: Dictionary) -> bool: return p.id == "s1_0")[0])
 	check((view._actors.s1_0.target as Vector3).is_equal_approx(moteur), "After the exit, forwards head for their engine places")
@@ -420,6 +432,10 @@ func check_tv_scrum(view) -> void:
 	var sortie_ecart := 0.0
 	var sortie_seul := ""
 	var sortie_sol := ""
+	var n8_fondu := 0.0
+	var n8_qui := ""
+	var n8_entier := 0.0
+	var n8_entier_qui := ""
 	var cas := 0
 	for dy in [0.0, 23.0]:
 		for featured in ["s0_12", "", "s0_7"]:
@@ -480,6 +496,20 @@ func check_tv_scrum(view) -> void:
 					sortie_seul = "%s y+%d frame %d: %.2f m from %s" % [featured, int(dy), frame, proche[0], proche[1]]
 				var angles := camera_angles(view)
 				pire = Vector2(maxf(pire.x, angles.x), maxf(pire.y, angles.y))
+				# 25/11/2026 (Léo) : le n° 8 qui part 8 m devant avec le ballon contourne les paquets,
+				# il ne traverse aucun joueur (buste ou tête dans un buste ou une tête).
+				if featured == "s0_7":
+					for autre: String in view._actors:
+						if autre != "s0_7":
+							var p := busts_overlap(view, "s0_7", autre)
+							if p > n8_fondu:
+								n8_fondu = p
+								n8_qui = "y+%d frame %d: %s" % [int(dy), frame, autre]
+							# Corps entier, une fois sorti du paquet (0,2 s) : aucun bras ni jambe dans lui.
+							var q := busts_overlap(view, "s0_7", autre, CORPS) if frame >= 12 else 0.0
+							if q > n8_entier:
+								n8_entier = q
+								n8_entier_qui = "y+%d frame %d: %s" % [int(dy), frame, autre]
 			var porteur: Vector3 = (view._actors[attendu].node as Node3D).position
 			var ball: Vector3 = view._ball.global_position
 			check(Vector2(ball.x - porteur.x, ball.z - porteur.z).length() < 0.8 and ball.y > 0.5, "Scrum exit (%s, y+%d): the ball is still in %s's hands after the exit (%.2f m, %.2f m high)" % [featured, int(dy), attendu, Vector2(ball.x - porteur.x, ball.z - porteur.z).length(), ball.y])
@@ -495,6 +525,10 @@ func check_tv_scrum(view) -> void:
 	check(intro_ecart < 1.0, "Put-in: the ball stays in the scrum-half's hands (%.2f m at most)" % intro_ecart)
 	check(intro_cote > 0.5, "Put-in: scrum-half and ball on the TV camera side of the scrum (%.2f m)" % intro_cote)
 	check(sortie_ecart < 1.0, "Scrum exit: the ball is never alone on the grass (worst %s)" % sortie_seul)
+	check(n8_fondu <= BUST_OVERLAP_MAX, "Scrum exit: the number 8 leaving with the ball walks through nobody (%.3f m bust overlap, %s)" % [n8_fondu, n8_qui])
+	metrics.exit_n8_bust_overlap_m = snappedf(n8_fondu, 0.001)
+	check(n8_entier <= BUST_OVERLAP_MAX, "Scrum exit: no arm or leg goes into the number 8 once out of the scrum (%.3f m, %s)" % [n8_entier, n8_entier_qui])
+	metrics.exit_n8_body_overlap_m = snappedf(n8_entier, 0.001)
 	metrics.tv_scrum_axis_deg = snappedf(pire.x, 0.1)
 	metrics.tv_scrum_bottom_deg = snappedf(pire.y, 0.1)
 	metrics.tv_scrum_size_m = snappedf(plus_large, 0.1)

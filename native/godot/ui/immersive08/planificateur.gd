@@ -274,7 +274,7 @@ static func _nom(parent: Control, app: Control, p: Dictionary, x: float, base: f
 	var lien := _bouton(parent, Rect2(x - 4, base - h * .7, l + 8, h), func():
 		if espoir: app._navigate("Formation")
 		else: _fiche(app, id), prefixe + id.validate_node_name(), "")
-	if not espoir: CarteSurvol.lier(app, lien, id, "squad")
+	if not espoir: CarteSurvol.lier_info(app, lien, id, "squad")
 	else: lien.tooltip_text = "Centre de formation"
 	return l
 

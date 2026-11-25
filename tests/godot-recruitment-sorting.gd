@@ -14,7 +14,7 @@ func settle() -> void:
 	for frame in 8: await process_frame
 func ids(rows: Array) -> Array: return rows.map(func(row: Dictionary): return row.id)
 func units() -> void:
-	var source := [{"id":"z","name":"Zulu","pos":"Centre","age":100,"rating":70,"fee":100,"salary":9,"available":true},{"id":"a","name":"Álpha","pos":"Arrière","age":20,"rating":10,"fee":9,"salary":100,"available":true},{"id":"b","name":"Bravo","pos":"Ailier","age":9,"rating":40,"fee":20,"salary":20,"available":false},{"id":"u","available":true}]
+	var source := [{"id":"z","name":"Zulu","pos":"Centre","age":100,"rating":70,"fee":100,"salary":9,"available":true},{"id":"a","name":"Álpha","pos":"Arrière","age":20,"rating":50,"fee":9,"salary":100,"available":true},{"id":"b","name":"Bravo","pos":"Ailier","age":9,"rating":60,"fee":20,"salary":20,"available":false},{"id":"u","available":true}]
 	var reports := {"z":{"id":"z","name":"Zulu","pos":"Centre","week":11,"season":1,"grade":"A","potential":90,"assessment":{"stale":false}},"a":{"id":"a","name":"Álpha","pos":"Arrière","week":2,"season":1,"grade":"C","potential":50,"assessment":{"stale":true}},"b":{"id":"b","name":"Bravo","pos":"Ailier","week":9,"season":1,"grade":"B","potential":70,"assessment":{"stale":false}}}
 	for player: Dictionary in source:
 		if player.get("rating") != null:

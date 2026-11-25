@@ -1544,7 +1544,18 @@ func terrain2d(view: Control) -> void:
 	# Le nom d'un joueur ouvre sa fiche sur l'entracte (match en pause), Échap revient à l'entracte sans casser le match.
 	var nom_lien := (rangs_xv[2] as Node).find_children("MatchBetweenPlayerName_*", "Button", true, false)
 	if not nom_lien.is_empty():
-		(nom_lien[0] as Button).pressed.emit()
+		# Règle du 25/11 : un clic sur le nom ouvre la carte joueur (rien au survol) ; la petite fenêtre vient de la fiche du match.
+		var lien_clic := nom_lien[0] as Button
+		var Carte = load("res://ui/carte_joueur_survol.gd")
+		check(lien_clic.has_meta("carte_clic"), "Nom du 3 : clic = carte joueur")
+		var clic_nom := InputEventMouseButton.new()
+		clic_nom.button_index = MOUSE_BUTTON_LEFT
+		clic_nom.pressed = true
+		lien_clic.gui_input.emit(clic_nom)
+		await settle(6)
+		check(Carte.actuelle(app) != null and Carte.actuelle(app).get_meta("player_id", "") == str(lineup[2].id), "Nom du 3 : le clic ouvre sa carte joueur")
+		Carte.cacher(app)
+		between.ouvrir_fiche(str(lien_clic.get_meta("player_id")))
 		await settle(6)
 		# Plein écran obligatoire : sa petite fenêtre par-dessus le match, jamais une sous-page qui remplace la vue.
 		var hote: Control = view.get("fenetre_hote") if view.fenetre_ouverte() else null

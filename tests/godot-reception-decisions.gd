@@ -115,7 +115,7 @@ func run() -> void:
 		state.selected = expiry[0].id
 		app._render(); await settle()
 		var person := app.find_child("InboxExpiryPlayer_0",true,false) as Button
-		check(person != null and person.has_meta("mini_fiche_joueur"), "Joueur lié aux échéances : nom en lien, mini-fiche au survol")
+		check(person != null and person.has_meta("carte_joueur") and not person.find_children("CarteJoueurInfo_*", "Control", true, false).is_empty(), "Joueur lié aux échéances : nom en lien, carte au survol du bouton (i)")
 		await capture("04-echeances-portraits")
 		if person != null:
 			var player_id := str(person.get_meta("player_id"))

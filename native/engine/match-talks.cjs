@@ -169,6 +169,10 @@ module.exports={
     st=S.contextualMatch=st||{version:1,current:null,receipts:[]};
     const context=identity(S,l),key=matchKey(context);
     check(!st.receipts.some(x=>x.key===key),'rencontre déjà traitée');
+    // Le pronostic lit le Niveau calculé (niveauMatch), donc les qualités détaillées. Un joueur de complément sans
+    // qualités (youth-…) n'en reçoit qu'en fin de commande (nativeAttributeStore.complete) : le pronostic figé ici
+    // différait alors de celui recalculé à la validation. Les qualités des deux feuilles sont donc posées avant.
+    if(typeof nativeAttributeStore!=='undefined')nativeAttributeStore.complete(S,null,true);
     r=st.current={key,context,participants:initialParticipants(S,l),phases:[{phase:'pre',context:phaseContext(S,l,'pre'),decision:null,closed:false,status:null}]};l.paused=true;
     adverse(l,'pre',r.phases[0].context,key);
    }

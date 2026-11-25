@@ -272,6 +272,10 @@ static func _profile_attributes(parent: VBoxContainer, player: Dictionary, detai
 			caption.custom_minimum_size.x = 37
 			row.add_child(caption)
 
+## Niveau passé (bilan annuel) en lettre du staff, recalé sur l'échelle du Niveau montré ; « — » si inconnu.
+static func _lettre_bilan(app:Control,p:Dictionary,valeur:Variant) -> String:
+	return load("res://ui/notation_staff.gd").texte_passe(app.model,p,valeur)
+
 static func _profile_contexts(parent:VBoxContainer,p:Dictionary,app:Control) -> void:
 	var grid:=GridContainer.new();grid.name="ProfileContexts";grid.columns=2;G.fill(grid)
 	grid.add_theme_constant_override("h_separation",6);grid.add_theme_constant_override("v_separation",6)
@@ -307,12 +311,13 @@ static func _profile_contexts(parent:VBoxContainer,p:Dictionary,app:Control) -> 
 			if option.id==data.get("focus"):focus=str(option.label)
 		_profile_fact(development,"ProfileDevelopmentFocus","Orientation",focus)
 		if data.get("seasonStart")!=null:
-			_profile_fact(development,"ProfileDevelopmentStart","Début de saison",G.n(data.seasonStart))
-			var delta:float=float(record.rating)-float(data.seasonStart)
-			_profile_fact(development,"ProfileDevelopmentDelta","Évolution du niveau",("+" if delta>=0 else "")+G.n(delta))
+			# Niveau de début de saison en LETTRE du staff (recalé sur l'échelle du Niveau montré), évolution en sens ▲ ▼ =.
+			var Notation:Variant=load("res://ui/notation_staff.gd")
+			_profile_fact(development,"ProfileDevelopmentStart","Début de saison",Notation.texte_passe(app.model,p,data.seasonStart))
+			_profile_fact(development,"ProfileDevelopmentDelta","Évolution du niveau",Notation.sens_depuis(app.model,p,data.seasonStart))
 		var history:Array=data.get("history",[])
 		if history.is_empty():_context_text(development,"Premier bilan annuel à venir.","AnnualEmpty")
-		for year:Dictionary in history.slice(maxi(0,history.size()-2)):_context_text(development,"%s · %s → %s · %s min / %s app."%[G.season_label(year.get("season","—")),G.n(year.get("start","—")),G.n(year.get("end","—")),G.n(year.get("minutes","—")),G.n(year.get("appearances","—"))],"Annual")
+		for year:Dictionary in history.slice(maxi(0,history.size()-2)):_context_text(development,"%s · %s → %s · %s min / %s app."%[G.season_label(year.get("season","—")),_lettre_bilan(app,p,year.get("start")),_lettre_bilan(app,p,year.get("end")),G.n(year.get("minutes","—")),G.n(year.get("appearances","—"))],"Annual")
 		var reason:=str(data.get("reason",""))
 		if not reason.is_empty():_context_text(development,"Progression annuelle." if reason.begins_with("Évolution annuelle") else reason,"DevelopmentReason")
 	var form:=_profile_tile(grid,"Form","Forme & prestations","ProfileContext")

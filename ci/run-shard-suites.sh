@@ -65,7 +65,7 @@ budget() {
     tests/native-academy-integrated-long.cjs) echo 1800s ;;
     # Centre en carrière Monde : trois carrières (Champ, Nationale, Top 14), activation et décisions, plus un jeune des
     # filières recruté de bout en bout (sauvegarde, réouverture) : 55 s puis ~4 min en local sous charge.
-    tests/world-academy-centre.cjs) echo 600s ;;
+    tests/world-academy-centre.cjs) echo 1200s ;; # 25/11/2026 : 223 s en local à vide, dépassé en CI chargée (600 s) ; budget ≈ 5 fois
     tests/native-delegate-transaction06.cjs|tests/native-contextual-integration.cjs) echo 600s ;;
     # Décisions natives et sauvegardes du direct en carrière Monde (une carrière pèse ~20 Mo de sauvegarde) : 314 s et 152 s en local sous charge.
     tests/native-decisions.cjs) echo 600s ;;
@@ -132,7 +132,7 @@ budget() {
     tests/analyste-video.cjs) echo 480s ;;
     # Audit des flux financiers migré en carrière Monde : 13 semaines tracées + contre-épreuve dans un second worker,
     # 85 s en local (20/11/2026) ; budget ≈ 5 fois, comme les autres carrières Monde sans poids mesuré.
-    tests/world-finance-flow-audit.cjs) echo 420s ;;
+    tests/world-finance-flow-audit.cjs) echo 900s ;; # 25/11/2026 : 152 s en local à vide, dépassé en CI chargée (420 s) ; budget ≈ 6 fois
     # Audit des flux sur une saison Monde entière + « Saison suivante » + 3 semaines (intersaison) : 6 min 40 en local sous charge (20/11/2026).
     tests/world-finance-flow-audit-intersaison.cjs) echo 1500s ;;
     # Même suite au rechargement (une graine par suite) : deux carrières Monde hebdomadaires sur 1,5 saison en parallèle (d'une traite et

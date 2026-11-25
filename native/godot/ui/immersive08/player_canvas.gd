@@ -103,6 +103,7 @@ static func build(app:Control,player:Dictionary,source:String="squad") -> Contro
 	if source=="squad" and FicheCharge.active(app,player):
 		FicheCharge.build(app,page,player)
 		return page
+	player = Commune.completer(app,player,source)
 	var detailed := Commune.valeurs(player,source)
 	_barre(page,app,player,source)
 	_bandeau(page,app,player,source)
@@ -841,14 +842,13 @@ static func _development(card:Panel,app:Control,player:Dictionary,source:String=
 	if record.get("appearances") is int or record.get("appearances") is float: bilan.append(G.n(record.appearances) + (" apparition" if int(record.appearances) == 1 else " apparitions"))
 	var start: Variant = development.get("seasonStart")
 	if (start is int or start is float) and (player.get("rating") is int or player.get("rating") is float):
-		var gain := roundi(float(player.rating) - float(start))
-		bilan.append(("+%d" % gain if gain > 0 else str(gain)) + " de progression cette saison")
+		bilan.append(load("res://ui/notation_staff.gd").sens_depuis(app.model, player, start) + " de progression cette saison")
 	D.text(card,24,163," · ".join(bilan) if not bilan.is_empty() else "Bilan et objectifs de ce joueur.",22,C.MUTED,400,1550,HORIZONTAL_ALIGNMENT_LEFT,true).name = "PlayerDevelopmentSummary"
 	var history:Array=development.get("history",[]) if development.get("history") is Array else []
 	if history.is_empty():D.text(card,24,223,"Premier bilan annuel à venir.",25,C.MUTED,500,1550)
 	for i in mini(4,history.size()):
 		var year:Dictionary=history[history.size()-1-i]
-		D.text(card,24,223+i*42,"Saison %s · %s → %s · %s minutes" % [G.season_label(year.get("season","—")),G.n(year.get("start","—")),G.n(year.get("end","—")),G.n(year.get("minutes","—"))],24,C.IVORY,500,1500)
+		D.text(card,24,223+i*42,"Saison %s · %s → %s · %s minutes" % [G.season_label(year.get("season","—")),load("res://ui/notation_staff.gd").texte_passe(app.model,player,year.get("start")),load("res://ui/notation_staff.gd").texte_passe(app.model,player,year.get("end")),G.n(year.get("minutes","—"))],24,C.IVORY,500,1500)
 	var choices := {}
 	for option: Variant in development.get("options", []):
 		if option is Dictionary: choices[option.get("id")] = option.get("label")

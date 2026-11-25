@@ -249,7 +249,11 @@ function factory(){
   const {parJoueur}=compteurs(s,club),notes=s.matchNotes?.joueurs||{};
   const squad=club.players.map(p=>{
    const c=parJoueur.get(String(p.id)),j=notes[p.id]?.s,f=p.playerFacts||{};
-   return {id:String(p.id),name:p.name,pos:p.pos,fam:p.fam,age:p.age,rating:p.rating,potential:p.potential,
+   // Qualités et notes au poste (décision de Léo du 25/11/2026 : visibles chez les autres clubs, comme FM ; la projection
+   // de connaissance les met en fourchette ou les cache selon l'option de carrière).
+   const qa=typeof nativePlayerAttributes==='function'?nativePlayerAttributes(p):{};
+   const qualites={};for(const k of ['attributesV2','primaryPosition','primaryPositions','secondaryPositions','positionRatings','qualifiedFrontRowPositions','positionFamiliarity','positionFamiliarityLevels'])if(qa[k]!==undefined)qualites[k]=qa[k];
+   return {id:String(p.id),name:p.name,pos:p.pos,fam:p.fam,age:p.age,rating:p.rating,potential:p.potential,...qualites,
     injury:Number(p.injury)||0,suspension:Number(p.suspension)||0,contractEnd:p.contractEnd??null,salary:p.salary??null,
     nationality:f.nationality??p.lnrNationality??null,flagCode:f.flagCode??null,seniorCaps:f.seniorCaps??null,seniorNationName:f.seniorNationName??null,onInternationalDuty:!!f.onInternationalDuty,
     appearanceId:p.appearanceId??null,appearanceBuild:p.appearanceBuild??null,appearanceBankVersion:p.appearanceBankVersion??null,portraitPath:p.portraitPath??null,

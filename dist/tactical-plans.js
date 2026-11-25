@@ -55,7 +55,7 @@ function penaliteConquete(l,side,kind,a,b){
  awardPenalty(l,beneficiaire,{phase:melee?'melee':'touche',incident:melee?'scrum':'maul',lanceur:side});
  return true;
 }
-const OUVERTURE_CHAMPIONNATS={elite:0,accession:-.03,nationale:-.015,urc:.025,champions:.02,challenge:.03,prem:.11,srp:.115,champ:.125,'jlo-d1':.125,'jlo-d2':.11};
+const OUVERTURE_CHAMPIONNATS={elite:-.055,accession:-.055,nationale:-.015,urc:-.035,champions:.02,challenge:.03,prem:.02,srp:.025,champ:.125,'jlo-d1':.085,'jlo-d2':.11};
 // Marqueur selon le poste occupé (maillot 1 à 15) et l'origine de l'essai : talonneur et troisième
 // ligne sur ballon porté, numéro 8 et demi de mêlée sur mêlée, ailiers, arrière et centres dans le jeu
 // courant. Un seul tirage, comme l'ancien tirage uniforme ; le joueur doit être en jeu.
