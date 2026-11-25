@@ -15,7 +15,7 @@ static func owned(person: Dictionary, own_context: bool = false) -> bool:
 	return own_context
 
 ## Joueur d'un autre club vu en clair (option de carrière « Précises », défaut, décision de Léo du 25/11/2026) :
-## qualités, notes au poste et Niveau exacts comme pour les nôtres.
+## qualités et notes au poste comme pour les nôtres ; Niveau et Potentiel restent l’estimation du staff (25/11).
 static func exact(person: Dictionary, own_context: bool = false) -> bool:
 	return owned(person,own_context) or _metadata(person).get("exact",false) == true
 

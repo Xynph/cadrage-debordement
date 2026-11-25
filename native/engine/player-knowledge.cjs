@@ -208,8 +208,8 @@ function factory(){
   return semaines>=8?0:semaines>=4?5:9;
  }
  // Qualités des joueurs des autres clubs (décision de Léo du 25/11/2026, « comme FM ») :
- //  • « Précises » (défaut) : qualités, notes au poste et Niveau de TOUS les joueurs visibles, autres clubs compris
- //    (knowledge.exact) ; seul le potentiel reste une estimation du staff (fourchette d'observation, « ? » sinon).
+ //  • « Précises » (défaut) : qualités et notes au poste de TOUS les joueurs visibles, autres clubs compris
+ //    (knowledge.exact) ; Niveau et Potentiel restent cachés (précision de Léo, 25/11) : lettre estimée par le staff.
  //  • « En fourchette » : aucun chiffre exact hors de notre club ; joueur pas observé = qualités inconnues ; observé =
  //    qualités en fourchette de 9 points ; suivi en profondeur = fourchette de 5 (knowledge.qualitesLargeur).
  const fourchette=s=>object(s?.qualitesJoueurs)&&s.qualitesJoueurs.mode==='fourchette';
@@ -217,7 +217,7 @@ function factory(){
   const known=records(s),out=Object.create(null),staff=scout(s),masque=fourchette(s);
   for(const p of players(s).values()){
    const r=known.get(p.id),owned=p.owned,stage=owned?'club':r?.stage??'unobserved',exact=owned||!masque;
-   out[p.id]={rating:exact?p.rating:null,ratingRange:owned?null:r?.ratingRange??null,potential:null,
+   out[p.id]={rating:owned?p.rating:null,ratingRange:owned?null:r?.ratingRange??null,potential:null,
     potentialRange:owned?interval(p.potential,5,salt(s)+':'+p.id+':club:potential:'+p.potential):r?.potentialRange??null,
     knowledge:{version:VERSION,owned,stage,observedAt:owned?null:r?{season:r.season,week:r.week,date:null}:null},scouting:scouting(s,p,staff)};
    if(exact&&!owned)out[p.id].knowledge.exact=true;
@@ -285,7 +285,7 @@ function factory(){
     const largeur=ownPerson.knowledge.qualitesLargeur??0;
     if(largeur>0&&object(value.attributesV2))value.attributesV2Range=Object.fromEntries(Object.entries(value.attributesV2).filter(([,v])=>number(v)&&v>=0&&v<=100).map(([k,v])=>[k,interval(v,largeur,pid+':qualite:'+k)]));
     else if(Object.hasOwn(value,'attributesV2Range'))delete value.attributesV2Range;
-    for(const k of levels)if(Object.hasOwn(value,k)&&!exacte(ownPerson.knowledge))value[k]=null;
+    for(const k of levels)if(Object.hasOwn(value,k)&&!ownPerson.knowledge.owned)value[k]=null;
     if(!voit(ownPerson.knowledge)){if(Object.hasOwn(value,'positionRatings'))value.positionRatings={};for(const k of ['_familyNotes','positionNotes'])if(Object.hasOwn(value,k))value[k]={};}
     else if(!exacte(ownPerson.knowledge))for(const k of ['_familyNotes','positionNotes'])if(Object.hasOwn(value,k))value[k]={};
     if(!voit(ownPerson.knowledge))for(const k of attrs)if(Object.hasOwn(value,k))value[k]=k==='skillBase'?null:{};
@@ -312,7 +312,7 @@ function factory(){
     const child=value[key];
     if(ceilingSet.has(key)){value[key]=null;continue;}
     if(ownPerson&&boundKeys.has(key)){value[key]=key==='noteMin'?ownPerson.ratingRange?.min??null:key==='noteMax'?ownPerson.ratingRange?.max??null:key==='potentialMin'?ownPerson.potentialRange?.min??null:ownPerson.potentialRange?.max??null;continue;}
-    if(ownPerson&&!exacte(ownPerson.knowledge)&&(levelSet.has(key)||key==='rating')){value[key]=null;continue;}
+    if(ownPerson&&!ownPerson.knowledge.owned&&(levelSet.has(key)||key==='rating')){value[key]=null;continue;}
     if(ownPerson&&key==='evidence'&&object(child)){
      child.seen=ownPerson.knowledge.stage!=='unobserved';child.noteMin=ownPerson.ratingRange?.min??null;child.noteMax=ownPerson.ratingRange?.max??null;child.potentialMin=ownPerson.potentialRange?.min??null;child.potentialMax=ownPerson.potentialRange?.max??null;
      child.label=child.seen?'Observé':'Non observé';

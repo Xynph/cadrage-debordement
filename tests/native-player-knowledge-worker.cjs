@@ -36,7 +36,7 @@ test('canonical worker (mode fourchette): exact internals, pure reads, paid targ
  assert.equal(denied.ok,false);assert.match(denied.error,/Écriture de sauvegarde impossible/);assert.deepEqual(bytes(),stable);assert.equal(denied.model.finance.cash,money);
  console.log('weekly target completed twice; source',target,'profile',dataDir);
 });
-test('canonical worker (mode Précises, défaut): autres clubs exacts, potentiel estimé, aucun chiffre de Niveau dans le rapport',t=>{
+test('canonical worker (mode Précises, défaut): qualités des autres clubs exactes, Niveau et potentiel cachés, aucun chiffre de Niveau dans le rapport',t=>{
  const dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'oval-knowledge-precise-')),bridge=createBridge({dataDir,seed:12345,now:1794178800000});let id=0;
  t.after(()=>{bridge.close();fs.rmSync(dataDir,{recursive:true,force:true});});
  const good=(command,payload={})=>{const r=bridge.handle({id:++id,command,payload});assert.equal(r.ok,true,r.error);return r.model;};
@@ -45,7 +45,7 @@ test('canonical worker (mode Précises, défaut): autres clubs exacts, potentiel
  const source=model.market[0];assert.ok(source,'une piste de recrutement');
 
  assert.equal(source.knowledge.owned,false);assert.equal(source.knowledge.exact,true);assert.equal(source.knowledge.qualitesLargeur,undefined);
- assert.ok(Number.isFinite(source.rating));const vrai=raw.clubs.flatMap(c=>c.players).find(p=>p.id===source.id);if(vrai){assert.equal(source.rating,vrai.rating);assert.deepEqual(source.attributesV2,vrai.attributesV2);}assert.equal(Object.keys(source.attributesV2).length,36);assert.equal(source.attributesV2Range,undefined);
+ assert.equal(source.rating,null,'Niveau caché');const vrai=raw.clubs.flatMap(c=>c.players).find(p=>p.id===source.id);if(vrai){assert.deepEqual(source.attributesV2,vrai.attributesV2);}assert.equal(Object.keys(source.attributesV2).length,36);assert.equal(source.attributesV2Range,undefined);
  assert.ok(Object.keys(source.positionRatings).length>0);assert.ok(source.niveauCalcule&&Number.isInteger(source.niveauCalcule.niveau));
  assert.equal(source.potential,null,'le potentiel reste une estimation du staff');
  assert.ok(!JSON.stringify(source.assessment||{}).match(/Niveau : d|Potentiel : d/));

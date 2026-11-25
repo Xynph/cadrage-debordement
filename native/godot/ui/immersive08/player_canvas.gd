@@ -103,6 +103,7 @@ static func build(app:Control,player:Dictionary,source:String="squad") -> Contro
 	if source=="squad" and FicheCharge.active(app,player):
 		FicheCharge.build(app,page,player)
 		return page
+	player = Commune.completer(app,player,source)
 	var detailed := Commune.valeurs(player,source)
 	_barre(page,app,player,source)
 	_bandeau(page,app,player,source)

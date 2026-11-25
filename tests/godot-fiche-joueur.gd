@@ -294,4 +294,14 @@ func run() -> void:
 			if mini_piste != null: check_grid(mini_piste, "CarteJoueurAttribut_", {}, "Carte d'une piste inconnue")
 			Carte.cacher(app)
 			await settle(2)
+	# Fiche d'un joueur d'un AUTRE club (25/11/2026) : ses qualités sont affichées, Niveau et Potentiel jamais en chiffre.
+	if not visible_piste.is_empty():
+		var autre: Dictionary = visible_piste.duplicate(true)
+		var pagea: Control = load("res://ui/immersive08/player_canvas.gd").build(app, autre, "adverse")
+		app.add_child(pagea)
+		await settle(4)
+		check_grid(pagea, "PlayerDetailedAttribute_", autre.attributesV2, "Autre club")
+		check(pagea.find_child("PlayerObserveAttributes", true, false) == null, "Autre club : pas de « Fais-le observer »")
+		check(not Notation.texte_champ(autre, "rating", false, app.model).is_valid_int() and not Notation.texte_champ(autre, "potential", false, app.model).is_valid_int(), "Autre club : Niveau et Potentiel en lettre, pas en chiffre")
+		pagea.queue_free()
 	finish()

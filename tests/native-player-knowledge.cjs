@@ -56,21 +56,21 @@ test('mode fourchette : aucune qualité exacte d’un autre club dans aucune cop
  assert.equal(p.rating,null);assert.equal(p.potential,null);assert.deepEqual(p.positionNotes,{});assert.deepEqual(p._familyNotes,{});assert.deepEqual(p.roleRatings,{});assert.deepEqual(p.details.attributesV2,{});assert.equal(p.details.rating,null);
  assert.ok(!JSON.stringify(p).includes('"tackling":73'),'la vraie valeur 73 ne sort nulle part');
 });
-test('mode Précises (défaut) : autres clubs exacts (note, niveaux, qualités, notes au poste), potentiel toujours estimé',()=>{
+test('mode Précises (défaut) : qualités et notes au poste des autres clubs exactes, Niveau et Potentiel cachés',()=>{
  const s=fixturePrecise(),v=k.visibility(s);
- assert.equal(v.foreign.rating,74);assert.equal(v.foreign.knowledge.exact,true);assert.equal(v.foreign.knowledge.owned,false);assert.equal(v.foreign.knowledge.qualitesLargeur,undefined);assert.equal(v.foreign.potential,null);assert.equal(v.foreign.potentialRange,null,'non observé : potentiel inconnu');
+ assert.equal(v.foreign.rating,null,'Niveau caché');assert.equal(v.foreign.knowledge.exact,true);assert.equal(v.foreign.knowledge.owned,false);assert.equal(v.foreign.knowledge.qualitesLargeur,undefined);assert.equal(v.foreign.potential,null);assert.equal(v.foreign.potentialRange,null,'non observé : potentiel inconnu');
  const doc=()=>({players:[{id:'foreign',rating:74,potential:86,attributesV2:{tackling:70,passing:55},positionRatings:{1:60},positionNotes:{1:60},_familyNotes:{pilier:60},roleRatings:{x:71},evidence:{noteMin:70,noteMax:76,potentialMin:80,potentialMax:90,label:'foo'},assessment:{observed:['Niveau : 74 / 100.','Prime relevée : 3000 € à cette date.'],estimates:['Potentiel : 80–90 / 100.','Autre estimation.']}}]});
  let m=doc();k.project(m,k.visibility(s));let p=m.players[0];
- assert.equal(p.rating,74);assert.deepEqual(p.attributesV2,{tackling:70,passing:55});assert.equal(p.attributesV2Range,undefined);assert.deepEqual(p.positionRatings,{1:60});assert.equal(p.potential,null,'potentiel jamais exact');
+ assert.equal(p.rating,null,'Niveau caché');assert.deepEqual(p.attributesV2,{tackling:70,passing:55});assert.equal(p.attributesV2Range,undefined);assert.deepEqual(p.positionRatings,{1:60});assert.equal(p.potential,null,'potentiel jamais exact');
  assert.ok(!JSON.stringify(p.assessment).includes('/ 100')||!/Niveau : \d|Potentiel : \d/.test(JSON.stringify(p.assessment)));
  assert.ok(!/Niveau : d|Potentiel : d/.test(JSON.stringify(p.assessment)));
  assert.equal(p.evidence.noteMin,null,'les bornes d’observation restent celles du staff');
  // Observé : potentiel = fourchette du staff, jamais la valeur exacte.
- const b=k.before(s);mission(s,1);k.observe(s,b,'advance_day');const vo=k.visibility(s).foreign;assert.equal(vo.rating,74);assert.equal(vo.potential,null);assert.ok(vo.potentialRange&&vo.potentialRange.max-vo.potentialRange.min===10);
+ const b=k.before(s);mission(s,1);k.observe(s,b,'advance_day');const vo=k.visibility(s).foreign;assert.equal(vo.rating,null);assert.equal(vo.potential,null);assert.ok(vo.potentialRange&&vo.potentialRange.max-vo.potentialRange.min===10);
  m=doc();k.project(m,k.visibility(s));assert.equal(m.players[0].potential,null);assert.equal(m.players[0].attributesV2.tackling,70);assert.equal(m.players[0].attributesV2Range,undefined);
 });
 test('mode Précises : joueur parti ou revenu et archive inconnue ; l’ID inconnu reste masqué',()=>{
- const s=fixturePrecise(),b=k.before(s),p=s.clubs[0].players.pop();s.clubs[1].players.push(p);k.observe(s,b,'interclub_accept');const v=k.visibility(s).own;assert.equal(v.rating,76,'joueur d’un autre club : exact');assert.equal(v.knowledge.owned,false);assert.equal(v.knowledge.exact,true);assert.equal(v.potential,null);
+ const s=fixturePrecise(),b=k.before(s),p=s.clubs[0].players.pop();s.clubs[1].players.push(p);k.observe(s,b,'interclub_accept');const v=k.visibility(s).own;assert.equal(v.rating,null,'joueur d’un autre club : Niveau caché');assert.equal(v.knowledge.owned,false);assert.equal(v.knowledge.exact,true);assert.equal(v.potential,null);
  const model={players:[{id:'old-gone',name:'Archive',pos:'Centre',rating:76,attributesV2:{passing:75},positionRatings:{1:70}}]};k.project(model,k.visibility(s));assert.equal(model.players[0].rating,null);assert.deepEqual(model.players[0].attributesV2,{});
 });
 test('strict validation rejects corrupt ranges, duplicates, version, future and extra keys',()=>{
