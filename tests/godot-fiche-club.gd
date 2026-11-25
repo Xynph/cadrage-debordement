@@ -173,6 +173,9 @@ func executer() -> void:
 	var lignes := page.find_children("ClubSheetRow*", "", true, false).size()
 	verifier(lignes >= 30, "effectif : %d lignes" % lignes)
 	mesures.effectif = lignes
+	var pastilles := page.find_children("ClubSheetNiveau*", "", true, false)
+	verifier(pastilles.size() > 0, "effectif : colonne Niveau en pastilles (%d)" % pastilles.size())
+	verifier(pastilles.all(func(n: Node): return str(n.get_meta("lettre", "")) != "" and not str(n.get_meta("lettre", "")).is_valid_int()), "effectif : pastilles de lettres, jamais de chiffre")
 	chevauchements(page, "effectif")
 	await capture("fiche-club-effectif")
 	var tri := page.find_child("ClubSheetSort_age", true, false) as Button
