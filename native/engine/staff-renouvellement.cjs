@@ -34,17 +34,22 @@ function plafondNiveau(base, consigne) {
 
 // Plan pur des fins de contrat. membres : {id, role, estime, age, ansMax} (ansMax : saisons avant la retraite) ;
 // x : {base, besoin{role:n}, restants{role:n} (membres encore sous contrat la saison prochaine),
-//      marche{role: meilleure note estimée à la portée du club}}.
+//      marche{role: notes estimées des candidats libres à la portée du club (liste, ou une seule note)}}.
+// Un même candidat libre ne justifie qu'un seul départ (gros staffs japonais, 25/11/2026 : le meilleur libre du poste
+// justifiait des dizaines de départs « le marché offre mieux », réembauchés à l'été) : chaque départ « mieux » réserve
+// le meilleur candidat encore libre du poste, le membre suivant se compare au suivant.
 function planifier(membres, x) {
-  const gardes = {}, out = [];
+  const gardes = {}, out = [], marche = {};
+  for (const [role, v] of Object.entries(x.marche || {})) marche[role] = [].concat(v).filter(Number.isFinite).sort((a, b) => b - a);
   const tries = membres.slice().sort((a, b) => b.estime - a.estime || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   for (const m of tries) {
     const besoin = x.besoin[m.role] ?? 0, deja = (x.restants[m.role] ?? 0) + (gardes[m.role] ?? 0);
+    const libre = marche[m.role]?.[0];
     let d;
     if (m.ansMax < 2) d = { decision: 'libere', raison: 'retraite' };
     else if (deja >= besoin) d = { decision: 'libere', raison: 'surnombre' };
     // Stabilité : seul un membre faible pour le club est remplacé, et seulement si le marché offre nettement mieux.
-    else if (m.estime < x.base - 5 && Number.isFinite(x.marche[m.role]) && x.marche[m.role] >= m.estime + 8) d = { decision: 'libere', raison: 'mieux' };
+    else if (m.estime < x.base - 5 && libre !== undefined && libre >= m.estime + 8) { d = { decision: 'libere', raison: 'mieux' }; marche[m.role].shift(); }
     else {
       const ans = Math.min(m.age <= 58 ? 3 : 2, m.ansMax);
       d = { decision: 'prolonge', raison: m.estime >= x.base - 5 ? 'solide' : 'continuite', ans };
@@ -107,7 +112,10 @@ function dsStaffObserver(forcee){
   const echeance=miens.filter(p=>p.contractEnd===S.season&&!decides.has(p.id));
   if(echeance.length){
    const restants={};for(const p of miens)if(p.contractEnd>S.season)restants[p.role]=(restants[p.role]||0)+1;
-   const marche={};for(const p of libres())if(p.level<=plafond){const e=dsStaffEstime(p,ev);if(!(marche[p.role]>=e))marche[p.role]=e;}
+   // Candidats libres à sa portée, du meilleur au moins bon ; ceux déjà promis à un départ « mieux » cette saison restent réservés.
+   const marche={},promis={};for(const x of bureau.decisions)if(x.raison==='mieux')promis[x.role]=(promis[x.role]||0)+1;
+   for(const p of libres())if(p.level<=plafond)(marche[p.role]||(marche[p.role]=[])).push(dsStaffEstime(p,ev));
+   for(const r in marche)marche[r]=marche[r].sort((a,b)=>b-a).slice(promis[r]||0);
    const plan=nativeStaffRenouvellement.planifier(echeance.map(p=>({id:p.id,role:p.role,estime:dsStaffEstime(p,ev),age:p.age,ansMax:p.retireAge-p.age})),{base:c.base,besoin,restants,marche});
    for(const d of plan){
     const p=echeance.find(x=>x.id===d.id);let decision=d.decision,raison=d.raison;
@@ -129,12 +137,24 @@ function dsStaffObserver(forcee){
   }
  }
  if(!lot.prolonges.length&&!lot.departs.length&&!lot.recrues.length)return false;
- bureau.lots=bureau.lots.concat(lot).slice(-12);
+ // Gros staffs (clubs japonais : jusqu'à 70 membres) : un lot dépasse vite 40 noms ; découpé en séries de 40 pour rester
+ // dans la forme de sauvegarde (sinon la carrière refuse sa propre sauvegarde).
+ bureau.lots=bureau.lots.concat(nativeStaffRenouvellement.decouperLot(lot)).slice(-12);
  const n=lot.prolonges.length+lot.recrues.length;
  if(n)news('Staff : le directeur sportif a '+[lot.prolonges.length?lot.prolonges.length+' prolongation'+(lot.prolonges.length>1?'s':''):'',lot.recrues.length?lot.recrues.length+' arrivée'+(lot.recrues.length>1?'s':''):''].filter(Boolean).join(' et ')+' à son actif.');
  return true;
 }
 `;
+
+// Un lot de courrier tient au plus LOT_MAX noms par liste (forme validée) : au-delà, séries successives de même date ;
+// les signatures refusées restent sur la première série.
+const LOT_MAX = 40;
+function decouperLot(lot, max = LOT_MAX) {
+  const n = Math.max(1, ...['prolonges', 'departs', 'recrues'].map(k => Math.ceil(lot[k].length / max)));
+  if (n === 1) return [lot];
+  return Array.from({ length: n }, (_, i) => ({ ...lot, id: i ? lot.id + '.' + (i + 1) : lot.id, refus: i ? 0 : lot.refus,
+    prolonges: lot.prolonges.slice(i * max, (i + 1) * max), departs: lot.departs.slice(i * max, (i + 1) * max), recrues: lot.recrues.slice(i * max, (i + 1) * max) }));
+}
 
 const short = (x, n) => typeof x === 'string' && x.length <= n;
 // Validation de sauvegarde du bureau staff du directeur sportif.
@@ -147,9 +167,9 @@ function valider(m, saison) {
     && b.decisions.every(e => e && short(e.id, 240) && short(e.name, 160) && ROLES.includes(e.role) && ['prolonge', 'libere'].includes(e.d) && RAISONS[e.raison] !== undefined && short(e.date, 10))
     && Array.isArray(b.lots) && b.lots.length <= 12
     && b.lots.every(l => l && short(l.id, 60) && short(l.date, 10) && Number.isSafeInteger(l.refus) && l.refus >= 0
-      && ['prolonges', 'departs', 'recrues'].every(k => Array.isArray(l[k]) && l[k].length <= 40 && l[k].every(entree)));
+      && ['prolonges', 'departs', 'recrues'].every(k => Array.isArray(l[k]) && l[k].length <= LOT_MAX && l[k].every(entree)));
   if (!ok) throw Error('Sauvegarde invalide : décisions du directeur sportif sur le staff.');
   return true;
 }
 
-module.exports = Object.freeze({ FENETRE, ROLES, RAISONS, plafondNiveau, planifier, recruter, valider, BRANCHEMENT });
+module.exports = Object.freeze({ FENETRE, ROLES, RAISONS, LOT_MAX, plafondNiveau, planifier, recruter, decouperLot, valider, BRANCHEMENT });
