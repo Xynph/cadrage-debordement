@@ -159,3 +159,17 @@ test('Budget : chaque championnat a ses recettes, son plafond s’il existe, et 
   total+=B.primeClassement(nom,2,4);assert.ok(Math.abs(total)<E.CHAMPIONNATS[nom].recettes*0.12,nom+' : saison type proche de l’équilibre ('+Math.round(total)+')');
  }
 });
+// Deuxième division japonaise (mesure du 25/11/2026, carrière Monde réelle) : un petit club ne finit plus dans le rouge hors enveloppe.
+test('D2 japonaise : effectif de départ plafonné, prudence dès la saison 2, soutien du propriétaire hors budget voté',()=>{
+ const regle=E.CHAMPIONNATS['jlo-d2'],forces=Array.from({length:8},(_,i)=>({id:i,division:'jlo-d2',base:62+i*2})),R=B.recettes(forces);
+ assert.ok(regle.masseDepart>0&&regle.masseDepart<0.4&&regle.prudence>regle.prudenceDepart&&regle.soutien>1);
+ // A : à la création, personne ne dépasse masseDepart des recettes (prudence de départ plus légère que celle de la saison 2).
+ for(const [id,l] of B.limites(forces,1,{creation:true}))assert.ok(l.limite<=R.get(id)*regle.masseDepart*1.0001,'masse de départ du club '+id);
+ // C : l'enveloppe promise reste celle du budget, le soutien est un supplément versé à la clôture seulement.
+ const sans=B.proprietaire(forces,3);assert.ok(sans.enveloppe>0&&sans.rallonge>0&&sans.rallonge<=sans.enveloppe*(regle.soutien-1)+25000);
+ const compte={enveloppe:sans.enveloppe,rallonge:sans.rallonge,reserve:1e9};
+ assert.equal(B.apportProprietaire(compte,1e9,0).apport,sans.enveloppe+sans.rallonge,'le propriétaire comble l\'enveloppe et son supplément');
+ assert.equal(B.apportProprietaire({enveloppe:sans.enveloppe,reserve:1e9},1e9,0).apport,sans.enveloppe,'une ancienne sauvegarde (sans supplément) garde son enveloppe');
+ for(const nom of noms.filter(n=>n!=='jlo-d2'))assert.equal(E.CHAMPIONNATS[nom].soutien,undefined,'les autres championnats ne sont pas touchés : '+nom);
+ const autres=Array.from({length:8},(_,i)=>({id:i,division:'accession',base:62+i*2}));assert.equal(B.proprietaire(autres,3).rallonge,undefined);
+});

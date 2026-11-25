@@ -217,6 +217,12 @@ static func _ball_des_pistes(v: NativeMatchView) -> void:
 		v._choregraphie.source_ballon = source
 		v._choregraphie.source_depuis = v._choregraphie.temps - 1.0
 		v._choregraphie.source_de = vise
+		if tenu:
+			# Et dans les mains de son porteur : sans cela, les bras partent du clip et mettent 0,2 s à
+			# venir au ballon (un bras court, gabarits v5, laisse alors le poignet à 0,3 m du ballon).
+			var tient: Dictionary = v._actors[porteur]
+			tient.grip = 1.0
+			tient.porte = 1.0
 	if source != v._choregraphie.source_ballon:
 		v._choregraphie.source_ballon = source
 		v._choregraphie.source_depuis = v._choregraphie.temps
