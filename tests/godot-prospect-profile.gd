@@ -41,6 +41,7 @@ func run() -> void:
 	var archive := current.duplicate(true)
 	archive.name = "Profil conservé"
 	app.model = {"squad":[{"id":"own:one","name":"Joueur du club","pos":"Centre","age":27,"rating":78,"salary":5100,"contractEnd":3}],"clubLife":{"regenScouting":{"candidates":[current],"shortlist":[archive]},"interclubMarket":{"candidates":[{"id":"seller:one","name":"Joueur du vendeur","club":"Club adverse","clubId":2,"pos":"Pilier gauche","age":30,"salary":6400,"sourceSalary":838383,"fee":50000,"contractEnd":3}]}}}
+	Notation.modele = app.model  # comme main.gd : modèle courant posé à chaque réponse du moteur
 	var original := JSON.stringify(app.model)
 	check(Profile.target_available(app,"regen-candidates","known:one"),"Candidat connu absent du marché général consultable")
 	check(Profile.projected_person(app,"regen-shortlist","known:one").name == "Profil conservé","Source archives exacte sans repli sur candidat homonyme")

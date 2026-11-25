@@ -111,7 +111,7 @@ func run() -> void:
 	check(fiche_roles_inconnus.note_role(A.detail(target),fiche_roles_inconnus.ROLES[0])>=0.0,"Qualités visibles : note du rôle calculée")
 	check(fiche_roles_inconnus.note_role(A.detail({}),fiche_roles_inconnus.ROLES[0])==-1.0,"Qualités inconnues : note du rôle en « ? », jamais inventée")
 	var masque: Dictionary=target.duplicate(true)
-	masque.attributesV2={};masque.positionRatings={};masque.rating=null;masque.knowledge={"owned":false,"stage":"unobserved"}
+	masque.attributesV2={};masque.positionRatings={};masque.rating=null;masque.erase("niveauCalcule");masque.knowledge={"owned":false,"stage":"unobserved"}
 	check(A.detail(masque).is_empty() and G.rating_text(masque)=="?","Option « En fourchette », pas observé : aucune qualité exacte ni Niveau")
 	var page: Control=app.find_child("CarnetMarket",true,false)
 	page.state.player_id=str(target.id)
