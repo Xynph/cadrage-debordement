@@ -279,6 +279,11 @@ func run() -> void:
 	if OS.get_environment("CD_MESURE_SOL") == "1":
 		sonde_sol = (load((get_script() as Script).resource_path.get_base_dir().path_join("sonde_sol.gd")) as GDScript).new()
 		root.add_child(sonde_sol)
+	# Sonde du ruck (CD_MESURE_RUCK=1) : jambes des joueurs debout qui entrent dans un joueur couché.
+	var sonde_ruck: Node = null
+	if OS.get_environment("CD_MESURE_RUCK") == "1":
+		sonde_ruck = (load((get_script() as Script).resource_path.get_base_dir().path_join("sonde_ruck.gd")) as GDScript).new()
+		root.add_child(sonde_ruck)
 	for signal_fenetre: Signal in [root.size_changed, root.focus_entered]:
 		if signal_fenetre.is_connected(app._keep_filled_display): signal_fenetre.disconnect(app._keep_filled_display)
 	await process_frame
@@ -489,6 +494,9 @@ func run() -> void:
 	if sonde_sol != null:
 		report["sol"] = sonde_sol.bilan()
 		print("MATCH_FILME_SOL ", JSON.stringify(report.sol))
+	if sonde_ruck != null:
+		report["ruck"] = sonde_ruck.bilan()
+		print("MATCH_FILME_RUCK ", JSON.stringify(report.ruck))
 	report["pas_fixe"] = pas
 	report["attente"] = o.attente
 	report["images_rendues"] = images_rendues
