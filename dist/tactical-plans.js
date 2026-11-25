@@ -16,27 +16,45 @@ let ESSAIS_RULES=1;
 // Écart de niveau : 1 = pas d'amplification supplémentaire (la courbe de niveau commune du 14/11, matchLevelEdge, la fournit désormais).
 var ESSAIS={porte:.63,ecart:1,finition:.51,but:.6};
 function essaisRules(l){return tacticalRules(l)&&l.essaisVersion===1}
-// Jeu au pied réaliste (docs/jeu-au-pied-20261125.md), rencontres aux essais réalistes : on tape surtout depuis son camp
-// (dégagement en touche depuis ses 22, occupation, chandelle), plus rarement dans le camp adverse (rasant, par-dessus) ;
-// le « poussé en touche » devient rare. Coefficients de jeu calés sur des matchs Monde (une action couvre plusieurs temps
-// de jeu), pas des probabilités mesurées du rugby. JEU_PIED_RULES=0 : ancien jeu au pied (comparaisons).
+// Jeu au pied réaliste (docs/jeu-au-pied-20261125.md), rencontres aux essais réalistes. Invariant : par zone, la possession
+// change par action à peu près autant qu'avec l'ancien moteur (sinon l'équipe qui attaque dans le camp adverse ne perd plus
+// le ballon, les points arrivent par séries et les matchs serrés deviennent rares) ; seule la forme change. L'ancien
+// « poussé en touche » à 12 % par action devient surtout un coup de pied raté ou perdu (même effet de terrain), le vrai poussé
+// en touche devient rare ; le jeu au pied choisi garde les fréquences de l'ancien moteur (triplées depuis ses 22) mais raconte
+// des dégagements en touche, des chandelles, des coups de pied longs, rasants, par-dessus ou croisés. Coefficients de jeu calés
+// sur des matchs Monde (une action couvre plusieurs temps de jeu). JEU_PIED_RULES=0 : ancien jeu au pied (comparaisons).
 // pousse : porteur poussé en touche par action (base + bord : près de son en-but ou de la ligne adverse, à moins de 10 m).
-// zone : probabilité de taper par action, selon la zone (ses 22, son camp, camp adverse, 22 adverses) ; style : par plan ;
-// botteur : effet par point de jeu au pied des arrières au-delà de 60 ; score : à partir de la 60e (mène, mené de 8+, mené de 1 à 7).
-// types : répartition des coups de pied par zone (touche, long, chandelle, rasant = rasant ou par-dessus dans le dos).
+// perdu : part de l'ancien poussé gardée par action, poussé compris ; le reste est un coup de pied raté ou perdu
+// (jeuAuPiedPerdu). perdus : issues dans son camp (touche directe, contré, trop court) et dans le camp adverse (croisé
+// directement en touche, rasant ou par-dessus ramassé, chandelle captée, ballon mort dans l'en-but) ; perduMetres : mètres
+// rendus à l'adversaire (comme le poussé, qui rendait le ballon sur place).
+// zone : probabilité de taper par action, selon la zone (ses 22, son camp, camp adverse, 22 adverses) ; style : par plan
+// (occupation : table à part, comme l'ancien moteur) ; score : à partir de la 60e (mène, mené de 16+, mené à portée).
+// types : répartition des coups de pied par zone (touche, long, chandelle, rasant = rasant ou par-dessus dans le dos, croisé).
 // touche : touche trouvée ; directe22 : touche directe depuis ses 22 ; cinquante : tentative de 50:22 depuis son camp et réussite ;
 // pluie : jeu au pied en plus par niveau de pluie (au lieu de METEO_MATCH.piedJeu, fait pour l'ancien jeu au pied rare).
-// recup : ballon repris par l'équipe qui botte (chandelle, rasant) ; enAvant : en-avant du receveur sous la chandelle.
+// recup : ballon repris par l'équipe qui botte (chandelle, rasant, croisé) ; enAvant : en-avant du receveur sous la chandelle ;
+// enButDefense : rasant ou par-dessus qui file vers l'en-but, couvert par la défense devant sa ligne ; croiseTouche : croisé
+// directement en touche.
 let JEU_PIED_RULES=1;
 var JEU_PIED={
  pousse:{base:.022,bord:.02},
- zone:{own22:.85,ownHalf:.55,oppHalf:.12,opp22:.04},
- style:{equilibre:1,conquete:.85,large:.7,occupation:2.2},pluie:.15,
- botteur:.008,score:{mene:1.2,menePlus:.5,meneMoins:.8},
- types:{own22:{touche:.82,long:.1,chandelle:.08,rasant:0},ownHalf:{touche:.64,long:.2,chandelle:.16,rasant:0},oppHalf:{touche:.36,long:.2,chandelle:.18,rasant:.26},opp22:{touche:0,long:0,chandelle:.25,rasant:.75}},
+ perdu:{own22:.12,ownHalf:.12,oppHalf:.12,opp22:.12},perduMetres:{camp:[2,8],adverse:[2,8]},
+ perdus:{camp:[.8,.05,.15],adverse:[.4,.3,.15,.15]},
+ zone:{own22:.35,ownHalf:.1,oppHalf:.025,opp22:.01},
+ style:{equilibre:1,conquete:.5,large:.75},occupation:{own22:.85,ownHalf:.65,oppHalf:.35,opp22:.08},pluie:.15,
+ score:{mene:1.2,menePlus:.5,meneMoins:.8},
+ types:{own22:{touche:.82,long:.1,chandelle:.08,rasant:0,croise:0},ownHalf:{touche:.64,long:.2,chandelle:.16,rasant:0,croise:0},oppHalf:{touche:.3,long:.15,chandelle:.15,rasant:.25,croise:.15},opp22:{touche:0,long:0,chandelle:.2,rasant:.55,croise:.25}},
  touche:.8,directe22:.8,cinquante:{tente:.03,reussite:.35},
- recup:{chandelle:.28,rasant:.32},enAvant:.07,adverseTape:12
+ recup:{chandelle:.28,rasant:.32,croise:.35},enAvant:.07,adverseTape:12,
+ enButDefense:.5,croiseTouche:.12,longueur:.85
 };
+function jeuPiedPerdu(l,side){return jeuPiedRules(l)?Math.max(0,JEU_PIED.perdu[jeuPiedZone(l,side)]-poussEnTouche(l,side)):0}
+function jeuPiedScore(l,side,zone){
+ const J=JEU_PIED,m=Number(l.minute)||0,d=l.score?l.score[side]-l.score[1-side]:0,g=typeof GESTION_SCORE==='object'?GESTION_SCORE:{debut:60,portee:15};
+ // Fin de match (logique de la gestion du score, dist/rugby.js) : l'équipe menée à portée ne dégage pas, sauf depuis ses 22.
+ return m<g.debut||d===0?1:d>0?J.score.mene:d<-g.portee?J.score.menePlus:zone==='ownHalf'?0:J.score.meneMoins;
+}
 function jeuPiedRules(l){return !!JEU_PIED_RULES&&essaisRules(l)}
 function jeuPiedZone(l,side){const d=Math.abs(ownGoal(side)-l.territory);return d<=22?'own22':d<50?'ownHalf':d<78?'oppHalf':'opp22'}
 function poussEnTouche(l,side){if(!jeuPiedRules(l))return .12;const d=Math.abs(ownGoal(side)-l.territory);return JEU_PIED.pousse.base+(d<10||d>90?JEU_PIED.pousse.bord:0)}
@@ -152,11 +170,7 @@ function openKickProbability(l,side){return clamp(openKickBase(l,side)*(1+(jeuPi
 function openKickBase(l,side){if(!tacticalRules(l))return l.tactics[side]==='occupation'?.5:0;if(jeuPiedRules(l))return jeuPiedBase(l,side);const distance=Math.abs(attackingGoal(side)-l.territory),style=effectiveAttack(l,side);if(style==='occupation')return distance>50?.65:distance>22?.35:.08;return distance>50?(style==='conquete'?.04:style==='large'?.06:.08):distance>22?.025:.01}
 function jeuPiedBase(l,side){
  const J=JEU_PIED,zone=jeuPiedZone(l,side),style=effectiveAttack(l,side);
- const botteur=clamp(1+(unit(l,side,'kick',p=>p.fam>=4)-60)*J.botteur,.8,1.25);
- const m=Number(l.minute)||0,d=l.score?l.score[side]-l.score[1-side]:0,g=typeof GESTION_SCORE==='object'?GESTION_SCORE:{debut:60,portee:15};
- // Fin de match (logique de la gestion du score, dist/rugby.js) : l'équipe menée à portée ne dégage pas, sauf depuis ses 22.
- const score=m<g.debut||d===0?1:d>0?J.score.mene:d<-g.portee?J.score.menePlus:zone==='ownHalf'?0:J.score.meneMoins;
- return J.zone[zone]*(J.style[style]??1)*botteur*score;
+ return (style==='occupation'?J.occupation[zone]:J.zone[zone]*(J.style[style]??1))*jeuPiedScore(l,side,zone);
 }
 function tacticalLoad(l,side){if(!tacticalRules(l))return l.tactics[side]==='large'?.49:l.tactics[side]==='conquete'?.44:.39;return l.possession===side?ATTACK_EFFECTS[effectiveAttack(l,side)].load:defensivePlan(l,side)==='pression'?.53:defensivePlan(l,side)==='prudente'?.31:.37}
 function tacticalCount(l,side,key,n=1){if(tacticalRules(l))l.tacticalStats[side][key]+=n}
