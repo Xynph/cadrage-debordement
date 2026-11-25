@@ -221,13 +221,13 @@ function aiRosterMeritPromotions(c){
  if(!aiRosterPopulationActive())return 0;
  const a=aiRosterAcademy(c);if(!a)return 0;
  let count=0;
- const ranked=a.players.filter(p=>p.age>=18&&!p.injury).sort((x,y)=>(y.rating-x.rating)||x.id.localeCompare(y.id));
+ const ranked=a.players.filter(p=>p.age>=18&&!p.injury).sort((x,y)=>(niveauMatch(y)-niveauMatch(x))||x.id.localeCompare(y.id));
  for(const p of ranked){
   if(professionalPlaces(c)<=0||c.players.length>=Math.max(40,aiRosterTarget(c)))break;
-  const peers=c.players.filter(q=>q.fam===p.fam).map(q=>q.rating);
+  const peers=c.players.filter(q=>q.fam===p.fam).map(q=>niveauMatch(q));
   const weakest=peers.length?Math.min(...peers):0;
   const crack=p.age>=19&&(p.dev?.potential??0)>=88;
-  if(!(p.rating>=weakest-2||crack))continue;
+  if(!(niveauMatch(p)>=weakest-2||crack))continue;
   if(!aiRosterFitWage(c,p,false))continue;
   a.players=a.players.filter(x=>x.id!==p.id);
   p.academy=false;p.contractEnd=S.season+2;p.joinedSeason=S.season;p.joinedRound=S.round;

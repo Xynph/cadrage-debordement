@@ -114,7 +114,7 @@ function pretRestituer(id,montant,avant){
 // Joueur que le président propose de vendre pour rembourser tout de suite : le mieux valorisé hors des cadres.
 function pretVenteProposee(restant){
  if(typeof transferValue!=='function')return null;
- const c=club(),cadres=new Set(c.players.slice().sort((a,b)=>b.rating-a.rating||String(a.id).localeCompare(String(b.id))).slice(0,10).map(p=>p.id));
+ const c=club(),cadres=new Set(c.players.slice().sort((a,b)=>(typeof niveauMatch==='function'?niveauMatch(b):b.rating)-(typeof niveauMatch==='function'?niveauMatch(a):a.rating)||String(a.id).localeCompare(String(b.id))).slice(0,10).map(p=>p.id));
  const libres=c.players.filter(p=>!cadres.has(p.id)&&p.age>=23&&!(typeof saleBlocked==='function'&&saleBlocked(p)));
  const p=libres.map(p=>({p,v:transferValue(p)})).sort((a,b)=>b.v-a.v||String(a.p.id).localeCompare(String(b.p.id)))[0];
  return p?{joueur:p.p.id,prix:p.v}:null;

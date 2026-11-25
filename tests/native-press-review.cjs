@@ -20,16 +20,17 @@ for(const variant of [0]){ // une seule formulation par question depuis le 18/11
  assert.ok(found,'Variante '+variant+' réellement préparée.');
 }
 const {createBridge}=require('../native/engine/worker.cjs');
+const {signerExport}=require('./helpers/signature-export.cjs');
 for(const [club,variant] of [[1,0],[6,0]]){
- const root=fs.mkdtempSync(path.join(process.env.CD_PRESS_TEST_ROOT||require('node:os').tmpdir(),'cd-press-review-'));let b=createBridge({dataDir:root,seed:398,now:1700000000000}),n=0;
+ const root=fs.mkdtempSync(path.join(process.env.CD_PRESS_TEST_ROOT||require('node:os').tmpdir(),'cd-press-review-'));let b=createBridge({testVm:true,dataDir:root,seed:398,now:1700000000000}),n=0;
  const good=(command,payload={})=>{const r=b.handle({id:++n,command,payload});assert.equal(r.ok,true,command+': '+r.error);return r.model;};
  try{
   let m=good('new_career',{mode:'world-champ',club}),p=m.clubLife.press;assert.ok(p.conference.questions.some(q=>q.variant===variant));
   const asked=p.conference.questions;m=good('press_conference',{context:p.context,answers:asked.map(q=>({questionId:q.id,answerId:'r1'}))});
   const expected=asked.map(q=>({id:q.id,question:q.question,answer:q.answers[1].text})),quotes=model=>model.clubLife.press.history.map(({id,question,answer})=>({id,question,answer}));assert.deepEqual(quotes(m),expected);
   const text=good('export').meta.exportText;assert.deepEqual(quotes(good('import',{text})),expected);
-  good('shutdown');b=createBridge({dataDir:root,now:1700000000000});assert.deepEqual(quotes(good('snapshot')),expected,'Vrais libellés repris variante'+variant);
-  const old=JSON.parse(text);old.state.pressConference.history.forEach(h=>{delete h.questionText;delete h.answerText;});const raw=JSON.stringify(old.state);let hash=2166136261;for(let i=0;i<raw.length;i++)hash=Math.imul(hash^raw.charCodeAt(i),16777619);old.checksum=(hash>>>0).toString(16).padStart(8,'0');
+  good('shutdown');b=createBridge({testVm:true,dataDir:root,now:1700000000000});assert.deepEqual(quotes(good('snapshot')),expected,'Vrais libellés repris variante'+variant);
+  const old=JSON.parse(text);old.state.pressConference.history.forEach(h=>{delete h.questionText;delete h.answerText;});signerExport(old,b.vm);
   m=good('import',{text:JSON.stringify(old)});assert.ok(m.clubLife.press.history.every(h=>h.question===null&&h.answer===null),'Ancien export compatible sans fausse citation.');
  }finally{b.close();}
 }

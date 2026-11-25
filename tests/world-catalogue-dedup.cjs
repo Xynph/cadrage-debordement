@@ -12,13 +12,15 @@ test('Le catalogue actif retire réellement les six doublons, seul le lecteur de
  for(const[id,mapping]of aliases){a.equal(active.has(id),false);a.equal(Object.hasOwn(world.worldProfiles,id),false);a.equal(legacy.aliases[id].canonicalId,mapping.canonicalId);a.equal(legacy.aliases[id].clubId,mapping.clubId);a.equal(legacy.aliases[id].player.id,id);a(active.has(mapping.canonicalId));}
 });
 function fixture(t,club=112){
- const {createBridge}=require('../native/engine/worker.cjs'),root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-catalogue-dedup-')),opts={dataDir:root,seed:318,now:1788134400000};let b=createBridge(opts),serial=0;
+ const {createBridge}=require('../native/engine/worker.cjs'),root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-catalogue-dedup-')),opts={dataDir:root,seed:318,now:1788134400000,testVm:true};let b=createBridge(opts),serial=0;
  const raw=(command,payload={})=>b.handle({id:++serial,command,payload}),go=(command,payload={})=>{const r=raw(command,payload);a.equal(r.ok,true,command+': '+r.error);return r.model;};
  t.after(()=>{b.close();fs.rmSync(root,{recursive:true,force:true});});settleClubMeetings(go('new_career',{mode:'world-champ',club}),(command,payload)=>go(command,payload));
- return {root,go,raw,export:()=>go('export').meta.exportText,disk:()=>fs.readFileSync(path.join(root,'PrototypeGodot/donnees.json')),restart:()=>{b.close();b=createBridge({...opts,seed:1,now:1});}};
+ return {root,go,raw,get vm(){return b.vm;},export:()=>go('export').meta.exportText,disk:()=>fs.readFileSync(path.join(root,'PrototypeGodot/donnees.json')),restart:()=>{b.close();b=createBridge({...opts,seed:1,now:1});}};
 }
-function encodedDocument(doc){const s=JSON.stringify(doc.state);let hash=2166136261;for(let i=0;i<s.length;i++)hash=Math.imul(hash^s.charCodeAt(i),16777619);doc.checksum=(hash>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);}
-function legacyDocument(text){
+// Empreinte comme le jeu, export réduit compris : tests/helpers/signature-export.cjs.
+const {signerExport}=require('./helpers/signature-export.cjs');
+function encodedDocument(doc,vm){return signerExport(doc,vm);}
+function legacyDocument(text,vm){
  const doc=JSON.parse(text);
  for(const[id,row]of Object.entries(loadLegacy().aliases)){
   const player={...structuredClone(row.player),worldProfile:structuredClone(row.worldProfile)};
@@ -27,7 +29,7 @@ function legacyDocument(text){
   player.potential=variation.sourcePotential(player.potential,id,doc.state.careerVariation);
   doc.state.clubs[row.clubId].players.push(player);
  }
- return encodedDocument(doc);
+ return encodedDocument(doc,vm);
 }
 // Un ancien export ne porte ni familiarité de poste ni rôle promis sur les six fiches historiques : le lecteur les
 // ajoute à l'import (familiarite-poste.cjs, role-contrat.cjs : rôle déduit pour l'effectif du manager). Rien d'autre
@@ -41,17 +43,17 @@ function importLegacy(h,text){
   if(row.clubId===got.state.club){a.equal(mine.roleContrat?.deduit,true,alias+' : rôle déduit');a.equal(mine.roleContrat.club,got.state.club);theirs.roleContrat=mine.roleContrat;}
   else a.equal(mine.roleContrat,undefined,alias+' : pas de rôle promis hors du club du manager');
  }
- a.deepEqual(got.state,want.state);a.equal(out,encodedDocument(got));
+ a.deepEqual(got.state,want.state);a.equal(out,encodedDocument(got,h.vm));
  h.go('import',{text:out});a.equal(h.export(),out,'Export migré relu à l’identique');
  return out;
 }
 test('Le vrai lecteur conserve les six fiches présentes dans un ancien export : état, RNG et reprise exacts',t=>{
  const sourceCount=text=>JSON.parse(text).state.clubs.flatMap(c=>c.players).filter(p=>!p.id.startsWith('depth-')).length;
- const h=fixture(t),fresh=h.export(),old=legacyDocument(fresh),invalid=JSON.parse(old),[id,row]=Object.entries(loadLegacy().aliases)[0];
+ const h=fixture(t),fresh=h.export(),old=legacyDocument(fresh,h.vm),invalid=JSON.parse(old),[id,row]=Object.entries(loadLegacy().aliases)[0];
  const wrong=invalid.state.clubs[row.clubId].players.find(p=>p.id===id);
  a.notEqual(wrong.potential,row.player.potential,'Cette graine distingue le potentiel de carrière du catalogue brut');
  wrong.potential=row.player.potential;
- const before=h.disk(),refused=h.raw('import',{text:encodedDocument(invalid)});
+ const before=h.disk(),refused=h.raw('import',{text:encodedDocument(invalid,h.vm)});
  a.equal(refused.ok,false);a.match(refused.error,/profil de joueur mondial incompatible : potential/);
  a.equal(h.export(),fresh);a.deepEqual(h.disk(),before,'Une politique mélangée reste refusée sans modifier le profil');
  const migrated=importLegacy(h,old);a.equal(sourceCount(old),5884);a.equal(sourceCount(migrated),5884);
@@ -81,5 +83,5 @@ test('Ancien pack : ID historique accepté, photo reliée au canonique et aucune
  const person=model.squad.find(p=>p.id===row.canonicalId);a(person);a.equal(person.name,'Canonique témoin');a(person.portraitPath);a.deepEqual(fs.readFileSync(person.portraitPath),png);a.equal(person.portraitStatus,'synthetic');
  const after=JSON.parse(h.export()).state;delete after.identityPack;a.deepEqual(after,before);a.deepEqual(fs.readFileSync(file),original);
  const saved=h.export();h.restart();a.equal(h.export(),saved);model=h.go('snapshot');a.equal(model.squad.find(p=>p.id===row.canonicalId).name,'Canonique témoin');
- const legacy=legacyDocument(saved),migrated=importLegacy(h,legacy);model=h.go('snapshot');a.equal(model.squad.find(p=>p.id===id).name,'Canonique témoin');a.equal(h.export(),migrated);
+ const legacy=legacyDocument(saved,h.vm),migrated=importLegacy(h,legacy);model=h.go('snapshot');a.equal(model.squad.find(p=>p.id===id).name,'Canonique témoin');a.equal(h.export(),migrated);
 });

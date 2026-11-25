@@ -320,7 +320,7 @@ function staffKnowledge(j,p){const C=STAFF_JUDGEMENT.composition,e=staffJudgemen
 // Contexte du prochain match du manager : derby ou adversaire plus fort (moyenne des 15 meilleures notes).
 function sheetContext(){
  try{const pair=typeof nextMatch==='function'?nextMatch():null;if(!pair)return {adversaire:false};const opp=S.clubs[pair[0]===S.club?pair[1]:pair[0]];if(!opp)return {adversaire:false};
-  const top=c=>[...(c.players||[])].map(p=>p.rating||0).sort((a,b)=>b-a).slice(0,15).reduce((a,b)=>a+b,0)/15;
+  const top=c=>[...(c.players||[])].map(p=>niveauMatch(p)).sort((a,b)=>b-a).slice(0,15).reduce((a,b)=>a+b,0)/15;
   const derby=typeof isDerby==='function'&&isDerby(S,S.club,opp.id);return {adversaire:!!derby||top(opp)>top(club())+2,derby:!!derby,name:opp.name}}catch(e){return {adversaire:false}}
 }
 // Parts de la perception d'un joueur à une famille de poste (club du manager) : erreur et penchant, déjà pondérés

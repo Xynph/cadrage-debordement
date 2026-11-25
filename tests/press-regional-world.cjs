@@ -5,7 +5,7 @@
 // rédactions, la Nationale la sienne en plus, et les coupes d'Europe une presse commune.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os'),vm=require('node:vm');
 const bank=require('../dist/press-question-bank.js'),pressIds=require('../native/engine/press-identities.cjs'),staff=require('../native/engine/staff.cjs');
-const {createBridge}=require('../native/engine/worker.cjs'),privees=require('../scripts/sources-privees.cjs');
+const {createBridge}=require('../native/engine/worker.cjs'),{signerExport}=require('./helpers/signature-export.cjs'),privees=require('../scripts/sources-privees.cjs');
 const ext=require('../native/engine/world-pacific-registry.cjs'),engine=path.join(__dirname,'../native/engine');
 const json=f=>JSON.parse(fs.readFileSync(path.join(engine,f),'utf8'));
 const champ=ext.extendChampRegistry(ext.extendNationaleRegistry(ext.extendJapanRegistry(ext.extendWorldRegistry(json('world-registry.json'),json('world-pacific-extension.json')),json('world-japan-extension.json')),json('world-nationale-extension.json')),json('world-champ-extension.json'));
@@ -89,7 +89,7 @@ const good=(command,payload={})=>{const r=b.handle({id:++seq,command,payload});a
 try{
  // Club français, anglais, écossais, irlandais (Ulster), japonais, fidjien.
  for(const [club,region] of [[3,'fr:elite'],[30,'en:prem'],[44,'sco:urc'],[42,'ie:urc'],[68,'jp:jlo-d1'],[62,'pac:srp'],[58,'nz:srp'],[52,'za:urc'],[nationale,'fr:nationale'],[102,'en:champ']]){
-  b?.close();b=createBridge({dataDir:fs.mkdtempSync(path.join(root,'c')),seed:4242,now:1700000000000});
+  b?.close();b=createBridge({testVm:true,dataDir:fs.mkdtempSync(path.join(root,'c')),seed:4242,now:1700000000000});
   const m=good('new_career',{mode:'world-champ',club}),press=m.clubLife.press,ids=new Set(bank.journalistsFor(region).map(j=>j.id));
   assert.equal(press.conference.available,true,club+' : conférence disponible');
   assert.ok(press.conference.questions.every(q=>ids.has(q.journalist.id)),club+' : questions de la presse '+region);
@@ -97,7 +97,7 @@ try{
   assert.deepEqual(press.people.map(p=>p.id),[...ids],club+' : annuaire de la presse locale');
  }
  // Conférence tenue avec un club écossais, puis mémoire au-delà de trente contacts.
- b.close();b=createBridge({dataDir:fs.mkdtempSync(path.join(root,'c')),seed:4242,now:1700000000000});
+ b.close();b=createBridge({testVm:true,dataDir:fs.mkdtempSync(path.join(root,'c')),seed:4242,now:1700000000000});
  let m=good('new_career',{mode:'world-champ',club:44});
  m=good('press_conference',{context:m.clubLife.press.context,answers:m.clubLife.press.conference.questions.map(q=>({questionId:q.id,answerId:'r1'}))});
  const met=m.clubLife.press.people.filter(p=>p.encounters>0);assert.ok(met.length>=2&&met.every(p=>['sco','eu'].includes(p.region)));
@@ -105,7 +105,7 @@ try{
  // Un coach qui a rencontré toute la presse du Monde garde une sauvegarde valide.
  const doc=JSON.parse(good('export').meta.exportText),s=doc.state;
  for(const j of bank.journalists)if(!s.pressPeople.contacts[j.id])s.pressPeople.contacts[j.id]={score:1,encounters:1,memory:[{season:1,week:0,club:44,questionId:'phase_finale-4-0',answerId:'r4',delta:1}]};
- {const text=JSON.stringify(s);let h=2166136261;for(let i=0;i<text.length;i++)h=Math.imul(h^text.charCodeAt(i),16777619);doc.checksum=(h>>>0).toString(16).padStart(8,'0');}
+ signerExport(doc,b.vm);
  m=good('import',{text:JSON.stringify(doc)});
  assert.equal(Object.keys(JSON.parse(good('export').meta.exportText).state.pressPeople.contacts).length,bank.journalists.length);
  // L'annuaire montre la presse locale et les journalistes déjà rencontrés ailleurs.
