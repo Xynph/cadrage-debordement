@@ -228,7 +228,32 @@ staff calculée dans le moteur (projection `notation` par joueur). Fiche d'un jo
 `niveauCalcule` (observé mais pas en profondeur) : les rôles y sont classés par la note brute des 8 qualités, sans
 recentrage. Suivi des jeunes : « cette saison +3 » reste un écart chiffré du Niveau.
 
-**Brancher le moteur du match sur le Niveau calculé** (non fait, chantier à part) demanderait : 1) enregistrer le rôle
+**Moteur du match branché sur le Niveau calculé (25/11, nuit)** : `native/engine/role-joueur.cjs`. Rôle choisi par le
+club enregistré sur le joueur (`p.roleId`, commande `set_player_role`, sauvegardé ; repli sur le meilleur rôle s'il
+manque, est inconnu ou d'un autre poste ; perdu quand le joueur quitte le club). `niveauMatch(p)` = Niveau au rôle
+(repli `rating`) remplace `rating` dans teamLevel (dist/rugby.js), le résultat rapide (league-detail.cjs), la sélection
+(jiff.cjs, doublons.cjs, contexte de feuille de match-actions.js, conseil de match-pilotage.js) et l'IA des clubs
+(promotions au mérite d'ai-roster-cycle.js, choix de l'acheteur d'economy.js, calendrier-mutations.cjs et
+vente-joueurs.cjs, cadres de club-owner.cjs) ; rôle de départ du direct
+(match-arrets.cjs) = rôle choisi. Inchangés : compétences de match (skill, roleNote, position-aptitudes : `rating −
+skillBase`), valeur, salaires, progression, niveau des clubs IA (`c.base`), sélections nationales, prêt d'une piste du
+marché (« hors 23 » à la note, model.cjs). L'écran
+(fiche_roles.gd) n'envoie pas encore la commande.
+
+Équilibre de ligue (`scripts/mesure-essais-monde.cjs <graine> 102`, une saison Monde, graines 4242 · 7 · 99, moyenne ;
+mieux armé = 23 meilleures `roleNote` du début de saison, même mesure avant et après) :
+
+| Mesure | Avant | Après |
+| --- | --- | --- |
+| Points · essais par match | 56,1 · 7,58 | 56,3 · 7,59 |
+| Victoires du mieux armé (toutes tranches · écart ≥ 5) | 63,1 % · 76,7 % | 63,7 % · 75,7 % |
+| Surprises (mieux armé de 3 points ou plus battu, % des matchs de championnat) | 12,8 % | 12,6 % |
+| Spearman classement/effectif · écart 1er-dernier | 0,71 · 51,6 pts | 0,73 · 50,5 pts |
+| Victoires à domicile | 62,9 % | 64,4 % |
+
+Écarts sous la dispersion entre graines ; à surveiller seulement : domicile (+1,4 point, 2 graines sur 3).
+
+Ce qui restait à faire avant ce branchement (pour mémoire) : 1) enregistrer le rôle
 choisi par le club pour chaque joueur (aujourd'hui « Son rôle » = meilleur rôle, rien dans S) ; 2) remplacer `rating`
 par `niveauJoueur(p, {roleId})` partout où le moteur lit la note (sélection automatique, match-arrets, IA des clubs,
 progression, valeur marchande, salaires) ou écrire le Niveau calculé dans `rating` à chaque progression ; 3) recaler

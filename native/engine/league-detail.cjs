@@ -119,7 +119,8 @@ function factory(){
  // l'effectif dans les divisions basses (Spearman rang/effectif Japon D2 0,73 → 0,88, Nationale 0,75 → 0,84).
  // La puissance reste celle du moteur complet (teamLevel : note × forme des 15 titulaires).
  const form=()=>MATCH_LEVEL_CURVE.forme;
- const score=p=>(Number(p.rating)||50)*(form()[0]+clamp(Number(p.condition)||80,0,100)*form()[1]);
+ // Niveau du joueur : niveauMatch (Niveau au rôle en carrière, role-joueur.cjs), comme teamLevel.
+ const score=p=>(typeof niveauMatch==='function'?niveauMatch(p):Number(p.rating)||50)*(form()[0]+clamp(Number(p.condition)||80,0,100)*form()[1]);
  function squad(s,id,away,f,opponentId,weather){
   const club=s.clubs[id];
   const pool=club.players.filter(p=>!p.injury&&!(p.suspension>0)&&!away(p.id));
@@ -156,7 +157,7 @@ function factory(){
  // réglé comme les championnats aussi ouverts ; coupes d'Europe non mesurées : écart et terrain inchangés. Autres : 1.
  // §14 quinquies (18/11) : poids de l'écart de l'URC ×0,84, Premiership et Championship ×0,86, Japon D1 ×0,90, Japon D2 ×0,91
  // (rapport pente du score / bruit, rapide contre complet, encore 10 à 16 % trop fort après §14 quater).
- const VOLUME=Object.freeze({elite:[1.09,.87,1,.63],accession:[1,.85,.8,.72],nationale:[.99,.9,.8,.56],prem:[1.53,.49,.58,.64],
+ const VOLUME=Object.freeze({elite:[1.09,.87,1.2,.8],accession:[1,.85,.8,.72],nationale:[.99,.9,.8,.56],prem:[1.53,.49,.58,.64],
   champ:[1.45,.56,.58,.6],urc:[1.22,.55,.77,.75],srp:[1.57,.39,.62,.55],'jlo-d1':[1.5,.52,.61,.58],'jlo-d2':[1.38,.6,.6,.54],
   champions:[1.24,.67,1,1],challenge:[1.2,.69,1,1]});
  const volume=id=>VOLUME[id]||[1,1,1,1];
@@ -213,7 +214,7 @@ function factory(){
   const curve=MATCH_LEVEL_CURVE.rapide,home=f.neutral?0:curve.terrain*(typeof terrainFactor==='function'?terrainFactor(f.competitionId):1);
   // Match piège (MATCH_LEVEL_CURVE.piege) : même tirage que le moteur complet, au-delà du seuil d'écart.
   const gap=teams[0].power-teams[1].power,trap=typeof matchTrapOffset==='function'?matchTrapOffset(gap,roll):0;
-  const ecart=typeof levelGapChampionnat==='function'?levelGapChampionnat(gap+trap,f.competitionId):gap+trap;
+  const ecart=typeof levelGapChampionnat==='function'?levelGapChampionnat(gap+trap,f.competitionId,'rapide'):gap+trap;
   // Complaisance du favori (RELACHEMENT, dist/tactical-plans.js, comme le moteur complet) : au-delà de 3 points d'écart,
   // jour sans possible, tirage déterministe par rencontre ; le favori perd alors la moitié de l'écart (après compression).
   // Poids du relâchement ramené à 1/1,2 (18/11/2026) : à plein, le résultat rapide ajoutait 5 points de surprises à 15 points
