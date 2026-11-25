@@ -20,6 +20,19 @@ static func projected_person(app: Control, source: String, id: String) -> Dictio
 	if found.size() != 1 or not found[0].get("name") is String or str(found[0].name).is_empty(): return {}
 	return found[0].duplicate(true)
 
+## Dossier d'un joueur d'un autre club (celui qu'ouvre le clic sur un joueur de l'effectif d'un club, page club) : le marché
+## entre clubs filtré sur son nom, puis son dossier. Faux si le jeu n'en a pas (l'appelant ouvre alors le club).
+static func ouvrir_dossier_adverse(app: Control, id: String, nom: String) -> bool:
+	if id.is_empty() or not target_available(app, "interclub", id): return false
+	var market: Variant = preload("res://ui/interclub_market_view.gd").open(app)
+	if not is_instance_valid(market): return false
+	market.search_field.text = nom
+	market.query = nom
+	market.page = 0
+	market._redraw()
+	var fenetre := app.get_node_or_null("InterclubMarket") as Window
+	return fenetre != null and open_target(app, "interclub", id, fenetre)
+
 static func target_available(app: Control, source: String, id: String) -> bool:
 	return not projected_person(app, source, id).is_empty()
 
