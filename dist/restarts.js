@@ -37,10 +37,12 @@ function performKickRestart(l,kind,team,cause,by){
  // Ballon repris par l'équipe qui botte : un partenaire qui a suivi le coup de pied, jamais le botteur lui-même
  // (il botte du centre, le ballon tombe 15 à 25 m plus loin ; le chorégraphe ne peut pas mettre en scène un botteur receveur).
  if(retain&&kicker&&receiver?.id===kicker.id){const others=activePlayers(l,team).filter(p=>p.id!==kicker.id),chasers=others.filter(p=>p.fam>=6),pool=chasers.length?chasers:others;if(pool.length)receiver=pool[(l.minute+team)%pool.length];}
- addEvent(l,`${receiver?.name||S.clubs[l.pair[l.possession]].abbr} (${S.clubs[l.pair[l.possession]].abbr}) récupère le ballon à la réception.`,'play',{kind:'reception',team:l.possession,actor:receiver?.id||null,from:{x:at,y:35},to:{x:landing,y:35}});return true;
+ addEvent(l,retain?`Renvoi court : ${receiver?.name||S.clubs[l.pair[l.possession]].abbr} (${S.clubs[l.pair[l.possession]].abbr}) reprend le ballon pour l’équipe qui l’a botté.`:`${receiver?.name||S.clubs[l.pair[l.possession]].abbr} (${S.clubs[l.pair[l.possession]].abbr}) récupère le ballon à la réception.`,'play',{kind:'reception',team:l.possession,actor:receiver?.id||null,from:{x:at,y:35},to:{x:landing,y:35}});return true;
 }
 function handFault(l,offender,forward=false){
- tacticalCount(l,offender,'handErrors');const at=l.territory;if(flowRules(l)&&offerAdvantage(l,'scrum',1-offender,offender,at))return true;addEvent(l,`${S.clubs[l.pair[offender]].abbr} commet ${forward?'une passe en avant':'un en-avant'} : introduction adverse.`,'play',{kind:'hand-fault',team:offender,cause:forward?'forward-pass':'knock-on',actor:actionPlayer(l,offender)?.id||null});
+ // Le récit de la faute précède toujours l'avantage : « X commet un en-avant », puis « Avantage sur en-avant pour Y ».
+ const narrate=()=>addEvent(l,`${S.clubs[l.pair[offender]].abbr} commet ${forward?'une passe en avant':'un en-avant'} : l’arbitre laisse jouer l’avantage.`,'play',{kind:'hand-fault',team:offender,cause:forward?'forward-pass':'knock-on',actor:actionPlayer(l,offender)?.id||null});
+ tacticalCount(l,offender,'handErrors');const at=l.territory;if(flowRules(l)&&offerAdvantage(l,'scrum',1-offender,offender,at,{narrate}))return true;addEvent(l,`${S.clubs[l.pair[offender]].abbr} commet ${forward?'une passe en avant':'un en-avant'} : introduction adverse.`,'play',{kind:'hand-fault',team:offender,cause:forward?'forward-pass':'knock-on',actor:actionPlayer(l,offender)?.id||null});
  return grantSetPiece(l,'scrum',1-offender,at,forward?'forward-pass':'knock-on',offender);
 }
 function resolveTouch(l,actor,exit,{direct=false,penalty=false,carried=false}={}){
@@ -136,5 +138,5 @@ function advanceCausalPlay(l){
   }
   const plan=effectiveAttack(l,side)==='conquete'?' au près':effectiveAttack(l,side)==='large'?' sur une séquence de jeu au large':'';const carrier=actionPlayer(l,side),gain=Math.round(Math.abs(l.territory-origin));const phrases=[`${carrier?.name||S.clubs[l.pair[side]].abbr} porte le ballon et gagne ${gain} mètres`,`${carrier?.name||S.clubs[l.pair[side]].abbr} avance de ${gain} mètres avant le plaquage`,`${S.clubs[l.pair[side]].abbr} progresse de ${gain} mètres par ${carrier?.name||'son porteur'}`];addEvent(l,`${phrases[l.minute%phrases.length]}${plan}${danger?' dans les 22 adverses':''}.`,'play',{kind:'carry',team:side,actor:carrier?.id||null,tackler:carrier?carryTackler(l,side,carrier.id,gain):null,from:{x:origin,y:35},to:{x:l.territory,y:35}});
  }else if(Math.random()<failedCarryError(l,side))return handFault(l,side);
- else{tacticalCount(l,opp,'recoveries');noterContre(l,side);ballPossession(l,opp);addEvent(l,`${actionName(l,opp,'defender')} récupère le ballon après le plaquage pour ${S.clubs[l.pair[opp]].abbr}.`,'turnover',{kind:'turnover',team:opp,actor:actionPlayer(l,opp,'defender')?.id||null})}
+ else{tacticalCount(l,opp,'recoveries');noterContre(l,side);const stopped=actionName(l,side,'carrier');ballPossession(l,opp);addEvent(l,`${stopped} (${S.clubs[l.pair[side]].abbr}) est arrêté net : ${actionName(l,opp,'defender')} récupère le ballon après le plaquage pour ${S.clubs[l.pair[opp]].abbr}.`,'turnover',{kind:'turnover',team:opp,actor:actionPlayer(l,opp,'defender')?.id||null})}
 }

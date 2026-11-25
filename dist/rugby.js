@@ -38,7 +38,9 @@ if(S.live&&!S.live.engine){let prev=S.live,l=createRugbyMatch(prev.pair,prev);S.
 if(old)news('Nouvelle version : attributs des joueurs, feuille à 23 et moteur de match enrichi. Ta carrière est conservée.');setupDevelopment(true);setupOpposition();setupManager();save()}
 function chooseSheet(i,id,bench=false){if(S.live)return;const list=bench?S.reserves:S.lineup,p=player(id);if(id&&(!p||p.injury||!(bench?benchEligible(p,i):slotEligible(p,i))))return;const all=[...S.lineup,...S.reserves],current=(bench?15:0)+i;if(id&&all.some((x,j)=>x===id&&j!==current)){toast('Ce joueur figure déjà sur la feuille.');return}list[i]=id||null;save();render()}
 function promoteCover(){if(S.live)return;repairSheet();if([...S.lineup,...S.reserves].filter(id=>!id).length>professionalPlaces())return false;let n=0;for(let i=0;i<23;i++){const isBench=i>=15,j=isBench?i-15:i,list=isBench?S.reserves:S.lineup;if(list[j])continue;let slot=isBench?[1,0,2,3,5,8,9,10][j]:j;let p=makePlayer(400+n,slot,56);p.id='academy-'+S.season+'-'+S.round+'-'+(S.playerSerial=(S.playerSerial||0)+1);delete p.skills;p.rating=rand(52,61);delete p.skills;p.age=19;p.condition=100;p.salary=COVER_WEEKLY_SALARY;ensureSkills(p);ensureContract(p);ensureDevelopment(p);club().players.push(p);list[j]=p.id;n++}if(n)news(`${n} espoir(s) promu(s) pour compléter la feuille de match.`);save();render();toast(n?`${n} espoir(s) rejoint le groupe.`:'Ta feuille de match est complète.')}
-function chooseScorer(c,ids,l=null){const fit=l?fitArrete(l):true;return ids.map(id=>c.players.find(p=>p.id===id)).filter(Boolean).sort((a,b)=>skill(b,'goal',fit)-skill(a,'goal',fit))[0]}
+// Buteur : un joueur d'arrière (n° 10 à 15 : famille 5 et plus) ; le demi de mêlée seulement à défaut, un avant jamais s'il reste un autre joueur.
+function buteursPossibles(players){const arrieres=players.filter(p=>p.fam>=5);if(arrieres.length)return arrieres;const demis=players.filter(p=>p.fam===4);return demis.length?demis:players}
+function chooseScorer(c,ids,l=null){const fit=l?fitArrete(l):true;return buteursPossibles(ids.map(id=>c.players.find(p=>p.id===id)).filter(Boolean)).sort((a,b)=>skill(b,'goal',fit)-skill(a,'goal',fit))[0]}
 // Index des effectifs (premier joueur de chaque identifiant, comme la recherche linéaire) : un match en relit l'effectif
 // des milliers de fois. Il est repris tant que le tableau garde les mêmes joueurs, dans le même ordre et avec les mêmes
 // identifiants (comparaison complète à chaque appel, sans allocation) ; sinon il est reconstruit. Résultats inchangés.
@@ -280,6 +282,10 @@ function disciplineDecision(l,foul,incident){
 /* `options.incident` (pénalités réalistes) : faute de mêlée, de touche ou de l'attaquant au sol, au lieu de l'incident tiré ; `options.phase` sert à la mesure. Le bénéficiaire reprend le ballon s'il ne l'avait pas. */
 function awardPenalty(l,side,options={}){
  const foul=1-side;
+ // Faute de l'équipe qui bénéficie déjà d'un avantage : l'arbitre revient à la première faute (matchflow.js). La faute
+ // reste comptée et peut valoir un carton (même suite de tirages), mais elle est racontée comme telle, sans annoncer
+ // une pénalité pour le mauvais camp.
+ const sousAvantage=flowRules(l)&&!l.flow.resolvingAward&&l.flow.advantage&&l.flow.advantage.team===foul;
  l.stats[foul].penalties++;
  if(options.incident&&l.possession!==side)ballPossession(l,side,l.territory);
  if(revisedRules(l)){
@@ -293,7 +299,7 @@ function awardPenalty(l,side,options={}){
   history.count++;history.recent++;
   // Arbitrage fin (dist/arbitrage.js) : cause détaillée de l'incident tiré, sans tirage de plus.
   const fin=typeof arbitrageFaute==='function'?arbitrageFaute(l,foul,side,incident,decision.repeated,options):null;
-  addEvent(l,fin?fin.texte:`${S.clubs[l.pair[foul]].abbr} sanctionné pour ${incident.label}${decision.repeated?' (fautes répétées)':''}. Pénalité pour ${S.clubs[l.pair[side]].abbr}.`,'penalty',{team:side,cause:incident.id,...(fin?{detail:fin.id}:{})});
+  addEvent(l,sousAvantage?`${S.clubs[l.pair[foul]].abbr} sanctionné pour ${incident.label}${decision.repeated?' (fautes répétées)':''} pendant l’avantage adverse : l’arbitre revient à la première faute.`:fin?fin.texte:`${S.clubs[l.pair[foul]].abbr} sanctionné pour ${incident.label}${decision.repeated?' (fautes répétées)':''}. Pénalité pour ${S.clubs[l.pair[side]].abbr}.`,'penalty',{team:side,cause:incident.id,...(fin?{detail:fin.id}:{})});
   if(decision.sanction){
    const eligible=activePlayers(l,foul);
    if(eligible.length){

@@ -35,10 +35,13 @@ function returnAdvantage(l){
  try{if(a.kind==='penalty')executePenaltyChoice(l,a.team);else grantSetPiece(l,'scrum',a.team,a.at,'knock-on',a.offender,a.at)}finally{l.flow.resolvingAward=false}
  return true;
 }
-function offerAdvantage(l,kind,team,offender,at,{force=false,unsafe=false}={}){
+// `narrate` : récit de la faute, écrit juste avant l'avantage (ou son retour) et seulement si l'arbitre laisse jouer,
+// pour que le joueur lise d'abord la faute puis l'avantage. Aucun tirage.
+function offerAdvantage(l,kind,team,offender,at,{force=false,unsafe=false,narrate=null}={}){
  if(!flowRules(l)||l.flow.resolvingAward)return false;
  const prior=l.flow.advantage;
  if(prior){
+  if(narrate)narrate();
   if(team!==prior.team){returnAdvantage(l);return true}
   if(kind==='penalty'){
    const further=(team===0?1:-1)*(at-prior.at)>0;
@@ -50,6 +53,7 @@ function offerAdvantage(l,kind,team,offender,at,{force=false,unsafe=false}={}){
  }
  if(unsafe||!force&&Math.random()>.55)return false;
  l.flow.advantage={kind,team,offender,at,started:l.minute,phases:0};
+ if(narrate)narrate();
  ballPossession(l,team,at);addEvent(l,`Avantage ${kind==='penalty'?'sur pénalité':'sur en-avant'} pour ${S.clubs[l.pair[team]].abbr}.`,'advantage');return true;
 }
 function settleAdvantage(l){
