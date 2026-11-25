@@ -88,7 +88,12 @@ test('Faute pendant l’avantage : retour à la première faute, jamais de péna
     if (e.type === 'penalty' && / pendant son avantage : retour à la faute initiale de /.test(e.text)) {
       sousAvantage++;
       const club = m.abbr[1 - e.scene.team];
-      if (!e.text.endsWith(`pénalité pour ${club}.`)) loi.push(`match ${m.k} [${j}] ${e.text}`);
+      const dit = /, (mêlée|pénalité) pour (\S+)\.$/.exec(e.text);
+      let q = j + 1; while (q < m.events.length && BRUIT.has(m.events[q].type)) q++;
+      const suite = (m.events[q] || {}).text || '';
+      // La sanction annoncée est celle de la faute initiale, la phase jouée est la même, sans seconde phrase d’avantage.
+      const ok = dit && dit[2] === club && !/^Aucun avantage obtenu/.test(suite) && (dit[1] === 'mêlée' ? suite.startsWith(`${club} prépare la mêlée`) : !/prépare la mêlée/.test(suite));
+      if (!ok) loi.push(`match ${m.k} [${j}] ${e.text} -> ${suite}`);
       if (m.events[j + 1] && m.events[j + 1].type === 'card') loi.push(`match ${m.k} [${j}] carton sur une faute racontée sans sanction`);
     } else if (e.type === 'penalty' && m.events[j + 1] && m.events[j + 1].type === 'card') {
       cartons++;

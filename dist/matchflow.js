@@ -28,21 +28,21 @@ function advantageReal(l,at=l.territory){
  if(l.advantageModel===2&&a.phases>=2&&l.possession===a.team&&gain>=(a.kind==='penalty'?18:8))return true;
  return gain>=(a.kind==='penalty'?25:12)||a.kind==='scrum'&&a.phases>=2&&l.possession===a.team&&gain>0;
 }
-function returnAdvantage(l){
+function returnAdvantage(l,silent=false){
  const a=l.flow.advantage;if(!a)return false;
- l.flow.advantage=null;addEvent(l,`Aucun avantage obtenu : retour à ${a.kind==='penalty'?'la pénalité':'la mêlée'} pour ${S.clubs[l.pair[a.team]].abbr}.`,'advantage',{team:a.team,to:{x:a.at,y:35}});
+ l.flow.advantage=null;if(!silent)addEvent(l,`Aucun avantage obtenu : retour à ${a.kind==='penalty'?'la pénalité':'la mêlée'} pour ${S.clubs[l.pair[a.team]].abbr}.`,'advantage',{team:a.team,to:{x:a.at,y:35}});
  ballPossession(l,a.team,a.at);l.flow.resolvingAward=true;
  try{if(a.kind==='penalty')executePenaltyChoice(l,a.team);else grantSetPiece(l,'scrum',a.team,a.at,'knock-on',a.offender,a.at)}finally{l.flow.resolvingAward=false}
  return true;
 }
 // `narrate` : récit de la faute, écrit juste avant l'avantage (ou son retour) et seulement si l'arbitre laisse jouer,
 // pour que le joueur lise d'abord la faute puis l'avantage. Aucun tirage.
-function offerAdvantage(l,kind,team,offender,at,{force=false,unsafe=false,narrate=null}={}){
+function offerAdvantage(l,kind,team,offender,at,{force=false,unsafe=false,narrate=null,silent=false}={}){
  if(!flowRules(l)||l.flow.resolvingAward)return false;
  const prior=l.flow.advantage;
  if(prior){
   if(narrate)narrate();
-  if(team!==prior.team){returnAdvantage(l);return true}
+  if(team!==prior.team){returnAdvantage(l,silent);return true}
   if(kind==='penalty'){
    const further=(team===0?1:-1)*(at-prior.at)>0;
    if(prior.kind==='scrum'||further){prior.kind='penalty';prior.at=at;prior.offender=offender}
