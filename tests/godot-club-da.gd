@@ -506,6 +506,7 @@ func names() -> void:
 	var Carte = load("res://ui/carte_joueur_survol.gd")
 	check(lien.has_meta("carte_joueur") and str(lien.get_meta("carte_joueur")) != "", "Survol du nom : carte joueur branchée")
 	check(lien.tooltip_text.is_empty(), "Nom : pas d'info-bulle système par-dessus la carte")
+	check(not lien.has_meta("carte_info") and lien.find_child("CarteJoueurInfo_*", true, false) != null and lien.find_child("CarteJoueurInfo_*", true, false).has_meta("carte_info"), "Nom : rien au survol, un (i) à côté ouvre la carte")
 	var carte := Carte.montrer(app, str(lien.get_meta("carte_joueur")), str(lien.get_meta("carte_source", "squad")), lien) as Control
 	await settle(4)
 	check(carte != null and carte.is_visible_in_tree() and Carte.actuelle(app) == carte, "Survol du nom : la carte joueur apparaît")

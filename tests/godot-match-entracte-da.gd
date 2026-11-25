@@ -285,11 +285,11 @@ func run() -> void:
 		var menu_plus := (ecran.find_child("MatchBetweenMore", true, false) as MenuButton).get_popup()
 		menu_plus.about_to_popup.emit()
 		var cams: Array = range(menu_plus.item_count).filter(func(k: int): return menu_plus.get_item_metadata(k) is String)
-		check(cams.size() == 3 and cams.all(func(k: int): return menu_plus.is_item_disabled(k) and menu_plus.get_item_text(k).ends_with("en 3D seulement") and menu_plus.is_item_radio_checkable(k)), cadre + " : caméras grisées en 2D, cochables")		# Noms : lien vers la fiche, carte joueur au survol.
+		check(cams.size() == 3 and cams.all(func(k: int): return menu_plus.is_item_disabled(k) and menu_plus.get_item_text(k).ends_with("en 3D seulement") and menu_plus.is_item_radio_checkable(k)), cadre + " : caméras grisées en 2D, cochables")		# Noms : clic = carte joueur (rien au survol, règle du 25/11).
 		var noms: Array = ecran.find_children("MatchBetweenPlayerName_*", "Button", true, false)
 		var nom1 := ecran.find_child("MatchBetweenPlayerName_p1", true, false) as Button
 		check(nom1 != null and nom1.text in ["Joueur Numéro1", "J. Numéro1"] and nom1.size.x >= nom1.get_theme_font("font").get_string_size(nom1.text, HORIZONTAL_ALIGNMENT_LEFT, -1, nom1.get_theme_font_size("font_size")).x, cadre + " : le nom se lit en entier (%s)" % (str(nom1.size) if nom1 != null else "absent"))
-		check(noms.size() == 23 and noms.all(func(b: Button): return b.has_meta("player_id") and b.has_meta("carte_joueur") and str(b.get_meta("carte_joueur")) == str(b.get_meta("player_id")) and b.pressed.get_connections().size() > 0), cadre + " : 23 noms, chacun lien vers sa fiche et carte joueur au survol (%d)" % noms.size())
+		check(noms.size() == 23 and noms.all(func(b: Button): return b.has_meta("player_id") and b.has_meta("carte_joueur") and str(b.get_meta("carte_joueur")) == str(b.get_meta("player_id")) and (b.pressed.get_connections().size() > 0 or (b.has_meta("carte_clic") and b.gui_input.get_connections().size() > 0))), cadre + " : 23 noms, chacun cliquable (carte joueur au clic) (%d)" % noms.size())
 		# Tout ce qui a l'air cliquable fait quelque chose, sans ouvrir de fenêtre (le menu Plus est l'exception).
 		var fenetres_avant := root.get_children().filter(func(n: Node): return n is Window and (n as Window).visible).size()
 		var muets: Array = []

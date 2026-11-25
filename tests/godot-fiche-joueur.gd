@@ -1,7 +1,7 @@
 extends SceneTree
 # Fiche joueur complète et mini-fiche au survol (décisions de Léo du 19/11/2026), carrière Monde réelle :
 # 36 attributs sur la première page, couleur de chaque palier, chiffre toujours écrit, drapeau d'un flagCode connu,
-# survol du nom = mini-fiche Control (aucune Window), clic sur le nom = fiche complète, attributs inconnus = « — ».
+# survol du (i) du nom (0,5 s) = mini-fiche Control (aucune Window), clic sur le nom = fiche complète, attributs inconnus = « — ».
 const Flow = preload("helpers/contextual_flow.gd")
 const Charte = preload("res://ui/charte.gd")
 const PlayerAttributes = preload("res://ui/player_attributes.gd")
@@ -134,7 +134,8 @@ func run() -> void:
 
 	# Le « i » voisin : même carte.
 	var info := app.find_child("CarteJoueurInfo_" + id.validate_node_name(), true, false) as Control
-	check(info != null and info.get_meta("carte_joueur", "") == id, "Petit « i » à côté du nom : carte joueur")
+	check(info != null and info.get_meta("carte_joueur", "") == id and info.has_meta("carte_info"), "Petit « i » à côté du nom : seul à ouvrir la carte joueur (survol 0,5 s)")
+	check(not link.has_meta("carte_info"), "Le nom lui-même n'ouvre rien au survol")
 
 	# Clavier : focus sur le nom + I.
 	link.grab_focus()

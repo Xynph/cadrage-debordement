@@ -128,6 +128,13 @@ static func lier_clic(app: Control, controle: Control, player_id: String, source
 	controle.gui_input.connect(func(event: InputEvent):
 		var clic := event as InputEventMouseButton
 		if clic == null or not clic.pressed or clic.button_index != MOUSE_BUTTON_LEFT: return
+		# Re-clic sur le nom de la carte ouverte : le guetteur (_input, avant l'interface) vient de la fermer sur ce même
+		# appui ; elle reste fermée (bascule) au lieu de se rouvrir aussitôt.
+		var fermee: Variant = app.get_meta("carte_fermee_clic", null)
+		if fermee is Dictionary and fermee.get("ancre", null) == controle and Time.get_ticks_msec() - int(fermee.get("t", 0)) < 250:
+			app.remove_meta("carte_fermee_clic")
+			controle.accept_event()
+			return
 		var ouverte := actuelle(app)
 		if ouverte != null and ouverte.get_meta("ancre", null) == controle: cacher(app)
 		else: montrer(app, player_id, source, controle, (direct.call() if direct.is_valid() else {}) as Dictionary)
@@ -286,6 +293,7 @@ class Guetteur extends Node:
 		var clic := event as InputEventMouseButton
 		if clic != null and clic.pressed:
 			masque = joueur
+			app.set_meta("carte_fermee_clic", {"ancre": Carte.actuelle(app).get_meta("ancre", null), "t": Time.get_ticks_msec()})
 			Carte.cacher(app)
 
 # --- Dessins : mini-terrain, jauge -------------------------------------------------------------------------
