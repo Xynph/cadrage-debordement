@@ -160,7 +160,7 @@ const MATCH_LEVEL_CURVE=Object.freeze({version:2,cible:Object.freeze({pente:.183
 // donnait que 56-61 % de victoires à domicile et un leader à 21-23 victoires sur 26 (docs/top14-dispute-20261117.md).
 // Top 14 ×2,1 depuis le 18/11/2026 (§15) : 74 % de victoires à domicile comme en 2024-25 (×1,7 : 67 %) ; le leader perd
 // enfin à l'extérieur (Toulouse 7,2 → 5,8 victoires en déplacement sur 13).
-const TERRAIN_CHAMPIONNAT=Object.freeze({elite:2.1,accession:1.7});
+const TERRAIN_CHAMPIONNAT=Object.freeze({elite:2.2,accession:2.1,prem:1.45,urc:1.3,srp:1.5,'jlo-d1':.1});
 function terrainFactor(competitionId){return TERRAIN_CHAMPIONNAT[competitionId]??1}
 function matchTrapOffset(gap,rnd=Math.random){const c=MATCH_LEVEL_CURVE.piege,d=Math.abs(Number(gap)||0),q=Math.min(c.max,c.parPoint*(d-c.seuil));if(!(q>0)||rnd()>=q)return 0;return -Math.sign(gap)*c.part*d}
 // Niveau du joueur pour le match (25/11/2026) : `rating` ici ; la carrière le remplace par le Niveau calculé au poste et
@@ -172,8 +172,8 @@ function teamLevel(players){const c=MATCH_LEVEL_CURVE.forme,list=(players||[]).f
 // chaque point d'écart ne compte que pour `pente`. Le moteur additionne beaucoup de petites actions : un gros écart y
 // pèse plus que dans un vrai Top 14, où même un leader très au-dessus (Toulouse, +5 sur la moyenne) plafonne à
 // 16-19 victoires sur 26. Mêmes réglages pour le moteur complet et le résultat rapide ; ailleurs : écart inchangé.
-const ECART_CHAMPIONNAT=Object.freeze({elite:Object.freeze({seuil:3,pente:.15})});
-function levelGapChampionnat(gap,competitionId){const c=ECART_CHAMPIONNAT[competitionId],a=Math.abs(gap);return c&&a>c.seuil?Math.sign(gap)*(c.seuil+(a-c.seuil)*c.pente):gap}
+const ECART_CHAMPIONNAT=Object.freeze({elite:Object.freeze({seuil:3,pente:.15}),accession:Object.freeze({facteur:.55,rapide:.84}),prem:Object.freeze({facteur:1.3,rapide:1.19}),urc:Object.freeze({facteur:2.6,rapide:1.52}),srp:Object.freeze({facteur:3.5,rapide:1.89}),'jlo-d1':Object.freeze({facteur:2.3,rapide:1.46})});
+function levelGapChampionnat(gap,competitionId,mode){const c=ECART_CHAMPIONNAT[competitionId];if(!c)return gap;const g=gap*((mode==='rapide'?c.rapide:c.facteur)??1),a=Math.abs(g);return c.seuil!=null&&a>c.seuil?Math.sign(g)*(c.seuil+(a-c.seuil)*c.pente):g}
 function matchLevelEdge(l,side){return MATCH_LEVEL_CURVE.complet.parPoint*levelGapChampionnat(teamLevel(activePlayers(l,side))-teamLevel(activePlayers(l,1-side))+(Number(l.levelTrap)||0)*(side===0?1:-1),l.worldContext?.competitionId)}
 function teamEdge(l,side,kind){const opp=1-side,t=l.tactics[side],weather=l.weather;const on=activePlayers(l,side);const attack=unit(l,side,'pass')*.4+unit(l,side,'speed')*.35+unit(l,side,'power')*.25;const defense=unit(l,opp,'tackle')*.72+unit(l,opp,'mental')*.28;let b=(tacticalRules(l)?tacticalEdge(l,side):(attack-defense)*(l.balanceVersion===2?.004:.009))+(on.length-activePlayers(l,opp).length)*.055;
 // V19: wider attack exposes an outnumbered backline; possession sides with extra players can exploit width.

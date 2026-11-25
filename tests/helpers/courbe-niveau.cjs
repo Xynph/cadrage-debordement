@@ -91,8 +91,8 @@ function tableau(titre, resumes, fit) {
 }
 
 // Série complète : pour chaque écart, n matchs dans le mode demandé.
-// Championnat du banc : URC, à l'avantage du terrain commun (TERRAIN_CHAMPIONNAT de dist/rugby.js vaut 1) ; le Top 14 et
-// la Pro D2 renforcent le terrain (×1,7, 17/11/2026) et ne mesurent donc pas la courbe commune.
+// Championnat du banc : URC par défaut (courbe calée sur l'URC réelle, TERRAIN_CHAMPIONNAT et ECART_CHAMPIONNAT de dist/rugby.js) ; le Top 14 et
+// la Pro D2 ont leurs propres réglages (tests/match-realite-championnats.cjs).
 function mesurer(h, { mode, ecarts, n, base = 4, slots = [7, 11], competitionId = 'urc' }) {
   installer(h);
   const series = ecarts.map(k => ({ k, matchs: jouer(h, { mode, k, n, base, slots, competitionId }) }));
