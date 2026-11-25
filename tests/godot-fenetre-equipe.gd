@@ -324,11 +324,8 @@ func controler_fiches() -> void:
 	lien.mouse_entered.emit()
 	await poser(2)
 	verifier(Carte.actuelle(app) == null, "survol du nom : aucune carte")
-	var info := lien.find_child("CarteJoueurInfo_*", true, false) as Control
-	verifier(info != null and info.has_meta("carte_info") and info.is_visible_in_tree(), "bouton (i) présent près du nom")
-	var carte: Control = Carte.montrer(app, id, "squad", info) if info != null else null
-	await poser(2)
-	verifier(carte != null and Carte.actuelle(app) != null and str(Carte.actuelle(app).get_meta("player_id", "")) == id, "carte du joueur depuis le bouton (i)")
+	# Page de match : pas de (i), rien au survol ; le clic ouvre la petite fenêtre du joueur (testé plus bas).
+	verifier(lien.find_child("CarteJoueurInfo_*", true, false) == null, "page Équipe du match : pas de bouton (i)")
 	Carte.cacher(app)
 	lien.mouse_exited.emit()
 	await poser(2)
