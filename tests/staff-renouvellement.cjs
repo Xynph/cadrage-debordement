@@ -26,6 +26,14 @@ test('Plan pur : prolonge les utiles, laisse partir surnombre, retraite et moins
   const stable = R.planifier([membre('b', 'scout', 74)], { ...x, marche: { scout: 84 } });
   assert.equal(stable[0].decision, 'prolonge', 'un membre au niveau du club reste, même si le marché offre mieux');
   assert.ok(plan.filter(d => d.decision === 'prolonge').every(d => d.ans >= 2 && d.ans <= 3), 'prolongation = au moins une saison de plus');
+  // Un même candidat libre ne justifie qu'un seul départ : le 2e membre faible se compare au 2e meilleur libre, etc.
+  const faibles = ['s1', 's2', 's3', 's4'].map((id, i) => membre(id, 'scout', 60 - i));
+  const besoin4 = { ...x, besoin: { scout: 4 }, restants: {} };
+  const seul = R.planifier(faibles, { ...besoin4, marche: { scout: 80 } });
+  assert.deepEqual(seul.map(d => d.raison), ['mieux', 'continuite', 'continuite', 'continuite'], 'un seul libre : un seul départ « mieux »');
+  const deux = R.planifier(faibles, { ...besoin4, marche: { scout: [64, 80, 75] } });
+  assert.deepEqual(deux.map(d => [d.id, d.raison]), [['s1', 'mieux'], ['s2', 'mieux'], ['s3', 'continuite'], ['s4', 'continuite']],
+    '80 et 75 justifient deux départs, 64 n’est nettement mieux ni que 58 ni que 57');
   assert.deepEqual(R.planifier([...[membre('c', 'coach', 75), membre('a1', 'assistant', 74)]].reverse(), x), R.planifier([membre('c', 'coach', 75), membre('a1', 'assistant', 74)], x), 'ordre sans effet');
 });
 
@@ -108,15 +116,50 @@ test('Gros staff : les décisions du directeur sportif restent dans une sauvegar
     r('for(const p of S.staffCareer.people.flat())if(p.clubId===S.club)p.contractEnd=S.season;');
     assert.equal(r('dsStaffObserver("2027-03-10")'), true);
     assert.doesNotThrow(() => r('nativeStaffRenouvellement.valider(S.manager,S.season)'), 'fins de contrat en masse');
+    const liberes = r("S.manager.staffDesk.decisions.filter(d=>d.d==='libere').length");
     r(BASCULE);
     r('dsStaffObserver("2027-08-10")');
     assert.doesNotThrow(() => r('nativeStaffRenouvellement.valider(S.manager,S.season)'), 'recrues en masse');
     const lots = JSON.parse(r('JSON.stringify(S.manager.staffDesk.lots)'));
     assert.ok(lots.every(l => ['prolonges', 'departs', 'recrues'].every(k => l[k].length <= R.LOT_MAX)));
-    assert.ok(lots.reduce((n, l) => n + l.departs.length, 0) > R.LOT_MAX, 'aucun départ perdu dans le découpage');
+    assert.equal(lots.reduce((n, l) => n + l.departs.length, 0), liberes, 'aucun départ perdu dans le découpage');
   } finally { jeu.fermer(); }
   const lot = { id: '2:2027-03-10:1', date: '2027-03-10', prolonges: [], departs: Array.from({ length: 49 }, (_, i) => ({ name: 'n' + i, role: 'r', raison: 'mieux' })), recrues: [], refus: 2 };
   const series = R.decouperLot(lot);
   assert.deepEqual(series.map(l => [l.id, l.departs.length, l.refus]), [['2:2027-03-10:1', 40, 2], ['2:2027-03-10:1.2', 9, 0]]);
   assert.deepEqual(R.decouperLot({ ...lot, departs: lot.departs.slice(0, 40) }).length, 1);
+});
+
+// Régression (25/11/2026) : gros staff japonais (clubs 71 et 80, 33 à 70 membres). Chaque membre était comparé au seul
+// meilleur candidat libre de son poste : ce même candidat justifiait des dizaines de départs « le marché offre nettement
+// mieux », tous réembauchés à l'été. Désormais chaque départ « mieux » réserve un candidat libre distinct, du meilleur au
+// moins bon : le k-ième départ du poste (du plus fort au plus faible) a en face le k-ième meilleur libre, nettement meilleur.
+test('Gros staff : un même candidat libre ne justifie qu’un seul départ « le marché offre mieux »', () => {
+  const jeu = M.ouvrir({ hebdomadaire: true, testVm: true, seed: 2026 });
+  const r = x => jeu.bridge.vm.run(x);
+  try {
+    M.creer(jeu, 71);
+    // Fins de contrat en deux temps (mars puis avril) : les candidats promis en mars restent réservés en avril.
+    const moitie = k => r(`S.staffCareer.people.flat().filter(p=>p.clubId===S.club).forEach((p,i)=>{if(i%2===${k})p.contractEnd=S.season;})`);
+    r('for(const p of S.staffCareer.people.flat())if(p.clubId===S.club)p.contractEnd=S.season+1;');
+    moitie(0);
+    // Marché vu par le directeur sportif ce jour-là (mêmes estimations que sa décision) : candidats libres à sa portée.
+    const est = 'dsStaffEstime(p,dsContratsDirecteur().evaluation)';
+    const marche = JSON.parse(r(`{const pl=nativeStaffRenouvellement.plafondNiveau(club().base,dsContratsConsigne()),m={};
+      for(const p of S.staffCareer.people.flat())if(p.clubId===null&&p.age<p.retireAge&&p.level<=pl)(m[p.role]||(m[p.role]=[])).push(${est});
+      for(const k in m)m[k].sort((a,b)=>b-a);JSON.stringify(m)}`));
+    assert.equal(r('dsStaffObserver("2027-03-10")'), true);
+    moitie(1);
+    assert.equal(r('dsStaffObserver("2027-04-10")'), true);
+    const mieux = JSON.parse(r(`JSON.stringify(S.manager.staffDesk.decisions.filter(d=>d.raison==='mieux').map(d=>{const p=S.staffCareer.people.flat().find(q=>q.id===d.id);return {role:d.role,e:${est}};}))`));
+    const parRole = {};
+    for (const d of mieux) (parRole[d.role] ??= []).push(d.e);
+    for (const [role, es] of Object.entries(parRole)) {
+      es.sort((a, b) => b - a);
+      const libres = marche[role] || [];
+      assert.ok(es.length <= libres.length, `${role} : ${es.length} départs « mieux » pour ${libres.length} candidats libres à portée`);
+      es.forEach((e, k) => assert.ok(libres[k] >= e + 8, `${role} : départ n°${k + 1} (${e}) face au candidat n°${k + 1} (${libres[k]})`));
+    }
+    assert.ok(mieux.length >= 1, 'le marché justifie encore des départs');
+  } finally { jeu.fermer(); }
 });

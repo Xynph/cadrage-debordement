@@ -34,17 +34,22 @@ function plafondNiveau(base, consigne) {
 
 // Plan pur des fins de contrat. membres : {id, role, estime, age, ansMax} (ansMax : saisons avant la retraite) ;
 // x : {base, besoin{role:n}, restants{role:n} (membres encore sous contrat la saison prochaine),
-//      marche{role: meilleure note estimée à la portée du club}}.
+//      marche{role: notes estimées des candidats libres à la portée du club (liste, ou une seule note)}}.
+// Un même candidat libre ne justifie qu'un seul départ (gros staffs japonais, 25/11/2026 : le meilleur libre du poste
+// justifiait des dizaines de départs « le marché offre mieux », réembauchés à l'été) : chaque départ « mieux » réserve
+// le meilleur candidat encore libre du poste, le membre suivant se compare au suivant.
 function planifier(membres, x) {
-  const gardes = {}, out = [];
+  const gardes = {}, out = [], marche = {};
+  for (const [role, v] of Object.entries(x.marche || {})) marche[role] = [].concat(v).filter(Number.isFinite).sort((a, b) => b - a);
   const tries = membres.slice().sort((a, b) => b.estime - a.estime || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   for (const m of tries) {
     const besoin = x.besoin[m.role] ?? 0, deja = (x.restants[m.role] ?? 0) + (gardes[m.role] ?? 0);
+    const libre = marche[m.role]?.[0];
     let d;
     if (m.ansMax < 2) d = { decision: 'libere', raison: 'retraite' };
     else if (deja >= besoin) d = { decision: 'libere', raison: 'surnombre' };
     // Stabilité : seul un membre faible pour le club est remplacé, et seulement si le marché offre nettement mieux.
-    else if (m.estime < x.base - 5 && Number.isFinite(x.marche[m.role]) && x.marche[m.role] >= m.estime + 8) d = { decision: 'libere', raison: 'mieux' };
+    else if (m.estime < x.base - 5 && libre !== undefined && libre >= m.estime + 8) { d = { decision: 'libere', raison: 'mieux' }; marche[m.role].shift(); }
     else {
       const ans = Math.min(m.age <= 58 ? 3 : 2, m.ansMax);
       d = { decision: 'prolonge', raison: m.estime >= x.base - 5 ? 'solide' : 'continuite', ans };
@@ -107,7 +112,10 @@ function dsStaffObserver(forcee){
   const echeance=miens.filter(p=>p.contractEnd===S.season&&!decides.has(p.id));
   if(echeance.length){
    const restants={};for(const p of miens)if(p.contractEnd>S.season)restants[p.role]=(restants[p.role]||0)+1;
-   const marche={};for(const p of libres())if(p.level<=plafond){const e=dsStaffEstime(p,ev);if(!(marche[p.role]>=e))marche[p.role]=e;}
+   // Candidats libres à sa portée, du meilleur au moins bon ; ceux déjà promis à un départ « mieux » cette saison restent réservés.
+   const marche={},promis={};for(const x of bureau.decisions)if(x.raison==='mieux')promis[x.role]=(promis[x.role]||0)+1;
+   for(const p of libres())if(p.level<=plafond)(marche[p.role]||(marche[p.role]=[])).push(dsStaffEstime(p,ev));
+   for(const r in marche)marche[r]=marche[r].sort((a,b)=>b-a).slice(promis[r]||0);
    const plan=nativeStaffRenouvellement.planifier(echeance.map(p=>({id:p.id,role:p.role,estime:dsStaffEstime(p,ev),age:p.age,ansMax:p.retireAge-p.age})),{base:c.base,besoin,restants,marche});
    for(const d of plan){
     const p=echeance.find(x=>x.id===d.id);let decision=d.decision,raison=d.raison;
