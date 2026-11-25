@@ -53,11 +53,20 @@ const PORTEE := 3.0
 const RETOUR := 1.2
 const PASSES_DEGAGEMENT := 6
 const PRISE := 0.25
+## Séparation des joueurs debout : volumes (tronc, tête, cuisses ; bras exclus), jeu laissé (m),
+## portée (m) entre racines, passes au plus.
+const TRONC_DEBOUT := [["Hips", "Abdomen", 0.13], ["Abdomen", "Torso", 0.14], ["Torso", "Neck", 0.14], ["Head", 0.22, 0.1],
+	["UpperLeg.L", "LowerLeg.L", 0.08], ["UpperLeg.R", "LowerLeg.R", 0.08]]
+const JEU_DEBOUT := 0.01
+const PORTEE_DEBOUT := 1.8
+const PASSES_SEPARATION := 4
 
 ## id -> {"rotations": {os: Quaternion}, "positions": {os: Vector3}, "y": float}
 var _origines: Dictionary = {}
 ## id -> écart horizontal du modèle (monde) appliqué à l'image précédente (dégagement).
 var _ecarts: Dictionary = {}
+## id -> écart horizontal du modèle (monde) de la séparation des joueurs debout.
+var _separations: Dictionary = {}
 ## Part de l'écart du porteur suivie par le ballon tenu (0 à la prise, 1 après PRISE s).
 var _poids_ballon := 0.0
 ## Corrections faites (tests, mesures).
@@ -87,6 +96,7 @@ func restaurer(id: String, entry: Dictionary) -> void:
 func oublier() -> void:
 	_origines.clear()
 	_ecarts.clear()
+	_separations.clear()
 
 
 ## Dernière pose de l'image.
@@ -194,6 +204,97 @@ func degager(actors: Dictionary, delta: float, porteur: String = "", ballon: Nod
 		o["modele"] = origine
 		_origines[id] = o
 		corrections += 1
+
+
+## Séparation, après `degager` (25/11/2026, sonde des contacts du match filmé : deux joueurs debout
+## qui marchent l'un dans l'autre, têtes qui se fondent au ruck, plaqueur dont le buste entre dans
+## celui du porteur) : deux joueurs debout dont le tronc, les cuisses ou la tête se pénètrent ont
+## leurs modèles (pas leurs racines) écartés à l'horizontale, chacun de la moitié, juste assez ;
+## l'écart revient à zéro à RETOUR m/s. Bras exclus (liaisons, plaquages : contact voulu).
+## `exclus` : joueurs liés à une phase où le contact est voulu (mêlée, ballon porté), jamais écartés.
+## Le ballon tenu suit l'écart de son porteur. Présentation seule.
+func separer(actors: Dictionary, delta: float, exclus: Dictionary = {}, porteur: String = "", ballon: Node3D = null) -> void:
+	var ids: Array = []
+	var volumes: Dictionary = {}
+	var racines: Dictionary = {}
+	for id: String in actors:
+		var entry: Dictionary = actors[id]
+		var rig: Skeleton3D = entry.get("rig")
+		var model: Node3D = entry.get("model")
+		var ecart: Vector3 = (_separations.get(id, Vector3.ZERO) as Vector3).move_toward(Vector3.ZERO, RETOUR * delta)
+		_separations[id] = ecart
+		if exclus.has(id) or model == null or rig == null or not rig.is_visible_in_tree():
+			_separations.erase(id)
+			continue
+		var torse := rig.find_bone("Torso")
+		if torse < 0 or _monde(rig, torse).origin.y < COUCHE:
+			_separations.erase(id)
+			continue
+		ids.append(id)
+		volumes[id] = _volumes(rig, TRONC_DEBOUT)
+		racines[id] = (entry.node as Node3D).global_position
+	# Écart de cette image : l'écart précédent (qui revient doucement) puis les poussées.
+	var poussees: Dictionary = {}
+	for id: String in ids:
+		poussees[id] = _separations.get(id, Vector3.ZERO)
+	for passe in PASSES_SEPARATION:
+		var bouge := false
+		for i in ids.size():
+			for j in range(i + 1, ids.size()):
+				var a: String = ids[i]
+				var b: String = ids[j]
+				if (racines[a] as Vector3).distance_to(racines[b]) > PORTEE_DEBOUT:
+					continue
+				var p := _poussee_mutuelle(volumes[a], poussees[a], volumes[b], poussees[b], racines[a] - racines[b])
+				if p.is_zero_approx():
+					continue
+				poussees[a] += p * 0.5
+				poussees[b] -= p * 0.5
+				bouge = true
+		if not bouge:
+			break
+	for id: String in ids:
+		var ecart: Vector3 = poussees[id]
+		if ecart.is_zero_approx():
+			_separations.erase(id)
+			continue
+		_separations[id] = ecart
+		var entry: Dictionary = actors[id]
+		var model: Node3D = entry.model
+		var o: Dictionary = _origines.get(id, {"rotations": {}, "positions": {}})
+		if not o.has("modele"):
+			o["modele"] = model.position
+		_origines[id] = o
+		model.global_position += ecart
+		if id == porteur and ballon != null:
+			ballon.global_position += Vector3(ecart.x, 0.0, ecart.z) * _poids_ballon
+		corrections += 1
+
+
+## Poussée horizontale (monde) qui sépare les volumes `va` (décalés de `da`) de `vb` (décalés de `db`) :
+## à ajouter à a et retirer à b (zéro s'ils ne se pénètrent pas). `racines` : racine de a moins celle de b.
+static func _poussee_mutuelle(va: Array, da: Vector3, vb: Array, db: Vector3, racines: Vector3) -> Vector3:
+	var pire := 0.0
+	var vers := Vector3.ZERO
+	for s1: Array in va:
+		for s2: Array in vb:
+			var r := Geometry3D.get_closest_points_between_segments(s1[0] + da, s1[1] + da, s2[0] + db, s2[1] + db)
+			var p := float(s1[2]) + float(s2[2]) + JEU_DEBOUT - (r[0] as Vector3).distance_to(r[1])
+			if p <= pire:
+				continue
+			var d: Vector3 = r[0] - r[1]
+			var longueur := d.length()
+			d.y = 0.0
+			if d.length() >= 0.02 and longueur > 0.001:
+				p *= minf(longueur / d.length(), 3.0)
+			if d.length() < 0.02:
+				d = racines + da - db
+				d.y = 0.0
+			if d.length() < 0.001:
+				d = Vector3.RIGHT
+			pire = p
+			vers = d.normalized() * p
+	return vers
 
 
 ## Plus forte poussée horizontale (monde) qui sort une jambe de `rig` des corps couchés `corps`.
