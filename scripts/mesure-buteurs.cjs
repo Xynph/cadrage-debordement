@@ -52,7 +52,7 @@ const VM = String.raw`globalThis.__mesureButeurs=function(o){if(o.reglage&&typeo
    if(suivi&&(l.score[suivi.side]!==suivi.pts||l.possession!==suivi.side||l.finished||++suivi.n>60)){touches.push([l.score[suivi.side]-suivi.pts,l.tries[suivi.side]-suivi.tries,suivi.d]);suivi=null}}}
   finally{goalChance=gc;noteGoalKick=ngk;executePenaltyChoice=epc;performKickRestart=pkr;contestSetPiece=csp;S.worldMode.fixtures.splice(S.worldMode.fixtures.indexOf(f),1)}
   const porte=[0,1].map(s=>(l.essaisDetail||[]).filter(e=>e[1]===s&&e[2]==='b').length);
-  return{score:l.score,tries:l.tries,porte,touchesLancees,goals:l.stats.map(s=>s.goals),goalAttempts:l.stats.map(s=>s.goalAttempts),conv:l.stats.map(s=>s.conversions),convAtt:l.stats.map(s=>s.conversionAttempts),tirs,choix,choixPres,touches,bilans};};
+  return{score:l.score,tries:l.tries,porte,touchesLancees,goals:l.stats.map(s=>s.goals),goalAttempts:l.stats.map(s=>s.goalAttempts),conv:l.stats.map(s=>s.conversions),convAtt:l.stats.map(s=>s.conversionAttempts),jaunes:l.stats.map(s=>s.yellows||0),tirs,choix,choixPres,touches,bilans};};
  /* Profils d'effectif (politiques) : sauteurs (talonneur, 2e et 3e lignes : touche +15), avants (avants : puissance, mêlée,
     plaquage +10), buteur (but +15), faible (but -15) ; copie modifiée, jamais le club d'origine. */
  const profiler=(c,profil)=>{for(const m of String(profil||'').split('+').filter(Boolean))for(const p of c.players){ensureSkills(p);const sk=p.skills,up=(k,v)=>{sk[k]=Math.max(20,Math.min(99,sk[k]+v))};
@@ -115,7 +115,7 @@ function resumePolitique(politique, m) {
   return { politique, matchs: m.length, victoires: r1(100 * v), sommeVictoires: v * m.length, intervalle95: r1(196 * Math.sqrt(v * (1 - v) / m.length)),
     penaltouches: r2(moy(m.map(x => x.choix[x.cote][1]))), tirsPres: r2(moy(m.map(x => x.choixPres[x.cote][0]))), touchesPres: r2(moy(m.map(x => x.choixPres[x.cote][1]))),
     bilanRenvoi: r2(moy(m.flatMap(x => x.bilans).filter(b => b[0] === 3).map(b => b[1]))), valeurPresTir: r2(moy(m.flatMap(x => x.bilans.filter(b => b[3] === x.cote && b[0] === 0 && b[2] < 30)).map(b => b[1]))), valeurPresTouche: r2(moy(m.flatMap(x => x.bilans.filter(b => b[3] === x.cote && b[0] === 1 && b[2] < 30)).map(b => b[1]))), partEssaisPorte: pc(porte, essais), pointsMatch: r1(moy(m.map(x => x.score[0] + x.score[1]))), essaisMatch: r2(moy(m.map(x => x.tries[0] + x.tries[1]))), points: r1(moy(m.map(x => x.score[x.cote]))), encaisses: r1(moy(m.map(x => x.score[1 - x.cote]))),
-    essais: r2(moy(m.map(x => x.tries[x.cote]))), tentees: r2(moy(m.map(x => x.goalAttempts[x.cote]))),
+    essais: r2(moy(m.map(x => x.tries[x.cote]))), essaisEncaisses: r2(moy(m.map(x => x.tries[1 - x.cote]))), jaunes: r2(moy(m.map(x => (x.jaunes || [0, 0])[x.cote]))), jaunesAdverses: r2(moy(m.map(x => (x.jaunes || [0, 0])[1 - x.cote]))), renvoisRecus: r2(moy(m.map(x => x.bilans.filter(b => b[0] === 3 && b[3] === x.cote).length))), tentees: r2(moy(m.map(x => x.goalAttempts[x.cote]))),
     reussite: pc(m.reduce((s, x) => s + x.goals[x.cote], 0), m.reduce((s, x) => s + x.goalAttempts[x.cote], 0)),
     bilanAuBut: r2(moy(m.flatMap(x => x.bilans).filter(b => b[0] === 0 && b[2] < 53).map(b => b[1]))), bilanTouche: r2(moy(m.flatMap(x => x.bilans).filter(b => b[0] === 1 && b[2] < 53).map(b => b[1]))) };
 }
