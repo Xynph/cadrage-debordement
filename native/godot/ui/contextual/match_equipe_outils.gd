@@ -85,7 +85,7 @@ func _nom_joueur(id: String, texte: String, taille: float, nom_noeud: String, la
 	lien.set_meta("lien", true)
 	lien.set_meta("fiche_joueur", id)
 	lien.pressed.connect(ouvrir_fiche.bind(id))
-	MiniFiche.lier(app as Control, lien, id, "squad")
+	load("res://ui/carte_joueur_survol.gd").lier(app as Control, lien, id, "squad")
 	# Mini-fiche posée sur l'application : au-dessus de la scène du match, comme celles du direct.
 	lien.mouse_entered.connect(_mini_fiche_devant)
 	return lien
