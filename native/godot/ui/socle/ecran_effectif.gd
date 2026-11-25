@@ -134,7 +134,7 @@ func _dessin_numero(zone: Control, rect: Rect2, joueur: Dictionary) -> void:
 func _dessin_niveau(zone: Control, rect: Rect2, joueur: Dictionary) -> void:
 	var niveau: Variant = joueur.get("rating")
 	var taille := J.px(18)
-	var texte := str(int(niveau)) if _nombre(niveau) else "—"
+	var texte: String = load("res://ui/notation_staff.gd").texte_champ(joueur, "rating", true) if _nombre(niveau) else "—"
 	zone.draw_string(J.TITRE_GRAS, Vector2(rect.position.x, rect.position.y + (rect.size.y + J.TITRE_GRAS.get_ascent(taille) - J.TITRE_GRAS.get_descent(taille)) / 2.0).round(), texte, HORIZONTAL_ALIGNMENT_LEFT, -1, taille, J.TEXTE)
 	var gauche := rect.position.x + J.px(38)
 	var largeur := rect.size.x - J.px(38)
@@ -199,7 +199,7 @@ func _colonnes(vue: int) -> Array:
 		"valeur": func(j: Dictionary) -> Variant: return j.get("age"), "texte": func(j: Dictionary) -> String: return str(int(j.age)) if _nombre(j.get("age")) else "—"}
 	var niveau := {"id": "niveau", "titre": "Niveau et potentiel", "largeur": 250, "decroissant_d_abord": true,
 		"valeur": func(j: Dictionary) -> Variant: return j.get("rating"), "dessin": _dessin_niveau,
-		"infobulle": func(j: Dictionary) -> String: return "Niveau %s · potentiel estimé %s" % [str(int(j.rating)) if _nombre(j.get("rating")) else "inconnu", _texte_potentiel(j)]}
+		"infobulle": func(j: Dictionary) -> String: return "Niveau %s · potentiel estimé %s" % [load("res://ui/notation_staff.gd").texte_champ(j, "rating", true) if _nombre(j.get("rating")) else "inconnu", load("res://ui/notation_staff.gd").texte_champ(j, "potential", true)]}
 	var condition := {"id": "condition", "titre": "Condition", "largeur": 136, "priorite": 1,
 		"valeur": func(j: Dictionary) -> Variant: return j.get("condition"), "dessin": _dessin_condition}
 	var salaire := {"id": "salaire", "titre": Salaire.field_label(), "largeur": 132, "priorite": 2, "align": HORIZONTAL_ALIGNMENT_RIGHT, "decroissant_d_abord": true,

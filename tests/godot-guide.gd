@@ -230,6 +230,9 @@ func run() -> void:
 	root.add_child(app)
 	await wait_model(); app.timer.stop()
 	if OS.get_environment("CD_GUIDE_CASE") == "write-error": await write_error_cases(); return
+	# Fenêtre de jeu réelle : à 64 x 64 (taille par défaut du script) le placement du conseil juge la page trop chargée et referme le guide en pleine recette.
+	root.content_scale_size = Vector2i(1280,800); root.size = Vector2i(1280,800)
+	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(Vector2i(1280,800))
 	attach()
 	check(not guide.expanded and named(guide, "GuideTour") != null, "Invitation compacte sans ouverture ni parole automatiques")
 	await press("GuideTour")
@@ -258,6 +261,9 @@ func run() -> void:
 		check(spoken.size() == count, "Pas de répétition sur les snapshots : " + route)
 		if spoken.size() > previous_requests:
 			check(spoken.back() == guide.bubble.text, "Bulle identique à la nouvelle chaîne TTS : " + route)
+		elif route == "Calendrier" and not guide.expanded:
+			# Calendrier (page dense qui défile toute la saison) : pas de place libre, Gabi reste en invitation compacte et ne dit rien.
+			check(guide.visible and spoken.size() == previous_requests, "Page dense sans place libre : invitation compacte conservée, aucune parole : " + route)
 		else:
 			check(guide.speech.voice_id.is_empty() and not guide.speech.has_recording(guide.bubble.text), "Bulle sans enregistrement : aucune ancienne prise réutilisée : " + route)
 	var after: Dictionary = await state_export()

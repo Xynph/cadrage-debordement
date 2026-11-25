@@ -13,6 +13,9 @@ const Charte = preload("res://ui/charte.gd")
 const Bandeau = preload("res://ui/bandeau_filtres.gd")
 const Pieces = preload("res://ui/immersive08/petites_pieces.gd")
 const F = preload("res://ui/immersive08/finance_canvas.gd")
+const Brique = preload("res://ui/immersive08/finance_briques.gd")
+const Colonne = preload("res://ui/immersive08/finance_colonne.gd")
+const Solde = preload("res://ui/immersive08/finance_solde.gd")
 
 const LARGEUR := 2248.0
 const HAUT := 150.0
@@ -30,9 +33,9 @@ const PERTE := Charte.PERTE
 
 static func construire(app: Control, canvas: Control, accounts: Dictionary, finance: Dictionary, ledger: Array, v: Dictionary) -> void:
 	_colonnes(app, canvas, accounts, finance, ledger, v)
-	var solde := F._panneau(canvas, Rect2(0, Y_SOLDE, LARGEUR, 1230 - Y_SOLDE), "Solde sur 12 mois", "FinanceSolde")
+	var solde := Brique._panneau(canvas, Rect2(0, Y_SOLDE, LARGEUR, 1230 - Y_SOLDE), "Solde sur 12 mois", "FinanceSolde")
 	_anton(solde)
-	F._solde(app, canvas, solde, accounts, LARGEUR)
+	Solde._solde(app, canvas, solde, accounts, LARGEUR)
 
 static func _colonnes(app: Control, canvas: Control, accounts: Dictionary, finance: Dictionary, ledger: Array, v: Dictionary) -> void:
 	_bandeau_tuiles(app, canvas, Rect2(0, HAUT, LARGEUR, 116), finance, v)
@@ -56,7 +59,7 @@ static func _bandeau_tuiles(app: Control, canvas: Control, zone: Rect2, finance:
 	var detail: Variant = finance.get("projection")
 	var defs := [
 		["FinanceMetric0", "TRÉSORERIE", U.amount(v.cash), "", TRESORERIE if v.cash == null or float(v.cash) >= 0.0 else PERTE, "money", _lien_carte(app, F._onglet_cible("cash"), "Ouvrir · Trésorerie")],
-		["FinanceProjectionEnd", "FIN DE SAISON PRÉVUE", U.amount(v.forecast), "", PERTE if v.forecast != null and float(v.forecast) < 0.0 else GAIN, "calendar", func(): F._vers(app, "budget"), F._projection_reading(finance)],
+		["FinanceProjectionEnd", "FIN DE SAISON PRÉVUE", U.amount(v.forecast), "", PERTE if v.forecast != null and float(v.forecast) < 0.0 else GAIN, "calendar", func(): F._vers(app, "budget"), Colonne._projection_reading(finance)],
 	]
 	if detail is Dictionary and finance.has("budget") and absf(float(detail.otherInflows)) >= 1.0:
 		var autres := float(detail.otherInflows)
@@ -147,13 +150,13 @@ static func _ou_va_l_argent(app: Control, canvas: Control, zone: Rect2, finance:
 	var bas := zone.size.y - 58.0
 	var sur_budget := F._onglet_courant(app) == "budget"
 	Pieces.pastille(p, 22, bas + 6, "%d semaines prévues" % remaining, "clock", "FinanceForecastWeeks", "", TRANSFERTS, Charte.PANNEAU_3, func(): F._vers(app, "budget"))
-	F._bouton(p, Rect2(w - 262, bas + 4, 242, 40), "Ajuster le budget" if sur_budget else "AJUSTER LE BUDGET", func(): F._strategy(app), "lien" if sur_budget else "ivoire", "arrow", "FinanceAdjustBudget")
+	Brique._bouton(p, Rect2(w - 262, bas + 4, 242, 40), "Ajuster le budget" if sur_budget else "AJUSTER LE BUDGET", func(): F._strategy(app), "lien" if sur_budget else "ivoire", "arrow", "FinanceAdjustBudget")
 
 # --- Pièces --------------------------------------------------------------------------------
 
 ## Verdict de la semaine (paliers et deux pastilles validés par Léo), titre en Anton.
 static func _verdict(app: Control, canvas: Control, zone: Rect2, v: Dictionary) -> void:
-	F._verdict_panneau(app, canvas, zone, v, false, "summary")
+	Colonne._verdict_panneau(app, canvas, zone, v, false, "summary")
 	var panneau := canvas.get_node_or_null("FinanceVerdict")
 	if panneau != null: _anton(panneau)
 
@@ -175,7 +178,7 @@ static func _transferts(app: Control, canvas: Control, zone: Rect2, accounts: Di
 		var part := 100.0 * float(engage) / float(total) if total > 0 else 0.0
 		lignes = [["Alloué", G.euros(total), Charte.IVOIRE, -1.0, "FinanceTransferBudgetAllocated"], ["Engagé", G.euros(engage), FONCTIONNEMENT if engage > 0 else Charte.IVOIRE_2, part, "FinanceTransferBudgetEngaged"], ["Restant", Budget.remaining(transfer), TRANSFERTS if int(transfer.get("disponible", 0)) > 0 else PERTE, -1.0, "FinanceTransferBudgetAmount"]]
 		# État de l'engagement : pastille à droite du titre (« 0 € engagé » → Transferts, ou limite de la caisse).
-		var depenses := F._dernieres_depenses(ledger)
+		var depenses := Colonne._dernieres_depenses(ledger)
 		var limite := int(transfer.get("disponible", 0)) < int(transfer.get("reste", transfer.get("disponible", 0)))
 		if limite:
 			var lp := Pieces.largeur_pastille("Limité par la caisse", "warning")
@@ -199,11 +202,11 @@ static func _transferts(app: Control, canvas: Control, zone: Rect2, accounts: Di
 
 ## Vigilances en lignes : point d'exclamation orange, titre, pastilles des compteurs, flèche ; vide = une coche.
 static func _vigilances(app: Control, canvas: Control, zone: Rect2, finance: Dictionary) -> void:
-	var lignes := F._vigilances(app, finance)
+	var lignes := Colonne._vigilances(app, finance)
 	var w := zone.size.x
 	var p := _panneau(canvas, zone, "Vigilances", "warning", "FinanceWatch", str(lignes.size()) if not lignes.is_empty() else "", Charte.INTENSIF)
 	if lignes.is_empty():
-		F._symbole(p, Rect2(22, TITRE_H + 14, 26, 26), "coche", GAIN)
+		Brique._symbole(p, Rect2(22, TITRE_H + 14, 26, 26), "coche", GAIN)
 		_t(p, 60, TITRE_H + 34, "0 à traiter", 20, GAIN, w - 80, HORIZONTAL_ALIGNMENT_LEFT, 700)
 		return
 	var h := minf(56.0, (zone.size.y - TITRE_H - 10) / lignes.size())
@@ -212,7 +215,7 @@ static func _vigilances(app: Control, canvas: Control, zone: Rect2, finance: Dic
 		var y := TITRE_H + 2 + i * h
 		var zone_ligne := _ligne(p, Rect2(12, y, w - 24, h - 2), i, ligne.action, str(ligne.id), "%s · %s" % [ligne.titre, ligne.detail])
 		zone_ligne.accessibility_name = "%s · %s" % [ligne.titre, ligne.detail]
-		F._symbole(p, Rect2(22, y + (h - 24) / 2.0, 24, 24), "exclam", Charte.INTENSIF)
+		Brique._symbole(p, Rect2(22, y + (h - 24) / 2.0, 24, 24), "exclam", Charte.INTENSIF)
 		var titre := str(ligne.titre)
 		var lt := minf(_largeur(titre, 19), w - 300)
 		_t(p, 58, y + h / 2.0 + 7, titre, 19, Charte.IVOIRE, lt + 4)
@@ -269,7 +272,7 @@ static func _lien_carte(app: Control, cible: Dictionary, _libelle: String) -> Ca
 
 ## Panneau de la Synthèse (rayon des Finances) avec titre Anton, pictogramme et compteur coloré.
 static func _panneau(parent: Control, zone: Rect2, titre: String, icone_id: String, id: String, compte: String, couleur_compte: Color) -> Panel:
-	var p := F._panneau(parent, zone, "", id)
+	var p := Brique._panneau(parent, zone, "", id)
 	_icone(p, Rect2(20, 17, 26, 26), icone_id, Charte.IVOIRE_2)
 	var t := _t(p, 58, 42, titre.to_upper(), 28, Charte.IVOIRE, zone.size.x - 260, HORIZONTAL_ALIGNMENT_LEFT, 400, false)
 	t.add_theme_font_override("font", Charte.TITRE_FICHE)
@@ -300,7 +303,7 @@ static func _entete_colonnes(parent: Control, zone: Rect2, colonnes: Array) -> v
 ## En-tête de groupe (comme « AVANTS 16 » de l'Effectif) : repère coloré, titre, montant coloré. Renvoie le y suivant.
 ## Ligne cliquable : survol commun (bande claire + liseré club), rayure une ligne sur deux (rang dans sa liste).
 static func _ligne(parent: Control, zone: Rect2, rang: int, action: Callable, id: String, bulle: String) -> Button:
-	var b := F._zone(parent, zone, action, id, bulle, true)
+	var b := Brique._zone(parent, zone, action, id, bulle, true)
 	var fond := b.get_node_or_null("SurvolLigne")
 	if fond != null:
 		fond.rang_fixe = rang

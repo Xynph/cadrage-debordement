@@ -50,20 +50,34 @@ func activate(control: Control, keyboard: bool) -> void:
 		await process_frame
 	await settle()
 func pure_cases() -> void:
-	check(Review.projected_mark({"rating":77,"note":91,"potential":88}, "rating") == "77", "Niveau global lu sans utiliser la note au poste")
-	check(Review.projected_mark({"rating":77,"potential":99,"potentialRange":{"min":86,"max":90}}, "potential") == "86–90", "Potentiel fourni en fourchette, jamais scalaire")
-	check(Review.projected_mark({"potential":99}, "potential") == "—", "Ancien potentiel scalaire masqué")
-	check(Review.projected_mark({}, "rating") == "—" and Review.projected_mark({"potential":null}, "potential") == "—", "Notes absentes affichées sans zéro inventé")
+	# Notation façon FM (24/11) : lettres du staff, jamais le chiffre du moteur.
+	var N: Script = load("res://ui/notation_staff.gd")
+	var lu := Review.projected_mark({"id":"x","rating":77,"note":91,"potential":88}, "rating")
+	check(lu == Review.projected_mark({"id":"x","rating":77}, "rating") and lu in N.LETTRES, "Niveau global en lettre, lu sans utiliser la note au poste (%s)" % lu)
+	var pot := Review.projected_mark({"id":"x","rating":77,"potential":99,"potentialRange":{"min":86,"max":90}}, "potential")
+	check(pot == Review.projected_mark({"id":"x","rating":77,"potential":10,"potentialRange":{"min":86,"max":90}}, "potential") and pot in N.LETTRES, "Potentiel en lettre tirée de la fourchette, jamais du scalaire (%s)" % pot)
+	check(Review.projected_mark({"potential":99}, "potential") == "?", "Ancien potentiel scalaire masqué")
+	check(Review.projected_mark({}, "rating") == "?" and Review.projected_mark({"potential":null}, "potential") == "?", "Notes absentes affichées sans zéro inventé")
 	var sorting: Array = [{"id":"a","name":"Émile","pos":"Ailier","rating":70,"potential":90,"age":23,"contractEnd":2,"salary":10000,"minutes":20,"status":"Titulaire","renewal":{"available":true}}, {"id":"b","name":"Alice","pos":"Centre","rating":80,"potential":85,"age":24,"contractEnd":1,"salary":2000,"minutes":10,"status":"Hors groupe","renewal":{"available":false,"reason":"Z"}}, {"id":"u","name":"","pos":""}]
 	for person: Dictionary in sorting:
 		if person.has("potential"): person.potentialRange={"min":int(person.potential)-2,"max":int(person.potential)+2}
 	var tied: Dictionary = sorting[0].duplicate(true)
 	tied.id = "c"
 	sorting.append(tied)
-	for scenario in [["salary", ["b","a","c","u"], ["a","c","b","u"]], ["rating", ["a","c","b","u"], ["b","a","c","u"]], ["name", ["b","a","c","u"], ["a","c","b","u"]], ["contractEnd", ["b","a","c","u"], ["a","c","b","u"]]]:
+	for scenario in [["salary", ["b","a","c","u"], ["a","c","b","u"]], ["name", ["b","a","c","u"], ["a","c","b","u"]], ["contractEnd", ["b","a","c","u"], ["a","c","b","u"]]]:
 		for descending in [false, true]:
 			var ordered: Array = Review.filtered(sorting, {"sort":scenario[0], "descending":descending}).map(func(player): return player.id)
 			check(ordered == scenario[2 if descending else 1], "Tri %s %s : valeurs exactes, égalités par ID et inconnues dernières" % [scenario[0], "descendant" if descending else "ascendant"])
+	# Tri par Niveau (revue du 24/11, écart 5) : sur la lettre MONTRÉE, à lettre égale par identifiant, inconnues dernières.
+	for descending in [false, true]:
+		var par_lettre: Array = Review.filtered(sorting, {"sort":"rating", "descending":descending})
+		var ordre_ok: bool = par_lettre[-1].id == "u"
+		for k in range(1, par_lettre.size() - 1):
+			var g: float = N.tri_champ(par_lettre[k - 1], "rating", true)
+			var d: float = N.tri_champ(par_lettre[k], "rating", true)
+			if (d > g if not descending else d < g) == false and d != g: ordre_ok = false
+			if d == g and str(par_lettre[k - 1].id) > str(par_lettre[k].id): ordre_ok = false
+		check(ordre_ok, "Tri rating %s : lettre montrée, égalités par ID, inconnues dernières" % ("descendant" if descending else "ascendant"))
 	for key in Review.SORT_KEYS:
 		for descending in [false,true]: check(Review.filtered(sorting, {"sort":key,"descending":descending})[-1].id == "u", "Inconnues dernières pour " + key)
 	var players: Array = []
@@ -287,8 +301,12 @@ func run() -> void:
 	var expected: Array = Review.filtered(app.model.squad, app.management_ui.roster.contract_review)
 	check(view.find_child("ContractReviewRows", true, false).get_child_count() == expected.size(), "Filtre saison reçu sur les bons identifiants")
 	var target: Dictionary = expected[0]
-	var level := app.find_child(Review.action_id("ContractLevel", str(target.id)), true, false) as Label
-	check(level != null and level.text == Review.projected_mark(target, "rating"), "Colonne Niveau égale au niveau global projeté")
+	# Notation façon FM (revue du 24/11, écart 1) : lettre du staff en pastille, jamais le chiffre du moteur.
+	var level := app.find_child(Review.action_id("ContractLevel", str(target.id)), true, false) as Control
+	var notation: Script = load("res://ui/notation_staff.gd")
+	var attendue: String = notation.texte_note(notation.lettre_champ(target, "rating", true, app.model))
+	check(level != null and str(level.get_meta("lettre", "")) == attendue and attendue == Review.projected_mark(target, "rating"), "Colonne Niveau : lettre du staff (%s)" % attendue)
+	check(level != null and level.find_children("*", "Label", true, false).all(func(l: Label) -> bool: return RegEx.create_from_string("\\d").search(l.text) == null), "Colonne Niveau : aucun chiffre")
 	check(level.get_index() == 2, "Niveau juste après le poste")
 	for scenario: Array in [["ContractNameLink", "", true], ["ContractPortraitLink", "", false], ["ContractSalaryLink", "contract", true], ["ContractEndLink", "contract", false]]:
 		view = review()

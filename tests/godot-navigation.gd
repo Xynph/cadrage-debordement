@@ -47,6 +47,10 @@ func visit(route: String, id: String = "") -> void:
 	app._navigate(route)
 	await settle()
 
+func market_fiche() -> String:
+	var fiche: Variant = app.management_ui.get("fiche_joueur")
+	return str(fiche.get("id", "")) if fiche is Dictionary and str(fiche.get("source", "")) == "market" else ""
+
 func palette() -> Window:
 	return named(app, "NavigationPalette")
 
@@ -231,13 +235,14 @@ func run() -> void:
 	var market_id := str(app.model.market[1].id)
 	app.model.market[0].name = "Zoé Marché Homonyme"; app.model.market[1].name = "Zoé Marché Homonyme"
 	await quick(); await search("zoe marche homonyme"); await key(KEY_DOWN); await key(KEY_ENTER)
-	check(app.route == "Recrutement" and app.management_ui.market.navigation_id == market_id, "Piste marché ouverte sur le second identifiant")
+	# Une piste ouverte depuis la recherche montre sa fiche complète (décision de Léo du 19/11/2026), par identifiant.
+	check(app.route == "Recrutement" and market_fiche() == market_id, "Piste marché ouverte sur le second identifiant")
 	var market_buttons: Array = app.body.find_children("*", "Button", true, false).filter(func(button): return button.has_meta("player_id"))
 	check(not market_buttons.is_empty() and market_buttons.all(func(button): return str(button.get_meta("player_id")) == market_id), "Le filtre strict ID du marché ne présente pas son homonyme")
 	app.model.market[1].name = "Identité de pack renommée"
 	await visit("Finances")
 	app.get_viewport().gui_release_focus(); await key(KEY_LEFT, false, true)
-	check(app.route == "Recrutement" and app.management_ui.market.navigation_id == market_id and app.body.find_children("*", "Button", true, false).any(func(button): return str(button.get_meta("player_id", "")) == market_id), "Historique marché restaure le même ID après renommage du pack")
+	check(app.route == "Recrutement" and market_fiche() == market_id and app.body.find_children("*", "Button", true, false).any(func(button): return str(button.get_meta("player_id", "")) == market_id), "Historique marché restaure le même ID après renommage du pack")
 	app.model = original.duplicate(true)
 	var projected: Dictionary = app.model
 	app.model = {"club":{"id":0}, "meta":{}}

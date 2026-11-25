@@ -6,9 +6,14 @@ extends SceneTree
 ## - l'or n'est porté que par l'action principale « Continuer avec … » (seule exception hors coque) ;
 ## - tout ce qui a l'air cliquable agit (sélection, tri, onglet, lien, écran suivant) ; aucune petite fenêtre ;
 ## - 1280 × 720 : toute la division reste visible, l'action reste dans la fenêtre, la page ne défile pas.
+## - niveau du club en palier écrit (notation façon FM), jamais la note moyenne chiffrée ;
+## - option « Qualités des joueurs » : Précises par défaut, un clic choisit « En fourchette », sauvegardée dans la carrière
+##   créée (qualités de nos joueurs en fourchette sur la fiche).
 ## Imprime une ligne CREATION_DA {checks, failures}. Captures (rendu graphique) : CD_CREATION_DA_CAPTURES=<dossier>.
 const Charte = preload("res://ui/charte.gd")
 const Entry = preload("res://ui/entry_screens.gd")
+const Notation = preload("res://ui/notation_staff.gd")
+const Flow = preload("helpers/contextual_flow.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -148,6 +153,10 @@ func run() -> void:
 	check(node("CreationClubTitle") != null and node("CreationRosterSummary") != null and node("CreationStadium") != null, "Le panneau présente le club choisi (bandeau du stade, niveau et rang)")
 	var summary := node("CreationRosterSummary")
 	check(summary != null and summary.find_children("*", "Label", true, false).any(func(l: Label) -> bool: return " sur " in l.text), "Le niveau porte son rang dans la division")
+	# Notation façon FM : le niveau du club est un palier écrit, jamais une note moyenne chiffrée.
+	var valeur_niveau := summary.find_child("Valeur", true, false) as Label if summary != null else null
+	check(valeur_niveau != null and (valeur_niveau.text in Notation.PALIERS or valeur_niveau.text.begins_with("Entre ")) and not valeur_niveau.text.replace(",", ".").is_valid_float(), "Niveau du club en palier écrit : " + (valeur_niveau.text if valeur_niveau != null else "absent"))
+	check(not app.root_content.find_children("*", "Label", true, false).any(func(l: Label) -> bool: return l.text.to_lower() == "note moyenne"), "Plus de « note moyenne » à la création")
 	var chosen_card := node("CreationClub%d" % chosen_id)
 	check(chosen_card != null and chosen_card.find_child("CreationCardChosen", true, false) != null and chosen_card.find_child("CreationCardMarker", true, false) != null, "La carte choisie porte « ✓ Choisi » et un marqueur incliné (pas la couleur seule)")
 	start = node("CreationNext") as Button
@@ -244,7 +253,87 @@ func run() -> void:
 	await press("CreationBackHome")
 	check(app.route == "Accueil", "« ← Accueil » revient à l’accueil")
 	check(windows().is_empty(), "Aucune petite fenêtre en fin de parcours")
+	await qualites_en_fourchette()
 	print("CREATION_DA ", JSON.stringify({"checks": checks, "failures": failures}))
 	app.queue_free()
 	await settle()
 	quit(0 if failures.is_empty() else 1)
+
+## Option de nouvelle carrière « Qualités des joueurs » (notation façon FM, 24/11) : deux pilules sur l'écran des options,
+## « Précises » par défaut ; un clic sur « En fourchette tant que pas observé » choisit et valide (aucun bouton Confirmer) ;
+## la carrière créée garde l'option : nos joueurs, pas encore suivis, montrent leurs qualités en fourchette sur la fiche.
+func qualites_en_fourchette() -> void:
+	Entry.begin_creation(app)
+	await settle()
+	await wait_engine()
+	var premiere := cards()[0] as Button if not cards().is_empty() else null
+	check(premiere != null, "Une carte de club pour la création")
+	if premiere == null: return
+	await press(str(premiere.name))
+	await press("CreationNext")
+	check(node("CreationQualitesSection") != null and node("CreationQualites_precises") != null and node("CreationQualites_fourchette") != null, "Option « Qualités des joueurs » : deux pilules")
+	check(str(app.management_ui.get("creation_qualites", "precises")) == "precises", "« Précises » par défaut")
+	await press("CreationQualites_fourchette")
+	check(str(app.management_ui.get("creation_qualites", "")) == "fourchette", "Un clic choisit « En fourchette tant que pas observé »")
+	check(node("CreationQualites_fourchette") != null and node("CreationStart") != null, "L’option reste à l’écran, sans bouton Confirmer")
+	await shot("creation-qualites-fourchette")
+	await press("CreationStart")
+	await wait_engine()
+	var squad: Array = app.model.get("squad", [])
+	check(not squad.is_empty() and squad.all(func(p: Dictionary) -> bool: return p.get("attributesV2Range") is Dictionary and (p.attributesV2Range as Dictionary).size() == 36), "Carrière créée en fourchette : qualités de nos joueurs en fourchette (%d joueurs)" % squad.size())
+	if squad.is_empty(): return
+	await Flow.settle_club_meetings(app, self, check)
+	var joueur: Dictionary = squad[0]
+	app.selected_player = str(joueur.id)
+	app.set_meta("immersive08_full_player", true)
+	app._navigate("Effectif")
+	await settle()
+	app.selected_player = str(joueur.id)
+	app.set_meta("immersive08_full_player", true)
+	app._render()
+	await settle(12)
+	var cellules: Array = app.find_children("PlayerDetailedAttribute_*", "Label", true, false)
+	var en_plage := cellules.filter(func(l: Label) -> bool: return bool(l.get_meta("fourchette", false)) and l.text.count("-") == 1)
+	check(cellules.size() == 36 and en_plage.size() == 36, "Fiche : les 36 qualités en fourchette (%d / %d)" % [en_plage.size(), cellules.size()])
+	var qualites_role: Array = app.find_children("PlayerRoleQuality_*", "Label", true, false)
+	check(not qualites_role.is_empty() and qualites_role.all(func(l: Label) -> bool: return l.text.count("-") == 1 and not l.text.is_valid_float()), "Fiche : qualités du rôle en fourchette aussi (%d)" % qualites_role.size())
+	var forts: Array = app.find_children("PlayerStrength_*", "Label", true, false)
+	check(not forts.is_empty() and forts.all(func(l: Label) -> bool: return l.text.count("-") == 1), "Fiche : points forts en fourchette")
+	await shot("fiche-qualites-fourchette")
+	# Tout ce qui est calculé à partir des qualités part de la fourchette (vérificateur, 24/11) : qualités reçues = milieu
+	# de chaque fourchette (radar, entraînement, Niveau au rôle), notes au poste et au rôle en lettre DOUBLE (staff pas sûr),
+	# ni relevé ni flèches de progression (vraies valeurs au dixième).
+	var plages: Dictionary = joueur.get("attributesV2Range", {})
+	var valeurs: Dictionary = joueur.get("attributesV2", {})
+	check(not plages.is_empty() and plages.keys().all(func(k: String) -> bool: return is_equal_approx(float(valeurs.get(k, -1)), (float(plages[k].min) + float(plages[k].max)) / 2.0)), "Qualités reçues par l’écran = milieu des fourchettes, jamais la vraie valeur")
+	var notes_role: Array = app.find_children("PlayerRoleNote_*", "", true, false)
+	check(not notes_role.is_empty() and notes_role.all(func(n: Node) -> bool: return str(n.get_meta("lettre", "")).contains("/")), "Fiche : Niveau au rôle en lettre double, incertaine (%s)" % str(notes_role.map(func(n: Node): return n.get_meta("lettre", ""))))
+	check(app.find_children("Fleche_*", "", true, false).is_empty() and joueur.get("fleches") == null, "Fiche : aucune flèche de progression tant que les qualités sont en fourchette")
+	var Notation = preload("res://ui/notation_staff.gd")
+	var principal: int = int((joueur.get("primaryPositions", [0]) as Array)[0]) if joueur.get("primaryPositions") is Array and not (joueur.primaryPositions as Array).is_empty() else 0
+	if principal > 0: check(Notation.texte_note(Notation.lettre_poste(app.model, joueur, principal, true)).contains("/"), "Note au poste principal : lettre double tant que les qualités sont en fourchette")
+	# Développement › Progression et radar du comparateur : qualités en fourchette, jamais le milieu écrit comme un chiffre
+	# sûr (2e revue du vérificateur, 25/11).
+	app.management_ui.immersive_player_tab = 4
+	app._render()
+	await settle(12)
+	var notes_prog: Array = app.find_children("ProgressionNote_*", "Label", true, false)
+	check(notes_prog.size() == 36 and notes_prog.all(func(l: Label) -> bool: return bool(l.get_meta("fourchette", false)) and l.text.count("-") == 1), "Progression : les 36 qualités en fourchette (%d)" % notes_prog.size())
+	await shot("progression-fourchette")
+	app.management_ui.immersive_player_tab = 0
+	if squad.size() >= 2:
+		app.management_ui.compare = [str(squad[0].id), str(squad[1].id)]
+		app._navigate("Effectif")
+		await settle()
+		load("res://ui/immersive08/comparateur_canvas.gd").ouvrir(app)
+		await settle(12)
+		var axes_r: Array = app.find_children("RadarAxe*Valeur*", "Label", true, false)
+		check(not axes_r.is_empty() and axes_r.all(func(l: Label) -> bool: return bool(l.get_meta("fourchette", false)) and l.text.contains("-")), "Radar du comparateur : axes en fourchette (%s)" % str(axes_r.map(func(l: Label) -> String: return l.text)))
+		await shot("radar-fourchette")
+		var axe0 := app.find_child("RadarAxe0", true, false) as BaseButton
+		check(axe0 != null, "Radar : axe cliquable")
+		if axe0 != null:
+			axe0.pressed.emit()
+			await settle(8)
+			var lignes_f: Array = app.find_children("RadarFenetreLigne_*_0", "Label", true, false)
+			check(not lignes_f.is_empty() and lignes_f.all(func(l: Label) -> bool: return l.text.count("-") == 1), "Radar, fenêtre d'un axe : qualités en fourchette (%s)" % str(lignes_f.map(func(l: Label) -> String: return l.text)))

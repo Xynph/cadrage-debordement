@@ -84,7 +84,10 @@ func run() -> void:
 	check(Meteo.libelle({"weather": "Sec"}) == "Temps sec", "Ancien champ weather « Sec » écrit en clair")
 	check(Meteo.libelle({"meteo": {"libelle": "forte pluie, terrain lourd"}}) == "Forte pluie, terrain lourd", "Autres libellés inchangés")
 	check(Meteo.avant_match({"meteo": {"libelle": "sec", "date": "2026-11-18"}}, "2026-11-18").ciel == "Temps sec", "Avant-match : ciel « Temps sec »")
-	var source := FileAccess.get_file_as_string("res://ui/immersive08/match_avant.gd")
+	# L'écran est réparti en fichiers match_avant*.gd (chaîne d'héritage) : le contrôle porte sur l'ensemble.
+	var source := ""
+	for fichier in ["", "_socle", "_outils", "_bandeau", "_affiche", "_verifications", "_adversaire"]:
+		source += FileAccess.get_file_as_string("res://ui/immersive08/match_avant%s.gd" % fichier)
 	check(not source.contains("else \"Sec\""), "Tuile météo de l'avant-match : plus de « Sec » seul")
 
 	print("MATCH_BANDEAU_COMPACT %d controles, %d echec" % [checks, failures.size()])

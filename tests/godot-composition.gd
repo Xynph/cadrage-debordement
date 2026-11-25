@@ -380,6 +380,17 @@ func run() -> void:
 	await settle()
 	var lignes := named("TacticsCandidateRows")
 	var eligibles: Array = Selection.slot(app.model, 9).get("eligibleIds", [])
+	# Tri cohérent (25/11) : les indisponibles et non qualifiés restent sous un séparateur visible, jamais mêlés au tri.
+	var separateur := lignes.find_child("TacticsCandidatesSeparateur", false, false) as Control if lignes != null else null
+	var melange := 0
+	var grises := 0
+	for ligne in (lignes.get_children() if lignes != null else []):
+		if not ligne is Button: continue
+		var gris := not bool(ligne.get_meta("eligible", true))
+		if gris: grises += 1
+		if separateur != null and gris and (ligne as Control).position.y < separateur.position.y: melange += 1
+	check(grises == 0 or (separateur != null and separateur.is_visible_in_tree()), "Candidats : séparateur visible au-dessus des indisponibles (%d grisés)" % grises)
+	check(melange == 0, "Candidats : aucun indisponible mêlé aux choisissables (%d)" % melange)
 	var hors_groupe := ""
 	for ligne in (lignes.get_children() if lignes != null else []):
 		if not ligne is Button: continue

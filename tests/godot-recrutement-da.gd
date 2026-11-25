@@ -295,6 +295,23 @@ func recherche_ciblee() -> void:
 	var lignes: Array = fenetre.find_children("RecherchePisteOuvrir_*", "Button", true, false)
 	check(lignes.size() <= observes.size(), "Liste : aucune ligne sans joueur observé (%d / %d)" % [lignes.size(), observes.size()])
 	check(fenetre.find_children("*", "Label", true, false).filter(func(l: Label) -> bool: return l.text == "?" or l.text.contains("★")).is_empty(), "Ni « ? » ni étoile dans la recherche")
+	# Décision de Léo du 24/11 : note au poste (pistes, notre meilleur au poste), note du rôle et potentiel en lettres du
+	# staff E- à S+ ; seuils des critères en lettres ; aucun chiffre de note.
+	var lettres_valides: Array = (load("res://ui/notation_staff.gd") as Script).get_script_constant_map().get("LETTRES", [])
+	var est_lettre := func(t: String) -> bool: return not t.is_empty() and Array(t.split("/")).all(func(l: String) -> bool: return l in lettres_valides)
+	var notes: Array = []
+	for motif in ["RecherchePisteNote_*", "RecherchePosteNous_*", "RecherchePistePot_*", "RecherchePisteRole_*"]:
+		notes += fenetre.find_children(motif, "", true, false).map(func(n: Node) -> String: return str(n.get_meta("lettre", "")))
+	check(not fenetre.find_children("RecherchePosteNous_*", "", true, false).is_empty(), "Notre meilleur au poste : lettre sur le terrain")
+	check(notes.all(func(t: String) -> bool: return est_lettre.call(t)), "Recherche : notes en lettres du staff (%s)" % str(notes.slice(0, 6)))
+	var chiffres: Array = []
+	for l: Label in fenetre.find_children("*", "Label", true, false):
+		if l.text.begins_with("≥") and not est_lettre.call(l.text.trim_prefix("≥").strip_edges()): chiffres.append(l.text)
+	for motif in ["RecherchePisteNote_*", "RecherchePosteNous_*", "RecherchePistePot_*", "RecherchePisteRole_*"]:
+		for n: Node in fenetre.find_children(motif, "", true, false):
+			for l: Label in n.find_children("*", "Label", true, false):
+				if not est_lettre.call(l.text): chiffres.append(l.text)
+	check(chiffres.is_empty(), "Recherche : ni note ni seuil chiffrés (%s)" % str(chiffres.slice(0, 4)))
 	var bouton := app.find_child("RechercheLancer", true, false) as Button
 	check(bouton != null and bouton.disabled, "Envoi impossible tant qu'aucun poste n'est choisi")
 	var poste := app.find_child("RecherchePosteChoisir_8", true, false) as Button

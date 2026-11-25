@@ -6,8 +6,8 @@ extends RefCounted
 ## qu'une fois, dans son en-tête (pas d'échelle au-dessus du fil).
 ##  - Gauche : en-tête de l'agent (portrait d'adulte, nom cliquable → sa petite fenêtre, agence, caractère « ? » tant
 ##    qu'il n'est pas découvert, humeur, relation en 5 crans qui s'allume et bouge pendant l'échange) ; carte « Au sujet
-##    de » (photo, nom, poste, âge, demande, transfert, rapport du recruteur compact : lettre, note au poste /100,
-##    familiarité, rang chez nous) ; « Ses joueurs » façon Effectif (le joueur concerné surligné ; clic = fiche).
+##    de » (photo, nom, poste, âge, demande, transfert, rapport du recruteur compact : lettre, note au poste en
+##    lettre, familiarité, rang chez nous) ; « Ses joueurs » façon Effectif (le joueur concerné surligné ; clic = fiche).
 ##  - Droite : le fil en trois tours (le ton ; une question sur le rôle attendu ou la durée ; faire une offre ou en rester
 ##    là), les bulles de l'agent avec SON portrait. Un clic sur une phrase la dit tout de suite : aucun bouton Valider.
 ## Ton (moteur native/engine/ton-agent.cjs, commandes agent_ton / agent_question, projection market[].agent) : il fait
@@ -285,7 +285,7 @@ static func _sujet(app: Control, page: Control, f: Control, zone: Rect2, d: Dict
 	# Transfert : à droite du nom (la ligne des pastilles reste dans la carte).
 	Pastilles.poser_a_droite(f, Pastilles.pastille("Transfert ouvert" if d.ouvert else "Transfert fermé", Pastilles.VERT if d.ouvert else Pastilles.ROUGE, "check" if d.ouvert else "lock",
 		"" if d.ouvert else str(d.p.get("reason", "")), 16, "AgentTransfert", _offre(app, page, str(d.id)) if d.ouvert else Callable()), zone.end.x - 14, y + 2)
-	# Rapport du recruteur compact : lettre, note au poste /100, familiarité, rang chez nous (clic = ferme, rapport dessous).
+	# Rapport du recruteur compact : lettre, note au poste en lettre, familiarité, rang chez nous (clic = ferme, rapport dessous).
 	var r: Dictionary = d.r
 	var ligne := Button.new()
 	ligne.name = "AgentRapportLigne"
@@ -294,11 +294,10 @@ static func _sujet(app: Control, page: Control, f: Control, zone: Rect2, d: Dict
 	f.add_child(ligne)
 	D.place(ligne, Rect2(x0, y + 96, zone.size.x - 28, 74))
 	ligne.pressed.connect(_fermer(page))
-	var lettre := D.text(ligne, 40, 56, str(r.lettre), 50, r.couleur, 800, 80, HORIZONTAL_ALIGNMENT_CENTER)
-	lettre.add_theme_font_override("font", Charte.TITRE_FICHE)
-	lettre.name = "AgentRapportLettre"
+	# Lettre du staff en pastille ronde (échelle unique E- à S+, notation_staff.gd).
+	load("res://ui/notation_staff.gd").pastille(ligne, 12, 37, int(r.indice), 56, "AgentRapportLettre")
 	Kit.etiquette(ligne, 100, 26, "Note au poste", 160)
-	Familiarite.poser_note(ligne, 100, 62, float(r.note), 30, 60, "AgentNotePoste").add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
+	load("res://ui/notation_staff.gd").pastille_note(ligne, 100, 52, r.lettre_poste, 40, "AgentNotePoste")
 	Kit.etiquette(ligne, 270, 26, "Familiarité", 200)
 	Familiarite.poser(ligne, 270, 58, Familiarite.niveau(r.piste, int(r.numero)), 20, "AgentFamiliarite")
 	Kit.etiquette(ligne, 500, 26, "Rang chez nous", 200)

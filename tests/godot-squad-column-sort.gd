@@ -18,7 +18,8 @@ func names(players: Array) -> Array:
 func projections() -> void:
 	check(Squad.G.contract_year(1)=="2027" and Squad.G.contract_year(3)=="2029","Fin de contrat exprimée en année civile réelle")
 	check(Squad.G.contract_year(null)=="—" and Squad.G.contract_year(1.5)=="—","Année inconnue non inventée")
-	var numeric := {"Numéro":"shirtNumber","Âge":"age","Niveau":"rating","Potentiel":"potential","Condition":"condition","Fatigue":"physicalLoad","Salaire":"salary","Échéance":"contractEnd","Minutes":"minutes"}
+	# Niveau et Potentiel trient sur la lettre MONTRÉE du staff (notation façon FM, Notation.tri_champ), plus sur le chiffre.
+	var numeric := {"Numéro":"shirtNumber","Âge":"age","Condition":"condition","Fatigue":"physicalLoad","Salaire":"salary","Échéance":"contractEnd","Minutes":"minutes"}
 	for key: String in numeric:
 		var source: Array = []
 		for pair in [["h",10],["u",null],["b",2],["a",2],["z",0]]:
@@ -94,10 +95,11 @@ func run() -> void:
 	check(app.user_preferences.set_value("salary_period","monthly"),"Salaire mensuel activé")
 	app._render(false);await settle()
 	check(table()!=null,"Vrai tableau d’effectif raccordé")
-	var level_cells: Array = table().rows.find_children("RosterLevel","Label",true,false)
-	var potential_cells: Array = table().rows.find_children("RosterPotential","Label",true,false)
-	check(level_cells.size()==original.squad.size() and level_cells.all(func(label):return label.get_theme_color("font_color")!=Squad.C.IVORY),"Niveau coloré au barème des attributs (chiffre toujours écrit)")
-	check(potential_cells.size()==original.squad.size() and potential_cells.all(func(label):return label.get_theme_color("font_color")==Squad.C.MUTED),"Potentiel en ivoire secondaire, sans couleur d’alerte")
+	# Notation façon FM (option B) : Niveau et Potentiel en pastilles rondes de la lettre du staff, jamais un chiffre.
+	var level_cells: Array = table().rows.find_children("RosterLevel","Control",true,false)
+	var potential_cells: Array = table().rows.find_children("RosterPotential","Control",true,false)
+	check(level_cells.size()==original.squad.size() and level_cells.all(func(n):return str(n.get_meta("lettre","")) != "" and not str(n.get_meta("lettre","")).is_valid_int()),"Niveau en pastille de lettre")
+	check(potential_cells.size()==original.squad.size() and potential_cells.all(func(n):return str(n.get_meta("lettre","")) != "" and not str(n.get_meta("lettre","")).is_valid_int()),"Potentiel en pastille de lettre")
 	check(table().sort_headers["Échéance"].caption=="FIN DE CONTRAT","Intitulé Fin de contrat")
 	check(not table().sort_headers.has("Note") and app.find_child("Sort_Note",true,false)==null,"Note au poste absente de l’Effectif")
 	var years_ok := true
@@ -127,8 +129,12 @@ func run() -> void:
 		check(label.text.ends_with("▼" if table().state.descending else "▲"),"Flèche du sens actif : "+criterion)
 	table().state.immersive_tab=0
 	var controlled:=original.duplicate(true)
-	for player: Dictionary in controlled.squad:player.rating=0
-	controlled.squad[-1].rating=100
+	# Le Niveau montré part du Niveau calculé (niveauCalcule) quand il existe, sinon de rating.
+	for player: Dictionary in controlled.squad:
+		player.rating=15
+		if player.get("niveauCalcule") is Dictionary: player.niveauCalcule.niveau=15
+	controlled.squad[-1].rating=99
+	if controlled.squad[-1].get("niveauCalcule") is Dictionary: controlled.squad[-1].niveauCalcule.niveau=99
 	app.model=controlled;app._navigate("Effectif");await settle()
 	table()._toggle_sort("Niveau")
 	if not table().state.descending:table()._toggle_sort("Niveau")

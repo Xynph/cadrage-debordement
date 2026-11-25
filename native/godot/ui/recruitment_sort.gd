@@ -24,9 +24,9 @@ static func value(item: Dictionary, column: String, reports: Dictionary, archive
 	if column == "Nom" or column == "Poste":
 		var text: Variant = item.get("name" if column == "Nom" else "pos")
 		return U.fold(text).strip_edges() if text is String and not text.strip_edges().is_empty() else null
-	if column == "Niveau": return Knowledge.sort_value(item,"rating")
+	if column == "Niveau": return load("res://ui/notation_staff.gd").tri_champ(item,"rating",Knowledge.owned(item))
 	if NUMERIC.has(column): return _number(item.get(NUMERIC[column]))
-	if column == "Potentiel": return Knowledge.sort_value(item,"potential")
+	if column == "Potentiel": return load("res://ui/notation_staff.gd").tri_champ(item,"potential",Knowledge.owned(item))
 	if column == "Date du rapport": return _date_week(report)
 	if column == "Rapport":
 		var status := report_status(report)

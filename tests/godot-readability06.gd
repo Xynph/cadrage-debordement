@@ -174,9 +174,15 @@ func inside(control: Control, viewport: Control = null) -> bool:
 func keyboard(button: BaseButton, description: String) -> void:
 	check(button != null and not button.disabled and button.is_visible_in_tree(), "Commande clavier disponible · " + description)
 	if button == null or button.disabled or not button.is_visible_in_tree(): return
+	var id := str(button.name)
 	button.grab_focus()
 	await settle()
-	check(button.has_focus(), "Focus clavier · " + description)
+	# Un rendu de l'écran pendant l'attente (réponse du moteur) reconstruit la commande : le jeu
+	# garde le focus par nom (management_state.gd). On suit donc le même contrôle reconstruit,
+	# qui doit toujours avoir le focus clavier.
+	if not is_instance_valid(button): button = named(id) as BaseButton
+	check(button != null and button.has_focus(), "Focus clavier · " + description)
+	if button == null: return
 	await key(KEY_ENTER)
 
 func expose_office(control: Control) -> void:
@@ -442,7 +448,10 @@ func immersive_profile(player: Dictionary, resolution: Vector2i) -> void:
 	await keyboard(named("FullPlayerTab4"), "développement du joueur")
 	# Joueur de l'effectif : progression par qualité (courbe 12 mois du relevé mensuel, 36 qualités à cocher).
 	var development := labels(named("ProgressionCourbeCarte"))
-	check(inside(named("ProgressionCourbeCarte"), app.body_scroll) and G.n(player.rating) in development and G.potential_text(player) in development, "Niveau et potentiel lisibles dans Développement")
+	# Notation façon FM : Niveau et Potentiel en pastilles de lettres (jamais le chiffre du moteur).
+	var tuile_n := named("ProgressionTuileNiveauLettre")
+	var tuile_p := named("ProgressionTuilePotentielLettre")
+	check(inside(named("ProgressionCourbeCarte"), app.body_scroll) and tuile_n != null and str(tuile_n.get_meta("lettre", "")) == G.rating_text(player, true) and tuile_p != null and str(tuile_p.get_meta("lettre", "")) == G.potential_text(player), "Niveau et potentiel lisibles dans Développement (lettres)")
 	check(inside(named("ProgressionCourbe"), app.body_scroll), "Courbe des 12 mois visible")
 	var coches: Array = named("ProgressionGrille").find_children("ProgressionCoche_*", "Button", true, false) if named("ProgressionGrille") != null else []
 	check(coches.size() == 36, "Les 36 qualités à cocher")
@@ -463,7 +472,12 @@ func route_reading(resolution: Vector2i) -> void:
 		check(inside(app.body_scroll), "Espace de travail visible %s %s" % [route,resolution])
 		if resolution.x == 2560:
 			var outer: VScrollBar = app.body_scroll.get_v_scroll_bar()
-			check(outer.max_value <= outer.page + 1, "Aucun défilement global nécessaire en 1440p · " + route)
+			if route == "Calendrier":
+				# Toute la saison sur une page qui défile (décision de Léo, #1028) : plus de pagination, la page
+				# globale ne défile que de ce que la liste dépasse de son cadre d'origine (760 unités).
+				var season := named("CalendarScroll")
+				check(named("CalendarPagination") == null and season != null and outer.max_value - outer.page <= rect(season).size.y - 760.0 * rect(app.body).size.x / 2248.0 + 1.0, "Calendrier : toute la saison sur une page qui défile, sans autre débord · " + str(resolution))
+			else: check(outer.max_value <= outer.page + 1, "Aucun défilement global nécessaire en 1440p · " + route)
 		if route == "Composition":
 			for id in ["LineupSlot01", "LineupAutomatic"]:
 				check(inside(named(id), app.body_scroll), "Commande de composition directement visible %s %s" % [id,resolution])

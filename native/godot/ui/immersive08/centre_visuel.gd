@@ -18,6 +18,8 @@ const PetiteFenetre = preload("res://ui/petite_fenetre.gd")
 const CarteSurvol = preload("res://ui/carte_joueur_survol.gd")
 const Academy = preload("res://ui/academy_pathways_view.gd")
 const Juniors = preload("res://ui/immersive08/centre_juniors.gd")
+const Notation = preload("res://ui/notation_staff.gd")
+const K = preload("res://ui/player_knowledge_text.gd")
 
 const LARGEUR := 2248.0
 const Y_ONGLETS := 130.0
@@ -499,8 +501,12 @@ static func etape(p: Dictionary) -> String:
 	var age := int(p.get("age", 0))
 	return "u17" if age <= 17 else ("u19" if age <= 19 else "u20")
 
-## Valeur chiffrée (niveau ou potentiel) : milieu de la fourchette si le chiffre exact est inconnu ; -1 sinon.
+## Niveau ou potentiel pour le tri : rang de la lettre du staff MONTRÉE (jamais le chiffre caché) ; -1 si inconnue.
+## Autre champ : valeur chiffrée, milieu de la fourchette si le chiffre exact est inconnu ; -1 sinon.
 static func valeur(joueur: Dictionary, champ: String) -> float:
+	if champ in ["rating", "potential"]:
+		var r: Variant = Notation.tri_champ(joueur, champ, K.owned(joueur, true))
+		return float(r) if r != null else -1.0
 	var v: Variant = joueur.get(champ)
 	if v is int or v is float: return float(v)
 	var f: Variant = joueur.get(champ + "Range")
@@ -509,6 +515,11 @@ static func valeur(joueur: Dictionary, champ: String) -> float:
 
 static func couleur(v: float) -> Color:
 	return Charte.couleur_attribut(v) if v >= 0.0 else Charte.IVOIRE_3
+
+## Couleur du Niveau ou du Potentiel : celle de la lettre du staff (palette de la notation).
+static func couleur_champ(joueur: Dictionary, champ: String) -> Color:
+	var l: Dictionary = Notation.lettre_champ(joueur, champ, K.owned(joueur, true))
+	return Notation.couleur(int(l.haut)).lightened(.15) if int(l.bas) >= 0 else Charte.IVOIRE_3
 
 static func niveau_txt(p: Dictionary) -> String:
 	return G.rating_text(p, true)
@@ -567,7 +578,7 @@ static func fenetre_parcours(ctx: Dictionary, id: String) -> void:
 	texte(fond, 146, 110, "%s · %s ans" % [p.pos, G.n(p.age)], 21, Charte.IVOIRE_2, 420)
 	R.pastille(fond, 146, 150, str(traj[1]), traj[3], str(traj[2]), NOM_FENETRE + "Trajectoire", 19)
 	var x := 620.0
-	for f: Array in [[niveau_txt(p), "NIVEAU", couleur(valeur(p, "rating"))], [potentiel_txt(p), "POTENTIEL", couleur(valeur(p, "potential"))], ["%d %%" % int(p.condition), "CONDITION", Charte.CONDITION]]:
+	for f: Array in [[niveau_txt(p), "NIVEAU", couleur_champ(p, "rating")], [potentiel_txt(p), "POTENTIEL", couleur_champ(p, "potential")], ["%d %%" % int(p.condition), "CONDITION", Charte.CONDITION]]:
 		chiffre(fond, x, 140, f[0], 54, f[2], 220)
 		texte(fond, x, 168, f[1], 16, Charte.IVOIRE_3, 220, HORIZONTAL_ALIGNMENT_LEFT, 700, false)
 		x += 220.0
@@ -648,7 +659,7 @@ static func _mentors(ctx: Dictionary, parent: Control, x: float, y: float, large
 		b.disabled = not actif
 		portrait(b, Rect2(4, 4, 32, 32), s, Color.TRANSPARENT, true)
 		texte(b, 44, 27, nom, 19, Charte.IVOIRE, l)
-		texte(b, 52 + largeur(nom, 19), 27, niveau_txt(s), 19, couleur(valeur(s, "rating")), 60, HORIZONTAL_ALIGNMENT_LEFT, 700)
+		texte(b, 52 + largeur(nom, 19), 27, niveau_txt(s), 19, couleur_champ(s, "rating"), 60, HORIZONTAL_ALIGNMENT_LEFT, 700)
 		cx += l + 8.0
 	return y + 54.0
 

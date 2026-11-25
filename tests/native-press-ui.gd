@@ -3,7 +3,6 @@ const ContextualFlow = preload("helpers/contextual_flow.gd")
 var app: Control
 var failures: Array[String] = []
 var checks := 0
-var room_viewport: SubViewport
 func _initialize() -> void: call_deferred("run")
 func check(value: bool, message: String) -> void:
 	checks += 1
@@ -53,16 +52,9 @@ func texts(node: Node) -> String:
 	for child in node.get_children(): result += texts(child)
 	return result
 func render_room(label: String) -> void:
-	if DisplayServer.get_name() == "headless": return
-	check(is_instance_valid(room_viewport),"Viewport de la vraie salle présent : "+label)
-	if not is_instance_valid(room_viewport): return
-	# This room is static. Render it initially and at each resize/capture,
-	# then cache only its 3D pixels while exercising the live UI. These receipts
-	# qualify geometry and inputs; they make no animation or frame-rate claim.
-	room_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
-	await RenderingServer.frame_post_draw
-	var rendered := room_viewport.get_texture().get_image()
-	check(rendered != null and not rendered.is_empty() and rendered.get_size() == room_viewport.size,"Salle 3D réellement rendue : "+label)
+	# Salle de presse : la photo de la page Presse, sans salle 3D (Léo, 25/11/2026).
+	var photo: TextureRect = app.contextual_director.view.find_child("PressRoomPhoto", true, false) if app.contextual_director.active() else null
+	check(photo != null and photo.texture != null,"Photo de la salle de presse présente : "+label)
 func capture(label: String) -> void:
 	if DisplayServer.get_name() == "headless": return
 	await render_room("capture "+label)
@@ -85,10 +77,9 @@ func run() -> void:
 	check(app.find_child("InboxOpenPressInvitation",true,false) == null,"Lire l’invitation avant de rejoindre la conférence")
 	await activate("InboxPressInvitation"); await activate("InboxOpenPressInvitation")
 	var director: Node = app.contextual_director
-	check(director.active() and director.kind == "press","Le courrier ouvre la vraie salle de presse 3D")
+	check(director.active() and director.kind == "press","Le courrier ouvre la vraie salle de presse")
 	if not director.active() or director.kind != "press": await finish(); return
 	check(not app.root_content.is_visible_in_tree(),"La salle prend toute la place de la navigation")
-	room_viewport = director.view.room.get_viewport()
 	await render_room("ouverture")
 	var scene: Dictionary = app.model.clubLife.clubMeetings.scene.duplicate(true)
 	check(scene.kind == "press" and not scene.completed,"Rendez-vous réel à terminer")
@@ -105,7 +96,7 @@ func run() -> void:
 		await render_room("redimensionnement "+str(dimensions))
 		var page: Control = director.view
 		check(page.name == "ContextualPress" and page.is_visible_in_tree(),"Surface contextuelle visible " + str(dimensions))
-		check(page.room != null and page.room.is_inside_tree(),"Salle native 3D présente")
+		check(page.find_child("PressRoomPhoto",true,false) != null,"Photo de la salle de presse présente")
 		check(page.find_child("PressReturn",true,false) == null,"Aucune sortie avant publication")
 		if dimensions.x == 1280: check(page.publish_button.disabled,"Publication inactive tant que les vraies réponses manquent")
 		for index in questions.size():

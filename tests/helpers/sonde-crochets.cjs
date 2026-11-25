@@ -34,7 +34,8 @@ function instrumenter() {
   for (const [nom, points] of POINTS) {
     const fichier = path.join(ENGINE, nom + '.cjs');
     const mod = require(fichier);
-    let src = mod.factory.toString();
+    // Copie Windows (core.autocrlf) : le source est en CRLF ; les points de sonde sont écrits en LF.
+    let src = mod.factory.toString().replace(/\r\n/g, '\n');
     for (const [texte, cle, avant] of points) {
       const i = src.indexOf(texte);
       if (i < 0) throw Error(`sonde : point introuvable dans ${nom} : ${texte.slice(0, 60)}`);

@@ -4,6 +4,8 @@ extends RefCounted
 # pour nos jeunes, potentiel en fourchette par la frontière de connaissance). Les résultats et
 # classements des compétitions de jeunes s'affichent dès que leur chantier alimente la projection.
 const G = preload("res://ui/carnet_skin.gd")
+const Notation = preload("res://ui/notation_staff.gd")
+const K = preload("res://ui/player_knowledge_text.gd")
 const PAGE_SIZE := 8
 
 static func build(app: Control) -> Control:
@@ -63,7 +65,8 @@ static func _summary(parent: Node, data: Dictionary) -> void:
 	var watch := G.h(12)
 	parent.add_child(watch)
 	var average: float = float(summary.get("progression", 0))
-	watch.add_child(G.metric(("+" if average > 0 else "") + G.n(average), "progression moyenne", G.GOOD if average > 0 else G.INK))
+	# Notation façon FM : sens de la progression, jamais l'écart chiffré du Niveau.
+	watch.add_child(G.metric(Notation.sens(average), "progression moyenne", G.GOOD if average > 0 else G.ALERT if average < 0 else G.INK))
 	watch.add_child(G.metric(G.n(summary.get("injured", 0)), "à l’infirmerie", G.ALERT if int(summary.get("injured", 0)) > 0 else G.INK))
 	watch.add_child(G.metric(G.n(summary.get("cracks", 0)), "cracks repérés", G.POTENTIAL_COLOR))
 	var lines: Array[String] = []
@@ -104,14 +107,16 @@ static func _card(parent: Node, app: Control, person: Dictionary, index: int, da
 	row.add_child(identity)
 	identity.add_child(G.wrap(str(person.get("name", "")), 23, G.INK))
 	identity.add_child(G.wrap("%s · %s ans" % [str(person.get("pos", "")), G.n(person.get("age", 0))], 13))
-	row.add_child(G.metric(G.rating_text(person, true), "niveau"))
-	row.add_child(G.metric(G.potential_text(person), "potentiel", G.POTENTIAL_COLOR))
+	# Niveau et Potentiel : pastilles rondes des lettres du staff, comme l'Effectif (jamais un chiffre du moteur).
+	var notre := K.owned(person, true)
+	row.add_child(_lettre(Notation.lettre_champ(person, "rating", notre), "niveau", "FollowUpNiveau"))
+	row.add_child(_lettre(Notation.lettre_champ(person, "potential", K.owned(person)), "potentiel", "FollowUpPotentiel"))
 	var progression: Dictionary = person.get("progression", {})
 	var season_gain := int(progression.get("season", 0))
-	row.add_child(G.metric(_signed(season_gain), "cette saison", G.GOOD if season_gain > 0 else G.ALERT if season_gain < 0 else G.INK))
+	row.add_child(G.metric(Notation.sens(season_gain), "cette saison", G.GOOD if season_gain > 0 else G.ALERT if season_gain < 0 else G.INK))
 	var details: Array[String] = []
 	var month: Variant = progression.get("month")
-	if month != null: details.append("%s depuis le dernier rapport" % _signed(int(month)))
+	if month != null: details.append("%s depuis le dernier rapport" % Notation.sens(int(month)))
 	details.append("%s min · %s match(s) en équipe première" % [G.n(person.get("minutes", 0)), G.n(person.get("appearances", 0))])
 	var junior: Variant = person.get("juniorMinutes")
 	if junior != null: details.append("%s min chez les jeunes" % G.n(junior))
@@ -137,5 +142,10 @@ static func _card(parent: Node, app: Control, person: Dictionary, index: int, da
 		G.gauge(card, "Plafond de matchs", float(count), float(limit), G.ALERT if count >= int(data.get("matchCap", {}).get("warning", 25)) else G.GOOD)
 	if not flags.is_empty(): card.add_child(G.label("  ·  ".join(flags), 12, tone, true))
 
-static func _signed(value: int) -> String:
-	return ("+" if value > 0 else "") + G.n(value)
+## Colonne d'une lettre : pastille ronde (taille de l'Effectif) puis sa légende.
+static func _lettre(l: Dictionary, legende: String, nom: String) -> VBoxContainer:
+	var c := G.v(4)
+	G.fill(c)
+	c.add_child(Notation.porte_pastille(l, 40.0, nom))
+	c.add_child(G.wrap(legende, 13))
+	return c
