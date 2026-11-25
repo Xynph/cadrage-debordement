@@ -240,7 +240,7 @@ function perceivedRoleValue(clubId,judges,p,key,l=null){
 }
 // Valeur réelle (mesures et tests) : vraie note, confiance et vrai sang-froid, mêmes poids.
 function trueRoleValue(p,key,l=null){let v=skill(p,key,true);if(key==='goal'){const C=STAFF_JUDGEMENT.confiance,F=STAFF_JUDGEMENT.sangFroid;v+=goalConfidence(p,l)*C.jugement+(sangFroid(p)-F.neutre)*F.choix}return v}
-function judgedOrder(clubId,judges,players,key,l=null){return [...players].map(p=>[p,perceivedRoleValue(clubId,judges,p,key,l)]).sort((a,b)=>b[1]-a[1]||(String(a[0].id)<String(b[0].id)?-1:1)).map(x=>x[0])}
+function judgedOrder(clubId,judges,players,key,l=null){if(key==='goal')players=buteursPossibles(players);return [...players].map(p=>[p,perceivedRoleValue(clubId,judges,p,key,l)]).sort((a,b)=>b[1]-a[1]||(String(a[0].id)<String(b[0].id)?-1:1)).map(x=>x[0])}
 function judgedBest(l,side,players,key){return judgedOrder(l.pair[side],l.staffJudges[side],players,key,l)[0]||null}
 function initializeStaffJudgement(l){
  if(!STAFF_JUDGEMENT_RULES)return;

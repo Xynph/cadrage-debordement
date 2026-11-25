@@ -38,7 +38,9 @@ if(S.live&&!S.live.engine){let prev=S.live,l=createRugbyMatch(prev.pair,prev);S.
 if(old)news('Nouvelle version : attributs des joueurs, feuille à 23 et moteur de match enrichi. Ta carrière est conservée.');setupDevelopment(true);setupOpposition();setupManager();save()}
 function chooseSheet(i,id,bench=false){if(S.live)return;const list=bench?S.reserves:S.lineup,p=player(id);if(id&&(!p||p.injury||!(bench?benchEligible(p,i):slotEligible(p,i))))return;const all=[...S.lineup,...S.reserves],current=(bench?15:0)+i;if(id&&all.some((x,j)=>x===id&&j!==current)){toast('Ce joueur figure déjà sur la feuille.');return}list[i]=id||null;save();render()}
 function promoteCover(){if(S.live)return;repairSheet();if([...S.lineup,...S.reserves].filter(id=>!id).length>professionalPlaces())return false;let n=0;for(let i=0;i<23;i++){const isBench=i>=15,j=isBench?i-15:i,list=isBench?S.reserves:S.lineup;if(list[j])continue;let slot=isBench?[1,0,2,3,5,8,9,10][j]:j;let p=makePlayer(400+n,slot,56);p.id='academy-'+S.season+'-'+S.round+'-'+(S.playerSerial=(S.playerSerial||0)+1);delete p.skills;p.rating=rand(52,61);delete p.skills;p.age=19;p.condition=100;p.salary=COVER_WEEKLY_SALARY;ensureSkills(p);ensureContract(p);ensureDevelopment(p);club().players.push(p);list[j]=p.id;n++}if(n)news(`${n} espoir(s) promu(s) pour compléter la feuille de match.`);save();render();toast(n?`${n} espoir(s) rejoint le groupe.`:'Ta feuille de match est complète.')}
-function chooseScorer(c,ids,l=null){const fit=l?fitArrete(l):true;return ids.map(id=>c.players.find(p=>p.id===id)).filter(Boolean).sort((a,b)=>skill(b,'goal',fit)-skill(a,'goal',fit))[0]}
+// Buteur : un joueur d'arrière (n° 10 à 15 : famille 5 et plus) ; le demi de mêlée seulement à défaut, un avant jamais s'il reste un autre joueur.
+function buteursPossibles(players){const arrieres=players.filter(p=>p.fam>=5);if(arrieres.length)return arrieres;const demis=players.filter(p=>p.fam===4);return demis.length?demis:players}
+function chooseScorer(c,ids,l=null){const fit=l?fitArrete(l):true;return buteursPossibles(ids.map(id=>c.players.find(p=>p.id===id)).filter(Boolean)).sort((a,b)=>skill(b,'goal',fit)-skill(a,'goal',fit))[0]}
 // Index des effectifs (premier joueur de chaque identifiant, comme la recherche linéaire) : un match en relit l'effectif
 // des milliers de fois. Il est repris tant que le tableau garde les mêmes joueurs, dans le même ordre et avec les mêmes
 // identifiants (comparaison complète à chaque appel, sans allocation) ; sinon il est reconstruit. Résultats inchangés.
@@ -280,6 +282,11 @@ function disciplineDecision(l,foul,incident){
 /* `options.incident` (pénalités réalistes) : faute de mêlée, de touche ou de l'attaquant au sol, au lieu de l'incident tiré ; `options.phase` sert à la mesure. Le bénéficiaire reprend le ballon s'il ne l'avait pas. */
 function awardPenalty(l,side,options={}){
  const foul=1-side;
+ // Faute de l'équipe qui bénéficie déjà d'un avantage (loi 7) : faute ordinaire, l'arbitre revient à la faute initiale
+ // de l'adversaire (matchflow.js), qui profite donc de la pénalité de l'équipe fautive, racontée comme telle ; jeu déloyal
+ // sanctionné (carton), l'avantage est annulé et la nouvelle pénalité est maintenue contre l'équipe fautive.
+ const fautifSousAvantage=flowRules(l)&&!l.flow.resolvingAward&&l.flow.advantage&&l.flow.advantage.team===foul;
+ let jeuDeloyal=false,sousAvantage=false;const sanctionInitiale=fautifSousAvantage?(l.flow.advantage.kind==='scrum'?'mêlée':'pénalité'):null;
  l.stats[foul].penalties++;
  if(options.incident&&l.possession!==side)ballPossession(l,side,l.territory);
  if(revisedRules(l)){
@@ -291,9 +298,10 @@ function awardPenalty(l,side,options={}){
   history.last=l.minute;
   const decision=disciplineDecision(l,foul,incident);
   history.count++;history.recent++;
+  jeuDeloyal=fautifSousAvantage&&!!decision.sanction;sousAvantage=fautifSousAvantage&&!decision.sanction;
   // Arbitrage fin (dist/arbitrage.js) : cause détaillée de l'incident tiré, sans tirage de plus.
   const fin=typeof arbitrageFaute==='function'?arbitrageFaute(l,foul,side,incident,decision.repeated,options):null;
-  addEvent(l,fin?fin.texte:`${S.clubs[l.pair[foul]].abbr} sanctionné pour ${incident.label}${decision.repeated?' (fautes répétées)':''}. Pénalité pour ${S.clubs[l.pair[side]].abbr}.`,'penalty',{team:side,cause:incident.id,...(fin?{detail:fin.id}:{})});
+  addEvent(l,sousAvantage?`${S.clubs[l.pair[foul]].abbr} sanctionné pour ${incident.label}${decision.repeated?' (fautes répétées)':''}, pénalité écartée pendant son avantage : retour à la faute initiale de ${S.clubs[l.pair[side]].abbr}, ${sanctionInitiale} pour ${S.clubs[l.pair[foul]].abbr}.`:fin?fin.texte:`${S.clubs[l.pair[foul]].abbr} sanctionné pour ${incident.label}${decision.repeated?' (fautes répétées)':''}. Pénalité pour ${S.clubs[l.pair[side]].abbr}.`,'penalty',{team:side,cause:incident.id,...(fin?{detail:fin.id}:{})});
   if(decision.sanction){
    const eligible=activePlayers(l,foul);
    if(eligible.length){
@@ -309,7 +317,8 @@ function awardPenalty(l,side,options={}){
    if(eligible.length){const p=eligible[rand(0,eligible.length-1)];s.yellowCounts[p.id]=(s.yellowCounts[p.id]||0)+1;l.stats[foul].yellows++;if(s.yellowCounts[p.id]>=2){s.on=s.on.map(id=>id===p.id?null:id);s.sentOff.push(p.id);addEvent(l,`${p.name} reçoit un second jaune et quitte définitivement le terrain (règle simplifiée du jeu).`,'card')}else{s.cards.push({id:p.id,until:l.minute+10});addEvent(l,`Carton jaune pour ${p.name} : 10 minutes à quatorze.`,'card')}}
   }
  }
- if(flowRules(l)&&offerAdvantage(l,'penalty',side,foul,l.territory,{unsafe:l.events.at(-1)?.type==='card'}))return;
+ if(jeuDeloyal){clearAdvantage(l,'Avantage annulé : jeu déloyal sanctionné, la nouvelle pénalité est maintenue.');executePenaltyChoice(l,side);return}
+ if(flowRules(l)&&offerAdvantage(l,'penalty',side,foul,l.territory,{unsafe:l.events.at(-1)?.type==='card',silent:sousAvantage}))return;
  executePenaltyChoice(l,side);
 }
 function executePenaltyChoice(l,side){const distance=side===0?100-l.territory:l.territory;/* Fin de période (dist/matchflow.js) : choix sensé au score après la sirène, annoncé. */const sirene=choixPenaliteSirene(l,side,distance);/* Plan de pénalité réglé avant le match (combinaisons, dist/playbook.js) : « Selon le score » garde le choix du staff. */let plan=sirene?'staff':typeof combiPlanPenalite==='function'?combiPlanPenalite(l,side,distance):'staff';if(plan==='main'&&!(quickTapRules(l)&&distance>0&&l.events.at(-1)?.type!=='card'&&quickTapper(l,side)))plan='staff';if(plan==='melee'&&!restartRules(l))plan='staff';if(plan==='melee'){annoncePenaliteSirene(l,side,'melee');addEvent(l,`${S.clubs[l.pair[side]].abbr} choisit la mêlée sur la pénalité.`);if(combiLire(l,side,'scrum','melee',()=>grantSetPiece(l,'scrum',side,l.territory,'penalty-scrum',1-side))!==false)return;plan='touche'}if(plan==='main'){annoncePenaliteSirene(l,side,'main');return combiLire(l,side,'main','main',()=>playQuickTap(l,side))}if(plan==='staff'&&sirene!=='poteaux'&&quickTapRules(l)&&wantsQuickTap(l,side,distance)){annoncePenaliteSirene(l,side,'main');return playQuickTap(l,side)}const spotY=penaltySpotY(l,side),attempt=sirene?sirene==='poteaux':plan==='poteaux'?distance<55:plan==='touche'?false:wantsPosts(l,side,distance,spotY)&&!pretereTouche(l,side);annoncePenaliteSirene(l,side,attempt?'poteaux':'touche');if(attempt){const kicker=goalKicker(l,side);l.stats[side].goalAttempts++;const scored=Math.random()<goalChance(l,side,false,spotY);noteGoalKick(l,side,scored);if(scored){l.stats[side].goals++;l.score[side]+=3;addEvent(l,`${kicker?.name||S.clubs[l.pair[side]].abbr} (${S.clubs[l.pair[side]].abbr}) · Pénalité réussie. ${l.score.join(' – ')}.`,'goal',{kind:'goal',team:side,actor:kicker?.id||null,from:{x:l.territory,y:spotY},to:{x:attackingGoal(side),y:35}})}else addEvent(l,`${kicker?.name||S.clubs[l.pair[side]].abbr} manque la tentative de pénalité.`,'miss',{kind:'miss',team:side,actor:kicker?.id||null,from:{x:l.territory,y:spotY},to:{x:attackingGoal(side),y:42}});if(restartRules(l)){chronoArret(l,'penalite');if(scored){if(!flowScored(l,side)&&(flowRules(l)||l.minute<80))relancer(l,'kickoff',1-side,'score',side)}else missedGoal(l,side)}else{l.territory=50;changePossession(l)}}else{const exit=clamp(l.territory+(side===0?1:-1)*rand(16,25),6,94);if(restartRules(l)){chronoArret(l,'penaltouche');if(plan==='touche')combiLire(l,side,'lineout','touche',()=>resolveTouch(l,side,exit,{direct:true,penalty:true}));else resolveTouch(l,side,exit,{direct:true,penalty:true})}else{l.possession=side;l.territory=exit;addEvent(l,`${S.clubs[l.pair[side]].abbr} choisit la pénaltouche pour installer la pression.`);contestSetPiece(l,side,'lineout',true)}}}
