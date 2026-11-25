@@ -4,7 +4,7 @@
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os'),vm=require('node:vm');
 const media=require('../native/engine/media-packs.cjs'),pressIds=require('../native/engine/press-identities.cjs');
-const db=require('../dist/rugby-common-rosters.js'),staff=require('../native/engine/staff.cjs'),{createBridge,CORE_FILES}=require('../native/engine/worker.cjs');
+const db=require('../dist/rugby-common-rosters.js'),staff=require('../native/engine/staff.cjs'),{createBridge,CORE_FILES}=require('../native/engine/worker.cjs'),{signerExport}=require('./helpers/signature-export.cjs');
 const root=fs.mkdtempSync(path.join(os.tmpdir(),'cd-press-pack-'));let seq=0;
 
 function archive(manifest){
@@ -101,7 +101,7 @@ const expectBase=(m,why)=>{const t=JSON.stringify(m);assert.ok(packNames.every(n
 const expectPack=(m,why)=>{const t=JSON.stringify(m);assert.ok(baseNames.every(n=>!t.includes(n)),why+' : plus aucun nom de base remplacé');assert.equal(person(m,'presse-0').name,'Journaliste Test Zéro',why);assert.equal(person(m,'presse-0').outlet,'Rédaction Test 1',why);for(const id of renamed)assert.equal(person(m,id).name,pressRubric.journalists.find(j=>j.id===id).name,why);};
 try{
  writeBank('presse-0');
- b=createBridge({dataDir:profile,seed:4242,now:1700000000000,distDir});
+ b=createBridge({testVm:true,dataDir:profile,seed:4242,now:1700000000000,distDir});
  let m=good('new_career',{mode:'world-champ',club:3});
  if(m.clubLife.press.conference.available)m=good('press_conference',{context:m.clubLife.press.context,answers:m.clubLife.press.conference.questions.map(q=>({questionId:q.id,answerId:'r0'}))});
  m=settle(m);assert.ok(m.clubLife.press.history.length>0,'au moins une conférence archivée');
@@ -128,7 +128,7 @@ try{
  // Bascule pack → base → pack, puis reprise du worker.
  m=settle(good('pack_select',{id:'base',scope:'career',mode}));expectBase(m,'retour à la base');
  m=settle(good('pack_select',{id:preview.id,scope:'career',mode}));expectPack(m,'pack rétabli');
- good('shutdown');b=createBridge({dataDir:profile,now:1700000000000,distDir});m=settle(good('snapshot'));expectPack(m,'reprise avec pack');
+ good('shutdown');b=createBridge({testVm:true,dataDir:profile,now:1700000000000,distDir});m=settle(good('snapshot'));expectPack(m,'reprise avec pack');
  // Manifeste installé altéré : le pack devient indisponible, la base s'affiche.
  {const installed=path.join(fs.realpathSync(m.meta.dataDir),'packs',preview.id,'manifest.json'),original=fs.readFileSync(installed);
   for(const alter of [x=>x.press.journalists['presse-0'].name='<i>Journaliste Test</i>',x=>x.press.journalists['presse-99']={name:'Journaliste Test'},x=>delete x.meta.pressIdentityVersion,x=>{delete x.press;}]){
@@ -140,11 +140,11 @@ try{
  // Ancienne sauvegarde : identifiant de journaliste d'avant le renommage,
  // signature d'époque dans l'archive. Elle est acceptée et migrée.
  const doc=JSON.parse(good('export').meta.exportText),old=doc.state,entry=old.pressConference.history.find(h=>h.journalist);
- target=entry.journalist.id;writeBank(target);good('shutdown');b=createBridge({dataDir:profile,now:1700000000000,distDir});
+ target=entry.journalist.id;writeBank(target);good('shutdown');b=createBridge({testVm:true,dataDir:profile,now:1700000000000,distDir});
  for(const h of old.pressConference.history)if(h.journalist?.id===target)Object.assign(h.journalist,{id:legacyId,name:'Signature Test Ancienne',outlet:'Rédaction Test Ancienne'});
  for(const e of old.pressConference.lastOutcome?.exchanges||[])if(e.journalistId===target)e.journalistId=legacyId;
  const contacts=old.pressPeople.contacts;if(contacts[target]){contacts[legacyId]=contacts[target];delete contacts[target];}
- {const text=JSON.stringify(old);let h=2166136261;for(let i=0;i<text.length;i++)h=Math.imul(h^text.charCodeAt(i),16777619);doc.checksum=(h>>>0).toString(16).padStart(8,'0');}// somme de contrôle des sauvegardes
+ signerExport(doc,b.vm);// somme de contrôle des sauvegardes (export réduit compris)
  m=settle(good('import',{text:JSON.stringify(doc)}));
  const migrated=state(),archived=migrated.pressConference.history.filter(h=>h.journalist?.name==='Signature Test Ancienne');
  assert.ok(archived.length>0&&archived.every(h=>h.journalist.id===target),'identifiant migré, signature d’époque conservée dans la sauvegarde');

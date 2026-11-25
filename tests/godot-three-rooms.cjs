@@ -9,17 +9,16 @@ const {spawnSync}=require('node:child_process');
 const godot=process.env.CD_GODOT_EXECUTABLE||process.env.CD_GODOT_EXE;
 const repository=path.resolve(__dirname,'..');
 
-function documentWith(text,mutate){
+// Empreinte comme le jeu, export réduit compris : tests/helpers/signature-export.cjs.
+const {signerExport}=require('./helpers/signature-export.cjs');
+function documentWith(text,mutate,vm){
   const document=JSON.parse(text);mutate(document.state);
-  const body=JSON.stringify(document.state);let checksum=2166136261;
-  for(let i=0;i<body.length;i++)checksum=Math.imul(checksum^body.charCodeAt(i),16777619);
-  document.checksum=(checksum>>>0).toString(16).padStart(8,'0');
-  return JSON.stringify(document);
+  return signerExport(document,vm);
 }
 function prepareFixtures(temporary){
   const directory=path.join(temporary,'fixtures');fs.mkdirSync(directory);
   const {createBridge}=require('../native/engine/worker.cjs');
-  const bridge=createBridge({dataDir:path.join(temporary,'fixture-profile'),seed:13,now:1700000000000});
+  const bridge=createBridge({dataDir:path.join(temporary,'fixture-profile'),seed:13,now:1700000000000,testVm:true});
   let sequence=0;
   const good=(command,payload={})=>{
     const response=bridge.handle({id:++sequence,command,payload});
@@ -58,7 +57,7 @@ function prepareFixtures(temporary){
         player.injury=injury;player.condition=68;
         player.physicalLoad={version:1,plan:'collective',...player.physicalLoad,fatigue:32};
         player.medicalV68={version:1,protocol:'standard',stage};
-      });
+      },bridge.vm);
       const projected=good('import',{text}).clubLife.clubSupport.medical.players.find(player=>player.id===patientId);
       assert.ok(projected,'Fixture must be accepted and projected by the production importer');
       assert.equal(projected.injury,injury);assert.equal(projected.stage,stage);

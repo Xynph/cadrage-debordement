@@ -9,6 +9,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const academyGroups = require('../native/engine/academy-groups.cjs');
 const { createBridge } = require('../native/engine/worker.cjs');
+const { signerExport } = require('./helpers/signature-export.cjs');
 
 const depth = {
   'Pilier gauche': 2, 'Talonneur': 2, 'Pilier droit': 2,
@@ -39,19 +40,14 @@ test('Les deux effectifs atteignent leur minimum avant les postes supplémentair
   assert.match(notes.at(-1), /plafond de 75/);
 });
 
-function seal(document) {
-  const raw = JSON.stringify(document.state);
-  let h = 2166136261;
-  for (let i = 0; i < raw.length; i++) h = Math.imul(h ^ raw.charCodeAt(i), 16777619);
-  return JSON.stringify({ ...document, checksum: (h >>> 0).toString(16).padStart(8, '0') });
-}
-
 for (const [mode, club] of [['world-champ', 102]]) {
   test(`Effectifs disjoints de tous les centres · ${mode}`, t => {
     const tmp = path.resolve(os.tmpdir());
     const dataDir = fs.mkdtempSync(path.join(tmp, 'oval-academy-groups-'));
-    const options = { dataDir, seed: 827381, now: 1794178800000 };
+    const options = { dataDir, seed: 827381, now: 1794178800000, testVm: true };
     let bridge = createBridge(options);
+    // Empreinte comme le jeu, export réduit compris : tests/helpers/signature-export.cjs.
+    const seal = document => signerExport(document, bridge.vm);
     let id = 0;
     const ask = (command, payload = {}) => bridge.handle({ id: ++id, command, payload });
     const ok = (command, payload) => {

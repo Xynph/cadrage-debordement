@@ -4,12 +4,13 @@ const {advanceToNextMatch}=require('./helpers/monde-matchs.cjs');
 const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {createBridge}=require('../native/engine/worker.cjs');
+const {signerExport}=require('./helpers/signature-export.cjs');
 const root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'native-relationships-'));
 let b,seq=0;
 const good=(command,payload={})=>{const r=b.handle({id:++seq,command,payload});assert.equal(r.ok,true,command+': '+r.error);return r.model;};
 const bad=(command,payload={})=>{const r=b.handle({id:++seq,command,payload});assert.equal(r.ok,false,command+' doit être refusé');return r;};
 try{
- b=createBridge({dataDir:root,seed:371,now:1700000000000});
+ b=createBridge({testVm:true,dataDir:root,seed:371,now:1700000000000});
  let m=settleClubMeetings(good('new_career',{mode:'world-champ',club:29}),good);
  assert.ok(m.clubLife?.relationships,'Le vrai worker doit exposer les relations du club 29.');
  const rel=()=>m.clubLife.relationships,ctx=()=>rel().context;
@@ -36,7 +37,7 @@ try{
  for(const alter of [s=>s.v70Relations.version=999,s=>s.v70Relations.pairs[0].score=61,s=>s.livingLockerRoom.version=999,s=>s.livingLockerRoom.commitments[0].dueWeek--,s=>s.livingLockerRoom.history.push(s.livingLockerRoom.history[0])]){
   const doc=JSON.parse(saved);alter(doc.state);const r=bad('import',{text:JSON.stringify(doc)});assert.match(r.error,/vestiaire/i);assert.equal(good('export').meta.exportText,saved);
  }
- good('shutdown');b=createBridge({dataDir:root});assert.equal(good('export').meta.exportText,saved,'Reprise fidèle.');m=good('snapshot');
+ good('shutdown');b=createBridge({testVm:true,dataDir:root});assert.equal(good('export').meta.exportText,saved,'Reprise fidèle.');m=good('snapshot');
  const profileFile=path.join(m.meta.dataDir,'donnees.json'),disk=fs.readFileSync(profileFile);
  const rollback=good('export').meta.exportText;
  refuseSavePublication(profileFile,()=>bad('relationship_conversation',{context:ctx(),playerId:rel().players[2].id,choice:'ecouter'}));
@@ -49,10 +50,10 @@ try{
  }
  const source=JSON.parse(fs.readFileSync(path.join(m.meta.dataDir,'donnees.json'),'utf8')),state=JSON.parse(source.store['bdt-v1']);state.livingLockerRoom.version=999;source.store['bdt-v1']=JSON.stringify(state);
  const hostile=path.join(root,'hostile','PrototypeGodot');fs.mkdirSync(hostile,{recursive:true});const hostileFile=path.join(hostile,'donnees.json'),hostileBytes=JSON.stringify(source);fs.writeFileSync(hostileFile,hostileBytes);
- good('shutdown');b=createBridge({dataDir:hostile});m=good('snapshot');assert.match(m.meta.profileError,/vestiaire/i);assert.equal(m.meta.hasCareer,false);assert.equal(fs.readFileSync(hostileFile,'utf8'),hostileBytes,'Le profil refusé reste intact.');
- good('shutdown');b=createBridge({dataDir:path.join(root,'legacy'),seed:371,now:1700000000000});settleClubMeetings(good('new_career',{mode:'world-champ',club:0}),good);
+ good('shutdown');b=createBridge({testVm:true,dataDir:hostile});m=good('snapshot');assert.match(m.meta.profileError,/vestiaire/i);assert.equal(m.meta.hasCareer,false);assert.equal(fs.readFileSync(hostileFile,'utf8'),hostileBytes,'Le profil refusé reste intact.');
+ good('shutdown');b=createBridge({testVm:true,dataDir:path.join(root,'legacy'),seed:371,now:1700000000000});settleClubMeetings(good('new_career',{mode:'world-champ',club:0}),good);
  const old=JSON.parse(good('export').meta.exportText);delete old.state.satisfactionVersion;delete old.state.relationsVersion;delete old.state.objectivesVersion;delete old.state.economy.objectives;delete old.state.economy.objectiveHistory;delete old.state.economy.relationLog;delete old.state.economy.moodLog;for(const c of old.state.clubs)for(const p of c.players)delete p.satisfaction;
- let hash=2166136261;for(const ch of JSON.stringify(old.state))hash=Math.imul(hash^ch.charCodeAt(0),16777619);old.checksum=(hash>>>0).toString(16).padStart(8,'0');
+ signerExport(old,b.vm);
  m=good('import',{text:JSON.stringify(old)});assert.equal(rel().active,false);assert.equal(JSON.parse(good('export').meta.exportText).state.satisfactionVersion,undefined);
  m=good('relationship_activate',{context:ctx()});assert.equal(rel().active,true);assert.equal(rel().players[0].score,65);bad('relationship_activate',{context:ctx()});m=good('relationship_conversation',{context:ctx(),playerId:rel().players[0].id,choice:'ecouter'});assert.equal(rel().players[0].score,67);
  console.log('Relations natives : conversations, promesses, duos, événement, lecture pure, reprise et rollback disque PASS.');

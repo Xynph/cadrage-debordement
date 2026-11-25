@@ -8,6 +8,7 @@ const path=require('node:path');
 const {spawnSync}=require('node:child_process');
 const {test}=require('node:test');
 const {createBridge}=require('../native/engine/worker.cjs');
+const {signerExport}=require('./helpers/signature-export.cjs');
 const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
 
 function openProfile(t){
@@ -15,7 +16,7 @@ function openProfile(t){
  const dir=path.join(folder,'PrototypeGodot');
  const current=path.join(dir,'donnees.json');
  const backup=path.join(dir,'donnees-precedentes.json');
- const open=()=>createBridge({mandatoryPress:true,dataDir:dir,seed:20261110,now:1700000000000});
+ const open=()=>createBridge({testVm:true,mandatoryPress:true,dataDir:dir,seed:20261110,now:1700000000000});
  let bridge=open(), sequence=0;
  const send=(command,payload={})=>bridge.handle({id:++sequence,command,payload});
  const good=(command,payload)=>{const result=send(command,payload);assert.equal(result.ok,true,result.error);return result.model;};
@@ -24,7 +25,7 @@ function openProfile(t){
   bridge.close();
   fs.rmSync(folder,{recursive:true,force:true});
  });
- return {send,good,bytes,current,reopen(){
+ return {send,good,bytes,current,get vm(){return bridge.vm;},reopen(){
   good('shutdown');
   assert.equal(fs.existsSync(path.join(dir,'profil.lock')),false);
   bridge=open();
@@ -36,12 +37,8 @@ function payload(model,invitationId){
  return {context:press.context,answers:press.conference.questions.map(q=>({questionId:q.id,answerId:'r4'})),
   ...(invitationId===undefined?{}:{invitationId})};
 }
-function sign(doc){
- let sum=2166136261;
- for(const char of JSON.stringify(doc.state).split(''))sum=Math.imul(sum^char.charCodeAt(0),16777619);
- doc.checksum=(sum>>>0).toString(16).padStart(8,'0');
- return JSON.stringify(doc);
-}
+// Empreinte comme le jeu, export réduit compris : tests/helpers/signature-export.cjs.
+function sign(doc,profile){return signerExport(doc,profile.vm);}
 
 test('L’invitation presse persiste, refuse un mauvais ID et donne un reçu atomique',t=>{
  const profile=openProfile(t),{good,send,bytes}=profile;
@@ -55,7 +52,7 @@ test('L’invitation presse persiste, refuse un mauvais ID et donne un reçu ato
  assert.deepEqual(bytes(),saved,'Lecture et reprise n’écrivent pas le courrier');
  const malformed=JSON.parse(text);
  malformed.state.pressInvitations.entries[0].id='press-v1:1:1:0';
- const importRefused=send('import',{text:sign(malformed)});
+ const importRefused=send('import',{text:sign(malformed,profile)});
  assert.equal(importRefused.ok,false);
  assert.match(importRefused.error,/invitation/i);
  assert.deepEqual(bytes(),saved);
@@ -104,7 +101,7 @@ test('Une invitation bloque la progression jusqu’à publication et un direct i
  delete live.state.pressConference;
  delete live.state.pressRelations;
  delete live.state.pressPeople;
- model=good('import',{text:sign(live)});
+ model=good('import',{text:sign(live,profile)});
  assert.equal(model.clubLife.press.conference.required,false);
  assert.equal(profile.reopen().clubLife.press.conference.required,false);
  good('delegate');
@@ -118,7 +115,7 @@ test('Une invitation bloque la progression jusqu’à publication et un direct i
 
  const legacy=JSON.parse(good('export').meta.exportText);
  delete legacy.state.pressInvitations;
- model=good('import',{text:sign(legacy)});
+ model=good('import',{text:sign(legacy,profile)});
  assert.equal(model.clubLife.press.conference.required,false,'Une conférence déjà publiée par un ancien moteur est reconnue');
  assert.equal(model.clubLife.press.invitations[0].status,'published');
  good('begin_match');

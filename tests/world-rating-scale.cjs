@@ -11,6 +11,7 @@ const vm = require('node:vm');
 const { test } = require('node:test');
 const repo = path.resolve(__dirname, '..');
 const { createBridge } = require(path.join(repo, 'native/engine/worker.cjs'));
+const { signerExport } = require(path.join(repo, 'tests/helpers/signature-export.cjs'));
 const { createV2, levels } = require('./helpers/senior-calibration-v2.cjs');
 
 const game = fs.readFileSync(path.join(repo, 'dist/game.js'), 'utf8');
@@ -24,7 +25,7 @@ const ELITE = ['elite', 'prem', 'urc', 'srp', 'jlo-d1'];
 (function () {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-bareme-v2-'));
   let created, exported, model, preview;
-  const bridge = createBridge({ dataDir: path.join(root, 'carriere'), seed: 20261114, now: 1794300000000 });
+  const bridge = createBridge({ dataDir: path.join(root, 'carriere'), seed: 20261114, now: 1794300000000, testVm: true });
   let serial = 0;
   const ask = (command, payload = {}) => {
     const result = bridge.handle({ id: ++serial, command, payload });
@@ -182,12 +183,8 @@ const ELITE = ['elite', 'prem', 'urc', 'srp', 'jlo-d1'];
   test('Sauvegarde au barème V1 : toujours valide, jamais recalculée', () => {
     const v1 = JSON.parse(exported);
     v1.state.seniorCalibrationVersion = 1;
-    // Empreinte d'export recalculée comme dist/saves.js (saveChecksum) : une carrière créée avant le barème V2.
-    const raw = JSON.stringify(v1.state);
-    let hash = 2166136261;
-    for (let i = 0; i < raw.length; i++) hash = Math.imul(hash ^ raw.charCodeAt(i), 16777619);
-    v1.checksum = (hash >>> 0).toString(16).padStart(8, '0');
-    const text = JSON.stringify(v1);
+    // Empreinte d'export recalculée comme le jeu (saveChecksum), export réduit compris : une carrière créée avant le barème V2.
+    const text = signerExport(v1, bridge.vm);
     ask('import', { text });
     const reread = JSON.parse(ask('export').meta.exportText).state;
     assert.equal(reread.seniorCalibrationVersion, 1);
