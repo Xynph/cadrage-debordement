@@ -57,6 +57,9 @@ const BALLON_BAS_MAX := 0.6
 ## 19 novembre 2026 : le ballon tenu glisse de BALLON_TUNNEL m au plus sur le côté du demi, vers la
 ## ligne médiane de la mêlée (le tunnel) : hors de l'aplomb de son buste, visible depuis la caméra TV.
 const BALLON_TUNNEL := 0.3
+## Longueur du bras (épaule -> poignet, m) de l'ancien athlète à 1,90 m, pour qui la posture
+## d'introduction est réglée : un demi aux bras plus courts (gabarits v5) se penche davantage.
+const BRAS_REFERENCE := 0.614
 ## Demi adverse : de son côté du ballon (recul négatif), du même côté de la mêlée, nettement à
 ## l'extérieur des paquets (18/11/2026 soir : à 1,35 m du centre, à demi penché contre le pilier
 ## droit adverse, il passait à l'image pour un avant resté debout dans le paquet).
@@ -421,14 +424,20 @@ func _appliquer(id: String, entry: Dictionary, nom: String, w: float) -> void:
 	_garder(id, entry, ARMS + LEGS + ["Abdomen", "Torso"])
 	var model: Node3D = entry.model
 	model.transform = _saved[id].model
-	model.rotation.x = float(p[0]) * w
-	model.position.y += float(p[1]) * w
+	var penche := 1.0
+	if nom == "introduction":
+		penche = clampf(BRAS_REFERENCE / maxf(_bras(rig), 0.01), 1.0, 1.4)
+		if penche < 1.02:
+			penche = 1.0
+	model.rotation.x = float(p[0]) * w * penche
+	# Gabarits v5 aux jambes plus longues : la flexion suit la longueur des jambes (foulée relative).
+	model.position.y += float(p[1]) * w * float(entry.get("foulee", 1.0))
 	# Buste fléchi vers l'avant (dos plat de la poussée).
 	var axe := (rig.global_basis.inverse() * actor.global_basis.x).normalized()
 	for bone in ["Abdomen", "Torso"]:
 		var index := rig.find_bone(bone)
 		if index >= 0:
-			Presentation._orient(rig, index, Basis(Quaternion(axe, float(p[2]) * w * 0.5)) * rig.get_bone_global_pose(index).basis, 1.0)
+			Presentation._orient(rig, index, Basis(Quaternion(axe, float(p[2]) * w * 0.5 * penche)) * rig.get_bone_global_pose(index).basis, 1.0)
 	# Appuis plantés derrière le bassin, genoux fléchis : les pieds restent sur la pelouse.
 	var avant := actor.global_basis.z.normalized()
 	for leg in ["L", "R"]:
@@ -456,6 +465,19 @@ func _appliquer(id: String, entry: Dictionary, nom: String, w: float) -> void:
 		for arm in ["L", "R"]:
 			var sign_ := 1.0 if arm == "L" else -1.0
 			Presentation._solve_arm(rig, arm, vise + cote * sign_ * 0.32, actor.global_basis * Vector3(sign_ * 0.7, -0.8, -0.15), w)
+
+
+## Longueur du bras gauche (épaule -> poignet) dans le monde.
+static func _bras(rig: Skeleton3D) -> float:
+	var total := 0.0
+	var chaine := ["UpperArm.L", "LowerArm.L", "Palm.L"]
+	for i in 2:
+		var a := rig.find_bone(chaine[i])
+		var b := rig.find_bone(chaine[i + 1])
+		if a < 0 or b < 0:
+			return BRAS_REFERENCE
+		total += rig.to_global(rig.get_bone_global_pose(a).origin).distance_to(rig.to_global(rig.get_bone_global_pose(b).origin))
+	return total
 
 
 func _garder(id: String, entry: Dictionary, names: Array) -> void:
