@@ -103,6 +103,12 @@ func survoler(ecran_nom: String, controle: Control, nom_capture: String) -> void
 	var joueur_vise := str(controle.get_meta("carte_joueur"))
 	# Règle de Léo (25/11) : le survol du NOM ne fait rien ; seul le bouton (i) (méta `carte_info`) ouvre la carte, après 0,5 s.
 	var info := controle if controle.has_meta("carte_info") else controle.find_child("CarteJoueurInfo_*", true, false) as Control
+	if info == null:
+		for n: Node in app.root_content.find_children("CarteJoueurInfo_*", "Control", true, false):
+			var c := n as Control
+			if c.has_meta("carte_info") and str(c.get_meta("carte_joueur", "")) == joueur_vise and c.is_visible_in_tree():
+				info = c
+				break
 	check(info != null and info.has_meta("carte_info") and info.is_visible_in_tree() and info.size.x >= 14.0, ecran_nom + " : bouton (i) présent et visible")
 	if info == null:
 		return

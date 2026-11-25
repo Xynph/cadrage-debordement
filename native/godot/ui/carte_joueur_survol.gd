@@ -130,7 +130,7 @@ static func lier_clic(app: Control, controle: Control, player_id: String, source
 		if clic == null or not clic.pressed or clic.button_index != MOUSE_BUTTON_LEFT: return
 		# Re-clic sur le nom de la carte ouverte : le guetteur (_input, avant l'interface) vient de la fermer sur ce même
 		# appui ; elle reste fermée (bascule) au lieu de se rouvrir aussitôt.
-		var fermee: Variant = app.get_meta("carte_fermee_clic", null)
+		var fermee: Variant = app.get_meta("carte_fermee_clic") if app.has_meta("carte_fermee_clic") else null
 		if fermee is Dictionary and fermee.get("ancre", null) == controle and Time.get_ticks_msec() - int(fermee.get("t", 0)) < 250:
 			app.remove_meta("carte_fermee_clic")
 			controle.accept_event()
