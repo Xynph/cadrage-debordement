@@ -47,6 +47,19 @@ var melee_tt: Array = []
 var _vitrine_debut: Dictionary = {}
 var _vitrines: Dictionary = {}
 var _precedents_tt: Dictionary = {}
+## Sortie de mêlée par un avant détaché avec le ballon (n° 8 ; Léo, 25/11/2026 : il traversait les
+## paquets encore liés). Fenêtre de SORTIE_FENETRE s depuis l'annonce : couples de ce porteur avec
+## tout autre joueur (corps entiers), et tous les couples de la mêlée pendant la fenêtre.
+const SORTIE_FENETRE := 3.0
+var _sortie_id := ""
+var _sortie_debut := -INF
+var _sortie_vus: Dictionary = {}
+const SORTIE_VITRINES := [0.6, 1.4]
+const SORTIE_VITRINES_MAX := 6
+var _sortie_photos: Dictionary = {}
+var _sortie_vitrines := 0
+var sortie_n8 := {"sorties": 0, "images": 0, "couples_franc": 0, "episodes_franc": 0, "couples_franc_tronc_tete": 0,
+	"penetration_max_m": 0.0, "os": {}, "pires": [], "couples_franc_en_course": 0, "en_course_max_m": 0.0}
 
 
 func _init() -> void:
@@ -217,6 +230,8 @@ func _process(delta: float) -> void:
 		racines[id] = (vue._actors[id].node as Node3D).global_position
 		if _couche(rig):
 			couches[id] = true
+	_suivre_sortie()
+	var sortie_vus: Dictionary = {}
 	var vus: Dictionary = {}
 	var vus_tt: Dictionary = {}
 	var touchees: Dictionary = {}
@@ -254,6 +269,8 @@ func _process(delta: float) -> void:
 				melee_tt.append({"t": snappedf(temps, 0.01), "image": images, "os": detail_t, "p": snappedf(max_t, 0.001),
 					"a": _etat_melee(a), "b": _etat_melee(b)})
 			vus_tt[a + ">" + b] = max_t > FRANC
+			if not _sortie_id.is_empty() and _sortie_id in [a, b] and max_p > FRANC:
+				_compter_sortie(a, b, max_p, max_t, detail, sortie_vus, phase)
 			if max_t > FRANC:
 				var st: Dictionary = par_phase[phase]
 				st.couples_franc_tronc_tete += 1
@@ -292,6 +309,7 @@ func _process(delta: float) -> void:
 		par_phase[phase].images_franc += 1
 	_precedents = vus
 	_precedents_tt = vus_tt
+	_sortie_vus = sortie_vus
 	for phase: String in ["melee", "maul"]:
 		if not vus_phase.has(phase):
 			_vitrine_debut.erase(phase)
@@ -304,6 +322,61 @@ func _process(delta: float) -> void:
 			_vitrine_debut[phase] = INF
 			_photographier({"phase": "vitrine-" + phase, "t": snappedf(temps, 0.01), "image": images, "a": v[2], "b": v[3],
 				"point": (v[0] as Vector3) / float(v[1]) + Vector3.UP * 0.9})
+
+
+## Porteur suivi à la sortie de mêlée : l'avant que le moteur détache avec le ballon (pas le demi qui
+## ramasse), pendant SORTIE_FENETRE s depuis l'annonce de la sortie.
+func _suivre_sortie() -> void:
+	var f = vue.get("_formations")
+	if f != null and str(f.formation.get("type", "")) == "sortie_melee":
+		var p := str(f.formation.get("porteur", ""))
+		if not p.is_empty() and str(f.formation.roles.get(p, "")) != "demi_sortie" and p != _sortie_id:
+			_sortie_id = p
+			_sortie_debut = temps
+			sortie_n8.sorties += 1
+	if not _sortie_id.is_empty() and (temps - _sortie_debut > SORTIE_FENETRE or not vue._actors.has(_sortie_id)):
+		_sortie_id = ""
+	if not _sortie_id.is_empty():
+		sortie_n8.images += 1
+		# Vitrines de la sortie (allure, pas une faute) : n° 8 sur le flanc puis le long du paquet adverse.
+		var depuis := temps - _sortie_debut
+		var due := SORTIE_VITRINES.filter(func(d: float) -> bool: return depuis >= d and not _sortie_photos.has("%s@%s" % [_sortie_id, d]))
+		if not due.is_empty() and _capture_due < 0 and not vues.is_empty() and _sortie_vitrines < SORTIE_VITRINES_MAX and f != null:
+			var voisin := ""
+			for id: String in f.formation.places:
+				if str(f.formation.roles.get(id, "")) == "pack" and vue._actors.has(id):
+					voisin = id
+					break
+			if not voisin.is_empty():
+				_sortie_photos["%s@%s" % [_sortie_id, due[0]]] = true
+				_sortie_vitrines += 1
+				var n8: Vector3 = (vue._actors[_sortie_id].node as Node3D).global_position
+				_photographier({"phase": "vitrine-sortie-n8", "t": snappedf(temps, 0.01), "image": images, "a": _sortie_id,
+					"b": voisin, "depuis_sortie": snappedf(depuis, 0.01), "point": n8 + Vector3.UP * 0.9})
+
+
+func _compter_sortie(a: String, b: String, max_p: float, max_t: float, detail: String, sortie_vus: Dictionary, phase: String = "") -> void:
+	var cle := a + ">" + b
+	sortie_vus[cle] = true
+	sortie_n8.couples_franc += 1
+	# Une fois sorti du paquet (0,2 s) : plus aucun contact voulu (liaison).
+	if temps - _sortie_debut > 0.2:
+		sortie_n8.couples_franc_en_course += 1
+		sortie_n8.en_course_max_m = maxf(float(sortie_n8.en_course_max_m), snappedf(max_p, 0.001))
+	if max_t > FRANC:
+		sortie_n8.couples_franc_tronc_tete += 1
+	sortie_n8.penetration_max_m = maxf(float(sortie_n8.penetration_max_m), snappedf(max_p, 0.001))
+	sortie_n8.os[detail] = int(sortie_n8.os.get(detail, 0)) + 1
+	if not _sortie_vus.has(cle):
+		sortie_n8.episodes_franc += 1
+		var autre := b if a == _sortie_id else a
+		var f = vue.get("_formations")
+		if (sortie_n8.pires as Array).size() < 30:
+			(sortie_n8.pires as Array).append({"t": snappedf(temps, 0.01), "depuis_sortie": snappedf(temps - _sortie_debut, 0.01),
+				"image": images, "autre": autre.right(6), "role_autre": str(f.formation.roles.get(autre, "")) if f != null else "",
+				"os": detail, "penetration": snappedf(max_p, 0.001), "libere": bool(f.libere) if f != null else true,
+				"phase": phase, "kind": str(vue._kind), "porteur_n8": str(vue._carrier_id) == _sortie_id,
+				"protege": not (f.entiers() as Dictionary).is_empty() if f != null and f.has_method("entiers") else false})
 
 
 func bilan() -> Dictionary:
@@ -323,4 +396,5 @@ func bilan() -> Dictionary:
 			"couples_images_proches": s.images_couples, "os": os_tries.slice(0, 6),
 			"couples_franc_tronc_tete": s.couples_franc_tronc_tete, "tronc_tete_max_m": s.tronc_tete_max_m, "os_tronc_tete": os_tt.slice(0, 6)}
 	return {"images": images, "images_rejeu_ignorees": images_rejeu, "seuil_franc_m": FRANC, "seuil_leger_m": LEGER,
-		"resume": resume, "pires": pires, "captures": captures, "melee_bustes_tetes": melee_tt}
+		"resume": resume, "pires": pires, "captures": captures, "melee_bustes_tetes": melee_tt,
+		"sortie_n8": sortie_n8}
