@@ -83,7 +83,8 @@ const SUIVI_LISSAGE := 1.2
 ## jusqu'à voir le buteur, le ballon, le pied des deux montants, la barre et TIR_MONTANT m de
 ## montant, hors du bandeau et de la légende (marge TIR_MARGE). Pendant le vol, elle suit le
 ## ballon vers les perches : le buteur quitte le cadre, le ballon et sa course à venir (TIR_AVANCE,
-## parts du vol) y entrent ; elle monte de TIR_MONTEE m. Amortie en TIR_LISSAGE s.
+## parts du vol) y entrent ; elle monte de TIR_MONTEE m ; ballon retombé, elle reprend le buteur avec
+## les poteaux jusqu'au plan suivant. Amortie en TIR_LISSAGE s.
 ## Jamais dans une tribune : |x| <= TIR_BORNE.x, |z| <= TIR_BORNE.y (panneaux à |z| = 41,2 m,
 ## gradins à 45 m, tribunes d'en-but à 65 m).
 const TIR_HAUTEUR := 2.8
@@ -460,8 +461,10 @@ func _cadrer_tir(aspect: float, mode: String, delta: float, pose: bool) -> Array
 	var en_plus: Array[Vector3] = []
 	for avance: float in TIR_AVANCE:
 		en_plus.append(ApresEssai.vol(depart, arrivee, minf(1.0, vole + avance)))
-	if vole < 0.05:
-		# Le buteur (élan compris) et le ballon sur le tee, jusqu'à la frappe : essentiels eux aussi.
+	if vole < 0.05 or vole >= 0.999:
+		# Le buteur (élan compris) et le ballon sur le tee, jusqu'à la frappe : essentiels eux aussi ;
+		# de nouveau une fois le ballon retombé, jusqu'au plan suivant (match filmé du 25/11 : deux à
+		# trois secondes de poteaux et de défenseurs sans buteur après chaque tir).
 		var pied := marque
 		var id := str(tir.get("buteur", ""))
 		if view._actors.has(id):

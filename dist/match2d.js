@@ -42,8 +42,11 @@ function matchScene(l){
    const attackPlan=record.plans.attack[side],defencePlan=record.plans.defence[side];
    if(attack&&slot>=8){y=attackPlan==='conquete'?23+(slot-8)*4.2:attackPlan==='large'?4+(slot-8)*10.3:7+(slot-8)*9.3;x=formation.x-dir*(attackPlan==='conquete'?8+(slot-8)*1.5:12+(slot-8)*2.8)}
    if(attack&&slot<8){x=formation.x-dir*(attackPlan==='conquete'?3+slot%3*1.5:6+slot%3*3);y=ball.y+(Math.floor(slot/3)-1)*(attackPlan==='conquete'?3:5)+(slot%3-1)*2}
-   if(!attack){x=formation.x+dir*(defencePlan==='pression'?4:defencePlan==='prudente'?14:9)+(slot%3);y=slot<8?10+slot*6.5:5+(slot-8)*10;if(slot===14)x+=dir*(defencePlan==='prudente'?15:10)}
+   if(!attack){x=formation.x+dir*((defencePlan==='pression'?4:defencePlan==='prudente'?14:9)+slot%3);y=slot<8?10+slot*6.5:5+(slot-8)*10;if(slot===14)x+=dir*(defencePlan==='prudente'?15:10)}
   }
+  // Pénalité et tir au but (loi 20) : la défense recule à 10 m au moins de la marque, vers sa ligne de but
+  // (sur sa ligne si elle est plus proche), quel que soit son plan de défense ; répartie sur la largeur.
+  if(!attack&&['penalty','goal','miss'].includes(kind)){const goalLine=possession===0?100:0,recul=10+slot%3*1.2;if((x-formation.x)*dir<recul)x=Math.abs(goalLine-formation.x)<=recul?goalLine:formation.x+dir*recul;if(!record?.plans)y=slot<8?10+slot*7:5+(slot-8)*10}
   if((record?.move==='maul'||record?.porte===true)&&side===team&&slot<8){x=ball.x+(side===0?-1:1)*(2+slot%3*1.3);y=ball.y+(Math.floor(slot/3)-1)*2.5}
   if(lineoutNext&&slot<8){const spot=lineoutSpot(side,slot,clamp(lineoutNext.to.x,5,95),lineoutNext.team,y);x+=(spot.x-x)*.5;y+=(spot.y-y)*.5} // à mi-chemin, pas encore alignés
   const featured=id===record?.actor;

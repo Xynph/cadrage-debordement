@@ -127,6 +127,11 @@ func run() -> void:
 	var touche := Regie.etat_montre(touche_plan, "jeu", 0.5, true, false, equipes)
 	check(touche == "Touche pour Visiteurs XV" and not touche.contains("Domicile"), "Ligne d'état, touche de l'autre équipe : « Touche pour » l'équipe qui lance (" + touche + ")")
 	check(Regie.etat_montre({"kind": "scrum", "scene": {"possession": 0, "ball": {"x": 50.0}}}, "jeu", 0.5, true, false, equipes) == "Mêlée pour Domicile XV", "Ligne d'état, mêlée : « Mêlée pour … »")
+	# Match filmé du 25/11 : « X a le ballon dans les 22 » pendant l'en-avant de X, mêlée pour l'autre.
+	var en_avant := Regie.etat_montre({"kind": "hand-fault", "scene": {"possession": 1, "ball": {"x": 80.0}}}, "jeu", 0.5, true, false, equipes)
+	check(en_avant == "En-avant", "Ligne d'état, en-avant : l'arrêt de jeu, pas la possession (" + en_avant + ")")
+	var penalite := Regie.etat_montre({"kind": "penalty", "scene": {"possession": 0, "ball": {"x": 60.0}}}, "jeu", 0.5, true, false, equipes)
+	check(penalite == "Pénalité pour Domicile XV", "Ligne d'état, pénalité : « Pénalité pour … » (" + penalite + ")")
 
 	# Écran intermédiaire : le terrain 2D rejoue des faits en retard sur la borne du moteur ; la ligne
 	# d'état suit le dernier fait joué (celui du bandeau du fil), pas le dernier fait de la borne
