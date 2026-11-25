@@ -127,6 +127,15 @@ def stage(node):
     model.mkdir(exist_ok=True)
     for n in ("quaternius-rugby-athlete.glb", "QUATERNIUS-CC0-v22.md", "ATTRIBUTION.md", "ASSETS-V23-LICENSES.md"):
         shutil.copy2(ROOT / "dist/match3d/assets" / n, model / n)
+    # Joueurs 3D v5 (CC0) : dix gabarits sur le squelette Quaternius, peaux et manifeste.
+    joueurs = ROOT / "dist/match3d/assets/joueurs"
+    if (joueurs / "joueurs.json").is_file():
+        catalogue = json.loads((joueurs / "joueurs.json").read_text(encoding="utf-8-sig"))
+        for profil in catalogue["profils"].values():
+            assert (joueurs / profil["fichier"]).is_file(), profil["fichier"]
+        for peau in catalogue["peaux"]:
+            assert (joueurs / "peaux" / peau).is_file(), peau
+        shutil.copytree(joueurs, model / "joueurs", dirs_exist_ok=True)
     script = "process.stdout.write(JSON.stringify(require('./dist/france-clubs.js').clubs))"
     data = subprocess.check_output([str(node), "-e", script], cwd=ROOT)
     (assets / "clubs.json").write_bytes(data)
@@ -228,7 +237,7 @@ def build(args):
             shutil.copy2(document, voice_licenses / document.name)
     shutil.copy2(ROOT / "dist/assets/club-atlas/manifest.json", licenses / "photos-manifest.json")
     shutil.copytree(ROOT / "dist/match3d/assets", licenses / "modele3d",
-                    ignore=shutil.ignore_patterns("*.glb", "*.gltf", "*.bin", "*.png", "*.jpg"))
+                    ignore=shutil.ignore_patterns("*.glb", "*.gltf", "*.bin", "*.png", "*.jpg", "*.webp"))
     (app / "LISEZ-MOI.txt").write_text(
         f"RUGBY LEGACY 27 — PRÉALPHA {BUILD_VERSION}\n\n"
         "Lancer RugbyLegacy27.exe. Aucun navigateur, Godot ou Node à installer.\n"
