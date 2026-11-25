@@ -176,6 +176,27 @@ func run() -> void:
 	entracte.etat_force = "Touche pour Visiteurs XV"
 	entracte._etat(vu_live, direct, equipes)
 	check(entracte.etat.text == "Touche pour Visiteurs XV", "Texte imposé par la régie : prioritaire")
+	entracte.etat_force = ""
+	# Vérificateur du 25/11 (8e) : carton joué sur le terrain 2D, juste avant la pénalité ; la ligne
+	# disait « Visiteurs XV a le ballon dans le camp adverse » (possession du moteur). Elle garde l'arrêt.
+	var terrain_arret = Terrain2D.new()
+	var arret_2d := [
+		{"i": 8, "minute": 8, "horloge": "8′", "kind": "hand-fault", "equipe": 0, "texte": "En-avant de Domicile XV.", "scene": {"kind": "hand-fault", "possession": 1, "ballon": [55.0, 30.0], "origine": [55.0, 30.0], "joueurs": []}},
+		{"i": 9, "minute": 8, "horloge": "8′", "kind": "penalty", "equipe": 0, "texte": "Plaquage dangereux de Visiteurs XV. Pénalité pour Domicile XV.", "scene": {"kind": "penalty", "possession": 0, "ballon": [60.0, 30.0], "origine": [60.0, 30.0], "joueurs": []}},
+		{"i": 10, "minute": 8, "horloge": "8′", "kind": "card", "equipe": 1, "texte": "Carton jaune pour Paul DURAND : exclusion de 10 minutes de jeu.", "scene": {"kind": "card", "possession": 1, "ballon": [60.0, 30.0], "origine": [60.0, 30.0], "joueurs": []}},
+	]
+	entracte.terrain = terrain_arret
+	var direct_arret := {"possession": 1, "zone": {"x": 60.0, "kind": "card"}, "borne": 11}
+	var vues_2d: Array = []
+	terrain_arret.alimenter(arret_2d, 11)
+	for k in 30:
+		terrain_arret.avancer(1.0)
+		entracte._etat(vu_live, direct_arret, equipes)
+		if vues_2d.is_empty() or vues_2d[-1] != entracte.etat.text: vues_2d.append(entracte.etat.text)
+	check(not terrain_arret.en_retard() and str(terrain_arret.joue.get("kind", "")) == "card", "Fixture : le carton est le dernier fait joué")
+	check(not vues_2d.any(func(t: String) -> bool: return t.contains("a le ballon")), "Écran intermédiaire, en-avant, pénalité puis carton : jamais la possession du moteur (%s)" % str(vues_2d))
+	check(entracte.etat.text == "Carton jaune pour Paul DURAND", "Écran intermédiaire, carton joué : la ligne dit le carton (" + entracte.etat.text + ")")
+	terrain_arret.free()
 	entracte.etat.free()
 	entracte.free()
 	terrain.free()

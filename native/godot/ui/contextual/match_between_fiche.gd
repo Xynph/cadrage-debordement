@@ -19,6 +19,9 @@ static func etat_du_fait(kind: String, camp: int, x: float, equipes: Array) -> S
 
 ## Ligne d'état d'un fait du terrain 2D (élément de direct.deroule), « » si inexploitable.
 static func etat_du_deroule(item: Dictionary, equipes: Array) -> String:
+	# Carton : l'arrêt dit le carton (« Carton jaune pour X »), comme pendant l'arrêt de jeu.
+	if str(item.get("kind", "")) == "card" and not str(item.get("texte", "")).is_empty():
+		return str(item.texte).get_slice(" :", 0).trim_suffix(".").strip_edges()
 	var scene: Variant = item.get("scene")
 	if not scene is Dictionary: return ""
 	var camp: Variant = scene.get("possession", item.get("equipe", -1))
@@ -43,6 +46,10 @@ func _etat(live: Dictionary, direct: Dictionary, equipes: Array) -> void:
 		# (celui du bandeau du fil), pas le dernier fait de la borne.
 		var montre := etat_du_deroule(terrain.joue, equipes)
 		etat.text = montre if not montre.is_empty() else "Le match"
+	elif terrain != null and str(terrain.joue.get("kind", "")) in ARRETS_TENUS and not etat_du_deroule(terrain.joue, equipes).is_empty():
+		# Dernier fait joué = arrêt de jeu (carton, pénalité, en-avant) : la ligne le garde jusqu'au fait
+		# suivant, pas la possession du moteur (vérificateur du 25/11, 8e : « CARTON JAUNE · X a le ballon »).
+		etat.text = etat_du_deroule(terrain.joue, equipes)
 	elif (possession is float or possession is int) and equipes.size() >= 2:
 		var cote := clampi(int(possession), 0, 1)
 		etat.text = "%s a le ballon %s" % [S.G.club_name(equipes[cote]), _zone(float(direct.get("zone", {}).get("x", 50.0)), cote)]
