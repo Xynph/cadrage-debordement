@@ -805,7 +805,7 @@ func _process(delta: float) -> void:
 	# Plancher : dernière pose de l'image (après le ballon et les formations), enregistrée par le rejeu.
 	_poser_plancher()
 	# Puis les jambes des joueurs debout sortent du corps des joueurs couchés (ruck), à l'horizontale.
-	_plancher.degager(_actors, delta, _carrier_id if _ball_attached else "")
+	_plancher.degager(_actors, delta, _carrier_id, _ball if _ball_attached and _ball.visible else null)
 	_rejeu.enregistrer(delta, _camera_cut)
 	_fit_camera(delta, _camera_cut)
 	_camera_cut = false

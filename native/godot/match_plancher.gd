@@ -44,18 +44,22 @@ const PASSES := 3
 ## racines, retour de l'écart (m/s), passes au plus par joueur.
 const COUCHE := 0.45
 const CORPS_COUCHE := [["Hips", "Abdomen", 0.13], ["Abdomen", "Torso", 0.14], ["Torso", "Neck", 0.14], ["Head", 0.22, 0.1],
-	["UpperLeg.L", "LowerLeg.L", 0.08], ["UpperLeg.R", "LowerLeg.R", 0.08], ["LowerLeg.L", "Foot.L", 0.06], ["LowerLeg.R", "Foot.R", 0.06]]
+	["UpperLeg.L", "LowerLeg.L", 0.08], ["UpperLeg.R", "LowerLeg.R", 0.08], ["LowerLeg.L", "Foot.L", 0.06], ["LowerLeg.R", "Foot.R", 0.06],
+	["UpperArm.L", "LowerArm.L", 0.06], ["UpperArm.R", "LowerArm.R", 0.06], ["LowerArm.L", "Palm.L", 0.05], ["LowerArm.R", "Palm.R", 0.05]]
 const JAMBES_DEBOUT := [["UpperLeg.L", "LowerLeg.L", 0.08], ["UpperLeg.R", "LowerLeg.R", 0.08], ["LowerLeg.L", "Foot.L", 0.06],
 	["LowerLeg.R", "Foot.R", 0.06], ["Foot.L", 0.16, 0.045], ["Foot.R", 0.16, 0.045]]
 const JEU := 0.025
 const PORTEE := 3.0
 const RETOUR := 1.2
 const PASSES_DEGAGEMENT := 6
+const PRISE := 0.25
 
 ## id -> {"rotations": {os: Quaternion}, "positions": {os: Vector3}, "y": float}
 var _origines: Dictionary = {}
 ## id -> écart horizontal du modèle (monde) appliqué à l'image précédente (dégagement).
 var _ecarts: Dictionary = {}
+## Part de l'écart du porteur suivie par le ballon tenu (0 à la prise, 1 après PRISE s).
+var _poids_ballon := 0.0
 ## Corrections faites (tests, mesures).
 var corrections := 0
 
@@ -140,9 +144,11 @@ func poser(id: String, entry: Dictionary) -> void:
 
 
 ## Dégagement, après `poser` (écart horizontal seul : le plancher reste acquis) : les jambes des joueurs debout sortent du corps des joueurs couchés.
-## `exclus` : joueur laissé à sa place, le porteur qui tient le ballon (le ballon suit ses mains : le
-## déplacer ferait sauter le ballon à la prise ou à la passe). Présentation seule.
-func degager(actors: Dictionary, delta: float, exclus: String = "") -> void:
+## `ballon` : ballon tenu par `porteur` (null s'il n'est pas dans ses mains) ; il suit l'écart du
+## porteur, avec un poids qui monte en PRISE s après la prise (aucun bond du ballon). À la passe, le
+## vol part de la place montrée. Présentation seule.
+func degager(actors: Dictionary, delta: float, porteur: String = "", ballon: Node3D = null) -> void:
+	_poids_ballon = move_toward(_poids_ballon, 1.0, delta / PRISE) if ballon != null else 0.0
 	var couches: Array = []
 	for id: String in actors:
 		var rig: Skeleton3D = actors[id].get("rig")
@@ -156,7 +162,7 @@ func degager(actors: Dictionary, delta: float, exclus: String = "") -> void:
 		var model: Node3D = entry.get("model")
 		var rig: Skeleton3D = entry.get("rig")
 		var ecart: Vector3 = (_ecarts.get(id, Vector3.ZERO) as Vector3).move_toward(Vector3.ZERO, RETOUR * delta)
-		if id in couches or id == exclus or model == null or rig == null or not rig.is_visible_in_tree():
+		if id in couches or model == null or rig == null or not rig.is_visible_in_tree():
 			_ecarts.erase(id)
 			continue
 		var racine: Vector3 = (entry.node as Node3D).global_position
@@ -180,6 +186,10 @@ func degager(actors: Dictionary, delta: float, exclus: String = "") -> void:
 			_ecarts.erase(id)
 			continue
 		_ecarts[id] = ecart
+		if id == porteur and ballon != null:
+			var reel := model.global_position - (model.get_parent() as Node3D).global_transform * origine
+			reel.y = 0.0
+			ballon.global_position += reel * _poids_ballon
 		var o: Dictionary = _origines.get(id, {"rotations": {}, "positions": {}})
 		o["modele"] = origine
 		_origines[id] = o

@@ -1,7 +1,7 @@
 extends Node
 ## Sonde du ruck (CD_MESURE_RUCK=1, match filmé seulement) : à chaque image, après toutes les poses
 ## de la vue 3D, cherche les joueurs couchés (buste à moins de COUCHE m du sol) et compte les jambes
-## (cuisse, tibia, pied) des autres joueurs qui entrent dans leur corps (tronc, tête, jambes), en
+## (cuisse, tibia, pied) des autres joueurs qui entrent dans leur corps (tronc, tête, bras, jambes), en
 ## volumes capsules. Rend le nombre d'images et de couples jambe/corps en intersection, la plus forte
 ## pénétration et les pires cas (avec l'instant simulé pour retrouver l'image du film).
 ## CD_RUCK_CAPTURES=<dossier> : les CAPTURES_MAX premiers rucks (un couché entouré d'au moins deux
@@ -10,10 +10,11 @@ extends Node
 
 const COUCHE := 0.45
 ## Pénétration (m) au-delà de laquelle un contact compte comme une traversée.
-const SEUIL := 0.03
+const SEUIL := 0.01
 ## Tronc et tête du couché : [os de départ, os d'arrivée ou longueur le long de l'axe, rayon].
 const CORPS := [["Hips", "Abdomen", 0.13], ["Abdomen", "Torso", 0.14], ["Torso", "Neck", 0.14], ["Head", 0.22, 0.1],
-	["UpperLeg.L", "LowerLeg.L", 0.08], ["UpperLeg.R", "LowerLeg.R", 0.08], ["LowerLeg.L", "Foot.L", 0.06], ["LowerLeg.R", "Foot.R", 0.06]]
+	["UpperLeg.L", "LowerLeg.L", 0.08], ["UpperLeg.R", "LowerLeg.R", 0.08], ["LowerLeg.L", "Foot.L", 0.06], ["LowerLeg.R", "Foot.R", 0.06],
+	["UpperArm.L", "LowerArm.L", 0.06], ["UpperArm.R", "LowerArm.R", 0.06], ["LowerArm.L", "Palm.L", 0.05], ["LowerArm.R", "Palm.R", 0.05]]
 const JAMBES := [["UpperLeg.L", "LowerLeg.L", 0.08], ["UpperLeg.R", "LowerLeg.R", 0.08], ["LowerLeg.L", "Foot.L", 0.06],
 	["LowerLeg.R", "Foot.R", 0.06], ["Foot.L", 0.16, 0.045], ["Foot.R", 0.16, 0.045]]
 
