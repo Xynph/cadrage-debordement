@@ -270,7 +270,7 @@ func _process(delta: float) -> void:
 					"a": _etat_melee(a), "b": _etat_melee(b)})
 			vus_tt[a + ">" + b] = max_t > FRANC
 			if not _sortie_id.is_empty() and _sortie_id in [a, b] and max_p > FRANC:
-				_compter_sortie(a, b, max_p, max_t, detail, sortie_vus)
+				_compter_sortie(a, b, max_p, max_t, detail, sortie_vus, phase)
 			if max_t > FRANC:
 				var st: Dictionary = par_phase[phase]
 				st.couples_franc_tronc_tete += 1
@@ -355,7 +355,7 @@ func _suivre_sortie() -> void:
 					"b": voisin, "depuis_sortie": snappedf(depuis, 0.01), "point": n8 + Vector3.UP * 0.9})
 
 
-func _compter_sortie(a: String, b: String, max_p: float, max_t: float, detail: String, sortie_vus: Dictionary) -> void:
+func _compter_sortie(a: String, b: String, max_p: float, max_t: float, detail: String, sortie_vus: Dictionary, phase: String = "") -> void:
 	var cle := a + ">" + b
 	sortie_vus[cle] = true
 	sortie_n8.couples_franc += 1
@@ -374,7 +374,9 @@ func _compter_sortie(a: String, b: String, max_p: float, max_t: float, detail: S
 		if (sortie_n8.pires as Array).size() < 30:
 			(sortie_n8.pires as Array).append({"t": snappedf(temps, 0.01), "depuis_sortie": snappedf(temps - _sortie_debut, 0.01),
 				"image": images, "autre": autre.right(6), "role_autre": str(f.formation.roles.get(autre, "")) if f != null else "",
-				"os": detail, "penetration": snappedf(max_p, 0.001), "libere": bool(f.libere) if f != null else true})
+				"os": detail, "penetration": snappedf(max_p, 0.001), "libere": bool(f.libere) if f != null else true,
+				"phase": phase, "kind": str(vue._kind), "porteur_n8": str(vue._carrier_id) == _sortie_id,
+				"protege": not (f.entiers() as Dictionary).is_empty() if f != null and f.has_method("entiers") else false})
 
 
 func bilan() -> Dictionary:
