@@ -69,11 +69,11 @@ for (const mode of ['world-champ']) {
         assert.equal(player.attributesV2Estimated, undefined, player.id);
         assert.equal(player.knowledge.owned, false, player.id);
         assert.equal(player.knowledge.stage, 'unobserved', player.id);
-        // Mode « Précises » (défaut, décision de Léo du 25/11/2026) : les autres clubs montrent leurs qualités et leur note ;
-        // seul le potentiel reste une estimation du staff. Le masquage (option « fourchette ») : tests/qualites-fourchette.cjs.
+        // Mode « Précises » (défaut, décision de Léo du 25/11/2026) : les autres clubs montrent leurs qualités ;
+        // Niveau et Potentiel restent cachés (lettre du staff à l'écran). Le masquage (option « fourchette ») : tests/qualites-fourchette.cjs.
         assert.equal(player.knowledge.exact, true, player.id);
         assert.deepEqual(Object.keys(player.attributesV2).sort(), referenceKeys, player.id);
-        assert.ok(Number.isFinite(player.rating), player.id);
+        assert.equal(player.rating, null, player.id);
         assert.equal(player.potential, null, player.id);
       }
 
