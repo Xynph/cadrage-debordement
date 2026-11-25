@@ -39,6 +39,9 @@ function essaisRules(l){return tacticalRules(l)&&l.essaisVersion===1}
 // zone.own22 0,25 et longueur 0,7 (25/11) : avec 0,35 et 0,85, les dégagements gagnants depuis ses 22 changeaient la
 // possession plus souvent qu'avant (0,44 contre 0,37 par action) et creusaient l'écart moyen (+1 point) ; 3 600 matchs
 // URC / Premiership / Top 14 : matchs à 7 points ou moins +0,3 point, écart moyen +0,4 par rapport à l'ancien moteur.
+// qualite : poids de la qualité du botteur (longueur, touche trouvée, 50:22, reprises) et de la chasse sous la chandelle.
+// 0,5 (25/11) : à 1, le jeu au pied amplifiait l'écart de niveau (banc de la courbe de niveau, URC, 3 × 2 700 matchs : pente
+// 0,324 contre 0,313 avec l'ancien moteur ; 0,5 : 0,309 ; 0 : 0,307), le meilleur botteur s'ajoutant au niveau déjà compté.
 let JEU_PIED_RULES=1;
 var JEU_PIED={
  pousse:{base:.022,bord:.02},
@@ -50,7 +53,7 @@ var JEU_PIED={
  types:{own22:{touche:.82,long:.1,chandelle:.08,rasant:0,croise:0},ownHalf:{touche:.64,long:.2,chandelle:.16,rasant:0,croise:0},oppHalf:{touche:.3,long:.15,chandelle:.15,rasant:.25,croise:.15},opp22:{touche:0,long:0,chandelle:.2,rasant:.55,croise:.25}},
  touche:.8,directe22:.8,cinquante:{tente:.03,reussite:.35},
  recup:{chandelle:.28,rasant:.32,croise:.35},enAvant:.07,adverseTape:12,
- enButDefense:.5,croiseTouche:.12,longueur:.7
+ enButDefense:.5,croiseTouche:.12,longueur:.7,qualite:.5
 };
 function jeuPiedPerdu(l,side){return jeuPiedRules(l)?Math.max(0,JEU_PIED.perdu[jeuPiedZone(l,side)]-poussEnTouche(l,side)):0}
 function jeuPiedScore(l,side,zone){

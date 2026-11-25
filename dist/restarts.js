@@ -109,7 +109,7 @@ function jeuAuPiedChasseur(l,side,botteur){const others=activePlayers(l,side).fi
 function jeuAuPied(l,side){
  const J=JEU_PIED,dir=side===0?1:-1,origin=l.territory,opp=1-side,ab=S.clubs[l.pair[side]].abbr,abo=S.clubs[l.pair[opp]].abbr,goal=attackingGoal(side);
  const type=jeuAuPiedType(l,side),botteur=jeuAuPiedBotteur(l,side,type),nom=botteur?.name||ab;
- const q=clamp(((botteur?skill(botteur,'kick',true):unit(l,side,'kick',p=>p.fam>=4))-60)/40,-1,1);
+ const q=J.qualite*clamp(((botteur?skill(botteur,'kick',true):unit(l,side,'kick',p=>p.fam>=4))-60)/40,-1,1);
  const pluie=meteoActive(l)?meteoNiveau(l,'pluie'):l.weather==='Pluie'?1:0;
  const vent=meteoActive(l)?ventMetres(l,side)+(Math.random()*2-1)*METEO_MATCH.piedAlea.vent*l.meteo.vent:l.weather==='Vent'?9:0;
  const plus=collectivePreparationBonus(l,side,'pied')+occupationKickEdge(l,side),occ=effectiveAttack(l,side)==='occupation';
@@ -145,7 +145,7 @@ function jeuAuPied(l,side){
  if(type==='chandelle'){
   const landing=origin+dir*clamp(rand(12,24)+q*3+plus-vent*.5,6,33);
   if(dedans(landing))return resolveInGoal(l,side,'attacking-kick-grounded',origin);
-  const at=clamp(landing,1,99),r=Math.random(),pr=clamp(J.recup.chandelle+q*.08+(unit(l,side,'speed',p=>p.fam>=5)-unit(l,opp,'mental',p=>p.fam>=5))*.003+(occ?.05:0),.12,.45);
+  const at=clamp(landing,1,99),r=Math.random(),pr=clamp(J.recup.chandelle+q*.08+(unit(l,side,'speed',p=>p.fam>=5)-unit(l,opp,'mental',p=>p.fam>=5))*.003*J.qualite+(occ?.05:0),.12,.45);
   if(r<pr){ballPossession(l,side,at);const c=jeuAuPiedChasseur(l,side,botteur);fait(`${nom} (${ab}) tape une chandelle ; ${c?.name||ab} la reprend à la retombée, ${metres(at)} mètres plus loin.`,at);return true}
   if(r<pr+J.enAvant+pluie*.03){ballPossession(l,opp,at);const rec=actionPlayer(l,opp,'receiver');fait(`${nom} (${ab}) tape une chandelle ; ${rec?.name||abo} (${abo}) la relâche sous la pression.`,at);return handFault(l,opp)}
   return reception(at,`${nom} (${ab}) tape une chandelle de ${metres(at)} mètres, contestée`);
