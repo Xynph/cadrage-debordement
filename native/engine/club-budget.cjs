@@ -355,15 +355,18 @@ const margeTrain = (division, annuel, marge = 0, depense = 0) => Math.max(Number
 // association bien gérée finit dans le vert, une entreprise ou un mécène ne perd pas plus que ce que son propriétaire comble).
 // ecart : ce que la saison a déjà changé à ce résultat (prime de classement attendue au rang du moment moins la prime moyenne,
 // dépenses hors budget) : un club en bas du tableau ou qui a payé une indemnité se serre la ceinture pour tenir son objectif.
-// plancher : résultat sous lequel le train de vie ne dépense plus rien (club du manager : 0, il finit dans le vert s'il est géré
-// raisonnablement) ; sans plancher, l'objectif en tient lieu. Le train de vie ne dépense jamais plus que ce que la saison connue
+// plancher : résultat sous lequel le train de vie ne dépense plus rien et le fonctionnement se réduit, comme sous un objectif
+// (club du manager : 0, il finit dans le vert s'il est géré raisonnablement) ; sans plancher, l'objectif en tient lieu. Le train de vie ne dépense jamais plus que ce que la saison connue
 // (ecart compris : prime au rang du moment, dépenses hors budget, excédents réinvestis) laisse au-dessus de cette borne
 // (25/11/2026, carrière Monde réelle, graines 4242, 7 et 2026, saison 3 : un club qui avait payé une indemnité ou réinvesti ses
 // excédents dépensait encore 70 % de l'excédent prévu par son budget ; associations du championnat celte jusqu'à -2,2 M€).
 function ajustement(annuel, masseAnnuelle, enveloppe, marge = 0, objectif = null, ecart = 0, plancher = null) {
   const resultat = annuel - fonctionnementAnnuel(annuel) - masseAnnuelle * (1 + COTISATIONS), connu = resultat + (Number.isFinite(ecart) ? ecart : 0);
-  if (objectif !== null && Number.isFinite(objectif) && connu < objectif) return -Math.min(0.15 * annuel, objectif - connu);
   const borne = objectif !== null && Number.isFinite(objectif) ? objectif : plancher !== null && Number.isFinite(plancher) ? plancher : null;
+  // Sous l'objectif, ou sous le plancher du club du manager (25/11/2026 : avec des recettes stables, le club du manager finissait
+  // encore la saison 3 à -57 k€, graine 4242, son train de vie ne dépensant plus rien sans rien économiser), le fonctionnement
+  // est réduit de ce qui manque, au plus 15 % des recettes.
+  if (borne !== null && connu < borne) return -Math.min(0.15 * annuel, borne - connu);
   if (resultat > 0) return Math.min(TRAIN_DE_VIE * Math.max(0, resultat - Math.max(0, Number.isFinite(marge) ? marge : 0)), borne === null ? Infinity : Math.max(0, connu - borne));
   const economies = Math.min(0.15 * annuel, 0.7 * Math.max(0, -resultat - enveloppe));
   return economies > 0 ? -economies : 0;
@@ -454,7 +457,18 @@ function limites(forces, saison, { creation = false, types = null, credits = nul
 //     domicile, sinon null) : Abonnements = abonnementsHebdo, Billetterie = guichet ; sans billets (anciens appels), l'ancienne part des recettes.
 //   staff : {annuel, reference} (masseStaff) : Salaires du staff (cotisations comprises dans Cotisations) et fonctionnement
 //     du club = enveloppe − staff de référence ; sans staff, une seule ligne « Staff et fonctionnement » comme avant.
-function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle, resultats, phase = 'league', neutre = false, receptions, gere = false, repere = '', formation = null, investissement = 0, accueil = 1, marge = 0, objectif = null, depense = 0, classement = null, aideRelegation: aide = 0, remboursement = 0, humeur = null, billets = null, staff = null, plancher = null }) {
+// Recettes encaissées en retard sur le budget voté (encaisse : recettes déjà comptées, ecoulees : semaines comptées) : écart
+// projeté sur la saison, seulement à la baisse et après SEMAINES_AVANT_MANQUE semaines (une réception de plus ou de moins
+// ne compte presque plus). Les primes de la ligue (fin de saison) ne sont pas attendues en cours de saison.
+// Mesure du 25/11/2026 (carrière Monde réelle, graines 4242 et 7, saison 3, recettes lues au statut) : des associations
+// finissaient encore à -10/-930 k€ en encaissant moins que leur budget voté, leur train de vie ignorant ce retard.
+const SEMAINES_AVANT_MANQUE = 6;
+function manqueRecettes({ annuel, modele, regle, semaines, aide = 0, aideCentre = 0, encaisse = null, ecoulees = 0 }) {
+  if (!Number.isFinite(encaisse) || !Number.isInteger(ecoulees) || ecoulees < SEMAINES_AVANT_MANQUE || !(semaines > 0)) return 0;
+  const attendu = (annuel - modele * regle.ligue * PART_PRIME + Math.max(0, Number.isFinite(aide) ? aide : 0) + Math.max(0, Number.isFinite(aideCentre) ? aideCentre : 0)) / semaines;
+  return Math.min(0, encaisse - attendu * ecoulees) * semaines / ecoulees;
+}
+function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle, resultats, phase = 'league', neutre = false, receptions, gere = false, repere = '', formation = null, investissement = 0, accueil = 1, marge = 0, objectif = null, depense = 0, classement = null, aideRelegation: aide = 0, remboursement = 0, humeur = null, billets = null, staff = null, plancher = null, encaisse = null, ecoulees = 0 }) {
   const { force, regle, annuel, modele } = regleDe(forces, clubId);
   if (!Number.isInteger(semaines) || semaines < 1) throw Error('Budget de club : nombre de semaines invalide.');
   const salaires = rond(masseHebdo * 52 / semaines), matchs = Math.max(1, receptions ?? Math.round(semaines / 2));
@@ -482,10 +496,11 @@ function semaine({ forces, clubId, masseHebdo, semaines, domicile, alea, libelle
   // moment (classement : {rang, taille}), dépenses hors budget et excédents réinvestis cette saison (investissement, annuel).
   const vise = objectif !== null && Number.isFinite(objectif) ? objectif : marge > 0 ? marge : null, borne = vise ?? (plancher !== null && Number.isFinite(plancher) ? plancher : null);
   const rangConnu = borne !== null && Number.isInteger(classement?.rang) && Number.isInteger(classement?.taille) && classement.taille >= 2 && classement.rang >= 1 && classement.rang <= classement.taille;
-  const ecart = (rangConnu ? primeClassement(force.division, classement.rang, classement.taille) - rond(regle.moyenne * regle.ligue * PART_PRIME) : 0) -
-    (borne !== null ? (Number.isFinite(depense) ? Math.max(0, depense) : 0) + (Number.isFinite(investissement) ? Math.max(0, investissement) : 0) : 0);
-  const train = gere ? ajustement(annuel, masseHebdo * 52, proprietaire(forces, clubId).enveloppe, margeTrain(force.division, annuel, marge, depense), vise, ecart, vise === null ? borne : null) : 0;
   const centre = centreFormation(annuel, force.division, formation);
+  const ecart = (rangConnu ? primeClassement(force.division, classement.rang, classement.taille) - rond(regle.moyenne * regle.ligue * PART_PRIME) : 0) -
+    (borne !== null ? (Number.isFinite(depense) ? Math.max(0, depense) : 0) + (Number.isFinite(investissement) ? Math.max(0, investissement) : 0) : 0) +
+    (borne !== null ? manqueRecettes({ annuel, modele, regle, semaines, aide, aideCentre: centre.aide, encaisse, ecoulees }) : 0);
+  const train = gere ? ajustement(annuel, masseHebdo * 52, proprietaire(forces, clubId).enveloppe, margeTrain(force.division, annuel, marge, depense), vise, ecart, vise === null ? borne : null) : 0;
   ecritures.push({ title: libelle + ' · Salaires des joueurs', amount: -salaires });
   if (staff && Number.isFinite(staff.annuel) && Number.isFinite(staff.reference)) {
     // Staff payé sur les mêmes semaines que les joueurs ; le train de vie (excédent dépensé) a sa propre ligne, les
@@ -547,7 +562,7 @@ function ouverture({ forces, saison, clubs, types = null, excedents = false, aid
     const projete = annuel - fonctionnementAnnuel(annuel) - (Number.isFinite(club.masse) ? club.masse : 0) * (1 + COTISATIONS) + aide;
     const vise = club.id === joue ? epargne(division, annuel) : objectifGestion(forces, club.id, p.type) ?? 0;
     const investissement = Math.min(engage.investissement, rond(Math.max(0, projete - vise)));
-    return { type: p.type, enveloppe: p.enveloppe, depart: club.cash - dividende, recettes: 0, charges: 0, salaires: 0, masse: Math.round(club.masse), division, rang: Math.ceil(taille / 2), taille,
+    return { type: p.type, enveloppe: p.enveloppe, depart: club.cash - dividende, recettes: 0, charges: 0, salaires: 0, semainesComptees: 0, masse: Math.round(club.masse), division, rang: Math.ceil(taille / 2), taille,
       reserve, investissement, dividende, aideRelegation: Number.isFinite(aides?.[club.id]) && aides[club.id] > 0 ? rond(aides[club.id]) : 0 };
   }) };
 }
@@ -616,6 +631,9 @@ function compter(compte, ecritures, masseAnnuelle, classement = null) {
     if (e.amount > 0) compte.recettes += e.amount; else compte.charges -= e.amount;
     if (e.title.endsWith('Salaires des joueurs')) compte.salaires -= e.amount;
   }
+  // Semaines comptées de la saison (manqueRecettes) ; absent d'une sauvegarde d'avant le 25/11/2026 : pas d'écart avant la
+  // saison suivante.
+  if (Number.isInteger(compte.semainesComptees)) compte.semainesComptees++;
   compte.masse = Math.round(masseAnnuelle);
   if (classement) { compte.division = classement.division; compte.rang = classement.rang; compte.taille = classement.taille; }
   return compte;
@@ -636,7 +654,7 @@ const annonceClauses = (sens, avant, apres, touches) => sens < 0
 //   compte : compteur du club ; tresorerie : caisse actuelle ; reste : semaines restantes ;
 //   receptionsRestantes : matchs de saison régulière à domicile encore à jouer ; rang, taille : classement actuel.
 //   billets : billetterie réelle {abonnementsHebdo, attendu} (même calcul que les écritures de la semaine) ; staff : masseStaff.
-function prevision({ forces, clubId, compte, tresorerie, masseHebdo, semaines, reste, receptions, receptionsRestantes, rang, taille, billets = null, staff = null }) {
+function prevision({ forces, clubId, compte, tresorerie, masseHebdo, semaines, reste, receptions, receptionsRestantes, rang, taille, billets = null, staff = null, formation = null }) {
   const { force, regle, annuel, modele } = regleDe(forces, clubId), division = force.division, masseAnnuelle = Math.round(masseHebdo * 52);
   const prime = primeClassement(division, rang, taille), reels = Number.isFinite(billets?.abonnementsHebdo) && Number.isFinite(billets?.attendu);
   const fixes = (modele * (regle.partenaires + regle.ligue * (1 - PART_PRIME) + regle.divers + (reels ? 0 : regle.billetterie * PART_ABONNEMENTS)) + (Number.isFinite(compte.aideRelegation) ? compte.aideRelegation : 0)) / semaines + (reels ? billets.abonnementsHebdo : 0);
@@ -649,7 +667,9 @@ function prevision({ forces, clubId, compte, tresorerie, masseHebdo, semaines, r
   // Même train de vie que les écritures de la semaine (semaine, club du manager : plancher 0, prime au rang du moment, dépenses
   // hors budget et excédents réinvestis).
   const investi = Number.isFinite(compte.investissement) ? compte.investissement : 0;
-  const ecartTrain = prime - rond(regle.moyenne * regle.ligue * PART_PRIME) - Math.max(0, -horsBudget) - Math.max(0, investi);
+  const manque = manqueRecettes({ annuel, modele, regle, semaines, aide: compte.aideRelegation, aideCentre: centreFormation(annuel, division, formation).aide, encaisse: compte.recettes,
+    ecoulees: Number.isInteger(compte.semainesComptees) ? compte.semainesComptees : 0 });
+  const ecartTrain = prime - rond(regle.moyenne * regle.ligue * PART_PRIME) - Math.max(0, -horsBudget) - Math.max(0, investi) + manque;
   const fonctionnement = fonctionnementAnnuel(annuel) + ajustement(annuel, masseHebdo * 52, compte.enveloppe, margeTrain(division, annuel, 0, -horsBudget), null, ecartTrain, 0) + investi + ecartStaff;
   const chargesPrevues = rond(compte.charges + (masseHebdo * 52 / semaines * (1 + COTISATIONS) + fonctionnement / semaines) * reste);
   const ligue = regles({ division, masseAnnuelle, recettes: recettesPrevues });
@@ -1107,7 +1127,7 @@ function budgetBilletterieCommande(command,p){
 function budgetPrevoir(forces,repere){
  const b=S.clubBudget,c=club(),semaines=wageForecastWeeks(),k=repere.classement[c.id]||b.clubs[c.id];
  const r=budgetCopie(nativeClubBudget.prevision({forces,clubId:c.id,compte:b.clubs[c.id],tresorerie:c.cash,masseHebdo:budgetMasse(c),semaines,reste:Math.max(0,semaines-b.semaines),
-  receptions:repere.receptions[c.id]||12,receptionsRestantes:repere.restantes[c.id]||0,rang:k.rang,taille:k.taille,billets:budgetBillets(c,null,repere),staff:budgetStaff(c)}));
+  receptions:repere.receptions[c.id]||12,receptionsRestantes:repere.restantes[c.id]||0,rang:k.rang,taille:k.taille,billets:budgetBillets(c,null,repere),staff:budgetStaff(c),formation:budgetCentre(c)}));
  b.prevision=r.prevision;
  for(const a of r.alertes){const derniere=b.alertes[a.cle];if(derniere===undefined||b.semaines-derniere>=10){b.alertes[a.cle]=b.semaines;news(a.message);}}
 }
@@ -1150,6 +1170,8 @@ function budgetSemaine(forces,repere,c,rencontre,libelle,caisse=c.cash){
   // l'excédent de l'exercice est réinvesti à 70 % dans le staff et le fonctionnement, un déficit
   // au-delà de l'enveloppe du propriétaire est réduit par des économies.
   repere:S.season+'|'+budgetSemaineNo(),gere:true,libelle,formation:budgetCentre(c),investissement:b.clubs[c.id].investissement||0,aideRelegation:b.clubs[c.id].aideRelegation||0,remboursement:b.clubs[c.id].remboursement||0,
+  // Recettes déjà comptées et semaines comptées : retard sur le budget voté (manqueRecettes), dont le train de vie tient compte.
+  encaisse:k.recettes,ecoulees:Number.isInteger(k.semainesComptees)?k.semainesComptees:0,
   // Clubs gérés d'un championnat encadré : l'excédent que vise leur budget n'est pas dépensé (le club joué fait ses propres choix).
   // Ailleurs, gestion par défaut (GESTION_DEFAUT) ; le club joué ne dépense pas en train de vie ce qui le ferait finir dans le rouge (plancher).
   marge:c.id===S.club?0:Math.max(0,nativeClubBudget.objectifGestion(forces,c.id,b.clubs[c.id].type)??0),objectif:c.id===S.club?null:nativeClubBudget.objectifGestion(forces,c.id,b.clubs[c.id].type),plancher:c.id===S.club?0:null,depense,classement:repere.classement[c.id]||null,
@@ -1526,5 +1548,5 @@ module.exports = Object.freeze({ fonctionnementAnnuel, SEUIL_FONCTIONNEMENT, FON
   PART_FORMATION, FORMATION, CREDIT_ACADEMIE, centreFormation, creditAcademie, ECONOMIE, DIVISIONS, COTISATIONS, FONCTIONNEMENT, PART_PRIME, PART_ABONNEMENTS, PLAFOND_SALARIAL, RATIO_SALAIRES, PROPRIETAIRES, BRANCHEMENT, VALIDATION,
   aideRelegation, annonceAideRelegation, LIBELLE_AIDE_RELEGATION, LIBELLE_REMBOURSEMENT,
   RESERVE, EXCEDENTS, EXCEDENT_DORMANT, TRAIN_DE_VIE, reserveCible, engagement, apportProprietaire, annonceDividende, annonceInvestissement,
-  recettesImprevues, fraisDeMatch, PART_FRAIS_IMPREVUS, deficitPrevu, LIBELLE_FRAIS_MATCH,
+  recettesImprevues, fraisDeMatch, PART_FRAIS_IMPREVUS, deficitPrevu, LIBELLE_FRAIS_MATCH, SEMAINES_AVANT_MANQUE, manqueRecettes,
   recettes, semaine, proprietaire, cibleGestion, objectifGestion, limites, annonceClauses, forme, affluence, spectateurs, ajustement, primeClassement, regles, ouverture, compter, annonce, prevision, cloture, leviers, euros, facteurHumeur, HUMEUR_PUBLIC });

@@ -50,6 +50,18 @@ test('Gestion propre à chaque club de Pro D2 : bons élèves, clubs à l’équ
   assert.equal(B.ajustement(10e6, 2.72e6, 0, 0.4e6), 0, 'excédent prévu (0,39 M€) sous l’excédent visé (0,4) : le train de vie n’y touche pas');
   assert.ok(Math.abs(B.ajustement(10e6, 2e6, 0, 0.4e6) - 0.7 * (1.4e6 - 0.4e6)) < 1, 'au-delà de l’excédent visé, 70 % repartent');
   assert.ok(Math.abs(B.ajustement(10e6, 2e6, 0) - 0.7 * 1.4e6) < 1, 'sans marge (autres championnats, club joué) : règle inchangée');
+  // Club du manager (plancher 0) : une saison qui s'annonce à -0,2 M€ (prime au rang du moment, dépenses hors budget) réduit son
+  // fonctionnement d'autant, même si le propriétaire comblerait la perte (25/11/2026 : -57 k€ en saison 3, graine 4242).
+  assert.ok(Math.abs(B.ajustement(10e6, 3e6, 0.5e6, 0, null, -0.2e6, 0) + 0.2e6) < 1, 'club du manager sous son plancher : économies');
+  assert.ok(Math.abs(B.ajustement(10e6, 3e6, 0.5e6, 0, null, -0.2e6, null)) < 1, 'sans plancher : la perte reste dans l’enveloppe');
+  assert.ok(Math.abs(B.ajustement(10e6, 3e6, 0.5e6, 0, null, -3e6, 0) + 1.5e6) < 1, 'économies du club du manager bornées à 15 % des recettes');
+  // Recettes encaissées en retard sur le budget voté (25/11/2026) : écart projeté sur la saison, jamais à la hausse.
+  const regle = B.DIVISIONS.accession, annuel = 10e6, semaines = 40, attendu = (annuel - annuel * regle.ligue * B.PART_PRIME) / semaines;
+  const manque = (encaisse, ecoulees) => B.manqueRecettes({ annuel, modele: annuel, regle, semaines, encaisse, ecoulees });
+  assert.ok(Math.abs(manque(attendu * 10 * 0.9, 10) + 0.1 * attendu * semaines) < 1, '10 % de retard après 10 semaines : 10 % des recettes de la saison');
+  assert.equal(manque(attendu * 10 * 1.2, 10), 0, 'en avance : rien de plus à dépenser');
+  assert.equal(manque(attendu * 3 * 0.5, 3), 0, 'trop tôt dans la saison');
+  assert.equal(manque(attendu * 10 * 0.9, 10) < 0 && B.manqueRecettes({ annuel, modele: annuel, regle, semaines, encaisse: null, ecoulees: 10 }) === 0, true, 'sauvegarde d’avant : pas d’écart');
 });
 
 test('Excédents d’un club de Pro D2 et de Nationale : 2 % des recettes engagés au plus par saison, sans limite ailleurs', () => {
