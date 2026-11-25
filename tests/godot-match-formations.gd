@@ -189,7 +189,10 @@ func check_scrum_exit() -> void:
 	var avant := {"type": "melee", "centre": f.centre, "introduit": f.introduit}
 	var sortie: Dictionary = Formations.calculer(scrum(60.0, 1, "setpiece-win", "sortie", "s1_7"), avant)
 	check(sortie.type == "sortie_melee", "The ball won right after a scrum keeps the packs bound for a moment")
-	check(not sortie.places.has("s1_7"), "The engine's carrier (number 8) leaves the scrum with the ball")
+	# 25/11/2026 (Léo) : le n° 8 qui se détache contourne sa mêlée par le flanc, hors des deux paquets.
+	check(str(sortie.roles.get("s1_7", "")) == "n8_sortie", "The engine's carrier (number 8) leaves the scrum with the ball")
+	var flanc: Vector2 = sortie.places.get("s1_7", Vector2.ZERO)
+	check(absf(flanc.y - sortie.centre.y) >= Formations.CONTOUR_COTE.y - 0.01, "The number 8 goes round his scrum, outside both packs (%.2f m from its axis)" % absf(flanc.y - sortie.centre.y))
 	check(sortie.places.has("s0_0") and sortie.places.has("s1_0"), "Both packs stay in the scrum while the ball comes out")
 	var loin := scrum(30.0, 1, "setpiece-win", "ailleurs")
 	check(Formations.calculer(loin, avant).type == "", "A set piece won elsewhere is not a scrum exit")
@@ -420,6 +423,8 @@ func check_tv_scrum(view) -> void:
 	var sortie_ecart := 0.0
 	var sortie_seul := ""
 	var sortie_sol := ""
+	var n8_fondu := 0.0
+	var n8_qui := ""
 	var cas := 0
 	for dy in [0.0, 23.0]:
 		for featured in ["s0_12", "", "s0_7"]:
@@ -480,6 +485,15 @@ func check_tv_scrum(view) -> void:
 					sortie_seul = "%s y+%d frame %d: %.2f m from %s" % [featured, int(dy), frame, proche[0], proche[1]]
 				var angles := camera_angles(view)
 				pire = Vector2(maxf(pire.x, angles.x), maxf(pire.y, angles.y))
+				# 25/11/2026 (Léo) : le n° 8 qui part 8 m devant avec le ballon contourne les paquets,
+				# il ne traverse aucun joueur (buste ou tête dans un buste ou une tête).
+				if featured == "s0_7":
+					for autre: String in view._actors:
+						if autre != "s0_7":
+							var p := busts_overlap(view, "s0_7", autre)
+							if p > n8_fondu:
+								n8_fondu = p
+								n8_qui = "y+%d frame %d: %s" % [int(dy), frame, autre]
 			var porteur: Vector3 = (view._actors[attendu].node as Node3D).position
 			var ball: Vector3 = view._ball.global_position
 			check(Vector2(ball.x - porteur.x, ball.z - porteur.z).length() < 0.8 and ball.y > 0.5, "Scrum exit (%s, y+%d): the ball is still in %s's hands after the exit (%.2f m, %.2f m high)" % [featured, int(dy), attendu, Vector2(ball.x - porteur.x, ball.z - porteur.z).length(), ball.y])
@@ -495,6 +509,8 @@ func check_tv_scrum(view) -> void:
 	check(intro_ecart < 1.0, "Put-in: the ball stays in the scrum-half's hands (%.2f m at most)" % intro_ecart)
 	check(intro_cote > 0.5, "Put-in: scrum-half and ball on the TV camera side of the scrum (%.2f m)" % intro_cote)
 	check(sortie_ecart < 1.0, "Scrum exit: the ball is never alone on the grass (worst %s)" % sortie_seul)
+	check(n8_fondu <= BUST_OVERLAP_MAX, "Scrum exit: the number 8 leaving with the ball walks through nobody (%.3f m bust overlap, %s)" % [n8_fondu, n8_qui])
+	metrics.exit_n8_bust_overlap_m = snappedf(n8_fondu, 0.001)
 	metrics.tv_scrum_axis_deg = snappedf(pire.x, 0.1)
 	metrics.tv_scrum_bottom_deg = snappedf(pire.y, 0.1)
 	metrics.tv_scrum_size_m = snappedf(plus_large, 0.1)

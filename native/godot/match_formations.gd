@@ -70,6 +70,21 @@ const DEMI_HORS_PAQUET := 0.8
 ## et restait posé sur l'herbe, loin de tout joueur, quand le porteur désigné était un arrière
 ## éloigné (ou absent).
 const DEMI_SORTIE := Vector2(0.9, 0.9)
+## N° 8 qui se détache avec le ballon (25/11/2026, accord de Léo) : parti aussitôt vers sa place du
+## moteur, droit devant, il traversait les deux paquets encore liés. Comme dans la réalité, il ramasse
+## au pied de sa mêlée puis la contourne : d'abord sur le côté de son paquet (CONTOUR_COTE : [recul
+## derrière le ballon, écart du centre]), tant que les paquets sont liés ; puis, déliés, il longe le
+## paquet adverse jusqu'à CONTOUR_AVANT m devant le ballon, au même écart, avant de rejoindre sa course.
+## Écart : flanker à 1,0 m + décalage des têtes, plus deux demi-largeurs d'épaules (≈ 0,9 m).
+## Côté caméra (celui des deux demis, DEMI_ADVERSE à 2,4 m du centre), l'écart passe à CONTOUR_CAMERA m.
+## Le côté est celui de sa course ; course droit devant : côté opposé à la caméra (loin des demis).
+## Le contour cesse s'il n'a plus le ballon, s'il est pris dans un geste (plaquage…) ou après CONTOUR_MAX s.
+const CONTOUR_COTE := Vector2(3.4, 2.3)
+const CONTOUR_CAMERA := 3.4
+const CONTOUR_AVANT := 4.2
+const CONTOUR_MAX := 4.0
+## Distance (m) sous laquelle un point de passage est atteint.
+const CONTOUR_ATTEINT := 0.35
 ## Hors-jeu de mêlée (loi 19) : arrières à 5 m au moins derrière les pieds du dernier avant.
 const HORS_JEU := 5.0
 const PIEDS_N8 := 0.6
@@ -114,6 +129,9 @@ var _posture: Dictionary = {}
 var _attente: Dictionary = {}
 var _cibles_moteur: Dictionary = {}
 var _saved: Dictionary = {}
+## Contour du n° 8 détaché : {"id", "points": [Vector2 du terrain], "i", "temps"} (vide sinon). Il survit
+## aux images suivantes du moteur : le n° 8 finit de contourner même si le fait d'après arrive.
+var contour: Dictionary = {}
 
 
 func _init(owner: Node3D) -> void:
@@ -171,8 +189,20 @@ static func _melee(scene: Dictionary, centre: Vector2, introduit: int, sortie: b
 		# Sens de poussée du paquet : le camp 0 pousse vers les x croissants (scène du moteur).
 		var s := 1.0 if side == 0 else -1.0
 		if slot < 8:
-			# Le joueur que le moteur désigne à la sortie (n° 8, talonneur…) se détache avec le ballon.
+			# Le joueur que le moteur désigne à la sortie (n° 8, talonneur…) se détache avec le ballon :
+			# il contourne la mêlée (CONTOUR_COTE), jamais à travers les paquets.
 			if sortie and id == porteur:
+				var course := Vector2(float(player.get("x", centre.x)), float(player.get("y", centre.y)))
+				var cote := signf(course.y - centre.y) if absf(course.y - centre.y) > 0.5 else -COTE_INTRO
+				var ecart := CONTOUR_CAMERA if cote == COTE_INTRO else CONTOUR_COTE.y
+				var flanc := centre + Vector2(-s * CONTOUR_COTE.x, cote * ecart)
+				f.places[id] = flanc
+				f.caps[id] = atan2(s, 0.0)
+				f.roles[id] = "n8_sortie"
+				f.contour = [flanc]
+				var devant := centre + Vector2(s * CONTOUR_AVANT, cote * ecart)
+				if _traverse(flanc, course, centre, ecart):
+					f.contour.append(devant)
 				continue
 			var m: Vector2 = MELEE[slot]
 			# Paquet décalé vers la gauche de ses joueurs : têtes adverses emboîtées en alternance.
@@ -220,6 +250,16 @@ static func _melee(scene: Dictionary, centre: Vector2, introduit: int, sortie: b
 				f.places[id] = Vector2(centre.x - s * limite, float(player.y))
 			f.roles[id] = "arriere"
 	return f
+
+
+## Vrai si le trajet `a` -> `b` passe dans l'emprise des deux paquets (CONTOUR_AVANT m de part et
+## d'autre du ballon, moins de `ecart` − 0,4 m de l'axe de la mêlée).
+static func _traverse(a: Vector2, b: Vector2, centre: Vector2, ecart: float) -> bool:
+	for k in 21:
+		var p := a.lerp(b, k / 20.0)
+		if absf(p.x - centre.x) < CONTOUR_AVANT and absf(p.y - centre.y) < ecart - 0.4:
+			return true
+	return false
 
 
 static func _touche(scene: Dictionary, marque: Vector2) -> Dictionary:
@@ -271,6 +311,10 @@ func preparer(scene: Dictionary, nouvelle: bool) -> void:
 	temps = 0.0
 	libere = false
 	_cibles_moteur.clear()
+	if formation.has("contour"):
+		contour = {"id": str(formation.porteur), "points": formation.contour, "i": 0, "temps": 0.0}
+	elif formation.type in ["melee", "touche"]:
+		contour = {}
 	if formation.type == "melee":
 		precedente = {"type": "melee", "centre": formation.centre, "introduit": formation.introduit}
 	elif formation.type != "sortie_melee":
@@ -279,10 +323,17 @@ func preparer(scene: Dictionary, nouvelle: bool) -> void:
 
 ## Place du joueur dans la vue : celle de la formation, sinon celle du moteur.
 func place(id: String, moteur: Vector3) -> Vector3:
+	if not contour.is_empty() and id == str(contour.id):
+		_cibles_moteur[id] = moteur
+		return _terrain(contour.points[int(contour.i)])
 	if libere or not formation.places.has(id):
 		return moteur
 	_cibles_moteur[id] = moteur
 	var p: Vector2 = formation.places[id]
+	return _terrain(p)
+
+
+static func _terrain(p: Vector2) -> Vector3:
 	return Vector3(p.x - 50.0, 0.0, p.y - 35.0)
 
 
@@ -315,14 +366,47 @@ func avancer(delta: float) -> void:
 		for id: String in _cibles_moteur:
 			if not view._actors.has(id) or _mis_en_scene(id):
 				continue
-			var entry: Dictionary = view._actors[id]
-			var at: Vector3 = (entry.node as Node3D).position
-			entry.from = at
-			entry.target = _cibles_moteur[id]
-			entry.duree = Motion.duree(at, entry.target)
-			entry.elapsed = 0.0
-			entry.tangent = Vector3.ZERO
-			entry.velocity = Vector3.ZERO
+			if not contour.is_empty() and id == str(contour.id):
+				continue
+			_viser(id, _cibles_moteur[id])
+	_contourner(delta)
+
+
+## N° 8 détaché : point de passage suivant une fois le précédent atteint (le premier, sur le flanc de
+## son paquet, seulement quand les paquets sont déliés), puis sa course du moteur.
+func _contourner(delta: float) -> void:
+	if contour.is_empty():
+		return
+	var id := str(contour.id)
+	contour.temps = float(contour.temps) + delta
+	if not view._actors.has(id) or _mis_en_scene(id):
+		contour = {}
+		return
+	var fini: bool = view._carrier_id != id or float(contour.temps) >= CONTOUR_MAX
+	var lies: bool = str(formation.type) == "sortie_melee" and not libere
+	var entry: Dictionary = view._actors[id]
+	var at: Vector3 = (entry.node as Node3D).position
+	var vise := _terrain(contour.points[int(contour.i)])
+	if not fini and (lies or Vector2(vise.x - at.x, vise.z - at.z).length() > CONTOUR_ATTEINT):
+		return
+	contour.i = int(contour.i) + 1
+	if not fini and int(contour.i) < (contour.points as Array).size():
+		_viser(id, _terrain(contour.points[int(contour.i)]))
+		return
+	contour = {}
+	if _cibles_moteur.has(id):
+		_viser(id, _cibles_moteur[id])
+
+
+func _viser(id: String, cible: Vector3) -> void:
+	var entry: Dictionary = view._actors[id]
+	var at: Vector3 = (entry.node as Node3D).position
+	entry.from = at
+	entry.target = cible
+	entry.duree = Motion.duree(at, cible)
+	entry.elapsed = 0.0
+	entry.tangent = Vector3.ZERO
+	entry.velocity = Vector3.ZERO
 
 
 ## Rend le squelette et le modèle d'avant la posture (avant la nouvelle animation de l'image).

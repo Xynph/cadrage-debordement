@@ -824,11 +824,8 @@ func _lies() -> Dictionary:
 			# Lié une fois à sa place (posture prise) ; en course vers elle, il contourne les autres.
 			if str(_formations.formation.roles.get(id, "")) in roles and float(_formations.posture_de(id)[1]) > 0.0:
 				lies[id] = true
-		# Avant qui se détache du paquet avec le ballon à la sortie : laissé tel quel (le ballon reste
-		# dans ses mains, à sa place).
-		var detache := str(_formations.formation.get("porteur", ""))
-		if not detache.is_empty() and not _formations.formation.places.has(detache):
-			lies[detache] = true
+		# N° 8 qui se détache avec le ballon (rôle « n8_sortie ») : pas lié, il contourne la mêlée
+		# (match_formations.gd, CONTOUR_COTE) et la séparation l'écarte des paquets qu'il frôle.
 	var scene_gestes: RefCounted = mise_en_scene()
 	if str(scene_gestes.get("phase")) in ["maul", "essai_maul"] and scene_gestes.has_method("lie"):
 		for id: String in _actors:
