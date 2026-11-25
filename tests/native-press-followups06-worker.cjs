@@ -2,12 +2,14 @@
 const {settleClubMeetings}=require('./helpers/club-meetings.cjs');
 const {playNextMatch}=require('./helpers/monde-matchs.cjs');
 const {refuseSavePublication}=require('./helpers/save-publication-refusal.cjs');
+const {signerExport}=require('./helpers/signature-export.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),{createBridge}=require('../native/engine/worker.cjs');
 const root=fs.mkdtempSync(path.join(process.env.TEMP||require('node:os').tmpdir(),'cd-press-followups06-'));let b,seq=0;
-const open=()=>b=createBridge({dataDir:root,seed:10606,now:1700000000000});
+const open=()=>b=createBridge({dataDir:root,seed:10606,now:1700000000000,testVm:true});
 const call=(command,payload={})=>b.handle({id:++seq,command,payload});
 const good=(command,payload={})=>{const r=call(command,payload);assert.equal(r.ok,true,command+': '+r.error);return r.model;};
-function signed(doc){let h=2166136261;const raw=JSON.stringify(doc.state);for(let i=0;i<raw.length;i++)h=Math.imul(h^raw.charCodeAt(i),16777619);doc.checksum=(h>>>0).toString(16).padStart(8,'0');return JSON.stringify(doc);}
+// Empreinte comme le jeu, export réduit compris (état reconstruit dans la VM du pont) : tests/helpers/signature-export.cjs.
+const signed=doc=>signerExport(doc,b.vm);
 try{
  open();let m=good('new_career',{mode:'world-champ',club:0});
  m=settleClubMeetings(m,good);const initial=JSON.parse(good('export').meta.exportText),candidate=initial.state.market[0],cash=m.club.cash;
