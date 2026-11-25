@@ -22,6 +22,21 @@ func fixture(x: float = 50, y: float = 35) -> Dictionary:
 
 func garment(view, id: String, name_: String) -> Color:
 	var parameters := {"Shirt": "jersey_color", "Shirt2": "trim_color", "Pants": "shorts_color", "Socks": "socks_color"}
+	# Joueurs v5 (match_joueur_v5.gd) : un matériau par tissu sur le maillage Corps.
+	# maillot -> Shirt2, détail -> Collar, short -> Pants, chaussettes -> Socks.
+	var model: Node = view._actors[id].model
+	if model.has_meta("joueur_v5"):
+		var tissus := {"Shirt": "Shirt2", "Shirt2": "Collar", "Pants": "Pants", "Socks": "Socks"}
+		var corps := model.find_child("Corps", true, false) as MeshInstance3D
+		if corps and tissus.has(name_):
+			for i in corps.mesh.get_surface_count():
+				var source := corps.mesh.surface_get_material(i)
+				if source and source.resource_name == tissus[name_]:
+					var porte := corps.get_surface_override_material(i) as StandardMaterial3D
+					if porte:
+						return porte.albedo_color
+		check(false, "Paramètre de tenue présent : " + name_)
+		return Color.MAGENTA
 	for mesh in view._actors[id].model.find_children("*", "MeshInstance3D", true, false):
 		var material := mesh.material_override as ShaderMaterial
 		if material and parameters.has(name_):
