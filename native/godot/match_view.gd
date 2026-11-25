@@ -827,6 +827,10 @@ func _lies() -> Dictionary:
 			# Lié une fois à sa place (posture prise) ; en course vers elle, il contourne les autres.
 			if str(_formations.formation.roles.get(id, "")) in roles and float(_formations.posture_de(id)[1]) > 0.0:
 				lies[id] = true
+			# 25/11/2026 (joueurs v5) : à la sortie, le demi encore accroupi de l'introduction reste lié
+			# le temps de se relever ; sinon la séparation l'éjectait du pilier (1 m) et le ballon suivait.
+			elif str(_formations.formation.type) == "sortie_melee" and str(_formations.posture_de(id)[0]) == "introduction" and float(_formations.posture_de(id)[1]) > 0.0:
+				lies[id] = true
 		# N° 8 qui se détache avec le ballon (rôle « n8_sortie ») : pas lié, il contourne la mêlée
 		# (match_formations.gd, CONTOUR_COTE) et la séparation l'écarte des paquets qu'il frôle.
 	var scene_gestes: RefCounted = mise_en_scene()

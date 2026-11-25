@@ -72,7 +72,12 @@ const DEMI_HORS_PAQUET := 0.8
 ## Avant : le ballon partait seul vers le point du fait (5 à 11 m plus loin que la mêlée, « avance »)
 ## et restait posé sur l'herbe, loin de tout joueur, quand le porteur désigné était un arrière
 ## éloigné (ou absent).
-const DEMI_SORTIE := Vector2(0.9, 0.9)
+## 25/11/2026 (joueurs v5, plus larges) : à (0,9 ; 0,9), le demi allait en ligne droite de l'entrée du
+## tunnel au pied du n° 8, à travers le flanc de son paquet lié ; la séparation sortait son corps du
+## paquet (jusqu'à 3 m de sa place) et le ballon suivait son corps. Il ramasse désormais au coin
+## arrière de sa mêlée, côté caméra, et longe le flanc pour y aller (2 m de l'axe : flanker à 1,2 m,
+## bras liés vers 1,5 m, plus la largeur de son buste).
+const DEMI_SORTIE := Vector2(1.2, 2.0)
 ## N° 8 qui se détache avec le ballon (25/11/2026, accord de Léo) : parti aussitôt vers sa place du
 ## moteur, droit devant, il traversait les deux paquets encore liés. Comme dans la réalité, il ramasse
 ## au pied de sa mêlée puis la contourne : d'abord sur le côté de son paquet (CONTOUR_COTE : [recul
@@ -140,11 +145,15 @@ var contour: Dictionary = {}
 ## N° 8 détaché que personne ne traverse, bras et jambes compris (match_plancher.gd `separer`,
 ## `entiers`), PROTEGE s depuis la sortie : {"id", "temps"} (vide sinon).
 var protege: Dictionary = {}
+## Demis qui se relèvent de l'introduction avant de partir (voir `place`).
+var _releve: Dictionary = {}
 
 
 ## Joueurs que la séparation garde entiers (voir `protege`).
 func entiers() -> Dictionary:
-	return {} if protege.is_empty() else {str(protege.id): true}
+	if protege.is_empty() or not view._actors.has(str(protege.id)) or _mis_en_scene(str(protege.id)):
+		return {}
+	return {str(protege.id): true}
 
 
 func _init(owner: Node3D) -> void:
@@ -345,6 +354,11 @@ func place(id: String, moteur: Vector3) -> Vector3:
 		return moteur
 	_cibles_moteur[id] = moteur
 	var p: Vector2 = formation.places[id]
+	# 25/11/2026 (joueurs v5) : le demi qui vient d'introduire se relève sur place avant de partir ;
+	# parti accroupi, il pivotait vers sa course et son buste penché balayait son flanker.
+	if str(formation.type) == "sortie_melee" and str(_posture.get(id, "")) == "introduction" and float(_poids.get(id, 0.0)) > 0.0 and view._actors.has(id):
+		_releve[id] = true
+		return (view._actors[id].node as Node3D).position
 	return _terrain(p)
 
 
@@ -384,6 +398,16 @@ func avancer(delta: float) -> void:
 			if not contour.is_empty() and id == str(contour.id):
 				continue
 			_viser(id, _cibles_moteur[id])
+	for id: String in _releve.keys():
+		if float(_poids.get(id, 0.0)) > 0.0 and view._actors.has(id):
+			continue
+		_releve.erase(id)
+		if not view._actors.has(id) or _mis_en_scene(id):
+			continue
+		if not libere and formation.places.has(id):
+			_viser(id, _terrain(formation.places[id]))
+		elif _cibles_moteur.has(id):
+			_viser(id, _cibles_moteur[id])
 	_contourner(delta)
 
 
@@ -393,7 +417,8 @@ func avancer(delta: float) -> void:
 func _contourner(delta: float) -> void:
 	if not protege.is_empty():
 		protege.temps = float(protege.temps) + delta
-		if float(protege.temps) >= PROTEGE or not view._actors.has(str(protege.id)):
+		# Pris dans un geste (plaquage…) : le contact est voulu, le plaqueur doit l'atteindre.
+		if float(protege.temps) >= PROTEGE or not view._actors.has(str(protege.id)) or _mis_en_scene(str(protege.id)):
 			protege = {}
 	if contour.is_empty():
 		return
@@ -460,7 +485,8 @@ func poser(delta: float) -> void:
 		var gap: Vector3 = entry.target - actor.position
 		var arrive := Vector2(gap.x, gap.z).length() < ARRIVE
 		var arrete: bool = float(entry.elapsed) >= float(entry.duree) or Vector2(gap.x, gap.z).length() < EN_PLACE
-		if actif and formation.caps.has(id) and arrete:
+		# Demi qui se relève de l'introduction : il garde son cap (accroupi, il balayait son flanker).
+		if actif and formation.caps.has(id) and arrete and not _releve.has(id):
 			var change := angle_difference(actor.rotation.y, float(formation.caps[id]))
 			actor.rotation.y += clampf(change, -VIRAGE * delta, VIRAGE * delta)
 		# 25/11/2026 (sonde des contacts du match filmé) : il ne se penche qu'une fois arrêté à sa place

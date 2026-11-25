@@ -307,6 +307,7 @@ func check_view(view: Node3D) -> void:
 	# 25/11/2026 (Léo : liés, jamais fondus) : à la sortie, ni le demi qui ramasse ni le demi adverse
 	# ne traversent un paquet penché (buste ou tête dans un buste ou une tête), image par image.
 	var demi_fondu := 0.0
+	var demi_qui := ""
 	for frame in 180:
 		view._process(1.0 / 60.0)
 		if frame == 29:
@@ -314,8 +315,12 @@ func check_view(view: Node3D) -> void:
 		for demi_id in ["s0_8", "s1_8"]:
 			for side in 2:
 				for slot in 8:
-					demi_fondu = maxf(demi_fondu, busts_overlap(view, demi_id, "s%d_%d" % [side, slot]))
-	check(demi_fondu <= BUST_OVERLAP_MAX, "Scrum exit: no scrum-half walks through a bound pack (%.3f m bust overlap, %.2f m allowed)" % [demi_fondu, BUST_OVERLAP_MAX])
+					var o := busts_overlap(view, demi_id, "s%d_%d" % [side, slot])
+					if o > demi_fondu:
+						demi_fondu = o
+						var pos: Vector3 = (view._actors[demi_id].node as Node3D).position
+						demi_qui = "%s in s%d_%d, frame %d, root (%.2f, %.2f), model offset %.2f m" % [demi_id, side, slot, frame, pos.x, pos.z, ((view._actors[demi_id].model as Node3D).global_position - pos).length()]
+	check(demi_fondu <= BUST_OVERLAP_MAX, "Scrum exit: no scrum-half walks through a bound pack (%.3f m bust overlap, %.2f m allowed; %s)" % [demi_fondu, BUST_OVERLAP_MAX, demi_qui])
 	metrics.exit_half_bust_overlap_m = snappedf(demi_fondu, 0.001)
 	var moteur: Vector3 = view._world(sortie.players.filter(func(p: Dictionary) -> bool: return p.id == "s1_0")[0])
 	check((view._actors.s1_0.target as Vector3).is_equal_approx(moteur), "After the exit, forwards head for their engine places")
