@@ -83,6 +83,11 @@ func cible(motif: String = "*") -> Control:
 		if c.has_meta("carte_joueur") and c.is_visible_in_tree() and c.size.x > 4.0 and ecran.encloses(c.get_global_rect()): return c
 	return null
 
+## Attente en horloge réelle (le délai de la carte ne dépend pas de la cadence d'images).
+func attendre_ms(ms: int) -> void:
+	var fin := Time.get_ticks_msec() + ms
+	while Time.get_ticks_msec() < fin: await process_frame
+
 ## Survol réel (souris du jeu) : rien avant le délai, la carte ensuite, entière ; la souris part, elle disparaît.
 func survoler(ecran_nom: String, controle: Control, nom_capture: String) -> void:
 	check(controle != null, ecran_nom + " : un nom ou un portrait porte la carte joueur")
@@ -96,12 +101,35 @@ func survoler(ecran_nom: String, controle: Control, nom_capture: String) -> void
 	# Joueur visé lu AVANT le survol : l'écran peut se redessiner pendant l'attente (données arrivées après coup) et libérer
 	# le contrôle survolé (1 lancement sur 4 : « get_meta on a previously freed instance », 24/11) ; la carte, elle, reste.
 	var joueur_vise := str(controle.get_meta("carte_joueur"))
+	# Règle de Léo (25/11) : le survol du NOM ne fait rien ; seul le bouton (i) (méta `carte_info`) ouvre la carte, après 0,5 s.
+	var info := controle if controle.has_meta("carte_info") else controle.find_child("CarteJoueurInfo_*", true, false) as Control
+	if info == null:
+		for n: Node in app.root_content.find_children("CarteJoueurInfo_*", "Control", true, false):
+			var c := n as Control
+			if c.has_meta("carte_info") and str(c.get_meta("carte_joueur", "")) == joueur_vise and c.is_visible_in_tree():
+				info = c
+				break
+	check(info != null and info.has_meta("carte_info") and info.is_visible_in_tree() and info.size.x >= 14.0, ecran_nom + " : bouton (i) présent et visible")
+	if info == null:
+		return
+	if info != controle:
+		souris(controle.get_global_rect().get_center())
+		await attendre_ms(1000)
+		check(Carte.actuelle(app) == null, ecran_nom + " : survol du nom 1 s = aucune carte")
+		souris(Vector2(2, 2))
+		await settle(4)
+	check(Rect2(Vector2.ZERO, Vector2(root.size)).grow(1.0).encloses(info.get_global_rect()), ecran_nom + " : bouton (i) entier dans l'écran")
+	souris(info.get_global_rect().get_center())
+	await attendre_ms(250)
+	check(Carte.actuelle(app) == null, ecran_nom + " : survol court du (i) (0,25 s) = aucune carte")
+	souris(Vector2(2, 2))
+	await settle(4)
 	var debut := Time.get_ticks_msec()
-	souris(controle.get_global_rect().get_center())
+	souris(info.get_global_rect().get_center())
 	var apparue := await until(func(): return Carte.actuelle(app) != null, 3000)
 	var delai := Time.get_ticks_msec() - debut
-	check(apparue, ecran_nom + " : la carte apparaît au survol")
-	check(not apparue or delai >= 300, ecran_nom + " : pas de carte avant le délai (%d ms)" % delai)
+	check(apparue, ecran_nom + " : la carte apparaît au survol du (i)")
+	check(not apparue or delai >= 450, ecran_nom + " : pas de carte avant le délai (%d ms)" % delai)
 	await settle(6)
 	var carte := Carte.actuelle(app)
 	if carte != null:

@@ -21,7 +21,7 @@ func _cout() -> void:
 	nom.add_theme_font_override("font", Charte.TITRE_EXTRA_ITALIQUE)
 	nom.name = "RecruitmentCostName"
 	var bouton_nom := _reading_area(cost, Rect2(20, 44, 430, 50), {"kind":"market", "id":player_id}, "RecruitmentNameLink", str(player.get("name", "Dossier")))
-	if bouton_nom != null: CarteSurvol.lier(app, bouton_nom, player_id, "market")
+	if bouton_nom != null: CarteSurvol.lier_info(app, bouton_nom, player_id, "market")
 	var statut: String = {"counter":"contre-offre reçue", "withdrawn":"discussion rompue", "signed":"contrat signé"}.get(str(player.get("negotiation", {}).get("status", "")) if player.get("negotiation") is Dictionary else "", "avant négociation")
 	var detail := "%s · %s ans · %s" % [str(player.get("pos", "—")), G.n(player.get("age", "—")), statut]
 	Kit.texte(cost, 24, 116, detail, Charte.IVOIRE_2, 440, 18)

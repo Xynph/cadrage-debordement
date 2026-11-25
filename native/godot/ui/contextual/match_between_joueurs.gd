@@ -155,9 +155,9 @@ func _nom_joueur(nom: String, id: String, alerte: String = "", humeur: Dictionar
 	lien.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	lien.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	lien.set_meta("player_id", id)
-	lien.pressed.connect(func(): ouvrir_fiche(id))
 	var app: Object = _app()
-	if app is Control and not id.is_empty(): CarteSurvol.lier(app, lien, id, "squad", func(): return _direct_carte(id))
+	if app is Control and not id.is_empty(): CarteSurvol.lier_clic(app, lien, id, "squad", func(): return _direct_carte(id))
+	else: lien.pressed.connect(func(): ouvrir_fiche(id))
 	rangee.add_child(lien)
 	if not alerte.is_empty():
 		var mot := _texte(alerte, 18, ALERTE if alerte in ["épuisé", "blessé", "exclu"] or alerte.begins_with("carton") else Charte.ATTRIBUT_40)

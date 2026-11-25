@@ -87,7 +87,7 @@ static func _person_link(app: Control, parent: Node, id: Variant, name: String) 
 	button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	G.fill(button)
 	EntityLink.bind(button, app, target, _name(app, id))
-	CarteSurvol.lier(app, button, str(id), "squad")
+	CarteSurvol.lier_info(app, button, str(id), "squad")
 	parent.add_child(button)
 	return button
 

@@ -83,6 +83,11 @@ func souris(position: Vector2, masque: int = 0) -> void:
 	root.push_input(mouvement)
 	await process_frame
 
+## Attente en horloge réelle (le délai de la carte ne dépend pas de la cadence d'images).
+func attendre_ms(ms: int) -> void:
+	var fin := Time.get_ticks_msec() + ms
+	while Time.get_ticks_msec() < fin: await process_frame
+
 func clic(position: Vector2, appui: bool) -> void:
 	var bouton := InputEventMouseButton.new()
 	bouton.button_index = MOUSE_BUTTON_LEFT
@@ -476,13 +481,29 @@ func run() -> void:
 	await settle(4)
 	var nom_survol := named("TacticsName10") as Control
 	if nom_survol != null:
+		# Règle de Léo (25/11) : le survol du NOM ne fait rien ; seul le bouton (i) ouvre la carte, après 0,5 s.
 		await souris(nom_survol.get_global_rect().get_center())
-		var limite := Time.get_ticks_msec() + 3000
-		while Carte.actuelle(app) == null and Time.get_ticks_msec() < limite: await process_frame
-		check(Carte.actuelle(app) != null and windows(app).is_empty(), "Survol souris du nom du n° 10 : carte joueur")
-		await souris(Vector2(4, 4))
-		await settle(10)
-		check(Carte.actuelle(app) == null, "Souris partie : la carte se ferme")
+		await attendre_ms(1000)
+		check(Carte.actuelle(app) == null, "Survol du nom du n° 10 pendant 1 s : aucune carte")
+		var info_survol := nom_survol.find_child("CarteJoueurInfo_*", false, false) as Control
+		check(info_survol != null and info_survol.has_meta("carte_info") and info_survol.is_visible_in_tree(), "Nom du n° 10 : bouton (i) visible")
+		if info_survol != null:
+			var ecran_vue := Rect2(Vector2.ZERO, Vector2(root.size))
+			check(ecran_vue.encloses(info_survol.get_global_rect()) and info_survol.size.x >= 14.0, "Bouton (i) du n° 10 : entier dans l'écran")
+			await souris(Vector2(4, 4))
+			await settle(4)
+			await souris(info_survol.get_global_rect().get_center())
+			await attendre_ms(250)
+			check(Carte.actuelle(app) == null, "Survol court du (i) (0,25 s) : aucune carte")
+			await souris(Vector2(4, 4))
+			await attendre_ms(100)
+			await souris(info_survol.get_global_rect().get_center())
+			var limite := Time.get_ticks_msec() + 3000
+			while Carte.actuelle(app) == null and Time.get_ticks_msec() < limite: await process_frame
+			check(Carte.actuelle(app) != null and windows(app).is_empty(), "Survol souris du (i) du n° 10 : carte joueur")
+			await souris(Vector2(4, 4))
+			await settle(10)
+			check(Carte.actuelle(app) == null, "Souris partie : la carte se ferme")
 	# Touche I sur une carte du XV : montre puis cache la carte joueur.
 	await composition()
 	named("LineupSlot06").grab_focus()
@@ -595,7 +616,7 @@ func run() -> void:
 	var nom := named("TacticsName02") as Button
 	check(nom != null, "Nom du n° 2 cliquable")
 	if nom != null:
-		check(nom.has_meta("carte_joueur"), "Nom du n° 2 : carte joueur au survol")
+		check(nom.has_meta("carte_joueur"), "Nom du n° 2 : carte joueur liée (ouverte par son bouton (i))")
 		var carte := Carte.montrer(app, str(nom.get_meta("carte_joueur")), "squad", nom)
 		await settle()
 		check(carte != null and Carte.actuelle(app) != null and windows(app).is_empty(), "Survol du nom : carte joueur sans fenêtre")
@@ -603,9 +624,12 @@ func run() -> void:
 		nom.mouse_exited.emit()
 		await settle()
 		var id := str(Selection.slot(app.model, 1).get("playerId"))
-		nom.pressed.emit()
+		var centre_nom := nom.get_global_rect().get_center()
+		await souris(centre_nom)
+		await clic(centre_nom, true)
+		await clic(centre_nom, false)
 		await settle()
-		check(app.route == "Effectif" and app.get_meta("immersive08_full_player", false) and app.selected_player == id, "Clic sur le nom : fiche complète")
+		check(app.route == "Effectif" and app.get_meta("immersive08_full_player", false) and app.selected_player == id, "Clic réel sur le nom : fiche complète (Effectif)")
 
 	# 7. Onglets et liens : chacun change d'écran.
 	# Onglets Consignes, Phases arrêtées, Entraînement : même page, même en-tête (tactics_onglets.gd).

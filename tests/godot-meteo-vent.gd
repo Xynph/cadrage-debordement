@@ -91,6 +91,7 @@ func controler_tableau(contexte: String) -> void:
 
 const Charte = preload("res://ui/charte.gd")
 const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
+const Carte = preload("res://ui/carte_joueur_survol.gd")
 
 func tableau_present_meteo() -> bool:
 	var ciel := app.match_screen.find_child("MatchFixtureWeather", true, false) as Button
@@ -176,7 +177,13 @@ func controler_da() -> void:
 	if barre != null:
 		barre.mouse_entered.emit()
 		await poser(4)
-		verifier(MiniFiche.actuelle(app) != null, "écran 12 : survol d'un titulaire = mini-fiche")
+		verifier(MiniFiche.actuelle(app) == null and app.find_child("CarteJoueurSurvol", true, false) == null, "écran 12 : survol d'un titulaire = rien")
+		var info_barre := barre.find_child("CarteJoueurInfo_*", true, false) as Control
+		verifier(info_barre != null and info_barre.has_meta("carte_info") and info_barre.is_visible_in_tree(), "écran 12 : bouton (i) près d'un titulaire")
+		var carte_barre: Control = Carte.montrer(app, str(barre.get_meta("carte_joueur", "")), "squad", info_barre) if info_barre != null else null
+		await poser(3)
+		verifier(carte_barre != null and Carte.actuelle(app) != null, "écran 12 : (i) d'un titulaire = carte joueur")
+		Carte.cacher(app)
 		barre.mouse_exited.emit()
 		await poser(3)
 		barre.pressed.emit()
@@ -208,7 +215,9 @@ func controler_da() -> void:
 	if alerte_nom != null:
 		alerte_nom.mouse_entered.emit()
 		await poser(4)
-		verifier(MiniFiche.actuelle(app) != null, "écran 12 : nom de la ligne d'alerte = mini-fiche au survol")
+		verifier(MiniFiche.actuelle(app) == null and Carte.actuelle(app) == null, "écran 12 : survol du nom de la ligne d'alerte = rien")
+		var info_alerte := alerte_nom.find_child("CarteJoueurInfo_*", true, false) as Control
+		verifier(info_alerte != null and info_alerte.has_meta("carte_info"), "écran 12 : ligne d'alerte = bouton (i) près du nom")
 		alerte_nom.mouse_exited.emit()
 		await poser(3)
 		alerte_nom.pressed.emit()
@@ -222,6 +231,11 @@ func controler_da() -> void:
 	if surveille != null:
 		surveille.mouse_entered.emit()
 		await poser(4)
+		verifier(MiniFiche.actuelle(app) == null, "écran 12 : survol du nom d'un joueur adverse = rien")
+		var info_adverse := surveille.find_child("CarteJoueurInfo_*", true, false) as Control
+		verifier(info_adverse != null and info_adverse.has_meta("carte_info"), "écran 12 : joueur adverse = bouton (i) près du nom")
+		if info_adverse != null: info_adverse.mouse_entered.emit()
+		await create_timer(0.8).timeout
 		var mini_adverse := MiniFiche.actuelle(app)
 		verifier(mini_adverse != null and mini_adverse.find_child("MiniFicheInconnu", true, false) != null, "écran 12 : joueur adverse = mini-fiche de ce que le jeu connaît")
 		surveille.mouse_exited.emit()

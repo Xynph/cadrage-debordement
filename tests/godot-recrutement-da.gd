@@ -244,7 +244,7 @@ func names_open_sheets() -> void:
 	await settle(3)
 	check(carte.actuelle(app) == null, "La souris part : la carte disparaît")
 	var infos: Array = app.root_content.find_children("CarteJoueurInfo_*", "Control", true, false)
-	check(not infos.is_empty(), "Un « i » suit chaque nom")
+	check(not infos.is_empty() and infos.all(func(i: Control): return i.has_meta("carte_info")) and not lien.has_meta("carte_info"), "Un « i » suit chaque nom (seul à ouvrir la carte, pas le nom)")
 	lien.pressed.emit()
 	await settle(10)
 	check(app.management_ui.get("fiche_joueur") is Dictionary, "Clic sur le nom : fiche complète de la piste")

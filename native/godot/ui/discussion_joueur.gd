@@ -284,7 +284,7 @@ static func _nom(app: Control, parent: Control, d: Dictionary, x: float, base: f
 	parent.add_child(bouton)
 	bouton.position = nom.position
 	bouton.size = Vector2(minf(nom.size.x, Charte.TITRE_FICHE.get_string_size(nom.text, HORIZONTAL_ALIGNMENT_LEFT, -1, C.px(taille)).x), nom.size.y)
-	CarteSurvol.lier(app, bouton, str(d.id), "squad")
+	CarteSurvol.lier_info(app, bouton, str(d.id), "squad")
 
 static func _visage(d: Dictionary, cote: float) -> Control:
 	var fond := PanelContainer.new()

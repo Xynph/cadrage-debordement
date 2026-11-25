@@ -573,7 +573,7 @@ func direction_a(mail: Dictionary) -> void:
 	# Panneau Concerné affiché : joueur lié et échéance.
 	check(node("InboxConcerne") == null, "Plus de panneau fixe « Concerné » à droite")
 	var who := node("InboxConcernedName") as Button
-	check(who != null and who.text == str(star.name) and who.has_meta("mini_fiche_joueur"), "Joueur lié : nom en lien, mini-fiche au survol")
+	check(who != null and who.text == str(star.name) and who.has_meta("carte_joueur") and not who.find_children("CarteJoueurInfo_*", "Control", true, false).is_empty(), "Joueur lié : nom en lien, carte au survol du bouton (i)")
 	check(node("InboxDeadline") != null, "Échéance écrite dans la lettre (mot « À FAIRE »)")
 	check(star.get("marketValue") is int or star.get("marketValue") is float, "Valeur du joueur projetée par le moteur")
 	if not rivals.is_empty(): check(node("InboxConcernedClub") != null, "Club lié : carte cliquable vers sa fiche")

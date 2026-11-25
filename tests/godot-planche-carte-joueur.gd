@@ -1,7 +1,7 @@
 extends SceneTree
-## Carte joueur au survol (fiche complète, choix de Léo du 21/11/2026) : dans le direct (écran 2D), la souris passe sur
-## un joueur de Mon XV ; la carte apparaît après
-## un court délai sans mettre le match en pause, entière dans l'écran ; Échap la ferme ; la souris part, elle disparaît.
+## Carte joueur (fiche complète, choix de Léo du 21/11/2026 ; règle du 25/11 : en match, un CLIC sur le nom ouvre la
+## carte, rien au survol) : dans le direct (écran 2D), un clic sur le nom d'un joueur de Mon XV ouvre la carte, sans mettre
+## le match en pause, entière dans l'écran ; Échap la ferme ; un clic ailleurs la ferme.
 ## Captures 2560 × 1440 (référence de Léo) puis 1920 × 1080. godot-planche-carte-joueur.cjs prépare la carrière Monde.
 const Carte = preload("res://ui/carte_joueur_survol.gd")
 var app: Control
@@ -67,6 +67,27 @@ func tuile(between: Control, numero: int) -> Control:
 		if str(c.name) == "MatchBetweenPlayer%d" % numero: return c
 	return choisie
 
+## Lien du nom du joueur n° `numero` dans sa tuile de Mon XV (clic = carte), relu à chaque appel.
+func lien_nom(numero: int) -> Control:
+	var t := tuile(entre(), numero)
+	if not is_instance_valid(t): return null
+	var l := t.find_child("MatchBetweenPlayerName_*", true, false) as Control
+	return l if is_instance_valid(l) and l.is_visible_in_tree() and l.get_global_rect().size.x > 2.0 else null
+
+## Clic gauche réel (appui puis relâche) au centre du contrôle.
+func cliquer(cible: Control) -> void:
+	var point := cible.get_global_rect().get_center()
+	souris(point)
+	await process_frame
+	for appui in [true, false]:
+		var bouton := InputEventMouseButton.new()
+		bouton.button_index = MOUSE_BUTTON_LEFT
+		bouton.pressed = appui
+		bouton.position = point
+		bouton.global_position = point
+		root.push_input(bouton)
+		await process_frame
+
 ## Textes coupés sans points de suspension et contrôles hors de la carte.
 func defauts(carte: Control) -> Array[String]:
 	var trouves: Array[String] = []
@@ -119,16 +140,19 @@ func run() -> void:
 		souris(Vector2(4, 4))
 		await settle(2)
 		# Mon XV est redessiné à chaque action du direct : la tuile est relue juste avant de viser (l'ancienne est libérée).
-		cible = tuile(entre(), 10)
+		cible = lien_nom(10)
 		if not is_instance_valid(cible):
 			await settle(10)
 			continue
-		var debut := Time.get_ticks_msec()
+		# Survol du nom : rien (règle du 25/11).
 		souris(cible.get_global_rect().get_center())
+		await settle(40)
+		check(Carte.actuelle(app) == null, "Match en cours : le survol du nom n'ouvre rien")
+		cible = lien_nom(10)
+		if not is_instance_valid(cible): continue
+		await cliquer(cible)
 		apparue = await until(func(): return Carte.actuelle(app) != null, 3000)
-		delai_ms = Time.get_ticks_msec() - debut
-	check(apparue, "Match en cours : la carte apparaît au survol")
-	check(not apparue or delai_ms >= 300, "Pas de carte avant le délai (%d ms)" % delai_ms)
+	check(apparue, "Match en cours : un clic sur le nom ouvre la carte")
 	check(not bool(app.model.live.get("paused", false)), "Le survol ne met pas le match en pause")
 	# Le direct continue (Mon XV redessiné sous la souris) : la carte reste ouverte tant que l'écran 2D est là.
 	for i in 60:
@@ -147,9 +171,21 @@ func run() -> void:
 		finir()
 		return
 	souris(cible.get_global_rect().get_center())
+	await settle(40)
+	Carte.cacher(app)
+	await settle(4)
+	souris(cible.get_global_rect().get_center())
+	await settle(40)
+	check(Carte.actuelle(app) == null, "À l'arrêt : le survol du joueur n'ouvre rien")
+	cible = lien_nom(10)
+	check(is_instance_valid(cible), "Lien du nom du joueur à l'arrêt")
+	if not is_instance_valid(cible):
+		finir()
+		return
+	await cliquer(cible)
 	await until(func(): return Carte.actuelle(app) != null, 3000)
-	check(Carte.actuelle(app) != null, "La carte apparaît au survol")
-	# Échap ferme la carte (et ne la rouvre pas tant que la souris reste sur le joueur).
+	check(Carte.actuelle(app) != null, "La carte apparaît au clic sur le nom")
+	# Échap ferme la carte.
 	var echap := InputEventKey.new()
 	echap.keycode = KEY_ESCAPE
 	echap.pressed = true
@@ -160,14 +196,27 @@ func run() -> void:
 	souris(Vector2(4, 4))
 	await settle(30)
 	check(Carte.actuelle(app) == null, "Souris hors du joueur : pas de carte")
+	# Re-clic sur le nom : la carte se ferme (bascule), un nouveau clic la rouvre.
+	cible = lien_nom(10)
+	if is_instance_valid(cible):
+		await cliquer(cible)
+		await until(func(): return Carte.actuelle(app) != null, 3000)
+		check(Carte.actuelle(app) != null, "Clic sur le nom : la carte s'ouvre")
+		cible = lien_nom(10)
+		if is_instance_valid(cible):
+			await cliquer(cible)
+			await settle(10)
+			check(Carte.actuelle(app) == null, "Re-clic sur le nom : la carte se ferme")
+		souris(Vector2(4, 4))
+		await settle(10)
 	for taille: Vector2i in [Vector2i(2560, 1440), Vector2i(1920, 1080)]:
 		root.size = taille
 		root.content_scale_size = taille
 		souris(Vector2(4, 4))
 		await settle(40)
-		cible = tuile(entre(), 10)
+		cible = lien_nom(10)
 		if not is_instance_valid(cible): continue
-		souris(cible.get_global_rect().get_center())
+		await cliquer(cible)
 		await until(func(): return Carte.actuelle(app) != null, 3000)
 		await settle(10)
 		var carte := Carte.actuelle(app)
@@ -184,10 +233,10 @@ func run() -> void:
 		check(carte.find_child("CarteJoueurTuileNiveau", true, false) != null and carte.find_child("CarteJoueurEtoilesNiveau", true, false) == null, "%s : niveau en tuile, sans étoiles" % str(taille))
 		print("PLANCHE_CARTE_JOUEUR %s : carte %s" % [str(taille), str(carte.get_global_rect())])
 		await capture("carte-%dx%d" % [taille.x, taille.y])
-	# Clic sur le joueur : la carte se range, sa petite fenêtre s'ouvre (comportement inchangé).
+	# Clic sur la tuile du joueur (hors du nom) : la carte se range, sa petite fenêtre s'ouvre (comportement inchangé).
 	cible = tuile(entre(), 10)
 	if is_instance_valid(cible) and Carte.actuelle(app) != null:
-		var point := cible.get_global_rect().get_center()
+		var point := Vector2(cible.get_global_rect().end.x - 6.0, cible.get_global_rect().get_center().y)
 		for appui in [true, false]:
 			var bouton := InputEventMouseButton.new()
 			bouton.button_index = MOUSE_BUTTON_LEFT

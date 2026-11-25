@@ -424,7 +424,8 @@ func fenetres(view: Control, between: Control) -> void:
 			if (n as Control).is_visible_in_tree(): return n
 		return null
 	var cas := [
-		["joueur", "MatchFenetreJoueur", func(): (premier.call(between, "MatchBetweenPlayerName_*", "Button") as Button).pressed.emit()],
+		# Le clic sur un nom ouvre la carte joueur (règle du 25/11) : la petite fenêtre du joueur s'ouvre par la fiche du match.
+		["joueur", "MatchFenetreJoueur", func(): between.ouvrir_fiche(str((premier.call(between, "MatchBetweenPlayerName_*", "Button") as Button).get_meta("player_id")))],
 		["joueur-carte", "MatchMenuJoueur", func(): (premier.call(between, "MatchBetweenPlayer1", "Button") as Button).pressed.emit()],
 		["club", "MatchFenetreClub", func(): (premier.call(between.classement_lignes, "MatchBetweenLiveRow*", "PanelContainer") as Control).gui_input.emit(clic)],
 		["match", "MatchFenetreMatch", func(): (premier.call(between.multiplex_cartes, "MatchBetweenMultiplexMatch*", "PanelContainer") as Control).gui_input.emit(clic)],

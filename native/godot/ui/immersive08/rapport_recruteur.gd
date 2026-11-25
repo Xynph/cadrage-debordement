@@ -238,7 +238,7 @@ static func _identite(app: Control, cadre: Control, r: Dictionary, x: float, y: 
 	var nom := Link.styled_button(cadre, Rect2(x + cote + 22, y + 2, 560, 50), str(p.get("name", "—")), 32, Charte.IVOIRE, "RapportRecruteurNom")
 	nom.add_theme_font_override("font", Charte.TITRE_FICHE)
 	nom.pressed.connect(func(): app.navigation_controller.open_entity({"kind": "market", "id": id}))
-	load("res://ui/carte_joueur_survol.gd").lier(app, nom, id, "market")
+	load("res://ui/carte_joueur_survol.gd").lier_info(app, nom, id, "market")
 	var ligne := "%s · n° %d · %s ans" % [r.poste, r.numero, G.n(p.get("age", "—"))] if r.numero > 0 else str(p.get("pos", "—"))
 	Kit.texte(cadre, x + cote + 24, y + 86, ligne, Charte.IVOIRE_2, 560, 20)
 
@@ -438,7 +438,7 @@ static func _liste(app: Control, cadre: Control, r: Dictionary, zone: Rect2, col
 		var id := str(joueur.get("id", ""))
 		var kind := "market" if est_piste else "player"
 		bouton.pressed.connect(func(): app.navigation_controller.open_entity({"kind": kind, "id": id}))
-		load("res://ui/carte_joueur_survol.gd").lier(app, bouton, id, "market" if est_piste else "squad")
+		load("res://ui/carte_joueur_survol.gd").lier_info(app, bouton, id, "market" if est_piste else "squad", Callable(), true)
 		if est_piste: Kit.marqueur(bouton, Rect2(0, 6, 6, hauteur_ligne - 16), Charte.VERT_CLAIR)
 		var base := (hauteur_ligne - 4) / 2.0 + 8
 		var rg := D.text(bouton, 14, base + 1, str(i + 1), 24, Charte.VERT_CLAIR if est_piste else Charte.IVOIRE_2, 800, 40)

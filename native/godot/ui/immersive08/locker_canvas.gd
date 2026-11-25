@@ -105,7 +105,7 @@ static func _lien_joueur(app: Control, parent: Control, zone: Rect2, id: String,
 	if id.is_empty() or P.player(app.model,id).is_empty() or not Link.available(app,"player",id): return
 	var bouton := Link.styled_button(parent,zone,"",18,C.IVORY,nom_noeud)
 	Link.bind(bouton,app,{"kind":"player","id":id},_name(app.model,id))
-	CarteSurvol.lier(app,bouton,id,"squad")
+	CarteSurvol.lier_info(app,bouton,id,"squad",Callable(),true)
 
 static func _name(model: Dictionary, id: Variant) -> String:
 	if id == null: return "Aucun relais disponible"
