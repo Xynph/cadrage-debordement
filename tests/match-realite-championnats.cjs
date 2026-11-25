@@ -17,9 +17,10 @@ const B = require('./helpers/courbe-niveau.cjs');
 const REEL = require('./fixtures/realite-matchs-20261125.json').championnats;
 
 // Pente par point visée (banc, moteur complet), issue du calage sur la dispersion réelle (docs/realite-matchs-20261125.md).
-const PENTE = { elite: 0.19, accession: 0.17, prem: 0.23, urc: 0.32, srp: 0.40, 'jlo-d1': 0.30 };
-const N = { complet: 120, rapide: 600 };
-const TOL = { domicile: 0.07, pente: 0.07, moteurs: 0.07 };
+const PENTE = { elite: 0.19, accession: 0.17, prem: 0.23, urc: 0.30, srp: 0.40, 'jlo-d1': 0.30 };
+const N = { complet: 240, rapide: 1000 };
+// Tolérances : réel ± 7 points de domicile, pente visée ± 0,06, plus une erreur type du banc (graine fixe : le test ne tire pas au sort).
+const TOL = { domicile: 0.07, pente: 0.06, moteurs: 0.06 };
 
 test('Domicile et poids du niveau de chaque championnat calés sur les matchs réels', { timeout: 900000 }, () => {
   const h = context(4242, { club: 102, console: false });
@@ -36,14 +37,17 @@ test('Domicile et poids du niveau de chaque championnat calés sur les matchs r�
       const reel = REEL[comp].domicileNiveauEgal / 100, f = m.fit;
       console.log(`${comp} ${mode} : domicile ${B.pct(f.domicileNiveauEgal)} (réel ${B.pct(reel)}), pente ${f.pente.toFixed(3)} (visée ${PENTE[comp]})`);
       const seD = f.se.terrain / 4;
-      assert.ok(Math.abs(f.domicileNiveauEgal - reel) <= TOL.domicile + 3 * seD,
+      assert.ok(Math.abs(f.domicileNiveauEgal - reel) <= TOL.domicile + seD,
         `${comp} ${mode} : domicile à niveau égal ${B.pct(f.domicileNiveauEgal)} contre ${B.pct(reel)} dans la réalité`);
-      assert.ok(Math.abs(f.pente - PENTE[comp]) <= TOL.pente + 3 * f.se.pente, `${comp} ${mode} : pente ${f.pente.toFixed(3)} pour ${PENTE[comp]}`);
-      fits[comp + mode] = f;
+      assert.ok(Math.abs(f.pente - PENTE[comp]) <= TOL.pente + f.se.pente, `${comp} ${mode} : pente ${f.pente.toFixed(3)} pour ${PENTE[comp]}`);
+      fits[comp + mode] = f; fits[comp + mode + '+6'] = m.resumes.find(x => x.k === 6);
     }
+    // Les deux moteurs d'accord : victoires du plus fort à +6 (domicile alterné). Comparé sur ce point plutôt que sur la pente,
+    // que la compression des gros écarts du Top 14 rend instable sur deux écarts seulement.
     for (const comp of Object.keys(PENTE)) {
-      const c = fits[comp + 'complet'], r = fits[comp + 'rapide'];
-      assert.ok(Math.abs(c.pente - r.pente) <= TOL.moteurs + 2 * Math.hypot(c.se.pente, r.se.pente), `${comp} : pentes complet ${c.pente.toFixed(3)} / rapide ${r.pente.toFixed(3)}`);
+      const c = fits[comp + 'complet+6'], r = fits[comp + 'rapide+6'];
+      const se = Math.hypot(Math.sqrt(c.victoires * (1 - c.victoires) / c.n), Math.sqrt(r.victoires * (1 - r.victoires) / r.n));
+      assert.ok(Math.abs(c.victoires - r.victoires) <= TOL.moteurs + se, `${comp} : +6 complet ${B.pct(c.victoires)} / rapide ${B.pct(r.victoires)}`);
     }
     // Hiérarchie : les championnats réellement étagés pèsent plus l'écart de niveau que les championnats français.
     assert.ok(fits.urccomplet.pente > fits.accessioncomplet.pente && fits.srprapide.pente > fits.accessionrapide.pente, 'URC et Super Rugby plus étagés que la Pro D2');

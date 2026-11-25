@@ -57,10 +57,11 @@ fréquents) et laisse trop peu de matchs serrés (bonus défensifs rares).
 - `ECART_CHAMPIONNAT` : `facteur` multiplie l'écart de niveau au moteur complet, `rapide` au résultat rapide (avant
   la compression du Top 14, inchangée). Le moteur complet ne laisse régler qu'une partie de la pente (les duels de
   qualités départagent déjà ; banc : pente ≈ 0,14 + 0,07 × facteur), d'où des facteurs plus forts qu'au rapide :
-  Pro D2 0,55 / 0,84, Premiership 1,3 / 1,19, URC 2,6 / 1,52, Super Rugby 3,5 / 1,89, Japon 2,3 / 1,46.
+  Pro D2 0,55 / 0,84, Premiership 1,3 / 1,19, URC 2,3 / 1,4, Super Rugby 3,5 / 1,89, Japon 2,3 / 1,46.
   Les clubs de Super Rugby sont très proches en note dans la base du monde alors que le vrai championnat est très
   étagé : le facteur compense.
-- Résultat rapide du Top 14 : poids du terrain 0,63 → 0,8 (78 % à niveau égal contre 82 % au complet, réel 79 %).
+- Résultat rapide du Top 14 : poids du terrain 0,63 → 0,8 (78 % à niveau égal contre 82 % au complet, réel 79 %), poids de l’écart 1 → 1,2 (même victoire à +6 que le complet).
+- Après la 1re vérification (25/11) : URC 2,6 → 2,3 au complet (1,52 → 1,4 au rapide), tests resserrés (240 matchs complets, réel ± 7 points, pente ± 0,06). Leader de l’URC sur 6 saisons : 91 % de victoires (réel 83 %), même valeur aux deux réglages : il vient de l’effectif du club de tête de la base, pas de la courbe ; hiérarchie URC 16 (réel 16,5).
 
 Banc (tests/helpers/courbe-niveau.cjs, deux copies du club 4, 400 matchs complets et 2 000 rapides par écart 0/+6),
 pente par point complet / rapide et domicile à niveau égal complet / rapide :
@@ -77,10 +78,10 @@ pente par point complet / rapide et domicile à niveau égal complet / rapide :
 ## Tests
 
 - `tests/match-rating-curve.cjs` : le banc joue en URC ; bornes = URC réelle (domicile à niveau égal 70 % ± 7,
-  pente 0,24-0,40, +6 entre 75 et 92 %, +10 entre 86 et 99 %, −10 entre 2 et 15 %, surprises à +15 entre 0,3 et 8 %).
+  pente 0,24-0,40, +6 entre 75 et 92 %, +10 entre 86 et 99 %, −10 entre 2 et 15 %, surprises à +15 entre 0,3 et 8 %, le plus fort de 6 points perd au moins 15 % de ses déplacements).
   Mesuré (CI) : complet pente 0,334, domicile 71,7 %, +6 84 % ; rapide 0,332, 70,1 %, +6 85 %.
-- `tests/match-realite-championnats.cjs` (nouveau, ~2 min 40) : pour chacun des 6 championnats, domicile à niveau
-  égal du banc = réel ± 7 points, pente = visée ± 0,07, moteurs complet et rapide d'accord.
+- `tests/match-realite-championnats.cjs` (nouveau, ~5 min 30, 240 matchs complets et 1 000 rapides par écart) : pour chacun des 6 championnats, domicile à niveau
+  égal du banc = réel ± 7 points, pente = visée ± 0,06 (plus une erreur type), moteurs complet et rapide d’accord à +6 (± 6 points). Vu rouge avec les réglages de main (Super Rugby rapide : pente 0,21 pour 0,40).
 
 Outils de mesure (hors dépôt, dossier temp/realite-match) : relevé des matchs réels, saison Monde complète par graine
 (`scripts/mesure-essais-monde.cjs`, fonction `mesurer`), analyses identiques pour le réel et le moteur.

@@ -4,7 +4,7 @@
 // (tests/helpers/courbe-niveau.cjs). Le moteur complet et le résultat rapide doivent suivre la même
 // courbe. Le banc joue en URC, dont la courbe est calée sur les vrais matchs (25/11/2026, docs/realite-matchs-20261125.md,
 // tests/fixtures/realite-matchs-20261125.json) : domicile à niveau égal = URC réelle (70 %), poids de l'écart de niveau
-// = celui qui redonne la hiérarchie réelle de l'URC sur des saisons Monde (pente ≈ 0,32 par point : +6 → 85 %,
+// = celui qui redonne la hiérarchie réelle de l'URC sur des saisons Monde (pente ≈ 0,30 par point : +6 → 84 %,
 // +10 → 95 %, −10 → 5 %), sans dérive des scores. Les autres championnats : tests/match-realite-championnats.cjs.
 // Carrière world-champ (club 102, hors des clubs du banc), aucun ancien mode.
 // Version CI : 3 écarts × 240 matchs au moteur complet, 4 écarts × 1 000 résultats rapides (~2 min).
@@ -27,7 +27,7 @@ PLAN.queue = { complet: 600, rapide: 2000 };
 const REEL_URC = require('./fixtures/realite-matchs-20261125.json').championnats.urc;
 const DOM = [REEL_URC.domicileNiveauEgal / 100 - 0.07, REEL_URC.domicileNiveauEgal / 100 + 0.07];
 const BORNES = {
-  // Pente visée 0,32 (ECART_CHAMPIONNAT.urc de dist/rugby.js : moteur complet ×2,6, résultat rapide ×1,52).
+  // Pente visée 0,30 (ECART_CHAMPIONNAT.urc de dist/rugby.js : moteur complet ×2,3, résultat rapide ×1,4).
   complet: { pente: LONGUE ? [0.26, 0.38] : [0.24, 0.40], domicile: DOM,
     // Scores : enveloppe de la réalité récente (docs/essais-realistes-20261114.md : 5,2 à 8,6 essais et 45 à 62 points par match selon le
     // championnat), et non plus l'intervalle mesuré à chaque réglage du moteur (38-62 puis 4,4-8,8 puis…) ; l'écart moyen reste ample.
@@ -69,7 +69,7 @@ test('Courbe de niveau commune au moteur complet et au résultat rapide (carriè
       // Glorieuse incertitude : le plus fort de 10 points perd encore à l'extérieur (URC réelle : le favori d'un gros écart
       // de bilan gagne 72 % de ses déplacements).
       assert.ok(r(10).victoires >= 0.86 && r(10).victoires <= 0.99, `${mode} +10 : ${B.pct(r(10).victoires)}`);
-      assert.ok(r(10).aExterieur < 0.98, `${mode} +10 : surprises à l'extérieur`);
+      assert.ok(r(10).aExterieur < 0.98 && r(6).aExterieur < 0.85, `${mode} +6 et +10 : surprises à l'extérieur`);
       assert.ok(r(6).victoires >= 0.75 && r(6).victoires <= 0.92, `${mode} +6 : ${B.pct(r(6).victoires)}`);
       if (r(-10)) dans(r(-10).victoires, [0.02, 0.15], `${mode} −10`);
       // Équilibre des scores (à niveau égal) : points, essais et écart moyen autour des valeurs d'avant.
