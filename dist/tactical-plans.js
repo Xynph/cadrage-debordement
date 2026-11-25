@@ -153,8 +153,9 @@ function openKickBase(l,side){if(!tacticalRules(l))return l.tactics[side]==='occ
 function jeuPiedBase(l,side){
  const J=JEU_PIED,zone=jeuPiedZone(l,side),style=effectiveAttack(l,side);
  const botteur=clamp(1+(unit(l,side,'kick',p=>p.fam>=4)-60)*J.botteur,.8,1.25);
- const m=Number(l.minute)||0,d=l.score?l.score[side]-l.score[1-side]:0;
- const score=m<60||d===0?1:d>0?J.score.mene:d<=-8?J.score.menePlus:J.score.meneMoins;
+ const m=Number(l.minute)||0,d=l.score?l.score[side]-l.score[1-side]:0,g=typeof GESTION_SCORE==='object'?GESTION_SCORE:{debut:60,portee:15};
+ // Fin de match (logique de la gestion du score, dist/rugby.js) : l'équipe menée à portée ne dégage pas, sauf depuis ses 22.
+ const score=m<g.debut||d===0?1:d>0?J.score.mene:d<-g.portee?J.score.menePlus:zone==='ownHalf'?0:J.score.meneMoins;
  return J.zone[zone]*(J.style[style]??1)*botteur*score;
 }
 function tacticalLoad(l,side){if(!tacticalRules(l))return l.tactics[side]==='large'?.49:l.tactics[side]==='conquete'?.44:.39;return l.possession===side?ATTACK_EFFECTS[effectiveAttack(l,side)].load:defensivePlan(l,side)==='pression'?.53:defensivePlan(l,side)==='prudente'?.31:.37}
