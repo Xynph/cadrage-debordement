@@ -96,8 +96,6 @@ const ETATS_ARRET := {"try": "Essai — %s", "transformation": "Transformation �
 	"lineout": "Touche pour %s", "scrum": "Mêlée pour %s",
 	# Match filmé du 25/11 : pendant l'en-avant ou la pénalité, le bandeau disait encore « X a le ballon… ».
 	"penalty": "Pénalité pour %s", "hand-fault": "En-avant"}
-## Arrêts de jeu que la ligne d'état de l'écran intermédiaire garde jusqu'au fait suivant.
-const ARRETS_TENUS := ["card", "penalty", "hand-fault"]
 
 ## Note de départ du moteur (match-direct.cjs, NOTE_DEPART) : titulaire au coup d'envoi, remplaçant à son entrée.
 const NOTE_DEPART := 6.5

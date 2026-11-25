@@ -325,8 +325,6 @@ func montrer_entracte(texte: String, bouton: bool, _force: bool = false) -> void
 func montrer_arret(valeur: Dictionary) -> void:
 	_arret = valeur
 	_poser_arret_commandes()
-	# La ligne d'état suit l'arrêt tout de suite (carton ouvert), sans attendre le prochain rafraîchissement du direct.
-	if not _dernier.is_empty() and is_instance_valid(etat): _etat(_dernier[1], _dernier[2], _equipes)
 	if valeur.is_empty():
 		montrer_droite(vue_droite)
 		return
