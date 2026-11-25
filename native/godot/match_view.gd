@@ -804,9 +804,31 @@ func _process(delta: float) -> void:
 	# Poses définitives de l'image : enregistrées pour le ralenti de l'essai (une coupe le recommence).
 	# Plancher : dernière pose de l'image (après le ballon et les formations), enregistrée par le rejeu.
 	_poser_plancher()
+	# Puis les jambes des joueurs debout sortent du corps des joueurs couchés (ruck), à l'horizontale.
+	_plancher.degager(_actors, delta, _carrier_id, _ball if _ball_attached and _ball.visible else null)
+	# Et les joueurs debout ne se traversent plus entre eux (sauf mêlée et ballon porté, liés exprès).
+	_plancher.separer(_actors, delta, _lies(), _carrier_id, _ball if _ball_attached and _ball.visible else null)
 	_rejeu.enregistrer(delta, _camera_cut)
 	_fit_camera(delta, _camera_cut)
 	_camera_cut = false
+
+## Joueurs liés dans une mêlée ou un ballon porté (contact voulu) : la séparation les laisse.
+func _lies() -> Dictionary:
+	var lies := {}
+	if _formations != null and _formations.active() and str(_formations.formation.type) in ["melee", "sortie_melee"]:
+		for id: String in _formations.formation.places:
+			lies[id] = true
+	var scene_gestes: RefCounted = mise_en_scene()
+	if str(scene_gestes.get("phase")) in ["maul", "essai_maul"]:
+		for id: String in _actors:
+			if scene_gestes.stages(id):
+				lies[id] = true
+	if choregraphie_active():
+		for id: String in _actors:
+			if _choregraphie.stages(id) and str(_choregraphie.etat(id)) in ["melee", "maul"]:
+				lies[id] = true
+	return lies
+
 
 ## Plancher de tous les joueurs (match_plancher.gd) ; le ballon tenu suit les mains relevées.
 func _poser_plancher() -> void:
