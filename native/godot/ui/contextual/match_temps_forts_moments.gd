@@ -36,6 +36,28 @@ static func etat_du_plan(plan: Dictionary, equipes: Array, kind: String = "") ->
 ## Ligne d'état pendant la lecture d'un plan, même règle que la légende (`fait_a_l_ecran`) : un arrêt
 ## de jeu (essai, touche, mêlée…) n'est dit qu'une fois à l'écran ; avant, la possession de la scène
 ## montrée (le porteur qui court vers la ligne). Tir au but : l'arrêt est connu dès la pose « prêt ».
+## Faits sans arrêt de jeu propre (carton, remplacement, consigne, message) : ils tombent pendant
+## l'arrêt en cours, le bandeau garde cet arrêt (match filmé du 25/11 : carton pendant une pénalité,
+## bandeau revenu à « X a le ballon dans les 22 »).
+const PLANS_DANS_L_ARRET := ["card", "sub", "tactic", "message"]
+
+## Ligne d'état du plan `i` de `plans` : celle du plan (etat_montre), ou, pour un carton, un
+## remplacement ou une consigne, celle du dernier plan qui porte l'arrêt de jeu (déjà montré).
+static func etat_montre_dans(plans: Array, i: int, phase_plan: String, instant: float, essai_montre: bool, jalon_montre: bool, equipes: Array) -> String:
+	var k := i
+	while k > 0 and plans[k] is Dictionary and str(plans[k].get("kind", "")) in PLANS_DANS_L_ARRET:
+		k -= 1
+	if k == i: return etat_montre(plans[i], phase_plan, instant, essai_montre, jalon_montre, equipes)
+	return etat_montre(plans[k], "jeu", INF, true, true, equipes)
+
+## Bandeau d'une liaison : « Pénalité pour X », « Touche pour X », « Mêlée pour X » (remises en jeu,
+## comme la ligne d'état des plans) ; « En-avant — X », « Essai — X » pour un fait ; libellé seul sans
+## équipe. Match filmé du 25/11 : « Pénalité Alder Fen XV ».
+const LIAISON_POUR := ["Touche", "Mêlée", "Pénalité", "Renvoi", "Renvoi aux 22", "Renvoi d'en-but"]
+static func texte_bandeau(libelle: String, club: String) -> String:
+	if libelle.is_empty() or club.is_empty(): return libelle
+	return ("%s pour %s" if libelle in LIAISON_POUR else "%s — %s") % [libelle, club]
+
 static func etat_montre(plan: Dictionary, phase_plan: String, instant: float, essai_montre: bool, jalon_montre: bool, equipes: Array) -> String:
 	if plan.has("annonce") or fait_a_l_ecran(plan, phase_plan, instant, essai_montre, jalon_montre): return etat_du_plan(plan, equipes)
 	return etat_du_plan(plan, equipes, "carry")
@@ -121,7 +143,7 @@ func bandeau_liaison() -> String:
 	var libelle := str(b.get("libelle", ""))
 	var camp := int(b.get("equipe", -1))
 	if libelle.is_empty(): return ""
-	if camp in [0, 1] and camp < _teams.size() and _teams[camp] is Dictionary: return "%s %s" % [libelle, S.G.club_name(_teams[camp])]
+	if camp in [0, 1] and camp < _teams.size() and _teams[camp] is Dictionary: return texte_bandeau(libelle, S.G.club_name(_teams[camp]))
 	return libelle
 
 func _vers_inter() -> void:
@@ -192,7 +214,7 @@ func _habiller() -> void:
 	# (plus bas) ; la 3D tenue après le temps fort garde le dernier fait montré ; ailleurs (écran
 	# intermédiaire, sortie), l'état du terrain 2D et du moteur borné (match_between.gd).
 	if etat == JEU and phase != "liaison" and index >= 0 and index < tf.get("plans", []).size():
-		between.forcer_etat(etat_montre(tf.plans[index], phase, temps, _essai_montre, _jalon_montre, _teams))
+		between.forcer_etat(etat_montre_dans(tf.plans, index, phase, temps, _essai_montre, _jalon_montre, _teams))
 	elif etat != JEU and etat != ATTENTE:
 		between.forcer_etat("")
 	_habiller_meteo()
