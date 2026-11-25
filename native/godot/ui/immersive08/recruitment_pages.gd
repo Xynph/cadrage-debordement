@@ -157,6 +157,16 @@ static func build(app: Control, page: Control, kind: String) -> void:
 					annuler.pressed.emit(), "RecrutementPageAnnuler", 20)
 		lien.set_meta("source", annuler)
 		(lien as Control).grab_focus.call_deferred()
+		# Rallonge au conseil (offre refusée par l'enveloppe) : le bouton de la vue adoptée finit sous la zone défilante, hors de
+		# vue ; il est repris dans le pied, à côté de « Fermer ». Un clic envoie la demande (aucune confirmation) ; après un
+		# refus il est grisé avec la date de réouverture.
+		var rallonge := zone.find_child("ContractTransferBudgetExtension", true, false) as Button
+		if rallonge != null:
+			var rallonge_faible: WeakRef = weakref(rallonge)
+			var demander := Kit.bouton_ivoire(cadre, Rect2(pied.position.x + 760, pied.position.y, 760, 46), str(rallonge.text), func():
+					var source := rallonge_faible.get_ref() as Button
+					if source != null and not source.disabled: source.pressed.emit(), "RecrutementPageRallonge")
+			demander.disabled = rallonge.disabled
 
 ## Bouton principal de la page : envoie la vue adoptée (offre au joueur : « Signer si accord ») en un clic.
 static func _signer(ok: Button) -> void:
@@ -339,10 +349,14 @@ static func _prendre(app: Control, kind: String, hote: Control, fenetre: AcceptD
 
 ## Après la fermeture d'une fenêtre adoptée : la page suit la fenêtre qui la remplace, attend la réponse du moteur,
 ## ou se ferme.
-static func _relais(app: Variant, kind: String, essai: int) -> void:
+static func _relais(app: Variant, kind: String, essai: int, fenetre_avant: Variant = null) -> void:
 	if not is_instance_valid(app): return
 	var hote := app.get_node_or_null(HOTE) as Control
 	if hote == null or actuelle(app) != kind: return
+	# Une fenêtre de remplacement a déjà été adoptée pendant l'attente : ce minuteur est périmé (sinon il refermait la page
+	# juste après la réponse du conseil).
+	if essai == 0: fenetre_avant = hote.get_meta("fenetre", null)
+	elif hote.get_meta("fenetre", null) != fenetre_avant: return
 	var suivante := _derniere_fenetre(app)
 	if suivante != null and (kind == "negociation" or not suivante is ConfirmationDialog):
 		for ancien: Variant in hote.get_meta("contenu", []):
@@ -355,7 +369,7 @@ static func _relais(app: Variant, kind: String, essai: int) -> void:
 	# Réponse du moteur attendue (offre envoyée, rallonge demandée) : on laisse jusqu'à 6 s à la vue pour se rouvrir.
 	var attente: bool = bool(app.get("waiting")) or (essai < 4 and str(app.get("last_command")) == "transfer_budget_extension")
 	if kind == "negociation" and essai < 24 and attente:
-		app.get_tree().create_timer(.25).timeout.connect(func(): _relais(app, kind, essai + 1))
+		app.get_tree().create_timer(.25).timeout.connect(func(): _relais(app, kind, essai + 1, fenetre_avant))
 		return
 	# Contre-offre reçue : l'offre se rouvre avec la contre-offre en pastille (jamais un retour muet à la liste).
 	if kind == "negociation" and str(app.get("last_command")) == "recruit":

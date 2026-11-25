@@ -74,16 +74,26 @@ function demandeRallonge(e, montant, cash, mat, R = REGLAGES) {
   return Math.ceil((montant - r) / pas) * pas;
 }
 
-// Réponse du président à une demande de rallonge : null = accordée, sinon la raison écrite du refus. Déterministe.
+// Réponse du président à une demande de rallonge : null = accordée, sinon la raison COURTE du refus (aucun chiffre :
+// décision de Léo du 25/11/2026, comme Football Manager ; le moteur garde ses seuils en interne). Déterministe.
 //   accordée si rallonges déjà accordées < maxParSaison, confiance ≥ confianceMin, montant ≤ partEnveloppe × enveloppe fixée.
 function decisionRallonge(e, montant, confiance, R = REGLAGES) {
   const Q = R.rallonge, t = Math.round(borne(fini(confiance) ? confiance : 50, 0, 100));
-  if (n0(e.rallongesAccordees) >= Q.maxParSaison) return `Le président refuse : le conseil a déjà accordé ${Q.maxParSaison} rallonge${Q.maxParSaison > 1 ? 's' : ''} cette saison.`;
-  if (t < Q.confianceMin) return `Le président refuse : sa confiance (${t}/100) est trop basse pour rouvrir l’enveloppe ; il en faut ${Q.confianceMin}.`;
+  if (n0(e.rallongesAccordees) >= Q.maxParSaison) return 'Assez de rallonges cette saison';
+  if (t < Q.confianceMin) return 'Résultats d’abord';
   const plafond = Math.floor(Q.partEnveloppe * e.enveloppe);
-  if (montant > plafond) return `Le président refuse : ${euros(montant)} dépassent ${Math.round(Q.partEnveloppe * 100)} % de l’enveloppe fixée en début de saison (${euros(plafond)} au plus).`;
+  if (montant > plafond) return 'Finances serrées';
   return null;
 }
+
+// Après un refus, le conseil ne veut plus en entendre parler pendant quelques mois (rallonge.moisSilence) : date ISO.
+function plusMois(iso, mois) {
+  const m = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(String(iso));
+  if (!m) return null;
+  return new Date(Date.UTC(+m[1], +m[2] - 1 + mois, +m[3])).toISOString().slice(0, 10);
+}
+// La demande est fermée tant que la date du jour est avant bloqueJusqu (ISO). Sans date de jeu : jamais fermée.
+const rallongeFermee = (e, jour) => !!e && typeof e.bloqueJusqu === 'string' && typeof jour === 'string' && jour < e.bloqueJusqu;
 
 // Report d'une saison sur la suivante (même club) : partReport × reste non dépensé de la saison précédente, arrondi au
 // millier inférieur, plafonné pour que enveloppe neuve + report ≤ recettes × plafond.
@@ -104,6 +114,8 @@ function rendu(e, montant, recettes, R = REGLAGES) {
 // Code exécuté dans le moteur (après club-budget.cjs, club-investments.cjs et president-reprise.cjs).
 // Attend : budgetActif, budgetMonde, budgetLisible, budgetForces, budgetLigue, nativeClubBudget, nativeBudgetTransferts (ce module).
 const BRANCHEMENT = `
+// Date du jeu (ISO) pour la fermeture du conseil après un refus ; null sans calendrier.
+const budgetTransfertsJour=()=>{try{const j=CDWorldCareer.calendarToday(S);return typeof j==='string'?j:null;}catch(e){return null;}};
 const budgetTransfertsActif=()=>!!S&&typeof budgetActif==='function'&&budgetActif()&&budgetMonde();
 // Entrées du calcul, sans rien écrire dans la carrière (lecture seule possible depuis la vue).
 function budgetTransfertsEntrees(){
@@ -168,15 +180,20 @@ function budgetTransfertsRallonge(p){
  if(p?.confirmed!==true)non('Confirme la demande de rallonge au conseil.');
  if(!Number.isInteger(p.amount)||p.amount<Q.arrondi||p.amount%Q.arrondi!==0||p.amount>1e9)non('Montant de rallonge invalide.');
  if(S.live)non('Le conseil ne se réunit pas pendant un match.');
+ const jour=budgetTransfertsJour();
+ if(T.rallongeFermee(budgetTransfertsEtat(false),jour))non('Le conseil ne veut plus en entendre parler pour le moment.');
  const ctx=budgetTransfertsContexte();
  if(T.reste(ctx.e)>=Math.max(0,ctx.cash-ctx.matelas))non('Pas de rallonge possible : c’est la caisse qui limite les transferts ; elle doit rester au-dessus de '+T.euros(ctx.matelas)+'.');
  const e=budgetTransfertsEtat(true),raison=T.decisionRallonge(e,p.amount,S.trust,R),accordee=!raison,cout=accordee?Q.coutAccordee:Q.coutRefusee;
  e.demandes=(e.demandes||0)+1;
+ const jusqu=!accordee&&jour?T.plusMois(jour,Q.moisSilence):null;
+ if(jusqu)e.bloqueJusqu=jusqu;
  if(accordee){e.rallonge=Math.round((e.rallonge||0)+p.amount);e.rallongesAccordees=(e.rallongesAccordees||0)+1;}
  S.trust=Math.max(0,Math.min(100,(Number.isFinite(S.trust)?S.trust:50)-cout));
- const message=accordee?'Le conseil accorde une rallonge de '+T.euros(p.amount)+' au budget de transferts.':raison;
- if(typeof news==='function')news('Budget de transferts : '+(accordee?'le conseil accorde une rallonge de '+T.euros(p.amount)+'.':'demande de rallonge de '+T.euros(p.amount)+' refusée. '+raison));
- return {accordee,montant:p.amount,message,confiance:S.trust,coutConfiance:cout};
+ const quand=jusqu?(typeof calJourMois==='function'?calJourMois(jusqu):nativeVenteJoueurs.dateFr(jusqu)):null;
+ const message=accordee?'Le conseil accorde une rallonge de '+T.euros(p.amount)+' au budget de transferts.':'Refusé : '+raison.toLowerCase()+(quand?' · plus de demande avant le '+quand:'');
+ if(typeof news==='function')news('Budget de transferts : '+(accordee?'le conseil accorde une rallonge de '+T.euros(p.amount)+'.':'demande de rallonge de '+T.euros(p.amount)+' refusée : '+raison.toLowerCase()+'.'));
+ return {accordee,montant:p.amount,message,raison:accordee?null:raison,bloqueJusqu:jusqu,bloqueLabel:quand};
 }
 // Vue Finances / Recrutement (finance.transferBudget), en euros entiers ; lecture seule.
 //   enveloppe : fixée par le conseil ; report : part reportée de la saison passée ; rallonge : rallonges accordées ;
@@ -185,7 +202,9 @@ function budgetTransfertsRallonge(p){
 //   m − reste arrondi au millier supérieur (rallongeArrondi) — calcul repris par ui/transfer_budget.gd.
 function budgetTransfertsVue(){
  const ctx=budgetTransfertsContexte(),Q=nativeBudgetTransferts.REGLAGES.rallonge;
- const regles={rallongeMax:Q.maxParSaison,rallongeArrondi:Q.arrondi,rallongeCout:{accordee:Q.coutAccordee,refusee:Q.coutRefusee}};
+ const jour=budgetTransfertsJour(),ee=budgetTransfertsEtat(false),ferme=nativeBudgetTransferts.rallongeFermee(ee,jour);
+ // Aucun coût ni seuil vers l'écran : seulement la date de réouverture après un refus.
+ const regles={rallongeMax:Q.maxParSaison,rallongeArrondi:Q.arrondi,rallongeBloqueJusqu:ferme?ee.bloqueJusqu:null,rallongeBloqueLabel:ferme?(typeof calJourMois==='function'?calJourMois(ee.bloqueJusqu):nativeVenteJoueurs.dateFr(ee.bloqueJusqu)):null};
  if(!ctx)return {actif:false,enveloppe:0,report:0,rallonge:0,depense:0,reconstitue:0,reste:0,caisseLibre:0,disponible:0,matelas:0,demandes:0,rallongesAccordees:0,...regles,saison:S?.season??null};
  const e=ctx.e,T=nativeBudgetTransferts;
  return {actif:true,enveloppe:e.enveloppe,report:Math.round(e.report||0),rallonge:Math.round(e.rallonge||0),depense:e.depense,reconstitue:e.reconstitue,
@@ -194,4 +213,4 @@ function budgetTransfertsVue(){
 }
 `;
 
-module.exports = Object.freeze({ REGLAGES, euros, matelas, enveloppe, valide, total, reste, disponible, refus, demandeRallonge, decisionRallonge, report, rendu, BRANCHEMENT });
+module.exports = Object.freeze({ REGLAGES, euros, matelas, enveloppe, valide, total, reste, disponible, refus, demandeRallonge, decisionRallonge, plusMois, rallongeFermee, report, rendu, BRANCHEMENT });

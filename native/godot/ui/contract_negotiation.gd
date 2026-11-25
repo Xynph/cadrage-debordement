@@ -114,7 +114,7 @@ static func open(app: Control, player: Dictionary, recruiting: bool, answer: Str
 	progress.name = "ContractNegotiationProgress"
 	body.add_child(progress)
 	if not answer.is_empty():
-		var reply := C.wrap(answer,18,C.MINT if answer.begins_with("Le conseil accorde") else C.ALERT,true,700)
+		var reply := C.wrap(answer,28,C.MINT if answer.begins_with("Le conseil accorde") else C.ALERT,true,700)
 		reply.name = "ContractTransferBudgetAnswer"
 		body.add_child(reply)
 	var columns := C.h(16)
@@ -186,11 +186,11 @@ static func open(app: Control, player: Dictionary, recruiting: bool, answer: Str
 		# Refus d’enveloppe que la caisse permettrait : le manager peut demander le manquant au conseil (R3 bis).
 		var extension := Budget.extension_for_refusal(transfer, quote.get("fee"), quote.get("reason","")) if recruiting and not bool(quote.get("available",false)) else 0
 		if extension > 0:
-			var ask := C.button(Budget.extension_button(extension),func(): pass)
+			var ask := C.button(Budget.extension_button(extension, transfer),func(): pass)
 			ask.pressed.connect(func(): _ask_extension(app,dialog,body,ask,player,transfer,extension))
 			ask.name = "ContractTransferBudgetExtension"
 			ask.add_theme_font_size_override("font_size",C.px(18))
-			ask.disabled = app.waiting or not app._live().is_empty()
+			ask.disabled = app.waiting or not app._live().is_empty() or Budget.extension_closed(transfer) != ""
 			body.add_child(ask)
 	if recruiting and not transfer.is_empty():
 		var share := C.wrap("%s : %s %s" % [Budget.LABEL, Budget.remaining(transfer), Budget.allocated(transfer)],16,C.MUTED)
@@ -249,11 +249,10 @@ static func _ask_extension(app: Control, dialog: ConfirmationDialog, body: Node,
 	var after := func(): _after_extension(app,player_id,player)
 	var next_frame := func(_value: Dictionary): app.get_tree().process_frame.connect(after,CONNECT_ONE_SHOT)
 	# Demande envoyée : l’ancienne vue se ferme, le devis est rouvert avec la réponse (jamais deux vues empilées).
-	# Confirmation EN PLACE sous le bouton (deux temps, aucune fenêtre).
 	var envoyee := func():
 		app.bridge.model_changed.connect(next_frame,CONNECT_ONE_SHOT)
 		dialog.queue_free()
-	Budget.confirm_extension(app,body,transfer,amount,envoyee,ask)
+	Budget.send_extension(app,amount,envoyee)
 static func _after_extension(app: Control, player_id: String, previous: Dictionary) -> void:
 	if app.last_command != Budget.EXTENSION_COMMAND: return
 	var refreshed := previous

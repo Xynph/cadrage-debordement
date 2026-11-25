@@ -812,16 +812,27 @@ func _process(delta: float) -> void:
 	_fit_camera(delta, _camera_cut)
 	_camera_cut = false
 
-## Joueurs liés dans une mêlée ou un ballon porté (contact voulu) : la séparation les laisse.
+## Joueurs liés dans une mêlée ou un ballon porté (contact voulu) : la séparation ne les écarte pas
+## entre eux, ils restent des obstacles pour les autres. 25/11/2026 : seuls les avants liés du paquet
+## et les deux demis tenus au tunnel, arrivés à leur place ; le demi qui ramasse à la sortie, l'arrière, le joueur qui
+## rejoint le ballon porté et ceux qui se replient après l'essai sont écartés des liés qu'ils frôlent.
 func _lies() -> Dictionary:
 	var lies := {}
 	if _formations != null and _formations.active() and str(_formations.formation.type) in ["melee", "sortie_melee"]:
+		var roles: Array = ["pack", "demi_intro", "demi_adverse"] if str(_formations.formation.type) == "melee" else ["pack"]
 		for id: String in _formations.formation.places:
-			lies[id] = true
+			# Lié une fois à sa place (posture prise) ; en course vers elle, il contourne les autres.
+			if str(_formations.formation.roles.get(id, "")) in roles and float(_formations.posture_de(id)[1]) > 0.0:
+				lies[id] = true
+		# Avant qui se détache du paquet avec le ballon à la sortie : laissé tel quel (le ballon reste
+		# dans ses mains, à sa place).
+		var detache := str(_formations.formation.get("porteur", ""))
+		if not detache.is_empty() and not _formations.formation.places.has(detache):
+			lies[detache] = true
 	var scene_gestes: RefCounted = mise_en_scene()
-	if str(scene_gestes.get("phase")) in ["maul", "essai_maul"]:
+	if str(scene_gestes.get("phase")) in ["maul", "essai_maul"] and scene_gestes.has_method("lie"):
 		for id: String in _actors:
-			if scene_gestes.stages(id):
+			if scene_gestes.lie(id):
 				lies[id] = true
 	if choregraphie_active():
 		for id: String in _actors:
