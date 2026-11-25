@@ -15,7 +15,10 @@ const VM_SOURCE = String.raw`globalThis.__bancCourbe=function(o){
   c.id=s.id;c.name=s.name;c.abbr=s.abbr;c.color=s.color;c.morale=75;
   for(const p of c.players){p.id=p.id+'#'+tag;p.condition=100;p.injury=0;p.suspension=0;
    if(k){p.rating+=k;p.skillBase=(p.skillBase??p.rating-k)+k;for(const s in p.skills)p.skills[s]=Math.min(99,p.skills[s]+k);
-    if(p.attributesV2)for(const s in p.attributesV2)if(typeof p.attributesV2[s]==='number')p.attributesV2[s]=Math.min(99,p.attributesV2[s]+k);}}
+    if(p.attributesV2)for(const s in p.attributesV2)if(typeof p.attributesV2[s]==='number')p.attributesV2[s]=Math.min(99,p.attributesV2[s]+k);
+    // Qualités compactes (joueurs générés) : même hausse, pour que le Niveau du match (niveauMatch, calculé sur les
+    // qualités) suive l'écart voulu comme la note.
+    if(typeof p.nativeAttributesV1==='string'&&/^\d{72}$/.test(p.nativeAttributesV1))p.nativeAttributesV1=p.nativeAttributesV1.match(/\d\d/g).map(v=>String(Math.max(20,Math.min(97,+v+k))).padStart(2,'0')).join('');}}
   return c;};
  const out=[];
  try{
