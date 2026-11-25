@@ -83,6 +83,8 @@ const CONTOUR_COTE := Vector2(3.4, 2.3)
 const CONTOUR_CAMERA := 3.4
 const CONTOUR_AVANT := 4.2
 const CONTOUR_MAX := 4.0
+## Durée (s) depuis la sortie pendant laquelle personne ne traverse le n° 8 (bras compris).
+const PROTEGE := 3.0
 ## Distance (m) sous laquelle un point de passage est atteint.
 const CONTOUR_ATTEINT := 0.35
 ## Hors-jeu de mêlée (loi 19) : arrières à 5 m au moins derrière les pieds du dernier avant.
@@ -132,6 +134,14 @@ var _saved: Dictionary = {}
 ## Contour du n° 8 détaché : {"id", "points": [Vector2 du terrain], "i", "temps"} (vide sinon). Il survit
 ## aux images suivantes du moteur : le n° 8 finit de contourner même si le fait d'après arrive.
 var contour: Dictionary = {}
+## N° 8 détaché que personne ne traverse, bras et jambes compris (match_plancher.gd `separer`,
+## `entiers`), PROTEGE s depuis la sortie : {"id", "temps"} (vide sinon).
+var protege: Dictionary = {}
+
+
+## Joueurs que la séparation garde entiers (voir `protege`).
+func entiers() -> Dictionary:
+	return {} if protege.is_empty() else {str(protege.id): true}
 
 
 func _init(owner: Node3D) -> void:
@@ -313,8 +323,10 @@ func preparer(scene: Dictionary, nouvelle: bool) -> void:
 	_cibles_moteur.clear()
 	if formation.has("contour"):
 		contour = {"id": str(formation.porteur), "points": formation.contour, "i": 0, "temps": 0.0}
+		protege = {"id": str(formation.porteur), "temps": 0.0}
 	elif formation.type in ["melee", "touche"]:
 		contour = {}
+		protege = {}
 	if formation.type == "melee":
 		precedente = {"type": "melee", "centre": formation.centre, "introduit": formation.introduit}
 	elif formation.type != "sortie_melee":
@@ -372,9 +384,14 @@ func avancer(delta: float) -> void:
 	_contourner(delta)
 
 
-## N° 8 détaché : point de passage suivant une fois le précédent atteint (le premier, sur le flanc de
-## son paquet, seulement quand les paquets sont déliés), puis sa course du moteur.
+## N° 8 détaché : point de passage suivant dès que le précédent est atteint, puis sa course du moteur.
+## 25/11/2026 (vérificateur) : il n'attend plus sur le flanc que les paquets se délient (1 s planté,
+## ballon en main) ; il longe aussitôt le paquet adverse, encore lié donc immobile, à l'écart.
 func _contourner(delta: float) -> void:
+	if not protege.is_empty():
+		protege.temps = float(protege.temps) + delta
+		if float(protege.temps) >= PROTEGE or not view._actors.has(str(protege.id)):
+			protege = {}
 	if contour.is_empty():
 		return
 	var id := str(contour.id)
@@ -383,11 +400,10 @@ func _contourner(delta: float) -> void:
 		contour = {}
 		return
 	var fini: bool = view._carrier_id != id or float(contour.temps) >= CONTOUR_MAX
-	var lies: bool = str(formation.type) == "sortie_melee" and not libere
 	var entry: Dictionary = view._actors[id]
 	var at: Vector3 = (entry.node as Node3D).position
 	var vise := _terrain(contour.points[int(contour.i)])
-	if not fini and (lies or Vector2(vise.x - at.x, vise.z - at.z).length() > CONTOUR_ATTEINT):
+	if not fini and Vector2(vise.x - at.x, vise.z - at.z).length() > CONTOUR_ATTEINT:
 		return
 	contour.i = int(contour.i) + 1
 	if not fini and int(contour.i) < (contour.points as Array).size():

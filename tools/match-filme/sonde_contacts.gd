@@ -59,7 +59,7 @@ const SORTIE_VITRINES_MAX := 6
 var _sortie_photos: Dictionary = {}
 var _sortie_vitrines := 0
 var sortie_n8 := {"sorties": 0, "images": 0, "couples_franc": 0, "episodes_franc": 0, "couples_franc_tronc_tete": 0,
-	"penetration_max_m": 0.0, "os": {}, "pires": []}
+	"penetration_max_m": 0.0, "os": {}, "pires": [], "couples_franc_en_course": 0, "en_course_max_m": 0.0}
 
 
 func _init() -> void:
@@ -359,6 +359,10 @@ func _compter_sortie(a: String, b: String, max_p: float, max_t: float, detail: S
 	var cle := a + ">" + b
 	sortie_vus[cle] = true
 	sortie_n8.couples_franc += 1
+	# Une fois sorti du paquet (0,2 s) : plus aucun contact voulu (liaison).
+	if temps - _sortie_debut > 0.2:
+		sortie_n8.couples_franc_en_course += 1
+		sortie_n8.en_course_max_m = maxf(float(sortie_n8.en_course_max_m), snappedf(max_p, 0.001))
 	if max_t > FRANC:
 		sortie_n8.couples_franc_tronc_tete += 1
 	sortie_n8.penetration_max_m = maxf(float(sortie_n8.penetration_max_m), snappedf(max_p, 0.001))
