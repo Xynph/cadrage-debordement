@@ -19,7 +19,14 @@ const CORPS := [["Hips", "Abdomen", 0.13], ["Abdomen", "Torso", 0.14], ["Torso",
 	["UpperLeg.L", "LowerLeg.L", 0.08], ["UpperLeg.R", "LowerLeg.R", 0.08], ["LowerLeg.L", "Foot.L", 0.06], ["LowerLeg.R", "Foot.R", 0.06],
 	["UpperArm.L", "LowerArm.L", 0.06], ["UpperArm.R", "LowerArm.R", 0.06], ["LowerArm.L", "Palm.L", 0.05], ["LowerArm.R", "Palm.R", 0.05]]
 const PHASES := ["melee", "maul", "plaquage", "touche", "ruck_sol", "debout"]
+## Bustes et têtes (bras et jambes exclus) : en mêlée et au ballon porté, les bras liés et les
+## épaules au contact sont voulus ; seuls les bustes et les têtes qui se confondent sont des fautes.
+const TRONC_TETE := ["Hips", "Abdomen", "Torso", "Head"]
 const CAPTURES_PAR_PHASE := 2
+## Vitrines (25/11/2026) : mêlée et ballon porté photographiés formés, VITRINE_DELAI s après leur début,
+## au plus VITRINES fois chacun, quels que soient les contacts (pour juger l'allure, pas une faute).
+const VITRINE_DELAI := 1.6
+const VITRINES := 2
 const PIRES_MAX := 80
 
 var vue: Node
@@ -35,6 +42,11 @@ var captures: Array = []
 var _captures_phase: Dictionary = {}
 var _capture_due := -1
 var _capture_info: Dictionary = {}
+## Mêlée : épisodes de bustes ou têtes confondus, avec l'état de chaque joueur (diagnostic).
+var melee_tt: Array = []
+var _vitrine_debut: Dictionary = {}
+var _vitrines: Dictionary = {}
+var _precedents_tt: Dictionary = {}
 
 
 func _init() -> void:
@@ -42,7 +54,8 @@ func _init() -> void:
 	dossier_captures = OS.get_environment("CD_CONTACTS_CAPTURES")
 	for p: String in PHASES:
 		par_phase[p] = {"images_couples": 0, "images_franc": 0, "couples_franc": 0, "episodes_franc": 0, "couples_leger": 0,
-			"episodes_leger": 0, "penetration_max_m": 0.0, "os": {}}
+			"episodes_leger": 0, "penetration_max_m": 0.0, "os": {}, "couples_franc_tronc_tete": 0, "tronc_tete_max_m": 0.0,
+			"os_tronc_tete": {}}
 
 
 func _ready() -> void:
@@ -124,6 +137,27 @@ func _phase(a: String, b: String, couches: Dictionary) -> String:
 	return "debout"
 
 
+func _etat_melee(id: String) -> Dictionary:
+	var e := {"id": id.right(6)}
+	var f = vue.get("_formations")
+	if f != null:
+		e["type"] = str(f.formation.get("type", ""))
+		e["role"] = str(f.formation.roles.get(id, ""))
+		e["posture"] = f.posture_de(id)
+		e["temps"] = snappedf(float(f.temps), 0.01)
+		e["libere"] = bool(f.libere)
+		if (f.formation.places as Dictionary).has(id):
+			var p: Vector2 = f.formation.places[id]
+			var n: Vector3 = (vue._actors[id].node as Node3D).position
+			e["ecart_place"] = snappedf(Vector2(n.x + 50.0, n.z + 35.0).distance_to(p), 0.01)
+			e["place"] = [snappedf(p.x - float(f.formation.centre.x), 0.01), snappedf(p.y - float(f.formation.centre.y), 0.01)]
+	e["pitch"] = snappedf((vue._actors[id].model as Node3D).rotation.x, 0.01)
+	e["lacet"] = snappedf((vue._actors[id].node as Node3D).rotation.y, 0.01)
+	e["mis_en_scene"] = f._mis_en_scene(id) if f != null else false
+	e["geste"] = not (vue._actors[id].get("geste", {}) as Dictionary).is_empty()
+	return e
+
+
 func _photographier(info: Dictionary) -> void:
 	var p: Vector3 = info.point
 	var a: Node3D = vue._actors[info.a].node
@@ -184,6 +218,7 @@ func _process(delta: float) -> void:
 		if _couche(rig):
 			couches[id] = true
 	var vus: Dictionary = {}
+	var vus_tt: Dictionary = {}
 	var touchees: Dictionary = {}
 	var vus_phase: Dictionary = {}
 	for i in ids.size():
@@ -194,9 +229,16 @@ func _process(delta: float) -> void:
 				continue
 			var phase := _phase(a, b, couches)
 			par_phase[phase].images_couples += 1
+			if phase in ["melee", "maul"]:
+				var v: Array = vus_phase.get(phase, [Vector3.ZERO, 0, a, b])
+				v[0] = (v[0] as Vector3) + (racines[a] as Vector3) + (racines[b] as Vector3)
+				v[1] = int(v[1]) + 2
+				vus_phase[phase] = v
 			var max_p := -INF
 			var detail := ""
 			var point := Vector3.ZERO
+			var max_t := -INF
+			var detail_t := ""
 			for s1: Array in corps[a]:
 				for s2: Array in corps[b]:
 					var r := Geometry3D.get_closest_points_between_segments(s1[0], s1[1], s2[0], s2[1])
@@ -205,6 +247,18 @@ func _process(delta: float) -> void:
 						max_p = p
 						detail = "%s/%s" % [s1[3], s2[3]]
 						point = ((r[0] as Vector3) + (r[1] as Vector3)) * 0.5
+					if p > max_t and str(s1[3]) in TRONC_TETE and str(s2[3]) in TRONC_TETE:
+						max_t = p
+						detail_t = "%s/%s" % [s1[3], s2[3]]
+			if max_t > FRANC and phase == "melee" and _precedents_tt.get(a + ">" + b, false) == false and melee_tt.size() < 40:
+				melee_tt.append({"t": snappedf(temps, 0.01), "image": images, "os": detail_t, "p": snappedf(max_t, 0.001),
+					"a": _etat_melee(a), "b": _etat_melee(b)})
+			vus_tt[a + ">" + b] = max_t > FRANC
+			if max_t > FRANC:
+				var st: Dictionary = par_phase[phase]
+				st.couples_franc_tronc_tete += 1
+				st.tronc_tete_max_m = maxf(float(st.tronc_tete_max_m), snappedf(max_t, 0.001))
+				st.os_tronc_tete[detail_t] = int(st.os_tronc_tete.get(detail_t, 0)) + 1
 			if max_p <= LEGER:
 				continue
 			var s: Dictionary = par_phase[phase]
@@ -237,6 +291,19 @@ func _process(delta: float) -> void:
 	for phase: String in touchees:
 		par_phase[phase].images_franc += 1
 	_precedents = vus
+	_precedents_tt = vus_tt
+	for phase: String in ["melee", "maul"]:
+		if not vus_phase.has(phase):
+			_vitrine_debut.erase(phase)
+			continue
+		if not _vitrine_debut.has(phase):
+			_vitrine_debut[phase] = temps
+		elif temps - float(_vitrine_debut[phase]) >= VITRINE_DELAI and int(_vitrines.get(phase, 0)) < VITRINES and _capture_due < 0 and not vues.is_empty():
+			var v: Array = vus_phase[phase]
+			_vitrines[phase] = int(_vitrines.get(phase, 0)) + 1
+			_vitrine_debut[phase] = INF
+			_photographier({"phase": "vitrine-" + phase, "t": snappedf(temps, 0.01), "image": images, "a": v[2], "b": v[3],
+				"point": (v[0] as Vector3) / float(v[1]) + Vector3.UP * 0.9})
 
 
 func bilan() -> Dictionary:
@@ -247,8 +314,13 @@ func bilan() -> Dictionary:
 		for k: String in s.os:
 			os_tries.append([k, s.os[k]])
 		os_tries.sort_custom(func(x, y): return x[1] > y[1])
+		var os_tt: Array = []
+		for k: String in s.os_tronc_tete:
+			os_tt.append([k, s.os_tronc_tete[k]])
+		os_tt.sort_custom(func(x, y): return x[1] > y[1])
 		resume[p] = {"images_franc": s.images_franc, "couples_franc": s.couples_franc, "episodes_franc": s.episodes_franc,
 			"couples_leger": s.couples_leger, "episodes_leger": s.episodes_leger, "penetration_max_m": s.penetration_max_m,
-			"couples_images_proches": s.images_couples, "os": os_tries.slice(0, 6)}
+			"couples_images_proches": s.images_couples, "os": os_tries.slice(0, 6),
+			"couples_franc_tronc_tete": s.couples_franc_tronc_tete, "tronc_tete_max_m": s.tronc_tete_max_m, "os_tronc_tete": os_tt.slice(0, 6)}
 	return {"images": images, "images_rejeu_ignorees": images_rejeu, "seuil_franc_m": FRANC, "seuil_leger_m": LEGER,
-		"resume": resume, "pires": pires, "captures": captures}
+		"resume": resume, "pires": pires, "captures": captures, "melee_bustes_tetes": melee_tt}

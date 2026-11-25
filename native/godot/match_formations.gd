@@ -57,6 +57,9 @@ const BALLON_BAS_MAX := 0.6
 ## 19 novembre 2026 : le ballon tenu glisse de BALLON_TUNNEL m au plus sur le côté du demi, vers la
 ## ligne médiane de la mêlée (le tunnel) : hors de l'aplomb de son buste, visible depuis la caméra TV.
 const BALLON_TUNNEL := 0.3
+## Longueur du bras (épaule -> poignet, m) de l'ancien athlète à 1,90 m, pour qui la posture
+## d'introduction est réglée : un demi aux bras plus courts (gabarits v5) se penche davantage.
+const BRAS_REFERENCE := 0.614
 ## Demi adverse : de son côté du ballon (recul négatif), du même côté de la mêlée, nettement à
 ## l'extérieur des paquets (18/11/2026 soir : à 1,35 m du centre, à demi penché contre le pilier
 ## droit adverse, il passait à l'image pour un avant resté debout dans le paquet).
@@ -91,6 +94,14 @@ const RAMPE := 0.4
 const ARRIVE := 0.6
 ## Rotation vers le cap de la phase, à l'arrêt (rad/s).
 const VIRAGE := 6.0
+## Écart de cap (rad) sous lequel un joueur arrêté à sa place se lie (prend sa posture) : penché,
+## sa tête est 1,1 m devant ses pieds ; à 0,05 rad elle dévie de 5 cm au plus, dans la marge de
+## l'alternance des têtes (2 × DECALAGE_TETES moins deux rayons de tête : 11 cm à deux).
+const FACE := 0.05
+## À moins de EN_PLACE m de sa place, un joueur est arrêté (il se tourne vers le cap) ; arrivé, il se
+## lie au plus tard après ATTENTE_MAX s.
+const EN_PLACE := 0.05
+const ATTENTE_MAX := 0.5
 const ARMS := ["UpperArm.L", "LowerArm.L", "Palm.L", "UpperArm.R", "LowerArm.R", "Palm.R"]
 const LEGS := ["UpperLeg.L", "LowerLeg.L", "Foot.L", "UpperLeg.R", "LowerLeg.R", "Foot.R"]
 
@@ -102,6 +113,8 @@ var temps := 0.0
 var libere := false
 var _poids: Dictionary = {}
 var _posture: Dictionary = {}
+## Temps passé arrivé à sa place sans être lié (s), par joueur.
+var _attente: Dictionary = {}
 var _cibles_moteur: Dictionary = {}
 var _saved: Dictionary = {}
 
@@ -193,6 +206,15 @@ static func _melee(scene: Dictionary, centre: Vector2, introduit: int, sortie: b
 			f.roles[id] = "demi_sortie"
 			if str(f.porteur).is_empty():
 				f.porteur = id
+		elif slot == 8 and sortie and introduit in [0, 1]:
+			# Demi adverse : il reste à sa place, hors des paquets, tant qu'ils sont liés (25/11/2026 :
+			# parti vers sa place de la scène dès l'annonce, il traversait son propre paquet penché).
+			var si := 1.0 if introduit == 0 else -1.0
+			var d: Vector2 = DEMI_INTRO if side == introduit else DEMI_ADVERSE
+			var place := centre + Vector2(-si * d.x, COTE_INTRO * absf(d.y))
+			f.places[id] = place
+			f.caps[id] = atan2(centre.x - place.x, centre.y - place.y)
+			f.roles[id] = "demi_adverse"
 		elif not sortie and player.has("x") and player.has("y"):
 			# Arrières : places du moteur, ramenées derrière la ligne de hors-jeu si besoin.
 			var limite := MELEE[7].x + PIEDS_N8 + HORS_JEU
@@ -337,10 +359,18 @@ func poser(delta: float) -> void:
 		var nom := str(formation.postures.get(id, "")) if actif else ""
 		var gap: Vector3 = entry.target - actor.position
 		var arrive := Vector2(gap.x, gap.z).length() < ARRIVE
-		var poids := move_toward(float(_poids.get(id, 0.0)), 1.0 if not nom.is_empty() and arrive else 0.0, (delta / RAMPE) if not view._paused else 0.0)
-		if actif and formation.caps.has(id) and float(entry.elapsed) >= float(entry.duree):
+		var arrete: bool = float(entry.elapsed) >= float(entry.duree) or Vector2(gap.x, gap.z).length() < EN_PLACE
+		if actif and formation.caps.has(id) and arrete:
 			var change := angle_difference(actor.rotation.y, float(formation.caps[id]))
 			actor.rotation.y += clampf(change, -VIRAGE * delta, VIRAGE * delta)
+		# 25/11/2026 (sonde des contacts du match filmé) : il ne se penche qu'une fois arrêté à sa place
+		# et tourné vers l'adversaire ; penché de travers en arrivant, sa tête entrait dans celle d'en face.
+		# Arrivé, il se lie au plus tard après ATTENTE_MAX s, même mal tourné (jamais de mêlée debout).
+		var face: bool = not formation.caps.has(id) or absf(angle_difference(actor.rotation.y, float(formation.caps[id]))) < FACE
+		var attente: float = float(_attente.get(id, 0.0)) + delta if arrive and not nom.is_empty() else 0.0
+		_attente[id] = attente
+		var lie: bool = not nom.is_empty() and arrive and ((arrete and face) or attente >= ATTENTE_MAX or float(_poids.get(id, 0.0)) > 0.0)
+		var poids := move_toward(float(_poids.get(id, 0.0)), 1.0 if lie else 0.0, (delta / RAMPE) if not view._paused else 0.0)
 		if not nom.is_empty():
 			_posture[id] = nom
 		if poids <= 0.0:
@@ -394,14 +424,20 @@ func _appliquer(id: String, entry: Dictionary, nom: String, w: float) -> void:
 	_garder(id, entry, ARMS + LEGS + ["Abdomen", "Torso"])
 	var model: Node3D = entry.model
 	model.transform = _saved[id].model
-	model.rotation.x = float(p[0]) * w
-	model.position.y += float(p[1]) * w
+	var penche := 1.0
+	if nom == "introduction":
+		penche = clampf(BRAS_REFERENCE / maxf(_bras(rig), 0.01), 1.0, 1.4)
+		if penche < 1.02:
+			penche = 1.0
+	model.rotation.x = float(p[0]) * w * penche
+	# Gabarits v5 aux jambes plus longues : la flexion suit la longueur des jambes (foulée relative).
+	model.position.y += float(p[1]) * w * float(entry.get("foulee", 1.0))
 	# Buste fléchi vers l'avant (dos plat de la poussée).
 	var axe := (rig.global_basis.inverse() * actor.global_basis.x).normalized()
 	for bone in ["Abdomen", "Torso"]:
 		var index := rig.find_bone(bone)
 		if index >= 0:
-			Presentation._orient(rig, index, Basis(Quaternion(axe, float(p[2]) * w * 0.5)) * rig.get_bone_global_pose(index).basis, 1.0)
+			Presentation._orient(rig, index, Basis(Quaternion(axe, float(p[2]) * w * 0.5 * penche)) * rig.get_bone_global_pose(index).basis, 1.0)
 	# Appuis plantés derrière le bassin, genoux fléchis : les pieds restent sur la pelouse.
 	var avant := actor.global_basis.z.normalized()
 	for leg in ["L", "R"]:
@@ -429,6 +465,19 @@ func _appliquer(id: String, entry: Dictionary, nom: String, w: float) -> void:
 		for arm in ["L", "R"]:
 			var sign_ := 1.0 if arm == "L" else -1.0
 			Presentation._solve_arm(rig, arm, vise + cote * sign_ * 0.32, actor.global_basis * Vector3(sign_ * 0.7, -0.8, -0.15), w)
+
+
+## Longueur du bras gauche (épaule -> poignet) dans le monde.
+static func _bras(rig: Skeleton3D) -> float:
+	var total := 0.0
+	var chaine := ["UpperArm.L", "LowerArm.L", "Palm.L"]
+	for i in 2:
+		var a := rig.find_bone(chaine[i])
+		var b := rig.find_bone(chaine[i + 1])
+		if a < 0 or b < 0:
+			return BRAS_REFERENCE
+		total += rig.to_global(rig.get_bone_global_pose(a).origin).distance_to(rig.to_global(rig.get_bone_global_pose(b).origin))
+	return total
 
 
 func _garder(id: String, entry: Dictionary, names: Array) -> void:

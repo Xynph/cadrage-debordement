@@ -13,6 +13,13 @@ const TICK := 0.32
 ## Allure de pointe crédible d'un ballon porté qui avance, en m/s (valeur choisie : un ballon porté
 ## d'élite avance à 1,5 à 2,5 m/s ; le paquet ne sprinte pas).
 const MAUL_PEAK_MAX := 2.8
+## Bustes et têtes (capsules de la sonde des contacts du match filmé) : pénétration franche au-delà de
+## BUST_OVERLAP_MAX m ; au ballon porté, au plus BUSTS_MERGED_MAX couples-images franches sur tout le
+## geste (arrivées en course d'une ou deux images ; avant le 25/11/2026 : 1 239, bloc de saut et
+## adversaires face à face, bustes confondus pendant toute la poussée).
+const BUSTES := [["Hips", "Abdomen", 0.13], ["Abdomen", "Torso", 0.14], ["Torso", "Neck", 0.14], ["Head", 0.22, 0.1]]
+const BUST_OVERLAP_MAX := 0.08
+const BUSTS_MERGED_MAX := 20
 
 var failures: Array[String] = []
 var checks := 0
@@ -46,6 +53,26 @@ func hands(view, id: String) -> float:
 	var worst := 0.0
 	for hand in ["Palm.L", "Palm.R"]:
 		worst = maxf(worst, rig.to_global(rig.get_bone_global_pose(rig.find_bone(hand)).origin).distance_to(view._ball.global_position))
+	return worst
+
+static func _busts(rig: Skeleton3D) -> Array:
+	var g := rig.global_transform
+	var out: Array = []
+	for v: Array in BUSTES:
+		var a := g * rig.get_bone_global_pose(rig.find_bone(v[0]))
+		var b: Vector3 = (g * rig.get_bone_global_pose(rig.find_bone(v[1]))).origin if v[1] is String else a.origin + a.basis.y.normalized() * float(v[1])
+		out.append([a.origin, b, float(v[2])])
+	return out
+
+## Plus forte pénétration (m) entre les bustes et têtes de deux joueurs.
+func busts_overlap(view, a: String, b: String) -> float:
+	if (view._actors[a].node as Node3D).global_position.distance_to((view._actors[b].node as Node3D).global_position) > 2.6:
+		return 0.0
+	var worst := -INF
+	for s1: Array in _busts(view._actors[a].rig):
+		for s2: Array in _busts(view._actors[b].rig):
+			var r := Geometry3D.get_closest_points_between_segments(s1[0], s1[1], s2[0], s2[1])
+			worst = maxf(worst, float(s1[2]) + float(s2[2]) - (r[0] as Vector3).distance_to(r[1]))
 	return worst
 
 ## La caméra suivie applique exactement la formule d'origine : point suivi + décalage fixe, taille fixe.
@@ -186,6 +213,8 @@ func run() -> void:
 	var hold_by_kind := {}
 	var try_grounded_at := -1.0
 	var maul_drive := 0.0
+	var maul_busts_merged := 0
+	var maul_busts_worst := 0.0
 	var maul_try_follows_seen := false
 	var maul_lead := 0.0
 	var aplati_too_early := false
@@ -294,6 +323,15 @@ func run() -> void:
 			waited += STEP
 			hold_by_kind[kinds[index]] = float(hold_by_kind.get(kinds[index], 0.0)) + STEP
 		if gestes.phase in ["maul", "essai_maul"]:
+			# Liés mais pas fondus (Léo, 25/11/2026) : entre deux joueurs du ballon porté, bras et
+			# épaules au contact permis, jamais un buste ou une tête dans un autre.
+			var staged: Array = gestes.cast.keys().filter(func(id: String) -> bool: return view._actors.has(id) and str(gestes.cast[id].get("role", "")) != "walk")
+			for i in staged.size():
+				for j in range(i + 1, staged.size()):
+					var fondu := busts_overlap(view, staged[i], staged[j])
+					if fondu > BUST_OVERLAP_MAX:
+						maul_busts_merged += 1
+						maul_busts_worst = maxf(maul_busts_worst, fondu)
 			var center: Vector3 = gestes._frame().center
 			if last_drive_phase == gestes.phase and last_center.is_finite():
 				var moved: float = Vector2(center.x - last_center.x, center.z - last_center.z).length()
@@ -421,6 +459,8 @@ func run() -> void:
 	check(maul_opponents >= 1, "Au moins un adversaire est lié : c'est bien un maul")
 	check(maul_spread < 3.8, "Le regroupement reste compact : " + str(maul_spread))
 	check(maul_pitch > 0.2, "Les liés poussent buste engagé : " + str(maul_pitch))
+	print("MATCH_GESTES_MAUL_BUSTES ", JSON.stringify({"couples_images": maul_busts_merged, "pire_m": snappedf(maul_busts_worst, 0.001)}))
+	check(maul_busts_merged <= BUSTS_MERGED_MAX, "Ballon porté : aucun buste ni aucune tête dans un autre (%d couples-images au-delà de %.2f m, pire %.2f m)" % [maul_busts_merged, BUST_OVERLAP_MAX, maul_busts_worst])
 	check(try_checked, "L'essai prolonge le ballon porté")
 	# Lot 8 : le ballon porté avance à allure de ballon porté (pas de sprint du paquet), le porteur
 	# aplatit dans l'en-but avant la fin du plan (la régie n'attend un geste que ECHEANCE_GESTE s par
