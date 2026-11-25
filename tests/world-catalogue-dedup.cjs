@@ -29,6 +29,22 @@ function legacyDocument(text){
  }
  return encodedDocument(doc);
 }
+// Un ancien export ne porte ni familiarité de poste ni rôle promis sur les six fiches historiques : le lecteur les
+// ajoute à l'import (familiarite-poste.cjs, role-contrat.cjs : rôle déduit pour l'effectif du manager). Rien d'autre
+// ne change : même état au champ près, même RNG, et l'export migré se relit à l'identique.
+function importLegacy(h,text){
+ h.go('import',{text});const out=h.export(),got=JSON.parse(out),want=JSON.parse(text);
+ for(const[alias,row]of Object.entries(loadLegacy().aliases)){
+  const mine=got.state.clubs[row.clubId].players.find(p=>p.id===alias),theirs=want.state.clubs[row.clubId].players.find(p=>p.id===alias);
+  a(mine&&theirs);a.equal(theirs.familiarite,undefined);a.equal(theirs.roleContrat,undefined);
+  a.match(mine.familiarite?.d??'',/^[0-9]{15}$/,alias+' : familiarité de poste ajoutée');theirs.familiarite=mine.familiarite;
+  if(row.clubId===got.state.club){a.equal(mine.roleContrat?.deduit,true,alias+' : rôle déduit');a.equal(mine.roleContrat.club,got.state.club);theirs.roleContrat=mine.roleContrat;}
+  else a.equal(mine.roleContrat,undefined,alias+' : pas de rôle promis hors du club du manager');
+ }
+ a.deepEqual(got.state,want.state);a.equal(out,encodedDocument(got));
+ h.go('import',{text:out});a.equal(h.export(),out,'Export migré relu à l’identique');
+ return out;
+}
 test('Le vrai lecteur conserve les six fiches présentes dans un ancien export : état, RNG et reprise exacts',t=>{
  const sourceCount=text=>JSON.parse(text).state.clubs.flatMap(c=>c.players).filter(p=>!p.id.startsWith('depth-')).length;
  const h=fixture(t),fresh=h.export(),old=legacyDocument(fresh),invalid=JSON.parse(old),[id,row]=Object.entries(loadLegacy().aliases)[0];
@@ -38,13 +54,13 @@ test('Le vrai lecteur conserve les six fiches présentes dans un ancien export :
  const before=h.disk(),refused=h.raw('import',{text:encodedDocument(invalid)});
  a.equal(refused.ok,false);a.match(refused.error,/profil de joueur mondial incompatible : potential/);
  a.equal(h.export(),fresh);a.deepEqual(h.disk(),before,'Une politique mélangée reste refusée sans modifier le profil');
- h.go('import',{text:old});a.equal(h.export(),old);a.equal(sourceCount(old),5884);
+ const migrated=importLegacy(h,old);a.equal(sourceCount(old),5884);a.equal(sourceCount(migrated),5884);
  const imported=JSON.parse(h.export()).state;
  for(const[alias,source]of Object.entries(loadLegacy().aliases)){
   const player=imported.clubs[source.clubId].players.find(p=>p.id===alias);
   a(player);a.equal(player.name,source.player.name);a.deepEqual(player.worldProfile,source.worldProfile);
  }
- const disk=h.disk();h.go('snapshot');a.deepEqual(h.disk(),disk);h.restart();a.equal(h.export(),old);a.deepEqual(h.disk(),disk);
+ const disk=h.disk();h.go('snapshot');a.deepEqual(h.disk(),disk);h.restart();a.equal(h.export(),migrated);a.deepEqual(h.disk(),disk);
  settleClubMeetings(h.go('new_career',{mode:'world-champ',club:112}),(command,payload)=>h.go(command,payload));a.equal(sourceCount(h.export()),5878);
 });
 function archive(root,players,assets=[]){
@@ -65,5 +81,5 @@ test('Ancien pack : ID historique accepté, photo reliée au canonique et aucune
  const person=model.squad.find(p=>p.id===row.canonicalId);a(person);a.equal(person.name,'Canonique témoin');a(person.portraitPath);a.deepEqual(fs.readFileSync(person.portraitPath),png);a.equal(person.portraitStatus,'synthetic');
  const after=JSON.parse(h.export()).state;delete after.identityPack;a.deepEqual(after,before);a.deepEqual(fs.readFileSync(file),original);
  const saved=h.export();h.restart();a.equal(h.export(),saved);model=h.go('snapshot');a.equal(model.squad.find(p=>p.id===row.canonicalId).name,'Canonique témoin');
- const legacy=legacyDocument(saved);h.go('import',{text:legacy});model=h.go('snapshot');a.equal(model.squad.find(p=>p.id===id).name,'Canonique témoin');a.equal(h.export(),legacy);
+ const legacy=legacyDocument(saved),migrated=importLegacy(h,legacy);model=h.go('snapshot');a.equal(model.squad.find(p=>p.id===id).name,'Canonique témoin');a.equal(h.export(),migrated);
 });
