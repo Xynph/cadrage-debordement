@@ -173,15 +173,17 @@ function wantsPosts(l,side,distance,y=35){const policy=l.penaltyPolicies?.[side]
 //   points suffisent à égaliser ou gagner (mené de 1 à 3).
 // - Consigne « points » posée par l'IA (dilemme du bonus, native/engine/match-bonus.cjs) : levée dans les cinq dernières
 //   minutes quand trois points ne servent plus à rien (ni égalité, ni bonus défensif à reprendre).
+// - Ces deux levées ne visent que la consigne posée par l'IA (managerMemory[side].consignePenalite, match-bonus.cjs) :
+//   une consigne fixée par le manager prime toujours, même quand elle paraît mauvaise.
 const PENALITE_IA=Object.freeze({fin:65,toucheLevee:70,derniere:75,bonusDefensif:72,facile:.85,unEssai:7,avanceBonus:8,conquete:28,
  culture:Object.freeze({pres:.3,milieu:.75,loin:1,mene:1.4,devant:1.2,serre:.6,minute:50,max:.9})});
 function bonusDefensifEcart(l){const bd=typeof nativeMatchBonus!=='undefined'?nativeMatchBonus.regleDuMatch(l)?.defensif?.ecart:null;return Number.isFinite(bd)?bd:null}
 function troisPointsUtiles(l,side){const diff=l.score[side]-l.score[1-side];if(diff+3>=0)return true;const bd=bonusDefensifEcart(l);return bd!==null&&-diff>bd&&-diff-3<=bd}
 function bonusOffensifAPortee(l,side){if(l.score[side]-l.score[1-side]<PENALITE_IA.avanceBonus)return false;const r=typeof nativeMatchBonus!=='undefined'?nativeMatchBonus.regleDuMatch(l):null;if(r?.offensif)return nativeMatchBonus.manque(r,l.score,l.tries,side)===1;return l.tries[side]-l.tries[1-side]===2&&(l.franceContext?.phase??S.phase)==='league'}
 function choixPoteauxStaff(l,side,distance,y,policy){
- const P=PENALITE_IA,m=matchMinute(l),diff=l.score[side]-l.score[1-side];
- if(policy==='touch')return side!==l.userSide&&m>=P.toucheLevee&&diff<0&&diff>=-3&&postsInRange(l,side,distance,y);
- if(policy==='points')return !(side!==l.userSide&&m>=P.derniere&&!troisPointsUtiles(l,side))&&postsInRange(l,side,distance,y,true);
+ const P=PENALITE_IA,m=matchMinute(l),diff=l.score[side]-l.score[1-side],poseeIA=side!==l.userSide&&l.managerMemory?.[side]?.consignePenalite===policy;
+ if(policy==='touch')return poseeIA&&m>=P.toucheLevee&&diff<0&&diff>=-3&&postsInRange(l,side,distance,y);
+ if(policy==='points')return !(poseeIA&&m>=P.derniere&&!troisPointsUtiles(l,side))&&postsInRange(l,side,distance,y,true);
  if(m>=P.fin){
   if(diff>=-3)return !(diff>=0&&bonusOffensifAPortee(l,side))&&postsInRange(l,side,distance,y);
   const bd=bonusDefensifEcart(l);
