@@ -75,6 +75,27 @@ func busts_overlap(view, a: String, b: String) -> float:
 			worst = maxf(worst, float(s1[2]) + float(s2[2]) - (r[0] as Vector3).distance_to(r[1]))
 	return worst
 
+## Touche (26/11/2026, sonde des contacts : avant-bras des porteurs dans les cuisses du sauteur, jusqu'à
+## 17 cm) : plus forte pénétration (m) des bras d'un porteur dans les cuisses de son sauteur.
+const BRAS := [["UpperArm.L", "LowerArm.L", 0.06], ["UpperArm.R", "LowerArm.R", 0.06], ["LowerArm.L", "Palm.L", 0.05], ["LowerArm.R", "Palm.R", 0.05]]
+const CUISSES := [["UpperLeg.L", "LowerLeg.L", 0.08], ["UpperLeg.R", "LowerLeg.R", 0.08]]
+const GRIP_OVERLAP_MAX := 0.08
+
+static func _capsules(rig: Skeleton3D, liste: Array) -> Array:
+	var g := rig.global_transform
+	var out: Array = []
+	for v: Array in liste:
+		out.append([(g * rig.get_bone_global_pose(rig.find_bone(v[0]))).origin, (g * rig.get_bone_global_pose(rig.find_bone(v[1]))).origin, float(v[2])])
+	return out
+
+func grip_overlap(view, lifter: String, jumper: String) -> float:
+	var worst := -INF
+	for s1: Array in _capsules(view._actors[lifter].rig, BRAS):
+		for s2: Array in _capsules(view._actors[jumper].rig, CUISSES):
+			var r := Geometry3D.get_closest_points_between_segments(s1[0], s1[1], s2[0], s2[1])
+			worst = maxf(worst, float(s1[2]) + float(s2[2]) - (r[0] as Vector3).distance_to(r[1]))
+	return worst
+
 ## La caméra suivie applique exactement la formule d'origine : point suivi + décalage fixe, taille fixe.
 func camera_plain(view, offset: Vector3, size: float) -> bool:
 	var camera: Camera3D = view._camera
@@ -188,6 +209,7 @@ func run() -> void:
 	var clock := 0.0
 	var peak := 0.0
 	var rival_peak := 0.0
+	var grip_worst := 0.0
 	var caught := false
 	var waited := 0.0
 	var maul_checked := false
@@ -403,6 +425,10 @@ func run() -> void:
 				rival_peak = maxf(rival_peak, lift(view, rival, bases))
 			if absf(gestes.time - (Gestes.CATCH + 0.1)) < STEP * 0.6:
 				caught = hands(view, gestes.jumper) < 0.3 and view._ball.global_position.y > 2.8
+			for id: String in gestes.cast:
+				var member: Dictionary = gestes.cast[id]
+				if member.role in ["lift_front", "lift_back"] and not str(gestes.jumpers[member.team]).is_empty():
+					grip_worst = maxf(grip_worst, grip_overlap(view, id, gestes.jumpers[member.team]))
 		if gestes.phase == "maul" and gestes.done and not maul_checked:
 			maul_checked = true
 			maul_drive = float(gestes.drive)
@@ -450,6 +476,8 @@ func run() -> void:
 	print("MATCH_GESTES_PACE ", JSON.stringify({"visible_peak_m_s": snappedf(fastest, 0.01), "by_phase": pace_by_phase, "fast_steps_off_screen": hidden_jumps, "cuts": cut_frames, "per_player": peaks}))
 	check(winner_jumper == gestes.jumpers[0] or winner_jumper == gestes.jumpers[1], "Le sauteur appartient à un bloc de saut")
 	check(peak > 0.95, "Le sauteur est porté à plus de 95 cm : " + str(peak))
+	check(grip_worst <= GRIP_OVERLAP_MAX, "Les porteurs tiennent les cuisses du sauteur sans que leurs bras y entrent : %.3f m (%.2f m au plus)" % [grip_worst, GRIP_OVERLAP_MAX])
+	print("MATCH_GESTES_PRISE ", JSON.stringify({"bras_dans_cuisses_m": snappedf(grip_worst, 0.001)}))
 	check(rival_peak > 0.4 and rival_peak < peak - 0.2, "Le bloc adverse conteste, moins haut : " + str(rival_peak))
 	check(caught, "Prise à deux mains au sommet, ballon à plus de 2,8 m")
 	check(maul_checked, "La touche conservée « ballon porté » forme un regroupement")
