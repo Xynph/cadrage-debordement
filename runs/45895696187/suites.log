@@ -1,0 +1,87 @@
+::group::tests/godot-planche-direct-tableau.cjs
+PLANCHE_DIRECT_TABLEAU minute 52 atteinte en 71 s
+PLANCHE_DIRECT_TABLEAU (2560, 1440) : classement 14 lignes, multiplex 6 matchs
+PLANCHE_DIRECT_TABLEAU (1920, 1080) : classement 14 lignes, multiplex 6 matchs
+PLANCHE_DIRECT_TABLEAU moral : 23 joueurs, 11 ont bougé depuis le coup d'envoi, mots ["Concentré", "Concentré", "Concentré", "Concentré", "Concentré", "Concentré"]
+PLANCHE_DIRECT_TABLEAU 39 controles, 0 echec
+CD_CPU_PROFILE suite=tests/godot-planche-direct-tableau.cjs user_s=2183.16 system_s=26.81 wall_s=678.44 cpu_pct=325% max_rss_kb=2712916
+PASS tests/godot-planche-direct-tableau.cjs (678 s)
+::endgroup::
+::group::tests/godot-match-entracte-da.cjs
+TAP version 13
+# Subtest: Entracte (DA) : maquette, liens actifs sans fenêtre, un seul aplat doré, panneau d’arrêt, clavier
+ok 1 - Entracte (DA) : maquette, liens actifs sans fenêtre, un seul aplat doré, panneau d’arrêt, clavier
+  ---
+  duration_ms: 4533.630229
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4539.019393
+CD_CPU_PROFILE suite=tests/godot-match-entracte-da.cjs user_s=3.94 system_s=0.17 wall_s=4.56 cpu_pct=90% max_rss_kb=450256
+PASS tests/godot-match-entracte-da.cjs (5 s)
+::endgroup::
+::group::tests/godot-match-temps-forts.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Temps forts (inactif) : 16 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Temps forts — cadrage : 131 images, hauteur visible de 13.2 à 18.8 m, ballon hors champ 0 (0 sous le voile d'entrée), images larges visibles 0 []
+Temps forts (actif) : 1568 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Hauteur visible minimale pendant les gestes : 7.5 m
+Temps forts et gestes — cadrage : 1026 images, hauteur visible de 7.5 à 38.0 m, ballon hors champ 0 (0 sous le voile d'entrée), images larges visibles 0 []
+Pause demandée pendant un temps fort : true (minute 25)
+Temps forts (gestes) : 18 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Temps forts (reprise) : 9 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Mi-temps à la minute 40 · causerie retenue par un temps fort : true
+Fin du match à la minute 80 · débrief retenu par un temps fort : true · score [39.0, 27.0] · arrêts sur carton repris : 0
+Réactions du stade : 20 · son actif : true · plans montrés : ["lineout", "setpiece-win", "hand-fault", "penalty", "goal", "carry", "try", "transformation", "scrum", "kick", "touch", "card", "reception", "turnover", "ingoal", "goalLine", "setpiece-loss"]
+Liaisons jouées : ["touche (coupe) 4.5 s"]
+Temps forts (defaut) : 72 contrôles ; 0 échec(s)
+WARNING: 3 RIDs of type "CanvasItem" were leaked.
+   at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2735)
+WARNING: 6 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Temps forts (choregraphie) : 20 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ENTRACTE2D 1 montre_max=2 temps_fort_debut=3 faits=0
+ENTRACTE2D 2 montre_max=16 temps_fort_debut=17 faits=8
+TERRAIN2D {"ballons":31,"deplacement":4297.5111315818,"faits":8,"minutes":7}
+Temps forts (terrain2d) : 4063 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+MULTIPLEX_REEL {"clubs":14,"matchs":6,"minute":2.0,"nous":1.0}
+Temps forts (multiplex) : 4409 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ENTRACTE {"horloges":5,"premier_s":1.401}
+Temps forts (entracte) : 28 contrôles ; 0 échec(s)
+
+Preuves temps forts : /tmp/tmp.nJSAaxgPTj/suite.NGiyog/cd-match-temps-forts-qOtrVA · contrôles : repli 16 · actif 1568 (2 temps forts) · gestes 18 · reprise 9 · défaut 72 · chorégraphe 20 · terrain 2D 4063 · journée en direct 4409 · entracte 28
+CD_CPU_PROFILE suite=tests/godot-match-temps-forts.cjs user_s=475.06 system_s=37.55 wall_s=463.41 cpu_pct=110% max_rss_kb=2752576
+PASS tests/godot-match-temps-forts.cjs (463 s)
+::endgroup::
