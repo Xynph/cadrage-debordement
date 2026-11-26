@@ -249,7 +249,9 @@ func _plaquer(ecart: float) -> void:
 	if entry.get("geste", {}).is_empty():
 		var clip := _clip(entry, CLIP_CHUTE)
 		if not clip.is_empty():
-			entry.geste = {"nom": "chute", "clip": clip, "t": CHUTE_DEBUT, "fin": INF, "ancre": true, "suite": [], "lance": false}
+			# Pas d'ancre : le contact a lieu jusqu'à ARRIVEE avant le point d'arrêt, le porteur
+			# tombe sur son élan et finit sa course au point canonique du moteur (centre du ruck).
+			entry.geste = {"nom": "chute", "clip": clip, "t": CHUTE_DEBUT, "fin": INF, "ancre": false, "suite": [], "lance": false}
 			au_sol = porteur
 	# Le porteur tombe vers l'avant : le ballon finit au sol devant lui, centre du ruck.
 	var cap: float = (entry.node as Node3D).rotation.y
