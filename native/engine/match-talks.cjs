@@ -34,12 +34,15 @@ module.exports={
    const result=phase==='post'?(l.winner===undefined?(diff>0?'win':diff<0?'loss':'draw'):l.winner===s.club?'win':'loss'):null;
    const out={venue,score:l.score.slice(),userSide:l.userSide,scoreState,result};
    // Pronostic d'avant-match (18/11/2026) : favori ou outsider au-delà du seuil de complaisance (tactical-plans.js, RELACHEMENT).
-   if(phase==='pre'){const g=pronostic(l);if(g)out.pronostic=g;}
+   if(phase==='pre'){const g=pronostic(l,s);if(g)out.pronostic=g;}
    return out;
   }
-  function pronostic(l){
-   if(typeof teamLevel!=='function'||typeof activePlayers!=='function'||!l?.sheets||!(l.userSide>=0))return null;
-   const g=teamLevel(activePlayers(l,l.userSide))-teamLevel(activePlayers(l,1-l.userSide)),seuil=typeof RELACHEMENT!=='undefined'?RELACHEMENT.seuil:3;
+  // `s` : la carrière dont on valide le match (à l'import, la carrière importée, pas la carrière chargée : nulle au lancement).
+  function pronostic(l,s=S){
+   if(typeof teamLevel!=='function'||!l?.sheets||!(l.userSide>=0)||!s?.clubs)return null;
+   // Mêmes joueurs que activePlayers (feuille « en jeu », hors cartons en cours), lus dans la carrière `s`.
+   const actifs=side=>{const sh=l.sheets[side],byId=new Map(s.clubs[l.pair[side]].players.map(p=>[p.id,p]));return sh.on.map(id=>byId.get(id)).filter(p=>p&&!(sh.cards||[]).some(c=>c.id===p.id&&c.until>l.minute));};
+   const g=teamLevel(actifs(l.userSide))-teamLevel(actifs(1-l.userSide)),seuil=typeof RELACHEMENT!=='undefined'?RELACHEMENT.seuil:3;
    return g>=seuil?'favorite':g<=-seuil?'underdog':null;
   }
   function facts(phase,c){
