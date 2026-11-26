@@ -51,7 +51,7 @@ const PART_POINTS=0.5,PART_GROSSES=0.5,BONUS_GROSSES=10,MEME_TYPE=8,REPETITION=1
 const DUREES=Object.freeze({
  kickoff:2.5,drop22:2.5,goalLine:2.5,reception:2,carry:1,kick:2.5,touch:1.5,
  lineout:1.5,scrum:1.5,'setpiece-win-touche':2,'setpiece-win-melee':3,'setpiece-loss':2.5,maul:5,
- turnover:2,'hand-fault':1.8,'quick-tap':2,penalty:1.5,card:2.5,goal:4.5,miss:4,try:3.5,transformation:4,ingoal:3,
+ turnover:2,'hand-fault':1.8,'quick-tap':2,penalty:1.5,'coup-franc':3,'essai-penalite':5,card:2.5,goal:4.5,miss:4,try:3.5,transformation:4,ingoal:3,
  break:1.5,end:2.5
 });
 const COURSE=6.5,ENTREE=0.6,SORTIE=0.8,COUPE=0.3,RALENTI=6;
@@ -60,6 +60,10 @@ const HORLOGE=Object.freeze({lente:3,normale:1.5,rapide:0.6,eclair:0.25});
 
 // Plans jamais joués en 3D : ils passent en bandeau ou dans le fil de commentaire.
 const BANDEAUX=new Set(['message','tactic','sub','advantage']);
+// Lois (dist/restarts.js, `scene.loi`, jamais le texte) : faits `message` joués en 3D sous le genre du fait de jeu
+// qu'ils sont (coup franc : coup de sifflet ; essai de pénalité : essai, sans marqueur ni transformation ; drop : tir au
+// but, réussi ou manqué). Le fait garde sa loi (`loi`) : type de temps fort, plan et geste de la vue 3D.
+const GENRES_LOIS=Object.freeze({'coup-franc':'penalty','essai-penalite':'try','drop-reussi':'goal','drop-rate':'miss'});
 // Événements qui terminent une action (ballon mort ou coup de sifflet).
 const FINS=new Set(['touch','hand-fault','try','goal','miss','ingoal','penalty','break','end']);
 // Événements qui lancent une action « déjà en place ».
@@ -101,7 +105,8 @@ function normaliser(events){
  const lignes=[];let finPremiere=null,score=[0,0],essais=[0,0];
  for(let i=0;i<events.length;i++){
   const e=events[i]||{},s=e.scene&&typeof e.scene==='object'?e.scene:null;
-  const kind=s?.kind||(['turnover','try','goal','penalty','advantage','card','sub','tactic','break','end','miss'].includes(e.type)?e.type:'message');
+  const loi=s?.kind==='message'&&GENRES_LOIS[s.loi]?s.loi:null;
+  const kind=loi?GENRES_LOIS[loi]:s?.kind||(['turnover','try','goal','penalty','advantage','card','sub','tactic','break','end','miss'].includes(e.type)?e.type:'message');
   const periode=e.period===2||s?.period===2?2:1;
   const min=Number.isFinite(e.min)?e.min:0;
   const minute=periode===2&&finPremiere!==null?40+min-finPremiere:min;
@@ -112,11 +117,11 @@ function normaliser(events){
   const equipe=[0,1].includes(s?.team)?s.team:null,possession=[0,1].includes(s?.possession)?s.possession:null;
   const x=Number.isFinite(s?.to?.x)?s.to.x:null,depuis=Number.isFinite(s?.from?.x)?s.from.x:x;
   // Transformation : fait structuré de l'essai, sinon lue dans le score (7 ou 5 points).
-  const transformation=kind!=='try'?null:typeof s.conversion==='boolean'?s.conversion:equipe!==null&&score[equipe]-avant[equipe]===7;
-  lignes.push({i,kind,type:e.type||'play',periode,min,minute,equipe,possession,x,depuis,transformation,
+  const transformation=kind!=='try'||loi?null:typeof s.conversion==='boolean'?s.conversion:equipe!==null&&score[equipe]-avant[equipe]===7;
+  lignes.push({i,kind,...(loi?{loi}:{}),type:e.type||'play',periode,min,minute,equipe,possession,x,depuis,transformation,
    touche:s?Number.isFinite(s.from?.y)&&s.from.y<=4:false,move:s?.move||null,porte:s?.porte===true,incident:s?.incident===true,
    scoreAvant:avant,scoreApres:score,essaisAvant,essaisApres:essais,cause:cause(e),
-   bandeau:BANDEAUX.has(kind)||kind==='card'&&!s?.incident||kind==='miss'&&e.type!=='miss'});
+   bandeau:BANDEAUX.has(kind)||kind==='card'&&!s?.incident||kind==='miss'&&e.type!=='miss'&&!loi});
  }
  return lignes;
 }
@@ -153,6 +158,10 @@ const PIED_COURT=Object.freeze({amorce:1,apres:2,base:62});
 // Action décisive portée par un événement : type de temps fort et intérêt de base (0–100).
 function action(l,lignes){
  const k=l.kind,d=l.equipe===null||l.x===null?null:distanceLigne(l.equipe,l.x);
+ // Drop : réussi, il compte comme des points ; manqué, comme une pénalité manquée (pas un « tir au but » de pénalité).
+ if(l.loi==='drop-reussi')return {type:'drop_reussi',base:74,force:true};
+ if(l.loi==='drop-rate')return {type:'drop_manque',base:70};
+ if(l.loi==='coup-franc')return {type:'coup_franc',base:d!==null&&d<=45?30:18};
  if(k==='try')return {type:'essai',base:100,force:true};
  if(k==='goal')return {type:'penalite_reussie',base:74,force:true};
  if(k==='miss'&&l.type==='miss')return {type:'penalite_manquee',base:70};
@@ -235,6 +244,8 @@ function dureePlan(l){
  if(l.bandeau)return 0;
  if(l.kind==='setpiece-win')return (l.touche?DUREES['setpiece-win-touche']:DUREES['setpiece-win-melee'])+(l.move==='maul'||l.porte?DUREES.maul:0);
  if(l.kind==='carry')return mouvementPlan(l)+DUREES.carry;
+ // Coup franc (arbitre au bras plié) et essai de pénalité (arbitre sous les poteaux) : le temps du geste.
+ if(l.loi&&DUREES[l.loi])return DUREES[l.loi];
  return DUREES[l.kind]??0;
 }
 // Plans d'une fenêtre, dans l'ordre de lecture. `coupe` : coupe franche vers une phase
@@ -251,7 +262,7 @@ function plansDe(lignes,debut,fin,tout=false){
   // Une remise en jeu ou un tir au but suit toujours un arrêt : on y arrive par une coupe.
   plans.push({i:j,kind:l.kind,minute:l.minute,periode:l.periode,duree:d,mouvement:mouvementPlan(l),
    coupe:LANCEMENTS.has(l.kind)||l.kind==='goal'||l.kind==='miss'});
-  if(l.kind==='try')plans.push({i:j,kind:'transformation',minute:l.minute,periode:l.periode,duree:DUREES.transformation,mouvement:0,coupe:true,reussie:l.transformation===true});
+  if(l.kind==='try'&&!l.loi)plans.push({i:j,kind:'transformation',minute:l.minute,periode:l.periode,duree:DUREES.transformation,mouvement:0,coupe:true,reussie:l.transformation===true});
  }
  return {plans,bandeaux};
 }
@@ -266,7 +277,8 @@ function fenetre(lignes,ancre,avant,apres,plancher=0,plafond=lignes.length-1){
   // La pénalité qui précède un tir au but ou un carton appartient à l'action.
   // Le coup de sifflet qui précède une pénalité jouée à la main aussi (la pénalité est jouée vite).
   const tape=l.kind==='penalty'&&lignes.slice(j+1).find(q=>!q.bandeau)?.kind==='quick-tap';
-  const chaine=l.kind==='penalty'&&['penalite_reussie','penalite_manquee','carton_jaune','carton_rouge','penalite_jouee_a_la_main'].includes(ancre.type)||l.kind==='card'&&l.incident||tape;
+  // L'essai de pénalité (loi 8) garde le coup de sifflet de la faute qui l'a empêché.
+  const chaine=l.kind==='penalty'&&(['penalite_reussie','penalite_manquee','carton_jaune','carton_rouge','penalite_jouee_a_la_main'].includes(ancre.type)||lignes[ancre.i].loi==='essai-penalite')||l.kind==='card'&&l.incident||tape;
   if(FINS.has(l.kind)&&!chaine||lignes[debut].minute-l.minute>1)break; // jamais plus d'une minute d'écart entre deux plans
   debut=j;if(!chaine)vus++; // le coup de sifflet et le carton ne consomment pas l'amorce
   if(LANCEMENTS.has(l.kind)||l.kind==='turnover'||l.kind==='setpiece-loss'||l.kind==='penalty')break;
@@ -637,7 +649,7 @@ function debutAction(lignes,j,plancher,amorce){
  let debut=j,vus=0;
  for(let k=j-1;k>=plancher&&vus<amorce;k--){
   const l=lignes[k];if(l.bandeau)continue;
-  const chaine=l.kind==='penalty'&&['goal','miss'].includes(lignes[j].kind)||l.kind==='card'&&l.incident;
+  const chaine=l.kind==='penalty'&&(['goal','miss'].includes(lignes[j].kind)||lignes[j].loi==='essai-penalite')||l.kind==='card'&&l.incident;
   if(finNaturelle(l)&&!chaine||lignes[debut].minute-l.minute>1)break;
   debut=k;if(!chaine)vus++;
   if(LANCEMENTS.has(l.kind)||l.kind==='penalty')break;
@@ -648,7 +660,8 @@ function debutAction(lignes,j,plancher,amorce){
 // tentée garde son tir ; le carton et les bandeaux de la même minute restent dans le temps fort.
 function finAction(lignes,j,plafond){
  let fin=j;
- const close=k=>finNaturelle(lignes[k])&&!(lignes[k].kind==='penalty'&&k<plafond&&['goal','miss'].includes(lignes.slice(k+1,plafond+1).find(q=>!q.bandeau&&!(q.kind==='card'&&q.incident))?.kind));
+ const apresSifflet=k=>lignes.slice(k+1,plafond+1).find(q=>!q.bandeau&&!(q.kind==='card'&&q.incident));
+ const close=k=>finNaturelle(lignes[k])&&!(lignes[k].kind==='penalty'&&k<plafond&&(['goal','miss'].includes(apresSifflet(k)?.kind)||apresSifflet(k)?.loi==='essai-penalite'));
  if(!close(j))for(let k=j+1;k<=plafond;k++){
   const l=lignes[k];if(l.bandeau)continue;
   if(l.kind==='kickoff'||l.kind==='drop22'||l.kind==='goalLine'||l.kind==='break'||l.kind==='end'||l.minute-lignes[fin].minute>1)break;
