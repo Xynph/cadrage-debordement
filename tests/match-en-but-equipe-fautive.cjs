@@ -45,33 +45,50 @@ test('Chaque fait d’en-but nomme l’équipe fautive (vrais matchs du moteur)'
 });
 
 test('Le bandeau des temps forts (projection du pont) nomme l’équipe fautive', { timeout: 170000 }, () => {
-  // Match de la carrière du film (scripts/match-filme.ps1 : club 102, cadence hebdomadaire), graine 4247, joué par le vrai
-  // moteur : la simulation s'arrête dès que deux plans d'en-but (porteur tenu, coup de pied aplati…) sont projetés dans les
-  // temps forts « dynamique » (aux minutes 11 et 20 de cette graine), pour rester sous la limite de 180 s des suites en CI.
-  const vus = [], manques = [];
-  const jeu = ouvrir({ seed: 4247, hebdomadaire: true });
+  // Carrière du film (scripts/match-filme.ps1 : club 102, cadence hebdomadaire) préparée une fois, arrêtée au coup d'envoi ; le
+  // match est rejoué avec des graines successives (import de la même carrière, même match de base, aléas différents) jusqu'à
+  // en trouver une où le vrai moteur projette au moins deux plans d'en-but (porteur tenu, coup de pied aplati, en-avant) dans
+  // les temps forts « dynamique » : la simulation s'arrête alors. Aucune graine n'est imposée : le verdict ne dépend que de
+  // la légende de ces plans. Borne de temps de 90 s (limite de 180 s des suites en CI), sinon échec listant les graines vues.
+  const debut = Date.now(), BORNE = 90000, MINUTES = 45;
+  const options = { hebdomadaire: true, leanModel: true, deferredCommits: true, journal: true, savePolicy: 'mois' };
+  const base = ouvrir({ seed: 1, hebdomadaire: true });
+  let texte;
   try {
-    let model = jusquAuMatch(jeu, creer(jeu, 102));
-    if (!model.selection.valid) model = jeu.call('auto_lineup');
-    if (!model.selection.valid) model = jeu.call('promote_cover', { confirmed: true });
-    model = skipMatchTalk(jeu.call('begin_match'), jeu.call);
-    const lire = live => {
-      for (const p of live.direct?.tempsFort?.plans || []) {
-        const fait = live.events[p.index]?.scene;
-        if (fait?.kind !== 'ingoal' || !CAUSES.includes(fait.cause) || vus.includes(p.index)) continue;
-        vus.push(p.index);
-        const abbr = String(live.teams[fait.team]?.abbr || '');
-        // Le bandeau dit l'équipe : le sigle de son club figure dans la légende du plan.
-        if (!abbr || !p.texte.includes(abbr)) manques.push(`${fait.cause} équipe ${fait.team} (${abbr}) : ${p.texte}`);
+    let model = jusquAuMatch(base, creer(base, 102));
+    if (!model.selection.valid) model = base.call('auto_lineup');
+    if (!model.selection.valid) model = base.call('promote_cover', { confirmed: true });
+    base.call('begin_match');
+    texte = base.call('export').meta.exportText;
+  } finally { base.fermer(); }
+  const essais = [];
+  let plans = null;
+  for (let graine = 11; !plans && Date.now() - debut < BORNE; graine++) {
+    const jeu = ouvrir({ seed: graine, ...options });
+    const vus = [], manques = [];
+    try {
+      jeu.call('import', { text: texte });
+      let model = skipMatchTalk(jeu.call('begin_match'), jeu.call);
+      const lire = live => {
+        for (const p of live.direct?.tempsFort?.plans || []) {
+          const fait = live.events[p.index]?.scene;
+          if (fait?.kind !== 'ingoal' || !CAUSES.includes(fait.cause) || vus.includes(p.index)) continue;
+          vus.push(p.index);
+          const abbr = String(live.teams[fait.team]?.abbr || '');
+          // Le bandeau dit l'équipe : le sigle de son club figure dans la légende du plan.
+          if (!abbr || !p.texte.includes(abbr)) manques.push(`${fait.cause} équipe ${fait.team} (${abbr}) : ${p.texte}`);
+        }
+      };
+      for (let ticks = 0; ticks < 120 && !model.live.finished && model.live.minute < MINUTES && vus.length < 2 && Date.now() - debut < BORNE; ticks++) {
+        model = skipMatchTalk(model, jeu.call);
+        if (model.live.paused) model = jeu.call('pause', { paused: false });
+        model = jeu.call('tick', { minute: true, temps_forts: 'dynamique' });
+        lire(model.live);
       }
-    };
-    for (let ticks = 0; ticks < 200 && !model.live.finished && vus.length < 2; ticks++) {
-      model = skipMatchTalk(model, jeu.call);
-      if (model.live.paused) model = jeu.call('pause', { paused: false });
-      model = jeu.call('tick', { minute: true, temps_forts: 'dynamique' });
-      lire(model.live);
-    }
-  } finally { jeu.fermer(); }
-  assert.ok(vus.length >= 2, `assez de plans d’en-but projetés (${vus.length})`);
-  assert.deepEqual(manques, [], `${manques.length} légendes d’en-but sans nom d’équipe sur ${vus.length}`);
+    } finally { jeu.fermer(); }
+    essais.push(`${graine} : ${vus.length} plan(s)`);
+    if (vus.length >= 2) plans = { vus, manques, graine };
+  }
+  assert.ok(plans, `aucune graine ne projette deux plans d’en-but en ${MINUTES} minutes (${essais.join(' ; ')})`);
+  assert.deepEqual(plans.manques, [], `graine ${plans.graine} : ${plans.manques.length} légendes d’en-but sans nom d’équipe sur ${plans.vus.length}`);
 });
