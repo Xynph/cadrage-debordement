@@ -149,6 +149,8 @@ var points_regie: Array[Vector3] = []
 ## Drop (plan large de côté) : rotation de la caméra de tribune autour de la verticale (rad), en biais vers les
 ## poteaux visés, pour lire le ballon entre les perches ou à côté ; 0 hors drop.
 const BIAIS_DROP := 0.5
+## Essai de pénalité : hauteur visible minimale du plan large (m), pour le ballon, l'arbitre et les poteaux.
+const ESSAI_PENALITE_TAILLE := 26.0
 var biais := 0.0
 var _axe_actif := false
 var _tir_camera := Vector3.ZERO
@@ -258,7 +260,8 @@ func frame_camera(focus: Vector3, size: float, offset: Vector3, aspect: float, m
 			_vitesse_taille = pas_taille[1]
 		poids = 1.0 if _pose or cut else minf(1.0, poids + delta / ENTREE)
 		_pose = false
-		_centre = _garder(_ballon(focus), _centre, _taille, basis, aspect)
+		# Essai de pénalité : le ballon est déjà dans les points cadrés ; le garder au centre repousserait les poteaux.
+		if kind != "essai_penalite": _centre = _garder(_ballon(focus), _centre, _taille, basis, aspect)
 	else:
 		poids = maxf(0.0, poids - delta / SORTIE)
 		if poids <= 0.0:
@@ -440,6 +443,9 @@ func _but(basis: Basis, aspect: float, mode: String, _base: float, focus: Vector
 	# Un geste de la vue choisit son propre cadrage, jamais plus large que celui-ci : on lui laisse la place.
 	var gestes: Variant = view.get("_gestes")
 	var plus_serre := float(bornes[1]) if gestes != null and gestes.active() else float(bornes[0])
+	# Essai de pénalité : plan large qui garde les poteaux avec le ballon, même quand la faute est loin (le
+	# ballon reste gardé à l'image : sans cette marge, il repousse les poteaux hors du cadre).
+	if kind == "essai_penalite": plus_serre = maxf(plus_serre, ESSAI_PENALITE_TAILLE)
 	var etendue := haut - bas
 	var visible := 1.0 - couvert_haut - couvert_bas
 	# Plafond : la hauteur voulue (jeu au pied compris), même au-delà du cadrage de base de la caméra.
