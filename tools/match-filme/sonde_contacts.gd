@@ -23,10 +23,12 @@ const PHASES := ["melee", "maul", "plaquage", "touche", "ruck_sol", "debout"]
 ## épaules au contact sont voulus ; seuls les bustes et les têtes qui se confondent sont des fautes.
 const TRONC_TETE := ["Hips", "Abdomen", "Torso", "Head"]
 ## Membres en cause (26/11/2026, contacts 3D 2e étape : bras dans les corps, jambes au ruck), par couple
-## d'os : bras dans le corps de l'autre (tronc, tête ou jambes), bras contre bras, jambe dans l'autre
-## (hors bras), tronc ou tête contre tronc ou tête. Pour chacune, par phase : couples-images, épisodes et
-## images au-delà de FRANC, pénétration maximale et moyenne.
-const CATEGORIES := ["bras_corps", "bras_bras", "jambes", "tronc_tete"]
+## d'os : bras dans le corps de l'autre (tronc, tête ou jambes), épaule dans le corps de l'autre (haut du
+## bras touché à moins de EPAULE de l'articulation : le tronc lui-même, qu'aucune pose du bras ne sort),
+## bras contre bras, jambe dans l'autre (hors bras), tronc ou tête contre tronc ou tête. Pour chacune, par
+## phase : couples-images, épisodes et images au-delà de FRANC, pénétration maximale et moyenne.
+const CATEGORIES := ["bras_corps", "epaule", "bras_bras", "jambes", "tronc_tete"]
+const EPAULE := 0.06
 const CAPTURES_PAR_PHASE := 2
 ## Vitrines (25/11/2026) : mêlée et ballon porté photographiés formés, VITRINE_DELAI s après leur début,
 ## au plus VITRINES fois chacun, quels que soient les contacts (pour juger l'allure, pas une faute).
@@ -314,6 +316,9 @@ func _process(delta: float) -> void:
 					var r := Geometry3D.get_closest_points_between_segments(s1[0], s1[1], s2[0], s2[1])
 					var p := float(s1[2]) + float(s2[2]) - (r[0] as Vector3).distance_to(r[1])
 					var cat: String = ligne[s2[3]]
+					if cat == "bras_corps" and p > FRANC and ((str(s1[3]).begins_with("UpperArm") and (r[0] as Vector3).distance_to(s1[0]) < EPAULE)
+							or (str(s2[3]).begins_with("UpperArm") and (r[1] as Vector3).distance_to(s2[0]) < EPAULE)):
+						cat = "epaule"
 					if p > float(max_m.get(cat, -INF)):
 						max_m[cat] = p
 					if p > max_p:

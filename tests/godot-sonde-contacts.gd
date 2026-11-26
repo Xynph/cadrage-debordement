@@ -3,7 +3,7 @@ extends SceneTree
 ## 1. pistes du chorégraphe pour un seul des deux joueurs d'un couple proche (l'autre reste sur la
 ##    vue) : aucune erreur de script, le couple est mesuré (26/11/2026 : 99 SCRIPT ERROR par match,
 ##    `etat()` demandé pour un joueur sans piste) ;
-## 2. membres en cause (bras dans le corps, bras contre bras, jambes, tronc/tête) et pénétration
+## 2. membres en cause (bras dans le corps, épaule, bras contre bras, jambes, tronc/tête) et pénétration
 ##    moyenne rendus par phase.
 ## Coordonnées de test, jamais un vrai match.
 
@@ -82,7 +82,7 @@ func run() -> void:
 	for p: String in bilan.resume:
 		var r: Dictionary = bilan.resume[p]
 		check(r.has("penetration_moyenne_m"), "%s: mean penetration reported" % p)
-		check(r.get("membres") is Dictionary and (r.membres as Dictionary).size() == 4, "%s: four limb categories reported" % p)
+		check(r.get("membres") is Dictionary and (r.membres as Dictionary).size() == Sonde.CATEGORIES.size(), "%s: every limb category reported" % p)
 		for c: String in r.get("membres", {}):
 			check(r.membres[c].has("moyenne_m") and r.membres[c].has("images") and r.membres[c].has("episodes"), "%s/%s: counts, frames, mean" % [p, c])
 	print("SONDE_CONTACTS_CHECKS ", JSON.stringify({"failures": failures, "metrics": metrics}))
