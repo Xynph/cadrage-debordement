@@ -253,26 +253,21 @@ static func _frise(fond: Control, ctx: Dictionary, W: float, y_haut: float) -> v
 	var mt := Vector2(mt_x + 2.0, mt_x + 14.0 + R.largeur("MT", 15))
 	for camp in 2:
 		var rangee: Array = rangees[camp]
+		var contourne := mt if camp == 1 else Vector2(-1.0, -1.0)
 		# Rangée trop longue pour la carte : le nom de famille seul.
-		var total := 0.0
-		for e: Dictionary in rangee: total += float(e.lw) + 10.0
-		if total > W - 8.0:
+		if not _placer(rangee, W, contourne):
 			for e: Dictionary in rangee:
 				var mots := str(e.nom).split(" ", false)
 				if mots.size() > 1:
 					e.nom = mots[mots.size() - 1]
 					e.lw = R.largeur(str(e.nom), 17) + 64 + (22.0 if e.o[1] != "ball" else 0.0)
-		var bout := 4.0 - 10.0
-		for e: Dictionary in rangee:
-			e.lx = maxf(float(e.ex) - float(e.lw) / 2.0, bout + 10.0)
-			if camp == 1 and float(e.lx) < mt.y and float(e.lx) + float(e.lw) > mt.x: e.lx = mt.y + 6.0
-			bout = float(e.lx) + float(e.lw)
-		var debut := W - 4.0 + 10.0
-		for k in range(rangee.size() - 1, -1, -1):
-			var e: Dictionary = rangee[k]
-			e.lx = maxf(4.0, minf(float(e.lx), debut - 10.0 - float(e.lw)))
-			if camp == 1 and float(e.lx) < mt.y and float(e.lx) + float(e.lw) > mt.x: e.lx = maxf(4.0, mt.x - 6.0 - float(e.lw))
-			debut = float(e.lx)
+			# Encore trop longue : les plus longues étiquettes raccourcies (nom coupé « … », entier en infobulle),
+			# jusqu'à la minute et l'initiale.
+			var plafond := 0.0
+			for e: Dictionary in rangee: plafond = maxf(plafond, float(e.lw))
+			while not _placer(rangee, W, contourne) and plafond > LARGEUR_ETIQUETTE_MIN:
+				plafond = maxf(LARGEUR_ETIQUETTE_MIN, floorf(plafond * .92))
+				for e: Dictionary in rangee: e.lw = minf(float(e.lw), plafond)
 	var compte := [0, 0]
 	for e: Dictionary in rangees[0] + rangees[1]:
 		var essai: Dictionary = e.essai
@@ -297,7 +292,8 @@ static func _frise(fond: Control, ctx: Dictionary, W: float, y_haut: float) -> v
 		var cadre := D.rect(zone, Rect2(lx, haut, lw, 30), Charte.PANNEAU_2, 6, Color(couleur, .5))
 		cadre.name = "CompteRenduFriseEtiquette%d_%d" % [camp, compte[camp]]
 		D.text(cadre, 8, 22, "%d'" % _n(essai.get("minute")), 17, couleur, 800, 44)
-		_nom_joueur(cadre, ctx, str(essai.get("id", "")), nom, Rect2(48, -3, R.largeur(nom, 17) + 12, 30), 17, Charte.IVOIRE, "CompteRenduFriseNom%d_%d" % [camp, compte[camp]])
+		var largeur_nom := minf(R.largeur(nom, 17) + 12, lw - 52.0 - (22.0 if o[1] != "ball" else 0.0))
+		_nom_joueur(cadre, ctx, str(essai.get("id", "")), nom, Rect2(48, -3, maxf(0.0, largeur_nom), 30), 17, Charte.IVOIRE, "CompteRenduFriseNom%d_%d" % [camp, compte[camp]])
 		if o[1] != "ball":
 			var io := C.icon(str(o[1]), C.px(16), R.TURQUOISE)
 			io.tooltip_text = str(o[0])
@@ -305,6 +301,31 @@ static func _frise(fond: Control, ctx: Dictionary, W: float, y_haut: float) -> v
 			cadre.add_child(io)
 			D.place(io, Rect2(lw - 26, 7, 16, 16))
 		compte[camp] += 1
+
+## Étiquette la plus courte de la frise : la minute et l'initiale du nom.
+const LARGEUR_ETIQUETTE_MIN := 96.0
+
+## Pose une rangée d'étiquettes (`lx` de chaque entrée) : une étiquette trop proche de la précédente glisse à droite,
+## puis, en partant de la fin, à gauche si la rangée déborde ; `mt` (x début, x fin ; négatif = aucun) est contourné.
+## Vrai si tout tient dans la carte, 10 d'écart entre étiquettes et « MT » libre.
+static func _placer(rangee: Array, W: float, mt: Vector2) -> bool:
+	var sur_mt := func(e: Dictionary) -> bool: return mt.y >= 0.0 and float(e.lx) < mt.y and float(e.lx) + float(e.lw) > mt.x
+	var bout := 4.0 - 10.0
+	for e: Dictionary in rangee:
+		e.lx = maxf(float(e.ex) - float(e.lw) / 2.0, bout + 10.0)
+		if sur_mt.call(e): e.lx = mt.y + 6.0
+		bout = float(e.lx) + float(e.lw)
+	var debut := W - 4.0 + 10.0
+	for k in range(rangee.size() - 1, -1, -1):
+		var e: Dictionary = rangee[k]
+		e.lx = maxf(4.0, minf(float(e.lx), debut - 10.0 - float(e.lw)))
+		if sur_mt.call(e): e.lx = maxf(4.0, mt.x - 6.0 - float(e.lw))
+		debut = float(e.lx)
+	var fin := 4.0 - 10.0
+	for e: Dictionary in rangee:
+		if float(e.lx) < fin + 10.0 - .5 or float(e.lx) + float(e.lw) > W - 4.0 + .5 or sur_mt.call(e): return false
+		fin = float(e.lx) + float(e.lw)
+	return true
 
 ## 1. Le match (lieu, météo, spectateurs) puis l'homme du match.
 static func _colonne_match(fond: Control, ctx: Dictionary, c1: float, w1: float, y: float) -> void:

@@ -211,7 +211,65 @@ func run() -> void:
 			destinations.append("BilanClubAdverse [fenêtre] -> %s" % app.route)
 	await article_compte_rendu(report)
 	await essai_apres_mi_temps(report)
+	await frise_rangee_chargee()
+	await bandeau_feuille_incomplete()
 	finish()
+
+## Frise figée (même cas quel que soit le match joué) : sept essais des visiteurs dont trois autour de la 40e et quatre
+## noms longs en seconde période ; les étiquettes tiennent dans la carte, sans chevauchement ni « MT » couvert.
+func frise_rangee_chargee() -> void:
+	var origine: Array = (app.model.decisions.report.get("essais", []) as Array).duplicate(true)
+	var essais: Array = []
+	for e: Array in [[39, 0, "Mathéo ESSAI-MT", "j"], [40, 1, "Mathéo ESSAI-MT", "j"], [41, 1, "Mathéo ESSAI-MT", "j"], [41, 0, "Mathéo ESSAI-MT", "j"], [42, 1, "Mathéo ESSAI-MT", "j"],
+			[45, 1, "Jean-Baptiste FAIRCLOUGH", "b"], [67, 1, "Tom FAIRCLOUGH", "j"], [76, 1, "Kyle OYONO-MBARGA", "m"], [80, 1, "Emmanuel BICKERSTAFF", "j"]]:
+		essais.append({"minute": e[0], "side": e[1], "id": null, "name": e[2], "origin": e[3], "zone": 30})
+	app.model.decisions.report.essais = essais
+	for t: Vector2i in [Vector2i(2560, 1440), Vector2i(1920, 1080)]:
+		await taille(t)
+		var avant := await avant_match()
+		if avant == null or not await ouvrir_bilan("frise chargée"): continue
+		var mt := app.find_child("CompteRenduMiTemps", true, false) as Control
+		var carte := app.find_child("CompteRenduCarte", true, false) as Control
+		check(mt != null and carte != null, "%dx%d · frise chargée : « MT » et carte" % [t.x, t.y])
+		if mt == null or carte == null: continue
+		var etiquettes: Array = app.find_children("CompteRenduFriseEtiquette*", "", true, false)
+		check(etiquettes.size() == essais.size(), "%dx%d · frise chargée : une étiquette par essai (%d)" % [t.x, t.y, etiquettes.size()])
+		for i in etiquettes.size():
+			check(rect(carte).grow(1).encloses(rect(etiquettes[i])), "%dx%d · frise chargée : %s dans la carte %s" % [t.x, t.y, etiquettes[i].name, rect(etiquettes[i])])
+			check(not rect(etiquettes[i]).grow(-1).intersects(rect(mt)), "%dx%d · frise chargée : %s ne couvre pas « MT »" % [t.x, t.y, etiquettes[i].name])
+			for j in range(i + 1, etiquettes.size()):
+				check(not rect(etiquettes[i]).grow(-1).intersects(rect(etiquettes[j]).grow(-1)), "%dx%d · frise chargée : %s et %s sans chevauchement" % [t.x, t.y, etiquettes[i].name, etiquettes[j].name])
+		await capture("fenetre-frise-chargee-%dx%d" % [t.x, t.y])
+		await touche(KEY_ESCAPE)
+	app.model.decisions.report.essais = origine
+	destinations.append("Frise chargée : sept essais d'un camp sans chevauchement")
+
+## 1280×720, feuille incomplète (erreur longue, coup d'envoi verrouillé) : tout le bandeau reste à l'écran, sans
+## chevauchement (MatchKickoff sorti de l'écran les 21 et 22/11 selon l'état de la feuille du match joué).
+func bandeau_feuille_incomplete() -> void:
+	var origine: Variant = app.model.get("selection")
+	check(origine is Dictionary, "Feuille du prochain match lisible")
+	if not origine is Dictionary: return
+	var selection: Dictionary = (origine as Dictionary).duplicate(true)
+	selection.valid = false
+	selection.errors = ["League One : vérifie les inscriptions et les quotas de la feuille (14 A-1, au plus 3 joueurs sous contrat C)"]
+	app.model.selection = selection
+	await taille(Vector2i(1280, 720))
+	var avant := await avant_match()
+	check(avant != null, "1280x720 · feuille incomplète : avant-match ouvert")
+	var statut := app.find_child("MatchOpenSheetStatus", true, false) as Button
+	check(statut != null and statut.is_visible_in_tree() and statut.text.begins_with("Feuille incomplète"), "1280x720 · feuille incomplète : statut affiché")
+	var kickoff := app.find_child("MatchKickoff", true, false) as Control
+	check(kickoff != null and kickoff.is_visible_in_tree(), "1280x720 · feuille incomplète : coup d'envoi dans le bandeau")
+	if kickoff != null:
+		var enfants: Array = kickoff.get_parent().get_children().filter(func(n: Node) -> bool: return n is Control and (n as Control).is_visible_in_tree() and (n as Control).size.x > 1)
+		for i in enfants.size():
+			check(ecran().encloses(rect(enfants[i]).grow(-1)), "1280x720 · feuille incomplète : %s du bandeau à l'écran %s" % [enfants[i].name, rect(enfants[i])])
+			for j in range(i + 1, enfants.size()):
+				check(not rect(enfants[i]).grow(-1).intersects(rect(enfants[j]).grow(-1)), "1280x720 · feuille incomplète : %s et %s sans chevauchement" % [enfants[i].name, enfants[j].name])
+	await capture("avant-match-feuille-incomplete-1280x720")
+	app.model.selection = origine
+	destinations.append("Bandeau 1280×720, feuille incomplète : coup d'envoi à l'écran")
 
 ## Essais juste avant et juste après la 40e (les deux camps) : aucune étiquette de la frise ne couvre « MT ».
 func essai_apres_mi_temps(report: Dictionary) -> void:
