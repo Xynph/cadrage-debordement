@@ -172,6 +172,9 @@ static func analyser(tf1: Dictionary, tf2: Dictionary, events: Array) -> Diction
 	return {"type": type, "choix": choix, "equipe": equipe, "marque": marque, "sortie": sortie, "arret": arret_index,
 		"fin": {"index": fin_index, "kind": fin_kind, "cause": str(fin_fait.get("cause", "")), "equipe": int(fin_fait.get("team", -1)), "texte": fin_texte},
 		"arret_kind": _kind(events[arret_index]) if arret_index >= 0 and arret_index < events.size() else fin_kind,
+		# Équipe et cause du dernier arrêt (l'en-avant se dit avec l'équipe fautive, pas celle de la remise en jeu).
+		"arret_equipe": int(_fait(events[arret_index]).get("team", -1)) if arret_index >= 0 and arret_index < events.size() else -1,
+		"arret_cause": str(_fait(events[arret_index]).get("cause", "")) if arret_index >= 0 and arret_index < events.size() else "",
 		"texte": texte, "scene": scene, "cible": cible, "plan_kind": kind, "points": fin_kind in POINTS or points, "coupe_forcee": jeu_entre,
 		"marqueur": int((dernier.get("scene", {}) as Dictionary).get("possession", 1 - equipe)) if dernier.get("scene") is Dictionary else 1 - equipe}
 
@@ -546,7 +549,15 @@ static func construire(info: Dictionary, joueurs: Dictionary, ballon: Dictionary
 	for p: Dictionary in plans: total += float(p.duree)
 	# Par plan : légende, borne du journal et bandeau (l'arrêt de jeu en cours, jamais la suite).
 	var remise := {"libelle": libelle_remise(type, str(info.get("plan_kind", ""))), "equipe": equipe}
-	var arret_a := remise
+	# Le dernier arrêt est un en-avant : son plan le dit avec l'équipe fautive (« En-avant — X »), comme sa
+	# légende ; la mêlée vient ensuite (vérificateur de #1305 : « En-avant — Brive » puis « Mêlée pour Brive »
+	# alors que le second en-avant était celui de l'adversaire, jamais dit).
+	var fait_arret := remise
+	if str(info.get("arret_kind", "")) == "hand-fault":
+		var fautive := int(info.get("arret_equipe", -1))
+		if fautive not in [0, 1] and type == "melee" and equipe in [0, 1]: fautive = 1 - equipe
+		if fautive in [0, 1]: fait_arret = libelle_arret({"kind": "hand-fault", "cause": str(info.get("arret_cause", "")), "equipe": fautive})
+	var arret_a := fait_arret
 	if forcee: arret_a = libelle_arret(fin_tf)
 	elif not str(info.choix).is_empty(): arret_a = {"libelle": "Pénalité", "equipe": equipe}
 	var textes: Array = [str(fin_tf.get("texte", "")) if forcee else str(info.get("texte", ""))]
@@ -558,7 +569,7 @@ static func construire(info: Dictionary, joueurs: Dictionary, ballon: Dictionary
 		textes.append(str(info.get("texte", "")))
 		arrets.append(int(info.get("arret", -1)))
 		kinds.append(str(info.get("arret_kind", "")))
-		bandeaux.append(remise)
+		bandeaux.append(fait_arret)
 	return {"type": type, "choix": info.choix, "coupe": coupe, "plans": plans, "duree": total, "arbitre": programme,
 		"detail": detail, "tenue": tenue, "texte": str(info.get("texte", "")), "textes": textes, "arrets": arrets, "kinds": kinds, "bandeaux": bandeaux,
 		"ramasseur": ramasseur, "capitaine": capitaine}

@@ -87,6 +87,8 @@ func run() -> void:
 	# Match : avant-match puis délégation
 	check(await Flow.prepare_match_day(app, self, check), "Jour de match atteint")
 	app._navigate("Match"); await settle(12)
+	# Le face-à-face charge la fiche du club adverse (club_sheet, #1176) : l'avant-match refuse ses sous-pages tant que le moteur répond.
+	await wait_engine()
 	var avant: Control = app.match_screen.find_child("MatchOpening", true, false) if app.match_screen != null else null
 	check(avant != null and avant.is_visible_in_tree(), "Avant-match affiché")
 	if avant != null:

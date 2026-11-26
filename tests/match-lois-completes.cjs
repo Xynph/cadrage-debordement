@@ -19,7 +19,9 @@ const { test } = require('node:test');
 const { worldYouth } = require('./helpers/youth-world-harness.cjs');
 const direct = require('../native/engine/match-direct.cjs');
 
-const N = 144, COMP = 'elite';
+// 288 matchs (144 avant le 26/11) : ~0,16 drop par match, la part après la 60e (~45 % sur 1 200 matchs) tombait à 11/32 à la
+// graine du test dès que le jeu au pied tirait autrement (50:22) ; mêmes bornes, échantillon plus grand.
+const N = 288, COMP = 'elite';
 const BRUIT = new Set(['sub', 'tactic', 'card', 'advantage']);
 
 function jouer(n) {

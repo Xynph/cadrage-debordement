@@ -198,6 +198,9 @@ budget() {
     tests/match-direct.cjs) echo 600s ;;
     # Reprise avant le match (#836) : plusieurs carrières Monde rechargées en plein match et matchs rejoués, 83 s en local, 180 s dépassées en CI.
     tests/reprise-avant-match.cjs) echo 600s ;;
+    # Ancien journal dont un « Continuer » franchit une semaine : carrière Monde jouée jusqu'à une semaine sans match
+    # (≈ 5 matchs) puis reprise ; 270 s en local.
+    tests/reprise-ancien-journal-semaine.cjs) echo 900s ;;
     # Entrées dans les 22 (#824) : un match Monde complet joué au worker (81 projections) ; 180 s dépassées en CI
     # sur les PR #837 et #841 (17/11) ; assertions inchangées.
     tests/match-zone22.cjs) echo 600s ;;

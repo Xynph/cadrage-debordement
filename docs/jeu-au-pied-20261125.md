@@ -29,7 +29,13 @@ des équipes qui ne dégagent jamais de leurs 22.
   réception ») ; touche à moins de 10 m gagnés hors de ses 22 : « trouve la touche à N mètres de la ligne adverse » ; coup de
   pied en touche de l'équipe qui a l'avantage : « Coup de pied en touche pendant l'avantage : retour à… » ; journal 3D :
   un fait « geste ; issue » trop long raccourcit le geste et garde le receveur entier.
-- 50:22 rares ; ballons qui roulent dans l'en-but : renvoi sur la ligne d'essai (aplati par la défense) ou aux 22 m (mort).
+- 50:22 au niveau de l'élite (26/11, ~0,3 par match, 0,03 avant) : depuis son camp, l'ouvreur vise souvent les 22 adverses
+  (4 coups de pied en touche sur 10, 1 sur 10 depuis ses 22) et réussit environ une fois sur quatre ; sinon le ballon reste
+  dans le champ et l'adversaire le récupère, ou sort trop tôt (touche adverse), ou sort directement (touche adverse à hauteur
+  du coup de pied hors de ses 22). 3 championnats × 600 matchs × 2 jeux de graines, avant → après : 50:22 0,03 → 0,33,
+  points 49,7 → 50,0, essais 6,08 → 6,10, matchs à 7 points ou moins 33,8 → 36,8 %, écart moyen 16,3 → 15,9 ; ballons
+  rentrés dans son camp par l'équipe qui botte : pas de 50:22 (loi 18) ;
+- ballons qui roulent dans l'en-but : renvoi sur la ligne d'essai (aplati par la défense) ou aux 22 m (mort).
 - Plan de jeu (occupation, jeu au large), qualité des botteurs, pluie et score après la 60e pèsent sur la décision de taper.
   En fin de match, l'équipe menée de 15 points ou moins ne dégage plus de son camp, sauf depuis ses 22.
 - Le porteur n'est plus « poussé en touche » qu'environ 1,5 fois par match (10 avant).
@@ -77,7 +83,7 @@ deux), ancien jeu au pied → nouveau, par match :
 | dont directes sans gain de terrain | → 0,24 | → 0,26 | → 0,27 |
 | Porteur poussé en touche | 10,1 → 1,5 | 10,0 → 1,5 | 10,3 → 1,5 |
 | Renvois aux 22 m et sur la ligne d'essai | 1,44 → 1,94 | 1,28 → 1,69 | 1,25 → 1,79 |
-| 50:22 | 0,01 → 0,05 | 0,01 → 0,03 | 0,01 → 0,04 |
+| 50:22 (0,29 / 0,33 / 0,37 depuis le 26/11) | 0,01 → 0,05 | 0,01 → 0,03 | 0,01 → 0,04 |
 | Points | 47,2 → 46,7 | 53,3 → 51,3 | 48,2 → 47,9 |
 | Essais | 5,39 → 5,32 | 7,12 → 6,85 | 6,23 → 6,23 |
 | Matchs à 7 points ou moins | 43,0 → 40,3 % | 34,5 → 32,2 % | 31,9 → 32,7 % |

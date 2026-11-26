@@ -34,7 +34,12 @@ function essaisRules(l){return tacticalRules(l)&&l.essaisVersion===1}
 // zone : probabilité de taper par action, selon la zone (ses 22, son camp, camp adverse, 22 adverses) ; style : par plan
 // (occupation : table à part, comme l'ancien moteur) ; score : à partir de la 60e (mène, mené de 16+, mené à portée).
 // types : répartition des coups de pied par zone (touche, long, chandelle, rasant = rasant ou par-dessus dans le dos, croisé).
-// touche : touche trouvée ; directe22 : touche directe depuis ses 22 ; cinquante : tentative de 50:22 depuis son camp et réussite ;
+// touche : touche trouvée ; directe22 : touche directe depuis ses 22 ; cinquante : 50:22 (loi 18), sur un coup de pied en touche
+// depuis son camp : tentative (`tente`, par zone : depuis ses 22, il faut ~60 m), réussite ; tentative ratée : sortie directe
+// (`directe`, touche adverse sans gain hors de ses 22), sortie après rebond avant les 22 adverses (`courte`, touche adverse),
+// sinon ballon resté dans le champ et rendu. 26/11 : 0,03 de tentative donnait 0,03 50:22 par match (réel d'élite 0,3-0,5) ;
+// 0,4 depuis son camp, 0,1 depuis ses 22, réussite 0,42 : ~0,33 par match (une tentative sur quatre réussie : botteur, pluie,
+// ballon rentré dans son camp), points, essais et écarts inchangés (3 championnats × 600 matchs × 2 jeux de graines).
 // pluie : jeu au pied en plus par niveau de pluie (au lieu de METEO_MATCH.piedJeu, fait pour l'ancien jeu au pied rare).
 // recup : ballon repris par l'équipe qui botte (chandelle, rasant, croisé) ; enAvant : en-avant du receveur sous la chandelle ;
 // enButDefense : rasant ou par-dessus qui file vers l'en-but, couvert par la défense devant sa ligne ; croiseTouche : croisé
@@ -58,7 +63,7 @@ var JEU_PIED={
  style:{equilibre:1,conquete:.5,large:.75},occupation:{own22:.85,ownHalf:.65,oppHalf:.35,opp22:.08},pluie:.3,
  score:{mene:1.2,menePlus:.5,meneMoins:.8},
  types:{own22:{touche:.9,long:.06,chandelle:.04,rasant:0,croise:0},ownHalf:{touche:.78,long:.12,chandelle:.1,rasant:0,croise:0},oppHalf:{touche:.3,long:.15,chandelle:.15,rasant:.25,croise:.15},opp22:{touche:0,long:0,chandelle:.2,rasant:.55,croise:.25}},
- touche:.85,directe22:.8,directeHors22:.04,cinquante:{tente:.03,reussite:.35},
+ touche:.85,directe22:.8,directeHors22:.04,cinquante:{tente:{own22:.1,ownHalf:.4},reussite:.42,directe:.2,courte:.25},
  recup:{chandelle:.28,rasant:.32,croise:.35},enAvant:.07,adverseTape:12,
  enButDefense:.5,croiseTouche:.12,longueur:.7,qualite:.3
 };

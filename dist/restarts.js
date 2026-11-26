@@ -170,14 +170,14 @@ function dropTente(l,side){
  if(restartRules(l)){chronoArret(l,'penalite');if(!flowScored(l,side)&&(flowRules(l)||l.minute<80))relancer(l,'kickoff',1-side,'score',side)}
  return true;
 }
-function resolveTouch(l,actor,exit,{direct=false,penalty=false,carried=false,kicker=null,court=false}={}){
+function resolveTouch(l,actor,exit,{direct=false,penalty=false,carried=false,kicker=null,court=false,vise=false}={}){
  const origin=l.territory,context=l.kickContext;
  const fifty=!penalty&&!carried&&!direct&&ownHalf(actor,origin)&&(actor===0?exit>=78:exit<=22)&&context?.team===actor&&context.halfEligible;
  const gain=penalty||!direct||own22(actor,origin)&&context?.team===actor&&context.twentyTwoEligible;
  const mark=gain?exit:(actor===0?Math.min(origin,exit):Math.max(origin,exit));
  const team=penalty||fifty?actor:1-actor,cause=penalty?'penalty-touch':fifty?'50-22':carried?'carry-touch':direct?'direct-touch':'indirect-touch';
  // Coup de pied de jeu en touche (jeu au pied réaliste) : le botteur est nommé, le fait porte son id (match 2D/3D, fiche de stats).
- if(kicker&&!penalty&&!carried){const ab=S.clubs[l.pair[actor]].abbr,m=Math.max(1,Math.round(Math.abs(exit-origin)));addEvent(l,`${kicker.name} (${ab}) ${fifty?`réussit un 50:22 : le ballon rebondit en touche dans les 22 adverses, ${ab} conserve le lancer`:direct&&!gain?'botte directement en touche sans gain de terrain':court?`trouve une touche courte, ${m>1?m+' mètres gagnés':'1 mètre gagné'}`:own22(actor,origin)?`dégage en touche, ${m} mètres gagnés`:m<10?`trouve la touche à ${Math.round(Math.abs(attackingGoal(actor)-exit))} mètres de la ligne adverse`:`trouve la touche${direct?'':' après rebond'}, ${m} mètres gagnés`}.`,'play',{kind:'touch',team:actor,cause,actor:kicker.id,from:{x:origin,y:35},to:{x:exit,y:0}});return grantSetPiece(l,'lineout',team,mark,cause,actor,origin)}
+ if(kicker&&!penalty&&!carried){const ab=S.clubs[l.pair[actor]].abbr,m=Math.max(1,Math.round(Math.abs(exit-origin)));addEvent(l,`${kicker.name} (${ab}) ${vise&&!fifty?(direct?`vise les 22 adverses mais botte directement en touche${gain?`, ${m} mètres gagnés`:' sans gain de terrain'}`:`vise les 22 adverses, le ballon sort trop tôt, ${m} mètres gagnés`):fifty?`réussit un 50:22 : le ballon rebondit en touche dans les 22 adverses, ${ab} conserve le lancer`:direct&&!gain?'botte directement en touche sans gain de terrain':court?`trouve une touche courte, ${m>1?m+' mètres gagnés':'1 mètre gagné'}`:own22(actor,origin)?`dégage en touche, ${m} mètres gagnés`:m<10?`trouve la touche à ${Math.round(Math.abs(attackingGoal(actor)-exit))} mètres de la ligne adverse`:`trouve la touche${direct?'':' après rebond'}, ${m} mètres gagnés`}.`,'play',{kind:'touch',team:actor,cause,actor:kicker.id,from:{x:origin,y:35},to:{x:exit,y:0}});return grantSetPiece(l,'lineout',team,mark,cause,actor,origin)}
  addEvent(l,`${S.clubs[l.pair[actor]].abbr} ${penalty?'trouve la pénaltouche et conserve le lancer':fifty?'réussit un 50:22 et conserve le lancer':carried?'est poussé en touche':direct&&!gain?'botte directement en touche sans gain de terrain':'envoie le ballon en touche'}.`,'play',{kind:'touch',team:actor,cause,from:{x:origin,y:35},to:{x:exit,y:0}});
  return grantSetPiece(l,'lineout',team,mark,cause,actor,origin);
 }
@@ -248,9 +248,14 @@ function jeuAuPied(l,side){
  if(type==='touche'){
   const half=ownHalf(side,origin),own=own22(side,origin);
   // 50:22 : tentative depuis son camp, le ballon doit rebondir avant de sortir dans les 22 adverses.
-  if(half&&Math.random()<J.cinquante.tente*(1+q*.5)){
+  // Ratée : sortie directe (touche adverse, sans gain hors de ses 22), sortie avant les 22 adverses, ou ballon rendu.
+  const C=J.cinquante,tente=typeof C.tente==='number'?C.tente:C.tente[own?'own22':'ownHalf'];
+  if(half&&Math.random()<tente*(1+q*.5)){
    const exit=goal-dir*rand(4,18);
-   if(Math.random()<clamp(J.cinquante.reussite+q*.15-pluie*.05,.1,.7))return resolveTouch(l,side,exit,{kicker:botteur});
+   if(Math.random()<clamp(C.reussite+q*.15-pluie*.05,.1,.7))return resolveTouch(l,side,exit,{kicker:botteur});
+   const rate=Math.random();
+   if(rate<(C.directe||0))return resolveTouch(l,side,clamp(origin+dir*rand(30,45),5,95),{direct:true,kicker:botteur,vise:true});
+   if(rate<(C.directe||0)+(C.courte||0))return resolveTouch(l,side,clamp(goal-dir*rand(24,34),5,95),{kicker:botteur,vise:true});
    const landing=clamp(goal-dir*rand(3,15),1,99);return reception(landing,`${nom} (${ab}) vise le 50:22 mais le ballon reste dans le champ`);
   }
   const dist=clamp((rand(22,38)+q*8)*J.longueur+plus-vent,10,58);

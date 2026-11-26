@@ -4,7 +4,8 @@
 // - les équipes tapent (au moins 12 coups de pied de jeu par match), surtout en touche (6 et plus), et le porteur
 //   « poussé en touche » devient rare (3 par match au plus, moins que les touches au pied), la touche directe sans gain
 //   de terrain aussi (0,5 par match au plus) ;
-// - les renvois aux 22 mètres ne sont plus exceptionnels ; quelques 50:22 sur l'échantillon ;
+// - les renvois aux 22 mètres ne sont plus exceptionnels ; 50:22 au niveau de l'élite (~0,3 par match), tentatives manquées
+//   plus nombreuses (ballon rendu, ou sorti : touche adverse) ;
 // - les lois : touche directe hors de ses 22 = lancer adverse à l'endroit du coup de pied, 50:22 seulement depuis son
 //   camp vers les 22 adverses, botteur nommé sur les touches au pied (match 2D/3D, fiche de stats).
 const assert = require('node:assert/strict');
@@ -42,6 +43,7 @@ test('Jeu au pied : dégagements, occupation, renvois aux 22 m et lois de la tou
       if (s.kind === 'drop22') add('drop22');
       if (s.kind === 'goalLine') add('goalLine');
       if (s.kind === 'kick' && /chandelle|par-dessus|rasant/.test(e.text)) add('contestes');
+      if (s.kind === 'kick' && /vise le 50:22/.test(e.text)) add('cinquanteRateChamp');
       if (s.kind === 'touch' && s.cause === 'direct-touch' && /sans gain/.test(e.text)) add('sansGain');
       // Le joueur qui prend le ballon est nommé dans le fait : le match 2D/3D le place au point de chute (pas de ballon seul au sol).
       if (s.kind === 'kick' && s.receiver == null) fautes.push('coup de pied sans joueur au point de chute : ' + e.text);
@@ -58,12 +60,17 @@ test('Jeu au pied : dégagements, occupation, renvois aux 22 m et lois de la tou
           if (!ownHalf || !opp22) fautes.push('50:22 irrégulier : ' + e.text);
           if (lancer && lancer.s.team !== s.team) fautes.push('50:22 sans le lancer : ' + e.text);
         }
+        // 50:22 manqué qui sort (directement, ou avant les 22 adverses) : touche à l'adversaire.
+        if (s.cause !== '50-22' && /vise les 22 adverses/.test(e.text)) {
+          add('cinquanteRateTouche');
+          if (lancer && lancer.s.team === s.team) fautes.push('50:22 manqué, lancer gardé : ' + e.text);
+        }
       }
     });
   }
   const par = k => (c[k] || 0) / N;
   const auPied = par('touch:direct-touch') + par('touch:indirect-touch') + par('touch:50-22');
-  const r = { coupsDePied: par('kicks'), touchesAuPied: auPied, pousse: par('touch:carry-touch'), contestes: par('contestes'), renvois22: par('drop22'), renvoisEnBut: par('goalLine'), cinquante22: c['touch:50-22'] || 0, sansGain: par('sansGain') };
+  const r = { coupsDePied: par('kicks'), touchesAuPied: auPied, pousse: par('touch:carry-touch'), contestes: par('contestes'), renvois22: par('drop22'), renvoisEnBut: par('goalLine'), cinquante22: c['touch:50-22'] || 0, cinquanteRates: par('cinquanteRateChamp') + par('cinquanteRateTouche'), cinquanteRatesTouche: par('cinquanteRateTouche'), sansGain: par('sansGain') };
   const msg = JSON.stringify(r);
   assert.deepEqual(fautes.slice(0, 5), [], 'lois du jeu au pied');
   assert.ok(r.coupsDePied >= 12 && r.coupsDePied <= 30, 'coups de pied de jeu par match ' + msg);
@@ -72,6 +79,10 @@ test('Jeu au pied : dégagements, occupation, renvois aux 22 m et lois de la tou
   assert.ok(r.contestes >= 1.5, 'chandelles, rasants et coups de pied par-dessus ' + msg);
   assert.ok(r.renvois22 + r.renvoisEnBut >= 1.8, 'renvois aux 22 mètres et sur la ligne d’essai ' + msg);
   assert.ok(r.cinquante22 >= 1 && r.cinquante22 / N <= 0.6, '50:22 rares mais présents ' + msg);
+  // 50:22 au niveau de l'élite (réel 0,3-0,5 par match ; 0,03 avant le 26/11) : ~0,3 attendu, 0,2 au moins sur 240 matchs.
+  assert.ok(r.cinquante22 / N >= 0.2, '50:22 au niveau de l’élite ' + msg);
+  // Tentatives manquées crédibles : plus fréquentes que les réussites, ballon rendu ou sorti (touche adverse).
+  assert.ok(r.cinquanteRates * N > r.cinquante22 && r.cinquanteRatesTouche >= 0.1, '50:22 manqués : ballon rendu ou touche adverse ' + msg);
   // Touche directe sans gain de terrain : rare au haut niveau (0,3-0,5 par match), pas une forme courante de perte de balle.
   assert.ok(r.sansGain <= 0.5, 'touche directe sans gain rare ' + msg);
 });

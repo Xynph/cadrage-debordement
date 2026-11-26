@@ -6,6 +6,7 @@ extends SceneTree
 ## moteur, déterminisme et détail jamais répété deux fois de suite. Lancé par godot-match-liaison.cjs.
 
 const Liaison = preload("res://match_liaison.gd")
+const Regie = preload("res://ui/contextual/match_temps_forts.gd")
 
 var checks := 0
 var failures: Array[String] = []
@@ -186,6 +187,26 @@ func run() -> void:
 	check(str(lien.bandeaux[0].libelle) == "En-avant" and int(lien.bandeaux[0].equipe) == 0 and str(lien.bandeaux[1].libelle) == "Touche" and int(lien.bandeaux[1].equipe) == 0,
 		"Bandeau : l'en-avant, puis la touche (%s)" % str(lien.bandeaux))
 	check(str(lien.textes[0]) == "Fin du temps fort." and str(lien.textes[1]).contains("touch") and int(lien.arrets[0]) == 1, "Légende et journal : l'arrêt montré dans chaque plan (%s)" % str(lien.textes))
+	# Vérificateur de #1305 (film 2, 29′-30′) : en-avant de Domicile, jeu non montré, en-avant des Visiteurs, mêlée
+	# pour Domicile. Le bandeau disait « En-avant — Domicile » puis « Mêlée pour Domicile » : le second en-avant
+	# (celui de sa légende) n'était jamais dit. Texte lu dans la régie, comme à l'écran.
+	var deux := temps_forts("hand-fault", [{"kind": "scrum"}, {"kind": "carry"}, {"kind": "hand-fault", "team": 1}],
+		"scrum", {"possession": 0, "origin": {"x": 60, "y": 32}, "ball": {"x": 60, "y": 32}, "players": melee})
+	deux[2][1].scene["team"] = 0
+	deux[2][4].text = "VIS commet un en-avant : introduction adverse."
+	var info_deux := Liaison.analyser(deux[0], deux[1], deux[2])
+	check(str(info_deux.get("type", "")) == "melee" and bool(info_deux.get("coupe_forcee", false)), "Deux en-avant puis mêlée : mêlée par coupe")
+	var lien_deux := Liaison.construire(info_deux, ecran(melee, Vector2(-2.5, 1.5), Vector2.ZERO), {"p": Vector3(9.0, 0.1, -3.0), "porteur": ""}, Vector2(55, 25), 41)
+	var regie_deux: Node = Regie.new()
+	regie_deux.liaison = lien_deux
+	regie_deux._teams = [{"name": "Domicile XV", "abbr": "DOM"}, {"name": "Visiteurs XV", "abbr": "VIS"}]
+	var vus_deux: Array = []
+	for k in (lien_deux.bandeaux as Array).size():
+		regie_deux._liaison_plan = k
+		vus_deux.append(regie_deux.bandeau_liaison())
+	check(vus_deux == ["En-avant — Domicile XV", "En-avant — Visiteurs XV"], "Deux en-avant : chaque plan dit son en-avant, avec l'équipe fautive (%s)" % str(vus_deux))
+	check(str(lien_deux.textes[1]).begins_with("VIS commet un en-avant"), "Plan B : la légende est le second en-avant (%s)" % str(lien_deux.textes))
+	regie_deux.free()
 	var arbitre_a: Vector2 = lien.arbitre[0].lieu
 	check(arbitre_a.distance_to(Vector2(15, 35)) < 8.0, "Plan A : l'arbitre est près de l'en-avant, pas à la touche (%s)" % str(arbitre_a))
 	donnees = temps_forts("touch", [], "lineout", {"possession": 0, "origin": {"x": 40, "y": 0}, "players": alignement}, true)

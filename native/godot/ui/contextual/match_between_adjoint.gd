@@ -325,6 +325,9 @@ func montrer_entracte(texte: String, bouton: bool, _force: bool = false) -> void
 func montrer_arret(valeur: Dictionary) -> void:
 	_arret = valeur
 	_poser_arret_commandes()
+	# La ligne d'état et sa phrase de jeu suivent l'arrêt ouvert ou fermé (carte « CARTON JAUNE » ouverte alors que le
+	# terrain 2D, en retard, disait encore « X a le ballon » ; godot-match-arrets-ecran).
+	if not _dernier.is_empty() and is_instance_valid(etat): _etat(_dernier[1], _dernier[2], _equipes)
 	if valeur.is_empty():
 		montrer_droite(vue_droite)
 		return
