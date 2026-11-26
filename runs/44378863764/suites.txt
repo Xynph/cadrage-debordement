@@ -1,7 +1,0 @@
-tests/godot-presse-rapide.cjs
-tests/godot-international-availability.cjs
-tests/godot-presse-promesses.cjs
-tests/godot-reglage-conferences.cjs
-tests/native-nation-meetings.cjs
-tests/presse-calendrier-fm.cjs
-tests/presse-rapide-monde.cjs

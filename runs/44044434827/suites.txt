@@ -1,2 +1,0 @@
-tests/godot-confrontations-directes.cjs
-tests/godot-forme-adverse.cjs

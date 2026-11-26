@@ -1,2 +1,0 @@
-== suites (3) (code 1)
-::error file=tests/godot-premiere-heure.cjs::Godot : ECHEC (124), durée 300 s, limite 300s

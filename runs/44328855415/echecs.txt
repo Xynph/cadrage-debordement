@@ -1,5 +1,0 @@
-== captures causerie (vestiaire : tuiles, phrases, Continuer ; 1080p et 720p) (code 1)
-FAIL six declarations in three columns
-ERROR: Condition "!is_inside_tree()" is true.
-ERROR: Texture with GL ID of 24: leaked 349524 bytes.
-ERROR: Texture with GL ID of 25: leaked 349524 bytes.

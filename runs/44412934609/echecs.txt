@@ -1,4 +1,0 @@
-== suites (5) (code 1)
-not ok 2 - Conférence ordinaire (après-match) : 3 questions au plus, adjoint au léger coût
-  name: 'AssertionError'
-::error file=tests/presse-rapide-monde.cjs::Godot : ECHEC (1), durée 205 s, limite 300s

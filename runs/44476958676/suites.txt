@@ -1,7 +1,0 @@
-tests/godot-match-camera-retouches.cjs
-tests/godot-match-formations.cjs
-tests/godot-match-ralenti-essai.cjs
-tests/godot-match-apres-essai.cjs
-tests/godot-match-cadrage-arret.cjs
-tests/godot-match-framing.cjs
-tests/godot-match-gestes.cjs

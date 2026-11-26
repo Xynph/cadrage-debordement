@@ -1,4 +1,0 @@
-tests/godot-banque-images.cjs
-tests/godot-fiche-club.cjs
-tests/godot-immersive08.cjs
-tests/godot-meteo-vent.cjs

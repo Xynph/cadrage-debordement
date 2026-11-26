@@ -1,4 +1,0 @@
-tests/godot-preparation-tabs.cjs
-tests/godot-match-temps-forts.cjs
-tests/godot-guide-voice.cjs
-tests/godot-centre-720.cjs

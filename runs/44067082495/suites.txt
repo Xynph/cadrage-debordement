@@ -1,2 +1,0 @@
-tests/godot-courrier-club.cjs
-tests/godot-ouverture-ecrans.cjs

@@ -1,2 +1,0 @@
-ci/run-godot-suites.sh
-CD_INVEST_GRAPHICS=1

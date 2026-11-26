@@ -1,6 +1,0 @@
-== captures comparateur de joueurs (Effectif, fiche joueur, marché ; 1440p et 720p) (code 1)
-not ok 2 - Comparateur de joueurs : captures des écrans (CD_COMPARATEUR_CAPTURE)
-  name: 'AssertionError'
-== captures paramètres audio (3 cases, volume Musique) (code 1)
-not ok 4 - Ambiance native : captures des paramètres audio (CD_AMBIANCE_CAPTURE)
-  name: 'AssertionError'

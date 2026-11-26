@@ -1,7 +1,0 @@
-== captures dilemmes (entracte 2D à la 70e avec tuile Bonus, feuille de match JIFF et liste des 33, infirmerie HIA ; 1280x720) (code 1)
-FAIL: Bouton « Viser le bonus » assez grand et dans l'écran ([P: (975.0, 683.0), S: (142.0, 26.0)])
-FAIL: Bouton « Sécuriser » assez grand et dans l'écran ([P: (1122.0, 683.0), S: (143.0, 26.0)])
-  throw new AssertionError(obj);
-AssertionError [ERR_ASSERTION]: Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
-FAIL: Bouton « Viser le bonus » assez grand et dans l'écran ([P: (975.0, 683.0), S: (142.0, 26.0)])
-FAIL: Bouton « Sécuriser » assez grand et dans l'écran ([P: (1122.0, 683.0), S: (143.0, 26.0)])

@@ -1,3 +1,0 @@
-mesure-monde
-ref=mesure-monde/apres-chrono-20261118181830
-sha=ed5e9f9988b5d66f2742e51418bd929218f53b11

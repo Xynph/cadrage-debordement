@@ -1,1 +1,0 @@
-tests/mesure-vitesse-jeu.cjs

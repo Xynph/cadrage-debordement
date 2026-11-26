@@ -1,3 +1,0 @@
-== captures argent du propriétaire (Réception : prêt, nouveau propriétaire ; Finances ; 1080p) (code 1)
-not ok 1 - Argent du propriétaire : courriers du prêt et du changement de propriétaire dans le vrai jeu
-  name: 'AssertionError'

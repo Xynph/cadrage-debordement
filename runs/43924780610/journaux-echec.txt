@@ -1,2 +1,0 @@
-CD_COMPARATEUR_CAPTURE=/home/runner/work/_temp/resultats/captures/comparateur
-CD_AMBIANCE_CAPTURE=/home/runner/work/_temp/resultats/captures/audio

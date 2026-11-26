@@ -1,2 +1,0 @@
-tests/godot-career-variation.cjs
-tests/godot-intro.cjs

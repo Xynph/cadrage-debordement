@@ -1,4 +1,0 @@
-tests/godot-disquette-sauvegarde.cjs
-tests/avance-jour-differe.cjs
-tests/godot-ecrans-chargement.cjs
-tests/godot-continuer.cjs

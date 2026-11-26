@@ -1,9 +1,0 @@
-== captures météo et vent (écran Match avant-match, vestiaire, bandeau, mi-temps, 1080p) (code 1)
-not ok 1 - Météo et vent : avant-match, bandeau du direct, mi-temps
-  name: 'AssertionError'
-== captures pilotage du match (écran 2D : consignes, arbitre, états des joueurs) (code 1)
-ERROR: Condition "status < 0" is true. Returning: ERR_CANT_OPEN
-AssertionError [ERR_ASSERTION]: The input was expected to not match the regular expression /SCRIPT ERROR|Parse Error|ERROR:/. Input:
-  'ERROR: Condition "status < 0" is true. Returning: ERR_CANT_OPEN\n' +
-    'ERROR: Condition "status < 0" is true. Returning: ERR_CANT_OPEN\n' +
-  expected: /SCRIPT ERROR|Parse Error|ERROR:/,

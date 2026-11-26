@@ -1,5 +1,0 @@
-== captures pilotage du match (écran 2D : consignes, arbitre, états des joueurs) (code 1)
-FAIL: Carrière Monde : le direct en temps forts s'ouvre
-  throw new AssertionError(obj);
-AssertionError [ERR_ASSERTION]: Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
-FAIL: Carrière Monde : le direct en temps forts s'ouvre

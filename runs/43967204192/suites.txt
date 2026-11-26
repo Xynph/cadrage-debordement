@@ -1,5 +1,0 @@
-tests/reactivite-projection-verification-semaines.cjs
-tests/reactivite-projection-verification.cjs
-tests/reactivite-projection-rapide-semaines.cjs
-tests/match-stats-realistes.cjs
-tests/espoirs-feuilles.cjs

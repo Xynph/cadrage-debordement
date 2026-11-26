@@ -1,4 +1,0 @@
-== captures Réception (1920x1080, 1280x720) (code 1)
-not ok 1 - Courrier du club : réponse en un clic, écran concerné ouvert, arrêts informatifs sur l’écran utile
-    FAIL: Texte de presse sur deux colonnes
-  name: 'AssertionError'

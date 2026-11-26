@@ -1,1 +1,0 @@
-CD_CAUSERIE_CAPTURES=/home/runner/work/_temp/resultats/captures/causerie

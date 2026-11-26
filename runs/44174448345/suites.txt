@@ -1,2 +1,0 @@
-tests/godot-immersive08.cjs
-tests/godot-feuille-espoir.cjs

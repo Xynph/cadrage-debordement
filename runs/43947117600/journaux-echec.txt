@@ -1,1 +1,0 @@
-CD_COURRIER_CAPTURES=/home/runner/work/_temp/resultats/captures/reception

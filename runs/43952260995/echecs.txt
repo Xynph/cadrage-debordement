@@ -1,8 +1,0 @@
-== captures Réception (1920x1080, 1280x720) (code 1)
-not ok 1 - Courrier du club : réponse en un clic, écran concerné ouvert, arrêts informatifs sur l’écran utile
-    FAIL: Filtre en tête de liste · InboxSubject · 1280x720
-    FAIL: Invitation du club : message de catégorie Club
-    FAIL: Invitation rangée dans la liste
-    FAIL: Invitations dans l'ordre d'affichage (Espace = prochain non lu)
-    FAIL: Espace ouvre l'invitation non lue
-  name: 'AssertionError'

@@ -1,8 +1,0 @@
-tests/godot-presse-promesses.cjs
-tests/godot-presse-rapide.cjs
-tests/godot-reglage-conferences.cjs
-tests/presse-calendrier-fm.cjs
-tests/continuer-arrets-saison.cjs
-tests/continuer-evenement-monde.cjs
-tests/native-club-meetings.cjs
-tests/presse-promesses-monde.cjs

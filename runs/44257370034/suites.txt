@@ -1,2 +1,0 @@
-tests/godot-meteo-vent.cjs
-tests/godot-immersive08.cjs
