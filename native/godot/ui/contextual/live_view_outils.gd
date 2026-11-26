@@ -225,8 +225,26 @@ func _largeur_journal() -> float:
 	return maxf(120.0, _legende.custom_minimum_size.x - roundf(32 * echelle) - roundf(32 * echelle) - roundf(12 * echelle) - 4.0)
 
 ## `texte` s'il tient sur une ligne de `largeur`, sinon coupé au dernier mot entier qui tient, suivi de « … ».
+## Fait en deux temps « geste ; issue » (coup de pied : « X tape… ; Y récupère pour Z. ») : l'issue et le receveur restent
+## entiers, c'est la fin du geste qui est raccourcie (« X (AFN) tape par-dessus ; Y récupère pour Z. »).
 static func ligne_tenue(texte: String, police: Font, taille: int, largeur: float) -> String:
 	if police.get_string_size(texte, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x <= largeur: return texte
+	var coupure := texte.find(" ; ")
+	if coupure > 0:
+		var issue := texte.substr(coupure)
+		var debut := texte.substr(0, coupure)
+		# D'abord à la virgule (« tape par-dessus la défense, trop long » → « tape par-dessus la défense ») ...
+		var virgule := debut.rfind(",")
+		while virgule > 0:
+			debut = debut.substr(0, virgule)
+			if police.get_string_size(debut + issue, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x <= largeur: return debut + issue
+			virgule = debut.rfind(",")
+		# ... puis au mot, signalé par « … » : le geste est coupé, jamais l'issue ni le receveur.
+		var geste := debut.split(" ", false)
+		while geste.size() > 4:
+			geste.remove_at(geste.size() - 1)
+			var court := " ".join(geste).strip_edges() + " …" + issue
+			if police.get_string_size(court, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x <= largeur: return court
 	var mots := texte.split(" ", false)
 	while mots.size() > 1:
 		mots.remove_at(mots.size() - 1)
