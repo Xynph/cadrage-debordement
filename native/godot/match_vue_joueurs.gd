@@ -11,6 +11,7 @@ const JoueurV5 = preload("res://match_joueur_v5.gd")
 const Cut = preload("res://match_cut.gd")
 const Impacts = preload("res://match_impacts.gd")
 const VueBallon = preload("res://match_vue_ballon.gd")
+const VueDrop = preload("res://match_vue_drop.gd")
 
 ## Nombre de joueurs à l'image, chacun à plus de Motion.TRAJET_REPLACEMENT de sa place, à partir
 ## duquel la vue coupe pour les replacer (équipe qui se reforme) au lieu de les faire courir.
@@ -121,6 +122,16 @@ static func _gestes_du_fait(v: NativeMatchView, scene: Dictionary, previous_kind
 			var nom := "reception_haute" if previous_kind in ["kick", "kickoff", "drop22", "goalLine", "touch"] else "reception"
 			var cle := v.instant_geste(nom)
 			v.jouer_geste(featured, nom, maxf(0.0, cle - 0.5), cle + 0.3)
+
+
+## Drop (match-direct.cjs, scène `drop`) : le botteur que le moteur met en avant lâche le ballon et le frappe au
+## rebond (match_vue_drop.gd) ; le clip « drop » de la bibliothèque adaptée l'accompagne quand elle est là.
+static func _lancer_drop(v: NativeMatchView, scene: Dictionary) -> void:
+	var possession := int(scene.get("possession", -1))
+	for player: Dictionary in scene.get("players", []):
+		if player.get("featured", false) and int(player.get("side", -1)) == possession:
+			VueDrop.lancer(v, str(player.get("id", "")))
+			return
 
 
 ## Mi-temps, fin de match (régie des temps forts) : chaque joueur quitte sa place et marche vers

@@ -77,6 +77,10 @@ test('Avec la variable, le moteur projette chaque temps fort au moment où il es
           assert.equal(Math.abs(plan.scene.origin.x - plan.scene.ball.x), 22);
           assert.deepEqual(plan.score, essai.score);
           assert.equal(plan.annonce, 'Transformation.');
+        } else if (/^drop-/.test(plan.loi || '')) {
+          // Drop (gestes des lois) : plan de tir au but déduit du fait, botteur au point du drop.
+          assert.equal(plan.scene.kind, plan.loi === 'drop-reussi' ? 'goal' : 'miss');
+          assert.equal(plan.scene.drop, true);
         } else assert.equal(plan.scene.kind, live.events[plan.index].scene.kind);
         // La légende ne dit jamais le résultat avant l'image.
         if (plan.kind === 'try') assert.ok(!/transform|–/.test(plan.texte) && plan.texte.includes('Essai'), plan.texte);

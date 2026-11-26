@@ -9,6 +9,7 @@ const Motion = preload("res://match_motion.gd")
 const Contact = preload("res://match_contact.gd")
 const Pass = preload("res://match_pass.gd")
 const ApresEssai = preload("res://match_apres_essai.gd")
+const VueDrop = preload("res://match_vue_drop.gd")
 
 
 ## Port du ballon par le porteur : deux mains (prise, passe proche, allure modérée) ou calé sous
@@ -172,6 +173,9 @@ static func _update_ball(v: NativeMatchView, delta: float) -> void:
 	if v.mise_en_scene().owns_ball():
 		return
 	if not v._pass_plan.is_empty() and _update_live_pass(v):
+		return
+	# Drop : ballon lâché des mains puis frappé au rebond, avant son vol de tir au but.
+	if VueDrop.avancer(v, delta):
 		return
 	v._ball_travel = minf(1.0, v._ball_travel + delta / v.duree_vol())
 	if v._tir_au_but():

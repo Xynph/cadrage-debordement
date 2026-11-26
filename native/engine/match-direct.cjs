@@ -16,7 +16,7 @@ const bonusFin=require('./match-bonus.cjs');
 const NIVEAUX=Object.freeze(Object.keys(selection.NIVEAUX));
 const LIBELLES=Object.freeze({aucun:'Commentaire seul',resume:'Résumé',cles:'Temps forts clés',etendus:'Temps forts étendus',dynamique:'Dynamique',integral:'Match complet'});
 const TYPES=Object.freeze({
- essai:'Essai',penalite_reussie:'Pénalité',penalite_manquee:'Pénalité manquée',carton_rouge:'Carton rouge',carton_jaune:'Carton jaune',
+ essai:'Essai',penalite_reussie:'Pénalité',penalite_manquee:'Pénalité manquée',drop_reussi:'Drop',drop_manque:'Drop manqué',coup_franc:'Coup franc',carton_rouge:'Carton rouge',carton_jaune:'Carton jaune',
  essai_refuse:'En-avant dans l’en-but',ballon_tenu_en_but:'Ballon tenu en but',en_but_sous_pression:'En-but sous pression',en_but_defendu:'En-but défendu',ballon_mort:'Ballon mort',
  cinquante_22:'50:22',touche_5m:'Touche près de la ligne',melee_5m:'Mêlée près de la ligne',ballon_porte:'Ballon porté',franchissement:'Franchissement',
  pres_de_la_ligne:'Près de la ligne',entree_dans_les_22:'Entrée dans les 22',jeu_dans_les_22:'Jeu dans les 22',progression:'Progression',pression_dans_les_22:'Pression dans les 22',
@@ -42,6 +42,22 @@ function lecteur(){
    const buteur=chooseScorer(S.clubs[l.pair[side]],record.on[side].filter(Boolean))?.id;
    const players=scene.players.map(p=>p.id===String(buteur)&&p.side===side?{...p,...depart,featured:true}:{...p,featured:false});
    return {...scene,key:scene.key+':transformation',kind:reussie?'goal':'miss',players,origin:depart,ball:{x:but,y:reussie?35:y>=35?43:27},possession:side};
+  },
+  // Plan de drop déduit du fait (`scene.loi` drop-reussi ou drop-rate, dist/restarts.js) : le botteur (nommé par le moteur,
+  // sinon son n° 10, comme dropTente) au point du drop ; le ballon vise le milieu des perches s'il est réussi, passe à côté
+  // d'un montant sinon (comme une transformation manquée).
+  drop(index){
+   const l=S.live,record=l?.events[index]?.scene;if(!record||!['drop-reussi','drop-rate'].includes(record.loi))return null;
+   const scene=sceneDe(l,index),side=record.team,but=attackingGoal(side),reussi=record.loi==='drop-reussi';
+   const ids=(record.on?.[side]||[]).filter(id=>id!=null),botteur=String(record.actor??record.on?.[side]?.[9]??ids[0]??'');
+   const depart={x:record.from.x,y:Math.max(5,Math.min(65,record.from.y))};
+   // Couloir dégagé derrière le botteur, dans l'axe des poteaux (caméra du tir au but) : un joueur à moins de 4 m de
+   // cet axe, jusqu'à 30 m derrière lui, s'écarte à 4,5 m (présentation seulement : le moteur ne place personne là).
+   const ax=depart.x-but,ay=depart.y-35,n=Math.hypot(ax,ay)||1,ux=ax/n,uy=ay/n;
+   const couloir=p=>{const dx=p.x-depart.x,dy=p.y-depart.y,le=dx*ux+dy*uy,tr=-dx*uy+dy*ux;if(le<=0.5||le>30||Math.abs(tr)>=4)return p;
+    const s=tr>=0?1:-1,x=depart.x+le*ux-uy*s*4.5,y=depart.y+le*uy+ux*s*4.5;return {...p,x:Math.max(1.5,Math.min(98.5,x)),y:Math.max(2,Math.min(68,y))}};
+   const players=scene.players.map(p=>p.id===botteur&&p.side===side?{...p,...depart,featured:true}:{...couloir(p),featured:false});
+   return {...scene,key:scene.key+':drop',kind:reussi?'goal':'miss',drop:true,players,origin:depart,ball:{x:but,y:reussi?35:depart.y>=35?40.5:29.5},possession:side};
   },
   // Profils physiques (chorégraphe) : compétence « Vitesse », forme comprise, sans rien écrire.
   profils(ids){
@@ -147,7 +163,8 @@ function compacte(scene){
 // (la même que la vue 3D) : la vue 2D les rejoue dans l'ordre pendant l'entracte.
 function deroule(lignes,events,lire,rencontre,nommer=t=>String(t||'')){
  const derniere=lignes.length?lignes[lignes.length-1]:null;if(!derniere)return [];
- const retenues=lignes.filter(l=>!l.bandeau&&!SANS_IMAGE.has(l.kind)&&events[l.i]?.scene&&derniere.minute-l.minute<=4&&l.periode===derniere.periode).slice(-DEROULE_MAX);
+ // Faits des lois joués en 3D (`loi`) : hors du déroulé 2D, comme avant les gestes (faits `message`).
+ const retenues=lignes.filter(l=>!l.bandeau&&!l.loi&&!SANS_IMAGE.has(l.kind)&&events[l.i]?.scene&&derniere.minute-l.minute<=4&&l.periode===derniere.periode).slice(-DEROULE_MAX);
  // Clé : la rencontre (saison, journée, affiche) ne suffit pas (même affiche rejouée depuis une
  // sauvegarde, autre carrière dans le même processus) : on y joint l'empreinte du fait.
  const cle=i=>{const s=events[i]?.scene||{};return rencontre+'|'+i+'|'+(events[i]?.min??'')+'|'+s.kind+'|'+s.team+'|'+s.possession+'|'+s.from?.x+','+s.from?.y+'|'+s.to?.x+','+s.to?.y+'|'+String(events[i]?.text||'').length};
@@ -304,9 +321,13 @@ const LOIS_TEXTE=new Set(['coup-franc','essai-penalite','drop-tente','drop-rate'
 function loisDuDirect(lignes,events,nommer){
  const sortie=[];let joue=-1;
  for(const l of lignes){
-  if(!l.bandeau){joue=l.i;continue}
   const loi=events[l.i]?.scene?.loi;
-  if(l.kind==='message'&&LOIS_TEXTE.has(loi)&&joue>=0)sortie.push({i:l.i,apres:joue,loi,kind:l.type==='try'?'try':l.type==='goal'?'goal':'message',equipe:l.equipe,horloge:horloge(l),score:l.scoreApres,texte:nommer(events[l.i].text)});
+  // Fait des lois joué en 3D (gestes : coup franc, essai de pénalité, drop ; match-highlights.cjs `loi`) : écrit après
+  // son propre plan, pendant que l'image (le geste) est tenue.
+  const joueEn3D=!l.bandeau&&l.loi===loi&&LOIS_TEXTE.has(loi);
+  if(!l.bandeau&&!joueEn3D){joue=l.i;continue}
+  if(joueEn3D)joue=l.i;
+  if((l.kind==='message'||joueEn3D)&&LOIS_TEXTE.has(loi)&&joue>=0)sortie.push({i:l.i,apres:joue,loi,kind:l.type==='try'?'try':l.type==='goal'?'goal':'message',equipe:l.equipe,horloge:horloge(l),score:l.scoreApres,texte:nommer(events[l.i].text)});
  }
  return sortie.slice(-LOIS_MAX);
 }
@@ -418,7 +439,7 @@ function project(model,niveau,lire,options={}){
  const derniere=[...vues].reverse().find(jouable)||null;
  const passe=releve(String(etat.rencontre||''),events.length,{stats:live.stats||[],statsRows:live.statsRows||[],tactique:etat.tactique||null},borne);
  // Fil : sans les messages d'avantage, les retours de carton ni les mises en place.
- const bruit=l=>l.kind==='advantage'||l.kind==='card'&&!l.incident||l.type==='setup'||l.kind==='miss'&&l.type!=='miss';
+ const bruit=l=>l.kind==='advantage'||l.kind==='card'&&!l.incident||l.type==='setup'||l.kind==='miss'&&l.type!=='miss'&&!l.loi;
  const fil=vues.filter(l=>!bruit(l)).slice(-10).map(l=>({i:l.i,horloge:horloge(l),texte:nommer(events[l.i].text),kind:l.kind,equipe:l.equipe}));
  const traces=vues.filter(l=>jouable(l)&&events[l.i].scene).slice(-3).map(l=>({depuis:point(events[l.i].scene.from),vers:point(events[l.i].scene.to),equipe:l.equipe,kind:l.kind})).filter(t=>t.depuis&&t.vers);
  // Repères de la frise : le score après le fait et son acteur (identifiant, nom connu du match), pour l'entracte
@@ -426,7 +447,7 @@ function project(model,niveau,lire,options={}){
  const nomActeur=id=>id?etat.notes?.noms?.[id]||(etat.effectifAdverse||[]).find(p=>String(p.id)===id)?.name||'':'';
  // Essai de pénalité et drop réussi (faits `message` du bloc des lois, `scene.loi`) : repères « try » (sans marqueur) et
  // « goal » (le botteur), comme le fil du score (`direct.marques`).
- const loiRepere=l=>l.kind==='message'?events[l.i]?.scene?.loi:null;
+ const loiRepere=l=>l.loi||(l.kind==='message'?events[l.i]?.scene?.loi:null);
  const reperes=vues.filter(l=>l.kind==='try'||l.kind==='goal'||l.kind==='card'&&l.incident||['essai-penalite','drop-reussi'].includes(loiRepere(l))).map(l=>{const loi=loiRepere(l),a=loi==='essai-penalite'?null:events[l.i]?.scene?.actor,id=a==null?null:String(a);
   return {i:l.i,kind:loi==='essai-penalite'?'try':loi==='drop-reussi'?'goal':l.kind,...(loi?{loi}:{}),equipe:l.equipe,horloge:horloge(l),minute:l.minute,x:l.x,y:events[l.i].scene?.to?.y??35,rouge:l.cause==='red',score:l.scoreApres||null,joueur:id,nom:nomActeur(id)};});
  // Chiffres : ceux que le moteur tient déjà.
@@ -514,7 +535,7 @@ function project(model,niveau,lire,options={}){
   const nomDe=id=>id?etat.notes?.noms?.[id]||(etat.effectifAdverse||[]).find(p=>String(p.id)===id)?.name||'':'';
   // Essai de pénalité (7 points, ni marqueur ni botteur) et drop réussi (3 points, le botteur) : faits `message` du bloc des lois, repérés par `scene.loi`.
   const loiDe=l=>events[l.i]?.scene?.loi;
-  direct.marques=vues.filter(l=>l.kind==='try'||l.kind==='goal'||l.kind==='message'&&['essai-penalite','drop-reussi'].includes(loiDe(l))).map(l=>{
+  direct.marques=vues.filter(l=>l.kind==='try'||l.kind==='goal'||['essai-penalite','drop-reussi'].includes(loiDe(l))).map(l=>{
    const a=events[l.i]?.scene?.actor,penalty=loiDe(l)==='essai-penalite',id=a==null||penalty?null:String(a);
    const nature=penalty?'essai-penalite':l.kind==='try'?(l.transformation===true?'essai-transforme':'essai'):loiDe(l)==='drop-reussi'||/drop/i.test(String(events[l.i]?.text||''))?'drop':'penalite';
    let buteur=null;
@@ -529,14 +550,18 @@ function project(model,niveau,lire,options={}){
   const indices=tf.plans.filter(p=>p.kind!=='transformation').map(p=>p.i),scenes=lire.scenes(indices),parIndex=new Map(indices.map((i,n)=>[i,scenes[n]]));
   const plans=[];
   for(const p of tf.plans){
-   let scene=p.kind==='transformation'?lire.transformation(p.i,p.reussie):parIndex.get(p.i);
+   // Lois (match-highlights.cjs, `loi`) : la vue 3D joue le geste de l'arbitre (coup franc, essai de pénalité) ou du botteur (drop).
+   const loi=lignes[p.i].loi||null,drop=loi==='drop-reussi'||loi==='drop-rate';
+   let scene=p.kind==='transformation'?lire.transformation(p.i,p.reussie):drop&&typeof lire.drop==='function'?lire.drop(p.i)||parIndex.get(p.i):parIndex.get(p.i);
    if(!scene)continue; // sans scène enregistrée, le plan reste dans le fil
    // Deux événements identiques (même minute, texte et position : touches répétées après pénaltouches)
    // donnent la même clé : on la rend unique par l'index pour que chaque plan soit une scène distincte.
    if(plans.some(q=>q.scene.key===scene.key))scene={...scene,key:scene.key+'#'+p.i};
-   plans.push({index:p.i,kind:p.kind,duree:p.duree,mouvement:p.mouvement,coupe:p.coupe,horloge:horloge(lignes[p.i]),
-    texte:legende(p,nommer(events[p.i].text)),...(ANNONCES[p.kind]?{annonce:ANNONCES[p.kind]}:{}),
-    score:p.kind==='try'?lignes[p.i].scoreAvant.map((n,side)=>n+(side===lignes[p.i].equipe?5:0)):lignes[p.i].scoreApres,
+   // Essai de pénalité : ni marqueur ni transformation, un plan à part pour la vue (« penalty-try »), score à +7.
+   const kind=loi==='essai-penalite'?'penalty-try':p.kind;
+   plans.push({index:p.i,kind,...(loi?{loi}:{}),duree:p.duree,mouvement:p.mouvement,coupe:p.coupe,horloge:horloge(lignes[p.i]),
+    texte:legende({...p,kind},nommer(events[p.i].text)),...(ANNONCES[kind]?{annonce:ANNONCES[kind]}:{}),
+    score:kind==='try'?lignes[p.i].scoreAvant.map((n,side)=>n+(side===lignes[p.i].equipe?5:0)):lignes[p.i].scoreApres,
     // Cause de l'arrêt (passe en avant…) : la ligne d'état dit « Passe en avant », pas « En-avant ».
     ...(lignes[p.i].cause?{cause:lignes[p.i].cause}:{}),scene});
   }
