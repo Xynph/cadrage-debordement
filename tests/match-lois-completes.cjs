@@ -15,36 +15,18 @@
 // - rien après le coup de sifflet final ;
 // - « Tirs de pénalité » affichés = buts − drops sur tirs − drops tentés (les drops ont leurs propres compteurs).
 const assert = require('node:assert/strict');
-const { test } = require('node:test');
-const { worldYouth } = require('./helpers/youth-world-harness.cjs');
+const { test, before } = require('node:test');
+const { jouer } = require('./helpers/lois-completes-monde.cjs');
 const direct = require('../native/engine/match-direct.cjs');
 
 // 288 matchs (144 avant le 26/11) : ~0,16 drop par match, la part après la 60e (~45 % sur 1 200 matchs) tombait à 11/32 à la
 // graine du test dès que le jeu au pied tirait autrement (50:22) ; mêmes bornes, échantillon plus grand.
-const N = 288, COMP = 'elite';
+const N = 288;
 const BRUIT = new Set(['sub', 'tactic', 'card', 'advantage']);
 
-function jouer(n) {
-  const matchs = [];
-  for (let monde = 0; matchs.length < n; monde++) {
-    const t = worldYouth({ seed: 61126 + monde * 101, club: monde * 7 });
-    const total = Number(t.run(`S.worldMode.fixtures.filter(f=>f.competitionId==='${COMP}'&&f.phase==='league').length`));
-    for (let i = 0; i < 48 && matchs.length < n; i++) {
-      matchs.push(JSON.parse(t.run(`(()=>{const f=S.worldMode.fixtures.filter(f=>f.competitionId==='${COMP}'&&f.phase==='league')[(${i}*7+${monde}*13)%${total}];
-        S.round=f.week;const pair=[f.homeId,f.awayId];for(const id of pair)CDFranceCareer.ensureAISheet(S.clubs[id]);S.club=pair[0];
-        const l=createRugbyMatch(pair,null,false);for(let n=0;!l.finished;n++){if(n>4000)throw Error('boucle');l.paused=false;advanceRugby(l)}
-        return JSON.stringify({abbr:pair.map(id=>S.clubs[id].abbr),score:l.score,tries:l.tries,yellows:l.stats[0].yellows+l.stats[1].yellows,
-          transfos:l.stats.map(s=>({c:s.conversions,a:s.conversionAttempts,pt:s.penaltyTries||0,panneau:statsPanel(l).includes((s.conversions-(s.penaltyTries||0))+' / '+(s.conversionAttempts-(s.penaltyTries||0)))})),
-          tirs:l.stats.map(s=>({g:s.goals,a:s.goalAttempts,d:s.drops||0,da:s.dropAttempts||0})),
-          panneauTirs:statsPanel(l).includes('<strong>'+(l.stats[0].goals-(l.stats[0].drops||0))+' / '+(l.stats[0].goalAttempts-(l.stats[0].dropAttempts||0))+'</strong><span>Tirs de pénalité</span><strong>'+(l.stats[1].goals-(l.stats[1].drops||0))+' / '+(l.stats[1].goalAttempts-(l.stats[1].dropAttempts||0))+'</strong>'),
-          journal:l.events.map(e=>e.scene?{min:e.min,type:e.type,text:e.text,period:e.period,scene:{kind:e.scene.kind,team:e.scene.team,possession:e.scene.possession,period:e.scene.period,actor:e.scene.actor,cause:e.scene.cause,loi:e.scene.loi,move:e.scene.move,incident:e.scene.incident,origin:e.scene.origin,conversion:e.scene.conversion,from:e.scene.from,to:e.scene.to,score:e.scene.score,tries:e.scene.tries}}:{min:e.min,type:e.type,text:e.text,period:e.period}),
-          events:l.events.map(e=>({min:e.min,type:e.type,text:e.text,s:e.scene?{kind:e.scene.kind,team:e.scene.team,cause:e.scene.cause,loi:e.scene.loi,score:e.scene.score}:{}}))});})()`)));
-    }
-  }
-  return matchs;
-}
-
-const matchs = jouer(N);
+// Les 288 matchs sont joués avant le premier test, six mondes en trois processus à la fois (tests/helpers/lois-completes-monde.cjs).
+let matchs = [];
+before(async () => { matchs = await jouer(N); });
 const suivant = (ev, j) => { let q = j + 1; while (q < ev.length && BRUIT.has(ev[q].type)) q++; return ev[q] || null; };
 const scoreAvant = (ev, j) => { for (let q = j - 1; q >= 0; q--) if (ev[q].s.score) return ev[q].s.score; return [0, 0]; };
 
