@@ -479,6 +479,8 @@ func _lire(delta: float, reel: float) -> void:
 			# Tir au but : le buteur s'élance vers le ballon (même image, aucun nouveau fait).
 			_elan = true
 			var elan := ApresEssai.elan(plan.scene, ApresEssai.FRAPPE)
+			# Transformation (loi 8) : les défenseurs chargent dès que le buteur s'élance.
+			if str(plan.get("kind", "")) == "transformation": elan = ApresEssai.charge(elan)
 			elan.key = str(plan.scene.get("key", "")) + ":pret"
 			stage.apply_frame(_image(elan, false, int(plan.index) - 1))
 		if temps >= float(PRET.get(str(plan.get("kind", "")), 0.0)): _jouer(plan)

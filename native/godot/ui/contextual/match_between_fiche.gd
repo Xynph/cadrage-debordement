@@ -10,6 +10,7 @@ static func etat_du_fait(kind: String, camp: int, x: float, equipes: Array) -> S
 	if camp in [0, 1] and camp < equipes.size() and equipes[camp] is Dictionary: club = S.G.club_name(equipes[camp])
 	if ETATS_ARRET.has(kind):
 		var modele := str(ETATS_ARRET[kind])
+		if not "%s" in modele: return modele
 		return modele % club if not club.is_empty() else modele.replace(" — %s", "").replace(" pour %s", "")
 	if club.is_empty(): return "Le match"
 	var texte := "%s a le ballon" % club
