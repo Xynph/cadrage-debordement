@@ -254,6 +254,8 @@ function fabrique(){
     }
     continue;
    }
+   // Drop réussi (fait du journal sans geste) : 3 points pour le botteur.
+   if(kind==='message'&&e.type==='goal'&&team!==null&&acteur){acteur.j.points+=3;continue}
    if((kind==='goal'||kind==='miss')&&team!==null&&acteur){
     acteur.j.penalitesTentees++;buteur[team]=acteur.id;
     if(kind==='goal'){acteur.j.penalitesReussies++;acteur.j.points+=3}

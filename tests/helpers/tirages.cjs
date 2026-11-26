@@ -31,7 +31,9 @@ const balayage = n => Array.from({ length: n }, (_, i) => (i + 0.5) / n);
 // pas des seuils : elles valent pour tout taux de course ou de finition du moteur.
 function courseReussie(run, side, { finit = null, live = 'l' } = {}) {
   const coup = run(`(tacticalRules(${live})||effectiveAttack(${live},${side})==='occupation')`);
-  return [HAUT, ...(coup ? [HAUT] : []), BAS, ...(finit === null ? [] : finit ? [BAS, 0.5] : [HAUT])];
+  // Drop à portée (lois manquantes, dist/restarts.js) : un tirage de plus, haut = pas de drop.
+  const drop = run(`typeof dropPossible==='function'&&dropPossible(${live},${side})`);
+  return [HAUT, ...(drop ? [HAUT] : []), ...(coup ? [HAUT] : []), BAS, ...(finit === null ? [] : finit ? [BAS, 0.5] : [HAUT])];
 }
 
 // Photographie de la rencontre en cours (S.live) pour rejouer plusieurs tirages à partir du même état.

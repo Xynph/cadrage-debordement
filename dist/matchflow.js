@@ -32,12 +32,13 @@ function returnAdvantage(l,silent=false){
  const a=l.flow.advantage;if(!a)return false;
  l.flow.advantage=null;if(!silent)addEvent(l,`Aucun avantage obtenu : retour à ${a.kind==='penalty'?'la pénalité':'la mêlée'} pour ${S.clubs[l.pair[a.team]].abbr}.`,'advantage',{team:a.team,to:{x:a.at,y:35}});
  ballPossession(l,a.team,a.at);l.flow.resolvingAward=true;
- try{if(a.kind==='penalty')executePenaltyChoice(l,a.team);else grantSetPiece(l,'scrum',a.team,a.at,'knock-on',a.offender,a.at)}finally{l.flow.resolvingAward=false}
+ try{if(a.kind==='penalty')executePenaltyChoice(l,a.team);else grantSetPiece(l,'scrum',a.team,a.at,a.cause==='forward-pass'?'forward-pass':'knock-on',a.offender,a.at)}finally{l.flow.resolvingAward=false}
  return true;
 }
 // `narrate` : récit de la faute, écrit juste avant l'avantage (ou son retour) et seulement si l'arbitre laisse jouer,
 // pour que le joueur lise d'abord la faute puis l'avantage. Aucun tirage.
-function offerAdvantage(l,kind,team,offender,at,{force=false,unsafe=false,narrate=null,silent=false}={}){
+// `passe` : passe en avant (loi 11), même avantage qu'un en-avant, nommé comme tel ; la mêlée rendue garde sa cause.
+function offerAdvantage(l,kind,team,offender,at,{force=false,unsafe=false,narrate=null,silent=false,passe=false}={}){
  if(!flowRules(l)||l.flow.resolvingAward)return false;
  const prior=l.flow.advantage;
  if(prior){
@@ -50,14 +51,14 @@ function offerAdvantage(l,kind,team,offender,at,{force=false,unsafe=false,narrat
   }
   // En-avant de l'adversaire pendant son propre avantage (chandelle relâchée…) : la faute racontée est suivie de l'avantage,
   // comme au premier en-avant. Aucun tirage, l'avantage en cours ne change pas.
-  if(kind==='scrum'&&narrate&&!silent)addEvent(l,`Avantage sur en-avant pour ${S.clubs[l.pair[team]].abbr}${prior.kind==='penalty'?' : la pénalité reste à jouer':''}.`,'advantage');
+  if(kind==='scrum'&&narrate&&!silent)addEvent(l,`Avantage sur ${passe?'passe en avant':'en-avant'} pour ${S.clubs[l.pair[team]].abbr}${prior.kind==='penalty'?' : la pénalité reste à jouer':''}.`,'advantage');
   if(unsafe)returnAdvantage(l);else ballPossession(l,team,at);
   return true;
  }
  if(unsafe||!force&&Math.random()>.55)return false;
- l.flow.advantage={kind,team,offender,at,started:l.minute,phases:0};
+ l.flow.advantage={kind,team,offender,at,started:l.minute,phases:0,...(passe?{cause:'forward-pass'}:{})};
  if(narrate)narrate();
- ballPossession(l,team,at);addEvent(l,`Avantage ${kind==='penalty'?'sur pénalité':'sur en-avant'} pour ${S.clubs[l.pair[team]].abbr}.`,'advantage');return true;
+ ballPossession(l,team,at);addEvent(l,`Avantage ${kind==='penalty'?'sur pénalité':passe?'sur passe en avant':'sur en-avant'} pour ${S.clubs[l.pair[team]].abbr}.`,'advantage');return true;
 }
 function settleAdvantage(l){
  const a=l.flow.advantage;if(!a||l.finished||l.flow.atBreak)return;
@@ -71,7 +72,7 @@ function flowBeforeRestart(l,kind,cause,at){
  if(l.flow.advantage&&!l.flow.resolvingAward){
   if(advantageReal(l,at))clearAdvantage(l);else{returnAdvantage(l);return false}
  }
- if(l.minute>=periodBoundary(l)&&!(l.flow.resolvingAward&&kind==='scrum'&&cause==='knock-on')&&cause!=='penalty-touch'&&cause!=='penalty-scrum'&&!['start','second-half'].includes(cause)){endFlowPeriod(l);return false}
+ if(l.minute>=periodBoundary(l)&&!(l.flow.resolvingAward&&kind==='scrum'&&(cause==='knock-on'||cause==='forward-pass'))&&cause!=='penalty-touch'&&cause!=='penalty-scrum'&&!['start','second-half'].includes(cause)){endFlowPeriod(l);return false}
  l.flow.ballDead=false;return true;
 }
 function flowScored(l,side){
