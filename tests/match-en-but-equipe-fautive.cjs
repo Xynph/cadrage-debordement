@@ -1,12 +1,12 @@
 'use strict';
 // Faits d'en-but (en-avant de l'attaque, porteur tenu, coup de pied aplati par la défense) : le texte nomme toujours
 // l'équipe fautive (journal, bandeau des temps forts 3D et écran intermédiaire 2D lisent ce même texte). Matchs joués par le
-// vrai moteur (carrière Monde, comme tests/match-temps-forts-pied.cjs), puis projection `live.direct` du pont natif.
+// vrai moteur (carrière Monde, comme tests/match-temps-forts-pied.cjs), puis plans des temps forts choisis par la sélection
+// du direct (match-highlights.cjs `en_direct`). La projection complète par le pont natif (plans et déroulé 2D) est vérifiée,
+// avec la légende du bandeau 3D, par tests/godot-match-en-but-libelles.cjs (préparation de carrière trop lente pour ce fichier).
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { worldYouth } = require('./helpers/youth-world-harness.cjs');
-const { ouvrir, creer, jusquAuMatch } = require('./helpers/carriere-monde.cjs');
-const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
 const selection = require('../native/engine/match-highlights.cjs');
 
 const NOMBRE = Number(process.env.CD_EN_BUT_MATCHS) || 60;
@@ -26,10 +26,13 @@ function simuler(nombre) {
   return matchs;
 }
 
+let matchs = null;
+const jouer = () => matchs || (matchs = simuler(NOMBRE));
+
 test('Chaque fait d’en-but nomme l’équipe fautive (vrais matchs du moteur)', { timeout: 1800000 }, () => {
   const vus = { 'held-up': 0, 'ingoal-knock-on': 0, 'attacking-kick-grounded': 0 };
   const manques = [];
-  for (const m of simuler(NOMBRE)) {
+  for (const m of jouer()) {
     for (const e of m.events) {
       const s = e.scene;
       if (!s || s.kind !== 'ingoal' || !CAUSES.includes(s.cause)) continue;
@@ -44,51 +47,19 @@ test('Chaque fait d’en-but nomme l’équipe fautive (vrais matchs du moteur)'
   assert.deepEqual(manques.slice(0, 5), [], `${manques.length} faits d’en-but sans nom d’équipe`);
 });
 
-test('Le bandeau des temps forts (projection du pont) nomme l’équipe fautive', { timeout: 170000 }, () => {
-  // Carrière du film (scripts/match-filme.ps1 : club 102, cadence hebdomadaire) préparée une fois, arrêtée au coup d'envoi ; le
-  // match est rejoué avec des graines successives (import de la même carrière, même match de base, aléas différents) jusqu'à
-  // en trouver une où le vrai moteur projette au moins deux plans d'en-but (porteur tenu, coup de pied aplati, en-avant) dans
-  // les temps forts « dynamique » : la simulation s'arrête alors. Aucune graine n'est imposée : le verdict ne dépend que de
-  // la légende de ces plans. Borne de temps de 90 s (limite de 180 s des suites en CI), sinon échec listant les graines vues.
-  const debut = Date.now(), BORNE = 90000, MINUTES = 45;
-  const options = { hebdomadaire: true, leanModel: true, deferredCommits: true, journal: true, savePolicy: 'mois' };
-  const base = ouvrir({ seed: 1, hebdomadaire: true });
-  let texte;
-  try {
-    let model = jusquAuMatch(base, creer(base, 102));
-    if (!model.selection.valid) model = base.call('auto_lineup');
-    if (!model.selection.valid) model = base.call('promote_cover', { confirmed: true });
-    base.call('begin_match');
-    texte = base.call('export').meta.exportText;
-  } finally { base.fermer(); }
-  const essais = [];
-  let plans = null;
-  for (let graine = 11; !plans && Date.now() - debut < BORNE; graine++) {
-    const jeu = ouvrir({ seed: graine, ...options });
-    const vus = [], manques = [];
-    try {
-      jeu.call('import', { text: texte });
-      let model = skipMatchTalk(jeu.call('begin_match'), jeu.call);
-      const lire = live => {
-        for (const p of live.direct?.tempsFort?.plans || []) {
-          const fait = live.events[p.index]?.scene;
-          if (fait?.kind !== 'ingoal' || !CAUSES.includes(fait.cause) || vus.includes(p.index)) continue;
-          vus.push(p.index);
-          const abbr = String(live.teams[fait.team]?.abbr || '');
-          // Le bandeau dit l'équipe : le sigle de son club figure dans la légende du plan.
-          if (!abbr || !p.texte.includes(abbr)) manques.push(`${fait.cause} équipe ${fait.team} (${abbr}) : ${p.texte}`);
-        }
-      };
-      for (let ticks = 0; ticks < 120 && !model.live.finished && model.live.minute < MINUTES && vus.length < 2 && Date.now() - debut < BORNE; ticks++) {
-        model = skipMatchTalk(model, jeu.call);
-        if (model.live.paused) model = jeu.call('pause', { paused: false });
-        model = jeu.call('tick', { minute: true, temps_forts: 'dynamique' });
-        lire(model.live);
-      }
-    } finally { jeu.fermer(); }
-    essais.push(`${graine} : ${vus.length} plan(s)`);
-    if (vus.length >= 2) plans = { vus, manques, graine };
+test('Les plans d’en-but des temps forts nomment l’équipe fautive (sélection du direct sur de vrais matchs)', { timeout: 170000 }, () => {
+  // Plans réellement retenus par la sélection en niveau « dynamique » (le bandeau 3D en reprend le texte du fait).
+  const manques = [];
+  let plans = 0;
+  for (const m of jouer()) {
+    const bilan = selection.en_direct(m.events, { niveau: 'dynamique' });
+    for (const h of bilan.tempsForts) for (const p of h.plans) {
+      const s = m.events[p.i]?.scene;
+      if (s?.kind !== 'ingoal' || !CAUSES.includes(s.cause)) continue;
+      plans++;
+      if (!m.events[p.i].text.includes(m.abbr[s.team])) manques.push(`${s.cause} (${m.abbr[s.team]}) : ${m.events[p.i].text}`);
+    }
   }
-  assert.ok(plans, `aucune graine ne projette deux plans d’en-but en ${MINUTES} minutes (${essais.join(' ; ')})`);
-  assert.deepEqual(plans.manques, [], `graine ${plans.graine} : ${plans.manques.length} légendes d’en-but sans nom d’équipe sur ${plans.vus.length}`);
+  assert.ok(plans >= 5, `assez de plans d’en-but retenus (${plans})`);
+  assert.deepEqual(manques.slice(0, 5), [], `${manques.length} plans d’en-but sans nom d’équipe sur ${plans}`);
 });

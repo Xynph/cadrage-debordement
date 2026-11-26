@@ -20,7 +20,7 @@ func check(ok: bool, message: String) -> void:
 
 func run() -> void:
 	var lu: Variant = JSON.parse_string(FileAccess.get_file_as_string(OS.get_environment("CD_EN_BUT_FAITS")))
-	check(lu is Array and (lu as Array).size() >= 2, "faits d'en-but du moteur lus")
+	check(lu is Array and (lu as Array).size() >= 4, "faits d'en-but du moteur lus")
 	for f: Dictionary in lu:
 		var equipes: Array = f.equipes
 		var camp := int(f.fait.team)

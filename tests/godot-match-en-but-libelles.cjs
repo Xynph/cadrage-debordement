@@ -11,13 +11,15 @@ const { ouvrir, creer, jusquAuMatch } = require('./helpers/carriere-monde.cjs');
 const { skipMatchTalk } = require('./helpers/scene-match-talks.cjs');
 
 const CAUSES = ['held-up', 'ingoal-knock-on', 'attacking-kick-grounded'];
-const faits = [];
+const faits = [], legendes = [];
 // Carrière du film (scripts/match-filme.ps1 : club 102, cadence hebdomadaire) préparée une fois, arrêtée au coup d'envoi ; le
 // match est rejoué avec des graines successives (import de la même carrière, aléas différents) par le vrai moteur, jusqu'à avoir
-// assez de plans ET de déroulés 2D d'en-but réels (au moins 3 de chaque, au moins 2 causes différentes). Aucune graine n'est
-// imposée. Borne de temps de 120 s pour cette partie, sinon échec listant les graines vues.
-const debut = Date.now(), BORNE = 120000, MINUTES = 80;
-const suffisant = () => faits.filter(f => f.source === 'plan').length >= 3 && faits.filter(f => f.source === 'deroule').length >= 3 && new Set(faits.map(f => f.fait.cause)).size >= 2;
+// assez de plans ET de déroulés 2D d'en-but réels (au moins 2 de chaque, d'au moins 2 causes différentes : le libellé se choisit par
+// cause, avec le même code pour un plan et pour un déroulé ; deux de chaque sur deux causes exercent donc les deux chemins et deux
+// causes, plus n'ajouterait que des répétitions). Aucune graine imposée. Borne de 200 s pour cette partie (suites Godot : 300 s
+// en CI, ci/run-godot-suites.sh), sinon échec listant les graines vues ; chaque rejeu s'arrête dès que les faits voulus sont vus.
+const debut = Date.now(), BORNE = 200000, MINUTES = 80;
+const suffisant = () => faits.filter(f => f.source === 'plan').length >= 2 && faits.filter(f => f.source === 'deroule').length >= 2 && new Set(faits.map(f => f.fait.cause)).size >= 2;
 const base = ouvrir({ seed: 1, hebdomadaire: true });
 let texte;
 try {
@@ -40,6 +42,9 @@ for (let graine = 11; !suffisant() && Date.now() - debut < BORNE; graine++) {
         const fait = live.events[p.index]?.scene;
         if (fait?.kind !== 'ingoal' || !CAUSES.includes(fait.cause) || vus.has('p' + p.index)) continue;
         vus.add('p' + p.index);
+        // Bandeau 3D (légende du plan, projection du direct) : le sigle de l'équipe qui attaque y figure.
+        const abbr = String(equipes[fait.team]?.abbr || '');
+        if (!abbr || !p.texte.includes(abbr)) legendes.push(`${fait.cause} équipe ${fait.team} (${abbr}) : ${p.texte}`);
         faits.push({ source: 'plan', graine, index: p.index, equipes, plan: p, fait: { kind: fait.kind, cause: fait.cause, team: fait.team }, texte: live.events[p.index].text });
       }
       for (const d of live.direct?.deroule || []) {
@@ -59,6 +64,7 @@ for (let graine = 11; !suffisant() && Date.now() - debut < BORNE; graine++) {
   essais.push(`${graine} : ${faits.length - avant} fait(s)`);
 }
 assert.ok(suffisant(), `faits d'en-but réels insuffisants (${faits.filter(f => f.source === 'plan').length} plans, ${faits.filter(f => f.source === 'deroule').length} déroulés) ; graines vues : ${essais.join(' ; ')}`);
+assert.deepEqual(legendes, [], 'légendes du bandeau 3D sans nom d’équipe');
 const dossier = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-en-but-libelles-'));
 fs.writeFileSync(path.join(dossier, 'faits.json'), JSON.stringify(faits));
 const result = spawnSync(godot, ['--headless', '--audio-driver', 'Dummy', '--path', path.resolve(__dirname, '../native/godot'), '--script', path.resolve(__dirname, 'godot-match-en-but-libelles.gd')],
