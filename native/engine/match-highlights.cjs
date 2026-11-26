@@ -679,9 +679,10 @@ function en_direct_importance(events,options={}){
    membres.push({type:l.kind==='try'?'essai':'carton_rouge',score:100,force:true});
   }
   // 50 s au plus par temps fort (suites comprises) : la fin recule jusqu'au dernier plan qui tient,
-  // sans jamais couper un essai ou un carton rouge déjà retenus.
+  // sans jamais couper un essai ou un carton rouge déjà retenus (y compris dans une suite d'action ou une fenêtre ouverte par
+  // un autre fait : le filet ci-dessus ne les rattrape pas, puisqu'ils sont déjà couverts).
   if(debut>=0){
-   const deja=suite?etat.dureeEpisode:0,garde=membres.some(m=>m.force)?Math.max(...[...Array(fin-debut+1).keys()].map(k=>debut+k).filter(k=>lignes[k].kind==='try'||lignes[k].kind==='card'&&lignes[k].incident&&lignes[k].cause==='red')):-1;
+   const deja=suite?etat.dureeEpisode:0,garde=Math.max(-1,...[...Array(fin-debut+1).keys()].map(k=>debut+k).filter(k=>lignes[k].kind==='try'||lignes[k].kind==='card'&&lignes[k].incident&&lignes[k].cause==='red'));
    while(fin>Math.max(debut,garde)&&deja+decrire(lignes,debut,fin,membres.length?membres:[{type:'jeu',score:0}],false,suite).duree>DUREE_MAX)fin--;
    if(garde<0&&deja+decrire(lignes,debut,fin,membres.length?membres:[{type:'jeu',score:0}],false,suite).duree>DUREE_MAX){debut=-1;fin=-1}
   }

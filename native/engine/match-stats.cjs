@@ -45,7 +45,7 @@ function fabrique(){
  // Calibrage (validé sur 120 matchs : tests/match-stats-realistes.cjs, tableau de la doc).
  const REGLAGES=Object.freeze({
   coursesParMinute:2.95,     // courses non racontées des deux équipes par minute pleinement jouée
-  piedsParMinute:.62,        // coups de pied courants des deux équipes par minute
+  piedsParMinute:.42,        // coups de pied courants des deux équipes par minute (hors coups de pied du journal : .62 avant le jeu au pied réaliste)
   cassure:.036,            // part des courses non racontées qui percent la ligne (franchissement, 22 à 40 m)
   gain:.8,                 // échelle des mètres d'une course ordinaire
   manque:.13,               // part des courses avec un plaquage manqué (défense équilibrée)
@@ -294,6 +294,11 @@ function fabrique(){
     continue;
    }
    if(kind==='kick'&&team!==null&&acteur){
+    acteur.j.coupsDePied++;acteur.j.metresAuPied+=Number.isFinite(s.from?.x)&&Number.isFinite(s.to?.x)?Math.abs(s.to.x-s.from.x):25;
+    continue;
+   }
+   // Touche au pied du jeu courant (dégagement, touche trouvée, 50:22) : le botteur est nommé par le moteur.
+   if(kind==='touch'&&['direct-touch','indirect-touch','50-22'].includes(s.cause)&&team!==null&&acteur){
     acteur.j.coupsDePied++;acteur.j.metresAuPied+=Number.isFinite(s.from?.x)&&Number.isFinite(s.to?.x)?Math.abs(s.to.x-s.from.x):25;
     continue;
    }

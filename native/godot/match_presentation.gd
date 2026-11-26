@@ -28,6 +28,9 @@ static func carrier_id(scene: Dictionary) -> String:
 				if int(player.get("side", -1)) == camp and int(player.get("slot", -1)) == slot:
 					return str(player.get("id", ""))
 		return ""
+	# Coup de pied de jeu : le joueur nommé au point de chute reçoit le ballon dans les mains.
+	if kind == "kick":
+		return str(scene.get("receiver", ""))
 	if kind not in ["carry", "reception", "turnover", "setpiece-win", "setpiece-loss", "quick-tap"]:
 		return ""
 	for player: Dictionary in scene.get("players", []):
