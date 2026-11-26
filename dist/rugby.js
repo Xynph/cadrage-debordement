@@ -180,31 +180,39 @@ const ECART_CHAMPIONNAT=Object.freeze({elite:Object.freeze({seuil:3,pente:.15}),
 function levelGapChampionnat(gap,competitionId,mode){const c=ECART_CHAMPIONNAT[competitionId];if(!c)return gap;const g=gap*((mode==='rapide'?c.rapide:c.facteur)??1),a=Math.abs(g);return c.seuil!=null&&a>c.seuil?Math.sign(g)*(c.seuil+(a-c.seuil)*c.pente):g}
 // Niveau au poste (lot K2, 26/11/2026, docs/niveau-au-poste-20261126.md) : dans chaque phase, le niveau qui compte est
 // surtout celui des postes qui la jouent. Poids par joueur selon la famille du poste (0 pilier, 1 talonneur, 2 deuxième
-// ligne, 3 troisième ligne, 4 demi de mêlée, 5 ouvreur, 6 ailier, 7 centre, 8 arrière). Écart de phase = écart uniforme
-// (chaque joueur 1/15, comme avant) + accent × (écart pondéré − écart uniforme) : une équipe homogène garde exactement
-// son écart (courbe favori/outsider inchangée en moyenne) ; un titulaire faible pèse davantage dans les phases de son
-// poste et moins dans les autres. Aucun tirage ajouté. NIVEAU_POSTE_RULES=0 : ancien moteur (WIP : désactivé tant que le calage n’est pas refait, voir k2-etat).
-let NIVEAU_POSTE_RULES=0;
+// ligne, 3 troisième ligne, 4 demi de mêlée, 5 ouvreur, 6 ailier, 7 centre, 8 arrière).
+// Neutre en moyenne : chaque titulaire est comparé à la norme de son poste dans le Monde (écart moyen d'un titulaire de
+// ce poste à la moyenne de son XV, mesuré sur les 116 clubs, temp k2/normes.cjs), et seul l'excès au-delà d'une marge
+// (SEUIL, ~1,2 écart type) compte : une équipe de structure ordinaire n'a aucun effet, un joueur nettement plus faible
+// (ou plus fort) que la norme de son poste pèse dans la phase de son poste. Jeu courant (percée, finition) : effet direct
+// sur la probabilité de la phase (hors compression de levelGapChampionnat) ; conquête : qualité Mêlée / Touche de l'unité.
+// Aucun tirage ajouté. NIVEAU_POSTE_RULES=0 : ancien moteur.
+let NIVEAU_POSTE_RULES=1;
 var NIVEAU_POSTE={
+ // Marge sans effet (≈ 1,2 écart type de chaque mesure dans le Monde).
+ seuil:{niveau:5,scrum:8,lineout:7},
+ // Norme du Monde par famille (titulaire − moyenne du XV) : niveau de match, qualité Mêlée, qualité Touche.
+ norme:{niveau:[-3.4,2,1,0,-.5,-.9,.8,1.1,.2],scrum:[27.3,31.8,15.3],lineout:[0,24,26.6]},
  // Course ballon en main : 3e ligne (soutien et grattage au ruck), centres, demis ; défense : 3e ligne et centres.
- percee:{accent:2,attaque:[.5,.5,.7,1.6,1.2,1.2,1,1.4,1],defense:[.6,.6,1,1.6,.9,.9,1,1.4,1]},
+ percee:{parPoint:.015,attaque:[.5,.5,.7,1.6,1.2,1.2,1,1.4,1],defense:[.6,.6,1,1.6,.9,.9,1,1.4,1]},
  // Dernière passe et finition dans les 22 : ailiers, arrière, centres ; défense : ailiers, arrière, centres.
- finition:{accent:2,attaque:[.4,.4,.5,1,1,1,2.5,1.5,1.8],defense:[.5,.5,.6,1.2,.8,.8,1.8,1.5,2]},
+ finition:{parPoint:.035,attaque:[.4,.4,.5,1,1,1,2.5,1.5,1.8],defense:[.5,.5,.6,1.2,.8,.8,1.8,1.5,2]},
  // Mêlée (qualité « Mêlée ») : piliers d'abord, talonneur, deuxième ligne pour la poussée.
- melee:{accent:2.5,poids:[3.5,2,.5]},
- // Touche (qualité « Touche ») : talonneur au lancer, deuxième ligne et troisième ligne au saut.
- touche:{accent:2,poids:[0,2,1.5,.7]}
+ melee:{accent:1.6,poids:[3.5,1.2,.5]},
+ // Touche (qualité « Touche ») : talonneur au lancer, deuxième ligne au saut.
+ touche:{accent:.7,poids:[0,2,1.5]}
 };
 function posteRules(l){return !!NIVEAU_POSTE_RULES&&essaisRules(l)}
-function moyennePoste(players,poids,val){let s=0,w=0;for(const p of players){const x=p?poids[p.fam]||0:0;if(x>0){s+=x*val(p);w+=x}}return w?s/w:null}
-function niveauForme(p){const c=MATCH_LEVEL_CURVE.forme;return niveauMatch(p)*(c[0]+clamp(Number(p.condition)||80,0,100)*c[1])}
-// Part « poste » de l'écart de niveau d'une phase (0 pour deux équipes homogènes).
-function ecartPostePhase(a,b,P){const d=(list,w)=>{const m=moyennePoste(list,w,niveauForme);return m===null?0:m-teamLevel(list)};return P.accent*(d(a,P.attaque)-d(b,P.defense))}
-function matchLevelEdge(l,side,phase){const a=activePlayers(l,side),b=activePlayers(l,1-side);return MATCH_LEVEL_CURVE.complet.parPoint*levelGapChampionnat(teamLevel(a)-teamLevel(b)+(phase&&posteRules(l)?ecartPostePhase(a,b,NIVEAU_POSTE[phase]):0)+(Number(l.levelTrap)||0)*(side===0?1:-1),l.worldContext?.competitionId)}
-// Écart d'avantage d'une phase par rapport au niveau uniforme (0 hors niveau au poste).
-function edgePoste(l,side,phase){return posteRules(l)?matchLevelEdge(l,side,phase)-matchLevelEdge(l,side):0}
-// Qualité de conquête d'une équipe : moyenne des avants concernés, accentuée vers les postes clés (niveau au poste).
-function uniteConquete(l,side,kind){const k=kind==='scrum'?'scrum':'lineout',u=unit(l,side,k,p=>kind==='scrum'?p.fam<=2:p.fam===1||p.fam===2);if(!posteRules(l))return u;const P=NIVEAU_POSTE[kind==='scrum'?'melee':'touche'],fit=fitArrete(l),w=moyennePoste(activePlayers(l,side),P.poids,p=>skill(p,k,fit));return w===null?u:u+P.accent*(w-u)}
+function excesPoste(d,s){return d>s?d-s:d<-s?d+s:0}
+// Excès moyen pondéré d'une équipe au-delà de la norme de chaque poste (0 pour une structure ordinaire) ; q : 'niveau',
+// 'scrum' ou 'lineout' (norme et marge), ref : moyenne du XV pour la même mesure.
+function excesPhase(players,poids,q,val,ref){const N=NIVEAU_POSTE.norme[q],s0=NIVEAU_POSTE.seuil[q];let s=0,w=0;for(const p of players){const x=p?poids[p.fam]||0:0;if(x>0){s+=x*excesPoste(val(p)-ref-(N[p.fam]||0),s0);w+=x}}return w?s/w:0}
+function niveauPosteForme(p){const c=MATCH_LEVEL_CURVE.forme;return niveauMatch(p)*(c[0]+clamp(Number(p.condition)||80,0,100)*c[1])}
+function matchLevelEdge(l,side){return MATCH_LEVEL_CURVE.complet.parPoint*levelGapChampionnat(teamLevel(activePlayers(l,side))-teamLevel(activePlayers(l,1-side))+(Number(l.levelTrap)||0)*(side===0?1:-1),l.worldContext?.competitionId)}
+// Avantage d'une phase de jeu courant dû au niveau au poste (0 hors niveau au poste).
+function edgePoste(l,side,phase){if(!posteRules(l))return 0;const P=NIVEAU_POSTE[phase],a=activePlayers(l,side),b=activePlayers(l,1-side);return P.parPoint*(excesPhase(a,P.attaque,'niveau',niveauPosteForme,teamLevel(a))-excesPhase(b,P.defense,'niveau',niveauPosteForme,teamLevel(b)))}
+// Qualité de conquête d'une équipe : moyenne des avants concernés, plus l'excès des postes clés au-delà de leur norme.
+function uniteConquete(l,side,kind){const k=kind==='scrum'?'scrum':'lineout',u=unit(l,side,k,p=>kind==='scrum'?p.fam<=2:p.fam===1||p.fam===2);if(!posteRules(l))return u;const P=NIVEAU_POSTE[kind==='scrum'?'melee':'touche'],fit=fitArrete(l),xv=activePlayers(l,side),val=p=>skill(p,k,fit);return u+P.accent*excesPhase(xv,P.poids,k,val,mean(xv.map(val)))}
 function teamEdge(l,side,kind){const opp=1-side,t=l.tactics[side],weather=l.weather;const on=activePlayers(l,side);const attack=unit(l,side,'pass')*.4+unit(l,side,'speed')*.35+unit(l,side,'power')*.25;const defense=unit(l,opp,'tackle')*.72+unit(l,opp,'mental')*.28;let b=(tacticalRules(l)?tacticalEdge(l,side):(attack-defense)*(l.balanceVersion===2?.004:.009))+(on.length-activePlayers(l,opp).length)*.055;
 // V19: wider attack exposes an outnumbered backline; possession sides with extra players can exploit width.
 if(l.advantageModel===2&&kind==='attack'&&t==='large')b+=(on.length-activePlayers(l,opp).length)*.018;
