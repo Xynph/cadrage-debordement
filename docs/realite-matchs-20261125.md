@@ -57,7 +57,9 @@ fréquents) et laisse trop peu de matchs serrés (bonus défensifs rares).
 - `ECART_CHAMPIONNAT` : `facteur` multiplie l'écart de niveau au moteur complet, `rapide` au résultat rapide (avant
   la compression du Top 14, inchangée). Le moteur complet ne laisse régler qu'une partie de la pente (les duels de
   qualités départagent déjà ; banc : pente ≈ 0,14 + 0,07 × facteur), d'où des facteurs plus forts qu'au rapide :
-  Pro D2 0,55 / 0,84, Premiership 1,3 / 1,19, URC 2,3 / 1,4, Super Rugby 3,5 / 1,89, Japon 2,3 / 1,46.
+  Pro D2 0,55 / 0,84, Premiership 1,3 / 1,19, URC 2 / 1,5 (2,3 / 1,4 avant le jeu au pied réaliste du 26/11 : pente du
+  complet 0,31 contre 0,26 au rapide en moyenne sur 6 graines, à la limite de tests/match-rating-curve.cjs ; après : ~0,27 / ~0,28),
+  Super Rugby 3,5 / 1,89, Japon 2,3 / 1,46.
   Les clubs de Super Rugby sont très proches en note dans la base du monde alors que le vrai championnat est très
   étagé : le facteur compense.
 - Résultat rapide du Top 14 : poids du terrain 0,63 → 0,8 (78 % à niveau égal contre 82 % au complet, réel 79 %), poids de l’écart 1 → 1,2 (même victoire à +6 que le complet).
@@ -148,3 +150,9 @@ défensif 32 / 29 / 36 / 42 / 35 / 27 % (réel 32 / 32 / 35 / 38 / 35 / 28), poi
 qui mène de 8 à 15 points à la 60e gagne 88 % du temps (100 % sans la gestion du score), à 16 points ou plus il ne perd
 jamais. Sondes au banc (300 à 400 matchs, URC et
 Top 14) : la réussite des favoris ne bouge pas (+6 : 85-86 % URC, 66-67 % Top 14).
+
+## Jeu au pied réaliste (25-26/11)
+
+Dégagements, occupation, 50:22 et renvois aux 22 m : voir [docs/jeu-au-pied-20261125.md](jeu-au-pied-20261125.md). Saisons Monde
+4242, 7 et 2026 (moyenne, avant / après / réel) : écart ≤ 7 Top 14 44,4 / 40,0 / 40 %, Premiership 40,5 / 40,5 / 36 %, URC
+39,5 / 38,4 / 41 % ; points et essais à ±1 près.

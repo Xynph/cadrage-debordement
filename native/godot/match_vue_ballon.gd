@@ -186,6 +186,9 @@ static func _update_ball(v: NativeMatchView, delta: float) -> void:
 			v._ball_attached = true
 		v._ball.global_position = anchor if v._ball_attached else v._ball_from.lerp(anchor, v._ball_travel)
 		v._ball.global_basis = entry.node.global_basis if v._ball_attached else v._ball_from_basis.slerp(entry.node.global_basis, v._ball_travel)
+		# Coup de pied capté : même arc que le coup de pied, jusque dans les mains du receveur.
+		if v._kind == "kick" and not v._ball_attached:
+			v._ball.global_position.y += sin(v._ball_travel * PI) * minf(6.0, v._ball_from.distance_to(anchor) * 0.18)
 	else:
 		v._ball_attached = false
 		v._ball.position = v._ball_from.lerp(v._ball_target, v._ball_travel)

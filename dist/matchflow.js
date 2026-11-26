@@ -48,6 +48,9 @@ function offerAdvantage(l,kind,team,offender,at,{force=false,unsafe=false,narrat
    if(prior.kind==='scrum'||further){prior.kind='penalty';prior.at=at;prior.offender=offender}
    addEvent(l,'Nouvelle faute : le bénéfice de la sanction la plus favorable est conservé.','advantage');
   }
+  // En-avant de l'adversaire pendant son propre avantage (chandelle relâchée…) : la faute racontée est suivie de l'avantage,
+  // comme au premier en-avant. Aucun tirage, l'avantage en cours ne change pas.
+  if(kind==='scrum'&&narrate&&!silent)addEvent(l,`Avantage sur en-avant pour ${S.clubs[l.pair[team]].abbr}${prior.kind==='penalty'?' : la pénalité reste à jouer':''}.`,'advantage');
   if(unsafe)returnAdvantage(l);else ballPossession(l,team,at);
   return true;
  }

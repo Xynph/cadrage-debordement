@@ -16,6 +16,61 @@ let ESSAIS_RULES=1;
 // Écart de niveau : 1 = pas d'amplification supplémentaire (la courbe de niveau commune du 14/11, matchLevelEdge, la fournit désormais).
 var ESSAIS={porte:.63,ecart:1,finition:.51,but:.6};
 function essaisRules(l){return tacticalRules(l)&&l.essaisVersion===1}
+// Jeu au pied réaliste (docs/jeu-au-pied-20261125.md), rencontres aux essais réalistes. Invariant : par zone, la possession
+// change par action à peu près autant qu'avec l'ancien moteur (sinon l'équipe qui attaque dans le camp adverse ne perd plus
+// le ballon, les points arrivent par séries et les matchs serrés deviennent rares) ; seule la forme change. L'ancien
+// « poussé en touche » à 12 % par action devient surtout un coup de pied raté ou perdu (même effet de terrain), le vrai poussé
+// en touche devient rare ; le jeu au pied choisi garde les fréquences de l'ancien moteur (×3 depuis ses 22) mais raconte
+// des dégagements en touche, des chandelles, des coups de pied longs, rasants, par-dessus ou croisés. Coefficients de jeu calés
+// sur des matchs Monde (une action couvre plusieurs temps de jeu). JEU_PIED_RULES=0 : ancien jeu au pied (comparaisons).
+// pousse : porteur poussé en touche par action (base + bord : près de son en-but ou de la ligne adverse, à moins de 10 m).
+// perdu : part de l'ancien poussé gardée par action, poussé compris ; le reste est un coup de pied raté ou perdu
+// (jeuAuPiedPerdu). perdus : formes de cette perte dans ses 22, dans son camp (touche courte, touche directe sans gain,
+// contré, rendu au milieu, chandelle trop longue, capté puis relancé) et dans le camp adverse (touche trouvée de peu, rasant
+// ou par-dessus ramassé, chandelle ou croisé captés, ballon mort dans l'en-but) ; la touche directe sans gain, rare au haut
+// niveau (0,3-0,5 par match), garde 2 % (26/11 : à 80 % dans son camp, elle faisait 4,1 touches directes par match).
+// perduMetres : terrain rendu à l'adversaire, petit comme avec le poussé, qui rendait le ballon sur place (touche courte
+// gagnant 6 à 14 m : points −1 par match, matchs serrés −2 points sur 3 600 matchs).
+// zone : probabilité de taper par action, selon la zone (ses 22, son camp, camp adverse, 22 adverses) ; style : par plan
+// (occupation : table à part, comme l'ancien moteur) ; score : à partir de la 60e (mène, mené de 16+, mené à portée).
+// types : répartition des coups de pied par zone (touche, long, chandelle, rasant = rasant ou par-dessus dans le dos, croisé).
+// touche : touche trouvée ; directe22 : touche directe depuis ses 22 ; cinquante : tentative de 50:22 depuis son camp et réussite ;
+// pluie : jeu au pied en plus par niveau de pluie (au lieu de METEO_MATCH.piedJeu, fait pour l'ancien jeu au pied rare).
+// recup : ballon repris par l'équipe qui botte (chandelle, rasant, croisé) ; enAvant : en-avant du receveur sous la chandelle ;
+// enButDefense : rasant ou par-dessus qui file vers l'en-but, couvert par la défense devant sa ligne ; croiseTouche : croisé
+// directement en touche ; longueur : facteur sur la longueur des coups de pied (dégagements comme occupation).
+// zone.own22 0,25 et longueur 0,7 (25/11) : avec 0,35 et 0,85, les dégagements gagnants depuis ses 22 changeaient la
+// possession plus souvent qu'avant (0,44 contre 0,37 par action) et creusaient l'écart moyen (+1 point) ; 3 600 matchs
+// URC / Premiership / Top 14 : matchs à 7 points ou moins +0,3 point, écart moyen +0,4 par rapport à l'ancien moteur.
+// pluie 0,3 (26/11) : sous la pluie forte, ~20 % de coups de pied en plus (tests/meteo-match.cjs : 15,6 contre 12,8 par temps sec).
+// qualite : poids de la qualité du botteur (longueur, touche trouvée, 50:22, reprises) et de la chasse sous la chandelle.
+// 0,5 (25/11) : à 1, le jeu au pied amplifiait l'écart de niveau (banc de la courbe de niveau, URC, 3 × 2 700 matchs : pente
+// 0,324 contre 0,313 avec l'ancien moteur ; 0,5 : 0,309 ; 0 : 0,307), le meilleur botteur s'ajoutant au niveau déjà compté.
+// 26/11 (8e passage) : qualite 0,3 ; plus de touches trouvées dans les dégagements de son camp (types own22/ownHalf, touche 0,85,
+// perdus touche 0,85 : touche courte plutôt que ballon rendu dans le champ) et poussé 1,2 % (le reste devient un coup de pied
+// perdu, même lancer adverse au même endroit) : 7,2 touches au pied par match en Top 14 (6,1 avant ; réel 12-18), même terrain.
+let JEU_PIED_RULES=1;
+var JEU_PIED={
+ pousse:{base:.012,bord:.02},
+ perdu:{own22:.12,ownHalf:.12,oppHalf:.12,opp22:.12},perduMetres:{camp:[2,8],adverse:[2,8],touche:[1,5],chandelle:[5,10],relance:[22,32]},
+ perdus:{own22:{touche:.85,contre:.05,court:.08,chandelle:.07},ownHalf:{touche:.85,directe:.02,contre:.04,court:.06,chandelle:.05,relance:.05},adverse:{directe:.02,touche:.28,rasant:.28,chandelle:.14,croise:.16,enBut:.12}},
+ zone:{own22:.25,ownHalf:.1,oppHalf:.025,opp22:.01},
+ style:{equilibre:1,conquete:.5,large:.75},occupation:{own22:.85,ownHalf:.65,oppHalf:.35,opp22:.08},pluie:.3,
+ score:{mene:1.2,menePlus:.5,meneMoins:.8},
+ types:{own22:{touche:.9,long:.06,chandelle:.04,rasant:0,croise:0},ownHalf:{touche:.78,long:.12,chandelle:.1,rasant:0,croise:0},oppHalf:{touche:.3,long:.15,chandelle:.15,rasant:.25,croise:.15},opp22:{touche:0,long:0,chandelle:.2,rasant:.55,croise:.25}},
+ touche:.85,directe22:.8,directeHors22:.04,cinquante:{tente:.03,reussite:.35},
+ recup:{chandelle:.28,rasant:.32,croise:.35},enAvant:.07,adverseTape:12,
+ enButDefense:.5,croiseTouche:.12,longueur:.7,qualite:.3
+};
+function jeuPiedPerdu(l,side){return jeuPiedRules(l)?Math.max(0,JEU_PIED.perdu[jeuPiedZone(l,side)]-poussEnTouche(l,side)):0}
+function jeuPiedScore(l,side,zone){
+ const J=JEU_PIED,m=Number(l.minute)||0,d=l.score?l.score[side]-l.score[1-side]:0,g=typeof GESTION_SCORE==='object'?GESTION_SCORE:{debut:60,portee:15};
+ // Fin de match (logique de la gestion du score, dist/rugby.js) : l'équipe menée à portée ne dégage pas, sauf depuis ses 22.
+ return m<g.debut||d===0?1:d>0?J.score.mene:d<-g.portee?J.score.menePlus:zone==='ownHalf'?0:J.score.meneMoins;
+}
+function jeuPiedRules(l){return !!JEU_PIED_RULES&&essaisRules(l)}
+function jeuPiedZone(l,side){const d=Math.abs(ownGoal(side)-l.territory);return d<=22?'own22':d<50?'ownHalf':d<78?'oppHalf':'opp22'}
+function poussEnTouche(l,side){if(!jeuPiedRules(l))return .12;const d=Math.abs(ownGoal(side)-l.territory);return JEU_PIED.pousse.base+(d<10||d>90?JEU_PIED.pousse.bord:0)}
 // Pénalités réalistes (docs/hierarchie-penalites-20261114.md) : rencontres créées avec `penalitesVersion`.
 // Le moteur ne sifflait qu'une faute de défenseur dans le jeu courant (~10 par match, réel ~20) : on ajoute
 // les fautes de l'attaquant au sol (`attaque`, par temps de jeu), les pénalités de mêlée (`melee`, par
@@ -124,8 +179,12 @@ function failedCarryError(l,side){const base=meteoActive(l)?METEO_MATCH.ballonPe
 function carryGain(l,side){const g=carryGainBase(l,side)+(contreEdge(l,side)>0?CONTRE.metres:0)+(l.pilotage&&typeof pilotageGain==='function'?pilotageGain(l,side):0);return meteoNiveau(l,'terrain')==='lourd'?Math.max(1,Math.round(g*METEO_MATCH.terrainLourd.gain)):g}
 function carryGainBase(l,side){if(!tacticalRules(l))return rand(12,25);const range=ATTACK_EFFECTS[effectiveAttack(l,side)].gain,d=defensivePlan(l,1-side),shift=d==='pression'?4:d==='prudente'?-4:0;return rand(Math.max(3,range[0]+shift),range[1]+shift)}
 function tacticalFinishAdjustment(l,side){return !tacticalRules(l)?0:ATTACK_EFFECTS[effectiveAttack(l,side)].finish+(defensivePlan(l,1-side)==='pression'?.04:defensivePlan(l,1-side)==='prudente'?-.055:0)}
-function openKickProbability(l,side){return clamp(openKickBase(l,side)*(1+METEO_MATCH.piedJeu.pluie*meteoNiveau(l,'pluie'))*(typeof pilotageKick==='function'&&l.pilotage?pilotageKick(l,side):1),0,.85)}
-function openKickBase(l,side){if(!tacticalRules(l))return l.tactics[side]==='occupation'?.5:0;const distance=Math.abs(attackingGoal(side)-l.territory),style=effectiveAttack(l,side);if(style==='occupation')return distance>50?.65:distance>22?.35:.08;return distance>50?(style==='conquete'?.04:style==='large'?.06:.08):distance>22?.025:.01}
+function openKickProbability(l,side){return clamp(openKickBase(l,side)*(1+(jeuPiedRules(l)?JEU_PIED.pluie:METEO_MATCH.piedJeu.pluie)*meteoNiveau(l,'pluie'))*(typeof pilotageKick==='function'&&l.pilotage?pilotageKick(l,side):1),0,.85)}
+function openKickBase(l,side){if(!tacticalRules(l))return l.tactics[side]==='occupation'?.5:0;if(jeuPiedRules(l))return jeuPiedBase(l,side);const distance=Math.abs(attackingGoal(side)-l.territory),style=effectiveAttack(l,side);if(style==='occupation')return distance>50?.65:distance>22?.35:.08;return distance>50?(style==='conquete'?.04:style==='large'?.06:.08):distance>22?.025:.01}
+function jeuPiedBase(l,side){
+ const J=JEU_PIED,zone=jeuPiedZone(l,side),style=effectiveAttack(l,side);
+ return (style==='occupation'?J.occupation[zone]:J.zone[zone]*(J.style[style]??1))*jeuPiedScore(l,side,zone);
+}
 function tacticalLoad(l,side){if(!tacticalRules(l))return l.tactics[side]==='large'?.49:l.tactics[side]==='conquete'?.44:.39;return l.possession===side?ATTACK_EFFECTS[effectiveAttack(l,side)].load:defensivePlan(l,side)==='pression'?.53:defensivePlan(l,side)==='prudente'?.31:.37}
 function tacticalCount(l,side,key,n=1){if(tacticalRules(l))l.tacticalStats[side][key]+=n}
 // V63: l'IA observe les courses adverses et ses erreurs, sans anticiper les tirages futurs.
@@ -596,7 +655,7 @@ function opponentAttackDecision(l,side){
  else if(margin<=-7&&remaining<=22&&fitness>=68&&speed+pass>power*1.65){plan='large';reason='tenter des espaces avant la fin';}
  else if(margin>=7&&remaining<=24){plan='occupation';reason='protéger le terrain et limiter le risque';}
  else if(attempts>=6&&advances/attempts<.35){plan=power>=pass?'conquete':'large';reason='corriger un manque de progression';}
- else if(other?.kicks>=5&&power>pass+7){plan='conquete';reason='reprendre la maîtrise au près';}
+ else if(other?.kicks>=(jeuPiedRules(l)?JEU_PIED.adverseTape:5)&&power>pass+7){plan='conquete';reason='reprendre la maîtrise au près';}
  return {plan,reason,remaining,margin,fitness};
 }
 function adaptOpponentAttack(l,side){

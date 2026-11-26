@@ -17,8 +17,10 @@ const setup = () => shared.restore(base);
 // mènent ou courent après le score avec la consigne « prendre les points », qui tire de plus loin en fin de match (réussite
 // 73,5 % au lieu de 74,7 % après la 70e). Ce choix de distance n'est pas de la fatigue et faussait la comparaison.
 const SIMULER = `var simuler=(n,regles)=>{const fx=CDWorldCareer.fixtures(S).filter(f=>f.homeId!==S.club&&f.awayId!==S.club),rng=Math.random,avant=SET_PIECE_FATIGUE_RULES,gc=goalChance;
- const b=Array.from({length:9},()=>({n:0,p:0,ref:0,ok:0,cond:0,but:0})),acc={b,touches:0,touchesGagnees:0,points:0,matchs:0,signature:[]};let cur=null;
- goalChance=function(l,side){const p=gc.apply(this,arguments);if((l.penaltyPolicies?.[side]||'auto')!=='auto')return p;const k=chooseScorer(S.clubs[l.pair[side]],activePlayers(l,side).map(x=>x.id),l),i=Math.min(8,Math.floor(l.minute/10)),c=b[i];cur={i,p};c.n++;c.p+=p;c.ref+=goalChanceEstimate(l,side,35,35);c.cond+=k.condition;c.but+=skill(k,'goal',fitArrete(l));return p};
+ const b=Array.from({length:9},()=>({n:0,p:0,ref:0,frais:0,ok:0,cond:0,but:0})),acc={b,touches:0,touchesGagnees:0,points:0,matchs:0,signature:[]};let cur=null;
+ goalChance=function(l,side){const p=gc.apply(this,arguments);if((l.penaltyPolicies?.[side]||'auto')!=='auto')return p;const k=chooseScorer(S.clubs[l.pair[side]],activePlayers(l,side).map(x=>x.id),l),i=Math.min(8,Math.floor(l.minute/10)),c=b[i];cur={i,p};c.n++;c.p+=p;c.ref+=goalChanceEstimate(l,side,35,35);
+  const gk=goalKicker(l,side),c0=gk.condition;gk.condition=100;c.frais+=goalChanceEstimate(l,side,35,35);gk.condition=c0;
+  c.cond+=k.condition;c.but+=skill(k,'goal',fitArrete(l));return p};
  SET_PIECE_FATIGUE_RULES=regles;
  try{for(let k=0;k<n;k++){const f=fx[k%fx.length];let x=(k*2654435761+1)>>>0;
   Math.random=()=>{x=(Math.imul(x,1664525)+1013904223)>>>0;const r=x/4294967296;if(cur){if(r<cur.p)b[cur.i].ok++;cur=null}return r};
@@ -31,12 +33,19 @@ const SIMULER = `var simuler=(n,regles)=>{const fx=CDWorldCareer.fixtures(S).fil
  finally{Math.random=rng;goalChance=gc;SET_PIECE_FATIGUE_RULES=avant}
  return acc};`;
 const simuler = (h, n, regles) => JSON.parse(h.run(SIMULER + `JSON.stringify(simuler(${n},${regles}))`));
-const tranches = a => a.b.map((c, i) => ({tranche: `${i * 10}-${i * 10 + 9}`, tentatives: c.n, reussite: +(100 * c.ok / c.n).toFixed(1), probabilite: +(100 * c.p / c.n).toFixed(1), reference: +(100 * c.ref / c.n).toFixed(1), condition: +(c.cond / c.n).toFixed(1), but: +(c.but / c.n).toFixed(1)}));
+const tranches = a => a.b.map((c, i) => ({tranche: `${i * 10}-${i * 10 + 9}`, tentatives: c.n, reussite: +(100 * c.ok / c.n).toFixed(1), probabilite: +(100 * c.p / c.n).toFixed(1), reference: +(100 * c.ref / c.n).toFixed(1), perteFatigue: +(100 * (c.frais - c.ref) / c.n).toFixed(2), condition: +(c.cond / c.n).toFixed(1), but: +(c.but / c.n).toFixed(1)}));
 // Probabilité moyenne de réussite du buteur en jeu sur un tir de référence (pénalité face aux poteaux à 35 m : fatigue,
 // mental et météo, sans le mélange des tirs) sur un groupe de tranches. Depuis la réussite au but recalée
 // (docs/penalites-au-but-20261123.md), distance et angle pèsent nettement : la probabilité des tirs réels baisse de ~3 points
 // après la 60e parce que les tirs y sont un peu plus longs et moins souvent des transformations, pas par fatigue.
-const proba = (a, ids) => {const c = ids.map(i => a.b[i]); return 100 * c.reduce((s, x) => s + x.ref, 0) / c.reduce((s, x) => s + x.n, 0)};
+// Depuis le jeu au pied réaliste (docs/jeu-au-pied-20261125.md), la moyenne brute de ce tir dépendait surtout du buteur présent :
+// près d'une fois sur deux, le meilleur buteur d'une feuille IA est remplaçant et entre après la 50e, et les équipes qui tapent
+// le plus (meilleurs botteurs) rendent le ballon et tirent un peu moins tôt dans le match. Compétence au but nue du buteur, 0-19
+// contre 60-89 : 70,8 → 72,0 avant, 69,4 → 72,2 après (+2,8 points sans aucun rapport avec la fatigue), pour une perte de
+// fatigue identique (0,56 → 1,72 avant, 0,54 → 1,76 après). On mesure donc la perte due à la fatigue sur ce même tir, pour le
+// même buteur : probabilité s'il était à condition 100, moins sa probabilité réelle. Plus exigeant sur la fatigue : un meilleur
+// buteur entré en fin de match ne masque plus une perte de fatigue.
+const proba = (a, ids) => {const c = ids.map(i => a.b[i]); return -100 * c.reduce((s, x) => s + x.frais - x.ref, 0) / c.reduce((s, x) => s + x.n, 0)};
 const reussite = a => 100 * a.b.reduce((s, x) => s + x.ok, 0) / a.b.reduce((s, x) => s + x.n, 0);
 
 test('Courbe : la compétence au but ne s’effondre plus avec la fatigue ; le jeu courant garde la sienne', () => {
@@ -67,8 +76,9 @@ test('Réussite au but par tranche de 10 minutes sur 300 matchs IA contre IA : p
   const baisseApres = proba(apres, [0, 1]) - proba(apres, [6, 7, 8]), baisseAvant = proba(avant, [0, 1]) - proba(avant, [6, 7, 8]);
   // Ordre de grandeur réel : réussite d'élite à peu près stable sur le match (légère baisse au plus).
   // « Presque stable » : au plus 2 points de baisse, et pas de vraie hausse (1 point d'échantillon toléré sur 300 matchs ;
-  // −0,31 après la baisse du nombre d'essais du 25/11/2026, plus de tirs au but en fin de match).
-  assert.ok(baisseApres > -1 && baisseApres < 2, `légère baisse de la probabilité de réussite en fin de match : ${baisseApres.toFixed(2)} point(s)`);
+  // −0,31 après la baisse du nombre d'essais du 25/11/2026, plus de tirs au but en fin de match). Perte due à la fatigue
+  // seule (même buteur) depuis le jeu au pied réaliste : ≈ 1,2 point avant comme après ce chantier.
+  assert.ok(baisseApres > -1 && baisseApres < 2, `légère baisse de la probabilité de réussite en fin de match (fatigue) : ${baisseApres.toFixed(2)} point(s)`);
   assert.ok(baisseApres < baisseAvant / 2, `baisse divisée par plus de deux (avant ${baisseAvant.toFixed(2)}, après ${baisseApres.toFixed(2)})`);
   // La compétence au but moyenne du buteur en fin de match reste à moins de 2 points du début.
   // Moyennes regroupées comme pour la probabilité ci-dessus (0-19 contre 60-79) : la tranche 70-79 seule (≈ 150 tirs)
