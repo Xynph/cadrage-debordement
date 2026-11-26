@@ -131,6 +131,7 @@ func _integrer() -> void:
 	var montrables: Array = []
 	for item: Variant in _items:
 		if item is Dictionary and int(item.get("i", -1)) < _limite and item.get("scene") is Dictionary: montrables.append(item)
+	var recale: Dictionary = {}
 	if _recaler > -2:
 		# Après un temps fort (ou à l'ouverture) : on repart de la dernière image déjà vue.
 		var jusque := _recaler
@@ -143,6 +144,7 @@ func _integrer() -> void:
 			dernier_i = maxi(jusque, int(base.i))
 			joue_i = int(base.i)
 			joue = base
+			recale = base
 		else:
 			dernier_i = jusque
 		_file = _file.filter(func(f: Dictionary): return int(f.i) > dernier_i)
@@ -154,6 +156,10 @@ func _integrer() -> void:
 	# Le terrain ne prend jamais plus d'une demi-douzaine de faits de retard sur l'horloge.
 	while _file.size() > 8:
 		_poser(_file.pop_front())
+	# Recalé sur la dernière image montrée en 3D : ce fait est joué ; le fil et la ligne d'état le suivent tout de
+	# suite (match filmé du 26/11 : après un essai à la 4′ en 3D, fil resté à la 1′ jusqu'au fait suivant ; l'écran
+	# l'avait rempli quand les faits du temps fort comptaient encore comme en retard, juste avant ce recalage).
+	if not recale.is_empty(): fait_joue.emit(recale)
 
 ## Après un temps fort : le terrain reprend à l'image `indice` (dernière montrée en 3D).
 ## -1 : à la dernière image disponible (ouverture du match, reprise d'une sauvegarde).

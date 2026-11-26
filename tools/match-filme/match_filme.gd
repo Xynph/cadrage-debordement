@@ -124,6 +124,56 @@ static func foule_de(jeu: Node) -> Dictionary:
 	return {"intensite": etat.get("intensite", 0.0), "debout": etat.get("debout", 0.0), "sons": etat.get("sons", [])}
 
 ## Lit les arguments placés après « -- ». Renvoie {"options": {...}, "erreurs": [...]}.
+## Ce que l'écran dit à cet instant (horloge, journal du bandeau, fil de l'écran 2D, possession annoncée) et
+## ce que la régie montre ou que le moteur sait (minute, possession) : base du détecteur de retard
+## (tools/match-filme/retard-journal.cjs). Vide hors direct.
+static func affichage_de(vue: Control, regie: Node, live: Dictionary) -> Dictionary:
+	if vue == null or live.is_empty(): return {}
+	var d := {"horloge": str(vue.clock.text), "score": str(vue.score.text), "minute_moteur": int(live.get("minute", 0))}
+	var journal: Array = vue.get("_journal") if vue.get("_journal") is Array else []
+	d["journal"] = journal.map(func(f: Variant) -> String: return "%s %s" % [str(f.get("minute", "")), str(f.get("texte", ""))] if f is Dictionary else "")
+	var legende: Variant = vue.get("_legende")
+	d["journal_visible"] = legende is Control and (legende as Control).is_visible_in_tree() and (legende as Control).self_modulate.a > 0.0
+	var ligne: Variant = vue.get("ligne_possession")
+	d["possession"] = str(vue._possession_texte.text) if ligne is Control and (ligne as Control).is_visible_in_tree() else ""
+	var events: Array = live.get("events", []) if live.get("events") is Array else []
+	d["faits_moteur"] = events.size()
+	if not events.is_empty() and events[-1] is Dictionary: d["dernier_fait_moteur"] = {"min": events[-1].get("min"), "kind": events[-1].get("kind", ""), "text": str(events[-1].get("text", "")).left(60)}
+	var direct: Dictionary = live.direct if live.get("direct") is Dictionary else {}
+	d["direct"] = {"horloge": direct.get("horloge", ""), "possession": direct.get("possession", -1), "borne": direct.get("borne", -1), "horlogeMontree": direct.get("horlogeMontree", "")}
+	if regie == null: return d
+	d["regie"] = {"etat": regie.etat, "phase": regie.phase, "index": regie.index, "vus": regie.get("_vus"), "loi": not (regie.get("_loi") as Dictionary).is_empty(), "retenu": not (regie.get("_retenu") as Dictionary).is_empty()}
+	var plans: Array = regie.tf.get("plans", []) if regie.tf is Dictionary else []
+	if regie.index >= 0 and regie.index < plans.size() and plans[regie.index] is Dictionary:
+		var plan: Dictionary = plans[regie.index]
+		var scene: Dictionary = plan.scene if plan.get("scene") is Dictionary else {}
+		d["plan"] = {"horloge": plan.get("horloge", ""), "kind": plan.get("kind", ""), "i": plan.get("index", -1), "possession": scene.get("possession", scene.get("team", -1)), "nb": plans.size(), "fin": regie.tf.get("fin", -1)}
+	# Journal du tiroir (régie.montre) : dernier fait que le joueur peut lire.
+	var montre: Dictionary = regie.montre(live)
+	var lus: Array = montre.get("events", []) if montre.get("events") is Array else []
+	d["tiroir"] = {"faits": lus.size(), "min": lus[-1].get("min") if not lus.is_empty() and lus[-1] is Dictionary else null}
+	var between: Variant = regie.get("between")
+	if between is Control and (between as Control).visible:
+		var etat_2d: Variant = between.get("etat")
+		d["etat_2d"] = str((etat_2d as Label).text) if etat_2d is Label else ""
+		var terrain: Variant = between.get("terrain")
+		if terrain != null:
+			# possession : celle du fait en cours de lecture (ou du dernier joué) ; possession_joue : celle du dernier fait fini.
+			var joue_scene: Variant = terrain.joue.get("scene") if terrain.joue is Dictionary else null
+			d["terrain"] = {"possession": terrain.possession, "joue_i": terrain.joue_i, "prochain_i": terrain.prochain_i(), "file": terrain.file_attente(), "horloge": terrain.horloge_montree(),
+				"possession_joue": joue_scene.get("possession", -1) if joue_scene is Dictionary else -1}
+		var fil: Variant = between.get("fil")
+		var lignes: Array = (fil as Node).find_children("MatchBetweenFeedLine", "", true, false) if fil is Node else []
+		if not lignes.is_empty():
+			var i_fil := int((lignes[-1] as Node).get_meta("i", -1))
+			d["fil"] = {"i": i_fil, "min": events[i_fil].get("min") if i_fil >= 0 and i_fil < events.size() and events[i_fil] is Dictionary else null}
+	# Porteur du ballon dans la 3D (camp de l'acteur qui tient le ballon), -1 si aucun.
+	var stage: Variant = regie.get("stage")
+	if stage != null and stage.get("_carrier_id") != null and stage.get("_actors") is Dictionary:
+		var porteur := str(stage._carrier_id)
+		d["porteur_3d"] = int(stage._actors[porteur].get("side", -1)) if stage._actors.has(porteur) and stage._actors[porteur] is Dictionary else -1
+	return d
+
 static func lire_options(args: PackedStringArray) -> Dictionary:
 	var o := defauts()
 	var erreurs: Array[String] = []
@@ -332,7 +382,8 @@ func run() -> void:
 	var report := {"options": {"camera": o.camera, "cadence": o.cadence, "cadence_moments": o.cadence_moments, "duree_max": o.duree_max, "minutes": o.minutes, "niveau": o.niveau, "taille": [o.taille.x, o.taille.y], "attente": o.attente},
 		"pilote": RenderingServer.get_current_rendering_driver_name(), "carte": RenderingServer.get_video_adapter_name(), "audio": AudioServer.get_driver_name(),
 		"fenetre": {"taille": [DisplayServer.window_get_size().x, DisplayServer.window_get_size().y], "mode": DisplayServer.window_get_mode()},
-		"images": [], "noires": 0, "moments": []}
+		"images": [], "noires": 0, "moments": [], "chrono": []}
+	var depuis_chrono := 0.0
 	var cadence_moments: float = minf(o.cadence_moments, o.cadence)
 	var moment_vu := ""
 	var regie_vue: Node = null
@@ -400,6 +451,17 @@ func run() -> void:
 			if dernier.minute != minute_vue:
 				minute_vue = dernier.minute
 				print("MATCH_FILME minute=", minute_vue, " score=", dernier.score)
+		# Chronologie de l'affichage (toutes les 0,25 s de jeu) : écran contre régie et moteur (détecteur de retard).
+		depuis_chrono += delta
+		if depuis_chrono >= 0.25 and vue != null and not live.is_empty():
+			depuis_chrono = 0.0
+			var a := affichage_de(vue, regie, live)
+			if not report.has("equipes") and live.get("teams") is Array:
+				var habillage: GDScript = load("res://ui/contextual/skin.gd")
+				report["equipes"] = (live.teams as Array).map(func(t: Variant) -> String: return habillage.G.club_name(t) if t is Dictionary else "")
+			a["s"] = snappedf(temps, 0.01)
+			a["image"] = report.images.size()
+			report.chrono.append(a)
 		# Vues du HUD demandées (menu Échap, fiche club) : ouverture, une seconde de jeu, image, retour au direct.
 		var vue_hud_en_cours := false
 		for v: Dictionary in vues_hud:
@@ -490,7 +552,7 @@ func run() -> void:
 		var ralenti_vu: Dictionary = ralenti_de(regie)
 		report.images.append({"fichier": nom, "secondes": snappedf(temps, 0.1), "minute": int(live.get("minute", dernier.get("minute", 0))),
 			"score": live.get("score", dernier.get("score", [0, 0])), "etat": etat, "moment": moment, "ralenti": ralenti_vu.ralenti, "mention_ralenti": ralenti_vu.mention,
-			"luminance": lum, "foule": foule_de(app)})
+			"luminance": lum, "foule": foule_de(app), "affichage": affichage_de(vue, regie, live)})
 	Engine.time_scale = 1.0
 	var duree_murale := (Time.get_ticks_msec() - debut) / 1000.0
 	# duree_s : temps de jeu simulé ; duree_reelle_s : horloge murale du direct.
