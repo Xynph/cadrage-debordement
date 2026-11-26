@@ -45,32 +45,35 @@ test('Chaque fait d’en-but nomme l’équipe fautive (vrais matchs du moteur)'
 });
 
 test('Le bandeau des temps forts (projection du pont) nomme l’équipe fautive', { timeout: 1800000 }, () => {
-  // Même carrière que le match filmé (scripts/match-filme.ps1 : club 102, graine 4242) : un coup de pied aplati et un porteur tenu
-  // en 40 minutes, vus dans les temps forts « dynamique » du jeu.
-  const jeu = ouvrir({ seed: 4242 });
+  // Matchs de la carrière du film (scripts/match-filme.ps1 : club 102), graines 4244 et 4245, joués en entier par le vrai
+  // moteur : leurs plans d'en-but (porteur tenu, coup de pied aplati) sont projetés dans les temps forts « dynamique ».
   const vus = [], manques = [];
-  try {
-    let model = jusquAuMatch(jeu, creer(jeu, 102));
-    if (!model.selection.valid) model = jeu.call('auto_lineup');
-    if (!model.selection.valid) model = jeu.call('promote_cover', { confirmed: true });
-    model = skipMatchTalk(jeu.call('begin_match'), jeu.call);
-    const lire = live => {
-      for (const p of live.direct?.tempsFort?.plans || []) {
-        const fait = live.events[p.index]?.scene;
-        if (fait?.kind !== 'ingoal' || !CAUSES.includes(fait.cause) || vus.includes(p.index)) continue;
-        vus.push(p.index);
-        const abbr = String(live.teams[fait.team]?.abbr || '');
-        // Le bandeau dit l'équipe : le sigle de son club figure dans la légende du plan.
-        if (!abbr || !p.texte.includes(abbr)) manques.push(`${fait.cause} équipe ${fait.team} (${abbr}) : ${p.texte}`);
+  for (const graine of [4244, 4245]) {
+    const jeu = ouvrir({ seed: graine });
+    try {
+      let model = jusquAuMatch(jeu, creer(jeu, 102));
+      if (!model.selection.valid) model = jeu.call('auto_lineup');
+      if (!model.selection.valid) model = jeu.call('promote_cover', { confirmed: true });
+      model = skipMatchTalk(jeu.call('begin_match'), jeu.call);
+      const lire = live => {
+        for (const p of live.direct?.tempsFort?.plans || []) {
+          const fait = live.events[p.index]?.scene;
+          const cle = graine + ':' + p.index;
+          if (fait?.kind !== 'ingoal' || !CAUSES.includes(fait.cause) || vus.includes(cle)) continue;
+          vus.push(cle);
+          const abbr = String(live.teams[fait.team]?.abbr || '');
+          // Le bandeau dit l'équipe : le sigle de son club figure dans la légende du plan.
+          if (!abbr || !p.texte.includes(abbr)) manques.push(`${fait.cause} équipe ${fait.team} (${abbr}) : ${p.texte}`);
+        }
+      };
+      for (let ticks = 0; ticks < 200 && !model.live.finished; ticks++) {
+        model = skipMatchTalk(model, jeu.call);
+        if (model.live.paused) model = jeu.call('pause', { paused: false });
+        model = jeu.call('tick', { minute: true, temps_forts: 'dynamique' });
+        lire(model.live);
       }
-    };
-    for (let ticks = 0; ticks < 140 && model.live.minute < 43 && !model.live.finished; ticks++) {
-      model = skipMatchTalk(model, jeu.call);
-      if (model.live.paused) model = jeu.call('pause', { paused: false });
-      model = jeu.call('tick', { minute: true, temps_forts: 'dynamique' });
-      lire(model.live);
-    }
-  } finally { jeu.fermer(); }
+    } finally { jeu.fermer(); }
+  }
   assert.ok(vus.length >= 2, `assez de plans d’en-but projetés (${vus.length})`);
   assert.deepEqual(manques, [], `${manques.length} légendes d’en-but sans nom d’équipe sur ${vus.length}`);
 });
