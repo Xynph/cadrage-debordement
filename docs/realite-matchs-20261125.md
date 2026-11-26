@@ -149,7 +149,8 @@ qui mène de 8 à 15 points à la 60e gagne 88 % du temps (100 % sans la gestion
 jamais. Sondes au banc (300 à 400 matchs, URC et
 Top 14) : la réussite des favoris ne bouge pas (+6 : 85-86 % URC, 66-67 % Top 14).
 
-## Jeu au pied réaliste (25/11, branche `claude/jeu-au-pied-realiste`, en cours)
+## Jeu au pied réaliste (25-26/11)
 
-Dégagements, occupation, 50:22 et renvois aux 22 m : voir [docs/jeu-au-pied-20261125.md](jeu-au-pied-20261125.md) (avant / après par
-championnat ; sur la graine 4242, écart ≤ 7 en baisse de 8 à 10 points en Top 14, Premiership et URC, à recaler avant fusion).
+Dégagements, occupation, 50:22 et renvois aux 22 m : voir [docs/jeu-au-pied-20261125.md](jeu-au-pied-20261125.md). Saisons Monde
+4242, 7 et 2026 (moyenne, avant / après / réel) : écart ≤ 7 Top 14 44,4 / 40,0 / 40 %, Premiership 40,5 / 40,5 / 36 %, URC
+39,5 / 38,4 / 41 % ; points et essais à ±1 près.

@@ -1,68 +1,86 @@
-# Jeu au pied réaliste (25 novembre 2026)
+# Jeu au pied réaliste (25-26 novembre 2026)
 
-Audit du réalisme des phases (A1, défaut n° 1) : le moteur ne jouait que 3 à 4,5 coups de pied par match (réel 40-50, dont
-12-18 en touche), aucun 50:22, 0,7 renvoi aux 22 m, et un « poussé en touche » fixe de 12 % par action fabriquait la moitié
-des touches (10 par match, réel 2-3). Le joueur voyait des équipes qui ne dégagent jamais de leurs 22.
+Audit du réalisme des phases (A1, défaut n° 1) : le moteur ne racontait que 3 à 4 coups de pied par match, presque aucun 50:22,
+et un « poussé en touche » fixe de 12 % par action fabriquait la moitié des touches (10 par match, réel 2-3). Le joueur voyait
+des équipes qui ne dégagent jamais de leurs 22.
 
 ## Ce qui change dans le jeu
 
-- Depuis ses 22, l'équipe dégage presque toujours en touche (touche directe avec gain de terrain, loi 18) ; depuis son camp,
-  elle cherche la touche, tape long dans le camp adverse ou fait monter une chandelle du demi de mêlée ; dans le camp
-  adverse, plus rarement, un coup de pied rasant ou par-dessus la défense, que la chasse peut récupérer.
+- Depuis ses 22, l'équipe dégage le plus souvent en touche (touche directe avec gain de terrain, loi 18) ; depuis son camp,
+  elle cherche la touche, tape long dans le camp adverse ou fait monter une chandelle du n° 9 ; dans le camp adverse, plus
+  rarement, un coup de pied rasant ou croisé que la chasse peut reprendre.
+- Un coup de pied peut être raté : touche directe, contré, trop court, croisé qui sort, rasant ramassé, chandelle captée.
 - Le botteur est nommé dans le journal et sur les touches au pied (match 2D/3D, fiche de stats).
-- 50:22 rares (tentés depuis son camp, ballon qui rebondit avant la touche dans les 22 adverses) ; ballons qui roulent dans
-  l'en-but : renvoi sur la ligne d'essai (aplati par la défense) ou aux 22 m (mort), d'où plus de renvois.
-- Choix du plan (occupation × 2,2, jeu au large × 0,7), qualité du jeu au pied des arrières, pluie (+15 % par niveau) et score
-  après la 60e (qui mène tape plus, qui est mené de 8 ou plus garde le ballon) pèsent sur la décision de taper.
-- Le porteur n'est plus « poussé en touche » qu'environ 2 fois par match.
+- 50:22 rares ; ballons qui roulent dans l'en-but : renvoi sur la ligne d'essai (aplati par la défense) ou aux 22 m (mort).
+- Plan de jeu (occupation, jeu au large), qualité des botteurs, pluie et score après la 60e pèsent sur la décision de taper.
+  En fin de match, l'équipe menée de 15 points ou moins ne dégage plus de son camp, sauf depuis ses 22.
+- Le porteur n'est plus « poussé en touche » qu'environ 2 fois par match (10 avant).
+- Un en-avant commis pendant l'avantage de l'adversaire (chandelle relâchée par le receveur, par exemple) est suivi de la ligne
+  « Avantage sur en-avant pour X » (avant : rien, et le journal enchaînait sur l'action suivante ; `tests/match-recit-coherent.cjs`).
 - Ballon botté mort dans l'en-but : la défense ne prend la mêlée à l'endroit du coup de pied que s'il a été frappé depuis le
   camp du botteur (sinon renvoi aux 22 m).
 
-Une action du moteur couvre plusieurs temps de jeu : le journal raconte 17-21 coups de pied par match (pas les 45 réels,
-dont beaucoup de petites relances au pied entre deux arrières), dont 8-10 en touche. La fiche de stats compte désormais les
-touches au pied du journal et reconstitue moins de coups de pied courants (0,62 → 0,42 par minute) : ~23 par équipe, comme avant.
+Une action du moteur couvre plusieurs temps de jeu : le journal raconte ~12 coups de pied par match (réel 40-50, dont beaucoup
+de petites relances entre arrières), dont ~6,5 touches au pied. La fiche de stats garde ~23 coups de pied par équipe.
+
+## Méthode : même équilibre que l'ancien moteur
+
+Les premiers réglages (17-18 coups de pied racontés) creusaient les écarts : sur une saison Monde, 8 à 10 points de matchs
+serrés en moins. Cause mesurée : l'équipe dans son camp rendait le ballon une action sur deux au pied, celle qui attaquait
+dans le camp adverse ne le perdait presque plus ; les points venaient par séries et le favori convertissait mieux.
+
+Réglage retenu : par zone du terrain, la probabilité qu'une action change la possession reste celle de l'ancien moteur. Les
+coups de pied prennent la place de l'ancien « poussé en touche » et des pertes de balle, ils ne s'y ajoutent pas. Seuls les
+dégagements depuis ses 22 changent un peu plus souvent la possession (voulu). Le poids de la qualité du botteur est réduit de
+moitié (`qualite` 0,5) : à plein poids, le meilleur botteur s'ajoutait au niveau de l'équipe déjà compté, et le favori gagnait
+plus souvent (pente de la courbe de niveau 0,324 contre 0,313 avant ; 0,309 à mi-poids, banc URC 3 × 2 700 matchs).
 
 ## Réglages (dist/tactical-plans.js, `JEU_PIED`)
 
-`zone` (probabilité de taper par action : ses 22 0,85, son camp 0,55, camp adverse 0,12, 22 adverses 0,04), `types` (répartition
-touche / long / chandelle / rasant par zone), `touche` 0,8 (touche trouvée), `directe22` 0,8, `cinquante` (tentative 3 %,
-réussite 35 %), `recup` (chandelle 0,28, rasant 0,32), `enAvant` 0,07, `pousse` (2,2 % + 2 % à moins de 10 m des lignes).
-`JEU_PIED_RULES=0` rend l'ancien jeu au pied (comparaisons). Coefficients de jeu calés sur des matchs Monde, pas des probabilités
-mesurées du rugby.
+`zone` (probabilité d'ouvrir le jeu au pied par action, par zone : ses 22 0,25), `types` (touche / long / chandelle / rasant /
+croisé par zone), `perdu` (coup de pied raté ou perdu, par zone, à la place de l'ancien poussé en touche), `longueur` 0,7,
+`touche` 0,8 (touche trouvée), `cinquante` (tentative, réussite), `recup` (chandelle, rasant, croisé), `pousse` (2,2 % + 2 %
+près des lignes), `qualite` 0,5. `JEU_PIED_RULES=0` rend l'ancien jeu au pied (comparaisons). Coefficients de jeu calés sur des
+matchs Monde, pas des probabilités mesurées du rugby.
 
 ## Avant / après
 
-Matchs de championnat Monde, moteur complet, 90 matchs par championnat (graine 827381), avant (`main`) → après, par match :
+Matchs de championnat Monde, moteur complet, 600 matchs par championnat et par jeu de graines (911111 et 827381, moyenne des
+deux), ancien jeu au pied → nouveau, par match :
 
-| | Top 14 | Premiership | URC | Nationale |
-| --- | --- | --- | --- | --- |
-| Coups de pied de jeu | 3,3 → 18,3 | 3,7 → 17,2 | 4,6 → 18,3 | – → 13,1 |
-| Touches au pied (dont 50:22) | 1,8 → 9,1 | 2,1 → 8,5 | 2,6 → 9,0 | – → 6,0 |
-| Porteur poussé en touche | 10,0 → 2,1 | 9,9 → 2,2 | 10,1 → 2,2 | – → 1,8 |
-| Renvois aux 22 m / sur la ligne d'essai | 0,66 + 0,62 → 1,09 + 0,86 | 0,58 + 0,70 → 0,80 + 1,11 | 0,77 + 0,63 → 1,00 + 1,29 | – → 1,33 + 0,84 |
-| 50:22 | 0 → 0,19 | 0 → 0,14 | 0 → 0,21 | – → 0,06 |
-| Lancers en touche | 18,9 → 19,4 | 20,6 → 20,5 | 21,5 → 20,8 | – → 19,4 |
-| Points | 48,9 → 49,4 | 53,4 → 54,9 | 48,0 → 49,2 | – → 45,7 |
-| Essais | 5,52 → 5,82 | 7,07 → 7,40 | 6,28 → 6,47 | – → 6,08 |
+| | Top 14 | Premiership | URC |
+| --- | --- | --- | --- |
+| Coups de pied racontés | 3,3 → 11,7 | 3,5 → 12,1 | 4,1 → 12,4 |
+| Touches au pied | 2,0 → 6,4 | 2,0 → 6,7 | 2,0 → 6,7 |
+| Porteur poussé en touche | 10,1 → 2,3 | 10,1 → 2,4 | 10,1 → 2,3 |
+| Renvois aux 22 m et sur la ligne d'essai | 1,45 → 1,95 | 1,28 → 1,80 | 1,25 → 1,82 |
+| 50:22 | 0,01 → 0,03 | 0,01 → 0,03 | 0,02 → 0,05 |
+| Points | 47,2 → 47,8 | 53,3 → 52,2 | 48,2 → 48,6 |
+| Essais | 5,40 → 5,49 | 7,12 → 6,96 | 6,24 → 6,33 |
+| Matchs à 7 points ou moins | 43,0 → 42,3 % | 34,5 → 33,4 % | 31,9 → 29,9 % |
+| Écart moyen | 12,8 → 13,3 | 17,4 → 17,3 | 18,4 → 19,4 |
 
-Réel (élite) : 40-50 coups de pied par match dont 12-18 en touche, 2-3 porteurs poussés en touche, 50:22 rares (0,2-0,5).
+Regroupé (3 600 matchs) : matchs serrés −1,3 point (bruit ±1,1), écart moyen +0,5. Réel (élite) : 40-50 coups de pied par
+match dont 12-18 en touche, 2-3 porteurs poussés en touche, 50:22 rares.
 
-Saison Monde complète (`scripts/mesure-essais-monde.cjs`, graine 4242, club 102), avant (`JEU_PIED_RULES=0`) / après / réel
-(docs/realite-matchs-20261125.md) :
+Saisons Monde complètes (`scripts/mesure-essais-monde.cjs`, club 102), moyenne des graines 4242, 7 et 2026, avant
+(`--regler "JEU_PIED_RULES=0"`) / après / réel (docs/realite-matchs-20261125.md) :
 
-| Championnat | Points | Essais | Écart moyen | Écart ≤ 7 | Bonus offensif (4 essais) |
+| Championnat | Points | Essais | Écart moyen | Écart ≤ 7 | Bonus offensif |
 | --- | --- | --- | --- | --- | --- |
-| Top 14 | 49,5 / 50,9 / 51,0 | 5,93 / 6,26 / 5,2-5,9 | 12,6 / 15,2 / 14,3 | 41,7 / 33,2 / 40 % | 41,2 / 36,9 % |
-| Premiership | 56,1 / 52,8 / 54,9 | 7,72 / 7,06 / 7,1-8,0 | 15,4 / 16,5 / 16,1 | 35,5 / 28,0 / 36 % | 56,5 / 50,5 % |
-| URC | 48,5 / 50,9 / 49,4 | 6,45 / 6,82 / 6,3-6,6 | 13,7 / 18,6 / 14,2 | 37,7 / 27,8 / 41 % | 44,4 / 46,7 % |
-| Nationale | 46,9 / 46,7 / – | 6,27 / 6,25 / – | 11,1 / 10,8 / – | 45,5 / 47,1 / – | 37,7 / 37,2 % |
+| Top 14 | 49,4 / 50,0 / 51,0 | 5,95 / 6,08 / 5,2-5,9 | 12,5 / 13,2 / 14,3 | 44,4 / 40,0 / 40 % | 36,6 / 37,7 % |
+| Premiership | 54,1 / 53,1 / 54,9 | 7,24 / 7,13 / 7,1-8,0 | 13,2 / 14,4 / 16,1 | 40,5 / 40,5 / 36 % | 52,9 / 48,7 % |
+| URC | 49,7 / 49,9 / 49,4 | 6,63 / 6,65 / 6,3-6,6 | 13,7 / 14,6 / 14,2 | 39,5 / 38,4 / 41 % | 45,7 / 45,7 % |
 
-**À reprendre avant fusion** : sur cette graine, les matchs deviennent plus déséquilibrés (écart ≤ 7 −8 à −10 points en
-Top 14, Premiership et URC, écart moyen URC +5) ; graines 7 et 2026 non mesurées. `tests/bonus-fin-de-match.cjs` est rouge :
-« sécuriser » (jeu au près, défense prudente, points) tape désormais pour sortir de son camp et encaisse 0,62 essai en 20 min
-au lieu de 0,92, d'où autant de bonus offensifs que « viser » (0,45 contre 0,38 ; main 0,15 contre 0,39). Variantes essayées
-sans succès net (100 fins de match) : pas de majoration « mène » pour le jeu au large, jeu au large qui sort de ses 22 comme
-les autres mais tape moitié moins ailleurs (0,43 / 0,43), conquête × 0,7 (change aussi l'adversaire IA).
+Par graine, écart ≤ 7 avant → après : Top 14 40,6 → 38,0 / 46,0 → 38,0 / 46,5 → 43,9 ; Premiership 43,0 → 44,1 /
+39,8 → 36,6 / 38,7 → 40,9 ; URC 43,0 → 35,8 / 36,4 → 39,1 / 39,1 → 40,4.
+
+## Courbe de niveau et cartons
+
+- `tests/match-rating-curve.cjs` : pente du moteur complet 0,286 (ancien jeu au pied 0,281), résultat rapide 0,263 ; vert.
+- `tests/arbitrage-fin.cjs` (80 rejeux du même match) : 0,0875 exclusion par équipe (seuil 0,12). Un tirage à 0,1375 avant la
+  fusion de main était du hasard : 1 680 rejeux par règle (21 jeux de graines), 0,074 avec le nouveau jeu au pied contre 0,080
+  avec l'ancien.
 
 ### Test de fatigue des phases arrêtées
 
