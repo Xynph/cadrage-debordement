@@ -52,3 +52,22 @@ dernières minutes quand trois points ne ramènent ni l'égalité ni le bonus d�
 Le meilleur buteur disponible (ouvreur, trois-quarts, arrière) entre dans le XV de l'IA quand il tire au moins 6 points mieux
 que le buteur retenu et que la perte au poste reste sous 0,4 × cet écart (10 au plus) ; il prend le poste des lignes arrières
 où il coûte le moins. Quotas JIFF/EQP appliqués ensuite comme avant.
+
+## Défense regroupée en fin de match (`defenseRegroupee`, constantes `DEFENSE_REGROUPEE`, `dist/tactical-plans.js`)
+
+Constat (six saisons Monde) : avec les nouveaux choix de pénalité, le Top 14 finissait trop serré (écart ≤ 7 : 45,9 % contre
+40,4 au réel, main 40,8). L'équipe menée joue désormais la touche au lieu de tirer trois points inutiles, et une pénaltouche
+jouée après la 75e marquait dans les quatre minutes 38 % du temps contre 26 % entre la 20e et la 70e : la poussée de fin de
+match de l'équipe menée (`GESTION_SCORE`) doublait l'efficacité d'une touche tardive. Une équipe menée de 11 à 14 points à la
+75e finissait à 7 points ou moins dans 45 % des cas (main : 20 %).
+
+Correctif sur l'efficacité, décision du coach inchangée : sur la touche gagnée après une pénaltouche et la séquence qui suit
+(même camp au ballon, aucun point marqué entre-temps), à partir de la 70e minute de jeu (plein effet à la 80e), quand
+l'équipe qui défend mène, elle défend sa ligne à quinze : essai direct sur ballon porté (ou mêlée) −0,12 et finition dans les
+22 −0,45 à plein effet (−0,06 et −0,225 à la 75e), la poussée de l'équipe menée y comprise. Aucun tirage ajouté ; rencontres
+`iaDecisionsVersion` seulement (`contestSetPiece`, `dist/rugby.js` ; `advanceCausalPlay`, `dist/restarts.js`).
+
+Mesure (saisons Monde, diag-elite, graines 4242/7/2026 puis 11/99/31) : une pénaltouche tardive d'une équipe menée marque
+dans les quatre minutes 22 % du temps (milieu de match 26 %) ; Top 14 écart ≤ 7 41,0 %, essais 5,92, points 49,0 ;
+Premiership 39,8 % et 7,15 essais ; URC 38,2 % et 6,38 essais. Menés de 11 à 14 à la 75e finissant à ≤ 7 (Top 14) : 45 → 28 %
+sur les trois graines communes (main 20 %), 34 % sur six graines.

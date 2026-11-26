@@ -89,6 +89,20 @@ var PENALITES={jeu:.01,attaque:.035,melee:.3,meleeDominant:.015,touche:.07};
 var PENALTOUCHE={risque:.08,sauteurs:.012,porte:.14,porteAvants:.012,porteMin:.04,ligne:22,risqueLigne:.06,sauteursLigne:.012};
 function penaltoucheRisque(l,side,a,b){if(!penalitesRules(l))return 0;if(!(side===0?l.territory>50:l.territory<50))return 0;const d=side===0?100-l.territory:l.territory,P=PENALTOUCHE,pr=Math.max(0,Math.min(1,(P.ligne-d)/(P.ligne-5)));return (a-b)*(P.sauteurs+pr*P.sauteursLigne)-P.risque-pr*P.risqueLigne}
 function ballonPorteBase(l,side){if(!penalitesRules(l))return null;const av=p=>p.fam<=3,defense=(unit(l,1-side,'power',av)+unit(l,1-side,'tackle',av))/2;return {base:PENALTOUCHE.porte+(unit(l,side,'power',av)-defense)*PENALTOUCHE.porteAvants,min:PENALTOUCHE.porteMin}}
+// Défense regroupée en fin de match (26/11/2026, docs/ia-decisions-match-20261126.md), rencontres `iaDecisionsVersion` : sur
+// la touche gagnée après une pénaltouche et la séquence qui suit (même camp au ballon, aucun point marqué entre-temps),
+// à partir de la `debut`e minute de jeu (plein effet à la 80e), l'équipe qui mène défend sa ligne à quinze, sans plus rien
+// craindre au large : ballon porté plus souvent arrêté (`porte`, essai direct sur porté ou mêlée) et finition près de la
+// ligne plus dure (`finition`, retrait sur la réussite de la séquence dans les 22). Le choix de la touche reste le même ;
+// sans ce terme, l'équipe menée de 11 à 14 points à la 75e finissait à 7 points ou moins deux fois plus souvent qu'avant
+// (la poussée de fin de match, GESTION_SCORE, doublait l'efficacité d'une pénaltouche tardive). Réglages de jeu calés sur
+// des saisons Monde contre les écarts réels, aucun tirage ajouté.
+var DEFENSE_REGROUPEE={debut:70,porte:.12,finition:.45};
+function suitePenaltouche(l,side){if(l.iaDecisionsVersion===1&&l.score)l.suitePenaltouche={side,points:l.score[0]+l.score[1]}}
+function defenseRegroupee(l,side){
+ const s=l.suitePenaltouche,D=DEFENSE_REGROUPEE;if(l.iaDecisionsVersion!==1||!s||s.side!==side||!l.score||s.points!==l.score[0]+l.score[1]||l.score[1-side]<=l.score[side])return 0;
+ const m=typeof matchMinute==='function'?matchMinute(l):Number(l.minute)||0;return m<D.debut?0:Math.min(1,(m-D.debut)/(80-D.debut));
+}
 const PENALITES_INCIDENTS={scrum:{id:'scrum',label:'faute en mêlée',weight:0,serious:false},maul:{id:'maul',label:'faute en touche ou sur ballon porté',weight:0,serious:false},'not-release':{id:'not-release',label:'ballon non libéré au sol',weight:0,serious:false},sealing:{id:'sealing',label:'scellement du ballon dans le ruck',weight:0,serious:false}};
 function penalitesRules(l){return essaisRules(l)&&l.penalitesVersion===1}
 // Culture du championnat sur pénalité (consigne automatique seulement) : part des tirs au but changés en
