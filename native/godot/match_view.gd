@@ -809,8 +809,9 @@ func _process(delta: float) -> void:
 	# Puis les jambes des joueurs debout sortent du corps des joueurs couchés (ruck), à l'horizontale.
 	_plancher.degager(_actors, delta, _carrier_id, _ball if _ball_attached and _ball.visible else null)
 	# Et les joueurs debout ne se traversent plus entre eux (sauf mêlée et ballon porté, liés exprès).
-	_plancher.separer(_actors, delta, _lies(), _carrier_id, _ball if _ball_attached and _ball.visible else null,
-		_formations.entiers() if _formations != null else {})
+	var lies := _lies()
+	_plancher.separer(_actors, delta, lies, _carrier_id, _ball if _ball_attached and _ball.visible else null,
+		_formations.entiers() if _formations != null else {}, _demis_lies(lies))
 	_rejeu.enregistrer(delta, _camera_cut)
 	_fit_camera(delta, _camera_cut)
 	_camera_cut = false
@@ -843,6 +844,18 @@ func _lies() -> Dictionary:
 			if _choregraphie.stages(id) and str(_choregraphie.etat(id)) in ["melee", "maul"]:
 				lies[id] = true
 	return lies
+
+
+## Liés de la mêlée qui ne sont pas des avants (demis tenus au tunnel) : la séparation sort leur buste
+## et leur tête de ceux des avants liés, sans bouger les paquets (match_plancher.gd, `separer`).
+func _demis_lies(lies: Dictionary) -> Dictionary:
+	var demis := {}
+	if _formations == null or not _formations.active() or str(_formations.formation.type) not in ["melee", "sortie_melee"]:
+		return demis
+	for id: String in lies:
+		if (_formations.formation.places as Dictionary).has(id) and str(_formations.formation.roles.get(id, "")) != "pack":
+			demis[id] = true
+	return demis
 
 
 ## Plancher de tous les joueurs (match_plancher.gd) ; le ballon tenu suit les mains relevées.

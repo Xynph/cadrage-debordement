@@ -44,6 +44,8 @@ var _capture_due := -1
 var _capture_info: Dictionary = {}
 ## Mêlée : épisodes de bustes ou têtes confondus, avec l'état de chaque joueur (diagnostic).
 var melee_tt: Array = []
+## Ballon porté : mêmes épisodes (26/11/2026 : têtes l'une dans l'autre en arrivant au ballon porté).
+var maul_tt: Array = []
 var _vitrine_debut: Dictionary = {}
 var _vitrines: Dictionary = {}
 var _precedents_tt: Dictionary = {}
@@ -115,7 +117,8 @@ func _couche(rig: Skeleton3D) -> bool:
 func _phase(a: String, b: String, couches: Dictionary) -> String:
 	var ch = vue.get("_choregraphie")
 	if ch != null and bool(ch.actif) and (ch.stages(a) or ch.stages(b)):
-		var etats := [str(ch.etat(a)), str(ch.etat(b))]
+		# Un seul des deux peut avoir une piste (l'autre reste sur la vue) : pas d'état pour lui.
+		var etats := [str(ch.etat(a)) if ch.stages(a) else "", str(ch.etat(b)) if ch.stages(b) else ""]
 		if "melee" in etats:
 			return "melee"
 		if "maul" in etats:
@@ -168,6 +171,25 @@ func _etat_melee(id: String) -> Dictionary:
 	e["lacet"] = snappedf((vue._actors[id].node as Node3D).rotation.y, 0.01)
 	e["mis_en_scene"] = f._mis_en_scene(id) if f != null else false
 	e["geste"] = not (vue._actors[id].get("geste", {}) as Dictionary).is_empty()
+	return e
+
+
+## Ballon porté : rôle, équipe, liaison et instant du geste de chaque joueur (diagnostic des bustes/têtes).
+func _etat_maul(id: String) -> Dictionary:
+	var e := {"id": id.right(6)}
+	var m = vue.mise_en_scene()
+	if m != null:
+		var membre: Dictionary = (m.get("cast") as Dictionary).get(id, {}) if m.get("cast") is Dictionary else {}
+		e["role"] = str(membre.get("role", ""))
+		e["camp"] = int(membre.get("team", -1))
+		e["rejoint"] = snappedf(float(membre.get("join", -1.0)), 0.01)
+		e["lie"] = bool(m.lie(id)) if m.has_method("lie") else false
+		e["temps"] = snappedf(float(m.get("time")), 0.01)
+		e["phase"] = str(m.get("phase"))
+	var ch = vue.get("_choregraphie")
+	if ch != null and bool(ch.actif) and ch.stages(id):
+		e["etat_chore"] = str(ch.etat(id))
+	e["pitch"] = snappedf((vue._actors[id].model as Node3D).rotation.x, 0.01)
 	return e
 
 
@@ -268,6 +290,9 @@ func _process(delta: float) -> void:
 			if max_t > FRANC and phase == "melee" and _precedents_tt.get(a + ">" + b, false) == false and melee_tt.size() < 40:
 				melee_tt.append({"t": snappedf(temps, 0.01), "image": images, "os": detail_t, "p": snappedf(max_t, 0.001),
 					"a": _etat_melee(a), "b": _etat_melee(b)})
+			if max_t > FRANC and phase == "maul" and _precedents_tt.get(a + ">" + b, false) == false and maul_tt.size() < 40:
+				maul_tt.append({"t": snappedf(temps, 0.01), "image": images, "os": detail_t, "p": snappedf(max_t, 0.001),
+					"a": _etat_maul(a), "b": _etat_maul(b)})
 			vus_tt[a + ">" + b] = max_t > FRANC
 			if not _sortie_id.is_empty() and _sortie_id in [a, b] and max_p > FRANC:
 				_compter_sortie(a, b, max_p, max_t, detail, sortie_vus, phase)
@@ -396,5 +421,5 @@ func bilan() -> Dictionary:
 			"couples_images_proches": s.images_couples, "os": os_tries.slice(0, 6),
 			"couples_franc_tronc_tete": s.couples_franc_tronc_tete, "tronc_tete_max_m": s.tronc_tete_max_m, "os_tronc_tete": os_tt.slice(0, 6)}
 	return {"images": images, "images_rejeu_ignorees": images_rejeu, "seuil_franc_m": FRANC, "seuil_leger_m": LEGER,
-		"resume": resume, "pires": pires, "captures": captures, "melee_bustes_tetes": melee_tt,
+		"resume": resume, "pires": pires, "captures": captures, "melee_bustes_tetes": melee_tt, "maul_bustes_tetes": maul_tt,
 		"sortie_n8": sortie_n8}

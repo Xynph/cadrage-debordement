@@ -216,8 +216,21 @@ func check_lineout() -> void:
 
 func check_view(view: Node3D) -> void:
 	view.apply_frame({"scene": scrum(60.0, 0)})
+	# 26/11/2026 (sonde des contacts : tête du demi qui introduit dans le buste de son pilier, jusqu'à
+	# 23 cm, pendant qu'il s'accroupit) : demis et avants ne se confondent jamais, image par image.
+	var demi_pack := 0.0
+	var demi_pack_qui := ""
 	for frame in 300:
 		view._process(1.0 / 60.0)
+		for demi_id in ["s0_8", "s1_8"]:
+			for side in 2:
+				for slot in 8:
+					var o := busts_overlap(view, demi_id, "s%d_%d" % [side, slot])
+					if o > demi_pack:
+						demi_pack = o
+						demi_pack_qui = "%s in s%d_%d, frame %d" % [demi_id, side, slot, frame]
+	check(demi_pack <= BUST_OVERLAP_MAX, "Scrum: no scrum-half bust or head inside a forward (%.3f m, %.2f m allowed; %s)" % [demi_pack, BUST_OVERLAP_MAX, demi_pack_qui])
+	metrics.scrum_half_bust_overlap_m = snappedf(demi_pack, 0.001)
 	var formations = view._formations
 	var worst := 0.0
 	var bent := 0
@@ -301,6 +314,33 @@ func check_view(view: Node3D) -> void:
 	metrics.intro_hips_m = snappedf(hips, 0.01)
 	metrics.scrum_place_error_m = snappedf(worst, 0.001)
 	metrics.scrum_lowest_foot_m = snappedf(lowest_foot, 0.001)
+	# Demi plus près de son paquet (gabarits v5 plus larges, bras plus courts : il se penche davantage) :
+	# sa tête et son buste restent hors des avants liés ; c'est lui qui s'écarte, les paquets ne bougent pas.
+	var paquets := {}
+	for side in 2:
+		for slot in 8:
+			paquets["s%d_%d" % [side, slot]] = (view._actors["s%d_%d" % [side, slot]].model as Node3D).global_position
+	var serre: Vector3 = (view._actors.s0_8.node as Node3D).position + Vector3(0.0, 0.0, -0.45)
+	var demi_serre := 0.0
+	var pack_bouge := 0.0
+	for frame in 90:
+		for cle in ["from", "target"]:
+			view._actors.s0_8[cle] = serre
+		(view._actors.s0_8.node as Node3D).position = serre
+		view._process(1.0 / 60.0)
+		if frame < 45:
+			continue
+		for id: String in paquets:
+			demi_serre = maxf(demi_serre, busts_overlap(view, "s0_8", id))
+			pack_bouge = maxf(pack_bouge, (view._actors[id].model as Node3D).global_position.distance_to(paquets[id]))
+	check(demi_serre <= BUST_OVERLAP_MAX, "Scrum-half pressed against his pack: no bust or head inside a forward (%.3f m, %.2f m allowed)" % [demi_serre, BUST_OVERLAP_MAX])
+	check(pack_bouge < 0.01, "The bound packs are never pushed apart by the scrum-half (%.3f m)" % pack_bouge)
+	metrics.scrum_half_pressed_overlap_m = snappedf(demi_serre, 0.001)
+	(view._actors.s0_8.node as Node3D).position = serre + Vector3(0.0, 0.0, 0.45)
+	for cle in ["from", "target"]:
+		view._actors.s0_8[cle] = (view._actors.s0_8.node as Node3D).position
+	for frame in 60:
+		view._process(1.0 / 60.0)
 	# Ballon gagné : les paquets restent liés SORTIE s, puis rejoignent les places de la scène.
 	var sortie := scrum(60.0, 0, "setpiece-win", "sortie", "s0_7")
 	view.apply_frame({"scene": sortie})

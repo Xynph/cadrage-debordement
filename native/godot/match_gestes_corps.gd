@@ -2,6 +2,9 @@ extends "res://match_gestes_etat.gd"
 ## Gestes de rugby : poses procédurales du squelette (touche, ballon porté, essai, après-essai)
 ## et aides de corps (liaison, poussée, bras, buste, pieds).
 
+## Touche : mains des porteurs posées à PRISE_CUISSE m de l'axe de la cuisse du sauteur, côté porteur
+## (rayon de la cuisse 8 cm, plus la main).
+const PRISE_CUISSE := 0.15
 
 ## Relevé du marqueur (0 allongé, 1 debout).
 func _rise() -> float:
@@ -112,7 +115,14 @@ func _pose_touche() -> void:
 		for leg in ["L", "R"]:
 			var hip := rig.to_global(rig.get_bone_global_pose(rig.find_bone("UpperLeg." + leg)).origin)
 			var knee := rig.to_global(rig.get_bone_global_pose(rig.find_bone("LowerLeg." + leg)).origin)
-			points.append(hip.lerp(knee, 0.75 if member.role == "lift_front" else 0.1))
+			var point := hip.lerp(knee, 0.75 if member.role == "lift_front" else 0.1)
+			# 26/11/2026 (sonde des contacts : avant-bras dans la cuisse du sauteur, jusqu'à 17 cm) : les mains
+			# se posent sur la cuisse, du côté du porteur, pas dans l'os.
+			var vers_porteur := actor.global_position - point
+			vers_porteur.y = 0.0
+			if vers_porteur.length() > 0.01:
+				point += vers_porteur.normalized() * PRISE_CUISSE
+			points.append(point)
 		if (points[0] - points[1]).dot(actor.global_basis.x) < 0.0:
 			points.reverse()
 		_arms(id, points[0], points[1], grip, false)
