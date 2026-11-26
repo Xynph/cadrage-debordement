@@ -215,6 +215,8 @@ function chiffresRugby(lignes,events){
    if(gain>=22)e.franchissements++;else t[1-l.equipe].plaquesStoppes++;
   }
   if(l.kind==='turnover'){e.recuperations++;e.plaquesStoppes++}
+  // Ballon injouable (maul arrêté) : ballon gagné par la défense, comme la feuille de statistiques.
+  if(l.kind==='message'&&s?.loi==='injouable')e.recuperations++;
   if(l.kind==='hand-fault')e.enAvant++;
   if(['kick','touch','drop22','goalLine'].includes(l.kind))e.pieds++;
   if(l.kind==='card'&&l.incident)e.cartons++;

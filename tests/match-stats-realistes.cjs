@@ -65,7 +65,8 @@ test('Cohérence : équipe = somme des joueurs, faits du journal et chiffres du 
       const carries = scenes.filter(x => x.kind === 'carry' && x.team === s && Number.isFinite(x.from?.x) && Number.isFinite(x.to?.x));
       assert.ok(e.franchissements >= carries.filter(x => Math.abs(x.to.x - x.from.x) >= 22).length, 'franchissements : au moins les courses racontées de 22 m et plus');
       assert.equal(e.conquetesVolees, scenes.filter(x => x.kind === 'setpiece-loss' && x.team === s && x.actor != null).length, 'conquêtes volées = pertes de mise en jeu adverses du journal');
-      assert.equal(e.recuperations, scenes.filter(x => x.kind === 'turnover' && x.team === s).length, 'ballons récupérés = turnovers du journal');
+      // Ballon injouable (loi 16, maul arrêté) : ballon gagné par la défense, compté comme récupéré.
+      assert.equal(e.recuperations, scenes.filter(x => (x.kind === 'turnover' || x.kind === 'message' && x.loi === 'injouable') && x.team === s).length, 'ballons récupérés = turnovers et ballons injouables du journal');
       assert.equal(e.enAvant, scenes.filter(x => x.kind === 'hand-fault' && x.team === s).length, 'en-avant = journal');
       assert.equal(e.cartonsJaunes, scenes.filter(x => x.kind === 'card' && x.incident === true && x.team === s && x.card !== 'red').length);
       // Défense : plaquages ≈ courses adverses (plaquages à deux compris), au moins un par course racontée stoppée.

@@ -44,8 +44,9 @@ function performKickRestart(l,kind,team,cause,by){
 function handFault(l,offender,forward=false){
  // Le récit de la faute précède toujours l'avantage : « X commet un en-avant », puis « Avantage sur en-avant pour Y ».
  // En-avant juste après un coup de pied pris par l'équipe fautive (chandelle relâchée, ballon ramassé puis échappé) : le
- // receveur nommé au coup de pied commet la faute, à l'écran comme dans le récit. Aucun tirage.
- const ab=S.clubs[l.pair[offender]].abbr,porteur=actionPlayer(l,offender),recu=!forward&&kickReceivedBy(l,offender);
+ // receveur nommé au coup de pied commet la faute, à l'écran comme dans le récit. Aucun tirage. Une faute de main juste
+ // à la réception est toujours un en-avant du receveur, jamais une passe en avant (tirage de l'appelant ignoré).
+ const ab=S.clubs[l.pair[offender]].abbr,porteur=actionPlayer(l,offender),recu=kickReceivedBy(l,offender);if(recu)forward=false;
  const qui=recu?`${recu.name} (${ab}) commet un en-avant à la réception`:`${ab} commet ${forward?'une passe en avant':'un en-avant'}`,actor=recu?recu.id:porteur?.id||null;
  const narrate=()=>addEvent(l,`${qui}.`,'play',{kind:'hand-fault',team:offender,cause:forward?'forward-pass':'knock-on',actor});
  tacticalCount(l,offender,'handErrors');const at=l.territory;if(flowRules(l)&&offerAdvantage(l,'scrum',1-offender,offender,at,{narrate,passe:forward}))return true;addEvent(l,`${qui} : introduction adverse.`,'play',{kind:'hand-fault',team:offender,cause:forward?'forward-pass':'knock-on',actor});

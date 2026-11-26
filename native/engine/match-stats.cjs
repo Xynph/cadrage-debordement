@@ -267,6 +267,15 @@ function fabrique(){
     if(perdant)perdant.j.ballonsPerdus++;
     continue;
    }
+   // Ballon injouable (loi 16, maul arrêté) : ballon gagné au contact par la défense, qui obtient la mêlée (camp du fait),
+   // compté comme un ballon récupéré (turnover gagné, comme dans les statistiques pro). Récupérateur non nommé par le
+   // moteur : un joueur présent du camp, surtout un avant (poids des rucks).
+   if(kind==='message'&&s.loi==='injouable'&&team!==null){
+    const gagnant=choisir(presents(team,min),c=>POIDS.rucks[c.poste],r);if(gagnant)gagnant.j.recuperations++;
+    const perdant=dernierPorteur[1-team]&&presents(1-team,min).find(c=>c.id===dernierPorteur[1-team].id)||choisir(presents(1-team,min),poidsCourse(min),r);
+    if(perdant)perdant.j.ballonsPerdus++;
+    continue;
+   }
    // Mêlée non disputée : la préparation (« setup ») puis l'introduction non disputée (« play ») du même camp
    // racontent une seule mêlée, que le moteur compte une fois (l.stats.scrums).
    if(kind==='scrum'||kind==='lineout'){const meme=kind==='scrum'&&e.type!=='setup'&&derniereMiseEnPlace?.kind==='scrum'&&derniereMiseEnPlace.team===team&&derniereMiseEnPlace.preparee;derniereMiseEnPlace={kind,team,preparee:e.type==='setup'};if(team!==null&&!meme){if(kind==='lineout'){equipes[team].touches.lancers++;const talon=presents(team,min).find(c=>c.poste===1);if(talon)talon.j.lancers++}else equipes[team].melees.introductions++}continue}
