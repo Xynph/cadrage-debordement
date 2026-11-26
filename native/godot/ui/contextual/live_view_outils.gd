@@ -406,9 +406,40 @@ func temps_forts_actifs() -> bool:
 func _live() -> Dictionary:
 	return model.get("live", {}) if model.get("live") is Dictionary else {}
 
+## Mémorise la demande du manager. Aucune demande : elle est posée. Sa propre demande : le 2e clic l'annule. Une pause déjà
+## demandée par Relire ou une fenêtre : le clic ne la défait jamais (jamais de reprise involontaire).
+func _memoriser_pause(voulue: bool) -> void:
+	if _pause_voulue == 0:
+		_pause_voulue = 1 if voulue else -1
+		_pause_clic = true
+	elif _pause_clic:
+		_pause_voulue = 0
+		_pause_clic = false
+	elif voulue and _pause_voulue < 0:
+		_pause_voulue = 1
+		_pause_clic = true
+
+## Pause ou reprise demandée par l'entracte (bouton, Espace) : même règle que le bouton Pause.
+func demander_pause(voulue: bool) -> void:
+	var live := _live()
+	if live.is_empty() or bool(live.get("finished", false)): return
+	if app.waiting or app.closing or app.connection_error:
+		_memoriser_pause(voulue)
+		return
+	app._command("pause", {"paused": voulue})
+
+## Pause du direct : jamais refusée tant que le match n'est pas fini. Moteur occupé (minute en route), qui se ferme ou
+## injoignable : le clic est mémorisé (`_pause_voulue`), rien n'est envoyé, et il est appliqué dès que le moteur répond.
 func _pause() -> void:
 	var live := _live()
-	director.command("pause", {"paused":not live.get("paused", false)})
+	if live.is_empty() or bool(live.get("finished", false)): return
+	var arrete := bool(live.get("paused", false))
+	if app.waiting or app.closing or app.connection_error:
+		_memoriser_pause(not arrete)
+		return
+	# Match déjà arrêté (action encore à l'écran, causerie) : rien à demander, le clic reste permis.
+	if not bool(_etat_bandeau().pause_possible) or not director._talk().is_empty(): return
+	director.command("pause", {"paused":not arrete})
 
 func choisir_camera(mode: String) -> void:
 	_choose_camera(mode)

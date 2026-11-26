@@ -117,6 +117,7 @@ func _ready() -> void:
 	add_child(equipe)
 	app.match_view = stage
 	app.pause_button = play
+	play.set_meta("toujours_cliquable", true)
 	app.match_finish = finish
 	app.match_clock = clock
 	_mettre_a_l_echelle()
@@ -201,9 +202,10 @@ func _process(_delta: float) -> void:
 	if is_instance_valid(menu) and menu.visible and is_instance_valid(equipe) and equipe.visible: _cacher_menu()
 	# Panneau du menu : ses lignes à retour automatique ne connaissent leur hauteur qu'après une mise en page.
 	if is_instance_valid(menu) and menu.visible: _placer_menu()
-	if _pause_voulue != 0 and not app.waiting:
+	if _pause_voulue != 0 and not app.waiting and not app.closing and not app.connection_error:
 		var voulue := _pause_voulue > 0
 		_pause_voulue = 0
+		_pause_clic = false
 		if bool(_live().get("paused", false)) != voulue and not _live().get("finished", false): director.command("pause", {"paused": voulue})
 
 func update_frame(value: Dictionary) -> void:

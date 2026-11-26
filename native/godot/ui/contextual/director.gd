@@ -291,7 +291,9 @@ func _refresh_controls() -> void:
 	var sending: bool = is_instance_valid(view) and view.has_method("envoi_en_cours") and view.envoi_en_cours()
 	for control in overlay.find_children("*", "BaseButton", true, false):
 		if control.has_meta("contextual_enabled"):
-			control.disabled = _waiting or sending or not bool(control.get_meta("contextual_enabled"))
+			# La pause du direct reste cliquable pendant une réponse du moteur (clic mémorisé par la vue).
+			var occupe := (_waiting or sending) and not control.has_meta("toujours_cliquable")
+			control.disabled = occupe or not bool(control.get_meta("contextual_enabled"))
 
 func _input(event: InputEvent) -> void:
 	if not active() or not event is InputEventKey or not event.pressed: return
