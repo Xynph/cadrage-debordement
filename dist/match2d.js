@@ -22,12 +22,14 @@ function matchScene(l){
  if(kind==='lineout'){ball.x=clamp(ball.x,5,95);ball.y=0;origin.x=clamp(origin.x,5,95)} // loi 18, dans la scène seulement : marque à 5 m au moins de la ligne de but ; ballon dans les mains du lanceur
  // Sortie en touche (ou avantage) suivie d'une touche : les avants sont déjà en marche vers leur place d'alignement.
  const lineoutNext=['touch','advantage'].includes(kind)?upcomingLineout(real,event):null;
+ // Fait qui suit une pénalité jouée vite à la main par la même équipe : la défense est montée sur le porteur (loi 20).
+ const afterTap=!!record&&previousScene(real,event)?.kind==='quick-tap'&&previousScene(real,event).team===possession;
  // Botteur désigné par le moteur au renvoi : il prend la place du n° 10, qui se range à côté de lui.
  const kickSlot=['kickoff','drop22','goalLine'].includes(kind)&&record?.actor!=null&&[0,1].includes(team)?on[team].indexOf(record.actor):-1;
  for(let side=0;side<2;side++)on[side].forEach((id,slot)=>{
   if(!id)return;const p=matchPlayer(real,side,id);if(!p)return;
   const attack=side===possession,dir=possession===0?1:-1,formation=['goal','miss'].includes(kind)?origin:ball;
-  let x=formation.x+(attack?-dir:dir)*(slot<8?5+slot%3*3:13+(slot-8)*2.8),y=slot<8?ball.y+(Math.floor(slot/3)-1)*4+(slot%3-1)*3:7+(slot-8)*9.3;
+  let folded=false,x=formation.x+(attack?-dir:dir)*(slot<8?5+slot%3*3:13+(slot-8)*2.8),y=slot<8?ball.y+(Math.floor(slot/3)-1)*4+(slot%3-1)*3:7+(slot-8)*9.3;
   if(kind==='carry'&&record?.style==='conquete'&&slot<8){x=ball.x+(attack?-dir:dir)*(3+slot%3*1.5);y=ball.y+(Math.floor(slot/3)-1)*3}
   if(kind==='scrum'&&slot<8){x=ball.x+(side===0?-1:1)*(1.5+slot%3*2.1);y=ball.y+(Math.floor(slot/3)-1)*2.7}
   // Touche (loi 18) : rangées à 0,5 m de part et d'autre de la ligne de remise en jeu, entre 5 et 15 m ; lanceur sur la marque ;
@@ -46,14 +48,28 @@ function matchScene(l){
   }
   // Pénalité et tir au but (loi 20) : la défense recule à 10 m au moins de la marque, vers sa ligne de but
   // (sur sa ligne si elle est plus proche), quel que soit son plan de défense ; répartie sur la largeur.
-  if(!attack&&['penalty','goal','miss'].includes(kind)){const goalLine=possession===0?100:0,recul=10+slot%3*1.2;if((x-formation.x)*dir<recul)x=Math.abs(goalLine-formation.x)<=recul?goalLine:formation.x+dir*recul;if(!record?.plans)y=slot<8?10+slot*7:5+(slot-8)*10}
+  // Pénalité jouée vite (quick-tap) : au moment de la tape, la défense est encore à ses 10 m.
+  if(!attack&&['penalty','goal','miss','quick-tap'].includes(kind)){const goalLine=possession===0?100:0,recul=10+slot%3*1.2;if((x-formation.x)*dir<recul)x=Math.abs(goalLine-formation.x)<=recul?goalLine:formation.x+dir*recul;if(!record?.plans)y=slot<8?10+slot*7:5+(slot-8)*10}
+  // Défense montée (fait qui suit la pénalité jouée vite) et défense près de sa ligne (essai, temps de jeu à moins de 15 m, où sa place habituelle tomberait sur sa ligne) :
+  // face au jeu, devant le ballon, étagée et resserrée sur ~32 m autour de lui, jamais en file sur sa ligne de but.
+  if(!attack&&(afterTap||kind==='try'||kind==='carry'&&(goalOf(possession)-ball.x)*dir<15)){
+   const goalLine=goalOf(possession),room=(goalLine-ball.x)*dir,gap=slot<8?1+slot%3*1.4:2+(slot-8)%3*1.6;
+   x=room<=.5?goalLine-dir*(.5+gap):room<8?ball.x+dir*(.5+Math.max(.4,(room-2)/5.2)*gap):ball.x+dir*gap;folded=true; // non bornée au terrain : ballon à moins de 4 m, la défense se tient sur sa ligne de but ou juste derrière (hors-jeu du regroupement)
+   y=clamp(ball.y,18,52)+(DEFENCE_FOLD[slot]-7)*2.3;
+   // Tape à 10 m au moins de la ligne, suivie d'un temps de jeu loin d'elle ou d'un essai : les avants ont jailli vers le point de la tape
+   // (à 1-7 m, dépassés si le porteur a gagné plus) ; les trois-quarts couvrent devant le porteur, ou le poursuivent jusqu'à l'essai,
+   // serrés autour de lui. Le plaqueur du moteur rejoint le porteur (match_impacts.gd).
+   const rush=afterTap&&(goalLine-origin.x)*dir>=10&&(room>=10||kind==='try');
+   if(rush&&slot<8)x=origin.x+dir*(Math.min(Math.max((ball.x-origin.x)*dir,0),4)+gap);
+   else if(rush&&kind==='try')y=clamp(ball.y,18,52)+(DEFENCE_FOLD[slot]-7)*1.2;
+  }
   if((record?.move==='maul'||record?.porte===true)&&side===team&&slot<8){x=ball.x+(side===0?-1:1)*(2+slot%3*1.3);y=ball.y+(Math.floor(slot/3)-1)*2.5}
   if(lineoutNext&&slot<8){const spot=lineoutSpot(side,slot,clamp(lineoutNext.to.x,5,95),lineoutNext.team,y);x+=(spot.x-x)*.5;y+=(spot.y-y)*.5} // à mi-chemin, pas encore alignés
   const featured=id===record?.actor;
-  if(featured&&['carry','turnover','reception','try','setpiece-win','setpiece-loss','kick','goal','miss'].includes(kind)){x=['kick','goal','miss'].includes(kind)?origin.x:ball.x;y=['kick','goal','miss'].includes(kind)?origin.y:ball.y}
+  if(featured&&['carry','turnover','reception','try','setpiece-win','setpiece-loss','kick','goal','miss','quick-tap'].includes(kind)){x=['kick','goal','miss'].includes(kind)?origin.x:ball.x;y=['kick','goal','miss'].includes(kind)?origin.y:ball.y}
   // Coup de pied de jeu : le joueur qui prend le ballon (nommé par le moteur) est au point de chute.
   if(kind==='kick'&&record?.receiver!=null&&id===record.receiver){x=ball.x;y=ball.y}
-  players.push({id,side,slot,x:featured&&kind==='try'||kind==='lineout'?x:clamp(x,1.5,98.5),y:kind==='lineout'?y:clamp(y,2,68),name:p.name,condition:p.condition,featured});
+  players.push({id,side,slot,x:featured&&kind==='try'||kind==='lineout'||folded?x:clamp(x,1.5,98.5),y:kind==='lineout'?y:clamp(y,2,68),name:p.name,condition:p.condition,featured});
  });
  return {ball,origin,players,stage:record?ACTION_LABELS[kind]:'État actuel',kind,team,possession,event,key:event||real.minute,period:record?.period||(real.flow?.period||1),restart:['scrum','lineout','kickoff','drop22','goalLine'].includes(kind)?{kind}:null,...(kind==='kick'&&record?.receiver!=null?{receiver:record.receiver}:{})};
 }
@@ -66,6 +82,12 @@ function lineoutSpot(side,slot,mark,team,y){const back=side===0?-1:1,goal=side==
  if(slot===8)return {x:mark+back*2.5,y:10};
  const off=13+(slot-8)*2.8;return {x:Math.abs(mark-goal)<=off?goal:mark+back*off,y};
 }
+// Défense resserrée autour du ballon (voir matchScene) : rang de chaque poste sur la largeur (0 à 14), avants au centre, trois-quarts aux ailes.
+const DEFENCE_FOLD=[5,7,9,6,8,4,10,3,11,2,0,1,12,14,13];
+// Ligne de but que défend l'équipe qui n'a pas le ballon.
+function goalOf(possession){return possession===0?100:0}
+// Dernier fait avec position enregistré avant le fait affiché (au plus trois événements en arrière), lu sans modifier le journal.
+function previousScene(l,event){const events=l.events||[],at=events.indexOf(event);for(let i=at-1;i>=0&&i>=at-3;i--){const s=events[i]?.scene;if(s)return s}return null}
 // Touche enregistrée juste après le fait affiché (au plus un avantage entre les deux), lue dans le journal sans le modifier.
 function upcomingLineout(l,event){const events=l.events||[],at=events.indexOf(event);if(at<0)return null;
  for(let i=at+1;i<events.length&&i<=at+2;i++){const s=events[i]?.scene;if(s?.kind==='lineout'&&[0,1].includes(s.team)&&Number.isFinite(s.to?.x))return s;if(s?.kind!=='advantage')return null}
