@@ -52,7 +52,7 @@ equals(['tests/missing-test.cjs'],allTests.slice());
 
 // Le code de gameplay sélectionne les dépendances critiques (sauvegardes incluses).
 equals(['dist/tactical-plans.js'],[
- 'tests/match-jeu-au-pied.cjs','tests/match-regles.cjs','tests/meteo-match.cjs','tests/tactical-plans.cjs','tests/v20-numerical-ai.cjs',
+ 'tests/match-ia-decisions.cjs','tests/match-jeu-au-pied.cjs','tests/match-regles.cjs','tests/meteo-match.cjs','tests/tactical-plans.cjs','tests/v20-numerical-ai.cjs',
  'tests/v21-numerical-advice.cjs','tests/v22-tactical-comparison.cjs','tests/v23-local-zones.cjs','tests/v24-four-zones.cjs','tests/v25-whatif.cjs','tests/v26-dual-whatif.cjs','tests/saves.cjs'
 ]);
 const rugby=selectTests(['dist/rugby.js']);

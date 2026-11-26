@@ -14,7 +14,7 @@ function registerRestart(l,kind,team,at,cause,by,origin=l.territory){
  if(['extra-first','extra-second'].includes(cause)&&!l.franceContext&&!l.worldContext)return null;
  if(!restartRules(l)||l.finished||!Number.isFinite(origin)||origin<0||origin>100||!RESTART_CAUSES[kind]?.includes(cause)||![0,1].includes(team)||![0,1].includes(by)||!Number.isFinite(at)||at<0||at>100)return null;
  if(team!==(['penalty-touch','50-22'].includes(cause)?by:1-by))return null;
- if(!flowBeforeRestart(l,kind,cause,at))return null;
+ if(!flowBeforeRestart(l,kind,cause,at,by))return null;
  const r={kind,team,at,cause,by,origin,minute:l.minute};l.restartLog.push(r);if(l.restartLog.length>300)l.restartLog.shift();return r;
 }
 function grantSetPiece(l,kind,team,at,cause,by,origin=l.territory){
@@ -43,9 +43,22 @@ function performKickRestart(l,kind,team,cause,by){
 }
 function handFault(l,offender,forward=false){
  // Le récit de la faute précède toujours l'avantage : « X commet un en-avant », puis « Avantage sur en-avant pour Y ».
- const narrate=()=>addEvent(l,`${S.clubs[l.pair[offender]].abbr} commet ${forward?'une passe en avant':'un en-avant'}.`,'play',{kind:'hand-fault',team:offender,cause:forward?'forward-pass':'knock-on',actor:actionPlayer(l,offender)?.id||null});
- tacticalCount(l,offender,'handErrors');const at=l.territory;if(flowRules(l)&&offerAdvantage(l,'scrum',1-offender,offender,at,{narrate,passe:forward}))return true;addEvent(l,`${S.clubs[l.pair[offender]].abbr} commet ${forward?'une passe en avant':'un en-avant'} : introduction adverse.`,'play',{kind:'hand-fault',team:offender,cause:forward?'forward-pass':'knock-on',actor:actionPlayer(l,offender)?.id||null});
+ // En-avant juste après un coup de pied pris par l'équipe fautive (chandelle relâchée, ballon ramassé puis échappé) : le
+ // receveur nommé au coup de pied commet la faute, à l'écran comme dans le récit. Aucun tirage.
+ const ab=S.clubs[l.pair[offender]].abbr,porteur=actionPlayer(l,offender),recu=!forward&&kickReceivedBy(l,offender);
+ const qui=recu?`${recu.name} (${ab}) commet un en-avant à la réception`:`${ab} commet ${forward?'une passe en avant':'un en-avant'}`,actor=recu?recu.id:porteur?.id||null;
+ const narrate=()=>addEvent(l,`${qui}.`,'play',{kind:'hand-fault',team:offender,cause:forward?'forward-pass':'knock-on',actor});
+ tacticalCount(l,offender,'handErrors');const at=l.territory;if(flowRules(l)&&offerAdvantage(l,'scrum',1-offender,offender,at,{narrate,passe:forward}))return true;addEvent(l,`${qui} : introduction adverse.`,'play',{kind:'hand-fault',team:offender,cause:forward?'forward-pass':'knock-on',actor});
  return grantSetPiece(l,'scrum',1-offender,at,forward?'forward-pass':'knock-on',offender);
+}
+// Receveur adverse du coup de pied qui vient d'être raconté (même minute, rien de joué entre les deux), sinon null.
+function kickReceivedBy(l,side){
+ for(let i=l.events.length-1;i>=0;i--){
+  const e=l.events[i];if(['sub','tactic','message'].includes(e.type))continue;
+  const s=e.scene;if(e.min!==l.minute||s?.kind!=='kick'||s.team===side||s.possession!==side||s.receiver==null)return null;
+  return activePlayers(l,side).find(p=>String(p.id)===String(s.receiver))||null;
+ }
+ return null;
 }
 // Lois manquantes (docs/lois-manquantes-20261126.md) : coups francs, passes en avant, essais de pénalité, drops.
 // Coup franc (loi 20, 2025) : jeu rapide à la main ou coup de pied ; ni tir au but (pas de drop avant que le ballon soit
@@ -152,7 +165,7 @@ function resolveTouch(l,actor,exit,{direct=false,penalty=false,carried=false,kic
  const mark=gain?exit:(actor===0?Math.min(origin,exit):Math.max(origin,exit));
  const team=penalty||fifty?actor:1-actor,cause=penalty?'penalty-touch':fifty?'50-22':carried?'carry-touch':direct?'direct-touch':'indirect-touch';
  // Coup de pied de jeu en touche (jeu au pied réaliste) : le botteur est nommé, le fait porte son id (match 2D/3D, fiche de stats).
- if(kicker&&!penalty&&!carried){const ab=S.clubs[l.pair[actor]].abbr,m=Math.max(1,Math.round(Math.abs(exit-origin)));addEvent(l,`${kicker.name} (${ab}) ${fifty?`réussit un 50:22 : le ballon rebondit en touche dans les 22 adverses, ${ab} conserve le lancer`:direct&&!gain?'botte directement en touche sans gain de terrain':court?`trouve une touche courte, ${m>1?m+' mètres gagnés':'1 mètre gagné'}`:own22(actor,origin)?`dégage en touche, ${m} mètres gagnés`:`trouve la touche${direct?'':' après rebond'}, ${m} mètres gagnés`}.`,'play',{kind:'touch',team:actor,cause,actor:kicker.id,from:{x:origin,y:35},to:{x:exit,y:0}});return grantSetPiece(l,'lineout',team,mark,cause,actor,origin)}
+ if(kicker&&!penalty&&!carried){const ab=S.clubs[l.pair[actor]].abbr,m=Math.max(1,Math.round(Math.abs(exit-origin)));addEvent(l,`${kicker.name} (${ab}) ${fifty?`réussit un 50:22 : le ballon rebondit en touche dans les 22 adverses, ${ab} conserve le lancer`:direct&&!gain?'botte directement en touche sans gain de terrain':court?`trouve une touche courte, ${m>1?m+' mètres gagnés':'1 mètre gagné'}`:own22(actor,origin)?`dégage en touche, ${m} mètres gagnés`:m<10?`trouve la touche à ${Math.round(Math.abs(attackingGoal(actor)-exit))} mètres de la ligne adverse`:`trouve la touche${direct?'':' après rebond'}, ${m} mètres gagnés`}.`,'play',{kind:'touch',team:actor,cause,actor:kicker.id,from:{x:origin,y:35},to:{x:exit,y:0}});return grantSetPiece(l,'lineout',team,mark,cause,actor,origin)}
  addEvent(l,`${S.clubs[l.pair[actor]].abbr} ${penalty?'trouve la pénaltouche et conserve le lancer':fifty?'réussit un 50:22 et conserve le lancer':carried?'est poussé en touche':direct&&!gain?'botte directement en touche sans gain de terrain':'envoie le ballon en touche'}.`,'play',{kind:'touch',team:actor,cause,from:{x:origin,y:35},to:{x:exit,y:0}});
  return grantSetPiece(l,'lineout',team,mark,cause,actor,origin);
 }
@@ -341,6 +354,8 @@ function courseDecoupee(l,side,origin,finisseur){
  return x;
 }
 function advanceCausalPlay(l){
+ // Séquence de pénaltouche (défense regroupée, dist/tactical-plans.js) : finie dès que l'autre camp joue le ballon.
+ if(l.suitePenaltouche&&l.suitePenaltouche.side!==l.possession)delete l.suitePenaltouche;
  const side=l.possession,opp=1-side,origin=l.territory,roll=Math.random(),penalites=penalitesRules(l),penaltyProb=clamp(.12+(penalites?PENALITES.jeu:0)+(70-unit(l,opp,'discipline'))*.002+tacticalPenaltyAdjustment(l,opp),tacticalRules(l)?.04:.06,tacticalRules(l)?.28:.23)*derbyFouls(l)*(typeof pilotageFoul==='function'?pilotageFoul(l,opp,'jeu'):1),handProb=handFaultProbability(l,side);
  if(roll<penaltyProb)return awardPenalty(l,side);
  if(roll<penaltyProb+handProb)return handFault(l,side,passeEnAvant(l));
@@ -360,7 +375,7 @@ function advanceCausalPlay(l){
   // The completed carrying sequence includes a tackle/ruck, resetting kick eligibility.
   l.kickContext={team:side,halfEligible:ownHalf(side,l.territory),twentyTwoEligible:own22(side,l.territory)};
   const danger=side===0?l.territory>74:l.territory<26;
-  if(danger&&Math.random()<(essais?clamp(ESSAIS.finition+ouvertureJeu(l)+edge+niveau+tacticalFinishAdjustment(l,side),.15,.85):clamp(.36+edge+tacticalFinishAdjustment(l,side),tacticalRules(l)?.12:.16,tacticalRules(l)?.78:.75))){
+  if(danger&&Math.random()<(essais?clamp(ESSAIS.finition+ouvertureJeu(l)+edge+niveau+tacticalFinishAdjustment(l,side)-(typeof defenseRegroupee==='function'?DEFENSE_REGROUPEE.finition*defenseRegroupee(l,side):0),.15,.85):clamp(.36+edge+tacticalFinishAdjustment(l,side),tacticalRules(l)?.12:.16,tacticalRules(l)?.78:.75))){
    const finish=Math.random();
    if(MATCH_COURSES_DECOUPEES){
     if(finish<.12)return resolveInGoal(l,side,finish<.08?'held-up':'ingoal-knock-on',l.territory,courseDecoupee(l,side,origin,null));

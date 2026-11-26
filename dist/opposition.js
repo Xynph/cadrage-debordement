@@ -44,7 +44,20 @@ function strategicPlayerScore(p,slot,style,level,rest,europe=false){const f=FAMI
 // imprévisible : on garde alors le tri d'origine (lot 37). Banc : titulaires relus une fois (ni la feuille ni l'effectif ne
 // changent pendant le choix du banc) ; la fatigue des titulaires du poste ne compte que pour la dernière place (i = 7).
 function bestOf(list,score){let best,top;for(let i=0;i<list.length;i++){const v=score(list[i]);if(v!==v)return list.sort((a,b)=>score(b)-score(a))[0];if(i===0||v>top){best=list[i];top=v}}return best}
-function managerSheet(c,opponent,weather,level,europe=false,ctx=null){if(level==='decouverte')return buildSheet(c);let base=buildSheet(c),style=chooseManagerStyle(c,base.lineup,weather,level,ctx);const rest=opponent&&opponent.base<c.base-3;const used=new Set();let lineup=FAMILIES.map((_,i)=>{const score=new Map(),scored=p=>{if(!score.has(p))score.set(p,strategicPlayerScore(p,i,style,level,rest,europe));return score.get(p)};let p=bestOf(c.players.filter(p=>!p.injury&&!used.has(p.id)&&slotEligible(p,i)),scored);if(p)used.add(p.id);return p?.id||null});let startersList=null;const starters=()=>startersList??=lineup.map(id=>c.players.find(x=>x.id===id));let bench=BENCH_LABELS.map((_,i)=>{let choices=c.players.filter(p=>!p.injury&&!used.has(p.id)&&benchEligible(p,i));if(i===6){let flyhalves=choices.filter(p=>p.fam===5);if(flyhalves.length)choices=flyhalves}const values=new Map();function value(p){if(values.has(p))return values.get(p);let depth=0;if(i===7){let out=starters().filter(x=>x&&x.fam===p.fam);let tired=out.length?100-Math.min(...out.map(x=>x.condition)):0;depth=tired*.15}const total=fitScore(p)+depth;values.set(p,total);return total}let p=bestOf(choices,value);if(p)used.add(p.id);return p?.id||null});return{lineup,bench}}
+// Buteur titulaire (26/11/2026, docs/ia-decisions-match-20261126.md) : le meilleur buteur disponible (demi d'ouverture,
+// trois-quarts, arrière) entre dans le XV quand il tire nettement mieux que le buteur retenu (au moins BUTEUR_IA.ecart points
+// au but) et que la perte au poste reste sous BUTEUR_IA.part × cet écart (BUTEUR_IA.max au plus) : ~0,85 point de réussite
+// par point de note au but (BUT.parPointNote), cinq tirs par match. Il prend le poste des lignes arrières où il coûte le moins.
+const BUTEUR_IA=Object.freeze({ecart:6,part:.4,max:10});
+function titulariserButeur(c,lineup,score){
+ const on=new Set(lineup.filter(Boolean)),xv=chooseScorer(c,[...on]);if(!xv)return lineup;
+ const k=c.players.filter(p=>!p.injury&&!on.has(p.id)&&p.fam>=5).sort((a,b)=>skill(b,'goal')-skill(a,'goal'))[0];
+ const gap=k?skill(k,'goal')-skill(xv,'goal'):0;if(gap<BUTEUR_IA.ecart)return lineup;
+ let best=null;for(let i=8;i<15;i++){const cur=c.players.find(p=>p.id===lineup[i]);if(!cur||!slotEligible(k,i))continue;const loss=score(cur,i)-score(k,i);if(!best||loss<best.loss)best={i,loss}}
+ if(!best||best.loss>Math.min(BUTEUR_IA.max,gap*BUTEUR_IA.part))return lineup;
+ const next=[...lineup];next[best.i]=k.id;return next;
+}
+function managerSheet(c,opponent,weather,level,europe=false,ctx=null){if(level==='decouverte')return buildSheet(c);let base=buildSheet(c),style=chooseManagerStyle(c,base.lineup,weather,level,ctx);const rest=opponent&&opponent.base<c.base-3;const used=new Set();let lineup=FAMILIES.map((_,i)=>{const score=new Map(),scored=p=>{if(!score.has(p))score.set(p,strategicPlayerScore(p,i,style,level,rest,europe));return score.get(p)};let p=bestOf(c.players.filter(p=>!p.injury&&!used.has(p.id)&&slotEligible(p,i)),scored);if(p)used.add(p.id);return p?.id||null});lineup=titulariserButeur(c,lineup,(p,i)=>strategicPlayerScore(p,i,style,level,rest,europe));used.clear();lineup.forEach(id=>id&&used.add(id));let startersList=null;const starters=()=>startersList??=lineup.map(id=>c.players.find(x=>x.id===id));let bench=BENCH_LABELS.map((_,i)=>{let choices=c.players.filter(p=>!p.injury&&!used.has(p.id)&&benchEligible(p,i));if(i===6){let flyhalves=choices.filter(p=>p.fam===5);if(flyhalves.length)choices=flyhalves}const values=new Map();function value(p){if(values.has(p))return values.get(p);let depth=0;if(i===7){let out=starters().filter(x=>x&&x.fam===p.fam);let tired=out.length?100-Math.min(...out.map(x=>x.condition)):0;depth=tired*.15}const total=fitScore(p)+depth;values.set(p,total);return total}let p=bestOf(choices,value);if(p)used.add(p.id);return p?.id||null});return{lineup,bench}}
 // Rotation autour de la Coupe d'Europe (18/11/2026, docs/top14-dispute-20261117.md §14) : en carrière Monde, un club IA qui
 // joue un match de championnat la semaine d'avant ou d'après un match européen (Champions Cup, Challenge Cup) ménage ses
 // titulaires qui enchaînent (deux feuilles de suite et 60 minutes ou plus) : −3 au choix de la feuille (−4 en expert).
@@ -53,7 +66,7 @@ const ROTATION_EUROPE=Object.freeze({competitions:Object.freeze(['champions','ch
 function rotationEuropeMalus(p,level){const R=ROTATION_EUROPE;return p.managerLoad?.streak>=R.serie&&p.managerLoad.minutes>=R.minutes?(level==='expert'?R.malusExpert:R.malus):0}
 function europeAutour(f,ci){const W=S?.worldMode,R=ROTATION_EUROPE;if(!W?.fixtures||!f||R.competitions.includes(f.competitionId))return false;return W.fixtures.some(x=>R.competitions.includes(x.competitionId)&&(x.homeId===ci||x.awayId===ci)&&Math.abs(x.week-f.week)<=R.semaines)}
 function semaineEuropeenne(l,ci){const W=S?.worldMode;if(!W?.fixtures)return false;return europeAutour(W.fixtures.find(x=>x.homeId===l.pair[0]&&x.awayId===l.pair[1]&&x.week===S.round),ci)}
-function initializeManagers(l,automated=false){l.aiLevel=S.difficulty||'classique';l.balanceVersion=2;l.managerMemory=[{lastSub:-10,lastReview:0,lastCardDiff:0,cardBase:null},{lastSub:-10,lastReview:0,lastCardDiff:0,cardBase:null}];l.numericalAiVersion=1;l.penaltyPolicies=['auto','auto'];for(let side=0;side<2;side++){if(side===l.userSide||l.pair[side]===S.club)continue;let c=S.clubs[l.pair[side]],other=S.clubs[l.pair[1-side]],europe=semaineEuropeenne(l,l.pair[side]),sheet=managerSheet(c,other,l.weather,l.aiLevel,europe,{...styleContext(l,side),europe});if(europe)l.rotationEurope=[...(l.rotationEurope||[]),side];l.sheets[side]={...l.sheets[side],on:sheet.lineup,initial:[...sheet.lineup],bench:sheet.bench,used:sheet.lineup.filter(Boolean)}}for(let side=0;side<2;side++){if(side===l.userSide||l.pair[side]===S.club)continue;const c=S.clubs[l.pair[side]];l.tactics[side]=chooseManagerStyle(c,l.sheets[side].on,l.weather,l.aiLevel,styleContext(l,side))}}
+function initializeManagers(l,automated=false){l.aiLevel=S.difficulty||'classique';l.balanceVersion=2;l.managerMemory=[{lastSub:-10,lastReview:0,lastCardDiff:0,cardBase:null},{lastSub:-10,lastReview:0,lastCardDiff:0,cardBase:null}];l.numericalAiVersion=1;l.iaDecisionsVersion=1;l.penaltyPolicies=['auto','auto'];for(let side=0;side<2;side++){if(side===l.userSide||l.pair[side]===S.club)continue;let c=S.clubs[l.pair[side]],other=S.clubs[l.pair[1-side]],europe=semaineEuropeenne(l,l.pair[side]),sheet=managerSheet(c,other,l.weather,l.aiLevel,europe,{...styleContext(l,side),europe});if(europe)l.rotationEurope=[...(l.rotationEurope||[]),side];l.sheets[side]={...l.sheets[side],on:sheet.lineup,initial:[...sheet.lineup],bench:sheet.bench,used:sheet.lineup.filter(Boolean)}}for(let side=0;side<2;side++){if(side===l.userSide||l.pair[side]===S.club)continue;const c=S.clubs[l.pair[side]];l.tactics[side]=chooseManagerStyle(c,l.sheets[side].on,l.weather,l.aiLevel,styleContext(l,side))}}
 // V20: an optional saved model: old in-progress fixtures keep their original AI.
 // These are coaching choices in the simulation, not disciplinary regulations.
 function adaptNumericalManager(l,side){
@@ -95,12 +108,101 @@ function adaptManager(l,side){if(l.finished||side===l.userSide)return;const leve
 // Note au poste du sortant (outFit) lue une fois par poste au lieu d'une fois par remplaçant : fitScore est une lecture
 // pure, même valeur (lot 36). La légalité du changement (legalChange, lecture pure elle aussi) n'est vérifiée que pour un
 // remplaçant qui deviendrait le meilleur choix : même meilleur choix, dans le même ordre (lot 37).
-function manageSubstitutions(l,side){if(l.finished||side===l.userSide)return;let level=difficultyLevel(l),start=level==='decouverte'?60:level==='expert'?45:50,spacing=level==='decouverte'?6:level==='expert'?4:5;if(l.minute<start)return;l.managerMemory=l.managerMemory||[{lastSub:-10,lastReview:0},{lastSub:-10,lastReview:0}];const memory=l.managerMemory[side];if(l.minute-memory.lastSub<spacing)return;const sh=l.sheets[side];if(!revisedRules(l)&&sh.subs>=8)return;let best=null,margin=l.score[side]-l.score[1-side],kicker=chooseScorer(S.clubs[l.pair[side]],activePlayers(l,side).map(p=>p.id),l),fit=staffSubsFit(l,side);for(let slot=0;slot<15;slot++){const out=matchPlayer(l,side,sh.on[slot]);if(!out||sh.cards.some(c=>c.id===out.id&&c.until>l.minute))continue;let outFit;for(let id of sh.bench){const p=matchPlayer(l,side,id);if(!p||p.injury)continue;let gain=fit(p,FAMILIES[slot])-(outFit??=fit(out,FAMILIES[slot]));const fresh=p.condition-out.condition;if(level==='decouverte'){if(out.condition>65||fresh<12)continue;gain=fresh*.2}else{if(fresh<7&&gain<3)continue;if(out.condition<60)gain+=4;if(level==='expert'&&kicker?.id===out.id&&Math.abs(margin)<=7&&l.minute>=55&&skill(p,'goal',fitArrete(l))<skill(out,'goal',fitArrete(l))-10)gain-=9;if(level==='expert'&&l.minute<60&&sh.bench.filter(id=>matchPlayer(l,side,id)?.fam===p.fam).length===1&&p.condition<85)gain-=2}if(gain>(level==='expert'?1.5:level==='classique'?2:0)&&(!best||gain>best.gain)&&legalChange(l,side,slot,id))best={slot,id,gain}}}if(best&&makeSub(l,side,best.slot,best.id))memory.lastSub=l.minute}
+function manageSubstitutions(l,side){if(l.finished||side===l.userSide)return;if(l.iaDecisionsVersion===1)return remplacementsIA(l,side);let level=difficultyLevel(l),start=level==='decouverte'?60:level==='expert'?45:50,spacing=level==='decouverte'?6:level==='expert'?4:5;if(l.minute<start)return;l.managerMemory=l.managerMemory||[{lastSub:-10,lastReview:0},{lastSub:-10,lastReview:0}];const memory=l.managerMemory[side];if(l.minute-memory.lastSub<spacing)return;const sh=l.sheets[side];if(!revisedRules(l)&&sh.subs>=8)return;let best=null,margin=l.score[side]-l.score[1-side],kicker=chooseScorer(S.clubs[l.pair[side]],activePlayers(l,side).map(p=>p.id),l),fit=staffSubsFit(l,side);for(let slot=0;slot<15;slot++){const out=matchPlayer(l,side,sh.on[slot]);if(!out||sh.cards.some(c=>c.id===out.id&&c.until>l.minute))continue;let outFit;for(let id of sh.bench){const p=matchPlayer(l,side,id);if(!p||p.injury)continue;let gain=fit(p,FAMILIES[slot])-(outFit??=fit(out,FAMILIES[slot]));const fresh=p.condition-out.condition;if(level==='decouverte'){if(out.condition>65||fresh<12)continue;gain=fresh*.2}else{if(fresh<7&&gain<3)continue;if(out.condition<60)gain+=4;if(level==='expert'&&kicker?.id===out.id&&Math.abs(margin)<=7&&l.minute>=55&&skill(p,'goal',fitArrete(l))<skill(out,'goal',fitArrete(l))-10)gain-=9;if(level==='expert'&&l.minute<60&&sh.bench.filter(id=>matchPlayer(l,side,id)?.fam===p.fam).length===1&&p.condition<85)gain-=2}if(gain>(level==='expert'?1.5:level==='classique'?2:0)&&(!best||gain>best.gain)&&legalChange(l,side,slot,id))best={slot,id,gain}}}if(best&&makeSub(l,side,best.slot,best.id))memory.lastSub=l.minute}
+// Banc de l'IA par vagues (26/11/2026, docs/ia-decisions-match-20261126.md) : rencontres créées avec `iaDecisionsVersion`.
+// Élite réelle : première ligne vers 47-55', avants puis charnière et trois-quarts par vagues entre 54' et 70', presque
+// rien après 75' (blessures à part, gérées par les incidents du match). Chaque camp a ses minutes de vague, tirées d'un
+// repère fixe de la rencontre (aucun tirage au sort), puis avancées selon le score : large avance → rotation, gros retard
+// → coaching offensif. Un joueur cramé (condition sous `crame`) sort avant sa vague dès la 40e. Dans une vague, plusieurs
+// changements la même minute (au plus `parMinute`) ; `ecart` minutes entre deux changements d'un même groupe.
+// Jamais de retour tactique d'un joueur remplacé (loi 3 : retours réservés au saignement, au protocole commotion, à la
+// première ligne et au rouge de vingt minutes) ; le buteur reste en jeu (sauf à bout) si son remplaçant tire moins bien (5 points au but), match plié compris : les
+// transformations de fin de match comptent encore (bonus offensif, différence de points) ; sans cela, la compétence du
+// buteur en fin de match baissait de plus de 2 points (tests/fatigue-phases-arretees.cjs, 26/11/2026).
+const BANC_IA=Object.freeze({
+ groupes:Object.freeze(['front','front','front','pack','pack','pack','pack','pack','demis','demis','arrieres','arrieres','arrieres','arrieres','arrieres']),
+ vagues:Object.freeze({front:[47,55],pack:[54,62],demis:[57,66],arrieres:[59,69]}),
+ ecart:Object.freeze({front:2,pack:4,demis:4,arrieres:4}),
+ fin:75,crame:55,horsLimite:40,debutCrame:40,
+ rotation:15,avanceRotation:5,avanceRetard:3,retardDecouverte:6,
+ parMinute:3,gainVague:-2,gainCrame:2,
+ buteur:Object.freeze({perte:5})
+});
+function vagueBanc(l,side,groupe){const W=BANC_IA.vagues[groupe];let h=2166136261;for(const v of [l.pair[0],l.pair[1],side,groupe.length*7+groupe.charCodeAt(0),S.season|0,S.round|0]){h^=Number(v)|0;h=Math.imul(h,16777619)>>>0}return W[0]+h%(W[1]-W[0]+1)}
+function remplacementsIA(l,side){
+ const B=BANC_IA,level=difficultyLevel(l),m=typeof matchMinute==='function'?matchMinute(l):l.minute;
+ if(m<B.debutCrame)return;
+ l.managerMemory=l.managerMemory||[{lastSub:-10,lastReview:0},{lastSub:-10,lastReview:0}];
+ const memory=l.managerMemory[side],sh=l.sheets[side];if(!revisedRules(l)&&sh.subs>=8)return;
+ const vagues=memory.banc||(memory.banc={faits:{front:0,pack:0,demis:0,arrieres:0}});
+ const margin=l.score[side]-l.score[1-side],decale=level==='decouverte'?B.retardDecouverte:m>=45&&margin>=B.rotation?-B.avanceRotation:m>=45&&margin<=-B.rotation?-B.avanceRetard:0;
+ const ouverte=g=>m>=vagueBanc(l,side,g)+decale+vagues.faits[g]*B.ecart[g];
+ const fit=staffSubsFit(l,side),fitA=fitArrete(l),garderButeur=level!=='decouverte';
+ for(let fait=0;fait<B.parMinute;fait++){
+  const kicker=garderButeur?chooseScorer(S.clubs[l.pair[side]],activePlayers(l,side).map(p=>p.id),l):null;let best=null;
+  for(let slot=0;slot<15;slot++){
+   const out=matchPlayer(l,side,sh.on[slot]);if(!out||!sh.initial.includes(out.id)||sh.cards.some(c=>c.id===out.id&&c.until>l.minute))continue;
+   const g=B.groupes[slot],crame=out.condition<(m>B.fin?B.horsLimite:B.crame),vague=m<=B.fin&&ouverte(g);if(!vague&&!crame)continue;
+   let outFit;
+   for(const id of sh.bench){
+    if(sh.used.includes(id))continue;const p=matchPlayer(l,side,id);if(!p||p.injury)continue;
+    let gain=fit(p,FAMILIES[slot])-(outFit??=fit(out,FAMILIES[slot]));
+    if(kicker?.id===out.id&&skill(p,'goal',fitA)<skill(out,'goal',fitA)-B.buteur.perte&&out.condition>=B.horsLimite)continue;
+    if(gain<=(vague?B.gainVague:B.gainCrame))continue;
+    if((!best||gain>best.gain)&&legalChange(l,side,slot,id))best={slot,id,gain,g};
+   }
+  }
+  if(!best||!makeSub(l,side,best.slot,best.id))break;
+  memory.lastSub=l.minute;vagues.faits[best.g]++;
+ }
+}
 function trackManagerLoad(l){if(l.managerLoadRecorded)return;l.managerLoadRecorded=true;for(let side=0;side<2;side++){const sh=l.sheets[side];for(let p of S.clubs[l.pair[side]].players){let minutes=sh.minutes[p.id]||0;p.managerLoad={minutes,streak:sh.initial.includes(p.id)?(p.managerLoad?.streak||0)+1:0}}}}
 // Fin de match (chrono des arrêts, docs/chrono-arrets-de-jeu-20261118.md) : à partir de la 72e, mené d'un peu plus que
 // l'écart du bonus défensif (Top 14 : −6 à −8), le staff prend les trois points (un tir coûte ≈ 2 min de chrono).
 // Portée du tir (docs/penalites-au-but-20261123.md) : réussite attendue du buteur à la marque (`y` : abscisse de la marque).
-function wantsPosts(l,side,distance,y=35){const policy=l.penaltyPolicies?.[side]||'auto';if(policy==='touch')return false;if(policy==='points')return postsInRange(l,side,distance,y,true);const smart=side===l.userSide||difficultyLevel(l)==='expert';if(smart&&l.minute>=65){const diff=l.score[side]-l.score[1-side];if(chronoRules(l)&&matchMinute(l)>=72){const bd=typeof nativeMatchBonus!=='undefined'?nativeMatchBonus.regleDuMatch(l)?.defensif?.ecart:null;if(bd&&-diff>bd&&-diff<=bd+3)return distance<45}if(diff<-3)return false;if(diff>=0&&l.tries[side]-l.tries[1-side]===2&&diff>7&&(l.franceContext?.phase??S.phase)==='league')return false;if(Math.abs(diff)<=3)return postsInRange(l,side,distance,y)}return postsInRange(l,side,distance,y)&&(l.tactics[side]!=='conquete'||distance<28)}
+function wantsPosts(l,side,distance,y=35){const policy=l.penaltyPolicies?.[side]||'auto';if(l.iaDecisionsVersion===1)return choixPoteauxStaff(l,side,distance,y,policy);if(policy==='touch')return false;if(policy==='points')return postsInRange(l,side,distance,y,true);const smart=side===l.userSide||difficultyLevel(l)==='expert';if(smart&&l.minute>=65){const diff=l.score[side]-l.score[1-side];if(chronoRules(l)&&matchMinute(l)>=72){const bd=typeof nativeMatchBonus!=='undefined'?nativeMatchBonus.regleDuMatch(l)?.defensif?.ecart:null;if(bd&&-diff>bd&&-diff<=bd+3)return distance<45}if(diff<-3)return false;if(diff>=0&&l.tries[side]-l.tries[1-side]===2&&diff>7&&(l.franceContext?.phase??S.phase)==='league')return false;if(Math.abs(diff)<=3)return postsInRange(l,side,distance,y)}return postsInRange(l,side,distance,y)&&(l.tactics[side]!=='conquete'||distance<28)}
+// Choix du staff sur pénalité (26/11/2026, docs/ia-decisions-match-20261126.md) : rencontres `iaDecisionsVersion`, toutes les
+// équipes en consigne « Selon le contexte » (IA de tous niveaux comme club du manager). Sans tirage (quickTapWeight s'en sert).
+// - Hors de portée (réussite attendue du buteur à la marque sous le seuil, vent et pluie compris) : touche.
+// - À partir de la 65e : mené de 3 points ou moins, à égalité ou devant, les poteaux (sauf bonus offensif à un essai avec
+//   8 points d'avance : touche) ; mené de 4 points ou plus, la touche pour l'essai, sauf entre la 72e et la fin pour revenir
+//   dans le bonus défensif (#1302, chrono) et, avant la 75e, mené de 8 à 10 points : trois points pour revenir à un essai transformé.
+// - Milieu de match : les poteaux ; un pack de conquête va en touche au-delà de 28 m, sauf tir facile. La part de pénaltouches
+//   propre au championnat (pretereTouche, dist/tactical-plans.js) ne joue qu'en milieu de match, selon la distance et le score.
+// - Consigne « touche » posée par l'IA (« tout pour la victoire ») : les poteaux dans les dix dernières minutes quand trois
+//   points suffisent à égaliser ou gagner (mené de 1 à 3).
+// - Consigne « points » posée par l'IA (dilemme du bonus, native/engine/match-bonus.cjs) : levée dans les cinq dernières
+//   minutes quand trois points ne servent plus à rien (ni égalité, ni bonus défensif à reprendre).
+// - Ces deux levées ne visent que la consigne posée par l'IA (managerMemory[side].consignePenalite, match-bonus.cjs) :
+//   une consigne fixée par le manager prime toujours, même quand elle paraît mauvaise.
+const PENALITE_IA=Object.freeze({fin:65,toucheLevee:70,derniere:75,bonusDefensif:72,facile:.85,unEssai:7,avanceBonus:8,conquete:28,
+ culture:Object.freeze({pres:.3,milieu:.75,loin:1,mene:1.4,devant:1.2,serre:.6,minute:50,max:.9})});
+function bonusDefensifEcart(l){const bd=typeof nativeMatchBonus!=='undefined'?nativeMatchBonus.regleDuMatch(l)?.defensif?.ecart:null;return Number.isFinite(bd)?bd:null}
+function troisPointsUtiles(l,side){const diff=l.score[side]-l.score[1-side];if(diff+3>=0)return true;const bd=bonusDefensifEcart(l);return bd!==null&&-diff>bd&&-diff-3<=bd}
+function bonusOffensifAPortee(l,side){if(l.score[side]-l.score[1-side]<PENALITE_IA.avanceBonus)return false;const r=typeof nativeMatchBonus!=='undefined'?nativeMatchBonus.regleDuMatch(l):null;if(r?.offensif)return nativeMatchBonus.manque(r,l.score,l.tries,side)===1;return l.tries[side]-l.tries[1-side]===2&&(l.franceContext?.phase??S.phase)==='league'}
+function choixPoteauxStaff(l,side,distance,y,policy){
+ const P=PENALITE_IA,m=matchMinute(l),diff=l.score[side]-l.score[1-side],poseeIA=side!==l.userSide&&l.managerMemory?.[side]?.consignePenalite===policy;
+ if(policy==='touch')return poseeIA&&m>=P.toucheLevee&&diff<0&&diff>=-3&&postsInRange(l,side,distance,y);
+ if(policy==='points')return !(poseeIA&&m>=P.derniere&&!troisPointsUtiles(l,side))&&postsInRange(l,side,distance,y,true);
+ if(m>=P.fin){
+  if(diff>=-3)return !(diff>=0&&bonusOffensifAPortee(l,side))&&postsInRange(l,side,distance,y);
+  const bd=bonusDefensifEcart(l);
+  if(chronoRules(l)&&m>=P.bonusDefensif&&bd!==null&&-diff>bd&&-diff<=bd+3)return distance<45;
+  return m<P.derniere&&-diff-3<=P.unEssai&&-diff>=8&&postsInRange(l,side,distance,y);
+ }
+ if(!postsInRange(l,side,distance,y))return false;
+ return l.tactics[side]!=='conquete'||distance<P.conquete||goalChanceEstimate(l,side,distance,y)>=P.facile;
+}
+// Part de pénaltouches propre au championnat (TOUCHE_CHAMPIONNATS), milieu de match seulement : nulle sur un tir facile,
+// réduite près des poteaux, plus forte quand on est mené de 8 points ou plus (ou qu'on mène largement), plus faible à score serré.
+function partToucheChampionnat(l,side,c){
+ if(!c)return 0;const P=PENALITE_IA,C=P.culture,m=matchMinute(l);if(m>=P.fin)return 0;
+ const d=side===0?100-l.territory:l.territory,diff=l.score[side]-l.score[1-side];
+ if(goalChanceEstimate(l,side,d,penaltySpotY(l,side))>=P.facile)return 0;
+ let w=c*(d<22?C.pres:d<40?C.milieu:C.loin);
+ if(m>=C.minute)w*=diff<=-8?C.mene:diff>=8?C.devant:Math.abs(diff)<=3?C.serre:1;
+ return clamp(w,0,C.max);
+}
 function setPenaltyPolicy(policy){const l=S.live;if(!l||!l.paused||l.finished||!PENALTY_POLICIES[policy])return;l.penaltyPolicies=l.penaltyPolicies||['auto','auto'];l.penaltyPolicies[l.userSide]=policy;addEvent(l,`Ta consigne sur pénalité : ${PENALTY_POLICIES[policy]}.`,'tactic',{team:l.userSide});syncMatchPresentation(l);save();render()}
 function setDifficulty(level){if(S.live){toast('La difficulté se règle entre deux rencontres.');return}if(!DIFFICULTIES[level])return;S.difficulty=level;save();render();toast('Difficulté : '+DIFFICULTIES[level][0]+'. Les attributs restent identiques.')}
 function difficultyPanel(){return `<div class="card"><div class="cardtitle"><h2>04 / Le défi du manager</h2><span class="tag">${DIFFICULTIES[S.difficulty||'classique'][0]}</span></div><div class="options">${Object.entries(DIFFICULTIES).map(([k,[title,desc]])=>`<button class="option ${(S.difficulty||'classique')===k?'selected':''}" onclick="setDifficulty('${k}')">${title}<small>${desc}</small></button>`).join('')}</div><p class="help">La difficulté modifie les décisions des adversaires. Aucun attribut, budget ou coefficient de réussite n’est augmenté selon le niveau. Le même moteur et les mêmes règles s’appliquent aux deux équipes. Ce réglage est conservé dans la sauvegarde et pris en compte au prochain coup d’envoi.</p></div>`}

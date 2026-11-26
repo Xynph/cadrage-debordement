@@ -37,7 +37,7 @@ const SEUIL_DYNAMIQUE=t=>86-32*t; // de 54 (tout se joue) à 80 (match plié)
 // d'une pénalité réussie, et le niveau dynamique en garde une part réelle (régulateur d'issue) :
 // voir docs/match-temps-forts-conception-20261111.md, § 13.
 const GROSSES=new Set(['franchissement','ballon_sauve','ballon_tenu_en_but','essai_refuse','penalite_manquee','pression_dans_les_22',
- 'pres_de_la_ligne','cinquante_22','jeu_au_pied_dangereux','contre_attaque','touche_5m','melee_5m','en_but_sous_pression','ballon_porte']);
+ 'pres_de_la_ligne','cinquante_22','jeu_au_pied_dangereux','pied_recupere','contre_attaque','touche_5m','melee_5m','en_but_sous_pression','ballon_porte']);
 // Régulateur d'issue du niveau dynamique : après quatre temps forts, si la part de ceux qui
 // marquent dépasse PART_POINTS, le seuil des grosses actions sans point baisse de BONUS_GROSSES
 // (et remonte d'autant si elles dépassent PART_GROSSES). Deux temps forts de même type à moins
@@ -138,6 +138,18 @@ function tension(ligne,{eliminatoire=false,bonus=true}={}){
  return borne(t,0,1);
 }
 
+// Coup de pied disputé gagné (option B de Léo, 26/11/2026) : chandelle, rasant, par-dessus ou croisé repris par
+// l'équipe qui botte (le fait `kick` garde le ballon à son équipe), ou chandelle relâchée par le receveur adverse
+// (en-avant de l'équipe qui reçoit, juste après et à la même minute). Lu sur la structure du journal, jamais sur le texte.
+function piedGagne(lignes,j){
+ const l=lignes[j];if(!l||l.kind!=='kick'||l.equipe===null||l.possession===null)return false;
+ if(l.possession===l.equipe)return true;
+ let k=j+1;while(k<lignes.length&&lignes[k].bandeau)k++;
+ const n=lignes[k];return !!n&&n.kind==='hand-fault'&&n.equipe===l.possession&&n.periode===l.periode&&n.min===l.min;
+}
+// Temps fort court d'un coup de pied gagné : un plan d'amorce au plus, le coup de pied, puis deux plans au plus.
+const PIED_COURT=Object.freeze({amorce:1,apres:2,base:62});
+
 // Action décisive portée par un événement : type de temps fort et intérêt de base (0–100).
 function action(l,lignes){
  const k=l.kind,d=l.equipe===null||l.x===null?null:distanceLigne(l.equipe,l.x);
@@ -177,6 +189,7 @@ function action(l,lignes){
   if(reprise)return {type:'reprise',base:40,lancement:true};
   return null;
  }
+ if(k==='kick'&&piedGagne(lignes,l.i))return {type:'pied_recupere',base:PIED_COURT.base};
  // Jeu au pied dangereux : le ballon tombe dans les 22 adverses.
  if(k==='kick'&&l.depuis!==null&&d!==null&&d<=22&&Math.abs(l.x-l.depuis)>=20)return {type:'jeu_au_pied_dangereux',base:56};
  if(k==='kick'&&l.depuis!==null&&Math.abs(l.x-l.depuis)>=35)return {type:'long_jeu_au_pied',base:26};
@@ -537,6 +550,12 @@ const DUREE_MAX=50;
 // danger sans point) ; moins de 30 % : il remonte.
 const ISSUE=Object.freeze({apres:4,haut:.5,bas:.3,pas:6});
 const finNaturelle=l=>FINS.has(l.kind)||l.kind==='turnover'||l.kind==='setpiece-loss';
+// Fin d'un temps fort court : `apres` plans montrables au plus après le fait j, sans dépasser la fin naturelle de l'action.
+function finCourte(lignes,j,plafond,apres){
+ const fin=finAction(lignes,j,plafond);let n=0,k=j;
+ for(let q=j+1;q<=fin;q++){if(montrable(lignes[q])){if(n>=apres)break;n++}k=q}
+ return k;
+}
 // Mi-temps et fin du match : jamais dans un temps fort déclenché (l'écran de pause s'en charge).
 const montrable=l=>!l.bandeau&&dureePlan(l)>0&&l.kind!=='break'&&l.kind!=='end';
 
@@ -670,12 +689,20 @@ function en_direct_importance(events,options={}){
    membres.push({type:v.type,score:v.valeur,force:false});
    j=fin;
   }
+  // 2 bis. Coup de pied disputé gagné non couvert : temps fort court (option B de Léo, 26/11/2026).
+  let court=false;
+  for(let j=Math.max(r.debut,etat.montre+1);j<=r.fin;j++){
+   if(!piedGagne(lignes,j)||debut>=0&&j>=debut&&j<=fin)continue;
+   court=debut<0;
+   ajoute(debutAction(lignes,j,Math.max(etat.montre+1,0),PIED_COURT.amorce),finCourte(lignes,j,r.fin,PIED_COURT.apres));
+   membres.push({type:'pied_recupere',score:PIED_COURT.base,force:false});
+  }
   // 3. Filet : un essai ou un carton rouge non couverts sont montrés depuis le début de leur action.
   for(let j=Math.max(r.debut,etat.montre+1);j<=r.fin;j++){
    const l=lignes[j],grave=l.kind==='try'||l.kind==='card'&&l.incident&&l.cause==='red';
    if(!grave||debut>=0&&j>=debut&&j<=fin)continue;
    ajoute(debutAction(lignes,j,Math.max(etat.montre+1,0),regle.amorce),finAction(lignes,j,r.fin));
-   rattrapage=declencheur===null&&!suite;
+   rattrapage=declencheur===null&&!suite;court=false;
    membres.push({type:l.kind==='try'?'essai':'carton_rouge',score:100,force:true});
   }
   // 50 s au plus par temps fort (suites comprises) : la fin recule jusqu'au dernier plan qui tient,
@@ -692,14 +719,14 @@ function en_direct_importance(events,options={}){
     const desc=decrire(lignes,debut,fin,membres,false,suite);
     // Types a posteriori (mesure seulement : jamais montrés avant l'image).
     const issues=[];for(let k=debut;k<=fin;k++){const a=lignes[k].bandeau?null:action(lignes[k],lignes);if(a)issues.push(a.type)}
-    const tf={cle:debut+'-'+plans.at(-1).i,suite,...desc,type:suite?'suite_de_l_action':declencheur?.type||(membres[0]?.type??'jeu'),
+    const tf={cle:debut+'-'+plans.at(-1).i,suite,...desc,type:suite?'suite_de_l_action':declencheur?.type||(membres.find(m=>m.force)??membres[0])?.type||'jeu',
      types:[...new Set([...membres.map(m=>m.type),...issues])],plans,bandeaux,nombrePlans:plans.length,
      declencheur:declencheur?.i??null,importance:declencheur?.importance??null,seuil:declencheur?.seuil??null,signaux:declencheur?.signaux??null,rattrapage};
     decision.joue=true;decision.tempsFort=tf;
     etat.montre=fin;etat.cumul+=tf.duree;
     etat.dureeEpisode=suite?etat.dureeEpisode+tf.duree:tf.duree;
     const dernierMontre=lignes[plans.at(-1).i],resteRafale=lignes.slice(fin+1,r.fin+1).some(montrable);
-    etat.ouvert=etat.dureeEpisode<DUREE_MAX&&!resteRafale&&!finNaturelle(dernierMontre)&&dernierMontre.kind!=='card';
+    etat.ouvert=!court&&etat.dureeEpisode<DUREE_MAX&&!resteRafale&&!finNaturelle(dernierMontre)&&dernierMontre.kind!=='card';
     if(!suite){
      etat.episodes++;
      if(plans.some(p=>p.kind==='try'||p.kind==='goal'))etat.points++;
@@ -734,6 +761,6 @@ function en_direct(events,options={}){
  return en_direct_importance(events,options);
 }
 
-module.exports=Object.freeze({NIVEAUX,DUREES,HORLOGE,GROSSES,FINS,LANCEMENTS,IMPORTANCE,DUREE_MAX,dansLes22,normaliser,tension,
+module.exports=Object.freeze({PIED_COURT,piedGagne,NIVEAUX,DUREES,HORLOGE,GROSSES,FINS,LANCEMENTS,IMPORTANCE,DUREE_MAX,dansLes22,normaliser,tension,
  importance,debutAction,finAction,temps_forts,en_direct,en_direct_retrospectif});
 

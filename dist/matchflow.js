@@ -28,9 +28,10 @@ function advantageReal(l,at=l.territory){
  if(l.advantageModel===2&&a.phases>=2&&l.possession===a.team&&gain>=(a.kind==='penalty'?18:8))return true;
  return gain>=(a.kind==='penalty'?25:12)||a.kind==='scrum'&&a.phases>=2&&l.possession===a.team&&gain>0;
 }
-function returnAdvantage(l,silent=false){
+// `motif` : début de la ligne de retour (coup de pied en touche de l'équipe qui a l'avantage : c'est son choix, pas « aucun avantage »).
+function returnAdvantage(l,silent=false,motif='Aucun avantage obtenu'){
  const a=l.flow.advantage;if(!a)return false;
- l.flow.advantage=null;if(!silent)addEvent(l,`Aucun avantage obtenu : retour à ${a.kind==='penalty'?'la pénalité':'la mêlée'} pour ${S.clubs[l.pair[a.team]].abbr}.`,'advantage',{team:a.team,to:{x:a.at,y:35}});
+ l.flow.advantage=null;if(!silent)addEvent(l,`${motif} : retour à ${a.kind==='penalty'?'la pénalité':'la mêlée'} pour ${S.clubs[l.pair[a.team]].abbr}.`,'advantage',{team:a.team,to:{x:a.at,y:35}});
  ballPossession(l,a.team,a.at);l.flow.resolvingAward=true;
  try{if(a.kind==='penalty')executePenaltyChoice(l,a.team);else grantSetPiece(l,'scrum',a.team,a.at,a.cause==='forward-pass'?'forward-pass':'knock-on',a.offender,a.at)}finally{l.flow.resolvingAward=false}
  return true;
@@ -67,10 +68,11 @@ function settleAdvantage(l){
  if(advantageReal(l))return clearAdvantage(l);
  if(a.phases>=3)return returnAdvantage(l);
 }
-function flowBeforeRestart(l,kind,cause,at){
+function flowBeforeRestart(l,kind,cause,at,by=null){
  if(!flowRules(l))return !l.finished;if(l.finished||l.flow.atBreak)return false;
  if(l.flow.advantage&&!l.flow.resolvingAward){
-  if(advantageReal(l,at))clearAdvantage(l);else{returnAdvantage(l);return false}
+  const tape=kind==='lineout'&&by===l.flow.advantage.team&&['direct-touch','indirect-touch'].includes(cause);
+  if(advantageReal(l,at))clearAdvantage(l);else{returnAdvantage(l,false,tape?'Coup de pied en touche pendant l’avantage':undefined);return false}
  }
  if(l.minute>=periodBoundary(l)&&!(l.flow.resolvingAward&&kind==='scrum'&&(cause==='knock-on'||cause==='forward-pass'))&&cause!=='penalty-touch'&&cause!=='penalty-scrum'&&!['start','second-half'].includes(cause)){endFlowPeriod(l);return false}
  l.flow.ballDead=false;return true;
