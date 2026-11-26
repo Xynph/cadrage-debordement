@@ -53,7 +53,12 @@ func _bandeau(next: Dictionary, play: Button, etat: Dictionary, en_page: bool) -
 		precedent.tooltip_text = "Écran précédent · Alt+←"
 		precedent.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		ligne.add_child(precedent)
-		if not next.is_empty(): ligne.add_child(_statut_feuille(etat))
+		if not next.is_empty():
+			var statut := _statut_feuille(etat)
+			ligne.add_child(statut)
+			# 1280 × 720 avec une feuille incomplète (erreur et raison du verrou) : le statut cède sa place, coupé « … »,
+			# pour que le coup d'envoi reste à l'écran.
+			ligne.pre_sort_children.connect(_statut_souple.bind(barre, ligne, statut.get_child(0)))
 		# Pastille du dernier match (choix de Léo du 21/11) : ouvre la petite fenêtre du bilan ; absente sans match joué.
 		var dernier: Control = Bilan.pastille_bandeau(self, _model) if not next.is_empty() else null
 		if dernier != null: ligne.add_child(dernier)
@@ -121,8 +126,26 @@ func _statut_feuille(etat: Dictionary) -> Control:
 	_icone_dans_lien(lien, C.icon_texture("warning" if alerte else "check", Charte.D if etat.incomplete else Charte.N if alerte else Charte.V), 16)
 	lien.tooltip_text = "Ouvrir la composition"
 	lien.accessibility_name = "%s, %s. Ouvrir la composition" % [etat.mot, " · ".join(suite)]
+	lien.clip_text = true
+	lien.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	ligne.add_child(lien)
 	return ligne
+
+## Largeur du statut de la feuille : sa largeur naturelle tant que le bandeau tient, sinon la place restante.
+func _statut_souple(barre: MarginContainer, ligne: HBoxContainer, lien: Button) -> void:
+	if not is_instance_valid(lien) or not lien.is_inside_tree(): return
+	var style := lien.get_theme_stylebox("normal")
+	var marges := style.get_margin(SIDE_LEFT) + style.get_margin(SIDE_RIGHT) if style != null else 0.0
+	var naturel := ceilf(lien.get_theme_font("font").get_string_size(lien.text, HORIZONTAL_ALIGNMENT_LEFT, -1, lien.get_theme_font_size("font_size")).x + marges) + 1.0
+	var dispo := barre.size.x - barre.get_theme_constant("margin_left") - barre.get_theme_constant("margin_right")
+	var autres := 0.0
+	var visibles := 0
+	for enfant: Node in ligne.get_children():
+		if not enfant is Control or not (enfant as Control).visible: continue
+		visibles += 1
+		if enfant != lien.get_parent(): autres += (enfant as Control).get_combined_minimum_size().x
+	autres += ligne.get_theme_constant("separation") * maxi(0, visibles - 1)
+	lien.custom_minimum_size.x = clampf(dispo - autres, minf(M(80), naturel), naturel)
 
 ## Pictogramme ☰ du lien « Menu » : trois traits ivoire.
 class Burger extends Control:
