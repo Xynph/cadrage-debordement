@@ -78,7 +78,7 @@ const BRAS := {
 }
 const TOLERANCE_BRAS := 0.02
 const JEU_BRAS := 0.005
-const PASSES_BRAS := 4
+const PASSES_BRAS := 6
 const ROTATION_BRAS_MAX := 0.6
 ## Haut du bras touché à moins de EPAULE_BRAS (m) de l'épaule : contact du tronc, laissé (sonde : « epaule »).
 const EPAULE_BRAS := 0.06
@@ -459,19 +459,28 @@ func _sortir_bras(rig: Skeleton3D, segments: Array, autres: Array, racine: Vecto
 	if pivots.is_empty():
 		return false
 	var voulu_m := pire + JEU_BRAS
+	# Pivot le plus efficace (bras de levier perpendiculaire à la sortie le plus long) : l'épaule quand le
+	# point enfoncé est près du coude, le coude quand c'est la main.
+	var meilleur := -1
+	var effet := 0.05
+	var levier := Vector3.ZERO
+	var perpendiculaire := Vector3.ZERO
 	for nom: String in pivots:
 		var i := rig.find_bone(nom)
 		if i < 0:
 			continue
-		var pivot := (g * rig.get_bone_global_pose(i)).origin
-		var levier := point - pivot
-		var longueur := levier.length()
-		if longueur < 0.05:
+		var l := point - (g * rig.get_bone_global_pose(i)).origin
+		if l.length() < 0.05:
 			continue
-		var perpendiculaire := dehors - levier / longueur * dehors.dot(levier / longueur)
-		if perpendiculaire.length() < 0.3:
-			continue
-		var angle := asin(clampf(voulu_m / (longueur * perpendiculaire.length()), 0.0, sin(ROTATION_BRAS_MAX)))
+		var perp := dehors - l.normalized() * dehors.dot(l.normalized())
+		if l.length() * perp.length() > effet:
+			effet = l.length() * perp.length()
+			meilleur = i
+			levier = l
+			perpendiculaire = perp
+	if meilleur >= 0:
+		var i := meilleur
+		var angle := asin(clampf(voulu_m / effet, 0.0, sin(ROTATION_BRAS_MAX)))
 		var monde := Quaternion(levier.cross(perpendiculaire).normalized(), angle)
 		var r := rig.global_basis.orthonormalized().get_rotation_quaternion()
 		var actuel := rig.get_bone_global_pose(i).basis.get_rotation_quaternion()

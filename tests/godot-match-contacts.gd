@@ -96,9 +96,8 @@ func contacts(view) -> Dictionary:
 			var torse_b := (rb.global_transform * rb.get_bone_global_pose(rb.find_bone("Torso"))).origin.y
 			if torse_a >= 0.45 and torse_b < 0.45:
 				sortie.jambe_couche = maxf(sortie.jambe_couche, penetration(volumes(ra, JAMBES), volumes(rb, CORPS)))
-			# Bras dans le corps d'un autre (26/11/2026), sauf ceux du porteur qui tient le ballon.
-			if not (ids[i] == view._carrier_id and view._ball_attached):
-				sortie.bras_corps = maxf(sortie.bras_corps, bras_dans(volumes(ra, BRAS), volumes(rb, SANS_BRAS)))
+			# Bras dans le corps d'un autre (26/11/2026), porteur du ballon compris.
+			sortie.bras_corps = maxf(sortie.bras_corps, bras_dans(volumes(ra, BRAS), volumes(rb, SANS_BRAS)))
 	return sortie
 
 func clip_de(view, id: String) -> String:
