@@ -46,6 +46,13 @@ au joueur) est ignorée. Une action qui échoue ou diverge arrête la reprise à
 **conservé** (`journal-non-rejoue-*.jsonl`) et le joueur en est informé. Un journal d'un autre profil ou illisible est
 conservé de même (`journal-ecarte-*`, `journal-illisible-*`), jamais effacé.
 
+Ancien journal (lignes sans séances de la semaine `w`, avant #1309) : les jours d'un « Continuer » gardaient les séances
+de la dernière projection, parfois celles d'une semaine passée ; la clôture d'une semaine sans match les jouait ainsi
+(carrière reprise différente sans alerte, ou arrêt sur « résultat différent »). Quand séances gardées et séances projetées
+diffèrent, les deux sont essayées (jours consécutifs d'une avance : séances gardées d'abord), la graine notée départage,
+au plus 8 retours en arrière ; sinon la plus longue suite confirmée est reprise. Les lignes reprises sont réécrites avec
+leur `w`. Test : `tests/reprise-ancien-journal-semaine.cjs`.
+
 ## Garanties en cas de plantage
 
 - Décision confirmée à l'écran = ligne déjà sur disque : rien n'est perdu (avant : la dernière décision pouvait

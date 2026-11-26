@@ -1674,19 +1674,47 @@ function createBridge(options={}){
    const actions=read.actions,started=performance.now();
    const base={seed,clock,store:copyStore(store),text:run('JSON.stringify(S)')};
    let reason='';
+   // Ancien journal (lignes sans `w`, avant #1309) : la ligne ne dit pas quelles séances de la semaine le jeu avait en
+   // vigueur. Une projection précédait chaque commande, sauf les jours d'un « Continuer » après le premier (séances de
+   // la dernière projection, parfois d'une semaine déjà passée : la clôture d'une semaine sans match les joue alors
+   // autrement). Choix le plus sûr pour le joueur (jamais perdre de progression) : pour chaque ligne où séances gardées
+   // et séances projetées diffèrent, les deux sont essayées, la graine notée après l'action départageant ; jours
+   // consécutifs d'une avance : séances gardées d'abord. Aucun chemin complet : la plus longue suite confirmée est
+   // reprise (au moins autant qu'avant), le journal d'origine conservé. Les lignes reprises sont réécrites avec leur `w`.
+   const n=actions.length,choix=new Array(n).fill(null),pris=new Array(n).fill(0),utilise=new Array(n);
+   const actif=p=>!!p&&peek('!!S&&S.season==='+JSON.stringify(p.season??null)+'&&S.round==='+JSON.stringify(p.round??null));
+   const poserAncien=i=>{
+    const a=actions[i];utilise[i]=undefined;choix[i]=null;
+    if(Object.hasOwn(a,'w')||peek('!!S?.live')){poserProgramme(a);return;}
+    const garde=programmeEnVigueur();poserProgramme(a);const projete=programmeEnVigueur();
+    const egal=JSON.stringify(garde)===JSON.stringify(projete)||!actif(garde)&&!actif(projete);
+    choix[i]=egal?null:a.c==='advance_day'&&actions[i-1]?.c==='advance_day'?['garde','projection']:['projection','garde'];
+    if(choix[i]?.[pris[i]]==='garde')ctx.nativeProgrammeEffets=garde;
+    utilise[i]=programmeEnVigueur();
+   };
    const apply=count=>{
     for(let i=0;i<count;i++){
-     const a=actions[i];poserProgramme(a);seed=a.s>>>0;peek('nativeSectionsFresh=false');projectionCache.clear();
+     const a=actions[i];poserAncien(i);seed=a.s>>>0;peek('nativeSectionsFresh=false');projectionCache.clear();
      try{handleCommand({id:'journal-'+(i+1),command:a.c,payload:a.p},false,a);}catch(error){reason=a.c+' : '+error.message;return i;}
      if(seed!==a.e){reason=a.c+' : résultat différent de celui noté';return i;}
     }
     return count;
    };
-   let applied=apply(actions.length);
-   if(applied<actions.length){
-    // Action divergente : retour au profil chargé puis reprise des seules actions confirmées.
-    restorePrior({...base,fromSave:false,state:()=>({state:JSON.parse(base.text),playback:null,saveError:false})});
-    if(apply(applied)!==applied){restorePrior({...base,fromSave:false,state:()=>({state:JSON.parse(base.text),playback:null,saveError:false})});applied=0;}
+   const restaurerBase=()=>restorePrior({...base,fromSave:false,state:()=>({state:JSON.parse(base.text),playback:null,saveError:false})});
+   let applied=apply(n),essais=0,meilleur={applied,pris:pris.slice(),reason};
+   // Retour sur le dernier choix de séances encore ouvert (au plus 8 essais, une seule fois au chargement).
+   while(applied<n&&essais<8){
+    let j=-1;for(let k=applied;k>=0;k--)if(choix[k]&&pris[k]+1<choix[k].length){j=k;break;}
+    if(j<0)break;
+    essais++;pris[j]++;for(let k=j+1;k<n;k++){pris[k]=0;choix[k]=null;}
+    restaurerBase();applied=apply(n);
+    if(applied>meilleur.applied)meilleur={applied,pris:pris.slice(),reason};
+   }
+   if(applied<n){
+    // Action divergente : retour au profil chargé puis reprise des seules actions confirmées (plus longue suite trouvée).
+    applied=meilleur.applied;reason=meilleur.reason;pris.splice(0,n,...meilleur.pris);
+    restaurerBase();
+    if(apply(applied)!==applied){restaurerBase();applied=0;}
    }
    // Ancien journal (avant la reprise avant le match) qui s'arrête en plein match : reprise jusqu'à la veille de son coup
    // d'envoi ; les lignes du match interrompu sont conservées à part, jamais effacées.
@@ -1701,7 +1729,7 @@ function createBridge(options={}){
    }
    const kept=applied<actions.length?journal.preserve('non-rejoue'):matchCut!==null?journal.preserve('avant-match'):null;
    if(matchCut!==null){applied=matchCut;matchResumeNotice=PRE_MATCH_NOTICE;}
-   journal.reset(loadedSha,actions.slice(0,applied));
+   journal.reset(loadedSha,actions.slice(0,applied).map((a,i)=>utilise[i]===undefined?a:{...a,w:utilise[i]}));
    // Texte de la carrière reprise en mémoire (copie d'annulation de la prochaine commande, profil d'une écriture directe).
    // Actions rejouées sans projection : versions des sections de la carrière toutes relues à la projection suivante.
    projectionCache.clear();peek('nativeSectionsFresh=false');if(sectionsOn)run('nativeStateVersions.reset()');if(applied)run('save()');cleanSave=typeof store['bdt-v1']==='string'?store['bdt-v1']:null;
