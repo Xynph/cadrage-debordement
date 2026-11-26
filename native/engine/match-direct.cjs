@@ -163,7 +163,8 @@ function compacte(scene){
 // (la même que la vue 3D) : la vue 2D les rejoue dans l'ordre pendant l'entracte.
 function deroule(lignes,events,lire,rencontre,nommer=t=>String(t||'')){
  const derniere=lignes.length?lignes[lignes.length-1]:null;if(!derniere)return [];
- const retenues=lignes.filter(l=>!l.bandeau&&!SANS_IMAGE.has(l.kind)&&events[l.i]?.scene&&derniere.minute-l.minute<=4&&l.periode===derniere.periode).slice(-DEROULE_MAX);
+ // Faits des lois joués en 3D (`loi`) : hors du déroulé 2D, comme avant les gestes (faits `message`).
+ const retenues=lignes.filter(l=>!l.bandeau&&!l.loi&&!SANS_IMAGE.has(l.kind)&&events[l.i]?.scene&&derniere.minute-l.minute<=4&&l.periode===derniere.periode).slice(-DEROULE_MAX);
  // Clé : la rencontre (saison, journée, affiche) ne suffit pas (même affiche rejouée depuis une
  // sauvegarde, autre carrière dans le même processus) : on y joint l'empreinte du fait.
  const cle=i=>{const s=events[i]?.scene||{};return rencontre+'|'+i+'|'+(events[i]?.min??'')+'|'+s.kind+'|'+s.team+'|'+s.possession+'|'+s.from?.x+','+s.from?.y+'|'+s.to?.x+','+s.to?.y+'|'+String(events[i]?.text||'').length};
@@ -320,9 +321,13 @@ const LOIS_TEXTE=new Set(['coup-franc','essai-penalite','drop-tente','drop-rate'
 function loisDuDirect(lignes,events,nommer){
  const sortie=[];let joue=-1;
  for(const l of lignes){
-  if(!l.bandeau){joue=l.i;continue}
   const loi=events[l.i]?.scene?.loi;
-  if(l.kind==='message'&&LOIS_TEXTE.has(loi)&&joue>=0)sortie.push({i:l.i,apres:joue,loi,kind:l.type==='try'?'try':l.type==='goal'?'goal':'message',equipe:l.equipe,horloge:horloge(l),score:l.scoreApres,texte:nommer(events[l.i].text)});
+  // Fait des lois joué en 3D (gestes : coup franc, essai de pénalité, drop ; match-highlights.cjs `loi`) : écrit après
+  // son propre plan, pendant que l'image (le geste) est tenue.
+  const joueEn3D=!l.bandeau&&l.loi===loi&&LOIS_TEXTE.has(loi);
+  if(!l.bandeau&&!joueEn3D){joue=l.i;continue}
+  if(joueEn3D)joue=l.i;
+  if((l.kind==='message'||joueEn3D)&&LOIS_TEXTE.has(loi)&&joue>=0)sortie.push({i:l.i,apres:joue,loi,kind:l.type==='try'?'try':l.type==='goal'?'goal':'message',equipe:l.equipe,horloge:horloge(l),score:l.scoreApres,texte:nommer(events[l.i].text)});
  }
  return sortie.slice(-LOIS_MAX);
 }
