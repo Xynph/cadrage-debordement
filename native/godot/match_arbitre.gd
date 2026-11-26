@@ -27,6 +27,19 @@ const ESSAI_SIFFLET := 0.7
 const ESSAI_PROCHE := 5.0
 const ESSAI_BRAS := 3.0
 const ESSAI_BRAS_HAUTEUR := -0.45
+## Lois (26 novembre 2026, demande de Léo) : programme donné par la régie au début d'un plan (`loi`).
+##   - coup franc : coup de sifflet LOI_SIFFLET s, puis BRAS PLIÉ vers l'équipe qui en bénéficie (bras
+##     horizontal, avant-bras levé, coude à 90°), différent du bras tendu de la pénalité ;
+##   - essai de pénalité : il court sous les poteaux, siffle LOI_SIFFLET s une fois arrivé (à moins de
+##     LOI_ARRIVE m), puis lève le bras droit au-dessus de la tête (essai accordé), face au terrain.
+const LOI_SIFFLET := 0.6
+const LOI_ARRIVE := 1.2
+const LOI_COUDE := 1.6
+## Bras plié : longueur du bras (épaule-coude) à l'horizontale et de l'avant-bras à la verticale (m).
+const COUDE_BRAS := 0.27
+const COUDE_AVANT_BRAS := 0.3
+## Bras levé à la verticale (hauteur_bras : angle de LEVE * 0,7 rad au-dessus de l'horizontale).
+const LEVE := 2.25
 
 var view: Node3D
 var model: Node3D
@@ -51,6 +64,9 @@ var _regard := Vector3.ZERO
 ## Essai qu'il accorde : {"point": Vector3, "t": s depuis l'aplati, "bras": instant où il tend le
 ## bras (-1 avant)} ; vide hors essai ou quand la régie le dirige (liaison).
 var essai: Dictionary = {}
+## Programme d'une loi (coup franc, essai de pénalité) : {"genre", "place" ou "point", "regard",
+## "dir" (bras), "t", "arrive"} ; vide sinon. La régie le pose et l'efface (match_temps_forts_lecture.gd).
+var loi: Dictionary = {}
 
 
 func _init(owner: Node3D) -> void:
@@ -126,7 +142,9 @@ func _process(delta: float) -> void:
 		return
 	var ballon: Vector3 = view._ball.global_position if is_instance_valid(view.get("_ball")) and view._ball.visible else position
 	_regard = ballon
-	if _accorder_essai(delta):
+	if _jouer_loi(delta):
+		pass
+	elif _accorder_essai(delta):
 		pass
 	elif not dirige:
 		var voulu := place_de_jeu(ballon)
@@ -177,6 +195,53 @@ func _accorder_essai(delta: float) -> bool:
 		hauteur_bras = ESSAI_BRAS_HAUTEUR
 	else:
 		signal_bras = ""
+	return true
+
+
+## Programme d'une loi (coup franc, essai de pénalité). Rend vrai tant qu'il dure : sa place et
+## ses signaux sont alors ceux de la loi.
+func _jouer_loi(delta: float) -> bool:
+	if not loi.is_empty() and not dirige:
+		# La régie a repris la main (fin du temps fort, liaison) : le programme s'arrête.
+		loi = {}
+		signal_bras = ""
+	if loi.is_empty():
+		return false
+	loi.t = float(loi.get("t", 0.0)) + delta
+	var t := float(loi.t)
+	var regard: Vector3 = loi.get("regard", position + Vector3.BACK)
+	match str(loi.get("genre", "")):
+		"coup-franc":
+			# Coup de sifflet en rejoignant la marque ; bras plié une fois arrivé (au plus tard LOI_COUDE s).
+			var place: Vector3 = loi.place
+			cible = place
+			_regard = regard
+			var pose := Vector2(position.x - place.x, position.z - place.z).length() < LOI_ARRIVE or t >= LOI_COUDE
+			if t < LOI_SIFFLET or not pose:
+				signal_bras = "sifflet" if t < LOI_SIFFLET + 0.4 else ""
+			else:
+				signal_bras = "coude"
+				direction_bras = loi.dir
+				hauteur_bras = 0.0
+		"essai-penalite":
+			var point: Vector3 = loi.point
+			cible = point
+			var pres := Vector2(position.x - point.x, position.z - point.z).length() < LOI_ARRIVE
+			if float(loi.get("arrive", -1.0)) < 0.0 and pres:
+				loi.arrive = t
+			var arrive := float(loi.get("arrive", -1.0))
+			# En course : il regarde où il va ; arrivé, face au terrain.
+			_regard = regard if arrive >= 0.0 else point
+			if arrive < 0.0:
+				signal_bras = ""
+			elif t < arrive + LOI_SIFFLET:
+				signal_bras = "sifflet"
+			else:
+				signal_bras = "bras"
+				direction_bras = loi.dir
+				hauteur_bras = LEVE
+		_:
+			return false
 	return true
 
 
@@ -235,5 +300,25 @@ func _signaler(delta: float) -> void:
 	d = d.normalized()
 	var gauche := repere.x.dot(d) >= 0.0
 	var epaule := global_position + repere * Vector3(0.2 if gauche else -0.2, 1.55, 0.0)
+	if _signal_vu == "coude":
+		# Bras plié (coup franc) : bras à l'horizontale vers l'équipe, avant-bras levé, coude à 90°, depuis
+		# l'épaule et avec les longueurs du squelette (le coude tombe ainsi à la hauteur de l'épaule).
+		# Le pôle (direction, comme pour le solveur) pousse le coude vers l'équipe et un peu vers le bas.
+		var cote := "L" if gauche else "R"
+		var os_bras := rig.find_bone("UpperArm." + cote)
+		var os_avant := rig.find_bone("LowerArm." + cote)
+		var os_main := rig.find_bone("Palm." + cote)
+		var bras := COUDE_BRAS
+		var avant_bras := COUDE_AVANT_BRAS
+		if mini(os_bras, mini(os_avant, os_main)) >= 0:
+			var a := rig.to_global(rig.get_bone_global_pose(os_bras).origin)
+			var b := rig.to_global(rig.get_bone_global_pose(os_avant).origin)
+			var c := rig.to_global(rig.get_bone_global_pose(os_main).origin)
+			epaule = a
+			bras = a.distance_to(b)
+			avant_bras = b.distance_to(c) * 0.97
+		var coude := epaule + d * bras
+		Presentation._solve_arm(rig, cote, coude + Vector3.UP * avant_bras, d * 1.0 + Vector3.DOWN * 0.15, w)
+		return
 	var main := epaule + (d * cos(hauteur_bras * 0.7) + Vector3.UP * sin(hauteur_bras * 0.7)) * 0.62
 	Presentation._solve_arm(rig, "L" if gauche else "R", main, epaule + Vector3.DOWN * 0.5 - d * 0.3, w)

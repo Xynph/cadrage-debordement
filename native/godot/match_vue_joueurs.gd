@@ -11,6 +11,7 @@ const JoueurV5 = preload("res://match_joueur_v5.gd")
 const Cut = preload("res://match_cut.gd")
 const Impacts = preload("res://match_impacts.gd")
 const VueBallon = preload("res://match_vue_ballon.gd")
+const VueDrop = preload("res://match_vue_drop.gd")
 
 ## Nombre de joueurs à l'image, chacun à plus de Motion.TRAJET_REPLACEMENT de sa place, à partir
 ## duquel la vue coupe pour les replacer (équipe qui se reforme) au lieu de les faire courir.
@@ -104,6 +105,10 @@ static func _gestes_du_fait(v: NativeMatchView, scene: Dictionary, previous_kind
 		return
 	var ball: Dictionary = scene.get("ball", {})
 	var origin: Variant = scene.get("origin")
+	# Drop (match-direct.cjs, scène `drop`) : ballon lâché des mains, frappé au rebond.
+	if kind in ["goal", "miss"] and scene.get("drop", false):
+		VueDrop.lancer(v, featured)
+		return
 	match kind:
 		"goal", "miss", "kick":
 			# Pénalité, transformation, jeu au pied : le pied frappe quand le ballon part.

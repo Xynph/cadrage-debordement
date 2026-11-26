@@ -32,6 +32,11 @@ static func etat_du_plan(plan: Dictionary, equipes: Array, kind: String = "") ->
 	var ballon: Variant = scene.get("ball")
 	var x: float = float(ballon.x) if ballon is Dictionary and (ballon.get("x") is float or ballon.get("x") is int) else NAN
 	var genre := kind if not kind.is_empty() else str(plan.get("kind", ""))
+	# Plan d'une loi (gestes 3D) : la ligne d'état des faits des lois ; drop : « Drop — X » jusqu'au bout (jamais l'issue).
+	var loi := str(plan.get("loi", ""))
+	if not loi.is_empty() and kind.is_empty():
+		genre = "loi:" + ("drop-tente" if loi.begins_with("drop") else loi)
+		if scene.get("team") is int or scene.get("team") is float: camp = scene.team
 	# Passe en avant (cause du moteur, loi 11) : « Passe en avant », pas « En-avant ».
 	if genre == "hand-fault" and str(plan.get("cause", scene.get("cause", ""))) == "forward-pass": genre = "passe-en-avant"
 	return Between.etat_du_fait(genre, int(camp), x, equipes)

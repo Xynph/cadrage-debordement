@@ -267,7 +267,8 @@ test('Niveau dynamique : une vraie part de grosses actions sans point, tous les 
   const parMatch = { episodes: [], points: [], grosses: [], memes: [], q: [[], [], [], []] };
   for (const { events } of echantillon) {
     const bilan = H.en_direct(events, { niveau: 'dynamique' });
-    const essais = events.filter(e => e.scene?.kind === 'try').length;
+    // Essais de pénalité compris (fait `message` à scene.loi « essai-penalite », joué en essai : gestes 3D des lois).
+    const essais = events.filter(e => e.scene?.kind === 'try' || e.scene?.loi === 'essai-penalite').length;
     let vus = 0, episodes = 0, points = 0, grosses = 0, memes = 0, precedent = null;
     const quarts = [0, 0, 0, 0];
     for (const tf of bilan.tempsForts) {
