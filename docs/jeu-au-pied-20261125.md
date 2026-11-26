@@ -15,21 +15,22 @@ des équipes qui ne dégagent jamais de leurs 22.
   rare (~0,2 par match ; 4,1 dans la première version, où elle servait de forme principale de perte de balle dans son camp).
 - Le botteur est nommé dans le journal et sur les touches au pied (match 2D/3D, fiche de stats). Le joueur qui prend le
   ballon (receveur adverse ou partenaire qui reprend) est nommé dans le fait (`receiver`) et placé au point de chute dans le
-  match 2D/3D : avant, le ballon retombait seul au sol, l'équipe restant en formation 5 à 13 m en retrait.
+  match 2D/3D : avant, le ballon retombait seul au sol, l'équipe restant en formation 5 à 13 m en retrait. En 3D, le ballon
+  suit l'arc du coup de pied jusque dans ses mains (8e passage : il finissait au sol, à ses pieds).
 - À l'écran : avec le chorégraphe éteint (défaut), un coup de pied de jeu est montré au niveau « Match complet » ; aux autres
   niveaux, il ne devient un temps fort que s'il dépasse 35 m ou tombe dans les 22 adverses après 20 m (règles inchangées de
   `native/engine/match-highlights.cjs`), ce qui arrive rarement avec des coups de pied de 15 à 35 m.
 - 50:22 rares ; ballons qui roulent dans l'en-but : renvoi sur la ligne d'essai (aplati par la défense) ou aux 22 m (mort).
 - Plan de jeu (occupation, jeu au large), qualité des botteurs, pluie et score après la 60e pèsent sur la décision de taper.
   En fin de match, l'équipe menée de 15 points ou moins ne dégage plus de son camp, sauf depuis ses 22.
-- Le porteur n'est plus « poussé en touche » qu'environ 2 fois par match (10 avant).
+- Le porteur n'est plus « poussé en touche » qu'environ 1,5 fois par match (10 avant).
 - Un en-avant commis pendant l'avantage de l'adversaire (chandelle relâchée par le receveur, par exemple) est suivi de la ligne
   « Avantage sur en-avant pour X » (avant : rien, et le journal enchaînait sur l'action suivante ; `tests/match-recit-coherent.cjs`).
 - Ballon botté mort dans l'en-but : la défense ne prend la mêlée à l'endroit du coup de pied que s'il a été frappé depuis le
   camp du botteur (sinon renvoi aux 22 m).
 
-Une action du moteur couvre plusieurs temps de jeu : le journal raconte ~12 coups de pied par match (réel 40-50, dont beaucoup
-de petites relances entre arrières), dont ~6 touches au pied. La fiche de stats garde ~23 coups de pied par équipe.
+Une action du moteur couvre plusieurs temps de jeu : le journal raconte ~13 coups de pied par match (réel 40-50, dont beaucoup
+de petites relances entre arrières), dont ~7 touches au pied. La fiche de stats garde ~23 coups de pied par équipe.
 
 ## Méthode : même équilibre que l'ancien moteur
 
@@ -41,7 +42,9 @@ Réglage retenu : par zone du terrain, la probabilité qu'une action change la p
 coups de pied prennent la place de l'ancien « poussé en touche » et des pertes de balle, ils ne s'y ajoutent pas. Seuls les
 dégagements depuis ses 22 changent un peu plus souvent la possession (voulu). Le poids de la qualité du botteur est réduit de
 moitié (`qualite` 0,5) : à plein poids, le meilleur botteur s'ajoutait au niveau de l'équipe déjà compté, et le favori gagnait
-plus souvent (pente de la courbe de niveau 0,324 contre 0,313 avant ; 0,309 à mi-poids, banc URC 3 × 2 700 matchs).
+plus souvent (pente de la courbe de niveau 0,324 contre 0,313 avant ; 0,309 à mi-poids, banc URC 3 × 2 700 matchs) ; 0,3 depuis
+le 26/11. Les dégagements de son camp trouvent plus souvent la touche (touche courte plutôt que ballon rendu dans le champ) et
+le poussé en touche passe de 2,2 à 1,2 % par action : le reste devient un coup de pied perdu, même lancer adverse au même endroit.
 
 ## Réglages (dist/tactical-plans.js, `JEU_PIED`)
 
@@ -49,8 +52,8 @@ plus souvent (pente de la courbe de niveau 0,324 contre 0,313 avant ; 0,309 à m
 croisé par zone), `perdu` (coup de pied raté ou perdu, par zone, à la place de l'ancien poussé en touche), `perdus` (formes de
 cette perte par zone : touche courte, touche directe 2 %, contré, rendu, chandelle, capté-relancé ; dans le camp adverse
 touche, rasant, chandelle, croisé, en-but), `perduMetres` (terrain rendu : 1 à 8 m, comme l'ancien poussé), `longueur` 0,7,
-`touche` 0,8 (touche trouvée), `cinquante` (tentative, réussite), `recup` (chandelle, rasant, croisé), `pousse` (2,2 % + 2 %
-près des lignes), `qualite` 0,5. `JEU_PIED_RULES=0` rend l'ancien jeu au pied (comparaisons). Coefficients de jeu calés sur des
+`touche` 0,85 (touche trouvée), `cinquante` (tentative, réussite), `recup` (chandelle, rasant, croisé), `pousse` (1,2 % + 2 %
+près des lignes), `qualite` 0,3. `JEU_PIED_RULES=0` rend l'ancien jeu au pied (comparaisons). Coefficients de jeu calés sur des
 matchs Monde, pas des probabilités mesurées du rugby.
 
 ## Avant / après
@@ -60,19 +63,20 @@ deux), ancien jeu au pied → nouveau, par match :
 
 | | Top 14 | Premiership | URC |
 | --- | --- | --- | --- |
-| Coups de pied racontés | 3,3 → 11,9 | 3,5 → 12,4 | 4,1 → 12,8 |
-| Touches au pied | 2,0 → 6,1 | 2,0 → 6,3 | 2,0 → 6,6 |
-| dont directes sans gain de terrain | → 0,25 | → 0,23 | → 0,26 |
-| Porteur poussé en touche | 10,1 → 2,3 | 10,1 → 2,3 | 10,1 → 2,2 |
-| Renvois aux 22 m et sur la ligne d'essai | 1,45 → 1,80 | 1,28 → 1,71 | 1,25 → 1,66 |
-| 50:22 | 0,01 → 0,03 | 0,01 → 0,03 | 0,02 → 0,04 |
-| Points | 47,2 → 47,1 | 53,3 → 51,3 | 48,2 → 47,8 |
-| Essais | 5,40 → 5,35 | 7,12 → 6,80 | 6,24 → 6,24 |
-| Matchs à 7 points ou moins | 43,0 → 41,5 % | 34,5 → 33,1 % | 31,9 → 30,3 % |
-| Écart moyen | 12,8 → 13,3 | 17,4 → 17,2 | 18,4 → 18,8 |
+| Coups de pied racontés | 3,3 → 13,0 | 3,5 → 13,2 | 4,1 → 13,7 |
+| Touches au pied | 1,9 → 6,8 | 1,9 → 6,9 | 2,2 → 7,1 |
+| dont directes sans gain de terrain | → 0,24 | → 0,26 | → 0,27 |
+| Porteur poussé en touche | 10,1 → 1,5 | 10,0 → 1,5 | 10,3 → 1,5 |
+| Renvois aux 22 m et sur la ligne d'essai | 1,44 → 1,94 | 1,28 → 1,69 | 1,25 → 1,79 |
+| 50:22 | 0,01 → 0,05 | 0,01 → 0,03 | 0,01 → 0,04 |
+| Points | 47,2 → 46,7 | 53,3 → 51,3 | 48,2 → 47,9 |
+| Essais | 5,39 → 5,32 | 7,12 → 6,85 | 6,23 → 6,23 |
+| Matchs à 7 points ou moins | 43,0 → 40,3 % | 34,5 → 32,2 % | 31,9 → 32,7 % |
+| Écart moyen | 12,8 → 13,6 | 17,4 → 16,9 | 18,4 → 18,1 |
 
-Regroupé (3 600 matchs) : matchs serrés −1,5 point (bruit ±1,1), écart moyen +0,2, points −0,9 (pluie : plus de jeu au pied). Changement de possession par action
-(URC, ses 22 / son camp / camp adverse / 22 adverses) : 0,39 / 0,43 / 0,49 / 0,56 avant, 0,43 / 0,44 / 0,49 / 0,55 après.
+Regroupé (3 600 matchs, réglage du 26/11 avec la courbe URC recalée) : matchs serrés −1,4 point (bruit ±1,1), écart moyen 0,0,
+points −0,9 (pluie : plus de jeu au pied). Changement de possession par action
+(URC, ses 22 / son camp / camp adverse / 22 adverses) : 0,39 / 0,43 / 0,49 / 0,56 avant, 0,42 / 0,45 / 0,48 / 0,55 après (Top 14 : 0,37 / 0,44 / 0,50 / 0,55 → 0,44 / 0,45 / 0,49 / 0,55).
 Réel (élite) : 40-50 coups de pied par match dont 12-18 en touche, 2-3 porteurs poussés en touche, 50:22 rares, touche directe
 sans gain 0,3 à 0,5.
 
@@ -82,22 +86,26 @@ gagnés), le dégagement rendu ou contré, la chandelle trop longue et le dégag
 par une touche trouvée de peu, le rasant ramassé, la chandelle ou le croisé captés. Le terrain rendu reste celui de l'ancien
 poussé en touche : avec 6 à 14 m gagnés sur la touche courte, les points baissaient d'un point par match et les matchs serrés
 de 2.
-Saisons Monde complètes (`scripts/mesure-essais-monde.cjs`, club 102), mesurées avant le changement des formes de perte du 26/11
-(mêmes équilibres attendus : même terrain rendu, même fréquence), moyenne des graines 4242, 7 et 2026, avant
-(`--regler "JEU_PIED_RULES=0"`) / après / réel (docs/realite-matchs-20261125.md) :
+Saisons Monde complètes (`scripts/mesure-essais-monde.cjs`, club 102), réglage final du 26/11, moyenne des graines 4242, 7 et
+2026, avant (`--regler "JEU_PIED_RULES=0"`, courbe URC d'avant) / après / réel (docs/realite-matchs-20261125.md) :
 
 | Championnat | Points | Essais | Écart moyen | Écart ≤ 7 | Bonus offensif |
 | --- | --- | --- | --- | --- | --- |
-| Top 14 | 49,4 / 50,0 / 51,0 | 5,95 / 6,08 / 5,2-5,9 | 12,5 / 13,2 / 14,3 | 44,4 / 40,0 / 40 % | 36,6 / 37,7 % |
-| Premiership | 54,1 / 53,1 / 54,9 | 7,24 / 7,13 / 7,1-8,0 | 13,2 / 14,4 / 16,1 | 40,5 / 40,5 / 36 % | 52,9 / 48,7 % |
-| URC | 49,7 / 49,9 / 49,4 | 6,63 / 6,65 / 6,3-6,6 | 13,7 / 14,6 / 14,2 | 39,5 / 38,4 / 41 % | 45,7 / 45,7 % |
+| Top 14 | 49,4 / 48,3 / 51,0 | 5,95 / 5,80 / 5,2-5,9 | 12,5 / 13,8 / 14,3 | 44,4 / 37,4 / 40 % | 36,6 / 35,7 % |
+| Premiership | 54,1 / 52,7 / 54,9 | 7,24 / 7,09 / 7,1-8,0 | 13,2 / 14,3 / 16,1 | 40,5 / 36,6 / 36 % | 52,9 / 50,2 % |
+| URC | 49,7 / 49,2 / 49,4 | 6,63 / 6,51 / 6,3-6,6 | 13,7 / 14,4 / 14,2 | 39,5 / 37,7 / 41 % | 45,7 / 42,8 % |
 
-Par graine, écart ≤ 7 avant → après : Top 14 40,6 → 38,0 / 46,0 → 38,0 / 46,5 → 43,9 ; Premiership 43,0 → 44,1 /
-39,8 → 36,6 / 38,7 → 40,9 ; URC 43,0 → 35,8 / 36,4 → 39,1 / 39,1 → 40,4.
+Par graine, écart ≤ 7 avant → après : Top 14 40,6 → 36,9 / 46,0 → 35,8 / 46,5 → 39,6 ; Premiership 43,0 → 39,8 /
+39,8 → 35,5 / 38,7 → 34,4 ; URC 43,0 → 37,7 / 36,4 → 41,1 / 39,1 → 34,4 (une saison : bruit de ±3 à ±5 points).
 
 ## Courbe de niveau et cartons
 
-- `tests/match-rating-curve.cjs` : pente du moteur complet 0,286 (ancien jeu au pied 0,281), résultat rapide 0,263 ; vert.
+- `tests/match-rating-curve.cjs` : la pente du moteur complet valait ~0,31 en moyenne sur 6 graines (ancien jeu au pied
+  compris), le résultat rapide ~0,26 : l'écart touchait la limite de 0,05 du test (0,317 à sa graine avec un réglage voisin).
+  Courbe URC recalée (`ECART_CHAMPIONNAT`, dist/rugby.js : complet 2,3 → 2, rapide 1,4 → 1,5, cible 0,30) : complet 0,248-0,292,
+  rapide 0,278-0,287, marge 0,020 à 0,047 sur les graines 4242, 7, 2026, 11, 99, 31337 (0,045 à celle du test).
+- `tests/match-jeu-au-pied.cjs` (touches au pied ≥ 6, Top 14, 48 matchs) : 5,9 à sa graine avant le 26/11 ; 7,2 / 7,0 / 6,5 / 7,5 /
+  7,9 sur 5 jeux de graines (décalages 0 à 4 000) après.
 - `tests/arbitrage-fin.cjs` (80 rejeux du même match) : 0,0875 exclusion par équipe (seuil 0,12). Un tirage à 0,1375 avant la
   fusion de main était du hasard : 1 680 rejeux par règle (21 jeux de graines), 0,074 avec le nouveau jeu au pied contre 0,080
   avec l'ancien.
