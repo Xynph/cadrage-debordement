@@ -824,7 +824,83 @@ func interval(view: Control) -> void:
 	app._command("pause", {"paused": true})
 	await wait_command()
 
-## Liaisons (carrière Monde, graine choisie par godot-match-liaison-monde.cjs) : les
+## Séquence écrite de la liaison (CD_LIAISON_SCRIPTE=1, godot-match-liaison-monde.cjs) : la vraie régie, la vraie
+## vue 3D et la vraie liaison (match_liaison.gd) jouent une suite de temps forts CONNUE, au lieu d'attendre qu'un tirage
+## du moteur en produise une. Les scènes sont celles du vrai moteur (tests/fixtures/match-gestes-sequence.json :
+## mêlée conservée, pénalité, pénaltouche, touche, produites par grantSetPiece / awardPenalty avec leurs décisions
+## forcées) ; seul l'ordre d'arrivée des temps forts est écrit ici, avec la forme de native/engine/match-direct.cjs
+## (index, kind, equipe, duree, scene…). Le moteur reste en pause : la régie ne lui demande aucune minute, aucun temps
+## fort tiré au sort ne se mêle à la séquence.
+##   1. temps fort A : mêlée conservée puis pénalité (arrêt de jeu) ;
+##   2. temps fort B : la touche, qui part là où A s'est arrêté (la pénaltouche est un fait d'arrêt entre les deux) :
+##      la régie doit les relier par une liaison, à vitesse réelle alors que les temps forts sont accélérés ; puis le
+##      moteur ne déclenche rien de plus : écran intermédiaire ;
+##   3. temps fort C, après l'écran intermédiaire : non contigu, aucune liaison.
+const SEQUENCE_LIAISON := "../../tests/fixtures/match-gestes-sequence.json"
+func scenario_liaison_ouvrir(regie: Node) -> Dictionary:
+	var source: Variant = JSON.parse_string(FileAccess.get_file_as_string(ProjectSettings.globalize_path("res://").path_join(SEQUENCE_LIAISON)))
+	var cadres: Array = source.get("frames", []) if source is Dictionary else []
+	check(cadres.size() >= 5 and str(cadres[1].scene.kind) == "penalty" and str(cadres[2].scene.kind) == "touch" and str(cadres[3].scene.kind) == "lineout", "Séquence écrite : pénalité, pénaltouche, touche du vrai moteur (%d scènes)" % cadres.size())
+	# Le temps fort du coup d'envoi de ce Godot finit d'abord ; le moteur est ensuite mis en pause pour de bon.
+	regie.set("_pause_au_depart", true)
+	if not app.model.live.get("paused", false): await command("pause", {"paused": true})
+	var limite := Time.get_ticks_msec() + 60000
+	while regie.etat == regie.JEU and Time.get_ticks_msec() < limite: await process_frame
+	check(regie.etat != regie.JEU, "Le temps fort du coup d'envoi finit avant la séquence écrite")
+	var base: int = (app.model.live.get("events", []) as Array).size()
+	var evenements: Array = []
+	# Faits 0 à 3 : mêlée conservée, pénalité, pénaltouche, touche ; 4 et 5 : les deux premiers rejoués (temps fort C).
+	for k in [0, 1, 2, 3, 0, 1]: evenements.append((cadres[k].events[0] as Dictionary).duplicate(true))
+	return {"cadres": cadres, "base": base, "evenements": evenements, "live": (app.model.live as Dictionary).duplicate(true), "etape": 0, "images": 0, "fini": false}
+
+func scenario_liaison_plan(sc: Dictionary, k: int, i: int, suffixe: String) -> Dictionary:
+	var scene: Dictionary = ((sc.cadres[k] as Dictionary).scene as Dictionary).duplicate(true)
+	if not suffixe.is_empty(): scene["key"] = str(scene.key) + suffixe
+	var fait: Dictionary = sc.evenements[i]
+	return {"index": int(sc.base) + i, "kind": str(scene.kind), "equipe": int(fait.scene.team), "duree": 3.0, "mouvement": 0.0, "coupe": false,
+		"horloge": str(sc.live.get("direct", {}).get("horloge", "")), "texte": str(fait.text), "score": [0, 0], "scene": scene}
+
+func scenario_liaison_envoyer(regie: Node, sc: Dictionary, cle: String, premier: int, dernier: int, plans: Array, en_pause: bool) -> void:
+	var live: Dictionary = (sc.live as Dictionary).duplicate()
+	var direct: Dictionary = (live.get("direct", {}) as Dictionary).duplicate(true)
+	direct.erase("arret")
+	direct.erase("tempsFort")
+	if not plans.is_empty():
+		direct["tempsFort"] = {"cle": cle, "suite": false, "type": "script", "debut": int(sc.base) + premier, "fin": int(sc.base) + dernier, "plans": plans,
+			"horlogeDebut": str(direct.get("horloge", "")), "horlogeFin": str(direct.get("horloge", "")), "duree": 3.0 * plans.size()}
+	live["direct"] = direct
+	live["events"] = (sc.live.get("events", []) as Array).slice(0, int(sc.base)) + (sc.evenements as Array)
+	live["paused"] = en_pause
+	live["atBreak"] = false
+	live["finished"] = false
+	regie.receive(app.model, live)
+
+## Une étape par image : la suivante part dès que la régie a fini la précédente (3D tenue en attente de la minute
+## suivante, comme dans le jeu quand le moteur n'a pas encore répondu).
+func scenario_liaison_pas(regie: Node, sc: Dictionary) -> void:
+	match int(sc.etape):
+		0:
+			scenario_liaison_envoyer(regie, sc, "script-a", 0, 1, [scenario_liaison_plan(sc, 0, 0, ""), scenario_liaison_plan(sc, 1, 1, "")], false)
+			sc.etape = 1
+		1:
+			if regie.etat == regie.ATTENTE:
+				scenario_liaison_envoyer(regie, sc, "script-b", 2, 3, [scenario_liaison_plan(sc, 3, 3, "")], false)
+				sc.etape = 2
+		2:
+			if regie.etat == regie.ATTENTE and regie.phase == "jeu":
+				# Le moteur ne déclenche rien de plus : l'écran intermédiaire (moteur en pause, aucune minute demandée).
+				scenario_liaison_envoyer(regie, sc, "", 0, 0, [], true)
+				sc.etape = 3
+		3:
+			sc.images += 1
+			if regie.etat == regie.INTER and sc.images >= 20:
+				scenario_liaison_envoyer(regie, sc, "script-c", 4, 5, [scenario_liaison_plan(sc, 0, 4, "#c"), scenario_liaison_plan(sc, 1, 5, "#c")], true)
+				sc.etape = 4
+		4:
+			if regie.etat != regie.JEU and regie.suivi.any(func(e: Dictionary) -> bool: return e.evenement == "temps_fort" and str(e.get("cle", "")) == "script-c"):
+				sc.fini = true
+
+## Liaisons (carrière Monde ; séquence écrite si CD_LIAISON_SCRIPTE=1, sinon graine choisie par godot-match-liaison-monde.cjs) : les
 ## temps forts contigus sont reliés en 3D, à vitesse réelle même quand les temps forts sont
 ## accélérés pour le test ; les autres gardent l'écran intermédiaire. Contrôles détaillés : check_liaisons.
 func linked(view: Control) -> void:
@@ -842,9 +918,15 @@ func linked(view: Control) -> void:
 	var derniere_liaison := {}
 	var fin := int(OS.get_environment("CD_LIAISON_MINUTES")) if OS.get_environment("CD_LIAISON_MINUTES").is_valid_int() else 11
 	var attendues := int(OS.get_environment("CD_LIAISON_ATTENDUES")) if OS.get_environment("CD_LIAISON_ATTENDUES").is_valid_int() else 2
-	while app.model.get("live") is Dictionary and int(app.model.live.minute) < fin and Time.get_ticks_msec() < deadline:
+	var scripte := OS.get_environment("CD_LIAISON_SCRIPTE") == "1"
+	var sc: Dictionary = {}
+	if scripte:
+		sc = await scenario_liaison_ouvrir(regie)
+		deadline = Time.get_ticks_msec() + 180000
+	while ((not bool(sc.fini)) if scripte else (app.model.get("live") is Dictionary and int(app.model.live.minute) < fin)) and Time.get_ticks_msec() < deadline:
 		await process_frame
-		if not reprise and not app.waiting and regie.etat != regie.JEU:
+		if scripte: scenario_liaison_pas(regie, sc)
+		elif not reprise and not app.waiting and regie.etat != regie.JEU:
 			reprise = true
 			if app.model.live.paused: app._command("pause", {"paused": false})
 		if regie.phase == "liaison" and regie.etat == regie.JEU:
@@ -873,10 +955,11 @@ func linked(view: Control) -> void:
 	check(touches_mal_placees.is_empty(), "Touches formées à leur place (%d vues) : %s" % [touches_vues, str(touches_mal_placees)])
 	check(images_liaison > 0 and accelere == 0, "Liaisons à vitesse réelle alors que les temps forts sont accélérés (%d images, %d accélérées)" % [images_liaison, accelere])
 	var liaisons: Array = regie.suivi.filter(func(e: Dictionary) -> bool: return e.evenement == "liaison" and e.has("duree_reelle"))
-	check(liaisons.size() >= attendues, "Au moins %d liaisons en %d minutes : " % [attendues, fin] + str(liaisons.map(func(e: Dictionary) -> String: return str(e.type))))
+	check(liaisons.size() >= attendues, ("Au moins %d liaisons dans la séquence écrite : " % attendues if scripte else "Au moins %d liaisons en %d minutes : " % [attendues, fin]) + str(liaisons.map(func(e: Dictionary) -> String: return str(e.type))))
 	var sans: Array = regie.suivi.filter(func(e: Dictionary) -> bool: return e.evenement == "temps_fort" and not bool(e.get("contigu", false)))
 	check(not sans.is_empty() and sans.all(func(e: Dictionary) -> bool: return str(e.get("liaison", "")).is_empty()), "Temps forts après l'écran intermédiaire : aucune liaison")
 	check(regie.suivi.any(func(e: Dictionary) -> bool: return e.evenement == "intermediaire"), "L'écran intermédiaire reste entre deux temps forts non contigus")
+	if scripte: return
 	app._command("pause", {"paused": true})
 	await wait_command()
 
