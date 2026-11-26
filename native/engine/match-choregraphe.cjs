@@ -193,6 +193,8 @@ function simuler(e,phases,graine){
   const j=etape?.plaqueur!=null?parId.get(String(etape.plaqueur)):null;
   return j&&j.side!==cote&&debout(j)?j:null;
  }
+ // Écart latéral (m) que le porteur concède vers le couloir de son plaqueur nommé : 60 % de l'écart, au plus 8 m.
+ const coupeVers=dy=>Math.abs(dy)<=2?0:Math.sign(dy)*Math.min(Math.abs(dy)*0.6,8);
  function choisirSoutiens(p){
   return J.filter(j=>j.side===p.side&&j!==p&&j!==S&&j!==demiDe(p.side)&&debout(j)).sort((a,b)=>dist(a,p)-dist(b,p)||a.slot-b.slot).slice(0,2);
  }
@@ -209,12 +211,15 @@ function simuler(e,phases,graine){
    const suivant=file.find(f=>fini(f.depuis));
    if(!essai&&etape?.ajoute&&suivant)x=s>0?Math.min(x,Math.max(p.x+0.5,suivant.depuis+1)):Math.max(x,Math.min(p.x-0.5,suivant.depuis-1));
   }
-  d.objectif={x:borne(x,2.5,97.5),y:borne(p.y+(alea()-0.5)*3,4,66)};
+  const arr=arriereDe(1-p.side),nomme=defenseurNomme(etape,p.side);
+  // Plaqueur nommé par le moteur dans un autre couloir : le porteur coupe vers lui (au plus 8 m), sinon il
+  // arrive au point du moteur bien avant son plaqueur et le relais le donne à un autre.
+  const y=p.y+(alea()-0.5)*3;
+  d.objectif={x:borne(x,2.5,97.5),y:borne(y+(nomme?coupeVers(nomme.y-y):0),4,66)};
   d.soutiens=choisirSoutiens(p);
   // Plaqueur : celui que le moteur nomme (fait `tackler`, le même que la colonne Plaq. de l'entracte),
   // sinon le défenseur debout le plus proche du point visé (l'arrière garde la profondeur).
   // Allure plafonnée par le profil : un plaqueur nommé loin du point arrive en retard et le relais prévu plus bas s'applique.
-  const arr=arriereDe(1-p.side),nomme=defenseurNomme(etape,p.side);
   d.plaqueur=nomme||J.filter(j=>j.side!==p.side&&debout(j)&&j!==arr).sort((a,b)=>dist(a,d.objectif)-dist(b,d.objectif)||a.slot-b.slot)[0];
   d.debutJeu=t;
   evenements.push({t:r1(t),type:'course',joueur:p.id});
@@ -413,8 +418,11 @@ function simuler(e,phases,graine){
   if(d.franchi){
    // Franchissement : le porteur perce puis l'arrière (ou le défenseur le plus en profondeur) le plaque au point du moteur.
    const x=borne(fini(st.x)?st.x:v.x+sens*22,4,96);
-   d.but={x,y:borne(v.y+(alea()-0.5)*8,6,64)};
-   d.couvreur=defenseurNomme(st,v.side)||(arriere&&debout(arriere)?arriere:null)||def.filter(debout).sort((a,b)=>(b.x-a.x)*sens-(a.x-b.x)*sens||a.slot-b.slot)[0];
+   const nomme=defenseurNomme(st,v.side);
+   d.couvreur=nomme||(arriere&&debout(arriere)?arriere:null)||def.filter(debout).sort((a,b)=>(b.x-a.x)*sens-(a.x-b.x)*sens||a.slot-b.slot)[0];
+   // Couvreur nommé par le moteur : la percée file vers son couloir (comme un temps de jeu).
+   const y=v.y+(alea()-0.5)*8;
+   d.but={x,y:borne(y+(nomme?coupeVers(nomme.y-y):0),6,64)};
   }else d.but=G;
   // Tentatives de plaquage (toutes ratées) : les deux défenseurs debout les plus proches, et l'arrière sur un essai.
   d.tentatives=new Set(def.filter(j=>debout(j)&&j!==arriere&&j!==d.couvreur).sort((a,b)=>dist(a,v)-dist(b,v)||a.slot-b.slot).slice(0,2));
@@ -1390,7 +1398,9 @@ function simuler(e,phases,graine){
    // Plaqueur désigné hors d'état ou distancé : le défenseur debout le plus proche prend le relais.
    if(!debout(d.plaqueur)||t-d.debutJeu>3&&dist(d.plaqueur,p)>4&&!(fini(d.etape?.x)&&(d.objectif.x-p.x)*dirDe(p.side)>4)){
     const relais=J.filter(j=>j.side!==p.side&&debout(j)).sort((a,b)=>dist(a,p)-dist(b,p)||a.slot-b.slot)[0];
-    if(relais)d.plaqueur=relais;
+    // Plaqueur nommé par le moteur à peine plus loin que le relais (2,5 m) : il garde le plaquage.
+    const nomme=defenseurNomme(d.etape,p.side);
+    if(relais&&!(nomme&&nomme===d.plaqueur&&dist(nomme,p)<=dist(relais,p)+2.5))d.plaqueur=relais;
    }
    const pl=d.plaqueur;
    if(pl&&dist(p,pl)<CONTACT&&auBout()){
@@ -1816,24 +1826,31 @@ function entreeDepuisTempsFort(tf,events,{profils={},avant=null,cle='',limiteAmo
 // faits du temps fort nomment alors un joueur qu'elle ne contient pas (« joueur d'étape absent »). L'effectif
 // est celui de la scène du premier fait ; chacun garde sa place de départ, et un entrant prend celle du joueur
 // qu'il remplace au même poste (sinon sa place dans la scène du fait).
-function effectifDuFait(depart,fait){
+// Un remplacement peut aussi tomber entre deux faits du temps fort (le marqueur entré en jeu pendant l'action) :
+// les scènes des faits suivants (`faits`, dans l'ordre) sont appliquées de la même façon, l'une après l'autre.
+function effectifDuFait(depart,faits){
  const base=p=>({id:p.id,side:p.side,slot:p.slot,x:p.x,y:p.y});
- if(!fait||!Array.isArray(fait.players))return depart.players.map(base);
- const avant=new Map(depart.players.map(p=>[String(p.id),p])),apres=new Set(fait.players.map(p=>String(p.id)));
- if(avant.size===apres.size&&[...apres].every(id=>avant.has(id)))return depart.players.map(base);
- return fait.players.map(q=>{
-  const p=avant.get(String(q.id));
-  if(p)return {...base(q),x:p.x,y:p.y};
-  const sorti=depart.players.find(r=>r.side===q.side&&r.slot===q.slot&&!apres.has(String(r.id)));
-  return sorti?{...base(q),x:sorti.x,y:sorti.y}:base(q);
- });
+ let effectif=depart.players.map(base);
+ for(const fait of faits){
+  if(!fait||!Array.isArray(fait.players))continue;
+  const avant=new Map(effectif.map(p=>[String(p.id),p])),apres=new Set(fait.players.map(p=>String(p.id)));
+  if(avant.size===apres.size&&[...apres].every(id=>avant.has(id)))continue;
+  const courant=effectif;
+  effectif=fait.players.map(q=>{
+   const p=avant.get(String(q.id));
+   if(p)return {...base(q),x:p.x,y:p.y};
+   const sorti=courant.find(r=>r.side===q.side&&r.slot===q.slot&&!apres.has(String(r.id)));
+   return sorti?{...base(q),x:sorti.x,y:sorti.y}:base(q);
+  });
+ }
+ return effectif;
 }
 function finir({type,equipe,vedette,sens,ouverture,etapes,premier,dernier,tf,plans,rec,profils,avant,cle,choisirBotteur,marqueur,choisirPorteur}){
  // Scène de départ : la remise en jeu formée, sinon la scène affichée juste avant le premier plan.
  const depart=ouverture&&ouverture.k!=='jeu'?plans[premier].scene:premier>0?plans[premier-1].scene:(avant||tf.depart);
  if(!depart||!Array.isArray(depart.players))return null;
  const mis=depart.players.find(p=>p.featured&&p.side===depart.possession);
- const joueurs=effectifDuFait(depart,plans[premier]?.scene);
+ const joueurs=effectifDuFait(depart,plans.slice(premier,dernier+1).map(p=>p?.scene));
  if(choisirBotteur){
   // Botteur d'un coup de pied en touche : l'ouvreur, sinon l'arrière, sinon le demi (choix de mise en scène).
   const pick=[9,14,8].map(s=>joueurs.find(p=>p.side===equipe&&p.slot===s)).find(Boolean);
