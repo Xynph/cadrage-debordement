@@ -557,9 +557,10 @@ function project(model,niveau,lire,options={}){
    // Deux événements identiques (même minute, texte et position : touches répétées après pénaltouches)
    // donnent la même clé : on la rend unique par l'index pour que chaque plan soit une scène distincte.
    if(plans.some(q=>q.scene.key===scene.key))scene={...scene,key:scene.key+'#'+p.i};
+   // equipe : l'équipe du fait du moteur (scene.team : fautive pour un en-avant) ; la scène 3D n'a que la possession.
    // Essai de pénalité : ni marqueur ni transformation, un plan à part pour la vue (« penalty-try »), score à +7.
    const kind=loi==='essai-penalite'?'penalty-try':p.kind;
-   plans.push({index:p.i,kind,...(loi?{loi}:{}),duree:p.duree,mouvement:p.mouvement,coupe:p.coupe,horloge:horloge(lignes[p.i]),
+   plans.push({index:p.i,kind,equipe:lignes[p.i].equipe,...(loi?{loi}:{}),duree:p.duree,mouvement:p.mouvement,coupe:p.coupe,horloge:horloge(lignes[p.i]),
     texte:legende({...p,kind},nommer(events[p.i].text)),...(ANNONCES[kind]?{annonce:ANNONCES[kind]}:{}),
     score:kind==='try'?lignes[p.i].scoreAvant.map((n,side)=>n+(side===lignes[p.i].equipe?5:0)):lignes[p.i].scoreApres,
     // Cause de l'arrêt (passe en avant…) : la ligne d'état dit « Passe en avant », pas « En-avant ».

@@ -23,11 +23,22 @@ static func etat_du_deroule(item: Dictionary, equipes: Array) -> String:
 	if not scene is Dictionary: return ""
 	var camp: Variant = scene.get("possession", item.get("equipe", -1))
 	if not (camp is int or camp is float): camp = item.get("equipe", -1)
+	# En-avant : l'équipe fautive (equipe du fait, scene.team du moteur), pas la possession.
+	if str(item.get("kind", scene.get("kind", ""))) == "hand-fault": camp = item.get("equipe", scene.get("team", -1))
+	if not (camp is int or camp is float): camp = -1
 	var b: Variant = scene.get("ballon")
 	var x: float = float(b[0]) if b is Array and (b as Array).size() >= 1 and (b[0] is float or b[0] is int) else NAN
 	var kind := str(item.get("kind", scene.get("kind", "")))
 	if kind == "hand-fault" and str(item.get("cause", "")) == "forward-pass": kind = "passe-en-avant"
 	return etat_du_fait(kind, int(camp) if (camp is int or camp is float) else -1, x, equipes)
+
+## Le carton est l'arrêt de jeu en cours : son arrêt-décision est ouvert, ou c'est le dernier fait joué par le
+## terrain 2D. Faux dès la reprise du jeu (fait suivant joué) ou pendant un autre arrêt (blessure…) :
+## la phrase de jeu ne dit plus le carton (vérificateur de #1305 : pastille « CARTON JAUNE » restée avec
+## « X a le ballon… », puis carton réaffiché pendant l'arrêt Blessure suivant).
+func carton_en_cours() -> bool:
+	if not _arret.is_empty(): return str(_arret.get("raison", "carton")) == "carton"
+	return terrain != null and terrain.joue is Dictionary and str(terrain.joue.get("kind", "")) == "card"
 
 func forcer_etat(texte: String) -> void:
 	if texte == etat_force: return
@@ -58,6 +69,10 @@ func _etat(live: Dictionary, direct: Dictionary, equipes: Array) -> void:
 		if is_instance_valid(phrase_trait_fm):
 			var c_possession: Variant = (terrain.couleurs[montre_p] if montre_p in [0, 1] and terrain.couleurs.size() == 2 else Color(0, 0, 0, 0))
 			phrase_trait_fm.color = Charte.club_trait(c_possession) if montre_p in [0, 1] else Color(0, 0, 0, 0)
+	# Phrase de jeu en aplat (carton, essai, but) : reposée à chaque écriture de la ligne, pour que le texte et
+	# sa pastille aillent toujours ensemble (avant : la ligne revenait à la possession, la pastille restait).
+	var bulles := get_node_or_null(BullesAdjoint.NOM)
+	if bulles != null: bulles.appliquer_phrase()
 	_ajuster_taille(etat)
 
 ## Phase du match, dans la barre de commandes : mi-temps, pause, défilement 2D et vitesse de l'horloge.
