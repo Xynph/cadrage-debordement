@@ -74,7 +74,9 @@ function coupFrancConquete(l,team,kind){
  // Mêlée ou touche formée puis arrêtée sur le coup franc : comptée comme jouée (comme une pénalité de conquête).
  l.stats[team][kind==='scrum'?'scrums':'lineouts']++;
  addEvent(l,`Coup franc pour ${S.clubs[l.pair[side]].abbr} : ${motif} (${S.clubs[l.pair[1-side]].abbr}).`,'play',{kind:'message',team:side,loi:'coup-franc'});
- return jouerCoupFranc(l,side);
+ // Mêlée ou touche accordée et jouée en coup franc : la suite (touche, coup de pied, fin de période à la sirène) ne
+ // la fait jamais passer pour refusée (sinon une pénalité « mêlée » retomberait en pénaltouche après le sifflet).
+ jouerCoupFranc(l,side);return true;
 }
 function jouerCoupFranc(l,side){
  const at=l.territory,dir=side===0?1:-1,ab=S.clubs[l.pair[side]].abbr,d=Math.abs(at-ownGoal(side));
@@ -131,7 +133,7 @@ function dropTente(l,side){
  // (dropAttempts, drops) pour le retirer de la ligne « Tirs de pénalité » affichée au joueur.
  tacticalCount(l,side,'kicks');l.stats[side].goalAttempts++;l.stats[side].dropAttempts=(l.stats[side].dropAttempts||0)+1;
  addEvent(l,`${nom} (${ab}) tente le drop à ${d} mètres.`,'play',{kind:'message',team:side,loi:'drop-tente'});
- if(!ok){addEvent(l,`Le drop de ${nom} passe à côté des poteaux.`,'play',{kind:'message',team:side,loi:'drop-rate'});return missedGoal(l,side)}
+ if(!ok){addEvent(l,`Le drop de ${nom} passe à côté des poteaux.`,'play',{kind:'message',team:side,loi:'drop-rate'});missedGoal(l,side);return true}
  l.score[side]+=3;l.stats[side].goals++;l.stats[side].drops=(l.stats[side].drops||0)+1;
  addEvent(l,`${ab} · Drop réussi par ${nom}. ${l.score.join(' – ')}.`,'goal',{kind:'message',team:side,actor:k?.id||null,loi:'drop-reussi'});
  if(restartRules(l)){chronoArret(l,'penalite');if(!flowScored(l,side)&&(flowRules(l)||l.minute<80))relancer(l,'kickoff',1-side,'score',side)}

@@ -11,12 +11,14 @@ const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const { worldYouth } = require('./helpers/youth-world-harness.cjs');
 
-const N = 48, COMP = 'elite';
+// 240 matchs (48 avant le 26/11) : à ~0,02-0,03 50:22 par match, 48 matchs donnaient zéro une fois sur trois selon la graine
+// et le moindre tirage de plus du moteur (lois manquantes) ; mêmes bornes, échantillon plus grand.
+const N = 240, COMP = 'elite';
 
 function jouer(n) {
   const matchs = [];
   for (let monde = 0; matchs.length < n; monde++) {
-    const t = worldYouth({ seed: 51117 + monde * 101, club: monde * 7 });
+    const t = worldYouth({ seed: 51117 + monde * 101, club: (monde % 2) * 7 }); // clubs 0 et 7 en alternance (tous ne sont pas jouables)
     const total = Number(t.run(`S.worldMode.fixtures.filter(f=>f.competitionId==='${COMP}'&&f.phase==='league').length`));
     for (let i = 0; i < 24 && matchs.length < n; i++) {
       matchs.push(JSON.parse(t.run(`(()=>{const f=S.worldMode.fixtures.filter(f=>f.competitionId==='${COMP}'&&f.phase==='league')[(${i}*7+${monde}*13)%${total}];

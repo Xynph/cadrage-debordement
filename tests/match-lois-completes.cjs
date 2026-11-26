@@ -10,6 +10,8 @@
 // - drop : 3 points, surtout dans le dernier quart d'heure ;
 // - champ `loi` du fait (scene.loi) : présent sur chaque fait du bloc des lois, jamais ailleurs ;
 // - fil du score de l'après-match (match-direct) : la somme de ses points = le score final, essais de pénalité et drops compris ;
+//   la frise (`reperes`) montre les mêmes points ;
+// - rien après le coup de sifflet final ;
 // - « Tirs de pénalité » affichés = buts − drops sur tirs − drops tentés (les drops ont leurs propres compteurs).
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
@@ -175,17 +177,27 @@ test('Faits des lois : scene.loi sur chaque coup franc, essai de pénalité, dro
   assert.deepEqual(fautes.slice(0, 5), [], `${fautes.length} faits sans le bon champ loi ; ${JSON.stringify(vus)}`);
 });
 
+// Coup de sifflet final : dernier fait du journal. Un drop raté à la sirène (renvoi refusé) laissait l'action continuer
+// après lui (1 match sur 144) ; de même un coup franc joué au pied en touche après la sirène sur une pénalité « mêlée ».
+test('Rien après le coup de sifflet final', () => {
+  const fautes = [];
+  for (const [n, m] of matchs.entries()) {
+    const fin = m.journal.findIndex(e => e.text === 'Coup de sifflet final.');
+    if (fin < 0) { fautes.push(`match ${n} : pas de coup de sifflet final`); continue; }
+    const apres = m.journal.slice(fin + 1);
+    if (apres.length) fautes.push(`match ${n} (${m.abbr.join('-')}) : ${apres.length} fait(s) après le sifflet final, dont « ${apres[0].text} »`);
+  }
+  assert.deepEqual(fautes.slice(0, 5), [], `${fautes.length}/${matchs.length} matchs avec des faits après le coup de sifflet final`);
+});
+
 // Fil du score de l'après-match (native/engine/match-direct.cjs, `direct.marques`) : il doit refaire le score, avec les
 // essais de pénalité (7 points, sans marqueur) et les drops (3 points, le botteur) qui sont des faits « message ».
 test('Fil du score : la somme des marques = le score final, essais de pénalité et drops compris', () => {
   const POINTS = { essai: 5, 'essai-transforme': 7, 'essai-penalite': 7, penalite: 3, drop: 3 };
   const lire = { scenes: indices => indices.map(() => null), transformation: () => null, etat: () => ({}), profils: () => ({}) };
-  const fautes = []; let essaisPen = 0, drops = 0;
+  const fautes = []; let essaisPen = 0, drops = 0, reperesPen = 0, reperesDrops = 0;
   for (const [n, m] of matchs.entries()) {
-    // Journal jusqu'au coup de sifflet final : un fait joué après lui (drop raté à la sirène, 1 match sur 144) ne marque rien
-    // mais empêche l'après-match de « tout montrer » (anomalie du moteur signalée à part, hors de ce contrôle).
-    const fin = m.journal.findLastIndex(e => e.scene?.kind === 'end');
-    const events = m.journal.slice(0, fin + 1).map(e => ({ min: e.min, type: e.type, text: e.text, ...(e.period ? { period: e.period } : {}), ...(e.scene ? { scene: e.scene } : {}) }));
+    const events = m.journal.map(e => ({ min: e.min, type: e.type, text: e.text, ...(e.period ? { period: e.period } : {}), ...(e.scene ? { scene: e.scene } : {}) }));
     const d = direct.project({ live: { events, teams: [{ abbr: m.abbr[0], name: m.abbr[0] }, { abbr: m.abbr[1], name: m.abbr[1] }], finished: true, score: m.score, stats: [], statsRows: [] }, next: { phase: 'league' } }, 'dynamique', lire);
     const somme = [0, 0];
     for (const marque of d.marques) {
@@ -196,8 +208,17 @@ test('Fil du score : la somme des marques = le score final, essais de pénalité
     }
     if (somme[0] !== m.score[0] || somme[1] !== m.score[1]) fautes.push(`match ${n} : fil ${somme} ≠ score ${m.score}`);
     if (d.marques.length && JSON.stringify(d.marques.at(-1).score) !== JSON.stringify(m.score)) fautes.push(`match ${n} : dernière marque ${d.marques.at(-1).score} ≠ score final ${m.score}`);
+    // Frise (`direct.reperes`, entracte et après-match) : les mêmes points que le fil du score, dans le même ordre ;
+    // essai de pénalité = repère « try » sans marqueur, drop réussi = repère « goal » du botteur.
+    const points = d.reperes.filter(r => r.kind !== 'card');
+    if (JSON.stringify(points.map(r => [r.kind, r.equipe, r.score])) !== JSON.stringify(d.marques.map(q => [q.kind, q.equipe, q.score]))) fautes.push(`match ${n} : frise ${JSON.stringify(points.map(r => r.score))} ≠ fil ${JSON.stringify(d.marques.map(q => q.score))}`);
+    for (const r of points) {
+      if (r.loi === 'essai-penalite') { reperesPen++; if (r.kind !== 'try' || r.joueur !== null) fautes.push(`match ${n} : repère d'essai de pénalité ${JSON.stringify(r)}`); }
+      if (r.loi === 'drop-reussi') { reperesDrops++; if (r.kind !== 'goal') fautes.push(`match ${n} : repère de drop ${JSON.stringify(r)}`); }
+    }
   }
   assert.ok(essaisPen >= 3 && drops >= 2, `essais de pénalité (${essaisPen}) et drops (${drops}) observés dans le fil`);
+  assert.deepEqual([reperesPen, reperesDrops], [essaisPen, drops], 'essais de pénalité et drops sur la frise');
   assert.deepEqual(fautes.slice(0, 5), [], `${fautes.length} fils du score irréguliers`);
 });
 

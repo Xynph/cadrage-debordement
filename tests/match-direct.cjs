@@ -86,7 +86,11 @@ test('Avec la variable, le moteur projette chaque temps fort au moment où il es
     };
     observer(model.live);
     assert.equal(model.live.direct.tempsFort?.type, 'coup_d_envoi', 'le coup d’envoi est le premier temps fort');
-    for (let ticks = 0; ticks < 60 && model.live.minute < 36 && !model.live.finished; ticks++) {
+    // Le match est suivi jusqu'à la 36e minute, puis jusqu'au premier essai projeté : la minute du premier essai dépend
+    // du tirage (lois manquantes : graine 1002, premier essai à la 69e, 35 – 7 à la 36e sur l'ancien moteur).
+    let enPremiereDemiHeure = null;
+    const essaiVu = () => vus.some(v => v.types.includes('essai'));
+    for (let ticks = 0; ticks < 140 && (model.live.minute < 36 || !essaiVu()) && !model.live.finished; ticks++) {
       model = skipMatchTalk(model, jeu.call);
       if (model.live.paused) model = jeu.call('pause', { paused: false });
       const avant = model.live.events.length, minuteAvant = model.live.minute;
@@ -95,9 +99,15 @@ test('Avec la variable, le moteur projette chaque temps fort au moment où il es
       assert.ok(model.live.minute > minuteAvant || model.live.finished, 'un pas simule une minute entière');
       assert.ok(model.live.events.length >= avant);
       observer(model.live);
+      if (enPremiereDemiHeure === null && model.live.minute >= 36) enPremiereDemiHeure = vus.length;
     }
-    assert.ok(vus.length >= 5, `au moins cinq temps forts en 35 minutes (${vus.length})`);
-    assert.ok(vus.some(v => v.types.includes('essai')), 'un essai a été projeté');
+    assert.ok(enPremiereDemiHeure >= 5, `au moins cinq temps forts en 35 minutes (${enPremiereDemiHeure})`);
+    // Chaque essai aplati du journal (scène 'try') est projeté dans un temps fort « essai » qui le contient.
+    const essais = model.live.events.map((e, i) => e.scene?.kind === 'try' ? i : -1).filter(i => i >= 0);
+    assert.ok(essais.length > 0, 'le match suivi contient un essai');
+    for (const i of essais) assert.ok(vus.some(v => v.types.includes('essai') && v.debut <= i && i <= v.fin), `essai ${i} projeté`);
+    assert.ok(essaiVu(), 'un essai a été projeté');
+    assert.equal(model.live.finished, false, 'match encore en cours pour le changement de niveau');
     // Le niveau se change en cours de match, et un pas ordinaire reste refusé de travers.
     model = jeu.call('tick', { minute: true, temps_forts: 'aucun' });
     assert.equal(model.live.direct.niveau, 'aucun');

@@ -127,7 +127,7 @@
       "tests/match-realite-championnats.cjs": 520,
       "tests/match-regles.cjs": 12,
       "tests/match-staff-roles.cjs": 72,
-      "tests/match-jeu-au-pied.cjs": 25,
+      "tests/match-jeu-au-pied.cjs": 55,
       "tests/match-lois-completes.cjs": 25,
       "tests/match-stats-realistes.cjs": 13,
       "tests/match-structured-facts.cjs": 8,

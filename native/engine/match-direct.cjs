@@ -406,8 +406,11 @@ function project(model,niveau,lire,options={}){
  // Repères de la frise : le score après le fait et son acteur (identifiant, nom connu du match), pour l'entracte
  // (« E · Garnier 10-7 », nom en lien vers la fiche pour un joueur du club).
  const nomActeur=id=>id?etat.notes?.noms?.[id]||(etat.effectifAdverse||[]).find(p=>String(p.id)===id)?.name||'':'';
- const reperes=vues.filter(l=>l.kind==='try'||l.kind==='goal'||l.kind==='card'&&l.incident).map(l=>{const a=events[l.i]?.scene?.actor,id=a==null?null:String(a);
-  return {i:l.i,kind:l.kind,equipe:l.equipe,horloge:horloge(l),minute:l.minute,x:l.x,y:events[l.i].scene?.to?.y??35,rouge:l.cause==='red',score:l.scoreApres||null,joueur:id,nom:nomActeur(id)};});
+ // Essai de pénalité et drop réussi (faits `message` du bloc des lois, `scene.loi`) : repères « try » (sans marqueur) et
+ // « goal » (le botteur), comme le fil du score (`direct.marques`).
+ const loiRepere=l=>l.kind==='message'?events[l.i]?.scene?.loi:null;
+ const reperes=vues.filter(l=>l.kind==='try'||l.kind==='goal'||l.kind==='card'&&l.incident||['essai-penalite','drop-reussi'].includes(loiRepere(l))).map(l=>{const loi=loiRepere(l),a=loi==='essai-penalite'?null:events[l.i]?.scene?.actor,id=a==null?null:String(a);
+  return {i:l.i,kind:loi==='essai-penalite'?'try':loi==='drop-reussi'?'goal':l.kind,...(loi?{loi}:{}),equipe:l.equipe,horloge:horloge(l),minute:l.minute,x:l.x,y:events[l.i].scene?.to?.y??35,rouge:l.cause==='red',score:l.scoreApres||null,joueur:id,nom:nomActeur(id)};});
  // Chiffres : ceux que le moteur tient déjà.
  // Aucun relevé assez ancien (début de match, reprise) : les libellés, sans valeur.
  const rang=nom=>passe?(passe.statsRows||[]).find(r=>r.label===nom):(live.statsRows||[]).filter(r=>r.label===nom).map(r=>({...r,home:'—',away:'—'}))[0];
