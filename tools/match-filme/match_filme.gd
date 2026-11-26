@@ -357,6 +357,9 @@ func run() -> void:
 	var ralentis: Array = []
 	var regie_id := 0
 	var suivi_lu := 0
+	# Images où la 3D se voit sans aucun joueur dans le champ (sonde_pelouse.gd).
+	var sonde_pelouse: RefCounted = (load((get_script() as Script).resource_path.get_base_dir().path_join("sonde_pelouse.gd")) as GDScript).new()
+	var vide_a_garder := ""
 	# Écran 13 (20/11/2026) : vues du HUD à capturer en plus du film, à un instant de jeu simulé (secondes) :
 	# CD_MATCH_FILME_MENU_ECHAP (menu du match ouvert par Échap) et CD_MATCH_FILME_FICHE_CLUB (fiche du club
 	# visiteur ouverte depuis sa plaque). Image « menu-echap.png » / « fiche-club.png », puis retour au direct.
@@ -395,6 +398,18 @@ func run() -> void:
 				if str(e.get("evenement", "")) != "legende": continue
 				# Horodatages muraux de la régie : convertis en temps simulé à la fin du direct.
 				legendes.append(e)
+		# Pelouse vide : l'image rendue de la précédente détection est gardée (les 12 premières).
+		if vide_a_garder != "":
+			var vide_image := root.get_texture().get_image()
+			if vide_image != null: vide_image.save_png(str(o.sortie).path_join(vide_a_garder))
+			vide_a_garder = ""
+		# Première image de chaque épisode (et la 4e, plus avancée dans le fondu), pour les 12 premiers épisodes.
+		var episodes_avant: int = sonde_pelouse.pires.size()
+		if sonde_pelouse.observer(regie, temps, int(live.get("minute", dernier.get("minute", 0)))) and sonde_pelouse.pires.size() <= 12:
+			var episode: Dictionary = sonde_pelouse.pires[sonde_pelouse.pires.size() - 1]
+			if sonde_pelouse.pires.size() > episodes_avant or int(episode.get("images", 1)) == 4:
+				vide_a_garder = "vide-%02d-%d.png" % [sonde_pelouse.pires.size(), int(episode.get("images", 1))]
+				episode["fichiers"] = (episode.get("fichiers", []) as Array) + [vide_a_garder]
 		if not live.is_empty():
 			dernier = {"score": live.get("score", [0, 0]).duplicate(), "minute": int(live.get("minute", 0)), "termine": bool(live.get("finished", false))}
 			if dernier.minute != minute_vue:
@@ -505,6 +520,8 @@ func run() -> void:
 	if sonde_contacts != null:
 		report["contacts"] = sonde_contacts.bilan()
 		print("MATCH_FILME_CONTACTS ", JSON.stringify(report.contacts.resume))
+	report["pelouse"] = sonde_pelouse.bilan()
+	print("MATCH_FILME_PELOUSE ", JSON.stringify({"images_3d": report.pelouse.images_3d, "pelouse_vide": report.pelouse.pelouse_vide}))
 	report["pas_fixe"] = pas
 	report["attente"] = o.attente
 	report["images_rendues"] = images_rendues
