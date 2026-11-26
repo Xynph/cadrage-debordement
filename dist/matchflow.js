@@ -224,7 +224,7 @@ function chronoMinute(l){
   const observation=beginPlanObservation(l),side=l.possession;
   l.stats[side].possession++;l.stats[0].territory+=l.territory;l.stats[1].territory+=100-l.territory;
   c.enCours=true;try{advanceFlowPlay(l)}finally{delete c.enCours}finishPlanObservation(l,observation);compterEntree22(l);
-  c.actions++;c.prochaine=c.debut+dureeAction(l)+c.arret;c.arret=0;
+  c.actions++;c.prochaine=c.debut+dureeAction(l)+c.arret+(l.pilotage&&typeof pilotageDuree==='function'?pilotageDuree(l,side):0);c.arret=0;
  }
 }
 // Secondes écoulées dans le match au départ de l'action en cours (chrono des arrêts), sinon null.

@@ -817,6 +817,19 @@ func _process(delta: float) -> void:
 	var lies := _lies()
 	_plancher.separer(_actors, delta, lies, _carrier_id, _ball if _ball_attached and _ball.visible else null,
 		_formations.entiers() if _formations != null else {}, _demis_lies(lies))
+	# Enfin, les bras qui entrent dans le corps d'un autre sont tournés au coude ou à l'épaule ; aucun joueur
+	# n'est déplacé. Le ballon tenu suit les mains de son porteur.
+	var tenu: bool = _ball_attached and _ball.visible and _actors.has(_carrier_id) and _actors[_carrier_id].rig != null
+	var mains := Plancher.mains(_actors[_carrier_id].rig) if tenu else Vector3.ZERO
+	# Pistes du chorégraphe : le ballon suit sa piste près des mains du porteur, ses bras restent tels quels.
+	var garder := {}
+	if choregraphie_active():
+		for id: String in [str(_choregraphie.porteur()), _carrier_id]:
+			if not id.is_empty():
+				garder[id] = true
+	_plancher.rentrer_bras(_actors, garder)
+	if tenu:
+		_ball.global_position += Plancher.mains(_actors[_carrier_id].rig) - mains
 	_rejeu.enregistrer(delta, _camera_cut)
 	_fit_camera(delta, _camera_cut)
 	_camera_cut = false
