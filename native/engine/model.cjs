@@ -134,7 +134,8 @@ module.exports=function nativeModel(){
   // Arbitrage fin (dist/arbitrage.js) : sous le compte, une ligne courte par équipe (lancers pas droits ; pénalités par famille).
   ['Touches conservées',a.lineoutsWon+' / '+a.lineouts,b.lineoutsWon+' / '+b.lineouts,a.lineoutNotStraight||b.lineoutNotStraight?l.pair.map((ci,s)=>{const n=l.stats[s].lineoutNotStraight||0;return S.clubs[ci].abbr+' · '+(n?n+' lancer'+(n>1?'s':'')+' pas droit'+(n>1?'s':''):'aucun lancer pas droit')}):null],
   ['Pénalités concédées',a.penalties,b.penalties,typeof arbitrageResume==='function'&&a.penaltyFamilies&&b.penaltyFamilies?l.pair.map((ci,s)=>S.clubs[ci].abbr+' · '+arbitrageResume(l.stats[s])):null],['Cartons jaunes',a.yellows,b.yellows],
-  ['Tirs de pénalité',a.goals+' / '+a.goalAttempts,b.goals+' / '+b.goalAttempts],
+  // Drops (dropAttempts, drops) : comptés avec les buts du moteur, retirés des tirs de pénalité affichés.
+  ['Tirs de pénalité',(a.goals-(a.drops||0))+' / '+(a.goalAttempts-(a.dropAttempts||0)),(b.goals-(b.drops||0))+' / '+(b.goalAttempts-(b.dropAttempts||0))],
   ['Transformations',(a.conversions-(a.penaltyTries||0))+' / '+(a.conversionAttempts-(a.penaltyTries||0)),(b.conversions-(b.penaltyTries||0))+' / '+(b.conversionAttempts-(b.penaltyTries||0))]
  ].map(([label,home,away,detail])=>({label,home,away,...(detail?{detail}:{})}));}
  return {protocol:1,lineup:S.lineup.slice(),reserves:S.reserves.slice(),captain:null,kicker:typeof staffKickerId==='function'?staffKickerId():(S.playerRoles?.buteur&&S.lineup.includes(S.playerRoles.buteur)?S.playerRoles.buteur:chooseScorer(own,S.lineup)?.id)||null,selection,tactics,calendar,leagues,market,...(typeof venteVue==='function'?{sales:venteVue()}:{}),...(typeof calendrierVue==='function'?{mutations:calendrierVue()}:{}),figures:(()=>{

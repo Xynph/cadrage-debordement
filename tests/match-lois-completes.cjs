@@ -7,10 +7,14 @@
 //   depuis ses 22 : lancer adverse ;
 // - essai de pénalité (loi 8) : 7 points sans transformation, carton jaune du fautif juste avant ;
 // - passe en avant (loi 11) : mêlée adverse (ou avantage à l'adversaire) ;
-// - drop : 3 points, surtout dans le dernier quart d'heure.
+// - drop : 3 points, surtout dans le dernier quart d'heure ;
+// - champ `loi` du fait (scene.loi) : présent sur chaque fait du bloc des lois, jamais ailleurs ;
+// - fil du score de l'après-match (match-direct) : la somme de ses points = le score final, essais de pénalité et drops compris ;
+// - « Tirs de pénalité » affichés = buts − drops sur tirs − drops tentés (les drops ont leurs propres compteurs).
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const { worldYouth } = require('./helpers/youth-world-harness.cjs');
+const direct = require('../native/engine/match-direct.cjs');
 
 const N = 144, COMP = 'elite';
 const BRUIT = new Set(['sub', 'tactic', 'card', 'advantage']);
@@ -26,7 +30,10 @@ function jouer(n) {
         const l=createRugbyMatch(pair,null,false);for(let n=0;!l.finished;n++){if(n>4000)throw Error('boucle');l.paused=false;advanceRugby(l)}
         return JSON.stringify({abbr:pair.map(id=>S.clubs[id].abbr),score:l.score,tries:l.tries,yellows:l.stats[0].yellows+l.stats[1].yellows,
           transfos:l.stats.map(s=>({c:s.conversions,a:s.conversionAttempts,pt:s.penaltyTries||0,panneau:statsPanel(l).includes((s.conversions-(s.penaltyTries||0))+' / '+(s.conversionAttempts-(s.penaltyTries||0)))})),
-          events:l.events.map(e=>({min:e.min,type:e.type,text:e.text,s:e.scene?{kind:e.scene.kind,team:e.scene.team,cause:e.scene.cause,score:e.scene.score}:{}}))});})()`)));
+          tirs:l.stats.map(s=>({g:s.goals,a:s.goalAttempts,d:s.drops||0,da:s.dropAttempts||0})),
+          panneauTirs:statsPanel(l).includes('<strong>'+(l.stats[0].goals-(l.stats[0].drops||0))+' / '+(l.stats[0].goalAttempts-(l.stats[0].dropAttempts||0))+'</strong><span>Tirs de pénalité</span><strong>'+(l.stats[1].goals-(l.stats[1].drops||0))+' / '+(l.stats[1].goalAttempts-(l.stats[1].dropAttempts||0))+'</strong>'),
+          journal:l.events.map(e=>e.scene?{min:e.min,type:e.type,text:e.text,period:e.period,scene:{kind:e.scene.kind,team:e.scene.team,possession:e.scene.possession,period:e.scene.period,actor:e.scene.actor,cause:e.scene.cause,loi:e.scene.loi,move:e.scene.move,incident:e.scene.incident,origin:e.scene.origin,conversion:e.scene.conversion,from:e.scene.from,to:e.scene.to,score:e.scene.score,tries:e.scene.tries}}:{min:e.min,type:e.type,text:e.text,period:e.period}),
+          events:l.events.map(e=>({min:e.min,type:e.type,text:e.text,s:e.scene?{kind:e.scene.kind,team:e.scene.team,cause:e.scene.cause,loi:e.scene.loi,score:e.scene.score}:{}}))});})()`)));
     }
   }
   return matchs;
@@ -140,4 +147,75 @@ test('Drop : 3 points, surtout en fin de match', () => {
   assert.ok(reussis / tentes >= 0.25 && reussis / tentes <= 0.75, `réussite crédible : ${reussis}/${tentes}`);
   assert.ok(tard / tentes >= 0.35, `drops surtout en fin de match : ${tard}/${tentes} après la 60e`);
   assert.deepEqual(fautes.slice(0, 5), [], `${fautes.length} drops irréguliers`);
+});
+
+// Champ `loi` du fait (dist/restarts.js, bloc LOIS) : lu par les gestes 3D, jamais déduit du texte. Il est présent sur
+// chaque fait du bloc des lois, et sur eux seuls ; le raté du drop passe ensuite par missedGoal, qui a ses propres faits.
+test('Faits des lois : scene.loi sur chaque coup franc, essai de pénalité, drop et ballon injouable', () => {
+  const LOIS = [
+    ['coup-franc', e => /^Coup franc pour /.test(e.text)],
+    ['coup-franc-joue', e => / joue vite le coup franc ; /.test(e.text)],
+    ['essai-penalite', e => e.type === 'try' && /^\S+ · Essai de pénalité/.test(e.text)],
+    ['drop-tente', e => / tente le drop /.test(e.text)],
+    ['drop-rate', e => /^Le drop de .* passe à côté des poteaux\.$/.test(e.text)],
+    ['drop-reussi', e => e.type === 'goal' && /Drop réussi/.test(e.text)],
+    ['injouable', e => /ballon injouable : mêlée pour /.test(e.text)],
+  ];
+  const vus = Object.fromEntries(LOIS.map(([k]) => [k, 0])), fautes = [];
+  for (const m of matchs) for (const e of m.events) {
+    const attendues = LOIS.filter(([, test]) => test(e)).map(([k]) => k);
+    if (attendues.length > 1) fautes.push('fait ambigu : ' + e.text);
+    const loi = e.s.loi;
+    if (attendues.length === 0) { if (loi !== undefined) fautes.push(`loi ${loi} sur un fait étranger : ${e.text}`); continue; }
+    vus[attendues[0]]++;
+    if (loi !== attendues[0]) fautes.push(`${e.text} : loi ${loi} au lieu de ${attendues[0]}`);
+    if (attendues[0] === 'coup-franc-joue' && e.s.kind !== 'carry') fautes.push('coup franc joué hors d’une course : ' + e.text);
+  }
+  for (const k of Object.keys(vus)) assert.ok(vus[k] > 0, `fait « ${k} » observé au moins une fois : ${JSON.stringify(vus)}`);
+  assert.deepEqual(fautes.slice(0, 5), [], `${fautes.length} faits sans le bon champ loi ; ${JSON.stringify(vus)}`);
+});
+
+// Fil du score de l'après-match (native/engine/match-direct.cjs, `direct.marques`) : il doit refaire le score, avec les
+// essais de pénalité (7 points, sans marqueur) et les drops (3 points, le botteur) qui sont des faits « message ».
+test('Fil du score : la somme des marques = le score final, essais de pénalité et drops compris', () => {
+  const POINTS = { essai: 5, 'essai-transforme': 7, 'essai-penalite': 7, penalite: 3, drop: 3 };
+  const lire = { scenes: indices => indices.map(() => null), transformation: () => null, etat: () => ({}), profils: () => ({}) };
+  const fautes = []; let essaisPen = 0, drops = 0;
+  for (const [n, m] of matchs.entries()) {
+    // Journal jusqu'au coup de sifflet final : un fait joué après lui (drop raté à la sirène, 1 match sur 144) ne marque rien
+    // mais empêche l'après-match de « tout montrer » (anomalie du moteur signalée à part, hors de ce contrôle).
+    const fin = m.journal.findLastIndex(e => e.scene?.kind === 'end');
+    const events = m.journal.slice(0, fin + 1).map(e => ({ min: e.min, type: e.type, text: e.text, ...(e.period ? { period: e.period } : {}), ...(e.scene ? { scene: e.scene } : {}) }));
+    const d = direct.project({ live: { events, teams: [{ abbr: m.abbr[0], name: m.abbr[0] }, { abbr: m.abbr[1], name: m.abbr[1] }], finished: true, score: m.score, stats: [], statsRows: [] }, next: { phase: 'league' } }, 'dynamique', lire);
+    const somme = [0, 0];
+    for (const marque of d.marques) {
+      if (!(marque.nature in POINTS)) { fautes.push(`match ${n} : nature inconnue ${marque.nature}`); continue; }
+      somme[marque.equipe] += POINTS[marque.nature];
+      if (marque.nature === 'essai-penalite') { essaisPen++; if (marque.joueur !== null || marque.buteur !== null || marque.kind !== 'try') fautes.push(`match ${n} : essai de pénalité avec marqueur ou botteur`); }
+      if (marque.nature === 'drop') { drops++; if (marque.kind !== 'goal') fautes.push(`match ${n} : drop sans kind goal`); }
+    }
+    if (somme[0] !== m.score[0] || somme[1] !== m.score[1]) fautes.push(`match ${n} : fil ${somme} ≠ score ${m.score}`);
+    if (d.marques.length && JSON.stringify(d.marques.at(-1).score) !== JSON.stringify(m.score)) fautes.push(`match ${n} : dernière marque ${d.marques.at(-1).score} ≠ score final ${m.score}`);
+  }
+  assert.ok(essaisPen >= 3 && drops >= 2, `essais de pénalité (${essaisPen}) et drops (${drops}) observés dans le fil`);
+  assert.deepEqual(fautes.slice(0, 5), [], `${fautes.length} fils du score irréguliers`);
+});
+
+// Drops : comptés avec les buts du moteur (score = essais × 5 + transformations × 2 + buts × 3, contrôlé à la sauvegarde),
+// mais retirés de « Tirs de pénalité » : le joueur voit buts − drops sur tirs − drops tentés.
+test('Tirs de pénalité affichés : buts − drops sur tirs − drops tentés', () => {
+  const fautes = []; let drops = 0, tentes = 0;
+  for (const [n, m] of matchs.entries()) {
+    for (const side of [0, 1]) {
+      const t = m.tirs[side];
+      const vus = m.events.filter(e => e.s.team === side && e.s.loi === 'drop-reussi').length, essais = m.events.filter(e => e.s.team === side && e.s.loi === 'drop-tente').length;
+      if (t.d !== vus) fautes.push(`match ${n} : drops comptés ${t.d} ≠ ${vus} dans le journal`);
+      if (t.da !== essais) fautes.push(`match ${n} : drops tentés comptés ${t.da} ≠ ${essais} dans le journal`);
+      if (t.d > t.da || t.d > t.g || t.da > t.a) fautes.push(`match ${n} : compteurs de drops incohérents ${JSON.stringify(t)}`);
+      drops += t.d; tentes += t.da;
+    }
+    if (!m.panneauTirs) fautes.push(`match ${n} : « Tirs de pénalité » affiché ≠ buts − drops / tirs − drops tentés`);
+  }
+  assert.ok(tentes >= 8 && drops >= 2, `assez de drops pour contrôler la ligne (${tentes} tentés, ${drops} réussis)`);
+  assert.deepEqual(fautes.slice(0, 5), [], `${fautes.length} lignes « Tirs de pénalité » irrégulières`);
 });

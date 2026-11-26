@@ -73,7 +73,7 @@ function coupFrancConquete(l,team,kind){
  const side=Math.random()<.5?team:1-team,motifs=COUP_FRANC_MOTIFS[kind],motif=motifs[(l.minute+l.events.length)%motifs.length];
  // Mêlée ou touche formée puis arrêtée sur le coup franc : comptée comme jouée (comme une pénalité de conquête).
  l.stats[team][kind==='scrum'?'scrums':'lineouts']++;
- addEvent(l,`Coup franc pour ${S.clubs[l.pair[side]].abbr} : ${motif} (${S.clubs[l.pair[1-side]].abbr}).`,'play',{kind:'message',team:side});
+ addEvent(l,`Coup franc pour ${S.clubs[l.pair[side]].abbr} : ${motif} (${S.clubs[l.pair[1-side]].abbr}).`,'play',{kind:'message',team:side,loi:'coup-franc'});
  return jouerCoupFranc(l,side);
 }
 function jouerCoupFranc(l,side){
@@ -88,7 +88,7 @@ function jouerCoupFranc(l,side){
  // Jeu rapide à la main : le demi de mêlée joue le coup franc, un partenaire avance (défense repliée à dix mètres).
  const tapper=quickTapper(l,side),carrier=actionPlayer(l,side)||tapper,g=rand(2,7),to=clamp(at+dir*g,1,99);
  tacticalCount(l,side,'carries');l.territory=to;l.kickContext={team:side,halfEligible:ownHalf(side,to),twentyTwoEligible:own22(side,to)};
- addEvent(l,`${tapper?.name||ab} (${ab}) joue vite le coup franc ; ${carrier?.name||ab} avance de ${g} mètres.`,'play',{kind:'carry',team:side,actor:carrier?.id||null,tackler:carrier?carryTackler(l,side,carrier.id,g):null,from:{x:at,y:35},to:{x:to,y:35}});
+ addEvent(l,`${tapper?.name||ab} (${ab}) joue vite le coup franc ; ${carrier?.name||ab} avance de ${g} mètres.`,'play',{kind:'carry',team:side,actor:carrier?.id||null,tackler:carrier?carryTackler(l,side,carrier.id,g):null,loi:'coup-franc-joue',from:{x:at,y:35},to:{x:to,y:35}});
  return true;
 }
 // Faute qui empêche un essai probable (loi 8) : près de la ligne, surtout en mêlée ou sur ballon porté.
@@ -104,7 +104,7 @@ function accorderEssaiPenalite(l,side,incident){
  // accordés sans tir figurent comme une transformation, comptée à part (penaltyTries) et retirée partout où le joueur voit
  // les transformations (statistiques du match, conseil, multiplex) ; aucun buteur n'est crédité (fiche de stats).
  l.score[side]+=7;l.stats[side].conversionAttempts++;l.stats[side].conversions++;l.stats[side].penaltyTries=(l.stats[side].penaltyTries||0)+1;
- addEvent(l,`${S.clubs[l.pair[side]].abbr} · Essai de pénalité : 7 points, sans transformation. ${l.score.join(' – ')}.`,'try',{kind:'message',team:side});
+ addEvent(l,`${S.clubs[l.pair[side]].abbr} · Essai de pénalité : 7 points, sans transformation. ${l.score.join(' – ')}.`,'try',{kind:'message',team:side,loi:'essai-penalite'});
  if(restartRules(l)){chronoArret(l,'penalite');if(!flowScored(l,side)&&(flowRules(l)||l.minute<80))relancer(l,'kickoff',1-side,'score',side)}
  return true;
 }
@@ -113,7 +113,7 @@ function accorderEssaiPenalite(l,side,incident){
 function ballonInjouable(l,side){
  if(!loisRules(l)||l.flow?.advantage||Math.random()>=LOIS.injouable)return false;
  const opp=1-side,carrier=actionPlayer(l,side);
- addEvent(l,`${carrier?.name||S.clubs[l.pair[side]].abbr} (${S.clubs[l.pair[side]].abbr}) est pris dans un maul arrêté, ballon injouable : mêlée pour ${S.clubs[l.pair[opp]].abbr}.`,'play',{kind:'message',team:opp});
+ addEvent(l,`${carrier?.name||S.clubs[l.pair[side]].abbr} (${S.clubs[l.pair[side]].abbr}) est pris dans un maul arrêté, ballon injouable : mêlée pour ${S.clubs[l.pair[opp]].abbr}.`,'play',{kind:'message',team:opp,loi:'injouable'});
  grantSetPiece(l,'scrum',opp,l.territory,'unplayable',side);return true;
 }
 // Drop de l'ouvreur (n° 10, sinon le botteur d'occupation) à portée, hors avantage.
@@ -127,12 +127,13 @@ function dropTente(l,side){
  const id=l.sheets[side]?.on?.[9],k=(id!=null?activePlayers(l,side).find(p=>p.id===id):null)||occupationKicker(l,side),ab=S.clubs[l.pair[side]].abbr,nom=k?.name||ab;
  const pluie=meteoActive(l)?meteoNiveau(l,'pluie'):l.weather==='Pluie'?1:0,note=k?(skill(k,'kick',true)+skill(k,'goal',true))/2:60;
  const ok=Math.random()<clamp(D.reussite+(note-70)*.008-Math.max(0,d-22)*D.parMetre-pluie*.08+goalConditions(l,side)*.5,.1,.8);
- // Drop compté avec les buts (score = essais × 5 + transformations × 2 + buts × 3, contrôlé à la sauvegarde).
- tacticalCount(l,side,'kicks');l.stats[side].goalAttempts++;
- addEvent(l,`${nom} (${ab}) tente le drop à ${d} mètres.`,'play',{kind:'message',team:side});
- if(!ok){addEvent(l,`Le drop de ${nom} passe à côté des poteaux.`,'play',{kind:'message',team:side});return missedGoal(l,side)}
- l.score[side]+=3;l.stats[side].goals++;
- addEvent(l,`${ab} · Drop réussi par ${nom}. ${l.score.join(' – ')}.`,'goal',{kind:'message',team:side,actor:k?.id||null});
+ // Drop compté avec les buts (score = essais × 5 + transformations × 2 + buts × 3, contrôlé à la sauvegarde), et à part
+ // (dropAttempts, drops) pour le retirer de la ligne « Tirs de pénalité » affichée au joueur.
+ tacticalCount(l,side,'kicks');l.stats[side].goalAttempts++;l.stats[side].dropAttempts=(l.stats[side].dropAttempts||0)+1;
+ addEvent(l,`${nom} (${ab}) tente le drop à ${d} mètres.`,'play',{kind:'message',team:side,loi:'drop-tente'});
+ if(!ok){addEvent(l,`Le drop de ${nom} passe à côté des poteaux.`,'play',{kind:'message',team:side,loi:'drop-rate'});return missedGoal(l,side)}
+ l.score[side]+=3;l.stats[side].goals++;l.stats[side].drops=(l.stats[side].drops||0)+1;
+ addEvent(l,`${ab} · Drop réussi par ${nom}. ${l.score.join(' – ')}.`,'goal',{kind:'message',team:side,actor:k?.id||null,loi:'drop-reussi'});
  if(restartRules(l)){chronoArret(l,'penalite');if(!flowScored(l,side)&&(flowRules(l)||l.minute<80))relancer(l,'kickoff',1-side,'score',side)}
  return true;
 }

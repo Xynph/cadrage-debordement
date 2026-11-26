@@ -187,7 +187,8 @@
   for(const [key,label,won,total] of [['scrums','Mêlées conservées','scrumsWon','scrums'],['lineouts','Touches conservées','lineoutsWon','lineouts'],['goals','Pénalités au but','goals','goalAttempts'],['conversions','Transformations','conversions','conversionAttempts']]){
    if([a[won],b[won],a[total],b[total]].every(Number.isFinite)){
     // Essai de pénalité (penaltyTries) : 7 points sans tentative, retiré des transformations affichées.
-    const pa=key==='conversions'?Number(a.penaltyTries)||0:0,pb=key==='conversions'?Number(b.penaltyTries)||0:0,aw=a[won]-pa,at=a[total]-pa,bw=b[won]-pb,bt=b[total]-pb;
+    // Drops (drops, dropAttempts) : comptés avec les buts du moteur, retirés des pénalités au but.
+    const pa=key==='conversions'?Number(a.penaltyTries)||0:0,pb=key==='conversions'?Number(b.penaltyTries)||0:0,da=key==='goals'?Number(a.drops)||0:0,db=key==='goals'?Number(b.drops)||0:0,ta=key==='goals'?Number(a.dropAttempts)||0:0,tb=key==='goals'?Number(b.dropAttempts)||0:0,aw=a[won]-pa-da,at=a[total]-pa-ta,bw=b[won]-pb-db,bt=b[total]-pb-tb;
     rows.push({key,label,left:aw+' / '+at,right:bw+' / '+bt,percent:at+bt?100*at/(at+bt):50,values:[aw,bw]});}
   }
   count('penalties','Pénalités concédées',val(a,'penalties'),val(b,'penalties'));

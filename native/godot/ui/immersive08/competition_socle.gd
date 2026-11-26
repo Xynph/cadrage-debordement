@@ -265,12 +265,21 @@ func _fixture_statistics(content: VBoxContainer, fixture: Dictionary) -> void:
 		content.add_child(C.label("%s · %s / %s" % [item[0], S.count_text(stats[0].get(item[1])), S.count_text(stats[1].get(item[1]))], 22, C.IVORY))
 	for item: Array in [["Mêlées conservées", "scrumsWon", "scrums"], ["Touches conservées", "lineoutsWon", "lineouts"], ["Tirs de pénalité", "goals", "goalAttempts"], ["Transformations", "conversions", "conversionAttempts"]]:
 		# Essai de pénalité (penaltyTries) : 7 points sans tentative, retiré des transformations affichées.
+		# Drops (drops, dropAttempts) : comptés avec les buts du moteur, retirés des tirs de pénalité affichés.
 		var vals: Array = []
 		for side: int in 2:
-			var pt: int = int(stats[side].get("penaltyTries", 0)) if item[1] == "conversions" else 0
+			var retire: Array = [0, 0]
+			if item[1] == "conversions":
+				var pt: int = int(stats[side].get("penaltyTries", 0))
+				retire = [pt, pt]
+			elif item[1] == "goals":
+				retire = [int(stats[side].get("drops", 0)), int(stats[side].get("dropAttempts", 0))]
+			var rang := 0
 			for key: String in [item[1], item[2]]:
 				var v: Variant = stats[side].get(key)
-				vals.append(int(v) - pt if pt > 0 and (v is int or v is float) else v)
+				var r: int = retire[rang]
+				rang += 1
+				vals.append(int(v) - r if r > 0 and (v is int or v is float) else v)
 		content.add_child(C.wrap("%s · %s / %s — %s / %s" % [item[0], S.count_text(vals[0]), S.count_text(vals[1]), S.count_text(vals[2]), S.count_text(vals[3])], 22, C.MUTED))
 
 func _date_provenance(content: VBoxContainer, fixture: Dictionary) -> void:
