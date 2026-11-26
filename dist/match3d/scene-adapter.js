@@ -62,7 +62,9 @@
   const transfer=projectedPass(scene,players);
   return {key:eventKey,kind:String(scene.kind||'message'),stage:String(scene.stage||''),period:scene.period===2?2:1,
    players,ball:point(scene.ball),origin:point(scene.origin||scene.ball),possession:scene.possession===1?1:0,
-   ...(cut?{cut}:{}),...(transfer?{pass:transfer}:{})};
+   ...(cut?{cut}:{}),...(transfer?{pass:transfer}:{}),
+   // Coup de pied de jeu : le joueur qui prend le ballon (au point de chute) le reçoit dans les mains.
+   ...(scene.kind==='kick'&&scene.receiver!=null&&players.some(p=>p.id===String(scene.receiver))?{receiver:String(scene.receiver)}:{})};
  }
  const world=p=>({x:p.x-50,z:p.y-35});
  function trajectory(previous,next,progress){

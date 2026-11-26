@@ -52,7 +52,7 @@ function matchScene(l){
   if(kind==='kick'&&record?.receiver!=null&&id===record.receiver){x=ball.x;y=ball.y}
   players.push({id,side,slot,x:featured&&kind==='try'||kind==='lineout'?x:clamp(x,1.5,98.5),y:kind==='lineout'?y:clamp(y,2,68),name:p.name,condition:p.condition,featured});
  });
- return {ball,origin,players,stage:record?ACTION_LABELS[kind]:'État actuel',kind,team,possession,event,key:event||real.minute,period:record?.period||(real.flow?.period||1),restart:['scrum','lineout','kickoff','drop22','goalLine'].includes(kind)?{kind}:null};
+ return {ball,origin,players,stage:record?ACTION_LABELS[kind]:'État actuel',kind,team,possession,event,key:event||real.minute,period:record?.period||(real.flow?.period||1),restart:['scrum','lineout','kickoff','drop22','goalLine'].includes(kind)?{kind}:null,...(kind==='kick'&&record?.receiver!=null?{receiver:record.receiver}:{})};
 }
 // Place d'un joueur dans la touche (loi 18) : rangées à 0,5 m de part et d'autre de la ligne de remise en jeu, entre 5 et 15 m ;
 // lanceur sur la marque ; vis-à-vis à 2 m de la marque et de la ligne des 5 m ; demi receveur à 2 m de sa rangée ;

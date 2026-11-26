@@ -27,7 +27,7 @@ PLAN.queue = { complet: 600, rapide: 2000 };
 const REEL_URC = require('./fixtures/realite-matchs-20261125.json').championnats.urc;
 const DOM = [REEL_URC.domicileNiveauEgal / 100 - 0.07, REEL_URC.domicileNiveauEgal / 100 + 0.07];
 const BORNES = {
-  // Pente visée 0,30 (ECART_CHAMPIONNAT.urc de dist/rugby.js : moteur complet ×2,3, résultat rapide ×1,4).
+  // Pente visée 0,30 (ECART_CHAMPIONNAT.urc de dist/rugby.js : moteur complet ×2, résultat rapide ×1,5 depuis le 26/11).
   complet: { pente: LONGUE ? [0.26, 0.38] : [0.24, 0.40], domicile: DOM,
     // Scores : enveloppe de la réalité récente (docs/essais-realistes-20261114.md : 5,2 à 8,6 essais et 45 à 62 points par match selon le
     // championnat), et non plus l'intervalle mesuré à chaque réglage du moteur (38-62 puis 4,4-8,8 puis…) ; l'écart moyen reste ample.

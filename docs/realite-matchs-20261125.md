@@ -57,7 +57,9 @@ fréquents) et laisse trop peu de matchs serrés (bonus défensifs rares).
 - `ECART_CHAMPIONNAT` : `facteur` multiplie l'écart de niveau au moteur complet, `rapide` au résultat rapide (avant
   la compression du Top 14, inchangée). Le moteur complet ne laisse régler qu'une partie de la pente (les duels de
   qualités départagent déjà ; banc : pente ≈ 0,14 + 0,07 × facteur), d'où des facteurs plus forts qu'au rapide :
-  Pro D2 0,55 / 0,84, Premiership 1,3 / 1,19, URC 2,3 / 1,4, Super Rugby 3,5 / 1,89, Japon 2,3 / 1,46.
+  Pro D2 0,55 / 0,84, Premiership 1,3 / 1,19, URC 2 / 1,5 (2,3 / 1,4 avant le jeu au pied réaliste du 26/11 : pente du
+  complet 0,31 contre 0,26 au rapide en moyenne sur 6 graines, à la limite de tests/match-rating-curve.cjs ; après : ~0,27 / ~0,28),
+  Super Rugby 3,5 / 1,89, Japon 2,3 / 1,46.
   Les clubs de Super Rugby sont très proches en note dans la base du monde alors que le vrai championnat est très
   étagé : le facteur compense.
 - Résultat rapide du Top 14 : poids du terrain 0,63 → 0,8 (78 % à niveau égal contre 82 % au complet, réel 79 %), poids de l’écart 1 → 1,2 (même victoire à +6 que le complet).

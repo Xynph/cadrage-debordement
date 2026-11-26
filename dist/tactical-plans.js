@@ -46,18 +46,21 @@ function essaisRules(l){return tacticalRules(l)&&l.essaisVersion===1}
 // qualite : poids de la qualité du botteur (longueur, touche trouvée, 50:22, reprises) et de la chasse sous la chandelle.
 // 0,5 (25/11) : à 1, le jeu au pied amplifiait l'écart de niveau (banc de la courbe de niveau, URC, 3 × 2 700 matchs : pente
 // 0,324 contre 0,313 avec l'ancien moteur ; 0,5 : 0,309 ; 0 : 0,307), le meilleur botteur s'ajoutant au niveau déjà compté.
+// 26/11 (8e passage) : qualite 0,3 ; plus de touches trouvées dans les dégagements de son camp (types own22/ownHalf, touche 0,85,
+// perdus touche 0,85 : touche courte plutôt que ballon rendu dans le champ) et poussé 1,2 % (le reste devient un coup de pied
+// perdu, même lancer adverse au même endroit) : 7,2 touches au pied par match en Top 14 (6,1 avant ; réel 12-18), même terrain.
 let JEU_PIED_RULES=1;
 var JEU_PIED={
- pousse:{base:.022,bord:.02},
+ pousse:{base:.012,bord:.02},
  perdu:{own22:.12,ownHalf:.12,oppHalf:.12,opp22:.12},perduMetres:{camp:[2,8],adverse:[2,8],touche:[1,5],chandelle:[5,10],relance:[22,32]},
- perdus:{own22:{touche:.8,contre:.05,court:.08,chandelle:.07},ownHalf:{touche:.78,directe:.02,contre:.04,court:.06,chandelle:.05,relance:.05},adverse:{directe:.02,touche:.28,rasant:.28,chandelle:.14,croise:.16,enBut:.12}},
+ perdus:{own22:{touche:.85,contre:.05,court:.08,chandelle:.07},ownHalf:{touche:.85,directe:.02,contre:.04,court:.06,chandelle:.05,relance:.05},adverse:{directe:.02,touche:.28,rasant:.28,chandelle:.14,croise:.16,enBut:.12}},
  zone:{own22:.25,ownHalf:.1,oppHalf:.025,opp22:.01},
  style:{equilibre:1,conquete:.5,large:.75},occupation:{own22:.85,ownHalf:.65,oppHalf:.35,opp22:.08},pluie:.3,
  score:{mene:1.2,menePlus:.5,meneMoins:.8},
- types:{own22:{touche:.82,long:.1,chandelle:.08,rasant:0,croise:0},ownHalf:{touche:.64,long:.2,chandelle:.16,rasant:0,croise:0},oppHalf:{touche:.3,long:.15,chandelle:.15,rasant:.25,croise:.15},opp22:{touche:0,long:0,chandelle:.2,rasant:.55,croise:.25}},
- touche:.8,directe22:.8,directeHors22:.04,cinquante:{tente:.03,reussite:.35},
+ types:{own22:{touche:.9,long:.06,chandelle:.04,rasant:0,croise:0},ownHalf:{touche:.78,long:.12,chandelle:.1,rasant:0,croise:0},oppHalf:{touche:.3,long:.15,chandelle:.15,rasant:.25,croise:.15},opp22:{touche:0,long:0,chandelle:.2,rasant:.55,croise:.25}},
+ touche:.85,directe22:.8,directeHors22:.04,cinquante:{tente:.03,reussite:.35},
  recup:{chandelle:.28,rasant:.32,croise:.35},enAvant:.07,adverseTape:12,
- enButDefense:.5,croiseTouche:.12,longueur:.7,qualite:.5
+ enButDefense:.5,croiseTouche:.12,longueur:.7,qualite:.3
 };
 function jeuPiedPerdu(l,side){return jeuPiedRules(l)?Math.max(0,JEU_PIED.perdu[jeuPiedZone(l,side)]-poussEnTouche(l,side)):0}
 function jeuPiedScore(l,side,zone){
