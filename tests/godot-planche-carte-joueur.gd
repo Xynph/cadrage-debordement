@@ -43,6 +43,27 @@ func until(condition: Callable, limit_ms: int) -> bool:
 	while not condition.call() and Time.get_ticks_msec() < deadline: await process_frame
 	return condition.call()
 
+## Arrêt de jeu (carton, blessure…) : le moteur a arrêté le match et l'écran d'arrêt attend le joueur (depuis #1315, la
+## graine 3 prend un carton dès la 5e minute). Le test fait comme lui : « Valider le choix » s'il y en a un, puis
+## « Reprendre le match » (même aide que godot-match-direct-da). Rien tant que la pause d'arrêt n'est pas reçue.
+func reprendre_arret() -> void:
+	var view := surface()
+	if not is_instance_valid(view) or view.regie == null: return
+	var regie: Node = view.regie
+	if regie.arret.is_empty() or app.waiting or not bool(app.model.live.get("paused", false)): return
+	var reprendre: Button = regie.between.find_child("MatchBetweenStopResume", true, false) if is_instance_valid(regie.between) else null
+	if reprendre == null or not reprendre.is_visible_in_tree() or reprendre.disabled: return
+	reprendre.pressed.emit()
+	await wait_command()
+
+## Comme `until`, le match continuant de se jouer : un arrêt de jeu est repris comme le ferait le joueur.
+func until_en_jouant(condition: Callable, limit_ms: int) -> bool:
+	var deadline := Time.get_ticks_msec() + limit_ms
+	while not condition.call() and Time.get_ticks_msec() < deadline:
+		await reprendre_arret()
+		await process_frame
+	return condition.call()
+
 func capture(nom: String) -> void:
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png(dossier.path_join(nom + ".png"))
@@ -126,8 +147,8 @@ func run() -> void:
 	# Match à fond jusqu'au moment des captures (consigne de Léo : jamais d'attente en temps réel), puis vitesse normale.
 	var minute_voulue := int(OS.get_environment("CD_PLANCHE_MINUTE")) if OS.get_environment("CD_PLANCHE_MINUTE").is_valid_int() else 12
 	Engine.time_scale = 16.0
-	await until(func(): return int(app.model.live.get("minute", 0)) >= minute_voulue, 600000)
-	check(await until(func(): return vue_2d(surface()), 240000), "Écran 2D du direct")
+	await until_en_jouant(func(): return int(app.model.live.get("minute", 0)) >= minute_voulue, 600000)
+	check(await until_en_jouant(func(): return vue_2d(surface()), 240000), "Écran 2D du direct")
 	Engine.time_scale = 1.0
 	# Survol pendant que le match tourne (l'écran 2D alterne avec les temps forts : on revient sur le joueur tant que la
 	# carte n'est pas apparue) ; le survol ne met pas le match en pause.
@@ -136,7 +157,8 @@ func run() -> void:
 	var delai_ms := 0
 	var limite_survol := Time.get_ticks_msec() + 90000
 	while not apparue and Time.get_ticks_msec() < limite_survol:
-		await until(func(): return vue_2d(surface()), 30000)
+		await until_en_jouant(func(): return vue_2d(surface()), 30000)
+		await reprendre_arret()
 		souris(Vector2(4, 4))
 		await settle(2)
 		# Mon XV est redessiné à chaque action du direct : la tuile est relue juste avant de viser (l'ancienne est libérée).
@@ -160,7 +182,7 @@ func run() -> void:
 		if not vue_2d(surface()): break
 	check(Carte.actuelle(app) != null or not vue_2d(surface()), "Match en cours : la carte reste ouverte sous la souris")
 	# Match figé sur l'écran 2D (pause du test, pas de la carte) pour des captures stables.
-	await until(func(): return vue_2d(surface()), 60000)
+	await until_en_jouant(func(): return vue_2d(surface()), 60000)
 	if not app.model.live.get("finished", false) and not app.model.live.get("paused", false): await command("pause", {"paused": true})
 	await settle(20)
 	souris(Vector2(4, 4))

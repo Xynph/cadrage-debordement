@@ -599,7 +599,9 @@ func _maj_joueurs() -> void:
 		for c: Array in CRIS_JOUEUR:
 			var b := ligne.get_node("FmCriJoueur_%d_%s" % [n, str(c[0])]) as Button
 			var ici := en_cours and str(vu.get("cri", "")) == str(c[0])
-			if b.get_meta("allume", null) == ici: continue
+			# Rond neuf (sous-liste tout juste ouverte) : pas encore de méta « allume » (get_meta avec un défaut nul
+			# écrirait une erreur Godot pour chacun des 45 ronds).
+			if b.has_meta("allume") and bool(b.get_meta("allume")) == ici: continue
 			b.set_meta("allume", ici)
 			for e in b.get_children():
 				b.remove_child(e)

@@ -45,6 +45,19 @@ func capture(nom: String) -> void:
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png(dossier.path_join(nom + ".png"))
 
+## Arrêt de jeu (carton, blessure…) : le moteur a arrêté le match et l'écran d'arrêt attend le joueur (depuis #1315, la
+## graine 3 prend un carton dès la 5e minute : sans reprise, la course vers la 22e minute attendait 600 s). Le test fait
+## comme le joueur : « Valider le choix » s'il y en a un, puis « Reprendre le match » (même aide que godot-match-direct-da).
+func reprendre_arret() -> void:
+	var view := surface()
+	if not is_instance_valid(view) or view.regie == null: return
+	var regie: Node = view.regie
+	if regie.arret.is_empty() or app.waiting or not bool(live().get("paused", false)): return
+	var reprendre: Button = regie.between.find_child("MatchBetweenStopResume", true, false) if is_instance_valid(regie.between) else null
+	if reprendre == null or not reprendre.is_visible_in_tree() or reprendre.disabled: return
+	reprendre.pressed.emit()
+	await wait_command()
+
 func vue_2d(view: Control) -> bool:
 	return view.regie != null and view.regie.etat == view.regie.INTER and view.regie.between.is_visible_in_tree() and view.regie.between._journee_montree() and not view.regie.between.panneaux_direct.is_empty() and view.regie.between.panneaux_direct[0].is_visible_in_tree()
 
@@ -111,6 +124,7 @@ func run() -> void:
 	while Time.get_ticks_msec() - depart < 600000 and int(live().get("minute", 0)) < 22 and not live().get("finished", false):
 		var scene: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
 		if scene is Dictionary and not app.waiting: await command("match_talk_continue", {"key": scene.key, "phase": scene.phase, "skip": true})
+		await reprendre_arret()
 		await settle(2)
 	print("CRIS_BANC minute %d atteinte en %d s" % [int(live().get("minute", 0)), (Time.get_ticks_msec() - depart) / 1000])
 	await taille(Vector2i(1920, 1080))
