@@ -150,7 +150,7 @@ var points_regie: Array[Vector3] = []
 ## poteaux visés, pour lire le ballon entre les perches ou à côté ; 0 hors drop.
 const BIAIS_DROP := 0.5
 ## Essai de pénalité : hauteur visible minimale du plan large (m), pour le ballon, l'arbitre et les poteaux.
-const ESSAI_PENALITE_TAILLE := 26.0
+const ESSAI_PENALITE_TAILLE := 18.0
 var biais := 0.0
 var _axe_actif := false
 var _tir_camera := Vector3.ZERO

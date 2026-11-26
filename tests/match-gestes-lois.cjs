@@ -122,12 +122,20 @@ test('Vue 3D : l’arbitre plie le bras au coup franc, court sous les poteaux et
   assert.match(arbitre, /"essai-penalite":[\s\S]*?cible = point[\s\S]*?signal_bras = "bras"[\s\S]*?hauteur_bras = LEVE/);
   const leve = Number(/const LEVE := ([\d.]+)/.exec(arbitre)[1]);
   assert.ok(Math.abs(leve * 0.7 - Math.PI / 2) < 0.05, 'bras levé à la verticale');
-  assert.match(lecture, /var point := Vector3\(poteaux - cote \* 1\.0, 0\.0, 0\.0\)/);
+  assert.match(lecture, /var point := Vector3\(poteaux - cote \* ESSAI_SOUS_POTEAUX\.x, 0\.0, ESSAI_SOUS_POTEAUX\.y\)/);
+  const sous = /const ESSAI_SOUS_POTEAUX := Vector2\(([\d.]+), (-?[\d.]+)\)/.exec(lecture);
+  assert.ok(sous && Number(sous[1]) <= 5 && Math.abs(Number(sous[2])) < 2.8, 'arbitre entre les poteaux, juste devant');
   assert.match(lecture, /_jouer_loi\(plan\)/);
   // Cadrages choisis par Léo (26/11) : plans larges seulement, sans variable d'option ; essai de pénalité sans les
   // joueurs qui reculent (poteaux toujours à l'image) ; drop vu de côté, caméra en biais vers les poteaux visés.
   assert.doesNotMatch(lecture, /CD_MATCH_LOIS_CADRAGE|option_lois/);
   assert.match(lecture, /cadrage\.regler\(true, "essai_penalite", true\)/);
+  // Essai de pénalité accordé entre les poteaux (26/11) : ballon sous les poteaux, joueurs autour, plan centré sur les
+  // poteaux et l'arbitre, quelle que soit la place de la faute (contrôle chiffré : tests/godot-match-gestes.gd).
+  assert.match(lecture, /replis\.ball = \{"x": but - sens \* ESSAI_BALLON, "y": 35\.0\}/);
+  assert.match(lecture, /cadrage\.points_regie\.assign\(points_essai_penalite\(poteaux, cote\)\)/);
+  assert.match(lecture, /stage\.apply_frame\(_image\(scene, true, int\(plan\.get\("index", 0\)\) - 1\)\)/);
+  assert.match(fs.readFileSync(path.join(__dirname, 'godot-match-gestes.gd'), 'utf8'), /plan centré sur les poteaux et l'arbitre[\s\S]*?même image pour une faute loin ou près/);
   assert.match(lecture, /if tir and not drop and cadrage\.has_method\("viser_poteaux"\)/);
   assert.match(lecture, /cadrage\.vers_poteaux\(poteaux\)/);
   const cadrage = godot('match_cadrage.gd');
