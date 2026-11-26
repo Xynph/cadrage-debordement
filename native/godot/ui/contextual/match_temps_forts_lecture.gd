@@ -397,7 +397,8 @@ func _commencer_plan() -> void:
 		cadrage.couvrir(view.clock.get_global_rect().end.y / hauteur + 0.03, (hauteur - legende.get_global_rect().position.y) / hauteur + 0.02)
 		if plan.get("coupe", false) and not _sans_coupe: cadrage.couper()
 		# Tir au but : caméra dans l'axe, derrière le buteur, les deux poteaux au fond.
-		if tir and cadrage.has_method("viser_poteaux") and not (drop and option_lois() == "B"): cadrage.viser_poteaux(stage._world(scene.origin), ApresEssai.poteaux_x(scene) - 50.0, ApresEssai.buteur(scene))
+		# Drop : plan large de côté (_cadrer_drop), jamais le plan dans l'axe d'un tir au but.
+		if tir and not drop and cadrage.has_method("viser_poteaux"): cadrage.viser_poteaux(stage._world(scene.origin), ApresEssai.poteaux_x(scene) - 50.0, ApresEssai.buteur(scene))
 	_placer_arbitre_tir(plan if tir else {})
 	_jouer_loi(plan)
 	_sans_coupe = false
@@ -421,20 +422,16 @@ func _commencer_plan() -> void:
 			return
 	_jouer(plan)
 
-## Lois : cadrage A ou B proposés à Léo (26/11/2026), le temps qu'il choisisse (CD_MATCH_LOIS_CADRAGE=B ;
-## A par défaut). Drop : A derrière le botteur vers les poteaux, B plan large de côté. Essai de pénalité :
-## A face aux poteaux, l'arbitre dessous ; B plan large avec les joueurs. Coup franc : A large, B serré.
-static func option_lois() -> String:
-	return "B" if OS.get_environment("CD_MATCH_LOIS_CADRAGE") == "B" else "A"
-
-## Drop, cadrage B (plan large de côté) : le botteur et les deux poteaux restent à l'image, du lâcher au passage
-## du ballon (le cadrage A, derrière le botteur, est celui du tir au but : viser_poteaux).
+## Drop (choix de Léo, 26/11/2026 : plan large de côté) : le botteur et les deux poteaux restent à l'image, du
+## lâcher au passage du ballon ; la caméra de tribune est tournée en biais vers les poteaux (match_cadrage.gd,
+## `biais`) pour qu'on voie le ballon passer entre les perches ou à côté.
 func _cadrer_drop(scene: Dictionary) -> void:
-	if cadrage == null or option_lois() != "B": return
+	if cadrage == null: return
 	var id := ApresEssai.buteur(scene)
 	if stage._actors.has(id): cadrage.temoin = stage._actors[id].node
 	var poteaux := ApresEssai.poteaux_x(scene) - 50.0
 	cadrage.points_regie.assign([Vector3(poteaux, 0.0, -3.0), Vector3(poteaux, 0.0, 3.0), Vector3(poteaux, 8.0, 0.0)])
+	cadrage.vers_poteaux(poteaux)
 
 ## Coup franc et essai de pénalité (`plan.loi`) : programme de l'arbitre (match_arbitre.gd, `loi`) et
 ## cadrage qui le garde à l'image. Tout autre plan efface le programme.
@@ -455,27 +452,22 @@ func _jouer_loi(plan: Dictionary) -> void:
 		# À côté de la marque, côté caméra et face à elle : le bras plié vers l'équipe se lit de profil.
 		var place := Vector3(clampf(marque.x - sens * 2.5, -52.0, 52.0), 0.0, clampf(marque.z + 4.0, -31.0, 31.0))
 		arbitre.loi = {"genre": loi, "place": place, "regard": place + Vector3(0.0, 0.0, 10.0), "dir": Vector3(sens, 0.0, 0.0), "t": 0.0}
-		if cadrage != null:
-			if option_lois() == "B": cadrage.regler(true, "coup_franc")
-			cadrage.temoin = arbitre
+		# Plan large de l'arrêt de jeu (choix de Léo) qui garde l'arbitre à l'image.
+		if cadrage != null: cadrage.temoin = arbitre
 		return
 	# Essai de pénalité : sous les poteaux, face au terrain.
 	var poteaux := ApresEssai.poteaux_x(scene) - 50.0
 	var cote := signf(poteaux) if absf(poteaux) > 1.0 else sens
 	var point := Vector3(poteaux - cote * 1.0, 0.0, 0.0)
 	arbitre.loi = {"genre": loi, "point": point, "regard": point - Vector3(cote * 10.0, 0.0, 0.0), "dir": Vector3(0.0, 0.0, 1.0), "t": 0.0, "arrive": -1.0}
-	_sonner("try", camp)
 	# Bannière « ESSAI » (+7) : celle du fait des lois (direct.lois, _montrer_loi), écrite après ce plan pendant que
 	# l'image est tenue ; l'arbitre garde alors le bras levé sous les poteaux (son programme dure jusqu'au plan suivant).
 	if cadrage == null: return
-	# B : cadrage large d'un arrêt de jeu (ballon, joueurs proches, arbitre et poteaux).
-	if option_lois() == "B": cadrage.regler(true, "penalty")
+	# Plan large (choix de Léo) : l'arbitre, les poteaux et le ballon au point de la faute, sans les joueurs qui
+	# reculent vers les 22 mètres (match_cadrage.gd, « essai_penalite ») : les poteaux restent à l'image même loin.
+	cadrage.regler(true, "essai_penalite", true)
 	cadrage.temoin = arbitre
-	if option_lois() == "A" and cadrage.has_method("viser_poteaux"):
-		cadrage.viser_poteaux(Vector3(poteaux - cote * 10.0, 0.0, 0.0), poteaux)
-		cadrage.tir["sans_ballon"] = true
-	else:
-		cadrage.points_regie.assign([Vector3(poteaux, 0.0, -3.0), Vector3(poteaux, 7.0, 3.0)])
+	cadrage.points_regie.assign([Vector3(poteaux, 0.0, -3.0), Vector3(poteaux, 7.0, 3.0)])
 
 ## Plan de tir au but (transformation, pénalité tentée) avec sa marque et son buteur.
 static func tir_au_but(plan: Dictionary) -> bool:

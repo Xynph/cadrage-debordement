@@ -124,6 +124,15 @@ test('Vue 3D : l’arbitre plie le bras au coup franc, court sous les poteaux et
   assert.ok(Math.abs(leve * 0.7 - Math.PI / 2) < 0.05, 'bras levé à la verticale');
   assert.match(lecture, /var point := Vector3\(poteaux - cote \* 1\.0, 0\.0, 0\.0\)/);
   assert.match(lecture, /_jouer_loi\(plan\)/);
+  // Cadrages choisis par Léo (26/11) : plans larges seulement, sans variable d'option ; essai de pénalité sans les
+  // joueurs qui reculent (poteaux toujours à l'image) ; drop vu de côté, caméra en biais vers les poteaux visés.
+  assert.doesNotMatch(lecture, /CD_MATCH_LOIS_CADRAGE|option_lois/);
+  assert.match(lecture, /cadrage\.regler\(true, "essai_penalite", true\)/);
+  assert.match(lecture, /if tir and not drop and cadrage\.has_method\("viser_poteaux"\)/);
+  assert.match(lecture, /cadrage\.vers_poteaux\(poteaux\)/);
+  const cadrage = godot('match_cadrage.gd');
+  assert.match(cadrage, /if kind == "essai_penalite" and is_instance_valid\(temoin\):/);
+  assert.match(cadrage, /offset = offset\.rotated\(Vector3\.UP, biais\)/);
   // Drop : clip « drop », ballon lâché des mains puis frappé au rebond, vol de tir au but vers la cible de la scène.
   const drop = godot('match_vue_drop.gd');
   assert.match(drop, /jouer_geste\(id, "drop"/);
