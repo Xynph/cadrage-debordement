@@ -116,7 +116,7 @@ function manageSubstitutions(l,side){if(l.finished||side===l.userSide)return;if(
 // → coaching offensif. Un joueur cramé (condition sous `crame`) sort avant sa vague dès la 40e. Dans une vague, plusieurs
 // changements la même minute (au plus `parMinute`) ; `ecart` minutes entre deux changements d'un même groupe.
 // Jamais de retour tactique d'un joueur remplacé (loi 3 : retours réservés au saignement, au protocole commotion, à la
-// première ligne et au rouge de vingt minutes) ; le buteur reste en jeu à score serré si son remplaçant tire nettement moins bien.
+// première ligne et au rouge de vingt minutes) ; le buteur reste en jeu (sauf à bout, ou match plié à plus de 14 points) si son remplaçant tire moins bien (5 points au but).
 const BANC_IA=Object.freeze({
  groupes:Object.freeze(['front','front','front','pack','pack','pack','pack','pack','demis','demis','arrieres','arrieres','arrieres','arrieres','arrieres']),
  vagues:Object.freeze({front:[47,55],pack:[54,62],demis:[57,66],arrieres:[59,69]}),
@@ -124,7 +124,7 @@ const BANC_IA=Object.freeze({
  fin:75,crame:55,horsLimite:40,debutCrame:40,
  rotation:15,avanceRotation:5,avanceRetard:3,retardDecouverte:6,
  parMinute:3,gainVague:-2,gainCrame:2,
- buteur:Object.freeze({ecart:7,minute:50,perte:8})
+ buteur:Object.freeze({ecart:14,perte:5})
 });
 function vagueBanc(l,side,groupe){const W=BANC_IA.vagues[groupe];let h=2166136261;for(const v of [l.pair[0],l.pair[1],side,groupe.length*7+groupe.charCodeAt(0),S.season|0,S.round|0]){h^=Number(v)|0;h=Math.imul(h,16777619)>>>0}return W[0]+h%(W[1]-W[0]+1)}
 function remplacementsIA(l,side){
@@ -135,7 +135,7 @@ function remplacementsIA(l,side){
  const vagues=memory.banc||(memory.banc={faits:{front:0,pack:0,demis:0,arrieres:0}});
  const margin=l.score[side]-l.score[1-side],decale=level==='decouverte'?B.retardDecouverte:m>=45&&margin>=B.rotation?-B.avanceRotation:m>=45&&margin<=-B.rotation?-B.avanceRetard:0;
  const ouverte=g=>m>=vagueBanc(l,side,g)+decale+vagues.faits[g]*B.ecart[g];
- const fit=staffSubsFit(l,side),fitA=fitArrete(l),serre=Math.abs(margin)<=B.buteur.ecart&&m>=B.buteur.minute&&level!=='decouverte';
+ const fit=staffSubsFit(l,side),fitA=fitArrete(l),serre=Math.abs(margin)<=B.buteur.ecart&&level!=='decouverte';
  for(let fait=0;fait<B.parMinute;fait++){
   const kicker=serre?chooseScorer(S.clubs[l.pair[side]],activePlayers(l,side).map(p=>p.id),l):null;let best=null;
   for(let slot=0;slot<15;slot++){

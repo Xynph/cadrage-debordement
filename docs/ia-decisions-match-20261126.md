@@ -18,7 +18,8 @@ Test : `tests/match-ia-decisions.cjs` (matchs IA contre IA de Premiership, URC e
   joueur à bout (condition < 40). Découverte : vagues retardées de 6 min.
 - Jamais de retour tactique d'un joueur remplacé par l'IA : les retours restent ceux de la loi 3 (saignement, protocole
   commotion, première ligne, rouge de 20 minutes), gérés par leurs modules.
-- Buteur protégé à score serré (écart ≤ 7 après la 50e) si son remplaçant tire 8 points moins bien.
+- Buteur gardé en jeu (sauf joueur à bout, condition < 40, ou match plié à plus de 14 points) si son remplaçant tire
+  au moins 5 points moins bien au but : la réussite au but reste stable jusqu’à la fin du match.
 
 ## Rouge de 20 minutes (`restoreRedReplacements`, `dist/rugby.js`)
 
