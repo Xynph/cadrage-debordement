@@ -115,7 +115,8 @@ function penalitesRules(l){return essaisRules(l)&&l.penalitesVersion===1}
 // Premiership, URC, Super Rugby, Championship et au Japon, où l'on joue la touche. Temps réglementaire seulement
 // (en prolongation, on prend les points).
 const TOUCHE_CHAMPIONNATS={urc:.4,prem:.45,srp:.45,champ:.4,'jlo-d1':.4,'jlo-d2':.4,champions:.15,challenge:.25};
-function pretereTouche(l,side){return penalitesRules(l)&&l.minute<80&&(l.penaltyPolicies?.[side]||'auto')==='auto'&&Math.random()<(l.iaDecisionsVersion===1?partToucheChampionnat(l,side,TOUCHE_CHAMPIONNATS[l.worldContext?.competitionId]||0):TOUCHE_CHAMPIONNATS[l.worldContext?.competitionId]||0)}
+// Consigne « Ballon porté » du banc (dist/match-pilotage.js, pilotagePenaltouche) : part de pénaltouche plus ou moins grande.
+function pretereTouche(l,side){if(!(penalitesRules(l)&&l.minute<80&&(l.penaltyPolicies?.[side]||'auto')==='auto'))return false;const c0=TOUCHE_CHAMPIONNATS[l.worldContext?.competitionId]||0,c=l.pilotage&&typeof pilotagePenaltouche==='function'?pilotagePenaltouche(l,side,c0):c0;return Math.random()<(l.iaDecisionsVersion===1?partToucheChampionnat(l,side,c):c)}
 // Pénalité de mêlée ou de touche, tirée avant la conquête : rend vrai si la phase s'arrête sur une pénalité.
 function penaliteConquete(l,side,kind,a,b){
  // Pas de pénalité de conquête à la minute d'un coup d'envoi : une pénalité réussie dans la même minute fermerait
@@ -198,7 +199,7 @@ function failedCarryError(l,side){const base=meteoActive(l)?METEO_MATCH.ballonPe
 function carryGain(l,side){const g=carryGainBase(l,side)+(contreEdge(l,side)>0?CONTRE.metres:0)+(l.pilotage&&typeof pilotageGain==='function'?pilotageGain(l,side):0);return meteoNiveau(l,'terrain')==='lourd'?Math.max(1,Math.round(g*METEO_MATCH.terrainLourd.gain)):g}
 function carryGainBase(l,side){if(!tacticalRules(l))return rand(12,25);const range=ATTACK_EFFECTS[effectiveAttack(l,side)].gain,d=defensivePlan(l,1-side),shift=d==='pression'?4:d==='prudente'?-4:0;return rand(Math.max(3,range[0]+shift),range[1]+shift)}
 function tacticalFinishAdjustment(l,side){return !tacticalRules(l)?0:ATTACK_EFFECTS[effectiveAttack(l,side)].finish+(defensivePlan(l,1-side)==='pression'?.04:defensivePlan(l,1-side)==='prudente'?-.055:0)}
-function openKickProbability(l,side){return clamp(openKickBase(l,side)*(1+(jeuPiedRules(l)?JEU_PIED.pluie:METEO_MATCH.piedJeu.pluie)*meteoNiveau(l,'pluie'))*(typeof pilotageKick==='function'&&l.pilotage?pilotageKick(l,side):1),0,.85)}
+function openKickProbability(l,side){const p=openKickBase(l,side)*(1+(jeuPiedRules(l)?JEU_PIED.pluie:METEO_MATCH.piedJeu.pluie)*meteoNiveau(l,'pluie'));return clamp(l.pilotage&&typeof pilotageKickProb==='function'?pilotageKickProb(l,side,p):p,0,.85)}
 function openKickBase(l,side){if(!tacticalRules(l))return l.tactics[side]==='occupation'?.5:0;if(jeuPiedRules(l))return jeuPiedBase(l,side);const distance=Math.abs(attackingGoal(side)-l.territory),style=effectiveAttack(l,side);if(style==='occupation')return distance>50?.65:distance>22?.35:.08;return distance>50?(style==='conquete'?.04:style==='large'?.06:.08):distance>22?.025:.01}
 function jeuPiedBase(l,side){
  const J=JEU_PIED,zone=jeuPiedZone(l,side),style=effectiveAttack(l,side);
