@@ -71,3 +71,8 @@ Mesure (saisons Monde, diag-elite, graines 4242/7/2026 puis 11/99/31) : une pén
 dans les quatre minutes 22 % du temps (milieu de match 26 %) ; Top 14 écart ≤ 7 41,0 %, essais 5,92, points 49,0 ;
 Premiership 39,8 % et 7,15 essais ; URC 38,2 % et 6,38 essais. Menés de 11 à 14 à la 75e finissant à ≤ 7 (Top 14) : 45 → 28 %
 sur les trois graines communes (main 20 %), 34 % sur six graines.
+
+Test dédié (`tests/match-defense-regroupee.cjs`, 26/11) : un match de Premiership figé à la 65e et à la 78e, chaque situation
+rejouée 1 500 fois avec les mêmes tirages, réglages du jeu contre défense regroupée neutralisée. À la 78e, défense qui mène :
+essai sur ballon porté après pénaltouche 0,142 → 0,087 par touche, finition dans les 22 0,412 → 0,247 par temps de jeu. À la
+65e, ou défense menée : mêmes essais au tirage près. Rouge si `porte` et `finition` sont mis à 0.
