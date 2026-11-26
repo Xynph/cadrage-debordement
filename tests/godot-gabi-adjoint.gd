@@ -206,6 +206,12 @@ func _recrutement() -> void:
 		if player.get("knowledge", {}).get("stage", "") == "unobserved": hidden = player.duplicate(true); break
 	_check(not hidden.is_empty(), "Recrutement : un joueur non observé sur le marché")
 	if not hidden.is_empty():
+		# Option « Précises » (défaut, #1299, décision de Léo du 25/11) : le moteur publie knowledge.exact pour les autres
+		# clubs, mais ni Niveau ni fourchette pour un joueur jamais observé : Gabi ne sait toujours rien de lui.
+		var precis := Avis.recrutement(model, hidden)
+		_check(str(precis.action.get("verdict", "")) == "a_suivre" and str(precis.texte).contains("jamais vu"), "Recrutement : non observé (Précises) -> à observer : " + str(precis.texte))
+		# Option « En fourchette » : aucune valeur exacte d'un autre club ; une note glissée dans les données reste cachée.
+		hidden.knowledge.erase("exact")
 		hidden.rating = 97
 		hidden.potential = 99
 		hidden.ratingRange = {"min": 95, "max": 99}
