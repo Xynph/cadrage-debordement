@@ -188,7 +188,8 @@ static func _vignette_xv(app: Control, message: String, zone: Rect2) -> Button:
 ## ouvre l'avant-match (le prochain) ou le calendrier du jour. `recent` : gardé pour la signature historique.
 static func _timeline(card: Panel, app: Control, _recent: Variant, w: int = GABI_WIDTH) -> Callable:
 	_titre(card, "PROCHAINS MATCHS")
-	_lien(card, w - 20, 12, "Tout le calendrier →", func(): app._navigate("Calendrier"), "OfficeCalendarAction", 20, true)
+	var calendrier := _lien(card, w - 20, 12, "Tout le calendrier →", func(): app._navigate("Calendrier"), "OfficeCalendarAction", 20, true)
+	_dernier_resultat(card, app, 24 + _largeur("PROCHAINS MATCHS", 26, Charte.TITRE_EXTRA_ITALIQUE) + 28, calendrier.position.x / C.density - 16)
 	var fixtures := Office.upcoming_matches(app.model).slice(0, 3)
 	if fixtures.is_empty():
 		D.text(card, 25, 100, "Aucune rencontre programmée pour le moment.", 21, Charte.IVOIRE_2, 500, w - 50, HORIZONTAL_ALIGNMENT_LEFT, true)
@@ -231,3 +232,35 @@ static func _timeline(card: Panel, app: Control, _recent: Variant, w: int = GABI
 		if etape.is_empty(): etape = Office.short_fixture_label(app.model, fixture)
 		D.text(card, w - 24, y + 29, etape.left(8), 18, Charte.IVOIRE_2, 500, 60, HORIZONTAL_ALIGNMENT_RIGHT, true)
 	return Callable()
+
+## Dernier résultat (bloc « Résultats » d'avant #1017, réduit à la rencontre la plus récente) dans l'en-tête des
+## prochains matchs : pastille V / N / D et score de notre côté (ouvre la rencontre), écusson adverse (ouvre le club).
+static func _dernier_resultat(card: Panel, app: Control, x: float, fin: float) -> void:
+	var joues: Array = app.model.get("calendar", []).filter(func(fixture: Dictionary):
+		var score: Variant = fixture.get("score")
+		return fixture.get("played", false) and score is Array and score.size() == 2)
+	if joues.is_empty(): return
+	var fixture: Dictionary = joues[-1]
+	var club_id: Variant = app.model.club.id
+	var cote := 0 if fixture.get("home", {}).get("id") == club_id else 1
+	var adversaire: Dictionary = fixture.get("away", {}) if cote == 0 else fixture.get("home", {})
+	var score: Array = fixture.score
+	var lettre := "N"
+	if score[cote] != score[1 - cote] or fixture.get("winner") != null:
+		var gagne: bool = (fixture.get("winner") == club_id) if score[cote] == score[1 - cote] else score[cote] > score[1 - cote]
+		lettre = "V" if gagne else "D"
+	var texte := "%s – %s" % [G.n(score[cote]), G.n(score[1 - cote])]
+	var largeur := _largeur(texte, 21, C.font(700)) + 4
+	if x + 38 + largeur + 10 + 28 > fin: return
+	var cle := str(fixture.get("id", fixture.get("date", ""))).validate_node_name()
+	var resume := " · ".join([Office.timeline_period(fixture), G.club_name(adversaire), texte])
+	_pastille(card, x, 16, lettre)
+	var points := D.text(card, x + 38, 36, texte, 21, Charte.IVOIRE, 700, largeur)
+	points.name = "OfficeRecentScore"
+	Office.describe_fixture(points, resume)
+	Office.reading_overlay(app, card, Rect2(x - 4, 10, 38 + largeur + 8, 32), Office.score_reading_target(app, fixture), "OfficeRecentFixture_" + cle, "Rencontre · " + resume)
+	var ecusson := Office.opponent_crest(adversaire, 28)
+	ecusson.name = "OfficeRecentCrest"
+	card.add_child(ecusson)
+	D.place(ecusson, Rect2(x + 38 + largeur + 10, 12, 28, 28))
+	Office.reading_overlay(app, card, Rect2(x + 38 + largeur + 10, 12, 28, 28), Office.club_reading_target(app, adversaire), "OfficeRecentClubCrest_" + cle, G.club_name(adversaire))

@@ -106,22 +106,31 @@ static func _group(card: Panel, app: Control, w: int = 580) -> void:
 		var texte_fatigue := "%d titulaire%s du prochain match sous %d %%" % [titulaires, "s" if titulaires > 1 else "", int(fatigue.seuil)]
 		x_pastille += _pastille_action(card, x_pastille, 290, "%d < %d %%" % [titulaires, int(fatigue.seuil)], R.ORANGE, "warning", func(): app._navigate("Composition"), "OfficeFatigueAction", texte_fatigue + " · ouvrir la composition") + 12
 		y_alerte = 336.0
+	var x_exemple := x_pastille
 	if group.watched > 0:
-		_pastille_action(card, x_pastille, 290, G.n(group.watched), R.ORANGE, "flag", app.navigation_controller.open_watched_roster, "OfficeWatchedAction", U.watch_caption(group.watched))
+		x_exemple += _pastille_action(card, x_pastille, 290, G.n(group.watched), R.ORANGE, "flag", app.navigation_controller.open_watched_roster, "OfficeWatchedAction", U.watch_caption(group.watched)) + 14
 		y_alerte = 336.0
 	var avec_blesses := _blesses(card, app, y_alerte, w)
-	if group.watched > 0 and not avec_blesses:
-		for player: Dictionary in app.model.get("squad", []):
-			var reason := U.watch_reason(player)
-			if reason.is_empty(): continue
-			var exemple := D.text(card, 25, 350, str(player.name) + " · " + reason, 19, Charte.IVOIRE_2, 500, w - 52)
-			exemple.tooltip_text = exemple.text
-			var lien_exemple := _label_reading(app, card, exemple, {"kind": "player", "id": str(player.id)}, "OfficeWatchedPlayer_" + str(player.id).validate_node_name(), str(player.name))
-			if lien_exemple != null: MiniFiche.lier(app, lien_exemple, str(player.id), "squad")
-			break
+	if group.watched > 0:
+		# Sans blessé : l'exemple du premier surveillé sous les pastilles. Avec blessés, « ! Blessés » garde cette ligne
+		# et l'exemple se range à droite des pastilles (le surveillé reste lié à sa fiche).
+		if avec_blesses: _exemple_surveille(card, app, x_exemple, 290, w - 24 - x_exemple)
+		else: _exemple_surveille(card, app, 25, 350, w - 52)
 	elif titulaires <= 0 and int(group.injured) <= 0:
 		D.text(card, 25, 330, "Aucune alerte physique", 21, Charte.V, 600, w - 52).name = "OfficeNoAlert"
 	_lien(card, 20, ROW2_H - 44, "Consulter le groupe →", app.navigation_controller.open_roster_group, "OfficeSquadAction", 21)
+
+## Premier joueur surveillé (« nom · raison ») : ouvre sa fiche, mini-fiche au survol.
+static func _exemple_surveille(card: Panel, app: Control, x: float, baseline: float, largeur: float) -> void:
+	if largeur < 80.0: return
+	for player: Dictionary in app.model.get("squad", []):
+		var reason := U.watch_reason(player)
+		if reason.is_empty(): continue
+		var exemple := D.text(card, x, baseline, str(player.name) + " · " + reason, 19, Charte.IVOIRE_2, 500, largeur)
+		exemple.tooltip_text = exemple.text
+		var lien_exemple := _label_reading(app, card, exemple, {"kind": "player", "id": str(player.id)}, "OfficeWatchedPlayer_" + str(player.id).validate_node_name(), str(player.name))
+		if lien_exemple != null: MiniFiche.lier(app, lien_exemple, str(player.id), "squad")
+		return
 
 ## Blessés : « ! Blessés : nom, nom » ; chaque nom ouvre la fiche (mini-fiche au survol). Rien sans blessé.
 static func _blesses(card: Panel, app: Control, baseline: float, w: int) -> bool:
