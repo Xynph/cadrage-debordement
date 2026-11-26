@@ -22,14 +22,14 @@ assert.match(yaml,/schedule:full:success/);
 assert.match(yaml,/rapide: \$\{\{ steps\.draft\.outputs\.rapide == 'true' \}\}/);
 assert.match(yaml,/grep -qx 'batterie-complete'/);
 assert.match(yaml,/"\$HEAD_REF" == train\/\*/);
-// Débit : brouillons en CI légère, batterie complète au passage en prête, annulation sur main.
+// Débit : brouillons en CI légère, batterie complète au passage en prête, main jamais annulé en cours (le dernier commit fusionné reste le seul en attente).
 assert.match(yaml,/types: \[opened, synchronize, reopened, ready_for_review\]/);
 // État brouillon lu en direct (course push + passage en prête, #590).
 assert.match(yaml,/draft: \$\{\{ steps\.draft\.outputs\.draft == 'true' \}\}/);
 assert.match(yaml,/gh api "repos\/\$GITHUB_REPOSITORY\/pulls\/\$PR" --jq \.draft/);
 assert.match(yaml,/pull-requests: read/);
 assert.match(yaml,/DRAFT: \$\{\{ needs\.classification\.outputs\.draft \}\}/);
-assert.match(yaml,/cancel-in-progress: \$\{\{ github\.event_name == 'pull_request' \|\| github\.event_name == 'push' \}\}/);
+assert.match(yaml,/cancel-in-progress: \$\{\{ github\.event_name == 'pull_request' \|\| \(github\.event_name == 'push' && github\.ref != 'refs\/heads\/main'\) \}\}/);
 const shardJob=yaml.split('\n  shards:\n')[1].split('\n  godot:\n')[0];
 assert.match(shardJob,/needs\.classification\.outputs\.draft != 'true'/);
 // Nombre de shards : une seule source (ci/ci-jobs.cjs) que la matrice doit refléter.
