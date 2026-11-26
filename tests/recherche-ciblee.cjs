@@ -40,6 +40,9 @@ test('Carrière Monde : mission payée, critères tenus, nouveaux joueurs observ
     assert.ok(rc.recruteurs.length >= 1, 'recruteurs du staff');
     const scouts = rc.recruteurs.map(x => x.id);
     const base = { family: 7, maxAge: 30, budget: 10000000, maxWage: 100000, confirmed: true, position: 12, minNote: 0, minPotential: 0, minAge: 18, scouts };
+    // Compteur de débits de mission (indépendant des autres flux de la caisse, qui varient avec la division).
+    jeu.bridge.vm.run('globalThis.__debits=[];(()=>{const a=createScoutMission;createScoutMission=function(){const c=S.clubs[S.club].cash,r=a.apply(this,arguments);globalThis.__debits.push(c-S.clubs[S.club].cash);return r;};Object.assign(createScoutMission,a);})()');
+    const debits = () => JSON.parse(jeu.bridge.vm.run('JSON.stringify(globalThis.__debits)'));
     // Critères refusés avant tout paiement.
     let s = etat();
     const avant = s.clubs[s.club].cash;
@@ -77,7 +80,9 @@ test('Carrière Monde : mission payée, critères tenus, nouveaux joueurs observ
     const continues = s.manager.missions.filter(j => j.cible?.priority === 'continue');
     assert.ok(continues.length >= 2, 'recherche continue relancée');
     assert.ok(continues.every((j, i) => j.cible.cycle === i + 1));
-    assert.equal(avant - s.clubs[s.club].cash >= 10000, true);
+    // Coût des missions = 10 000 € exactement (2 envois à 5 000 €) ; la relance « continue » ne débite ni ne rembourse rien :
+    // aucun autre appel de création de mission, donc aucun autre débit. (La caisse brute varie avec la division.)
+    assert.deepEqual(debits(), [5000, 5000]);
     const journal = s.manager.inbox.filter(x => /^Recherche ciblée/.test(x.title));
     assert.ok(journal.length >= 2, 'message à chaque rapport');
     // Liste des joueurs déjà observés : estimations seulement, jamais la note exacte.

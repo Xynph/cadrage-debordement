@@ -31,8 +31,12 @@ test('Clôture sans réserve (anciens comptes) : apport = min(enveloppe, défici
  }
  const r=clot(compteTest(),9e6);assert.ok(!r.messages.some(m=>/prises sur la réserve/.test(m)));
 });
+// Masse d'un budget sain (25 % des recettes) : la saison laisse de quoi réinvestir. Depuis le 25/11/2026, l'investissement ne prend
+// que ce que le budget de la saison laisse au-dessus du résultat visé (club-budget.cjs, ouverture) ; une masse de 10 M€ (45 % des
+// recettes du club) n'en laisse rien.
+const masseSaine=id=>Math.round(B.recettes(forces).get(id)*0.25);
 test('Ouverture avec excédents : réinvestissement, dividende de l’entreprise, rien pour mécène et association',()=>{
- const recettes=B.recettes(forces),riche=id=>({id,cash:recettes.get(id)*2,masse:1e7});
+ const recettes=B.recettes(forces),riche=id=>({id,cash:recettes.get(id)*2,masse:masseSaine(id)});
  for(const type of ['mecene','entreprise','association']){
   const id=parType[type],clubs=forces.map(f=>f.id===id?riche(id):{id:f.id,cash:0,masse:1e7});
   const c=B.ouverture({forces,saison:2,clubs,excedents:true}).clubs[id],surplus=c.depart+c.dividende-c.reserve;
@@ -44,6 +48,9 @@ test('Ouverture avec excédents : réinvestissement, dividende de l’entreprise
   assert.ok(c.investissement+c.dividende<=surplus+1,'on ne dépense pas plus que l’excédent');
   const sans=B.ouverture({forces,saison:2,clubs,excedents:false}).clubs[id];
   assert.equal(sans.investissement,0);assert.equal(sans.dividende,0);assert.equal(sans.depart,riche(id).cash);assert.equal(sans.reserve,c.reserve);
+  // Budget déjà déficitaire (masse de 10 M€) : rien n'est réinvesti, le dividende d'un groupe actionnaire ne change pas.
+  const lourd=B.ouverture({forces,saison:2,clubs:forces.map(f=>f.id===id?{...riche(id),masse:1e7}:{id:f.id,cash:0,masse:1e7}),excedents:true}).clubs[id];
+  assert.equal(lourd.investissement,0,type+' : saison déficitaire, aucun réinvestissement');assert.equal(lourd.dividende,c.dividende,type+' : dividende inchangé');
  }
  const pauvre=B.ouverture({forces,saison:2,clubs:forces.map(f=>({id:f.id,cash:0,masse:1e7})),excedents:true});
  assert.ok(pauvre.clubs.every(c=>c.investissement===0&&c.dividende===0),'pas d’excédent sans caisse au-dessus de la réserve');
@@ -61,7 +68,7 @@ test('Six saisons à +1 M€ avant prime : la caisse reste bornée (réserve + 3
   const id=parType[type],r=B.reserveCible(B.recettes(forces).get(id),id);
   let cash=r,ancien=r,max=r;
   for(let saison=2;saison<=7;saison++){
-   const c=B.ouverture({forces,saison,clubs:forces.map(f=>({id:f.id,cash:f.id===id?cash:0,masse:1e7})),excedents:true}).clubs[id];
+   const c=B.ouverture({forces,saison,clubs:forces.map(f=>({id:f.id,cash:f.id===id?cash:0,masse:f.id===id?masseSaine(id):1e7})),excedents:true}).clubs[id];
    cash=c.depart+1e6-c.investissement;ancien+=1e6;max=Math.max(max,cash);
   }
   assert.equal(ancien,r+6e6);assert.ok(max<=r+3e6,type+' : caisse '+max+' > réserve '+r+' + 3 M€');
