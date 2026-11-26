@@ -67,6 +67,21 @@ const BUSTE_TETE := [["Hips", "Abdomen", 0.13], ["Abdomen", "Torso", 0.14], ["To
 ## Joueur debout près d'un joueur couché : jambes, buste et tête (bras exclus : mains au ballon, liaisons).
 const DEBOUT_SUR_COUCHE := JAMBES_DEBOUT + BUSTE_TETE
 const JEU_DEBOUT := 0.01
+## Bras (26/11/2026, sonde des contacts : bras dans les corps par milliers en mêlée, ballon porté,
+## plaquage et ruck, jusqu'à 20 cm) : corps des autres que les bras ne traversent pas (tout sauf leurs
+## bras), segments du bras [os, os d'arrivée, rayon, pivots du plus proche au plus éloigné], pénétration
+## tolérée (m, bras au contact), jeu visé (m), passes au plus par bras, rotation au plus par passe (rad).
+const CORPS_SANS_BRAS := TRONC_DEBOUT + [["LowerLeg.L", "Foot.L", 0.06], ["LowerLeg.R", "Foot.R", 0.06]]
+const BRAS := {
+	"L": [["UpperArm.L", "LowerArm.L", 0.06, ["UpperArm.L"]], ["LowerArm.L", "Palm.L", 0.05, ["LowerArm.L", "UpperArm.L"]]],
+	"R": [["UpperArm.R", "LowerArm.R", 0.06, ["UpperArm.R"]], ["LowerArm.R", "Palm.R", 0.05, ["LowerArm.R", "UpperArm.R"]]],
+}
+const TOLERANCE_BRAS := 0.02
+const JEU_BRAS := 0.005
+const PASSES_BRAS := 6
+const ROTATION_BRAS_MAX := 0.6
+## Haut du bras touché à moins de EPAULE_BRAS (m) de l'épaule : contact du tronc, laissé (sonde : « epaule »).
+const EPAULE_BRAS := 0.06
 ## 25/11/2026 : 2,6 m (comme la sonde des contacts) au lieu de 1,8 m : penché en mêlée, un avant a la
 ## tête 1,1 m devant ses pieds ; à 1,8 m, le demi qui se tourne contre un flanker n'était pas vu.
 const PORTEE_DEBOUT := 2.6
@@ -353,6 +368,130 @@ func separer(actors: Dictionary, delta: float, exclus: Dictionary = {}, porteur:
 		if id == porteur and ballon != null:
 			ballon.global_position += Vector3(ecart.x, 0.0, ecart.z) * _poids_ballon
 		corrections += 1
+
+
+## Bras, après `separer` (dernière pose de l'image) : le haut du bras ou l'avant-bras d'un joueur qui entre
+## dans le corps d'un autre (CORPS_SANS_BRAS, à moins de PORTEE_DEBOUT) au-delà de TOLERANCE_BRAS est tourné
+## au coude ou à l'épaule, juste assez pour revenir au contact (JEU_BRAS) : liaisons de mêlée et de ballon
+## porté, bras du plaqueur et des joueurs du ruck posés sur le corps, pas dedans. Ni racine ni modèle ne
+## bougent (aucun joueur écarté), têtes et bustes inchangés. `garder` : joueurs dont les bras restent tels
+## quels (porteur qui tient le ballon). Retiré au début de l'image suivante (`restaurer`).
+func rentrer_bras(actors: Dictionary, garder: Dictionary = {}) -> void:
+	var ids: Array = []
+	var corps: Dictionary = {}
+	var racines: Dictionary = {}
+	for id: String in actors:
+		var rig: Skeleton3D = actors[id].get("rig")
+		if rig == null or not rig.is_visible_in_tree():
+			continue
+		ids.append(id)
+		corps[id] = _volumes(rig, CORPS_SANS_BRAS)
+		racines[id] = (actors[id].node as Node3D).global_position
+	for a: String in ids:
+		if garder.has(a):
+			continue
+		var autres: Array = []
+		for b: String in ids:
+			if b != a and (racines[a] as Vector3).distance_to(racines[b]) <= PORTEE_DEBOUT:
+				autres.append_array(corps[b])
+		if autres.is_empty():
+			continue
+		var rig: Skeleton3D = actors[a].rig
+		var o: Dictionary = _origines.get(a, {"rotations": {}, "positions": {}})
+		var tourne := false
+		for cote: String in BRAS:
+			for passe in PASSES_BRAS:
+				if not _sortir_bras(rig, BRAS[cote], autres, racines[a], o):
+					break
+				tourne = true
+		if tourne:
+			# Bras tourné : la main ne passe pas sous la pelouse pour autant (chaînes des bras du plancher).
+			for chaine: Array in CHAINES.slice(0, 2):
+				for passe in PASSES:
+					var bas := _plus_bas(rig, chaine[1])
+					if bas.is_empty():
+						break
+					var marge: float = MARGE_BOUT if bas.bout else MARGE_ARTICULATION
+					if float(bas.point.y) >= marge - 0.0005 or not _relever(rig, chaine[0], bas.point, marge, o):
+						break
+			_origines[a] = o
+			corrections += 1
+
+
+## Une passe pour un bras (`segments` de BRAS) : son point le plus enfoncé dans les volumes `autres` est
+## ramené au contact par la rotation d'un pivot (coude pour l'avant-bras, sinon épaule). Rend vrai si un
+## os a tourné.
+func _sortir_bras(rig: Skeleton3D, segments: Array, autres: Array, racine: Vector3, o: Dictionary) -> bool:
+	var g := rig.global_transform
+	var pire := TOLERANCE_BRAS
+	var point := Vector3.ZERO
+	var dehors := Vector3.ZERO
+	var pivots: Array = []
+	for s: Array in segments:
+		var i := rig.find_bone(s[0])
+		var j := rig.find_bone(s[1])
+		if i < 0 or j < 0:
+			continue
+		var p0 := (g * rig.get_bone_global_pose(i)).origin
+		var p1 := (g * rig.get_bone_global_pose(j)).origin
+		for v: Array in autres:
+			var r := Geometry3D.get_closest_points_between_segments(p0, p1, v[0], v[1])
+			var p := float(s[2]) + float(v[2]) - (r[0] as Vector3).distance_to(r[1])
+			# Contact à l'articulation de l'épaule : c'est le tronc, aucune rotation du bras ne l'en sort.
+			if p <= pire or (r[0] as Vector3).distance_to(p0) < EPAULE_BRAS and str(s[0]).begins_with("UpperArm"):
+				continue
+			var d: Vector3 = r[0] - r[1]
+			if d.length() < 0.01:
+				# Bras sur l'axe du volume : ressorti du côté de l'épaule.
+				var axe: Vector3 = (v[1] as Vector3) - (v[0] as Vector3)
+				d = p0 - (r[1] as Vector3)
+				if axe.length() > 0.001:
+					d -= axe.normalized() * d.dot(axe.normalized())
+				if d.length() < 0.01:
+					d = racine - (r[1] as Vector3)
+					d.y = 0.0
+			if d.length() < 0.001:
+				continue
+			pire = p
+			point = r[0]
+			dehors = d.normalized()
+			pivots = s[3]
+	if pivots.is_empty():
+		return false
+	var voulu_m := pire + JEU_BRAS
+	# Pivot le plus efficace (bras de levier perpendiculaire à la sortie le plus long) : l'épaule quand le
+	# point enfoncé est près du coude, le coude quand c'est la main.
+	var meilleur := -1
+	var effet := 0.05
+	var levier := Vector3.ZERO
+	var perpendiculaire := Vector3.ZERO
+	for nom: String in pivots:
+		var i := rig.find_bone(nom)
+		if i < 0:
+			continue
+		var l := point - (g * rig.get_bone_global_pose(i)).origin
+		if l.length() < 0.05:
+			continue
+		var perp := dehors - l.normalized() * dehors.dot(l.normalized())
+		if l.length() * perp.length() > effet:
+			effet = l.length() * perp.length()
+			meilleur = i
+			levier = l
+			perpendiculaire = perp
+	if meilleur >= 0:
+		var i := meilleur
+		var angle := asin(clampf(voulu_m / effet, 0.0, sin(ROTATION_BRAS_MAX)))
+		var monde := Quaternion(levier.cross(perpendiculaire).normalized(), angle)
+		var r := rig.global_basis.orthonormalized().get_rotation_quaternion()
+		var actuel := rig.get_bone_global_pose(i).basis.get_rotation_quaternion()
+		var voulu := r.inverse() * monde * r * actuel
+		var parent := rig.get_bone_parent(i)
+		var parent_rot := rig.get_bone_global_pose(parent).basis.get_rotation_quaternion() if parent >= 0 else Quaternion.IDENTITY
+		if not o.rotations.has(i):
+			o.rotations[i] = rig.get_bone_pose_rotation(i)
+		rig.set_bone_pose_rotation(i, (parent_rot.inverse() * voulu).normalized())
+		return true
+	return false
 
 
 ## Poussée horizontale (monde) qui sépare les volumes `va` (décalés de `da`) de `vb` (décalés de `db`) :

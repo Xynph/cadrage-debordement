@@ -65,6 +65,28 @@ func busts_overlap(view, a: String, b: String, liste: Array = BUSTES) -> float:
 	return worst
 
 
+## Plus forte pénétration (m) d'un bras de `a` (haut du bras hors articulation de l'épaule, avant-bras) dans le
+## corps de `b` (bras exclus), joueurs à moins de 2,6 m.
+const BRAS := [["UpperArm.L", "LowerArm.L", 0.06], ["UpperArm.R", "LowerArm.R", 0.06], ["LowerArm.L", "Palm.L", 0.05], ["LowerArm.R", "Palm.R", 0.05]]
+const SANS_BRAS := BUSTES + [["UpperLeg.L", "LowerLeg.L", 0.08], ["UpperLeg.R", "LowerLeg.R", 0.08], ["LowerLeg.L", "Foot.L", 0.06],
+	["LowerLeg.R", "Foot.R", 0.06]]
+const EPAULE := 0.06
+const ARM_IN_BODY_MAX := 0.03
+
+func arm_in_body(view, a: String, b: String) -> float:
+	if (view._actors[a].node as Node3D).global_position.distance_to((view._actors[b].node as Node3D).global_position) > 2.6:
+		return 0.0
+	var worst := 0.0
+	var bras := _busts(view._actors[a].rig, BRAS)
+	for x in bras.size():
+		for s2: Array in _busts(view._actors[b].rig, SANS_BRAS):
+			var r := Geometry3D.get_closest_points_between_segments(bras[x][0], bras[x][1], s2[0], s2[1])
+			if x < 2 and (r[0] as Vector3).distance_to(bras[x][0]) < EPAULE:
+				continue
+			worst = maxf(worst, float(bras[x][2]) + float(s2[2]) - (r[0] as Vector3).distance_to(r[1]))
+	return worst
+
+
 func _initialize() -> void:
 	call_deferred("run")
 
@@ -287,6 +309,14 @@ func check_view(view: Node3D) -> void:
 			pack_fondu = maxf(pack_fondu, busts_overlap(view, "s%d_%d" % [a / 8, a % 8], "s%d_%d" % [b / 8, b % 8]))
 	check(pack_fondu <= BUST_OVERLAP_MAX, "Bound scrum: no bust or head inside another (%.3f m, %.2f m allowed)" % [pack_fondu, BUST_OVERLAP_MAX])
 	metrics.scrum_bust_overlap_m = snappedf(pack_fondu, 0.001)
+	# Bras liés posés sur le corps du voisin, pas dedans (26/11/2026, sonde des contacts : jusqu'à 20 cm).
+	var pack_bras := 0.0
+	for a in 18:
+		for b in 18:
+			if a != b:
+				pack_bras = maxf(pack_bras, arm_in_body(view, "s%d_%d" % [a / 9, a % 9], "s%d_%d" % [b / 9, b % 9]))
+	check(pack_bras <= ARM_IN_BODY_MAX, "Bound scrum: arms rest on the other bodies, not inside (%.3f m, %.2f m allowed)" % [pack_bras, ARM_IN_BODY_MAX])
+	metrics.scrum_arm_in_body_m = snappedf(pack_bras, 0.001)
 	metrics.scrum_pack_head_max_m = snappedf(pack_head, 0.01)
 	metrics.scrum_head_gap_m = snappedf(head_gap, 0.001)
 	metrics.scrum_head_height_m = snappedf(head_height, 0.01)
