@@ -105,7 +105,7 @@ function restoreRedReplacements(l,side){
  const sh=l.sheets[side];
  for(const red of sh.redCards){if(frontRowRules(l)&&red.slot<3)continue;if(red.filled||red.until===null||red.until>l.minute)continue;
   if(!red.announced){red.announced=true;addEvent(l,`${S.clubs[l.pair[side]].abbr} peut remplacer ${matchPlayer(l,side,red.id)?.name||'le joueur exclu'} : les 20 minutes sont écoulées.`,'card')}
-  if(side!==l.userSide){const p=eligibleChanges(l,side,red.slot).sort((a,b)=>fitScore(b)-fitScore(a))[0];if(p)makeSub(l,side,red.slot,p.id)}
+  /* Note au poste à pourvoir (et non au poste du remplaçant) : un talonneur ne remplace pas un ailier exclu quand un trois-quarts attend sur le banc. */if(side!==l.userSide){const f=FAMILIES[red.slot],p=eligibleChanges(l,side,red.slot).sort((a,b)=>fitScore(b,f)-fitScore(a,f))[0];if(p)makeSub(l,side,red.slot,p.id)}
  }
 }
 function revisedSubPanel(l){

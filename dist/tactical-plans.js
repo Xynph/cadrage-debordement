@@ -41,7 +41,7 @@ function penalitesRules(l){return essaisRules(l)&&l.penalitesVersion===1}
 // Premiership, URC, Super Rugby, Championship et au Japon, où l'on joue la touche. Temps réglementaire seulement
 // (en prolongation, on prend les points).
 const TOUCHE_CHAMPIONNATS={urc:.4,prem:.45,srp:.45,champ:.4,'jlo-d1':.4,'jlo-d2':.4,champions:.15,challenge:.25};
-function pretereTouche(l,side){return penalitesRules(l)&&l.minute<80&&(l.penaltyPolicies?.[side]||'auto')==='auto'&&Math.random()<(TOUCHE_CHAMPIONNATS[l.worldContext?.competitionId]||0)}
+function pretereTouche(l,side){return penalitesRules(l)&&l.minute<80&&(l.penaltyPolicies?.[side]||'auto')==='auto'&&Math.random()<(l.iaDecisionsVersion===1?partToucheChampionnat(l,side,TOUCHE_CHAMPIONNATS[l.worldContext?.competitionId]||0):TOUCHE_CHAMPIONNATS[l.worldContext?.competitionId]||0)}
 // Pénalité de mêlée ou de touche, tirée avant la conquête : rend vrai si la phase s'arrête sur une pénalité.
 function penaliteConquete(l,side,kind,a,b){
  // Pas de pénalité de conquête à la minute d'un coup d'envoi : une pénalité réussie dans la même minute fermerait

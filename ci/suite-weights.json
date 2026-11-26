@@ -118,6 +118,7 @@
       "tests/match-direct.cjs": 315,
       "tests/match-essai-visible.cjs": 373,
       "tests/match-highlights.cjs": 17,
+      "tests/match-ia-decisions.cjs": 40,
       "tests/match-importance.cjs": 13,
       "tests/match-notes.cjs": 364,
       "tests/match-penalite-main.cjs": 184,
