@@ -29,9 +29,15 @@ func carry(key: String, depuis: float, x: float, ligne: float, avance: float = 1
 const TRONC_TETE := [["Hips", "Abdomen", 0.13], ["Abdomen", "Torso", 0.14], ["Torso", "Neck", 0.14], ["Head", 0.22, 0.1]]
 const CORPS := TRONC_TETE + [["UpperLeg.L", "LowerLeg.L", 0.08], ["UpperLeg.R", "LowerLeg.R", 0.08], ["LowerLeg.L", "Foot.L", 0.06],
 	["LowerLeg.R", "Foot.R", 0.06], ["UpperArm.L", "LowerArm.L", 0.06], ["UpperArm.R", "LowerArm.R", 0.06], ["LowerArm.L", "Palm.L", 0.05], ["LowerArm.R", "Palm.R", 0.05]]
+## Bras (haut du bras, avant-bras) et corps sans les bras, mêmes rayons que la sonde.
+const BRAS := [["UpperArm.L", "LowerArm.L", 0.06], ["UpperArm.R", "LowerArm.R", 0.06], ["LowerArm.L", "Palm.L", 0.05], ["LowerArm.R", "Palm.R", 0.05]]
+const SANS_BRAS := TRONC_TETE + [["UpperLeg.L", "LowerLeg.L", 0.08], ["UpperLeg.R", "LowerLeg.R", 0.08], ["LowerLeg.L", "Foot.L", 0.06], ["LowerLeg.R", "Foot.R", 0.06]]
 const JAMBES := [["UpperLeg.L", "LowerLeg.L", 0.08], ["UpperLeg.R", "LowerLeg.R", 0.08], ["LowerLeg.L", "Foot.L", 0.06], ["LowerLeg.R", "Foot.R", 0.06]]
 ## Au-delà : interpénétration franche (sonde des contacts, Léo 25/11/2026).
 const FRANC := 0.08
+## Bras au contact d'un autre corps : 3 cm au plus (seuil « léger » de la sonde ; match_plancher.gd en tolère 2).
+const BRAS_TOLERE := 0.03
+const EPAULE := 0.06
 
 static func volumes(rig: Skeleton3D, liste: Array) -> Array:
 	var sortie: Array = []
@@ -56,6 +62,18 @@ static func penetration(va: Array, vb: Array) -> float:
 			pire = maxf(pire, float(s1[2]) + float(s2[2]) - (r[0] as Vector3).distance_to(r[1]))
 	return pire
 
+## Pénétration des bras `va` (BRAS) dans les corps `vb`, hors contacts à l'articulation de l'épaule (moins de
+## EPAULE du début du haut du bras : c'est le tronc, compté à part par la sonde).
+static func bras_dans(va: Array, vb: Array) -> float:
+	var pire := -INF
+	for x in va.size():
+		for s2: Array in vb:
+			var r := Geometry3D.get_closest_points_between_segments(va[x][0], va[x][1], s2[0], s2[1])
+			if x < 2 and (r[0] as Vector3).distance_to(va[x][0]) < EPAULE:
+				continue
+			pire = maxf(pire, float(va[x][2]) + float(s2[2]) - (r[0] as Vector3).distance_to(r[1]))
+	return pire
+
 ## Plus fortes pénétrations de l'image : buste ou tête dans un buste ou une tête (tous couples), et jambe d'un
 ## joueur debout dans le corps d'un joueur couché (buste à moins de 0,45 m).
 func contacts(view) -> Dictionary:
@@ -63,7 +81,7 @@ func contacts(view) -> Dictionary:
 	for id: String in view._actors:
 		if view._actors[id].rig != null and (view._actors[id].rig as Skeleton3D).is_visible_in_tree():
 			ids.append(id)
-	var sortie := {"tronc_tete": 0.0, "jambe_couche": 0.0}
+	var sortie := {"tronc_tete": 0.0, "jambe_couche": 0.0, "bras_corps": 0.0}
 	for i in ids.size():
 		for j in ids.size():
 			if i == j:
@@ -78,6 +96,9 @@ func contacts(view) -> Dictionary:
 			var torse_b := (rb.global_transform * rb.get_bone_global_pose(rb.find_bone("Torso"))).origin.y
 			if torse_a >= 0.45 and torse_b < 0.45:
 				sortie.jambe_couche = maxf(sortie.jambe_couche, penetration(volumes(ra, JAMBES), volumes(rb, CORPS)))
+			# Bras dans le corps d'un autre (26/11/2026), sauf ceux du porteur qui tient le ballon.
+			if not (ids[i] == view._carrier_id and view._ball_attached):
+				sortie.bras_corps = maxf(sortie.bras_corps, bras_dans(volumes(ra, BRAS), volumes(rb, SANS_BRAS)))
 	return sortie
 
 func clip_de(view, id: String) -> String:
@@ -102,7 +123,7 @@ func run() -> void:
 	var chute := false
 	var seconds := 0.0
 	var mouvement := 15.0 / 6.5
-	var pires := {"tronc_tete": 0.0, "jambe_couche": 0.0}
+	var pires := {"tronc_tete": 0.0, "jambe_couche": 0.0, "bras_corps": 0.0}
 	for frame in 60 * 8:
 		var t := frame / 60.0
 		if frame % 12 == 0 and t <= mouvement + 0.2:
@@ -135,6 +156,8 @@ func run() -> void:
 	metrics.ruck_leg_in_grounded_max_m = snappedf(float(pires.jambe_couche), 0.001)
 	check(float(pires.tronc_tete) <= FRANC, "Tackle and ruck: no torso or head inside another (%.3f m)" % pires.tronc_tete)
 	check(float(pires.jambe_couche) <= FRANC, "Ruck: no standing leg inside the grounded player (%.3f m)" % pires.jambe_couche)
+	metrics.tackle_ruck_arm_in_body_max_m = snappedf(float(pires.bras_corps), 0.001)
+	check(float(pires.bras_corps) <= BRAS_TOLERE, "Tackle and ruck: no arm inside another body (%.3f m)" % pires.bras_corps)
 	check(chute, "The tackled carrier plays the fall clip")
 	check(peak <= Motion.ALLURE_MAX + ALLURE_TOLERANCE, "Tackler and ruck support never exceed sprint pace (peak %.1f m/s)" % peak)
 	metrics.contact_s = snappedf(contact_at, 0.01)
