@@ -48,6 +48,8 @@ function matchScene(l){
   if(lineoutNext&&slot<8){const spot=lineoutSpot(side,slot,clamp(lineoutNext.to.x,5,95),lineoutNext.team,y);x+=(spot.x-x)*.5;y+=(spot.y-y)*.5} // à mi-chemin, pas encore alignés
   const featured=id===record?.actor;
   if(featured&&['carry','turnover','reception','try','setpiece-win','setpiece-loss','kick','goal','miss'].includes(kind)){x=['kick','goal','miss'].includes(kind)?origin.x:ball.x;y=['kick','goal','miss'].includes(kind)?origin.y:ball.y}
+  // Coup de pied de jeu : le joueur qui prend le ballon (nommé par le moteur) est au point de chute.
+  if(kind==='kick'&&record?.receiver!=null&&id===record.receiver){x=ball.x;y=ball.y}
   players.push({id,side,slot,x:featured&&kind==='try'||kind==='lineout'?x:clamp(x,1.5,98.5),y:kind==='lineout'?y:clamp(y,2,68),name:p.name,condition:p.condition,featured});
  });
  return {ball,origin,players,stage:record?ACTION_LABELS[kind]:'État actuel',kind,team,possession,event,key:event||real.minute,period:record?.period||(real.flow?.period||1),restart:['scrum','lineout','kickoff','drop22','goalLine'].includes(kind)?{kind}:null};

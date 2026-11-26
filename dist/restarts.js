@@ -45,14 +45,14 @@ function handFault(l,offender,forward=false){
  tacticalCount(l,offender,'handErrors');const at=l.territory;if(flowRules(l)&&offerAdvantage(l,'scrum',1-offender,offender,at,{narrate}))return true;addEvent(l,`${S.clubs[l.pair[offender]].abbr} commet ${forward?'une passe en avant':'un en-avant'} : introduction adverse.`,'play',{kind:'hand-fault',team:offender,cause:forward?'forward-pass':'knock-on',actor:actionPlayer(l,offender)?.id||null});
  return grantSetPiece(l,'scrum',1-offender,at,forward?'forward-pass':'knock-on',offender);
 }
-function resolveTouch(l,actor,exit,{direct=false,penalty=false,carried=false,kicker=null}={}){
+function resolveTouch(l,actor,exit,{direct=false,penalty=false,carried=false,kicker=null,court=false}={}){
  const origin=l.territory,context=l.kickContext;
  const fifty=!penalty&&!carried&&!direct&&ownHalf(actor,origin)&&(actor===0?exit>=78:exit<=22)&&context?.team===actor&&context.halfEligible;
  const gain=penalty||!direct||own22(actor,origin)&&context?.team===actor&&context.twentyTwoEligible;
  const mark=gain?exit:(actor===0?Math.min(origin,exit):Math.max(origin,exit));
  const team=penalty||fifty?actor:1-actor,cause=penalty?'penalty-touch':fifty?'50-22':carried?'carry-touch':direct?'direct-touch':'indirect-touch';
  // Coup de pied de jeu en touche (jeu au pied réaliste) : le botteur est nommé, le fait porte son id (match 2D/3D, fiche de stats).
- if(kicker&&!penalty&&!carried){const ab=S.clubs[l.pair[actor]].abbr,m=Math.round(Math.abs(exit-origin));addEvent(l,`${kicker.name} (${ab}) ${fifty?`réussit un 50:22 : le ballon rebondit en touche dans les 22 adverses, ${ab} conserve le lancer`:direct&&!gain?'botte directement en touche sans gain de terrain':own22(actor,origin)?`dégage en touche, ${m} mètres gagnés`:`trouve la touche${direct?'':' après rebond'}, ${m} mètres gagnés`}.`,'play',{kind:'touch',team:actor,cause,actor:kicker.id,from:{x:origin,y:35},to:{x:exit,y:0}});return grantSetPiece(l,'lineout',team,mark,cause,actor,origin)}
+ if(kicker&&!penalty&&!carried){const ab=S.clubs[l.pair[actor]].abbr,m=Math.max(1,Math.round(Math.abs(exit-origin)));addEvent(l,`${kicker.name} (${ab}) ${fifty?`réussit un 50:22 : le ballon rebondit en touche dans les 22 adverses, ${ab} conserve le lancer`:direct&&!gain?'botte directement en touche sans gain de terrain':court?`trouve une touche courte, ${m>1?m+' mètres gagnés':'1 mètre gagné'}`:own22(actor,origin)?`dégage en touche, ${m} mètres gagnés`:`trouve la touche${direct?'':' après rebond'}, ${m} mètres gagnés`}.`,'play',{kind:'touch',team:actor,cause,actor:kicker.id,from:{x:origin,y:35},to:{x:exit,y:0}});return grantSetPiece(l,'lineout',team,mark,cause,actor,origin)}
  addEvent(l,`${S.clubs[l.pair[actor]].abbr} ${penalty?'trouve la pénaltouche et conserve le lancer':fifty?'réussit un 50:22 et conserve le lancer':carried?'est poussé en touche':direct&&!gain?'botte directement en touche sans gain de terrain':'envoie le ballon en touche'}.`,'play',{kind:'touch',team:actor,cause,from:{x:origin,y:35},to:{x:exit,y:0}});
  return grantSetPiece(l,'lineout',team,mark,cause,actor,origin);
 }
@@ -116,8 +116,9 @@ function jeuAuPied(l,side){
  const vent=meteoActive(l)?ventMetres(l,side)+(Math.random()*2-1)*METEO_MATCH.piedAlea.vent*l.meteo.vent:l.weather==='Vent'?9:0;
  const plus=collectivePreparationBonus(l,side,'pied')+occupationKickEdge(l,side),occ=effectiveAttack(l,side)==='occupation';
  const dedans=x=>side===0?x>=100:x<=0,dans22=x=>side===0?x>=78:x<=22;
- const fait=(texte,landing,team)=>addEvent(l,texte,'play',{kind:'kick',team:side,actor:botteur?.id||null,from:{x:origin,y:35},to:{x:landing,y:35}});
- const reception=(landing,debut)=>{ballPossession(l,opp,landing);const r=actionPlayer(l,opp,'receiver');fait(`${debut} ; ${r?.name||abo} réceptionne pour ${abo}.`,landing);return true};
+ // Joueur qui prend le ballon (receveur adverse ou partenaire qui reprend) : placé au point de chute (match 2D/3D).
+ const fait=(texte,landing,qui=null)=>addEvent(l,texte,'play',{kind:'kick',team:side,actor:botteur?.id||null,...(qui?{receiver:qui.id}:{}),from:{x:origin,y:35},to:{x:landing,y:35}});
+ const reception=(landing,debut)=>{ballPossession(l,opp,landing);const r=actionPlayer(l,opp,'receiver');fait(`${debut} ; ${r?.name||abo} réceptionne pour ${abo}.`,landing,r);return true};
  const metres=x=>Math.round(Math.abs(x-origin));
  if(type==='touche'){
   const half=ownHalf(side,origin),own=own22(side,origin);
@@ -129,7 +130,7 @@ function jeuAuPied(l,side){
   }
   const dist=clamp((rand(22,38)+q*8)*J.longueur+plus-vent,10,58);
   if(Math.random()<clamp(J.touche+q*.12-pluie*.03,.45,.9)){
-   const direct=own?Math.random()<J.directe22:Math.random()<.08;let exit=origin+dir*dist;
+   const direct=Math.random()<(own?J.directe22:J.directeHors22);let exit=origin+dir*dist;
    if(!dans22(origin+dir*0)&&dans22(exit))exit=goal-dir*23;
    return resolveTouch(l,side,clamp(exit,5,95),{direct,kicker:botteur});
   }
@@ -148,15 +149,15 @@ function jeuAuPied(l,side){
   const landing=origin+dir*clamp(rand(12,24)+q*3+plus-vent*.5,6,33);
   if(dedans(landing))return resolveInGoal(l,side,'attacking-kick-grounded',origin);
   const at=clamp(landing,1,99),r=Math.random(),pr=clamp(J.recup.chandelle+q*.08+(unit(l,side,'speed',p=>p.fam>=5)-unit(l,opp,'mental',p=>p.fam>=5))*.003*J.qualite+(occ?.05:0),.12,.45);
-  if(r<pr){ballPossession(l,side,at);const c=jeuAuPiedChasseur(l,side,botteur);fait(`${nom} (${ab}) tape une chandelle ; ${c?.name||ab} la reprend à la retombée, ${metres(at)} mètres plus loin.`,at);return true}
-  if(r<pr+J.enAvant+pluie*.03){ballPossession(l,opp,at);const rec=actionPlayer(l,opp,'receiver');fait(`${nom} (${ab}) tape une chandelle ; ${rec?.name||abo} (${abo}) la relâche sous la pression.`,at);return handFault(l,opp)}
+  if(r<pr){ballPossession(l,side,at);const c=jeuAuPiedChasseur(l,side,botteur);fait(`${nom} (${ab}) tape une chandelle ; ${c?.name||ab} la reprend à la retombée, ${metres(at)} mètres plus loin.`,at,c);return true}
+  if(r<pr+J.enAvant+pluie*.03){ballPossession(l,opp,at);const rec=actionPlayer(l,opp,'receiver');fait(`${nom} (${ab}) tape une chandelle ; ${rec?.name||abo} (${abo}) la relâche sous la pression.`,at,rec);return handFault(l,opp)}
   return reception(at,`${nom} (${ab}) tape une chandelle de ${metres(at)} mètres, contestée`);
  }
  if(type==='croise'){
   // Coup de pied croisé vers l'aile (camp adverse) : capté par l'ailier, sinon par la défense, parfois directement en touche.
   const landing=origin+dir*clamp(rand(10,24)+q*3+plus-vent*.5,6,30),at=dedans(landing)?clamp(goal-dir*rand(2,6),1,99):clamp(landing,1,99);
   const r=Math.random(),pr=clamp(J.recup.croise+q*.1+(occ?.03:0)-pluie*.05,.1,.5);
-  if(r<pr){ballPossession(l,side,at);const c=jeuAuPiedChasseur(l,side,botteur);fait(`${nom} (${ab}) tape un coup de pied croisé ; ${c?.name||ab} le capte sur l’aile, ${metres(at)} mètres plus loin.`,at);return true}
+  if(r<pr){ballPossession(l,side,at);const c=jeuAuPiedChasseur(l,side,botteur);fait(`${nom} (${ab}) tape un coup de pied croisé ; ${c?.name||ab} le capte sur l’aile, ${metres(at)} mètres plus loin.`,at,c);return true}
   if(r<pr+J.croiseTouche)return resolveTouch(l,side,clamp(at,5,95),{direct:true,kicker:botteur});
   return reception(at,`${nom} (${ab}) tente le coup de pied croisé, capté par la défense`);
  }
@@ -164,40 +165,55 @@ function jeuAuPied(l,side){
  const dessus=Math.random()<(dans22(origin)?.55:.4),landing=origin+dir*clamp((dessus?rand(10,22):rand(8,20))+q*2+plus,5,31);
  const pr=clamp(J.recup.rasant+q*.1+(occ?.03:0)-pluie*.04,.12,.5),geste=dessus?'tape par-dessus la défense':'glisse un coup de pied rasant';
  if(dedans(landing)){
-  if(Math.random()<pr*.7){const at=clamp(goal-dir*rand(2,5),1,99);ballPossession(l,side,at);const c=jeuAuPiedChasseur(l,side,botteur);fait(`${nom} (${ab}) ${geste} ; ${c?.name||ab} récupère juste avant l’en-but.`,at);return true}
+  if(Math.random()<pr*.7){const at=clamp(goal-dir*rand(2,5),1,99);ballPossession(l,side,at);const c=jeuAuPiedChasseur(l,side,botteur);fait(`${nom} (${ab}) ${geste} ; ${c?.name||ab} récupère juste avant l’en-but.`,at,c);return true}
   // La défense ramasse le ballon devant sa ligne (ancienne remise à zéro du « poussé en touche ») ; sinon, il file dans l'en-but.
   if(Math.random()<J.enButDefense)return reception(clamp(goal-dir*rand(2,6),1,99),`${nom} (${ab}) ${geste}, la défense couvre devant sa ligne`);
   return resolveInGoal(l,side,Math.random()<.7?'attacking-kick-grounded':'kick-dead',origin);
  }
  const at=clamp(landing,1,99);
- if(Math.random()<pr){ballPossession(l,side,at);const c=jeuAuPiedChasseur(l,side,botteur);fait(`${nom} (${ab}) ${geste} ; ${c?.name||ab} récupère le ballon, ${metres(at)} mètres plus loin.`,at);return true}
+ if(Math.random()<pr){ballPossession(l,side,at);const c=jeuAuPiedChasseur(l,side,botteur);fait(`${nom} (${ab}) ${geste} ; ${c?.name||ab} récupère le ballon, ${metres(at)} mètres plus loin.`,at,c);return true}
  return reception(at,`${nom} (${ab}) ${geste}, ${metres(at)} mètres`);
 }
 // Coup de pied raté ou perdu : reprend la part de l'ancien « poussé en touche » (ballon rendu à l'adversaire sans gain
-// de terrain notable, au hasard, quel que soit le niveau). Dans son camp : dégagement directement en touche, contré,
-// trop court ; dans le camp adverse : croisé en touche, rasant ou par-dessus ramassé, chandelle captée, ballon mort dans l'en-but.
+// de terrain notable, au hasard, quel que soit le niveau). Formes réalistes (JEU_PIED.perdus) : dans son camp, touche trouvée
+// mais courte, dégagement contré, trop court ou rendu au milieu, chandelle du n° 9 trop longue, dégagement capté puis relancé
+// par l'adversaire ; dans le camp adverse, rasant ou par-dessus ramassé, chandelle captée, croisé capté, ballon mort dans
+// l'en-but. La touche directe sans gain (lancer adverse à hauteur du coup de pied), rare au haut niveau, garde une petite part.
 // Equipe menée à portée en fin de match dans son camp (elle ne dégage plus) : le porteur est poussé en touche.
 function jeuAuPiedPerdu(l,side){
  const zone=jeuPiedZone(l,side);
  if(!jeuPiedScore(l,side,zone))return resolveTouch(l,side,l.territory,{carried:true});
  tacticalCount(l,side,'kicks');
- const dir=side===0?1:-1,origin=l.territory,opp=1-side,ab=S.clubs[l.pair[side]].abbr,abo=S.clubs[l.pair[opp]].abbr,goal=attackingGoal(side);
- const camp=zone==='own22'||zone==='ownHalf',botteur=camp?jeuAuPiedBotteur(l,side,'touche'):occupationKicker(l,side),nom=botteur?.name||ab;
- const devant=m=>clamp(Math.abs(goal-origin)>m+3?origin+dir*m:goal-dir*3,1,99);
- const recoit=(at,texte)=>{ballPossession(l,opp,at);const r=actionPlayer(l,opp,'receiver');addEvent(l,`${texte} ; ${r?.name||abo} récupère pour ${abo}.`,'play',{kind:'kick',team:side,actor:botteur?.id||null,from:{x:origin,y:35},to:{x:at,y:35}});return true};
- const w=JEU_PIED.perdus[camp?'camp':'adverse'],r=Math.random()*w.reduce((a,b)=>a+b,0);
+ const J=JEU_PIED,dir=side===0?1:-1,origin=l.territory,opp=1-side,ab=S.clubs[l.pair[side]].abbr,abo=S.clubs[l.pair[opp]].abbr,goal=attackingGoal(side);
+ const camp=zone==='own22'||zone==='ownHalf',k=jeuAuPiedTire(camp?J.perdus[zone]:{...J.perdus.adverse,...(zone==='opp22'?{touche:0}:{})});
+ const botteur=camp?jeuAuPiedBotteur(l,side,k==='chandelle'?'chandelle':'touche'):occupationKicker(l,side),nom=botteur?.name||ab;
+ const devant=m=>clamp(Math.abs(goal-origin)>m+3?origin+dir*m:goal-dir*3,1,99),M=J.perduMetres;
+ const fait=(at,texte,qui=null)=>addEvent(l,texte,'play',{kind:'kick',team:side,actor:botteur?.id||null,...(qui?{receiver:qui.id}:{}),from:{x:origin,y:35},to:{x:at,y:35}});
+ const recoit=(at,texte)=>{ballPossession(l,opp,at);const r=actionPlayer(l,opp,'receiver');fait(at,`${texte} ; ${r?.name||abo} récupère pour ${abo}.`,r);return true};
  if(camp){
-  // Touche directe hors de ses 22 : lancer adverse à hauteur du coup de pied ; depuis ses 22 : touche trouvée trop court.
-  if(r<w[0])return zone==='own22'?resolveTouch(l,side,devant(rand(6,13)),{kicker:botteur}):resolveTouch(l,side,clamp(origin+dir*rand(15,30),5,95),{direct:true,kicker:botteur});
-  if(r<w[0]+w[1])return recoit(clamp(origin-dir*rand(1,4),1,99),`${nom} (${ab}) voit son dégagement contré`);
-  return recoit(devant(rand(...JEU_PIED.perduMetres.camp)),`${nom} (${ab}) manque son dégagement, trop court`);
+  if(k==='touche')return resolveTouch(l,side,devant(rand(...M.touche)),{kicker:botteur,court:true});
+  if(k==='directe')return resolveTouch(l,side,clamp(origin+dir*rand(15,30),5,95),{direct:true,kicker:botteur});
+  if(k==='contre')return recoit(clamp(origin-dir*rand(1,4),1,99),`${nom} (${ab}) voit son dégagement contré`);
+  if(k==='chandelle')return recoit(devant(rand(...M.chandelle)),`${nom} (${ab}) tape une chandelle trop longue, sans pression`);
+  if(k==='relance'){
+   // Dégagement capté puis relancé : le receveur remonte le terrain, la possession change près du point de départ.
+   const landing=devant(rand(...M.relance)),at=devant(rand(...M.camp)),r=actionPlayer(l,opp,'receiver');
+   fait(landing,`${nom} (${ab}) dégage dans le champ ; ${r?.name||abo} capte pour ${abo}.`,r);ballPossession(l,opp,at);
+   const g=Math.round(Math.abs(landing-at));
+   if(g>=1)addEvent(l,`${r?.name||abo} (${abo}) relance et remonte ${g} mètres.`,'play',{kind:'carry',team:opp,actor:r?.id||null,tackler:r?carryTackler(l,opp,r.id,g):null,from:{x:landing,y:35},to:{x:at,y:35}});
+   return true;
+  }
+  return recoit(devant(rand(...M.camp)),`${nom} (${ab}) manque son dégagement, rendu au milieu du terrain`);
  }
- if(r<w[0])return resolveTouch(l,side,origin,{direct:true,kicker:botteur});
- if(r<w[0]+w[1])return recoit(devant(rand(...JEU_PIED.perduMetres.adverse)),`${nom} (${ab}) ${Math.random()<.5?'glisse un rasant':'tape par-dessus la défense'}, trop long`);
- if(r<w[0]+w[1]+w[2])return recoit(devant(rand(...JEU_PIED.perduMetres.adverse)),`${nom} (${ab}) tape une chandelle d’attaque, captée par la défense`);
+ if(k==='directe')return resolveTouch(l,side,origin,{direct:true,kicker:botteur});
+ if(k==='touche')return resolveTouch(l,side,devant(rand(...M.touche)),{kicker:botteur});
+ if(k==='rasant')return recoit(devant(rand(...M.adverse)),`${nom} (${ab}) ${Math.random()<.5?'glisse un rasant':'tape par-dessus la défense'}, trop long`);
+ if(k==='chandelle')return recoit(devant(rand(...M.adverse)),`${nom} (${ab}) tape une chandelle d’attaque, captée par la défense`);
+ if(k==='croise')return recoit(devant(rand(...M.adverse)),`${nom} (${ab}) tente le coup de pied croisé, capté par la défense`);
  // Trop long : ballon mort au-delà de l'en-but (renvoi aux 22 m de la défense) ou aplati par la défense (renvoi sur sa ligne).
  return resolveInGoal(l,side,Math.random()<.7?'kick-dead':'attacking-kick-grounded',origin);
 }
+function jeuAuPiedTire(w){let r=Math.random()*Object.values(w).reduce((a,b)=>a+b,0);for(const [k,v] of Object.entries(w))if(v>0&&(r-=v)<0)return k;return Object.keys(w)[0]}
 // Découpage des longues courses (docs/match-courses-20261112.md) : quand une course réussie
 // mène à un essai (ou à un ballon tenu ou échappé dans l'en-but), le journal écrit la course
 // telle que le moteur l'écrit quand elle n'aboutit pas (origine → point atteint, porteur

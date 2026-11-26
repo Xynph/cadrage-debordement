@@ -25,9 +25,12 @@ function essaisRules(l){return tacticalRules(l)&&l.essaisVersion===1}
 // sur des matchs Monde (une action couvre plusieurs temps de jeu). JEU_PIED_RULES=0 : ancien jeu au pied (comparaisons).
 // pousse : porteur poussé en touche par action (base + bord : près de son en-but ou de la ligne adverse, à moins de 10 m).
 // perdu : part de l'ancien poussé gardée par action, poussé compris ; le reste est un coup de pied raté ou perdu
-// (jeuAuPiedPerdu). perdus : issues dans son camp (touche directe, contré, trop court) et dans le camp adverse (croisé
-// directement en touche, rasant ou par-dessus ramassé, chandelle captée, ballon mort dans l'en-but) ; perduMetres : mètres
-// rendus à l'adversaire (comme le poussé, qui rendait le ballon sur place).
+// (jeuAuPiedPerdu). perdus : formes de cette perte dans ses 22, dans son camp (touche courte, touche directe sans gain,
+// contré, rendu au milieu, chandelle trop longue, capté puis relancé) et dans le camp adverse (touche trouvée de peu, rasant
+// ou par-dessus ramassé, chandelle ou croisé captés, ballon mort dans l'en-but) ; la touche directe sans gain, rare au haut
+// niveau (0,3-0,5 par match), garde 2 % (26/11 : à 80 % dans son camp, elle faisait 4,1 touches directes par match).
+// perduMetres : terrain rendu à l'adversaire, petit comme avec le poussé, qui rendait le ballon sur place (touche courte
+// gagnant 6 à 14 m : points −1 par match, matchs serrés −2 points sur 3 600 matchs).
 // zone : probabilité de taper par action, selon la zone (ses 22, son camp, camp adverse, 22 adverses) ; style : par plan
 // (occupation : table à part, comme l'ancien moteur) ; score : à partir de la 60e (mène, mené de 16+, mené à portée).
 // types : répartition des coups de pied par zone (touche, long, chandelle, rasant = rasant ou par-dessus dans le dos, croisé).
@@ -39,19 +42,20 @@ function essaisRules(l){return tacticalRules(l)&&l.essaisVersion===1}
 // zone.own22 0,25 et longueur 0,7 (25/11) : avec 0,35 et 0,85, les dégagements gagnants depuis ses 22 changeaient la
 // possession plus souvent qu'avant (0,44 contre 0,37 par action) et creusaient l'écart moyen (+1 point) ; 3 600 matchs
 // URC / Premiership / Top 14 : matchs à 7 points ou moins +0,3 point, écart moyen +0,4 par rapport à l'ancien moteur.
+// pluie 0,3 (26/11) : sous la pluie forte, ~20 % de coups de pied en plus (tests/meteo-match.cjs : 15,6 contre 12,8 par temps sec).
 // qualite : poids de la qualité du botteur (longueur, touche trouvée, 50:22, reprises) et de la chasse sous la chandelle.
 // 0,5 (25/11) : à 1, le jeu au pied amplifiait l'écart de niveau (banc de la courbe de niveau, URC, 3 × 2 700 matchs : pente
 // 0,324 contre 0,313 avec l'ancien moteur ; 0,5 : 0,309 ; 0 : 0,307), le meilleur botteur s'ajoutant au niveau déjà compté.
 let JEU_PIED_RULES=1;
 var JEU_PIED={
  pousse:{base:.022,bord:.02},
- perdu:{own22:.12,ownHalf:.12,oppHalf:.12,opp22:.12},perduMetres:{camp:[2,8],adverse:[2,8]},
- perdus:{camp:[.8,.05,.15],adverse:[.4,.3,.15,.15]},
+ perdu:{own22:.12,ownHalf:.12,oppHalf:.12,opp22:.12},perduMetres:{camp:[2,8],adverse:[2,8],touche:[1,5],chandelle:[5,10],relance:[22,32]},
+ perdus:{own22:{touche:.8,contre:.05,court:.08,chandelle:.07},ownHalf:{touche:.78,directe:.02,contre:.04,court:.06,chandelle:.05,relance:.05},adverse:{directe:.02,touche:.28,rasant:.28,chandelle:.14,croise:.16,enBut:.12}},
  zone:{own22:.25,ownHalf:.1,oppHalf:.025,opp22:.01},
- style:{equilibre:1,conquete:.5,large:.75},occupation:{own22:.85,ownHalf:.65,oppHalf:.35,opp22:.08},pluie:.15,
+ style:{equilibre:1,conquete:.5,large:.75},occupation:{own22:.85,ownHalf:.65,oppHalf:.35,opp22:.08},pluie:.3,
  score:{mene:1.2,menePlus:.5,meneMoins:.8},
  types:{own22:{touche:.82,long:.1,chandelle:.08,rasant:0,croise:0},ownHalf:{touche:.64,long:.2,chandelle:.16,rasant:0,croise:0},oppHalf:{touche:.3,long:.15,chandelle:.15,rasant:.25,croise:.15},opp22:{touche:0,long:0,chandelle:.2,rasant:.55,croise:.25}},
- touche:.8,directe22:.8,cinquante:{tente:.03,reussite:.35},
+ touche:.8,directe22:.8,directeHors22:.04,cinquante:{tente:.03,reussite:.35},
  recup:{chandelle:.28,rasant:.32,croise:.35},enAvant:.07,adverseTape:12,
  enButDefense:.5,croiseTouche:.12,longueur:.7,qualite:.5
 };

@@ -9,8 +9,16 @@ des équipes qui ne dégagent jamais de leurs 22.
 - Depuis ses 22, l'équipe dégage le plus souvent en touche (touche directe avec gain de terrain, loi 18) ; depuis son camp,
   elle cherche la touche, tape long dans le camp adverse ou fait monter une chandelle du n° 9 ; dans le camp adverse, plus
   rarement, un coup de pied rasant ou croisé que la chasse peut reprendre.
-- Un coup de pied peut être raté : touche directe, contré, trop court, croisé qui sort, rasant ramassé, chandelle captée.
-- Le botteur est nommé dans le journal et sur les touches au pied (match 2D/3D, fiche de stats).
+- Un coup de pied peut être raté ou perdu : touche trouvée mais courte, dégagement contré, rendu au milieu du terrain, chandelle
+  trop longue, dégagement capté puis relancé par l'adversaire (le receveur remonte le terrain), rasant ou par-dessus ramassé,
+  chandelle d'attaque ou croisé captés par la défense. La touche directe sans gain de terrain, rare au haut niveau, reste
+  rare (~0,2 par match ; 4,1 dans la première version, où elle servait de forme principale de perte de balle dans son camp).
+- Le botteur est nommé dans le journal et sur les touches au pied (match 2D/3D, fiche de stats). Le joueur qui prend le
+  ballon (receveur adverse ou partenaire qui reprend) est nommé dans le fait (`receiver`) et placé au point de chute dans le
+  match 2D/3D : avant, le ballon retombait seul au sol, l'équipe restant en formation 5 à 13 m en retrait.
+- À l'écran : avec le chorégraphe éteint (défaut), un coup de pied de jeu est montré au niveau « Match complet » ; aux autres
+  niveaux, il ne devient un temps fort que s'il dépasse 35 m ou tombe dans les 22 adverses après 20 m (règles inchangées de
+  `native/engine/match-highlights.cjs`), ce qui arrive rarement avec des coups de pied de 15 à 35 m.
 - 50:22 rares ; ballons qui roulent dans l'en-but : renvoi sur la ligne d'essai (aplati par la défense) ou aux 22 m (mort).
 - Plan de jeu (occupation, jeu au large), qualité des botteurs, pluie et score après la 60e pèsent sur la décision de taper.
   En fin de match, l'équipe menée de 15 points ou moins ne dégage plus de son camp, sauf depuis ses 22.
@@ -21,7 +29,7 @@ des équipes qui ne dégagent jamais de leurs 22.
   camp du botteur (sinon renvoi aux 22 m).
 
 Une action du moteur couvre plusieurs temps de jeu : le journal raconte ~12 coups de pied par match (réel 40-50, dont beaucoup
-de petites relances entre arrières), dont ~6,5 touches au pied. La fiche de stats garde ~23 coups de pied par équipe.
+de petites relances entre arrières), dont ~6 touches au pied. La fiche de stats garde ~23 coups de pied par équipe.
 
 ## Méthode : même équilibre que l'ancien moteur
 
@@ -38,7 +46,9 @@ plus souvent (pente de la courbe de niveau 0,324 contre 0,313 avant ; 0,309 à m
 ## Réglages (dist/tactical-plans.js, `JEU_PIED`)
 
 `zone` (probabilité d'ouvrir le jeu au pied par action, par zone : ses 22 0,25), `types` (touche / long / chandelle / rasant /
-croisé par zone), `perdu` (coup de pied raté ou perdu, par zone, à la place de l'ancien poussé en touche), `longueur` 0,7,
+croisé par zone), `perdu` (coup de pied raté ou perdu, par zone, à la place de l'ancien poussé en touche), `perdus` (formes de
+cette perte par zone : touche courte, touche directe 2 %, contré, rendu, chandelle, capté-relancé ; dans le camp adverse
+touche, rasant, chandelle, croisé, en-but), `perduMetres` (terrain rendu : 1 à 8 m, comme l'ancien poussé), `longueur` 0,7,
 `touche` 0,8 (touche trouvée), `cinquante` (tentative, réussite), `recup` (chandelle, rasant, croisé), `pousse` (2,2 % + 2 %
 près des lignes), `qualite` 0,5. `JEU_PIED_RULES=0` rend l'ancien jeu au pied (comparaisons). Coefficients de jeu calés sur des
 matchs Monde, pas des probabilités mesurées du rugby.
@@ -50,20 +60,30 @@ deux), ancien jeu au pied → nouveau, par match :
 
 | | Top 14 | Premiership | URC |
 | --- | --- | --- | --- |
-| Coups de pied racontés | 3,3 → 11,7 | 3,5 → 12,1 | 4,1 → 12,4 |
-| Touches au pied | 2,0 → 6,4 | 2,0 → 6,7 | 2,0 → 6,7 |
-| Porteur poussé en touche | 10,1 → 2,3 | 10,1 → 2,4 | 10,1 → 2,3 |
-| Renvois aux 22 m et sur la ligne d'essai | 1,45 → 1,95 | 1,28 → 1,80 | 1,25 → 1,82 |
-| 50:22 | 0,01 → 0,03 | 0,01 → 0,03 | 0,02 → 0,05 |
-| Points | 47,2 → 47,8 | 53,3 → 52,2 | 48,2 → 48,6 |
-| Essais | 5,40 → 5,49 | 7,12 → 6,96 | 6,24 → 6,33 |
-| Matchs à 7 points ou moins | 43,0 → 42,3 % | 34,5 → 33,4 % | 31,9 → 29,9 % |
-| Écart moyen | 12,8 → 13,3 | 17,4 → 17,3 | 18,4 → 19,4 |
+| Coups de pied racontés | 3,3 → 11,9 | 3,5 → 12,4 | 4,1 → 12,8 |
+| Touches au pied | 2,0 → 6,1 | 2,0 → 6,3 | 2,0 → 6,6 |
+| dont directes sans gain de terrain | → 0,25 | → 0,23 | → 0,26 |
+| Porteur poussé en touche | 10,1 → 2,3 | 10,1 → 2,3 | 10,1 → 2,2 |
+| Renvois aux 22 m et sur la ligne d'essai | 1,45 → 1,80 | 1,28 → 1,71 | 1,25 → 1,66 |
+| 50:22 | 0,01 → 0,03 | 0,01 → 0,03 | 0,02 → 0,04 |
+| Points | 47,2 → 47,1 | 53,3 → 51,3 | 48,2 → 47,8 |
+| Essais | 5,40 → 5,35 | 7,12 → 6,80 | 6,24 → 6,24 |
+| Matchs à 7 points ou moins | 43,0 → 41,5 % | 34,5 → 33,1 % | 31,9 → 30,3 % |
+| Écart moyen | 12,8 → 13,3 | 17,4 → 17,2 | 18,4 → 18,8 |
 
-Regroupé (3 600 matchs) : matchs serrés −1,3 point (bruit ±1,1), écart moyen +0,5. Réel (élite) : 40-50 coups de pied par
-match dont 12-18 en touche, 2-3 porteurs poussés en touche, 50:22 rares.
+Regroupé (3 600 matchs) : matchs serrés −1,5 point (bruit ±1,1), écart moyen +0,2, points −0,9 (pluie : plus de jeu au pied). Changement de possession par action
+(URC, ses 22 / son camp / camp adverse / 22 adverses) : 0,39 / 0,43 / 0,49 / 0,56 avant, 0,43 / 0,44 / 0,49 / 0,55 après.
+Réel (élite) : 40-50 coups de pied par match dont 12-18 en touche, 2-3 porteurs poussés en touche, 50:22 rares, touche directe
+sans gain 0,3 à 0,5.
 
-Saisons Monde complètes (`scripts/mesure-essais-monde.cjs`, club 102), moyenne des graines 4242, 7 et 2026, avant
+Formes des pertes (26/11, après le vérificateur) : dans la première version, la touche directe sans gain servait de perte
+de balle dans son camp et faisait 65 % des touches au pied (4,1 par match). Elle est remplacée par la touche courte (1 à 5 m
+gagnés), le dégagement rendu ou contré, la chandelle trop longue et le dégagement capté puis relancé ; dans le camp adverse,
+par une touche trouvée de peu, le rasant ramassé, la chandelle ou le croisé captés. Le terrain rendu reste celui de l'ancien
+poussé en touche : avec 6 à 14 m gagnés sur la touche courte, les points baissaient d'un point par match et les matchs serrés
+de 2.
+Saisons Monde complètes (`scripts/mesure-essais-monde.cjs`, club 102), mesurées avant le changement des formes de perte du 26/11
+(mêmes équilibres attendus : même terrain rendu, même fréquence), moyenne des graines 4242, 7 et 2026, avant
 (`--regler "JEU_PIED_RULES=0"`) / après / réel (docs/realite-matchs-20261125.md) :
 
 | Championnat | Points | Essais | Écart moyen | Écart ≤ 7 | Bonus offensif |
