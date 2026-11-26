@@ -92,8 +92,9 @@ test('Pénalité : au but à portée quand 3 points comptent, en touche quand il
   assert.ok(z1 > z2 + 10 && z2 > z3, `au but selon la distance : ${z1.toFixed(1)} / ${z2.toFixed(1)} / ${z3.toFixed(1)} %`);
   assert.ok(serre.length >= 8 && butSerre >= 90, `mené de 1 à 3 en fin de match, à portée : au but ${butSerre.toFixed(1)} % sur ${serre.length}`);
   assert.equal(inutiles.length, 0, 'tirs au but qui ne ramènent ni l’égalité ni le bonus défensif : ' + JSON.stringify(inutiles.slice(0, 3)));
-  // Premiership et URC jouent plus la touche que le Top 14, sans renoncer aux points : au moins 70 % des tirs du Top 14.
-  for (const c of ['prem', 'urc']) assert.ok(tirs[c] >= 0.7 * tirs.elite && tirs[c] < tirs.elite + 0.3, `${c} : ${tirs[c].toFixed(2)} tirs au but par match (Top 14 ${tirs.elite.toFixed(2)})`);
+  // Premiership et URC jouent plus la touche que le Top 14, sans renoncer aux points : au moins 60 % des tirs du Top 14 (réel :
+  // pénalités ≈ 13-15 % des points contre ≈ 25 %, TOUCHE_CHAMPIONNATS ; main ≈ 50 %).
+  for (const c of ['prem', 'urc']) assert.ok(tirs[c] >= 0.6 * tirs.elite && tirs[c] < tirs.elite + 0.3, `${c} : ${tirs[c].toFixed(2)} tirs au but par match (Top 14 ${tirs.elite.toFixed(2)})`);
 });
 
 test('Première ligne remplacée par une première ligne, buteur titulaire', { timeout: 600000 }, () => {
