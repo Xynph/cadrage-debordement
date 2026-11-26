@@ -95,7 +95,9 @@ const POSTES_COURTS := {"pilier gauche": "PG", "talonneur": "TA", "pilier droit"
 const ETATS_ARRET := {"try": "Essai — %s", "transformation": "Transformation — %s", "goal": "Tir au but — %s", "miss": "Tir au but — %s",
 	"lineout": "Touche pour %s", "scrum": "Mêlée pour %s",
 	# Match filmé du 25/11 : pendant l'en-avant ou la pénalité, le bandeau disait encore « X a le ballon… ».
-	"penalty": "Pénalité pour %s", "hand-fault": "En-avant"}
+	# En-avant : l'équipe fautive (scene.team du moteur), comme le bandeau de la liaison (« En-avant — X ») ;
+	# jamais la possession (vérificateur de #1319 : « En-avant » sans équipe pendant l'arrêt).
+	"penalty": "Pénalité pour %s", "hand-fault": "En-avant — %s"}
 
 ## Note de départ du moteur (match-direct.cjs, NOTE_DEPART) : titulaire au coup d'envoi, remplaçant à son entrée.
 const NOTE_DEPART := 6.5

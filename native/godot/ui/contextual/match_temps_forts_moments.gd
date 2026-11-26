@@ -28,6 +28,8 @@ static func etat_du_plan(plan: Dictionary, equipes: Array, kind: String = "") ->
 	var scene: Variant = plan.get("scene")
 	if not scene is Dictionary: return "Le match"
 	var camp: Variant = scene.get("possession", scene.get("team", -1))
+	# En-avant : l'équipe fautive (scene.team du moteur), pas la possession ; sans elle, « En-avant » seul.
+	if (kind if not kind.is_empty() else str(plan.get("kind", ""))) == "hand-fault": camp = scene.get("team", -1)
 	if not (camp is int or camp is float): camp = -1
 	var ballon: Variant = scene.get("ball")
 	var x: float = float(ballon.x) if ballon is Dictionary and (ballon.get("x") is float or ballon.get("x") is int) else NAN
@@ -99,8 +101,23 @@ func retenir_horloge(heure: String, secondes: int) -> Array:
 	var total := 0
 	for morceau: String in heure.split("+"): total += int(morceau)
 	total = total * 60 + secondes
+	# Nouvelle période : « 40 » après « 40+2 » est le coup d'envoi de la seconde, pas un recul (vérificateur de
+	# #1319, film 2 : « 40+2:05 » resté après la mi-temps).
+	if _horloge_vue.size() >= 3 and nouvelle_periode(str(_horloge_vue[0]), heure): _horloge_vue = []
 	if _horloge_vue.size() < 3 or total >= int(_horloge_vue[2]): _horloge_vue = [heure, secondes, total]
 	return [str(_horloge_vue[0]), int(_horloge_vue[1])]
+
+## `apres` est d'une période plus récente que `avant` : `avant` est un temps additionnel (« 40+2 ») et `apres`
+## une minute simple au moins égale à sa base (« 40 », « 41 ») ; dans une même période, l'horloge ne revient
+## jamais d'un temps additionnel à une minute simple.
+static func nouvelle_periode(avant: String, apres: String) -> bool:
+	avant = avant.trim_suffix("′").strip_edges()
+	apres = apres.trim_suffix("′").strip_edges()
+	if not "+" in avant or not apres.is_valid_int(): return false
+	return int(apres) >= int(avant.split("+")[0])
+
+static func _minute_lisible(texte: String) -> bool:
+	return not texte.is_empty() and texte.replace("+", "").is_valid_int()
 
 ## Part écoulée de la minute affichée (0 à 1), d'après l'horloge choisie.
 func _part_minute() -> float:
@@ -127,8 +144,13 @@ func _habiller_horloge() -> void:
 	var differee: String = between.horloge_differee().trim_suffix("′").strip_edges()
 	# Sinon, la minute du dernier fait montré (le moteur a de l'avance : rien d'un temps fort à venir).
 	if differee.is_empty(): differee = _horloge_montree.trim_suffix("′").strip_edges()
-	if not differee.is_empty() and differee.replace("+", "").is_valid_int(): heure = differee
-	if not heure.is_empty() and heure.replace("+", "").is_valid_int():
+	# Fait d'une période finie (« 40+2 », le moteur déjà en seconde période) : ce n'est pas l'heure du jeu.
+	if _minute_lisible(differee) and not (_minute_lisible(heure) and nouvelle_periode(differee, heure)): heure = differee
+	# Arrêt-décision ouvert : sa carte dit la minute du fait (« CARTON JAUNE · 33′ ») ; l'horloge la rejoint, sans
+	# jamais reculer (vérificateur de #1319, film 2 : carte « 33′ » sous une horloge à 31:59).
+	var minute_arret := str(arret.get("horloge", "")).trim_suffix("′").strip_edges() if not arret.is_empty() else ""
+	if _minute_lisible(minute_arret): retenir_horloge(minute_arret, 0)
+	if _minute_lisible(heure):
 		# Les sources de la minute (moteur, terrain 2D en retard, dernier fait montré) et des secondes (minute
 		# qui roule, entracte d'un temps fort retenu) changent d'une image à l'autre : jamais en arrière.
 		var montree := retenir_horloge(heure, int(part * 60.0))

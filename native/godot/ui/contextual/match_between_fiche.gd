@@ -23,6 +23,9 @@ static func etat_du_deroule(item: Dictionary, equipes: Array) -> String:
 	if not scene is Dictionary: return ""
 	var camp: Variant = scene.get("possession", item.get("equipe", -1))
 	if not (camp is int or camp is float): camp = item.get("equipe", -1)
+	# En-avant : l'équipe fautive (equipe du fait, scene.team du moteur), pas la possession.
+	if str(item.get("kind", scene.get("kind", ""))) == "hand-fault": camp = item.get("equipe", scene.get("team", -1))
+	if not (camp is int or camp is float): camp = -1
 	var b: Variant = scene.get("ballon")
 	var x: float = float(b[0]) if b is Array and (b as Array).size() >= 1 and (b[0] is float or b[0] is int) else NAN
 	return etat_du_fait(str(item.get("kind", scene.get("kind", ""))), int(camp) if (camp is int or camp is float) else -1, x, equipes)

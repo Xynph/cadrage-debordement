@@ -129,7 +129,13 @@ func run() -> void:
 	check(Regie.etat_montre({"kind": "scrum", "scene": {"possession": 0, "ball": {"x": 50.0}}}, "jeu", 0.5, true, false, equipes) == "Mêlée pour Domicile XV", "Ligne d'état, mêlée : « Mêlée pour … »")
 	# Match filmé du 25/11 : « X a le ballon dans les 22 » pendant l'en-avant de X, mêlée pour l'autre.
 	var en_avant := Regie.etat_montre({"kind": "hand-fault", "scene": {"possession": 1, "ball": {"x": 80.0}}}, "jeu", 0.5, true, false, equipes)
-	check(en_avant == "En-avant", "Ligne d'état, en-avant : l'arrêt de jeu, pas la possession (" + en_avant + ")")
+	check(en_avant == "En-avant", "Ligne d'état, en-avant sans équipe fautive connue : l'arrêt de jeu, pas la possession (" + en_avant + ")")
+	# Vérificateur de #1319 : les en-avant filmés disaient « En-avant » sans équipe. L'équipe fautive (scene.team du
+	# moteur) est nommée, comme au bandeau de la liaison, même quand la possession est déjà à l'autre équipe.
+	var en_avant_vis := Regie.etat_montre({"kind": "hand-fault", "scene": {"possession": 0, "team": 1, "ball": {"x": 80.0}}}, "jeu", 0.5, true, false, equipes)
+	check(en_avant_vis == "En-avant — Visiteurs XV", "Ligne d'état, en-avant : « En-avant — équipe fautive » (" + en_avant_vis + ")")
+	var en_avant_2d := Between.etat_du_deroule({"kind": "hand-fault", "equipe": 0, "scene": {"kind": "hand-fault", "possession": 1, "ballon": [40.0, 30.0]}}, equipes)
+	check(en_avant_2d == "En-avant — Domicile XV", "Fait du terrain 2D, en-avant : « En-avant — équipe fautive » (" + en_avant_2d + ")")
 	var penalite := Regie.etat_montre({"kind": "penalty", "scene": {"possession": 0, "ball": {"x": 60.0}}}, "jeu", 0.5, true, false, equipes)
 	check(penalite == "Pénalité pour Domicile XV", "Ligne d'état, pénalité : « Pénalité pour … » (" + penalite + ")")
 	# Vérificateur du 25/11 (16e) : carton jaune pendant l'arrêt de la pénalité, bandeau revenu à
@@ -249,6 +255,55 @@ func run() -> void:
 	check("%s:%02d" % regie.retenir_horloge("40+2", 30) == "40+2:30" and "%s:%02d" % regie.retenir_horloge("40+1", 50) == "40+2:30", "Arrêts de jeu « 40+2 » : jamais en arrière non plus")
 	regie._horloge_vue = []
 	check("%s:%02d" % regie.retenir_horloge("40", 5) == "40:05", "Seconde période : l'horloge repart de 40")
+
+	# Vérificateur de #1319, film 2 : après la mi-temps, l'horloge de l'écran intermédiaire disait « 40+2:05 »,
+	# « 40+2:56 » (le dernier fait montré était l'essai de la 40+2, le moteur déjà à la 40 de la seconde période).
+	# Puis carte « CARTON JAUNE · 33′ » sous une horloge à 31:59. Horloge réelle de la régie (_habiller_horloge).
+	var script_vue := GDScript.new()
+	script_vue.source_code = "extends Control\nvar clock := Label.new()\n"
+	script_vue.reload()
+	var vue_h: Control = script_vue.new()
+	var ecran_h = Between.new()
+	var terrain_h = Terrain2D.new()
+	ecran_h.terrain = terrain_h
+	regie.view = vue_h
+	regie.between = ecran_h
+	regie.etat = Regie.INTER
+	regie._retenu = {}
+	regie._live_inter = {}
+	regie._live = {"minute": 42, "teams": equipes}
+	var horloge_h := func(moteur: String, montree: String, secondes: int, carte: String = "") -> String:
+		regie._horloge_inter = moteur
+		regie._horloge_montree = montree
+		regie._roule = (float(secondes) + 0.5) / 60.0 * float(Regie.HORLOGES[regie.horloge])
+		regie.arret = {"raison": "carton", "cle": "carton-x", "horloge": carte} if not carte.is_empty() else {}
+		regie._habiller_horloge()
+		return vue_h.clock.text
+	regie._horloge_vue = []
+	var mi_temps: Array = [horloge_h.call("40+2′", "40+2′", 30), horloge_h.call("40+2′", "40+2′", 59)]
+	# Coup d'envoi de la seconde période : le dernier fait montré est encore celui de la 40+2.
+	mi_temps.append_array([horloge_h.call("40′", "40+2′", 5), horloge_h.call("40′", "40+2′", 56), horloge_h.call("41′", "", 12)])
+	check(mi_temps == ["40+2:30", "40+2:59", "40:05", "40:56", "41:12"], "Après la mi-temps : l'horloge repart de 40, jamais « 40+2 » de la première période (%s)" % str(mi_temps))
+	# Même sans la remise à zéro de la mi-temps (sortie non mise en scène) : « 40 » après « 40+2 » est la seconde période.
+	regie._horloge_vue = []
+	var sans_sortie: Array = [horloge_h.call("40+2′", "", 59), horloge_h.call("40′", "", 5)]
+	check(sans_sortie == ["40+2:59", "40:05"], "Seconde période sans sortie mise en scène : l'horloge repart de 40 (%s)" % str(sans_sortie))
+	# Carte d'arrêt et horloge : même minute, l'horloge rejoint la carte sans jamais reculer ensuite.
+	regie._horloge_vue = []
+	var carte_h: Array = [horloge_h.call("33′", "31′", 59), horloge_h.call("33′", "31′", 59, "33′"), horloge_h.call("33′", "31′", 59, "33′"), horloge_h.call("33′", "31′", 59)]
+	check(carte_h == ["31:59", "33:00", "33:00", "33:00"], "Carte « CARTON JAUNE · 33′ » : l'horloge dit 33, jamais 31:59 à côté, ni après (%s)" % str(carte_h))
+	regie._horloge_vue = []
+	var carte_avance: Array = [horloge_h.call("34′", "34′", 20), horloge_h.call("34′", "34′", 20, "33′")]
+	check(carte_avance == ["34:20", "34:20"], "Carte d'une minute déjà passée : l'horloge ne recule pas (%s)" % str(carte_avance))
+	regie.arret = {}
+	regie._horloge_vue = []
+	regie.view = null
+	regie.between = null
+	regie._live = {}
+	vue_h.clock.free()
+	vue_h.free()
+	ecran_h.free()
+	terrain_h.free()
 
 	# Vérificateur de #1305 : « BLESSURE · 6′ » à la 21′. Le choix de blessure laissé au staff restait en attente dans
 	# le moteur et revenait comme nouvel arrêt après le carton : un arrêt déjà montré ne revient pas.
