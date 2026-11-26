@@ -18,8 +18,11 @@ Test : `tests/match-ia-decisions.cjs` (matchs IA contre IA de Premiership, URC e
   joueur à bout (condition < 40). Découverte : vagues retardées de 6 min.
 - Jamais de retour tactique d'un joueur remplacé par l'IA : les retours restent ceux de la loi 3 (saignement, protocole
   commotion, première ligne, rouge de 20 minutes), gérés par leurs modules.
-- Buteur gardé en jeu (sauf joueur à bout, condition < 40, ou match plié à plus de 14 points) si son remplaçant tire
-  au moins 5 points moins bien au but : la réussite au but reste stable jusqu’à la fin du match.
+- Buteur gardé en jeu (sauf joueur à bout, condition < 40) si son remplaçant tire au moins 5 points moins bien au but,
+  match plié compris (les transformations de fin de match comptent pour le bonus offensif et la différence) : la
+  compétence au but reste stable jusqu’à la fin du match. Avec l'exception « match plié à plus de 14 points » d'abord
+  prévue, elle baissait de 2,2 à 2,4 points entre le début (0-19') et la fin (60-79') sur deux échantillons de 300 matchs
+  (main : 0,2-0,3), au-delà des 2 points de `tests/fatigue-phases-arretees.cjs` ; sans elle : 0,9 et 1,3.
 
 ## Rouge de 20 minutes (`restoreRedReplacements`, `dist/rugby.js`)
 
