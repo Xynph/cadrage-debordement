@@ -209,9 +209,18 @@ func _vers_inter() -> void:
 	# Le bandeau « ESSAI » finit sa durée même si l'écran intermédiaire revient entre l'essai et la transformation.
 	if _bandeau_titre != "ESSAI": _cacher_bandeau()
 	_presenter(false)
-	if cadrage != null: cadrage.regler(false)
 	_montrer_jeu(false)
+	# Le cadrage du temps fort reste posé tant que la 3D se voit sous le fondu : relâché plus tôt, un tir au but
+	# filmé dans l'axe coupait vers la caméra de tribune, sur le ballon derrière les poteaux, loin des joueurs
+	# (pelouse vide pendant le fondu, films du 26/11). Relâché une fois l'écran intermédiaire opaque.
+	if cadrage != null:
+		if _fondu != null and _fondu.is_valid(): _fondu.chain().tween_callback(_relacher_cadrage)
+		else: _relacher_cadrage()
 	suivi.append({"evenement": "intermediaire", "horloge": str(_live.get("direct", {}).get("horloge", "")), "debut_ms": Time.get_ticks_msec()})
+
+## Fin du fondu vers l'écran intermédiaire : la caméra repasse au cadrage large (rien si un temps fort est reparti).
+func _relacher_cadrage() -> void:
+	if cadrage != null and etat == INTER: cadrage.regler(false)
 
 func _apres_lecture() -> void:
 	# Arrêt-décision : jamais au milieu d'un temps fort, toujours après.

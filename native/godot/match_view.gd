@@ -599,6 +599,11 @@ func apply_frame(live: Dictionary) -> void:
 			_ball_travel = 1.0 if _paused else 0.0
 		if _paused:
 			_ball_travel = 1.0
+			# Image posée (pause, entrée coupée d'un temps fort) : le ballon y est tout de suite. Sinon un geste
+			# annulé dans la même image (match_gestes.gd, cancel) ou l'image suivante le faisaient repartir de son
+			# ancienne place, derrière les poteaux du tir précédent, et la caméra le suivait sur une pelouse vide
+			# (film 1305c/film-2 image 0588, films du 26/11).
+			_ball.position = _ball_target
 		_ball.visible = true
 	else:
 		# Ballon absent de la scène : la caméra reste où elle est (pas de saut au centre du terrain).
