@@ -21,11 +21,12 @@ permissions:
   # Lecture de l'état brouillon réel de la PR (classification).
   pull-requests: read
 
-# PR : seul le dernier push compte. main : seul le dernier commit fusionné compte (chaque
-# PR a déjà passé la batterie complète) ; workflow_dispatch n'est jamais annulé.
+# PR : seul le dernier push compte. main : jamais annulé en cours de route (sinon aucune batterie
+# ne finit à chaque fusion) ; GitHub ne garde qu'un run en attente, donc seul le dernier commit
+# fusionné compte parmi les attentes. workflow_dispatch n'est jamais annulé.
 concurrency:
   group: tests-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref != 'refs/heads/main') }}
 
 jobs:
   classification:
