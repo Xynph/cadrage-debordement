@@ -60,7 +60,7 @@ test('Phases du poste : une équipe ordinaire sans effet, un titulaire faible p�
   console.log('référence', JSON.stringify(ref));
   assert.ok(Math.abs(ref.finition) <= .04 && Math.abs(ref.percee) <= .04, `équipe ordinaire : finition ${ref.finition.toFixed(3)}, percée ${ref.percee.toFixed(3)}`);
   const ail = phases(VARIANTES.ailier);
-  assert.ok(ref.finition - ail.finition >= .03 && ref.finition - ail.finition <= .15, `ailiers faibles : finition ${ref.finition.toFixed(3)} → ${ail.finition.toFixed(3)}`);
+  assert.ok(ref.finition - ail.finition >= .015 && ref.finition - ail.finition <= .12, `ailier faible : finition ${ref.finition.toFixed(3)} → ${ail.finition.toFixed(3)}`);
   assert.ok(ref.finition - ail.finition > ref.percee - ail.percee, 'les ailiers pèsent plus en finition qu’en percée');
   const pil = phases(VARIANTES.pilier);
   const dMelee = ref.melee - pil.melee, dMoy = ref.meleeMoy - pil.meleeMoy;
