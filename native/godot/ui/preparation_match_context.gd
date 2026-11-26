@@ -25,6 +25,7 @@ var current_phase := Phase.BEFORE
 var tactics_available := false
 var phase_applied := false
 var engine_was_busy := false
+var pause_wanted := false
 
 static func match_available(model: Dictionary) -> bool:
 	var live: Variant = model.get("live")
@@ -47,11 +48,20 @@ func open_match() -> void:
 	if match_available(app.model):
 		app._navigate("Match")
 
+## Pause toujours permise tant que le match tourne. Moteur occupé, qui se ferme ou injoignable : le clic est mémorisé
+## (rien n'est envoyé) et appliqué dès la réponse ; un 2e clic avant cela annule la demande.
 func pause_match() -> void:
-	if not _engine_busy() and _phase(app.model) == Phase.RUNNING:
-		if app._command("pause", {"paused": true}):
-			if pause_button.has_focus(): focus_fallback.grab_focus()
-			_sync_actions()
+	if _phase(app.model) != Phase.RUNNING: return
+	if _engine_busy():
+		pause_wanted = not pause_wanted
+		return
+	_send_pause()
+
+func _send_pause() -> void:
+	pause_wanted = false
+	if app._command("pause", {"paused": true}):
+		if pause_button.has_focus(): focus_fallback.grab_focus()
+		_sync_actions()
 
 func can_edit_tactics() -> bool:
 	return not _engine_busy() and _tactics_available(app.model, _phase(app.model))
@@ -137,6 +147,9 @@ func _engine_busy() -> bool:
 	return app.waiting or app.closing or app.connection_error
 
 func _process(_delta: float) -> void:
+	if pause_wanted and not _engine_busy():
+		if _phase(app.model) == Phase.RUNNING: _send_pause()
+		else: pause_wanted = false
 	# There is no signal when a request starts. Poll the local guard while
 	# the controls can act, without redrawing or replacing any of them.
 	if consignes.is_visible_in_tree(): _sync_actions()
@@ -145,6 +158,6 @@ func _sync_actions(force: bool = false) -> void:
 	var busy := _engine_busy()
 	if not force and busy == engine_was_busy: return
 	engine_was_busy = busy
-	if pause_button != null: pause_button.disabled = busy
+	if pause_button != null: pause_button.disabled = false
 	for button in tactics:
 		button.disabled = not tactics_available or busy

@@ -44,13 +44,13 @@ func setup(owner_view: Control, container: Control, target: SubViewport, space: 
 	between.hote_barre = view.get("bande_temps_forts")
 	space.add_child(between)
 	between.niveau_choisi.connect(choisir_niveau)
-	between.reprise_demandee.connect(func(): app._command("pause", {"paused": false}))
+	between.reprise_demandee.connect(func(): view.demander_pause(false))
 	between.tiroir_demande.connect(func(titre: String): view._toggle_drawer(titre))
 	between.passer_demande.connect(passer)
 	between.horloge_choisie.connect(choisir_horloge)
 	# « Confier la fin à l'adjoint » : confirmée dans la colonne de droite de l'entracte (jamais une fenêtre).
 	between.delegation_demandee.connect(func(): view.director.command("delegate"))
-	between.pause_demandee.connect(func(): app._command("pause", {"paused": true}))
+	between.pause_demandee.connect(func(): view.demander_pause(true))
 	# Fiche joueur lue pendant l'entracte : le match se met en pause, comme pour la fenêtre Équipe.
 	between.fiche_ouverte.connect(func(ouverte: bool): tiroir_ouvert() if ouverte else tiroir_ferme())
 	between.couvert = func() -> bool: return (is_instance_valid(view.get("equipe")) and view.equipe.visible) or (view.has_method("fenetre_ouverte") and view.fenetre_ouverte())
