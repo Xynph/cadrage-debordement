@@ -1,15 +1,21 @@
 extends "res://ui/contextual/match_between_journee.gd"
 ## Mon XV, banc et changements de l'écran intermédiaire du match.
 
-## Colonne de gauche (Gabi, événements, enjeu, bonus, banc) : le banc garde toujours la hauteur de ses 8 lignes ; quand
-## la colonne n'a plus la place (bulles de Gabi, bonus de fin de match), les événements cèdent leur hauteur et défilent.
+## Colonne de gauche (Gabi, événements, enjeu, bonus, banc) : le banc garde la hauteur de ses 8 lignes tant qu'il y a la
+## place ; quand la colonne n'en a plus (bulles de Gabi, duel, bonus de fin de match), les événements cèdent d'abord leur
+## hauteur et défilent, puis le banc défile à son tour (jusqu'à la moitié de sa hauteur) : la barre de Mon XV ne sort
+## jamais de l'écran (relevé du 26/11 : page de 959 px pour 921 px de cadre à la 76e minute en 1920 × 1080).
 func _tenir_gauche() -> void:
 	if not is_instance_valid(_colonne_gauche) or not is_instance_valid(_page_fm) or not is_instance_valid(_defile_ev): return
-	if is_instance_valid(_defile_banc) and is_instance_valid(zone_banc):
-		var h_banc := ceilf(zone_banc.get_combined_minimum_size().y)
-		if not is_equal_approx(_defile_banc.custom_minimum_size.y, h_banc): _defile_banc.custom_minimum_size.y = h_banc
-	if _defile_ev.get_child_count() == 0 or _page_fm.size.y <= 0.0: return
-	var h_contenu := (_defile_ev.get_child(0) as Control).get_combined_minimum_size().y
+	var avec_banc := is_instance_valid(_defile_banc) and is_instance_valid(zone_banc)
+	var h_banc := ceilf(zone_banc.get_combined_minimum_size().y) if avec_banc else 0.0
+	# Hauteur offerte par le cadre, pas celle de la page : une page trop pleine grandit au-delà de son cadre, et sa
+	# propre taille ne disait plus qu'il fallait céder.
+	var cadre := _page_fm.get_parent() as Control
+	var h_page := cadre.size.y - _page_fm.offset_top + _page_fm.offset_bottom if cadre != null else _page_fm.size.y
+	if h_page <= 0.0:
+		if avec_banc and not is_equal_approx(_defile_banc.custom_minimum_size.y, h_banc): _defile_banc.custom_minimum_size.y = h_banc
+		return
 	var grille := _colonne_gauche.get_parent() as Control
 	var ecart := float(_page_fm.get_theme_constant("separation"))
 	var autres := 0.0
@@ -19,10 +25,19 @@ func _tenir_gauche() -> void:
 		if c == null or not c.visible or c.top_level: continue
 		rangs += 1
 		if c != grille: autres += c.get_combined_minimum_size().y
-	var dispo_grille := _page_fm.size.y - autres - ecart * maxf(0.0, rangs - 1)
-	var sans_ev := _colonne_gauche.get_combined_minimum_size().y - _defile_ev.get_combined_minimum_size().y
-	var hauteur := floorf(clampf(h_contenu, 0.0, maxf(0.0, dispo_grille - sans_ev)))
-	if not is_equal_approx(_defile_ev.custom_minimum_size.y, hauteur): _defile_ev.custom_minimum_size.y = hauteur
+	var dispo_grille := h_page - autres - ecart * maxf(0.0, rangs - 1)
+	# Ce que la colonne demande hors événements et hors banc (Gabi, duel ou arrêt, enjeu, bonus, cadres et écarts).
+	var ev_visible := _defile_ev.is_visible_in_tree()
+	var fixe := _colonne_gauche.get_combined_minimum_size().y - (_defile_ev.get_combined_minimum_size().y if ev_visible else 0.0) - (_defile_banc.custom_minimum_size.y if avec_banc and _defile_banc.is_visible_in_tree() else 0.0)
+	var place := dispo_grille - fixe
+	if ev_visible and _defile_ev.get_child_count() > 0:
+		var h_contenu := (_defile_ev.get_child(0) as Control).get_combined_minimum_size().y
+		var hauteur := floorf(clampf(h_contenu, 0.0, maxf(0.0, place - h_banc)))
+		if not is_equal_approx(_defile_ev.custom_minimum_size.y, hauteur): _defile_ev.custom_minimum_size.y = hauteur
+		place -= hauteur
+	if avec_banc:
+		var h := floorf(clampf(place, ceilf(h_banc * 0.5), h_banc))
+		if not is_equal_approx(_defile_banc.custom_minimum_size.y, h): _defile_banc.custom_minimum_size.y = h
 
 ## D3 : carte haute d'un joueur (barre basse de Mon XV) : visage et numéro, nom, énergie (jauge et valeur ou alerte),
 ## note du match en pastille et plaquages.
