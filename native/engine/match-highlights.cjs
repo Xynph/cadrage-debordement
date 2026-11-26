@@ -51,7 +51,7 @@ const PART_POINTS=0.5,PART_GROSSES=0.5,BONUS_GROSSES=10,MEME_TYPE=8,REPETITION=1
 const DUREES=Object.freeze({
  kickoff:2.5,drop22:2.5,goalLine:2.5,reception:2,carry:1,kick:2.5,touch:1.5,
  lineout:1.5,scrum:1.5,'setpiece-win-touche':2,'setpiece-win-melee':3,'setpiece-loss':2.5,maul:5,
- turnover:2,'hand-fault':1.8,'quick-tap':2,penalty:1.5,'coup-franc':3,'essai-penalite':6.5,card:2.5,goal:4.5,miss:4,try:3.5,transformation:4,ingoal:3,
+ turnover:2,'hand-fault':1.8,'quick-tap':2,penalty:1.5,'coup-franc':3,'essai-penalite':5,card:2.5,goal:4.5,miss:4,try:3.5,transformation:4,ingoal:3,
  break:1.5,end:2.5
 });
 const COURSE=6.5,ENTREE=0.6,SORTIE=0.8,COUPE=0.3,RALENTI=6;
