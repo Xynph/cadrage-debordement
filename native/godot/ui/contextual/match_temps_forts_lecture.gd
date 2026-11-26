@@ -414,6 +414,7 @@ func _commencer_plan() -> void:
 		stage.apply_frame(_image(pret, true, int(plan.index) - 1))
 		stage.apply_frame(_image(pret, false, int(plan.index) - 1))
 		_derniers = _positions(pret)
+		if drop: _cadrer_drop(scene)
 		if float(PRET.get(str(plan.get("kind", "")), 0.0)) > 0.0:
 			phase = "pret"
 			_habiller()
@@ -425,6 +426,15 @@ func _commencer_plan() -> void:
 ## A face aux poteaux, l'arbitre dessous ; B plan large avec les joueurs. Coup franc : A large, B serré.
 static func option_lois() -> String:
 	return "B" if OS.get_environment("CD_MATCH_LOIS_CADRAGE") == "B" else "A"
+
+## Drop, cadrage B (plan large de côté) : le botteur et les deux poteaux restent à l'image, du lâcher au passage
+## du ballon (le cadrage A, derrière le botteur, est celui du tir au but : viser_poteaux).
+func _cadrer_drop(scene: Dictionary) -> void:
+	if cadrage == null or option_lois() != "B": return
+	var id := ApresEssai.buteur(scene)
+	if stage._actors.has(id): cadrage.temoin = stage._actors[id].node
+	var poteaux := ApresEssai.poteaux_x(scene) - 50.0
+	cadrage.points_regie.assign([Vector3(poteaux, 0.0, -3.0), Vector3(poteaux, 0.0, 3.0), Vector3(poteaux, 8.0, 0.0)])
 
 ## Coup franc et essai de pénalité (`plan.loi`) : programme de l'arbitre (match_arbitre.gd, `loi`) et
 ## cadrage qui le garde à l'image. Tout autre plan efface le programme.
@@ -455,6 +465,8 @@ func _jouer_loi(plan: Dictionary) -> void:
 	var point := Vector3(poteaux - cote * 1.0, 0.0, 0.0)
 	arbitre.loi = {"genre": loi, "point": point, "regard": point - Vector3(cote * 10.0, 0.0, 0.0), "dir": Vector3(0.0, 0.0, 1.0), "t": 0.0, "arrive": -1.0}
 	_sonner("try", camp)
+	# Bannière « ESSAI » (+7) : celle du fait des lois (direct.lois, _montrer_loi), écrite après ce plan pendant que
+	# l'image est tenue ; l'arbitre garde alors le bras levé sous les poteaux (son programme dure jusqu'au plan suivant).
 	if cadrage == null: return
 	# B : cadrage large d'un arrêt de jeu (ballon, joueurs proches, arbitre et poteaux).
 	if option_lois() == "B": cadrage.regler(true, "penalty")

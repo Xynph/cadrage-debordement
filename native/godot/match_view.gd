@@ -605,7 +605,10 @@ func apply_frame(live: Dictionary) -> void:
 		_ball.visible = false
 		_ball_attached = false
 	mise_en_scene().observe(live, scene, new_action, _action_motion and not _paused and has_ball and _live_cadence == 1)
-	if new_action and play_action and _animations_adaptees != null and _live_cadence == 1:
+	# Drop (gestes des lois) : ballon lâché des mains et frappé au rebond, avec ou sans bibliothèque d'animations.
+	if new_action and play_action and _live_cadence == 1 and scene.get("drop", false):
+		VueJoueurs._lancer_drop(self, scene)
+	elif new_action and play_action and _animations_adaptees != null and _live_cadence == 1:
 		VueJoueurs._gestes_du_fait(self, scene, previous_kind)
 	VueJoueurs._replacer_longs(self, new_action)
 

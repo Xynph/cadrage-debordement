@@ -127,6 +127,8 @@ test('Vue 3D : l’arbitre plie le bras au coup franc, court sous les poteaux et
   // Drop : clip « drop », ballon lâché des mains puis frappé au rebond, vol de tir au but vers la cible de la scène.
   const drop = godot('match_vue_drop.gd');
   assert.match(drop, /jouer_geste\(id, "drop"/);
-  assert.match(godot('match_vue_joueurs.gd'), /scene\.get\("drop", false\)[\s\S]*?VueDrop\.lancer/);
+  // Lancé à l'image du drop, avec ou sans bibliothèque d'animations adaptées (le ballon fait le geste dans tous les cas).
+  assert.match(godot('match_view.gd'), /if new_action and play_action and _live_cadence == 1 and scene\.get\("drop", false\):\s*VueJoueurs\._lancer_drop/);
+  assert.match(godot('match_vue_joueurs.gd'), /static func _lancer_drop[\s\S]*?VueDrop\.lancer/);
   assert.match(godot('match_vue_ballon.gd'), /VueDrop\.avancer\(v, delta\)/);
 });
