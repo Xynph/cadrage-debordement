@@ -406,5 +406,15 @@ function advanceCausalPlay(l){
   const plan=effectiveAttack(l,side)==='conquete'?' au près':effectiveAttack(l,side)==='large'?' sur une séquence de jeu au large':'';const carrier=actionPlayer(l,side),gain=Math.round(Math.abs(l.territory-origin));const phrases=[`${carrier?.name||S.clubs[l.pair[side]].abbr} porte le ballon et gagne ${gain} mètres`,`${carrier?.name||S.clubs[l.pair[side]].abbr} avance de ${gain} mètres avant le plaquage`,`${S.clubs[l.pair[side]].abbr} progresse de ${gain} mètres par ${carrier?.name||'son porteur'}`];addEvent(l,`${phrases[l.minute%phrases.length]}${plan}${danger?' dans les 22 adverses':''}.`,'play',{kind:'carry',team:side,actor:carrier?.id||null,tackler:carrier?carryTackler(l,side,carrier.id,gain):null,from:{x:origin,y:35},to:{x:l.territory,y:35}});
  }else if(Math.random()<failedCarryError(l,side))return handFault(l,side,passeEnAvant(l));
  else if(ballonInjouable(l,side))return true;
- else{tacticalCount(l,opp,'recoveries');noterContre(l,side);const stopped=actionName(l,side,'carrier');ballPossession(l,opp);addEvent(l,`${stopped} (${S.clubs[l.pair[side]].abbr}) est arrêté net : ${actionName(l,opp,'defender')} récupère le ballon après le plaquage pour ${S.clubs[l.pair[opp]].abbr}.`,'turnover',{kind:'turnover',team:opp,actor:actionPlayer(l,opp,'defender')?.id||null})}
+ else{tacticalCount(l,opp,'recoveries');noterContre(l,side);const stopped=actionName(l,side,'carrier'),contre=recupereALinstant(l,side);ballPossession(l,opp);addEvent(l,`${contre?'Ballon aussitôt rendu : ':''}${stopped} (${S.clubs[l.pair[side]].abbr}) ${contre?'relance tout de suite mais ':''}est arrêté net : ${actionName(l,opp,'defender')} récupère le ballon après le plaquage pour ${S.clubs[l.pair[opp]].abbr}.`,'turnover',{kind:'turnover',team:opp,actor:actionPlayer(l,opp,'defender')?.id||null})}
+}
+// Ballon que `side` vient de récupérer (plaquage, mêlée ou touche adverse, même minute, rien de joué depuis) : la course
+// arrêtée qui le rend aussitôt est racontée comme une relance immédiate, pas comme une seconde récupération sortie de
+// nulle part (audit du 25/11, anomalie 9). Lecture du journal seule, aucun tirage.
+function recupereALinstant(l,side){
+ for(let i=l.events.length-1;i>=0;i--){
+  const e=l.events[i];if(['sub','tactic','message','card'].includes(e.type))continue;
+  return e.type==='turnover'&&e.min===l.minute&&e.scene?.team===side;
+ }
+ return false;
 }
