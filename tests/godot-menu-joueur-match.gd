@@ -51,6 +51,27 @@ func until_vivant(condition: Callable, limit_ms: int) -> bool:
 		await process_frame
 	return condition.call()
 
+## Arrêt de jeu (carton, blessure…) : le moteur a arrêté le match et l'écran d'arrêt attend le joueur (depuis #1315, la
+## graine 3 prend un carton dès la 5e minute). Le test fait comme lui : « Valider le choix » s'il y en a un, puis
+## « Reprendre le match » (même aide que godot-match-direct-da). Rien tant que la pause d'arrêt n'est pas reçue.
+func reprendre_arret() -> void:
+	var view := surface()
+	if not is_instance_valid(view) or view.regie == null: return
+	var regie: Node = view.regie
+	if regie.arret.is_empty() or app.waiting or not bool(live().get("paused", false)): return
+	var reprendre: Button = regie.between.find_child("MatchBetweenStopResume", true, false) if is_instance_valid(regie.between) else null
+	if reprendre == null or not reprendre.is_visible_in_tree() or reprendre.disabled: return
+	reprendre.pressed.emit()
+	await wait_command()
+
+## Comme `until`, le match continuant de se jouer : un arrêt de jeu est repris comme le ferait le joueur.
+func until_en_jouant(condition: Callable, limit_ms: int) -> bool:
+	var deadline := Time.get_ticks_msec() + limit_ms
+	while not condition.call() and Time.get_ticks_msec() < deadline:
+		await reprendre_arret()
+		await process_frame
+	return condition.call()
+
 ## État du direct pour le journal (un rouge en ligne se lit sans rejouer le match).
 func etat_direct(view: Control) -> String:
 	if view == null or view.regie == null or not is_instance_valid(view.regie.between): return "direct absent ou écran reconstruit (minute %d)" % int(live().get("minute", 0))
@@ -125,10 +146,12 @@ func run() -> void:
 	while Time.get_ticks_msec() - depart < 600000 and int(live().get("minute", 0)) < 50 and not live().get("finished", false):
 		var scene: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
 		if scene is Dictionary and not app.waiting: await command("match_talk_continue", {"key": scene.key, "phase": scene.phase, "skip": true})
+		await reprendre_arret()
 		await settle(2)
 	print("MENU_JOUEUR minute %d atteinte en %d s" % [int(live().get("minute", 0)), (Time.get_ticks_msec() - depart) / 1000])
 	await taille(Vector2i(1920, 1080))
-	check(await until(func(): return surface() != null and vue_2d(surface()), 240000), "Écran 2D du direct")
+	# Écran 2D sans arrêt de jeu ouvert (un arrêt met le match en pause jusqu'au choix du manager).
+	check(await until_en_jouant(func(): return surface() != null and vue_2d(surface()) and surface().regie.arret.is_empty(), 240000), "Écran 2D du direct")
 	view = surface()
 	var between: Control = view.regie.between
 	# Le joueur à ouvrir : un ouvreur ou un demi (rôles et consignes riches), sur sa carte de Mon XV.
