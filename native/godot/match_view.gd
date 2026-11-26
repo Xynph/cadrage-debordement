@@ -105,6 +105,8 @@ var _ball_marker: Node3D
 var _ball_beacon: Node3D
 var _ball_attached := false
 var _ball_travel := 1.0
+## Drop en cours (match_vue_drop.gd) : {"id", "t", "main"} ; vide sinon.
+var _drop: Dictionary = {}
 var _grass: ShaderMaterial
 var _contact_plan: Dictionary = {}
 var _action_key := ""

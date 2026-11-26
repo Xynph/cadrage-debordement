@@ -142,6 +142,10 @@ var _touche_poids := 0.0
 ## de la ligne de but visée), "buteur": id} ; vide hors tir. `_axe_actif` : la dernière image a été
 ## cadrée dans l'axe (la vue pose alors la caméra telle quelle). Caméra et point visé amortis.
 var tir: Dictionary = {}
+## Lois (coup franc, essai de pénalité ; 26 novembre 2026) : la régie fait entrer dans le cadre un témoin
+## qui bouge (l'arbitre) et des points fixes (les poteaux), jusqu'au plan suivant (`regler` les efface).
+var temoin: Node3D = null
+var points_regie: Array[Vector3] = []
 var _axe_actif := false
 var _tir_camera := Vector3.ZERO
 var _tir_camera_vitesse := Vector3.ZERO
@@ -158,6 +162,8 @@ func _init(owner: Node3D) -> void:
 func regler(on: bool, plan_kind: String = "", longue: bool = false) -> void:
 	actif = on
 	kind = plan_kind
+	temoin = null
+	points_regie.clear()
 	large = longue or plan_kind in VOLS or plan_kind in ARRETS
 	if not tir.is_empty():
 		tir = {}
@@ -366,7 +372,11 @@ func _but(basis: Basis, aspect: float, mode: String, _base: float, focus: Vector
 	var plus_large := float(LARGE[mode]) if large else float(bornes[1])
 	# Mêlée, touche, ruck : le paquet et les demis seulement, pas les arrières écartés.
 	var groupe: Array = view.regroupement() if view.has_method("regroupement") else []
-	if not groupe.is_empty():
+	if kind == "coup_franc" and is_instance_valid(temoin):
+		# Coup franc, plan serré (option B) : le ballon et l'arbitre au bras plié, de près.
+		bornes = SERRE_MELEE.get(mode, SERRE[mode])
+		plus_large = float(bornes[1])
+	elif not groupe.is_empty():
 		bornes = SERRE_MELEE[mode] if SERRE_MELEE.has(mode) and _en_melee() else SERRE[mode]
 		plus_large = float(bornes[1])
 		for place: Vector3 in groupe:
@@ -392,6 +402,11 @@ func _but(basis: Basis, aspect: float, mode: String, _base: float, focus: Vector
 				var place: Vector3 = view._actors[id].node.position
 				points.append(Vector3(place.x, 0.0, place.z))
 				points.append(Vector3(place.x, TAILLE_JOUEUR, place.z))
+	# Lois : l'arbitre (bras levé compris) et les poteaux visés restent à l'image.
+	if is_instance_valid(temoin):
+		points.append(Vector3(temoin.position.x, 0.0, temoin.position.z))
+		points.append(Vector3(temoin.position.x, TAILLE_JOUEUR + 0.4, temoin.position.z))
+	points.append_array(points_regie)
 	if kind in VOLS:
 		# Ballon en l'air : son départ et son point de chute restent à l'image ; le cadrage vise
 		# entre les deux et s'élargit (pistes du chorégraphe ou trajectoire du direct).
@@ -444,7 +459,13 @@ func _cadrer_tir(aspect: float, mode: String, delta: float, pose: bool) -> Array
 	if is_instance_valid(view._ball) and view._ball.visible:
 		ballon = view._ball.global_position
 	# Essentiel : ballon, pied des montants, barre et montants ; en plus : la course à venir du ballon.
-	var essentiels: Array[Vector3] = [ballon]
+	# Essai de pénalité : pas de ballon à suivre (il reste au point de la faute), l'arbitre à sa place.
+	var essentiels: Array[Vector3] = []
+	if not tir.get("sans_ballon", false):
+		essentiels.append(ballon)
+	if is_instance_valid(temoin):
+		essentiels.append(Vector3(temoin.position.x, 0.0, temoin.position.z))
+		essentiels.append(Vector3(temoin.position.x, TAILLE_JOUEUR + 0.4, temoin.position.z))
 	for z: float in [-POTEAUX_Z, POTEAUX_Z]:
 		for h: float in [0.0, 3.0, TIR_MONTANT]:
 			essentiels.append(Vector3(poteaux.x, h, z))
