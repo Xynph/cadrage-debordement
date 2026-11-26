@@ -110,9 +110,9 @@ func run() -> void:
 	pair = await mount(sans)
 	check(pair[1].find_child("ContractDelegationStaff", true, false) == null, "Sans decisions.delegation : aucune case")
 	unmount(pair[0])
-	# Courrier : la rubrique « contrats » du moteur arrive dans Direction et ouvre l'onglet Contrats.
+	# Courrier : la rubrique « contrats » du moteur arrive dans Conseil (ex-Direction, renommée par #1191) et ouvre l'onglet Contrats.
 	var Mail = load("res://ui/club_mail.gd")
-	check(Mail.CATEGORY.get("contrats") == "Direction", "Courrier « Contrats » rangé dans Direction (icône et couleur existantes)")
+	check(Mail.CATEGORY.get("contrats") == "Conseil", "Courrier « Contrats » rangé dans Conseil (icône et couleur existantes)")
 	check(Mail.route_of("contrats") == "Effectif" and Mail.caption("contrats") == "Ouvrir · Contrats", "L'écran « contrats » ouvre l'Effectif, bouton « Contrats »")
 	print("PROLONGATIONS_STAFF ", checks, " controles, ", failures.size(), " echec", "s" if failures.size() > 1 else "")
 	quit(1 if failures.size() > 0 else 0)

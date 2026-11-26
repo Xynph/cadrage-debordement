@@ -328,10 +328,21 @@ func run() -> void:
 		check(view.fenetre_ouverte() and panneau != null and panneau.is_visible_in_tree(), "Plaque %d : petite fenêtre du club par-dessus le match" % cote)
 		if panneau == null: continue
 		check(int(panneau.get_meta("club_id", -1)) == int(float(app.model.live.teams[cote].id)), "Plaque %d : la fenêtre est celle de ce club" % cote)
-		# Le score du bandeau (ce qui a été montré), jamais celui du moteur en avance.
+		# Le score du bandeau (ce qui a été montré), jamais celui du moteur en avance ; lu une fois la pause posée (elle part
+		# dès que le jeu est libre : la minute en cours peut encore montrer un point).
+		await until(func(): return bool(app.model.live.get("paused", false)) and not app.waiting, 10000)
 		var marque: Array = view.score_affiche()
 		var score_tuile: Label = panneau.find_child("MatchFenetreClubScoreValeur", true, false)
 		check(score_tuile != null and score_tuile.text == "%d – %d" % [int(marque[cote]), int(marque[1 - cote])], "Plaque %d : score du match de son point de vue en tuile (%s)" % [cote, score_tuile.text if score_tuile != null else "?"])
+		# Un point montré au bandeau fenêtre ouverte (minute en cours avant la pause) : la tuile le suit.
+		if score_tuile != null:
+			var bandeau_avant: String = view.score.text
+			view.score.text = "%d — %d" % [int(marque[0]) + 7, int(marque[1])]
+			await settle(2)
+			var suivi := [int(marque[0]) + 7, int(marque[1])]
+			check(score_tuile.text == "%d – %d" % [suivi[cote], suivi[1 - cote]], "Plaque %d : la tuile du score suit le bandeau, fenêtre ouverte (%s)" % [cote, score_tuile.text])
+			view.score.text = bandeau_avant
+			await settle(2)
 		var essais_tuile: Label = panneau.find_child("MatchFenetreClubEssaisValeur", true, false)
 		check(essais_tuile != null and essais_tuile.text.is_valid_int() and int(essais_tuile.text) * 5 <= int(marque[cote]), "Plaque %d : essais jamais en avance sur le score montré (%s)" % [cote, essais_tuile.text if essais_tuile != null else "?"])
 		check(["MatchFenetreClubEcusson", "MatchFenetreClubForme", "MatchFenetreClubRang", "MatchFenetreClubPoints", "MatchFenetreClubEssais", "MatchFenetreClubPossession", "MatchFenetreClubTerritoire", "MatchFenetreClubPénalités", "MatchFenetreClubLieu"].all(func(n: String) -> bool: return panneau.find_child(n, true, false) != null), "Plaque %d : écusson, forme, rang, points, chiffres du match, lieu" % cote)
@@ -415,6 +426,8 @@ func run() -> void:
 		await settle(6)
 		page = view.get("page")
 		check(page.visible and page.find_child("ActionReviewPage", true, false) != null and fenetres().is_empty() and app.find_child("MatchActionReview", true, false) == null, "Relire : page du direct, pas une fenêtre")
+		# Comme pour les plaques : la pause part dès que le jeu est libre (demande différée pendant une minute).
+		await until(func(): return bool(app.model.live.get("paused", false)) and not app.waiting, 10000)
 		check(app.model.live.get("paused", false), "Relire : le match est en pause")
 		check(aplats_or(page).is_empty() and angles_droits(page).is_empty(), "Page de relecture : aucun aplat doré (anneau de focus permis), aucun aplat à angles droits (%s / %s)" % [str(aplats_or(page)), str(angles_droits(page))])
 		check(muets(page).is_empty(), "Page de relecture : aucun clic sans réponse : " + str(muets(page)))
