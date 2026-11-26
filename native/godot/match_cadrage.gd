@@ -146,6 +146,10 @@ var tir: Dictionary = {}
 ## qui bouge (l'arbitre) et des points fixes (les poteaux), jusqu'au plan suivant (`regler` les efface).
 var temoin: Node3D = null
 var points_regie: Array[Vector3] = []
+## Drop (plan large de côté) : rotation de la caméra de tribune autour de la verticale (rad), en biais vers les
+## poteaux visés, pour lire le ballon entre les perches ou à côté ; 0 hors drop.
+const BIAIS_DROP := 0.5
+var biais := 0.0
 var _axe_actif := false
 var _tir_camera := Vector3.ZERO
 var _tir_camera_vitesse := Vector3.ZERO
@@ -164,6 +168,7 @@ func regler(on: bool, plan_kind: String = "", longue: bool = false) -> void:
 	kind = plan_kind
 	temoin = null
 	points_regie.clear()
+	biais = 0.0
 	large = longue or plan_kind in VOLS or plan_kind in ARRETS
 	if not tir.is_empty():
 		tir = {}
@@ -176,6 +181,12 @@ func regler(on: bool, plan_kind: String = "", longue: bool = false) -> void:
 func viser_poteaux(marque: Vector3, poteaux_x: float, buteur: String = "") -> void:
 	tir = {"marque": Vector3(marque.x, 0.0, marque.z), "poteaux": Vector3(poteaux_x, 0.0, 0.0), "buteur": buteur}
 	couper()
+
+
+## Drop : caméra de tribune en biais vers la ligne de but visée (`poteaux_x`, repère de la vue, ±50), jusqu'au
+## plan suivant. La caméra (côté +z du terrain) recule vers le botteur et regarde les poteaux de trois quarts.
+func vers_poteaux(poteaux_x: float) -> void:
+	biais = -signf(poteaux_x) * BIAIS_DROP
 
 
 ## La dernière image est cadrée dans l'axe d'un tir au but (la vue la pose sans autre recadrage).
@@ -212,6 +223,8 @@ func frame_camera(focus: Vector3, size: float, offset: Vector3, aspect: float, m
 		_touche_poids = maxf(0.0, _touche_poids - delta / SORTIE)
 	if _touche_poids > 0.0:
 		offset = incliner_touche(offset, focus.z, mode, smoothstep(0.0, 1.0, _touche_poids))
+	if actif and absf(biais) > 0.0:
+		offset = offset.rotated(Vector3.UP, biais)
 	if actif and not tir.is_empty():
 		# Tir au but : plan dans l'axe, derrière le buteur (le plan suivant repart d'une coupe).
 		var axial := _cadrer_tir(aspect, mode, delta, cut or _pose)
@@ -372,10 +385,9 @@ func _but(basis: Basis, aspect: float, mode: String, _base: float, focus: Vector
 	var plus_large := float(LARGE[mode]) if large else float(bornes[1])
 	# Mêlée, touche, ruck : le paquet et les demis seulement, pas les arrières écartés.
 	var groupe: Array = view.regroupement() if view.has_method("regroupement") else []
-	if kind == "coup_franc" and is_instance_valid(temoin):
-		# Coup franc, plan serré (option B) : le ballon et l'arbitre au bras plié, de près.
-		bornes = SERRE_MELEE.get(mode, SERRE[mode])
-		plus_large = float(bornes[1])
+	if kind == "essai_penalite" and is_instance_valid(temoin):
+		# Essai de pénalité, plan large : ballon, arbitre et poteaux (ci-dessous), sans les joueurs qui reculent.
+		pass
 	elif not groupe.is_empty():
 		bornes = SERRE_MELEE[mode] if SERRE_MELEE.has(mode) and _en_melee() else SERRE[mode]
 		plus_large = float(bornes[1])
@@ -459,13 +471,7 @@ func _cadrer_tir(aspect: float, mode: String, delta: float, pose: bool) -> Array
 	if is_instance_valid(view._ball) and view._ball.visible:
 		ballon = view._ball.global_position
 	# Essentiel : ballon, pied des montants, barre et montants ; en plus : la course à venir du ballon.
-	# Essai de pénalité : pas de ballon à suivre (il reste au point de la faute), l'arbitre à sa place.
-	var essentiels: Array[Vector3] = []
-	if not tir.get("sans_ballon", false):
-		essentiels.append(ballon)
-	if is_instance_valid(temoin):
-		essentiels.append(Vector3(temoin.position.x, 0.0, temoin.position.z))
-		essentiels.append(Vector3(temoin.position.x, TAILLE_JOUEUR + 0.4, temoin.position.z))
+	var essentiels: Array[Vector3] = [ballon]
 	for z: float in [-POTEAUX_Z, POTEAUX_Z]:
 		for h: float in [0.0, 3.0, TIR_MONTANT]:
 			essentiels.append(Vector3(poteaux.x, h, z))
