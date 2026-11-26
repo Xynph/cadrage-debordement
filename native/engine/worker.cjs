@@ -1689,9 +1689,10 @@ function createBridge(options={}){
     const garde=programmeEnVigueur();poserProgramme(a);const projete=programmeEnVigueur();
     const egal=JSON.stringify(garde)===JSON.stringify(projete)||!actif(garde)&&!actif(projete);
     choix[i]=egal?null:a.c==='advance_day'&&actions[i-1]?.c==='advance_day'?['garde','projection']:['projection','garde'];
-    if(choix[i]?.[pris[i]]==='garde')ctx.nativeProgrammeEffets=garde;
+    if(!toutProjeter&&choix[i]?.[pris[i]]==='garde')ctx.nativeProgrammeEffets=garde;
     utilise[i]=programmeEnVigueur();
    };
+   let toutProjeter=false;
    const apply=count=>{
     for(let i=0;i<count;i++){
      const a=actions[i];poserAncien(i);seed=a.s>>>0;peek('nativeSectionsFresh=false');projectionCache.clear();
@@ -1710,7 +1711,13 @@ function createBridge(options={}){
     restaurerBase();applied=apply(n);
     if(applied>meilleur.applied)meilleur={applied,pris:pris.slice(),reason};
    }
+   // Dernier essai : séances toujours projetées (reprise d'avant ce correctif), jamais moins d'actions reprises qu'avant.
+   if(applied<n&&essais>0){
+    toutProjeter=true;restaurerBase();applied=apply(n);
+    if(applied>meilleur.applied)meilleur={applied,pris:pris.slice(),reason,toutProjeter:true};
+   }
    if(applied<n){
+    toutProjeter=meilleur.toutProjeter===true;
     // Action divergente : retour au profil chargé puis reprise des seules actions confirmées (plus longue suite trouvée).
     applied=meilleur.applied;reason=meilleur.reason;pris.splice(0,n,...meilleur.pris);
     restaurerBase();
