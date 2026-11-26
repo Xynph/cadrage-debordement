@@ -549,13 +549,30 @@ static func _hors_des_couches(jambes: Array, decal: Vector3, corps: Array, racin
 				if d.length() >= 0.02 and longueur > 0.001:
 					p *= minf(longueur / d.length(), 3.0)
 				if d.length() < 0.02:
-					d = racine + decal - (r[1] as Vector3)
-					d.y = 0.0
+					d = _de_cote(racine + decal - (r[1] as Vector3), (s2[1] as Vector3) - (s2[0] as Vector3))
 				if d.length() < 0.001:
 					d = Vector3.RIGHT
 				pire = p
 				vers = d.normalized() * p
 	return vers
+
+
+## Jambe en travers d'un membre couché (axe `axe`) : sortie horizontale de côté, perpendiculaire à ce membre,
+## du côté de `repli` (pieds du joueur debout ou racine, depuis le point de contact). 26/11/2026 (sonde du
+## ruck) : sortie le long de la cuisse quand les pieds étaient dans son axe, écarts de 0,3 à 0,6 m et tibia
+## encore 9 à 18 cm dedans. Séparation seulement : le dégagement (`_poussee`, avant elle) garde sa sortie
+## (porteur qui sautait de côté en une image, ballon à 30 m/s dans godot-match-choregraphie).
+static func _de_cote(repli: Vector3, axe: Vector3) -> Vector3:
+	var d := Vector3(repli.x, 0.0, repli.z)
+	var a := Vector3(axe.x, 0.0, axe.z)
+	if a.length() < 0.001:
+		return d
+	a = a.normalized()
+	var cote := Vector3(-a.z, 0.0, a.x)
+	d -= a * d.dot(a)
+	if d.length() < 0.02:
+		return cote if cote.dot(repli) >= 0.0 else -cote
+	return d
 
 
 ## Plus forte poussée horizontale (monde) qui sort une jambe de `rig` des corps couchés `corps`.
