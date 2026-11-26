@@ -423,10 +423,15 @@ func _memoriser_pause(voulue: bool) -> void:
 func demander_pause(voulue: bool) -> void:
 	var live := _live()
 	if live.is_empty() or bool(live.get("finished", false)): return
-	if app.waiting or app.closing or app.connection_error:
+	if not _pause_applicable():
 		_memoriser_pause(voulue)
 		return
 	app._command("pause", {"paused": voulue})
+
+## Vrai quand une pause demandée peut partir : moteur libre, pas de match déjà arrêté avec une action encore à l'écran,
+## pas de causerie.
+func _pause_applicable() -> bool:
+	return not (app.waiting or app.closing or app.connection_error) and bool(_etat_bandeau().pause_possible) and director._talk().is_empty()
 
 ## Pause du direct : jamais refusée tant que le match n'est pas fini. Moteur occupé (minute en route), qui se ferme ou
 ## injoignable : le clic est mémorisé (`_pause_voulue`), rien n'est envoyé, et il est appliqué dès que le moteur répond.
@@ -434,11 +439,10 @@ func _pause() -> void:
 	var live := _live()
 	if live.is_empty() or bool(live.get("finished", false)): return
 	var arrete := bool(live.get("paused", false))
-	if app.waiting or app.closing or app.connection_error:
-		_memoriser_pause(not arrete)
+	if not _pause_applicable():
+		# Moteur occupé, action encore à l'écran après un arrêt de jeu, causerie : la demande attend (`_process`).
+		_memoriser_pause(true if not bool(_etat_bandeau().pause_possible) else not arrete)
 		return
-	# Match déjà arrêté (action encore à l'écran, causerie) : rien à demander, le clic reste permis.
-	if not bool(_etat_bandeau().pause_possible) or not director._talk().is_empty(): return
 	director.command("pause", {"paused":not arrete})
 
 func choisir_camera(mode: String) -> void:

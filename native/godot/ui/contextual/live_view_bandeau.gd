@@ -292,11 +292,12 @@ func _poser_periode() -> void:
 ## Libellé et accès du bouton : « Pause » tant que le match joue à l'écran, « Reprendre » en pause.
 func _poser_pause(etat: Dictionary) -> void:
 	var libelle := libelle_pause(etat)
+	# Demande de pause mémorisée (sablier), sans phrase.
+	if _pause_voulue != 0: libelle += " ⧗"
 	if play.text != libelle: play.text = libelle
 	# Jamais grisé tant que le match n'est pas fini (voulu par Léo) : le clic est mémorisé si le moteur est occupé.
 	var possible: bool = not bool(_live().get("finished", false)) and not _live().is_empty()
 	var aide := "" if bool(etat.pause_possible) or bool(_live().get("finished", false)) else "Le match est déjà arrêté : l’action en cours se termine."
-	if _pause_voulue != 0 and aide.is_empty(): aide = "Demande de %s mémorisée : appliquée dès que le jeu répond." % ("pause" if _pause_voulue > 0 else "reprise")
 	if play.tooltip_text != aide: play.tooltip_text = aide
 	if bool(play.get_meta("contextual_enabled", true)) != possible:
 		play.set_meta("contextual_enabled", possible)

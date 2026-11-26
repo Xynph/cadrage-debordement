@@ -678,6 +678,36 @@ func pause_toujours_cliquable() -> void:
 	check(en_pause.call(), "Pause : la pause de Relire reste appliquée après le clic")
 	await command("pause", {"paused": false})
 	await settle(4)
+	# Causerie à l'écran : le clic est mémorisé (sans phrase : sablier), appliqué une seule fois quand elle se termine.
+	var matchTalks: Dictionary = app.model.get("clubLife", {}).get("matchTalks", {}) if app.model.get("clubLife") is Dictionary else {}
+	var scene_avant: Variant = matchTalks.get("scene")
+	matchTalks["scene"] = {"key": "test"}
+	await settle(2)
+	check(not play.disabled, "Pause : non grisée pendant une causerie")
+	play.pressed.emit()
+	await settle(3)
+	check(view.get("_pause_voulue") == 1 and not en_pause.call() and play.text.contains("⧗") and play.tooltip_text.is_empty(), "Pause : causerie, clic mémorisé (sablier, aucune phrase), rien d'envoyé")
+	matchTalks["scene"] = scene_avant
+	if scene_avant == null: matchTalks.erase("scene")
+	await until(func(): return en_pause.call() and not app.waiting, 20000)
+	check(en_pause.call() and view.get("_pause_voulue") == 0 and not play.text.contains("⧗"), "Pause : causerie finie, pause appliquée une seule fois")
+	await command("pause", {"paused": false})
+	await settle(4)
+	# Action encore à l'écran alors que le moteur est déjà arrêté : demande mémorisée, aucune reprise involontaire.
+	var regie_vue: Node = view.regie
+	var etat_regie: Variant = regie_vue.etat
+	var live_modele: Dictionary = app.model.live
+	live_modele["paused"] = true
+	regie_vue.etat = regie_vue.JEU
+	await settle(1)
+	check(not bool(view._etat_bandeau().pause_possible) and not play.disabled, "Pause : action à l'écran, moteur arrêté : bouton non grisé")
+	play.pressed.emit()
+	check(view.get("_pause_voulue") == 1, "Pause : action à l'écran, clic mémorisé")
+	regie_vue.etat = etat_regie
+	await settle(4)
+	check(view.get("_pause_voulue") == 0 and bool(app.model.live.get("paused", false)) and not app.waiting, "Pause : action finie, match déjà en pause, rien ne change (pas de reprise)")
+	live_modele["paused"] = false
+	await settle(2)
 	# Coup de sifflet / relecture : action encore à l'écran alors que le moteur est déjà arrêté.
 	var etat_arret := LiveView.etat_bandeau({"paused": true}, true, true, false)
 	check(not bool(etat_arret.pause_possible), "Pause : état « déjà arrêté » reconnu")

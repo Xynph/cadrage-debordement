@@ -202,7 +202,7 @@ func _process(_delta: float) -> void:
 	if is_instance_valid(menu) and menu.visible and is_instance_valid(equipe) and equipe.visible: _cacher_menu()
 	# Panneau du menu : ses lignes à retour automatique ne connaissent leur hauteur qu'après une mise en page.
 	if is_instance_valid(menu) and menu.visible: _placer_menu()
-	if _pause_voulue != 0 and not app.waiting and not app.closing and not app.connection_error:
+	if _pause_voulue != 0 and _pause_applicable():
 		var voulue := _pause_voulue > 0
 		_pause_voulue = 0
 		_pause_clic = false
