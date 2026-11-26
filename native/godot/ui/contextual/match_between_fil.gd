@@ -159,7 +159,8 @@ func _poser_temps_forts(reperes: Array, equipes: Array) -> void:
 		icone.custom_minimum_size = Vector2(px(26), px(26))
 		icone.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		rangee.add_child(icone)
-		var mot := "Essai" if kind == "try" else ("Carton" if kind == "card" else "Pén.")
+		var loi := str(repere.get("loi", ""))
+		var mot := ("Essai de pénalité" if loi == "essai-penalite" else "Essai") if kind == "try" else ("Carton" if kind == "card" else ("Drop" if loi == "drop-reussi" else "Pén."))
 		var qui := str(repere.get("nom", "")).strip_edges()
 		var texte := _texte("%s %s" % [str(repere.get("horloge", "")), qui if not qui.is_empty() else mot], 18, encre, false, true)
 		texte.mouse_filter = Control.MOUSE_FILTER_IGNORE

@@ -12,6 +12,15 @@ func _suivre_journal() -> void:
 	if _journal.size() > 2: _journal.resize(2)
 	_dessiner_journal()
 
+## Un fait écrit au journal sans passer par la légende (faits des lois passés par les pistes du chorégraphe).
+func ajouter_au_journal(texte: String) -> void:
+	texte = texte.strip_edges()
+	if texte.is_empty(): return
+	if not _journal.is_empty() and str(_journal[0].texte) == texte: return
+	_journal.push_front({"minute": minute_de(clock.text), "texte": texte})
+	if _journal.size() > 2: _journal.resize(2)
+	_dessiner_journal()
+
 func _dessiner_journal() -> void:
 	var joueurs: Array = model.get("squad", []) if model.get("squad") is Array else []
 	# Journal vide : le panneau ne montre pas une bande sans texte.

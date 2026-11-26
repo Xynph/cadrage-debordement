@@ -509,7 +509,9 @@ func _lire(delta: float, reel: float) -> void:
 	if _attente_place < ECHEANCE_PLACE and stage.has_method("deplacement_restant") and stage.deplacement_restant() > 0.05:
 		_attente_place += reel
 		return
-	_score = plan.get("score", _score)
+	# Faits des lois qui suivent le plan (coup franc, essai de pénalité, drop…) : écrits l'un après l'autre, image tenue.
+	if _tenir_lois(plan, delta): return
+	_score = _score_apres(index)
 	index += 1
 	if index < tf.plans.size():
 		_commencer_plan()

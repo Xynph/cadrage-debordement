@@ -61,7 +61,7 @@ function handFault(l,offender,forward=false){
 // fin (dès `minute`, mené de `ecart` points au plus ou à égalité), reussite à 22 m pour un botteur de 70, perte par mètre.
 let LOIS_RULES=1;
 var LOIS={coupFranc:{melee:.17,touche:.09},passeAvant:.16,injouable:.25,essaiPenalite:{distance:7,conquete:.3,jeu:.08},
- drop:{zone:[14,35],base:.012,fin:.35,minute:72,ecart:3,reussite:.6,parMetre:.012}};
+ drop:{zone:[14,35],base:.012,fin:.35,minute:72,ecart:3,plie:{mene:7,avance:14},reussite:.6,parMetre:.012}};
 function loisRules(l){return !!LOIS_RULES&&typeof penalitesRules==='function'&&penalitesRules(l)}
 function passeEnAvant(l){return loisRules(l)&&Math.random()<LOIS.passeAvant}
 const COUP_FRANC_MOTIFS={scrum:['engagement anticipé en mêlée','introduction pas droite','talonnage avant l’introduction','mêlée pas formée dans les 30 secondes'],lineout:['couloir fermé dans l’alignement','sauteur soutenu avant le lancer','alignement pas formé dans les 30 secondes']};
@@ -120,7 +120,13 @@ function ballonInjouable(l,side){
 }
 // Drop de l'ouvreur (n° 10, sinon le botteur d'occupation) à portée, hors avantage.
 // Sans tirage : l'action peut-elle commencer par un drop ? (aussi lu par tests/helpers/tirages.cjs).
-function dropPossible(l,side){if(!loisRules(l)||l.flow?.advantage)return false;const d=Math.round(Math.abs(attackingGoal(side)-l.territory));return d>=LOIS.drop.zone[0]&&d<=LOIS.drop.zone[1]}
+// Garde-fou, avant tout tirage : pas de drop dans un match plié (mené de plus de `plie.mene` points en seconde période,
+// ou plus de `plie.avance` points d'avance) ; la fin de match serrée (`fin`) n'est jamais pliée.
+function dropPossible(l,side){
+ if(!loisRules(l)||l.flow?.advantage)return false;const D=LOIS.drop,d=Math.round(Math.abs(attackingGoal(side)-l.territory));
+ const ecart=l.score[side]-l.score[1-side],seconde=(l.flow?.period??((Number(l.minute)||0)>=40?2:1))>=2;
+ if(ecart>D.plie.avance||seconde&&ecart<-D.plie.mene)return false;
+ return d>=D.zone[0]&&d<=D.zone[1]}
 function dropTente(l,side){
  if(!dropPossible(l,side))return false;
  const D=LOIS.drop,goal=attackingGoal(side),at=l.territory,d=Math.round(Math.abs(goal-at));

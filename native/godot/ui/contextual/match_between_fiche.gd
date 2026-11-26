@@ -25,7 +25,9 @@ static func etat_du_deroule(item: Dictionary, equipes: Array) -> String:
 	if not (camp is int or camp is float): camp = item.get("equipe", -1)
 	var b: Variant = scene.get("ballon")
 	var x: float = float(b[0]) if b is Array and (b as Array).size() >= 1 and (b[0] is float or b[0] is int) else NAN
-	return etat_du_fait(str(item.get("kind", scene.get("kind", ""))), int(camp) if (camp is int or camp is float) else -1, x, equipes)
+	var kind := str(item.get("kind", scene.get("kind", "")))
+	if kind == "hand-fault" and str(item.get("cause", "")) == "forward-pass": kind = "passe-en-avant"
+	return etat_du_fait(kind, int(camp) if (camp is int or camp is float) else -1, x, equipes)
 
 func forcer_etat(texte: String) -> void:
 	if texte == etat_force: return

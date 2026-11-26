@@ -95,7 +95,12 @@ const POSTES_COURTS := {"pilier gauche": "PG", "talonneur": "TA", "pilier droit"
 const ETATS_ARRET := {"try": "Essai — %s", "transformation": "Transformation — %s", "goal": "Tir au but — %s", "miss": "Tir au but — %s",
 	"lineout": "Touche pour %s", "scrum": "Mêlée pour %s",
 	# Match filmé du 25/11 : pendant l'en-avant ou la pénalité, le bandeau disait encore « X a le ballon… ».
-	"penalty": "Pénalité pour %s", "hand-fault": "En-avant"}
+	"penalty": "Pénalité pour %s", "hand-fault": "En-avant",
+	# Faute de main par une passe (cause « forward-pass », loi 11) : la ligne dit ce que l'arbitre a sifflé.
+	"passe-en-avant": "Passe en avant",
+	# Faits des lois sans image (scene.loi), écrits par la régie après le plan qu'ils suivent.
+	"loi:coup-franc": "Coup franc pour %s", "loi:essai-penalite": "Essai de pénalité — %s", "loi:drop-tente": "Drop — %s",
+	"loi:drop-rate": "Drop manqué — %s", "loi:drop-reussi": "Drop réussi — %s", "loi:injouable": "Mêlée pour %s"}
 
 ## Note de départ du moteur (match-direct.cjs, NOTE_DEPART) : titulaire au coup d'envoi, remplaçant à son entrée.
 const NOTE_DEPART := 6.5

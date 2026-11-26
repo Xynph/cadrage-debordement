@@ -11,6 +11,7 @@
 // - champ `loi` du fait (scene.loi) : présent sur chaque fait du bloc des lois, jamais ailleurs ;
 // - fil du score de l'après-match (match-direct) : la somme de ses points = le score final, essais de pénalité et drops compris ;
 //   la frise (`reperes`) montre les mêmes points ;
+// - direct 3D : chaque fait des lois sans image est écrit après un plan d'un temps fort (`direct.lois`) ;
 // - rien après le coup de sifflet final ;
 // - « Tirs de pénalité » affichés = buts − drops sur tirs − drops tentés (les drops ont leurs propres compteurs).
 const assert = require('node:assert/strict');
@@ -220,6 +221,42 @@ test('Fil du score : la somme des marques = le score final, essais de pénalité
   assert.ok(essaisPen >= 3 && drops >= 2, `essais de pénalité (${essaisPen}) et drops (${drops}) observés dans le fil`);
   assert.deepEqual([reperesPen, reperesDrops], [essaisPen, drops], 'essais de pénalité et drops sur la frise');
   assert.deepEqual(fautes.slice(0, 5), [], `${fautes.length} fils du score irréguliers`);
+});
+
+// Direct 3D (match filmé du 26/11 : essai de pénalité, drop et coup franc absents du fil et de la légende, seul le tiroir
+// Journal les montrait) : chaque fait des lois sans image figure dans `direct.lois` dès qu'il est au journal, rattaché
+// (`apres`) au dernier fait joué avant lui ; en match complet, ce fait est le dernier plan d'un temps fort reçu par la
+// régie, qui écrit alors le fait des lois après ce plan (match_temps_forts_lecture.gd, lois_du_plan) : texte, score.
+test('Direct 3D : chaque fait des lois est écrit après un plan d\'un temps fort (match complet)', () => {
+  const LOIS = new Set(['coup-franc', 'essai-penalite', 'drop-tente', 'drop-rate', 'drop-reussi', 'injouable']);
+  const lire = { scenes: ix => ix.map(i => ({ key: 'k' + i, players: [], ball: { x: 50, y: 35 }, origin: { x: 50, y: 35 } })), transformation: i => ({ key: 't' + i, players: [] }), etat: () => ({}), profils: () => ({}) };
+  const projeter = (m, events, fini) => direct.project({ live: { events, teams: [{ abbr: m.abbr[0], name: m.abbr[0] }, { abbr: m.abbr[1], name: m.abbr[1] }], finished: fini, score: m.score, stats: [], statsRows: [] }, next: { phase: 'league' } }, 'integral', lire);
+  const fautes = [], vus = {}; let ecrits = 0, total = 0;
+  for (const [n, m] of matchs.slice(0, 36).entries()) {
+    const events = m.journal.map(e => ({ min: e.min, type: e.type, text: e.text, ...(e.period ? { period: e.period } : {}), ...(e.scene ? { scene: e.scene } : {}) }));
+    const faits = events.map((e, i) => ({ i, loi: e.scene?.loi })).filter(x => LOIS.has(x.loi));
+    if (!faits.length) continue;
+    // Plans reçus par la régie, temps fort par temps fort (le direct recalculé à chaque fait du journal).
+    const plans = new Set(), cles = new Set();
+    for (let k = 1; k <= events.length; k++) {
+      const tf = projeter(m, events.slice(0, k), k === events.length).tempsFort;
+      if (!tf || cles.has(tf.cle)) continue;
+      cles.add(tf.cle);
+      tf.plans.forEach((p, j) => { if (tf.plans[j + 1]?.index !== p.index) plans.add(p.index); });
+    }
+    for (const f of faits) {
+      total++; vus[f.loi] = (vus[f.loi] || 0) + 1;
+      const loi = projeter(m, events.slice(0, f.i + 1), false).lois.find(x => x.i === f.i);
+      if (!loi) { fautes.push(`match ${n} : ${f.loi} absent de direct.lois : ${events[f.i].text}`); continue; }
+      if (loi.texte !== events[f.i].text || loi.loi !== f.loi) fautes.push(`match ${n} : ${f.loi} mal recopié ${JSON.stringify(loi)}`);
+      if (JSON.stringify(loi.score) !== JSON.stringify(events[f.i].scene.score)) fautes.push(`match ${n} : score de ${f.loi} ${loi.score} ≠ ${events[f.i].scene.score}`);
+      if (f.loi === 'essai-penalite' && loi.kind !== 'try' || f.loi === 'drop-reussi' && loi.kind !== 'goal') fautes.push(`match ${n} : nature de ${f.loi} ${loi.kind}`);
+      if (plans.has(loi.apres)) ecrits++; else fautes.push(`match ${n} : ${f.loi} après le fait ${loi.apres}, jamais un plan montré : ${events[f.i].text}`);
+    }
+  }
+  console.log('direct 3D, faits des lois écrits après un plan :', ecrits, '/', total, JSON.stringify(vus));
+  assert.ok(vus['coup-franc'] >= 20 && vus['injouable'] >= 10 && (vus['essai-penalite'] || 0) + (vus['drop-tente'] || 0) >= 1, 'assez de faits des lois observés : ' + JSON.stringify(vus));
+  assert.deepEqual(fautes.slice(0, 5), [], `${fautes.length} faits des lois jamais écrits dans le direct 3D`);
 });
 
 // Drops : comptés avec les buts du moteur (score = essais × 5 + transformations × 2 + buts × 3, contrôlé à la sauvegarde),

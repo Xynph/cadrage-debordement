@@ -292,6 +292,22 @@ function borneEntracte(lignes,bilan){
 // Chiffres cumulés du moteur (possession, mêlées, pénalités…) tels qu'ils étaient quand le
 // journal s'arrêtait avant la borne : relevés à chaque projection, par rencontre.
 const RELEVES=new Map();
+// Faits des lois sans image (`scene.loi` sur un fait `message` : coup franc, essai de pénalité, drop tenté / raté /
+// réussi, ballon injouable), les plus récents du journal du moteur, chacun avec `apres` : l'indice du dernier fait
+// joué qui le précède (seuls des bandeaux entre les deux). La régie 3D les écrit après le plan de ce fait (légende,
+// journal, score, ligne d'état), sans geste ni image ; lus au direct le plus récent, pas dans le temps fort reçu (le
+// fait peut tomber au pas du moteur suivant). Match filmé du 26/11 : essai de pénalité et drop réussi absents du
+// fil du direct 3D, seul le tiroir Journal les montrait.
+const LOIS_TEXTE=new Set(['coup-franc','essai-penalite','drop-tente','drop-rate','drop-reussi','injouable']),LOIS_MAX=24;
+function loisDuDirect(lignes,events,nommer){
+ const sortie=[];let joue=-1;
+ for(const l of lignes){
+  if(!l.bandeau){joue=l.i;continue}
+  const loi=events[l.i]?.scene?.loi;
+  if(l.kind==='message'&&LOIS_TEXTE.has(loi)&&joue>=0)sortie.push({i:l.i,apres:joue,loi,kind:l.type==='try'?'try':l.type==='goal'?'goal':'message',equipe:l.equipe,horloge:horloge(l),score:l.scoreApres,texte:nommer(events[l.i].text)});
+ }
+ return sortie.slice(-LOIS_MAX);
+}
 // Le journal du moteur nomme les clubs par leur sigle interne (« FDG ») ; l'écran les nomme par
 // leur identité affichée (presentation.abbr). Le texte montré reprend le sigle affiché.
 function renommeur(equipes){
@@ -503,6 +519,7 @@ function project(model,niveau,lire,options={}){
    if(nature==='essai-transforme'&&typeof lire.transformation==='function'){try{const p=(lire.transformation(l.i,true)?.players||[]).find(x=>x.featured);if(p)buteur={joueur:String(p.id),nom:nomDe(String(p.id))};}catch{buteur=null;}}
    return {horloge:horloge(l),minute:l.minute,kind:l.kind==='message'?(penalty?'try':'goal'):l.kind,nature,equipe:l.equipe,joueur:id,nom:nomDe(id),buteur,score:l.scoreApres,texte:nommer(events[l.i].text)};});
  }
+ direct.lois=loisDuDirect(lignes,events,nommer);
  direct.feuille=feuille;feuilleStats.habillerAdversaire(direct.adversaire,feuille);
  direct.statsRows=[...direct.statsRows,...feuilleStats.lignesEquipe(feuille)];
  const tf=bilan.courant;
@@ -517,7 +534,9 @@ function project(model,niveau,lire,options={}){
    if(plans.some(q=>q.scene.key===scene.key))scene={...scene,key:scene.key+'#'+p.i};
    plans.push({index:p.i,kind:p.kind,duree:p.duree,mouvement:p.mouvement,coupe:p.coupe,horloge:horloge(lignes[p.i]),
     texte:legende(p,nommer(events[p.i].text)),...(ANNONCES[p.kind]?{annonce:ANNONCES[p.kind]}:{}),
-    score:p.kind==='try'?lignes[p.i].scoreAvant.map((n,side)=>n+(side===lignes[p.i].equipe?5:0)):lignes[p.i].scoreApres,scene});
+    score:p.kind==='try'?lignes[p.i].scoreAvant.map((n,side)=>n+(side===lignes[p.i].equipe?5:0)):lignes[p.i].scoreApres,
+    // Cause de l'arrêt (passe en avant…) : la ligne d'état dit « Passe en avant », pas « En-avant ».
+    ...(lignes[p.i].cause?{cause:lignes[p.i].cause}:{}),scene});
   }
   // Position de départ : le dernier plan jouable avant la fenêtre, pour que le premier
   // plan parte d'où l'action se trouvait et non de la scène précédemment affichée.
@@ -530,7 +549,7 @@ function project(model,niveau,lire,options={}){
    duree:tf.duree,debut:tf.debut,fin:tf.fin,
    // Déclenchement (journal de régie et tests ; jamais affiché : il ne doit rien annoncer).
    declenchement:tf.declencheur===undefined?null:{fait:tf.declencheur,importance:tf.importance,seuil:tf.seuil,rattrapage:tf.rattrapage===true},scoreAvant:lignes[plans[0].index].scoreAvant,horlogeDebut:horloge(lignes[tf.debut]),horlogeFin:horloge(lignes[tf.fin]),depart,plans,
-   bandeaux:tf.bandeaux.map(i=>({kind:lignes[i].kind,texte:nommer(events[i].text)}))};
+   bandeaux:tf.bandeaux.map(i=>({i,kind:lignes[i].kind,...(events[i]?.scene?.loi?{loi:events[i].scene.loi}:{}),texte:nommer(events[i].text)}))};
   if(plans.length&&(options.choregraphe===true||options.choregraphe==='entrees')){
    try{
     const c=choregraphier(direct.tempsFort,plans,events,lire);
