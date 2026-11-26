@@ -15,6 +15,7 @@ func _suspendre() -> void:
 	if str(etat.pause) != "PAUSE" and app.waiting and Time.get_ticks_msec() - _reprise_ms < 5000:
 		_reprendre_apres = true
 		_pause_voulue = 1
+		_pause_clic = false
 		return
 	if str(etat.pause) != "PAUSE" or not bool(etat.pause_possible): return
 	_reprendre_apres = true
@@ -23,7 +24,9 @@ func _suspendre() -> void:
 	if app.waiting and str(app.get("last_command")) == "tick" and (app.get("queued_action") as Dictionary).is_empty():
 		app._command("pause", {"paused": true})
 		director._refresh_controls()
-	elif app.waiting: _pause_voulue = 1
+	elif app.waiting or app.closing or app.connection_error:
+		_pause_voulue = 1
+		_pause_clic = false
 	else: director.command("pause", {"paused": true})
 
 ## Relance le match s'il est en pause (et pas fini).
@@ -32,7 +35,9 @@ func _relancer() -> void:
 	var live := _live()
 	if live.is_empty() or live.get("finished", false) or not director._talk().is_empty(): return
 	_reprise_ms = Time.get_ticks_msec()
-	if app.waiting: _pause_voulue = -1
+	if app.waiting or app.closing or app.connection_error:
+		_pause_voulue = -1
+		_pause_clic = false
 	elif live.get("paused", false): director.command("pause", {"paused": false})
 
 # --- Menu du match (Échap) ----------------------------------------------------------

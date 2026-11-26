@@ -608,7 +608,163 @@ func run() -> void:
 		await capture("fenetre-joueur-1280")
 		view.fermer_fenetre()
 		await wait_command()
+	await pause_toujours_cliquable()
 	finir()
+
+## Pause toujours cliquable (Léo, 26/11/2026) : jamais grisée tant que le match n'est pas fini ; si le moteur est occupé,
+## ferme ou injoignable, le clic est mémorisé (rien d'envoyé), appliqué une seule fois dès la réponse, 2e clic = annulation.
+func pause_toujours_cliquable() -> void:
+	var view := surface()
+	if view == null: check(false, "Pause : écran du direct introuvable"); return
+	await until(func(): return not app.waiting, 20000)
+	if bool(app.model.live.get("paused", false)): await command("pause", {"paused": false})
+	await settle(4)
+	# Aucune minute réelle pendant ce test : l'état « moteur occupé » est posé à la main.
+	app.timer.stop()
+	var play: Button = view.play
+	root.gui_release_focus()
+	var en_pause := func() -> bool: return bool(app.model.live.get("paused", false))
+	# Moteur occupé : bouton non grisé, clic mémorisé, appliqué une seule fois à la réponse.
+	app.waiting = true
+	await settle(3)
+	check(not play.disabled, "Pause : non grisée pendant une minute en route")
+	play.pressed.emit()
+	check(view.get("_pause_voulue") == 1 and not en_pause.call(), "Pause : clic pendant une minute en route mémorisé, rien d'envoyé")
+	play.pressed.emit()
+	check(view.get("_pause_voulue") == 0, "Pause : 2e clic avant la réponse annule la demande")
+	play.pressed.emit()
+	app.waiting = false
+	await until(func(): return en_pause.call() and not app.waiting, 20000)
+	check(en_pause.call() and view.get("_pause_voulue") == 0, "Pause : demande mémorisée appliquée dès la réponse, une seule fois")
+	await command("pause", {"paused": false})
+	await settle(4)
+	# Touche Espace : même règle.
+	app.waiting = true
+	await settle(2)
+	touche(KEY_SPACE)
+	await settle(2)
+	check(view.get("_pause_voulue") == 1, "Pause : Espace pendant une minute en route mémorisé")
+	touche(KEY_SPACE)
+	await settle(2)
+	check(view.get("_pause_voulue") == 0, "Pause : 2e Espace annule la demande")
+	touche(KEY_SPACE)
+	await settle(2)
+	app.waiting = false
+	await until(func(): return en_pause.call() and not app.waiting, 20000)
+	check(en_pause.call(), "Pause : Espace mémorisé appliqué à la réponse")
+	await command("pause", {"paused": false})
+	await settle(4)
+	# Moteur qui se ferme ou injoignable : bouton non grisé, rien d'envoyé, pas de plantage.
+	for etat in ["closing", "connection_error"]:
+		app.set(etat, true)
+		await settle(4)
+		check(not play.disabled, "Pause : non grisée pendant %s" % etat)
+		play.pressed.emit()
+		await settle(4)
+		check(view.get("_pause_voulue") == 1 and not en_pause.call(), "Pause : %s, clic mémorisé sans rien envoyer (%s %s %s)" % [etat, str(view.get("_pause_voulue")), str(en_pause.call()), str(app.waiting)])
+		app.set(etat, false)
+		await until(func(): return en_pause.call() and not app.waiting, 20000)
+		check(en_pause.call(), "Pause : %s terminé, demande appliquée" % etat)
+		await command("pause", {"paused": false})
+		await settle(4)
+	# Pause déjà demandée par Relire (ou une fenêtre) pendant une minute en route : un clic ne la défait jamais.
+	app.waiting = true
+	view.set("_pause_voulue", 1)
+	view.set("_pause_clic", false)
+	play.pressed.emit()
+	check(view.get("_pause_voulue") == 1, "Pause : un clic ne défait pas la pause demandée par Relire")
+	app.waiting = false
+	await until(func(): return en_pause.call() and not app.waiting, 20000)
+	check(en_pause.call(), "Pause : la pause de Relire reste appliquée après le clic")
+	await command("pause", {"paused": false})
+	await settle(4)
+	# Causerie à l'écran : le clic est mémorisé (sans phrase : sablier), appliqué une seule fois quand elle se termine.
+	var matchTalks: Dictionary = app.model.get("clubLife", {}).get("matchTalks", {}) if app.model.get("clubLife") is Dictionary else {}
+	var scene_avant: Variant = matchTalks.get("scene")
+	matchTalks["scene"] = {"key": "test"}
+	await settle(2)
+	check(not play.disabled, "Pause : non grisée pendant une causerie")
+	play.pressed.emit()
+	await settle(3)
+	check(view.get("_pause_voulue") == 1 and not en_pause.call() and play.text.contains("⧗") and play.tooltip_text.is_empty(), "Pause : causerie, clic mémorisé (sablier, aucune phrase), rien d'envoyé")
+	matchTalks["scene"] = scene_avant
+	if scene_avant == null: matchTalks.erase("scene")
+	await until(func(): return en_pause.call() and not app.waiting, 20000)
+	check(en_pause.call() and view.get("_pause_voulue") == 0 and not play.text.contains("⧗"), "Pause : causerie finie, pause appliquée une seule fois")
+	await command("pause", {"paused": false})
+	await settle(4)
+	# Action encore à l'écran alors que le moteur est déjà arrêté : demande mémorisée, aucune reprise involontaire.
+	var regie_vue: Node = view.regie
+	var etat_regie: Variant = regie_vue.etat
+	var live_modele: Dictionary = app.model.live
+	live_modele["paused"] = true
+	regie_vue.etat = regie_vue.JEU
+	await settle(1)
+	check(not bool(view._etat_bandeau().pause_possible) and not play.disabled, "Pause : action à l'écran, moteur arrêté : bouton non grisé")
+	play.pressed.emit()
+	check(view.get("_pause_voulue") == 1, "Pause : action à l'écran, clic mémorisé")
+	regie_vue.etat = etat_regie
+	await settle(4)
+	check(view.get("_pause_voulue") == 0 and bool(app.model.live.get("paused", false)) and not app.waiting, "Pause : action finie, match déjà en pause, rien ne change (pas de reprise)")
+	live_modele["paused"] = false
+	await settle(2)
+	# Clic pendant la minute qui finit le match : la demande tombe avec le match (rien d'envoyé, pas de sablier).
+	app.waiting = true
+	await settle(2)
+	play.pressed.emit()
+	check(view.get("_pause_voulue") == 1, "Pause : clic mémorisé avant la fin du match")
+	app.last_command = ""
+	var live_fin: Dictionary = app.model.live
+	live_fin["finished"] = true
+	app.waiting = false
+	await settle(4)
+	check(view.get("_pause_voulue") == 0 and not play.text.contains("⧗") and str(app.last_command) == "" and not app.waiting, "Pause : match fini à la réponse, demande effacée, aucune commande envoyée")
+	live_fin["finished"] = false
+	await settle(2)
+	# Coup de sifflet / relecture : action encore à l'écran alors que le moteur est déjà arrêté.
+	var etat_arret := LiveView.etat_bandeau({"paused": true}, true, true, false)
+	check(not bool(etat_arret.pause_possible), "Pause : état « déjà arrêté » reconnu")
+	view._poser_pause(etat_arret)
+	view.director._refresh_controls()
+	check(not play.disabled, "Pause : non grisée pendant un arrêt de jeu ou une relecture")
+	view._poser_pause(view._etat_bandeau())
+	# Préparation : même règle (preparation_match_context.gd).
+	var faux := GDScript.new()
+	faux.source_code = "extends Control
+var waiting := false
+var closing := false
+var connection_error := false
+var model := {\"live\": {\"minute\": 10}}
+var sent: Array = []
+func _command(c: String, p: Dictionary = {}) -> bool:
+	sent.append([c, p])
+	return true
+"
+	faux.reload()
+	var faux_app: Control = faux.new()
+	var contexte: Node = load("res://ui/preparation_match_context.gd").new()
+	contexte.app = faux_app
+	contexte.pause_button = Button.new()
+	contexte.focus_fallback = Button.new()
+	contexte.consignes = Control.new()
+	root.add_child(contexte)
+	for etat in ["waiting", "closing", "connection_error"]:
+		faux_app.set(etat, true)
+		contexte._sync_actions(true)
+		check(not contexte.pause_button.disabled, "Préparation : Pause non grisée (%s)" % etat)
+		contexte.pause_match()
+		contexte.pause_match()
+		contexte.pause_match()
+		check(faux_app.sent.is_empty() and contexte.pause_wanted, "Préparation : clic mémorisé sans envoi (%s)" % etat)
+		faux_app.set(etat, false)
+		contexte._process(0.0)
+		contexte._process(0.0)
+		check(faux_app.sent.size() == 1 and not contexte.pause_wanted, "Préparation : appliquée une seule fois à la réponse (%s)" % etat)
+		faux_app.sent.clear()
+	contexte.pause_match()
+	check(faux_app.sent.size() == 1, "Préparation : moteur libre, envoi direct")
+	contexte.free()
+	faux_app.free()
 
 func capture(nom: String) -> void:
 	if DisplayServer.get_name() == "headless": return
