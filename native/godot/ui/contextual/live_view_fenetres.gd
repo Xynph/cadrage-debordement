@@ -18,7 +18,12 @@ func _suspendre() -> void:
 		return
 	if str(etat.pause) != "PAUSE" or not bool(etat.pause_possible): return
 	_reprendre_apres = true
-	if app.waiting: _pause_voulue = 1
+	# Minute du direct en route (la 3D attend la suite d'un temps fort) : la pause prend la file du jeu et part
+	# dans la même réponse, avant que la minute suivante ne se lance derrière la page ou la fenêtre.
+	if app.waiting and str(app.get("last_command")) == "tick" and (app.get("queued_action") as Dictionary).is_empty():
+		app._command("pause", {"paused": true})
+		director._refresh_controls()
+	elif app.waiting: _pause_voulue = 1
 	else: director.command("pause", {"paused": true})
 
 ## Relance le match s'il est en pause (et pas fini).

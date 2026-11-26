@@ -20,6 +20,15 @@ des équipes qui ne dégagent jamais de leurs 22.
 - À l'écran : avec le chorégraphe éteint (défaut), un coup de pied de jeu est montré au niveau « Match complet » ; aux autres
   niveaux, il ne devient un temps fort que s'il dépasse 35 m ou tombe dans les 22 adverses après 20 m (règles inchangées de
   `native/engine/match-highlights.cjs`), ce qui arrive rarement avec des coups de pied de 15 à 35 m.
+  **26/11 (option B de Léo)** : un coup de pied disputé gagné (chandelle reprise ou relâchée par le receveur, rasant,
+  par-dessus ou croisé récupéré par l'équipe qui botte) devient un temps fort court à tous les niveaux en direct
+  (`piedGagne`, `PIED_COURT` : un plan d'amorce, le coup de pied, deux plans après). 200 matchs Monde, niveau dynamique :
+  0,68 coup de pied gagné par match, montrés 0,10 → 0,68 ; temps forts avec un coup de pied 0,93 → 1,46 par match ;
+  temps forts 15,8 → 16,3 ; tous les essais montrés. Test : `tests/match-temps-forts-pied.cjs`.
+  Légendes : l'en-avant qui suit un coup de pied pris par l'adversaire nomme le receveur (« X commet un en-avant à la
+  réception ») ; touche à moins de 10 m gagnés hors de ses 22 : « trouve la touche à N mètres de la ligne adverse » ; coup de
+  pied en touche de l'équipe qui a l'avantage : « Coup de pied en touche pendant l'avantage : retour à… » ; journal 3D :
+  un fait « geste ; issue » trop long raccourcit le geste et garde le receveur entier.
 - 50:22 rares ; ballons qui roulent dans l'en-but : renvoi sur la ligne d'essai (aplati par la défense) ou aux 22 m (mort).
 - Plan de jeu (occupation, jeu au large), qualité des botteurs, pluie et score après la 60e pèsent sur la décision de taper.
   En fin de match, l'équipe menée de 15 points ou moins ne dégage plus de son camp, sauf depuis ses 22.
