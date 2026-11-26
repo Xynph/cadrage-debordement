@@ -44,36 +44,34 @@ test('Chaque fait d’en-but nomme l’équipe fautive (vrais matchs du moteur)'
   assert.deepEqual(manques.slice(0, 5), [], `${manques.length} faits d’en-but sans nom d’équipe`);
 });
 
-test('Le bandeau des temps forts (projection du pont) nomme l’équipe fautive', { timeout: 1800000 }, () => {
-  // Matchs de la carrière du film (scripts/match-filme.ps1 : club 102), graines 4244 et 4245, joués en entier par le vrai
-  // moteur : leurs plans d'en-but (porteur tenu, coup de pied aplati) sont projetés dans les temps forts « dynamique ».
+test('Le bandeau des temps forts (projection du pont) nomme l’équipe fautive', { timeout: 170000 }, () => {
+  // Match de la carrière du film (scripts/match-filme.ps1 : club 102, cadence hebdomadaire), graine 4247, joué par le vrai
+  // moteur : la simulation s'arrête dès que deux plans d'en-but (porteur tenu, coup de pied aplati…) sont projetés dans les
+  // temps forts « dynamique » (aux minutes 11 et 20 de cette graine), pour rester sous la limite de 180 s des suites en CI.
   const vus = [], manques = [];
-  for (const graine of [4244, 4245]) {
-    const jeu = ouvrir({ seed: graine });
-    try {
-      let model = jusquAuMatch(jeu, creer(jeu, 102));
-      if (!model.selection.valid) model = jeu.call('auto_lineup');
-      if (!model.selection.valid) model = jeu.call('promote_cover', { confirmed: true });
-      model = skipMatchTalk(jeu.call('begin_match'), jeu.call);
-      const lire = live => {
-        for (const p of live.direct?.tempsFort?.plans || []) {
-          const fait = live.events[p.index]?.scene;
-          const cle = graine + ':' + p.index;
-          if (fait?.kind !== 'ingoal' || !CAUSES.includes(fait.cause) || vus.includes(cle)) continue;
-          vus.push(cle);
-          const abbr = String(live.teams[fait.team]?.abbr || '');
-          // Le bandeau dit l'équipe : le sigle de son club figure dans la légende du plan.
-          if (!abbr || !p.texte.includes(abbr)) manques.push(`${fait.cause} équipe ${fait.team} (${abbr}) : ${p.texte}`);
-        }
-      };
-      for (let ticks = 0; ticks < 200 && !model.live.finished; ticks++) {
-        model = skipMatchTalk(model, jeu.call);
-        if (model.live.paused) model = jeu.call('pause', { paused: false });
-        model = jeu.call('tick', { minute: true, temps_forts: 'dynamique' });
-        lire(model.live);
+  const jeu = ouvrir({ seed: 4247, hebdomadaire: true });
+  try {
+    let model = jusquAuMatch(jeu, creer(jeu, 102));
+    if (!model.selection.valid) model = jeu.call('auto_lineup');
+    if (!model.selection.valid) model = jeu.call('promote_cover', { confirmed: true });
+    model = skipMatchTalk(jeu.call('begin_match'), jeu.call);
+    const lire = live => {
+      for (const p of live.direct?.tempsFort?.plans || []) {
+        const fait = live.events[p.index]?.scene;
+        if (fait?.kind !== 'ingoal' || !CAUSES.includes(fait.cause) || vus.includes(p.index)) continue;
+        vus.push(p.index);
+        const abbr = String(live.teams[fait.team]?.abbr || '');
+        // Le bandeau dit l'équipe : le sigle de son club figure dans la légende du plan.
+        if (!abbr || !p.texte.includes(abbr)) manques.push(`${fait.cause} équipe ${fait.team} (${abbr}) : ${p.texte}`);
       }
-    } finally { jeu.fermer(); }
-  }
+    };
+    for (let ticks = 0; ticks < 200 && !model.live.finished && vus.length < 2; ticks++) {
+      model = skipMatchTalk(model, jeu.call);
+      if (model.live.paused) model = jeu.call('pause', { paused: false });
+      model = jeu.call('tick', { minute: true, temps_forts: 'dynamique' });
+      lire(model.live);
+    }
+  } finally { jeu.fermer(); }
   assert.ok(vus.length >= 2, `assez de plans d’en-but projetés (${vus.length})`);
   assert.deepEqual(manques, [], `${manques.length} légendes d’en-but sans nom d’équipe sur ${vus.length}`);
 });
