@@ -28,8 +28,9 @@ static func etat_du_plan(plan: Dictionary, equipes: Array, kind: String = "") ->
 	var scene: Variant = plan.get("scene")
 	if not scene is Dictionary: return "Le match"
 	var camp: Variant = scene.get("possession", scene.get("team", -1))
-	# En-avant : l'équipe fautive (scene.team du moteur), pas la possession ; sans elle, « En-avant » seul.
-	if (kind if not kind.is_empty() else str(plan.get("kind", ""))) == "hand-fault": camp = scene.get("team", -1)
+	# En-avant : l'équipe fautive, lue sur le fait du moteur (plan.equipe = scene.team du fait, match-direct.cjs) ;
+	# la scène 3D normalisée n'a que la possession (vérificateur de #1319 : « En-avant » sans équipe en 3D).
+	if (kind if not kind.is_empty() else str(plan.get("kind", ""))) == "hand-fault": camp = plan.get("equipe", scene.get("team", -1))
 	if not (camp is int or camp is float): camp = -1
 	var ballon: Variant = scene.get("ball")
 	var x: float = float(ballon.x) if ballon is Dictionary and (ballon.get("x") is float or ballon.get("x") is int) else NAN

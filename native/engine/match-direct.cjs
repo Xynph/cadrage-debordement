@@ -509,7 +509,8 @@ function project(model,niveau,lire,options={}){
    // Deux événements identiques (même minute, texte et position : touches répétées après pénaltouches)
    // donnent la même clé : on la rend unique par l'index pour que chaque plan soit une scène distincte.
    if(plans.some(q=>q.scene.key===scene.key))scene={...scene,key:scene.key+'#'+p.i};
-   plans.push({index:p.i,kind:p.kind,duree:p.duree,mouvement:p.mouvement,coupe:p.coupe,horloge:horloge(lignes[p.i]),
+   // equipe : l'équipe du fait du moteur (scene.team : fautive pour un en-avant) ; la scène 3D n'a que la possession.
+   plans.push({index:p.i,kind:p.kind,equipe:lignes[p.i].equipe,duree:p.duree,mouvement:p.mouvement,coupe:p.coupe,horloge:horloge(lignes[p.i]),
     texte:legende(p,nommer(events[p.i].text)),...(ANNONCES[p.kind]?{annonce:ANNONCES[p.kind]}:{}),
     score:p.kind==='try'?lignes[p.i].scoreAvant.map((n,side)=>n+(side===lignes[p.i].equipe?5:0)):lignes[p.i].scoreApres,scene});
   }
