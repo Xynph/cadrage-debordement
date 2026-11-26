@@ -401,6 +401,42 @@ func run() -> void:
 	else: check(false, "Bouton Relire du tiroir absent ou grisé")
 	if view.drawer.visible: view._fermer_tiroir()
 
+	# 4 ter bis. « Relire » pressé PENDANT une minute du direct (le moteur n'a pas encore répondu à la minute, la file
+	# du jeu est vide) : la pause part dans la même réponse que la minute, avant qu'une autre minute ne démarre derrière
+	# la page. Course rejouée sans attente : la minute et le clic partent dans la même image.
+	if app.model.live.get("paused", false): await command("pause", {"paused": false})
+	view._toggle_drawer("Journal")
+	await settle(6)
+	await until(func(): return not app.waiting, 20000)
+	var relire_course: Button = view.get("journal").find_child("MatchJournalReview", true, false)
+	check(relire_course != null and not relire_course.disabled and not bool(app.model.live.get("paused", false)), "Relire en pleine minute : bouton prêt, match en cours")
+	if relire_course != null and not relire_course.disabled:
+		var reponses: Array = []
+		var ecoute := func(valeur: Dictionary) -> void:
+			var direct: Dictionary = valeur.get("live", {}) if valeur.get("live") is Dictionary else {}
+			reponses.append({"derniere": str(app.last_command), "attend": bool(app.waiting), "pause": bool(direct.get("paused", false)), "minute": int(direct.get("minute", -1))})
+		app.bridge.model_changed.connect(ecoute)
+		var minute_depart := int(app.model.live.get("minute", -1))
+		var envoyee: bool = app._command("tick", {"minute": true, "temps_forts": "cles"})
+		var file_vide: bool = envoyee and app.waiting and str(app.last_command) == "tick" and (app.queued_action as Dictionary).is_empty()
+		check(file_vide, "Relire en pleine minute : une minute du direct est en route, file du jeu vide")
+		relire_course.pressed.emit()
+		await until(func(): return reponses.size() >= 2 and not app.waiting, 30000)
+		await settle(30)
+		app.bridge.model_changed.disconnect(ecoute)
+		var premiere: Dictionary = reponses[0] if reponses.size() > 0 else {}
+		var seconde: Dictionary = reponses[1] if reponses.size() > 1 else {}
+		check(bool(premiere.get("attend", false)) and str(premiere.get("derniere", "")) == "pause", "Relire en pleine minute : la pause part dans la même réponse que la minute (%s)" % str(premiere))
+		check(bool(seconde.get("pause", false)) and bool(app.model.live.get("paused", false)), "Relire en pleine minute : match en pause dès la réponse suivante (%s)" % str(seconde))
+		check(reponses.size() == 2 and str(app.last_command) == "pause" and not app.waiting, "Relire en pleine minute : aucune nouvelle minute derrière la page (%d réponses, dernière commande %s)" % [reponses.size(), str(app.last_command)])
+		check(int(app.model.live.get("minute", -1)) == int(premiere.get("minute", -2)) and int(premiere.get("minute", -2)) >= minute_depart, "Relire en pleine minute : la minute n'avance plus après la pause")
+		page = view.get("page")
+		check(page != null and page.visible and page.find_child("ActionReviewPage", true, false) != null, "Relire en pleine minute : page de relecture ouverte")
+		var retour_course: Button = page.find_child("MatchPageBack", true, false) if page != null else null
+		if retour_course != null: retour_course.pressed.emit()
+		await wait_command()
+	if view.drawer.visible: view._fermer_tiroir()
+
 	# 4 quater. Bannière d'essai : notre marqueur est un lien (souligné, fiche au clic) ; un adversaire reste du texte.
 	if app.model.live.get("paused", false): await command("pause", {"paused": false})
 	var morceaux := nom_notre.split(" ")
