@@ -160,7 +160,23 @@ func places_loi_8() -> void:
 		check(absf(place.distance_to(marque) - ApresEssai.ELAN) < 0.01 and (place - marque).normalized().dot(axe) > 0.999, "Camp %d : buteur à %.1f m derrière le ballon, dans l'axe des poteaux" % [camp, ApresEssai.ELAN])
 		check(Vector2(float(elan.ball.x), float(elan.ball.y)).distance_to(marque) < 0.01, "Camp %d : ballon posé sur la marque pendant l'élan" % camp)
 		check(JSON.stringify(moteur) == avant, "Camp %d : la scène du moteur n'est pas modifiée" % camp)
-
+		# Charge (loi 8) : dès la course d'élan, les quinze défenseurs sortent de leur en-but vers le
+		# ballon, sans le rejoindre ; personne d'autre ne bouge (match filmé du 25/11 : défense figée
+		# sur sa ligne, ballon manqué retombé parmi elle).
+		var charge := ApresEssai.charge(elan)
+		var sortis := 0
+		var immobiles := 0
+		var places_avant := {}
+		for joueur: Dictionary in elan.players: places_avant[str(joueur.id)] = Vector2(float(joueur.x), float(joueur.y))
+		for joueur: Dictionary in charge.players:
+			var at := Vector2(float(joueur.x), float(joueur.y))
+			var avant_charge: Vector2 = places_avant[str(joueur.id)]
+			if int(joueur.side) != camp:
+				var devant := (but - at.x) * sens
+				if devant >= 4.0 and at.distance_to(marque) >= ApresEssai.DISTANCE_TRANSFORMATION * 0.45 and at.distance_to(marque) < avant_charge.distance_to(marque) - 3.0: sortis += 1
+			elif at.distance_to(avant_charge) < 0.01: immobiles += 1
+		check(sortis == 15, "Camp %d : les quinze défenseurs chargent hors de leur en-but vers le ballon, sans l'atteindre (%d)" % [camp, sortis])
+		check(immobiles == 15, "Camp %d : la charge ne déplace que la défense (%d sur 15)" % [camp, immobiles])
 
 ## Vol d'un tir au but : au-dessus de la barre à la ligne de but, retombé dans l'en-but, assez court
 ## pour que la régie annonce le résultat après le passage du ballon.
@@ -375,6 +391,10 @@ func tir_dans_l_axe(nom: String, mode: String, camp: int, essai_y: float, penali
 		check(dans_le_champ(view, visibles[libelle], COUVERT_HAUT, 1.0 - COUVERT_BAS), "%s : %s à l'image, hors du bandeau et de la légende" % [nom, libelle])
 	# Élan puis frappe : le buteur s'élance, le ballon vole vers les perches.
 	var elan := ApresEssai.elan(tir, ApresEssai.FRAPPE)
+	# Transformation : la défense charge dès la course d'élan, comme dans la régie (loi 8).
+	if not penalite.is_finite():
+		elan = ApresEssai.charge(elan)
+		tir = ApresEssai.charge(tir)
 	elan.key = pret.key
 	for k in 18:
 		if k == 0: view.apply_frame(image(elan))
@@ -403,6 +423,13 @@ func tir_dans_l_axe(nom: String, mode: String, camp: int, essai_y: float, penali
 	check(hors_champ == 0, "%s : le ballon reste à l'image pendant tout le vol (%d images dehors sur %d)" % [nom, hors_champ, images])
 	check(poteaux_hors == 0, "%s : les deux poteaux restent à l'image pendant le vol (%d)" % [nom, poteaux_hors])
 	check(a_la_ligne > View.BARRE_Y, "%s : le ballon passe au-dessus de la barre (%.2f m)" % [nom, a_la_ligne])
+	# Ballon retombé : le plan tient encore quelques secondes ; le buteur revient à l'image avec les
+	# poteaux (match filmé du 25/11 : 2 à 3 s de défenseurs et d'un ballon au sol, sans buteur).
+	for k in 30: view._process(STEP)
+	var pied_apres: Vector3 = (view._actors[buteur].node as Node3D).position
+	check(dans_le_champ(view, pied_apres + Vector3.UP * 1.8, COUVERT_HAUT, 1.0 - COUVERT_BAS) and dans_le_champ(view, pied_apres + Vector3.UP * 0.1, COUVERT_HAUT, 1.0 - COUVERT_BAS), "%s : le buteur revient à l'image une fois le ballon retombé" % nom)
+	for z: float in [-View.POTEAUX_Z, View.POTEAUX_Z]:
+		check(dans_le_champ(view, Vector3(poteaux_x, 0.3, z)), "%s : poteau %+.1f à l'image une fois le ballon retombé" % [nom, z])
 	mesures[nom] = {"recul_m": snappedf(recul, 0.01), "camera": [snappedf(camera.global_position.x, 0.1), snappedf(camera.global_position.y, 0.1), snappedf(camera.global_position.z, 0.1)],
 		"vol_s": snappedf(duree, 0.01), "ballon_ligne_m": snappedf(a_la_ligne, 0.01)}
 	# Plan suivant : retour à la caméra de la tribune, d'une coupe.

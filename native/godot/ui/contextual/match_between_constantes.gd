@@ -93,7 +93,9 @@ const POSTES_COURTS := {"pilier gauche": "PG", "talonneur": "TA", "pilier droit"
 
 ## Libellés d'arrêt de jeu de la ligne d'état (fait montré, avec l'équipe qu'il concerne).
 const ETATS_ARRET := {"try": "Essai — %s", "transformation": "Transformation — %s", "goal": "Tir au but — %s", "miss": "Tir au but — %s",
-	"lineout": "Touche pour %s", "scrum": "Mêlée pour %s"}
+	"lineout": "Touche pour %s", "scrum": "Mêlée pour %s",
+	# Match filmé du 25/11 : pendant l'en-avant ou la pénalité, le bandeau disait encore « X a le ballon… ».
+	"penalty": "Pénalité pour %s", "hand-fault": "En-avant"}
 
 ## Note de départ du moteur (match-direct.cjs, NOTE_DEPART) : titulaire au coup d'envoi, remplaçant à son entrée.
 const NOTE_DEPART := 6.5
