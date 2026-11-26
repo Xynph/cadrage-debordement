@@ -212,7 +212,7 @@ func degager(actors: Dictionary, delta: float, porteur: String = "", ballon: Nod
 		var origine := model.position
 		model.global_position += ecart
 		for passe in PASSES_DEGAGEMENT:
-			var pousse := _poussee(rig, voisins)
+			var pousse := _poussee(rig, voisins, id != porteur)
 			if pousse.is_zero_approx():
 				break
 			model.global_position += pousse
@@ -560,8 +560,7 @@ static func _hors_des_couches(jambes: Array, decal: Vector3, corps: Array, racin
 ## Jambe en travers d'un membre couché (axe `axe`) : sortie horizontale de côté, perpendiculaire à ce membre,
 ## du côté de `repli` (pieds du joueur debout ou racine, depuis le point de contact). 26/11/2026 (sonde du
 ## ruck) : sortie le long de la cuisse quand les pieds étaient dans son axe, écarts de 0,3 à 0,6 m et tibia
-## encore 9 à 18 cm dedans. Séparation seulement : le dégagement (`_poussee`, avant elle) garde sa sortie
-## (porteur qui sautait de côté en une image, ballon à 30 m/s dans godot-match-choregraphie).
+## encore 9 à 18 cm dedans. Séparation et dégagement (sauf porteur du ballon, voir `_poussee`).
 static func _de_cote(repli: Vector3, axe: Vector3) -> Vector3:
 	var d := Vector3(repli.x, 0.0, repli.z)
 	var a := Vector3(axe.x, 0.0, axe.z)
@@ -576,7 +575,9 @@ static func _de_cote(repli: Vector3, axe: Vector3) -> Vector3:
 
 
 ## Plus forte poussée horizontale (monde) qui sort une jambe de `rig` des corps couchés `corps`.
-static func _poussee(rig: Skeleton3D, corps: Array) -> Vector3:
+## `de_cote` : jambe en travers d'un membre couché sortie de côté (`_de_cote`) ; faux pour le porteur du ballon
+## (il sautait de côté en une image avec lui : ballon à 30 m/s dans godot-match-choregraphie).
+static func _poussee(rig: Skeleton3D, corps: Array, de_cote: bool = false) -> Vector3:
 	var jambes := _volumes(rig, JAMBES_DEBOUT)
 	var pire := 0.0
 	var vers := Vector3.ZERO
@@ -601,6 +602,8 @@ static func _poussee(rig: Skeleton3D, corps: Array) -> Vector3:
 				if d.length() < 0.02:
 					d = rig.global_position - autre.global_position
 					d.y = 0.0
+				if de_cote and (Vector3(r[0].x, 0.0, r[0].z) - Vector3(r[1].x, 0.0, r[1].z)).length() < 0.02:
+					d = _de_cote(d, (s2[1] as Vector3) - (s2[0] as Vector3))
 				if d.length() < 0.001:
 					d = Vector3.RIGHT
 				pire = p
