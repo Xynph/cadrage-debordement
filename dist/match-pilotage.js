@@ -176,20 +176,31 @@ function setConsigneAdverse(l,axe,valeur){
 //   (jouer la montre) ou `tout` secondes de moins (jouer vite) : le chrono en secondes (CHRONO) rend le temps réel ;
 //   « Tout tenter » donne `toutAvantage` d'avantage en attaque (0,025 avant), pour plus de points marqués comme encaissés ;
 // - touche : le lancer « Sûr » est gagné plus souvent (`sure`, 0,06 avant) mais donne un ballon lent, l'action suivante
-//   perd `lente` d'avantage ; le lancer au fond « Risqué » gagné donne une plateforme de `fond` (0,05 avant) ;
+//   perd `lente` d'avantage ; le lancer au fond « Risqué » gagné donne une plateforme de `fond` (0,05 avant) et
+//   `metres` mètres de plus au porteur suivant (le fond d'alignement lance le jeu plus loin) ;
 // - maul : sur une pénalité hors tir facile, « Souvent » ajoute `touche` à la part de pénaltouche du capitaine (règle
 //   du championnat, opposition.js), « Jamais » la multiplie par `jamais` ; le ballon porté se tente depuis une touche
 //   gagnée à moins de `zone` m de leur ligne (23 m sans consigne) ;
 // - mêlée : fréquence des pénalités de mêlée ×`pousser` (1,5 avant) ou ×`vite` (0,65 avant).
 // Réglages de jeu, mesurés dans tests/match-consignes-direct.cjs (mêmes graines, consigne posée à la 50e).
+// `ordinateur` : retenue des bancs de l'ordinateur (matchs IA contre IA et banc adverse du match du joueur). Leurs
+// règles posent « Occuper » (devant de 10 points au plus dès la 65e), « Garder » (menés dès la 55e), « Jouer la montre »
+// et « Tout tenter » (dès la 70e) à chaque match serré : avec la pleine force du manager, la Premiership perdait 3 à 4
+// points de matchs à 7 points ou moins (40,2 → 37,0 % sur 6 graines, calage réel ~42 %). Ces deux axes gardent donc
+// chez l'ordinateur leur force d'avant le lot K1 : `pied` faux = ancien facteur multiplicatif (pilotageKick, sans
+// porteur poussé en touche) ; `fin` = début, secondes et avantage d'avant. Le manager garde la pleine force.
 const CONSIGNES_POIDS=Object.freeze({
  pied:{occuper:.4,plan:1.12,garder:.4},
  relance:{degager:.4,relancer:.5},
  fin:{debut:60,montre:12,tout:-6,toutAvantage:.04},
- touche:{sure:.08,lente:.06,fond:.1},
+ touche:{sure:.08,lente:.06,fond:.1,metres:5},
  maul:{touche:.25,jamais:.3,zone:{souvent:30,jamais:15}},
- melee:{pousser:1.75,vite:.5}
+ melee:{pousser:1.75,vite:.5},
+ ordinateur:{pied:false,fin:{debut:70,montre:0,tout:0,toutAvantage:.025}}
 });
+// Côté joué par l'ordinateur (tout banc qui n'est pas celui du manager, délégation au staff comprise côté manager).
+const coteOrdinateur=(l,side)=>!!l.pilotage?.cotes||side!==l.userSide;
+const poidsFin=(l,side)=>coteOrdinateur(l,side)?CONSIGNES_POIDS.ordinateur.fin:CONSIGNES_POIDS.fin;
 // Rôles du poste et consignes individuelles du manager (native/engine/match-arrets.cjs, CDMatchArrets.effets) :
 // absents de la version web et des matchs sans pilotage (effet nul).
 const pilIndiv=()=>typeof CDMatchArrets!=='undefined'?CDMatchArrets.effets:null;
@@ -232,7 +243,7 @@ function pilotageEdge(l,side,kind){
  const y=pilConsigne(l,side,'rythme'),r=pilConsigne(l,1-side,'rucks'),d=pilConsigne(l,1-side,'discipline'),p=l.pilotage.plateforme;
  const rel=enCampPropre(l,side)?pilConsigne(l,side,'relance'):null,f=finDeMatch(l,side),c=pilConsigne(l,side,'cible');
  return (y==='rapide'?.02:y==='lent'?-.02:0)+(r==='agressive'?-.012:r==='prudente'?.012:0)+(d==='stricte'?.012:d==='limite'?-.008:0)+(p&&p.side===side&&l.minute-p.minute<=1?(p.lente?-CONSIGNES_POIDS.touche.lente:p.fond?CONSIGNES_POIDS.touche.fond:.05):0)
-  +(rel==='relancer'?.022:0)+(f==='montre'?-.012:f==='tout'?CONSIGNES_POIDS.fin.toutAvantage:0)
+  +(rel==='relancer'?.022:0)+(f==='montre'?-.012:f==='tout'?poidsFin(l,side).toutAvantage:0)
   // Attaquer leur aile la plus faible : voir AILE_FAIBLE.
   +(c==='aile'?aileEdge(l,side):0)
   // Consignes individuelles et rôles (attaque, ou défense du camp d'en face).
@@ -240,7 +251,7 @@ function pilotageEdge(l,side,kind){
 }
 // Notre camp (là où « Relance » joue) et fin de match (dès la 70e) pour le côté `side`.
 function enCampPropre(l,side){return side===0?l.territory<50:l.territory>50}
-function finDeMatch(l,side){const f=pilConsigne(l,side,'finDeMatch');return l.minute>=CONSIGNES_POIDS.fin.debut&&f&&f!=='normal'?f:null}
+function finDeMatch(l,side){const f=pilConsigne(l,side,'finDeMatch');return f&&f!=='normal'&&l.minute>=poidsFin(l,side).debut?f:null}
 // Effet d'un point faible visé : plein au début, nul 30 minutes après (l'adversaire corrige).
 function cibleForce(l,side){const d=side===l.userSide?l.pilotage.depuis?.cible:null;return Number.isFinite(d)?Math.max(0,1-(l.minute-d)/30):1}
 // « Leur aile faible » (19/11/2026). Avant : l'ailier le plus faible comparé à toute la ligne (avants compris, meilleurs
@@ -273,7 +284,7 @@ function aileEdge(l,side){const f=aileForce(l,side);return aileFaible(l,1-side)*
 // Mètres en plus d'un temps de jeu réussi par `side` (tactical-plans.js, carryGain).
 function pilotageGain(l,side){
  if(!pilotageActif(l))return 0;
- const indiv=pilIndiv()?.gain(l,side)??0;
+ const p=l.pilotage.plateforme,indiv=(pilIndiv()?.gain(l,side)??0)+(p&&p.fond&&p.side===side&&l.minute-p.minute<=1?CONSIGNES_POIDS.touche.metres:0);
  if(pilConsigne(l,side,'cible')!=='aile')return indiv;
  const A=AILE_FAIBLE,f=aileForce(l,side);return indiv+(aileFaible(l,1-side)>0?Math.round(A.metres*f):0);
 }
@@ -282,10 +293,10 @@ function pilotageKick(l,side){
  return (k==='moins'?.55:k==='plus'?1.55:1)*(y==='lent'?1.1:1)*(rel==='degager'?1.4:rel==='relancer'?.6:1)*(f==='montre'?.6:f==='tout'?.8:1)*(pilIndiv()?.kick(l,side)??1);
 }
 // Probabilité de taper dans le jeu courant (tactical-plans.js, openKickProbability) : `p` = celle du plan de jeu, zone,
-// score et pluie compris. Jeu au pied réaliste : voir CONSIGNES_POIDS ; ancien jeu au pied : facteur pilotageKick d'avant.
+// score et pluie compris. Jeu au pied réaliste : voir CONSIGNES_POIDS ; ancien jeu au pied et ordinateur retenu : facteur pilotageKick d'avant.
 function pilotageKickProb(l,side,p){
  if(!pilotageActif(l))return p;
- if(typeof jeuPiedRules!=='function'||!jeuPiedRules(l))return p*pilotageKick(l,side);
+ if(typeof jeuPiedRules!=='function'||!jeuPiedRules(l)||(!CONSIGNES_POIDS.ordinateur.pied&&coteOrdinateur(l,side)))return p*pilotageKick(l,side);
  const P=CONSIGNES_POIDS,k=pilConsigne(l,side,'piedJeu'),y=pilConsigne(l,side,'rythme'),rel=enCampPropre(l,side)?pilConsigne(l,side,'relance'):null,f=finDeMatch(l,side);
  const w=1-(1-(k==='plus'?P.pied.occuper:0))*(1-(rel==='degager'?P.relance.degager:0));
  let q=p;
@@ -307,14 +318,14 @@ function pilotagePenaltouche(l,side,c){
 // Part des coups de pied perdus (jeuAuPiedPerdu, restarts.js) encore tapés par `side` : en gardant le ballon en main
 // (« Garder », « Relancer » dans notre camp), le ballon se perd plutôt au contact, porteur poussé en touche (même terrain).
 function pilotageGarde(l,side){
- if(!pilotageActif(l))return 1;
+ if(!pilotageActif(l)||(!CONSIGNES_POIDS.ordinateur.pied&&coteOrdinateur(l,side)))return 1;
  const P=CONSIGNES_POIDS,k=pilConsigne(l,side,'piedJeu'),rel=enCampPropre(l,side)?pilConsigne(l,side,'relance'):null;
  return (k==='moins'?P.pied.garder:1)*(rel==='relancer'?P.relance.relancer:1);
 }
 // Secondes ajoutées à une action jouée ballon en main par `side` (matchflow.js, chronoMinute) : fin de match.
 function pilotageDuree(l,side){
  if(!pilotageActif(l))return 0;
- const f=finDeMatch(l,side);return f==='montre'?CONSIGNES_POIDS.fin.montre:f==='tout'?CONSIGNES_POIDS.fin.tout:0;
+ const f=finDeMatch(l,side);return f==='montre'?poidsFin(l,side).montre:f==='tout'?poidsFin(l,side).tout:0;
 }
 // Mêlée : « Pousser » fait siffler plus souvent et penche vers le pack dominant ; « Sortir vite » apaise la mêlée.
 // Rend {freq, biais} pour la mêlée introduite par `side` (tactical-plans.js, penaliteConquete) ; `a`, `b` : packs.
