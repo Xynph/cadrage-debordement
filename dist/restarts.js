@@ -373,7 +373,7 @@ function courseDecoupee(l,side,origin,finisseur){
 function advanceCausalPlay(l){
  // Séquence de pénaltouche (défense regroupée, dist/tactical-plans.js) : finie dès que l'autre camp joue le ballon.
  if(l.suitePenaltouche&&l.suitePenaltouche.side!==l.possession)delete l.suitePenaltouche;
- const side=l.possession,opp=1-side,origin=l.territory,roll=Math.random(),penalites=penalitesRules(l),penaltyProb=clamp(.12+(penalites?PENALITES.jeu:0)+(70-unit(l,opp,'discipline'))*.002+tacticalPenaltyAdjustment(l,opp),tacticalRules(l)?.04:.06,tacticalRules(l)?.28:.23)*derbyFouls(l)*(typeof pilotageFoul==='function'?pilotageFoul(l,opp,'jeu'):1),handProb=handFaultProbability(l,side);
+ const side=l.possession,opp=1-side,origin=l.territory,roll=Math.random(),penalites=penalitesRules(l),penaltyProb=clamp(.12+(penalites?PENALITES.jeu:0)+(70-unit(l,opp,'discipline'))*.002+tacticalPenaltyAdjustment(l,opp),tacticalRules(l)?.04:.06,tacticalRules(l)?.28:.23)*derbyFouls(l)*(typeof pilotageFoul==='function'?pilotageFoul(l,opp,'jeu'):1)*fraicheurFaute(l,opp),handProb=handFaultProbability(l,side)+fraicheurMain(l,side);
  if(roll<penaltyProb)return awardPenalty(l,side);
  if(roll<penaltyProb+handProb)return handFault(l,side,passeEnAvant(l));
  // Lois manquantes : drop tenté par l'ouvreur (surtout en fin de match serré), avant le reste de l'action.
@@ -385,9 +385,9 @@ function advanceCausalPlay(l){
  if(roll<penaltyProb+handProb+pousse)return resolveTouch(l,side,l.territory,{carried:true});
  if(roll<penaltyProb+handProb+pousse+perdu)return jeuAuPiedPerdu(l,side);
  // Pénalités réalistes : faute de l'attaquant au sol (ballon non libéré, scellement), plus rare chez les joueurs disciplinés.
- if(penalites&&roll<penaltyProb+handProb+pousse+perdu+clamp(PENALITES.attaque+(70-unit(l,side,'discipline'))*.001,.02,.08)*(typeof pilotageFoul==='function'?pilotageFoul(l,side,'attaque'):1))return awardPenalty(l,opp,{phase:'attaque',incident:roll*1000%2<1?'not-release':'sealing'});
+ if(penalites&&roll<penaltyProb+handProb+pousse+perdu+clamp(PENALITES.attaque+(70-unit(l,side,'discipline'))*.001,.02,.08)*(typeof pilotageFoul==='function'?pilotageFoul(l,side,'attaque'):1)*fraicheurFaute(l,side))return awardPenalty(l,opp,{phase:'attaque',incident:roll*1000%2<1?'not-release':'sealing'});
  if((tacticalRules(l)||effectiveAttack(l,side)==='occupation')&&Math.random()<openKickProbability(l,side))return kickOpenPlay(l,side);
- tacticalCount(l,side,'carries');const edge=teamEdge(l,side,'attack'),essais=essaisRules(l),niveau=essais?(ESSAIS.ecart-1)*tacticalEdge(l,side):0,success=Math.random()<(essais?clamp(ESSAIS.porte+ouvertureJeu(l)+edge+niveau,.2,.9):clamp(.49+edge,.18,.84));
+ tacticalCount(l,side,'carries');const edge=teamEdge(l,side,'attack')+fraicheurJeu(l,side),essais=essaisRules(l),niveau=essais?(ESSAIS.ecart-1)*tacticalEdge(l,side):0,success=Math.random()<(essais?clamp(ESSAIS.porte+ouvertureJeu(l)+edge+niveau,.2,.9):clamp(.49+edge,.18,.84));
  if(success){
   l.territory=clamp(l.territory+(side===0?1:-1)*carryGain(l,side),1,99);tacticalCount(l,side,'advances');const metres=Math.abs(l.territory-origin);tacticalCount(l,side,'metres',metres);if(metres>=22)tacticalCount(l,side,'longGains');
   // The completed carrying sequence includes a tackle/ruck, resetting kick eligibility.

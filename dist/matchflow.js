@@ -284,6 +284,39 @@ function meteoLibelle(l){if(!meteoActive(l))return l.weather.toLowerCase();const
 function meteoConseil(l){if(!meteoActive(l))return null;const m=l.meteo;const base=meteoConseilBase(l,m);return ventSensActif(l)?base+` Le vent souffle dans le dos de ${ventNomCamp(l)} ${periodeVent(l)===1?'en première période ; il changera de camp à la mi-temps.':'en seconde période.'}`:base}
 function meteoConseilBase(l,m){return m.pluie===2?'Terrain lourd et ballon glissant : le staff conseille le jeu au pied, le ballon porté et la conquête plutôt que le large.':m.pluie?'Ballon glissant : le staff conseille de limiter les passes à risque et d’occuper au pied.':m.vent===2?'Grand vent : le staff prévient que les tirs au but et le jeu au pied long deviennent aléatoires ; prenez les points faciles et jouez la touche.':m.vent?'Du vent : tirs au but un peu moins sûrs, jeu au pied plus court.':m.chaleur?'Forte chaleur : les organismes vont souffrir, le staff conseille d’anticiper les remplacements.':'Terrain sec : les qualités techniques peuvent s’exprimer.'}
 function fitArrete(l){return l?.setPieceFatigueVersion===1?'arrete':true}
+// Fraîcheur en match (lot K3, 26/11/2026, docs/remplacants-20261126.md) : un joueur frais qui remplace un joueur fatigué
+// change la suite du match. Rencontres créées avec `remplacantsVersion` (un match commencé avant garde ses règles).
+// Fatigue d'un joueur : (seuil − condition) / echelle, de 0 (frais) à max. Un entrant apporte en plus un impact qui
+// s'éteint en `impact.duree` minutes ; s'il est nettement moins bon au poste que le sortant (note au poste hors
+// condition, au-delà de `niveau.tolere` points), l'impact baisse et il garde un décalage (un remplaçant bien plus
+// faible coûte). Chaque camp : moyenne pondérée sur les joueurs en jeu (poids par maillot selon la phase). Effets
+// relatifs, un camp contre l'autre, sans tirage ajouté : porteur qui passe le plaquage (`jeu`, ajouté à l'avantage
+// d'attaque), fautes de main (`main`), pénalités concédées (`faute`, multiplicateur), pénalité de mêlée (`melee`).
+var FRAICHEUR={seuil:90,echelle:20,max:1.6,impact:{valeur:.35,duree:15},niveau:{tolere:3,echelle:15,poids:.8},
+ jeu:.25,main:.06,faute:.3,melee:.1,
+ poids:{jeu:null,main:[1,1,1,1,1,1,1,1,1.5,1.5,1.5,1.5,1.5,1.5,1.5],faute:[1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1,1,1,1,1,1,1],melee:[2,2,2,2,2,1,1,1,0,0,0,0,0,0,0]}};
+function fraicheurRules(l){return l?.remplacantsVersion===1}
+// Note au poste du maillot, sans la condition (fitScore la multiplie par .5 + condition × .005).
+function noteAuPoste(p,slot){return fitScore(p,FAMILIES[slot])/(.5+(Number(p.condition)||0)*.005)}
+// Apport d'un entrant, lu une fois par remplacement (lecture pure, non sauvegardée).
+const ENTREES_FRAICHEUR=new WeakMap();
+function entreeFraicheur(l,sub){let e=ENTREES_FRAICHEUR.get(sub);if(e)return e;const N=FRAICHEUR.niveau,sh=l.sheets[sub.side],slot=sh.on.indexOf(sub.in),p=matchPlayer(l,sub.side,sub.in),o=matchPlayer(l,sub.side,sub.out);const d=p&&o&&slot>=0&&slot<15?Math.max(0,noteAuPoste(o,slot)-noteAuPoste(p,slot)-N.tolere):0;e={apport:clamp(1-d/N.echelle,0,1),decalage:d/N.echelle*N.poids};ENTREES_FRAICHEUR.set(sub,e);return e}
+function fraicheurCamp(l,side,phase){
+ const F=FRAICHEUR,sh=l.sheets[side],w=F.poids[phase],entrees=new Map();
+ for(const s of l.subs||[])if(s.side===side&&!s.returning)entrees.set(s.in,s);
+ let t=0,n=0;
+ for(let slot=0;slot<15;slot++){const id=sh.on[slot];if(id==null)continue;const k=w?w[slot]:1;if(!k)continue;const p=matchPlayer(l,side,id);if(!p||sh.cards.some(c=>c.id===id&&c.until>l.minute))continue;
+  let f=clamp((F.seuil-(Number(p.condition)||80))/F.echelle,0,F.max);const s=entrees.get(id);
+  if(s){const e=entreeFraicheur(l,s),age=l.minute-s.minute;if(age<F.impact.duree)f-=F.impact.valeur*(1-age/F.impact.duree)*e.apport;f+=e.decalage}
+  t+=k*f;n+=k}
+ return n?t/n:0;
+}
+// Écart de fraîcheur (> 0 : `side` plus frais que l'adversaire).
+function fraicheurEcart(l,side,phase){return fraicheurRules(l)?fraicheurCamp(l,1-side,phase)-fraicheurCamp(l,side,phase):0}
+function fraicheurJeu(l,side){return FRAICHEUR.jeu*fraicheurEcart(l,side,'jeu')}
+function fraicheurMain(l,side){return -FRAICHEUR.main*fraicheurEcart(l,side,'main')}
+function fraicheurFaute(l,fautif){return clamp(1-FRAICHEUR.faute*fraicheurEcart(l,fautif,'faute'),.7,1.3)}
+function fraicheurMelee(l,side){return FRAICHEUR.melee*fraicheurEcart(l,side,'melee')}
 function quickTapRules(l){return flowRules(l)&&l.quickTapVersion===1}
 // Le demi de mêlée joue la pénalité ; à défaut, le premier troisième ligne en jeu.
 function quickTapper(l,side){const on=activePlayers(l,side),id=l.sheets[side].on[8];return on.find(p=>p.id===id)||on.find(p=>p.fam===4)||on.find(p=>p.fam===3)||on[0]||null}
@@ -327,7 +360,7 @@ function playQuickTap(l,side){
  l.quickTaps=l.quickTaps||[0,0];l.quickTaps[side]++;
  addEvent(l,`${tapper?.name||abbr} (${abbr}) joue vite la pénalité à la main.`,'play',{kind:'quick-tap',team:side,actor:tapper?.id||null,from:{x:origin,y},to:{x:origin,y},possession:side});
  tacticalCount(l,side,'carries');
- const edge=teamEdge(l,side,'attack'),defence=effectiveDefence(l,opp);
+ const edge=teamEdge(l,side,'attack')+fraicheurJeu(l,side),defence=effectiveDefence(l,opp);
  // Défense mal replacée : l'écart entre la vivacité du demi et l'organisation adverse.
  const surprise=clamp(((tapper?skill(tapper,'speed',true):60)-unit(l,opp,'mental'))*.004,-.06,.08)+(defence==='pression'?.02:defence==='prudente'?-.03:0)+(typeof combiSurpriseJeuVite==='function'?combiSurpriseJeuVite(l,side):0);
  const lose=(why)=>{

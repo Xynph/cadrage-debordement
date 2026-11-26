@@ -125,7 +125,7 @@ function penaliteConquete(l,side,kind,a,b){
  const melee=kind==='scrum';
  const pm=melee&&l.pilotage&&typeof pilotageMelee==='function'?pilotageMelee(l,side,a,b):{freq:1,biais:0};
  if(Math.random()>=(melee?PENALITES.melee*(typeof pilotageScrumPenalty==='function'?pilotageScrumPenalty(l):1)*pm.freq:PENALITES.touche))return false;
- const pourLanceur=melee?clamp(.55+(a-b)*PENALITES.meleeDominant+pm.biais+(typeof combiBiaisMelee==='function'?combiBiaisMelee(l,side):0),.2,.9):.65;
+ const pourLanceur=melee?clamp(.55+(a-b)*PENALITES.meleeDominant+pm.biais+(typeof combiBiaisMelee==='function'?combiBiaisMelee(l,side):0)+(typeof fraicheurMelee==='function'?fraicheurMelee(l,side):0),.2,.9):.65;
  const beneficiaire=Math.random()<pourLanceur?side:1-side;
  awardPenalty(l,beneficiaire,{phase:melee?'melee':'touche',incident:melee?'scrum':'maul',lanceur:side});
  return true;
