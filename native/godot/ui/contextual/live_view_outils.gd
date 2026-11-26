@@ -241,10 +241,13 @@ static func ligne_tenue(texte: String, police: Font, taille: int, largeur: float
 			virgule = debut.rfind(",")
 		# ... puis au mot, signalé par « … » : le geste est coupé, jamais l'issue ni le receveur.
 		var geste := debut.split(" ", false)
-		while geste.size() > 4:
+		while geste.size() > 3:
 			geste.remove_at(geste.size() - 1)
 			var court := " ".join(geste).strip_edges() + " …" + issue
 			if police.get_string_size(court, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x <= largeur: return court
+		# Ligne très étroite : l'issue seule (« Nathan LANDRY réceptionne pour VDX. »).
+		var seule := issue.substr(3)
+		if police.get_string_size(seule, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x <= largeur: return seule
 	var mots := texte.split(" ", false)
 	while mots.size() > 1:
 		mots.remove_at(mots.size() - 1)

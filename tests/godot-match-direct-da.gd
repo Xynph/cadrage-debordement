@@ -262,7 +262,10 @@ func run() -> void:
 	var pied := LiveView.ligne_tenue("Donal GANNON (AFN) tape par-dessus la défense, trop long ; Fraser BUSH récupère pour MBR.", Charte.texte_moyen(), taille_j, place)
 	check(pied == attendu, "Coup de pied : receveur gardé dans le journal : " + pied)
 	var serre := LiveView.ligne_tenue("Donal GANNON (AFN) tente le coup de pied croisé ; Aidan GORMLEY récupère pour MBR.", Charte.texte_moyen(), taille_j, place - 60.0)
-	check(serre.ends_with(" … ; Aidan GORMLEY récupère pour MBR.") and serre.begins_with("Donal GANNON (AFN) tente"), "Coup de pied serré : geste coupé, receveur gardé : " + serre)
+	check(serre.ends_with(" … ; Aidan GORMLEY récupère pour MBR.") and serre.begins_with("Donal GANNON (AFN)"), "Coup de pied serré : geste coupé, receveur gardé : " + serre)
+	var issue_seule := "Aidan GORMLEY récupère pour MBR."
+	var etroit := LiveView.ligne_tenue("Donal GANNON (AFN) tente le coup de pied croisé ; " + issue_seule, Charte.texte_moyen(), taille_j, Charte.texte_moyen().get_string_size(issue_seule, HORIZONTAL_ALIGNMENT_LEFT, -1, taille_j).x + 1.0)
+	check(etroit == issue_seule, "Coup de pied très serré : l'issue seule : " + etroit)
 	var notre: Dictionary = app.model.squad[0]
 	var riche: RichTextLabel = lignes[0][1]
 	view._survol_joueur(str(notre.id), riche)
