@@ -286,14 +286,16 @@ function meteoConseilBase(l,m){return m.pluie===2?'Terrain lourd et ballon gliss
 function fitArrete(l){return l?.setPieceFatigueVersion===1?'arrete':true}
 // Fraîcheur en match (lot K3, 26/11/2026, docs/remplacants-20261126.md) : un joueur frais qui remplace un joueur fatigué
 // change la suite du match. Rencontres créées avec `remplacantsVersion` (un match commencé avant garde ses règles).
-// Fatigue d'un joueur : (seuil − condition) / echelle, de 0 (frais) à max. Un entrant apporte en plus un impact qui
+// Fatigue d'un joueur : seulement celle DU MATCH, minutes jouées / echelle, de 0 (frais) à max. Ni la forme
+// d'avant-match ni l'endurance n'y entrent (elles pèsent déjà par la condition dans les compétences) : compter la
+// baisse de condition favorisait les équipes les plus endurantes (favori +4 points, matchs serrés −3). Un entrant apporte en plus un impact qui
 // s'éteint en `impact.duree` minutes ; s'il est nettement moins bon au poste que le sortant (note au poste hors
 // condition, au-delà de `niveau.tolere` points), l'impact baisse et il garde un décalage (un remplaçant bien plus
 // faible coûte). Chaque camp : moyenne pondérée sur les joueurs en jeu (poids par maillot selon la phase). Effets
 // relatifs, un camp contre l'autre, sans tirage ajouté : porteur qui passe le plaquage (`jeu`, ajouté à l'avantage
 // d'attaque), fautes de main (`main`), pénalités concédées (`faute`, multiplicateur), pénalité de mêlée (`melee`).
-var FRAICHEUR={seuil:90,echelle:20,max:1.6,impact:{valeur:.35,duree:15},niveau:{tolere:3,echelle:15,poids:.8},
- jeu:.25,main:.06,faute:.3,melee:.1,
+var FRAICHEUR={echelle:25,max:1.6,impact:{valeur:.35,duree:15},niveau:{tolere:3,echelle:15,poids:.8},
+ jeu:.18,main:.06,faute:.25,melee:.2,
  poids:{jeu:null,main:[1,1,1,1,1,1,1,1,1.5,1.5,1.5,1.5,1.5,1.5,1.5],faute:[1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1,1,1,1,1,1,1],melee:[2,2,2,2,2,1,1,1,0,0,0,0,0,0,0]}};
 function fraicheurRules(l){return l?.remplacantsVersion===1}
 // Note au poste du maillot, sans la condition (fitScore la multiplie par .5 + condition × .005).
@@ -306,7 +308,7 @@ function fraicheurCamp(l,side,phase){
  for(const s of l.subs||[])if(s.side===side&&!s.returning)entrees.set(s.in,s);
  let t=0,n=0;
  for(let slot=0;slot<15;slot++){const id=sh.on[slot];if(id==null)continue;const k=w?w[slot]:1;if(!k)continue;const p=matchPlayer(l,side,id);if(!p||sh.cards.some(c=>c.id===id&&c.until>l.minute))continue;
-  let f=clamp((F.seuil-(Number(p.condition)||80))/F.echelle,0,F.max);const s=entrees.get(id);
+  let f=clamp((Number(sh.minutes?.[id])||0)/F.echelle,0,F.max);const s=entrees.get(id);
   if(s){const e=entreeFraicheur(l,s),age=l.minute-s.minute;if(age<F.impact.duree)f-=F.impact.valeur*(1-age/F.impact.duree)*e.apport;f+=e.decalage}
   t+=k*f;n+=k}
  return n?t/n:0;
