@@ -100,6 +100,8 @@ const ETATS_ARRET := {"try": "Essai — %s", "transformation": "Transformation �
 	"penalty": "Pénalité pour %s", "hand-fault": "En-avant — %s",
 	# Faute de main par une passe (cause « forward-pass », loi 11) : la ligne dit ce que l'arbitre a sifflé.
 	"passe-en-avant": "Passe en avant",
+	# Faits d'en-but du moteur (scene.cause) : l'équipe qui attaque est nommée (en-avant, porteur tenu, coup de pied aplati).
+	"ingoal-knock-on": "En-avant dans l’en-but — %s", "held-up": "Ballon tenu en but — %s", "attacking-kick-grounded": "Coup de pied aplati — %s",
 	# Faits des lois sans image (scene.loi), écrits par la régie après le plan qu'ils suivent.
 	"loi:coup-franc": "Coup franc pour %s", "loi:essai-penalite": "Essai de pénalité — %s", "loi:drop-tente": "Drop — %s",
 	"loi:drop-rate": "Drop manqué — %s", "loi:drop-reussi": "Drop réussi — %s", "loi:injouable": "Mêlée pour %s"}
