@@ -80,11 +80,15 @@ function loisRules(l){return !!LOIS_RULES&&typeof penalitesRules==='function'&&p
 function passeEnAvant(l){return loisRules(l)&&Math.random()<LOIS.passeAvant}
 const COUP_FRANC_MOTIFS={scrum:['engagement anticipé en mêlée','introduction pas droite','talonnage avant l’introduction','mêlée pas formée dans les 30 secondes'],lineout:['couloir fermé dans l’alignement','sauteur soutenu avant le lancer','alignement pas formé dans les 30 secondes']};
 // Coup franc sur faute technique, tiré quand la mêlée ou la touche est prête (avant la pénalité de conquête).
+// Temps écoulé (sirène) : aucun coup franc, avant tout tirage ; la mêlée ou la touche due après la sirène reste la
+// dernière action annoncée, disputée puis close comme avant les lois manquantes (sinon un coup franc joué vite relançait
+// la période après « dernière action avant le changement de camp »).
 function coupFrancConquete(l,team,kind){
  if(!loisRules(l)||l.restartLog?.some(r=>r.kind==='kickoff'&&r.minute===l.minute))return false;
+ if(typeof periodBoundary==='function'&&flowRules(l)&&l.minute>=periodBoundary(l))return false;
  if(kind==='scrum'&&l.sheets.some(sh=>sh.front?.uncontested))return false;
  if(Math.random()>=LOIS.coupFranc[kind==='scrum'?'melee':'touche'])return false;
- const side=Math.random()<.5?team:1-team,motifs=COUP_FRANC_MOTIFS[kind],motif=motifs[(l.minute+l.events.length)%motifs.length];
+ const side=Math.random()<.5?team:1-team,motifs=COUP_FRANC_MOTIFS[kind],motif=motifs[(l.minute+coupFrancRang(l))%motifs.length];
  // Mêlée ou touche formée puis arrêtée sur le coup franc : comptée comme jouée (comme une pénalité de conquête).
  l.stats[team][kind==='scrum'?'scrums':'lineouts']++;
  addEvent(l,`Coup franc pour ${S.clubs[l.pair[side]].abbr} : ${motif} (${S.clubs[l.pair[1-side]].abbr}).`,'play',{kind:'message',team:side,loi:'coup-franc'});
@@ -92,15 +96,22 @@ function coupFrancConquete(l,team,kind){
  // la fait jamais passer pour refusée (sinon une pénalité « mêlée » retomberait en pénaltouche après le sifflet).
  jouerCoupFranc(l,side);return true;
 }
+// Motif sans tirage, lu dans l'état du moteur (mêlées et touches jouées) et jamais dans le journal : le découpage des
+// longues courses (MATCH_COURSES_DECOUPEES) ajoute des faits au journal sans changer le jeu, le motif doit rester le même.
+function coupFrancRang(l){return l.stats.reduce((n,s)=>n+(s.scrums||0)+(s.lineouts||0),0)}
+// Taper ou jouer vite suit le plan de jeu au pied du bénéficiaire (pilotage : jeu au pied, relance, rythme, fin de match,
+// consignes individuelles « Jouer au pied »), comme le jeu au pied courant (openKickProbability) ; sans pilotage
+// (IA contre IA), facteur 1 : mêmes probabilités et mêmes tirages.
 function jouerCoupFranc(l,side){
  const at=l.territory,dir=side===0?1:-1,ab=S.clubs[l.pair[side]].abbr,d=Math.abs(at-ownGoal(side));
+ const pied=typeof pilotageKick==='function'&&l.pilotage?pilotageKick(l,side):1;
  ballPossession(l,side,at);
- if(d<=22&&Math.random()<.85){
+ if(d<=22&&Math.random()<clamp(.85*pied,.3,.97)){
   // Dégagement en touche depuis ses 22 : gain de terrain, lancer adverse.
   l.kickContext={team:side,halfEligible:false,twentyTwoEligible:true};tacticalCount(l,side,'kicks');
   return resolveTouch(l,side,clamp(at+dir*rand(18,32),5,95),{direct:true,kicker:occupationKicker(l,side)});
  }
- if(d>22&&d<50&&Math.random()<.45){l.kickContext={team:side,halfEligible:false,twentyTwoEligible:false};return kickOpenPlay(l,side)}
+ if(d>22&&d<50&&Math.random()<clamp(.45*pied,.1,.85)){l.kickContext={team:side,halfEligible:false,twentyTwoEligible:false};return kickOpenPlay(l,side)}
  // Jeu rapide à la main : le demi de mêlée joue le coup franc, un partenaire avance (défense repliée à dix mètres).
  const tapper=quickTapper(l,side),carrier=actionPlayer(l,side)||tapper,g=rand(2,7),to=clamp(at+dir*g,1,99);
  tacticalCount(l,side,'carries');l.territory=to;l.kickContext={team:side,halfEligible:ownHalf(side,to),twentyTwoEligible:own22(side,to)};
