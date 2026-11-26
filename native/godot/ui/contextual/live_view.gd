@@ -202,6 +202,10 @@ func _process(_delta: float) -> void:
 	if is_instance_valid(menu) and menu.visible and is_instance_valid(equipe) and equipe.visible: _cacher_menu()
 	# Panneau du menu : ses lignes à retour automatique ne connaissent leur hauteur qu'après une mise en page.
 	if is_instance_valid(menu) and menu.visible: _placer_menu()
+	# Match fini ou plus de direct : une demande de pause mémorisée est périmée (jamais reportée sur un autre match).
+	if _pause_voulue != 0 and (_live().is_empty() or bool(_live().get("finished", false))):
+		_pause_voulue = 0
+		_pause_clic = false
 	if _pause_voulue != 0 and _pause_applicable():
 		var voulue := _pause_voulue > 0
 		_pause_voulue = 0

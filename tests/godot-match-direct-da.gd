@@ -708,6 +708,19 @@ func pause_toujours_cliquable() -> void:
 	check(view.get("_pause_voulue") == 0 and bool(app.model.live.get("paused", false)) and not app.waiting, "Pause : action finie, match déjà en pause, rien ne change (pas de reprise)")
 	live_modele["paused"] = false
 	await settle(2)
+	# Clic pendant la minute qui finit le match : la demande tombe avec le match (rien d'envoyé, pas de sablier).
+	app.waiting = true
+	await settle(2)
+	play.pressed.emit()
+	check(view.get("_pause_voulue") == 1, "Pause : clic mémorisé avant la fin du match")
+	app.last_command = ""
+	var live_fin: Dictionary = app.model.live
+	live_fin["finished"] = true
+	app.waiting = false
+	await settle(4)
+	check(view.get("_pause_voulue") == 0 and not play.text.contains("⧗") and str(app.last_command) == "" and not app.waiting, "Pause : match fini à la réponse, demande effacée, aucune commande envoyée")
+	live_fin["finished"] = false
+	await settle(2)
 	# Coup de sifflet / relecture : action encore à l'écran alors que le moteur est déjà arrêté.
 	var etat_arret := LiveView.etat_bandeau({"paused": true}, true, true, false)
 	check(not bool(etat_arret.pause_possible), "Pause : état « déjà arrêté » reconnu")
