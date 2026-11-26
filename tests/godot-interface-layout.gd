@@ -129,7 +129,8 @@ func run() -> void:
 		finish()
 		return
 	await command("import",{"text":FileAccess.get_file_as_string(proof.path_join("career.json"))})
-	await ContextualFlow.settle_club_meetings(app, self, check)
+	# Carrière Monde : la conférence de présentation (rendez-vous du club) reste à ouvrir depuis son courrier (press_from_mail).
+	await ContextualFlow.settle_club_meetings(app, self, check, "press")
 	app._navigate("Composition");await settle();app.coach.close()
 	density_contract()
 	await capture("composition-native-"+str(root.size.x))
@@ -296,6 +297,8 @@ func run() -> void:
 	check(FileAccess.get_file_as_bytes(disk)==bytes,"Resize et lecture : disque inchangé")
 	await command("export")
 	check(app.model.meta.exportText==before,"Resize et lecture : export S/RNG identique")
+	# Carrière Monde : la conférence obligatoire bloque les ordres tant qu’elle attend ; elle est publiée ici, après les invariants de lecture.
+	await ContextualFlow.settle_club_meetings(app, self, check)
 	# A real command creates the N10 receipt, outside the read-only invariant.
 	var attack:String=app.model.tactics.attacks.filter(func(v):return v.id!=app.model.tactics.attack)[0].id
 	await command("set_tactics",{"attack":attack,"defense":app.model.tactics.defense})
