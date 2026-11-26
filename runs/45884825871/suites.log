@@ -1,0 +1,40 @@
+::group::tests/godot-planche-direct-tableau.cjs
+PLANCHE_DIRECT_TABLEAU minute 5 atteinte en 600 s
+PLANCHE_DIRECT_TABLEAU (2560, 1440) : classement 14 lignes, multiplex 6 matchs
+PLANCHE_DIRECT_TABLEAU SONDE page pos=(24.0, 121.0) size=(1872.0, 940.0) min=(1716.0, 940.0) offs top=9.0 bot=-6.0 parent=MatchBetween (1872.0, 936.0)
+PLANCHE_DIRECT_TABLEAU SONDE MatchBetweenPage min=(1716.0, 940.0) size=(1872.0, 940.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE   MatchBetweenTiles min=(1716.0, 734.0) size=(1872.0, 734.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE   MatchBetweenSquadBar min=(1654.0, 188.0) size=(1872.0, 188.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE     MatchBetweenEventsColumn min=(405.0, 734.0) size=(405.0, 734.0) cms=(405.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE     MatchBetweenCentre min=(855.0, 704.0) size=(1011.0, 734.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE     MatchBetweenStandingsColumn min=(420.0, 671.0) size=(420.0, 734.0) cms=(420.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE     MatchBetweenMain min=(1654.0, 188.0) size=(1872.0, 188.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE       MatchBetweenAdviceCard min=(202.0, 142.0) size=(405.0, 142.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE       MatchBetweenColumn min=(301.0, 237.0) size=(405.0, 237.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE       MatchBetweenBonus min=(60.0, 90.0) size=(405.0, 90.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE       MatchBetweenBenchTile min=(121.0, 211.0) size=(405.0, 211.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE       MatchBetweenPitchRow min=(855.0, 411.0) size=(1011.0, 441.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE       MatchBetweenPlayLine min=(265.0, 52.0) size=(1011.0, 52.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE       MatchBetweenDashboardRow min=(355.0, 205.0) size=(1011.0, 205.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE       MatchBetweenLiveDay0 min=(287.0, 394.0) size=(420.0, 457.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE       MatchBetweenLiveDay1 min=(105.0, 259.0) size=(420.0, 259.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE       @MarginContainer@6027 min=(1652.0, 186.0) size=(1870.0, 186.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE         @MarginContainer@5944 min=(200.0, 140.0) size=(403.0, 140.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE         MatchBetweenStop min=(301.0, 237.0) size=(405.0, 237.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE         @VBoxContainer@5954 min=(36.0, 66.0) size=(381.0, 66.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE         @MarginContainer@6036 min=(119.0, 209.0) size=(403.0, 209.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE         MatchBetweenLineup0 min=(240.0, 73.0) size=(269.0, 441.0) cms=(240.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE         MatchBetweenPitchTile min=(339.0, 411.0) size=(436.0, 441.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE         MatchBetweenLineup1 min=(240.0, 73.0) size=(270.0, 441.0) cms=(240.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE         @HBoxContainer@6004 min=(237.0, 40.0) size=(983.0, 40.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE         MatchBetweenMirrorBars min=(135.0, 205.0) size=(496.0, 205.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE         MatchBetweenCumulTile min=(202.0, 55.0) size=(497.0, 205.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE         @MarginContainer@6021 min=(285.0, 392.0) size=(418.0, 455.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE         @MarginContainer@6024 min=(103.0, 257.0) size=(418.0, 257.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU SONDE         @VBoxContainer@6028 min=(1624.0, 158.0) size=(1842.0, 158.0) cms=(0.0, 0.0)
+PLANCHE_DIRECT_TABLEAU (1920, 1080) : classement 14 lignes, multiplex 6 matchs
+PLANCHE_DIRECT_TABLEAU moral : 23 joueurs, 15 ont bougé depuis le coup d'envoi, mots ["Concentré", "Concentré", "Concentré", "Concentré", "Concentré", "Concentré"]
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/godot-planche-direct-tableau.cjs user_s=3042.75 system_s=34.63 wall_s=986.49 cpu_pct=311% max_rss_kb=2750448
+::error file=tests/godot-planche-direct-tableau.cjs::Godot : ECHEC (1), durée 987 s, limite 1200s
+::endgroup::

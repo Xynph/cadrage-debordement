@@ -1,0 +1,2 @@
+== suites (1) (code 1)
+::error file=tests/godot-planche-direct-tableau.cjs::Godot : ECHEC (1), durée 987 s, limite 1200s
