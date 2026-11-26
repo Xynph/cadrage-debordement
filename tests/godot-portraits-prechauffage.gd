@@ -17,12 +17,21 @@ const STEP_BUDGET_MS := 50.0
 var app: Control
 var checks := 0
 var failures: Array[String] = []
+## Échecs de CHRONO seulement (budgets en ms). Un chrono ne se trompe que dans un sens : la charge de la machine ne fait
+## qu'ajouter du temps. Le script .cjs relance donc ce seul cas (meilleur de 3, mêmes seuils) ; un échec fonctionnel ne
+## est jamais relancé. Code de sortie 2 = rien d'autre que des chronos hors budget.
+var timing_failures: Array[String] = []
 
 func _initialize() -> void: call_deferred("run")
 
 func check(ok: bool, message: String) -> void:
 	checks += 1
 	if not ok: failures.append(message); printerr("FAIL: ", message)
+
+## Contrôle de chrono : voir `timing_failures`.
+func check_timing(ok: bool, message: String) -> void:
+	checks += 1
+	if not ok: timing_failures.append(message); printerr("FAIL (chrono): ", message)
 
 func settle(frames: int = 8) -> void:
 	for frame in frames: await process_frame
@@ -71,18 +80,21 @@ func run() -> void:
 	check(in_cache == total, "Portraits de l'effectif en cache après le repos au Bureau : %d / %d" % [in_cache, total])
 	check(Warmup.warmed > 0, "Le préchauffage a fabriqué des portraits (%d)" % Warmup.warmed)
 	var step_ms: float = Warmup.longest_step_usec / 1000.0
-	check(step_ms < STEP_BUDGET_MS, "Plus longue étape du préchauffage %.1f ms, budget %.0f ms" % [step_ms, STEP_BUDGET_MS])
+	check_timing(step_ms < STEP_BUDGET_MS, "Plus longue étape du préchauffage %.1f ms, budget %.0f ms" % [step_ms, STEP_BUDGET_MS])
 
 	# 2. 1re ouverture de la Composition : plus aucun portrait à fabriquer d'un bloc.
+	var cache_avant := _cache_keys()
 	var started := Time.get_ticks_usec()
 	app._navigate("Composition")
 	var composition_ms := (Time.get_ticks_usec() - started) / 1000.0
 	await settle()
+	# Contrôle déterministe (indépendant de la charge) : l'ouverture ne fabrique AUCUN portrait, tout vient du cache.
+	check(_cache_keys() == cache_avant, "La 1re Composition ne fabrique aucun portrait (caches inchangés)")
 	var portraits: Array[Node] = app.body.find_children("TacticsPortrait*", "TextureRect", true, false)
 	var filled: int = portraits.filter(func(node: Node) -> bool: return (node as TextureRect).texture != null).size()
 	check(portraits.size() >= 15, "Composition construite avec ses portraits (%d)" % portraits.size())
 	check(filled == portraits.size(), "Portraits de la Composition remplis : %d / %d" % [filled, portraits.size()])
-	check(composition_ms < budget, "1re Composition construite en %.0f ms, budget %.0f ms" % [composition_ms, budget])
+	check_timing(composition_ms < budget, "1re Composition construite en %.0f ms, budget %.0f ms" % [composition_ms, budget])
 
 	# 3. Commande moteur en attente : le préchauffage ne prend aucune image ; il reprend ensuite.
 	app._navigate("Bureau")
@@ -107,6 +119,12 @@ func run() -> void:
 	check(frames > 1, "Le préchauffage est étalé sur plusieurs images (%d)" % frames)
 
 	print("CD_PRECHAUFFAGE ", JSON.stringify({"effectif": total, "en_cache": in_cache, "composition_ms": snappedf(composition_ms, 0.1), "etape_max_ms": snappedf(step_ms, 0.1), "images_reprise": frames}))
-	print("PRECHAUFFAGE PORTRAITS : ", checks, " contrôles ; ", failures.size(), " échec(s)")
+	print("PRECHAUFFAGE PORTRAITS : ", checks, " contrôles ; ", failures.size() + timing_failures.size(), " échec(s)")
 	app.bridge.stop()
-	quit(0 if failures.is_empty() else 1)
+	quit(1 if not failures.is_empty() else (2 if not timing_failures.is_empty() else 0))
+
+## Clés des caches de portraits (photos du pack et visages composés) : égales avant/après = rien fabriqué entre-temps.
+func _cache_keys() -> String:
+	var keys: Array = G.portrait_textures.keys() + Portrait._textures.keys()
+	keys.sort()
+	return str(keys)
