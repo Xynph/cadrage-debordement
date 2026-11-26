@@ -173,8 +173,10 @@ static func texte_lettre(i: int) -> String:
 	return LETTRES[i] if i >= 0 else "?"
 
 ## Pastille lettre ronde (choix B de Léo). Renvoie la largeur posée.
+## Rayon arrondi au-dessus (ceili) : avec int() une taille non entière (36,8) donnait un rayon sous la demi-hauteur,
+## D.rect y voyait une tuile et lui posait l'ombre portée, interdite sur les pastilles par la charte.
 static func pastille(parent: Control, x: float, centre_y: float, i: int, taille: float, nom: String = "") -> float:
-	var fond := D.rect(parent, Rect2(x, centre_y - taille / 2.0, taille, taille), couleur(i), int(taille / 2.0))
+	var fond := D.rect(parent, Rect2(x, centre_y - taille / 2.0, taille, taille), couleur(i), ceili(taille / 2.0))
 	if not nom.is_empty(): fond.name = nom
 	fond.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fond.set_meta("lettre", texte_lettre(i))
@@ -367,12 +369,12 @@ static func pastille_note(parent: Control, x: float, centre_y: float, l: Diction
 		rond.set_meta("lettre", texte_note(l))
 		return rond
 	var w := largeur_note(l, taille)
-	var fond := D.rect(parent, Rect2(x, centre_y - taille / 2.0, w, taille), couleur(h), int(taille / 2.0))
+	var fond := D.rect(parent, Rect2(x, centre_y - taille / 2.0, w, taille), couleur(h), ceili(taille / 2.0))
 	if not nom.is_empty(): fond.name = nom
 	fond.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fond.set_meta("lettre", texte_note(l))
 	fond.set_meta("incertaine", true)
-	var gauche := D.rect(fond, Rect2(0, 0, w / 2.0 + taille * 0.25, taille), couleur(b), int(taille / 2.0))
+	var gauche := D.rect(fond, Rect2(0, 0, w / 2.0 + taille * 0.25, taille), couleur(b), ceili(taille / 2.0))
 	gauche.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	D.rect(fond, Rect2(w / 2.0, 0, taille * 0.3, taille), couleur(b)).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	D.rect(fond, Rect2(w / 2.0 - 1.0, taille * 0.18, 2.0, taille * 0.64), Color(Charte.ENCRE, .55)).mouse_filter = Control.MOUSE_FILTER_IGNORE
