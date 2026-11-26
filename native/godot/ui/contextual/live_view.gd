@@ -190,6 +190,7 @@ func _process(_delta: float) -> void:
 		if _recouvrir == 0: _recadrer()
 	_poser_periode()
 	_suivre_journal()
+	_suivre_score_fenetre_club()
 	# Rappel « Échap » : en 3D seulement (l'entracte a ses propres rappels) et hors action en cours.
 	var entracte: bool = regie != null and regie.between != null and regie.between.visible
 	var rappel: bool = not compact and not entracte and not _live().get("finished", false)

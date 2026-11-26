@@ -179,8 +179,15 @@ try {
   const ailier = (ecart, numeros) => `{const o=1-l.userSide,on=l.sheets[o].on,arr=activePlayers(l,o).filter(p=>{const n=on.indexOf(p.id)+1;return n>=10&&n<=15});
     for(const n of ${JSON.stringify(numeros)}){const p=matchPlayer(l,o,on[n-1]),autres=arr.filter(x=>x.id!==p.id),moy=autres.reduce((s,x)=>s+skill(x,'tackle'),0)/autres.length;
       ensureSkills(p);p.skills.tackle+=moy+(${ecart})-skill(p,'tackle')}}`;
+  // Aile solide : leurs trois-quarts remplaçants (ailiers, centres, arrière) sont renforcés comme leurs deux ailiers.
+  // Depuis #1314, l'IA remplace un ailier vers la 40e-60e : sans cela, l'entrant redevenait une aile faible et viser
+  // l'aile rapportait (0,38). Accord de Léo (26/11) : « Oui, renforce aussi les trois-quarts remplaçants dans le test de
+  // l'aile solide, contrôle et seuil inchangés ».
+  const bancSolide = ecart => `{const o=1-l.userSide,on=l.sheets[o].on,arr=activePlayers(l,o).filter(p=>{const n=on.indexOf(p.id)+1;return n>=10&&n<=15}),
+    moy=arr.reduce((s,x)=>s+skill(x,'tackle'),0)/arr.length;
+    for(const id of l.sheets[o].bench||[]){const p=id&&matchPlayer(l,o,id);if(!p||!(p.fam>=6))continue;ensureSkills(p);p.skills.tackle+=moy+(${ecart})-skill(p,'tackle')}}`;
   const viser = 'l.pilotage.consignes.cible="aile";l.pilotage.depuis.cible=0;';
-  const faible = ailier(-12, [14]), solide = ailier(5, [11, 14]);
+  const faible = ailier(-12, [14]), solide = ailier(5, [11, 14]) + bancSolide(5);
   const faibleBase = serie(faible, 400), faibleAile = serie(faible + viser, 400), solideBase = serie(solide, 400), solideAile = serie(solide + viser, 400), base100 = serie('', 100);
   console.log('relance : coups de pied', r(degager.coups), '/', r(relancer.coups), '· mètres', r(degager.metres), '/', r(relancer.metres), '· pertes', r(degager.pertes), '/', r(relancer.pertes));
   console.log('coups d’envoi repris : courts', r(courts.repris / courts.envois), '· base', r(base100.repris / base100.envois), '· longs', r(longs.repris / longs.envois));

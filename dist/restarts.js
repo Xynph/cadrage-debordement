@@ -381,7 +381,8 @@ function advanceCausalPlay(l){
  if(dropTente(l,side))return true;
  // Jeu au pied réaliste : l'ancienne part du « poussé en touche » (12 % par action) devient surtout un coup de pied
  // raté ou perdu (jeuAuPiedPerdu), même probabilité, même effet de terrain ; le vrai poussé en touche devient rare.
- const pousse=poussEnTouche(l,side),perdu=jeuPiedPerdu(l,side);
+ // Consignes « Garder » / « Relancer » (pilotageGarde) : une part des coups de pied perdus devient un porteur poussé en touche.
+ const garde=l.pilotage&&typeof pilotageGarde==='function'?pilotageGarde(l,side):1,perdu0=jeuPiedPerdu(l,side),pousse=poussEnTouche(l,side)+perdu0*(1-garde),perdu=perdu0*garde;
  if(roll<penaltyProb+handProb+pousse)return resolveTouch(l,side,l.territory,{carried:true});
  if(roll<penaltyProb+handProb+pousse+perdu)return jeuAuPiedPerdu(l,side);
  // Pénalités réalistes : faute de l'attaquant au sol (ballon non libéré, scellement), plus rare chez les joueurs disciplinés.

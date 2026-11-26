@@ -2,8 +2,10 @@
 // Liaisons entre temps forts contigus dans le vrai jeu, carrière Monde (seul mode de carrière depuis
 // le 13/11/2026) : la régie relie en 3D les temps forts contigus, à vitesse réelle même quand les
 // temps forts sont accélérés pour le test, et garde l'écran 2D entre deux temps forts non contigus.
-// Graine 4 (CD_LIAISON_GRAINE) : liaison touche par coupe avant la 18e minute. La graine 3 n'en donnait plus
-// aucune après les changements du moteur et de la carrière du 24/11/2026 (autres faits, liaisons intactes).
+// Graine 6 (CD_LIAISON_GRAINE) : liaison pénalité par coupe avant la 18e minute. La graine 3 n'en donnait plus
+// aucune après les changements du moteur et de la carrière du 24/11/2026 (autres faits, liaisons intactes) ; la
+// graine 4 non plus après les lois manquantes du moteur (#1315, 26/11/2026 : match calme, deux temps forts en
+// 18 minutes ; liaisons toujours jouées, p. ex. graine 6).
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path'),assert=require('node:assert/strict');
 const {spawnSync}=require('node:child_process');
 const godot=process.env.CD_GODOT_EXECUTABLE||process.env.CD_GODOT_EXE;
@@ -34,7 +36,7 @@ if(process.env.CD_LIAISON_EXPORT){
  console.log('Export jetable world-champ, graine 7, club 0 : '+target);process.exit(0);
 }
 const env={...process.env,CD_GODOT_SELF_TEST:'0',CD_NODE_EXECUTABLE:process.execPath,CD_GODOT_DATA_DIR:path.join(directory,'liaison','PrototypeGodot'),CD_MATCH_TEMPS_FORTS_ARTIFACTS:directory,
- CD_MATCH_TEMPS_FORTS_MODE:'liaison',CD_MATCH_TEMPS_FORTS:'1',CD_MATCH_TEMPS_FORTS_HORLOGE:'eclair',CD_MATCH_TEMPS_FORTS_VITESSE:'4',CD_GODOT_SEED:process.env.CD_LIAISON_GRAINE||'4',CD_LIAISON_MINUTES:process.env.CD_LIAISON_MINUTES||'18',CD_LIAISON_ATTENDUES:process.env.CD_LIAISON_ATTENDUES||'1'};
+ CD_MATCH_TEMPS_FORTS_MODE:'liaison',CD_MATCH_TEMPS_FORTS:'1',CD_MATCH_TEMPS_FORTS_HORLOGE:'eclair',CD_MATCH_TEMPS_FORTS_VITESSE:'4',CD_GODOT_SEED:process.env.CD_LIAISON_GRAINE||'6',CD_LIAISON_MINUTES:process.env.CD_LIAISON_MINUTES||'18',CD_LIAISON_ATTENDUES:process.env.CD_LIAISON_ATTENDUES||'1'};
 for(const name of ['CD_MODES_HERITES','CD_MATCH_TEMPS_FORTS_NIVEAU','CD_MATCH_GESTES','CD_MATCH_CHOREGRAPHE','CD_MATCH_TEMPS_FORTS_ENTRACTE'])delete env[name];
 const result=spawnSync(godot,['--headless','--max-fps','60','--path',path.resolve(__dirname,'../native/godot'),'--script',path.resolve(__dirname,'godot-match-temps-forts.gd')],{env,encoding:'utf8',windowsHide:true,timeout:1200000});
 const output=(result.stdout||'')+(result.stderr||'');console.log(output);

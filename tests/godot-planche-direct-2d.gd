@@ -36,6 +36,27 @@ func until(condition: Callable, limit_ms: int) -> bool:
 	while not condition.call() and Time.get_ticks_msec() < deadline: await process_frame
 	return condition.call()
 
+## Arrêt de jeu (carton, blessure…) : le moteur a arrêté le match et l'écran d'arrêt attend le joueur (depuis #1315, la
+## graine 3 prend un carton dès la 5e minute). Le test fait comme lui : « Valider le choix » s'il y en a un, puis
+## « Reprendre le match » (même aide que godot-match-direct-da). Rien tant que la pause d'arrêt n'est pas reçue.
+func reprendre_arret() -> void:
+	var view := surface()
+	if not is_instance_valid(view) or view.regie == null: return
+	var regie: Node = view.regie
+	if regie.arret.is_empty() or app.waiting or not bool(app.model.live.get("paused", false)): return
+	var reprendre: Button = regie.between.find_child("MatchBetweenStopResume", true, false) if is_instance_valid(regie.between) else null
+	if reprendre == null or not reprendre.is_visible_in_tree() or reprendre.disabled: return
+	reprendre.pressed.emit()
+	await wait_command()
+
+## Comme `until`, le match continuant de se jouer : un arrêt de jeu est repris comme le ferait le joueur.
+func until_en_jouant(condition: Callable, limit_ms: int) -> bool:
+	var deadline := Time.get_ticks_msec() + limit_ms
+	while not condition.call() and Time.get_ticks_msec() < deadline:
+		await reprendre_arret()
+		await process_frame
+	return condition.call()
+
 func capture(nom: String) -> void:
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png(dossier.path_join(nom + ".png"))
@@ -81,10 +102,10 @@ func run() -> void:
 	if app.model.live.get("paused", false): await command("pause", {"paused": false})
 	# En jeu, entre deux temps forts (écran 2D), une fois la journée en direct calculée (après quelques minutes).
 	var minute_voulue := int(OS.get_environment("CD_PLANCHE_MINUTE")) if OS.get_environment("CD_PLANCHE_MINUTE").is_valid_int() else 12
-	await until(func(): return int(app.model.live.get("minute", 0)) >= minute_voulue, 600000)
-	check(await until(func(): return vue_2d(view), 240000), "Écran 2D du direct avec classement et multiplex")
+	await until_en_jouant(func(): return int(app.model.live.get("minute", 0)) >= minute_voulue, 600000)
+	check(await until_en_jouant(func(): return vue_2d(view) and view.regie.arret.is_empty(), 240000), "Écran 2D du direct avec classement et multiplex")
 	# Au moins un fait de match affiché avant de figer (en ligne, rendu lent, la 12e minute peut n'en avoir aucun encore).
-	await until(func(): return view.regie.between.find_children("MatchBetweenEvent*", "PanelContainer", true, false).any(func(n: Node): return (n as Control).is_visible_in_tree() and str(n.name).substr(17).is_valid_int()) or view.regie.between.find_children("MatchBetweenHighlight*", "PanelContainer", true, false).any(func(n: Node): return (n as Control).is_visible_in_tree()), 400000)
+	await until_en_jouant(func(): return view.regie.between.find_children("MatchBetweenEvent*", "PanelContainer", true, false).any(func(n: Node): return (n as Control).is_visible_in_tree() and str(n.name).substr(17).is_valid_int()) or view.regie.between.find_children("MatchBetweenHighlight*", "PanelContainer", true, false).any(func(n: Node): return (n as Control).is_visible_in_tree()), 400000)
 	if app.model.live.get("finished", false) == false and not app.model.live.get("paused", false): await command("pause", {"paused": true})
 	await settle(30)
 	var between: Control = view.regie.between
@@ -121,9 +142,18 @@ func run() -> void:
 		for n: Node in racine.find_children(motif, classe, true, false):
 			if (n as Control).is_visible_in_tree(): return n
 		return null
-	# Le nom d'un joueur de Mon XV (capture dédiée demandée par Léo).
+	# Le nom d'un joueur de Mon XV : en match, un clic ouvre sa carte joueur, sans petite fenêtre (règle de Léo du 25/11,
+	# #1297) ; capture dédiée demandée par Léo.
+	var Carte = load("res://ui/carte_joueur_survol.gd")
 	var nom_joueur: Button = premier.call(between.xv, "MatchBetweenPlayerName_*", "Button")
-	await essayer("nom d'un joueur", "MatchFenetreJoueur", "direct-2d-fenetre-joueur-nom-2560", func(): nom_joueur.pressed.emit(), nom_joueur != null, view)
+	check(nom_joueur != null, "nom d'un joueur : présent à l'écran")
+	if nom_joueur != null:
+		nom_joueur.gui_input.emit(clic)
+		await settle(12)
+		check(Carte.actuelle(app) != null and not view.fenetre_ouverte(), "nom d'un joueur : sa carte joueur, sans petite fenêtre")
+		await capture("direct-2d-carte-joueur-nom-2560")
+		Carte.cacher(app)
+		await settle(4)
 	var carte: Button = premier.call(between.xv, "MatchBetweenPlayer1", "Button")
 	# Carte de Mon XV : la fenêtre du joueur en match (idée 32 : mini-fiche, poste, rôle, consignes).
 	await essayer("carte d'un joueur", "MatchMenuJoueur", "direct-2d-fenetre-joueur-carte-2560", func(): carte.pressed.emit(), carte != null, view)

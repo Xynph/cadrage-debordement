@@ -108,6 +108,24 @@ func ouvrir_fiche_club_id(id: int) -> void:
 	for i in tuiles.size():
 		var t: Array = tuiles[i]
 		Pieces.tuile(fond, Rect2(36 + i * (largeur + 12.0), 318, largeur, 128), str(t[0]), str(t[1]), t[2], "MatchFenetreClub" + str(t[3]), 50 if i > 0 else 46)
+	fond.set_meta("cote", cote)
+
+## Fenêtre d'un club du match ouverte pendant la minute en cours (la pause part dès que le jeu est libre) : son score
+## et ses essais suivent le bandeau si un point y est montré avant la pause.
+func _suivre_score_fenetre_club() -> void:
+	if not is_instance_valid(fenetre_hote): return
+	var fond: Control = fenetre_hote.find_child("MatchFenetreClubPanneau", true, false)
+	if fond == null or not fond.has_meta("cote"): return
+	var valeur: Label = fond.find_child("MatchFenetreClubScoreValeur", true, false)
+	if valeur == null: return
+	var cote := int(fond.get_meta("cote"))
+	var marque := score_affiche()
+	var texte := "%d – %d" % [marque[cote], marque[1 - cote]]
+	if valeur.text == texte: return
+	valeur.text = texte
+	valeur.add_theme_color_override("font_color", Charte.GAIN if marque[cote] > marque[1 - cote] else Charte.PERTE if marque[cote] < marque[1 - cote] else Charte.IVOIRE)
+	var essais: Label = fond.find_child("MatchFenetreClubEssaisValeur", true, false)
+	if essais != null: essais.text = str(_essais_montres(cote))
 
 ## Petite fenêtre d'un de nos joueurs : portrait, poste et numéro, note du match, énergie (jauge), niveau, puis ses
 ## essais, plaquages et mètres du match en tuiles. Rien pour un adversaire (pas de fiche).

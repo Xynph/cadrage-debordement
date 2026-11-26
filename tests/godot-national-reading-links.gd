@@ -39,8 +39,9 @@ func run() -> void:
 	var callups: Control = International._callups(app, projection, names)
 	app.add_child(callups)
 	check(words(callups).contains("France") and words(callups).contains("du 1er novembre 2026 au 30 novembre 2026"), "Titre et dates de convocation inchangés")
-	check(words(callups).contains("Joueur connu · Centre · 24 ans · Niveau 66–74"), "Libellé et fourchette conservés mot pour mot")
-	check(words(callups).contains("Joueur sans fiche · Ailier · 22 ans · Niveau —"), "Joueur non consultable reste affiché sans note inventée")
+	# Niveau en lettres depuis #1273 : fourchette 66–74 = deux lettres voisines (« B+/A- »), jamais un chiffre du moteur.
+	check(RegEx.create_from_string("Joueur connu · Centre · 24 ans · Niveau [A-ES][+-]?/[A-ES][+-]?\n").search(words(callups)) != null, "Libellé et fourchette conservés mot pour mot")
+	check(words(callups).contains("Joueur sans fiche · Ailier · 22 ans · Niveau ?\n"), "Joueur non consultable reste affiché sans note inventée")
 	var nation := callups.find_child("InternationalCallupNation_FRA", true, false) as Button
 	var player := callups.find_child("InternationalCallupPlayer_known", true, false) as Button
 	check(nation != null and player != null, "Nation et joueur disponibles deviennent contrôles de lecture")

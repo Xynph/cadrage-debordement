@@ -207,3 +207,29 @@ test('Choix du manager : autre remplaçant, autre sortant, refus, présentation 
   assert.equal(sortie.rec, autre);
   assert.equal(sortie.actifs, 14, 'effectif toujours réduit');
 });
+
+// Fenêtre Équipe (match-pilotage.cjs) : le moteur vide la place d'un pilier en exclusion temporaire et le range sur le
+// banc jusqu'à la mêlée qui fait entrer un spécialiste ; le XV du direct le garde à son poste, comme tout joueur exclu.
+test('Fenêtre Équipe : pilier exclu temporairement gardé à son poste jusqu’à l’entrée du spécialiste', { timeout: 600000 }, () => {
+  const j = preparer();
+  restaurer();
+  let m = skipMatchTalk(j.call('begin_match'), j.call);
+  m = j.call('tick', { minute: true, temps_forts: 'dynamique' });
+  const carton = json(`(() => { const l = S.live, sh = l.sheets[l.userSide], id = sh.on[2]; delete l.incidentChoix;
+    giveMatchCard(l, l.userSide, id, 'yellow'); return {id, vide: sh.on[2] === null, banc: sh.bench.includes(id)}; })()`);
+  assert.equal(carton.vide && carton.banc, true, 'moteur : place du pilier vidée, pilier sur le banc');
+  m = j.call('pause', { paused: true });
+  assert.equal(m.live.lineup.length, 15);
+  assert.ok(m.live.lineup.every(p => p && Number.isFinite(p.rating)), 'XV complet dans la fenêtre Équipe');
+  assert.equal(m.live.lineup[2].id, carton.id, 'pilier exclu à son poste');
+  assert.equal(m.live.reserves.some(p => p.id === carton.id), false, 'pilier exclu absent des remplaçants');
+  // Mêlée suivante : un spécialiste entre à son poste, un autre joueur sort pour lui ; ce poste-là est vraiment vacant.
+  const couverture = json(`(() => { const l = S.live, sh = l.sheets[l.userSide]; prepareFrontRows(l); delete l.incidentChoix;
+    return {pilier: sh.on[2], donneur: sh.front.held.at(-1)?.slot ?? null}; })()`);
+  assert.notEqual(couverture.pilier, carton.id);
+  assert.ok(Number.isInteger(couverture.donneur), 'un joueur sort pour le spécialiste');
+  m = j.call('pause', { paused: true });
+  assert.equal(m.live.lineup[2].id, couverture.pilier, 'spécialiste à son poste');
+  assert.equal(m.live.lineup[couverture.donneur], null, 'poste du joueur sorti vacant');
+  assert.equal(m.live.reserves.some(p => p.id === carton.id), true, 'pilier exclu sur le banc');
+});

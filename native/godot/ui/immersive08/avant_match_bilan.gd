@@ -77,6 +77,9 @@ static func _score_texte(report: Dictionary) -> String:
 
 static func _pastille_resultat(avant: Control, res: String, taille: float) -> Control:
 	var p: Button = avant.pastille(res, taille)
+	# Pastille décorative (le clic est celui de toute la pastille du bandeau) : nom propre, distinct des pastilles de
+	# forme cliquables de l'affiche (« PastilleV », etc.), que les recherches par nom ne doivent pas confondre.
+	p.name = "MatchLastMatchResult" + res
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.focus_mode = Control.FOCUS_NONE
 	return p

@@ -21,11 +21,12 @@ permissions:
   # Lecture de l'état brouillon réel de la PR (classification).
   pull-requests: read
 
-# PR : seul le dernier push compte. main : seul le dernier commit fusionné compte (chaque
-# PR a déjà passé la batterie complète) ; workflow_dispatch n'est jamais annulé.
+# PR : seul le dernier push compte. main : jamais annulé en cours de route (sinon aucune batterie
+# ne finit à chaque fusion) ; GitHub ne garde qu'un run en attente, donc seul le dernier commit
+# fusionné compte parmi les attentes. workflow_dispatch n'est jamais annulé.
 concurrency:
   group: tests-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref != 'refs/heads/main') }}
 
 jobs:
   classification:
@@ -165,7 +166,7 @@ jobs:
           # de 12 Go. Budgets par suite, journaux groupés et résumé : ci/run-shard-suites.sh.
           bash ci/run-shard-suites.sh "$RUNNER_TEMP/shard-suites.txt" "Shard $SHARD/10 ($COVERAGE)" 3
   godot:
-    name: Godot ${{ matrix.shard }}/5
+    name: Godot ${{ matrix.shard }}/6
     needs: classification
     # Suites qui pilotent le SDK (source lisant CD_GODOT_EXE ou CD_GODOT_EXECUTABLE).
     # BLOQUANT (14/11) : « Validation CI » dépend de ce job (voir validation ci-dessous).
@@ -181,7 +182,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5]
+        shard: [1, 2, 3, 4, 5, 6]
     runs-on: ${{ fromJSON(vars.CI_RUNNER_LINUX || '"ubuntu-24.04"') }}
     timeout-minutes: 55
     env:
@@ -272,10 +273,10 @@ jobs:
           GALLIUM_DRIVER: llvmpipe
         run: |
           set -euo pipefail
-          node ci/shard-tests.cjs "$SHARD" godot 5 > "$RUNNER_TEMP/godot-suites.txt"
-          if [[ ! -s "$RUNNER_TEMP/godot-suites.txt" ]]; then echo "### Godot $SHARD/5 : aucune suite (mode rapide)" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
+          node ci/shard-tests.cjs "$SHARD" godot 6 > "$RUNNER_TEMP/godot-suites.txt"
+          if [[ ! -s "$RUNNER_TEMP/godot-suites.txt" ]]; then echo "### Godot $SHARD/6 : aucune suite (mode rapide)" >> "$GITHUB_STEP_SUMMARY"; exit 0; fi
           xvfb-run -a -s "-screen 0 1920x1080x24" \
-            bash ci/run-godot-suites.sh "$RUNNER_TEMP/godot-suites.txt" "Godot $SHARD/5"
+            bash ci/run-godot-suites.sh "$RUNNER_TEMP/godot-suites.txt" "Godot $SHARD/6"
   validation:
     name: Validation CI
     if: ${{ always() && needs.classification.outputs.deja_vert != 'true' }}
