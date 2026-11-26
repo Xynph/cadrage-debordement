@@ -100,11 +100,27 @@ func contacts(view) -> Dictionary:
 			sortie.bras_corps = maxf(sortie.bras_corps, bras_dans(volumes(ra, BRAS), volumes(rb, SANS_BRAS)))
 	return sortie
 
+## Ruck (26/11/2026, sonde du ruck : tibia d'un joueur debout planté dans la cuisse d'un couché, jusqu'à 14-18 cm,
+## avec des écarts de 0,3 à 0,6 m) : tibia vertical en travers de la cuisse, pieds du joueur dans l'axe de la
+## cuisse. Une seule poussée doit l'en sortir, de côté (perpendiculaire à la cuisse), pas le long d'elle.
+func jambe_en_travers() -> void:
+	var Plancher = load("res://match_plancher.gd")
+	var cuisse := [[Vector3(0.0, 0.1, 0.0), Vector3(0.45, 0.1, 0.0), 0.08]]
+	var tibia := [[Vector3(0.2, 0.5, 0.0), Vector3(0.2, 0.06, 0.0), 0.06]]
+	var pousse: Vector3 = Plancher._hors_des_couches(tibia, Vector3.ZERO, [cuisse], Vector3(0.3, 0.0, 0.0))
+	var deplace := [[(tibia[0][0] as Vector3) + pousse, (tibia[0][1] as Vector3) + pousse, 0.06]]
+	var reste := penetration(deplace, cuisse)
+	metrics.crossed_leg_left_m = snappedf(reste, 0.001)
+	metrics.crossed_leg_push_m = snappedf(pousse.length(), 0.001)
+	check(reste <= 0.0, "Ruck: one push takes a shin out of the grounded thigh it crosses (%.3f m left)" % reste)
+	check(absf(pousse.x) < 0.05 and pousse.length() < 0.25, "Ruck: the push is sideways, not along the thigh (%s)" % pousse)
+
 func clip_de(view, id: String) -> String:
 	return str((view._actors[id].animation as AnimationPlayer).current_animation)
 
 func run() -> void:
 	var Motion = load("res://match_motion.gd")
+	jambe_en_travers()
 	var view = load("res://match_view.gd").new()
 	root.add_child(view)
 	await process_frame
