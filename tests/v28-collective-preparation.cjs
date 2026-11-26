@@ -47,11 +47,11 @@ const fresh=context(),tired=context();fresh.run('start(0);S.collectiveFocus="pie
 tired.run('start(0);S.collectiveFocus="pied";club().players.forEach(p=>{ensurePhysicalLoad(p).fatigue=100});trainWeek();var l=createRugbyMatch([0,1])');
 assert.ok(value(fresh,'collectivePreparationBonus(l,0,"pied")')>value(tired,'collectivePreparationBonus(l,0,"pied")'));
 
-// Conquête : même événement et même tirage aléatoire, 82 % échoue sans préparation,
-// mais passe avec +4 points (conservation des mêlées/touches disputées).
+// Conquête : même événement et même tirage aléatoire, juste au-dessus de la conservation à packs égaux
+// (CONQUETE, dist/rugby.js) : échoue sans préparation, mais passe avec +4 points (mêlées/touches disputées).
 const scrumNone=context(),scrumPrep=context();
 for(const [t,focus] of [[scrumNone,'aucune'],[scrumPrep,'conquete']]){
- t.run('start(0);S.collectiveFocus='+JSON.stringify(focus)+';trainWeek();var l=createRugbyMatch([0,1]);delete l.restartVersion;Math.random=()=>.82;unit=()=>75;setPieceEffects=()=>({win:0,gain:0,finish:0,move:Object.keys(SCRUM_MOVES)[0]});contestSetPiece(l,0,"scrum")');
+ t.run('start(0);S.collectiveFocus='+JSON.stringify(focus)+';trainWeek();var l=createRugbyMatch([0,1]);delete l.restartVersion;unit=()=>75;var seuil=conqueteBase(l,"scrum",75,75)+.02;Math.random=()=>seuil;setPieceEffects=()=>({win:0,gain:0,finish:0,move:Object.keys(SCRUM_MOVES)[0]});contestSetPiece(l,0,"scrum")');
 }
 assert.equal(value(scrumNone,'l.stats[0].scrumsWon'),0);
 assert.equal(value(scrumPrep,'l.stats[0].scrumsWon'),1);

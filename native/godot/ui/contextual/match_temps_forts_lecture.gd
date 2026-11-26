@@ -449,6 +449,8 @@ func _lire_choregraphie(reel: float) -> void:
 
 func _jouer(plan: Dictionary) -> void:
 	var scene: Dictionary = plan.scene
+	# Transformation : la défense lancée à la course d'élan poursuit sa charge pendant le tir (loi 8).
+	if str(plan.get("kind", "")) == "transformation" and tir_au_but(plan): scene = ApresEssai.charge(scene)
 	phase = "jeu"
 	temps = 0.0
 	_attente_place = 0.0

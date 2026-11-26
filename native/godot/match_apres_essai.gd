@@ -48,6 +48,13 @@ const AU_DELA := 6.0
 const VITESSE_VOL := 26.0
 const VOL := [0.6, 1.2]
 const BALLON_AU_SOL := 0.13
+## Charge des défenseurs (loi 8 : ils quittent leur ligne de but dès que le buteur s'élance) : chacun
+## sort de son en-but vers le ballon, de CHARGE m (rangs étagés de CHARGE_ETAGE), jamais plus loin que
+## CHARGE_PART de la distance au ballon (en courant droit vers lui, ils se resserrent sur l'axe du tir).
+## Match filmé du 25/11 : défenseurs figés sur leur ligne et ballon manqué retombé parmi eux.
+const CHARGE := 11.0
+const CHARGE_ETAGE := [1.0, 0.87, 0.75]
+const CHARGE_PART := 0.5
 ## Partenaires autour du marqueur : à AUTOUR m de lui, en éventail face au terrain.
 const AUTOUR := 1.2
 const ECARTS_AUTOUR := [0.0, 0.95, -0.95, 1.9, -1.9, 2.8]
@@ -158,6 +165,43 @@ static func transformation(scene: Dictionary) -> Dictionary:
 			var place: Dictionary = joueur.duplicate()
 			place.x = (nouvelles[str(joueur.id)] as Vector2).x
 			place.y = (nouvelles[str(joueur.id)] as Vector2).y
+			joueurs.append(place)
+		else:
+			joueurs.append(joueur)
+	copie.players = joueurs
+	return copie
+
+
+## Défenseurs qui chargent le buteur d'une transformation (loi 8), dès sa course d'élan : la même
+## scène, les défenseurs (camp opposé à `possession`) sortis de leur en-but vers le ballon. Rend la
+## scène telle quelle sans marque.
+static func charge(scene: Dictionary) -> Dictionary:
+	var origine: Variant = scene.get("origin")
+	var camp := int(scene.get("possession", -1))
+	if not origine is Dictionary or not origine.has("x") or not origine.has("y") or camp not in [0, 1]:
+		return scene
+	var marque_tir := Vector2(float(origine.x), float(origine.y))
+	var defense: Array = []
+	for joueur: Variant in scene.get("players", []):
+		if joueur is Dictionary and int(joueur.get("side", -1)) == 1 - camp:
+			defense.append([float(joueur.get("y", 35.0)), str(joueur.get("id", ""))])
+	defense.sort()
+	var rang := {}
+	for k in defense.size():
+		rang[str(defense[k][1])] = k
+	var copie := scene.duplicate()
+	var joueurs: Array = []
+	for joueur: Variant in scene.get("players", []):
+		if joueur is Dictionary and rang.has(str(joueur.get("id", ""))):
+			var place: Dictionary = joueur.duplicate()
+			var depuis := Vector2(float(joueur.get("x", 50.0)), float(joueur.get("y", 35.0)))
+			var vers := marque_tir - depuis
+			var longueur := vers.length()
+			if longueur > 1.0:
+				var pas := minf(CHARGE * float(CHARGE_ETAGE[int(rang[str(joueur.id)]) % CHARGE_ETAGE.size()]), longueur * CHARGE_PART)
+				var p := depuis + vers / longueur * pas
+				place.x = clampf(p.x, -EN_BUT, 100.0 + EN_BUT)
+				place.y = clampf(p.y, BORD, 70.0 - BORD)
 			joueurs.append(place)
 		else:
 			joueurs.append(joueur)

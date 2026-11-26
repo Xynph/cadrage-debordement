@@ -44,7 +44,9 @@ function sample(attack,defence,weather='Sec',games=80){
  }
  return out;
 }
-const balanced=sample('equilibre','equilibre'),wide=sample('large','equilibre'),close=sample('conquete','equilibre'),kicking=sample('occupation','equilibre'),wetWide=sample('large','equilibre','Pluie'),wetClose=sample('conquete','equilibre','Pluie'),rush=sample('equilibre','pression','Sec',180),drift=sample('equilibre','prudente','Sec',180);
+const balanced=sample('equilibre','equilibre'),wide=sample('large','equilibre'),close=sample('conquete','equilibre'),kicking=sample('occupation','equilibre'),wetWide=sample('large','equilibre','Pluie'),wetClose=sample('conquete','equilibre','Pluie'),rush=sample('equilibre','pression','Sec',360),drift=sample('equilibre','prudente','Sec',360);
+// Défense en pression / prudente : 360 matchs chacune (180 avant la conquête réaliste) : l'écart de fautes (+1,2 par match) est net
+// (z = 6 à 360 matchs, 7 à 540), mais la graine fixe à 180 matchs le donnait à 3,5. Plus d'échantillon, même seuil.
 // Les gains par course réussie sont des moyennes : on compare les rapports (le recalage de la distance d'une course les déplace ensemble).
 assert.ok(wide.metres/wide.advances>close.metres/close.advances*1.1,'Wide play must gain more per successful carry');
 T.plusGrand('Wet wide play must cause more handling errors (par course)',T.zProportions(wetWide.handErrors,wetWide.carries,wetClose.handErrors,wetClose.carries));
