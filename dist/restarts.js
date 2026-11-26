@@ -185,7 +185,8 @@ function resolveInGoal(l,actor,scenario,kickOrigin=l.territory,depuis=null){
  const defender=1-actor;
  if(scenario==='defender-grounded'){addEvent(l,`${S.clubs[l.pair[actor]].abbr} a rentré le ballon dans son propre en-but et l’y rend mort : mêlée adverse à cinq mètres.`,'play',{kind:'ingoal',team:actor,cause:scenario,to:{x:ownGoal(actor),y:35}});return grantSetPiece(l,'scrum',1-actor,ownGoal(actor)+(actor===0?5:-5),'defender-grounded',actor,kickOrigin)}
  if(['held-up','attacking-kick-grounded','ingoal-knock-on'].includes(scenario)){
-  addEvent(l,scenario==='held-up'?'Le porteur attaquant est tenu dans l’en-but sans pouvoir aplatir.':scenario==='ingoal-knock-on'?'En-avant de l’attaque dans l’en-but.':'Le coup de pied de l’attaque est aplati par la défense dans son en-but.','play',{kind:'ingoal',team:actor,cause:scenario,...(depuis===null?{}:{from:{x:depuis,y:35}}),to:{x:attackingGoal(actor),y:35}});
+  {const ab=S.clubs[l.pair[actor]].abbr; // L'équipe qui attaque est nommée : le bandeau 3D et l'écran 2D lisent ce texte (détection de la cause : match-highlights.cjs).
+  addEvent(l,scenario==='held-up'?`Le porteur attaquant de ${ab} est tenu dans l’en-but sans pouvoir aplatir.`:scenario==='ingoal-knock-on'?`En-avant de l’attaque de ${ab} dans l’en-but.`:`Le coup de pied de l’attaque de ${ab} est aplati par la défense dans son en-but.`,'play',{kind:'ingoal',team:actor,cause:scenario,...(depuis===null?{}:{from:{x:depuis,y:35}}),to:{x:attackingGoal(actor),y:35}});}
   return performKickRestart(l,'goalLine',defender,scenario,actor);
  }
  if(scenario==='kick-dead'){

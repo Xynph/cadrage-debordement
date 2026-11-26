@@ -30,7 +30,8 @@ static func etat_du_plan(plan: Dictionary, equipes: Array, kind: String = "") ->
 	var camp: Variant = scene.get("possession", scene.get("team", -1))
 	# En-avant : l'équipe fautive, lue sur le fait du moteur (plan.equipe = scene.team du fait, match-direct.cjs) ;
 	# la scène 3D normalisée n'a que la possession (vérificateur de #1319 : « En-avant » sans équipe en 3D).
-	if (kind if not kind.is_empty() else str(plan.get("kind", ""))) == "hand-fault": camp = plan.get("equipe", scene.get("team", -1))
+	var genre_plan := kind if not kind.is_empty() else str(plan.get("kind", ""))
+	if genre_plan == "hand-fault" or Between.genre_en_but(genre_plan, str(plan.get("cause", scene.get("cause", "")))) != genre_plan: camp = plan.get("equipe", scene.get("team", -1))
 	if not (camp is int or camp is float): camp = -1
 	var ballon: Variant = scene.get("ball")
 	var x: float = float(ballon.x) if ballon is Dictionary and (ballon.get("x") is float or ballon.get("x") is int) else NAN
@@ -42,6 +43,7 @@ static func etat_du_plan(plan: Dictionary, equipes: Array, kind: String = "") ->
 		if scene.get("team") is int or scene.get("team") is float: camp = scene.team
 	# Passe en avant (cause du moteur, loi 11) : « Passe en avant », pas « En-avant ».
 	if genre == "hand-fault" and str(plan.get("cause", scene.get("cause", ""))) == "forward-pass": genre = "passe-en-avant"
+	genre = Between.genre_en_but(genre, str(plan.get("cause", scene.get("cause", ""))))
 	return Between.etat_du_fait(genre, int(camp), x, equipes)
 
 ## Ligne d'état pendant la lecture d'un plan, même règle que la légende (`fait_a_l_ecran`) : un arrêt
