@@ -216,6 +216,20 @@ func deja_vu(cle: String) -> bool:
 	var vus: Variant = app.management_ui.get("match_temps_forts_vus")
 	return vus is Array and cle in vus
 
+## Arrêt-décision déjà montré (`cle` : rencontre + clé du moteur) ; `marquer` le retient. Tous les arrêts du
+## match sont gardés, pas le dernier seul : un choix de blessure laissé au staff reste en attente dans le moteur
+## et revenait après un carton plus récent (vérificateur de #1305 : « BLESSURE · 6′ » à la 21′).
+func arret_vu(cle: String, marquer: bool = false) -> bool:
+	var vus: Variant = app.management_ui.get("match_temps_forts_arrets")
+	if not vus is Array: vus = []
+	var deja: bool = cle in vus or cle == str(app.management_ui.get("match_temps_forts_arret", ""))
+	if marquer and not deja:
+		vus.append(cle)
+		while vus.size() > VUS_MAX: vus.pop_front()
+		app.management_ui["match_temps_forts_arrets"] = vus
+		app.management_ui["match_temps_forts_arret"] = cle
+	return deja
+
 func marquer_vu(cle: String) -> void:
 	app.management_ui["match_temps_forts_cle"] = cle
 	var vus: Variant = app.management_ui.get("match_temps_forts_vus")
@@ -265,6 +279,7 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 	# Match repris en cours de route (sauvegarde) ou fin confiée à l'adjoint : ce que le
 	# moteur a déjà joué n'est pas rejoué, l'écran intermédiaire montre où en est le match.
 	var premiere: bool = str(app.management_ui.get("match_temps_forts_rencontre", "")) != rencontre
+	if premiere: _horloge_vue = []
 	app.management_ui["match_temps_forts_rencontre"] = rencontre
 	var delegue: bool = live.get("finished", false) and str(app.get("last_command")) == "delegate"
 	if (premiere and int(live.get("minute", 0)) > 0) or delegue:
@@ -272,7 +287,7 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 		# Mi-temps ou fin déjà passées (reprise), ou fin confiée à l'adjoint : pas de sortie mise en scène.
 		if not cle_sortie(live).is_empty(): app.management_ui["match_temps_forts_sortie"] = cle_sortie(live)
 		if etat == SORTIE: _finir_sortie(false)
-		if signale is Dictionary: app.management_ui["match_temps_forts_arret"] = rencontre + str(signale.get("cle", ""))
+		if signale is Dictionary: arret_vu(rencontre + str(signale.get("cle", "")), true)
 		nouveau = false
 		_arret_attendu = {}
 		if etat != INTER:
@@ -282,8 +297,7 @@ func receive(model: Dictionary, live: Dictionary) -> void:
 		# Le terrain 2D ne rejoue pas ce que le moteur a déjà joué : il part de la dernière image.
 		between.terrain.recaler(-1)
 		suivi.append({"evenement": "delegation" if delegue else "reprise", "horloge": str(direct.get("horloge", "")), "debut_ms": Time.get_ticks_msec()})
-	if signale is Dictionary and rencontre + str(signale.get("cle", "")) != str(app.management_ui.get("match_temps_forts_arret", "")):
-		app.management_ui["match_temps_forts_arret"] = rencontre + str(signale.get("cle", ""))
+	if signale is Dictionary and not arret_vu(rencontre + str(signale.get("cle", "")), true):
 		_arret_attendu = signale
 	if not arret.is_empty() and not live.get("paused", false) and not _pause_envoyee:
 		arret = {}

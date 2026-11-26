@@ -136,7 +136,7 @@ func rafraichir(force: bool = false) -> void:
 	var m := _minute()
 	if m < _minute_vue: _ecartes().clear()
 	_minute_vue = m
-	_phrase()
+	appliquer_phrase()
 	var bs := bulles()
 	var cle := JSON.stringify([bs, between.get_viewport_rect().size])
 	if cle == _cle and is_instance_valid(_boite) and not force: return
@@ -346,13 +346,17 @@ func _dernier_fait() -> Array:
 	if kind == "try": return ["essai", ("Essai de %s" % nom) if not nom.is_empty() else "", minute]
 	return ["but", ("%s passe les poteaux" % nom) if not nom.is_empty() else "", minute]
 
-func _phrase() -> void:
+func appliquer_phrase() -> void:
 	var cadre: Variant = between.get("phrase_fm")
 	var etat: Variant = between.get("etat")
 	if not cadre is PanelContainer or not is_instance_valid(cadre) or not etat is Label: return
 	var fait := _dernier_fait()
 	# Le fait marquant des 3 dernières minutes prend la phrase de jeu ; plus ancien, la phrase reste celle du jeu.
 	var recent := not fait.is_empty() and _minute() - int(fait[2]) <= 3 and not str(fait[1]).is_empty()
+	# Texte imposé par la régie (plan 3D, liaison) : il reste tel quel.
+	if not str(between.get("etat_force")).is_empty(): recent = false
+	# Carton : seulement tant qu'il est l'arrêt en cours (jusqu'à la reprise du jeu, jamais pendant un autre arrêt).
+	if recent and str(fait[0]) in ["jaune", "rouge"] and between.has_method("carton_en_cours") and not between.carton_en_cours(): recent = false
 	if recent: (etat as Label).text = str(fait[1])
 	var sorte := str(fait[0]) if recent else ""
 	var cle := JSON.stringify([sorte, (etat as Label).text])

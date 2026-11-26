@@ -179,6 +179,10 @@ var _horloge_inter := ""
 var _horloge_montree := ""
 var _minute_inter := -1
 var _roule := 0.0
+## Horloge la plus avancée déjà montrée dans la période ([minute écrite, « 40+2 » compris ; secondes ; total
+## en secondes]) : l'horloge de l'écran intermédiaire ne recule jamais (vérificateur de #1305 : 20:28 → 20:10
+## → 21:59 → 21:12). Vidée à la mi-temps, à la fin et au changement de rencontre.
+var _horloge_vue: Array = []
 var _live_inter: Dictionary = {}
 ## Liaison en cours (plans, programme de l'arbitre, légende), plan joué et temps écoulé dans ce plan.
 var liaison: Dictionary = {}

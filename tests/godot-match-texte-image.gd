@@ -176,9 +176,93 @@ func run() -> void:
 	entracte.etat_force = "Touche pour Visiteurs XV"
 	entracte._etat(vu_live, direct, equipes)
 	check(entracte.etat.text == "Touche pour Visiteurs XV", "Texte imposé par la régie : prioritaire")
+	entracte.etat_force = ""
 	entracte.etat.free()
 	entracte.free()
 	terrain.free()
+
+	# Vérificateur de #1305 (film 1, 20′-21′ ; film 3, 47′) : carton jaune, reprise du jeu, puis arrêt Blessure.
+	# Phrase de jeu réelle de l'écran (aplat, pastille, ligne d'état) relue à chaque écriture de la ligne.
+	var ecran = Between.new()
+	var terrain_c = Terrain2D.new()
+	ecran.terrain = terrain_c
+	ecran.phrase_fm = PanelContainer.new()
+	ecran.phrase_fm.add_theme_stylebox_override("panel", StyleBoxFlat.new())
+	var ligne_c := HBoxContainer.new()
+	ecran.phrase_fm.add_child(ligne_c)
+	ecran.etat = Label.new()
+	ligne_c.add_child(ecran.etat)
+	Between.BullesAdjoint.poser(ecran)
+	var carton_2d := [
+		{"i": 20, "minute": 20, "horloge": "20′", "kind": "card", "equipe": 1, "texte": "Carton jaune pour Paul DURAND : exclusion de 10 minutes de jeu.", "scene": {"kind": "card", "possession": 1, "ballon": [60.0, 30.0], "origine": [60.0, 30.0], "joueurs": []}},
+		{"i": 21, "minute": 20, "horloge": "20′", "kind": "carry", "equipe": 1, "texte": "Visiteurs XV avance.", "scene": {"kind": "carry", "possession": 1, "ballon": [65.0, 30.0], "origine": [60.0, 30.0], "joueurs": []}},
+	]
+	var live_c := {"teams": equipes, "events": events, "minute": 21}
+	var direct_c := {"possession": 1, "zone": {"x": 65.0, "kind": "carry"}, "borne": 22, "reperes": [{"kind": "card", "nom": "Paul DURAND", "minute": 20}]}
+	ecran._dernier = [{}, live_c, direct_c]
+	var vue_c := func() -> String:
+		var tag := ligne_c.get_node_or_null("MatchBetweenPlayLineTag")
+		return ecran.etat.text + (" [pastille]" if tag != null and not tag.is_queued_for_deletion() else "")
+	# Comme l'écran : rafraîchissement du direct (ligne puis phrase de jeu, update_frame), puis réécriture de la
+	# ligne seule par le fil ou le terrain (match_between_fil.gd) ; on relit le texte après chacun.
+	var bulles_c: Node = ecran.get_node(Between.BullesAdjoint.NOM)
+	var rafraichir_c := func(lu: Array) -> void:
+		ecran._etat(live_c, direct_c, equipes)
+		bulles_c.appliquer_phrase()
+		lu.append(vue_c.call())
+		ecran._etat(live_c, direct_c, equipes)
+		lu.append(vue_c.call())
+	terrain_c.alimenter(carton_2d.slice(0, 1), 21)
+	terrain_c.avancer(10.0)
+	ecran._arret = {"raison": "carton", "cle": "carton-20", "horloge": "20′", "texte": "Carton jaune pour Paul DURAND : exclusion de 10 minutes de jeu."}
+	var ouvert_c: Array = []
+	rafraichir_c.call(ouvert_c)
+	check(ouvert_c.all(func(t: String) -> bool: return t == "Carton jaune pour Paul DURAND [pastille]"), "Carton, arrêt ouvert : la ligne dit le carton, avec sa pastille (%s)" % str(ouvert_c))
+	ecran._arret = {}
+	var avant_c: Array = []
+	rafraichir_c.call(avant_c)
+	check(avant_c.all(func(t: String) -> bool: return t == "Carton jaune pour Paul DURAND [pastille]"), "Carton dernier fait joué, avant la reprise : le carton reste (%s)" % str(avant_c))
+	# Reprise : le terrain 2D joue le fait suivant ; ni pastille ni texte du carton, sur plusieurs rafraîchissements.
+	terrain_c.alimenter(carton_2d, 22)
+	terrain_c.avancer(10.0)
+	var reprise_c: Array = []
+	for k in 3: rafraichir_c.call(reprise_c)
+	check(str(terrain_c.joue.get("kind", "")) == "carry", "Fixture : le jeu a repris sur le terrain 2D")
+	check(reprise_c.all(func(t: String) -> bool: return t.begins_with("Visiteurs XV a le ballon") and not t.contains("pastille")), "Après la reprise : la possession, sans la pastille du carton (%s)" % str(reprise_c))
+	# Arrêt Blessure dans les 3 minutes du carton : il ne réaffiche pas le carton.
+	ecran._arret = {"raison": "blessure", "cle": "incident-x-22", "horloge": "21′", "texte": "VIS · Blessure : Jean MARTIN doit quitter le terrain, Luc PETIT le remplace."}
+	var blessure_c: Array = []
+	rafraichir_c.call(blessure_c)
+	check(blessure_c.all(func(t: String) -> bool: return not t.contains("Carton") and not t.contains("pastille")), "Arrêt Blessure après le carton : le carton n'est pas réaffiché (%s)" % str(blessure_c))
+	ecran._arret = {}
+	ecran.phrase_fm.free()
+	ecran.free()
+	terrain_c.free()
+
+	# Vérificateur de #1305 (film 1) : horloge de l'écran intermédiaire 20:28 → 20:04 → 20:10 → 20:22 → 21:59 → 21:12.
+	# Le texte posé par la régie ne recule jamais dans la période ; il repart à la mi-temps.
+	var horloges: Array = []
+	for vu: Array in [["20", 28], ["20", 4], ["20", 10], ["20", 22], ["21", 59], ["21", 12], ["22", 3]]:
+		var h: Array = regie.retenir_horloge(str(vu[0]), int(vu[1]))
+		horloges.append("%s:%02d" % [h[0], int(h[1])])
+	check(horloges == ["20:28", "20:28", "20:28", "20:28", "21:59", "21:59", "22:03"], "Horloge de l'écran intermédiaire : jamais en arrière (%s)" % str(horloges))
+	check("%s:%02d" % regie.retenir_horloge("40+2", 30) == "40+2:30" and "%s:%02d" % regie.retenir_horloge("40+1", 50) == "40+2:30", "Arrêts de jeu « 40+2 » : jamais en arrière non plus")
+	regie._horloge_vue = []
+	check("%s:%02d" % regie.retenir_horloge("40", 5) == "40:05", "Seconde période : l'horloge repart de 40")
+
+	# Vérificateur de #1305 : « BLESSURE · 6′ » à la 21′. Le choix de blessure laissé au staff restait en attente dans
+	# le moteur et revenait comme nouvel arrêt après le carton : un arrêt déjà montré ne revient pas.
+	var script_app := GDScript.new()
+	script_app.source_code = "extends Control\nvar management_ui := {}\n"
+	script_app.reload()
+	var app_arret: Control = script_app.new()
+	regie.app = app_arret
+	var montres: Array = []
+	for cle: String in ["incident-m-12", "carton-80", "incident-m-12", "carton-80", "incident-m-95"]:
+		if not regie.arret_vu("r|" + cle, true): montres.append(cle)
+	check(montres == ["incident-m-12", "carton-80", "incident-m-95"], "Arrêts-décisions : chacun montré une fois, la blessure de la 6′ ne revient pas à la 21′ (%s)" % str(montres))
+	regie.app = null
+	app_arret.free()
 
 	# Trace des légendes : en liaison, le texte est celui de l'arrêt (essai) et non celui du plan à venir (touche).
 	var lien := {"arrets": [2, 3], "kinds": ["try", "lineout"], "arret": 3}
