@@ -46,7 +46,9 @@ function mesurer(matchs) {
    const e = f.equipes[s];
    equipes.n++;
    for (const c of EQUIPE) equipes[c] += e[c] ?? 0;
-   const points = Object.values(f.joueurs).filter(j => j.camp === s).reduce((a, j) => a + j.points, 0);
+   // Essai de pénalité (loi 8) : 7 points accordés à l'équipe, sans marqueur ni buteur.
+   const points = Object.values(f.joueurs).filter(j => j.camp === s).reduce((a, j) => a + j.points, 0)
+     + 7 * m.events.filter(e => e.type === 'try' && e.scene?.kind === 'message' && e.scene.team === s).length;
    if (points !== m.score[s]) ecarts.push({ cle: m.cle, camp: s, points, score: m.score[s] });
   }
   for (const j of Object.values(f.joueurs)) {

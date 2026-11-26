@@ -52,8 +52,8 @@ test('« Avantage sur en-avant » : l’en-avant est raconté juste avant, par l
     racontes++;
     let q = j + 1; while (q < m.events.length && BRUIT.has(m.events[q].type)) q++;
     const suite = m.events[q]; if (!suite) return;
-    const promet = /laisse jouer/.test(e.text) && !/^Avantage sur en-avant/.test(suite.text); // promettre un avantage que la ligne suivante annule
-    const ok = !promet && (/ : introduction adverse.$/.test(e.text) ? /prépare la mêlée|^Mi-temps|^Coup de sifflet final/.test(suite.text) : /^(Avantage sur en-avant|Aucun avantage obtenu : retour à la mêlée)/.test(suite.text) || suite.text === `Aucun avantage obtenu : retour à la pénalité pour ${m.abbr[e.scene.team]}.`);
+    const promet = /laisse jouer/.test(e.text) && !/^Avantage sur (en-avant|passe en avant)/.test(suite.text); // promettre un avantage que la ligne suivante annule
+    const ok = !promet && (/ : introduction adverse.$/.test(e.text) ? /prépare la mêlée|^Mi-temps|^Coup de sifflet final/.test(suite.text) : /^(Avantage sur (en-avant|passe en avant)|Aucun avantage obtenu : retour à la mêlée)/.test(suite.text) || suite.text === `Aucun avantage obtenu : retour à la pénalité pour ${m.abbr[e.scene.team]}.`);
     if (!ok) incoherents.push(`match ${m.k} [${j}] ${e.text} -> ${suite.text}`);
   });
   assert.ok(racontes >= 100, `assez d’en-avants racontés (${racontes})`);

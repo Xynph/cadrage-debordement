@@ -98,6 +98,31 @@ func run() -> void:
 	check(textes(regie.montre(live)).size() == 4, "Faits déjà connus : le journal les garde")
 	regie._vus = 1
 
+	# Faits des lois sans image (match filmé du 26/11 : essai de pénalité et drop absents du fil du direct 3D) :
+	# direct.lois les rattache (`apres`) au fait du plan qu'ils suivent ; la régie les écrit après ce plan.
+	var drop := {"i": 4, "apres": 3, "loi": "drop-reussi", "kind": "goal", "equipe": 0, "horloge": "15′", "score": [13, 0], "texte": "DOM · Drop réussi par Petit. 13 – 0."}
+	var coup_franc := {"i": 5, "apres": 2, "loi": "coup-franc", "kind": "message", "equipe": 1, "horloge": "12′", "score": [7, 0], "texte": "Coup franc pour VIS : introduction pas droite (DOM)."}
+	regie._live = {"direct": {"lois": [coup_franc, drop]}}
+	check(regie.lois_du_plan(3).size() == 1 and str(regie.lois_du_plan(3)[0].loi) == "drop-reussi", "Faits des lois : rattachés au plan de leur fait (apres)")
+	check(regie.lois_du_plan(1).is_empty() and regie.lois_du_plan(2).size() == 1, "Faits des lois : après la transformation, jamais entre l'essai et elle")
+	check(regie._score_apres(3) == [13, 0], "Score après le plan et le drop réussi : +3 (%s)" % str(regie._score_apres(3)))
+	var avec_drop := events.duplicate()
+	avec_drop.append({"min": 15, "type": "goal", "text": drop.texte})
+	avec_drop.append({"min": 16, "text": "Renvoi."})
+	var live_drop := live.duplicate()
+	live_drop["events"] = avec_drop
+	regie._events = avec_drop
+	poser(regie, 3, "jeu", Regie.RESULTAT)
+	check(textes(regie.montre(live_drop)).size() == 4, "Tir au but vu : le drop qui suit attend son tour")
+	regie._loi = drop
+	check(textes(regie.montre(live_drop)).size() == 5 and textes(regie.montre(live_drop))[4] == drop.texte, "Drop écrit après le plan : il entre au journal (%s)" % str(textes(regie.montre(live_drop))))
+	check(Regie.etat_de_loi(drop, equipes) == "Drop réussi — Domicile XV", "Ligne d'état du drop réussi (%s)" % Regie.etat_de_loi(drop, equipes))
+	check(Regie.etat_de_loi(coup_franc, equipes) == "Coup franc pour Visiteurs XV", "Ligne d'état du coup franc (%s)" % Regie.etat_de_loi(coup_franc, equipes))
+	check(Regie.etat_de_loi({"loi": "essai-penalite", "equipe": 1}, equipes) == "Essai de pénalité — Visiteurs XV", "Ligne d'état de l'essai de pénalité")
+	regie._loi = {}
+	regie._live = {}
+	regie._events = events
+
 	# Outils de coupe.
 	check(Regie.sans_transformation("Essai de Bernard, transformé par Petit : 7-0.") == "Essai de Bernard.", "Coupe de l'essai à la transformation")
 	check(Regie.sans_transformation("Essai de pénalité.") == "Essai.", "Essai sans transformation dans le texte : « Essai. » (comme le moteur)")
@@ -130,6 +155,10 @@ func run() -> void:
 	# Match filmé du 25/11 : « X a le ballon dans les 22 » pendant l'en-avant de X, mêlée pour l'autre.
 	var en_avant := Regie.etat_montre({"kind": "hand-fault", "scene": {"possession": 1, "ball": {"x": 80.0}}}, "jeu", 0.5, true, false, equipes)
 	check(en_avant == "En-avant", "Ligne d'état, en-avant : l'arrêt de jeu, pas la possession (" + en_avant + ")")
+	# Vérificateur du 26/11 : « En-avant » affiché pour une passe en avant (cause du moteur « forward-pass », loi 11).
+	var passe := Regie.etat_montre({"kind": "hand-fault", "cause": "forward-pass", "scene": {"possession": 1, "ball": {"x": 80.0}}}, "jeu", 0.5, true, false, equipes)
+	check(passe == "Passe en avant", "Ligne d'état, passe en avant : « Passe en avant » (" + passe + ")")
+	check(Between.etat_du_deroule({"kind": "hand-fault", "cause": "forward-pass", "equipe": 1, "scene": {"possession": 1, "ballon": [80.0, 35.0]}}, equipes) == "Passe en avant", "Ligne d'état de l'écran intermédiaire, passe en avant")
 	var penalite := Regie.etat_montre({"kind": "penalty", "scene": {"possession": 0, "ball": {"x": 60.0}}}, "jeu", 0.5, true, false, equipes)
 	check(penalite == "Pénalité pour Domicile XV", "Ligne d'état, pénalité : « Pénalité pour … » (" + penalite + ")")
 	# Vérificateur du 25/11 (16e) : carton jaune pendant l'arrêt de la pénalité, bandeau revenu à

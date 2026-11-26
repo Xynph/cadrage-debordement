@@ -252,7 +252,7 @@ Ce lot ne modifie aucune loi, disposition de compétition ou probabilité sporti
 
 Le mode natif `france30` possède ses calendriers, classements et transitions propres. Le format retenu se réfère au [Livre II sportif LNR 2026–2027, version du 1er juillet 2026](https://assets.lnr.fr/3/0/4/6/9/8/LIVRE-2_Sportif-et-Comp%C3%A9titions_2627_V2_703069b00e686885076f1b627c8c5441.pdf), notamment aux articles 2005–2013, 2034 et 2085. La source et le schéma sont détaillés dans le plan France reliée ; les départages par groupes, les phases finales et les deux issues du barrage sont vérifiés dans les tests `france-rules`, `france-knockout` et `france-transitions`.
 
-Cette édition de compétition ne remplace pas le profil de lois de match `fr-pro-2025` du moteur existant. Les prolongations utilisent ce même moteur. Les drops et les exclusions de staff ne sont pas produits par la simulation actuelle ; leur présence dans un ordre de départage ne signifie pas que ces événements sont implémentés. Les tirs sont résolus atomiquement, avec buteurs choisis automatiquement ; pas de sauvegarde au milieu d'une tentative.
+Cette édition de compétition ne remplace pas le profil de lois de match `fr-pro-2025` du moteur existant. Les prolongations utilisent ce même moteur. Les drops sont produits par le moteur depuis le 26/11/2026 ([lois manquantes](lois-manquantes-20261126.md)) ; les exclusions de staff ne le sont pas ; leur présence dans un ordre de départage ne signifie pas que ces événements sont implémentés. Les tirs sont résolus atomiquement, avec buteurs choisis automatiquement ; pas de sauvegarde au milieu d'une tentative.
 
 Abstractions déclarées : monde fermé à trente clubs sans Nationale, cadence commune de 34 semaines et calendrier sans dates réelles. Les calendriers générés suivent des tables de Berger avec alternance (au plus deux réceptions ou deux déplacements de suite, retour en miroir de l’aller) ; l’ordre des journées n’est pas celui du calendrier LNR publié ([détail](calendrier-alternance-20261111.md)). À égalité encore indiscernable après les critères disponibles, la convention de classement antérieur puis d'ID stable reste une convention du jeu. Aucun forfait administratif ni conformité intégrale du rugby 2026–2027 n'est annoncé. Le stade 3D conserve des dimensions de présentation ; il ne certifie ni une enceinte réelle ni sa conformité réglementaire.
 
@@ -333,7 +333,9 @@ Sources : [loi 5 — Durée](https://passport.world.rugby/fr/les-regles-du-jeu/r
 - Tirs au but : séance commentée tir par tir à partir de la preuve enregistrée,
   sans tirage ajouté ni changement du vainqueur ; critère de départage écrit en
   français (essais marqués, pénalités réussies, drops, exclusions, tirs au but).
-- Non traité : coup franc après la sirène (le moteur n'en accorde pas), temps
+- Coups francs (26/11/2026) : accordés sur fautes techniques de mêlée et de touche ; un coup franc sifflé après la
+  sirène se joue (à la main) ou se termine en touche comme le reste du jeu.
+- Non traité : temps
   mort de l'arbitre, prolongation « mort subite » des règlements qui en
   prévoient une hors Pacific et Japon, chemin hérité hors Monde (« prolongation
   simplifiée »). `tests/fin-de-periode.cjs`.

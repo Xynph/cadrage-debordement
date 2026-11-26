@@ -2,7 +2,7 @@
 // Atomic match sequences, pinned to the 2025 laws. The clock/advantage engine
 // remains separate; each restart has a cause, beneficiary and longitudinal mark.
 const RESTART_AUTH=new WeakMap();
-const RESTART_CAUSES={scrum:['knock-on','forward-pass','kick-dead-option','defender-grounded','penalty-scrum'],lineout:['carry-touch','indirect-touch','direct-touch','penalty-touch','50-22','missed-goal-touch'],kickoff:['start','second-half','score','extra-first','extra-second'],drop22:['missed-goal-dead','kick-dead'],goalLine:['held-up','attacking-kick-grounded','ingoal-knock-on']};
+const RESTART_CAUSES={scrum:['knock-on','forward-pass','kick-dead-option','defender-grounded','penalty-scrum','unplayable'],lineout:['carry-touch','indirect-touch','direct-touch','penalty-touch','50-22','missed-goal-touch'],kickoff:['start','second-half','score','extra-first','extra-second'],drop22:['missed-goal-dead','kick-dead'],goalLine:['held-up','attacking-kick-grounded','ingoal-knock-on']};
 function restartRules(l){return l.restartVersion===1}
 function ownGoal(side){return side===0?0:100}
 function attackingGoal(side){return ownGoal(1-side)}
@@ -20,7 +20,9 @@ function registerRestart(l,kind,team,at,cause,by,origin=l.territory){
 function grantSetPiece(l,kind,team,at,cause,by,origin=l.territory){
  if(!['scrum','lineout'].includes(kind))return false;
  const mark=clamp(at,5,95),r=registerRestart(l,kind,team,mark,cause,by,origin);if(!r)return false;
- l.territory=mark;l.possession=team;addEvent(l,`${S.clubs[l.pair[team]].abbr} prépare ${kind==='scrum'?'la mêlée, introduction à suivre':'la touche, lancer à suivre'}.`,'setup',{kind,team,from:{x:mark,y:kind==='lineout'?4:35},to:{x:mark,y:kind==='lineout'?4:35}});RESTART_AUTH.set(l,r);
+ l.territory=mark;l.possession=team;addEvent(l,`${S.clubs[l.pair[team]].abbr} prépare ${kind==='scrum'?'la mêlée, introduction à suivre':'la touche, lancer à suivre'}.`,'setup',{kind,team,from:{x:mark,y:kind==='lineout'?4:35},to:{x:mark,y:kind==='lineout'?4:35}});
+ if(coupFrancConquete(l,team,kind))return true;
+ RESTART_AUTH.set(l,r);
  try{contestSetPiece(l,team,kind,cause==='penalty-touch')}finally{RESTART_AUTH.delete(l)}
  ballPossession(l,l.possession,l.territory);return true;
 }
@@ -42,11 +44,12 @@ function performKickRestart(l,kind,team,cause,by){
 function handFault(l,offender,forward=false){
  // Le récit de la faute précède toujours l'avantage : « X commet un en-avant », puis « Avantage sur en-avant pour Y ».
  // En-avant juste après un coup de pied pris par l'équipe fautive (chandelle relâchée, ballon ramassé puis échappé) : le
- // receveur nommé au coup de pied commet la faute, à l'écran comme dans le récit. Aucun tirage.
- const ab=S.clubs[l.pair[offender]].abbr,porteur=actionPlayer(l,offender),recu=!forward&&kickReceivedBy(l,offender);
+ // receveur nommé au coup de pied commet la faute, à l'écran comme dans le récit. Aucun tirage. Une faute de main juste
+ // à la réception est toujours un en-avant du receveur, jamais une passe en avant (tirage de l'appelant ignoré).
+ const ab=S.clubs[l.pair[offender]].abbr,porteur=actionPlayer(l,offender),recu=kickReceivedBy(l,offender);if(recu)forward=false;
  const qui=recu?`${recu.name} (${ab}) commet un en-avant à la réception`:`${ab} commet ${forward?'une passe en avant':'un en-avant'}`,actor=recu?recu.id:porteur?.id||null;
  const narrate=()=>addEvent(l,`${qui}.`,'play',{kind:'hand-fault',team:offender,cause:forward?'forward-pass':'knock-on',actor});
- tacticalCount(l,offender,'handErrors');const at=l.territory;if(flowRules(l)&&offerAdvantage(l,'scrum',1-offender,offender,at,{narrate}))return true;addEvent(l,`${qui} : introduction adverse.`,'play',{kind:'hand-fault',team:offender,cause:forward?'forward-pass':'knock-on',actor});
+ tacticalCount(l,offender,'handErrors');const at=l.territory;if(flowRules(l)&&offerAdvantage(l,'scrum',1-offender,offender,at,{narrate,passe:forward}))return true;addEvent(l,`${qui} : introduction adverse.`,'play',{kind:'hand-fault',team:offender,cause:forward?'forward-pass':'knock-on',actor});
  return grantSetPiece(l,'scrum',1-offender,at,forward?'forward-pass':'knock-on',offender);
 }
 // Receveur adverse du coup de pied qui vient d'être raconté (même minute, rien de joué entre les deux), sinon null.
@@ -57,6 +60,115 @@ function kickReceivedBy(l,side){
   return activePlayers(l,side).find(p=>String(p.id)===String(s.receiver))||null;
  }
  return null;
+}
+// Lois manquantes (docs/lois-manquantes-20261126.md) : coups francs, passes en avant, essais de pénalité, drops.
+// Coup franc (loi 20, 2025) : jeu rapide à la main ou coup de pied ; ni tir au but (pas de drop avant que le ballon soit
+// mort ou joué par l'adversaire), ni mêlée (loi 20.3 : l'option mêlée n'existe que sur pénalité) ; touche directe :
+// lancer adverse, gain de terrain seulement depuis ses 22 ; pas de 50:22. Fautes techniques de conquête : loi 19
+// (engagement anticipé, introduction, talonnage, mêlée formée en 30 s) et loi 18 (couloir, sauteur soutenu avant le
+// lancer, alignement formé en 30 s). Passe en avant (loi 11) : mêlée adverse, avantage possible. Essai de pénalité
+// (loi 8) : faute qui empêche un essai probable, 7 points sans transformation, carton jaune du fautif. Drop (loi 8) :
+// 3 points, par l'ouvreur, surtout en fin de match serré. Fréquences : réglages de simulation calés sur la mesure (réel
+// élite par match : coups francs 3-5, passes en avant 2-4, essais de pénalité 0,07-0,15, drops tentés ~0,2).
+// coupFranc : par mêlée / touche formée ; passeAvant : part des fautes de main ; essaiPenalite : à `distance` m au plus de
+// la ligne, faute de mêlée ou de ballon porté (conquete) ou dans le jeu ; drop : zone (m de la ligne), base par action,
+// fin (dès `minute`, mené de `ecart` points au plus ou à égalité), reussite à 22 m pour un botteur de 70, perte par mètre.
+let LOIS_RULES=1;
+var LOIS={coupFranc:{melee:.17,touche:.09},passeAvant:.16,injouable:.25,essaiPenalite:{distance:7,conquete:.3,jeu:.08},
+ drop:{zone:[14,35],base:.012,fin:.35,minute:72,ecart:3,plie:{mene:7,avance:14},reussite:.6,parMetre:.012}};
+function loisRules(l){return !!LOIS_RULES&&typeof penalitesRules==='function'&&penalitesRules(l)}
+function passeEnAvant(l){return loisRules(l)&&Math.random()<LOIS.passeAvant}
+const COUP_FRANC_MOTIFS={scrum:['engagement anticipé en mêlée','introduction pas droite','talonnage avant l’introduction','mêlée pas formée dans les 30 secondes'],lineout:['couloir fermé dans l’alignement','sauteur soutenu avant le lancer','alignement pas formé dans les 30 secondes']};
+// Coup franc sur faute technique, tiré quand la mêlée ou la touche est prête (avant la pénalité de conquête).
+// Temps écoulé (sirène) : aucun coup franc, avant tout tirage ; la mêlée ou la touche due après la sirène reste la
+// dernière action annoncée, disputée puis close comme avant les lois manquantes (sinon un coup franc joué vite relançait
+// la période après « dernière action avant le changement de camp »).
+function coupFrancConquete(l,team,kind){
+ if(!loisRules(l)||l.restartLog?.some(r=>r.kind==='kickoff'&&r.minute===l.minute))return false;
+ if(typeof periodBoundary==='function'&&flowRules(l)&&l.minute>=periodBoundary(l))return false;
+ if(kind==='scrum'&&l.sheets.some(sh=>sh.front?.uncontested))return false;
+ if(Math.random()>=LOIS.coupFranc[kind==='scrum'?'melee':'touche'])return false;
+ const side=Math.random()<.5?team:1-team,motifs=COUP_FRANC_MOTIFS[kind],motif=motifs[(l.minute+coupFrancRang(l))%motifs.length];
+ // Mêlée ou touche formée puis arrêtée sur le coup franc : comptée comme jouée (comme une pénalité de conquête).
+ l.stats[team][kind==='scrum'?'scrums':'lineouts']++;
+ addEvent(l,`Coup franc pour ${S.clubs[l.pair[side]].abbr} : ${motif} (${S.clubs[l.pair[1-side]].abbr}).`,'play',{kind:'message',team:side,loi:'coup-franc'});
+ // Mêlée ou touche accordée et jouée en coup franc : la suite (touche, coup de pied, fin de période à la sirène) ne
+ // la fait jamais passer pour refusée (sinon une pénalité « mêlée » retomberait en pénaltouche après le sifflet).
+ jouerCoupFranc(l,side);return true;
+}
+// Motif sans tirage, lu dans l'état du moteur (mêlées et touches jouées) et jamais dans le journal : le découpage des
+// longues courses (MATCH_COURSES_DECOUPEES) ajoute des faits au journal sans changer le jeu, le motif doit rester le même.
+function coupFrancRang(l){return l.stats.reduce((n,s)=>n+(s.scrums||0)+(s.lineouts||0),0)}
+// Taper ou jouer vite suit le plan de jeu au pied du bénéficiaire (pilotage : jeu au pied, relance, rythme, fin de match,
+// consignes individuelles « Jouer au pied »), comme le jeu au pied courant (openKickProbability) ; sans pilotage
+// (IA contre IA), facteur 1 : mêmes probabilités et mêmes tirages.
+function jouerCoupFranc(l,side){
+ const at=l.territory,dir=side===0?1:-1,ab=S.clubs[l.pair[side]].abbr,d=Math.abs(at-ownGoal(side));
+ const pied=typeof pilotageKick==='function'&&l.pilotage?pilotageKick(l,side):1;
+ ballPossession(l,side,at);
+ if(d<=22&&Math.random()<clamp(.85*pied,.3,.97)){
+  // Dégagement en touche depuis ses 22 : gain de terrain, lancer adverse.
+  l.kickContext={team:side,halfEligible:false,twentyTwoEligible:true};tacticalCount(l,side,'kicks');
+  return resolveTouch(l,side,clamp(at+dir*rand(18,32),5,95),{direct:true,kicker:occupationKicker(l,side)});
+ }
+ if(d>22&&d<50&&Math.random()<clamp(.45*pied,.1,.85)){l.kickContext={team:side,halfEligible:false,twentyTwoEligible:false};return kickOpenPlay(l,side)}
+ // Jeu rapide à la main : le demi de mêlée joue le coup franc, un partenaire avance (défense repliée à dix mètres).
+ const tapper=quickTapper(l,side),carrier=actionPlayer(l,side)||tapper,g=rand(2,7),to=clamp(at+dir*g,1,99);
+ tacticalCount(l,side,'carries');l.territory=to;l.kickContext={team:side,halfEligible:ownHalf(side,to),twentyTwoEligible:own22(side,to)};
+ addEvent(l,`${tapper?.name||ab} (${ab}) joue vite le coup franc ; ${carrier?.name||ab} avance de ${g} mètres.`,'play',{kind:'carry',team:side,actor:carrier?.id||null,tackler:carrier?carryTackler(l,side,carrier.id,g):null,loi:'coup-franc-joue',from:{x:at,y:35},to:{x:to,y:35}});
+ return true;
+}
+// Faute qui empêche un essai probable (loi 8) : près de la ligne, surtout en mêlée ou sur ballon porté.
+function essaiPenaliteProbable(l,side,incident){
+ if(!loisRules(l))return false;const E=LOIS.essaiPenalite;
+ if(Math.abs(attackingGoal(side)-l.territory)>E.distance)return false;
+ return Math.random()<(['scrum','maul'].includes(incident?.id)?E.conquete:E.jeu);
+}
+function accorderEssaiPenalite(l,side,incident){
+ const depart=Array.isArray(l.essaisPoss)&&l.essaisPoss[0]===side?l.essaisPoss[1]:l.territory;
+ l.tries[side]++;(l.essaisDetail||(l.essaisDetail=[])).push([Math.max(0,Math.round(l.minute)||0),side,incident?.id==='maul'?'b':incident?.id==='scrum'?'m':'j',Math.round(side===0?100-clamp(depart,0,100):clamp(depart,0,100))]);
+ // Compte du moteur (score = essais × 5 + transformations × 2 + buts × 3, contrôlé à la sauvegarde) : les 2 points
+ // accordés sans tir figurent comme une transformation, comptée à part (penaltyTries) et retirée partout où le joueur voit
+ // les transformations (statistiques du match, conseil, multiplex) ; aucun buteur n'est crédité (fiche de stats).
+ l.score[side]+=7;l.stats[side].conversionAttempts++;l.stats[side].conversions++;l.stats[side].penaltyTries=(l.stats[side].penaltyTries||0)+1;
+ addEvent(l,`${S.clubs[l.pair[side]].abbr} · Essai de pénalité : 7 points, sans transformation. ${l.score.join(' – ')}.`,'try',{kind:'message',team:side,loi:'essai-penalite'});
+ if(restartRules(l)){chronoArret(l,'penalite');if(!flowScored(l,side)&&(flowRules(l)||l.minute<80))relancer(l,'kickoff',1-side,'score',side)}
+ return true;
+}
+// Porteur arrêté et ballon qui ne ressort pas du maul formé autour de lui (loi 16) : mêlée pour l'équipe qui n'avait pas
+// le ballon au début du maul. Part des ballons perdus au contact (injouable).
+function ballonInjouable(l,side){
+ if(!loisRules(l)||l.flow?.advantage||Math.random()>=LOIS.injouable)return false;
+ const opp=1-side,carrier=actionPlayer(l,side);
+ addEvent(l,`${carrier?.name||S.clubs[l.pair[side]].abbr} (${S.clubs[l.pair[side]].abbr}) est pris dans un maul arrêté, ballon injouable : mêlée pour ${S.clubs[l.pair[opp]].abbr}.`,'play',{kind:'message',team:opp,loi:'injouable'});
+ grantSetPiece(l,'scrum',opp,l.territory,'unplayable',side);return true;
+}
+// Drop de l'ouvreur (n° 10, sinon le botteur d'occupation) à portée, hors avantage.
+// Sans tirage : l'action peut-elle commencer par un drop ? (aussi lu par tests/helpers/tirages.cjs).
+// Garde-fou, avant tout tirage : pas de drop dans un match plié (mené de plus de `plie.mene` points en seconde période,
+// ou plus de `plie.avance` points d'avance) ; la fin de match serrée (`fin`) n'est jamais pliée.
+function dropPossible(l,side){
+ if(!loisRules(l)||l.flow?.advantage)return false;const D=LOIS.drop,d=Math.round(Math.abs(attackingGoal(side)-l.territory));
+ const ecart=l.score[side]-l.score[1-side],seconde=(l.flow?.period??((Number(l.minute)||0)>=40?2:1))>=2;
+ if(ecart>D.plie.avance||seconde&&ecart<-D.plie.mene)return false;
+ return d>=D.zone[0]&&d<=D.zone[1]}
+function dropTente(l,side){
+ if(!dropPossible(l,side))return false;
+ const D=LOIS.drop,goal=attackingGoal(side),at=l.territory,d=Math.round(Math.abs(goal-at));
+ const ecart=l.score[side]-l.score[1-side],fin=(Number(l.minute)||0)>=D.minute&&ecart<=0&&ecart>=-D.ecart;
+ if(Math.random()>=(fin?D.fin:D.base))return false;
+ const id=l.sheets[side]?.on?.[9],k=(id!=null?activePlayers(l,side).find(p=>p.id===id):null)||occupationKicker(l,side),ab=S.clubs[l.pair[side]].abbr,nom=k?.name||ab;
+ const pluie=meteoActive(l)?meteoNiveau(l,'pluie'):l.weather==='Pluie'?1:0,note=k?(skill(k,'kick',true)+skill(k,'goal',true))/2:60;
+ const ok=Math.random()<clamp(D.reussite+(note-70)*.008-Math.max(0,d-22)*D.parMetre-pluie*.08+goalConditions(l,side)*.5,.1,.8);
+ // Drop compté avec les buts (score = essais × 5 + transformations × 2 + buts × 3, contrôlé à la sauvegarde), et à part
+ // (dropAttempts, drops) pour le retirer de la ligne « Tirs de pénalité » affichée au joueur.
+ tacticalCount(l,side,'kicks');l.stats[side].goalAttempts++;l.stats[side].dropAttempts=(l.stats[side].dropAttempts||0)+1;
+ addEvent(l,`${nom} (${ab}) tente le drop à ${d} mètres.`,'play',{kind:'message',team:side,loi:'drop-tente'});
+ if(!ok){addEvent(l,`Le drop de ${nom} passe à côté des poteaux.`,'play',{kind:'message',team:side,loi:'drop-rate'});missedGoal(l,side);return true}
+ l.score[side]+=3;l.stats[side].goals++;l.stats[side].drops=(l.stats[side].drops||0)+1;
+ addEvent(l,`${ab} · Drop réussi par ${nom}. ${l.score.join(' – ')}.`,'goal',{kind:'message',team:side,actor:k?.id||null,loi:'drop-reussi'});
+ if(restartRules(l)){chronoArret(l,'penalite');if(!flowScored(l,side)&&(flowRules(l)||l.minute<80))relancer(l,'kickoff',1-side,'score',side)}
+ return true;
 }
 function resolveTouch(l,actor,exit,{direct=false,penalty=false,carried=false,kicker=null,court=false}={}){
  const origin=l.territory,context=l.kickContext;
@@ -258,7 +370,9 @@ function advanceCausalPlay(l){
  if(l.suitePenaltouche&&l.suitePenaltouche.side!==l.possession)delete l.suitePenaltouche;
  const side=l.possession,opp=1-side,origin=l.territory,roll=Math.random(),penalites=penalitesRules(l),penaltyProb=clamp(.12+(penalites?PENALITES.jeu:0)+(70-unit(l,opp,'discipline'))*.002+tacticalPenaltyAdjustment(l,opp),tacticalRules(l)?.04:.06,tacticalRules(l)?.28:.23)*derbyFouls(l)*(typeof pilotageFoul==='function'?pilotageFoul(l,opp,'jeu'):1),handProb=handFaultProbability(l,side);
  if(roll<penaltyProb)return awardPenalty(l,side);
- if(roll<penaltyProb+handProb)return handFault(l,side);
+ if(roll<penaltyProb+handProb)return handFault(l,side,passeEnAvant(l));
+ // Lois manquantes : drop tenté par l'ouvreur (surtout en fin de match serré), avant le reste de l'action.
+ if(dropTente(l,side))return true;
  // Jeu au pied réaliste : l'ancienne part du « poussé en touche » (12 % par action) devient surtout un coup de pied
  // raté ou perdu (jeuAuPiedPerdu), même probabilité, même effet de terrain ; le vrai poussé en touche devient rare.
  const pousse=poussEnTouche(l,side),perdu=jeuPiedPerdu(l,side);
@@ -283,6 +397,7 @@ function advanceCausalPlay(l){
    return scoreTry(l,side,'open',origin);
   }
   const plan=effectiveAttack(l,side)==='conquete'?' au près':effectiveAttack(l,side)==='large'?' sur une séquence de jeu au large':'';const carrier=actionPlayer(l,side),gain=Math.round(Math.abs(l.territory-origin));const phrases=[`${carrier?.name||S.clubs[l.pair[side]].abbr} porte le ballon et gagne ${gain} mètres`,`${carrier?.name||S.clubs[l.pair[side]].abbr} avance de ${gain} mètres avant le plaquage`,`${S.clubs[l.pair[side]].abbr} progresse de ${gain} mètres par ${carrier?.name||'son porteur'}`];addEvent(l,`${phrases[l.minute%phrases.length]}${plan}${danger?' dans les 22 adverses':''}.`,'play',{kind:'carry',team:side,actor:carrier?.id||null,tackler:carrier?carryTackler(l,side,carrier.id,gain):null,from:{x:origin,y:35},to:{x:l.territory,y:35}});
- }else if(Math.random()<failedCarryError(l,side))return handFault(l,side);
+ }else if(Math.random()<failedCarryError(l,side))return handFault(l,side,passeEnAvant(l));
+ else if(ballonInjouable(l,side))return true;
  else{tacticalCount(l,opp,'recoveries');noterContre(l,side);const stopped=actionName(l,side,'carrier');ballPossession(l,opp);addEvent(l,`${stopped} (${S.clubs[l.pair[side]].abbr}) est arrêté net : ${actionName(l,opp,'defender')} récupère le ballon après le plaquage pour ${S.clubs[l.pair[opp]].abbr}.`,'turnover',{kind:'turnover',team:opp,actor:actionPlayer(l,opp,'defender')?.id||null})}
 }

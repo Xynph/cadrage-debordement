@@ -102,6 +102,11 @@ const REJEU_MAX := 4.0
 ## MENTION_MARGE de la hauteur des bords ; taille du texte en part de la hauteur de l'image.
 const MENTION_MARGE := 0.015
 const MENTION_TAILLE := 0.026
+## Faits des lois sans image (plan.lois, match-direct.cjs : coup franc, essai de pénalité, drop, ballon injouable) :
+## écrits après le plan qu'ils suivent, chacun tenu LOI_TENUE s de jeu (LOI_POINTS s quand il change le score) dans
+## la légende, le journal et la ligne d'état ; aucun geste, l'image du plan reste.
+const LOI_TENUE := 1.6
+const LOI_POINTS := 2.4
 
 var view: Control
 var app: Control
@@ -137,6 +142,11 @@ var _demande := false
 var _fondu: Tween
 var _debut_ms := 0
 var _tenu := 0.0
+## Fait des lois écrit en ce moment (vide sinon), ceux qui attendent, plan dont ils ont été pris, temps restant.
+var _loi: Dictionary = {}
+var _lois: Array = []
+var _lois_plan := -1
+var _loi_reste := 0.0
 var _sans_reponse := 0.0
 var _apres_erreur := 0.0
 var _actif := false

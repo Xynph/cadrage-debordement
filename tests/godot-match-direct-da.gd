@@ -41,6 +41,32 @@ func until(condition: Callable, limit_ms: int) -> bool:
 	while not condition.call() and Time.get_ticks_msec() < deadline: await process_frame
 	return condition.call()
 
+## Arrêt de jeu (carton, blessure…) : le moteur a arrêté le match et l'écran d'arrêt attend le joueur. Il fait comme lui :
+## « Valider le choix » (choix du staff) s'il y en a un, puis « Reprendre le match ». Rien tant que la pause d'arrêt
+## n'est pas reçue ou qu'une commande est en route.
+func reprendre_arret(view: Variant) -> void:
+	if not is_instance_valid(view) or view.regie == null: return
+	var regie: Node = view.regie
+	if regie == null or regie.arret.is_empty() or app.waiting or not bool(app.model.live.get("paused", false)): return
+	var reprendre: Button = regie.between.find_child("MatchBetweenStopResume", true, false) if is_instance_valid(regie.between) else null
+	if reprendre == null or not reprendre.is_visible_in_tree() or reprendre.disabled: return
+	reprendre.pressed.emit()
+	await wait_command()
+
+## Comme `until`, le match continuant de se jouer : un arrêt de jeu légitime est repris comme le ferait le joueur.
+func until_en_jouant(view: Variant, condition: Callable, limit_ms: int) -> bool:
+	var deadline := Time.get_ticks_msec() + limit_ms
+	while not condition.call() and Time.get_ticks_msec() < deadline:
+		await reprendre_arret(view)
+		await process_frame
+	return condition.call()
+
+## Régie au repos : aucune commande en route, aucun temps fort à l'écran ni à montrer (`retient`, le signal de la régie
+## pour la causerie), aucune sortie des joueurs, aucun arrêt de jeu, match lancé.
+func regie_au_repos(view: Variant) -> bool:
+	if not is_instance_valid(view) or view.regie == null or not app.model.get("live") is Dictionary: return false
+	return not app.waiting and not view.regie.retient(app.model.live) and view.regie.etat != view.regie.JEU and view.regie.etat != view.regie.SORTIE and view.regie.arret.is_empty() and not bool(app.model.live.get("paused", false)) and not bool(app.model.live.get("finished", false))
+
 ## Or de Continuer (et ancien or des skins) : interdit dans l'écran.
 func dore(c: Color) -> bool:
 	for o: Color in [Charte.OR, Charte.OR_VIF, Base.GOLD, Color("e0b35a")]:
@@ -190,8 +216,8 @@ func run() -> void:
 		finir()
 		return
 	if app.model.live.get("paused", false): await command("pause", {"paused": false})
-	# Un premier fait écrit : le journal se remplit.
-	await until(func(): return not view.journal_affiche().is_empty(), 90000)
+	# Un premier fait écrit : le journal se remplit (un carton dès les premières minutes arrête le match : repris).
+	await until_en_jouant(view, func(): return not view.journal_affiche().is_empty(), 90000)
 	await settle(4)
 	var ecran := Rect2(Vector2.ZERO, Vector2(root.size))
 
@@ -694,6 +720,11 @@ func pause_toujours_cliquable() -> void:
 	await command("pause", {"paused": false})
 	await settle(4)
 	# Action encore à l'écran alors que le moteur est déjà arrêté : demande mémorisée, aucune reprise involontaire.
+	# Simulée depuis une régie au repos (sinon l'action « finie » serait encore réellement à l'écran, ou une minute
+	# en route reprendrait le match) : rien n'est attendu entre le repos constaté et la simulation.
+	await until_en_jouant(view, func(): return regie_au_repos(view), 60000)
+	check(regie_au_repos(view), "Pause : régie au repos avant l'action simulée (direct %s, attend %s)" % [str(surface() == view), str(app.waiting)])
+	if not is_instance_valid(view) or surface() != view: return
 	var regie_vue: Node = view.regie
 	var etat_regie: Variant = regie_vue.etat
 	var live_modele: Dictionary = app.model.live

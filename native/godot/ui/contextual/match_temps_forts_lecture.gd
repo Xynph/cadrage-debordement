@@ -48,6 +48,8 @@ func montre(live: Dictionary) -> Dictionary:
 	# Transformation : son fait du journal est celui de l'essai (même index), déjà montré.
 	var avance := 1 if vu or (kind == "transformation" and phase != "choregraphie") else 0
 	var jusque: int = maxi(int(plan.index) + avance, _vus)
+	# Fait des lois écrit après le plan (coup franc, essai de pénalité…) : il entre au journal avec sa légende.
+	if not _loi.is_empty(): jusque = maxi(jusque, int(_loi.get("i", -1)) + 1)
 	# Le texte brut de l'essai dit déjà la transformation et le score : jusqu'au résultat du tir,
 	# le journal garde la légende de l'essai (native/engine/match-direct.cjs, `legende`).
 	var tronquer: bool = (kind == "try" or (kind == "transformation" and not vu)) and int(plan.index) >= _vus and int(plan.index) < mini(jusque, _events.size())
@@ -170,6 +172,9 @@ func _demarrer(candidat: Dictionary, lien: Dictionary = {}) -> void:
 	_rejeu_du = false
 	if is_instance_valid(stage) and stage.has_method("enregistrer_rejeu"): stage.enregistrer_rejeu(rejeu_voulu(tf.get("plans", []), _calme()))
 	index = 0
+	_lois_plan = -1
+	_lois = []
+	_loi = {}
 	etat = JEU
 	_debut_ms = Time.get_ticks_msec()
 	_score = tf.get("scoreAvant", _live.get("score", [0, 0]))
@@ -284,6 +289,80 @@ func _lire_liaison(reel: float) -> void:
 	between.forcer_etat("")
 	_commencer_plan()
 	if not tenue.is_empty() and stage.has_method("tenir_poses"): stage.tenir_poses(tenue)
+
+## Faits des lois qui suivent le plan `k` du temps fort (direct.lois le plus récent, match-direct.cjs : `apres` = le
+## fait du plan) ; aucun pour l'essai suivi de sa transformation (même fait : ils viennent après la transformation).
+func lois_du_plan(k: int) -> Array:
+	var plans: Array = tf.get("plans", [])
+	if k < 0 or k >= plans.size() or not plans[k] is Dictionary: return []
+	var fait := int(plans[k].get("index", -1))
+	if fait < 0 or (k + 1 < plans.size() and plans[k + 1] is Dictionary and int(plans[k + 1].get("index", -1)) == fait): return []
+	var direct: Variant = _live.get("direct")
+	var lois: Variant = direct.get("lois") if direct is Dictionary else null
+	var sortie: Array = []
+	if lois is Array:
+		for loi: Variant in lois:
+			if loi is Dictionary and int(loi.get("apres", -1)) == fait: sortie.append(loi)
+	return sortie
+
+## Faits des lois du plan fini : chacun écrit à son tour dans la légende, le journal et la ligne d'état, l'image du
+## plan tenue (aucun geste). Vrai tant qu'il en reste un à l'écran ; faux quand le plan peut céder la place.
+func _tenir_lois(_plan: Dictionary, delta: float) -> bool:
+	if _lois_plan != index:
+		_lois_plan = index
+		_lois = lois_du_plan(index)
+		_loi = {}
+		if not _lois.is_empty():
+			_montrer_loi()
+			return true
+	if _loi.is_empty(): return false
+	_loi_reste -= delta
+	if _loi_reste > 0.0: return true
+	if not _lois.is_empty():
+		_montrer_loi()
+		return true
+	_loi = {}
+	return false
+
+## Score après un plan et les faits des lois qui le suivent (essai de pénalité : +7, drop réussi : +3).
+func _score_apres(k: int) -> Array:
+	var marque: Array = tf.plans[k].get("score", _score)
+	for fait: Variant in lois_du_plan(k):
+		if fait is Dictionary and fait.get("score") is Array and (fait.score as Array).size() == 2: marque = fait.score
+	return marque
+
+func _montrer_loi() -> void:
+	_loi = _lois.pop_front() if _lois[0] is Dictionary else {}
+	if _loi.is_empty():
+		_lois.clear()
+		return
+	var loi := str(_loi.get("loi", ""))
+	var camp := int(_loi.get("equipe", -1)) if _loi.get("equipe") != null else -1
+	var marque: Variant = _loi.get("score")
+	var points := marque is Array and (marque as Array).size() == 2 and _score.size() >= 2 and int(marque[0]) + int(marque[1]) > int(_score[0]) + int(_score[1])
+	_loi_reste = LOI_POINTS if points else LOI_TENUE
+	if marque is Array and (marque as Array).size() == 2: _score = marque
+	# Texte seul : ni geste ni réaction du stade (le son suit le plan montré, godot-match-temps-forts).
+	if loi == "essai-penalite":
+		# Bannière « ESSAI » (texte seul, sans ralenti ni rejeu : rien à rejouer), à la couleur du club.
+		var couleur := Color.TRANSPARENT
+		var equipe := ""
+		if camp in [0, 1] and camp < _teams.size() and _teams[camp] is Dictionary:
+			couleur = Color.from_string(str(S.G.identity(_teams[camp]).get("color", "")), Charte.CLUB)
+			equipe = S.G.club_name(_teams[camp])
+		var minute := str(_loi.get("horloge", "")).trim_suffix("′").strip_edges()
+		var contexte := ("%s · %se minute" % [equipe, minute] if not equipe.is_empty() else "%se minute" % minute) if minute.is_valid_int() else equipe
+		montrer_bandeau("ESSAI", "Essai de pénalité", contexte, ESSAI_BANDEAU, couleur, "+7\n%d – %d" % [int(_score[0]), int(_score[1])] if _score.size() >= 2 else "+7")
+	suivi.append({"evenement": "loi", "loi": loi, "i": int(_loi.get("i", -1)), "texte": str(_loi.get("texte", "")), "score": _score.duplicate(), "debut_ms": Time.get_ticks_msec()})
+	_habiller()
+
+## Pistes du chorégraphe qui passent un plan suivi de faits des lois : pas d'image à tenir (les pistes courent),
+## ils entrent au journal du direct dans l'ordre.
+func _lois_au_journal(k: int) -> void:
+	for fait: Variant in lois_du_plan(k):
+		if not fait is Dictionary: continue
+		if view.has_method("ajouter_au_journal"): view.ajouter_au_journal(str(fait.get("texte", "")))
+		suivi.append({"evenement": "loi", "loi": str(fait.get("loi", "")), "i": int(fait.get("i", -1)), "texte": str(fait.get("texte", "")), "journal": true, "debut_ms": Time.get_ticks_msec()})
 
 func _commencer_plan() -> void:
 	var plan: Dictionary = tf.plans[index]
@@ -408,7 +487,8 @@ func _lire_choregraphie(reel: float) -> void:
 		var k := clampi(int(jalons[_jalons_lus][1]), index, dernier)
 		_jalons_lus += 1
 		if k > index:
-			_score = tf.plans[index].get("score", _score)
+			for j in range(index, k): _lois_au_journal(j)
+			_score = _score_apres(k - 1)
 			index = k
 		_jalon_montre = true
 		_image_posee(int(tf.plans[index].get("index", -1)))
@@ -434,7 +514,8 @@ func _lire_choregraphie(reel: float) -> void:
 			break
 	_jalon_montre = true
 	if index < dernier:
-		_score = tf.plans[index].get("score", _score)
+		for j in range(index, dernier): _lois_au_journal(j)
+		_score = _score_apres(dernier - 1)
 		index = dernier
 	stage.arreter_choregraphie()
 	# Places réelles en fin de pistes : point de départ du plan suivant.

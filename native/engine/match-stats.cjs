@@ -254,6 +254,8 @@ function fabrique(){
     }
     continue;
    }
+   // Drop réussi (fait du journal sans geste) : 3 points pour le botteur.
+   if(kind==='message'&&e.type==='goal'&&team!==null&&acteur){acteur.j.points+=3;continue}
    if((kind==='goal'||kind==='miss')&&team!==null&&acteur){
     acteur.j.penalitesTentees++;buteur[team]=acteur.id;
     if(kind==='goal'){acteur.j.penalitesReussies++;acteur.j.points+=3}
@@ -261,6 +263,15 @@ function fabrique(){
    }
    if(kind==='turnover'&&team!==null){
     if(acteur)acteur.j.recuperations++;
+    const perdant=dernierPorteur[1-team]&&presents(1-team,min).find(c=>c.id===dernierPorteur[1-team].id)||choisir(presents(1-team,min),poidsCourse(min),r);
+    if(perdant)perdant.j.ballonsPerdus++;
+    continue;
+   }
+   // Ballon injouable (loi 16, maul arrêté) : ballon gagné au contact par la défense, qui obtient la mêlée (camp du fait),
+   // compté comme un ballon récupéré (turnover gagné, comme dans les statistiques pro). Récupérateur non nommé par le
+   // moteur : un joueur présent du camp, surtout un avant (poids des rucks).
+   if(kind==='message'&&s.loi==='injouable'&&team!==null){
+    const gagnant=choisir(presents(team,min),c=>POIDS.rucks[c.poste],r);if(gagnant)gagnant.j.recuperations++;
     const perdant=dernierPorteur[1-team]&&presents(1-team,min).find(c=>c.id===dernierPorteur[1-team].id)||choisir(presents(1-team,min),poidsCourse(min),r);
     if(perdant)perdant.j.ballonsPerdus++;
     continue;
