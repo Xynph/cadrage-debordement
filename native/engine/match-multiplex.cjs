@@ -66,7 +66,7 @@ function factory(){
   let x=seed^0x5bd1e995;const next=()=>{x=(Math.imul(x,1664525)+1013904223)>>>0;return x/4294967296;};
   const units=[];
   for(const side of [0,1]){
-   const st=r.stats?.[side]||{},tries=r.tries[side],conv=Math.min(tries,st.conversions||0);
+   const st=r.stats?.[side]||{},tries=r.tries[side],conv=Math.min(tries,(st.conversions||0)-(st.penaltyTries||0));
    let rest=r.score[side]-tries*5-conv*2;
    for(let i=0;i<tries;i++)units.push({side,points:i<conv?7:5,try:1});
    while(rest>=3){units.push({side,points:3,try:0});rest-=3;}

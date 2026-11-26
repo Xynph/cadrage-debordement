@@ -204,8 +204,14 @@ func run() -> void:
 		return {"key": "arrets-%s-%d" % [kind, int(x)], "kind": kind, "stage": "", "period": 1, "players": joueurs(Vector2(x, 30)),
 			"ball": {"x": x, "y": 30.0}, "origin": {"x": x, "y": 30.0}, "possession": possession}
 	var melee_scene: Dictionary = scene_3d.call("scrum", 0, 55.0)
-	var tf1 := {"cle": "arrets-a", "plans": [{"index": 1, "kind": "hand-fault", "equipe": 0, "horloge": "31′", "texte": "A commet un en-avant.", "scene": scene_3d.call("hand-fault", 0, 45.0)}], "debut": 0, "fin": 1}
-	var tf2 := {"cle": "arrets-b", "plans": [{"index": 5, "kind": "scrum", "equipe": 0, "horloge": "31′", "texte": "Mêlée pour A.", "scene": melee_scene}], "debut": 2, "fin": 5}
+	# Minutes de la suite écrite : juste après l'extrait du vrai match joué plus haut, car l'horloge de l'écran ne recule
+	# jamais. Avec les lois de #1315, cet extrait commence vers la 46′ : l'ancien 31′ fixe tombait avant lui.
+	# Accord de Léo (26/11, via le directeur) : « tu peux décaler les minutes de la séquence écrite du test « arrêts à
+	# l'écran » de #1319 (option 1), contrôles et seuils inchangés ». Mêmes contrôles, minutes relatives (m0, m0+2, m0+3).
+	# Minute de départ lue sur l'horloge affichée (live.minute compte les pas du chrono, pas les minutes de jeu).
+	var m0: int = maxi(31, int(str(view.clock.text).split(":")[0].split("+")[0]) + 1)
+	var tf1 := {"cle": "arrets-a", "plans": [{"index": 1, "kind": "hand-fault", "equipe": 0, "horloge": str(m0) + "′", "texte": "A commet un en-avant.", "scene": scene_3d.call("hand-fault", 0, 45.0)}], "debut": 0, "fin": 1}
+	var tf2 := {"cle": "arrets-b", "plans": [{"index": 5, "kind": "scrum", "equipe": 0, "horloge": str(m0) + "′", "texte": "Mêlée pour A.", "scene": melee_scene}], "debut": 2, "fin": 5}
 	var info := Liaison.analyser(tf1, tf2, events_tf)
 	check(str(info.get("type", "")) == "melee" and bool(info.get("coupe_forcee", false)), "Liaison : en-avant de A, jeu, en-avant de B, mêlée (coupe)")
 	var ecran_3d: Dictionary = {}
@@ -250,16 +256,16 @@ func run() -> void:
 	check(ecran.is_visible_in_tree(), "L'écran intermédiaire est à l'écran")
 	var base := maxi(1000, (vrai_live.get("events", []) as Array).size() + 50)
 	var deroule: Array = [
-		fait_2d(base, 31, "hand-fault", 0, 0, 45.0, "A commet un en-avant : introduction adverse."),
-		fait_2d(base + 1, 31, "scrum", 1, 1, 45.0, "Mêlée pour B."),
-		fait_2d(base + 2, 31, "hand-fault", 1, 1, 55.0, "B commet un en-avant : introduction adverse."),
-		fait_2d(base + 3, 31, "scrum", 0, 0, 55.0, "Mêlée pour A."),
-		fait_2d(base + 4, 31, "carry", 0, 0, 60.0, "A avance."),
-		fait_2d(base + 5, 33, "card", 1, 0, 60.0, "Carton jaune pour Paul DURAND : exclusion de 10 minutes de jeu."),
-		fait_2d(base + 6, 34, "carry", 0, 0, 64.0, "A avance."),
+		fait_2d(base, m0, "hand-fault", 0, 0, 45.0, "A commet un en-avant : introduction adverse."),
+		fait_2d(base + 1, m0, "scrum", 1, 1, 45.0, "Mêlée pour B."),
+		fait_2d(base + 2, m0, "hand-fault", 1, 1, 55.0, "B commet un en-avant : introduction adverse."),
+		fait_2d(base + 3, m0, "scrum", 0, 0, 55.0, "Mêlée pour A."),
+		fait_2d(base + 4, m0, "carry", 0, 0, 60.0, "A avance."),
+		fait_2d(base + 5, m0 + 2, "card", 1, 0, 60.0, "Carton jaune pour Paul DURAND : exclusion de 10 minutes de jeu."),
+		fait_2d(base + 6, m0 + 3, "carry", 0, 0, 64.0, "A avance."),
 	]
 	var events_live: Array = (vrai_live.get("events", []) as Array).duplicate()
-	while events_live.size() < base + 8: events_live.append({"min": 31, "text": "Jeu.", "type": "play"})
+	while events_live.size() < base + 8: events_live.append({"min": m0, "text": "Jeu.", "type": "play"})
 	var direct_base: Dictionary = (vrai_live.get("direct", {}) as Dictionary).duplicate(true)
 	direct_base.erase("tempsFort")
 	direct_base.erase("arret")
@@ -282,7 +288,7 @@ func run() -> void:
 		live["finished"] = false
 		regie.receive(app.model, live)
 	ecran.terrain.gel = true
-	envoyer.call(31, "31′", "31′", 5, [], {}, true)
+	envoyer.call(m0, str(m0) + "′", str(m0) + "′", 5, [], {}, true)
 	var lu_2d: Array = []
 	for k in 4:
 		ecran.terrain.gel = true
@@ -295,35 +301,35 @@ func run() -> void:
 
 	# --- 3. Carton (terrain 2D encore à la 31′), reprise, puis blessure -----------------------------------------
 	ecran.terrain.avancer(10.0)
-	var carton := {"cle": "carton-%d" % (base + 5), "raison": "carton", "rouge": false, "pourNous": true, "texte": "Carton jaune pour Paul DURAND : exclusion de 10 minutes de jeu.", "horloge": "33′"}
-	var reperes := [{"kind": "card", "nom": "Paul DURAND", "minute": 33, "rouge": false}]
-	envoyer.call(33, "33′", "31′", 6, reperes, carton, true)
+	var carton := {"cle": "carton-%d" % (base + 5), "raison": "carton", "rouge": false, "pourNous": true, "texte": "Carton jaune pour Paul DURAND : exclusion de 10 minutes de jeu.", "horloge": str(m0 + 2) + "′"}
+	var reperes := [{"kind": "card", "nom": "Paul DURAND", "minute": m0 + 2, "rouge": false}]
+	envoyer.call(m0 + 2, str(m0 + 2) + "′", str(m0) + "′", 6, reperes, carton, true)
 	await settle(6)
 	var titre := str(ecran.arret_titre.text) if is_instance_valid(ecran.arret_titre) else ""
 	var horloge := str(view.clock.text)
-	check(ecran.terrain.en_retard() and ecran.terrain.horloge_montree() == "31′", "Fixture : le terrain 2D montre encore la 31′ quand la carte s'ouvre")
-	check(titre == "CARTON JAUNE · 33′", "Carte d'arrêt du carton (%s)" % titre)
-	check(horloge.split(":")[0] == "33", "Carte et horloge : même minute, « CARTON JAUNE · 33′ » et %s" % horloge)
+	check(ecran.terrain.en_retard() and ecran.terrain.horloge_montree() == str(m0) + "′", "Fixture : le terrain 2D montre encore la minute d'avant quand la carte s'ouvre")
+	check(titre == "CARTON JAUNE · " + str(m0 + 2) + "′", "Carte d'arrêt du carton (%s)" % titre)
+	check(horloge.split(":")[0] == str(m0 + 2), "Carte et horloge : même minute, « CARTON JAUNE · %d′ » et %s" % [m0 + 2, horloge])
 	check(str(ecran.etat.text) == "Carton jaune pour Paul DURAND" and pastille(ecran), "Carton ouvert : le bandeau dit le carton, avec sa pastille (%s)" % str(ecran.etat.text))
 	await capture("carton")
 	# Reprise du jeu : la carte se ferme, le terrain joue le carton puis la course suivante.
-	envoyer.call(33, "33′", "33′", 6, reperes, {}, false)
+	envoyer.call(m0 + 2, str(m0 + 2) + "′", str(m0 + 2) + "′", 6, reperes, {}, false)
 	await settle(4)
 	ecran.terrain.gel = true
 	for k in 2:
 		ecran.terrain.avancer(10.0)
 		await settle(2)
 	var reprise_horloge := str(view.clock.text)
-	check(reprise_horloge.split(":")[0] == "33", "Après la carte : l'horloge ne recule pas (%s)" % reprise_horloge)
-	var blessure := {"cle": "incident-arrets-%d" % (base + 6), "raison": "blessure", "rouge": false, "pourNous": false, "texte": "Blessure : Jean MARTIN doit quitter le terrain.", "horloge": "34′"}
-	envoyer.call(34, "34′", "34′", 7, reperes, blessure, true)
+	check(reprise_horloge.split(":")[0] == str(m0 + 2), "Après la carte : l'horloge ne recule pas (%s)" % reprise_horloge)
+	var blessure := {"cle": "incident-arrets-%d" % (base + 6), "raison": "blessure", "rouge": false, "pourNous": false, "texte": "Blessure : Jean MARTIN doit quitter le terrain.", "horloge": str(m0 + 3) + "′"}
+	envoyer.call(m0 + 3, str(m0 + 3) + "′", str(m0 + 3) + "′", 7, reperes, blessure, true)
 	ecran.terrain.gel = true
 	ecran.terrain.avancer(10.0)
 	await settle(6)
 	var titre_b := str(ecran.arret_titre.text) if is_instance_valid(ecran.arret_titre) else ""
 	var horloge_b := str(view.clock.text)
-	check(titre_b == "BLESSURE · 34′", "Carte d'arrêt de la blessure (%s)" % titre_b)
-	check(horloge_b.split(":")[0] == "34", "Blessure : carte et horloge à la même minute (%s)" % horloge_b)
+	check(titre_b == "BLESSURE · " + str(m0 + 3) + "′", "Carte d'arrêt de la blessure (%s)" % titre_b)
+	check(horloge_b.split(":")[0] == str(m0 + 3), "Blessure : carte et horloge à la même minute (%s)" % horloge_b)
 	check(not str(ecran.etat.text).contains("Carton") and not pastille(ecran), "Blessure après le carton : ni carton ni pastille au bandeau (%s)" % str(ecran.etat.text))
 	await capture("blessure-apres-carton")
 	finir()

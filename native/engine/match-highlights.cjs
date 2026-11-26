@@ -697,13 +697,14 @@ function en_direct_importance(events,options={}){
    ajoute(debutAction(lignes,j,Math.max(etat.montre+1,0),PIED_COURT.amorce),finCourte(lignes,j,r.fin,PIED_COURT.apres));
    membres.push({type:'pied_recupere',score:PIED_COURT.base,force:false});
   }
-  // 3. Filet : un essai ou un carton rouge non couverts sont montrés depuis le début de leur action.
+  // 3. Filet : un essai ou un carton rouge non couverts sont montrés depuis le début de leur action. Le tir au but (réussi
+  // ou manqué : l'issue ne se devine pas) aussi : un niveau plus complet montre au moins ce que montre le résumé (le score).
   for(let j=Math.max(r.debut,etat.montre+1);j<=r.fin;j++){
-   const l=lignes[j],grave=l.kind==='try'||l.kind==='card'&&l.incident&&l.cause==='red';
-   if(!grave||debut>=0&&j>=debut&&j<=fin)continue;
+   const l=lignes[j],grave=l.kind==='try'||l.kind==='card'&&l.incident&&l.cause==='red',tir=l.kind==='goal'||l.kind==='miss'&&l.type==='miss';
+   if(!grave&&!tir||debut>=0&&j>=debut&&j<=fin)continue;
    ajoute(debutAction(lignes,j,Math.max(etat.montre+1,0),regle.amorce),finAction(lignes,j,r.fin));
-   rattrapage=declencheur===null&&!suite;court=false;
-   membres.push({type:l.kind==='try'?'essai':'carton_rouge',score:100,force:true});
+   if(grave)rattrapage=declencheur===null&&!suite;court=false;
+   membres.push(tir?{type:'tir_au_but',score:74,force:true}:{type:l.kind==='try'?'essai':'carton_rouge',score:100,force:true});
   }
   // 50 s au plus par temps fort (suites comprises) : la fin recule jusqu'au dernier plan qui tient,
   // sans jamais couper un essai ou un carton rouge déjà retenus (y compris dans une suite d'action ou une fenêtre ouverte par

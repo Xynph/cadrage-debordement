@@ -34,7 +34,10 @@ static func etat_du_plan(plan: Dictionary, equipes: Array, kind: String = "") ->
 	if not (camp is int or camp is float): camp = -1
 	var ballon: Variant = scene.get("ball")
 	var x: float = float(ballon.x) if ballon is Dictionary and (ballon.get("x") is float or ballon.get("x") is int) else NAN
-	return Between.etat_du_fait(kind if not kind.is_empty() else str(plan.get("kind", "")), int(camp), x, equipes)
+	var genre := kind if not kind.is_empty() else str(plan.get("kind", ""))
+	# Passe en avant (cause du moteur, loi 11) : « Passe en avant », pas « En-avant ».
+	if genre == "hand-fault" and str(plan.get("cause", scene.get("cause", ""))) == "forward-pass": genre = "passe-en-avant"
+	return Between.etat_du_fait(genre, int(camp), x, equipes)
 
 ## Ligne d'état pendant la lecture d'un plan, même règle que la légende (`fait_a_l_ecran`) : un arrêt
 ## de jeu (essai, touche, mêlée…) n'est dit qu'une fois à l'écran ; avant, la possession de la scène
@@ -60,6 +63,11 @@ const LIAISON_POUR := ["Touche", "Mêlée", "Pénalité", "Renvoi", "Renvoi aux 
 static func texte_bandeau(libelle: String, club: String) -> String:
 	if libelle.is_empty() or club.is_empty(): return libelle
 	return ("%s pour %s" if libelle in LIAISON_POUR else "%s — %s") % [libelle, club]
+
+## Ligne d'état d'un fait des lois (plan.lois) : « Coup franc pour X », « Essai de pénalité — X », « Drop réussi — X »…
+static func etat_de_loi(fait: Dictionary, equipes: Array) -> String:
+	var camp := int(fait.get("equipe", -1)) if fait.get("equipe") != null else -1
+	return Between.etat_du_fait("loi:" + str(fait.get("loi", "")), camp, NAN, equipes)
 
 static func etat_montre(plan: Dictionary, phase_plan: String, instant: float, essai_montre: bool, jalon_montre: bool, equipes: Array) -> String:
 	if plan.has("annonce") or fait_a_l_ecran(plan, phase_plan, instant, essai_montre, jalon_montre): return etat_du_plan(plan, equipes)
@@ -292,6 +300,17 @@ func _habiller() -> void:
 	var plan: Dictionary = tf.plans[index]
 	# Le dernier temps fort se regarde avant de valider la journée.
 	_valider(false)
+	# Fait des lois écrit après le plan (coup franc, essai de pénalité, drop…) : sa légende, sa ligne d'état, son score.
+	if not _loi.is_empty() and phase != "liaison":
+		var heure_loi := str(_loi.get("horloge", ""))
+		view.clock.text = heure_loi if not heure_loi.is_empty() else str(plan.get("horloge", ""))
+		if _score.size() >= 2: view.score.text = "%d — %d" % [int(_score[0]), int(_score[1])]
+		view.events.text = str(_loi.get("texte", ""))
+		between.forcer_etat(etat_de_loi(_loi, _teams))
+		view.events.get_parent().get_parent().visible = not view.events.text.is_empty()
+		legende.visible = not view.events.text.is_empty()
+		_tracer_legende()
+		return
 	if phase == "liaison":
 		# Liaison : le fait d'arrêt de jeu (touche, en-avant, pénalité), rien de l'action à venir ;
 		# l'horloge reste celle du temps fort précédent (arrêt de jeu).

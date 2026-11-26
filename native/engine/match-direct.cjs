@@ -215,6 +215,8 @@ function chiffresRugby(lignes,events){
    if(gain>=22)e.franchissements++;else t[1-l.equipe].plaquesStoppes++;
   }
   if(l.kind==='turnover'){e.recuperations++;e.plaquesStoppes++}
+  // Ballon injouable (maul arrêté) : ballon gagné par la défense, comme la feuille de statistiques.
+  if(l.kind==='message'&&s?.loi==='injouable')e.recuperations++;
   if(l.kind==='hand-fault')e.enAvant++;
   if(['kick','touch','drop22','goalLine'].includes(l.kind))e.pieds++;
   if(l.kind==='card'&&l.incident)e.cartons++;
@@ -292,6 +294,22 @@ function borneEntracte(lignes,bilan){
 // Chiffres cumulés du moteur (possession, mêlées, pénalités…) tels qu'ils étaient quand le
 // journal s'arrêtait avant la borne : relevés à chaque projection, par rencontre.
 const RELEVES=new Map();
+// Faits des lois sans image (`scene.loi` sur un fait `message` : coup franc, essai de pénalité, drop tenté / raté /
+// réussi, ballon injouable), les plus récents du journal du moteur, chacun avec `apres` : l'indice du dernier fait
+// joué qui le précède (seuls des bandeaux entre les deux). La régie 3D les écrit après le plan de ce fait (légende,
+// journal, score, ligne d'état), sans geste ni image ; lus au direct le plus récent, pas dans le temps fort reçu (le
+// fait peut tomber au pas du moteur suivant). Match filmé du 26/11 : essai de pénalité et drop réussi absents du
+// fil du direct 3D, seul le tiroir Journal les montrait.
+const LOIS_TEXTE=new Set(['coup-franc','essai-penalite','drop-tente','drop-rate','drop-reussi','injouable']),LOIS_MAX=24;
+function loisDuDirect(lignes,events,nommer){
+ const sortie=[];let joue=-1;
+ for(const l of lignes){
+  if(!l.bandeau){joue=l.i;continue}
+  const loi=events[l.i]?.scene?.loi;
+  if(l.kind==='message'&&LOIS_TEXTE.has(loi)&&joue>=0)sortie.push({i:l.i,apres:joue,loi,kind:l.type==='try'?'try':l.type==='goal'?'goal':'message',equipe:l.equipe,horloge:horloge(l),score:l.scoreApres,texte:nommer(events[l.i].text)});
+ }
+ return sortie.slice(-LOIS_MAX);
+}
 // Le journal du moteur nomme les clubs par leur sigle interne (« FDG ») ; l'écran les nomme par
 // leur identité affichée (presentation.abbr). Le texte montré reprend le sigle affiché.
 function renommeur(equipes){
@@ -406,8 +424,11 @@ function project(model,niveau,lire,options={}){
  // Repères de la frise : le score après le fait et son acteur (identifiant, nom connu du match), pour l'entracte
  // (« E · Garnier 10-7 », nom en lien vers la fiche pour un joueur du club).
  const nomActeur=id=>id?etat.notes?.noms?.[id]||(etat.effectifAdverse||[]).find(p=>String(p.id)===id)?.name||'':'';
- const reperes=vues.filter(l=>l.kind==='try'||l.kind==='goal'||l.kind==='card'&&l.incident).map(l=>{const a=events[l.i]?.scene?.actor,id=a==null?null:String(a);
-  return {i:l.i,kind:l.kind,equipe:l.equipe,horloge:horloge(l),minute:l.minute,x:l.x,y:events[l.i].scene?.to?.y??35,rouge:l.cause==='red',score:l.scoreApres||null,joueur:id,nom:nomActeur(id)};});
+ // Essai de pénalité et drop réussi (faits `message` du bloc des lois, `scene.loi`) : repères « try » (sans marqueur) et
+ // « goal » (le botteur), comme le fil du score (`direct.marques`).
+ const loiRepere=l=>l.kind==='message'?events[l.i]?.scene?.loi:null;
+ const reperes=vues.filter(l=>l.kind==='try'||l.kind==='goal'||l.kind==='card'&&l.incident||['essai-penalite','drop-reussi'].includes(loiRepere(l))).map(l=>{const loi=loiRepere(l),a=loi==='essai-penalite'?null:events[l.i]?.scene?.actor,id=a==null?null:String(a);
+  return {i:l.i,kind:loi==='essai-penalite'?'try':loi==='drop-reussi'?'goal':l.kind,...(loi?{loi}:{}),equipe:l.equipe,horloge:horloge(l),minute:l.minute,x:l.x,y:events[l.i].scene?.to?.y??35,rouge:l.cause==='red',score:l.scoreApres||null,joueur:id,nom:nomActeur(id)};});
  // Chiffres : ceux que le moteur tient déjà.
  // Aucun relevé assez ancien (début de match, reprise) : les libellés, sans valeur.
  const rang=nom=>passe?(passe.statsRows||[]).find(r=>r.label===nom):(live.statsRows||[]).filter(r=>r.label===nom).map(r=>({...r,home:'—',away:'—'}))[0];
@@ -491,12 +512,16 @@ function project(model,niveau,lire,options={}){
   // `nature` : essai, essai transformé (la transformation est comptée sur la ligne de l'essai), pénalité ou drop ;
   // `buteur` : auteur de la transformation, le même que le plan « transformation » du direct (lire.transformation).
   const nomDe=id=>id?etat.notes?.noms?.[id]||(etat.effectifAdverse||[]).find(p=>String(p.id)===id)?.name||'':'';
-  direct.marques=vues.filter(l=>l.kind==='try'||l.kind==='goal').map(l=>{const a=events[l.i]?.scene?.actor,id=a==null?null:String(a);
-   const nature=l.kind==='try'?(l.transformation===true?'essai-transforme':'essai'):/drop/i.test(String(events[l.i]?.text||''))?'drop':'penalite';
+  // Essai de pénalité (7 points, ni marqueur ni botteur) et drop réussi (3 points, le botteur) : faits `message` du bloc des lois, repérés par `scene.loi`.
+  const loiDe=l=>events[l.i]?.scene?.loi;
+  direct.marques=vues.filter(l=>l.kind==='try'||l.kind==='goal'||l.kind==='message'&&['essai-penalite','drop-reussi'].includes(loiDe(l))).map(l=>{
+   const a=events[l.i]?.scene?.actor,penalty=loiDe(l)==='essai-penalite',id=a==null||penalty?null:String(a);
+   const nature=penalty?'essai-penalite':l.kind==='try'?(l.transformation===true?'essai-transforme':'essai'):loiDe(l)==='drop-reussi'||/drop/i.test(String(events[l.i]?.text||''))?'drop':'penalite';
    let buteur=null;
    if(nature==='essai-transforme'&&typeof lire.transformation==='function'){try{const p=(lire.transformation(l.i,true)?.players||[]).find(x=>x.featured);if(p)buteur={joueur:String(p.id),nom:nomDe(String(p.id))};}catch{buteur=null;}}
-   return {horloge:horloge(l),minute:l.minute,kind:l.kind,nature,equipe:l.equipe,joueur:id,nom:nomDe(id),buteur,score:l.scoreApres,texte:nommer(events[l.i].text)};});
+   return {horloge:horloge(l),minute:l.minute,kind:l.kind==='message'?(penalty?'try':'goal'):l.kind,nature,equipe:l.equipe,joueur:id,nom:nomDe(id),buteur,score:l.scoreApres,texte:nommer(events[l.i].text)};});
  }
+ direct.lois=loisDuDirect(lignes,events,nommer);
  direct.feuille=feuille;feuilleStats.habillerAdversaire(direct.adversaire,feuille);
  direct.statsRows=[...direct.statsRows,...feuilleStats.lignesEquipe(feuille)];
  const tf=bilan.courant;
@@ -512,7 +537,9 @@ function project(model,niveau,lire,options={}){
    // equipe : l'équipe du fait du moteur (scene.team : fautive pour un en-avant) ; la scène 3D n'a que la possession.
    plans.push({index:p.i,kind:p.kind,equipe:lignes[p.i].equipe,duree:p.duree,mouvement:p.mouvement,coupe:p.coupe,horloge:horloge(lignes[p.i]),
     texte:legende(p,nommer(events[p.i].text)),...(ANNONCES[p.kind]?{annonce:ANNONCES[p.kind]}:{}),
-    score:p.kind==='try'?lignes[p.i].scoreAvant.map((n,side)=>n+(side===lignes[p.i].equipe?5:0)):lignes[p.i].scoreApres,scene});
+    score:p.kind==='try'?lignes[p.i].scoreAvant.map((n,side)=>n+(side===lignes[p.i].equipe?5:0)):lignes[p.i].scoreApres,
+    // Cause de l'arrêt (passe en avant…) : la ligne d'état dit « Passe en avant », pas « En-avant ».
+    ...(lignes[p.i].cause?{cause:lignes[p.i].cause}:{}),scene});
   }
   // Position de départ : le dernier plan jouable avant la fenêtre, pour que le premier
   // plan parte d'où l'action se trouvait et non de la scène précédemment affichée.
@@ -525,7 +552,7 @@ function project(model,niveau,lire,options={}){
    duree:tf.duree,debut:tf.debut,fin:tf.fin,
    // Déclenchement (journal de régie et tests ; jamais affiché : il ne doit rien annoncer).
    declenchement:tf.declencheur===undefined?null:{fait:tf.declencheur,importance:tf.importance,seuil:tf.seuil,rattrapage:tf.rattrapage===true},scoreAvant:lignes[plans[0].index].scoreAvant,horlogeDebut:horloge(lignes[tf.debut]),horlogeFin:horloge(lignes[tf.fin]),depart,plans,
-   bandeaux:tf.bandeaux.map(i=>({kind:lignes[i].kind,texte:nommer(events[i].text)}))};
+   bandeaux:tf.bandeaux.map(i=>({i,kind:lignes[i].kind,...(events[i]?.scene?.loi?{loi:events[i].scene.loi}:{}),texte:nommer(events[i].text)}))};
   if(plans.length&&(options.choregraphe===true||options.choregraphe==='entrees')){
    try{
     const c=choregraphier(direct.tempsFort,plans,events,lire);

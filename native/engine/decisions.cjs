@@ -43,7 +43,7 @@ module.exports=function nativeDecisions(){
   weather:last.weather||null,preparation:last.preparation||null,notes:debriefNotes(last,side),
   plans:last.planUsage||null,tacticalStats:last.tacticalStats||null,stats:last.stats||null,
   // Compte rendu (idée FM n°19) : essais détaillés du moteur (minute, camp, origine j/b/m, zone de départ, marqueur), noms lus dans l'effectif.
-  essais:(Array.isArray(last.essais)?last.essais:Array.isArray(last.essaisDetail)?(ev=>last.essaisDetail.map((e,i)=>[...e.slice(0,4),ev[i]?.scene?.team===e[1]?ev[i].scene.actor??null:null]))((Array.isArray(last.events)?last.events:[]).filter(e=>e&&e.type==='try'&&e.scene&&e.scene.kind==='try')):[]).filter(e=>Array.isArray(e)&&e.length>=4).map(([minute,camp,origine,zone,id])=>({minute,side:camp,id:id??null,name:id==null?null:S.clubs[last.pair[camp]]?.players?.find(p=>p.id===id)?.name||null,origin:origine,zone})),
+  essais:(Array.isArray(last.essais)?last.essais:Array.isArray(last.essaisDetail)?(ev=>last.essaisDetail.map((e,i)=>[...e.slice(0,4),ev[i]?.scene?.team===e[1]?ev[i].scene.actor??null:null]))((Array.isArray(last.events)?last.events:[]).filter(e=>e&&e.type==='try'&&e.scene)):[]).filter(e=>Array.isArray(e)&&e.length>=4).map(([minute,camp,origine,zone,id])=>({minute,side:camp,id:id??null,name:id==null?null:S.clubs[last.pair[camp]]?.players?.find(p=>p.id===id)?.name||null,origin:origine,zone})),
   affluence:Number.isInteger(last.affluence)?last.affluence:null,
   // Analyse vidéo (revue FM27, idée 28) : domination minute par minute et entrées dans les 22, gardées à la clôture (worker.cjs).
   analyse:last.analyse||(last===S.live&&typeof nativeAnalyseVideo!=='undefined'?nativeAnalyseVideo.calculer(last):null),

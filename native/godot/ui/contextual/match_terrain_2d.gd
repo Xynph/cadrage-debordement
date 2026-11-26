@@ -600,6 +600,7 @@ func _dessiner_jeu(police: Font, e: float) -> void:
 	var item: Dictionary = _courant if not _courant.is_empty() else joue
 	if legende and not item.is_empty():
 		var libelle := str(LIBELLES.get(str(item.get("kind", "")), ""))
+		if str(item.get("kind", "")) == "hand-fault" and str(item.get("cause", "")) == "forward-pass": libelle = "Passe en avant"
 		if str(item.get("kind", "")) == "try" and _courant.is_empty(): libelle = "Essai transformé" if item.get("transformation", false) else "Essai non transformé"
 		var texte := "%s  %s" % [str(item.get("horloge", "")), libelle]
 		var corps := roundi(maxf(13.0, px(26)))

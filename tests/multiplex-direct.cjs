@@ -105,8 +105,8 @@ test('même graine : S.history identique avec et sans déroulé anticipé, multi
       assert.ok(r.forme.every(x => ['V', 'N', 'D'].includes(x)), 'forme en V/N/D : ' + r.forme);
       assert.ok(n('V') <= r.gagnes && n('N') <= r.nuls && n('D') <= r.perdus, 'forme cohérente avec V/N/D : ' + r.clubId);
     }
-    // Nature de chaque marque = points marqués : essai 5, essai transformé 7, pénalité ou drop 3 ; buteur de la transformation.
-    const POINTS = { essai: 5, 'essai-transforme': 7, penalite: 3, drop: 3 };
+    // Nature de chaque marque = points marqués : essai 5, essai transformé ou de pénalité 7, pénalité ou drop 3 ; buteur de la transformation.
+    const POINTS = { essai: 5, 'essai-transforme': 7, 'essai-penalite': 7, penalite: 3, drop: 3 };
     let avant = [0, 0];
     for (const m of marques) {
       assert.equal(m.score[m.equipe] - avant[m.equipe], POINTS[m.nature], 'points de la marque ' + m.horloge + ' ' + m.nature);

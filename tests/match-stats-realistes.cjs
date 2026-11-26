@@ -47,19 +47,26 @@ test('Cohérence : équipe = somme des joueurs, faits du journal et chiffres du 
     const scenes = m.events.map(e => e.scene).filter(Boolean);
     for (const s of [0, 1]) {
       const e = f.equipes[s], joueurs = Object.values(f.joueurs).filter(j => j.camp === s);
+      // Lois manquantes (26/11) : l'essai de pénalité (7 points, transformation comprise au compte du moteur) n'a ni marqueur
+      // ni buteur ; le drop compte avec les buts du moteur mais n'est pas une pénalité de la fiche.
+      const pt = m.events.filter(x => x.type === 'try' && x.scene?.kind === 'message' && x.scene.team === s).length;
+      const drops = m.events.filter(x => x.type === 'goal' && x.scene?.kind === 'message' && x.scene.team === s).length;
+      // Compte à part (penaltyTries), retiré des transformations affichées au joueur : aucune tentative.
+      assert.equal(m.stats[s].penaltyTries || 0, pt, 'essais de pénalité = moteur');
       for (const champ of MS.CHAMPS_JOUEUR) assert.equal(e[champ], joueurs.reduce((n, j) => n + j[champ], 0), `${champ} = somme des joueurs`);
-      assert.equal(e.points, m.score[s], 'points = score');
-      assert.equal(e.essais, m.tries[s], 'essais = essais du moteur');
+      assert.equal(e.points, m.score[s] - 7 * pt, 'points = score');
+      assert.equal(e.essais, m.tries[s] - pt, 'essais = essais du moteur');
       assert.equal(e.penalitesConcedees, m.stats[s].penalties, 'pénalités concédées = moteur');
       assert.equal(e.touches.lancers, m.stats[s].lineouts, 'touches = moteur');
       assert.equal(e.touches.gagnees, m.stats[s].lineoutsWon, 'touches gagnées = moteur');
       assert.equal(e.melees.introductions, m.stats[s].scrums, 'mêlées = moteur');
-      assert.equal(e.transformations, m.stats[s].conversions, 'transformations = moteur');
-      assert.equal(e.penalitesReussies, m.stats[s].goals, 'pénalités réussies = moteur');
+      assert.equal(e.transformations, m.stats[s].conversions - pt, 'transformations = moteur');
+      assert.equal(e.penalitesReussies, m.stats[s].goals - drops, 'pénalités réussies = moteur');
       const carries = scenes.filter(x => x.kind === 'carry' && x.team === s && Number.isFinite(x.from?.x) && Number.isFinite(x.to?.x));
       assert.ok(e.franchissements >= carries.filter(x => Math.abs(x.to.x - x.from.x) >= 22).length, 'franchissements : au moins les courses racontées de 22 m et plus');
       assert.equal(e.conquetesVolees, scenes.filter(x => x.kind === 'setpiece-loss' && x.team === s && x.actor != null).length, 'conquêtes volées = pertes de mise en jeu adverses du journal');
-      assert.equal(e.recuperations, scenes.filter(x => x.kind === 'turnover' && x.team === s).length, 'ballons récupérés = turnovers du journal');
+      // Ballon injouable (loi 16, maul arrêté) : ballon gagné par la défense, compté comme récupéré.
+      assert.equal(e.recuperations, scenes.filter(x => (x.kind === 'turnover' || x.kind === 'message' && x.loi === 'injouable') && x.team === s).length, 'ballons récupérés = turnovers et ballons injouables du journal');
       assert.equal(e.enAvant, scenes.filter(x => x.kind === 'hand-fault' && x.team === s).length, 'en-avant = journal');
       assert.equal(e.cartonsJaunes, scenes.filter(x => x.kind === 'card' && x.incident === true && x.team === s && x.card !== 'red').length);
       // Défense : plaquages ≈ courses adverses (plaquages à deux compris), au moins un par course racontée stoppée.

@@ -52,7 +52,7 @@ function factory(){
     const p=s.clubs[ci].players.find(p=>p.id===pid);if(!p)continue;
     const minutes=sh.minutes?.[pid];m.players.push({id:pid,name:p.name,clubId:ci,minutes:num(minutes,0,l.minute)?minutes:null});
    }
-   const st=l.stats?.[side],goals=int(st?.goals,0,1000)?st.goals:null,attempts=int(st?.goalAttempts,0,1000)?st.goalAttempts:null;
+   const st=l.stats?.[side],drops=int(st?.drops||0,0,1000)?st.drops||0:0,dropAttempts=int(st?.dropAttempts||0,0,1000)?st.dropAttempts||0:0,goals=int(st?.goals,0,1000)?st.goals-drops:null,attempts=int(st?.goalAttempts,0,1000)?st.goalAttempts-dropAttempts:null; // drops : hors pénalités
    m.totals.push({clubId:ci,tries:int(l.tries?.[side],0,1000)?l.tries[side]:null,penaltyGoals:goals,penaltyMisses:goals!==null&&attempts!==null&&attempts>=goals?attempts-goals:null});
   }
   for(let i=0;i<(l.events||[]).length;i++){

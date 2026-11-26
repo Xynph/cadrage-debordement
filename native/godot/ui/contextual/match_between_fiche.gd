@@ -28,7 +28,9 @@ static func etat_du_deroule(item: Dictionary, equipes: Array) -> String:
 	if not (camp is int or camp is float): camp = -1
 	var b: Variant = scene.get("ballon")
 	var x: float = float(b[0]) if b is Array and (b as Array).size() >= 1 and (b[0] is float or b[0] is int) else NAN
-	return etat_du_fait(str(item.get("kind", scene.get("kind", ""))), int(camp) if (camp is int or camp is float) else -1, x, equipes)
+	var kind := str(item.get("kind", scene.get("kind", "")))
+	if kind == "hand-fault" and str(item.get("cause", "")) == "forward-pass": kind = "passe-en-avant"
+	return etat_du_fait(kind, int(camp) if (camp is int or camp is float) else -1, x, equipes)
 
 ## Le carton est l'arrêt de jeu en cours : son arrêt-décision est ouvert, ou c'est le dernier fait joué par le
 ## terrain 2D. Faux dès la reprise du jeu (fait suivant joué) ou pendant un autre arrêt (blessure…) :

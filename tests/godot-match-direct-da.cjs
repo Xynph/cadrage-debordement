@@ -21,9 +21,12 @@ const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'cd-match-direct-da-'));
   fs.writeFileSync(path.join(directory, 'monde.json'), call('export').meta.exportText);
   bridge.close?.(); fs.rmSync(dataDir, {recursive: true, force: true});
 }
+const graine = String(process.env.CD_MATCH_DIRECT_DA_GRAINE || '3').trim();
+assert.match(graine, /^\d+$/, 'CD_MATCH_DIRECT_DA_GRAINE : un entier');
 const env = {...process.env, CD_GODOT_SELF_TEST: '0', CD_NODE_EXECUTABLE: process.env.CD_NODE_EXECUTABLE || process.execPath, CD_GODOT_DATA_DIR: path.join(directory, 'jeu', 'PrototypeGodot'),
-  CD_MATCH_DIRECT_DA_ARTIFACTS: directory, CD_MATCH_TEMPS_FORTS: '1', CD_MATCH_TEMPS_FORTS_HORLOGE: 'eclair', CD_MATCH_TEMPS_FORTS_VITESSE: '4', CD_MATCH_TEMPS_FORTS_NIVEAU: 'cles', CD_GODOT_SEED: '3'};
+  CD_MATCH_DIRECT_DA_ARTIFACTS: directory, CD_MATCH_TEMPS_FORTS: '1', CD_MATCH_TEMPS_FORTS_HORLOGE: 'eclair', CD_MATCH_TEMPS_FORTS_VITESSE: '4', CD_MATCH_TEMPS_FORTS_NIVEAU: 'cles', CD_GODOT_SEED: graine};
 for (const name of ['CD_MATCH_GESTES', 'CD_MATCH_CHOREGRAPHE', 'CD_MATCH_TEMPS_FORTS_ENTRACTE', 'CD_MATCH_SORTIE']) delete env[name];
+// CD_MATCH_DIRECT_DA_GRAINE=<n> : autre graine du jeu (3 par défaut), pour éprouver le test sur d'autres matchs.
 // CD_MATCH_DIRECT_DA_CAPTURES=<dossier> : jeu rendu (pas --headless ; à lancer sur le bureau caché de godot-slot.ps1),
 // captures du direct (1920 et 1280) et de chaque petite fenêtre copiées dans ce dossier.
 const captures = process.env.CD_MATCH_DIRECT_DA_CAPTURES || '';

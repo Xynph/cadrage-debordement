@@ -42,7 +42,7 @@ function factory(raw) {
 
   function scoring(result, requireConversions=false) {
     const {score,tries} = result;
-    const conversions = result.conversions ?? (Array.isArray(result.stats) ? result.stats.map(s=>s?.conversions) : undefined);
+    const conversions = result.conversions ?? (Array.isArray(result.stats) ? result.stats.map(s=>s?.conversions==null?s?.conversions:s.conversions-(Number(s.penaltyTries)||0)) : undefined);
     check(numbers(score) && numbers(tries,50) && tries.every((n,i)=>n*5<=score[i]), 'score ou essais invalides.');
     if (conversions!==undefined || requireConversions) check(numbers(conversions,50) && conversions.every((n,i)=>n<=tries[i] && tries[i]*5+n*2<=score[i]),'transformations invalides.');
     return {score:score.slice(),tries:tries.slice(),conversions:conversions?.slice() ?? [0,0]};

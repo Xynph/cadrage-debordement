@@ -91,6 +91,9 @@ var _relecture: Array = []  ## [faits filtrés, équipes, fait de départ] de la
 var _reprendre_apres := false
 ## Pause demandée pendant une réponse du moteur : envoyée dès qu'il est libre.
 var _pause_voulue := 0
+## La demande mémorisée vient d'un clic (ou d'Espace) du manager : un 2e clic l'annule. Une demande de Relire ou d'une
+## fenêtre n'est jamais annulée par un clic : la pause reste.
+var _pause_clic := false
 
 ## Redessine le fond de la bande quand ce qu'elle montre change (texte de la phrase, commandes visibles, taille).
 var _cle_bande := ""

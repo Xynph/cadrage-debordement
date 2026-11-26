@@ -388,7 +388,9 @@ function factory() {
       const last = F.season[F.season.length - 1];
       // Après la clôture du match (réponse possible), au plus trois jours après la rencontre.
       if (F.s.live || !last?.stats || !last.date || last.date < shift(F.d, -3) || last.date >= F.d) return [];
-      const x = last.stats, o = last.other || {}, pct = (a, b) => b > 0 ? Math.round(a / b * 100) : null;
+      const s0 = last.stats, o = last.other || {}, pct = (a, b) => b > 0 ? Math.round(a / b * 100) : null;
+      // Drops (drops, dropAttempts) : comptés avec les buts du moteur, retirés de la réussite au pied sur pénalités.
+      const x = { ...s0, goals: s0.goals - (Number(s0.drops) || 0), goalAttempts: s0.goalAttempts - (Number(s0.dropAttempts) || 0) };
       const notes = [];
       const melee = pct(x.scrumsWon, x.scrums), touche = pct(x.lineoutsWon, x.lineouts), pied = pct(x.goals, x.goalAttempts);
       if (melee !== null) notes.push({ poids: (85 - melee) * 1.2, axe: 'conquete', texte: melee < 80 ? 'mêlée en difficulté, ' + x.scrumsWon + ' sur ' + x.scrums + ' conservées' : 'mêlée solide, ' + x.scrumsWon + ' sur ' + x.scrums });

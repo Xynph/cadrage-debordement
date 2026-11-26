@@ -44,7 +44,9 @@ class Domination extends Control:
 		var kind := str(repere.get("kind", ""))
 		var lettre := "E" if kind == "try" else ("C" if kind == "card" else "P")
 		var qui := str(repere.get("nom", "")).strip_edges()
-		var morceaux := ["%s · %s" % [lettre, qui if not qui.is_empty() else str(repere.get("horloge", ""))]]
+		# Essai de pénalité (loi 8) : ni marqueur ni botteur, la frise le nomme.
+		if qui.is_empty() and str(repere.get("loi", "")) == "essai-penalite": qui = "Essai de pénalité"
+		var morceaux :=["%s · %s" % [lettre, qui if not qui.is_empty() else str(repere.get("horloge", ""))]]
 		if not qui.is_empty(): morceaux.append(str(repere.get("horloge", "")))
 		var marque: Variant = repere.get("score") if repere.get("score") is Array else scores.get(int(repere.get("i", -1)))
 		if kind != "card" and marque is Array and (marque as Array).size() == 2:

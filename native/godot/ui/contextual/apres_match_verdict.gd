@@ -124,12 +124,13 @@ func _fil_du_score(parent: VBoxContainer) -> void:
 		if s is Array and s.size() == 2: item.add_child(_texte("%d–%d" % [int(s[0]), int(s[1])], 13, Charte.IVOIRE_2))
 		flux.add_child(item)
 
-## Mot écrit d'une marque : « ESSAI », « ESSAI TRANSFORMÉ », « PÉNALITÉ », « DROP » (moteur : `nature`).
-## `court` (petites hauteurs) : « ESSAI TR. », « PÉN. ».
+## Mot écrit d'une marque : « ESSAI », « ESSAI TRANSFORMÉ », « ESSAI DE PÉNALITÉ », « PÉNALITÉ », « DROP » (moteur : `nature`).
+## `court` (petites hauteurs) : « ESSAI TR. », « ESSAI PÉN. », « PÉN. ».
 static func nature_marque(m: Dictionary, court: bool = false) -> String:
 	match str(m.get("nature", "")):
 		"essai": return "ESSAI"
 		"essai-transforme": return "ESSAI TR." if court else "ESSAI TRANSFORMÉ"
+		"essai-penalite": return "ESSAI PÉN." if court else "ESSAI DE PÉNALITÉ"
 		"penalite": return "PÉN." if court else "PÉNALITÉ"
 		"drop": return "DROP"
 	return "ESSAI" if str(m.get("kind", "")) == "try" else "PÉNALITÉ OU DROP"

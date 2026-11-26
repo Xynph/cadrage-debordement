@@ -62,6 +62,10 @@ const TRONC_DEBOUT := [["Hips", "Abdomen", 0.13], ["Abdomen", "Torso", 0.14], ["
 ## d'avants qui se déliaient entraient de 13 à 18 cm dans son buste).
 const CORPS_ENTIER := TRONC_DEBOUT + [["LowerLeg.L", "Foot.L", 0.06], ["LowerLeg.R", "Foot.R", 0.06],
 	["UpperArm.L", "LowerArm.L", 0.06], ["UpperArm.R", "LowerArm.R", 0.06], ["LowerArm.L", "Palm.L", 0.05], ["LowerArm.R", "Palm.R", 0.05]]
+## Buste et tête seuls (demis liés au tunnel contre les avants liés).
+const BUSTE_TETE := [["Hips", "Abdomen", 0.13], ["Abdomen", "Torso", 0.14], ["Torso", "Neck", 0.14], ["Head", 0.22, 0.1]]
+## Joueur debout près d'un joueur couché : jambes, buste et tête (bras exclus : mains au ballon, liaisons).
+const DEBOUT_SUR_COUCHE := JAMBES_DEBOUT + BUSTE_TETE
 const JEU_DEBOUT := 0.01
 ## 25/11/2026 : 2,6 m (comme la sonde des contacts) au lieu de 1,8 m : penché en mêlée, un avant a la
 ## tête 1,1 m devant ses pieds ; à 1,8 m, le demi qui se tourne contre un flanker n'était pas vu.
@@ -225,10 +229,14 @@ func degager(actors: Dictionary, delta: float, porteur: String = "", ballon: Nod
 ## `entiers` : joueurs que personne ne traverse, bras et jambes compris (CORPS_ENTIER, pour tout couple
 ## où l'un d'eux figure).
 ## Le ballon tenu suit l'écart de son porteur. Présentation seule.
-func separer(actors: Dictionary, delta: float, exclus: Dictionary = {}, porteur: String = "", ballon: Node3D = null, entiers: Dictionary = {}) -> void:
+## `demis` (parmi les `exclus`) : demis de mêlée liés au tunnel ; 26/11/2026 (sonde des contacts : tête du
+## demi qui introduit dans le buste de son pilier, jusqu'à 23 cm, pendant qu'il s'accroupit) : leur buste et
+## leur tête sortent de ceux des avants liés, et c'est le demi seul qui s'écarte (les paquets ne bougent pas).
+func separer(actors: Dictionary, delta: float, exclus: Dictionary = {}, porteur: String = "", ballon: Node3D = null, entiers: Dictionary = {}, demis: Dictionary = {}) -> void:
 	var ids: Array = []
 	var volumes: Dictionary = {}
 	var complets: Dictionary = {}
+	var bustes: Dictionary = {}
 	var racines: Dictionary = {}
 	for id: String in actors:
 		var entry: Dictionary = actors[id]
@@ -236,7 +244,7 @@ func separer(actors: Dictionary, delta: float, exclus: Dictionary = {}, porteur:
 		var model: Node3D = entry.get("model")
 		var ecart: Vector3 = (_separations.get(id, Vector3.ZERO) as Vector3).move_toward(Vector3.ZERO, RETOUR * delta)
 		_separations[id] = ecart
-		if exclus.has(id):
+		if exclus.has(id) and not demis.has(id):
 			_separations.erase(id)
 		if model == null or rig == null or not rig.is_visible_in_tree():
 			_separations.erase(id)
@@ -249,20 +257,49 @@ func separer(actors: Dictionary, delta: float, exclus: Dictionary = {}, porteur:
 		volumes[id] = _volumes(rig, TRONC_DEBOUT)
 		if not entiers.is_empty():
 			complets[id] = _volumes(rig, CORPS_ENTIER)
+		if not demis.is_empty() and exclus.has(id):
+			bustes[id] = _volumes(rig, BUSTE_TETE)
 		racines[id] = (entry.node as Node3D).global_position
 	# Écart de cette image : l'écart précédent (qui revient doucement) puis les poussées.
 	var poussees: Dictionary = {}
 	for id: String in ids:
 		poussees[id] = _separations.get(id, Vector3.ZERO)
+	# 26/11/2026 (sonde des contacts : tibia dans la tête du plaqué jusqu'à 10 cm) : les poussées entre joueurs
+	# debout ramenaient au ruck les jambes que `degager` venait de sortir du joueur couché. Les couchés restent
+	# donc des obstacles fixes pour les jambes, le buste et la tête des joueurs debout proches (plaqueur penché
+	# sur le ballon dont le ventre recevait la tête du plaqué), à chaque passe.
+	var couches: Array = []
+	for id: String in actors:
+		var rig: Skeleton3D = actors[id].get("rig")
+		if rig == null or not rig.is_visible_in_tree() or ids.has(id):
+			continue
+		var torse := rig.find_bone("Torso")
+		if torse >= 0:
+			couches.append([(actors[id].node as Node3D).global_position, _volumes(rig, CORPS_COUCHE)])
+	var jambes: Dictionary = {}
+	for id: String in ids:
+		if exclus.has(id):
+			continue
+		var proches: Array = []
+		for c: Array in couches:
+			if (c[0] as Vector3).distance_to(racines[id]) <= PORTEE:
+				proches.append(c[1])
+		if not proches.is_empty():
+			jambes[id] = [_volumes(actors[id].rig, DEBOUT_SUR_COUCHE), proches]
 	# Couples proches ; ceux d'un joueur gardé entier en dernier : à chaque passe, c'est lui qui a le
 	# dernier mot (ses voisins ne repoussent pas dans lui celui qu'il vient d'écarter).
 	var couples: Array = []
 	var couples_entiers: Array = []
+	var couples_demis: Array = []
 	for i in ids.size():
 		for j in range(i + 1, ids.size()):
 			var a: String = ids[i]
 			var b: String = ids[j]
-			if (exclus.has(a) and exclus.has(b)) or (racines[a] as Vector3).distance_to(racines[b]) > PORTEE_DEBOUT:
+			if (racines[a] as Vector3).distance_to(racines[b]) > PORTEE_DEBOUT:
+				continue
+			if exclus.has(a) and exclus.has(b):
+				if demis.has(a) != demis.has(b):
+					couples_demis.append([b, a] if demis.has(a) else [a, b])
 				continue
 			(couples_entiers if entiers.has(a) or entiers.has(b) else couples).append([a, b])
 	couples.append_array(couples_entiers)
@@ -282,11 +319,27 @@ func separer(actors: Dictionary, delta: float, exclus: Dictionary = {}, porteur:
 			poussees[a] += p * part_a
 			poussees[b] -= p * (1.0 - part_a)
 			bouge = true
+		for id: String in jambes:
+			var p := _hors_des_couches(jambes[id][0], poussees[id], jambes[id][1], racines[id])
+			if not p.is_zero_approx():
+				poussees[id] += p
+				bouge = true
+		# [avant lié, demi] : le demi s'écarte de tout l'écart, buste et tête seulement, toujours du côté
+		# où il se tient (de la racine de l'avant vers la sienne) : jamais poussé à travers le paquet.
+		for couple: Array in couples_demis:
+			var a: String = couple[0]
+			var b: String = couple[1]
+			var dehors: Vector3 = racines[b] - racines[a]
+			dehors.y = 0.0
+			var p := _penetration(bustes[a], poussees[a], bustes[b], poussees[b])
+			if p > 0.0 and dehors.length() > 0.001:
+				poussees[b] += dehors.normalized() * p
+				bouge = true
 		if not bouge:
 			break
 	for id: String in ids:
 		var ecart: Vector3 = poussees[id]
-		if exclus.has(id) or ecart.is_zero_approx():
+		if (exclus.has(id) and not demis.has(id)) or ecart.is_zero_approx():
 			_separations.erase(id)
 			continue
 		_separations[id] = ecart
@@ -325,6 +378,44 @@ static func _poussee_mutuelle(va: Array, da: Vector3, vb: Array, db: Vector3, ra
 				d = Vector3.RIGHT
 			pire = p
 			vers = d.normalized() * p
+	return vers
+
+
+## Plus forte pénétration (m, jeu JEU_DEBOUT compris) entre les volumes `va` (décalés de `da`) et `vb` (de `db`).
+static func _penetration(va: Array, da: Vector3, vb: Array, db: Vector3) -> float:
+	var pire := 0.0
+	for s1: Array in va:
+		for s2: Array in vb:
+			var r := Geometry3D.get_closest_points_between_segments(s1[0] + da, s1[1] + da, s2[0] + db, s2[1] + db)
+			pire = maxf(pire, float(s1[2]) + float(s2[2]) + JEU_DEBOUT - (r[0] as Vector3).distance_to(r[1]))
+	return pire
+
+
+## Poussée horizontale (monde) qui sort les jambes `jambes` (décalées de `decal`) des corps couchés
+## `corps` (volumes déjà calculés) ; `racine` : pieds du joueur debout, côté où il est écarté si sa jambe
+## est juste au-dessus du corps.
+static func _hors_des_couches(jambes: Array, decal: Vector3, corps: Array, racine: Vector3) -> Vector3:
+	var pire := 0.0
+	var vers := Vector3.ZERO
+	for volumes: Array in corps:
+		for s1: Array in jambes:
+			for s2: Array in volumes:
+				var r := Geometry3D.get_closest_points_between_segments(s1[0] + decal, s1[1] + decal, s2[0], s2[1])
+				var p := float(s1[2]) + float(s2[2]) + JEU - (r[0] as Vector3).distance_to(r[1])
+				if p <= pire:
+					continue
+				var d: Vector3 = r[0] - r[1]
+				var longueur := d.length()
+				d.y = 0.0
+				if d.length() >= 0.02 and longueur > 0.001:
+					p *= minf(longueur / d.length(), 3.0)
+				if d.length() < 0.02:
+					d = racine + decal - (r[1] as Vector3)
+					d.y = 0.0
+				if d.length() < 0.001:
+					d = Vector3.RIGHT
+				pire = p
+				vers = d.normalized() * p
 	return vers
 
 
