@@ -60,7 +60,7 @@ func run() -> void:
 	var uniques := {}
 	for nom in noms: uniques[nom] = true
 	check(uniques.size() == noms.size(), "Noms de fichiers uniques")
-	check(noms[0] == "reception" and noms[-1] == "apres-match" and noms.slice(-4) == ["direct", "equipe-composition", "equipe-consignes", "apres-match"], "Réception d'abord, le direct à la fin, l'après-match en dernier")
+	check(noms[0] == "reception" and noms[-1] == "apres-match" and noms.slice(-7) == ["direct", "fm-direct-1", "fm-direct-2", "fm-direct-3", "equipe-composition", "equipe-consignes", "apres-match"], "Réception d'abord, le direct à la fin, l'après-match en dernier")
 	check(noms.find("options") < noms.find("accueil") and noms.find("packs") < noms.find("direct") and noms.find("selections") < noms.find("fiche-joueur"), "Compléments après la gestion, hors carrière avant le direct")
 	for attendu in ["fiche-joueur", "fiche-club", "calendrier-semaine", "calendrier", "classements", "recrutement", "presse", "options"]:
 		check(attendu in noms, "Écran couvert : " + attendu)
