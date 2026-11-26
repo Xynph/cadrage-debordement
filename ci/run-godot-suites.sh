@@ -65,6 +65,12 @@ declare -A suite_limits=(
   # Consignes en petite fenêtre (idée 33) : même préparation, match jusqu'à la 52e à vitesse max, 2 tailles.
   [tests/godot-consignes-match.cjs]=1200
   [tests/godot-immersive08.cjs]=600
+  # Grands moments : préparation Node (carrière Monde jusqu'au jour du match), puis le match ENTIER en rendu logiciel
+  # (premier essai, sorties de mi-temps et de fin). Depuis le 24/11 (phases arrêtées #1199, arrêts de jeu #1216-#1219),
+  # le moteur joue un autre match : 13 temps forts 3D au lieu de 9 (gestes et essais tenus en temps réel), minute du
+  # moteur ~1,8 fois plus chère ; mesuré en local, match 207 s au lieu de 108 s, préparation 64 s au lieu de 45 s.
+  # Runner : verts à 282, 293 et 295 s, 5 coupures à 300 s (23-26/11) ; ×1,6 sur un runner lent. Accord de Léo, 26/11.
+  [tests/godot-match-grands-moments.cjs]=600
   # Panneaux de l'Effectif : une carrière Monde préparée jusqu'au jour de match (~60 s en local) puis le vrai jeu (~25 s).
   [tests/godot-panneaux-effectif.cjs]=600
   # Planificateur : carrière Monde créée côté Node (sans match), puis le vrai jeu (~30 s).

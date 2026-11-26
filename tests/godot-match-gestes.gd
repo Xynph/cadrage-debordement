@@ -75,6 +75,30 @@ func busts_overlap(view, a: String, b: String) -> float:
 			worst = maxf(worst, float(s1[2]) + float(s2[2]) - (r[0] as Vector3).distance_to(r[1]))
 	return worst
 
+## Ballon porté (26/11/2026, sonde des contacts : bras dans les corps jusqu'à 20 cm) : plus forte pénétration (m)
+## d'un bras de `a` (haut du bras hors articulation de l'épaule, avant-bras) dans le corps de `b` (bras exclus).
+const CORPS_SANS_BRAS := [["Hips", "Abdomen", 0.13], ["Abdomen", "Torso", 0.14], ["Torso", "Neck", 0.14], ["UpperLeg.L", "LowerLeg.L", 0.08],
+	["UpperLeg.R", "LowerLeg.R", 0.08], ["LowerLeg.L", "Foot.L", 0.06], ["LowerLeg.R", "Foot.R", 0.06]]
+const EPAULE := 0.06
+## Couples-images au plus avec un bras au-delà de 8 cm (3158 avant le 26/11/2026, 5 après ; restent ceux dont le
+## haut du bras part de l'intérieur de l'autre, liés au contact : option A de Léo, paquets du maul inchangés).
+const ARMS_IN_BODY_MAX := 8
+
+func arm_in_body(view, a: String, b: String) -> float:
+	if (view._actors[a].node as Node3D).global_position.distance_to((view._actors[b].node as Node3D).global_position) > 2.6:
+		return 0.0
+	var worst := -INF
+	var bras := _capsules(view._actors[a].rig, BRAS)
+	var corps := _capsules(view._actors[b].rig, CORPS_SANS_BRAS)
+	corps.append(_busts(view._actors[b].rig).back())
+	for x in bras.size():
+		for s2: Array in corps:
+			var r := Geometry3D.get_closest_points_between_segments(bras[x][0], bras[x][1], s2[0], s2[1])
+			if x < 2 and (r[0] as Vector3).distance_to(bras[x][0]) < EPAULE:
+				continue
+			worst = maxf(worst, float(bras[x][2]) + float(s2[2]) - (r[0] as Vector3).distance_to(r[1]))
+	return worst
+
 ## Touche (26/11/2026, sonde des contacts : avant-bras des porteurs dans les cuisses du sauteur, jusqu'à
 ## 17 cm) : plus forte pénétration (m) des bras d'un porteur dans les cuisses de son sauteur.
 const BRAS := [["UpperArm.L", "LowerArm.L", 0.06], ["UpperArm.R", "LowerArm.R", 0.06], ["LowerArm.L", "Palm.L", 0.05], ["LowerArm.R", "Palm.R", 0.05]]
@@ -264,6 +288,8 @@ func run() -> void:
 	var maul_drive := 0.0
 	var maul_busts_merged := 0
 	var maul_busts_worst := 0.0
+	var maul_arm_worst := 0.0
+	var maul_arm_frames := 0
 	var maul_try_follows_seen := false
 	var maul_lead := 0.0
 	var aplati_too_early := false
@@ -381,6 +407,11 @@ func run() -> void:
 					if fondu > BUST_OVERLAP_MAX:
 						maul_busts_merged += 1
 						maul_busts_worst = maxf(maul_busts_worst, fondu)
+					# Bras liés posés sur le corps de l'autre, pas dedans (26/11/2026).
+					var bras_dedans := maxf(arm_in_body(view, staged[i], staged[j]), arm_in_body(view, staged[j], staged[i]))
+					maul_arm_worst = maxf(maul_arm_worst, bras_dedans)
+					if bras_dedans > BUST_OVERLAP_MAX:
+						maul_arm_frames += 1
 			var center: Vector3 = gestes._frame().center
 			if last_drive_phase == gestes.phase and last_center.is_finite():
 				var moved: float = Vector2(center.x - last_center.x, center.z - last_center.z).length()
@@ -514,7 +545,8 @@ func run() -> void:
 	check(maul_opponents >= 1, "Au moins un adversaire est lié : c'est bien un maul")
 	check(maul_spread < 3.8, "Le regroupement reste compact : " + str(maul_spread))
 	check(maul_pitch > 0.2, "Les liés poussent buste engagé : " + str(maul_pitch))
-	print("MATCH_GESTES_MAUL_BUSTES ", JSON.stringify({"couples_images": maul_busts_merged, "pire_m": snappedf(maul_busts_worst, 0.001)}))
+	print("MATCH_GESTES_MAUL_BUSTES ", JSON.stringify({"couples_images": maul_busts_merged, "pire_m": snappedf(maul_busts_worst, 0.001), "bras_pire_m": snappedf(maul_arm_worst, 0.001), "bras_couples_images": maul_arm_frames}))
+	check(maul_arm_frames <= ARMS_IN_BODY_MAX, "Ballon porté : bras posés sur le corps de l'autre, pas dedans (%d couples-images au-delà de %.2f m, pire %.3f m)" % [maul_arm_frames, BUST_OVERLAP_MAX, maul_arm_worst])
 	check(maul_busts_merged <= BUSTS_MERGED_MAX, "Ballon porté : aucun buste ni aucune tête dans un autre (%d couples-images au-delà de %.2f m, pire %.2f m)" % [maul_busts_merged, BUST_OVERLAP_MAX, maul_busts_worst])
 	check(try_checked, "L'essai prolonge le ballon porté")
 	# Lot 8 : le ballon porté avance à allure de ballon porté (pas de sprint du paquet), le porteur
