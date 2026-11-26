@@ -25,6 +25,7 @@ function jouer(n) {
         S.round=f.week;const pair=[f.homeId,f.awayId];for(const id of pair)CDFranceCareer.ensureAISheet(S.clubs[id]);S.club=pair[0];
         const l=createRugbyMatch(pair,null,false);for(let n=0;!l.finished;n++){if(n>4000)throw Error('boucle');l.paused=false;advanceRugby(l)}
         return JSON.stringify({abbr:pair.map(id=>S.clubs[id].abbr),score:l.score,tries:l.tries,yellows:l.stats[0].yellows+l.stats[1].yellows,
+          transfos:l.stats.map(s=>({c:s.conversions,a:s.conversionAttempts,pt:s.penaltyTries||0,panneau:statsPanel(l).includes((s.conversions-(s.penaltyTries||0))+' / '+(s.conversionAttempts-(s.penaltyTries||0)))})),
           events:l.events.map(e=>({min:e.min,type:e.type,text:e.text,s:e.scene?{kind:e.scene.kind,team:e.scene.team,cause:e.scene.cause,score:e.scene.score}:{}}))});})()`)));
     }
   }
@@ -96,6 +97,13 @@ test('Essai de pénalité : 7 points sans transformation, carton jaune du fautif
     if (!cartons.some(x => /^Carton (jaune|rouge)|carton rouge|second jaune/.test(x.text))) fautes.push('sans carton : ' + e.text);
     if (m.events[q]?.type !== 'penalty' || m.events[q].s.team !== side) fautes.push('sans faute sifflée juste avant : ' + e.text);
   });
+  // Statistiques du match vues par le joueur : transformations tentées = essais marqués hors essais de pénalité.
+  for (const m of matchs) for (const side of [0, 1]) {
+    const t = m.transfos[side], vusIci = m.events.filter(e => e.type === 'try' && /Essai de pénalité/.test(e.text) && e.s.team === side).length;
+    if (t.pt !== vusIci) fautes.push(`compte des essais de pénalité ${t.pt} ≠ ${vusIci}`);
+    if (t.a - t.pt !== m.tries[side] - vusIci) fautes.push(`transformations tentées affichées ${t.a - t.pt} pour ${m.tries[side] - vusIci} essais marqués`);
+    if (!t.panneau) fautes.push('statistiques du match : transformations sans retrait des essais de pénalité');
+  }
   assert.ok(vus >= 3, `assez d’essais de pénalité observés (${vus})`);
   assert.deepEqual(fautes.slice(0, 5), [], `${fautes.length}/${vus} essais de pénalité irréguliers`);
 });

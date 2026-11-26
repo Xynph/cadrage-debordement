@@ -7,7 +7,8 @@
 // = celui qui redonne la hiérarchie réelle de l'URC sur des saisons Monde (pente ≈ 0,30 par point : +6 → 84 %,
 // +10 → 95 %, −10 → 5 %), sans dérive des scores. Les autres championnats : tests/match-realite-championnats.cjs.
 // Carrière world-champ (club 102, hors des clubs du banc), aucun ancien mode.
-// Version CI : 3 écarts × 240 matchs au moteur complet, 4 écarts × 1 000 résultats rapides (~2 min).
+// Version CI : 3 écarts × 600 matchs au moteur complet (240 avant le 26/11 : à +6, ±2,6 points d’échantillon, la graine fixe
+// faisait passer ou casser le seuil de 75 % au moindre tirage de plus du moteur), 4 écarts × 3 000 résultats rapides (~3 min).
 // Version longue (manuelle, sous verrou) : CD_COURBE_LONGUE=1 node tests/match-rating-curve.cjs
 // (9 écarts, 600 matchs complets et 4 000 rapides par écart, trois clubs de base : Top 14, PRO D2, URC).
 const { test } = require('node:test');
@@ -18,7 +19,7 @@ const B = require('./helpers/courbe-niveau.cjs');
 const LONGUE = process.env.CD_COURBE_LONGUE === '1';
 const PLAN = LONGUE
   ? { complet: { ecarts: [-15, -10, -6, -3, 0, 3, 6, 10, 15], n: 600 }, rapide: { ecarts: [-15, -10, -6, -3, 0, 3, 6, 10, 15], n: 4000 }, bases: [4, 20, 44] }
-  : { complet: { ecarts: [0, 6, 10], n: 240 }, rapide: { ecarts: [-10, 0, 6, 10], n: 3000 }, bases: [4] };
+  : { complet: { ecarts: [0, 6, 10], n: 600 }, rapide: { ecarts: [-10, 0, 6, 10], n: 3000 }, bases: [4] };
 // Série de la queue (+15, hors ajustement logistique) : version CI seulement, la version longue la contient déjà.
 PLAN.queue = { complet: 600, rapide: 2000 };
 // Bornes : cible ± tolérance de conception ± trois erreurs types de l'ajustement (variance mesurée de l'échantillon, tests/helpers/courbe-niveau.cjs).

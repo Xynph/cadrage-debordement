@@ -101,8 +101,9 @@ function accorderEssaiPenalite(l,side,incident){
  const depart=Array.isArray(l.essaisPoss)&&l.essaisPoss[0]===side?l.essaisPoss[1]:l.territory;
  l.tries[side]++;(l.essaisDetail||(l.essaisDetail=[])).push([Math.max(0,Math.round(l.minute)||0),side,incident?.id==='maul'?'b':incident?.id==='scrum'?'m':'j',Math.round(side===0?100-clamp(depart,0,100):clamp(depart,0,100))]);
  // Compte du moteur (score = essais × 5 + transformations × 2 + buts × 3, contrôlé à la sauvegarde) : les 2 points
- // accordés sans tir figurent comme une transformation, aucun buteur n'est crédité (fiche de stats).
- l.score[side]+=7;l.stats[side].conversionAttempts++;l.stats[side].conversions++;
+ // accordés sans tir figurent comme une transformation, comptée à part (penaltyTries) et retirée partout où le joueur voit
+ // les transformations (statistiques du match, conseil, multiplex) ; aucun buteur n'est crédité (fiche de stats).
+ l.score[side]+=7;l.stats[side].conversionAttempts++;l.stats[side].conversions++;l.stats[side].penaltyTries=(l.stats[side].penaltyTries||0)+1;
  addEvent(l,`${S.clubs[l.pair[side]].abbr} · Essai de pénalité : 7 points, sans transformation. ${l.score.join(' – ')}.`,'try',{kind:'message',team:side});
  if(restartRules(l)){chronoArret(l,'penalite');if(!flowScored(l,side)&&(flowRules(l)||l.minute<80))relancer(l,'kickoff',1-side,'score',side)}
  return true;

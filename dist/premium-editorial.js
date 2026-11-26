@@ -185,7 +185,10 @@
   ratio('possession','Possession','possession');ratio('occupation','Occupation','territory');
   count('tries','Essais',l.tries?.[0]??null,l.tries?.[1]??null);
   for(const [key,label,won,total] of [['scrums','Mêlées conservées','scrumsWon','scrums'],['lineouts','Touches conservées','lineoutsWon','lineouts'],['goals','Pénalités au but','goals','goalAttempts'],['conversions','Transformations','conversions','conversionAttempts']]){
-   if([a[won],b[won],a[total],b[total]].every(Number.isFinite)){rows.push({key,label,left:a[won]+' / '+a[total],right:b[won]+' / '+b[total],percent:a[total]+b[total]?100*a[total]/(a[total]+b[total]):50,values:[a[won],b[won]]});}
+   if([a[won],b[won],a[total],b[total]].every(Number.isFinite)){
+    // Essai de pénalité (penaltyTries) : 7 points sans tentative, retiré des transformations affichées.
+    const pa=key==='conversions'?Number(a.penaltyTries)||0:0,pb=key==='conversions'?Number(b.penaltyTries)||0:0,aw=a[won]-pa,at=a[total]-pa,bw=b[won]-pb,bt=b[total]-pb;
+    rows.push({key,label,left:aw+' / '+at,right:bw+' / '+bt,percent:at+bt?100*at/(at+bt):50,values:[aw,bw]});}
   }
   count('penalties','Pénalités concédées',val(a,'penalties'),val(b,'penalties'));
   count('yellows','Cartons jaunes',val(a,'yellows'),val(b,'yellows'));

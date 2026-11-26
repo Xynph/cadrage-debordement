@@ -51,6 +51,8 @@ test('Cohérence : équipe = somme des joueurs, faits du journal et chiffres du 
       // ni buteur ; le drop compte avec les buts du moteur mais n'est pas une pénalité de la fiche.
       const pt = m.events.filter(x => x.type === 'try' && x.scene?.kind === 'message' && x.scene.team === s).length;
       const drops = m.events.filter(x => x.type === 'goal' && x.scene?.kind === 'message' && x.scene.team === s).length;
+      // Compte à part (penaltyTries), retiré des transformations affichées au joueur : aucune tentative.
+      assert.equal(m.stats[s].penaltyTries || 0, pt, 'essais de pénalité = moteur');
       for (const champ of MS.CHAMPS_JOUEUR) assert.equal(e[champ], joueurs.reduce((n, j) => n + j[champ], 0), `${champ} = somme des joueurs`);
       assert.equal(e.points, m.score[s] - 7 * pt, 'points = score');
       assert.equal(e.essais, m.tries[s] - pt, 'essais = essais du moteur');

@@ -61,8 +61,9 @@ function factory(){
   if(s.lineouts>0&&fini(s.lineoutsWon))e.touche=100*s.lineoutsWon/s.lineouts;
   if(fini(s.possession)&&fini(t.possession)&&s.possession+t.possession>0)e.possession=100*s.possession/(s.possession+t.possession);
   if(fini(s.territory)&&fini(t.territory)&&s.territory+t.territory>0)e.territoire=100*s.territory/(s.territory+t.territory);
-  const tentatives=(Number(s.goalAttempts)||0)+(Number(s.conversionAttempts)||0);
-  if(tentatives>0)e.buteur=100*((Number(s.goals)||0)+(Number(s.conversions)||0))/tentatives;
+  // Essai de pénalité (penaltyTries) : 7 points sans tentative, hors réussite au pied.
+  const pt=Number(s.penaltyTries)||0,tentatives=(Number(s.goalAttempts)||0)+(Number(s.conversionAttempts)||0)-pt;
+  if(tentatives>0)e.buteur=100*((Number(s.goals)||0)+(Number(s.conversions)||0)-pt)/tentatives;
   if(fini(s.penalties))e.penalites=s.penalties;
   if(fini(s.yellows))e.jaunes=s.yellows;
   if(fini(s.entries22))e.entrees22=s.entries22;
