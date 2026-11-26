@@ -2,9 +2,9 @@ extends "res://ui/contextual/match_between_journee.gd"
 ## Mon XV, banc et changements de l'écran intermédiaire du match.
 
 ## Colonne de gauche (Gabi, événements, enjeu, bonus, banc) : le banc garde la hauteur de ses 8 lignes tant qu'il y a la
-## place ; quand la colonne n'en a plus (bulles de Gabi, duel, bonus de fin de match), les événements cèdent d'abord leur
-## hauteur et défilent, puis le banc défile à son tour (jusqu'à la moitié de sa hauteur) : la barre de Mon XV ne sort
-## jamais de l'écran (relevé du 26/11 : page de 959 px pour 921 px de cadre à la 76e minute en 1920 × 1080).
+## place ; quand la colonne n'en a plus (bulles de Gabi, duel, bonus de fin de match), les événements cèdent leur hauteur
+## et défilent, mesurés sur le cadre de la page : la barre de Mon XV ne sort plus de l'écran (relevé du 26/11 : page de
+## 959 à 962 px pour 921 px de cadre à la 76e minute en 1920 × 1080).
 func _tenir_gauche() -> void:
 	if not is_instance_valid(_colonne_gauche) or not is_instance_valid(_page_fm) or not is_instance_valid(_defile_ev): return
 	var avec_banc := is_instance_valid(_defile_banc) and is_instance_valid(zone_banc)
@@ -35,9 +35,8 @@ func _tenir_gauche() -> void:
 		var hauteur := floorf(clampf(h_contenu, 0.0, maxf(0.0, place - h_banc)))
 		if not is_equal_approx(_defile_ev.custom_minimum_size.y, hauteur): _defile_ev.custom_minimum_size.y = hauteur
 		place -= hauteur
-	if avec_banc:
-		var h := floorf(clampf(place, ceilf(h_banc * 0.5), h_banc))
-		if not is_equal_approx(_defile_banc.custom_minimum_size.y, h): _defile_banc.custom_minimum_size.y = h
+	# Le banc garde ses 8 lignes (vérificateur du 24/11, godot-cris-banc) : il ne cède jamais sa hauteur.
+	if avec_banc and not is_equal_approx(_defile_banc.custom_minimum_size.y, h_banc): _defile_banc.custom_minimum_size.y = h_banc
 
 ## D3 : carte haute d'un joueur (barre basse de Mon XV) : visage et numéro, nom, énergie (jauge et valeur ou alerte),
 ## note du match en pastille et plaquages.
