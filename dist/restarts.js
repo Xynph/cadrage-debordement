@@ -254,6 +254,8 @@ function courseDecoupee(l,side,origin,finisseur){
  return x;
 }
 function advanceCausalPlay(l){
+ // Séquence de pénaltouche (défense regroupée, dist/tactical-plans.js) : finie dès que l'autre camp joue le ballon.
+ if(l.suitePenaltouche&&l.suitePenaltouche.side!==l.possession)delete l.suitePenaltouche;
  const side=l.possession,opp=1-side,origin=l.territory,roll=Math.random(),penalites=penalitesRules(l),penaltyProb=clamp(.12+(penalites?PENALITES.jeu:0)+(70-unit(l,opp,'discipline'))*.002+tacticalPenaltyAdjustment(l,opp),tacticalRules(l)?.04:.06,tacticalRules(l)?.28:.23)*derbyFouls(l)*(typeof pilotageFoul==='function'?pilotageFoul(l,opp,'jeu'):1),handProb=handFaultProbability(l,side);
  if(roll<penaltyProb)return awardPenalty(l,side);
  if(roll<penaltyProb+handProb)return handFault(l,side);
@@ -271,7 +273,7 @@ function advanceCausalPlay(l){
   // The completed carrying sequence includes a tackle/ruck, resetting kick eligibility.
   l.kickContext={team:side,halfEligible:ownHalf(side,l.territory),twentyTwoEligible:own22(side,l.territory)};
   const danger=side===0?l.territory>74:l.territory<26;
-  if(danger&&Math.random()<(essais?clamp(ESSAIS.finition+ouvertureJeu(l)+edge+niveau+tacticalFinishAdjustment(l,side),.15,.85):clamp(.36+edge+tacticalFinishAdjustment(l,side),tacticalRules(l)?.12:.16,tacticalRules(l)?.78:.75))){
+  if(danger&&Math.random()<(essais?clamp(ESSAIS.finition+ouvertureJeu(l)+edge+niveau+tacticalFinishAdjustment(l,side)-(typeof defenseRegroupee==='function'?DEFENSE_REGROUPEE.finition*defenseRegroupee(l,side):0),.15,.85):clamp(.36+edge+tacticalFinishAdjustment(l,side),tacticalRules(l)?.12:.16,tacticalRules(l)?.78:.75))){
    const finish=Math.random();
    if(MATCH_COURSES_DECOUPEES){
     if(finish<.12)return resolveInGoal(l,side,finish<.08?'held-up':'ingoal-knock-on',l.territory,courseDecoupee(l,side,origin,null));

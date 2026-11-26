@@ -152,6 +152,8 @@ function factory(){
   l.penaltyPolicies=l.penaltyPolicies||['auto','auto'];
   const change=l.tactics[side]!==c.attack||(l.defences?.[side]||'equilibre')!==c.defense||l.penaltyPolicies[side]!==c.penalty;
   l.tactics[side]=c.attack;if(l.defences)l.defences[side]=c.defense;l.penaltyPolicies[side]=c.penalty;
+  // Consigne posée par l'IA elle-même : seule celle-ci peut être levée en fin de match (choixPoteauxStaff, dist/opposition.js).
+  if(l.managerMemory?.[side])l.managerMemory[side].consignePenalite=c.penalty;
   if(change&&typeof addEvent==='function')addEvent(l,`${S.clubs[l.pair[side]].abbr} ${PHRASES_IA[id]}.`,'tactic',{team:side});
   return id;
  }
