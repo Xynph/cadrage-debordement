@@ -112,11 +112,38 @@ func make_view(gestes: bool):
 	view.set_live_cadence(1)
 	return view
 
+## Essai de pénalité (26/11/2026) : accordé entre les poteaux, la même image pour une faute loin ou près de la ligne :
+## ballon sous les poteaux, équipe qui marque autour d'eux, plan centré sur les poteaux et l'arbitre.
+func essai_penalite() -> void:
+	var lecture: Script = load("res://ui/contextual/match_temps_forts_lecture.gd")
+	var attaques: Array = []
+	for faute: float in [72.0, 97.0]:
+		var joueurs: Array = []
+		for side in 2:
+			for slot in 15:
+				joueurs.append({"id": "%d-%d" % [side, slot], "side": side, "slot": slot, "x": faute - 6.0 + slot, "y": 10.0 + slot * 3.0})
+		var s: Dictionary = lecture.scene_essai_penalite({"kind": "message", "team": 0, "possession": 1, "ball": {"x": faute, "y": 20.0}, "players": joueurs})
+		check(absf(float(s.ball.x) - 100.0) < 1.0 and absf(float(s.ball.y) - 35.0) < 0.5, "Essai de pénalité : ballon sous les poteaux (faute à %d m de la ligne)" % int(100.0 - faute))
+		var points: Array = lecture.points_essai_penalite(50.0, 1.0)
+		points.append(Vector3(46.5, 0.0, -1.5)) # arbitre sous les poteaux, bras levé
+		points.append(Vector3(float(s.ball.x) - 50.0, 0.0, float(s.ball.y) - 35.0))
+		var centre := Vector3.ZERO
+		for p: Vector3 in points: centre += Vector3(p.x, 0.0, p.z)
+		centre /= float(points.size())
+		check(absf(centre.x - 50.0) < 8.0 and absf(centre.z) < 2.0, "Essai de pénalité : plan centré sur les poteaux et l'arbitre " + str(centre))
+		var attaque: Array = []
+		for p: Dictionary in s.players:
+			if int(p.side) == 0: attaque.append([float(p.x), float(p.y)])
+		check(attaque.size() == 15 and attaque.all(func(a: Array) -> bool: return a[0] >= 78.0 and a[0] < 100.0 and absf(a[1] - 35.0) <= 14.0), "Essai de pénalité : l'équipe qui marque autour des poteaux")
+		attaques.append(attaque)
+	check(attaques.size() == 2 and attaques[0] == attaques[1], "Essai de pénalité : même image pour une faute loin ou près")
+
 func run() -> void:
 	root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
 	root.size = Vector2i(1280, 720)
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(ProjectSettings.globalize_path("res://").path_join("../../tests/fixtures/match-gestes-sequence.json")))
 	check(parsed is Dictionary and parsed.get("frames") is Array, "Séquence du moteur lisible")
+	essai_penalite()
 	if not failures.is_empty():
 		quit(1)
 		return
