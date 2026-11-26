@@ -22,6 +22,11 @@ const PHASES := ["melee", "maul", "plaquage", "touche", "ruck_sol", "debout"]
 ## Bustes et têtes (bras et jambes exclus) : en mêlée et au ballon porté, les bras liés et les
 ## épaules au contact sont voulus ; seuls les bustes et les têtes qui se confondent sont des fautes.
 const TRONC_TETE := ["Hips", "Abdomen", "Torso", "Head"]
+## Membres en cause (26/11/2026, contacts 3D 2e étape : bras dans les corps, jambes au ruck), par couple
+## d'os : bras dans le corps de l'autre (tronc, tête ou jambes), bras contre bras, jambe dans l'autre
+## (hors bras), tronc ou tête contre tronc ou tête. Pour chacune, par phase : couples-images, épisodes et
+## images au-delà de FRANC, pénétration maximale et moyenne.
+const CATEGORIES := ["bras_corps", "bras_bras", "jambes", "tronc_tete"]
 const CAPTURES_PAR_PHASE := 2
 ## Vitrines (25/11/2026) : mêlée et ballon porté photographiés formés, VITRINE_DELAI s après leur début,
 ## au plus VITRINES fois chacun, quels que soient les contacts (pour juger l'allure, pas une faute).
@@ -49,6 +54,9 @@ var maul_tt: Array = []
 var _vitrine_debut: Dictionary = {}
 var _vitrines: Dictionary = {}
 var _precedents_tt: Dictionary = {}
+## Os -> os -> catégorie (CATEGORIES) ; couples « a>b:catégorie » au-delà de FRANC à l'image précédente.
+var _categories: Dictionary = {}
+var _precedents_membres: Dictionary = {}
 ## Sortie de mêlée par un avant détaché avec le ballon (n° 8 ; Léo, 25/11/2026 : il traversait les
 ## paquets encore liés). Fenêtre de SORTIE_FENETRE s depuis l'annonce : couples de ce porteur avec
 ## tout autre joueur (corps entiers), et tous les couples de la mêlée pendant la fenêtre.
@@ -68,9 +76,30 @@ func _init() -> void:
 	process_priority = 100002
 	dossier_captures = OS.get_environment("CD_CONTACTS_CAPTURES")
 	for p: String in PHASES:
+		var membres := {}
+		for c: String in CATEGORIES:
+			membres[c] = {"couples": 0, "episodes": 0, "images": 0, "max_m": 0.0, "somme_m": 0.0}
 		par_phase[p] = {"images_couples": 0, "images_franc": 0, "couples_franc": 0, "episodes_franc": 0, "couples_leger": 0,
-			"episodes_leger": 0, "penetration_max_m": 0.0, "os": {}, "couples_franc_tronc_tete": 0, "tronc_tete_max_m": 0.0,
-			"os_tronc_tete": {}}
+			"episodes_leger": 0, "penetration_max_m": 0.0, "somme_franc_m": 0.0, "os": {}, "couples_franc_tronc_tete": 0,
+			"tronc_tete_max_m": 0.0, "os_tronc_tete": {}, "membres": membres}
+	for x: Array in CORPS:
+		var ligne := {}
+		for y: Array in CORPS:
+			ligne[str(y[0])] = categorie(str(x[0]), str(y[0]))
+		_categories[str(x[0])] = ligne
+
+
+## Catégorie (CATEGORIES) du contact entre l'os `x` d'un joueur et l'os `y` d'un autre (noms de CORPS).
+static func categorie(x: String, y: String) -> String:
+	var bras_x := x.begins_with("UpperArm") or x.begins_with("LowerArm")
+	var bras_y := y.begins_with("UpperArm") or y.begins_with("LowerArm")
+	if bras_x and bras_y:
+		return "bras_bras"
+	if bras_x or bras_y:
+		return "bras_corps"
+	if x in TRONC_TETE and y in TRONC_TETE:
+		return "tronc_tete"
+	return "jambes"
 
 
 func _ready() -> void:
@@ -257,6 +286,8 @@ func _process(delta: float) -> void:
 	var vus: Dictionary = {}
 	var vus_tt: Dictionary = {}
 	var touchees: Dictionary = {}
+	var touchees_m: Dictionary = {}
+	var vus_m: Dictionary = {}
 	var vus_phase: Dictionary = {}
 	for i in ids.size():
 		for j in range(i + 1, ids.size()):
@@ -276,10 +307,15 @@ func _process(delta: float) -> void:
 			var point := Vector3.ZERO
 			var max_t := -INF
 			var detail_t := ""
+			var max_m := {}
 			for s1: Array in corps[a]:
+				var ligne: Dictionary = _categories[s1[3]]
 				for s2: Array in corps[b]:
 					var r := Geometry3D.get_closest_points_between_segments(s1[0], s1[1], s2[0], s2[1])
 					var p := float(s1[2]) + float(s2[2]) - (r[0] as Vector3).distance_to(r[1])
+					var cat: String = ligne[s2[3]]
+					if p > float(max_m.get(cat, -INF)):
+						max_m[cat] = p
 					if p > max_p:
 						max_p = p
 						detail = "%s/%s" % [s1[3], s2[3]]
@@ -294,6 +330,18 @@ func _process(delta: float) -> void:
 				maul_tt.append({"t": snappedf(temps, 0.01), "image": images, "os": detail_t, "p": snappedf(max_t, 0.001),
 					"a": _etat_maul(a), "b": _etat_maul(b)})
 			vus_tt[a + ">" + b] = max_t > FRANC
+			for cat: String in max_m:
+				if float(max_m[cat]) <= FRANC:
+					continue
+				var m: Dictionary = par_phase[phase].membres[cat]
+				var cle_m := a + ">" + b + ":" + cat
+				m.couples += 1
+				m.max_m = maxf(float(m.max_m), snappedf(float(max_m[cat]), 0.001))
+				m.somme_m = float(m.somme_m) + float(max_m[cat])
+				touchees_m[phase + ":" + cat] = true
+				vus_m[cle_m] = true
+				if not _precedents_membres.has(cle_m):
+					m.episodes += 1
 			if not _sortie_id.is_empty() and _sortie_id in [a, b] and max_p > FRANC:
 				_compter_sortie(a, b, max_p, max_t, detail, sortie_vus, phase)
 			if max_t > FRANC:
@@ -310,6 +358,7 @@ func _process(delta: float) -> void:
 				s.couples_franc += 1
 				touchees[phase] = true
 				s.penetration_max_m = maxf(float(s.penetration_max_m), snappedf(max_p, 0.001))
+				s.somme_franc_m = float(s.somme_franc_m) + max_p
 				var cle_os := detail
 				s.os[cle_os] = int(s.os.get(cle_os, 0)) + 1
 				vus[cle] = "franc"
@@ -332,6 +381,10 @@ func _process(delta: float) -> void:
 					s.episodes_leger += 1
 	for phase: String in touchees:
 		par_phase[phase].images_franc += 1
+	for cle: String in touchees_m:
+		var parts := cle.split(":")
+		par_phase[parts[0]].membres[parts[1]].images += 1
+	_precedents_membres = vus_m
 	_precedents = vus
 	_precedents_tt = vus_tt
 	_sortie_vus = sortie_vus
@@ -416,8 +469,15 @@ func bilan() -> Dictionary:
 		for k: String in s.os_tronc_tete:
 			os_tt.append([k, s.os_tronc_tete[k]])
 		os_tt.sort_custom(func(x, y): return x[1] > y[1])
+		var membres := {}
+		for c: String in CATEGORIES:
+			var m: Dictionary = s.membres[c]
+			membres[c] = {"couples": m.couples, "episodes": m.episodes, "images": m.images, "max_m": m.max_m,
+				"moyenne_m": snappedf(float(m.somme_m) / float(m.couples), 0.001) if int(m.couples) > 0 else 0.0}
 		resume[p] = {"images_franc": s.images_franc, "couples_franc": s.couples_franc, "episodes_franc": s.episodes_franc,
 			"couples_leger": s.couples_leger, "episodes_leger": s.episodes_leger, "penetration_max_m": s.penetration_max_m,
+			"penetration_moyenne_m": snappedf(float(s.somme_franc_m) / float(s.couples_franc), 0.001) if int(s.couples_franc) > 0 else 0.0,
+			"membres": membres,
 			"couples_images_proches": s.images_couples, "os": os_tries.slice(0, 6),
 			"couples_franc_tronc_tete": s.couples_franc_tronc_tete, "tronc_tete_max_m": s.tronc_tete_max_m, "os_tronc_tete": os_tt.slice(0, 6)}
 	return {"images": images, "images_rejeu_ignorees": images_rejeu, "seuil_franc_m": FRANC, "seuil_leger_m": LEGER,
