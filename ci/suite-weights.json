@@ -125,7 +125,7 @@
       "tests/match-importance.cjs": 13,
       "tests/match-notes.cjs": 364,
       "tests/match-penalite-main.cjs": 184,
-      "tests/match-pilotage.cjs": 230,
+      "tests/match-pilotage.cjs": 520,
       "tests/match-rating-curve.cjs": 415,
       "tests/match-realite-championnats.cjs": 520,
       "tests/match-regles.cjs": 12,
