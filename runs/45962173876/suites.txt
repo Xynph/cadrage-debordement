@@ -1,0 +1,2 @@
+tests/godot-cris-banc.cjs
+tests/godot-match-temps-forts.cjs
