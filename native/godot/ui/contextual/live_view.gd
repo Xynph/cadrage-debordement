@@ -8,6 +8,9 @@ extends "res://ui/contextual/live_view_bandeau.gd"
 ## de nos joueurs ouvrent une petite fenêtre visuelle par-dessus le match (match en pause, repris à la fermeture) ;
 ## le menu ouvre ses réglages dans une page du direct.
 
+## Match fini et entièrement montré : l'après-match couvre la vue.
+var _fin_montree := false
+
 func _ready() -> void:
 	name = "ContextualLiveMatch"
 	app = director.app
@@ -385,6 +388,34 @@ func _suivre_apres_match() -> void:
 	if is_instance_valid(apres_match) and apres_match.visible != fini:
 		apres_match.visible = fini
 		if fini: apres_match.update_frame(model)
-	if is_instance_valid(_viewport):
-		var mode := SubViewport.UPDATE_DISABLED if fini else SubViewport.UPDATE_ALWAYS
-		if _viewport.render_target_update_mode != mode: _viewport.render_target_update_mode = mode
+	_fin_montree = fini
+	_suivre_rendu_3d()
+
+## La scène 3D n'est rendue que si elle peut se voir : ni après-match par-dessus, ni écran intermédiaire posé à fond sur
+## elle (voile opaque de la régie, pendant tout l'entracte). Rien ne change à l'écran : sous un aplat opaque, l'image 3D
+## n'apparaît dans aucun pixel ; la scène, elle, continue d'avancer (joueurs, caméra, ballon). Sous rendu logiciel
+## (machines sans carte graphique), cette image cachée coûtait l'essentiel de chaque image de l'écran 2D.
+## Décidé aussi juste avant le dessin de chaque image (frame_pre_draw), une fois les fondus du voile avancés : l'image
+## où la 3D recommence à paraître sous le voile qui s'efface est toujours rendue.
+func _suivre_rendu_3d() -> void:
+	if not is_instance_valid(_viewport): return
+	var mode := SubViewport.UPDATE_DISABLED if _fin_montree or _3d_sous_voile() else SubViewport.UPDATE_ALWAYS
+	if _viewport.render_target_update_mode != mode: _viewport.render_target_update_mode = mode
+
+## Vrai si le voile de l'écran intermédiaire recouvre toute l'image 3D sans la moindre transparence (lui et ses parents).
+func _3d_sous_voile() -> bool:
+	if regie == null or not is_instance_valid(regie.voile): return false
+	var voile: ColorRect = regie.voile
+	if not voile.is_visible_in_tree() or voile.color.a < 1.0 or voile.self_modulate.a < 1.0: return false
+	var noeud: Node = voile
+	while noeud is CanvasItem:
+		if (noeud as CanvasItem).modulate.a < 1.0: return false
+		noeud = noeud.get_parent()
+	var image := _viewport.get_parent() as Control
+	return image == null or voile.get_global_rect().encloses(image.get_global_rect())
+
+func _enter_tree() -> void:
+	if not RenderingServer.frame_pre_draw.is_connected(_suivre_rendu_3d): RenderingServer.frame_pre_draw.connect(_suivre_rendu_3d)
+
+func _exit_tree() -> void:
+	if RenderingServer.frame_pre_draw.is_connected(_suivre_rendu_3d): RenderingServer.frame_pre_draw.disconnect(_suivre_rendu_3d)
