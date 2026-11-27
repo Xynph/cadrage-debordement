@@ -80,6 +80,7 @@
       "tests/godot-match-gestes.cjs": 20,
       "tests/hierarchie-penalites-monde.cjs": 41,
       "tests/homme-du-match-postes.cjs": 81,
+      "tests/import-carriere-apres-match.cjs": 60,
       "tests/import-rapide.cjs": 74,
       "tests/integration-cloud-complete.cjs": 231,
       "tests/international-career.cjs": 20,
