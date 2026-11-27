@@ -76,6 +76,23 @@ func relever_plans() -> void:
 	var cle := str(v.stage.get("_action_key"))
 	if not cle.is_empty() and (plans_vus.is_empty() or plans_vus.back() != cle): plans_vus.append(cle)
 
+## Mode « actif » : images d'un temps fort où le journal du bandeau dit un autre fait que la légende du plan (relevé à
+## chaque image, avant le traitement de la suivante : c'est l'image rendue). Films du 26/11 (retard-journal.cjs) : au
+## début d'un temps fort, une image gardait « 21' Transformation manquée. » sous un plan de la 24′.
+var journal_images := 0
+var journal_perime: Array[String] = []
+func observer_journal() -> void:
+	var v := surface()
+	if v == null or v.regie == null or v.regie.etat != v.regie.JEU: return
+	var legende: Variant = v.get("_legende")
+	if not (legende is Control and (legende as Control).is_visible_in_tree() and (legende as Control).self_modulate.a > 0.0): return
+	var texte := str(v.events.text).strip_edges()
+	if texte.is_empty(): return
+	journal_images += 1
+	var journal: Array = v.get("_journal")
+	var tete := str(journal[0].get("texte", "")) if not journal.is_empty() and journal[0] is Dictionary else ""
+	if tete != texte: journal_perime.append("%s journal « %s » / plan « %s »" % [v.clock.text, tete.left(48), texte.left(48)])
+
 func surface() -> Control:
 	return app.contextual_director.view if app.contextual_director.active() and app.contextual_director.kind == "live" else null
 
@@ -698,6 +715,7 @@ func active(view: Control) -> void:
 	check(regie != null and view.temps_forts_actifs(), "Avec la variable, la régie cadence le match")
 	if regie == null: return
 	var between: Control = regie.between
+	if not process_frame.is_connected(observer_journal): process_frame.connect(observer_journal)
 	check(app.model.live.direct.tempsFort is Dictionary and app.model.live.direct.tempsFort.type == "coup_d_envoi", "Le moteur projette le coup d'envoi")
 	check(regie.etat == regie.JEU and not between.visible, "Le coup d'envoi est joué en 3D, écran intermédiaire masqué")
 	# Les traces « legende » (texte / image) ne sont pas des événements de la régie.
@@ -735,6 +753,8 @@ func active(view: Control) -> void:
 	check(regie.etat != regie.JEU or regie.suivi.filter(func(e: Dictionary) -> bool: return e.evenement != "legende").size() > 2, "Une minute sans action retenue reste sur l'écran intermédiaire")
 	var replayed := func(): return regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "temps_fort").size() >= 2 and regie.etat != regie.JEU
 	check(await until(replayed, 240000), "Un second temps fort est joué puis rendu à l'écran intermédiaire (minute %d)" % int(app.model.live.minute))
+	if process_frame.is_connected(observer_journal): process_frame.disconnect(observer_journal)
+	check(journal_images > 0 and journal_perime.is_empty(), "Journal du bandeau = légende du plan à chaque image des temps forts (%d images, %d en retard : %s)" % [journal_images, journal_perime.size(), str(journal_perime.slice(0, 4))])
 	var played: Array = regie.suivi.filter(func(entry: Dictionary): return entry.evenement == "temps_fort")
 	check(played.all(func(entry: Dictionary): return float(entry.get("duree_reelle", 0.0)) > 0.0), "Chaque temps fort est allé à son terme")
 	check(regie.suivi.any(func(entry: Dictionary): return entry.evenement == "intermediaire"), "L'écran intermédiaire a été montré entre deux temps forts")

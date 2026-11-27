@@ -361,6 +361,10 @@ func _habiller() -> void:
 ## elle s'affiche et celui où la phase correspondante a commencé à l'écran (report.json du match
 ## filmé ; CD_MATCH_TRACE_LEGENDE=1 l'écrit aussi dans la sortie, préfixe LEGENDE_IMAGE).
 func _tracer_legende() -> void:
+	# Le journal du bandeau suit la légende dans la même image : la vue le met à jour dans son _process, qui passe avant
+	# celui de la régie (son enfant) ; sans cela, la première image d'un plan montrait l'ancien fait (films du 26/11 :
+	# « 21' Transformation manquée. » sous un plan de la 24′ ; godot-match-temps-forts, mode actif).
+	if view != null and view.has_method("_suivre_journal"): view._suivre_journal()
 	var texte := str(view.events.text)
 	if texte == _legende_tracee: return
 	_legende_tracee = texte
