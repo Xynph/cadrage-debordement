@@ -1,0 +1,18 @@
+::group::tests/godot-cris-banc.cjs
+CRIS_BANC minute 22 atteinte en 27 s
+CRIS_BANC taille (1920, 1080) : terrain 358 / 412 px (87 %), pastilles 4.13 px
+CRIS_BANC taille (2560, 1440) : terrain 481 / 551 px (87 %), pastilles 6.06 px
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/godot-cris-banc.cjs user_s=3234.31 system_s=22.89 wall_s=967.06 cpu_pct=336% max_rss_kb=2747220
+::error file=tests/godot-cris-banc.cjs::Godot : ECHEC (1), durée 967 s, limite 1200s
+::endgroup::
+::group::tests/godot-planche-carte-joueur.cjs
+PLANCHE_CARTE_JOUEUR (2560, 1440) : carte [P: (585.0, 686.5), S: (945.0, 745.5)]
+PLANCHE_CARTE_JOUEUR (1920, 1080) : carte [P: (437.25, 512.875), S: (708.75, 559.125)]
+PLANCHE_CARTE_JOUEUR 30 controles, 1 echec
+  - Match en cours : un clic sur le nom ouvre la carte
+ECHEC : Match en cours : un clic sur le nom ouvre la carte
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/godot-planche-carte-joueur.cjs user_s=2187.53 system_s=20.99 wall_s=639.84 cpu_pct=345% max_rss_kb=2749628
+::error file=tests/godot-planche-carte-joueur.cjs::Godot : ECHEC (1), durée 639 s, limite 1200s
+::endgroup::
