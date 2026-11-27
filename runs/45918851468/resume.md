@@ -1,0 +1,9 @@
+## Tests en ligne : main @ f152a61
+
+- OK : suites (1) (463 s)
+### Suites demandées : 1 suites, 0 échec(s), 0 échec(s) informatif(s)
+| Suite | Résultat | Durée |
+| --- | --- | --- |
+| tests/godot-sonde-rendu.cjs | OK | 463 s |
+
+Sauts déclarés pour d'autres raisons (plateforme, outil manuel) : 0
