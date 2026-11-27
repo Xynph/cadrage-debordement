@@ -1,0 +1,3 @@
+tests/godot-planche-direct-tableau.cjs
+tests/godot-match-direct-da.cjs
+tests/godot-match-temps-forts.cjs

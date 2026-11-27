@@ -1,0 +1,12 @@
+== suites (3) (code 1)
+ERROR: 4 RID allocations of type 'PN13RendererDummy14TextureStorage12DummyTextureE' were leaked at exit.
+ERROR: 4 RID allocations of type 'PN18TextServerAdvanced22ShapedTextDataAdvancedE' were leaked at exit.
+ERROR: 1 RID allocations of type 'PN18TextServerAdvanced12FontAdvancedE' were leaked at exit.
+FAIL: Les plans du temps fort se sont succédé
+ECHEC mode actif
+  throw new AssertionError(obj);
+AssertionError [ERR_ASSERTION]: modes en échec :
+FAIL: Les plans du temps fort se sont succédé
++     'FAIL: Les plans du temps fort se sont succédé\n' +
+      'FAIL: Les plans du temps fort se sont succédé\n' +
+::error file=tests/godot-match-temps-forts.cjs::Godot : ECHEC (1), durée 586 s, limite 900s
