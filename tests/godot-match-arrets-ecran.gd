@@ -12,6 +12,7 @@ extends SceneTree
 const Regie = preload("res://ui/contextual/match_temps_forts.gd")
 const Between = preload("res://ui/contextual/match_between.gd")
 const Liaison = preload("res://match_liaison.gd")
+const Bulles = preload("res://ui/contextual/match_bulles_adjoint.gd")
 var app: Control
 var checks := 0
 var failures: Array[String] = []
@@ -217,6 +218,16 @@ func run() -> void:
 	var ecran_3d: Dictionary = {}
 	for p: Dictionary in joueurs(Vector2(47, 30)): ecran_3d[p.id] = {"p": Vector2(p.x, p.y), "v": Vector2.ZERO}
 	var lien := Liaison.construire(info, ecran_3d, {"p": Vector3(45.0, 0.1, -30.0), "porteur": ""}, Vector2(45, 25), 41)
+	# Un essai des trois dernières minutes met sa pastille « ESSAI » sur la ligne d'état ; dès que la régie impose le texte
+	# d'un arrêt (plan 3D, liaison), la pastille doit partir avec le texte (match filmé du 26/11 : « ESSAI | En-avant »).
+	var pile: Variant = ecran.get("_dernier")
+	if pile is Array and (pile as Array).size() > 2 and pile[2] is Dictionary:
+		(pile[2] as Dictionary)["reperes"] = [{"kind": "try", "nom": "Fraser BUSH", "minute": int((pile[1] as Dictionary).get("minute", 0))}]
+	ecran.forcer_etat("")
+	var bulles_ecran := ecran.get_node_or_null(Bulles.NOM)
+	if bulles_ecran != null: bulles_ecran.appliquer_phrase()
+	var pastille_posee := pastille(ecran)
+	check(pastille_posee, "Fixture : un essai récent pose sa pastille ESSAI sur la ligne d'état")
 	regie._teams = equipes
 	regie._score = [0, 0]
 	regie.tf = tf1
@@ -245,6 +256,7 @@ func run() -> void:
 	regie._habiller()
 	await settle(4)
 	lu_3d.append(str(ecran.etat.text))
+	check(not pastille(ecran), "3D : le texte imposé par la régie ne garde pas la pastille ESSAI d'un essai récent (%s)" % str(lu_3d[0]))
 	var voulu_3d := ["En-avant — " + nom_a, "En-avant — " + nom_a, "En-avant — " + nom_b, "Mêlée pour " + nom_a]
 	check(lu_3d == voulu_3d, "3D et liaison : chaque en-avant nomme l'équipe fautive, puis la mêlée (%s)" % str(lu_3d))
 

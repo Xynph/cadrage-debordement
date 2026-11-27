@@ -553,6 +553,8 @@ static func construire(info: Dictionary, joueurs: Dictionary, ballon: Dictionary
 	# légende ; la mêlée vient ensuite (vérificateur de #1305 : « En-avant — Brive » puis « Mêlée pour Brive »
 	# alors que le second en-avant était celui de l'adversaire, jamais dit).
 	var fait_arret := remise
+	if str(info.get("arret_kind", "")) == "ingoal" and str(info.get("arret_cause", "")) in ["ingoal-knock-on", "held-up", "attacking-kick-grounded"] and int(info.get("arret_equipe", -1)) in [0, 1]:
+		fait_arret = libelle_arret({"kind": "ingoal", "cause": str(info.get("arret_cause", "")), "equipe": int(info.get("arret_equipe", -1))})
 	if str(info.get("arret_kind", "")) == "hand-fault":
 		var fautive := int(info.get("arret_equipe", -1))
 		if fautive not in [0, 1] and type == "melee" and equipe in [0, 1]: fautive = 1 - equipe
@@ -597,7 +599,13 @@ static func libelle_arret(fin: Dictionary) -> Dictionary:
 		"goal": return {"libelle": "Pénalité réussie", "equipe": camp}
 		"miss": return {"libelle": "Pénalité manquée", "equipe": camp}
 		"touch": return {"libelle": "Ballon en touche", "equipe": -1}
-		"ingoal": return {"libelle": "Ballon mort", "equipe": -1}
+		# En-avant, porteur tenu, coup de pied aplati : l'équipe qui attaque est nommée ; ballon mort : aucune.
+		"ingoal":
+			match str(fin.get("cause", "")):
+				"ingoal-knock-on": return {"libelle": "En-avant dans l’en-but", "equipe": camp}
+				"held-up": return {"libelle": "Ballon tenu en but", "equipe": camp}
+				"attacking-kick-grounded": return {"libelle": "Coup de pied aplati", "equipe": camp}
+			return {"libelle": "Ballon mort", "equipe": -1}
 	return {"libelle": "Arrêt de jeu", "equipe": -1}
 
 
