@@ -71,7 +71,7 @@ test('Saison Monde : stats de la fiche réalistes par poste, essais des joueurs 
   try {
     const vm = jeu.bridge.vm;
     // Relevé de chaque match noté (manager et IA), sans effet : le calcul de la note enregistrée est pur.
-    vm.run(`globalThis.__releves=[];{const f=recordDevelopmentMatch,w=function(l){if(l&&l.finished&&!l.developmentRecorded&&!l.matchNotesRecorded){const r=CDMatchNotes.noterMatch(l),e=[0,0],p=[0,0];for(const n of Object.values(r.joueurs)){e[n.cote]+=n.essais;p[n.cote]+=n.points||0;}__releves.push({pair:l.pair.slice(),score:l.score.slice(),tries:(l.tries||[]).slice(),essais:e,points:p,manager:l.userSide>=0,journal:(l.userSide>=0?l.events:(l.notesJournal||[])).length});}return f.apply(this,arguments);};Object.assign(w,f);recordDevelopmentMatch=w;}`);
+    vm.run(`globalThis.__releves=[];{const f=recordDevelopmentMatch,w=function(l){if(l&&l.finished&&!l.developmentRecorded&&!l.matchNotesRecorded){const r=CDMatchNotes.noterMatch(l),e=[0,0],p=[0,0];for(const n of Object.values(r.joueurs)){e[n.cote]+=n.essais;p[n.cote]+=n.points||0;}__releves.push({pair:l.pair.slice(),score:l.score.slice(),tries:(l.tries||[]).slice(),essais:e,points:p,manager:l.userSide>=0,journal:(l.userSide>=0?l.events:(l.notesJournal||[])).length,penalites:[0,1].map(s=>Number(l.stats?.[s]?.penaltyTries)||0)});}return f.apply(this,arguments);};Object.assign(w,f);recordDevelopmentMatch=w;}`);
     let model = M.creer(jeu, 0);
     let directVerifie = false;
     for (let j = 0; j < JOURNEES; j++) {
@@ -111,8 +111,9 @@ test('Saison Monde : stats de la fiche réalistes par poste, essais des joueurs 
     const releves = JSON.parse(vm.run('JSON.stringify(__releves)'));
     assert.ok(releves.length >= JOURNEES * 7, 'matchs notés relevés : ' + releves.length);
     for (const r of releves) {
-      assert.deepEqual(r.essais, r.tries, 'essais des joueurs = essais du match ' + r.pair.join('-'));
-      assert.deepEqual(r.points, r.score, 'points des joueurs = score ' + r.pair.join('-'));
+      // Essai de pénalité (#1315) : compté au score (7 points), crédité à aucun joueur (dist/restarts.js).
+      assert.deepEqual(r.essais.map((n, cote) => n + r.penalites[cote]), r.tries, 'essais des joueurs = essais du match ' + r.pair.join('-'));
+      assert.deepEqual(r.points.map((n, cote) => n + 7 * r.penalites[cote]), r.score, 'points des joueurs = score ' + r.pair.join('-'));
     }
     // Moyennes par poste, saison du monde entier (titulaires : 55 minutes ou plus par match en moyenne).
     const etat = JSON.parse(jeu.call('export').meta.exportText).state;

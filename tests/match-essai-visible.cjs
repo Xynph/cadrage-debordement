@@ -38,11 +38,13 @@ function jouer(club) {
 
 const matchs = [0, 3, 7, 10, 13].map(jouer);
 const essais = m => m.events.map((e, i) => [e, i]).filter(([e]) => e.scene?.kind === 'try');
+// Essai de pénalité (#1315) : 7 points sans marqueur, fait `message` du bloc des lois (scene.loi), joué en plan « penalty-try » (#1322).
+const penalites = m => m.events.filter(e => e.scene?.loi === 'essai-penalite');
 
 test('Les matchs de contrôle marquent des essais, dont au moins un sur ballon porté', () => {
   const total = matchs.reduce((n, m) => n + essais(m).length, 0);
   assert.ok(total >= 10, `essais joués : ${total}`);
-  for (const m of matchs) assert.equal(essais(m).length, m.tries[0] + m.tries[1], 'chaque essai du score a son événement');
+  for (const m of matchs) assert.equal(essais(m).length + penalites(m).length, m.tries[0] + m.tries[1], 'chaque essai du score a son événement');
   assert.ok(matchs.some(m => essais(m).some(([e]) => e.scene.origin === 'maul')), 'un essai sur ballon porté au moins');
 });
 
@@ -148,7 +150,10 @@ test('Moteur natif, minute par minute : chaque essai du score a été projeté d
       assert.equal(model.live.finished, true);
       const plans = [...montres.values()].flatMap(tf => tf.plans);
       const essaisMontres = plans.filter(p => p.kind === 'try');
-      assert.equal(essaisMontres.length, model.live.tries[0] + model.live.tries[1], `graine ${seed} : un plan d’essai par essai du score`);
+      const penalitesMontrees = plans.filter(p => p.kind === 'penalty-try');
+      for (const plan of penalitesMontrees) assert.equal(model.live.events[plan.index].scene?.loi, 'essai-penalite', 'plan d’essai de pénalité = fait du moteur');
+      assert.equal(penalitesMontrees.length, model.live.events.filter(e => e.scene?.loi === 'essai-penalite').length, `graine ${seed} : chaque essai de pénalité montré`);
+      assert.equal(essaisMontres.length + penalitesMontrees.length, model.live.tries[0] + model.live.tries[1], `graine ${seed} : un plan d’essai par essai du score`);
       for (const plan of essaisMontres) {
         const record = model.live.events[plan.index].scene;
         const marqueur = plan.scene.players.find(p => p.featured);

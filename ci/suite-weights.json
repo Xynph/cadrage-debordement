@@ -389,6 +389,7 @@
       "tests/godot-immersive08.cjs": 185,
       "tests/godot-incident-arret.cjs": 2,
       "tests/godot-intensite-auto.cjs": 33,
+      "tests/godot-interface-layout.cjs": 200,
       "tests/godot-international-availability.cjs": 20,
       "tests/godot-international-reception.cjs": 19,
       "tests/godot-intro.cjs": 85,
