@@ -112,6 +112,9 @@ test('barème du bonus lu dans les classements, situations et choix de l’IA', 
 // actions pour les deux équipes. Ballons perdus et essais encaissés se comparent par action de jeu (taux), plus en
 // nombre sur vingt minutes ; 100 fins de match au lieu de 50 pour un taux stable (100 : viser 0,085 ballon perdu
 // par action contre 0,064, essais encaissés 0,031 contre 0,030 par action).
+// Remplaçants (lot K3, accord de Léo du 27/11/2026) : un remplaçant frais pèse, donc le club mesuré change ses joueurs
+// avec les mêmes règles que l'ordinateur (armes égales) ; sans cela, viser 1,06 essai contre 0,90 (rouge), avec : 1,23
+// contre 0,70. Si « viser » n'avait aucun effet (consigne de sécuriser rejouée), 0,70 contre 0,70 : rouge.
 test('consignes de fin de match : gain et risque mesurés', () => {
   const { mesurer } = require('../scripts/mesure-bonus-fin-de-match.cjs');
   const r = mesurer({ n: 100, situations: ['offensif'] }).offensif, viser = r.viser, securiser = r.securiser;
