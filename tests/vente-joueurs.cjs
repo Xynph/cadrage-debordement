@@ -430,9 +430,13 @@ test('Performance et courrier : cadence journalière, clôture de semaine par «
       return { ...cloture, offres: m.sales.offers.map(o => o.name), mail: m.clubLife?.clubMail?.mails?.find(x => x.type === 'offre_transfert') ?? null };
     } finally { restaurer(); jeu.fermer(); }
   };
-  const sans = mesure(false), avec = mesure(true);
-  console.log(`clôture de semaine (advance_day du ${avec.jour}) : sans liste ${sans.ms} ms, avec 5 joueurs proposés ${avec.ms} ms`);
-  assert.equal(avec.jour, sans.jour, 'même journée de clôture');
+  // Chrono au meilleur de 3 mesures (comme #1324) : une charge ponctuelle du PC ne doit pas faire échouer le test.
+  const essais = [];
+  for (let i = 0; i < 3; i++) essais.push({ sans: mesure(false), avec: mesure(true) });
+  const meilleur = essais.reduce((a, b) => (b.avec.ms - b.sans.ms < a.avec.ms - a.sans.ms ? b : a));
+  const { sans, avec } = meilleur;
+  console.log(`clôture de semaine (advance_day du ${avec.jour}) : sans liste ${sans.ms} ms, avec 5 joueurs proposés ${avec.ms} ms (surcoûts des 3 mesures : ${essais.map(e => e.avec.ms - e.sans.ms).join(' / ')} ms)`);
+  for (const e of essais) assert.equal(e.avec.jour, e.sans.jour, 'même journée de clôture');
   assert.ok(avec.ms - sans.ms <= SURCOUT_MAX_MS, `surcoût ${avec.ms - sans.ms} ms > ${SURCOUT_MAX_MS} ms`);
   assert.ok(avec.ms < 15000);
   assert.ok(avec.offres.length >= 5, 'offres reçues : ' + avec.offres.length);
