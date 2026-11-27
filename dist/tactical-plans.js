@@ -109,7 +109,7 @@ function ballonPorteBase(l,side){if(!penalitesRules(l))return null;const av=p=>p
 // (réel 20-25 %) : la poussée de GESTION_SCORE (+0,3 en attaque) passait aussi bien en jeu courant que sur pénaltouche.
 // `force` : intensité (×`porte`, ×`finition`) ; `championnats` : part de cette force selon le championnat, calée sur les
 // saisons Monde (Top 14 20-25 % ; URC, plus sensible, sans perdre de fins serrées).
-var DEFENSE_REGROUPEE={debut:70,porte:.12,finition:.45,deuxScores:{ecart:11,debut:72,rampe:5,force:1.3,championnats:{elite:.95,urc:.6}}};
+var DEFENSE_REGROUPEE={debut:70,porte:.12,finition:.45,deuxScores:{ecart:11,debut:72,rampe:5,force:1.3,championnats:{elite:.95,urc:.85}}};
 function suitePenaltouche(l,side){if(l.iaDecisionsVersion===1&&l.score)l.suitePenaltouche={side,points:l.score[0]+l.score[1]}}
 function defenseRegroupee(l,side){
  const s=l.suitePenaltouche,D=DEFENSE_REGROUPEE;if(l.iaDecisionsVersion!==1||!l.score||l.score[1-side]<=l.score[side])return 0;

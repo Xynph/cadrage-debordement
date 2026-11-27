@@ -191,13 +191,15 @@ b+=matchLevelEdge(l,side);if(l.franceContext?!l.franceContext.neutral:l.worldCon
 // `unScore` (27/11/2026, docs/remontees-tardives-20261127.md) : menée de `proche` à `unScore.ecart` points (un essai
 // transformé, ou un essai et une pénalité), l'équipe pousse plus fort (`unScore.poursuit`), le bonus défensif ou la victoire
 // à portée ; menée de plus, elle se heurte à la défense regroupée à deux scores (DEFENSE_REGROUPEE.deuxScores).
-var GESTION_SCORE={debut:60,mene:.15,poursuit:.3,proche:4,portee:15,unScore:{ecart:10,poursuit:.42}};
+// `tenir` (27/11/2026) : devant de 1 à `tenir.ecart` points, l'équipe qui mène joue la sécurité (attaque −`tenir.mene`) :
+// elle garde le score plutôt que de creuser, ce qui rend les fins à un score aussi fréquentes que dans le réel.
+var GESTION_SCORE={debut:60,mene:.15,poursuit:.3,proche:4,portee:15,unScore:{ecart:10,poursuit:.42},tenir:{ecart:7,mene:.12,debut:55}};
 // Résultat rapide (native/engine/league-detail.cjs) : même fin de match en un tirage, l'équipe menée de 8 à « portee » points
 // marque un essai de fin de match avec la probabilité « essai », sinon, menée de 6 à 12, une pénalité avec « penalite ».
 // « championnat » : part de ces tirages selon le championnat (mesures au rapide contre le réel : Pro D2, Premiership,
 // Super Rugby et Japon, plus étagés ou plus prolifiques, finissent moins souvent à un score).
 var FIN_MATCH_RAPIDE={essai:.5,penalite:.5,portee:21,championnat:{accession:.62,prem:.7,srp:.4,'jlo-d1':.3}};
-function gestionScore(l,side){const g=GESTION_SCORE,m=Number(l.minute)||0;if(!l.worldContext||m<g.debut||!l.score)return 0;const d=l.score[side]-l.score[1-side],r=Math.min(1,(m-g.debut)/(80-g.debut));if(d>=8)return -g.mene*r*Math.min(1,(d-7)/14);if(d<=-g.proche&&d>=-g.portee)return (g.unScore&&d>=-g.unScore.ecart?g.unScore.poursuit:g.poursuit)*r;return 0}
+function gestionScore(l,side){const g=GESTION_SCORE,m=Number(l.minute)||0;if(!l.worldContext||m<g.debut||!l.score)return 0;const d=l.score[side]-l.score[1-side],r=Math.min(1,(m-g.debut)/(80-g.debut));if(d>=8)return -g.mene*r*Math.min(1,(d-7)/14);if(g.tenir&&d>=1&&d<=g.tenir.ecart)return m<g.tenir.debut?0:-g.tenir.mene*Math.min(1,(m-g.tenir.debut)/(80-g.tenir.debut));if(d<=-g.proche&&d>=-g.portee)return (g.unScore&&d>=-g.unScore.ecart?g.unScore.poursuit:g.poursuit)*r;return 0}
 function changePossession(l){if(restartRules(l))ballPossession(l,1-l.possession);else l.possession=1-l.possession}
 // The field is modelled as 70 m wide (y=0..70), with the posts at y=35.
 // These are game-balance coefficients, not measured professional kick percentages.

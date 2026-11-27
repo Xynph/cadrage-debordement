@@ -15,38 +15,37 @@ jouait aussi fort à deux scores qu'à un score, et rien ne freinait l'équipe m
 
 - `DEFENSE_REGROUPEE.deuxScores` (dist/tactical-plans.js) : devant d'au moins 11 points (plus qu'un essai transformé et une
   pénalité), l'équipe qui mène défend regroupée sur TOUTE action adverse à partir de la 72e (plein effet à la 77e) : ballon
-  porté plus souvent arrêté, finition dans les 22 plus dure. Force 1,3 (×0,95 en Top 14, ×0,6 en URC, plus sensible).
-  Sur pénaltouche, la règle de #1314 reste.
+  porté plus souvent arrêté, finition dans les 22 plus dure. Force 1,3 (×0,95 en Top 14, ×0,85 en URC). Sur pénaltouche,
+  la règle de #1314 reste.
 - `GESTION_SCORE.unScore` (dist/rugby.js) : menée de 4 à 10 points, l'équipe pousse plus fort (+0,42 au lieu de +0,3 à la
-  80e), bonus défensif ou victoire à portée. Compense une partie des fins serrées perdues.
+  80e), bonus défensif ou victoire à portée.
+- `GESTION_SCORE.tenir` (dist/rugby.js) : devant de 1 à 7 points, l'équipe qui mène joue la sécurité (attaque −0,12 à la
+  80e, rampe depuis la 55e, effet dès la 60e) : elle garde le score plutôt que de creuser. Rend les fins à un score que les
+  remontées trop fréquentes fournissaient à tort.
 
 ## Mesures
 
-Saisons Monde complètes (club 102), main / branche, mêmes 8 graines (12, 13, 808, 1234, 5150, 77, 3141, 9001) :
+Saisons Monde complètes (club 102), 16 graines (4242, 7, 2026, 11, 99, 31, 2027, 555, 12, 13, 808, 1234, 5150, 77, 3141,
+9001), main / branche :
 
 | Championnat | Remontées 11-14 à la 75e | Écart ≤ 7 (réel) | Points | Essais |
 | --- | --- | --- | --- | --- |
-| Top 14 | 35,9 / 20,3 % (n 181 / 153) | 40,0 / 37,0 % (40) | 50,4 / 49,9 | 6,12 / 6,04 |
-| Premiership | 30,1 / 19,2 % (n 93 / 104) | 37,8 / 33,5 % (36) | 56,7 / 55,8 | 7,31 / 7,24 |
-| URC | 36,8 / 23,5 % (n 133 / 153) | 38,3 / 36,7 % (41) | 50,8 / 50,6 | 6,47 / 6,37 |
+| Top 14 | 34,1 / 15,5 % (n 346 / 283) | 40,0 / 41,0 % (40) | 50,7 / 49,9 | 6,14 / 6,01 |
+| Premiership | 34,0 / 24,0 % (n 194 / 167) | 38,2 / 40,0 % (36) | 57,0 / 56,0 | 7,34 / 7,18 |
+| URC | 34,3 / 20,3 % (n 268 / 286) | 38,0 / 39,7 % (41) | 50,8 / 50,2 | 6,45 / 6,32 |
 
-Matchs IA contre IA (2 × 600 par championnat, graines 4242 et 7, main / branche) : écart ≤ 7 Top 14 38,5 / 35,8 %,
-Premiership 40,3 / 38,5 %, URC 37,8 / 39,3 % ; favori (niveau +1) Top 14 64,9 / 66,4 %, Premiership 62,4 / 62,0 %, URC
-71,7 / 70,2 % ; bonus défensif par match 0,27 / 0,24, 0,37 / 0,35, 0,34 / 0,35 ; points à 1,4 près.
-
-Bruit des saisons : deux séries de 8 graines au même réglage s'écartent jusqu'à 3 points sur l'écart ≤ 7 et 6 points sur
-les remontées. Les sondes à tirages communs (match IA contre IA figé à la 60e, écarts pondérés comme en saison) donnent
-une perte d'écart ≤ 7 de 0,5 à 1 point, inévitable : les remontées de 11-14 points SONT des fins serrées (≈ 10 % des
-matchs à la 75e).
+Top 14 au même réglage sur deux autres séries de 16 graines (URC ×0,6 et ×0,72) : 16,8 et 18,8 % de remontées, 41,5 et
+41,8 % d'écarts ≤ 7. Bruit d'une série de 16 graines : ±2 points sur les remontées.
 
 Banc du test `tests/match-remontees-tardives.cjs` (IA contre IA, 40 matchs figés à la 75e × 40 rejeux, Top 14 graines 7 et
-4242, URC graine 7, mêmes tirages avec et sans la défense regroupée à deux scores) : 27,0 % sur main, 18,3 % sur la
-branche (échelle plus basse que la saison Monde). Menée de 3 à 9 à la 75e : fins serrées inchangées (à un point près).
+4242, URC graine 7, mêmes tirages avec et sans la défense regroupée à deux scores) : 27,2 % sans, 17,4 % avec (échelle plus
+basse que la saison Monde). Menée de 3 à 9 à la 75e : fins serrées inchangées (à un point près).
 
 ## Restes
 
-- Matchs serrés en baisse en Top 14 (−2 à −3 points en saison comme en IA contre IA ; une 2e série de 8 graines au réglage voisin donnait −1,3) et en Premiership : le moteur tirait une partie de ses fins serrées de remontées trop fréquentes. Il manque une autre source de fins serrées (pénalités et drops de fin de match, gestion du score des matchs à un score) ; à traiter dans un lot suivant, sans revenir sur les remontées.
-- `match-consignes-direct` (24 matchs) et `fatigue-phases-arretees` (compétence du buteur en fin de match) sont au bord
-  de leurs seuils sur main aussi (« montre : moins de points encaissés » −0,04 ; buteur −1,8 pour un seuil de 2) : de
-  nombreux réglages voisins les font passer au rouge sans rapport avec ce qu'ils vérifient. Réglage retenu vert sur les
-  deux ; à élargir leur échantillon (accord de Léo requis).
+- Top 14 : remontées à 16-19 % (cible 20-25 %). Un Top 14 moins fort (×0,8 à ×0,92) les ramènerait vers 20-22 %, mais
+  rend rouge `match-consignes-direct` dans 24 essais sur 24. Ce test (24 matchs du club 102 en Championship, avec une
+  semaine du Monde simulée entre ses trois moments) change d'issue sur l'une de ses 40 assertions dès que n'importe quel
+  championnat consomme d'autres tirages. Il faut élargir son échantillon (accord de Léo) avant d'affiner ce réglage.
+- `fatigue-phases-arretees` (compétence du buteur en fin de match) est lui aussi au bord de son seuil sur main (−1,8 pour
+  2) et varie avec les mêmes réglages.

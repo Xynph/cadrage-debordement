@@ -56,8 +56,8 @@ test('Remontées tardives : menée de 11 à 14 points à la 75e, une équipe rev
   const jeu = total(tous.jeu), neutre = total(tous.neutre);
   console.log(`Ensemble : ${jeu.taux.toFixed(1)} % (sans : ${neutre.taux.toFixed(1)} %) sur ${jeu.n} fins`);
   // Échelle de ce banc (IA contre IA, effectifs au complet en début de saison) : plus basse que la saison Monde complète.
-  // Mesures du 27/11 : ici 27 % sur main et 18 % avec la défense regroupée à deux scores ; en saison Monde (8 graines),
-  // Top 14 35,9 → 20,3 % (réel 20-25 %). Bornes avec marge ; le hasard reste (jamais de score figé).
+  // Mesures du 27/11 : ici 27 % sur main et 17 % avec la défense regroupée à deux scores ; en saison Monde (16 graines),
+  // Top 14 34,1 → 15,5 %, URC 34,3 → 20,3 % (réel Top 14 20-25 %). Bornes avec marge ; le hasard reste (jamais de score figé).
   assert.ok(jeu.taux <= 21, `menée de 11 à 14 à la 75e, retour à 7 points ou moins trop fréquent : ${jeu.taux.toFixed(1)} % (21 % au plus sur ce banc)`);
   assert.ok(jeu.taux >= 10, `retour au score devenu trop rare : ${jeu.taux.toFixed(1)} % (10 % au moins sur ce banc)`);
   for (const x of tous.jeu) assert.ok(x.taux >= 8 && x.taux <= 26, `championnat ou graine hors de la fourchette : ${x.taux.toFixed(1)} %`);
