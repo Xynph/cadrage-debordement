@@ -205,12 +205,26 @@ func run() -> void:
 	var bulle: Button = nouvelles(ecran())[0]
 	var sorte := str(bulle.get_meta("sorte", ""))
 	var avant := nouvelles(ecran()).size()
+	# Axes portés par la bulle cliquée (une bulle de consigne peut en porter plusieurs : une entrée de file par axe).
+	var module: Node = ecran().get_node_or_null(Bulles.NOM)
+	var liste: Array = module.bulles() if module != null else []
+	var rang := int(str(bulle.name).get_slice("_", 1)) - 1
+	var axes_bulle: Array = []
+	if rang >= 0 and rang < liste.size():
+		var d: Dictionary = liste[rang]
+		if d.get("axes") is Array: axes_bulle = (d.axes as Array).map(func(a: Variant) -> String: return str(a))
+		elif d.get("lignes") is Array: axes_bulle = (d.lignes as Array).map(func(x: Variant) -> String: return str((x as Dictionary).get("axe", "")))
+	var file_avant := file_adjoint().map(func(e: Variant) -> String: return str((e as Dictionary).get("axe", "")))
 	bulle.pressed.emit()
 	await wait_command()
 	await settle(10)
 	check(not file_adjoint().is_empty(), "clic sur la bulle (%s) : conseil rangé dans la file du prochain arrêt, auteur adjoint" % sorte)
 	check(bulles_de(ecran()).any(func(b: Node) -> bool: return str(b.get_meta("sorte", "")) == "attente"), "la bulle acceptée passe en attente (⧗)")
-	check(nouvelles(ecran()).size() == avant - 1, "la bulle acceptée quitte les conseils")
+	var ajoutes := file_adjoint().map(func(e: Variant) -> String: return str((e as Dictionary).get("axe", ""))).filter(func(a: String) -> bool: return not file_avant.has(a))
+	ajoutes.sort()
+	axes_bulle.sort()
+	check(not axes_bulle.is_empty() and ajoutes == axes_bulle, "la bulle acceptée quitte les conseils : les entrées de file ajoutées couvrent exactement ses axes (bulle %s, file %s)" % [str(axes_bulle), str(ajoutes)])
+	check(nouvelles(ecran()).size() < avant, "la bulle acceptée quitte les conseils (%d -> %d)" % [avant, nouvelles(ecran()).size()])
 	await capture("final-attente-1920")
 	# ✕ sur un autre conseil : écarté.
 	if not nouvelles(ecran()).is_empty():
