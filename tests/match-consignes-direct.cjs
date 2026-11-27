@@ -11,7 +11,10 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { context } = require('./monde-harness.cjs');
 
-const USER = 102, MOMENTS = 3, GRAINES = 8, MINUTE = 50;
+// 192 matchs (24 affiches × 8 graines, mêmes graines de départ ; accord de Léo du 27/11/2026 : « OK pour élargir
+// match-consignes-direct (plus de matchs, même seuil, mêmes graines) ») : sur 24 matchs, chaque réglage du moteur faisait
+// tomber une consigne au hasard (une touche de plus ou de moins change la suite) ; seuils et assertions inchangés.
+const USER = 102, MOMENTS = 24, GRAINES = 8, MINUTE = 50;
 const CONSIGNES = {
   piedJeu: ['moins', 'plus'], rythme: ['lent', 'rapide'], relance: ['degager', 'relancer'], finDeMatch: ['montre', 'tout'],
   rucks: ['prudente', 'agressive'], discipline: ['stricte', 'limite'], touche: ['sure', 'risquee'], maul: ['jamais', 'souvent'],

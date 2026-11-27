@@ -12,12 +12,12 @@ Rencontres créées avec `remplacantsVersion` (un match commencé avant garde se
   jouées / 25, plafonnée à 1,6 (atteinte vers la 40e). Ni la forme d'avant-match ni l'endurance n'y entrent : elles
   pèsent déjà par la condition dans les compétences. Un premier essai fondé sur la baisse de condition favorisait les
   équipes endurantes (favori +4 points, matchs serrés −3) : abandonné.
-- **Entrée** : un entrant apporte un élan (0,35) qui s'éteint en 15 minutes. S'il est nettement moins bon au poste que le
+- **Entrée** : un entrant apporte un élan (0,6) qui s'éteint en 15 minutes. S'il est nettement moins bon au poste que le
   sortant (note au poste hors condition, au-delà de 3 points), l'élan baisse et il garde un décalage (0,8 par 15
   points) : un remplaçant bien plus faible coûte.
 - **Effets**, camp contre camp, sans tirage ajouté (moyenne pondérée par maillot selon la phase) :
-  porteur qui passe le plaquage (+0,18 × écart sur l'avantage d'attaque), fautes de main (−0,06 × écart, arrières
-  ×1,5), pénalités concédées (×(1 − 0,25 × écart), avants ×1,5, borné 0,7-1,3), pénalité de mêlée (+0,2 × écart, cinq
+  porteur qui passe le plaquage (+0,09 × écart sur l'avantage d'attaque), fautes de main (−0,03 × écart, arrières
+  ×1,5), pénalités concédées (×(1 − 0,08 × écart), avants ×1,5, borné 0,7-1,3), pénalité de mêlée (+0,1 × écart, cinq
   de devant ×2, troisième ligne ×1).
 - **Remplacement au poste** (`rangPoste`, `dist/opposition.js`) : l'ordinateur ne choisit que parmi le meilleur rang
   présent sur le banc (même poste, puis même ligne : première ligne, deuxième et troisième lignes, charnière,
@@ -90,3 +90,13 @@ non-talonneur au talon quand le banc a le bon joueur (200 matchs).
   ou ne garder que l'élan d'entrée. Le bonus repasse vert, mais un remplacement du joueur après ceux de l'ordinateur ne
   pèse presque plus rien (suite changée retombée à 13-36 %, niveau de main) et la suite des consignes reste au bord du
   seuil selon la graine (relance, touche, tout tenter). Non retenu.
+
+## Réglage du 27/11 après refusion de main (remontées tardives #1356, fautes de main #1353)
+Avec l'ancien réglage (jeu 0,18, main 0,06, faute 0,25, mêlée 0,2, élan 0,35), trois mesures existantes tombaient :
+consignes en direct (« touche sûre » 17 % pour 25 %, « relance=dégager » 29 % pour 30 %, 24 matchs), poids du niveau en URC
+(0,182 pour 0,30) et tirs au but de la Premiership (3,11 pour 3,12). Diagnostic (une part coupée à la fois) : l'effet sur
+les pénalités faisait tomber tirs et URC ; la fraîcheur en jeu faisait tomber les consignes. Retenu : jeu 0,09, main 0,03,
+faute 0,08, mêlée 0,1, et un élan d'entrée plus fort (0,6) pour que l'entrant frais pèse encore (sans lui : suite changée
+31,8 % pour 35 %). Une vingtaine de variantes voisines (élan 0,5 à 0,8, jeu 0,08 à 0,13, faute 0,08 à 0,12) : chacune faisait tomber au hasard une
+consigne sur 24 matchs, la compétence au but de fatigue-phases-arretees (2,1 pour 2) ou le remplaçant (29 à 34 %). Avec
+l'accord de Léo, match-consignes-direct passe à 192 matchs (mêmes graines, mêmes seuils) : vert sur main et ici.

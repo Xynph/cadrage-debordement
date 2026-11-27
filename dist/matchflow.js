@@ -294,8 +294,8 @@ function fitArrete(l){return l?.setPieceFatigueVersion===1?'arrete':true}
 // faible coûte). Chaque camp : moyenne pondérée sur les joueurs en jeu (poids par maillot selon la phase). Effets
 // relatifs, un camp contre l'autre, sans tirage ajouté : porteur qui passe le plaquage (`jeu`, ajouté à l'avantage
 // d'attaque), fautes de main (`main`), pénalités concédées (`faute`, multiplicateur), pénalité de mêlée (`melee`).
-var FRAICHEUR={echelle:25,max:1.6,impact:{valeur:.35,duree:15},niveau:{tolere:3,echelle:15,poids:.8},
- jeu:.18,main:.06,faute:.25,melee:.2,
+var FRAICHEUR={echelle:25,max:1.6,impact:{valeur:.6,duree:15},niveau:{tolere:3,echelle:15,poids:.8},
+ jeu:.09,main:.03,faute:.08,melee:.1,
  poids:{jeu:null,main:[1,1,1,1,1,1,1,1,1.5,1.5,1.5,1.5,1.5,1.5,1.5],faute:[1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1,1,1,1,1,1,1],melee:[2,2,2,2,2,1,1,1,0,0,0,0,0,0,0]}};
 function fraicheurRules(l){return l?.remplacantsVersion===1}
 // Note au poste du maillot, sans la condition (fitScore la multiplie par .5 + condition × .005).
