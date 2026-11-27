@@ -1,0 +1,7 @@
+== suites (2) (code 1)
+ECHEC : Écran 2D du direct
+ECHEC : Écran 2D du direct, en pause
+SCRIPT ERROR: Invalid access to property or key 'regie' on a base object of type 'Nil'.
+::error file=tests/godot-cris-banc.cjs::Godot : ECHEC (1), durée 963 s, limite 1200s
+ECHEC : Match en cours : un clic sur le nom ouvre la carte
+::error file=tests/godot-planche-carte-joueur.cjs::Godot : ECHEC (1), durée 630 s, limite 1200s

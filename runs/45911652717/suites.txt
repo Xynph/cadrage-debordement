@@ -1,0 +1,2 @@
+tests/godot-cris-banc.cjs
+tests/godot-planche-carte-joueur.cjs

@@ -1,0 +1,208 @@
+::group::tests/godot-cris-banc.cjs
+CRIS_BANC SONDE course t=60 kind=live/actif minute=5.0 paused=true finished=false halftime=false atBreak=false waiting=false ts=16.0 etat=0 INTER=0 arret=true b_vis=true journee=true panneaux=2 p0=true
+CRIS_BANC SONDE course t=62 kind=live/actif minute=6.0 paused=false finished=false halftime=false atBreak=false waiting=true ts=16.0 etat=0 INTER=0 arret=false b_vis=true journee=true panneaux=2 p0=true
+CRIS_BANC SONDE course t=67 kind=live/actif minute=8.0 paused=false finished=false halftime=false atBreak=false waiting=false ts=16.0 etat=1 INTER=0 arret=false b_vis=false journee=true panneaux=2 p0=false
+CRIS_BANC SONDE course t=69 kind=live/actif minute=8.0 paused=false finished=false halftime=false atBreak=false waiting=false ts=16.0 etat=1 INTER=0 arret=false b_vis=false journee=true panneaux=2 p0=false
+CRIS_BANC SONDE course t=71 kind=live/actif minute=8.0 paused=false finished=false halftime=false atBreak=false waiting=false ts=16.0 etat=1 INTER=0 arret=false b_vis=false journee=true panneaux=2 p0=false
+CRIS_BANC SONDE course t=73 kind=live/actif minute=10.0 paused=false finished=false halftime=false atBreak=false waiting=true ts=16.0 etat=0 INTER=0 arret=false b_vis=true journee=true panneaux=2 p0=true
+CRIS_BANC SONDE course t=74 kind=live/actif minute=12.0 paused=false finished=false halftime=false atBreak=false waiting=false ts=16.0 etat=1 INTER=0 arret=false b_vis=false journee=true panneaux=2 p0=false
+CRIS_BANC SONDE course t=76 kind=live/actif minute=12.0 paused=false finished=false halftime=false atBreak=false waiting=true ts=16.0 etat=2 INTER=0 arret=false b_vis=false journee=true panneaux=2 p0=false
+CRIS_BANC SONDE course t=78 kind=live/actif minute=14.0 paused=false finished=false halftime=false atBreak=false waiting=true ts=16.0 etat=0 INTER=0 arret=false b_vis=true journee=true panneaux=2 p0=true
+CRIS_BANC SONDE course t=80 kind=live/actif minute=15.0 paused=false finished=false halftime=false atBreak=false waiting=false ts=16.0 etat=1 INTER=0 arret=false b_vis=false journee=true panneaux=2 p0=false
+CRIS_BANC SONDE course t=81 kind=live/actif minute=16.0 paused=false finished=false halftime=false atBreak=false waiting=false ts=16.0 etat=0 INTER=0 arret=false b_vis=true journee=true panneaux=2 p0=true
+CRIS_BANC SONDE course t=83 kind=live/actif minute=18.0 paused=false finished=false halftime=false atBreak=false waiting=false ts=16.0 etat=0 INTER=0 arret=false b_vis=true journee=true panneaux=2 p0=true
+CRIS_BANC SONDE course t=84 kind=live/actif minute=20.0 paused=false finished=false halftime=false atBreak=false waiting=false ts=16.0 etat=0 INTER=0 arret=false b_vis=true journee=true panneaux=2 p0=true
+CRIS_BANC SONDE fin course t=86 kind=live/actif minute=22.0 paused=false finished=false halftime=false atBreak=false waiting=true ts=16.0 etat=0 INTER=0 arret=false b_vis=true journee=true panneaux=2 p0=true
+CRIS_BANC minute 22 atteinte en 26 s
+CRIS_BANC SONDE attente 2D t=114 kind=live/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 etat=3 INTER=0 arret=false b_vis=false journee=true panneaux=2 p0=false
+CRIS_BANC SONDE attente 2D t=116 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=117 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=119 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=121 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=123 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=124 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=126 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=128 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=130 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=132 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=133 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=135 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=137 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=139 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=140 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=142 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=144 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=145 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=147 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=149 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=151 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=152 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=154 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=156 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=158 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=159 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=161 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=163 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=165 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=166 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=168 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=170 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=172 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=173 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=175 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=177 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=179 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=180 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=182 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=184 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=186 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=187 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=189 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=191 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=193 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=194 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=196 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=198 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=200 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=201 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=203 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=205 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=207 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=208 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=210 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=212 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=214 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=215 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=217 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=219 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=221 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=222 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=224 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=226 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=227 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=229 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=231 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=233 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=234 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=236 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=238 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=240 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=241 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=243 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=245 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=247 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=248 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=250 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=252 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=254 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=255 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=257 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=259 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=261 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=262 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=264 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=266 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=268 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=269 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=271 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=273 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=275 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=276 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=278 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=280 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=282 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=283 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=285 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=287 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=289 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=290 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=292 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=294 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=296 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=297 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=299 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=301 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=303 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=304 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=306 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=308 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=310 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=312 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=313 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=315 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=317 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=319 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=320 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=322 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=324 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=326 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=327 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=329 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=331 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=333 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=334 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=336 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=338 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=340 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=341 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=343 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=345 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=347 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=348 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=350 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=352 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente 2D t=354 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=16.0 sans regie
+CRIS_BANC SONDE attente pause t=357 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=358 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=360 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=362 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=364 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=365 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=367 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=369 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=371 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=373 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=374 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=376 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=378 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=380 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=381 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=383 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=385 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=387 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=388 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=390 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=392 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=394 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=395 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=397 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=399 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=401 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=402 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=404 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=406 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=408 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=409 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=411 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=413 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=415 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE attente pause t=416 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+CRIS_BANC SONDE avant 138 t=417 kind=locker/actif minute=41.0 paused=true finished=false halftime=true atBreak=true waiting=false ts=1.0 sans regie
+ECHEC : Écran 2D du direct
+ECHEC : Écran 2D du direct, en pause
+SCRIPT ERROR: Invalid access to property or key 'regie' on a base object of type 'Nil'.
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/godot-cris-banc.cjs user_s=3376.39 system_s=14.68 wall_s=963.05 cpu_pct=352% max_rss_kb=2744096
+::error file=tests/godot-cris-banc.cjs::Godot : ECHEC (1), durée 963 s, limite 1200s
+::endgroup::
+::group::tests/godot-planche-carte-joueur.cjs
+PLANCHE_CARTE_JOUEUR SONDE pas de lien vue2d=false
+PLANCHE_CARTE_JOUEUR (2560, 1440) : carte [P: (585.0, 686.5), S: (945.0, 745.5)]
+PLANCHE_CARTE_JOUEUR (1920, 1080) : carte [P: (437.25, 512.875), S: (708.75, 559.125)]
+PLANCHE_CARTE_JOUEUR 30 controles, 1 echec
+  - Match en cours : un clic sur le nom ouvre la carte
+ECHEC : Match en cours : un clic sur le nom ouvre la carte
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/godot-planche-carte-joueur.cjs user_s=2163.34 system_s=19.98 wall_s=629.57 cpu_pct=346% max_rss_kb=2749088
+::error file=tests/godot-planche-carte-joueur.cjs::Godot : ECHEC (1), durée 630 s, limite 1200s
+::endgroup::
