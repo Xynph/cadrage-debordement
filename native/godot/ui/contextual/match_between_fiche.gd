@@ -17,6 +17,11 @@ static func etat_du_fait(kind: String, camp: int, x: float, equipes: Array) -> S
 	if not is_nan(x): texte += " " + _zone(x, camp)
 	return texte
 
+## Genre de la ligne d'état d'un fait d'en-but : sa cause (« En-avant dans l'en-but — X »…) quand le moteur la donne,
+## sinon le genre inchangé (ballon mort : « X a le ballon… »).
+static func genre_en_but(kind: String, cause: String) -> String:
+	return cause if kind == "ingoal" and cause in ["ingoal-knock-on", "held-up", "attacking-kick-grounded"] else kind
+
 ## Ligne d'état d'un fait du terrain 2D (élément de direct.deroule), « » si inexploitable.
 static func etat_du_deroule(item: Dictionary, equipes: Array) -> String:
 	var scene: Variant = item.get("scene")
@@ -24,12 +29,14 @@ static func etat_du_deroule(item: Dictionary, equipes: Array) -> String:
 	var camp: Variant = scene.get("possession", item.get("equipe", -1))
 	if not (camp is int or camp is float): camp = item.get("equipe", -1)
 	# En-avant : l'équipe fautive (equipe du fait, scene.team du moteur), pas la possession.
-	if str(item.get("kind", scene.get("kind", ""))) == "hand-fault": camp = item.get("equipe", scene.get("team", -1))
+	var genre_fait := str(item.get("kind", scene.get("kind", "")))
+	if genre_fait == "hand-fault" or genre_en_but(genre_fait, str(item.get("cause", ""))) != genre_fait: camp = item.get("equipe", scene.get("team", -1))
 	if not (camp is int or camp is float): camp = -1
 	var b: Variant = scene.get("ballon")
 	var x: float = float(b[0]) if b is Array and (b as Array).size() >= 1 and (b[0] is float or b[0] is int) else NAN
 	var kind := str(item.get("kind", scene.get("kind", "")))
 	if kind == "hand-fault" and str(item.get("cause", "")) == "forward-pass": kind = "passe-en-avant"
+	kind = genre_en_but(kind, str(item.get("cause", "")))
 	return etat_du_fait(kind, int(camp) if (camp is int or camp is float) else -1, x, equipes)
 
 ## Le carton est l'arrêt de jeu en cours : son arrêt-décision est ouvert, ou c'est le dernier fait joué par le
@@ -43,7 +50,11 @@ func carton_en_cours() -> bool:
 func forcer_etat(texte: String) -> void:
 	if texte == etat_force: return
 	etat_force = texte
-	if not texte.is_empty() and is_instance_valid(etat): etat.text = texte
+	if not texte.is_empty() and is_instance_valid(etat):
+		etat.text = texte
+		# Le texte imposé remplace la phrase de jeu : la pastille « ESSAI » d'un essai récent part avec elle.
+		var bulles := get_node_or_null(BullesAdjoint.NOM)
+		if bulles != null: bulles.appliquer_phrase()
 	elif not _dernier.is_empty() and is_instance_valid(etat): _etat(_dernier[1], _dernier[2], _equipes)
 
 func _etat(live: Dictionary, direct: Dictionary, equipes: Array) -> void:

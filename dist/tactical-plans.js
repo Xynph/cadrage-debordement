@@ -102,11 +102,21 @@ function ballonPorteBase(l,side){if(!penalitesRules(l))return null;const av=p=>p
 // sans ce terme, l'équipe menée de 11 à 14 points à la 75e finissait à 7 points ou moins deux fois plus souvent qu'avant
 // (la poussée de fin de match, GESTION_SCORE, doublait l'efficacité d'une pénaltouche tardive). Réglages de jeu calés sur
 // des saisons Monde contre les écarts réels, aucun tirage ajouté.
-var DEFENSE_REGROUPEE={debut:70,porte:.12,finition:.45};
+// `deuxScores` (27/11/2026, docs/remontees-tardives-20261127.md) : devant d'au moins `ecart` points (plus qu'un essai
+// transformé et une pénalité), l'équipe qui mène défend ainsi sur TOUTE action adverse à partir de la `debut`e minute
+// (plein effet `rampe` minutes plus tard) : elle peut concéder une pénalité sans danger et garde tout son monde près de sa
+// ligne. Sans ce terme, l'équipe menée de 11 à 14 points à la 75e revenait à 7 points ou moins dans 30 à 34 % des matchs
+// (réel 20-25 %) : la poussée de GESTION_SCORE (+0,3 en attaque) passait aussi bien en jeu courant que sur pénaltouche.
+// `force` : intensité (×`porte`, ×`finition`) ; `championnats` : part de cette force selon le championnat, calée sur les
+// saisons Monde (Top 14 20-25 % ; URC, plus sensible, sans perdre de fins serrées).
+var DEFENSE_REGROUPEE={debut:70,porte:.12,finition:.45,deuxScores:{ecart:11,debut:72,rampe:5,force:1.3,championnats:{elite:.85,urc:.7}}};
 function suitePenaltouche(l,side){if(l.iaDecisionsVersion===1&&l.score)l.suitePenaltouche={side,points:l.score[0]+l.score[1]}}
 function defenseRegroupee(l,side){
- const s=l.suitePenaltouche,D=DEFENSE_REGROUPEE;if(l.iaDecisionsVersion!==1||!s||s.side!==side||!l.score||s.points!==l.score[0]+l.score[1]||l.score[1-side]<=l.score[side])return 0;
- const m=typeof matchMinute==='function'?matchMinute(l):Number(l.minute)||0;return m<D.debut?0:Math.min(1,(m-D.debut)/(80-D.debut));
+ const s=l.suitePenaltouche,D=DEFENSE_REGROUPEE;if(l.iaDecisionsVersion!==1||!l.score||l.score[1-side]<=l.score[side])return 0;
+ const m=typeof matchMinute==='function'?matchMinute(l):Number(l.minute)||0,Z=D.deuxScores;
+ const large=Z&&l.score[1-side]-l.score[side]>=Z.ecart&&m>=Z.debut?Z.force*(Z.championnats?.[l.worldContext?.competitionId]??1)*Math.min(1,(m-Z.debut)/Z.rampe):0;
+ if(!s||s.side!==side||s.points!==l.score[0]+l.score[1])return large;
+ return Math.max(large,m<D.debut?0:Math.min(1,(m-D.debut)/(80-D.debut)));
 }
 const PENALITES_INCIDENTS={scrum:{id:'scrum',label:'faute en mêlée',weight:0,serious:false},maul:{id:'maul',label:'faute en touche ou sur ballon porté',weight:0,serious:false},'not-release':{id:'not-release',label:'ballon non libéré au sol',weight:0,serious:false},sealing:{id:'sealing',label:'scellement du ballon dans le ruck',weight:0,serious:false}};
 function penalitesRules(l){return essaisRules(l)&&l.penalitesVersion===1}
