@@ -26,6 +26,9 @@ var proof := OS.get_environment("CD_MATCH_TEMPS_FORTS_ARTIFACTS")
 var mode := OS.get_environment("CD_MATCH_TEMPS_FORTS_MODE")
 ## Vitesse de test du temps du moteur (CD_TEST_VITESSE) ; les étapes qui attrapent un temps fort en plein vol repassent en temps réel.
 var vitesse_a_fond := 1.0
+## Mode « actif » : clés des plans du premier temps fort, relevées à chaque image dès qu'il commence (sur un poste lent,
+## le temps fort est déjà à son dernier plan quand le test reprend la main après la mise en pause).
+var plans_vus: Array[String] = []
 
 func _initialize() -> void:
 	# Version de test du jeu : le match défile à fond (consigne de Léo, 21/11/2026). Le temps du moteur (images, minuteries,
@@ -62,6 +65,16 @@ func command(id: String, payload: Dictionary = {}) -> void:
 	var repondu: bool = not app.waiting and app.bridge.last_response_ok
 	await settle(2)
 	check(repondu, "Worker réel " + id + " : " + app.last_error)
+
+func relever_plans() -> void:
+	var v := surface()
+	if v == null or v.regie == null: return
+	var r: Node = v.regie
+	if r.etat == r.INTER or r.etat == r.SORTIE:
+		if not plans_vus.is_empty() and process_frame.is_connected(relever_plans): process_frame.disconnect(relever_plans)
+		return
+	var cle := str(v.stage.get("_action_key"))
+	if not cle.is_empty() and (plans_vus.is_empty() or plans_vus.back() != cle): plans_vus.append(cle)
 
 func surface() -> Control:
 	return app.contextual_director.view if app.contextual_director.active() and app.contextual_director.kind == "live" else null
@@ -345,6 +358,7 @@ func run() -> void:
 		await command("begin_match")
 		await settle()
 		var limite_l := Time.get_ticks_msec() + 120000
+		if mode == "actif": process_frame.connect(relever_plans)
 		while Time.get_ticks_msec() < limite_l:
 			var scene_l: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
 			if scene_l is Dictionary:
@@ -701,7 +715,10 @@ func active(view: Control) -> void:
 	# Entracte : l'horloge du moteur, avec les secondes qui roulent (« 1:00 », « 40+2:15 »).
 	# (ou la minute du fait que le terrain 2D rejoue encore, en retard sur le moteur).
 	check(view.clock.text.begins_with(str(app.model.live.direct.horloge).trim_suffix("′") + ":") or view.clock.text.begins_with(str(app.model.live.direct.get("horlogeMontree", "")).trim_suffix("′") + ":") or not between.horloge_differee().is_empty() and view.clock.text.begins_with(between.horloge_differee().trim_suffix("′") + ":"), "Horloge du moteur, secondes comprises, sur l'écran intermédiaire : " + view.clock.text)
-	check(str(view.stage.get("_action_key")) != first_key, "Les plans du temps fort se sont succédé")
+	relever_plans()
+	if process_frame.is_connected(relever_plans): process_frame.disconnect(relever_plans)
+	check(plans_vus.size() >= 2, "Les plans du temps fort se sont succédé")
+	print("Plans du premier temps fort : ", plans_vus.size())
 	Engine.time_scale = vitesse_a_fond
 	var minute: int = app.model.live.minute
 	await settle(40)
