@@ -70,7 +70,12 @@ Workflow : `.github/workflows/tests.yml` (« Tests JavaScript »). La batterie c
 
 ### Rouges après #1351
 
-Diagnostic en cours, voir PR suivante.
+À diagnostiquer (rouges sur main depuis #1351 « le niveau de chaque joueur compte dans les phases de son poste », run 45983993853 ; reproduits en local sur main) :
+- `tests/match-consignes-direct.cjs` sous-test 1 : « rucks=prudente : effet sur la marge trop fort (6.46) ».
+- `tests/quota-formation.cjs` sous-test 6 : « rien à signaler quand la marge est confortable » ; le jeu renvoie maintenant une alerte.
+À faire : vérifier qu'ils sont verts juste avant #1351, puis trancher jeu faux (corriger le jeu) ou test lisant une situation changée (adapter la situation de départ, mêmes contrôles, mêmes seuils), avec décision tracée.
+
+#1365 (vente-joueurs, meilleur de 3 mesures) : budget CI de la suite porté à 1200 s (538 s en local, 600 s dépassées) ; fusion auto armée, à vérifier.
 
 ## 5. Règles de travail
 
