@@ -37,6 +37,19 @@ func until(condition: Callable, limit_ms: int) -> bool:
 	while not condition.call() and Time.get_ticks_msec() < deadline: await process_frame
 	return condition.call()
 
+## Arrêt de jeu (carton, blessure…) : le moteur a arrêté le match et l'écran d'arrêt attend le joueur (depuis #1315, la
+## graine 3 prend un carton dès la 5e minute : sans reprise, la course vers la minute voulue attendait toute la limite).
+## Le test fait comme le joueur : « Reprendre le match » (même aide que godot-cris-banc). Rien tant que la pause n'est pas reçue.
+func reprendre_arret() -> void:
+	var view := surface()
+	if not is_instance_valid(view) or view.regie == null: return
+	var regie: Node = view.regie
+	if regie.arret.is_empty() or app.waiting or not bool(app.model.live.get("paused", false)): return
+	var reprendre: Button = regie.between.find_child("MatchBetweenStopResume", true, false) if is_instance_valid(regie.between) else null
+	if reprendre == null or not reprendre.is_visible_in_tree() or reprendre.disabled: return
+	reprendre.pressed.emit()
+	await wait_command()
+
 func capture(nom: String) -> void:
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png(dossier.path_join(nom + ".png"))
@@ -93,6 +106,7 @@ func run() -> void:
 		# Mi-temps, causerie : on passe.
 		var scene: Variant = app.model.get("clubLife", {}).get("matchTalks", {}).get("scene")
 		if scene is Dictionary and not app.waiting: await command("match_talk_continue", {"key": scene.key, "phase": scene.phase, "skip": true})
+		await reprendre_arret()
 		await settle(2)
 	print("PLANCHE_STAT minute %d atteinte en %d s" % [int(app.model.live.get("minute", 0)), (Time.get_ticks_msec() - depart) / 1000])
 	check(int(app.model.live.get("minute", 0)) >= minute_voulue, "minute %d non atteinte en 600 s (minute %d)" % [minute_voulue, int(app.model.live.get("minute", 0))])

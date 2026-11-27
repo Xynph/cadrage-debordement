@@ -123,7 +123,7 @@ assert.ok(godotExcluded.length > 0 && godotExcluded.every(f => legacyTestFiles()
 // godot-engine est passé au Monde (#828, 16/11/2026) : il tourne désormais dans les jobs Godot.
 for (const name of ['deepen-match'])
   assert.ok(godotExcluded.includes('tests/' + name + '.cjs'), name + ' est exclue (ancien mode)');
-for (const name of ['godot-immersive08', 'deepen-analytics-real-ui'])
+for (const name of ['godot-immersive08', 'deepen-analytics-real-ui', 'godot-interface-layout'])
   assert.ok(godot.includes('tests/' + name + '.cjs'), name + ' tourne en mode Monde');
 for (const name of ['godot-assets', 'godot-common-rosters', 'saves'])
   assert.ok(!godot.includes('tests/' + name + '.cjs'), name + ' est du JavaScript pur');
