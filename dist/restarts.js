@@ -319,7 +319,7 @@ function jeuAuPiedPerdu(l,side){
  const camp=zone==='own22'||zone==='ownHalf',k=jeuAuPiedTire(camp?J.perdus[zone]:{...J.perdus.adverse,...(zone==='opp22'?{touche:0}:{})});
  const botteur=camp?jeuAuPiedBotteur(l,side,k==='chandelle'?'chandelle':'touche'):occupationKicker(l,side),nom=botteur?.name||ab;
  const devant=m=>clamp(Math.abs(goal-origin)>m+3?origin+dir*m:goal-dir*3,1,99),M=J.perduMetres;
- const fait=(at,texte,qui=null)=>addEvent(l,texte,'play',{kind:'kick',team:side,actor:botteur?.id||null,...(qui?{receiver:qui.id}:{}),from:{x:origin,y:35},to:{x:at,y:35}});
+ const fait=(at,texte,qui=null,suite={})=>addEvent(l,texte,'play',{kind:'kick',team:side,actor:botteur?.id||null,...(qui?{receiver:qui.id}:{}),from:{x:origin,y:35},to:{x:at,y:35},...suite});
  const recoit=(at,texte)=>{ballPossession(l,opp,at);const r=actionPlayer(l,opp,'receiver');fait(at,`${texte} ; ${r?.name||abo} récupère pour ${abo}.`,r);return true};
  if(camp){
   if(k==='touche')return resolveTouch(l,side,devant(rand(...M.touche)),{kicker:botteur,court:true});
@@ -329,7 +329,9 @@ function jeuAuPiedPerdu(l,side){
   if(k==='relance'){
    // Dégagement capté puis relancé : le receveur remonte le terrain, la possession change près du point de départ.
    const landing=devant(rand(...M.relance)),at=devant(rand(...M.camp)),r=actionPlayer(l,opp,'receiver');
-   fait(landing,`${nom} (${ab}) dégage dans le champ ; ${r?.name||abo} capte pour ${abo}.`,r);ballPossession(l,opp,at);
+   // Le fait dit déjà le ballon chez le receveur (image : il capte au point de chute) : sans cela, bandeau et ligne d'état
+   // donnaient le ballon au botteur pendant la réception (tests/match-bandeau-possession.cjs). Possession du match inchangée ici.
+   fait(landing,`${nom} (${ab}) dégage dans le champ ; ${r?.name||abo} capte pour ${abo}.`,r,{possession:opp});ballPossession(l,opp,at);
    const g=Math.round(Math.abs(landing-at));
    if(g>=1)addEvent(l,`${r?.name||abo} (${abo}) relance et remonte ${g} mètres.`,'play',{kind:'carry',team:opp,actor:r?.id||null,tackler:r?carryTackler(l,opp,r.id,g):null,from:{x:landing,y:35},to:{x:at,y:35}});
    return true;
