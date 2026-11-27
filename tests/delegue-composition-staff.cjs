@@ -105,11 +105,23 @@ test('Délégation : case décochée, la feuille du joueur reste inchangée ; al
         break;
       }
       // Case décochée : le coup d'envoi ne touche pas à la feuille du joueur.
+      const blessesAvant = new Set(jeu.bridge.vm.run('club().players.filter(p=>p.injury>0).map(p=>p.id)'));
       model = jeu.call('begin_match', { delegated: true, composition: false });
       assert.equal(model.decisions.delegation.matchLineup, false, 'choix décoché mémorisé');
       const surLeTerrain = jeu.bridge.vm.run('(()=>{const l=S.live;return JSON.stringify(l.sheets[l.userSide].on)})()');
-      assert.equal(surLeTerrain, JSON.stringify(JSON.parse(avant).lineup), 'feuille inchangée au coup d’envoi');
-      assert.equal(jeu.bridge.vm.run(FEUILLE), avant, 'feuille du joueur inchangée');
+      // Blessure à la séance lancée par ce coup d'envoi : le blessé ne peut pas jouer, la feuille est réparée
+      // (repairSheet) ; seul cas où elle bouge. Les autres titulaires restent dans les 23.
+      const blessesSeance = JSON.parse(avant).lineup.filter(id => !blessesAvant.has(id) && jeu.bridge.vm.run(`(player('${id}')?.injury||0)>0`));
+      if (blessesSeance.length) {
+        const on = JSON.parse(surLeTerrain), feuille = JSON.parse(jeu.bridge.vm.run(FEUILLE)), vingtTrois = new Set([...feuille.lineup, ...feuille.bench]);
+        for (const id of blessesSeance) assert.ok(!on.includes(id), 'blessé à la séance du coup d’envoi : pas sur le terrain');
+        for (const id of JSON.parse(avant).lineup) if (!blessesSeance.includes(id)) assert.ok(vingtTrois.has(id), 'titulaire apte gardé dans les 23 : ' + id);
+        assert.equal(surLeTerrain, JSON.stringify(feuille.lineup), 'XV sur le terrain = feuille réparée');
+        console.log(`journée ${w} : ${blessesSeance.length} titulaire(s) blessé(s) à la séance du coup d’envoi, feuille réparée`);
+      } else {
+        assert.equal(surLeTerrain, JSON.stringify(JSON.parse(avant).lineup), 'feuille inchangée au coup d’envoi');
+        assert.equal(jeu.bridge.vm.run(FEUILLE), avant, 'feuille du joueur inchangée');
+      }
       model = skipMatchTalk(jeu.call('delegate'), jeu.call);
       model = jeu.call('finish_round');
     }
