@@ -195,10 +195,14 @@ test('Moteur Monde : trois lignes pour un montant, chantiers aboutis, trésoreri
       const b=S.clubBudget.clubs,e=S.clubInvest;return {saison:e.saison===S.season,semaines:wageForecastWeeks(),
        egal:e.clubs.every((p,i)=>p.montant===b[i].investissement),plus:e.clubs.filter(p=>p.montant>0).length,n:S.clubs.length,
        montant:e.clubs[S.club].montant,fac:worldClub(S.club).facilities,acc:e.clubs[S.club].accueil,
-       parts:e.clubs[S.club].parts,type:b[S.club].type,valide:nativeClubInvestments.valide(e,S.clubs.length)};})()`);
+       parts:e.clubs[S.club].parts,type:b[S.club].type,valide:nativeClubInvestments.valide(e,S.clubs.length),
+       // #1310 : un club géré ne réinvestit que ce que sa saison laisse au-dessus du résultat visé (objectifGestion), jamais dans une perte prévue.
+       attendus:(()=>{const f=budgetForces(),an=nativeClubBudget.recettes(f);return S.clubs.filter(c=>{if(c.id===S.club)return true;const a=an.get(c.id),
+        projete=a-nativeClubBudget.fonctionnementAnnuel(a)-budgetMasse(c)*52*(1+nativeClubBudget.COTISATIONS),vise=Math.max(0,nativeClubBudget.objectifGestion(f,c.id,b[c.id].type)??0);
+        return Math.round((projete-vise)/100)*100>0;}).map(c=>c.id)})(),reinvestis:e.clubs.map((p,i)=>i).filter(i=>e.clubs[i].montant>0)};})()`);
     assert.equal(ouv.saison, true); assert.equal(ouv.valide, true);
     assert.equal(ouv.egal, true, 'montant = investissement de #870 pour chaque club');
-    assert.equal(ouv.plus, ouv.n, 'tous les clubs riches réinvestissent'); assert.ok(ouv.montant > 0);
+    assert.deepEqual(ouv.reinvestis, ouv.attendus, 'tous les clubs riches réinvestissent, sauf dans une perte prévue (#1310)'); assert.equal(ouv.plus, ouv.attendus.length); assert.ok(ouv.plus > 0); assert.ok(ouv.montant > 0);
     assert.ok(Math.abs(somme(ouv.parts) - 1) < 1e-9);
     // 2. Une vraie semaine de jeu : le grand livre montre trois lignes dont la somme est l'ancien montant unique.
     const avant = lire('({ledger:S.ledger.length,cash:club().cash,fac:worldClub(S.club).facilities})');
@@ -224,8 +228,9 @@ test('Moteur Monde : trois lignes pour un montant, chantiers aboutis, trésoreri
       for(let w=0;w<${ouv.semaines};w++){
         const rc={pair:w%2?[c.id,autre]:[autre,c.id],neutral:false,phase:'league'};
         // Les frais de match (recettes imprévues) se cumulent dans le compteur : la semaine de comparaison ne doit pas les compter deux fois.
-        const cpt=S.clubBudget.clubs[c.id],f0=[cpt.imprevu,cpt.fraisMatch];
-        const k=[p.accueil,e.saison];e.saison=-1;p.accueil=0;const base=budgetSemaine(forces,repere,c,rc,'S');e.saison=k[1];p.accueil=k[0];[cpt.imprevu,cpt.fraisMatch]=f0;
+        // Depuis #1310, le train de vie lit aussi les recettes et semaines déjà comptées (encaisse, ecoulees) : tout le compteur est remis.
+        const cpt=S.clubBudget.clubs[c.id],f0=JSON.stringify(cpt);
+        const k=[p.accueil,e.saison];e.saison=-1;p.accueil=0;const base=budgetSemaine(forces,repere,c,rc,'S');e.saison=k[1];p.accueil=k[0];for(const x of Object.keys(cpt))delete cpt[x];Object.assign(cpt,JSON.parse(f0));
         const reel=budgetSemaine(forces,repere,c,rc,'S');
         maxLignes=Math.max(maxLignes,reel.filter(x=>/Investissements/.test(x.title)).length);
         if(JSON.stringify(hors(base))!==JSON.stringify(hors(reel)))ecartAutres++;
