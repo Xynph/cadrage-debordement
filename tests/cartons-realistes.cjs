@@ -14,7 +14,7 @@ try {
   h.start(102);
   const top14 = JSON.parse(h.run(`(()=>{const fx=S.worldMode.fixtures.filter(f=>f.competitionId==='elite'&&f.phase==='league');
     let x=4242;const alea=()=>{x=(Math.imul(x,1664525)+1013904223)>>>0;return x/4294967296};let j=0,ex=0,pen=0,n=0;
-    for(let i=0;i<160;i++){const g=fx[Math.floor(alea()*fx.length)];
+    for(let i=0;i<800;i++){const g=fx[Math.floor(alea()*fx.length)];
       for(const id of [g.homeId,g.awayId]){CDFranceCareer.ensureAISheet(S.clubs[id]);for(const p of S.clubs[id].players){p.condition=100;p.injury=0;p.suspension=0}}
       const f={...g,id:'cartons-'+i,week:S.round};S.worldMode.fixtures.push(f);
       try{const l=createRugbyMatch([g.homeId,g.awayId],null,true);for(let k=0;!l.finished&&k<700;k++){l.paused=false;advanceRugby(l)}
@@ -22,6 +22,9 @@ try {
       finally{S.worldMode.fixtures.splice(S.worldMode.fixtures.indexOf(f),1)}}
     return JSON.stringify({jaunes:j/n,exclusions:ex/n,penalites:pen/n})})()`, 1200000));
   console.log('Top 14, par équipe et par match :', JSON.stringify(top14));
+  // 800 affiches au lieu de 160, mêmes graines de départ, seuils inchangés (accord de Léo, 27/11 : « obéis à la direction ») : à 160 affiches
+  // l'erreur type (~0,04) faisait passer la moyenne de 0,47 à 0,61 d'un tirage à l'autre. Niveau réel mesuré sur 3200 affiches : ~0,546 jaune
+  // par équipe et par match (main comme niveau au poste), loin du ~0,65 annoncé : à surveiller.
   // Avant le 19/11/2026 : ~0,2 jaune par équipe (2,5 avant le 18/11). Mesuré ~0,65 sur 1 000 affiches.
   assert.ok(top14.jaunes > 0.5 && top14.jaunes < 0.85, 'Top 14 : jaunes dans la cible : ' + top14.jaunes);
   assert.ok(top14.exclusions > 0.005 && top14.exclusions < 0.1, 'Top 14 : rouges rares mais présents : ' + top14.exclusions);
