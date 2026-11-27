@@ -186,9 +186,12 @@ try {
   const bancSolide = ecart => `{const o=1-l.userSide,on=l.sheets[o].on,arr=activePlayers(l,o).filter(p=>{const n=on.indexOf(p.id)+1;return n>=10&&n<=15}),
     moy=arr.reduce((s,x)=>s+skill(x,'tackle'),0)/arr.length;
     for(const id of l.sheets[o].bench||[]){const p=id&&matchPlayer(l,o,id);if(!p||!(p.fam>=6))continue;ensureSkills(p);p.skills.tackle+=moy+(${ecart})-skill(p,'tackle')}}`;
+  // 1000 matchs par série (au lieu de 400), mêmes graines, seuil 1 inchangé : à 400 matchs l'erreur type de l'écart est ~0,9 point,
+  // et le tirage seul faisait passer l'effet de +2,4 à +0,6 sans que le moteur change (mesuré sur 2 x 3000 matchs : +2,55 ± 0,23).
+  // Accord de Léo (27/11) : « OK pour élargir match-consignes-direct (plus de matchs, même seuil, mêmes graines). OK aussi pour les 3 autres tests : match-pilotage aile faible… ».
   const viser = 'l.pilotage.consignes.cible="aile";l.pilotage.depuis.cible=0;';
   const faible = ailier(-12, [14]), solide = ailier(5, [11, 14]) + bancSolide(5);
-  const faibleBase = serie(faible, 400), faibleAile = serie(faible + viser, 400), solideBase = serie(solide, 400), solideAile = serie(solide + viser, 400), base100 = serie('', 100);
+  const faibleBase = serie(faible, 1000), faibleAile = serie(faible + viser, 1000), solideBase = serie(solide, 400), solideAile = serie(solide + viser, 400), base100 = serie('', 100);
   console.log('relance : coups de pied', r(degager.coups), '/', r(relancer.coups), '· mètres', r(degager.metres), '/', r(relancer.metres), '· pertes', r(degager.pertes), '/', r(relancer.pertes));
   console.log('coups d’envoi repris : courts', r(courts.repris / courts.envois), '· base', r(base100.repris / base100.envois), '· longs', r(longs.repris / longs.envois));
   console.log('pénalités de mêlée : base', r(base100.penMelee), '· pousser', r(pousser.penMelee), '| essais sur ballon porté : jamais', r(maulJamais.maul), '· base', r(base100.maul), '· souvent', r(maulSouvent.maul), '| aile faible visée : écart', r(faibleAile.ecart), 'contre', r(faibleBase.ecart), '· mètres', r(faibleAile.metres), 'contre', r(faibleBase.metres), '| aile solide visée : écart', r(solideAile.ecart), 'contre', r(solideBase.ecart));

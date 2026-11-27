@@ -36,8 +36,10 @@ const LARGEUR := 70.0
 
 ## Place de chaque numéro : x en fraction de la largeur, y en fraction de la hauteur (0 = en haut, en-but adverse).
 ## Schéma de jeu, attaque vers le haut : avants devant (1-2-3, 4-5, 6-8-7), charnière, centres et ailiers, arrière au fond.
-const PLACES := {1: Vector2(.27, .19), 2: Vector2(.5, .19), 3: Vector2(.73, .19), 4: Vector2(.38, .31), 5: Vector2(.62, .31),
-	6: Vector2(.2, .43), 8: Vector2(.5, .43), 7: Vector2(.8, .43), 9: Vector2(.38, .545), 10: Vector2(.63, .65),
+## Rangées du pack et demi de mêlée espacées d'au moins une hauteur de carte (0,126 × 1060 > 132) : deux cartes voisines
+## ne se chevauchent jamais, un clic au bas d'une plaque ne choisit pas le joueur de la rangée suivante.
+const PLACES := {1: Vector2(.27, .19), 2: Vector2(.5, .19), 3: Vector2(.73, .19), 4: Vector2(.38, .316), 5: Vector2(.62, .316),
+	6: Vector2(.2, .442), 8: Vector2(.5, .442), 7: Vector2(.8, .442), 9: Vector2(.38, .568), 10: Vector2(.63, .65),
 	11: Vector2(.11, .78), 12: Vector2(.37, .78), 13: Vector2(.63, .78), 14: Vector2(.89, .78), 15: Vector2(.5, .905)}
 ## Taille d'une carte du XV (unités du gabarit).
 const CARTE := Vector2(156, 132)

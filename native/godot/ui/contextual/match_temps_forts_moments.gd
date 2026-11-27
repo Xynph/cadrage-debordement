@@ -30,7 +30,8 @@ static func etat_du_plan(plan: Dictionary, equipes: Array, kind: String = "") ->
 	var camp: Variant = scene.get("possession", scene.get("team", -1))
 	# En-avant : l'équipe fautive, lue sur le fait du moteur (plan.equipe = scene.team du fait, match-direct.cjs) ;
 	# la scène 3D normalisée n'a que la possession (vérificateur de #1319 : « En-avant » sans équipe en 3D).
-	if (kind if not kind.is_empty() else str(plan.get("kind", ""))) == "hand-fault": camp = plan.get("equipe", scene.get("team", -1))
+	var genre_plan := kind if not kind.is_empty() else str(plan.get("kind", ""))
+	if genre_plan == "hand-fault" or Between.genre_en_but(genre_plan, str(plan.get("cause", scene.get("cause", "")))) != genre_plan: camp = plan.get("equipe", scene.get("team", -1))
 	if not (camp is int or camp is float): camp = -1
 	var ballon: Variant = scene.get("ball")
 	var x: float = float(ballon.x) if ballon is Dictionary and (ballon.get("x") is float or ballon.get("x") is int) else NAN
@@ -42,6 +43,7 @@ static func etat_du_plan(plan: Dictionary, equipes: Array, kind: String = "") ->
 		if scene.get("team") is int or scene.get("team") is float: camp = scene.team
 	# Passe en avant (cause du moteur, loi 11) : « Passe en avant », pas « En-avant ».
 	if genre == "hand-fault" and str(plan.get("cause", scene.get("cause", ""))) == "forward-pass": genre = "passe-en-avant"
+	genre = Between.genre_en_but(genre, str(plan.get("cause", scene.get("cause", ""))))
 	return Between.etat_du_fait(genre, int(camp), x, equipes)
 
 ## Ligne d'état pendant la lecture d'un plan, même règle que la légende (`fait_a_l_ecran`) : un arrêt
@@ -256,8 +258,8 @@ func _montrer_jeu(visible_3d: bool) -> void:
 		_fondu = create_tween().set_parallel(true)
 		_fondu.tween_property(voile, "modulate:a", 1.0, FONDU)
 		_fondu.tween_property(between, "modulate:a", 1.0, FONDU)
-		# La 3D continue d'être rendue sous le voile : arrêter puis relancer la sous-vue
-		# n'apportait qu'une économie et ajoutait un état de plus au moment des coupes.
+		# La 3D est rendue sous le voile tant qu'il n'est pas opaque ; voile à fond, la vue du direct
+		# cesse de la rendre (live_view._suivre_rendu_3d, juste avant chaque image) : aucun état ici.
 
 func _habiller() -> void:
 	# Mi-temps, fin de match : une fois le temps fort fini, la 3D restée à l'écran montre tout le terrain.
