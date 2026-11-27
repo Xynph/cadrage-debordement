@@ -258,8 +258,8 @@ func _montrer_jeu(visible_3d: bool) -> void:
 		_fondu = create_tween().set_parallel(true)
 		_fondu.tween_property(voile, "modulate:a", 1.0, FONDU)
 		_fondu.tween_property(between, "modulate:a", 1.0, FONDU)
-		# La 3D continue d'être rendue sous le voile : arrêter puis relancer la sous-vue
-		# n'apportait qu'une économie et ajoutait un état de plus au moment des coupes.
+		# La 3D est rendue sous le voile tant qu'il n'est pas opaque ; voile à fond, la vue du direct
+		# cesse de la rendre (live_view._suivre_rendu_3d, juste avant chaque image) : aucun état ici.
 
 func _habiller() -> void:
 	# Mi-temps, fin de match : une fois le temps fort fini, la 3D restée à l'écran montre tout le terrain.
