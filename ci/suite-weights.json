@@ -115,7 +115,7 @@
       "tests/manager-mobility.cjs": 30,
       "tests/match-choregraphe.cjs": 379,
       "tests/match-conquete.cjs": 60,
-      "tests/match-niveau-poste.cjs": 120,
+      "tests/match-niveau-poste.cjs": 200,
       "tests/match-courses.cjs": 12,
       "tests/match-cris-joueur.cjs": 230,
       "tests/match-direct.cjs": 315,

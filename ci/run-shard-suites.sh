@@ -124,6 +124,8 @@ budget() {
     # Résultats calés sur les vrais championnats (25/11/2026) : banc de courbe dans 6 championnats, 2 400 matchs complets et
     # 6 000 rapides, 181 s en local ; 180 s dépassées en CI (PR #1298, Suites 10/10). Budget ≈ 5 fois.
     tests/match-realite-championnats.cjs) echo 900s ;;
+    # Niveau au poste (K2, PR #1351) : titulaires à -15 au poste sur le club 102, ~200 s en local sous charge, 180 s dépassées en CI (Suites 2/10) ; budget ≈ 3 fois, assertions inchangées.
+    tests/match-niveau-poste.cjs) echo 600s ;;
     # Outil Monde en fin de saison (#1058) : saison 1 entière validée par le moteur, puis premier match de la saison 2 ;
     # 117 s en local, 180 s dépassées en CI (Suites 6/10). Budget ≈ 3,5 fois.
     # 23/11/2026 : 214 s en local sous charge et 420 s dépassées en CI (PR #1199, Suites 6/10, suite et moteur non touchés) ; budget ≈ 4 fois.
@@ -150,7 +152,8 @@ budget() {
     # Arrêts de jeu (PR #1216) : carrière Monde + séries de matchs, 86 s en local, 180 s dépassées en CI (Suites 9/10) ; budget ≈ 5 fois.
     tests/match-arrets.cjs) echo 480s ;;
     # 23/11/2026 : 323 s en local sur main, 352 s avec les arrêts de jeu (PR #1216) ; 480 s dépassées en CI (Suites 1/10) ; budget ≈ 2,5 fois.
-    tests/match-pilotage.cjs) echo 900s ;;
+    # 27/11/2026 : aile faible sur 1000 matchs (accord de Léo) : 520 s en local à vide ; 900 s ne laissaient plus que 1,7 fois ; budget ≈ 3 fois.
+    tests/match-pilotage.cjs) echo 1500s ;;
     # Cris à un joueur et permutation des ailes (idée FM27 n° 34) : carrière Monde + 5 séries de 300 matchs, ~150 s en local.
     tests/match-cris-joueur.cjs) echo 480s ;;
     # Dilemmes rugby (#925, 18/11/2026) : la presse rapide en carrière Monde passe de 149 à 172 s en local (commotions, doublons, relâchement
