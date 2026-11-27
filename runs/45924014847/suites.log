@@ -1,0 +1,439 @@
+::group::tests/godot-match-temps-forts.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Temps forts (inactif) : 16 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Temps forts — cadrage : 120 images, hauteur visible de 13.2 à 18.5 m, ballon hors champ 0 (0 sous le voile d'entrée), images larges visibles 0 []
+Temps forts (actif) : 1568 contrôles ; 1 échec(s)
+FAIL: Les plans du temps fort se sont succédé
+
+ECHEC mode actif
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Hauteur visible minimale pendant les gestes : 7.5 m
+Temps forts et gestes — cadrage : 1006 images, hauteur visible de 7.5 à 38.0 m, ballon hors champ 0 (0 sous le voile d'entrée), images larges visibles 0 []
+Pause demandée pendant un temps fort : true (minute 25)
+Temps forts (gestes) : 18 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Temps forts (reprise) : 9 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Mi-temps à la minute 40 · causerie retenue par un temps fort : true
+Fin du match à la minute 80 · débrief retenu par un temps fort : true · score [39.0, 27.0] · arrêts sur carton repris : 0
+Réactions du stade : 20 · son actif : true · plans montrés : ["lineout", "setpiece-win", "hand-fault", "penalty", "goal", "carry", "try", "transformation", "scrum", "kick", "touch", "card", "reception", "turnover", "ingoal", "goalLine", "setpiece-loss"]
+Liaisons jouées : ["touche (coupe) 4.6 s"]
+Temps forts (defaut) : 72 contrôles ; 0 échec(s)
+WARNING: 3 RIDs of type "CanvasItem" were leaked.
+   at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2735)
+WARNING: 6 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Temps forts (choregraphie) : 20 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ENTRACTE2D 1 montre_max=2 temps_fort_debut=3 faits=0
+ENTRACTE2D 2 montre_max=16 temps_fort_debut=17 faits=10
+TERRAIN2D {"ballons":34,"deplacement":4879.09889525053,"faits":11,"minutes":7}
+Temps forts (terrain2d) : 4063 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+MULTIPLEX_REEL {"clubs":14,"matchs":6,"minute":2.0,"nous":1.0}
+Temps forts (multiplex) : 4409 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ENTRACTE {"horloges":5,"premier_s":2.002}
+Temps forts (entracte) : 28 contrôles ; 0 échec(s)
+
+Preuves temps forts : /tmp/tmp.5nhCRAKrUE/suite.I5bBuu/cd-match-temps-forts-B1DsVF · contrôles : repli 16 · gestes 18 · reprise 9 · défaut 72 · chorégraphe 20 · terrain 2D 4063 · journée en direct 4409 · entracte 28
+node:assert:150
+  throw new AssertionError(obj);
+  ^
+
+AssertionError [ERR_ASSERTION]: modes en échec :
+actif : Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Temps forts — cadrage : 120 images, hauteur visible de 13.2 à 18.5 m, ballon hors champ 0 (0 sous le voile d'entrée), images larges visibles 0 []
+Temps forts (actif) : 1568 contrôles ; 1 échec(s)
+FAIL: Les plans du temps fort se sont succédé
+
+
+1 !== 0
+
++ actual - expected
+
++ [
++   'actif : Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n' +
++     '\n' +
++     "Temps forts — cadrage : 120 images, hauteur visible de 13.2 à 18.5 m, ballon hors champ 0 (0 sous le voile d'entrée), images larges visibles 0 []\n" +
++     'Temps forts (actif) : 1568 contrôles ; 1 échec(s)\n' +
++     'FAIL: Les plans du temps fort se sont succédé\n' +
++     '\n' +
++     '\n' +
++     '1 !== 0\n'
++ ]
+- []
+
+    at Object.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.cjs:127:8)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [
+    'actif : Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n' +
+      '\n' +
+      "Temps forts — cadrage : 120 images, hauteur visible de 13.2 à 18.5 m, ballon hors champ 0 (0 sous le voile d'entrée), images larges visibles 0 []\n" +
+      'Temps forts (actif) : 1568 contrôles ; 1 échec(s)\n' +
+      'FAIL: Les plans du temps fort se sont succédé\n' +
+      '\n' +
+      '\n' +
+      '1 !== 0\n'
+  ],
+  expected: [],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.5
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/godot-match-temps-forts.cjs user_s=700.50 system_s=57.79 wall_s=628.53 cpu_pct=120% max_rss_kb=2746008
+::error file=tests/godot-match-temps-forts.cjs::Godot : ECHEC (1), durée 629 s, limite 900s
+::endgroup::
+::group::tests/godot-match-temps-forts.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Temps forts (inactif) : 16 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Temps forts — cadrage : 122 images, hauteur visible de 13.2 à 19.0 m, ballon hors champ 0 (0 sous le voile d'entrée), images larges visibles 0 []
+Temps forts (actif) : 1568 contrôles ; 1 échec(s)
+FAIL: Les plans du temps fort se sont succédé
+
+ECHEC mode actif
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Hauteur visible minimale pendant les gestes : 7.5 m
+Temps forts et gestes — cadrage : 1005 images, hauteur visible de 7.5 à 38.0 m, ballon hors champ 0 (0 sous le voile d'entrée), images larges visibles 0 []
+Pause demandée pendant un temps fort : true (minute 25)
+Temps forts (gestes) : 18 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Temps forts (reprise) : 9 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Mi-temps à la minute 40 · causerie retenue par un temps fort : true
+Fin du match à la minute 80 · débrief retenu par un temps fort : true · score [39.0, 27.0] · arrêts sur carton repris : 0
+Réactions du stade : 20 · son actif : true · plans montrés : ["lineout", "setpiece-win", "hand-fault", "penalty", "goal", "carry", "try", "transformation", "scrum", "kick", "touch", "card", "reception", "turnover", "ingoal", "goalLine", "setpiece-loss"]
+Liaisons jouées : ["touche (coupe) 4.5 s"]
+Temps forts (defaut) : 72 contrôles ; 0 échec(s)
+WARNING: 3 RIDs of type "CanvasItem" were leaked.
+   at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2735)
+WARNING: 6 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Temps forts (choregraphie) : 20 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ENTRACTE2D 1 montre_max=2 temps_fort_debut=3 faits=0
+ENTRACTE2D 2 montre_max=16 temps_fort_debut=17 faits=10
+TERRAIN2D {"ballons":33,"deplacement":4867.98512941131,"faits":28,"minutes":7}
+Temps forts (terrain2d) : 343 contrôles ; 69 échec(s)
+FAIL: Fenêtre ouverte : le match est en pause
+FAIL: 1920×1080 : l'écran intermédiaire tient dans la fenêtre (état 1, visible false)
+FAIL: 1920×1080 : Mon XV en barre basse, une carte par joueur
+FAIL: 1920×1080 : le banc dans son cadre
+FAIL: 1920×1080 : XV adverse par le lien de Mon XV
+FAIL: 1920×1080 : frise de domination visible (90 px)
+FAIL: 1920×1080 : carte de Gabi à l'écran
+FAIL: 1920×1080 : terrain 2D en grand au centre ((320.0, 208.0))
+FAIL: 1920×1080 : événements à gauche, compositions autour du terrain, Mon XV en bas
+FAIL: 1920×1080 : dernier fait au-dessus du terrain, sans chevauchement ([P: (24.0, 172.0), S: (70.0, 20.0)] / [P: (24.0, 172.0), S: (320.0, 208.0)])
+FAIL: 1920×1080 : la page tient dans l'écran intermédiaire ([P: (24.0, 172.0), S: (1872.0, 1852.0)] dans [P: (24.0, 163.0), S: (1872.0, 817.0)], minimum 1852)
+FAIL: 1920×1080 : marge sous le pied des raccourcis ([P: (24.0, 172.0), S: (21.0, 21.0)], bas de l'écran intermédiaire 980)
+FAIL: 1920×1080 : domination sous le terrain
+FAIL: 1920×1080 : carte de Gabi en tête de la colonne de gauche ([P: (24.0, 172.0), S: (202.0, 142.0)])
+FAIL: 2560×1440 : l'écran intermédiaire tient dans la fenêtre (état 1, visible false)
+FAIL: 2560×1440 : Mon XV en barre basse, une carte par joueur
+FAIL: 2560×1440 : le banc dans son cadre
+FAIL: 2560×1440 : XV adverse par le lien de Mon XV
+FAIL: 2560×1440 : frise de domination visible (120 px)
+FAIL: 2560×1440 : carte de Gabi à l'écran
+FAIL: 2560×1440 : terrain 2D en grand au centre ((420.0, 277.0))
+FAIL: 2560×1440 : événements à gauche, compositions autour du terrain, Mon XV en bas
+FAIL: 2560×1440 : dernier fait au-dessus du terrain, sans chevauchement ([P: (32.0, 224.0), S: (87.0, 26.0)] / [P: (32.0, 224.0), S: (420.0, 277.0)])
+FAIL: 2560×1440 : la page tient dans l'écran intermédiaire ([P: (32.0, 224.0), S: (2496.0, 2330.0)] dans [P: (32.0, 212.0), S: (2496.0, 1100.0)], minimum 2330)
+FAIL: 2560×1440 : marge sous le pied des raccourcis ([P: (32.0, 224.0), S: (28.0, 28.0)], bas de l'écran intermédiaire 1312)
+FAIL: 2560×1440 : domination sous le terrain
+FAIL: 2560×1440 : carte de Gabi en tête de la colonne de gauche ([P: (32.0, 224.0), S: (254.0, 180.0)])
+FAIL: Entracte avec la journée 1920×1080 : classement et multiplex de dix matchs (10 cartes ; classement false, multiplex false)
+FAIL: Entracte avec la journée 1920×1080 : la page tient dans l'écran intermédiaire ([P: (24.0, 172.0), S: (1872.0, 2012.0)] dans [P: (24.0, 163.0), S: (1872.0, 817.0)], minimum 2012)
+FAIL: Entracte avec la journée 1920×1080 : marge sous le pied des raccourcis ([P: (24.0, 172.0), S: (21.0, 21.0)], bas de l'écran intermédiaire 980)
+FAIL: Entracte avec la journée 1920×1080 : dix matchs, fondu et « › » au bord droit du multiplex
+FAIL: Entracte avec la journée 1920×1080 : Gabi reste entier à l'écran ([P: (24.0, 172.0), S: (202.0, 142.0)])
+FAIL: Entracte avec la journée 2560×1440 : classement et multiplex de dix matchs (10 cartes ; classement false, multiplex false)
+FAIL: Entracte avec la journée 2560×1440 : la page tient dans l'écran intermédiaire ([P: (32.0, 224.0), S: (2496.0, 2530.0)] dans [P: (32.0, 212.0), S: (2496.0, 1100.0)], minimum 2530)
+FAIL: Entracte avec la journée 2560×1440 : marge sous le pied des raccourcis ([P: (32.0, 224.0), S: (28.0, 28.0)], bas de l'écran intermédiaire 1312)
+FAIL: Entracte avec la journée 2560×1440 : dix matchs, fondu et « › » au bord droit du multiplex
+FAIL: Entracte avec la journée 2560×1440 : Gabi reste entier à l'écran ([P: (32.0, 224.0), S: (254.0, 180.0)])
+FAIL: Entracte avec deux matchs : la rangée tient, pas de fondu (2 cartes, rangée 802 px dans 0)
+FAIL: Pilotage : les faits marquants restent à l'écran
+FAIL: Mon XV : moral « Gonflé à bloc ▲ » du 1 (Gonflé à bloc ▲)
+FAIL: Mon XV : moral « Concentré » du 2 (Concentré)
+FAIL: Mon XV : moral « Abattu ▼ » du 3 (Abattu ▼)
+FAIL: 1920×1080 : l'écran intermédiaire tient dans la fenêtre (état 1, visible false)
+FAIL: 1920×1080 : Mon XV en barre basse, une carte par joueur
+FAIL: 1920×1080 : le banc dans son cadre
+FAIL: 1920×1080 : XV adverse par le lien de Mon XV
+FAIL: 1920×1080 : frise de domination visible (90 px)
+FAIL: 1920×1080 : carte de Gabi à l'écran
+FAIL: 1920×1080 : terrain 2D en grand au centre ((320.0, 208.0))
+FAIL: 1920×1080 : événements à gauche, compositions autour du terrain, Mon XV en bas
+FAIL: 1920×1080 : dernier fait au-dessus du terrain, sans chevauchement ([P: (24.0, 172.0), S: (70.0, 20.0)] / [P: (24.0, 172.0), S: (320.0, 208.0)])
+FAIL: 1920×1080 : la page tient dans l'écran intermédiaire ([P: (24.0, 172.0), S: (1872.0, 1852.0)] dans [P: (24.0, 163.0), S: (1872.0, 817.0)], minimum 1852)
+FAIL: 1920×1080 : marge sous le pied des raccourcis ([P: (24.0, 172.0), S: (21.0, 21.0)], bas de l'écran intermédiaire 980)
+FAIL: 1920×1080 : domination sous le terrain
+FAIL: 1920×1080 : carte de Gabi en tête de la colonne de gauche ([P: (24.0, 172.0), S: (202.0, 142.0)])
+FAIL: 2560×1440 : l'écran intermédiaire tient dans la fenêtre (état 1, visible false)
+FAIL: 2560×1440 : Mon XV en barre basse, une carte par joueur
+FAIL: 2560×1440 : le banc dans son cadre
+FAIL: 2560×1440 : XV adverse par le lien de Mon XV
+FAIL: 2560×1440 : frise de domination visible (120 px)
+FAIL: 2560×1440 : carte de Gabi à l'écran
+FAIL: 2560×1440 : terrain 2D en grand au centre ((420.0, 277.0))
+FAIL: 2560×1440 : événements à gauche, compositions autour du terrain, Mon XV en bas
+FAIL: 2560×1440 : dernier fait au-dessus du terrain, sans chevauchement ([P: (32.0, 224.0), S: (87.0, 26.0)] / [P: (32.0, 224.0), S: (420.0, 277.0)])
+FAIL: 2560×1440 : la page tient dans l'écran intermédiaire ([P: (32.0, 224.0), S: (2496.0, 2330.0)] dans [P: (32.0, 212.0), S: (2496.0, 1100.0)], minimum 2330)
+FAIL: 2560×1440 : marge sous le pied des raccourcis ([P: (32.0, 224.0), S: (28.0, 28.0)], bas de l'écran intermédiaire 1312)
+FAIL: 2560×1440 : domination sous le terrain
+FAIL: 2560×1440 : carte de Gabi en tête de la colonne de gauche ([P: (32.0, 224.0), S: (254.0, 180.0)])
+FAIL: Sans pilotage : le dernier fait reste à l'écran
+
+ECHEC mode terrain2d
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+MULTIPLEX_REEL {"clubs":14,"matchs":6,"minute":2.0,"nous":1.0}
+Temps forts (multiplex) : 4409 contrôles ; 0 échec(s)
+
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ENTRACTE {"horloges":5,"premier_s":2.038}
+Temps forts (entracte) : 28 contrôles ; 0 échec(s)
+
+Preuves temps forts : /tmp/tmp.5nhCRAKrUE/suite.rq6mfb/cd-match-temps-forts-wDtPAu · contrôles : repli 16 · gestes 18 · reprise 9 · défaut 72 · chorégraphe 20 · journée en direct 4409 · entracte 28
+node:assert:150
+  throw new AssertionError(obj);
+  ^
+
+AssertionError [ERR_ASSERTION]: modes en échec :
+actif : Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Temps forts — cadrage : 122 images, hauteur visible de 13.2 à 19.0 m, ballon hors champ 0 (0 sous le voile d'entrée), images larges visibles 0 []
+Temps forts (actif) : 1568 contrôles ; 1 échec(s)
+FAIL: Les plans du temps fort se sont succédé
+
+
+1 !== 0
+
+
+terrain2d : Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ENTRACTE2D 1 montre_max=2 temps_fort_debut=3 faits=0
+ENTRACTE2D 2 montre_max=16 temps_fort_debut=17 faits=10
+TERRAIN2D {"ballons":33,"deplacement":4867.98512941131,"faits":28,"minutes":7}
+Temps forts (terrain2d) : 343 contrôles ; 69 échec(s)
+FAIL: Fenêtre ouverte : le match est en pause
+FAIL: 1920×1080 : l'écran intermédiaire tient dans la fenêtre (état 1, visible false)
+FAIL: 1920×1080 : Mon XV en barre basse, une carte par joueur
+FAIL: 1920×1080 : le banc dans son cadre
+FAIL: 1920×1080 : XV adverse par le lien de Mon XV
+FAIL: 1920×1080 : frise de domination visible (90 px)
+FAIL: 1920×1080 : carte de Gabi à l'écran
+FAIL: 1920×1080 : terrain 2D en grand au centre ((320.0, 208.0))
+FAIL: 1920×1080 : événements à gauche, compositions autour du terrain, Mon XV en bas
+FAIL: 1920×1080 : dernier fait au-dessus du terrain, sans chevauchement ([P: (24.0, 172.0), S: (70.0, 20.0)] / [P: (24.0, 172.0), S: (320.0, 208.0)])
+FAIL: 1920×1080 : la page tient dans l'écran intermédiaire ([P: (24.0, 172.0), S: (1872.0, 1852.0)] dans [P: (24.0, 163.0), S: (1872.0, 817.0)], minimum 1852)
+FAIL: 1920×1080 : marge sous le pied des raccourcis ([P: (24.0, 172.0), S: (21.0, 21.0)], bas de l'écran intermédiaire 980)
+FAIL: 1920×1080 : domination sous le terrain
+FAIL: 1920×1080 : carte de Gabi en tête de la colonne de gauche ([P: (24.0, 172.0), S: (202.0, 142.0)])
+FAIL: 2560×1440 : l'écran intermédiaire tient dans la fenêtre (état 1, visible false)
+FAIL: 2560×1440 : Mon XV en barre basse, une carte par joueur
+FAIL: 2560×1440 : le banc dans son cadre
+FAIL: 2560×1440 : XV adverse par le lien de Mon XV
+FAIL: 2560×1440 : frise de domination visible (120 px)
+FAIL: 2560×1440 : carte de Gabi à l'écran
+FAIL: 2560×1440 : terrain 2D en grand au centre ((420.0, 277.0))
+FAIL: 2560×1440 : événements à gauche, compositions autour du terrain, Mon XV en bas
+FAIL: 2560×1440 : dernier fait au-dessus du terrain, sans chevauchement ([P: (32.0, 224.0), S: (87.0, 26.0)] / [P: (32.0, 224.0), S: (420.0, 277.0)])
+FAIL: 2560×1440 : la page tient dans l'écran intermédiaire ([P: (32.0, 224.0), S: (2496.0, 2330.0)] dans [P: (32.0, 212.0), S: (2496.0, 1100.0)], minimum 2330)
+FAIL: 2560×1440 : marge sous le pied des raccourcis ([P: (32.0, 224.0), S: (28.0, 28.0)], bas de l'écran intermédiaire 1312)
+FAIL: 2560×1440 : domination sous le terrain
+FAIL: 2560×1440 : carte de Gabi en tête de la colonne de gauche ([P: (32.0, 224.0), S: (254.0, 180.0)])
+FAIL: Entracte avec la journée 1920×1080 : classement et multiplex de dix matchs (10 cartes ; classement false, multiplex false)
+FAIL: Entracte avec la journée 1920×1080 : la page tient dans l'écran intermédiaire ([P: (24.0, 172.0), S: (1872.0, 2012.0)] dans [P: (24.0, 163.0), S: (1872.0, 817.0)], minimum 2012)
+FAIL: Entracte avec la journée 1920×1080 : marge sous le pied des raccourcis ([P: (24.0, 172.0), S: (21.0, 21.0)], bas de l'écran intermédiaire 980)
+FAIL: Entracte avec la journée 1920×1080 : dix matchs, fondu et « › » au bord droit du multiplex
+FAIL: Entracte avec la journée 1920×1080 : Gabi reste entier à l'écran ([P: (24.0, 172.0), S: (202.0, 142.0)])
+FAIL: Entracte avec la journée 2560×1440 : classement et multiplex de dix matchs (10 cartes ; classement false, multiplex false)
+FAIL: Entracte avec la journée 2560×1440 : la page tient dans l'écran intermédiaire ([P: (32.0, 224.0), S: (2496.0, 2530.0)] dans [P: (32.0, 212.0), S: (2496.0, 1100.0)], minimum 2530)
+FAIL: Entracte avec la journée 2560×1440 : marge sous le pied des raccourcis ([P: (32.0, 224.0), S: (28.0, 28.0)], bas de l'écran intermédiaire 1312)
+FAIL: Entracte avec la journée 2560×1440 : dix matchs, fondu et « › » au bord droit du multiplex
+FAIL: Entracte avec la journée 2560×1440 : Gabi reste entier à l'écran ([P: (32.0, 224.0), S: (254.0, 180.0)])
+FAIL: Entracte avec deux matchs : la rangée tient, pas de fondu (2 cartes, rangée 802 px dans 0)
+FAIL: Pilotage : les faits marquants restent à l'écran
+FAIL: 
++ actual - expected
+
++ [
++   'actif : Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n' +
++     '\n' +
++     "Temps forts — cadrage : 122 images, hauteur visible de 13.2 à 19.0 m, ballon hors champ 0 (0 sous le voile d'entrée), images larges visibles 0 []\n" +
++     'Temps forts (actif) : 1568 contrôles ; 1 échec(s)\n' +
++     'FAIL: Les plans du temps fort se sont succédé\n' +
++     '\n' +
++     '\n' +
++     '1 !== 0\n',
++   'terrain2d : Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n' +
++     '\n' +
++     'ENTRACTE2D 1 montre_max=2 temps_fort_debut=3 faits=0\n' +
++     'ENTRACTE2D 2 montre_max=16 temps_fort_debut=17 faits=10\n' +
++     'TERRAIN2D {"ballons":33,"deplacement":4867.98512941131,"faits":28,"minutes":7}\n' +
++     'Temps forts (terrain2d) : 343 contrôles ; 69 échec(s)\n' +
++     'FAIL: Fenêtre ouverte : le match est en pause\n' +
++     "FAIL: 1920×1080 : l'écran intermédiaire tient dans la fenêtre (état 1, visible false)\n" +
++     'FAIL: 1920×1080 : Mon XV en barre basse, une carte par joueur\n' +
++     'FAIL: 1920×1080 : le banc dans son cadre\n' +
++     'FAIL: 1920×1080 : XV adverse par le lien de Mon XV\n' +
++     'FAIL: 1920×1080 : frise de domination visible (90 px)\n' +
++     "FAIL: 1920×1080 : carte de Gabi à l'écran\n" +
++     'FAIL: 1920×1080 : terrain 2D en grand au centre ((320.0, 208.0))\n' +
++     'FAIL: 1920×1080 : événements à gauche, compositions autour du terrain, Mon XV en bas\n' +
++     'FAIL: 1920×1080 : dernier fait au-dessus du terrain, sans chevauchement ([P: (24.0, 172.0), S: (70.0, 20.0)] / [P: (24.0, 172.0), S: (320.0, 208.0)])\n' +
++     "FAIL: 1920×1080 : la page tient dans l'écran intermédiaire ([P: (24.0, 172.0), S: (1872.0, 1852.0)] dans [P: (24.0, 163.0), S: (1872.0, 817.0)], minimum 1852)\n" +
++     "FAIL: 1920×1080 : marge sous le pied des raccourcis ([P: (24.0, 172.0), S: (21.0, 21.0)], bas de l'écran intermédiaire 980)\n" +
++     'FAIL: 1920×1080 : domination sous le terrain\n' +
++     'FAIL: 1920×1080 : carte de Gabi en tête de la colonne de gauche ([P: (24.0, 172.0), S: (202.0, 142.0)])\n' +
++     "FAIL: 2560×1440 : l'écran intermédiaire tient dans la fenêtre (état 1, visible false)\n" +
++     'FAIL: 2560×1440 : Mon XV en barre basse, une carte par joueur\n' +
++     'FAIL: 2560×1440 : le banc dans son cadre\n' +
++     'FAIL: 2560×1440 : XV adverse par le lien de Mon XV\n' +
++     'FAIL: 2560×1440 : frise de domination visible (120 px)\n' +
++     "FAIL: 2560×1440 : carte de Gabi à l'écran\n" +
++     'FAIL: 2560×1440 : terrain 2D en grand au centre ((420.0, 277.0))\n' +
++     'FAIL: 2560×1440 : événements à gauche, compositions autour du terrain, Mon XV en bas\n' +
++     'FAIL: 2560×1440 : dernier fait au-dessus du terrain, sans chevauchement ([P: (32.0, 224.0), S: (87.0, 26.0)] / [P: (32.0, 224.0), S: (420.0, 277.0)])\n' +
++     "FAIL: 2560×1440 : la page tient dans l'écran intermédiaire ([P: (32.0, 224.0), S: (2496.0, 2330.0)] dans [P: (32.0, 212.0), S: (2496.0, 1100.0)], minimum 2330)\n" +
++     "FAIL: 2560×1440 : marge sous le pied des raccourcis ([P: (32.0, 224.0), S: (28.0, 28.0)], bas de l'écran intermédiaire 1312)\n" +
++     'FAIL: 2560×1440 : domination sous le terrain\n' +
++     'FAIL: 2560×1440 : carte de Gabi en tête de la colonne de gauche ([P: (32.0, 224.0), S: (254.0, 180.0)])\n' +
++     'FAIL: Entracte avec la journée 1920×1080 : classement et multiplex de dix matchs (10 cartes ; classement false, multiplex false)\n' +
++     "FAIL: Entracte avec la journée 1920×1080 : la page tient dans l'écran intermédiaire ([P: (24.0, 172.0), S: (1872.0, 2012.0)] dans [P: (24.0, 163.0), S: (1872.0, 817.0)], minimum 2012)\n" +
++     "FAIL: Entracte avec la journée 1920×1080 : marge sous le pied des raccourcis ([P: (24.0, 172.0), S: (21.0, 21.0)], bas de l'écran intermédiaire 980)\n" +
++     'FAIL: Entracte avec la journée 1920×1080 : dix matchs, fondu et « › » au bord droit du multiplex\n' +
++     "FAIL: Entracte avec la journée 1920×1080 : Gabi reste entier à l'écran ([P: (24.0, 172.0), S: (202.0, 142.0)])\n" +
++     'FAIL: Entracte avec la journée 2560×1440 : classement et multiplex de dix matchs (10 cartes ; classement false, multiplex false)\n' +
++     "FAIL: Entracte avec la journée 2560×1440 : la page tient dans l'écran intermédiaire ([P: (32.0, 224.0), S: (2496.0, 2530.0)] dans [P: (32.0, 212.0), S: (2496.0, 1100.0)], minimum 2530)\n" +
++     "FAIL: Entracte avec la journée 2560×1440 : marge sous le pied des raccourcis ([P: (32.0, 224.0), S: (28.0, 28.0)], bas de l'écran intermédiaire 1312)\n" +
++     'FAIL: Entracte avec la journée 2560×1440 : dix matchs, fondu et « › » au bord droit du multiplex\n' +
++     "FAIL: Entracte avec la journée 2560×1440 : Gabi reste entier à l'écran ([P: (32.0, 224.0), S: (254.0, 180.0)])\n" +
++     'FAIL: Entracte avec deux matchs : la rangée tient, pas de fondu (2 cartes, rangée 802 px dans 0)\n' +
++     "FAIL: Pilotage : les faits marquants restent à l'écran\n" +
++     'FAIL: '
++ ]
+- []
+
+    at Object.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.cjs:127:8)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [
+    'actif : Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n' +
+      '\n' +
+      "Temps forts — cadrage : 122 images, hauteur visible de 13.2 à 19.0 m, ballon hors champ 0 (0 sous le voile d'entrée), images larges visibles 0 []\n" +
+      'Temps forts (actif) : 1568 contrôles ; 1 échec(s)\n' +
+      'FAIL: Les plans du temps fort se sont succédé\n' +
+      '\n' +
+      '\n' +
+      '1 !== 0\n',
+    'terrain2d : Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n' +
+      '\n' +
+      'ENTRACTE2D 1 montre_max=2 temps_fort_debut=3 faits=0\n' +
+      'ENTRACTE2D 2 montre_max=16 temps_fort_debut=17 faits=10\n' +
+      'TERRAIN2D {"ballons":33,"deplacement":4867.98512941131,"faits":28,"minutes":7}\n' +
+      'Temps forts (terrain2d) : 343 contrôles ; 69 échec(s)\n' +
+      'FAIL: Fenêtre ouverte : le match est en pause\n' +
+      "FAIL: 1920×1080 : l'écran intermédiaire tient dans la fenêtre (état 1, visible false)\n" +
+      'FAIL: 1920×1080 : Mon XV en barre basse, une carte par joueur\n' +
+      'FAIL: 1920×1080 : le banc dans son cadre\n' +
+      'FAIL: 1920×1080 : XV adverse par le lien de Mon XV\n' +
+      'FAIL: 1920×1080 : frise de domination visible (90 px)\n' +
+      "FAIL: 1920×1080 : carte de Gabi à l'écran\n" +
+      'FAIL: 1920×1080 : terrain 2D en grand au centre ((320.0, 208.0))\n' +
+      'FAIL: 1920×1080 : événements à gauche, compositions autour du terrain, Mon XV en bas\n' +
+      'FAIL: 1920×1080 : dernier fait au-dessus du terrain, sans chevauchement ([P: (24.0, 172.0), S: (70.0, 20.0)] / [P: (24.0, 172.0), S: (320.0, 208.0)])\n' +
+      "FAIL: 1920×1080 : la page tient dans l'écran intermédiaire ([P: (24.0, 172.0), S: (1872.0, 1852.0)] dans [P: (24.0, 163.0), S: (1872.0, 817.0)], minimum 1852)\n" +
+      "FAIL: 1920×1080 : marge sous le pied des raccourcis ([P: (24.0, 172.0), S: (21.0, 21.0)], bas de l'écran intermédiaire 980)\n" +
+      'FAIL: 1920×1080 : domination sous le terrain\n' +
+      'FAIL: 1920×1080 : carte de Gabi en tête de la colonne de gauche ([P: (24.0, 172.0), S: (202.0, 142.0)])\n' +
+      "FAIL: 2560×1440 : l'écran intermédiaire tient dans la fenêtre (état 1, visible false)\n" +
+      'FAIL: 2560×1440 : Mon XV en barre basse, une carte par joueur\n' +
+      'FAIL: 2560×1440 : le banc dans son cadre\n' +
+      'FAIL: 2560×1440 : XV adverse par le lien de Mon XV\n' +
+      'FAIL: 2560×1440 : frise de domination visible (120 px)\n' +
+      "FAIL: 2560×1440 : carte de Gabi à l'écran\n" +
+      'FAIL: 2560×1440 : terrain 2D en grand au centre ((420.0, 277.0))\n' +
+      'FAIL: 2560×1440 : événements à gauche, compositions autour du terrain, Mon XV en bas\n' +
+      'FAIL: 2560×1440 : dernier fait au-dessus du terrain, sans chevauchement ([P: (32.0, 224.0), S: (87.0, 26.0)] / [P: (32.0, 224.0), S: (420.0, 277.0)])\n' +
+      "FAIL: 2560×1440 : la page tient dans l'écran intermédiaire ([P: (32.0, 224.0), S: (2496.0, 2330.0)] dans [P: (32.0, 212.0), S: (2496.0, 1100.0)], minimum 2330)\n" +
+      "FAIL: 2560×1440 : marge sous le pied des raccourcis ([P: (32.0, 224.0), S: (28.0, 28.0)], bas de l'écran intermédiaire 1312)\n" +
+      'FAIL: 2560×1440 : domination sous le terrain\n' +
+      'FAIL: 2560×1440 : carte de Gabi en tête de la colonne de gauche ([P: (32.0, 224.0), S: (254.0, 180.0)])\n' +
+      'FAIL: Entracte avec la journée 1920×1080 : classement et multiplex de dix matchs (10 cartes ; classement false, multiplex false)\n' +
+      "FAIL: Entracte avec la journée 1920×1080 : la page tient dans l'écran intermédiaire ([P: (24.0, 172.0), S: (1872.0, 2012.0)] dans [P: (24.0, 163.0), S: (1872.0, 817.0)], minimum 2012)\n" +
+      "FAIL: Entracte avec la journée 1920×1080 : marge sous le pied des raccourcis ([P: (24.0, 172.0), S: (21.0, 21.0)], bas de l'écran intermédiaire 980)\n" +
+      'FAIL: Entracte avec la journée 1920×1080 : dix matchs, fondu et « › » au bord droit du multiplex\n' +
+      "FAIL: Entracte avec la journée 1920×1080 : Gabi reste entier à l'écran ([P: (24.0, 172.0), S: (202.0, 142.0)])\n" +
+      'FAIL: Entracte avec la journée 2560×1440 : classement et multiplex de dix matchs (10 cartes ; classement false, multiplex false)\n' +
+      "FAIL: Entracte avec la journée 2560×1440 : la page tient dans l'écran intermédiaire ([P: (32.0, 224.0), S: (2496.0, 2530.0)] dans [P: (32.0, 212.0), S: (2496.0, 1100.0)], minimum 2530)\n" +
+      "FAIL: Entracte avec la journée 2560×1440 : marge sous le pied des raccourcis ([P: (32.0, 224.0), S: (28.0, 28.0)], bas de l'écran intermédiaire 1312)\n" +
+      'FAIL: Entracte avec la journée 2560×1440 : dix matchs, fondu et « › » au bord droit du multiplex\n' +
+      "FAIL: Entracte avec la journée 2560×1440 : Gabi reste entier à l'écran ([P: (32.0, 224.0), S: (254.0, 180.0)])\n" +
+      'FAIL: Entracte avec deux matchs : la rangée tient, pas de fondu (2 cartes, rangée 802 px dans 0)\n' +
+      "FAIL: Pilotage : les faits marquants restent à l'écran\n" +
+      'FAIL: '
+  ],
+  expected: [],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.5
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/godot-match-temps-forts.cjs user_s=700.23 system_s=57.98 wall_s=631.63 cpu_pct=120% max_rss_kb=2746096
+::error file=tests/godot-match-temps-forts.cjs::Godot : ECHEC (1), durée 631 s, limite 900s
+::endgroup::

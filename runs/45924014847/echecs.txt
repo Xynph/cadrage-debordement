@@ -1,0 +1,16 @@
+== suites (2) (code 1)
+FAIL: Les plans du temps fort se sont succédé
+ECHEC mode actif
+  throw new AssertionError(obj);
+AssertionError [ERR_ASSERTION]: modes en échec :
+FAIL: Les plans du temps fort se sont succédé
++     'FAIL: Les plans du temps fort se sont succédé\n' +
+      'FAIL: Les plans du temps fort se sont succédé\n' +
+::error file=tests/godot-match-temps-forts.cjs::Godot : ECHEC (1), durée 629 s, limite 900s
+FAIL: Les plans du temps fort se sont succédé
+ECHEC mode actif
+FAIL: Fenêtre ouverte : le match est en pause
+FAIL: 1920×1080 : l'écran intermédiaire tient dans la fenêtre (état 1, visible false)
+FAIL: 1920×1080 : Mon XV en barre basse, une carte par joueur
+FAIL: 1920×1080 : le banc dans son cadre
+FAIL: 1920×1080 : XV adverse par le lien de Mon XV
