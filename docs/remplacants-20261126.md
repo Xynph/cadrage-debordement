@@ -25,37 +25,35 @@ Rencontres créées avec `remplacantsVersion` (un match commencé avant garde se
   remplacement sur blessure (`native/engine/incidents-match.cjs`).
 - **Incertitude** : aucun texte ni chiffre nouveau à l'écran ; le joueur ne voit jamais le poids d'un changement.
 
-## Mesures
+## Mesures (réglage final, commit 84eb662cd, main refusionné jusqu'à #1361)
 
 Remplacement au poste à la 50e ou 60e, club 102, même affiche et même tirage avec ou sans le changement (200 essais,
-`temp/moteur-match-realisme/k3/mesure.cjs`) — suite changée / marge après le changement, main → branche :
+`temp/moteur-match-realisme/k3/mesure.cjs`) — suite changée, main → branche :
 
-| Changement | 50e suite | 50e marge | 60e suite | 60e marge |
-| --- | --- | --- | --- | --- |
-| Pilier | 23 → 44 % | +0,24 → +0,69 | 15 → 34 % | +0,09 → +0,63 |
-| Troisième ligne | 31 → 56 % | +0,64 → +1,28 | 24 → 44 % | +0,68 → +1,07 |
-| Demi de mêlée | 19 → 47 % | −0,27 → +1,72 | 17 → 32 % | +0,12 → +0,52 |
-| Ailier | 30 → 39 % | +0,13 → +1,12 | 22 → 30 % | +0,40 → +0,52 |
-
-(marge : ± 0,3 à 0,6 d'échantillonnage). Après un changement : moins de pénalités concédées (−0,1 à −0,3), plus de
-porteurs qui avancent (+1,4 à +4,5 points), fautes de main par action en baisse mais un peu plus de ballons joués.
+| Changement | 50e | 60e |
+| --- | --- | --- |
+| Pilier | 15 → 25 % | 12 → 20 % |
+| Troisième ligne | 26 → 40 % | 17 → 30 % |
+| Demi de mêlée | 21 → 32 % | 15 → 27 % |
+| Ailier | 19 → 32 % | 12 → 24 % |
 
 Ordinateur (200 matchs IA contre IA, test) : demi de mêlée mis à l'aile avec un trois-quarts libre 2 → 0 ; sur 150
 matchs toutes compétitions, remplacements hors de la ligne alors que la ligne avait un joueur libre 12 → 0.
 
-### Calage IA contre IA (600 matchs × graines 4242 et 7, `k1/calage.cjs` + remontées)
+### Calage IA contre IA (600 matchs × graines 4242 et 7, `k3/calage-k3.cjs`)
 
 | Championnat | Matchs serrés (≤ 7) | Favori gagne | Remontées (mené 11-14 à la 75e) | Points |
 | --- | --- | --- | --- | --- |
-| Top 14 | 38,5 → 37,4 % | 64,8 → 64,3 % | 25,5 → 23,4 % | 50,6 → 51,3 |
-| Premiership | 40,3 → 38,6 % | 62,4 → 63,9 % | 33,6 → 39,4 % | 57,6 → 57,8 |
-| URC | 37,8 → 37,5 % | 71,7 → 68,5 % | 27,3 → 28,8 % | 51,6 → 51,1 |
+| Top 14 | 38,5 → 39,3 % | 63,7 → 63,4 % | 16,9 → 20,9 % | 50,3 → 51,0 |
+| Premiership | 38,0 → 39,5 % | | 19,7 → 20,9 % | |
 
-Écart d'échantillonnage : ± 2 points (serrés, favori), ± 5 points (remontées, ~130 matchs concernés). Sur les trois
-championnats : serrés 38,9 → 37,8 % (± 0,9), remontées 28,8 → 30,2 % (± 3). Réglage plus fort essayé (+0,25 jeu,
-0,3 faute) : serrés −1,2, suite changée 31-55 % ; retenu le plus doux, qui garde la suite changée nettement au-dessus de main.
+Écart d'échantillonnage : ± 2 points (serrés, favori), ± 5 points (remontées, ~110 à 130 matchs concernés). Depuis #1356
+(défense regroupée à deux scores), les remontées tardives de main sont sous 20 % en Top 14.
 
-### Saisons Monde (6 graines)
+Réglage d'origine de ce lot (jeu 0,18, faute 0,25, élan 0,35 ; suite changée à la 50e 39 à 56 %) : abandonné après la
+refusion de main, voir plus bas. Les saisons Monde ci-dessous ont été mesurées avec ce réglage d'origine, avant #1356.
+
+### Saisons Monde (6 graines, réglage d'origine, main du 26/11)
 
 Carrière Monde, club 102, saison régulière, graines 4242, 7, 2026, 11, 99, 31 (`scripts/mesure-essais-monde.cjs`) —
 réel (docs/realite-matchs-20261125.md) / main / branche :
@@ -68,28 +66,25 @@ réel (docs/realite-matchs-20261125.md) / main / branche :
 | Super Rugby | 56,9 / 57,3 / 57,1 | 7,8 / 7,51 / 7,43 | 35 / 36,3 / 35,2 % | 63 / 64,8 / 62,5 % | — / 74,8 / 70,3 % |
 | Japon D1 | 60,8 / 61,0 / 60,7 | 8,5 / 8,35 / 8,30 | 30 / 34,4 / 29,6 % | 50 / 52,2 / 48,1 % | — / 79,3 / 81,8 % |
 
-Échantillon : 480 à 1 092 matchs par championnat (± 1,5 à 2,2 points). Aucun écart hors de l'échantillonnage ; le
-Japon se rapproche du réel sur les matchs serrés.
+Échantillon : 480 à 1 092 matchs par championnat (± 1,5 à 2,2 points).
 
 ## Test
 
-`tests/match-remplacants.cjs` (rouge sur main, vert ici) : suite changée et marge sur 248 remplacements imposés à la
-50e (camp sans autre changement : suite changée 17 % avant, 50 % après, seuil ≥ 35 % ; marge +0,41, bornée à ± 3) ; sens et
-bornes de chaque effet, remplaçant bien plus faible qui pèse moins ; ordinateur jamais de demi de mêlée à l'aile ni de
-non-talonneur au talon quand le banc a le bon joueur (200 matchs).
+`tests/match-remplacants.cjs` (rouge sur main, vert ici) : suite changée et marge sur les remplacements imposés à la
+50e (camp sans autre changement : suite changée 18,1 % sur main, **36,7 %** ici, seuil ≥ 35 % — marge étroite ; marge
+finale +0,98, main −0,39, bornée à ± 3) ; sens et bornes de chaque effet, remplaçant bien plus faible qui pèse moins ;
+ordinateur jamais de demi de mêlée à l'aile ni de non-talonneur au talon quand le banc a le bon joueur (200 matchs).
 
-## Deux suites existantes rouges (non modifiées, décision de Léo attendue)
+## Suites existantes adaptées (accords de Léo du 27/11/2026)
 
-- `tests/bonus-fin-de-match.cjs` (« viser : plus d'essais marqués ») : la mesure rend les deux XV identiques à la 60e
-  (compétences et condition) mais le club du joueur n'a fait aucun changement alors que l'ordinateur a déjà sorti ses
-  remplaçants ; la fraîcheur départage désormais (victoire de base en menant de 3 : 74 → 57 %). Le miroir devrait aussi
-  égaliser les remplacements (ou le club du joueur remplacer comme l'ordinateur).
-- `tests/match-consignes-direct.cjs` : 24 matchs à graines fixes, seuils de « suite changée » au bord (touche sûre
-  17 % pour 25 %). Même cause (club du joueur sans changement face à un ordinateur qui change).
-- Essais pour les garder vertes sans toucher aux tests : plafonner l'écart de fraîcheur d'un camp (tanh, 0,1 à 0,2)
-  ou ne garder que l'élan d'entrée. Le bonus repasse vert, mais un remplacement du joueur après ceux de l'ordinateur ne
-  pèse presque plus rien (suite changée retombée à 13-36 %, niveau de main) et la suite des consignes reste au bord du
-  seuil selon la graine (relance, touche, tout tenter). Non retenu.
+- `tests/bonus-fin-de-match.cjs` : la mesure (`scripts/mesure-bonus-fin-de-match.cjs`) fait remplacer le club du joueur
+  avec les règles de l'ordinateur (armes égales), minutes jouées recopiées par le miroir. « Viser » : 1,35 essai contre
+  0,74 (sans cela 1,06 contre 0,90, rouge).
+- `tests/match-consignes-direct.cjs` : 24 → 192 matchs, mêmes graines de départ, seuils et assertions inchangés. 96 matchs
+  ne suffisent pas (rouge : relance=dégager 29 % pour 30 %, main compris) ; à 192 : main relance 31 % / touche sûre 34 %,
+  branche 34 % / 27 %.
+- Essais écartés pour garder ces suites sans les toucher : plafonner l'écart de fraîcheur d'un camp (tanh, 0,1 à 0,2)
+  ou ne garder que l'élan d'entrée : un remplacement du joueur ne pesait presque plus rien (13-36 %, niveau de main).
 
 ## Réglage du 27/11 après refusion de main (remontées tardives #1356, fautes de main #1353)
 Avec l'ancien réglage (jeu 0,18, main 0,06, faute 0,25, mêlée 0,2, élan 0,35), trois mesures existantes tombaient :
