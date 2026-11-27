@@ -127,9 +127,11 @@ func run() -> void:
 		await reprendre_arret()
 		await settle(2)
 	print("CRIS_BANC minute %d atteinte en %d s" % [int(live().get("minute", 0)), (Time.get_ticks_msec() - depart) / 1000])
+	# Vitesse normale AVANT l'agrandissement : sous rendu logiciel (CI), les 30 images du changement de taille durent
+	# des dizaines de secondes ; à 16x le match filait plusieurs minutes (runs 45911652717, 45919818738).
+	Engine.time_scale = 1.0
 	await taille(Vector2i(1920, 1080))
 	check(await until(func(): return surface() != null and vue_2d(surface()), 240000), "Écran 2D du direct")
-	Engine.time_scale = 1.0
 	# Match en pause sur l'écran 2D pendant les clics et les captures (un temps fort 3D masquerait la barre) ; les cris
 	# et la file marchent aussi match lancé (le ballon reste vivant : la permutation attend le prochain arrêt).
 	await command("pause", {"paused": true})
@@ -241,7 +243,9 @@ func run() -> void:
 	await settle(8)
 	check(calque_pose and deroulant() == null and not bool(bouton(between, "MatchBetweenShouts").get_meta("ouvert", true)), "un clic à côté ferme le menu")
 	# Pendant un temps fort 3D, le bouton « Cris » reste un vrai bouton : son menu s'ouvre sous lui (jamais de faux bouton).
-	await menu_en_3d()
+	if not await menu_en_3d():
+		finir()
+		return
 	view = surface()
 	between = view.regie.between
 	# Toutes les petites fenêtres de l'écran 2D en anthracite satiné (choix B de Léo), captures en 1920.
@@ -400,6 +404,9 @@ func liste_en_place() -> void:
 	# Sur un poste lent (CI sans carte graphique), les 2 minutes passent en peu d'images 2D : on continue de jouer
 	# jusqu'à avoir observé assez d'images, sans rien baisser du seuil de 10 images.
 	while (int(live().get("minute", 0)) < m0 + 2 or images < 10) and not live().get("finished", false) and Time.get_ticks_msec() - depart < 240000:
+		# 2 minutes jouées : la suite des 10 images se compte à vitesse normale (même seuil), pour ne pas filer vers la
+		# mi-temps sur un poste à quelques images par seconde.
+		if int(live().get("minute", 0)) >= m0 + 2: Engine.time_scale = 1.0
 		await process_frame
 		var v := surface()
 		if v == null or not vue_2d(v): continue
@@ -493,13 +500,40 @@ func finir() -> void:
 
 ## Match lancé jusqu'à un temps fort 3D, mis en pause dessus : le bouton « Cris » est visible et son menu s'ouvre
 ## sous lui, par-dessus la 3D ; Échap le ferme ; retour à l'écran 2D.
-func menu_en_3d() -> void:
-	await command("pause", {"paused": false})
-	Engine.time_scale = 8.0
-	var en_3d := await until(func(): return surface() != null and surface().regie != null and surface().regie.etat != surface().regie.INTER and not surface().regie.between.is_visible_in_tree(), 240000)
-	await command("pause", {"paused": true})
+func direct_ouvert() -> bool:
+	return surface() != null and surface().regie != null
+
+## Temps fort 3D à l'écran (pas la sortie des joueurs de la mi-temps, qui ferme le direct).
+func temps_fort_3d() -> bool:
+	if not direct_ouvert(): return false
+	var r: Node = surface().regie
+	return r.etat != r.INTER and r.etat != r.SORTIE and not r.between.is_visible_in_tree()
+
+## Direct fermé (mi-temps, fin) pendant une attente : échec avec la minute, au lieu d'une erreur sur un nœud disparu.
+func garde_direct(etape: String) -> bool:
+	if direct_ouvert(): return true
+	check(false, "%s : le direct s'est fermé avant (minute %d, écran %s)" % [etape, int(live().get("minute", 0)), str(app.contextual_director.kind)])
+	return false
+
+func menu_en_3d() -> bool:
+	# Attente en temps réel (240 s) d'un temps fort 3D, match à 8x ; dès qu'il paraît, vitesse normale AVANT la pause
+	# pour qu'il soit encore à l'écran quand elle arrive (sous rendu logiciel, la pause demandée à 8x tombait après
+	# lui, voire après la mi-temps : run 45919818738). Fini avant la pause : on relance et on attend le suivant.
+	var en_3d := false
+	var limite := Time.get_ticks_msec() + 240000
+	while not en_3d and direct_ouvert() and not live().get("finished", false) and Time.get_ticks_msec() < limite:
+		if bool(live().get("paused", false)): await command("pause", {"paused": false})
+		Engine.time_scale = 8.0
+		await until(func(): return temps_fort_3d() or not direct_ouvert() or live().get("finished", false), maxi(limite - Time.get_ticks_msec(), 0))
+		Engine.time_scale = 1.0
+		if not temps_fort_3d(): break
+		await command("pause", {"paused": true})
+		await settle(10)
+		en_3d = temps_fort_3d()
 	Engine.time_scale = 1.0
-	await settle(10)
+	if not garde_direct("Temps fort 3D"): return false
+	if not en_3d and not bool(live().get("paused", false)): await command("pause", {"paused": true})
+	print("CRIS_BANC temps fort 3D : %s, minute %d" % [en_3d, int(live().get("minute", 0))])
 	check(en_3d and not surface().regie.between.is_visible_in_tree(), "temps fort 3D à l'écran, match en pause")
 	var b := bouton(null, "MatchBetweenShouts")
 	if b != null and b.is_visible_in_tree():
@@ -531,10 +565,11 @@ func menu_en_3d() -> void:
 	else:
 		# Sinon le bouton doit être caché (jamais un bouton qui ne fait rien).
 		check(b == null, "en 3D : bouton « Cris » visible mais sans menu")
+	# Retour à l'écran 2D à vitesse normale (un temps fort se termine en quelques secondes) : à 8x, le match pouvait
+	# atteindre la mi-temps avant la pause sur un poste lent.
 	await command("pause", {"paused": false})
-	Engine.time_scale = 8.0
-	await until(func(): return surface() != null and vue_2d(surface()), 240000)
-	Engine.time_scale = 1.0
+	await until(func(): return not direct_ouvert() or vue_2d(surface()), 240000)
 	await command("pause", {"paused": true})
-	await until(func(): return surface() != null and vue_2d(surface()), 60000)
+	await until(func(): return not direct_ouvert() or vue_2d(surface()), 60000)
+	return garde_direct("Retour à l'écran 2D après le temps fort 3D")
 	await settle(10)
