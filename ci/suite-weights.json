@@ -252,7 +252,7 @@
       "tests/v35-salary-demand.cjs": 2,
       "tests/v63-1-long-career.cjs": 76,
       "tests/v63-2-stress-native.cjs": 104,
-      "tests/vente-joueurs.cjs": 200,
+      "tests/vente-joueurs.cjs": 400,
       "tests/calendrier-mutations.cjs": 120,
       "tests/clubs-geres-mutations.cjs": 120,
       "tests/effectif-sans-plancher.cjs": 120,
