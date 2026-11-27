@@ -81,9 +81,17 @@ func press_from_mail() -> bool:
 		var available := action != null and action.is_visible_in_tree() and not action.disabled
 		check(available,"Accès public à la conférence : "+id)
 		if not available: return false
-		await enter(action)
-	check(app.route == "Presse","Le courrier ouvre sa conférence existante")
-	return app.route == "Presse"
+		if id != "InboxOpenPressInvitation": await enter(action)
+	# Carrière Monde : « Ouvrir la conférence » mène à la salle de presse (rendez-vous du club) ; la page Presse à onglets
+	# s'ouvre depuis le menu (comme godot-presse-da). Le courrier est donc vérifié jusqu'à son bouton, puis la page ouverte du menu.
+	app._navigate("Presse"); await settle(); await settle()
+	check(app.route == "Presse" and named("PressTabs") != null,"La page Presse s'ouvre depuis le menu")
+	# Origine du courrier posée après l'ouverture de la page (sinon la salle prend la main), comme godot-presse-da.
+	app.set_meta("press_mail_origin",str(app.model.clubLife.press.conference.get("invitationId","")))
+	var page:=app.find_child("CarnetPresse",true,false)
+	if page!=null: page._select(1)
+	await settle();await settle()
+	return app.route == "Presse" and named("PressTabs") != null
 func density_contract() -> void:
 	# Catches the old 1080p cap: a 1440p desktop must gain canvas space,
 	# rather than enlarge the same controls by 4/3.
