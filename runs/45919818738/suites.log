@@ -1,0 +1,24 @@
+::group::tests/godot-cris-banc.cjs
+CRIS_BANC minute 22 atteinte en 29 s
+CRIS_BANC taille (1920, 1080) : terrain 358 / 412 px (87 %), pastilles 4.13 px
+CRIS_BANC taille (2560, 1440) : terrain 481 / 551 px (87 %), pastilles 6.06 px
+CRIS_BANC liste : minutes 28 -> 31, 10 images 2D
+SCRIPT ERROR: Invalid access to property or key 'regie' on a base object of type 'Nil'.
+Command exited with non-zero status 1
+CD_CPU_PROFILE suite=tests/godot-cris-banc.cjs user_s=3293.13 system_s=19.04 wall_s=963.80 cpu_pct=343% max_rss_kb=2745176
+::error file=tests/godot-cris-banc.cjs::Godot : ECHEC (1), durée 964 s, limite 1200s
+::endgroup::
+::group::tests/godot-planche-carte-joueur.cjs
+PLANCHE_CARTE_JOUEUR (2560, 1440) : carte [P: (585.0, 686.5), S: (945.0, 745.5)]
+PLANCHE_CARTE_JOUEUR (1920, 1080) : carte [P: (437.25, 512.875), S: (708.75, 559.125)]
+PLANCHE_CARTE_JOUEUR 31 controles, 0 echec
+CD_CPU_PROFILE suite=tests/godot-planche-carte-joueur.cjs user_s=1128.51 system_s=19.40 wall_s=365.37 cpu_pct=314% max_rss_kb=2752448
+PASS tests/godot-planche-carte-joueur.cjs (366 s)
+::endgroup::
+::group::tests/godot-planche-direct-2d.cjs
+PLANCHE_DIRECT_2D (2560, 1440) : classement 14 lignes, multiplex 6 matchs
+PLANCHE_DIRECT_2D (1920, 1080) : classement 14 lignes, multiplex 6 matchs
+PLANCHE_DIRECT_2D 42 controles, 0 echec
+CD_CPU_PROFILE suite=tests/godot-planche-direct-2d.cjs user_s=1146.63 system_s=18.03 wall_s=369.83 cpu_pct=314% max_rss_kb=2753528
+PASS tests/godot-planche-direct-2d.cjs (369 s)
+::endgroup::

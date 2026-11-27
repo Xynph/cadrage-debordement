@@ -1,0 +1,3 @@
+== suites (3) (code 1)
+SCRIPT ERROR: Invalid access to property or key 'regie' on a base object of type 'Nil'.
+::error file=tests/godot-cris-banc.cjs::Godot : ECHEC (1), durée 964 s, limite 1200s
