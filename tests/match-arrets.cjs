@@ -113,7 +113,10 @@ try {
      for(const [p,c] of snap)p.condition=c;acc.matchs++}
     for(const k of Object.keys(acc))if(k!=='matchs')acc[k]/=acc.matchs;return acc`);
   const poser = (quoi) => `const ind=l.pilotage.indiv={roles:{},consignes:{},v:1};${quoi}`;
-  const N = 160;
+  // 480 matchs par réglage (au lieu de 160, mêmes graines, mêmes seuils) : avec les remplaçants (K3), « Jouer au pied »
+  // donnait +7,1 % sur 160 matchs pour +8 % exigés (+10,6 % sur main) ; aucun des trois joueurs visés n’est remplacé
+  // (sonde du 28/11 : 0 sortie sur 80 matchs), l’écart restant est le bruit de l’échantillon.
+  const N = 480;
   const base = mesurer(poser(''), N);
   // Charnière et arrière « Jouer au pied » : plus de coups de pied.
   const pied = mesurer(poser('ind.consignes[sh.on[8]]=["pied"];ind.consignes[sh.on[9]]=["pied"];ind.consignes[sh.on[14]]=["pied"];'), N);
