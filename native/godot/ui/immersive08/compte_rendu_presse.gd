@@ -54,7 +54,8 @@ static func construire(view: Control, outcome: Dictionary) -> void:
 	y = _domaines(page, outcome, y)
 	var haut := y + 20.0
 	var bas := _gauche(view, page, outcome, haut)
-	_droite(view, page, haut)
+	var gauche_vide: bool = is_equal_approx(bas, haut) and not _annonce_presente(view)
+	_droite(view, page, haut, gauche_vide)
 	_annonce(view, page, bas + 14.0)
 
 ## Rappel des promesses en cours, en pastilles (couleur = bien partie ou non).
@@ -80,7 +81,8 @@ static func _domaines(page: Control, outcome: Dictionary, y: float) -> float:
 	rangee.name = "PressOutcomeHeadline"
 	rangee.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	page.add_child(rangee)
-	D.place(rangee, Rect2(0, y, 2248, 250))
+	D.place(rangee, Rect2(0, y, 2248, 130))
+	var apres: Dictionary = outcome.get("after", {})
 	var presents := DOMAINES.filter(func(e: Array): return delta.has(e[0]))
 	var n := maxi(1, presents.size())
 	var l := (2248.0 - 20.0 * (n - 1)) / n
@@ -88,20 +90,29 @@ static func _domaines(page: Control, outcome: Dictionary, y: float) -> float:
 		var e: Array = presents[k]
 		var v := float(delta[e[0]])
 		var ton := _ton(v, e[2])
-		var carte := _carte(rangee, Rect2(k * (l + 20.0), 0, l, 250), ton, "PressOutcome_" + str(e[0]))
-		var mot := D.text(carte, l / 2.0, 54, str(e[1]).to_upper(), 30, Charte.IVOIRE, 800, l, HORIZONTAL_ALIGNMENT_CENTER)
-		mot.add_theme_font_override("font", Charte.TITRE_FICHE)
-		_fleche(carte, Rect2(l / 2.0 - 80.0, 84, 160, 128), v, e[2])
-	return y + 250.0
+		var carte := _carte(rangee, Rect2(k * (l + 20.0), 0, l, 130), ton, "PressOutcome_" + str(e[0]))
+		D.text(carte, 28, 40, str(e[1]).to_upper(), 22, Charte.IVOIRE_2, 700, l - 56.0)
+		# Valeur après la conférence si le modèle la donne, sinon le sens en toutes lettres.
+		var ecart := "%+d" % roundi(v) if roundi(v) != 0 else "stable"
+		if apres.has(e[0]):
+			var valeur := D.text(carte, 28, 104, str(roundi(float(apres[e[0]]))), 52, Charte.IVOIRE, 800, 200)
+			valeur.add_theme_font_override("font", Charte.TITRE_FICHE)
+		else:
+			ecart = "stable" if roundi(v) == 0 else ("en hausse" if v > 0 else "en baisse")
+		D.text(carte, l - 200.0, 100, ecart, 30, ton, 800, 140, HORIZONTAL_ALIGNMENT_RIGHT)
+		_fleche(carte, Rect2(l - 52.0, 76, 26, 21), v, e[2])
+	return y + 130.0
 
-static func _ligne(parent: Control, y: float, nom: String, qui: String, quoi: String, v: float, id: String) -> void:
+static func _ligne(parent: Control, y: float, nom: String, qui: String, quoi: String, v: float, id: String, h := 76.0) -> void:
 	var ton := _ton(v, true)
-	var carte := _carte(parent, Rect2(0, y, 1060, 76), ton, id)
-	D.rect(carte, Rect2(0, 12, 6, 52), ton, 3)
-	var t := D.text(carte, 32, 48, qui, 30, Charte.IVOIRE, 800, 600)
+	var carte := _carte(parent, Rect2(0, y, 1060, h), ton, id)
+	var m := h / 2.0
+	D.rect(carte, Rect2(0, 12, 6, h - 24.0), ton, 3)
+	var t := D.text(carte, 32, m + 10.0, qui, 30, Charte.IVOIRE, 800, 560)
 	t.add_theme_font_override("font", Charte.TITRE_FICHE)
-	D.text(carte, 650, 46, quoi, 22, Charte.IVOIRE_2, 600, 200)
-	_fleche(carte, Rect2(920, 16, 56, 44), v, true)
+	D.text(carte, 610, m + 8.0, quoi, 24, Charte.IVOIRE_2, 600, 180)
+	D.text(carte, 800, m + 10.0, "%+d" % roundi(v) if roundi(v) != 0 else "stable", 28, ton, 800, 150, HORIZONTAL_ALIGNMENT_RIGHT)
+	_fleche(carte, Rect2(980, m - 13.0, 32, 26), v, true)
 
 ## Joueurs visés (moral) puis journalistes (relation). Rend le bas de la colonne.
 static func _gauche(view: Control, page: Control, outcome: Dictionary, y: float) -> float:
@@ -111,42 +122,54 @@ static func _gauche(view: Control, page: Control, outcome: Dictionary, y: float)
 	D.place(colonne, Rect2(0, y, 1060, 1300.0 - y))
 	var cy := 0.0
 	var joueurs: Array = outcome.get("players", [])
+	var echanges: Array = outcome.get("exchanges", [])
+	# Les lignes s'étirent pour remplir la hauteur (place gardée pour l'objectif annoncé), sans dépasser 150.
+	var entetes := (36.0 if not joueurs.is_empty() else 0.0) + (36.0 if not echanges.is_empty() else 0.0)
+	var lignes := joueurs.size() + echanges.size()
+	var h := clampf((1300.0 - y - 120.0 - entetes) / maxf(1.0, lignes) - 10.0, 76.0, 150.0)
 	if not joueurs.is_empty():
-		D.text(colonne, 0, cy + 22, "JOUEURS", 18, Charte.IVOIRE_3, 700, 300)
+		D.text(colonne, 0, cy + 22, "JOUEURS", 20, Charte.IVOIRE_3, 700, 300)
 		cy += 36.0
 		for p: Dictionary in joueurs:
-			_ligne(colonne, cy, "", str(p.get("name", "")), "Moral", float(p.get("delta", 0)), "PressOutcomePlayer_" + str(p.get("id", "")).validate_node_name())
-			cy += 86.0
-	var echanges: Array = outcome.get("exchanges", [])
+			_ligne(colonne, cy, "", str(p.get("name", "")), "Moral", float(p.get("delta", 0)), "PressOutcomePlayer_" + str(p.get("id", "")).validate_node_name(), h)
+			cy += h + 10.0
 	if not echanges.is_empty():
-		D.text(colonne, 0, cy + 22, "JOURNALISTES", 18, Charte.IVOIRE_3, 700, 300)
+		D.text(colonne, 0, cy + 22, "JOURNALISTES", 20, Charte.IVOIRE_3, 700, 300)
 		cy += 36.0
 		for ex: Dictionary in echanges:
 			var nom := "Identité indisponible"
 			for personne: Dictionary in view.data.get("people", []):
 				if personne.get("id") == ex.get("journalistId"): nom = str(personne.get("name", "")); break
-			_ligne(colonne, cy, "", nom, "Relation", float(ex.get("delta", 0)), "PressOutcomeRelation_" + str(ex.get("journalistId", "")).validate_node_name())
-			cy += 86.0
+			_ligne(colonne, cy, "", nom, "Relation", float(ex.get("delta", 0)), "PressOutcomeRelation_" + str(ex.get("journalistId", "")).validate_node_name(), h)
+			cy += h + 10.0
 	return y + cy
 
-static func _droite(view: Control, page: Control, y: float) -> void:
+static func _annonce_presente(view: Control) -> bool:
+	for promesse: Dictionary in view._promises().get("active", []):
+		if view._context_key(promesse) == view._context: return true
+	return false
+
+## Déclarations ; elles prennent toute la largeur quand la colonne de gauche n'a rien à montrer.
+static func _droite(view: Control, page: Control, y: float, pleine := false) -> void:
 	var colonne := Control.new()
 	colonne.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	page.add_child(colonne)
-	D.place(colonne, Rect2(1100, y, 1148, 1300.0 - y))
+	var x0 := 0.0 if pleine else 1100.0
+	var lw := 2248.0 - x0
+	D.place(colonne, Rect2(x0, y, lw, 1300.0 - y))
 	var cy := 0.0
 	var vus := 0
 	for fiche: Dictionary in view.data.get("history", []):
 		if view._context_key(fiche) != view._context or vus >= 4: continue
 		vus += 1
 		var journaliste: Dictionary = fiche.get("journalist", {})
-		var carte := D.rect(colonne, Rect2(0, cy, 1148, 204), Charte.PANNEAU, Charte.RAYON_CARTE)
+		var carte := D.rect(colonne, Rect2(0, cy, lw, 204), Charte.PANNEAU, Charte.RAYON_CARTE)
 		D.rect(carte, Rect2(0, 14, 6, 176), Charte.DORE, 3)
-		D.text(carte, 32, 44, str(journaliste.get("name", "Identité indisponible")) + " · " + str(journaliste.get("outlet", "")), 24, Charte.DORE, 800, 1080)
+		D.text(carte, 32, 44, str(journaliste.get("name", "Identité indisponible")) + " · " + str(journaliste.get("outlet", "")), 24, Charte.DORE, 800, lw - 68.0)
 		var question: Variant = fiche.get("question", fiche.get("questionText"))
 		var reponse: Variant = fiche.get("answer", fiche.get("answerText"))
-		if question is String: Fm._para(carte, Rect2(32, 50, 1084, 64), question, 21, Charte.IVOIRE_2, 500)
-		if reponse is String: Fm._para(carte, Rect2(32, 116, 1084, 84), ("Gabi : " if fiche.get("delegated", false) else "") + reponse, 24, Charte.IVOIRE, 700)
+		if question is String: Fm._para(carte, Rect2(32, 50, lw - 64.0, 64), question, 21, Charte.IVOIRE_2, 500)
+		if reponse is String: Fm._para(carte, Rect2(32, 116, lw - 64.0, 84), ("Gabi : " if fiche.get("delegated", false) else "") + reponse, 24, Charte.IVOIRE, 700)
 		cy += 212.0
 
 ## Objectif annoncé avec la dernière réponse : réactions des supporters, médias, direction, pression.
@@ -159,7 +182,7 @@ static func _annonce(view: Control, page: Control, y: float) -> void:
 		D.text(carte, 24, 40, "« %s »" % str(promesse.get("label", "")), 22, Charte.DORE, 700, 1010)
 		var x := 24.0
 		for cle: Array in [["fanTrust", "Supporters", true], ["mediaTrust", "Médias", true], ["trust", "Direction", true], ["boardPressure", "Pression", false]]:
-			D.text(carte, x, 78, str(cle[1]), 18, Charte.IVOIRE_2, 600, 150)
+			D.text(carte, x, 78, str(cle[1]), 20, Charte.IVOIRE_2, 600, 150)
 			_fleche(carte, Rect2(x + 126, 52, 34, 27), float(annonce.get(cle[0], 0)), cle[2])
 			x += 250.0
 		return

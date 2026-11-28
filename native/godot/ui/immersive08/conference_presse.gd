@@ -19,12 +19,12 @@ const Fenetre = preload("res://ui/immersive08/fenetre_visuelle.gd")
 const TONS := {
 	"confident": ["Affirmé", Charte.GAIN, "check"],
 	"humour": ["Humour", Charte.CONFIANCE, "star"],
-	"honest": ["Honnête", Charte.MORAL, "people"],
+	"honest": ["Honnête", Charte.DORE, "people"],
 	"cautious": ["Prudent", Charte.REPOS, "info"],
 	"aggressive": ["Agressif", Charte.PERTE, "warning"],
 }
 ## Familles de ton : [mot, couleur, tons].
-const FAMILLES := [["POSITIF", Charte.GAIN, ["confident", "humour"]], ["NEUTRE", Charte.MORAL, ["honest", "cautious"]], ["OFFENSIF", Charte.PERTE, ["aggressive"]]]
+const FAMILLES := [["POSITIF", Charte.GAIN, ["confident", "humour"]], ["NEUTRE", Charte.DORE, ["honest", "cautious"]], ["OFFENSIF", Charte.PERTE, ["aggressive"]]]
 ## Domaines de la réaction : [clé de l'effet, mot, plus = bien ?]. « Moral » = moral du joueur concerné.
 const DOMAINES := [["player", "Moral", true], ["media", "Médias", true], ["fans", "Supporters", true], ["pressure", "Pression", false], ["relation", "Relation", true]]
 ## Actualité du joueur (moteur) → [mot, icône, couleur].
@@ -186,22 +186,22 @@ static func _journaliste(view: Control, page: Control, q: Dictionary) -> void:
 	nom.add_theme_font_override("font", Charte.TITRE_FICHE)
 	nom.name = "PressJournalistName"
 	D.text(cadre, 172, 108, str(j.get("outlet", "")), 20, Charte.IVOIRE_2, 600, 520)
-	D.text(cadre, 720, 56, "ATTITUDE", 15, Charte.IVOIRE_3, 700, 200)
+	D.text(cadre, 720, 56, "ATTITUDE", 18, Charte.IVOIRE_3, 700, 200)
 	_attitude(cadre, 720, 70, q.get("relation", {}), "PressAttitude")
 	if not str(j.get("styleLabel", "")).is_empty(): Pieces.pastille(cadre, 172, 124, str(j.get("styleLabel", "")), "tactic", "PressStyle", "", Charte.IVOIRE_2)
 	var qui := str(j.get("id", ""))
 	Pieces.rendre_cliquable(cadre, Vector2(1060, 170), func(): _fenetre_journaliste(view, page, qui, q), "PressJournalistOpen", str(j.get("name", "")), "", Charte.RAYON_PANNEAU)
-	var bulle := D.rect(cadre, Rect2(28, 186, 1004, 166), Charte.MORAL, Charte.RAYON_CARTE)
+	var bulle := D.rect(cadre, Rect2(28, 186, 1004, 166), Charte.PANNEAU_3, Charte.RAYON_CARTE, Color(Charte.DORE, .55))
 	bulle.name = "PressQuestionBubble"
 	bulle.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var question := _para(bulle, Rect2(30, 18, 944, 136), str(q.get("question", "")), 27, Charte.ENCRE, 700)
+	var question := _para(bulle, Rect2(30, 18, 944, 136), str(q.get("question", "")), 27, Charte.IVOIRE, 700)
 	question.name = "PressQuestion"
 
 ## Sujet de la question (thème + sujet du moteur), relance d'une déclaration archivée.
 static func _sujet(page: Control, q: Dictionary) -> void:
 	var sujet := D.rect(page, Rect2(0, 506, 1060, 78), Charte.PANNEAU, Charte.RAYON_CARTE)
 	sujet.name = "PressTopic"
-	D.text(sujet, 24, 48, "SUJET", 15, Charte.IVOIRE_3, 700, 120)
+	D.text(sujet, 24, 48, "SUJET", 18, Charte.IVOIRE_3, 700, 120)
 	var x := 110.0 + Pieces.pastille(sujet, 110, 22, str(q.get("label", "")), "info", "PressTheme", "", Charte.DORE) + 10
 	if not str(q.get("subject", "")).is_empty(): x += Pieces.pastille(sujet, x, 22, str(q.get("subject", "")), "", "PressSubject", "", Charte.IVOIRE_2) + 10
 	if q.get("followUp") is Dictionary: Pieces.pastille(sujet, x, 22, "Relance", "warning", "PressArchivedSource", "", Charte.INTENSIF)
@@ -228,7 +228,7 @@ static func _carte_joueur(app: Control, page: Control, r: Rect2, q: Dictionary) 
 	if p.is_empty():
 		Pieces.pastille(carte, 24, 24, "Groupe", "people", "PressPlayerNone", "", Charte.IVOIRE_2)
 		return
-	D.text(carte, 24, 34, "JOUEUR CONCERNÉ", 15, Charte.IVOIRE_3, 700, 300)
+	D.text(carte, 24, 34, "JOUEUR CONCERNÉ", 18, Charte.IVOIRE_3, 700, 300)
 	Visuel.portrait(carte, Rect2(24, 50, 96, 96), p, Charte.IVOIRE, true)
 	var nom := D.text(carte, 140, 88, str(p.get("name", "")), 30, Charte.IVOIRE, 800, 560)
 	nom.add_theme_font_override("font", Charte.TITRE_FICHE)
@@ -236,7 +236,7 @@ static func _carte_joueur(app: Control, page: Control, r: Rect2, q: Dictionary) 
 	if p.has("pos"): D.text(carte, 140, 124, "%s · %d ans" % [str(p.get("pos", "")), int(p.get("age", 0))], 19, Charte.IVOIRE_2, 600, 520)
 	var actu: Array = ACTUALITES.get(str(q.get("player", {}).get("news", "")), [])
 	if not actu.is_empty(): Pieces.pastille(carte, r.size.x - 40 - Pieces.largeur_pastille(str(actu[0]), str(actu[1])), 24, str(actu[0]), str(actu[1]), "PressPlayerNews", "", actu[2])
-	D.text(carte, 24, 178, "FORME", 15, Charte.IVOIRE_3, 700, 120)
+	D.text(carte, 24, 178, "FORME", 18, Charte.IVOIRE_3, 700, 120)
 	Notes.pastilles(carte, Vector2(110, 154), Notes.forme(Notes.joueur(app.model, str(p.get("id", "")))), Vector2(56, 34), 8)
 	Pieces.rendre_cliquable(carte, r.size, func(): _fenetre_joueur(app, page, p, q), "PressPlayerOpen", str(p.get("name", "")), "", Charte.RAYON_CARTE)
 
@@ -252,7 +252,7 @@ static func _reaction(page: Control, r: Rect2, questions: Array, choix: Dictiona
 	var dite := _reponse_dite(q, choix)
 	var carte := D.rect(page, r, Charte.PANNEAU, Charte.RAYON_CARTE)
 	carte.name = "PressReaction"
-	D.text(carte, 24, 34, "RÉACTION · Q%d" % (montre + 1), 15, Charte.IVOIRE_3, 700, 300)
+	D.text(carte, 24, 34, "RÉACTION · Q%d" % (montre + 1), 18, Charte.IVOIRE_3, 700, 300)
 	var ton: Array = TONS.get(str(dite.get("tone", "")), ["", Charte.IVOIRE, "info"])
 	Pieces.pastille(carte, 24, 56, str(ton[0]), str(ton[2]), "PressReactionTone", "", ton[1])
 	_fleches(carte, Vector2(230, 38), dite.get("effects", {}), 166.0, "PressReaction_")
@@ -263,8 +263,8 @@ static func _fleches(parent: Control, at: Vector2, effets: Dictionary, pas: floa
 		var d: Array = DOMAINES[k]
 		var v := float(effets.get(d[0], effets.get("morale", 0) if d[0] == "player" else 0))
 		var x := at.x + k * pas
-		D.text(parent, x, at.y, str(d[1]).to_upper(), 14, Charte.IVOIRE_3, 700, pas - 10)
-		_fleche_a(parent, Rect2(x + 4, at.y + 14, 34, 28), v, d[2]).name = prefixe + str(d[0])
+		D.text(parent, x, at.y, str(d[1]).to_upper(), 18, Charte.IVOIRE_3, 700, pas - 10)
+		_fleche_a(parent, Rect2(x + 4, at.y + 16, 34, 28), v, d[2]).name = prefixe + str(d[0])
 
 ## Objectif public (facultatif, début de saison) : un clic retient l'objectif, annoncé avec la dernière réponse ;
 ## un second clic l'annule. Aucune réaction annoncée d'avance.
@@ -273,7 +273,7 @@ static func _promesse(view: Control, page: Control, r: Rect2) -> void:
 	if offre.is_empty(): return
 	var cadre := D.rect(page, r, Charte.PANNEAU, Charte.RAYON_CARTE)
 	cadre.name = "PressPromiseOffer"
-	D.text(cadre, 24, 34, "OBJECTIF PUBLIC", 15, Charte.IVOIRE_3, 700, 300)
+	D.text(cadre, 24, 34, "OBJECTIF PUBLIC", 18, Charte.IVOIRE_3, 700, 300)
 	_para(cadre, Rect2(24, 44, r.size.x - 48, 56), str(offre.get("question", "")), 19, Charte.IVOIRE, 600)
 	var options: Array = offre.get("options", []).duplicate()
 	if offre.get("refuse") is Dictionary: options.append(offre.refuse)
@@ -317,7 +317,7 @@ static func _gabi(view: Control, page: Control) -> void:
 			x += Pieces.pastille(page, x, y, "En personne", "warning", "PressDelegateReason", "", Charte.DORE) + 24
 	var reglage: Dictionary = view.data.get("policy", {})
 	if reglage.is_empty(): return
-	D.text(page, x, y + 24, "ORDINAIRES", 14, Charte.IVOIRE_3, 700, 140)
+	D.text(page, x, y + 24, "ORDINAIRES", 18, Charte.IVOIRE_3, 700, 140)
 	x += 130
 	for option: Array in [["moi", "Y aller", "check"], ["adjoint", "Envoyer l’adjoint", "people"]]:
 		var cle: String = option[0]
@@ -376,7 +376,7 @@ static func _fenetre_joueur(app: Control, page: Control, p: Dictionary, q: Dicti
 	# Forme : les cinq dernières notes en pastilles colorées.
 	var forme := D.rect(fond, Rect2(36, 240, 420, 190), Charte.PANNEAU_2, Charte.RAYON_CARTE)
 	forme.name = "PressPlayerWindowForm"
-	D.text(forme, 18, 34, "FORME", 15, Charte.IVOIRE_3, 700, 200)
+	D.text(forme, 18, 34, "FORME", 18, Charte.IVOIRE_3, 700, 200)
 	var notes: Array = Notes.forme(Notes.joueur(app.model, str(p.get("id", ""))))
 	if notes.is_empty(): D.text(forme, 18, 110, "—", 40, Charte.IVOIRE_3, 800, 200)
 	else: Notes.pastilles(forme, Vector2(18, 70), notes, Vector2(70, 44), 8)
@@ -403,7 +403,7 @@ static func _fenetre_journaliste(view: Control, page: Control, id: String, q: Di
 	# Relation : jauge de −100 à +100 centrée.
 	var jauge := D.rect(fond, Rect2(36, 240, 420, 190), Charte.PANNEAU_2, Charte.RAYON_CARTE)
 	jauge.name = "PressJournalistWindowRelation"
-	D.text(jauge, 18, 34, "RELATION", 15, Charte.IVOIRE_3, 700, 200)
+	D.text(jauge, 18, 34, "RELATION", 18, Charte.IVOIRE_3, 700, 200)
 	var score := clampf(float(relation.get("score", 0)), -100, 100)
 	D.rect(jauge, Rect2(18, 100, 384, 12), Charte.PANNEAU_3, 6).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var milieu := 18 + 192.0
@@ -415,7 +415,7 @@ static func _fenetre_journaliste(view: Control, page: Control, id: String, q: Di
 	# Mémoire : derniers tons répondus à ce journaliste, flèche de l'effet sur la relation.
 	var memoire := D.rect(fond, Rect2(716, 240, 228, 190), Charte.PANNEAU_2, Charte.RAYON_CARTE)
 	memoire.name = "PressJournalistWindowMemory"
-	D.text(memoire, 14, 34, "DERNIERS TONS", 15, Charte.IVOIRE_3, 700, 200)
+	D.text(memoire, 14, 34, "DERNIERS TONS", 18, Charte.IVOIRE_3, 700, 200)
 	var souvenirs: Array = []
 	for personne: Variant in view.data.get("people", []):
 		if personne is Dictionary and str(personne.get("id", "")) == id: souvenirs = personne.get("memory", [])
