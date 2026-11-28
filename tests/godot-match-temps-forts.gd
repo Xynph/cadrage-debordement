@@ -260,9 +260,8 @@ func _tient(view: Control, between: Control, label: String, screen: Rect2) -> vo
 		var cartes := _cartes_multiplex(between)
 		if between.multiplex.is_visible_in_tree() and not cartes.is_empty():
 			var defile: Control = between.multiplex_defile
-			check(defile.is_ancestor_of(between.multiplex_cartes) and between.multiplex_cartes.columns >= 1 and between.multiplex_cartes.columns <= Between.colonnes_multiplex(cartes.size(), 2), label + " : multiplex en grille, au plus le nombre de colonnes voulu (%d colonnes, %d cartes)" % [between.multiplex_cartes.columns, cartes.size()])
+			check(defile.is_ancestor_of(between.multiplex_cartes) and between.multiplex_cartes.columns == Between.colonnes_multiplex(cartes.size(), 2), label + " : multiplex en grille de trois rangées au plus (%d colonnes, %d cartes)" % [between.multiplex_cartes.columns, cartes.size()])
 			check(cartes.all(func(c: Control): return inside(defile.get_global_rect().grow_individual(0, 0, 100000, 0), c.get_global_rect())), label + " : cartes du multiplex dans leur zone (la suite défile en largeur)")
-			check(cartes.all(func(c: Control): return c.get_global_rect().end.x <= defile.get_global_rect().end.x + 1.0), label + " : aucune carte du multiplex coupée à droite")
 			check(inside(defile.get_global_rect(), (cartes[0] as Control).get_global_rect()) and inside(zone, between.multiplex.get_global_rect()), label + " : première carte du multiplex entière, panneau dans l'écran")
 			var fondu: Control = between.multiplex_fondu
 			var reste_a_droite: bool = between.multiplex_deborde() and float(between.multiplex_defile.scroll_horizontal) + defile.size.x < between.multiplex_cartes.size.x - 1.0
