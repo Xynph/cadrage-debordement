@@ -34,7 +34,14 @@ let echecs = 0;
   const output = (result.stdout || '') + (result.stderr || '');
   console.log(output.split(/\r?\n/).filter(l => /PLANCHE_DIRECT_2D|ECHEC|SCRIPT ERROR|^  - /.test(l)).join('\n'));
   fs.rmSync(path.join(dossier, 'monde.json'), {force: true});
-  if (result.status !== 0 || /SCRIPT ERROR/.test(output)) echecs++;
+  if (result.status !== 0 || /SCRIPT ERROR/.test(output)) {
+    echecs++;
+    // Jamais de sortie muette : code, signal, délai dépassé / lancement impossible, puis la fin du journal Godot.
+    console.log('ECHEC godot-planche-direct-2d : code ' + result.status + (result.signal ? ', signal ' + result.signal : '') + (result.error ? ', ' + result.error.message : '')
+      + (/SCRIPT ERROR/.test(output) ? ', erreur de script' : '') + ' ; fin du journal Godot :\n' + (output.split(/\r?\n/).filter(l => l.trim()).slice(-25).join('\n') || '(journal vide)'));
+  } else if (!/PLANCHE_DIRECT_2D \d+ controles, 0 echec/.test(output)) {
+    echecs++; console.log('ECHEC godot-planche-direct-2d : Godot est sorti en 0 sans la ligne de bilan « N controles, 0 echec » ; fin du journal :\n' + output.split(/\r?\n/).filter(l => l.trim()).slice(-25).join('\n'));
+  }
 }
 fs.rmSync(directory, {recursive: true, force: true});
 process.exit(echecs ? 1 : 0);
