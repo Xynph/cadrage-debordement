@@ -56,7 +56,9 @@ func _hero() -> void:
 	app.heading.add_theme_font_override("font", C.Charte.TITRE_FICHE)
 	D.text(hero, 28, 151, G.club_name(app.model.club), 25, C.IVORY, 500, 1100, HORIZONTAL_ALIGNMENT_LEFT, true)
 	D.chip(hero, Rect2(29, 163, 288, 30), _pathway_status().to_upper(), GREEN if data.get("active", false) else GOLD)
-	D.button(hero, Rect2(1840, 126, 388, 56), "Revenir à la formation", func(): app._navigate("Formation"), false, "arrow", false, ACCENT, "CentreBackFormation")
+	var retour := D.button(hero, Rect2(1840, 126, 388, 56), "Revenir à la formation", func(): app._navigate("Formation"), false, "arrow", false, ACCENT, "CentreBackFormation")
+	retour.add_theme_font_override("font", C.BOLD)
+	retour.add_theme_font_size_override("font_size", C.font_px(30))
 
 func _pathway_status() -> String:
 	if not data.get("available", false): return "Relève suivie en formation"

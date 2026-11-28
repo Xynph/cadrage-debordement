@@ -1,5 +1,5 @@
 extends RefCounted
-## Entrée d'une page dessinée (Bureau d'abord, 28/11/2026) : les blocs apparaissent en cascade (fondu + montée de
+## Entrée de toutes les pages de la coque (Bureau le 28/11/2026, toutes ensuite) : les blocs apparaissent en cascade (fondu + montée de
 ## quelques pixels) et les jauges se remplissent depuis zéro. Seulement quand on ARRIVE sur la page (pas à chaque
 ## rafraîchissement : décision, Continuer, retour de fenêtre). Court (< 0,45 s en tout), jamais bloquant : les clics
 ## et le clavier marchent pendant l'animation. « Mouvement réduit » dans les Préférences : aucune animation.
@@ -38,22 +38,26 @@ static func animer(app: Node, page: Control, route: String, forcer := false) -> 
 	var blocs: Array[Control] = []
 	for enfant in page.get_children():
 		if enfant is Control and (enfant as Control).visible: blocs.append(enfant)
-	# Ordre de lecture : de haut en bas, puis de gauche à droite.
-	blocs.sort_custom(func(a: Control, b: Control) -> bool:
-		return a.position.x < b.position.x if is_equal_approx(a.position.y, b.position.y) else a.position.y < b.position.y)
 	if blocs.is_empty(): return null
+	# Dans un conteneur (pages classiques, Bureau des petits écrans), la mise en page n'est pas encore faite (blocs
+	# tous en 0,0) et replace les blocs : ordre des enfants = ordre de lecture, fondu seul, cascade limitée.
+	var conteneur := page is Container
+	if not conteneur:
+		# Ordre de lecture : de haut en bas, puis de gauche à droite.
+		blocs.sort_custom(func(a: Control, b: Control) -> bool:
+			return a.position.x < b.position.x if is_equal_approx(a.position.y, b.position.y) else a.position.y < b.position.y)
 	var tween := page.create_tween().set_parallel(true)
-	# Dans un conteneur (Bureau classique des petits écrans), la mise en page replace les blocs : fondu seul.
-	var montee := 0.0 if page is Container else MONTEE * C.density
+	var montee := 0.0 if conteneur else MONTEE * C.density
 	# Un bloc et son ombre portée (même rectangle, nœud voisin) partent ensemble.
 	var rang := -1
 	var precedent := Rect2(-1, -1, -1, -1)
 	for bloc in blocs:
 		var fin := bloc.position
-		if not Rect2(fin, bloc.size).is_equal_approx(precedent): rang += 1
+		if conteneur or not Rect2(fin, bloc.size).is_equal_approx(precedent): rang += 1
 		precedent = Rect2(fin, bloc.size)
 		bloc.modulate.a = 0.0
-		var delai := rang * DECALAGE
+		# Longues listes classiques : au-delà de 8 blocs, le reste arrive avec le 8e (entrée toujours < 0,45 s).
+		var delai := mini(rang, 7) * DECALAGE
 		tween.tween_property(bloc, "modulate:a", 1.0, DUREE).set_delay(delai).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 		if montee <= 0.0: continue
 		bloc.position.y = fin.y + montee

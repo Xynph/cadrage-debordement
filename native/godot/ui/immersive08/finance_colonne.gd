@@ -134,7 +134,8 @@ static func _carte_budget(app: Control, canvas: Control, rectangle: Rect2, accou
 	var limite := int(transfer.get("disponible", 0)) < int(transfer.get("reste", transfer.get("disponible", 0)))
 	if not limite and depenses.is_empty():
 		# Rien d'engagé : une pastille plutôt qu'une phrase.
-		Pieces.pastille(carte, 20, 142 + decalage, "0 € engagé", "check", "FinanceNothingCommitted", "", Pieces.VERT, Charte.PANNEAU_3, func(): F._vers(app, "transfers"))
+		# (Le « Engagé 0 € » de la carte le dit déjà : pas de seconde pastille pour la même information.)
+		pass
 	else:
 		var note := "Limité par la caisse du club" if limite else depenses
 		Brique._texte(carte, 20, 160 + decalage, note, 16, Charte.IVOIRE_2, largeur - 40).mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -170,7 +171,7 @@ static func _vigilances(app: Control, finance: Dictionary) -> Array:
 	if budget is Dictionary and budget.get("plafondSalarial") != null and float(budget.plafondSalarial) > 0.0 and budget.get("masseSalariale") != null:
 		var part := roundi(100.0 * float(budget.masseSalariale) / float(budget.plafondSalarial))
 		if part >= 80:
-			lignes.append({"id": "FinanceWatchCap", "titre": "Masse salariale · joueurs à %d %% du plafond de la ligue" % part, "detail": "marge restante : %s" % U.amount(budget.get("margePlafond")), "lien": "Budget" if F._onglet_courant(app) == "wages" else "Salaires", "action": func(): F._ouvrir_onglet(app, "budget") if F._onglet_courant(app) == "wages" else F._open_wages(app, false)})
+			lignes.append({"id": "FinanceWatchCap", "titre": "Masse salariale", "detail": "joueurs à %d %% du plafond de la ligue · marge restante : %s" % [part, U.amount(budget.get("margePlafond"))], "lien": "Budget" if F._onglet_courant(app) == "wages" else "Salaires", "action": func(): F._ouvrir_onglet(app, "budget") if F._onglet_courant(app) == "wages" else F._open_wages(app, false)})
 	return lignes
 
 static func _watch(card: Panel, app: Control, finance: Dictionary, largeur: float) -> void:
@@ -186,11 +187,11 @@ static func _watch(card: Panel, app: Control, finance: Dictionary, largeur: floa
 		var zone := Brique._zone(card, Rect2(10, y, largeur - 20, 70), ligne.action, str(ligne.id), "%s · %s" % [ligne.titre, ligne.detail])
 		zone.accessibility_name = "%s · %s" % [ligne.titre, ligne.detail]
 		Brique._symbole(card, Rect2(20, y + 20, 28, 28), "exclam", Charte.IVOIRE)
-		Brique._texte(card, 62, y + 28, str(ligne.titre), 19, Charte.IVOIRE, 220 if ligne.has("tuiles") else largeur - 290).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		Brique._texte(card, 62, y + 28, str(ligne.titre), 19, Charte.IVOIRE, 184 if ligne.has("tuiles") else largeur - 290).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		if ligne.has("tuiles"):
 			# Compteurs du contrat à anticiper : deux tuiles (au total, et cette saison) au lieu d'une phrase.
 			var tuiles: Array = ligne.tuiles
-			for k in tuiles.size(): Pieces.tuile(card, Rect2(290 + k * 118, y + 4, 110, 62), tuiles[k][0], tuiles[k][1], tuiles[k][3], tuiles[k][2], 26, "", "", k == 1, func(): F._vers_contrats(app))
+			for k in tuiles.size(): Pieces.tuile(card, Rect2(250 + k * 106, y + 4, 100, 62), tuiles[k][0], tuiles[k][1], tuiles[k][3], tuiles[k][2], 26, "", "", k == 1, func(): F._vers_contrats(app))
 		else:
 			# Le détail passe sous le lien (aligné sur le titre) et prend toute la largeur : plus de troncature à 1280.
 			Brique._texte(card, 62, y + 56, str(ligne.detail), 16, Charte.IVOIRE_2, largeur - 86).mouse_filter = Control.MOUSE_FILTER_IGNORE

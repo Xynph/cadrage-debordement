@@ -427,10 +427,10 @@ static func _wage_text(weekly: Variant) -> String:
 
 func _overview() -> void:
 	var club := D.panel(workspace, Rect2(0, 0, 700, 844), "Le club", "shield", "", "ClubSheetIdentity")
+	# Stade, capacité et réputation sont déjà dans l'en-tête de la fiche : pas répétés ici.
 	var rows := [
 		["Entraîneur", data.get("coach")], ["Président", data.get("president")], ["Directeur sportif", data.get("director")],
-		["Stade", data.get("stadium")], ["Capacité", ("%s places" % _thousands(data.capacity)) if data.get("capacity") is float or data.get("capacity") is int else null],
-		["Réputation", _reputation_text()], ["Finances", null],
+		["Finances", null],
 		["Masse salariale estimée", _wage_text(data.get("wageBill"))], ["Objectif", data.get("goal")], ["Stratégie", _strategy(data.get("strategy"))],
 	]
 	var y := 104
@@ -438,13 +438,13 @@ func _overview() -> void:
 		var row: Array = rows[rang]
 		# Rayure une ligne sur deux commune (ui/survol_ligne.gd), derrière les textes.
 		var rayure = load("res://ui/survol_ligne.gd").rayure(club, rang, "ClubSheetIdentityStripe%d" % rang)
-		if rayure != null: D.place(rayure, Rect2(12, y - 34, 676, 54))
+		if rayure != null: D.place(rayure, Rect2(12, y - 40, 676, 66))
 		D.text(club, 24, y, str(row[0]), 24, C.MUTED, 500, 250)
 		if str(row[0]) == "Finances" and data.get("finances") is Dictionary:
 			_health_row(club, y)
 		else:
 			D.text(club, 280, y, str(row[1]) if row[1] != null and str(row[1]) != "" else "—", 26, C.IVORY, 600, 400)
-		y += 58
+		y += 74
 	# Tenue du club : maillot de la banque d'images aux couleurs du club, en haut à droite du panneau.
 	var kit := Tenue.maillot(_identity(club_id))
 	if kit != null:

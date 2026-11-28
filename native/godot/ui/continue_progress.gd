@@ -177,7 +177,7 @@ func _ready() -> void:
 	_right.add_child(_days_box)
 	_tip_box.add_theme_constant_override("separation", 2)
 	_right.add_child(_tip_box)
-	_style_label(tip_title, "LE CONSEIL DE GABI", 12, Charte.IVOIRE_2, Charte.TITRE_GRAS)
+	_style_label(tip_title, "LE CONSEIL DE GABI", 13, Charte.IVOIRE_2, Charte.TITRE_GRAS)
 	tip_title.name = "ContinueProgressTipTitle"
 	tip_title.uppercase = true
 	_tip_box.add_child(tip_title)
@@ -242,7 +242,7 @@ func _build_sheet(sheet: PanelContainer, month: Label, weekday: Label, day: Labe
 	box.add_child(day)
 	if weekday != null:
 		# Jour de la semaine : lu avec le mois dans la même ligne (« VEN. NOV. »), ce libellé reste pour l'accessibilité.
-		_style_label(weekday, "", 12, Charte.IVOIRE_2, Charte.TITRE_GRAS, HORIZONTAL_ALIGNMENT_CENTER)
+		_style_label(weekday, "", 13, Charte.IVOIRE_2, Charte.TITRE_GRAS, HORIZONTAL_ALIGNMENT_CENTER)
 		weekday.hide()
 		box.add_child(weekday)
 

@@ -74,7 +74,7 @@ static func pastille(parent: Control, rect: Rect2, service: String, icone: Strin
 	return bouton
 
 static func largeur_pastille(service: String, taille: int) -> float:
-	return C.font(700).get_string_size(service.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, taille - 2).x + taille + 26.0
+	return C.font(700).get_string_size(service.to_upper(), HORIZONTAL_ALIGNMENT_LEFT, -1, C.font_px(taille - 2)).x / C.density + taille + 26.0
 
 ## Hauteur de la bande en pied du courrier ouvert : réponse requise (selon la tuile la plus haute), réponse donnée,
 ## ou 0.
@@ -115,7 +115,21 @@ static func _effets(option: Dictionary) -> Array:
 	# Sans effet chiffré : rien sous le libellé (pas de phrase « sans effet »).
 	if str(option.get("effets", "")).strip_edges().is_empty(): return []
 	var lignes: Array = load("res://ui/immersive08/reception_canvas.gd").consequences(str(option.get("effets", "")))
+	# Une ligne neutre (=) qui répète le libellé de la réponse (« Demander l'apport » / « Demande d'apport ») n'apprend rien.
+	var racines := _racines(str(option.get("libelle", "")))
+	lignes = lignes.filter(func(ligne: Array) -> bool:
+		if ligne[0] != "=": return true
+		var propres := _racines(str(ligne[1]))
+		return propres.is_empty() or not propres.all(func(mot: String) -> bool: return racines.has(mot)))
 	return lignes.slice(0, 4)
+
+## Racines (5 premières lettres sans accent, mots de plus de 3 lettres) d'un texte : sert à repérer une répétition.
+static func _racines(texte: String) -> Array[String]:
+	var result: Array[String] = []
+	var plat: String = load("res://ui/management_state.gd").fold(texte).replace("’", " ").replace("'", " ")
+	for mot: String in plat.split(" ", false):
+		if mot.length() > 3: result.append(mot.left(5))
+	return result
 
 ## Lignes du contenu d'une tuile : [lignes du libellé, lignes de chaque effet…] (retour à la ligne, jamais d'ellipse).
 static func _contenu(libelle: String, effets: Array, largeur: float) -> Array:

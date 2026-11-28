@@ -61,7 +61,8 @@ static func messages(model: Dictionary) -> Array[Dictionary]:
 		var text := str(mail.get("corps", "")) + "\n\n— " + str(mail.get("expediteur", ""))
 		var chosen := chosen_option(model, mail)
 		if not chosen.is_empty():
-			text += ("\n\nGabi a répondu : " if delegated(model, mail) else "\n\nTa réponse : ") + str(chosen.get("libelle", "")) + (("\n" + str(mail.resultat)) if mail.get("resultat") is String else "")
+			# Le libellé de la réponse est déjà dit par la bande « TA RÉPONSE » / « GABI A RÉPONDU » sous le courrier : le texte ne garde que la suite.
+			if mail.get("resultat") is String: text += "\n\n" + str(mail.resultat)
 		elif str(mail.get("status", "")) == "classe": text += "\n\nSans réponse de ta part, le dossier a été classé."
 		result.append({"id":str(mail.id), "subject":str(mail.get("sujet", "")), "text":text, "category":CATEGORY.get(str(mail.get("categorie", "")), "Club"),
 			"route":route_of(str(mail.get("ecran", ""))), "position":100000 + int(str(mail.id).trim_prefix("mail-")), "club_mail":mail})

@@ -24,7 +24,7 @@ const ZONES := [["+50 m", 100], ["22-50 m", 50], ["5-22 m", 22], ["0-5 m", 5]]
 const ORIGINES := {"j": ["Jeu courant", R.BLEU, "ballon"], "b": ["Ballon porté", R.ORANGE, "people"], "m": ["Mêlée", R.VIOLET, "people"]}
 const TRANCHES := 8
 ## Fréquence d'un titulaire au maillot (choix de Léo) : [seuil bas, couleur, légende], du plus fort au plus faible.
-const PALIERS := [[.75, R.VERT, "75 %"], [.5, Charte.ATTRIBUT_55, "50 %"], [.3, R.ORANGE, "30 %"], [0.0, Charte.GRIS_VERT, "−30 %"]]
+const PALIERS := [[.75, R.VERT, "≥ 75 %"], [.5, Charte.ATTRIBUT_55, "≥ 50 %"], [.3, R.ORANGE, "≥ 30 %"], [0.0, Charte.GRIS_VERT, "< 30 %"]]
 ## Terrain vertical : place de chaque maillot, l'équipe attaque vers le haut. Deux maillots qui se recouvrent en largeur
 ## sont séparés d'au moins 0,115 de hauteur (rond + plaque = 76 unités, terrain de 718 au moins).
 const PLACES := {1: Vector2(.3, .09), 2: Vector2(.5, .09), 3: Vector2(.7, .09), 4: Vector2(.4, .205), 5: Vector2(.6, .205),
