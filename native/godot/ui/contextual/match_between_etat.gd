@@ -350,7 +350,13 @@ class Compo extends Control:
 			draw_string(CHIFFRES, Vector2(boite.position.x + 5.0, boite.position.y + corps_n * 0.9), texte, HORIZONTAL_ALIGNMENT_LEFT, -1, corps_n, Charte.encre_note(note))
 			var nom := _court(str(d.get("nom", "")))
 			var taille := nom_corps
-			while taille > 11 and POLICE.get_string_size(nom, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x > fond.size.x * 0.3: taille -= 1
+			# Largeur permise : écart entre deux joueurs d'une même rangée (première ligne : 0,26 × 0,8 de la largeur).
+			var permis := fond.size.x * 0.2
+			while taille > 11 and POLICE.get_string_size(nom, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x > permis: taille -= 1
+			var coupe := nom
+			while coupe.length() > 3 and POLICE.get_string_size(nom, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x > permis:
+				coupe = coupe.substr(0, coupe.length() - 1)
+				nom = coupe + "…"
 			var ln := POLICE.get_string_size(nom, HORIZONTAL_ALIGNMENT_LEFT, -1, taille).x
 			var x := clampf(c.x - ln * 0.5, fond.position.x + 3.0, fond.end.x - ln - 3.0)
 			var y := c.y + r + 4.0 + taille * 0.95

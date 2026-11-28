@@ -18,7 +18,7 @@ static func _parcours(ctx: Dictionary, parent: Node) -> void:
 	var joueurs: Array = tous.filter(func(p: Dictionary): return (etape.is_empty() or V.etape(p) == etape) and (filtre.is_empty() or str(p.path) == filtre))
 	var colonnes := [
 		{"k": "nom", "t": "JOUEUR", "tri": true, "desc": false},
-		{"k": "poste", "t": "POSTE", "w": 108, "tri": true, "desc": false},
+		{"k": "poste", "t": "POSTE", "w": 128, "tri": true, "desc": false},
 		{"k": "age", "t": "ÂGE", "w": 34, "a": HORIZONTAL_ALIGNMENT_RIGHT, "tri": true},
 		{"k": "niv", "t": "NIV.", "w": 40, "a": HORIZONTAL_ALIGNMENT_RIGHT, "tri": true},
 		{"k": "pot", "t": "POT.", "w": 48, "a": HORIZONTAL_ALIGNMENT_RIGHT, "tri": true},

@@ -153,7 +153,7 @@ static func _blesses(card: Panel, app: Control, baseline: float, w: int) -> bool
 		if app.navigation_controller.entity_available(cible):
 			lien.pressed.connect(func(): app.navigation_controller.open_entity(cible))
 			MiniFiche.lier(app, lien, str(player.id), "squad")
-		x += largeur + 8
+		x += largeur + 30  # place du (i) posé juste après le nom
 	if noms.size() > 2:
 		var reste := "+%d blessé%s →" % [noms.size() - 2, "s" if noms.size() > 3 else ""]
 		var plus := _lien(card, x, baseline - 24, reste, func():

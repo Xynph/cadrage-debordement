@@ -19,7 +19,7 @@ static func _concerned_layout(app: Control, message: Dictionary, width: float) -
 		var player: Dictionary = data.player
 		var weeks := float(player.get("injury", 0)) if (player.get("injury") is int or player.get("injury") is float) else 0.0
 		availability = ("%s · %d sem." % [ClubMail.injury_label(app.model, player), ceili(weeks)]) if weeks > 0 else ("En reprise" if P.player_in_recovery(app.model, str(player.get("id", ""))) else "Apte")
-	var lines := Canvas.wrapped_lines(availability, 18, minf(300.0, width - 420.0)) if not availability.is_empty() else 1
+	var lines := Canvas.wrapped_lines(availability, 18, minf(280.0, width - 446.0)) if not availability.is_empty() else 1
 	return {"data":data, "availability":availability, "lines":lines, "height":maxf(Canvas._h(40), 24.0 * lines + 10.0)}
 
 ## Nom cliquable (joueur, club) : lien souligné d'emblée quand il ouvre un écran ; sans destination, texte gris non
@@ -53,13 +53,13 @@ static func _concerned_row(card: Panel, app: Control, message: Dictionary, layou
 		var link := _nom_lien(app, card, Rect2(cursor, y, 260, Canvas._h(40)), "player", player_id, str(player.get("name", "")), 20, C.IVORY, "InboxConcernedName")
 		link.accessibility_name = "Ouvrir la fiche de " + str(player.get("name", ""))
 		MiniFiche.lier(app, link, player_id, "squad")
-		cursor += 270.0
-		var state_label := D.text(card, cursor, y + 27, str(layout.availability), 18, C.ALERT if float(player.get("injury", 0) if (player.get("injury") is int or player.get("injury") is float) else 0) > 0 else C.MUTED, 600, minf(300.0, limit - cursor - 10.0), HORIZONTAL_ALIGNMENT_LEFT, true)
+		cursor += 296.0
+		var state_label := D.text(card, cursor, y + 27, str(layout.availability), 18, C.ALERT if float(player.get("injury", 0) if (player.get("injury") is int or player.get("injury") is float) else 0) > 0 else C.MUTED, 600, minf(280.0, limit - cursor - 10.0), HORIZONTAL_ALIGNMENT_LEFT, true)
 		state_label.name = "InboxConcernedAvailability"
 		state_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		state_label.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 		state_label.size.y = C.px(24.0 * int(layout.lines))
-		cursor += minf(300.0, limit - cursor - 10.0) + 14.0
+		cursor += minf(280.0, limit - cursor - 10.0) + 14.0
 	if data.has("club") and cursor + 300.0 <= limit:
 		var club: Dictionary = data.club
 		var rank := "1er" if int(club.rank) == 1 else "%de" % int(club.rank)

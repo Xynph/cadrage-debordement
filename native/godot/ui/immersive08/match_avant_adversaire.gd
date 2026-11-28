@@ -43,6 +43,11 @@ func _adversaire(model: Dictionary, next: Dictionary, data: Dictionary, nous: in
 		lien.set_meta("joueur_id", id)
 		_lier_mini_adverse(lien, joueur, eux)
 		ligne.add_child(lien)
+		# Place pour le bouton (i), posé à droite du nom : sans elle il recouvre le début du poste.
+		var place_info := Control.new()
+		place_info.custom_minimum_size = Vector2(M(18), 0)
+		place_info.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ligne.add_child(place_info)
 		var detail := "%s · %s" % [str(joueur.get("poste", "")), str(joueur.get("role", ""))]
 		if joueur.get("chiffre") is String: detail += " · " + str(joueur.chiffre)
 		var role := lignes(detail, 13, Charte.IVOIRE_2, 1, false, 500)

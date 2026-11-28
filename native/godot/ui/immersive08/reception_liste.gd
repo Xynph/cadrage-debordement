@@ -230,7 +230,7 @@ static func _row(rows: Control, app: Control, state: Dictionary, message: Dictio
 	var hour := str(message.get("hour", ""))
 	var meta_width := (84.0 if not hour.is_empty() else 0.0) + (30.0 if mark.get("favorite", false) else 0.0) + (54.0 if count > 1 else 0.0)
 	if is_unread: D.rect(row, Rect2(14, 22, 12, 12), teinte, 6).name = "UnreadDot"
-	var service_w := minf(Messages.largeur_pastille(service, 17), 220.0)
+	var service_w := minf(Messages.largeur_pastille(service, 17), 250.0)
 	var pill := Messages.pastille(row, Rect2(36, 12, service_w, 30), service, Canvas.SERVICE_ICONS.get(service, "home"), 17, filtre)
 	pill.tooltip_text = service + " · " + Canvas._sender(app, message)
 	# Courrier signé par un agent nommé : son visage devant son nom (même visage que dans sa fenêtre et la discussion).

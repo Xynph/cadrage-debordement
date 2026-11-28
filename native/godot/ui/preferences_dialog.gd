@@ -288,7 +288,7 @@ static func _titre_info(parent: Node, titre: String, aide: String) -> void:
 
 static func _volume(parent: Node, caption: String, id: String) -> SpinBox:
 	var row := G.h(12); parent.add_child(row)
-	var label := G.label(caption + " (%)",14); G.fill(label); row.add_child(label)
+	var label := G.label(caption,14); G.fill(label); row.add_child(label)
 	var volume := SpinBox.new()
 	volume.name = id; volume.min_value = 0; volume.max_value = 100; volume.step = 1
 	# SpinBox commits typed text on Enter/focus exit; arrows are discrete commits.
