@@ -319,7 +319,7 @@ function jeuAuPiedPerdu(l,side){
  const camp=zone==='own22'||zone==='ownHalf',k=jeuAuPiedTire(camp?J.perdus[zone]:{...J.perdus.adverse,...(zone==='opp22'?{touche:0}:{})});
  const botteur=camp?jeuAuPiedBotteur(l,side,k==='chandelle'?'chandelle':'touche'):occupationKicker(l,side),nom=botteur?.name||ab;
  const devant=m=>clamp(Math.abs(goal-origin)>m+3?origin+dir*m:goal-dir*3,1,99),M=J.perduMetres;
- const fait=(at,texte,qui=null)=>addEvent(l,texte,'play',{kind:'kick',team:side,actor:botteur?.id||null,...(qui?{receiver:qui.id}:{}),from:{x:origin,y:35},to:{x:at,y:35}});
+ const fait=(at,texte,qui=null,suite={})=>addEvent(l,texte,'play',{kind:'kick',team:side,actor:botteur?.id||null,...(qui?{receiver:qui.id}:{}),from:{x:origin,y:35},to:{x:at,y:35},...suite});
  const recoit=(at,texte)=>{ballPossession(l,opp,at);const r=actionPlayer(l,opp,'receiver');fait(at,`${texte} ; ${r?.name||abo} récupère pour ${abo}.`,r);return true};
  if(camp){
   if(k==='touche')return resolveTouch(l,side,devant(rand(...M.touche)),{kicker:botteur,court:true});
@@ -329,7 +329,9 @@ function jeuAuPiedPerdu(l,side){
   if(k==='relance'){
    // Dégagement capté puis relancé : le receveur remonte le terrain, la possession change près du point de départ.
    const landing=devant(rand(...M.relance)),at=devant(rand(...M.camp)),r=actionPlayer(l,opp,'receiver');
-   fait(landing,`${nom} (${ab}) dégage dans le champ ; ${r?.name||abo} capte pour ${abo}.`,r);ballPossession(l,opp,at);
+   // Le fait dit déjà le ballon chez le receveur (image : il capte au point de chute) : sans cela, bandeau et ligne d'état
+   // donnaient le ballon au botteur pendant la réception (tests/match-bandeau-possession.cjs). Possession du match inchangée ici.
+   fait(landing,`${nom} (${ab}) dégage dans le champ ; ${r?.name||abo} capte pour ${abo}.`,r,{possession:opp});ballPossession(l,opp,at);
    const g=Math.round(Math.abs(landing-at));
    if(g>=1)addEvent(l,`${r?.name||abo} (${abo}) relance et remonte ${g} mètres.`,'play',{kind:'carry',team:opp,actor:r?.id||null,tackler:r?carryTackler(l,opp,r.id,g):null,from:{x:landing,y:35},to:{x:at,y:35}});
    return true;
@@ -388,13 +390,13 @@ function advanceCausalPlay(l){
  // Pénalités réalistes : faute de l'attaquant au sol (ballon non libéré, scellement), plus rare chez les joueurs disciplinés.
  if(penalites&&roll<penaltyProb+handProb+pousse+perdu+clamp(PENALITES.attaque+(70-unit(l,side,'discipline'))*.001,.02,.08)*(typeof pilotageFoul==='function'?pilotageFoul(l,side,'attaque'):1)*fraicheurFaute(l,side))return awardPenalty(l,opp,{phase:'attaque',incident:roll*1000%2<1?'not-release':'sealing'});
  if((tacticalRules(l)||effectiveAttack(l,side)==='occupation')&&Math.random()<openKickProbability(l,side))return kickOpenPlay(l,side);
- tacticalCount(l,side,'carries');const edge=teamEdge(l,side,'attack')+fraicheurJeu(l,side),essais=essaisRules(l),niveau=essais?(ESSAIS.ecart-1)*tacticalEdge(l,side):0,success=Math.random()<(essais?clamp(ESSAIS.porte+ouvertureJeu(l)+edge+niveau,.2,.9):clamp(.49+edge,.18,.84));
+ tacticalCount(l,side,'carries');const edge0=teamEdge(l,side,'attack')+fraicheurJeu(l,side),edge=edge0+edgePoste(l,side,'percee'),edgeFin=edge0+edgePoste(l,side,'finition'),essais=essaisRules(l),niveau=essais?(ESSAIS.ecart-1)*tacticalEdge(l,side):0,success=Math.random()<(essais?clamp(ESSAIS.porte+ouvertureJeu(l)+edge+niveau,.2,.9):clamp(.49+edge,.18,.84));
  if(success){
   l.territory=clamp(l.territory+(side===0?1:-1)*carryGain(l,side),1,99);tacticalCount(l,side,'advances');const metres=Math.abs(l.territory-origin);tacticalCount(l,side,'metres',metres);if(metres>=22)tacticalCount(l,side,'longGains');
   // The completed carrying sequence includes a tackle/ruck, resetting kick eligibility.
   l.kickContext={team:side,halfEligible:ownHalf(side,l.territory),twentyTwoEligible:own22(side,l.territory)};
   const danger=side===0?l.territory>74:l.territory<26;
-  if(danger&&Math.random()<(essais?clamp(ESSAIS.finition+ouvertureJeu(l)+edge+niveau+tacticalFinishAdjustment(l,side)-(typeof defenseRegroupee==='function'?DEFENSE_REGROUPEE.finition*defenseRegroupee(l,side):0),.15,.85):clamp(.36+edge+tacticalFinishAdjustment(l,side),tacticalRules(l)?.12:.16,tacticalRules(l)?.78:.75))){
+  if(danger&&Math.random()<(essais?clamp(ESSAIS.finition+ouvertureJeu(l)+edgeFin+niveau+tacticalFinishAdjustment(l,side)-(typeof defenseRegroupee==='function'?DEFENSE_REGROUPEE.finition*defenseRegroupee(l,side):0),.15,.85):clamp(.36+edge+tacticalFinishAdjustment(l,side),tacticalRules(l)?.12:.16,tacticalRules(l)?.78:.75))){
    const finish=Math.random();
    if(MATCH_COURSES_DECOUPEES){
     if(finish<.12)return resolveInGoal(l,side,finish<.08?'held-up':'ingoal-knock-on',l.territory,courseDecoupee(l,side,origin,null));
