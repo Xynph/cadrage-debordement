@@ -171,7 +171,7 @@ static func _vigilances(app: Control, finance: Dictionary) -> Array:
 	if budget is Dictionary and budget.get("plafondSalarial") != null and float(budget.plafondSalarial) > 0.0 and budget.get("masseSalariale") != null:
 		var part := roundi(100.0 * float(budget.masseSalariale) / float(budget.plafondSalarial))
 		if part >= 80:
-			lignes.append({"id": "FinanceWatchCap", "titre": "Masse salariale", "detail": "joueurs à %d %% du plafond de la ligue · marge restante : %s" % [part, U.amount(budget.get("margePlafond"))], "lien": "Budget" if F._onglet_courant(app) == "wages" else "Salaires", "action": func(): F._ouvrir_onglet(app, "budget") if F._onglet_courant(app) == "wages" else F._open_wages(app, false)})
+			lignes.append({"id": "FinanceWatchCap", "titre": "Masse salariale · joueurs", "detail": "%d %% du plafond de la ligue · marge restante : %s" % [part, U.amount(budget.get("margePlafond"))], "lien": "Budget" if F._onglet_courant(app) == "wages" else "Salaires", "action": func(): F._ouvrir_onglet(app, "budget") if F._onglet_courant(app) == "wages" else F._open_wages(app, false)})
 	return lignes
 
 static func _watch(card: Panel, app: Control, finance: Dictionary, largeur: float) -> void:
