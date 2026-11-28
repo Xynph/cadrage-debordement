@@ -1,0 +1,5 @@
+tests/godot-entree-page.cjs
+tests/godot-fatigue-overview.cjs
+tests/godot-office-ui.cjs
+tests/godot-bureau-da.cjs
+tests/godot-office-entity-links.cjs

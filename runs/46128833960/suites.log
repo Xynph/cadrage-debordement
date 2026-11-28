@@ -1,0 +1,32 @@
+::notice::Suite exclue (ancien mode de carrière, CD_MODES_HERITES) : tests/godot-fatigue-overview.cjs
+::notice::Suite exclue (ancien mode de carrière, CD_MODES_HERITES) : tests/godot-office-ui.cjs
+::notice::Suite exclue (ancien mode de carrière, CD_MODES_HERITES) : tests/godot-office-entity-links.cjs
+::group::tests/godot-entree-page.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+godot-entree-page : 12 vérifications, 0 échec(s)
+godot-entree-page : OK
+CD_CPU_PROFILE suite=tests/godot-entree-page.cjs user_s=0.21 system_s=0.03 wall_s=0.73 cpu_pct=34% max_rss_kb=121944
+PASS tests/godot-entree-page.cjs (1 s)
+::endgroup::
+::group::tests/godot-bureau-da.cjs
+BUREAU DA : 198 contrôles ; 0 échec(s)
+TAP version 13
+# Subtest: Bureau : DA Affiche et Gabi, éléments cliquables, charte
+ok 1 - Bureau : DA Affiche et Gabi, éléments cliquables, charte
+  ---
+  duration_ms: 51139.254236
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 51144.683545
+CD_CPU_PROFILE suite=tests/godot-bureau-da.cjs user_s=38.65 system_s=1.46 wall_s=51.17 cpu_pct=78% max_rss_kb=1209120
+PASS tests/godot-bureau-da.cjs (51 s)
+::endgroup::
