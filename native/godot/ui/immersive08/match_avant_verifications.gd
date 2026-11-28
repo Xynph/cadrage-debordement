@@ -33,7 +33,7 @@ func _feuille(model: Dictionary, etat: Dictionary) -> Control:
 		rangee.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		barres.add_child(rangee)
 		rangees.append(rangee)
-	barres.custom_minimum_size.y = M(230 if deux_rangees else 130)
+	barres.custom_minimum_size.y = M(270 if deux_rangees else 150)
 	for i in 15:
 		var barre := Barre.new()
 		barre.name = "FeuilleBarre%d" % (i + 1)
@@ -42,13 +42,21 @@ func _feuille(model: Dictionary, etat: Dictionary) -> Control:
 		barre.mini = CONDITION_MINI
 		barre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		barre.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		barre.custom_minimum_size = Vector2(M(18), M(112 if deux_rangees else 110))
+		barre.custom_minimum_size = Vector2(M(18), M(132 if deux_rangees else 130))
 		if not str(ids[i]).is_empty():
 			barre.tooltip_text = ""
 			barre.accessibility_name = "N° %d, %s, condition %d %%" % [i + 1, noms[i], roundi(conditions[i])]
 			var id: String = ids[i]
 			barre.pressed.connect(func(): _ouvrir_joueur(id))
 			MiniFiche.lier(app, barre, id, "squad")
+			# Le (i) occupe sa propre rangée en haut de la barre (sinon il recouvre la valeur de condition).
+			var info_barre := barre.find_child("CarteJoueurInfo_*", true, false) as Control
+			if info_barre != null:
+				barre.reserve_info = 18.0
+				var centrer := func():
+					if is_instance_valid(info_barre) and is_instance_valid(barre): info_barre.position = Vector2((barre.size.x - info_barre.size.x) / 2.0, 1.0)
+				barre.resized.connect(centrer)
+				centrer.call()
 		else:
 			barre.disabled = true
 			barre.mouse_default_cursor_shape = Control.CURSOR_ARROW
@@ -113,6 +121,7 @@ class Barre extends Button:
 	var valeur := -1.0
 	var numero := 0
 	var mini := 80
+	var reserve_info := 0.0
 	func _ready() -> void:
 		flat = true
 		for look in ["normal", "hover", "pressed", "focus", "disabled"]: add_theme_stylebox_override(look, StyleBoxEmpty.new())
@@ -127,7 +136,7 @@ class Barre extends Button:
 		var taille := 12
 		# Barres étroites (fenêtre 1280) : les valeurs voisines se décalent d'un étage pour ne pas se chevaucher.
 		var etage: bool = size.x < float(taille) * 1.9
-		var haut := float(taille) * (2.0 if etage else 1.0) + 4.0
+		var haut := float(taille) * (2.0 if etage else 1.0) + 4.0 + reserve_info
 		var bas := float(taille) + 4.0
 		var zone := Rect2(0, haut, size.x, maxf(4.0, size.y - haut - bas))
 		draw_rect(zone, Charte.PANNEAU_2)

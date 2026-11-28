@@ -308,7 +308,9 @@ func _remplir_xv(joueurs: Array, direct: Dictionary) -> void:
 		return
 	alertes_xv.clear()
 	if joueurs.is_empty():
-		xv.add_child(_texte("Composition indisponible.", 19, DOUX, true))
+		var vide_xv := _texte("Composition indisponible.", 19, DOUX, true)
+		vide_xv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		xv.add_child(vide_xv)
 		return
 	var ordre := ordre_xv(joueurs, infos, tri_xv, tri_inverse)
 	for rang_ligne in ordre.size():
@@ -464,7 +466,9 @@ func _remplir_banc(live: Dictionary) -> void:
 	var nombre := "%d joueur%s" % [reserves.size(), "s" if reserves.size() > 1 else ""]
 	precision_banc.text = nombre + ((" · %d changement%s possible%s" % [int(restants), "s" if int(restants) > 1 else "", "s" if int(restants) > 1 else ""]) if restants is int or restants is float else "")
 	if reserves.is_empty():
-		banc.add_child(_texte("Aucun remplaçant sur la feuille.", 18, DOUX, true))
+		var vide_banc := _texte("Aucun remplaçant sur la feuille.", 18, DOUX, true)
+		vide_banc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		banc.add_child(vide_banc)
 		return
 	for n in reserves.size():
 		var joueur: Variant = reserves[n]
@@ -555,7 +559,9 @@ func _remplir_xv_adverse(direct: Dictionary) -> void:
 	var liste: Array = direct.get("adversaire", []) if direct.get("adversaire") is Array else []
 	var camp := int(direct.get("camp", -1))
 	if liste.is_empty():
-		xv.add_child(_texte("Composition adverse pas encore vue.", 19, DOUX, true))
+		var vide_xv := _texte("Composition adverse pas encore vue.", 19, DOUX, true)
+		vide_xv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		xv.add_child(vide_xv)
 		return
 	for poste in liste.size():
 		var j: Variant = liste[poste]
