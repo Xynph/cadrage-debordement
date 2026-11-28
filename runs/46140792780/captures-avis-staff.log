@@ -1,0 +1,19 @@
+Avis (moteur) : Ton entraîneur de l’attaque, Aleki Afamasaga, préfère Angus FORBES à Samuel KEEBLE au poste de centre : il voit Angus FORBES plus solide à ce poste.
+Avis (Godot) : {"controles":7,"failures":[],"lignes":["Angus FORBES plutôt que Samuel KEEBLE (centre) · plus solide"]}
+Captures : /home/runner/work/_temp/resultats/captures/avis-staff
+TAP version 13
+# Subtest: Composition : avis du staff affiché sur la feuille
+ok 1 - Composition : avis du staff affiché sur la feuille
+  ---
+  duration_ms: 145234.935869
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 145242.010623
