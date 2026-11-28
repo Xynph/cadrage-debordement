@@ -1,0 +1,5 @@
+tests/godot-phrases-lot10.cjs
+tests/reprise-ancien-journal-semaine.cjs
+tests/calendrier-mutations.cjs
+tests/vente-joueurs.cjs
+tests/world-zones-classement.cjs

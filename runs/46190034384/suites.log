@@ -1,0 +1,67 @@
+::group::tests/godot-phrases-lot10.cjs
+Destinations :
+ManagerCareerFragiles1 -> Recrutement
+ManagerCareerMasse1 -> Finances
+ManagerCareerSemaines1 -> Finances
+ManagerCareerFragiles2 -> Recrutement
+ManagerCareerMasse2 -> Finances
+ManagerCareerSemaines2 -> Finances
+ManagerCareerFragiles3 -> Recrutement
+ManagerCareerMasse3 -> Finances
+ManagerCareerSemaines3 -> Finances
+ManagerRecruitmentLien -> Recrutement
+Vitrine 1280x720 : 4 colonnes
+Vitrine 1920x1080 : 4 colonnes
+VitrineCompte -> Classements
+VitrineReputation -> Classements
+VitrineSemaines -> Calendrier
+VitrineClub_3 -> Fiche club
+VitrineClub_10 -> Fiche club
+VitrineClub_76 -> Fiche club
+VitrineClub_4 -> Fiche club
+VitrineClub_5 -> Fiche club
+VitrineClub_7 -> Fiche club
+VitrineClub_0 -> Fiche club
+VitrineClub_1 -> Fiche club
+Prise de poste -> petite fenêtre (Échap, ✕, clic à côté)
+Écho -> petite fenêtre
+Pastille « Consigne locale » -> plan principal
+Ligne de phase arrêtée -> choix retenu
+PlaybookAdviceZones -> onglet 0
+PlaybookAdvicePhases -> onglet 1
+Contrôles : 1522
+TAP version 13
+# Subtest: Lot 10 : écrans sans phrases d’aide, chaque pièce cliquable
+ok 1 - Lot 10 : écrans sans phrases d’aide, chaque pièce cliquable
+  ---
+  duration_ms: 63141.304965
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 63146.577012
+CD_CPU_PROFILE suite=tests/godot-phrases-lot10.cjs user_s=73.66 system_s=3.39 wall_s=63.17 cpu_pct=121% max_rss_kb=1920680
+PASS tests/godot-phrases-lot10.cjs (64 s)
+::endgroup::
+::group::tests/reprise-ancien-journal-semaine.cjs
+::error file=tests/reprise-ancien-journal-semaine.cjs::Godot : ECHEC (124), durée 300 s, limite 300s
+::endgroup::
+::group::tests/calendrier-mutations.cjs
+clôture de semaine : sans approche 6179 ms, avec approches 6908 ms (3 approches)
+::error file=tests/calendrier-mutations.cjs::Godot : ECHEC (124), durée 300 s, limite 300s
+::endgroup::
+::group::tests/vente-joueurs.cjs
+clôture de semaine : sans liste 6307 ms, avec 5 joueurs proposés 7654 ms (7 offres, 2 spontanée)
+::error file=tests/vente-joueurs.cjs::Godot : ECHEC (124), durée 300 s, limite 300s
+::endgroup::
+::group::tests/world-zones-classement.cjs
+world-zones-classement PASS {"access":"13e maintenu","nationale":"2 promu(s)","japon":["maintien","maintien"]}
+CD_CPU_PROFILE suite=tests/world-zones-classement.cjs user_s=268.89 system_s=5.07 wall_s=250.23 cpu_pct=109% max_rss_kb=2854432
+PASS tests/world-zones-classement.cjs (250 s)
+::endgroup::

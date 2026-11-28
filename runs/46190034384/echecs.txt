@@ -1,0 +1,4 @@
+== suites (5) (code 1)
+::error file=tests/reprise-ancien-journal-semaine.cjs::Godot : ECHEC (124), durée 300 s, limite 300s
+::error file=tests/calendrier-mutations.cjs::Godot : ECHEC (124), durée 300 s, limite 300s
+::error file=tests/vente-joueurs.cjs::Godot : ECHEC (124), durée 300 s, limite 300s
