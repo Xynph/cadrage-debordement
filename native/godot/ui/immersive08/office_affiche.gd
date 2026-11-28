@@ -68,6 +68,9 @@ static func _prochain(card: Panel, app: Control, next: Dictionary, w: int) -> vo
 	var away: Dictionary = next.get("away", {})
 	var demi := w / 2.0
 	var y0 := BAND + 16
+	# Les deux clubs classés : le rang est déjà dans la ligne « Classement » du face-à-face, juste dessous. Le répéter sous
+	# le nom du club de droite le collait aux en-têtes du tableau ; on ne le garde que si le face-à-face ne l'a pas.
+	var rang_sous_nom := not (home.has("rank") and home.has("points") and away.has("rank") and away.has("points"))
 	for cote in 2:
 		var club: Dictionary = home if cote == 0 else away
 		var x0 := 28.0 if cote == 0 else demi + 40.0
@@ -76,7 +79,7 @@ static func _prochain(card: Panel, app: Control, next: Dictionary, w: int) -> vo
 		Office.reading_overlay(app, card, Rect2(x0, y0, 64, 64), Office.club_reading_target(app, club), "OfficeNext%sClubCrest" % ["Home" if cote == 0 else "Away"], G.club_name(club))
 		var nom := _ex(D.text(card, x0 + 84, base, G.club_name(club).to_upper(), 44, Charte.IVOIRE, 800, demi - 160))
 		_label_reading(app, card, nom, Office.club_reading_target(app, club), "OfficeNext%sClubName" % ["Home" if cote == 0 else "Away"], nom.text)
-		if club.has("rank") and club.has("points"):
+		if rang_sous_nom and club.has("rank") and club.has("points"):
 			var rang := G.n(club.rank)
 			var texte := "%s%s · %s pts" % [rang, "er" if rang == "1" else "e", G.n(club.points)] if P.standings_open(club) else "Pas encore classé · %s pts" % G.n(club.points)
 			D.text(card, x0 + 84, base + 28, texte, 20, Charte.club_texte(app.accent) if club.get("id") == app.model.club.id else Charte.IVOIRE_2, 600, demi - 160)

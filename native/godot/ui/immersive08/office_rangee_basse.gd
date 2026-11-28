@@ -190,7 +190,10 @@ static func _timeline(card: Panel, app: Control, _recent: Variant, w: int = GABI
 	_titre(card, "PROCHAINS MATCHS")
 	var calendrier := _lien(card, w - 20, 12, "Tout le calendrier →", func(): app._navigate("Calendrier"), "OfficeCalendarAction", 20, true)
 	_dernier_resultat(card, app, 24 + _largeur("PROCHAINS MATCHS", 26, Charte.TITRE_EXTRA_ITALIQUE) + 28, calendrier.position.x / C.density - 16)
-	var fixtures := Office.upcoming_matches(app.model).slice(0, 3)
+	# Trois matchs dans la colonne de Gabi ; Gabi désactivé, la colonne entière est à eux : on la remplit (jusqu'à 16)
+	# au lieu de laisser un grand panneau vide sous trois lignes.
+	var nombre := clampi(int((card.size.y / C.density - 70.0) / 42.0), 3, 16)
+	var fixtures := Office.upcoming_matches(app.model, nombre)
 	if fixtures.is_empty():
 		D.text(card, 25, 100, "Aucune rencontre programmée pour le moment.", 21, Charte.IVOIRE_2, 500, w - 50, HORIZONTAL_ALIGNMENT_LEFT, true)
 	for i in fixtures.size():
