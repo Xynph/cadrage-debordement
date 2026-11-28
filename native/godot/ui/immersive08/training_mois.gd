@@ -308,8 +308,8 @@ static func _effets(parent: Control, at: Vector2, effets: Dictionary, prefixe: S
 	return x - at.x
 
 static func _petite_pilule(parent: Control, at: Vector2, mot: String, icone: String, couleur: Color, id: String, bulle: String) -> float:
-	var largeur := C.BODY.get_string_size(mot, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(10, C.px(15))).x / C.density + 18.0 + (20.0 if not icone.is_empty() else 0.0)
-	var pilule := D.rect(parent, Rect2(at.x, at.y, largeur, 26), Charte.PANNEAU_3.lerp(couleur, .2), Charte.RAYON_PILULE)
+	var largeur := C.BODY.get_string_size(mot, HORIZONTAL_ALIGNMENT_LEFT, -1, maxi(12, C.px(19))).x / C.density + 20.0 + (26.0 if not icone.is_empty() else 0.0)
+	var pilule := D.rect(parent, Rect2(at.x, at.y, largeur, 32), Charte.PANNEAU_3.lerp(couleur, .2), Charte.RAYON_PILULE)
 	pilule.name = id
 	pilule.tooltip_text = bulle
 	var gauche := 9.0
@@ -320,9 +320,9 @@ static func _petite_pilule(parent: Control, at: Vector2, mot: String, icone: Str
 		image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		image.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		pilule.add_child(image)
-		D.place(image, Rect2(8, 5, 16, 16))
-		gauche = 28.0
-	D.text(pilule, gauche, 19, mot, 15, couleur, 700, largeur - gauche - 4).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		D.place(image, Rect2(8, 5, 22, 22))
+		gauche = 35.0
+	D.text(pilule, gauche, 23, mot, 19, couleur, 700, largeur - gauche - 4).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return largeur
 
 ## Un jour : numéro, trois créneaux (match puis séances), « Repos » en filet quand le jour est libre ; clic = petite
@@ -347,7 +347,7 @@ static func _jour(page: Control, data: Dictionary, panneau: Control, r: Rect2, d
 	if not absences.is_empty():
 		var partis := absences.filter(func(e: Dictionary): return e.kind == "absence").size()
 		var couleur: Color = Charte.PERTE if partis > 0 else Charte.GAIN
-		_petite_pilule(cadre, Vector2(r.size.x - 70, 6), str(partis if partis > 0 else absences.size()), "flag", couleur, "TrainingMonthAbsence_" + date, "Sélection : %d absent(s), %d retour(s)" % [partis, absences.size() - partis])
+		_petite_pilule(cadre, Vector2(r.size.x - 84, 4), str(partis if partis > 0 else absences.size()), "flag", couleur, "TrainingMonthAbsence_" + date, "Sélection : %d absent(s), %d retour(s)" % [partis, absences.size() - partis])
 	var creneaux := _creneaux(data, date)
 	var hc := minf(32.0, (r.size.y - 40) / 3.0 - 4)
 	for k in 3:
@@ -356,7 +356,7 @@ static func _jour(page: Control, data: Dictionary, panneau: Control, r: Rect2, d
 			if k == 0 and not hors_mois:
 				var repos := D.rect(cadre, rc, Color.TRANSPARENT, Charte.RAYON_PETIT, Charte.FILET)
 				repos.mouse_filter = Control.MOUSE_FILTER_IGNORE
-				D.text(repos, 10, hc - 9, "Repos", 15, Charte.IVOIRE_3, 600, rc.size.x - 14).mouse_filter = Control.MOUSE_FILTER_IGNORE
+				D.text(repos, 10, hc - 8, "Repos", 19, Charte.IVOIRE_3, 600, rc.size.x - 14).mouse_filter = Control.MOUSE_FILTER_IGNORE
 			continue
 		var cr: Array = creneaux[k]
 		var bloc: Panel
@@ -369,7 +369,7 @@ static func _jour(page: Control, data: Dictionary, panneau: Control, r: Rect2, d
 			D.place(crest, Rect2(4, 2, hc - 4, hc - 4))
 			var texte := _court(adv) + "  " + _lieu(data, cr[2])
 			if not _score(cr[2]).is_empty(): texte += "  " + _score(cr[2])
-			D.text(bloc, hc + 6, hc - 9, texte, 16, Charte.ENCRE, 800, rc.size.x - hc - 10).mouse_filter = Control.MOUSE_FILTER_IGNORE
+			D.text(bloc, hc + 6, hc - 8, texte, 19, Charte.ENCRE, 800, rc.size.x - hc - 10).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		else:
 			var couleur: Color = FAMILLES[cr[0]][1]
 			bloc = D.rect(cadre, rc, Color(couleur, .22), Charte.RAYON_PETIT)
@@ -378,7 +378,7 @@ static func _jour(page: Control, data: Dictionary, panneau: Control, r: Rect2, d
 			icone.modulate = couleur
 			bloc.add_child(icone)
 			D.place(icone, Rect2(11, 4, hc - 8, hc - 8))
-			D.text(bloc, hc + 8, hc - 9, str(cr[1]), 16, Charte.IVOIRE, 600, rc.size.x - hc - 12).mouse_filter = Control.MOUSE_FILTER_IGNORE
+			D.text(bloc, hc + 8, hc - 8, str(cr[1]), 19, Charte.IVOIRE, 600, rc.size.x - hc - 12).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		bloc.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		bloc.name = "TrainingMonthSlot_%s_%d" % [date, k]
 	var jour := date

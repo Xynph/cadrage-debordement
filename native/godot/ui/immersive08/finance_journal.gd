@@ -106,7 +106,13 @@ static func _ledger(card: Panel, app: Control, ledger: Array, limit: int, key: S
 	var chip_x := largeur - 600.0
 	Brique._bloc(card, Rect2(10, 60, largeur - 20, 36), Charte.PANNEAU_2)
 	Brique._etiquette(card, 24, 84, "N°", 60)
-	Brique._etiquette(card, 113, 84, "Mouvement", 400)
+	# Compétition et journée dites une seule fois : en-tête pour la 1re ligne de la page, puis à chaque changement de journée.
+	var groupe_entete := ""
+	if not ledger.is_empty() and first < ledger.size():
+		var parts_tete := str(ledger[first].get("title","")).split(" · ")
+		if parts_tete.size() >= 3 and parts_tete[1].begins_with("Journée"): groupe_entete = parts_tete[0] + " · " + parts_tete[1]
+	Brique._etiquette(card, 113, 84, "Mouvement" if groupe_entete.is_empty() else "Mouvement · " + groupe_entete, 440)
+	var groupe_courant := groupe_entete
 	Brique._etiquette(card, chip_x, 84, "Catégorie", 200)
 	Brique._etiquette(card, droite_entrees, 84, "Entrées", 160, HORIZONTAL_ALIGNMENT_RIGHT)
 	Brique._etiquette(card, droite_sorties, 84, "Sorties", 160, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -124,7 +130,15 @@ static func _ledger(card: Panel, app: Control, ledger: Array, limit: int, key: S
 		var destination := _destination_categorie(app, str(category[0]))
 		Brique._zone(card, Rect2(12, y, largeur - 24, 32), destination[1], "FinanceLedgerRow_%d" % (first+i), "Ouvrir · %s : %s" % [destination[0], title], true)
 		Brique._texte(card, 24, y + 22, "%02d" % (first+i+1), 17, Charte.IVOIRE_2, 60).mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var title_label := Brique._texte(card, 113, y + 22, title, 19, Charte.IVOIRE, chip_x - 130)
+		var libelle := title
+		var parts := title.split(" · ")
+		if parts.size() >= 3 and parts[1].begins_with("Journée"):
+			var groupe := parts[0] + " · " + parts[1]
+			libelle = " · ".join(parts.slice(2))
+			if groupe != groupe_courant:
+				libelle = groupe + " · " + libelle
+				groupe_courant = groupe
+		var title_label := Brique._texte(card, 113, y + 22, libelle, 19, Charte.IVOIRE, chip_x - 130)
 		title_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		if selected:
 			title_label.name = "FinanceLedgerTarget"
