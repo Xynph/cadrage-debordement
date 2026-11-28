@@ -14,6 +14,9 @@ var checks := 0
 var failures: Array[String] = []
 var proof := OS.get_environment("CD_SURVOLS_ARTIFACTS")
 var captures := OS.get_environment("CD_SURVOLS_CAPTURES")
+## Ancre réellement survolée par survoler() : la page peut se redessiner pendant l'attente (fin d'un chargement) et
+## libérer l'ancre passée par l'appelant ; l'appelant reprend celle-ci (même clé) pour la capture et le retrait.
+var survolee: Control
 
 func _initialize() -> void: call_deferred("run")
 func check(value: bool, message: String) -> void:
@@ -76,6 +79,7 @@ func survoler(ancre: Control) -> Control:
 		bulle = Bulle.montrer(ancre)
 		await settle()
 	if bulle != null and not is_instance_valid(bulle): bulle = null
+	survolee = ancre if is_instance_valid(ancre) else lie(cle)
 	check(bulle != null and bulle.is_visible_in_tree(), "Bulle affichée au survol de " + cle)
 	if bulle != null: check(Rect2(Vector2.ZERO, root.get_visible_rect().size).encloses(bulle.get_global_rect()), "Bulle entière dans l'écran (" + cle + ")")
 	return bulle
@@ -89,6 +93,10 @@ func capture(nom: String, zone: Rect2 = Rect2()) -> void:
 	if zone.has_area():
 		var z := Rect2i(zone.grow(60.0)).intersection(Rect2i(Vector2i.ZERO, image.get_size()))
 		image.get_region(z).save_png(captures.path_join(nom + suffixe + "-zoom.png"))
+
+## Zone de capture ancre + bulle (vide si l'une a été libérée par un redessin de la page).
+func zone(a: Control, b: Control) -> Rect2:
+	return a.get_global_rect().merge(b.get_global_rect()) if is_instance_valid(a) and is_instance_valid(b) else Rect2()
 
 func texte(n: Node, nom: String) -> String:
 	var l := n.find_child(nom, true, false) as Label
@@ -111,6 +119,7 @@ func classement() -> void:
 	check(ancre != null, "Écusson du classement lié à la mini-carte (club qui ne nous joue pas)")
 	if ancre == null: return
 	var bulle := await survoler(ancre)
+	ancre = survolee
 	if bulle == null: return
 	check(bulle.size.x > bulle.size.y, "Carte compacte horizontale dans le classement")
 	check(bulle.find_child("CarteClubBandeau", true, false) == null, "Pas de carte verticale dans le classement")
@@ -122,7 +131,7 @@ func classement() -> void:
 		var p := bulle.find_child("CarteClubForme_%d" % i, true, false)
 		if p != null and p.find_children("*", "Label", true, false).any(func(l): return (l as Label).text == "D"):
 			check(_teinte(p).is_equal_approx(Charte.PERTE), "Défaite rouge sur la mini-carte")
-	await capture("classement-carte-club", ancre.get_global_rect().merge(bulle.get_global_rect()))
+	await capture("classement-carte-club", zone(ancre, bulle))
 	# Échap range la bulle.
 	var ev := InputEventKey.new()
 	ev.keycode = KEY_ESCAPE
@@ -130,8 +139,8 @@ func classement() -> void:
 	root.push_input(ev)
 	await settle()
 	# Le guetteur suit le survol réel ; sur le bureau caché des captures, la fenêtre n'a pas la souris : vérifié en headless.
-	if captures.is_empty(): check(Bulle.actuelle(ancre) == null, "Échap ferme la mini-carte")
-	Bulle.cacher(ancre)
+	if captures.is_empty(): check(ancre == null or Bulle.actuelle(ancre) == null, "Échap ferme la mini-carte")
+	if is_instance_valid(ancre): Bulle.cacher(ancre)
 	souris(Vector2(4, 4))
 	# Tableau du classement : défaites en rouge, toujours avec la lettre D.
 	var defaites := 0
@@ -164,10 +173,11 @@ func avant_match() -> void:
 	check(ancre != null, "Écusson adverse de l'Avant-match lié")
 	if ancre == null: return
 	var bulle := await survoler(ancre)
+	ancre = survolee
 	if bulle == null: return
 	check(bulle.find_child("CarteClubBandeau", true, false) != null and bulle.size.y > bulle.size.x, "Carte verticale à grand écusson à l'Avant-match")
-	await capture("avant-match-carte-club", ancre.get_global_rect().merge(bulle.get_global_rect()))
-	Bulle.cacher(ancre)
+	await capture("avant-match-carte-club", zone(ancre, bulle))
+	if is_instance_valid(ancre): Bulle.cacher(ancre)
 	check(app.find_child("ImmersiveMatchCountdown", true, false) == null, "Pas de compte à rebours sur l'avant-match lui-même")
 
 func courbe(route: String, cle: String, nom: String) -> void:
@@ -175,10 +185,11 @@ func courbe(route: String, cle: String, nom: String) -> void:
 	check(ancre != null, "%s : mini-courbe « %s » liée" % [route, cle])
 	if ancre == null: return
 	var bulle := await survoler(ancre)
+	ancre = survolee
 	if bulle == null: return
 	check(bulle.find_child("MiniCourbeTrace", true, false) != null and texte(bulle, "MiniCourbeValeur") != "", "%s : courbe remplie et valeur (%s)" % [route, cle])
-	if not nom.is_empty(): await capture(nom, ancre.get_global_rect().merge(bulle.get_global_rect()))
-	Bulle.cacher(ancre)
+	if not nom.is_empty(): await capture(nom, zone(ancre, bulle))
+	if is_instance_valid(ancre): Bulle.cacher(ancre)
 	souris(Vector2(4, 4))
 	await settle()
 
@@ -232,6 +243,7 @@ func ancienne_sauvegarde() -> void:
 	var ancre: Control = lies("club:")[0] if not lies("club:").is_empty() else null
 	if ancre != null:
 		var bulle := await survoler(ancre)
+		ancre = survolee
 		check(bulle != null, "Sans prochain match publié : la mini-carte s'affiche quand même")
 		if is_instance_valid(ancre): Bulle.cacher(ancre)
 
