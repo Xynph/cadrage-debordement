@@ -33,7 +33,9 @@
   d'une réservation non résolue. Si la CI est rouge, la PR attend : corriger.
 - **Mode rapide et batterie horaire** (décision de Léo, 19/11/2026,
   [détail](docs/fusion-rapide.md)) : une PR prête ne passe que les suites courtes et
-  celles qu'elle modifie (~10 min) ; étiquette `batterie-complete` pour tout lancer.
+  celles qu'elle modifie (~10 min). **Ne pas poser l'étiquette `batterie-complete` sur une PR** (décision de Léo,
+  28/11/2026 : 50 min au lieu de 10 et tous les rouges lents des autres) ; la batterie horaire de `main` couvre le reste.
+  Une PR rouge seulement par délai dépassé est relancée une fois toute seule (`relance-delai.yml`).
   La batterie complète tourne chaque heure sur `main` ; rouge après une relance :
   « MAIN ROUGE » sur #591 et retour arrière automatique si une seule PR est en cause.
   Main rouge : le corriger avant toute autre fusion.

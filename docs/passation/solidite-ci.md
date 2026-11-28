@@ -34,7 +34,7 @@ Workflow : `.github/workflows/tests.yml` (« Tests JavaScript »). La batterie c
 - Délai du job : 50 min. Journaux groupés par suite, lignes `PASS tests/x.cjs (N s)` et `CD_CPU_PROFILE`, tableau dans le résumé du run.
 
 **Jobs « Godot n/6 »** (SDK Godot 4.7.2 réel).
-- Six jobs (`GODOT_SHARD_COUNT` dans `ci/ci-jobs.cjs`, `node ci/shard-tests.cjs <i> godot 6`), poids de la section `godot` de `ci/suite-weights.json` (remesurés à partir de 13 runs, #1327).
+- Sept jobs depuis le 28/11 (`GODOT_SHARD_COUNT` dans `ci/ci-jobs.cjs`, `node ci/shard-tests.cjs <i> godot 7`), poids de la section `godot` de `ci/suite-weights.json` (remesurés le 28/11 sur 4 batteries).
 - Rendu logiciel (Mesa llvmpipe sous xvfb) : **environ 1 image par seconde** en 1920/2560 avant #1355. Toute attente comptée en images est donc piégeuse (voir section 3).
 - Exécution par `ci/run-godot-suites.sh` : plafond par suite dans `suite_limits` (300 s par défaut, 600 à 1200 s pour les suites de rendu), SDK obligatoire (une suite qui se saute faute de moteur échoue).
 - **Délai de 45 min** pour l'étape des suites (le job a 55 min). Une suite qui perd 600 à 900 s (bloquée, plafond atteint) fait couper le job entier : le rouge d'un shard peut venir d'une autre suite du même shard.
