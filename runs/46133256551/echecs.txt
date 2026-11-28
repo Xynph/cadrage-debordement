@@ -1,0 +1,4 @@
+Suite inconnue : godot-contextual-ui
+== captures comparateur de joueurs (Effectif, fiche joueur, marché ; 1440p et 720p) (code 1)
+# SCRIPT ERROR: Invalid call. Nonexistent 'float' constructor.
+not ok 2 - Comparateur de joueurs : captures des écrans (CD_COMPARATEUR_CAPTURE)

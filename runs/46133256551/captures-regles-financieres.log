@@ -1,0 +1,18 @@
+TAP version 13
+# A2R (Godot) : {"a2r":"CONSEIL\\nL’A2R (Autorité de régulation du rugby)\\nlun. 17 août, 14:10\\nTOULOUSE CAPITOLE XV · LUN. 17 AOÛT\\nDÉCISION DE L’A2R : 2 000 000 € À TROUVER AVANT LE 30 JUIN\\nÀ FAIRE · Réponds avant le lun. 24 août : sans réponse, le dossier sera classé.\\nRÉPONSE REQUISE\\nAVANT LE 24 AOÛT\\nDemander l’apport au pro","controles":18,"failures":[],"president":"CONSEIL\\nLe président\\nlun. 17 août, 12:36\\nTOULOUSE CAPITOLE XV · LUN. 17 AOÛT\\nIL FAUT VENDRE AVANT LE 7 SEPTEMBRE\\nÀ FAIRE · Réponds avant le lun. 24 août : sans réponse, le dossier sera classé.\\nRÉPONSE REQUISE\\nAVANT LE 24 AOÛT\\nLes mettre sur la liste des transferts\\n= Joueurs désignés proposés aux aut"} · moteur : {"date":"2026-08-17","niveau":3,"president":["Simon LECLERC","Lény LAFONT","Diego VERA"],"mails":[{"id":"mail-1","type":"a2r_apport"},{"id":"mail-2","type":"reprise_president"}]}
+# Captures : /home/runner/work/_temp/resultats/captures/regles-financieres
+# Subtest: A2R et président : courriers lisibles et réponses depuis le mail dans le vrai jeu
+ok 1 - A2R et président : courriers lisibles et réponses depuis le mail dans le vrai jeu
+  ---
+  duration_ms: 45175.653679
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 45633.120063

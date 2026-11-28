@@ -1,0 +1,15 @@
+--- premier
+INTRO moteur prêt + titre : 30439 ms
+INTRO 29 contrôles, 0 échecs
+--- second
+INTRO moteur prêt + titre : 19513 ms
+INTRO 28 contrôles, 0 échecs
+--- ancien
+INTRO moteur prêt + titre : 19110 ms
+INTRO 27 contrôles, 0 échecs
+--- court
+INTRO moteur prêt + titre : 12996 ms
+INTRO 9 contrôles, 0 échecs
+--- qa
+INTRO 2 contrôles, 0 échecs
+Journaux de l’ouverture : /tmp/cd-intro-ovFWVY

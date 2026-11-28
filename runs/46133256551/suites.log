@@ -1,0 +1,8 @@
+::group::tests/godot-entree-page.cjs
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+godot-entree-page : 19 vérifications, 0 échec(s)
+godot-entree-page : OK
+CD_CPU_PROFILE suite=tests/godot-entree-page.cjs user_s=0.19 system_s=0.06 wall_s=1.29 cpu_pct=19% max_rss_kb=121880
+PASS tests/godot-entree-page.cjs (1 s)
+::endgroup::

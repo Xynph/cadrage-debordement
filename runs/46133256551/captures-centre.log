@@ -1,0 +1,18 @@
+Centre (Godot) : {"controles":180,"failures":[],"mesures":{"1280x720":{"ecart_saison_px":18.5,"hauteur":720,"pastilles":0,"vide_bouton_px":18.1},"1920x1080":{"ecart_saison_px":26.8,"hauteur":1080,"pastilles":0,"vide_bouton_px":26.5},"2560x1440":{"ecart_saison_px":36,"hauteur":1440,"pastilles":0,"vide_bouton_px":36},"actif-1280x720":{"Centre":{"cible":24.4,"texte":11.7},"CentreDetection":0.02,"CentreRencontres":0.02,"Centres":{"cible":24.4,"texte":11.7},"Filières":{"cible":24.4,"texte":11.7},"Générations":{"cible":24.4,"texte":11.7},"Parcours":{"cible":24.4,"texte":11.7},"Passerelle pro":{"cible":24.4,"texte":11.7}},"actif-1920x1080":{"Centre":{"cible":24.3,"texte":11.7},"CentreDetection":0.02,"CentreRencontres":0.02,"Centres":{"cible":24.3,"texte":11.7},"Filières":{"cible":24.3,"texte":12.7},"Générations":{"cible":24.3,"texte":11.7},"Parcours":{"cible":24.3,"texte":12.7},"Passerelle pro":{"cible":24.3,"texte":12.7}},"actif-2560x1440":{"Centre":{"cible":32.1,"texte":14.6},"CentreDetection":0.02,"CentreRencontres":0.02,"Centres":{"cible":32.1,"texte":12.7},"Filières":{"cible":32.1,"texte":16.6},"Générations":{"cible":32.1,"texte":14.6},"Parcours":{"cible":32.1,"texte":16.6},"Passerelle pro":{"cible":32.1,"texte":16.6}}}}
+Captures : /home/runner/work/_temp/resultats/captures/centre
+TAP version 13
+# Subtest: Centre en 1280 × 720 : pastilles entières, Saison junior sous les tuiles
+ok 1 - Centre en 1280 × 720 : pastilles entières, Saison junior sous les tuiles
+  ---
+  duration_ms: 75084.166253
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 75089.527392

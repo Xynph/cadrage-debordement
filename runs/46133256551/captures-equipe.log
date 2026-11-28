@@ -1,0 +1,18 @@
+TAP version 13
+# Fenêtre Équipe (Godot) : {"controles":984,"failures":[],"rapport":{"boutons":["ÉQUIPE","CRIS","CONSIGNES","RÉGLAGES","PLUS ▾","PAUSE"],"cri_reponse":"","cris_moteur":true,"defilement_1280x720":false,"defilement_1920x1080":false,"defilement_2560x1440":false,"plan":["equilibre","large","large",""],"remplacement":{"apres":"world:champ:81acbd3e74eba29fa672","enAttente":false,"inId":"world:champ:81acbd3e74eba29fa672","outId":"world:champ:1829a69149e374127b55","slot":0},"staff_reponse":"Le staff n’a rien à proposer.","statut":"BLAKELEY entre à la place de FAIRCLOUGH."}}
+# Captures : /home/runner/work/_temp/resultats/captures/equipe
+# Subtest: Fenêtre Équipe : un bouton, pause, composition, banc, consignes
+ok 1 - Fenêtre Équipe : un bouton, pause, composition, banc, consignes
+  ---
+  duration_ms: 598230.87261
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 598745.272861

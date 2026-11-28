@@ -1,0 +1,18 @@
+Étiquette Derby (Godot) : {"controles":14,"failures":[]}
+Captures : /home/runner/work/_temp/resultats/captures/derby
+TAP version 13
+# Subtest: Étiquette Derby sur le prochain match (Bureau, Composition, Préparation)
+ok 1 - Étiquette Derby sur le prochain match (Bureau, Composition, Préparation)
+  ---
+  duration_ms: 157442.054465
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 157451.250582
