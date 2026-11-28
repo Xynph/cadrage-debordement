@@ -95,7 +95,7 @@ Les batteries complètes de `main` étaient rouges presque toute la matinée du 
 | Chrono d'une journée de vente de joueurs à 1,0 à 1,8 s pour 1,5 s permis en CI (0,7 s en local) | `vente-joueurs` (Suites 4/10) | Correctif dans #1365 (meilleur de 3) ; en cours |
 | Délais dépassés sur runner lent (+60 % partout) | `presse-rapide-monde`, `world-zones-classement`, `world-nouvelle-saison-rapide` (23,6 s pour 20 s) | À surveiller ; pas de défaut du jeu. Ne pas relever les limites sans mesure |
 | Test de vitesse du préchauffage des portraits (251 à 256 ms pour 250 ms) | `godot-portraits-prechauffage` | Intermittent sur CI chargée ; seuil inchangé ; relancer, mais lire le journal avant (une fois c'était un vrai rouge) |
-| Rouges rares et isolés (voir [solidite-ci.md](solidite-ci.md) section 3) | `godot-survols-club-courbe-rebours`, `deepen-analytics-real-ui`, `godot-equipe-type`, `godot-preparation-ecran`, `godot-centre-cartes`, `godot-phrases-lot10`, `godot-apres-match` | À reprendre si ils reviennent |
+| Rouges rares et isolés (voir [solidite-ci.md](solidite-ci.md) section 4) | `godot-survols-club-courbe-rebours`, `deepen-analytics-real-ui`, `godot-equipe-type`, `godot-preparation-ecran`, `godot-centre-cartes`, `godot-phrases-lot10`, `godot-apres-match` | À reprendre si ils reviennent |
 
 Au moment de la passation, la batterie de `main` sur le dernier commit (qui inclut #1363) était **en cours** ; les deux précédentes avaient échoué sur `Suites 5/10` et `Suites 7/10` (suites qui se terminent en environ 76 s, limite 180 s). Vérifier avant tout autre chose si `main` est vert. Rappel : `main` rouge doit être corrigé **avant toute autre fusion**, et `main-rouge.yml` peut ouvrir tout seul une PR de retour arrière.
 

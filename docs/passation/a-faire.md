@@ -21,7 +21,7 @@ Rappel d'économie : un chantier = une conversation ou un agent ; en cas de lot 
 
 ### P1-1. Rouges rares isolés de la batterie Godot
 - Suites : `deepen-analytics-real-ui`, `godot-equipe-type`, `godot-preparation-ecran`, `godot-centre-cartes`, `godot-phrases-lot10`, `godot-apres-match`, `godot-survols-club-courbe-rebours`.
-- Contexte : rouges un jour sur plusieurs, sans lien avec un changement de code. Cause probable pour `survols-club-courbe-rebours` : l'ancre survolée est libérée pendant l'attente du test (vers la ligne 69), `SCRIPT ERROR: Cannot call method 'get_meta' on a previously freed instance`. Analyse complète dans [solidite-ci.md](solidite-ci.md) section 3.
+- Contexte : rouges un jour sur plusieurs, sans lien avec un changement de code. Cause probable pour `survols-club-courbe-rebours` : l'ancre survolée est libérée pendant l'attente du test (vers la ligne 69), `SCRIPT ERROR: Cannot call method 'get_meta' on a previously freed instance`. Analyse complète dans [solidite-ci.md](solidite-ci.md) section 4.
 - Faire : pour chaque suite, relire les journaux des runs rouges (`gh run view <id> --log-failed`, ou `log-reader`), classer (a), (b) ou (c), corriger le jeu pour un vrai défaut (l'attente d'un nœud libéré est souvent un vrai défaut de reconstruction d'écran), figer la graine pour un hasard.
 - Critère de fin : 5 batteries programmées consécutives sans rouge sur ces suites.
 
