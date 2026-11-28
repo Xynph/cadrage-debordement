@@ -49,6 +49,10 @@ export CD_SHARD_WORK="$work"
 budget_pct="${CD_SHARD_BUDGET_PCT:-100}"
 [[ "$budget_pct" =~ ^[1-9][0-9]{1,2}$ ]] || { echo "Pourcentage de délai invalide : $budget_pct" >&2; exit 2; }
 unset CD_SHARD_BUDGET_PCT
+# Plancher des délais : deux fois le poids mesuré de la suite (médiane +15 %, ci/suite-weights.json). Un budget égal
+# au poids coupait la moitié des passages lents (28/11 : vente-joueurs 1200 s pour 1119, calendrier-mutations 540 pour 552,
+# world-zones-classement 360 pour 295) ; une vraie boucle sans fin reste coupée, deux fois plus tard au plus.
+node -e "const w=require(process.argv[1]).js.weights;for(const [f,v] of Object.entries(w))console.log(f+'\t'+Math.ceil(v))" "$root/ci/suite-weights.json" > "$work/poids.tsv"
 
 budget() {
   # Budgets ciblés de réception cumulative, distincts des poids de planification.
@@ -280,6 +284,9 @@ run_one() {
   name="$(basename "$test")"
   log="$work/logs/$name.log"
   limit="$(budget "$test")"
+  local poids
+  poids="$(awk -F'\t' -v f="$test" '$1==f{print $2; exit}' "$work/poids.tsv")"
+  (( ${poids:-0} * 2 > ${limit%s} )) && limit="$(( poids * 2 ))s"
   limit="$(( ${limit%s} * budget_pct / 100 ))s"
   touch "$work/running/$name"
   # TMPDIR propre à la suite (sous-shell de run_one) : supprimé après la suite, même en cas d'échec ou de délai.
