@@ -17,6 +17,7 @@ static func ouvrir(page: Control, nom: String, titre: String, icone: String, lar
 		ancienne.queue_free()
 	var calque := Control.new()
 	calque.name = nom
+	calque.z_index = 10  # au-dessus des boutons (i) de la page (z 1), qui sinon se posent sur la fenêtre
 	page.add_child(calque)
 	D.place(calque, Rect2(0, 0, 2248, 1230))
 	var fermer := func():

@@ -168,6 +168,8 @@ static func flux(app: Control, parent: Control, x: float, ligne: float, largeur_
 			else:
 				texte(parent, gauche, y, mot, morceau.get("couleur", Charte.IVOIRE), w + 4, taille)
 			curseur = gauche - x + w
+			# Le bouton (i) de la carte joueur se pose à droite du nom : on lui laisse sa place pour qu'il ne couvre pas le mot suivant.
+			if morceau.has("joueur"): curseur += 22.0
 			poses += 1
 	return {"lignes": mini(rang + 1, max_lignes) if poses > 0 else 0, "omis": omis}
 
