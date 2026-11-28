@@ -194,8 +194,11 @@ static func render(app: Control) -> bool:
 	app.body = C.v(16)
 	C.fill(app.body, true)
 	app.body_scroll.add_child(app.body)
+	# Page à animer à l'arrivée (ui/entree_page.gd) : page dessinée, Bureau, ou corps des pages classiques (fondu seul).
+	var page_entree: Control = app.body
 	if canvas_script!=null:
 		var canvas := Control.new()
+		page_entree = canvas
 		canvas.custom_minimum_size=Vector2(2248,1244)*C.density
 		C.fill(canvas,true)
 		app.body.add_child(canvas)
@@ -205,10 +208,13 @@ static func render(app: Control) -> bool:
 	elif app.route == "Bureau":
 		var bureau: Control = OfficeCanvas.build(app) if physical.x >= OFFICE_CANVAS_MIN_WIDTH else Office.build(app)
 		app.body.add_child(bureau)
-		# Arrivée sur le Bureau : blocs en cascade et jauges qui se remplissent (pas à chaque rafraîchissement).
-		EntreePage.animer(app, bureau, "Bureau")
+		page_entree = bureau
 	else: _existing_page(app,immersive_match)
-	if app.route != "Bureau": EntreePage.arrivee(app, app.route)
+	# Arrivée sur une page : blocs en cascade et jauges qui se remplissent (pas à chaque rafraîchissement).
+	# Page classique : un seul enfant dans le corps (souvent un conteneur) → on anime ses blocs à lui.
+	if page_entree == app.body and app.body.get_child_count() == 1 and app.body.get_child(0) is Control:
+		page_entree = app.body.get_child(0)
+	EntreePage.animer(app, page_entree, app.route)
 	if not hors_coque: Entete._footer(content, app, layout)
 	app._update_live_bar()
 	app.call_deferred("_refresh_coach")
