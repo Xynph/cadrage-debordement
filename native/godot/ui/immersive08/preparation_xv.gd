@@ -43,7 +43,12 @@ func _surveiller(section: Control, rectangle: Rect2) -> void:
 		var large := Notation.largeur_note(lettre, taille_p)
 		var pastille := Notation.pastille_note(carte, 400 - large, 32, lettre, taille_p, "PreparationThreatLevel%d" % i)
 		pastille.set_meta("valeur", Notation.texte_note(lettre))
-		_etiquette(carte, 412.0 - 150.0, 72, legende, 150.0, HORIZONTAL_ALIGNMENT_RIGHT).name = "PreparationThreatLevelLabel%d" % i
+		# Petite fenêtre : la légende sous la pastille mordrait sur le poste du joueur ; elle passe en infobulle.
+		var etiquette := _etiquette(carte, 400 - large / 2.0, 72, legende, 110, HORIZONTAL_ALIGNMENT_CENTER)
+		etiquette.name = "PreparationThreatLevelLabel%d" % i
+		if C.dense():
+			etiquette.visible = false
+			pastille.tooltip_text = legende
 		_texte(carte, 126, 112, str(menace.get("role", "")), 16, Charte.IVOIRE, 285)
 		if _nombre(menace.get("fitness")) and not C.dense(): _texte(carte, 126, 130, "Condition %d %%" % int(menace.fitness), 15, Charte.IVOIRE_2, 285)
 	var signaux: Array = reports.get("signals", [])
