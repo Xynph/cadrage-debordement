@@ -120,7 +120,7 @@ static func _clubs(app: Control, canvas: Control, zone: Rect2, accounts: Diction
 		else: Brique._rayer(panel, Rect2(14, y + 1, largeur - 28, row_height - 2), i)
 		var base := y + row_height * .72
 		D.text(panel, 25, base, str(i + 1), 20, Charte.IVOIRE_2, 600, 60)
-		var caption := G.club_name(club) + ("  · ton club" if own else "")
+		var caption := G.club_name(club) + (" · ton club" if own else "")
 		Link.name_link(app, panel, Rect2(95, y + 3, 440, row_height - 6), "club", str(int(club.get("id", -1))), caption, 21, Charte.IVOIRE, "FinanceClubName" + str(i))
 		# Santé : liseré teinté + mot (charte : ni pastille arrondie ni cadre complet, la couleur jamais seule).
 		var sante := Control.new()
@@ -132,4 +132,4 @@ static func _clubs(app: Control, canvas: Control, zone: Rect2, accounts: Diction
 		D.text(sante, 20, 24, Health.label(club), 20, Charte.IVOIRE, 700, 160).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		D.text(panel, 760, base, Health.owner(club), 20, Charte.IVOIRE, 500, 300)
 		Health.sparkline(panel, Rect2(1090, y + 3, 120, row_height - 6), club, "FinanceClubCurve" + str(i))
-		if not sans_courbe: D.text(panel, 1230, base, Health.reading(club), 17, Charte.IVOIRE_2, 500, largeur - 1250)
+		if not sans_courbe and not Health.derniere(club).is_empty(): D.text(panel, 1230, base, "Dernière : " + Health.derniere(club), 17, Charte.IVOIRE_2, 500, largeur - 1250)

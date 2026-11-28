@@ -28,7 +28,7 @@ static func _installations(panneau: Panel, app: Control, finance: Dictionary, st
 		academie_niveau = "%s / %s" % [G.n(suivi.get("total", 0)), G.n(suivi.get("capacity", 75))]
 		academie_suite = "%s Crabos · %s Espoirs" % [G.n(suivi.get("crabos", {}).get("count", 0)), G.n(suivi.get("espoirs", {}).get("count", 0))]
 	rangees.append({"id": "ClubFacilityAcademy", "nom": "Académie", "niveau": academie_niveau, "segments": [3, int(academie)] if academie != null else [], "suite": academie_suite, "cout": "", "statut": "", "action": func(): app._navigate("Centre")})
-	rangees.append({"id": "ClubFacilityStadium", "nom": str(G.identity(app.model.club).get("stadium", "Le stade")), "niveau": G.n(fans.capacity) + " places" if fans.has("capacity") else "—", "segments": [], "suite": "Affluence prévue " + G.n(fans.expectedAttendance) if fans.has("expectedAttendance") else "Photo, ville et crédits", "cout": "", "statut": "", "action": func(): _tab(app, "territory", "ClubTab_overview")})
+	rangees.append({"id": "ClubFacilityStadium", "nom": str(G.identity(app.model.club).get("stadium", "Le stade")), "niveau": _milliers(fans.capacity) + " places" if fans.has("capacity") else "—", "segments": [], "suite": "Affluence prévue " + _milliers(fans.expectedAttendance) if fans.has("expectedAttendance") else "Photo, ville et crédits", "cout": "", "statut": "", "action": func(): _tab(app, "territory", "ClubTab_overview")})
 	for i in rangees.size():
 		var donnees: Dictionary = rangees[i]
 		var rangee := Button.new()
@@ -216,6 +216,6 @@ static func _stade(panneau: Panel, app: Control, fans: Dictionary) -> void:
 	var x_tuile := 24.0
 	for chiffre: Array in [["capacity", "places", Pastilles.TURQUOISE], ["expectedAttendance", "affluence", Pastilles.BLEU], ["subscribers", "abonnés", Pastilles.VIOLET]]:
 		if not fans.has(chiffre[0]): continue
-		x_tuile += Pastilles.poser(panneau, Pastilles.tuile(G.n(fans[chiffre[0]]), str(chiffre[1]), chiffre[2], Charte.PANNEAU_2, 22, "ClubStadiumFigure_" + str(chiffre[0]), true, func(): _tab(app, "territory", "ClubTab_overview")), x_tuile, 246) + 8.0
+		x_tuile += Pastilles.poser(panneau, Pastilles.tuile(_milliers(fans[chiffre[0]]), str(chiffre[1]), chiffre[2], Charte.PANNEAU_2, 22, "ClubStadiumFigure_" + str(chiffre[0]), true, func(): _tab(app, "territory", "ClubTab_overview")), x_tuile, 246) + 8.0
 	var voir_stade := Kit.lien(panneau, Rect2(panneau.size.x / C.density - 24, 12, 0, 34), "Voir le stade →", func(): _tab(app, "territory", "ClubTab_overview"), "ClubSeeStadiumLink", 19, true)
 	voir_stade.tooltip_text = ""

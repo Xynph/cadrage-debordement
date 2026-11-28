@@ -205,7 +205,12 @@ static func _detail(card: Panel, app: Control, state: Dictionary, message: Dicti
 	# Une coupure de presse n'a pas de lettre : l'échéance s'écrit alors dans l'en-tête (mot « À FAIRE », jamais la couleur seule).
 	var press_due := Canvas._deadline(app, message, true)
 	if not _press_mail(message).is_empty() and not press_due.is_empty():
-		D.text(card,Canvas.PAD+420,86,"À FAIRE · " + press_due,19,C.IVORY,700,Canvas._w-2*Canvas.PAD-420-tools_width-20).name = "InboxDeadline"
+		var place := Canvas._w-2*Canvas.PAD-420-tools_width-20
+		var phrase := "À FAIRE · " + press_due
+		# Trop long pour la place (720p, plancher de 12 px) : on garde l'essentiel, « À FAIRE · avant le … ».
+		if C.font(700).get_string_size(phrase,HORIZONTAL_ALIGNMENT_LEFT,-1,C.font_px(19)).x / C.density > place:
+			phrase = "À FAIRE · " + Canvas._deadline(app, message)
+		D.text(card,Canvas.PAD+420,86,phrase,19,C.IVORY,700,place).name = "InboxDeadline"
 	var x := Canvas._w - Canvas.PAD - tools_width
 	var favorite := D.button(card,Rect2(x,40,150,Canvas._h(44)),"Favori" if not mark.get("favorite",false) else "Favori ★",func():
 		Canvas._mark_members(state, message, "favorite", not mark.get("favorite",false))

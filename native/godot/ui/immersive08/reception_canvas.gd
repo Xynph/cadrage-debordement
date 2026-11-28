@@ -421,11 +421,11 @@ static func heading(row: Control, app: Control) -> Label:
 	title.name = "InboxPageTitle"
 	var messages := _messages(app)
 	var counts := Reading.counts(messages,app.model)
-	var x := C.Charte.TITRE_FICHE.get_string_size("RÉCEPTION.", HORIZONTAL_ALIGNMENT_LEFT, -1, 50).x + 26.0
+	var x := C.Charte.TITRE_FICHE.get_string_size("RÉCEPTION.", HORIZONTAL_ALIGNMENT_LEFT, -1, C.font_px(50)).x / C.density + 26.0
 	var line := "%d non lus · %d à faire" % [unread(app),counts.todo]
 	D.text(row,x,56,line,19,C.MUTED,500,560).name = "InboxPageCounts"
 	if counts.urgent > 0:
-		var after := x + C.font(500).get_string_size(line + " · ", HORIZONTAL_ALIGNMENT_LEFT, -1, 19).x
+		var after := x + C.font(500).get_string_size(line + " · ", HORIZONTAL_ALIGNMENT_LEFT, -1, C.font_px(19)).x / C.density
 		D.text(row,after,56,"! %d urgent%s" % [counts.urgent, "" if counts.urgent == 1 else "s"],19,C.ALERT,700,260).name = "InboxPageUrgent"
 	# En haut à droite : volume de la semaine, archives et « Tout lu » (agit sur les courriers d'information).
 	var today := _unix(_today(app))

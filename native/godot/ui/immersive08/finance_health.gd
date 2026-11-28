@@ -40,6 +40,12 @@ static func owner(health: Variant) -> String:
 	return "—"
 
 ## Lecture des saisons pour une infobulle : « 2026-2027 : dans le vert · 2027-2028 : en perte ».
+## Verdict de la dernière saison seule (« en perte », « à l’équilibre », « dans le vert ») : court, pour la colonne du classement.
+static func derniere(health: Variant) -> String:
+	if not health is Dictionary or not health.get("courbe") is Array or health.courbe.is_empty(): return ""
+	var result := float((health.courbe as Array).back().get("resultat", 0))
+	return "à l’équilibre" if absf(result) < 250000.0 else ("dans le vert" if result > 0.0 else "en perte")
+
 static func reading(health: Variant) -> String:
 	if not health is Dictionary or not health.get("courbe") is Array or health.courbe.is_empty():
 		return "Pas encore de saison close sous cette direction."
