@@ -126,7 +126,7 @@ static func _effets(option: Dictionary) -> Array:
 ## Racines (5 premières lettres sans accent, mots de plus de 3 lettres) d'un texte : sert à repérer une répétition.
 static func _racines(texte: String) -> Array[String]:
 	var result: Array[String] = []
-	var plat := load("res://ui/management_state.gd").fold(texte).replace("’", " ").replace("'", " ")
+	var plat: String = load("res://ui/management_state.gd").fold(texte).replace("’", " ").replace("'", " ")
 	for mot: String in plat.split(" ", false):
 		if mot.length() > 3: result.append(mot.left(5))
 	return result
