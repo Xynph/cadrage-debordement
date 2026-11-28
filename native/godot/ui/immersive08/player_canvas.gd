@@ -760,7 +760,10 @@ static func _moyennes(card:Panel,notes:Dictionary) -> void:
 	var par := func(cle:String) -> String:
 		var v: Variant = notes.get(cle)
 		if v == null: return "—"
-		return String.num(float(v)/m,1).replace(".",",")
+		var moyenne_match := float(v)/m
+		# Pas de « 20,0 » : une décimale seulement quand la moyenne n'est pas ronde.
+		if is_equal_approx(moyenne_match,roundf(moyenne_match)): return str(int(roundf(moyenne_match)))
+		return String.num(moyenne_match,1).replace(".",",")
 	var texte := "PAR MATCH  ·  %s plaquages  ·  %s m  ·  %s passes  ·  %s essai  ·  %s franch." % [par.call("plaquages"),par.call("metres"),par.call("passes"),par.call("essais"),par.call("franchissements")]
 	D.text(card,24,236,texte,21,C.GOLD,600,880).name = "PlayerSeasonPerMatch"
 

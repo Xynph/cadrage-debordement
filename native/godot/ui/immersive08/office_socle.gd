@@ -241,5 +241,6 @@ static func noms_cliquables(app: Control, parent: Control, zone: Rect2, texte: S
 			var lien := Link.styled_button(parent, Rect2(zone.position.x + avant - 2, zone.position.y + ligne * haut, large + 4, hauteur), "", taille, Charte.IVOIRE, "OfficeNom_%s_%d" % [str(trouve.id).validate_node_name(), int(trouve.start)])
 			lien.accessibility_name = "Ouvrir la fiche · " + texte.substr(int(trouve.start), int(trouve.end) - int(trouve.start))
 			lien.pressed.connect(func(): app.navigation_controller.open_entity(cible))
+			lien.set_meta("info_dehors", true)
 			MiniFiche.lier(app, lien, str(trouve.id), "squad")
 			break

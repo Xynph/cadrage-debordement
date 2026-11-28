@@ -134,7 +134,7 @@ static func condition(player: Dictionary) -> Variant:
 static func echeance(app: Control, player: Dictionary) -> String:
 	var fin: Variant = player.get("contractEnd")
 	var texte := G.contract_year(fin)
-	if texte != "—" and int(fin) <= int(app.model.get("meta", {}).get("season", 1)): texte += " ⧗ fin de saison"
+	if texte != "—" and int(fin) <= int(app.model.get("meta", {}).get("season", 1)): texte += " · fin de saison"
 	return texte
 
 ## Valeurs des 36 attributs si elles sont connues, sinon {} (afficher « — »).

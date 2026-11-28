@@ -366,7 +366,7 @@ static func _ligne_monde(app: Control) -> Control:
 	var base: Dictionary = app.pack_manager.database("creation")
 	var joueurs := int(base.get("startingPlayerCount", base.get("playerCount", 0)))
 	if joueurs > 0:
-		var depart := C.label("%s joueurs au départ" % G.n(joueurs), 19, Charte.IVOIRE_2, false, 500)
+		var depart := C.label("%s joueurs au départ" % G.euros(joueurs).trim_suffix(" €"), 19, Charte.IVOIRE_2, false, 500)
 		depart.name = "EntryStartingPlayers"
 		ligne.add_child(depart)
 	return ligne if ligne.get_child_count() > 0 else null

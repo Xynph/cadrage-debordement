@@ -508,6 +508,8 @@ static func _chiffre(parent: HBoxContainer, caption: String, value: String, deta
 	column.add_child(_etiquette(caption))
 	var figure := C.label(value, taille, C.IVORY, true, 800)
 	figure.name = "Valeur"
+	figure.clip_text = true
+	figure.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	column.add_child(figure)
 	if not detail.is_empty(): column.add_child(C.wrap(detail, 17, C.MUTED))
 	return column
@@ -966,9 +968,12 @@ static func _chiffre_carte(parent: HBoxContainer, caption: String, value: String
 	var column := C.v(0)
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(C.fill(column))
+	# Un palier long (« Entre pro et haut niveau ») prend plus de largeur et finit par « … » plutôt que d'être coupé net.
+	if value.length() > 12: column.size_flags_stretch_ratio = 1.9
 	column.add_child(_etiquette(caption))
 	var figure := C.label(value, taille, C.IVORY, true, 800)
 	figure.clip_text = true
+	figure.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	column.add_child(figure)
 
 class Jauge extends Control:
@@ -1102,7 +1107,7 @@ static func _pied(app: Control) -> Control:
 	var row := C.h(16)
 	foot.add_child(row)
 	var database: Dictionary = app.pack_manager.database("creation")
-	var count := "%d clubs jouables · %s joueurs" % [app.pack_manager.playable_club_count("creation"), G.n(database.get("startingPlayerCount", database.get("playerCount", 0)))]
+	var count := "%d clubs jouables · %s joueurs" % [app.pack_manager.playable_club_count("creation"), G.euros(database.get("startingPlayerCount", database.get("playerCount", 0))).trim_suffix(" €")]
 	var left := C.label(count, 16, C.MUTED, false)
 	left.name = "CreationWorldInfo"
 	left.size_flags_vertical = Control.SIZE_SHRINK_CENTER
