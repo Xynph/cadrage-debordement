@@ -98,6 +98,11 @@ func _feuille(model: Dictionary, etat: Dictionary) -> Control:
 			nom_lien.tooltip_text = ""
 			MiniFiche.lier(app, nom_lien, identifiant, "squad")
 			flux.add_child(nom_lien)
+			# Place du bouton (i) posé à droite du nom : sans elle, il recouvre « (n° 13) ».
+			var place_info := Control.new()
+			place_info.custom_minimum_size = Vector2(M(18), 0)
+			place_info.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			flux.add_child(place_info)
 			var suite_nom := texte("(n° %d) à %d %%" % [b.slot + 1, b.condition], 13, Charte.IVOIRE, false, 500)
 			suite_nom.add_theme_font_override("font", C.BODY)
 			flux.add_child(suite_nom)
