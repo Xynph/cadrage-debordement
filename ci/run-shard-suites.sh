@@ -151,6 +151,9 @@ budget() {
     # Pilotage du match (#912) : carrière Monde + 11 séries de 160 matchs rejoués, 125-150 s en local ; 180 s dépassées en CI.
     # Arrêts de jeu (PR #1216) : carrière Monde + séries de matchs, 86 s en local, 180 s dépassées en CI (Suites 9/10) ; budget ≈ 5 fois.
     tests/match-arrets.cjs) echo 480s ;;
+    # 192 matchs × 25 variantes (élargi de 24 matchs, accord de Léo du 27/11) : 85 s pour 24 matchs en CI (run 46128180494),
+    # soit ≈ 680 s attendues ; budget ≈ 2,2 fois, assertions et seuils inchangés.
+    tests/match-consignes-direct.cjs) echo 1500s ;;
     # 23/11/2026 : 323 s en local sur main, 352 s avec les arrêts de jeu (PR #1216) ; 480 s dépassées en CI (Suites 1/10) ; budget ≈ 2,5 fois.
     # 27/11/2026 : aile faible sur 1000 matchs (accord de Léo) : 520 s en local à vide ; 900 s ne laissaient plus que 1,7 fois ; budget ≈ 3 fois.
     tests/match-pilotage.cjs) echo 1500s ;;
