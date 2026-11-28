@@ -25,7 +25,7 @@ var _precision_choice: OptionButton
 var _headers: Dictionary = {}
 ## Colonnes du tableau : [clé, largeur minimale, poids]. Les poids donnent la place aux noms et aux statuts (1920 : plus aucun texte coupé) ; le tableau
 ## se partage la largeur du panneau au lieu de la dépasser (1920, 1280, échelle d'interface 90-130 %).
-const COLS := [["name", 126, 250], ["pos", 60, 100], ["rating", 40, 50], ["age", 34, 45], ["salary", 62, 105], ["share", 90, 130], ["playtime", 150, 200], ["contractEnd", 152, 170], ["conseil", 140, 175], ["actions", 96, 80]]
+const COLS := [["name", 126, 250], ["pos", 92, 130], ["rating", 40, 50], ["age", 34, 45], ["salary", 78, 110], ["share", 90, 130], ["playtime", 150, 200], ["contractEnd", 152, 170], ["conseil", 140, 175], ["actions", 96, 80]]
 const COL_GAP := 4
 ## Couleurs franches par sens (jamais seules : chaque couleur accompagne un chiffre, une icône ou un mot).
 const ORANGE := Color("e0a04a")

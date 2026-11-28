@@ -55,6 +55,16 @@ class Coche extends Control:
 				draw_rect(Rect2(s * .44, s * .7, s * .12, s * .12), couleur)
 			_: draw_line(Vector2(s * .28, s * .5), Vector2(s * .72, s * .5), couleur, w)
 
+## Entier avec espace fine-insécable (« 19 500 ») : lisible sans décimale ni point.
+static func _milliers(valeur: Variant) -> String:
+	if not (valeur is int or valeur is float): return str(valeur)
+	var chiffres := str(absi(int(valeur)))
+	var groupe := ""
+	for index in chiffres.length():
+		if index > 0 and (chiffres.length() - index) % 3 == 0: groupe += " "
+		groupe += chiffres[index]
+	return ("−" if int(valeur) < 0 else "") + groupe
+
 static func _coche(parent: Control, zone: Rect2, genre: String, couleur: Color = Charte.IVOIRE) -> Coche:
 	var forme := Coche.new()
 	forme.genre = genre
@@ -103,7 +113,7 @@ static func _sous_titre(app: Control) -> String:
 	var parts: Array[String] = []
 	var stade := str(identite.get("stadium", "")).strip_edges()
 	if not stade.is_empty(): parts.append(stade)
-	if fans.has("capacity"): parts.append(G.n(fans.capacity) + " places")
+	if fans.has("capacity"): parts.append(_milliers(fans.capacity) + " places")
 	var histoire: Variant = identite.get("history")
 	if histoire is Dictionary and histoire.has("founded"): parts.append("fondé en %d" % int(histoire.founded))
 	var president := _president(app)

@@ -178,7 +178,7 @@ func delegate_to_gabi() -> void:
 		if str(option.id) == expected: libelle = str(option.libelle)
 	check(label != null and label.text == libelle, "Réponse de Gabi écrite : " + libelle)
 	var row: Node = app.root_content.find_child("InboxClubMail_" + str(mail.id).replace("-", "_"), true, false)
-	check(row != null and str(row.get_meta("message_text", "")).contains("Gabi a répondu : " + libelle), "La lettre dit ce que Gabi a répondu")
+	check(row != null and not str(row.get_meta("message_text", "")).contains("Gabi a répondu : " + libelle), "La lettre ne répète pas la réponse de Gabi déjà dite par la bande du bas")
 	check(button("InboxClubMailDelegate") == null, "Plus de délégation une fois répondu")
 	answered_row(mail, "✓ GABI A RÉPONDU")
 
