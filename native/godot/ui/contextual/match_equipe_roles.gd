@@ -92,10 +92,8 @@ func _candidat(role: String, c: Dictionary, choisi: bool, du_staff: bool, occupe
 	var nom := _coupe(_texte("%d · %s" % [int(c.get("num", 0)), str(c.get("name", ""))], 15, C.IVORY, _gras))
 	nom.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	rangee.add_child(nom)
-	if du_staff:
-		var marque := _texte("choix du staff", 12, C.MUTED)
-		marque.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		rangee.add_child(marque)
+	# « choix du staff » est déjà dit dans la ligne « En charge » de la carte : pas répété sur la ligne du joueur.
+	if du_staff: bouton.tooltip_text = "Choix du staff"
 	var note := _titre(str(int(c.get("value", 0))), 18, C.IVORY)
 	note.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	rangee.add_child(note)

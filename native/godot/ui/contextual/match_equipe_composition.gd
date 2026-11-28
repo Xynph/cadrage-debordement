@@ -24,7 +24,13 @@ func _pied_composition(infos: HBoxContainer) -> void:
 	for texte in actives: infos.add_child(_puce(texte))
 	for bilan_v: Variant in p.get("bilans", []) if p.get("bilans") is Array else []:
 		if bilan_v is Dictionary:
-			infos.add_child(_texte(bilan_court(p, str(bilan_v.get("axe", ""))), 13, C.ALERT if str(bilan_v.get("axe", "")) in ["rucks", "discipline"] else C.MUTED))
+			var texte_bilan := bilan_court(p, str(bilan_v.get("axe", "")))
+			# Coupé avec « … » (et infobulle) plutôt que tronqué net quand les puces prennent la place.
+			var ligne_bilan := _coupe(_texte(texte_bilan, 13, C.ALERT if str(bilan_v.get("axe", "")) in ["rucks", "discipline"] else C.MUTED))
+			ligne_bilan.name = "TeamFooterBilan"
+			ligne_bilan.tooltip_text = texte_bilan
+			ligne_bilan.mouse_filter = Control.MOUSE_FILTER_PASS
+			infos.add_child(ligne_bilan)
 			break
 	var arbitre := Pilotage.arbitre_texte(p.get("arbitre"))
 	if not arbitre.is_empty():
@@ -62,7 +68,7 @@ func _cris(cris: Dictionary) -> void:
 		bouton.focus_mode = Control.FOCUS_ALL
 		bouton.disabled = not disponible or est_actif
 		bouton.tooltip_text = str(option.get("note", ""))
-		bouton.custom_minimum_size.y = px(88)
+		bouton.custom_minimum_size.y = px(100)
 		# Cri actif : fond relevé, filet GAUCHE épais ivoire et coche (comme un choix courant), jamais d'or ; les autres :
 		# un seul filet bas (charte §3 : aucun cadre complet).
 		# Charte finale : un cri est une carte de rayon 12, sans bordure ; le cri actif est sur fond de ligne choisie (vert franc) avec sa coche ; focus : anneau dore.
@@ -78,7 +84,7 @@ func _cris(cris: Dictionary) -> void:
 		bouton.pressed.connect(func(): crier(id))
 		var rangee := _h(10)
 		rangee.position = Vector2(px(12), 0)
-		rangee.size = Vector2(px(200 - 24), px(88))
+		rangee.size = Vector2(px(200 - 24), px(100))
 		rangee.alignment = BoxContainer.ALIGNMENT_CENTER
 		bouton.add_child(rangee)
 		bouton.resized.connect(func(): rangee.size = Vector2(bouton.size.x - px(24), bouton.size.y))

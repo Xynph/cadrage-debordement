@@ -108,7 +108,7 @@ static func build(app: Control, page: Control, zone: Rect2, premiere: Dictionary
 ## Colonnes du tableau selon sa largeur : [clé, titre, x, largeur, alignement à droite].
 static func _colonnes(largeur: float) -> Dictionary:
 	var k := largeur / 2204.0
-	return {"name":[8, 370 * k], "positions":[390 * k, 160 * k], "note":[560 * k, 260 * k], "condition":[850 * k, 230 * k],
+	return {"name":[8, 470 * k], "positions":[490 * k, 110 * k], "note":[610 * k, 210 * k], "condition":[850 * k, 230 * k],
 		"status":[1110 * k, largeur - 1110 * k - 200 * k], "action":[largeur - 190 * k, 180 * k]}
 
 static func _entete(app: Control, entete: Control, colonnes: Dictionary, remplir: Callable) -> void:
