@@ -266,6 +266,25 @@ func calendrier() -> void:
 	check(app.find_children("TrainingMonthDay_*", "Panel", true, false).size() >= 28, "Un mois complet affiché")
 	await capture("calendrier-haut")
 
+# ---- 8 : tour des écrans jamais capturés (28/11/2026) ---------------------------------------------------------------
+
+## Effectif, Recrutement, Formation, Club, Staff, Plan de jeu, Préparation, Classements, Carrière, Rivalités :
+## chaque page s'ouvre sans erreur, n'est pas vide, et est capturée en 1080p puis en 1280×720.
+const TOUR := ["Effectif", "Recrutement", "Formation", "Club", "Staff", "Plan de jeu", "Préparation", "Classements", "Carrière", "Rivalités"]
+
+func tour_ecrans() -> void:
+	for taille: Vector2i in [Vector2i(1920, 1080), Vector2i(1280, 720)]:
+		root.size = taille
+		if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(taille)
+		for route: String in TOUR:
+			app._navigate(route)
+			await settle(20)
+			check(app.route == route, "Tour des écrans : %s ouvert (%s)" % [route, app.route])
+			check(texts(app.body).length() > 40, "Tour des écrans : %s n'est pas vide en %dx%d" % [route, taille.x, taille.y])
+			await capture("tour-%s-%dx%d" % [route.to_lower().replace(" ", "-").replace("î", "i").replace("é", "e"), taille.x, taille.y])
+	root.size = Vector2i(1920, 1080)
+	if DisplayServer.get_name() != "headless": DisplayServer.window_set_size(root.size)
+
 func run() -> void:
 	create_timer(1200.0).timeout.connect(func():
 		failures.append("délai dépassé (1200 s)")
@@ -282,7 +301,7 @@ func run() -> void:
 	app.timer.stop()
 	check(app.model.get("club") is Dictionary and str(app.model.get("meta", {}).get("mode")) == "world", "Carrière Monde importée")
 	check(str(app.model.get("meta", {}).get("leagueId", "")) == "champ", "Club de Champ Rugby")
-	for phase in ["fiche_joueur", "gabi_voile", "continuer", "fatigue", "calendrier"]:
+	for phase in ["fiche_joueur", "gabi_voile", "continuer", "fatigue", "calendrier", "tour_ecrans"]:
 		print("PHASE ", phase)
 		await call(phase)
 	fin()
