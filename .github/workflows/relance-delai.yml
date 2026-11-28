@@ -1,0 +1,34 @@
+name: Relance d'une PR rouge par délai
+# Une PR prête dont les seuls rouges sont des délais dépassés (suite coupée, étape Godot coupée à 45 min,
+# délai interne de la VM) est relancée UNE fois, automatiquement (décision de Léo du 28/11/2026, CI plus
+# rapide) : plus d'attente d'un humain pour un runner lent. Une assertion rouge n'est jamais relancée.
+# Main a sa propre relance (main-rouge.yml).
+on:
+  workflow_run:
+    workflows: ["Tests JavaScript"]
+    types: [completed]
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: relance-delai-${{ github.event.workflow_run.id }}
+  cancel-in-progress: false
+
+jobs:
+  relance:
+    if: ${{ github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.run_attempt == 1 }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: ci
+      - name: Relance unique si seuls des délais sont rouges
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+        run: bash ci/relance-delai.sh

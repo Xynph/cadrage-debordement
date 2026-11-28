@@ -178,7 +178,7 @@ func _terrain(centre: VBoxContainer) -> void:
 			# Le clic sur le médaillon choisit le poste ; le NOM est un lien vers sa fiche (mini-fiche au survol).
 			ligne.add_child(_nom_joueur(id, nom_court(str(d.nom)), 17, "TeamPlayerName", 104, C.font(700)))
 			if notes.has(id):
-				var note := _titre(("%.1f" % float(d.note)), 17, C.IVORY, 800)
+				var note := _titre(("%.1f" % float(d.note)).replace(".", ","), 17, C.IVORY, 800)
 				note.name = "TeamPlayerNote"
 				ligne.add_child(note)
 			pile.add_child(etiquette)
@@ -213,7 +213,7 @@ func _terrain(centre: VBoxContainer) -> void:
 				puce.mouse_filter = Control.MOUSE_FILTER_IGNORE
 				puce.add_child(_texte(puce_texte, 12, puce_teinte, _gras))
 				pile.add_child(puce)
-			medaillon.tooltip_text = "%d · %s · %s\nÉnergie %d %%%s" % [slot + 1, str(d.poste), str(d.nom), roundi(float(d.energie)), ("\nNote du match %.1f" % float(d.note)) if notes.has(id) else ""]
+			medaillon.tooltip_text = "%d · %s · %s\nÉnergie %d %%%s" % [slot + 1, str(d.poste), str(d.nom), roundi(float(d.energie)), ("\nNote du match %s" % ("%.1f" % float(d.note)).replace(".", ",")) if notes.has(id) else ""]
 			var eligibles := PackedStringArray()
 			for x: Variant in _entrants(slot): eligibles.append(str(x))
 			medaillon.set_drag_forwarding(Callable(), _peut_deposer.bind(eligibles), _deposer.bind(slot))

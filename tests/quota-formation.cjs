@@ -93,7 +93,9 @@ test('Alerte : feuille sous la trajectoire, Gabi propose des échanges concrets 
    S.jiff.counts[S.club]=[8,16*(8+p0.remaining)-(p0.currentSheet+2)*p0.remaining];
    const p=CDJiff.project();const adv=nativePositionAptitudes.quotaAdvice(own,S.lineup,S.reserves);
    const ok=adv&&adv.changes.every(c=>!CDJiff.isJiff(S,own.players.find(x=>x.id===c.sortant))&&CDJiff.isJiff(S,own.players.find(x=>x.id===c.playerId)));
-   S.jiff.counts[S.club]=[8,8*23];const calm=nativePositionAptitudes.quotaAdvice(own,S.lineup,S.reserves);
+   // Marge confortable : la moyenne déjà acquise n'exige plus au prochain match qu'un JIFF de moins que la feuille
+   // actuelle (même calcul que le retard ci-dessus, en sens inverse : indépendant des titulaires du jour).
+   S.jiff.counts[S.club]=[8,16*(8+p0.remaining)-(p0.currentSheet-1)*p0.remaining];const calm=nativePositionAptitudes.quotaAdvice(own,S.lineup,S.reserves);
    return JSON.stringify({alert:p.alert,need:p.need,adv,ok,calm});})()`));
   assert.equal(r.alert, true);
   assert.ok(r.need > r.adv.current);
