@@ -60,7 +60,7 @@ static func _filieres(ctx: Dictionary, parent: Node) -> void:
 	var recruit := V.cout(ctx, "recruit", 8000)
 	var colonnes := [
 		{"k": "nom", "t": "JOUEUR", "tri": true, "desc": false},
-		{"k": "poste", "t": "POSTE", "w": 108, "tri": true, "desc": false},
+		{"k": "poste", "t": "POSTE", "w": 128, "tri": true, "desc": false},
 		{"k": "age", "t": "ÂGE", "w": 34, "a": HORIZONTAL_ALIGNMENT_RIGHT, "tri": true},
 		{"k": "pot", "t": "POT.", "w": 40, "a": HORIZONTAL_ALIGNMENT_RIGHT, "tri": true},
 		{"k": "obs", "t": "OBS.", "w": 62, "tri": true},
@@ -126,7 +126,7 @@ static func _passerelle(ctx: Dictionary, parent: Node) -> void:
 	var montres := elements.filter(func(e: Dictionary): return T._garde_pro(e, etape))
 	var colonnes := [
 		{"k": "nom", "t": "JOUEUR", "tri": true, "desc": false},
-		{"k": "poste", "t": "POSTE", "w": 108, "tri": true, "desc": false},
+		{"k": "poste", "t": "POSTE", "w": 128, "tri": true, "desc": false},
 		{"k": "age", "t": "ÂGE", "w": 34, "a": HORIZONTAL_ALIGNMENT_RIGHT, "tri": true},
 		{"k": "niv", "t": "NIV.", "w": 40, "a": HORIZONTAL_ALIGNMENT_RIGHT, "tri": true},
 		{"k": "pot", "t": "POT.", "w": 48, "a": HORIZONTAL_ALIGNMENT_RIGHT, "tri": true},
@@ -221,7 +221,7 @@ static func _generations(ctx: Dictionary, parent: Node) -> void:
 	var joueurs: Array = f.joueurs
 	var colonnes := [
 		{"k": "nom", "t": "JOUEUR", "tri": true, "desc": false},
-		{"k": "poste", "t": "POSTE", "w": 108, "tri": true, "desc": false},
+		{"k": "poste", "t": "POSTE", "w": 128, "tri": true, "desc": false},
 		{"k": "age", "t": "ÂGE", "w": 34, "a": HORIZONTAL_ALIGNMENT_RIGHT, "tri": true},
 		{"k": "niv", "t": "NIV.", "w": 40, "a": HORIZONTAL_ALIGNMENT_RIGHT, "tri": true},
 		{"k": "pot", "t": "POT.", "w": 48, "a": HORIZONTAL_ALIGNMENT_RIGHT, "tri": true},

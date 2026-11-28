@@ -11,6 +11,7 @@ const Kit = preload("res://ui/immersive08/tactics_kit.gd")
 const Roles = preload("res://ui/immersive08/tactics_roles.gd")
 const Espoir = preload("res://ui/espoir_appel.gd")
 const Cover = preload("res://ui/lineup_cover.gd")
+const HAUTEUR_COURTE := 480.0
 const PAGES := ["roles", "espoir", "renforts"]
 const TITRES := {"roles":"Tireurs et lanceur", "espoir":"Appeler un espoir", "renforts":"Renforts d’urgence"}
 
@@ -40,7 +41,8 @@ static func build(app: Control, page: Control, kind: String) -> void:
 	var titre := Kit.titre_page(page, 0, 98, str(TITRES.get(kind, "")), 38, 1400)
 	titre.name = "CompositionSubpageTitle"
 	D.line(page, Vector2(0, 122), Vector2(2248, 122), Charte.FILET)
-	var bloc := D.rect(page, Rect2(0, 146, 1500, 760), Charte.PANNEAU, Charte.RAYON_PANNEAU)
+	# Les pages courtes (espoir, renforts) n'ont pas à dérouler un grand panneau vide : hauteur au contenu.
+	var bloc := D.rect(page, Rect2(0, 146, 1500, 760 if kind == "roles" else HAUTEUR_COURTE), Charte.PANNEAU, Charte.RAYON_PANNEAU)
 	bloc.name = "CompositionSubpage_" + kind
 	bloc.mouse_filter = Control.MOUSE_FILTER_PASS
 	match kind:
@@ -55,7 +57,7 @@ static func _corps(bloc: Control) -> VBoxContainer:
 	D.place(corps, Rect2(28, 24, 1444, 700))
 	return corps
 
-static func _paragraphe(corps: Control, texte: String, couleur: Color = Charte.IVOIRE, taille: int = 20) -> Label:
+static func _paragraphe(corps: Control, texte: String, couleur: Color = Charte.IVOIRE, taille: int = 24) -> Label:
 	var label := C.wrap(texte, taille, couleur)
 	label.add_theme_font_override("font", Charte.TEXTE)
 	corps.add_child(label)
@@ -75,35 +77,37 @@ static func _espoir(app: Control, bloc: Control) -> void:
 	_paragraphe(corps, Espoir.vacancy_text(app.model), Charte.IVOIRE).name = "LineupEspoirVacancy"
 	var choix := Espoir.add_choices(corps, app.model, false)
 	_charte(corps)
-	_paragraphe(corps, "Comme en vrai, le jeune est prêté à l’équipe première pour ce match seulement : pas de contrat professionnel, il retourne au centre ensuite et gagne de l’expérience.", Charte.IVOIRE_2, 18)
-	var valider := Kit.bouton_ivoire(bloc, Rect2(28, 680, 300, 48), "Appeler le jeune", func():
+	_paragraphe(corps, "Comme en vrai, le jeune est prêté à l’équipe première pour ce match seulement : pas de contrat professionnel, il retourne au centre ensuite et gagne de l’expérience.", Charte.IVOIRE_2, 22)
+	var valider := Kit.bouton_ivoire(bloc, Rect2(28, HAUTEUR_COURTE - 80, 300, 48), "Appeler le jeune", func():
 		if app.waiting or not choix.is_valid(): return
 		var entree: Dictionary = choix.call()
 		if not entree.get("payload", {}).has("espoirs"): return
 		app.management_ui.erase("composition_page")
 		app._command("espoir_appeler", {"assignments": entree.payload.espoirs}), "LineupEspoirConfirm")
 	valider.disabled = not choix.is_valid()
-	Kit.lien(bloc, Rect2(360, 684, 0, 40), "Annuler", func(): fermer(app), "LineupEspoirCancel", 20)
+	Kit.lien(bloc, Rect2(360, HAUTEUR_COURTE - 76, 0, 40), "Annuler", func(): fermer(app), "LineupEspoirCancel", 20)
 
 ## Renforts d'urgence : places, salaires ; « Signer les renforts » envoie promote_cover (confirmé).
 static func _renforts(app: Control, bloc: Control) -> void:
 	var quote := Cover.data(app)
 	var corps := _corps(bloc)
-	_paragraphe(corps, Cover.caption(quote), Charte.IVOIRE_2, 18).name = "LineupCoverCaption"
+	_paragraphe(corps, Cover.caption(quote), Charte.IVOIRE_2, 22).name = "LineupCoverCaption"
 	_paragraphe(corps, Cover.detail(quote)).name = "LineupCoverDetail"
-	var signer := Kit.bouton_ivoire(bloc, Rect2(28, 680, 320, 48), "Signer les renforts", func():
+	var signer := Kit.bouton_ivoire(bloc, Rect2(28, HAUTEUR_COURTE - 80, 320, 48), "Signer les renforts", func():
 		if app.waiting: return
 		app.management_ui.erase("composition_page")
 		Cover.sign(app, quote), "LineupCoverConfirm")
 	signer.disabled = int(quote.get("places", 0)) < (quote.get("slots", []) as Array).size()
 	if signer.disabled: _paragraphe(corps, "Le groupe professionnel compte trop peu de places libres.", Charte.D, 18)
-	Kit.lien(bloc, Rect2(380, 684, 0, 40), "Annuler", func(): fermer(app), "LineupCoverCancel", 20)
+	Kit.lien(bloc, Rect2(380, HAUTEUR_COURTE - 76, 0, 40), "Annuler", func(): fermer(app), "LineupCoverCancel", 20)
 
 ## Habille les contrôles génériques d'une sous-page aux jetons de la charte (pas de thème historique) : listes
 ## déroulantes, cases et boutons radio, textes en DM Sans.
 static func _charte(racine: Node) -> void:
 	for noeud in racine.find_children("*", "", true, false):
 		if noeud is OptionButton: Kit.styler_liste(noeud)
-		elif noeud is CheckBox: Kit.styler_case(noeud)
+		elif noeud is CheckBox:
+			Kit.styler_case(noeud)
+			(noeud as CheckBox).add_theme_font_size_override("font_size", maxi(12, C.px(24)))
 		elif noeud is Label:
 			(noeud as Label).add_theme_font_override("font", Charte.TEXTE)

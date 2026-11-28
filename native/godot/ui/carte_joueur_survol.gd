@@ -110,8 +110,10 @@ static func lier_info(app: Control, controle: Control, player_id: String, source
 	controle.add_child(info)
 	var poser := func():
 		if not is_instance_valid(info) or not is_instance_valid(controle): return
-		var x := controle.size.x - taille - 2.0 if dedans else controle.size.x + 4.0
-		var y := 2.0 if dedans else (controle.size.y - taille) / 2.0
+		# Zone cliquable posée sur un nom dans une phrase : le (i) se met juste après le nom, en exposant, sans mordre sur ses lettres.
+		var dehors: bool = dedans and controle.has_meta("info_dehors")
+		var x := controle.size.x + 1.0 if dehors else (controle.size.x - taille - 2.0 if dedans else controle.size.x + 4.0)
+		var y := -2.0 if dehors else (2.0 if dedans else (controle.size.y - taille) / 2.0)
 		info.position = Vector2(x, y)
 	controle.resized.connect(poser)
 	poser.call()
@@ -439,7 +441,7 @@ static func _entete(carte: Panel, app: Control, player: Dictionary, source: Stri
 	# Colonne de droite : contrat, salaire, valeur (libellé à gauche, valeur à droite).
 	var gx := largeur - 24.0 - 310.0
 	_panneau(carte, Rect2(gx, 24, 310, cote), Charte.PANNEAU)
-	var lignes := [["CONTRAT", str(commune.echeance(app, player)).replace(" ⧗ fin de saison", " ⧗") if _nombre(player.get("contractEnd")) else "—"],
+	var lignes := [["CONTRAT", str(commune.echeance(app, player)).replace(" · fin de saison", " · fin") if _nombre(player.get("contractEnd")) else "—"],
 		["SALAIRE", G.salary(player.salary) if _nombre(player.get("salary")) else "—"],
 		["VALEUR", G.euros(player.marketValue) if _nombre(player.get("marketValue")) else "—"]]
 	for i in lignes.size():

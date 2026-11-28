@@ -54,11 +54,17 @@ static func place_detail(parent: Node, rectangle: Rect2, detail: Control) -> voi
 static func strategy(model: Dictionary) -> Dictionary:
 	return model.get("clubLife", {}).get("clubStrategy", {})
 
+## « 300.0 » -> « 300 », « 1.50 » -> « 1.5 » (uniquement après le point décimal).
+static func _sans_zeros(texte: String) -> String:
+	if not texte.contains("."): return texte
+	return texte.rstrip("0").rstrip(".")
+
 static func amount(value: Variant) -> String:
 	if value == null: return "—"
 	var absolute := absf(float(value))
-	if absolute >= 1000000.0: return ("%.2f M€" % (float(value)/1000000.0)).replace(".", ",").replace("-", "−")
-	if absolute >= 10000.0: return ("%.1f k€" % (float(value)/1000.0)).replace(".", ",").replace("-", "−")
+	# Pas de décimale inutile : « 300 k€ », « 1 M€ » (et non « 300,0 k€ », « 1,00 M€ »).
+	if absolute >= 1000000.0: return (_sans_zeros("%.2f" % (float(value)/1000000.0)) + " M€").replace(".", ",").replace("-", "−")
+	if absolute >= 10000.0: return (_sans_zeros("%.1f" % (float(value)/1000.0)) + " k€").replace(".", ",").replace("-", "−")
 	return G.euros(value)
 
 static func art_fade(parent: Control, rectangle: Rect2) -> void:

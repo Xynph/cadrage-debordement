@@ -26,7 +26,7 @@ const STARTER_POSITIONS = ["Pilier gauche", "Talonneur", "Pilier droit", "Deuxi�
 ## Poste abrégé sur les tuiles (le poste complet reste en infobulle et en métadonnée « position »).
 const POSTES_COURTS := {"Pilier gauche": "Pilier G.", "Pilier droit": "Pilier D.", "Deuxième ligne": "2e ligne",
 	"Troisième ligne aile": "3e ligne aile", "Troisième ligne centre": "3e ligne centre", "Troisième ligne": "3e ligne",
-	"Demi de mêlée": "Demi de mêlée", "Demi d’ouverture": "Ouvreur", "Demi d'ouverture": "Ouvreur"}
+	"Demi de mêlée": "Demi de mêlée", "Demi d’ouverture": "Ouvreur", "Demi d'ouverture": "Ouvreur", "Poste non renseigné": "À renseigner"}
 ## Masque des portraits : carré à coins arrondis ou rond, y compris sur une planche (atlas).
 const MASQUE_PORTRAIT := "shader_type canvas_item;
 uniform vec4 region = vec4(0.0, 0.0, 1.0, 1.0);
@@ -462,7 +462,10 @@ func _bilan_causerie(parent: VBoxContainer, decision: Dictionary) -> void:
 		summary.name = "TalkDecisionReactions"
 		parent.add_child(summary)
 		for label: String in order:
-			summary.add_child(_text("%d %s" % [int(counts[label]), label.to_lower()], px(14), colors[label]))
+			var nombre := int(counts[label])
+			var mot := label.to_lower()
+			if nombre > 1 and not mot.ends_with("s"): mot += "s"
+			summary.add_child(_text("%d %s" % [nombre, mot], px(14), colors[label]))
 
 func _position_label(participant: Dictionary, player: Dictionary) -> String:
 	var number := int(participant.get("number", 0))

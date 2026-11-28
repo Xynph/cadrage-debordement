@@ -49,7 +49,9 @@ if [[ "${CD_EL_CAPTURES:-false}" == "true" ]]; then
   # feuille-espoir, match-rendu, comparateur, audio, reception, reception-medicale, creation, derby, equipe ; vide ou « toutes » = intro, finitions, fiche-club, feuille-espoir ; match-rendu (40 passes, 57 min sous llvmpipe :
   # à demander explicitement ; sans GPU, Forward+ n'existe pas, donc seules les passes « actuel » en 1280x720). comparateur et audio : aussi à demander explicitement.
   quoi=" $(echo "${CD_EL_CAPTURES_QUOI:-}" | tr ',' ' ') "
-  [[ "$quoi" =~ ^[[:space:]]*$ || "$quoi" == *" toutes "* ]] && quoi=" intro finitions fiche-club feuille-espoir "
+  [[ "$quoi" =~ ^[[:space:]]*$ ]] && quoi=" intro finitions fiche-club feuille-espoir "
+  # « toutes » = vraiment toutes, sauf match-rendu (57 min sous llvmpipe : à demander à part).
+  [[ "$quoi" == *" toutes "* ]] && quoi=" intro finitions fiche-club feuille-espoir reception reception-medicale presse meteo pilotage equipe vestiaire banque-images avis-staff prolongations-staff investissements sante proprietaire regles-financieres dilemmes comparateur creation centre derby audio "
   for q in $quoi; do
     case "$q" in intro|finitions|fiche-club|feuille-espoir|match-rendu|comparateur|audio|reception|reception-medicale|creation|derby|avis-staff|meteo|presse|banque-images|prolongations-staff|investissements|sante|proprietaire|regles-financieres|equipe|pilotage|vestiaire|dilemmes|centre) ;;
       *) echo "Capture inconnue : $q" >> "$out/echecs.txt"; echo "- ECHEC : capture inconnue $q" >> "$out/resume.md"; failed=1 ;; esac

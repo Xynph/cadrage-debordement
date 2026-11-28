@@ -610,7 +610,7 @@ static func fenetre_parcours(ctx: Dictionary, id: String) -> void:
 	var mentor := cout(ctx, "mentor", 8000)
 	var am: bool = a and not bool(data.get("weekMentored", false))
 	var y2 := 214.0
-	y2 = reglage(fond, x2, y2, col, "Accompagnement · " + euros(mentor), [["technique", "Technique", REPUTATION, "", am], ["mental", "Mental", COHESION, "", am], ["physique", "Physique", ALERTE, "", am]], null, func(v: Variant): envoyer(ctx, "academy_mentor", {"playerId": id, "focus": v}, mentor, "Accompagnement " + str(v)), "CVAccompagnement")
+	y2 = reglage(fond, x2, y2, col, "Accompagnement", [["technique", "Technique", REPUTATION, euros(mentor), am], ["mental", "Mental", COHESION, euros(mentor), am], ["physique", "Physique", ALERTE, euros(mentor), am]], null, func(v: Variant): envoyer(ctx, "academy_mentor", {"playerId": id, "focus": v}, mentor, "Accompagnement " + str(v)), "CVAccompagnement")
 	y2 = _mentors(ctx, fond, x2, y2, col, p, a)
 	var engagements: Array = []
 	var pros: Array = []

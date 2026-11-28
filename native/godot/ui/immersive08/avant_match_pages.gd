@@ -156,7 +156,10 @@ static func _delegation(ecran, app: Control, model: Dictionary, corps: VBoxConta
 static func _espoir(ecran, app: Control, model: Dictionary, corps: VBoxContainer) -> void:
 	_titre(ecran, corps, "Feuille incomplète")
 	var fixture: Variant = model.get("next")
-	corps.add_child(_paragraphe(ecran, Espoir.vacancy_text(model), 16, Charte.N))
+	# Le titre dit déjà « Feuille incomplète » : le paragraphe commence directement par la place vide.
+	var constat := Espoir.vacancy_text(model).trim_prefix("Feuille incomplète : ")
+	if not constat.is_empty(): constat = constat.left(1).to_upper() + constat.substr(1)
+	corps.add_child(_paragraphe(ecran, constat, 16, Charte.N))
 	var choix := Espoir.add_choices(corps, model, true)
 	_joueurs_proposes(ecran, app, corps, model)
 	var a22 := P.reduced_bench_number(model) != 0
@@ -175,7 +178,7 @@ static func _joueurs_proposes(ecran, app: Control, corps: VBoxContainer, model: 
 	if offre.is_empty(): return
 	var ligne := HFlowContainer.new()
 	ligne.name = "FeuilleJeunesProposes"
-	ligne.add_theme_constant_override("h_separation", ecran.M(10))
+	ligne.add_theme_constant_override("h_separation", ecran.M(28))  # place du bouton (i) à droite de chaque nom
 	var intro: Label = ecran.texte("Jeunes proposés :", 15, Charte.IVOIRE_2, false, 500)
 	intro.add_theme_font_override("font", C.BODY)
 	ligne.add_child(intro)

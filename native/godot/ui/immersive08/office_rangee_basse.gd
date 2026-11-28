@@ -157,7 +157,7 @@ static func _journal(card: Panel, app: Control, w: int = 1132) -> void:
 		if blessure != null:
 			var nom := blessure.get_string(1)
 			D.text(card, x_titre, y + 29, nom, 21, Charte.IVOIRE, 600, w - x_titre - 200, HORIZONTAL_ALIGNMENT_LEFT, true).name = "OfficeJournalTitre" + str(i + 1)
-			var marque := R.pastille(card, x_titre + minf(_largeur(nom, 21, C.BODY), w - x_titre - 200) + 16, y + 29, "✚ %s sem." % blessure.get_string(2), R.ROUGE, "", "OfficeJournalBlessure" + str(i + 1))
+			var marque := R.pastille(card, x_titre + minf(_largeur(nom, 21, C.BODY), w - x_titre - 200) + 30, y + 29, "✚ %s sem." % blessure.get_string(2), R.ROUGE, "", "OfficeJournalBlessure" + str(i + 1))
 			var blesses := names_in(app.model, nom)
 			if not blesses.is_empty() and blesses[0] is Dictionary and blesses[0].has("id"):
 				var cible := {"kind": "player", "id": str(blesses[0].id)}

@@ -99,7 +99,7 @@ static func _clipping(app: Control, message: Dictionary, mail: Dictionary, width
 
 ## Marge à droite du texte de chaque colonne du tableau (px de mise en page), pour ne jamais coller la colonne voisine.
 const INFIRMARY_GUTTER := 16.0
-const INFIRMARY_COLUMNS := [["JOUEUR", .22], ["POSTE", .14], ["BLESSURE", .32], ["RETOUR ESTIMÉ", .16], ["PROCHAIN MATCH", .16]]
+const INFIRMARY_COLUMNS := [["JOUEUR", .20], ["POSTE", .17], ["BLESSURE", .29], ["RETOUR ESTIMÉ", .17], ["PROCHAIN MATCH", .17]]
 
 ## Tableau de l'infirmerie (données réelles de la partie) : joueurs blessés et en reprise, retour estimé et statut
 ## pour la prochaine rencontre (forfait rouge, apte vert, risque doré).
@@ -196,7 +196,13 @@ static func _infirmary(app: Control, width: float) -> Control:
 			cell.custom_minimum_size = Vector2(C.px(width * float(columns[column][1])), C.px(48))
 			cell.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 			if cell is Button:
+				# Le (i) de la carte joueur se pose juste à droite du nom : on réserve sa place pour qu'il ne mord pas la colonne suivante.
+				cell.custom_minimum_size.x -= C.px(28)
 				row.add_child(cell)
+				var reserve := Control.new()
+				reserve.custom_minimum_size = Vector2(C.px(28), 0)
+				reserve.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				row.add_child(reserve)
 				row_height = maxf(row_height, cell.custom_minimum_size.y)
 				continue
 			var gutter := StyleBoxEmpty.new()

@@ -48,5 +48,28 @@ func run() -> void:
 	app.user_preferences.data.reduced_motion = false
 	EntreePage.arrivee(app, "Effectif")
 	check(EntreePage.animer(app, page, "Bureau") == null, "suite lancée avec --script : page posée sans animation")
+	# Page classique (conteneur, mise en page pas encore faite) : fondu en cascade dans l'ordre des enfants, sans montée.
+	var classique := VBoxContainer.new()
+	app.add_child(classique)
+	for i in 12: classique.add_child(Panel.new())
+	EntreePage.arrivee(app, "Bureau")
+	var t2 := EntreePage.animer(app, classique, "Effectif", true)
+	check(t2 != null, "arrivée sur une page classique : animation lancée")
+	check(classique.get_child(0).modulate.a < 0.01 and classique.get_child(11).modulate.a < 0.01, "page classique : départ transparent")
+	await create_timer(0.12).timeout
+	check(classique.get_child(0).modulate.a > classique.get_child(7).modulate.a + 0.2, "page classique : vraie cascade (le 1er bloc arrive avant le 8e)")
+	await t2.finished
+	var opaques := true
+	for n in classique.get_children(): opaques = opaques and is_equal_approx(n.modulate.a, 1.0)
+	check(opaques, "page classique : tous les blocs opaques à la fin")
+	check(classique.get_child(0).position.y < classique.get_child(11).position.y, "page classique : mise en page laissée au conteneur")
+	# Aller-retour : revenir sur une page déjà vue rejoue l'entrée.
+	EntreePage.arrivee(app, "Finances")
+	check(EntreePage.animer(app, page_test(app), "Effectif", true) != null, "retour sur Effectif après Finances : entrée rejouée")
+	# Page vide : rien à animer, pas d'erreur.
+	EntreePage.arrivee(app, "Bureau")
+	var vide := Control.new()
+	app.add_child(vide)
+	check(EntreePage.animer(app, vide, "Recherche", true) == null, "page sans bloc : rien à animer")
 	print("godot-entree-page : %d vérifications, %d échec(s)" % [checks, failures.size()])
 	quit(1 if failures.size() > 0 else 0)
