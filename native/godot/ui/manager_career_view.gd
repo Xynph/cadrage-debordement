@@ -115,7 +115,7 @@ static func _attente(app: Control, parent: Node, data: Dictionary) -> void:
 	var clubs: Array = (vue.get("clubs", []) as Array).filter(func(c): return c is Dictionary)
 	var interesses: Array = clubs.filter(func(c): return c.get("reason") == "offer")
 	var tete := _rangee(parent)
-	tete.add_child(Pastilles.pastille("%d club(s) intéressé(s)" % interesses.size(), Pastilles.VERT, "check", "", 18, "VitrineCompte", func(): app._navigate("Classements")))
+	tete.add_child(Pastilles.pastille("%d club%s intéressé%s" % [interesses.size(), "s" if interesses.size() > 1 else "", "s" if interesses.size() > 1 else ""], Pastilles.VERT, "check", "", 18, "VitrineCompte", func(): app._navigate("Classements")))
 	tete.add_child(Pastilles.pastille("Réputation %d" % int(vue.get("reputation", 0)), Pastilles.VIOLET, "star", "", 18, "VitrineReputation", func(): app._navigate("Classements")))
 	tete.add_child(Pastilles.pastille("%d sem." % int(vue.get("weeksLeft", 0)), Pastilles.TURQUOISE, "hourglass", "", 18, "VitrineSemaines", func(): app._navigate("Calendrier")))
 	# Les plus prestigieux d'abord : intéressés, puis les autres.

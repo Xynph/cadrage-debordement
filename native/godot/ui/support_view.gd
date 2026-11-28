@@ -129,7 +129,7 @@ static func _staff(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 			if not condition.is_empty(): tuile.contenu.add_child(LienZone.relier(JaugeAvantApres.new("Condition", condition.avant, condition.apres, Charte.CONDITION), "SupportLienCondition_" + cle, "Effectif › Condition", _vers_condition.bind(app)))
 			tuile.contenu.add_child(LienZone.relier(JaugeAvantApres.new("Moral", float(d.morale), float(pv.get("morale", d.morale)), Charte.MORAL), "SupportLienMoral_" + cle, "Vestiaire", _vers_vestiaire.bind(app)))
 			tuile.contenu.add_child(LienZone.relier(JaugeAvantApres.new("Confiance", float(d.trust), float(pv.get("trust", d.trust)), Charte.CONFIANCE), "SupportLienConfiance_" + cle, "Club › Direction", _vers_direction.bind(app)))
-			tuile.pied.add_child(LienZone.relier(Tuile.pastille("%d joueur(s)" % int(pv.get("affected", 0)), Charte.IVOIRE, "people", "Joueurs concernés par la réunion"), "SupportLienJoueurs_" + cle, "Effectif › Condition", _vers_condition.bind(app)))
+			tuile.pied.add_child(LienZone.relier(Tuile.pastille("%d joueur%s" % [int(pv.get("affected", 0)), "s" if int(pv.get("affected", 0)) > 1 else ""], Charte.IVOIRE, "people", "Joueurs concernés par la réunion"), "SupportLienJoueurs_" + cle, "Effectif › Condition", _vers_condition.bind(app)))
 		elif applied:
 			tuile.pied.add_child(Tuile.pastille("Réunion tenue", Charte.GAIN, "check", etat))
 		else:
