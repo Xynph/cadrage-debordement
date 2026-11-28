@@ -1,0 +1,18 @@
+Météo (Godot) : {"controles":903,"failures":[],"textes":{"arbitre_sans-annonce":"ARBITRE | Julien Castaing | RUCKS | Pointilleux | MÊLÉE | Équilibré | HORS-JEU | Équilibré | CARTONS | Souple","arbitre_vent":"ARBITRE | Julien Castaing | RUCKS | Pointilleux | MÊLÉE | Équilibré | HORS-JEU | Équilibré | CARTONS | Souple","avant":["LA MÉTÉO  ·  GRAND VENT","Le vent souffle dans le dos de Hawthorn College XV en première période ; il changera de camp à la mi-temps.","Grand vent : le staff prévient que les tirs au but et le jeu au pied long deviennent aléatoires ; prenez les points faciles et jouez la touche."],"direct":"Grand vent · dans le dos de Hawthorn College XV en 1re période","ecran_match":"CONDITIONS DU MATCH | ANNONCÉES LA VEILLE | MÉTÉO | Vent | · pelouse souple | VENT | 1re période · notre dos\n2e période · dos adverse | « Du vent : tirs au but un peu moins sûrs, jeu au pied plus court. » | ARBITRE | Owen Pritchard-Lloyd | RUCKS | Pointilleux | MÊLÉE | Équilibré | HORS-JEU | Équilibré | CARTONS | Équilibré | Adapter le plan de jeu →","ecran_match_bandeau":"Grand vent","ecran_match_vent":"1re période · notre dos\n2e période · dos adverse","gabi":"LE MOT DE GABI | 3 CLÉS | « Ils sont 8es et prennent 26 points par match. Trois clés pour moi : » | 1 | Ils vont varier le jeu | c’est l’identité de leur club (lecture incertaine) | 2 | Marquer tôt avec le vent | il est dans notre dos en 1re période | 3 | M. Pritchard-Lloyd siffle beaucoup les rucks | on évite de contester chaque ruck | Ouvrir le plan de jeu → | Préparer la causerie →","joueurs":"L’ADVERSAIRE | 8E · 5 PTS | PLAN | INCERTAIN | Ils vont varier le jeu | POINT FORT | C’est l’identité de leur club | 14 | ailier · franchissements · 1,0 / m | 5 | deuxième ligne · grattages · 0,5 / m | MÊLÉE | 20 % contre 58 % · ▼ −38 | Hamish BOURNE | Rhys YORK | Régler les consignes → | Dossier adverse →","mi_temps":"Mi-temps · changement de camp : le vent passe dans le dos de Alder Fen XV","photos":{"chaleur":"match-tunnel-chaleur","forte-pluie":"match-tunnel-forte-pluie","jour-pluie":"stade-pelouse-pluie-jour","jour-sec":"stade-pelouse-sec-jour","neutre":"match-tunnel-neutre","pluie":"match-tunnel","sec":"match-tunnel-sec","vent":"match-tunnel-vent"},"plan":{"action":"consignes","cle":"identite","confiance":"incertaine","conseil":"garde ton plan et gagne les collisions","lecteur":{"nom":"Ben Franklin","role":"analyste vidéo"},"libelle":"Régler les consignes","raison":"c’est l’identité de leur club","style":"equilibre","titre":"Ils vont varier le jeu"}}}
+Captures : /home/runner/work/_temp/resultats/captures/meteo
+TAP version 13
+# Subtest: Météo et vent : avant-match, bandeau du direct, mi-temps
+ok 1 - Météo et vent : avant-match, bandeau du direct, mi-temps
+  ---
+  duration_ms: 366074.392073
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 366082.051591
