@@ -20,7 +20,9 @@ const { STOPS } = require('../native/engine/continuer.cjs');
 
 const dossier = dir => path.join(dir, 'PrototypeGodot');
 const lignes = dir => fs.readFileSync(path.join(dossier(dir), J.FILE), 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l));
-const ouvrir = dataDir => M.ouvrir({ dataDir, journal: true, deferredCommits: true });
+// testVm : plafond de la VM à 600 s au lieu des 15 s du jeu (seul effet sans leanModel, worker.cjs) ; l'avance de deux
+// semaines cherchée ici dépassait 15 s sur un runner chargé (run 46161229425, 28/11), comme les sondes de saison.
+const ouvrir = dataDir => M.ouvrir({ dataDir, journal: true, deferredCommits: true, testVm: true });
 // Empreinte SHA-256 du texte de l'état exporté (preuve du moteur) : pas de copie de ~22 Mo.
 const exporter = jeu => { const p = jeu.call('export', { proof: true }).meta.exportRoundTripSha256; assert.match(p, /^[a-f0-9]{64}$/); return p; };
 const lundi = date => { const d = new Date(Date.parse(date)); d.setUTCDate(d.getUTCDate() - (d.getUTCDay() + 6) % 7); return d.toISOString().slice(0, 10); };
