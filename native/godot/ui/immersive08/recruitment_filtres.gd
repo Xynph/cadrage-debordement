@@ -17,13 +17,14 @@ func _filters(positions: Array) -> void:
 	focus.set_border_width_all(2)
 	recherche.add_theme_stylebox_override("focus", focus)
 	add_child(recherche)
-	D.place(recherche, Rect2(Bandeau.MARGE, Y_FILTRES, 330, 38))
+	var l_rech := 230.0 if C.density < .75 else 330.0
+	D.place(recherche, Rect2(Bandeau.MARGE, Y_FILTRES, l_rech, 38))
 	recherche.text_changed.connect(func(value: String):
 		state.search = value
 		state.navigation_id = ""
 		_filter_changed())
 	var k := 1.3 if C.density < .75 else 1.0
-	var x := 346.0 + Bandeau.MARGE
+	var x := l_rech + 16.0 + Bandeau.MARGE
 	position_filter = _choice(Rect2(x, Y_FILTRES, 270, 38), "MarketPosition", "Poste", positions, state.position, func(value: String): state.position = value; state.position_libre = true; _filter_changed())
 	x += 282
 	_choice(Rect2(x, Y_FILTRES, 190, 38), "MarketAge", "Âge", ["Tous", "≤ 22 ans", "23–28 ans", "≥ 29 ans"], state.get("age_filter", "Tous"), func(value: String): state.age_filter = value; _filter_changed())
