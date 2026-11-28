@@ -150,7 +150,12 @@ budget() {
     tests/godot-engine.cjs) echo 600s ;;
     # Pilotage du match (#912) : carrière Monde + 11 séries de 160 matchs rejoués, 125-150 s en local ; 180 s dépassées en CI.
     # Arrêts de jeu (PR #1216) : carrière Monde + séries de matchs, 86 s en local, 180 s dépassées en CI (Suites 9/10) ; budget ≈ 5 fois.
-    tests/match-arrets.cjs) echo 480s ;;
+    # 480 matchs par réglage au lieu de 160 (remplaçants K3, 28/11) : 168 s en CI pour 160 (run 46127960110), ≈ 500 s attendues ;
+    # budget ≈ 2,4 fois, assertions et seuils inchangés.
+    tests/match-arrets.cjs) echo 1200s ;;
+    # 192 matchs × 25 variantes (élargi de 24 matchs, accord de Léo du 27/11) : 85 s pour 24 matchs en CI (run 46128180494),
+    # soit ≈ 680 s attendues ; budget ≈ 2,2 fois, assertions et seuils inchangés.
+    tests/match-consignes-direct.cjs) echo 1500s ;;
     # 23/11/2026 : 323 s en local sur main, 352 s avec les arrêts de jeu (PR #1216) ; 480 s dépassées en CI (Suites 1/10) ; budget ≈ 2,5 fois.
     # 27/11/2026 : aile faible sur 1000 matchs (accord de Léo) : 520 s en local à vide ; 900 s ne laissaient plus que 1,7 fois ; budget ≈ 3 fois.
     tests/match-pilotage.cjs) echo 1500s ;;
@@ -203,7 +208,8 @@ budget() {
     tests/reprise-avant-match.cjs) echo 600s ;;
     # Ancien journal dont un « Continuer » franchit une semaine : carrière Monde jouée jusqu'à une semaine sans match
     # (≈ 5 matchs) puis reprise ; 270 s en local.
-    tests/reprise-ancien-journal-semaine.cjs) echo 900s ;;
+    # Recherche prolongée à 90 « Continuer » (K3, 28/11) : 475 s en CI pour 60 sans trouver (run 46127960110) ; budget relevé.
+    tests/reprise-ancien-journal-semaine.cjs) echo 1500s ;;
     # Entrées dans les 22 (#824) : un match Monde complet joué au worker (81 projections) ; 180 s dépassées en CI
     # sur les PR #837 et #841 (17/11) ; assertions inchangées.
     tests/match-zone22.cjs) echo 600s ;;
