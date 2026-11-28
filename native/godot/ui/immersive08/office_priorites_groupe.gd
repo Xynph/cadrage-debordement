@@ -69,14 +69,15 @@ static func _group(card: Panel, app: Control, w: int = 580) -> void:
 	var disponibles := _zone(card, Rect2(16, 66, 220, 70), "", app.navigation_controller.open_roster_group, "OfficeGroupAvailable", 20)
 	disponibles.tooltip_text = "Voir les %s joueurs disponibles" % G.n(group.available)
 	D.text(card, 24, 118, group.available, 52, Charte.V, 800, 90)
-	D.text(card, 24 + _largeur(G.n(group.available), 52, C.font(800)) + 14, 116, "disponibles", 21, Charte.IVOIRE, 600, 130)
+	D.text(card, 24 + _largeur(G.n(group.available), 52, C.font(800)) + 14, 116, "disponible" if int(group.available) <= 1 else "disponibles", 21, Charte.IVOIRE, 600, 130)
 	var vers_blesses := func():
 		if app.navigation_controller.has_method("open_roster_injured"): app.navigation_controller.open_roster_injured()
 		else: app.navigation_controller.open_roster_group()
 	var blesses := _zone(card, Rect2(250, 66, 220, 70), "", vers_blesses, "OfficeGroupInjured", 20)
 	blesses.tooltip_text = "Voir les %s joueurs blessés" % G.n(group.injured)
 	D.text(card, 258, 118, "! " + G.n(group.injured) if int(group.injured) > 0 else G.n(group.injured), 52, R.ROUGE if int(group.injured) > 0 else Charte.IVOIRE_2, 800, 100)
-	D.text(card, 258 + _largeur("! " + G.n(group.injured), 52, C.font(800)) + 14, 116, "blessés", 21, Charte.IVOIRE, 600, 110)
+	var chiffre_blesses := "! " + G.n(group.injured) if int(group.injured) > 0 else G.n(group.injured)
+	D.text(card, 258 + _largeur(chiffre_blesses, 52, C.font(800)) + 14, 116, "blessé" if int(group.injured) <= 1 else "blessés", 21, Charte.IVOIRE, 600, 110)
 	var fatigue := Avis.fatigue_resume(app.model)
 	var titulaires := int(fatigue.count)
 	var jauges: Array = [

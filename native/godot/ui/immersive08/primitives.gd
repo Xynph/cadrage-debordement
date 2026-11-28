@@ -213,7 +213,10 @@ static func bar(parent: Node, rectangle: Rect2, value: float, color: Color = C.M
 	rect(parent,rectangle,C.SELECTED,C.Charte.RAYON_PILULE)
 	var fill := rectangle
 	fill.size.x *= clampf(value/100.0,0,1)
-	if fill.size.x > 0: rect(parent,fill,color,C.Charte.RAYON_PILULE)
+	if fill.size.x > 0:
+		var barre := rect(parent,fill,color,C.Charte.RAYON_PILULE)
+		# Remplissage depuis zéro quand on arrive sur une page dessinée (ui/entree_page.gd).
+		barre.set_meta("entree_page_jauge", barre.size.x)
 
 static func words(value: String, characters: int = 45, count: int = 2) -> Array[String]:
 	var result: Array[String] = []

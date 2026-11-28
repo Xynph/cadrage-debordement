@@ -10,6 +10,7 @@ const Raccourcis = preload("res://ui/raccourcis_clavier.gd")
 const P = preload("res://ui/immersive08/projection.gd")
 const Office = preload("res://ui/immersive08/office.gd")
 const OfficeCanvas = preload("res://ui/immersive08/office_canvas.gd")
+const EntreePage = preload("res://ui/entree_page.gd")
 const SquadCanvas = preload("res://ui/immersive08/squad_canvas.gd")
 const SocleEffectif = preload("res://ui/socle/ecran_effectif.gd")
 const TacticsCanvas = preload("res://ui/immersive08/tactics_canvas.gd")
@@ -201,8 +202,13 @@ static func render(app: Control) -> bool:
 		canvas_script.build(app,canvas)
 		if app.route == "Calendrier":
 			D.button(canvas,Rect2(1830,147,395,40),"Programme du mois",func(): TrainingMois.ouvrir(app),false,"calendar",true,app.accent,"CalendarShowMonth")
-	elif app.route == "Bureau": app.body.add_child(OfficeCanvas.build(app) if physical.x >= OFFICE_CANVAS_MIN_WIDTH else Office.build(app))
+	elif app.route == "Bureau":
+		var bureau: Control = OfficeCanvas.build(app) if physical.x >= OFFICE_CANVAS_MIN_WIDTH else Office.build(app)
+		app.body.add_child(bureau)
+		# Arrivée sur le Bureau : blocs en cascade et jauges qui se remplissent (pas à chaque rafraîchissement).
+		EntreePage.animer(app, bureau, "Bureau")
 	else: _existing_page(app,immersive_match)
+	if app.route != "Bureau": EntreePage.arrivee(app, app.route)
 	if not hors_coque: Entete._footer(content, app, layout)
 	app._update_live_bar()
 	app.call_deferred("_refresh_coach")

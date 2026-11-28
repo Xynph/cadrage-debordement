@@ -32,14 +32,14 @@ static func _live_fixture(model: Dictionary, pair: Array, include_next: bool = t
 	)
 	return fixtures[0] if fixtures.size() == 1 else {}
 
-static func upcoming_matches(model: Dictionary) -> Array:
+static func upcoming_matches(model: Dictionary, limite: int = 7) -> Array:
 	var live: Variant = model.get("live")
-	if not live is Dictionary or live.is_empty(): return P.upcoming(model)
+	if not live is Dictionary or live.is_empty(): return P.upcoming(model, limite)
 	var current := _live_fixture(model, live.get("pair", []), false)
 	var fixture_id := str(current.get("id", ""))
-	if fixture_id.is_empty(): return P.upcoming(model)
-	var fixtures := P.upcoming(model, 8)
-	return fixtures.filter(func(fixture: Dictionary): return fixture.get("id") != fixture_id).slice(0, 7)
+	if fixture_id.is_empty(): return P.upcoming(model, limite)
+	var fixtures := P.upcoming(model, limite + 1)
+	return fixtures.filter(func(fixture: Dictionary): return fixture.get("id") != fixture_id).slice(0, limite)
 
 static func _live_status(live: Dictionary) -> Dictionary:
 	var finished: bool = live.get("finished", false)

@@ -10,9 +10,8 @@ static func watch_reason(player: Dictionary) -> String:
 	if charge >= 70:
 		reasons.append("Charge %d %%" % floori(charge))
 	if condition < 80:
-		var displayed := floorf(condition * 10) / 10
-		var value := str(displayed).trim_suffix(".0").replace(".", ",")
-		reasons.append("Condition " + value + " %")
+		# Entier arrondi vers le bas (79,9 reste sous le seuil de 80 : « 79 % »), comme la charge.
+		reasons.append("Condition %d %%" % floori(condition))
 	return " · ".join(reasons)
 
 ## Raison d'indisponibilité d'un joueur du club : "blesse", "suspendu", "selection" ; vide s'il est apte
