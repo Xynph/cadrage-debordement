@@ -26,7 +26,7 @@ static func _installations(panneau: Panel, app: Control, finance: Dictionary, st
 	var academie_suite := "Installations du centre"
 	if academie == null and centre_ouvert:
 		academie_niveau = "%s / %s" % [G.n(suivi.get("total", 0)), G.n(suivi.get("capacity", 75))]
-		academie_suite = "%s jeunes au centre" % G.n(int(suivi.get("crabos", {}).get("count", 0)) + int(suivi.get("espoirs", {}).get("count", 0)))
+		academie_suite = "%s Crabos · %s Espoirs" % [G.n(suivi.get("crabos", {}).get("count", 0)), G.n(suivi.get("espoirs", {}).get("count", 0))]
 	rangees.append({"id": "ClubFacilityAcademy", "nom": "Académie", "niveau": academie_niveau, "segments": [3, int(academie)] if academie != null else [], "suite": academie_suite, "cout": "", "statut": "", "action": func(): app._navigate("Centre")})
 	rangees.append({"id": "ClubFacilityStadium", "nom": str(G.identity(app.model.club).get("stadium", "Le stade")), "niveau": _milliers(fans.capacity) + " places" if fans.has("capacity") else "—", "segments": [], "suite": "Affluence " + _milliers(fans.expectedAttendance) if fans.has("expectedAttendance") else "Photo, ville et crédits", "cout": "", "statut": "", "action": func(): _tab(app, "territory", "ClubTab_overview")})
 	for i in rangees.size():
@@ -49,7 +49,7 @@ static func _installations(panneau: Panel, app: Control, finance: Dictionary, st
 		else:
 			_segments(rangee, 542, 15, 120, int(segments[0]), int(segments[1]))
 			Kit.texte(rangee, 742, 27, str(donnees.niveau), Charte.IVOIRE, 70, 18, HORIZONTAL_ALIGNMENT_RIGHT).name = "ClubFacilityLevel"
-		Kit.texte(rangee, 772, 27, str(donnees.suite), Charte.IVOIRE_2, 230, 18)
+		Kit.texte(rangee, 772, 27, str(donnees.suite), Charte.IVOIRE_2, 300, 17)
 		if not str(donnees.cout).is_empty(): Kit.texte(rangee, 1142, 27, str(donnees.cout), Charte.IVOIRE, 130, 18, HORIZONTAL_ALIGNMENT_RIGHT)
 		if not str(donnees.statut).is_empty(): Kit.texte(rangee, 1176, 27, str(donnees.statut), Charte.IVOIRE_2, 190, 17)
 	var details := Kit.lien(panneau, Rect2(24, 270, 0, 34), "Projets et devis des installations →", func(): _tab(app, "infrastructure", "ClubTab_infrastructure"), "ClubFacilityDetails", 19)
