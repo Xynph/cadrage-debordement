@@ -31,11 +31,11 @@ const DY := 2.0
 const PASTILLE := 32.0
 const HEADER_H := 34.0
 const TABLE_TOP := 258.0
-const ROWS_H := 560.0
+const ROWS_H := 610.0
 ## Marge sous la dernière ligne : elle reste entière et loin des coins arrondis du panneau en fin de défilement.
 const BAS_TABLEAU := 22.0
-const STRIP_TOP := 874.0
-const CARTES_TOP := 1004.0
+const STRIP_TOP := 924.0
+const CARTES_TOP := 1054.0
 
 ## Courbe de niveau des saisons passées (jetons de la charte : trait ivoire, dernier point plein).
 class Trend extends Control:
