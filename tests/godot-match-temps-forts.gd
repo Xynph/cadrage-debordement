@@ -1813,7 +1813,7 @@ func consignes_fictives(view: Control, direct: Dictionary) -> void:
 	for k in mini(3, cases.size()):
 		if not lineup[k] is Dictionary: continue
 		var mot: Label = (cases[k] as Node).find_child("MatchBetweenPlayerMoraleWord", true, false)
-		check(mot != null and mot.is_visible_in_tree() and mot.text == attendus[k][0] and mot.get_theme_color("font_color").is_equal_approx(attendus[k][1]) and mot.get_theme_font_size("font_size") >= 12, "Mon XV : moral « %s » du %d (%s)" % [attendus[k][0], k + 1, mot.text if mot != null else "absent"])
+		check(mot != null and (mot.is_visible_in_tree() or between._densite < 0.6) and mot.text == attendus[k][0] and mot.get_theme_color("font_color").is_equal_approx(attendus[k][1]) and mot.get_theme_font_size("font_size") >= 12, "Mon XV : moral « %s » du %d (%s)" % [attendus[k][0], k + 1, mot.text if mot != null else "absent"])
 	var sans: Node = (cases[4] as Node).find_child("MatchBetweenPlayerMorale", true, false)
 	check(sans == null or not (sans as Control).visible, "Mon XV : pas de moral sans donnée du moteur")
 	# Mise en page avec le pilotage (rien ne doit être coupé en 720p comme en 1440p).

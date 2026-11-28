@@ -193,35 +193,9 @@ func _centre(next: Dictionary, data: Dictionary, nous: int) -> Control:
 	lien.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lien.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	colonne.add_child(lien)
-	if next.get("meteo") is Dictionary:
-		var meteo := _ligne_meteo(next, nous)
-		colonne.add_child(meteo)
+	# Le ciel, le vent et la pelouse se lisent dans « Conditions du match » ; le vent est aussi sur le terrain.
 	return colonne
 
-## Ciel et vent en une ligne (icône + mot) ; clic : le plan de jeu, pour l'adapter aux conditions.
-func _ligne_meteo(next: Dictionary, nous: int) -> Control:
-	var annonce := MeteoTexte.annonce(next)
-	var meteo: Dictionary = next.meteo
-	var bouton := Button.new()
-	bouton.name = "MatchFixtureWeather"
-	bouton.set_meta("immersive_style_applied", true)
-	C.style_bouton_lien(bouton, roundi(14 / .75))
-	bouton.add_theme_font_override("font", C.BODY)
-	_icone_dans_lien(bouton, icone_meteo(meteo, Charte.IVOIRE), 18)
-	bouton.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var ciel := MeteoTexte.libelle(annonce)
-	var vent: String = ["", "Vent", "Grand vent"][clampi(int(meteo.get("vent", 0)), 0, 2)]
-	var mots: Array[String] = [ciel]
-	if not vent.is_empty() and ciel.to_lower().find("vent") < 0: mots.append(vent.to_lower())
-	bouton.text = " · ".join(mots)
-	bouton.tooltip_text = "Adapter le plan de jeu aux conditions"
-	bouton.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	bouton.pressed.connect(func(): _aller("Plan de jeu"))
-	bouton.set_meta("vent", phrase_vent(next, nous))
-	var enveloppe := CenterContainer.new()
-	enveloppe.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	enveloppe.add_child(bouton)
-	return enveloppe
 ## Rang, points et forme d'un club : rang cliquable (Classements), pastilles V / N / D à lettre et forme.
 func _classement(club: Dictionary, side: int, forme: Array, matchs: Array = []) -> Control:
 	var ligne := HBoxContainer.new()

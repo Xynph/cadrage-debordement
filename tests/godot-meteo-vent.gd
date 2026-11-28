@@ -94,8 +94,8 @@ const MiniFiche = preload("res://ui/immersive08/mini_fiche.gd")
 const Carte = preload("res://ui/carte_joueur_survol.gd")
 
 func tableau_present_meteo() -> bool:
-	var ciel := app.match_screen.find_child("MatchFixtureWeather", true, false) as Button
-	return ciel != null and ciel.is_visible_in_tree()
+	var ciel := app.match_screen.find_child("MeteoCiel", true, false) as Label
+	return ciel != null and ciel.is_visible_in_tree() and app.match_screen.find_child("MatchFixtureWeather", true, false) == null
 
 func fenetres_visibles() -> Array:
 	return app.find_children("*", "Window", true, false).filter(func(w: Node): return (w as Window).visible and not w.is_queued_for_deletion() and w.name != "MiniFicheJoueur")
@@ -272,7 +272,7 @@ func avant_match() -> void:
 	await poser(10)
 	controler_tableau("avant-match")
 	await controler_da()
-	verifier(tableau_present_meteo(), "écran 12 : ligne du ciel cliquable dans l'affiche")
+	verifier(tableau_present_meteo(), "écran 12 : ciel dans Conditions du match, plus de ligne redondante sous l'heure")
 	var tableau: Node = app.match_screen.find_child("MatchOpening", true, false)
 	var meteo: Node = tableau.find_child("TuileMeteo", true, false) if tableau != null else null
 	var texte_meteo := textes_de(meteo)
@@ -351,10 +351,10 @@ func avant_match() -> void:
 			verifier(photos[nom].begins_with("match-tunnel"), "coup d'envoi le soir : tunnel (%s)" % photos[nom])
 		if nom == "vent":
 			var nous := 1 if app.model.next.get("away", {}).get("id") == app.model.club.get("id") else 0
-			var ligne_ciel := app.match_screen.find_child("MatchFixtureWeather", true, false) as Button
+			var ligne_ciel := app.match_screen.find_child("MeteoCiel", true, false) as Label
 			var bandeau: String = ligne_ciel.text if ligne_ciel != null else ""
 			textes.ecran_match_bandeau = bandeau
-			verifier(bandeau.contains("Grand vent") and ligne_ciel != null and ligne_ciel.is_visible_in_tree(), "affiche : ciel cliquable « %s »" % bandeau)
+			verifier(bandeau.contains("Grand vent") and ligne_ciel != null and ligne_ciel.is_visible_in_tree(), "Conditions du match : ciel « %s »" % bandeau)
 			var vent := textes_de(app.match_screen.find_child("MeteoVent", true, false))
 			textes.ecran_match_vent = vent
 			verifier(vent.contains("1re période") and vent.contains("2e période"), "tuile météo : vent des deux périodes « %s »" % vent)
