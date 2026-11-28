@@ -21,7 +21,9 @@ const EXCLUSIVE_WEIGHT = 30;
 // Jobs Godot : SDK 4.7.2 installé en CI, suites natives sous xvfb. Bloquants (14/11) : « Validation CI »
 // en dépend dans le workflow ; sautés (donc sans effet) quand aucun fichier Godot ne change.
 // 19/11/2026 : cinq jobs Godot. 26/11/2026 : six (les suites durent 218 min au total, 44 min par job à cinq, au bord du délai de 45 min ; 36 min à six).
-const GODOT_SHARD_COUNT = 6;
+// 28/11/2026 : sept (poids remesurés sur les batteries du 27-28/11 : 267 min au total, 44 min par job à six, au bord de la
+// coupure de 45 min, des jobs coupés ce jour-là ; 38 min à sept). 10 lots JS + 7 Godot + classification = 18 jobs sur 20.
+const GODOT_SHARD_COUNT = 7;
 // Mode rapide (PR prête sans étiquette `batterie-complete`, 19/11/2026) : suites dont le poids ne dépasse pas
 // RAPIDE_MAX_S, plus les suites modifiées par la PR quel que soit leur poids. La batterie complète tourne
 // chaque heure sur main (schedule).

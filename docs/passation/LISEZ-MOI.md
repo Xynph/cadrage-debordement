@@ -85,7 +85,7 @@ Le verrou de places Godot, le bureau Windows caché, le film de match (`scripts/
 
 ### Workflows principaux
 
-- `tests.yml` (« Tests JavaScript ») : le workflow qui décide des fusions. Jobs : `classification`, `Suites 1/10` à `10/10` (suites Node réparties par poids, au plus 3 en parallèle par runner, 2 si une suite « exclusive » tourne), `Godot 1/6` à `6/6` (suites Godot, SDK 4.7.2, xvfb, limite d'étape 45 min, job 55 min), puis `Validation CI` (l'agrégateur : seule sa conclusion autorise la fusion).
+- `tests.yml` (« Tests JavaScript ») : le workflow qui décide des fusions. Jobs : `classification`, `Suites 1/10` à `10/10` (suites Node réparties par poids, au plus 3 en parallèle par runner, 2 si une suite « exclusive » tourne), `Godot 1/7` à `7/7` (suites Godot, SDK 4.7.2, xvfb, limite d'étape 45 min, job 55 min), puis `Validation CI` (l'agrégateur : seule sa conclusion autorise la fusion).
 - Déclencheurs : PR (brouillon : classification seulement, `Validation CI` rouge exprès, ne pas le « réparer ») ; PR prête : mode rapide (suites courtes, de poids ≤ 60 s, et suites modifiées par la PR) ; étiquette `batterie-complete` pour tout lancer ; push sur `main` (batterie complète, non annulée par la fusion suivante depuis #1348) ; `schedule` (cron `41 * * * *`, que GitHub n'exécute en pratique que quelques fois par jour) : batterie complète JS et Godot sur `main` ; `workflow_dispatch`.
 - Les jobs Godot sont bloquants seulement si le diff touche Godot (`native/godot/`, `tests/godot-*`, lanceurs) ; sinon ils sont sautés.
 - `main-rouge.yml` : si la batterie programmée de `main` est rouge, relance une fois les jobs en échec, puis alerte sur le ticket de coordination et **ouvre une PR de retour arrière automatique si une seule PR est en cause**. Surveiller ces PR de retour arrière : ne pas les laisser fusionner sans comprendre le rouge.
@@ -95,7 +95,7 @@ Le verrou de places Godot, le bureau Windows caché, le film de match (`scripts/
 
 ### Répartition et limites de temps
 
-- Répartition : `ci/shard-tests.cjs` avec les poids de `ci/suite-weights.json` (section `godot` remesurée le 26/11 à partir de 13 exécutions programmées). Nombre de jobs : `ci/ci-jobs.cjs` (`SHARD_COUNT = 10`, `GODOT_SHARD_COUNT = 6` depuis #1328 : à cinq, les suites Godot durent 44 min par job, au bord de la coupure à 45 min ; à six, environ 36 min).
+- Répartition : `ci/shard-tests.cjs` avec les poids de `ci/suite-weights.json` (section `godot` remesurée le 26/11 à partir de 13 exécutions programmées). Nombre de jobs : `ci/ci-jobs.cjs` (`SHARD_COUNT = 10`, `GODOT_SHARD_COUNT = 7` depuis le 28/11 : poids remesurés, 44 min par job à six, au bord de la coupure à 45 min ; à sept, environ 38 min).
 - Chaque suite a sa limite de temps : 180 s pour les suites Node par défaut, 300 s pour les suites Godot par défaut, avec des exceptions (`ci/run-godot-suites.sh` `suite_limits`, `ci/suite-weights.json`). Exemples : `godot-match-grands-moments` 600 s depuis #1341, `godot-planche-direct-2d` 900 s.
 - Jamais relever une limite sans mesure : voir règles du créateur.
 
