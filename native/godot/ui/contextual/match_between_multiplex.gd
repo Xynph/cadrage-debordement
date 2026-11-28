@@ -45,7 +45,7 @@ func _carte_match_v2(m: Dictionary, avant: Array, teintes: Dictionary) -> Contro
 	var style := _case(RELIEF, Charte.RAYON_CARTE)
 	style.set_content_margin_all(px(6))
 	carte.add_theme_stylebox_override("panel", style)
-	carte.custom_minimum_size.x = px(190)
+	carte.custom_minimum_size.x = px(110)
 	carte.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var fini := bool(m.get("fini", false))
 	var cotes: Array = [m.get("home", {}), m.get("away", {})]
@@ -221,6 +221,13 @@ static func colonnes_multiplex(matchs: int, voulues: int) -> int:
 func _largeur_multiplex() -> void:
 	if not is_instance_valid(multiplex_defile) or not is_instance_valid(multiplex_cartes): return
 	if not is_zero_approx(multiplex_defile.custom_minimum_size.x): multiplex_defile.custom_minimum_size.x = 0
+	# Les cartes tiennent entièrement dans le bloc : on réduit le nombre de colonnes à ce que la largeur permet.
+	if multiplex_cartes.get_child_count() > 0 and multiplex_defile.size.x > 1.0:
+		var sep: int = multiplex_cartes.get_theme_constant("h_separation")
+		var largeur_carte: float = maxf(1.0, (multiplex_cartes.get_child(0) as Control).get_combined_minimum_size().x)
+		var tient: int = maxi(1, int(floor((multiplex_defile.size.x + sep) / (largeur_carte + sep))))
+		var voulues: int = colonnes_multiplex(multiplex_cartes.get_child_count(), _colonnes_multiplex)
+		if tient < voulues: multiplex_cartes.columns = tient
 	multiplex_defile.custom_minimum_size.y = multiplex_cartes.get_combined_minimum_size().y
 	_fondu_multiplex()
 

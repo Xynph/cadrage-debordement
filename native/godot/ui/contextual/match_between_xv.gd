@@ -94,17 +94,22 @@ func _remplir_carte_haute(case: Button, poste: int, joueur: Dictionary, info: Di
 	var bas := S.G.h(px(6))
 	bas.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	colonne.add_child(bas)
+	# Petite fenêtre (720p) : textes au plancher de 12 px réels, donc moins d'infos par tuile (nom, énergie, note).
+	var serre: bool = _densite < 0.6
 	var mot_plaq := _texte("PLAQ.", 17, DOUX, false, true)
+	mot_plaq.visible = not serre
 	mot_plaq.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	mot_plaq.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bas.add_child(mot_plaq)
 	var plaq := _texte(str(int(info.get("plaquages", 0))), 18, IVOIRE, false, true)
 	plaq.add_theme_font_override("font", TITRES_EXTRA)
+	plaq.visible = not serre
 	plaq.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	plaq.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	S.G.fill(plaq)
 	bas.add_child(plaq)
 	bas.add_child(_pastille_note(float(info.note)))
+	if serre: bas.alignment = BoxContainer.ALIGNMENT_CENTER
 	# Moral du joueur en direct (moteur : départ = réaction à la causerie, puis les faits du match) : pastille + mot,
 	# flèche quand il bouge nettement depuis 5 minutes.
 	var moral := moral_joueur(_pilotage, str(info.id))
@@ -125,7 +130,7 @@ func _remplir_carte_haute(case: Button, poste: int, joueur: Dictionary, info: Di
 	mot_moral.name = "MatchBetweenPlayerMoraleWord"
 	mot_moral.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ligne_moral.add_child(mot_moral)
-	ligne_moral.visible = not moral.is_empty()
+	ligne_moral.visible = not moral.is_empty() and not serre
 	case.custom_minimum_size = Vector2(px(130), px(172))
 	return colonne
 

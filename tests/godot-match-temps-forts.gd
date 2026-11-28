@@ -260,8 +260,9 @@ func _tient(view: Control, between: Control, label: String, screen: Rect2) -> vo
 		var cartes := _cartes_multiplex(between)
 		if between.multiplex.is_visible_in_tree() and not cartes.is_empty():
 			var defile: Control = between.multiplex_defile
-			check(defile.is_ancestor_of(between.multiplex_cartes) and between.multiplex_cartes.columns == Between.colonnes_multiplex(cartes.size(), 2), label + " : multiplex en grille de trois rangées au plus (%d colonnes, %d cartes)" % [between.multiplex_cartes.columns, cartes.size()])
+			check(defile.is_ancestor_of(between.multiplex_cartes) and between.multiplex_cartes.columns >= 1 and between.multiplex_cartes.columns <= Between.colonnes_multiplex(cartes.size(), 2), label + " : multiplex en grille, au plus le nombre de colonnes voulu (%d colonnes, %d cartes)" % [between.multiplex_cartes.columns, cartes.size()])
 			check(cartes.all(func(c: Control): return inside(defile.get_global_rect().grow_individual(0, 0, 100000, 0), c.get_global_rect())), label + " : cartes du multiplex dans leur zone (la suite défile en largeur)")
+			check(cartes.all(func(c: Control): return c.get_global_rect().end.x <= defile.get_global_rect().end.x + 1.0), label + " : aucune carte du multiplex coupée à droite")
 			check(inside(defile.get_global_rect(), (cartes[0] as Control).get_global_rect()) and inside(zone, between.multiplex.get_global_rect()), label + " : première carte du multiplex entière, panneau dans l'écran")
 			var fondu: Control = between.multiplex_fondu
 			var reste_a_droite: bool = between.multiplex_deborde() and float(between.multiplex_defile.scroll_horizontal) + defile.size.x < between.multiplex_cartes.size.x - 1.0
@@ -1813,7 +1814,7 @@ func consignes_fictives(view: Control, direct: Dictionary) -> void:
 	for k in mini(3, cases.size()):
 		if not lineup[k] is Dictionary: continue
 		var mot: Label = (cases[k] as Node).find_child("MatchBetweenPlayerMoraleWord", true, false)
-		check(mot != null and mot.is_visible_in_tree() and mot.text == attendus[k][0] and mot.get_theme_color("font_color").is_equal_approx(attendus[k][1]) and mot.get_theme_font_size("font_size") >= 12, "Mon XV : moral « %s » du %d (%s)" % [attendus[k][0], k + 1, mot.text if mot != null else "absent"])
+		check(mot != null and (mot.is_visible_in_tree() or between._densite < 0.6) and mot.text == attendus[k][0] and mot.get_theme_color("font_color").is_equal_approx(attendus[k][1]) and mot.get_theme_font_size("font_size") >= 12, "Mon XV : moral « %s » du %d (%s)" % [attendus[k][0], k + 1, mot.text if mot != null else "absent"])
 	var sans: Node = (cases[4] as Node).find_child("MatchBetweenPlayerMorale", true, false)
 	check(sans == null or not (sans as Control).visible, "Mon XV : pas de moral sans donnée du moteur")
 	# Mise en page avec le pilotage (rien ne doit être coupé en 720p comme en 1440p).
