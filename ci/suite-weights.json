@@ -418,6 +418,7 @@
       "tests/godot-dilemmes.cjs": 121,
       "tests/godot-disquette-sauvegarde.cjs": 4,
       "tests/godot-ecran-club.cjs": 23,
+      "tests/godot-accord-libelles.cjs": 2,
       "tests/godot-ecrans-chargement.cjs": 44,
       "tests/godot-effectif-da.cjs": 26,
       "tests/godot-engine.cjs": 399,

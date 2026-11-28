@@ -244,7 +244,7 @@ func _redraw() -> void:
 	if _court():
 		_maj_entete(people)
 	else:
-		counter.text = "%d jeunes · %s" % [people.size(),"suivi actif" if _data().get("enabled",false) else "suivi à démarrer"]
+		counter.text = "%d jeune%s · %s" % [people.size(),"s" if people.size() > 1 else "","suivi actif" if _data().get("enabled",false) else "suivi à démarrer"]
 		if not str(state.get("draft_notice","")).is_empty(): counter.text += "\n"+str(state.draft_notice)
 		if _data().get("locked",false): counter.text += "\nObjectifs verrouillés : révise-les avant la séance, hors match et pendant la saison régulière."
 	previous.disabled = start==0; next.disabled = start+PAGE_SIZE>=people.size()

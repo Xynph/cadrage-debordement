@@ -10,6 +10,7 @@ const Art = preload("res://ui/art_widgets.gd")
 # carnet_skin.gd (papier clair) et contextual/skin.gd (salles du club) les reprennent.
 ## Depuis la charte finale, ces noms pointent sur les jetons de `Charte` (ui/charte.gd), seule source des couleurs.
 const Charte = preload("res://ui/charte.gd")
+const Accord = preload("res://ui/accord.gd")
 const BG = Charte.FOND
 const PANEL = Charte.PANNEAU
 const LINE = Charte.FILET
@@ -52,7 +53,7 @@ static func box(color: Color, kind: String = "control", border: Color = Color.TR
 
 static func label(text: Variant, size: int = 14, color: Color = INK, title: bool = false) -> Label:
 	var l := Label.new()
-	l.text = str(text)
+	l.text = Accord.texte(str(text))
 	l.add_theme_font_size_override("font_size", reading_size(size))
 	l.add_theme_color_override("font_color", color)
 	if title: l.add_theme_font_override("font", T.DISPLAY)

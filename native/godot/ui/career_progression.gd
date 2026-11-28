@@ -65,7 +65,7 @@ static func in_days(today: String, date: String) -> String:
 	var days := int(round((Time.get_unix_time_from_datetime_string(date + "T12:00:00") - Time.get_unix_time_from_datetime_string(today + "T12:00:00")) / 86400.0))
 	if days <= 0: return " (aujourd’hui)"
 	if days == 1: return " (demain)"
-	return " (dans %d jours)" % days
+	return " (dans %d jour%s)" % [days, "s" if days > 1 else ""]
 
 const CONTINUE_COMMAND := "advance_until_event"
 

@@ -75,8 +75,8 @@ static func text(parent: Node, x: float, baseline: float, value: Variant, font_s
 	var left := x-width if align == HORIZONTAL_ALIGNMENT_RIGHT else x-width/2 if align == HORIZONTAL_ALIGNMENT_CENTER else x
 	parent.add_child(control)
 	control.position = Vector2(C.px(left),C.px(baseline)-chosen.get_ascent(pixels))
-	control.size = Vector2(C.px(width) if width > 0 else chosen.get_string_size(str(value),HORIZONTAL_ALIGNMENT_LEFT,-1,pixels).x,chosen.get_height(pixels))
-	control.tooltip_text = str(value)
+	control.size = Vector2(C.px(width) if width > 0 else chosen.get_string_size(control.text,HORIZONTAL_ALIGNMENT_LEFT,-1,pixels).x,chosen.get_height(pixels))
+	control.tooltip_text = control.text
 	return control
 
 ## Titre long (nom de club) : jusqu'à `max_lines` lignes coupées aux mots, puis taille réduite

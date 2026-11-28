@@ -61,7 +61,7 @@ static func build(app: Control) -> Control:
 		elif archive.get("champion") != null:
 			duels.add_child(G.wrap("%s · %s" % [G.season_label(archive.season), _club(app, archive.champion)], 15))
 	for year: Dictionary in data.get("years", []):
-		duels.add_child(G.wrap("%s · %s rencontres suivies · %s rivalité(s) intenses" % [G.season_label(year.season), int(year.matches), int(year.rivalries)], 13))
+		duels.add_child(G.wrap("%s · %s rencontres suivies · %s rivalité(s) intense(s)" % [G.season_label(year.season), int(year.matches), int(year.rivalries)], 13))
 	var right := G.panel(page, 1.25)
 	G.chapter(right, "14", "Les échos des clubs", "Les résultats qui agitent les vestiaires.", app.accent)
 	var events := G.scroll(right)
