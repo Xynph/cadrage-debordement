@@ -107,7 +107,7 @@ static func font(weight: int = 600) -> Font:
 
 static func label(text: Variant, font_size: int = 22, color: Color = IVORY, display: bool = true, weight: int = 600) -> Label:
 	var control := Label.new()
-	control.text = Base.n(text) if text is float or text is int else str(text)
+	control.text = Base.n(text) if text is float or text is int else Base.Accord.texte(str(text))
 	control.add_theme_font_override("font", font(weight) if display else BODY)
 	control.add_theme_font_size_override("font_size", maxi(12, px(font_size)))
 	control.add_theme_color_override("font_color", color)

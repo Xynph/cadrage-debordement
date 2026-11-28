@@ -129,7 +129,7 @@ static func _staff(tabs: TabContainer, app: Control, data: Dictionary) -> void:
 			if not condition.is_empty(): tuile.contenu.add_child(LienZone.relier(JaugeAvantApres.new("Condition", condition.avant, condition.apres, Charte.CONDITION), "SupportLienCondition_" + cle, "Effectif › Condition", _vers_condition.bind(app)))
 			tuile.contenu.add_child(LienZone.relier(JaugeAvantApres.new("Moral", float(d.morale), float(pv.get("morale", d.morale)), Charte.MORAL), "SupportLienMoral_" + cle, "Vestiaire", _vers_vestiaire.bind(app)))
 			tuile.contenu.add_child(LienZone.relier(JaugeAvantApres.new("Confiance", float(d.trust), float(pv.get("trust", d.trust)), Charte.CONFIANCE), "SupportLienConfiance_" + cle, "Club › Direction", _vers_direction.bind(app)))
-			tuile.pied.add_child(LienZone.relier(Tuile.pastille("%d joueurs" % int(pv.get("affected", 0)), Charte.IVOIRE, "people", "Joueurs concernés par la réunion"), "SupportLienJoueurs_" + cle, "Effectif › Condition", _vers_condition.bind(app)))
+			tuile.pied.add_child(LienZone.relier(Tuile.pastille("%d joueur(s)" % int(pv.get("affected", 0)), Charte.IVOIRE, "people", "Joueurs concernés par la réunion"), "SupportLienJoueurs_" + cle, "Effectif › Condition", _vers_condition.bind(app)))
 		elif applied:
 			tuile.pied.add_child(Tuile.pastille("Réunion tenue", Charte.GAIN, "check", etat))
 		else:
@@ -296,7 +296,7 @@ static func _concussions(list: VBoxContainer, app: Control, medical: Dictionary)
 		var left: Variant = c.get("joursRestants")
 		var remaining := (" · encore %d jour%s" % [int(left), "s" if int(left) > 1 else ""]) if left != null and int(left) > 0 and int(left) < int(c.jours) else ""
 		card.add_child(G.section(_name(app, c.id), "Commotion du %s · %s" % [_date(c.date), str(c.motif)]))
-		card.add_child(G.wrap("Retour possible le %s (%d jours)%s" % [_date(c.retour), int(c.jours), remaining], 16, G.INK))
+		card.add_child(G.wrap("Retour possible le %s (%d jour(s))%s" % [_date(c.retour), int(c.jours), remaining], 16, G.INK))
 		var exception := {"possible":"Exception à 7 jours possible : avis du spécialiste à demander depuis le courrier du médecin.", "accordee":"Avis favorable du spécialiste indépendant : retour au 7e jour.", "refusee":"Avis défavorable du spécialiste indépendant : 12 jours.", "non":"Antécédent ou signes évidents : 12 jours, sans exception." if c.get("antecedent", false) or int(c.get("critere", 0)) == 1 else "Pas de retour à la normale au contrôle du lendemain : 12 jours, sans exception."}
 		card.add_child(G.wrap(str(exception.get(str(c.exception), "")), 14))
 	if not history.is_empty():
