@@ -134,7 +134,7 @@ func rail() -> void:
 	for id: String in ["ImmersiveClubName", "ImmersiveClubContext"]:
 		var label := named(id) as Label
 		check(label != null and label.get_global_rect().end.x <= rail_end - 4.0 and label.get_theme_font("font").get_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, label.get_theme_font_size("font_size")).x <= label.size.x * label.get_line_count() + 1.0, "%s tient dans le rail (%s)" % [id, str(label.get_global_rect()) if label != null else "?"])
-	if context != null and rank != "—": check(context.text.ends_with("· " + rank) and context.get_line_count() <= 2, "Le rang n'est jamais perdu (%s, %d ligne(s))" % [context.text, context.get_line_count()])
+	if context != null and rank != "—": check(context.text.ends_with("· " + rank) and context.get_line_count() <= 3, "Le rang n'est jamais perdu (%s, %d ligne(s))" % [context.text, context.get_line_count()])
 	# Même calcul partout : deux lignes, puis 12 px, puis la division raccourcie sans perdre « · rang ».
 	var long_name := "Division d'accession régionale du grand sud-ouest atlantique et pyrénéen · 12e"
 	var fitted: Array = app.Immersive.fit_context(long_name, "12e", app.Immersive.RAIL_WIDTH - 117.0)

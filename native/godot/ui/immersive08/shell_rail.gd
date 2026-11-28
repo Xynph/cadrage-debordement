@@ -34,6 +34,8 @@ static func fit_context(context: String, rank: String, room: float) -> Array:
 		if D.title_lines(C.BODY, context, Outils._fpx(size), room * C.density) <= 2: return [context, size, 2]
 		if Outils._fpx(size) <= Outils._coque_floor or size <= 1.0: break
 		size -= 1.0
+	# Au plancher de 12 px : trois lignes plutôt qu'une division coupée.
+	if D.title_lines(C.BODY, context, Outils._fpx(size), room * C.density) <= 3: return [context, size, 3]
 	var suffix := " · " + rank if not rank.is_empty() and context.ends_with(" · " + rank) else ""
 	var division := context.trim_suffix(suffix)
 	while division.length() > 1:
@@ -157,9 +159,9 @@ static func _rail_header(rail: Control, app: Control, national: bool) -> float:
 	sub.tooltip_text = context
 	sub.set_meta("context_complet", context)
 	sub.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
-	if int(fitted[2]) == 2:
+	if int(fitted[2]) >= 2:
 		sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		sub.max_lines_visible = 2
+		sub.max_lines_visible = int(fitted[2])
 		sub.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	sub.update_minimum_size()
 	D.place(sub, Rect2(96, sub_top, room, sub_height))

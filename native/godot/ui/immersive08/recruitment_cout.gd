@@ -24,7 +24,7 @@ func _cout() -> void:
 	if bouton_nom != null: CarteSurvol.lier_info(app, bouton_nom, player_id, "market")
 	var statut: String = {"counter":"contre-offre reçue", "withdrawn":"discussion rompue", "signed":"contrat signé"}.get(str(player.get("negotiation", {}).get("status", "")) if player.get("negotiation") is Dictionary else "", "avant négociation")
 	var detail := "%s · %s ans · %s" % [str(player.get("pos", "—")), G.n(player.get("age", "—")), statut]
-	Kit.texte(cost, 24, 116, detail, Charte.IVOIRE_2, 440, 18)
+	Kit.texte(cost, 24, 116, detail, Charte.IVOIRE_2, 470, 18 if C.density >= .75 else 16)
 	# Budget de transferts : déjà engagé, cette indemnité, reste.
 	var budget := Budget.data(app.model)
 	var fee: Variant = player.get("fee")
@@ -71,7 +71,7 @@ func _cout() -> void:
 	var vers_offre := Callable(self, "_approcher").bind(player) if offre_ouverte else Callable()
 	# Coût de l'offre en tuiles : salaire demandé, durée, masse salariale sur la durée, frais d'observation.
 	var tuile_y := 98.0
-	Pieces.tuile(cost, Rect2(1290, tuile_y, 112, 62), G.salary_amount(quote.get("salary")), G.salary_period(), Pieces.BLEU if offre_ouverte else Charte.IVOIRE, "RecruitmentCostSalary", 24, "Salaire demandé", "", false, vers_offre)
+	Pieces.tuile(cost, Rect2(1290, tuile_y, 112, 62), G.salary_amount(quote.get("salary")), G.salary_period(C.density < .75), Pieces.BLEU if offre_ouverte else Charte.IVOIRE, "RecruitmentCostSalary", 24, "Salaire demandé", "", false, vers_offre)
 	Pieces.tuile(cost, Rect2(1408, tuile_y, 112, 62), annees, "ans" if max_years != 1 else "an", Pieces.VIOLET if offre_ouverte else Charte.IVOIRE, "RecruitmentCostYears", 24, "Durée du contrat", "", false, vers_offre)
 	if (quote.get("salary") is int or quote.get("salary") is float) and max_years > 0:
 		var total_salaire := int(quote.salary) * WEEKS_PER_YEAR * max_years

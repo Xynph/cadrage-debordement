@@ -237,7 +237,10 @@ static func _carte_joueur(app: Control, page: Control, r: Rect2, q: Dictionary) 
 	var actu: Array = ACTUALITES.get(str(q.get("player", {}).get("news", "")), [])
 	if not actu.is_empty(): Pieces.pastille(carte, r.size.x - 40 - Pieces.largeur_pastille(str(actu[0]), str(actu[1])), 24, str(actu[0]), str(actu[1]), "PressPlayerNews", "", actu[2])
 	D.text(carte, 24, 178, "FORME", 18, Charte.IVOIRE_3, 700, 120)
-	Notes.pastilles(carte, Vector2(110, 154), Notes.forme(Notes.joueur(app.model, str(p.get("id", "")))), Vector2(56, 34), 8)
+	var forme: Array = Notes.forme(Notes.joueur(app.model, str(p.get("id", ""))))
+	# Sans match noté cette saison : une phrase plutôt que cinq tirets vides.
+	if forme.is_empty(): D.text(carte, 110, 178, "Pas encore noté cette saison", 20, Charte.IVOIRE_2, 600, 520).name = "PressPlayerNoForm"
+	else: Notes.pastilles(carte, Vector2(110, 154), forme, Vector2(56, 34), 8)
 	Pieces.rendre_cliquable(carte, r.size, func(): _fenetre_joueur(app, page, p, q), "PressPlayerOpen", str(p.get("name", "")), "", Charte.RAYON_CARTE)
 
 ## Réaction à la réponse dite (question affichée, sinon la dernière dite) : une flèche par domaine, jamais de chiffre.
@@ -378,7 +381,7 @@ static func _fenetre_joueur(app: Control, page: Control, p: Dictionary, q: Dicti
 	forme.name = "PressPlayerWindowForm"
 	D.text(forme, 18, 34, "FORME", 18, Charte.IVOIRE_3, 700, 200)
 	var notes: Array = Notes.forme(Notes.joueur(app.model, str(p.get("id", ""))))
-	if notes.is_empty(): D.text(forme, 18, 110, "—", 40, Charte.IVOIRE_3, 800, 200)
+	if notes.is_empty(): D.text(forme, 18, 110, "Pas encore noté cette saison", 22, Charte.IVOIRE_2, 600, 390)
 	else: Notes.pastilles(forme, Vector2(18, 70), notes, Vector2(70, 44), 8)
 	var suivi := _vestiaire(app, str(p.get("id", "")))
 	var tuiles := [["score", "Moral", "heart", "PressPlayerWindowMorale"], ["trust", "Confiance", "people", "PressPlayerWindowTrust"]]

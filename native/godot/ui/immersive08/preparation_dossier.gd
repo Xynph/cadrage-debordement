@@ -53,7 +53,7 @@ func _agir(code: String) -> void:
 ## Rapport de force : nous (plein) face à eux (anneau), chiffres écrits, écart en mots ; chaque ligne mène à l'écran d'action.
 ## Pas des lignes du rapport de force : en petite fenêtre, assez haut pour le secteur et son action écrits l'un sous l'autre.
 func _pas_rapport() -> float:
-	return maxf(C.reach(44.0), 62.0) if C.dense() else C.reach(44.0)
+	return maxf(C.reach(44.0), 50.0) if C.dense() else C.reach(44.0)
 
 func _rapport(section: Control, rectangle: Rect2) -> void:
 	var domaines: Array = reports.get("domains", [])

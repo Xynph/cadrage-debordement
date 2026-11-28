@@ -12,9 +12,9 @@ func _columns() -> Array:
 			{"id":"minutes", "titre":"MINUTES", "tri":"minutes", "x":1780.0, "w":140.0, "align":2}, {"id":"status", "titre":"STATUT", "tri":"status", "x":1950.0, "w":290.0, "align":0}]
 	return [{"id":"num", "titre":"#", "tri":"source", "x":22.0, "w":40.0, "align":1}, {"id":"name", "titre":"JOUEUR", "tri":"name", "x":132.0, "w":420.0, "align":0},
 		{"id":"pos", "titre":"POSTE", "tri":"pos", "x":580.0, "w":190.0, "align":0}, {"id":"age", "titre":"ÂGE", "tri":"age", "x":790.0, "w":70.0, "align":2},
-		{"id":"note", "titre":"NIV.", "tri":"note", "x":880.0, "w":80.0, "align":1}, {"id":"potential", "titre":"POTENTIEL", "tri":"potential", "x":990.0, "w":330.0, "align":0},
-		{"id":"minutes", "titre":"MINUTES", "tri":"minutes", "x":1340.0, "w":130.0, "align":2},
-		{"id":"contract", "titre":"FIN DU CONTRAT", "tri":"contract", "x":1500.0, "w":170.0, "align":2}, {"id":"status", "titre":"STATUT", "tri":"status", "x":1700.0, "w":540.0, "align":0}]
+		{"id":"note", "titre":"NIV.", "tri":"note", "x":880.0, "w":80.0, "align":1}, {"id":"potential", "titre":"POTENTIEL", "tri":"potential", "x":990.0, "w":470.0, "align":0},
+		{"id":"minutes", "titre":"MINUTES", "tri":"minutes", "x":1480.0, "w":130.0, "align":2},
+		{"id":"contract", "titre":"FIN DU CONTRAT", "tri":"contract", "x":1640.0, "w":170.0, "align":2}, {"id":"status", "titre":"STATUT", "tri":"status", "x":1850.0, "w":390.0, "align":0}]
 
 func _col(columns: Array, id: String) -> Dictionary:
 	for col: Dictionary in columns:
@@ -119,7 +119,7 @@ func _draw_rows(columns: Array) -> void:
 		var col_p := _col(columns, "potential")
 		if not col_p.is_empty():
 			var lp := Notation.pastille(hit, col_p.x, ROW / 2.0, int(note.potentiel), PASTILLE, "AcademyLettrePotentiel")
-			D.text(hit, col_p.x + lp + 10, 21 + DY, str(note.phrase.texte), 17, note.phrase.couleur, 600, 300, HORIZONTAL_ALIGNMENT_LEFT, true).name = "AcademyPhrasePotentiel"
+			D.text(hit, col_p.x + lp + 10, 21 + DY, str(note.phrase.texte), 17, note.phrase.couleur, 600, col_p.w - lp - 10, HORIZONTAL_ALIGNMENT_LEFT, true).name = "AcademyPhrasePotentiel"
 		var gain: Variant = _delta(p)
 		if not _col(columns, "change").is_empty():
 			var colonne_gain := _col(columns, "change")
