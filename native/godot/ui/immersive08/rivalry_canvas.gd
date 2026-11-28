@@ -201,7 +201,7 @@ func _pair_row(parent: Panel, pair: Dictionary, index: int, selected: bool) -> v
 	# Rayure une ligne sur deux, survol et appui communs (ui/survol_ligne.gd) ; jamais de vert de sélection.
 	load("res://ui/survol_ligne.gd").appliquer(row, selected, Color.TRANSPARENT, app.accent).rang_fixe = index
 	_crest(row, a, Rect2(18, 9, 43, 43))
-	D.text(row, 73, 37, _club(a), 27, C.IVORY, 700, 284)
+	D.text(row, 73, 37, _club(a), 27, C.IVORY, 700, 260)
 	D.text(row, 359, 37, "VS", 22, C.GOLD, 700, 41, HORIZONTAL_ALIGNMENT_CENTER)
 	_crest(row, b, Rect2(392, 9, 43, 43))
 	D.text(row, 445, 37, _club(b), 27, C.IVORY, 700, 272)

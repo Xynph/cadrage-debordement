@@ -35,9 +35,9 @@ static func construire(app: Control, canvas: Control, data: Dictionary) -> void:
 		_tuile(canvas, Rect2(i * (w + 16.0), 243, w, 112), tuiles[i], "CareerMetricLien" + str(i), _vers(app, "details", "CareerTab_details"), 56)
 	load("res://ui/immersive08/career_canvas.gd")._tabs(app, canvas, "summary")
 	# Les saisons : tableau pleine largeur.
-	var plan := _panneau(canvas, Rect2(0, 441, LARGEUR, 356), "Plan sur trois saisons", "tactic", "CareerPlanSummary")
+	var plan := _panneau(canvas, Rect2(0, 441, LARGEUR, 452), "Plan sur trois saisons", "tactic", "CareerPlanSummary")
 	_lien(plan, LARGEUR - 24, 13, "Couverture poste par poste →", _vers(app, "plan", "CareerTab_plan"), "CareerOpenPlan")
-	_saisons(app, plan, data, Rect2(14, 66, LARGEUR - 28, 0), 76.0, [
+	_saisons(app, plan, data, Rect2(14, 66, LARGEUR - 28, 0), 106.0, [
 		{"k": "saison", "t": "SAISON", "x": 24, "w": 300},
 		{"k": "couverts", "t": "POSTES COUVERTS", "x": 380, "w": 600},
 		{"k": "masse", "t": "MASSE SALARIALE", "x": 1060, "w": 280},
@@ -47,9 +47,11 @@ static func construire(app: Control, canvas: Control, data: Dictionary) -> void:
 	# Trois courtes listes côte à côte, à la hauteur de la plus longue.
 	var moves: Array = data.get("history", [])
 	var n_parcours := maxi(1, mini(4, moves.size()))
-	var h := 70.0
-	var hauteur := maxi(2, n_parcours) * (h + 2.0)
-	var y0 := 813.0
+	var y0 := 909.0
+	# Les trois listes prennent toute la hauteur restante de la toile (1244) ; lignes plus basses si le parcours est long.
+	var rangs := maxi(2, n_parcours)
+	var h := clampf(floorf((1244.0 - y0 - 82.0) / rangs) - 2.0, 56.0, 120.0)
+	var hauteur := rangs * (h + 2.0)
 	var largeurs := [720.0, 860.0, LARGEUR - 720.0 - 860.0 - 32.0]
 	var x := 0.0
 	var mandat := _panneau(canvas, Rect2(x, y0, largeurs[0], 70 + hauteur + 12), "Mandat et mobilité", "flag", "CareerMandate")

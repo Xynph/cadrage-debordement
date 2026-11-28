@@ -315,7 +315,7 @@ static func _bonus(p: Panel, service: Dictionary, largeur: float, y: float) -> v
 	var par_poste := int(service.get("salaire", {}).get("parPoste", 0))
 	var montant := D.text(p, largeur - 24, y + 40, ("−" + G.euros(salaire)) if salaire > 0 else "0 €", 24, Pastilles.ORANGE if salaire > 0 else Charte.IVOIRE_3, 800, 220, HORIZONTAL_ALIGNMENT_RIGHT)
 	montant.name = "StaffSalaire_" + str(service.id)
-	Kit.texte(p, largeur - 24, y + 64, "/ SEM. · %s PAR POSTE" % G.euros(par_poste), Charte.IVOIRE_3, 260, 13, HORIZONTAL_ALIGNMENT_RIGHT)
+	Kit.texte(p, largeur - 24, y + 64, "%s / POSTE / SEM." % G.euros(par_poste), Charte.IVOIRE_3, 280, 13, HORIZONTAL_ALIGNMENT_RIGHT)
 
 ## Avis des dirigeants (moteur) : pastille colorée, niveau moyen du service face au niveau attendu.
 static func _avis(app: Control, p: Panel, service: Dictionary, par: Dictionary, largeur: float) -> void:
@@ -408,7 +408,7 @@ static func _contrats(app: Control, p: Panel, people: Array, largeur: float) -> 
 		tuile.custom_minimum_size.x = l * C.density; tuile.size.x = l * C.density
 	# Salaires des postes en plus (moteur) : total de la semaine, en orange s'il y en a.
 	var total := int(projection(app).get("salaireSemaine", 0))
-	Kit.texte(p, 24, 230, "POSTES EN PLUS · SEMAINE", Charte.IVOIRE_3, 300, 14)
+	Kit.texte(p, 24, 230, "POSTES EN PLUS · SEMAINE", Charte.IVOIRE_3, largeur - 48, 14)
 	var montant := D.text(p, 24, 286, ("−" + G.euros(total)) if total > 0 else "0 €", 44, Pastilles.ORANGE if total > 0 else Charte.IVOIRE_3, 800, largeur - 48)
 	montant.name = "StaffSalaireTotal"
 
