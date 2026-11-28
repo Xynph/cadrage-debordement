@@ -18,6 +18,8 @@ var _back: Button
 var _forward: Button
 var _find: Button
 var _restoring := false
+## Fiche cliquée pendant une requête du moteur : [cible, fenêtre source], ouverte à la réponse.
+var _differee: Array = []
 var _palette_return_focus: WeakRef
 var _search_field: WeakRef
 var _dispatching := false
@@ -571,6 +573,21 @@ func _travel(direction: int) -> void:
 	_restoring = false
 	_refresh_controls()
 
+## Seule la requête en cours du moteur bloque (pas de fenêtre, rendez-vous, erreur ni coupure).
+func _attente_seule(ignore: Window = null) -> bool:
+	if app == null or not app.waiting or app.closing or app.connection_error or not app.last_error.is_empty(): return false
+	if is_instance_valid(app.contextual_director) and (app.contextual_director.active_meeting() or app.contextual_director.match_immersed()): return false
+	return not _has_popup(app, ignore)
+
+## Ouvre la fiche cliquée pendant la requête précédente, une fois le moteur libre (appelé en différé après chaque
+## réponse) ; abandonnée si une fenêtre, un rendez-vous ou une erreur est apparu entre-temps.
+func reprendre_differee() -> void:
+	if _differee.is_empty() or app == null or app.waiting: return
+	var attente: Array = _differee
+	_differee = []
+	var fenetre: Window = attente[1] if is_instance_valid(attente[1]) else null
+	open_entity(attente[0], fenetre)
+
 func _blocked(ignore: Window = null, save_shortcut: bool = false) -> bool:
 	if app == null or app.waiting or app.closing or app.connection_error: return true
 	if not save_shortcut and is_instance_valid(app.contextual_director) and (app.contextual_director.active_meeting() or app.contextual_director.match_immersed()): return true
@@ -651,7 +668,14 @@ func _reading_source(source: Window) -> bool:
 
 func open_entity(target: Dictionary, source_window: Window = null) -> bool:
 	var source: Window = source_window if _reading_source(source_window) else null
-	if str(target.get("kind", "")) == "prospect" or _blocked(source) or not entity_available(target): return false
+	if str(target.get("kind", "")) == "prospect" or not entity_available(target): return false
+	# Clic pendant une requête du moteur (retour d'une fiche, rafraîchissement) : gardé et ouvert dès la réponse
+	# (reprendre_differee), au lieu d'être perdu sans signe (constat du 28/11/2026). Le dernier clic l'emporte ;
+	# fenêtre, rendez-vous, erreur ou coupure refusent toujours.
+	if _blocked(source):
+		if _attente_seule(source): _differee = [target.duplicate(true), source_window]
+		return false
+	_differee = []
 	# A repeated session keeps the original history entry and source snapshot.
 	# World owns both validation and the exact visible session context.
 	if source != null:

@@ -141,6 +141,8 @@ static func receive(m: Control, value: Dictionary, live_opening: bool) -> void:
 		var next: Dictionary = m.queued_action.duplicate(true)
 		m.queued_action.clear()
 		m._command(next.command, next.payload, next.get("target_route", ""))
+	# Fiche cliquée pendant cette requête (navigation_controller.open_entity) : ouverte maintenant que la page est à jour.
+	if is_instance_valid(m.navigation_controller): m.navigation_controller.call_deferred("reprendre_differee")
 
 static func record_timing(m: Control, command: String, receive_us: int) -> void:
 	if not m._timing_trace: return
@@ -293,6 +295,8 @@ static func failed(m: Control, message: String) -> void:
 	if is_instance_valid(m.soundscape): m.soundscape.notify_error()
 	if m.decision_feedback != null: m.decision_feedback.complete(m.last_command, false, m.model)
 	m.waiting = false
+	# Requête refusée : une fiche cliquée pendant l'attente n'est pas ouverte après coup.
+	if is_instance_valid(m.navigation_controller): m.navigation_controller._differee = []
 	if SeasonPreparation.is_advance(m.last_command): SeasonPreparation.show_pending(m, false)
 	var anticipated: bool = not m.optimistic_edits.is_empty() or m.queued_action.get("optimistic") is Array
 	var reverted: Array = m.optimistic_edits.duplicate()
