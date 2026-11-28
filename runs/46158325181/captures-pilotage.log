@@ -1,0 +1,336 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.5 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.5 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 20.1.2, 256 bits)
+
+ENTRACTE2D 1 montre_max=2 temps_fort_debut=3 faits=0
+ENTRACTE2D 2 montre_max=16 temps_fort_debut=17 faits=10
+CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-1920x1080-tableau.png (1920, 1080) 0
+CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-2560x1440-tableau.png (2560, 1440) 0
+CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-Entracte-avec-la-journée-1920x1080-journee.png (1920, 1080) 0
+CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-Entracte-avec-la-journée-2560x1440-journee.png (2560, 1440) 0
+CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-1920x1080-tableau.png (1920, 1080) 0
+CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-2560x1440-tableau.png (2560, 1440) 0
+TERRAIN2D {"ballons":12,"deplacement":4890.39997754619,"faits":15,"minutes":7}
+Temps forts (terrain2d) : 4075 contrôles ; 189 échec(s)
+libspeechd.so.2: cannot open shared object file: No such file or directory
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+FAIL: 1920×1080 (Mon XV) : MatchBetweenPage n'est pas coupé ([P: (24.0, 121.0), S: (1872.0, 1090.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSquadBar n'est pas coupé ([P: (24.0, 1023.0), S: (1872.0, 188.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenMain n'est pas coupé ([P: (24.0, 1023.0), S: (1872.0, 188.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @MarginContainer@7960 n'est pas coupé ([P: (25.0, 1024.0), S: (1870.0, 186.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @VBoxContainer@7961 n'est pas coupé ([P: (39.0, 1038.0), S: (1842.0, 158.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @HBoxContainer@7962 n'est pas coupé ([P: (39.0, 1038.0), S: (1842.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSquadTitle n'est pas coupé ([P: (39.0, 1038.0), S: (53.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSquadHeader n'est pas coupé ([P: (100.0, 1038.0), S: (259.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_numero n'est pas coupé ([P: (100.0, 1042.0), S: (33.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_joueur n'est pas coupé ([P: (138.0, 1042.0), S: (56.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_energie n'est pas coupé ([P: (199.0, 1042.0), S: (58.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_plaquages n'est pas coupé ([P: (262.0, 1042.0), S: (47.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_note n'est pas coupé ([P: (314.0, 1042.0), S: (45.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @Control@7967 n'est pas coupé ([P: (367.0, 1038.0), S: (1186.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSquadFoot n'est pas coupé ([P: (1561.0, 1040.0), S: (205.0, 23.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenTeamTotalMargin n'est pas coupé ([P: (1561.0, 1040.0), S: (205.0, 23.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenTeamTotal n'est pas coupé ([P: (1566.0, 1040.0), S: (195.0, 23.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @Label@8470 n'est pas coupé ([P: (1566.0, 1044.0), S: (31.0, 15.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @PanelContainer@8474 n'est pas coupé ([P: (1603.0, 1042.0), S: (43.0, 18.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @HBoxContainer@8471 n'est pas coupé ([P: (1612.0, 1043.0), S: (25.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @Label@8472 n'est pas coupé ([P: (1612.0, 1043.0), S: (12.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @Label@8473 n'est pas coupé ([P: (1628.0, 1043.0), S: (9.0, 15.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @PanelContainer@8478 n'est pas coupé ([P: (1652.0, 1042.0), S: (49.0, 18.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @HBoxContainer@8475 n'est pas coupé ([P: (1661.0, 1043.0), S: (31.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @Label@8476 n'est pas coupé ([P: (1661.0, 1043.0), S: (4.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @Label@8477 n'est pas coupé ([P: (1669.0, 1043.0), S: (23.0, 15.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @PanelContainer@8482 n'est pas coupé ([P: (1707.0, 1042.0), S: (54.0, 18.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @HBoxContainer@8479 n'est pas coupé ([P: (1716.0, 1043.0), S: (36.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @Label@8480 n'est pas coupé ([P: (1716.0, 1043.0), S: (10.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @Label@8481 n'est pas coupé ([P: (1730.0, 1043.0), S: (22.0, 15.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenTabOpponent n'est pas coupé ([P: (1774.0, 1038.0), S: (78.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenKeys n'est pas coupé ([P: (1860.0, 1038.0), S: (21.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenKeysHelp n'est pas coupé ([P: (1860.0, 1041.0), S: (21.0, 21.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @Label@7973 n'est pas coupé ([P: (1860.0, 1043.0), S: (21.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSquadScroll n'est pas coupé ([P: (39.0, 1067.0), S: (1842.0, 129.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenPage n'est pas coupé ([P: (24.0, 121.0), S: (1872.0, 1090.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenSquadBar n'est pas coupé ([P: (24.0, 1023.0), S: (1872.0, 188.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenMain n'est pas coupé ([P: (24.0, 1023.0), S: (1872.0, 188.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @MarginContainer@7960 n'est pas coupé ([P: (25.0, 1024.0), S: (1870.0, 186.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @VBoxContainer@7961 n'est pas coupé ([P: (39.0, 1038.0), S: (1842.0, 158.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @HBoxContainer@7962 n'est pas coupé ([P: (39.0, 1038.0), S: (1842.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenSquadTitle n'est pas coupé ([P: (39.0, 1038.0), S: (80.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenSquadHeader n'est pas coupé ([P: (127.0, 1038.0), S: (259.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenSort_numero n'est pas coupé ([P: (127.0, 1042.0), S: (33.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenSort_joueur n'est pas coupé ([P: (165.0, 1042.0), S: (56.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenSort_energie n'est pas coupé ([P: (226.0, 1042.0), S: (58.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenSort_plaquages n'est pas coupé ([P: (289.0, 1042.0), S: (47.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenSort_note n'est pas coupé ([P: (341.0, 1042.0), S: (45.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @Control@7967 n'est pas coupé ([P: (394.0, 1038.0), S: (1180.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenSquadFoot n'est pas coupé ([P: (1582.0, 1040.0), S: (205.0, 23.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenTeamTotalMargin n'est pas coupé ([P: (1582.0, 1040.0), S: (205.0, 23.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenTeamTotal n'est pas coupé ([P: (1587.0, 1040.0), S: (195.0, 23.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @Label@8588 n'est pas coupé ([P: (1587.0, 1044.0), S: (31.0, 15.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @PanelContainer@8592 n'est pas coupé ([P: (1624.0, 1042.0), S: (41.0, 18.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @HBoxContainer@8589 n'est pas coupé ([P: (1633.0, 1043.0), S: (23.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @Label@8590 n'est pas coupé ([P: (1633.0, 1043.0), S: (10.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @Label@8591 n'est pas coupé ([P: (1647.0, 1043.0), S: (9.0, 15.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @PanelContainer@8596 n'est pas coupé ([P: (1671.0, 1042.0), S: (49.0, 18.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @HBoxContainer@8593 n'est pas coupé ([P: (1680.0, 1043.0), S: (31.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @Label@8594 n'est pas coupé ([P: (1680.0, 1043.0), S: (4.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @Label@8595 n'est pas coupé ([P: (1688.0, 1043.0), S: (23.0, 15.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @PanelContainer@8600 n'est pas coupé ([P: (1726.0, 1042.0), S: (56.0, 18.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @HBoxContainer@8597 n'est pas coupé ([P: (1735.0, 1043.0), S: (38.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @Label@8598 n'est pas coupé ([P: (1735.0, 1043.0), S: (12.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @Label@8599 n'est pas coupé ([P: (1751.0, 1043.0), S: (22.0, 15.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenTabOpponent n'est pas coupé ([P: (1795.0, 1038.0), S: (57.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenKeys n'est pas coupé ([P: (1860.0, 1038.0), S: (21.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenKeysHelp n'est pas coupé ([P: (1860.0, 1041.0), S: (21.0, 21.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @Label@7973 n'est pas coupé ([P: (1860.0, 1043.0), S: (21.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenSquadScroll n'est pas coupé ([P: (39.0, 1067.0), S: (1842.0, 129.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 : la page tient dans l'écran intermédiaire ([P: (24.0, 121.0), S: (1872.0, 1090.0)] dans [P: (24.0, 112.0), S: (1872.0, 936.0)], minimum 1090)
+FAIL: 1920×1080 : marge sous le pied des raccourcis ([P: (1860.0, 1038.0), S: (21.0, 28.0)], bas de l'écran intermédiaire 1048)
+FAIL: 1920×1080 : MatchBetweenMain dans l'écran ([P: (24.0, 1023.0), S: (1872.0, 188.0)])
+FAIL: 1920×1080 : MatchBetweenSquadScroll dans l'écran ([P: (39.0, 1067.0), S: (1842.0, 129.0)])
+FAIL: 2560×1440 (Mon XV) : MatchBetweenPage n'est pas coupé ([P: (32.0, 156.0), S: (2496.0, 1399.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 (Mon XV) : MatchBetweenSquadBar n'est pas coupé ([P: (32.0, 1307.0), S: (2496.0, 248.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 (Mon XV) : MatchBetweenMain n'est pas coupé ([P: (32.0, 1307.0), S: (2496.0, 248.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 (Mon XV) : @MarginContainer@8944 n'est pas coupé ([P: (33.0, 1308.0), S: (2494.0, 246.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 (Mon XV) : @VBoxContainer@8945 n'est pas coupé ([P: (51.0, 1326.0), S: (2458.0, 210.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 (Mon XV) : MatchBetweenSquadScroll n'est pas coupé ([P: (51.0, 1364.0), S: (2458.0, 172.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 (XV adverse) : MatchBetweenPage n'est pas coupé ([P: (32.0, 156.0), S: (2496.0, 1399.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 (XV adverse) : MatchBetweenSquadBar n'est pas coupé ([P: (32.0, 1307.0), S: (2496.0, 248.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 (XV adverse) : MatchBetweenMain n'est pas coupé ([P: (32.0, 1307.0), S: (2496.0, 248.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 (XV adverse) : @MarginContainer@8944 n'est pas coupé ([P: (33.0, 1308.0), S: (2494.0, 246.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 (XV adverse) : @VBoxContainer@8945 n'est pas coupé ([P: (51.0, 1326.0), S: (2458.0, 210.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 (XV adverse) : MatchBetweenSquadScroll n'est pas coupé ([P: (51.0, 1364.0), S: (2458.0, 172.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 : la page tient dans l'écran intermédiaire ([P: (32.0, 156.0), S: (2496.0, 1399.0)] dans [P: (32.0, 144.0), S: (2496.0, 1256.0)], minimum 1399)
+FAIL: 2560×1440 : MatchBetweenMain dans l'écran ([P: (32.0, 1307.0), S: (2496.0, 248.0)])
+FAIL: 2560×1440 : MatchBetweenSquadScroll dans l'écran ([P: (51.0, 1364.0), S: (2458.0, 172.0)])
+FAIL: Entracte avec la journée 1920×1080 : MatchBetweenPage n'est pas coupé ([P: (24.0, 121.0), S: (1872.0, 929.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: Entracte avec la journée 1920×1080 : MatchBetweenSquadBar n'est pas coupé ([P: (24.0, 862.0), S: (1872.0, 188.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: Entracte avec la journée 1920×1080 : MatchBetweenMain n'est pas coupé ([P: (24.0, 862.0), S: (1872.0, 188.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: Entracte avec la journée 1920×1080 : la page tient dans l'écran intermédiaire ([P: (24.0, 121.0), S: (1872.0, 929.0)] dans [P: (24.0, 112.0), S: (1872.0, 936.0)], minimum 929)
+FAIL: Entracte avec la journée 1920×1080 : MatchBetweenMain dans l'écran ([P: (24.0, 862.0), S: (1872.0, 188.0)])
+FAIL: Entracte avec la journée 1920×1080 : dix matchs, la rangée dépasse et défile (394 px dans 394)
+FAIL: Entracte avec la journée 1920×1080 : dix matchs, fondu et « › » au bord droit du multiplex
+FAIL: Entracte avec la journée 1920×1080 : revenu au début, le fondu revient
+FAIL: Entracte avec la journée 2560×1440 : dix matchs, la rangée dépasse et défile (526 px dans 526)
+FAIL: Entracte avec la journée 2560×1440 : dix matchs, fondu et « › » au bord droit du multiplex
+FAIL: Entracte avec la journée 2560×1440 : revenu au début, le fondu revient
+FAIL: 1920×1080 (Mon XV) : MatchBetweenPage n'est pas coupé ([P: (24.0, 121.0), S: (1872.0, 1090.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSquadBar n'est pas coupé ([P: (24.0, 1023.0), S: (1872.0, 188.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenMain n'est pas coupé ([P: (24.0, 1023.0), S: (1872.0, 188.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @MarginContainer@12641 n'est pas coupé ([P: (25.0, 1024.0), S: (1870.0, 186.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @VBoxContainer@12642 n'est pas coupé ([P: (39.0, 1038.0), S: (1842.0, 158.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @HBoxContainer@12643 n'est pas coupé ([P: (39.0, 1038.0), S: (1842.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSquadTitle n'est pas coupé ([P: (39.0, 1038.0), S: (53.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSquadHeader n'est pas coupé ([P: (100.0, 1038.0), S: (259.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_numero n'est pas coupé ([P: (100.0, 1042.0), S: (33.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_joueur n'est pas coupé ([P: (138.0, 1042.0), S: (56.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_energie n'est pas coupé ([P: (199.0, 1042.0), S: (58.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_plaquages n'est pas coupé ([P: (262.0, 1042.0), S: (47.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_note n'est pas coupé ([P: (314.0, 1042.0), S: (45.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @Control@12648 n'est pas coupé ([P: (367.0, 1038.0), S: (1190.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSquadFoot n'est pas coupé ([P: (1565.0, 1040.0), S: (201.0, 23.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenTeamTotalMargin n'est pas coupé ([P: (1565.0, 1040.0), S: (201.0, 23.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenTeamTotal n'est pas coupé ([P: (1570.0, 1040.0), S: (191.0, 23.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @Label@13149 n'est pas coupé ([P: (1570.0, 1044.0), S: (31.0, 15.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @PanelContainer@13153 n'est pas coupé ([P: (1607.0, 1042.0), S: (43.0, 18.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @HBoxContainer@13150 n'est pas coupé ([P: (1616.0, 1043.0), S: (25.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @Label@13151 n'est pas coupé ([P: (1616.0, 1043.0), S: (12.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @Label@13152 n'est pas coupé ([P: (1632.0, 1043.0), S: (9.0, 15.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @PanelContainer@13157 n'est pas coupé ([P: (1656.0, 1042.0), S: (49.0, 18.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @HBoxContainer@13154 n'est pas coupé ([P: (1665.0, 1043.0), S: (31.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @Label@13155 n'est pas coupé ([P: (1665.0, 1043.0), S: (4.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @Label@13156 n'est pas coupé ([P: (1673.0, 1043.0), S: (23.0, 15.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @PanelContainer@13161 n'est pas coupé ([P: (1711.0, 1042.0), S: (50.0, 18.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @HBoxContainer@13158 n'est pas coupé ([P: (1720.0, 1043.0), S: (32.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @Label@13159 n'est pas coupé ([P: (1720.0, 1043.0), S: (6.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @Label@13160 n'est pas coupé ([P: (1730.0, 1043.0), S: (22.0, 15.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenTabOpponent n'est pas coupé ([P: (1774.0, 1038.0), S: (78.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenKeys n'est pas coupé ([P: (1860.0, 1038.0), S: (21.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenKeysHelp n'est pas coupé ([P: (1860.0, 1041.0), S: (21.0, 21.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @Label@12654 n'est pas coupé ([P: (1860.0, 1043.0), S: (21.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSquadScroll n'est pas coupé ([P: (39.0, 1067.0), S: (1842.0, 129.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenPage n'est pas coupé ([P: (24.0, 121.0), S: (1872.0, 1090.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenSquadBar n'est pas coupé ([P: (24.0, 1023.0), S: (1872.0, 188.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenMain n'est pas coupé ([P: (24.0, 1023.0), S: (1872.0, 188.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @MarginContainer@12641 n'est pas coupé ([P: (25.0, 1024.0), S: (1870.0, 186.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @VBoxContainer@12642 n'est pas coupé ([P: (39.0, 1038.0), S: (1842.0, 158.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @HBoxContainer@12643 n'est pas coupé ([P: (39.0, 1038.0), S: (1842.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenSquadTitle n'est pas coupé ([P: (39.0, 1038.0), S: (80.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenSquadHeader n'est pas coupé ([P: (127.0, 1038.0), S: (259.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenSort_numero n'est pas coupé ([P: (127.0, 1042.0), S: (33.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenSort_joueur n'est pas coupé ([P: (165.0, 1042.0), S: (56.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenSort_energie n'est pas coupé ([P: (226.0, 1042.0), S: (58.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenSort_plaquages n'est pas coupé ([P: (289.0, 1042.0), S: (47.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenSort_note n'est pas coupé ([P: (341.0, 1042.0), S: (45.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @Control@12648 n'est pas coupé ([P: (394.0, 1038.0), S: (1180.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenSquadFoot n'est pas coupé ([P: (1582.0, 1040.0), S: (205.0, 23.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenTeamTotalMargin n'est pas coupé ([P: (1582.0, 1040.0), S: (205.0, 23.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenTeamTotal n'est pas coupé ([P: (1587.0, 1040.0), S: (195.0, 23.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @Label@13267 n'est pas coupé ([P: (1587.0, 1044.0), S: (31.0, 15.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @PanelContainer@13271 n'est pas coupé ([P: (1624.0, 1042.0), S: (43.0, 18.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @HBoxContainer@13268 n'est pas coupé ([P: (1633.0, 1043.0), S: (25.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @Label@13269 n'est pas coupé ([P: (1633.0, 1043.0), S: (12.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @Label@13270 n'est pas coupé ([P: (1649.0, 1043.0), S: (9.0, 15.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @PanelContainer@13275 n'est pas coupé ([P: (1673.0, 1042.0), S: (49.0, 18.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @HBoxContainer@13272 n'est pas coupé ([P: (1682.0, 1043.0), S: (31.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @Label@13273 n'est pas coupé ([P: (1682.0, 1043.0), S: (4.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @Label@13274 n'est pas coupé ([P: (1690.0, 1043.0), S: (23.0, 15.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @PanelContainer@13279 n'est pas coupé ([P: (1728.0, 1042.0), S: (54.0, 18.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @HBoxContainer@13276 n'est pas coupé ([P: (1737.0, 1043.0), S: (36.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @Label@13277 n'est pas coupé ([P: (1737.0, 1043.0), S: (10.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @Label@13278 n'est pas coupé ([P: (1751.0, 1043.0), S: (22.0, 15.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenTabOpponent n'est pas coupé ([P: (1795.0, 1038.0), S: (57.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenKeys n'est pas coupé ([P: (1860.0, 1038.0), S: (21.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenKeysHelp n'est pas coupé ([P: (1860.0, 1041.0), S: (21.0, 21.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : @Label@12654 n'est pas coupé ([P: (1860.0, 1043.0), S: (21.0, 16.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (XV adverse) : MatchBetweenSquadScroll n'est pas coupé ([P: (39.0, 1067.0), S: (1842.0, 129.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 : la page tient dans l'écran intermédiaire ([P: (24.0, 121.0), S: (1872.0, 1090.0)] dans [P: (24.0, 112.0), S: (1872.0, 936.0)], minimum 1090)
+FAIL: 1920×1080 : marge sous le pied des raccourcis ([P: (1860.0, 1038.0), S: (21.0, 28.0)], bas de l'écran intermédiaire 1048)
+FAIL: 1920×1080 : MatchBetweenMain dans l'écran ([P: (24.0, 1023.0), S: (1872.0, 188.0)])
+FAIL: 1920×1080 : MatchBetweenSquadScroll dans l'écran ([P: (39.0, 1067.0), S: (1842.0, 129.0)])
+FAIL: 2560×1440 (Mon XV) : MatchBetweenPage n'est pas coupé ([P: (32.0, 156.0), S: (2496.0, 1399.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 (Mon XV) : MatchBetweenSquadBar n'est pas coupé ([P: (32.0, 1307.0), S: (2496.0, 248.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 (Mon XV) : MatchBetweenMain n'est pas coupé ([P: (32.0, 1307.0), S: (2496.0, 248.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 (Mon XV) : @MarginContainer@13623 n'est pas coupé ([P: (33.0, 1308.0), S: (2494.0, 246.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 (Mon XV) : @VBoxContainer@13624 n'est pas coupé ([P: (51.0, 1326.0), S: (2458.0, 210.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 (Mon XV) : MatchBetweenSquadScroll n'est pas coupé ([P: (51.0, 1364.0), S: (2458.0, 172.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 (XV adverse) : MatchBetweenPage n'est pas coupé ([P: (32.0, 156.0), S: (2496.0, 1399.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 (XV adverse) : MatchBetweenSquadBar n'est pas coupé ([P: (32.0, 1307.0), S: (2496.0, 248.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 (XV adverse) : MatchBetweenMain n'est pas coupé ([P: (32.0, 1307.0), S: (2496.0, 248.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 (XV adverse) : @MarginContainer@13623 n'est pas coupé ([P: (33.0, 1308.0), S: (2494.0, 246.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 (XV adverse) : @VBoxContainer@13624 n'est pas coupé ([P: (51.0, 1326.0), S: (2458.0, 210.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 (XV adverse) : MatchBetweenSquadScroll n'est pas coupé ([P: (51.0, 1364.0), S: (2458.0, 172.0)] hors de [P: (32.0, 144.0), S: (2496.0, 1256.0)])
+FAIL: 2560×1440 : la page tient dans l'écran intermédiaire ([P: (32.0, 156.0), S: (2496.0, 1399.0)] dans [P: (32.0, 144.0), S: (2496.0, 1256.0)], minimum 1399)
+FAIL: 2560×1440 : MatchBetweenMain dans l'écran ([P: (32.0, 1307.0), S: (2496.0, 248.0)])
+FAIL: 2560×1440 : MatchBetweenSquadScroll dans l'écran ([P: (51.0, 1364.0), S: (2458.0, 172.0)])
+
+ECHEC mode terrain2d
+Preuves temps forts : /tmp/cd-match-temps-forts-9tQ6wn · contrôles : 
+node:assert:150
+  throw new AssertionError(obj);
+  ^
+
+AssertionError [ERR_ASSERTION]: modes en échec :
+terrain2d : Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.5 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.5 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 20.1.2, 256 bits)
+
+ENTRACTE2D 1 montre_max=2 temps_fort_debut=3 faits=0
+ENTRACTE2D 2 montre_max=16 temps_fort_debut=17 faits=10
+CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-1920x1080-tableau.png (1920, 1080) 0
+CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-2560x1440-tableau.png (2560, 1440) 0
+CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-Entracte-avec-la-journée-1920x1080-journee.png (1920, 1080) 0
+CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-Entracte-avec-la-journée-2560x1440-journee.png (2560, 1440) 0
+CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-1920x1080-tableau.png (1920, 1080) 0
+CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-2560x1440-tableau.png (2560, 1440) 0
+TERRAIN2D {"ballons":12,"deplacement":4890.39997754619,"faits":15,"minutes":7}
+Temps forts (terrain2d) : 4075 contrôles ; 189 échec(s)
+libspeechd.so.2: cannot open shared object file: No such file or directory
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)
+FAIL: 1920×1080 (Mon XV) : MatchBetweenPage n'est pas coupé ([P: (24.0, 121.0), S: (1872.0, 1090.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSquadBar n'est pas coupé ([P: (24.0, 1023.0), S: (1872.0, 188.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenMain n'est pas coupé ([P: (24.0, 1023.0), S: (1872.0, 188.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @MarginContainer@7960 n'est pas coupé ([P: (25.0, 1024.0), S: (1870.0, 186.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @VBoxContainer@7961 n'est pas coupé ([P: (39.0, 1038.0), S: (1842.0, 158.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @HBoxContainer@7962 n'est pas coupé ([P: (39.0, 1038.0), S: (1842.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSquadTitle n'est pas coupé ([P: (39.0, 1038.0), S: (53.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSquadHeader n'est pas coupé ([P: (100.0, 1038.0), S: (259.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_numero n'est pas coupé ([P: (100.0, 1042.0), S: (33.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_joueur n'est pas coupé ([P: (138.0, 1042.0), S: (56.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_energie n'est pas coupé ([P: (199.0, 1042.0), S: (58.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_plaquages n'est pas coupé ([P: (262.0, 1042.0), S: (47.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_note n'est pas coupé ([P: (314.0, 1042.0), S: (45.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : @Control@7967 n'est pas coupé ([P: (367.0, 1038.0), S: (1186.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenSquadFoot n'est pas coupé ([P: (1561.0, 1040.0), S: (205.0, 23.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenTeamTotalMargin n'est pas coupé ([P: (1561.0, 1040.0), S: (205.0, 23.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])
+FAIL: 1920×1080 (Mon XV) : MatchBetweenTeamTotal n'est pas coupé ([P: (1566.0, 1040
++ actual - expected
+
++ [
++   'terrain2d : Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n' +
++     'OpenGL API 4.5 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.5 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 20.1.2, 256 bits)\n' +
++     '\n' +
++     'ENTRACTE2D 1 montre_max=2 temps_fort_debut=3 faits=0\n' +
++     'ENTRACTE2D 2 montre_max=16 temps_fort_debut=17 faits=10\n' +
++     'CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-1920x1080-tableau.png (1920, 1080) 0\n' +
++     'CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-2560x1440-tableau.png (2560, 1440) 0\n' +
++     'CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-Entracte-avec-la-journée-1920x1080-journee.png (1920, 1080) 0\n' +
++     'CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-Entracte-avec-la-journée-2560x1440-journee.png (2560, 1440) 0\n' +
++     'CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-1920x1080-tableau.png (1920, 1080) 0\n' +
++     'CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-2560x1440-tableau.png (2560, 1440) 0\n' +
++     'TERRAIN2D {"ballons":12,"deplacement":4890.39997754619,"faits":15,"minutes":7}\n' +
++     'Temps forts (terrain2d) : 4075 contrôles ; 189 échec(s)\n' +
++     'libspeechd.so.2: cannot open shared object file: No such file or directory\n' +
++     'WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.\n' +
++     '     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)\n' +
++     "FAIL: 1920×1080 (Mon XV) : MatchBetweenPage n'est pas coupé ([P: (24.0, 121.0), S: (1872.0, 1090.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
++     "FAIL: 1920×1080 (Mon XV) : MatchBetweenSquadBar n'est pas coupé ([P: (24.0, 1023.0), S: (1872.0, 188.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
++     "FAIL: 1920×1080 (Mon XV) : MatchBetweenMain n'est pas coupé ([P: (24.0, 1023.0), S: (1872.0, 188.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
++     "FAIL: 1920×1080 (Mon XV) : @MarginContainer@7960 n'est pas coupé ([P: (25.0, 1024.0), S: (1870.0, 186.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
++     "FAIL: 1920×1080 (Mon XV) : @VBoxContainer@7961 n'est pas coupé ([P: (39.0, 1038.0), S: (1842.0, 158.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
++     "FAIL: 1920×1080 (Mon XV) : @HBoxContainer@7962 n'est pas coupé ([P: (39.0, 1038.0), S: (1842.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
++     "FAIL: 1920×1080 (Mon XV) : MatchBetweenSquadTitle n'est pas coupé ([P: (39.0, 1038.0), S: (53.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
++     "FAIL: 1920×1080 (Mon XV) : MatchBetweenSquadHeader n'est pas coupé ([P: (100.0, 1038.0), S: (259.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
++     "FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_numero n'est pas coupé ([P: (100.0, 1042.0), S: (33.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
++     "FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_joueur n'est pas coupé ([P: (138.0, 1042.0), S: (56.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
++     "FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_energie n'est pas coupé ([P: (199.0, 1042.0), S: (58.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
++     "FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_plaquages n'est pas coupé ([P: (262.0, 1042.0), S: (47.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
++     "FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_note n'est pas coupé ([P: (314.0, 1042.0), S: (45.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
++     "FAIL: 1920×1080 (Mon XV) : @Control@7967 n'est pas coupé ([P: (367.0, 1038.0), S: (1186.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
++     "FAIL: 1920×1080 (Mon XV) : MatchBetweenSquadFoot n'est pas coupé ([P: (1561.0, 1040.0), S: (205.0, 23.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
++     "FAIL: 1920×1080 (Mon XV) : MatchBetweenTeamTotalMargin n'est pas coupé ([P: (1561.0, 1040.0), S: (205.0, 23.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
++     "FAIL: 1920×1080 (Mon XV) : MatchBetweenTeamTotal n'est pas coupé ([P: (1566.0, 1040"
++ ]
+- []
+
+    at Object.<anonymous> (/home/runner/work/cadrage-debordement/cadrage-debordement/tests/godot-match-temps-forts.cjs:127:8)
+    at Module._compile (node:internal/modules/cjs/loader:1781:14)
+    at Object..js (node:internal/modules/cjs/loader:1913:10)
+    at Module.load (node:internal/modules/cjs/loader:1505:32)
+    at Function._load (node:internal/modules/cjs/loader:1309:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [
+    'terrain2d : Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org\n' +
+      'OpenGL API 4.5 (Core Profile) Mesa 25.2.8-0ubuntu0.24.04.5 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 20.1.2, 256 bits)\n' +
+      '\n' +
+      'ENTRACTE2D 1 montre_max=2 temps_fort_debut=3 faits=0\n' +
+      'ENTRACTE2D 2 montre_max=16 temps_fort_debut=17 faits=10\n' +
+      'CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-1920x1080-tableau.png (1920, 1080) 0\n' +
+      'CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-2560x1440-tableau.png (2560, 1440) 0\n' +
+      'CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-Entracte-avec-la-journée-1920x1080-journee.png (1920, 1080) 0\n' +
+      'CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-Entracte-avec-la-journée-2560x1440-journee.png (2560, 1440) 0\n' +
+      'CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-1920x1080-tableau.png (1920, 1080) 0\n' +
+      'CAPTURE /home/runner/work/_temp/resultats/captures/pilotage/ecran-2d-lot1-terrain2d-2560x1440-tableau.png (2560, 1440) 0\n' +
+      'TERRAIN2D {"ballons":12,"deplacement":4890.39997754619,"faits":15,"minutes":7}\n' +
+      'Temps forts (terrain2d) : 4075 contrôles ; 189 échec(s)\n' +
+      'libspeechd.so.2: cannot open shared object file: No such file or directory\n' +
+      'WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.\n' +
+      '     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:372)\n' +
+      "FAIL: 1920×1080 (Mon XV) : MatchBetweenPage n'est pas coupé ([P: (24.0, 121.0), S: (1872.0, 1090.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
+      "FAIL: 1920×1080 (Mon XV) : MatchBetweenSquadBar n'est pas coupé ([P: (24.0, 1023.0), S: (1872.0, 188.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
+      "FAIL: 1920×1080 (Mon XV) : MatchBetweenMain n'est pas coupé ([P: (24.0, 1023.0), S: (1872.0, 188.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
+      "FAIL: 1920×1080 (Mon XV) : @MarginContainer@7960 n'est pas coupé ([P: (25.0, 1024.0), S: (1870.0, 186.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
+      "FAIL: 1920×1080 (Mon XV) : @VBoxContainer@7961 n'est pas coupé ([P: (39.0, 1038.0), S: (1842.0, 158.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
+      "FAIL: 1920×1080 (Mon XV) : @HBoxContainer@7962 n'est pas coupé ([P: (39.0, 1038.0), S: (1842.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
+      "FAIL: 1920×1080 (Mon XV) : MatchBetweenSquadTitle n'est pas coupé ([P: (39.0, 1038.0), S: (53.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
+      "FAIL: 1920×1080 (Mon XV) : MatchBetweenSquadHeader n'est pas coupé ([P: (100.0, 1038.0), S: (259.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
+      "FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_numero n'est pas coupé ([P: (100.0, 1042.0), S: (33.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
+      "FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_joueur n'est pas coupé ([P: (138.0, 1042.0), S: (56.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
+      "FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_energie n'est pas coupé ([P: (199.0, 1042.0), S: (58.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
+      "FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_plaquages n'est pas coupé ([P: (262.0, 1042.0), S: (47.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
+      "FAIL: 1920×1080 (Mon XV) : MatchBetweenSort_note n'est pas coupé ([P: (314.0, 1042.0), S: (45.0, 19.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
+      "FAIL: 1920×1080 (Mon XV) : @Control@7967 n'est pas coupé ([P: (367.0, 1038.0), S: (1186.0, 28.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
+      "FAIL: 1920×1080 (Mon XV) : MatchBetweenSquadFoot n'est pas coupé ([P: (1561.0, 1040.0), S: (205.0, 23.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
+      "FAIL: 1920×1080 (Mon XV) : MatchBetweenTeamTotalMargin n'est pas coupé ([P: (1561.0, 1040.0), S: (205.0, 23.0)] hors de [P: (24.0, 112.0), S: (1872.0, 936.0)])\n" +
+      "FAIL: 1920×1080 (Mon XV) : MatchBetweenTeamTotal n'est pas coupé ([P: (1566.0, 1040"
+  ],
+  expected: [],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v22.23.5
