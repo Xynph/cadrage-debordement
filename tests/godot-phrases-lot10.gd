@@ -90,6 +90,9 @@ func ouvrir_mobilite() -> void:
 	app.management_ui["immersive08_career_tab"] = "details"
 	app._navigate("Carrière")
 	await settle(12)
+	# Retour de la fiche d'un club : la requête du monde qu'elle a lancée peut tourner encore (app.waiting), et la
+	# navigation est alors refusée (garde de lecture) ; on attend que le moteur soit libre, pas un nombre d'images.
+	await wait_engine()
 
 func carriere() -> void:
 	await ouvrir_mobilite()
@@ -192,6 +195,7 @@ func echos() -> void:
 	app.management_ui["rivalry"] = {"tab": 1}
 	app._navigate("Rivalités")
 	await settle(12)
+	await wait_engine()
 	var carte := app.root_content.find_child("RivalryEcho_0", true, false) as Button
 	if carte == null:
 		destinations.append("Échos : aucun écho dans cette carrière (%d événements), fenêtre non testée" % events.size())
@@ -203,6 +207,7 @@ func echos() -> void:
 	for nom in ["RivalryEchoScore", "RivalryEchoReaction", "RivalryEchoPression", "RivalryEchoTension", "RivalryEchoClubA"]:
 		check(fenetre != null and fenetre.find_child(nom, true, false) != null, "Écho : " + nom)
 	await capture("rivalites-echo")
+	await wait_engine()
 	await key(KEY_ESCAPE)
 	check(app.route == "Rivalités" and PetiteFenetre.ouverte(self) == null, "Écho : Échap ferme, on reste sur Rivalités")
 	destinations.append("Écho -> petite fenêtre")
