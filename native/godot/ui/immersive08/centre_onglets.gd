@@ -289,8 +289,9 @@ static func _parcours(ctx: Dictionary, zone: Rect2) -> void:
 	var lz := Rect2(X_LISTE, zone.position.y, L_LISTE, zone.size.y)
 	var joueurs: Array = tous.filter(func(p: Dictionary): return (etape.is_empty() or V.etape(p) == etape) and (filtre.is_empty() or str(p.path) == filtre))
 	var colonnes := [
-		{"k": "nom", "t": "JOUEUR", "x": 16.0, "w": 380.0, "tri": true, "desc": false},
-		{"k": "poste", "t": "POSTE", "x": 410.0, "w": 190.0, "tri": true, "desc": false},
+		{"k": "nom", "t": "JOUEUR", "x": 16.0, "w": 340.0, "tri": true, "desc": false},
+		# « Demi d'ouverture » entier (coupé à 190) : la colonne Joueur, large, cède 40.
+		{"k": "poste", "t": "POSTE", "x": 370.0, "w": 230.0, "tri": true, "desc": false},
 		{"k": "age", "t": "ÂGE", "x": 610.0, "w": 60.0, "a": HORIZONTAL_ALIGNMENT_RIGHT, "tri": true},
 		{"k": "niv", "t": "NIV.", "x": 690.0, "w": 70.0, "a": HORIZONTAL_ALIGNMENT_RIGHT, "tri": true},
 		{"k": "pot", "t": "POT.", "x": 780.0, "w": 100.0, "a": HORIZONTAL_ALIGNMENT_RIGHT, "tri": true},
