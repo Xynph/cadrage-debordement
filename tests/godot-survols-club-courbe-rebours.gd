@@ -62,12 +62,22 @@ func lie(cle: String) -> Control:
 
 ## Survol : la souris se pose sur l'ancre, la bulle apparaît (sans attendre en mode test).
 func survoler(ancre: Control) -> Control:
+	# Clé lue avant les attentes : un rafraîchissement de la page peut libérer l'ancre pendant settle().
+	var cle := str(ancre.get_meta("bulle_survol"))
 	souris(ancre.get_global_rect().get_center())
 	await process_frame
 	var bulle := Bulle.montrer(ancre)
 	await settle()
-	check(bulle != null and bulle.is_visible_in_tree(), "Bulle affichée au survol de " + str(ancre.get_meta("bulle_survol")))
-	if bulle != null: check(Rect2(Vector2.ZERO, root.get_visible_rect().size).encloses(bulle.get_global_rect()), "Bulle entière dans l'écran (" + str(ancre.get_meta("bulle_survol")) + ")")
+	# Page redessinée pendant l'attente (fin d'un chargement) : on survole la nouvelle ancre de même clé, une fois.
+	if not is_instance_valid(ancre) and lie(cle) != null:
+		ancre = lie(cle)
+		souris(ancre.get_global_rect().get_center())
+		await process_frame
+		bulle = Bulle.montrer(ancre)
+		await settle()
+	if bulle != null and not is_instance_valid(bulle): bulle = null
+	check(bulle != null and bulle.is_visible_in_tree(), "Bulle affichée au survol de " + cle)
+	if bulle != null: check(Rect2(Vector2.ZERO, root.get_visible_rect().size).encloses(bulle.get_global_rect()), "Bulle entière dans l'écran (" + cle + ")")
 	return bulle
 
 func capture(nom: String, zone: Rect2 = Rect2()) -> void:
@@ -223,7 +233,7 @@ func ancienne_sauvegarde() -> void:
 	if ancre != null:
 		var bulle := await survoler(ancre)
 		check(bulle != null, "Sans prochain match publié : la mini-carte s'affiche quand même")
-		Bulle.cacher(ancre)
+		if is_instance_valid(ancre): Bulle.cacher(ancre)
 
 func run() -> void:
 	var tailles: Array[Vector2i] = [Vector2i(1920, 1080)]
