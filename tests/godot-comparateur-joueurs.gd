@@ -144,10 +144,10 @@ func run_captures() -> void:
 	# Mon joueur : le mieux classé de l’effectif ; joueur du marché : un poste que mon effectif occupe, noms longs des deux.
 	var mine: Dictionary = squad[0]
 	for player: Dictionary in squad:
-		if float(player.get("rating",0))>float(mine.get("rating",0)): mine=player
+		if _note(player)>_note(mine): mine=player
 	var target: Dictionary = market[0]
 	for player: Dictionary in market:
-		if str(player.get("pos",""))==str(mine.get("pos","")) and float(player.get("rating",0))>=float(target.get("rating",0)): target=player
+		if str(player.get("pos",""))==str(mine.get("pos","")) and _note(player)>=_note(target): target=player
 	mine["name"]=LONG_NAME
 	target["name"]=LONG_NAME+" II"
 	for size: Vector2i in [Vector2i(2560,1440),Vector2i(1280,720)]:
@@ -193,3 +193,8 @@ func finish() -> void:
 	app.closing=true
 	app.bridge.stop()
 	quit(0 if failures==0 else 1)
+
+## Note connue ou 0 : sur le marché, la note d'un joueur non observé est nulle (pas de float(null)).
+func _note(player: Dictionary) -> float:
+	var v: Variant = player.get("rating", 0)
+	return float(v) if v is float or v is int else 0.0
