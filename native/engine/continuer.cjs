@@ -377,7 +377,8 @@ function arretInfo(items) {
   if (ordre.length === 1) return infoStop(lead);
   const mails = ordre.filter(i => i.mail).map(i => i.mail);
   const plusieurs = ordre.filter(i => i.nature !== 'routine').length > 1;
-  const ligne = i => i.type === 'courrier' ? i.detail : i.label + ' : ' + i.detail;
+  // Détail qui se présente déjà (« Mi-saison : 13e sur 14… ») : pas de libellé en double (« Mi-saison : Mi-saison : », 28/11).
+  const ligne = i => i.type === 'courrier' || i.detail.toLowerCase().startsWith(i.label.toLowerCase()) ? i.detail : i.label + ' : ' + i.detail;
   return { kind: 'info', label: lead.label, detail: [lead.detail, ...ordre.slice(1).map(ligne)].join(' · '), type: plusieurs ? 'groupe' : lead.type, nature: 'info',
     // Courrier d'info rangé (ou rien d'autre où aller) : la Réception sur le plus important ; sinon l'écran du plus
     // important (veille : la composition), la routine restant lisible en Réception.

@@ -99,6 +99,11 @@ test('Règle : types informatifs toujours actifs, priorité, plusieurs arrêts l
   assert.equal(r.stop.detail, 'Championnat : fin de phase (phase régulière), nous terminons 2e sur 14 (70 pts, 26 matchs). Suite : demi-finales.');
   r = C.arrets(hier, { ...base, miSaison: { rank: 4, points: 30, played: 13, size: 14, goal: 'Viser les phases finales' } }, opts());
   assert.equal(r.stop.detail, 'Mi-saison : 4e sur 14 (30 pts, 13 matchs). Objectif de la direction : viser les phases finales.');
+  // Mi-saison rangée avec un courrier d'info : un seul arrêt, sans libellé en double (« Mi-saison : Mi-saison : », 28/11).
+  r = C.arrets(hier, { ...base, courrier: [courrier[3]], miSaison: { rank: 4, points: 30, played: 13, size: 14, goal: null } }, opts());
+  assert.equal(r.stop.type, 'groupe');
+  assert.match(r.stop.detail, /Mi-saison : 4e sur 14/);
+  assert.doesNotMatch(r.stop.detail, /Mi-saison : Mi-saison/);
   // Veille de la 1re journée déjà annoncée par la préparation (« À noter ») : pas en double.
   assert.equal(C.informatifs(hier, { ...base, veille, notes: ['veille:2026-10-09'] }, opts()).length, 0);
   // Prochain arrêt annoncé : mi-saison puis veille ; arrêts informatifs ignorés : le match.
@@ -206,7 +211,10 @@ test('Saison complète : arrêts informatifs répartis, monde inchangé au 15/12
   console.log('Saison jusqu’au', avec.date);
   const { types, parMois } = bilan(avec.arrets);
   assert.ok(Object.keys(parMois).length >= 6, 'répartis sur la saison : ' + Object.keys(parMois).join(', '));
-  assert.equal(types.mi_saison, 1, 'une mi-saison');
+  // Mi-saison seule ou rangée dans l'arrêt d'info du jour (« groupe », un seul arrêt d'info par jour, décision de Léo du
+  // 18/11/2026) : sonde du 28/11, rangée le 27/12 avec le bulletin médical, le lendemain de match et la presse.
+  const miSaisons = avec.arrets.filter(x => x[1] === 'info' && (x[2] === 'mi_saison' || x[2] === 'groupe' && /(^| · )Mi-saison : /.test(x[3] || '')));
+  assert.equal(miSaisons.length, 1, 'une mi-saison : ' + JSON.stringify(miSaisons));
   assert.ok(types.fin_phase >= 1, 'au moins une fin de phase');
   // Parcimonie : jamais un arrêt informatif par jour ; au plus 14 par mois (11 mesurés en décembre, le 16/11).
   for (const [k, n] of Object.entries(parMois)) assert.ok(n <= 14, k + ' : ' + n + ' arrêts informatifs');
