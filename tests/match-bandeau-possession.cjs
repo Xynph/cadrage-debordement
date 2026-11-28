@@ -11,7 +11,9 @@ const { worldYouth } = require('./helpers/youth-world-harness.cjs');
 
 // Mondes et rencontres où le moteur joue ce dégagement capté (sonde du 27/11 : 7 cas sur 60 matchs).
 const MONDES = [10, 12];
-const PAR_MONDE = 9;
+// 30 rencontres par monde (au lieu de 9, mêmes mondes, mêmes contrôles) : avec les remplaçants (K3), les tirages changent et
+// 9 rencontres ne couvraient plus que 2 dégagements captés pour 3 exigés (sonde du 28/11 : 13 sur 80 rencontres).
+const PAR_MONDE = 30;
 let faits = 0, degages = 0;
 const faux = [];
 for (const monde of MONDES) {

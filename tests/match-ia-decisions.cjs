@@ -9,7 +9,9 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { context } = require('./monde-harness.cjs');
 
-const N = { prem: 70, urc: 70, elite: 70 };
+// 210 matchs par championnat (au lieu de 70, mêmes affiches tournantes, mêmes seuils) : à 70, le rapport des tirs au but
+// Premiership / Top 14 (≈ 0,70 exigé) se jouait au centième près (3,13 pour 3,129 avec les remplaçants K3, 28/11).
+const N = { prem: 210, urc: 210, elite: 210 };
 const pct = (a, b) => (b ? 100 * a / b : 0);
 
 function jouer(h, comp, n) {

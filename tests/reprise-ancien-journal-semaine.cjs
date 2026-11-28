@@ -37,7 +37,9 @@ test('Ancien journal : un « Continuer » qui franchit une semaine est repris en
   let coupure, etat, lignesAvance, perimees;
   try {
     let model = jeu.regler(jeu.call('new_career', { mode: 'world-champ', club: 102 }));
-    for (let n = 0; n < 60 && !coupure; n++) {
+    // Jusqu'à 90 « Continuer » (au lieu de 60) : avec les remplaçants (K3), les résultats changent les arrêts et la première
+    // avance de deux semaines avec des séances périmées tombe à la 72e (fenêtre de février-mars, sonde du 28/11).
+    for (let n = 0; n < 90 && !coupure; n++) {
       if (model.meta.calendarCadence?.matchReady && model.next) { model = M.jouerLeMatch(jeu, model); continue; }
       // Séances prévues par semaine (lundi), vues par la projection d'avant l'avance.
       const prevues = new Set((model.calendarPlanning?.sessions || []).map(s => lundi(s.date)));

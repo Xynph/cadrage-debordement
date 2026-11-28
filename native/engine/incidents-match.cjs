@@ -67,7 +67,7 @@ function factory(){
   if(l?.incidentsVersion!==1||l.finished||!KINDS.includes(kind))return null;
   const sh=l.sheets[side],p=matchPlayer(l,side,sh.on[slot]);
   if(!p||sh.cards.some(c=>c.id===p.id&&c.until>l.minute)||l.incidents.length>=INCIDENTS.historique)return null;
-  const options=eligibleChanges(l,side,slot).sort(staffOrder(slot)),repl=options[0];
+  const rang=p=>l.remplacantsVersion===1&&typeof rangPoste==='function'?rangPoste(p,slot):0,options=eligibleChanges(l,side,slot).sort((a,b)=>rang(a)-rang(b)||staffOrder(slot)(a,b)),repl=options[0];
   if(!repl)return null;
   swap(l,side,slot,repl.id,kind);
   const key=matchKey(l)||'',x={n:l.incidents.length,side,id:p.id,slot,minute:l.minute,kind,repl:repl.id,until:null,etat:'definitif'};

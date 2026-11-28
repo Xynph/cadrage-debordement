@@ -66,7 +66,7 @@ const ROTATION_EUROPE=Object.freeze({competitions:Object.freeze(['champions','ch
 function rotationEuropeMalus(p,level){const R=ROTATION_EUROPE;return p.managerLoad?.streak>=R.serie&&p.managerLoad.minutes>=R.minutes?(level==='expert'?R.malusExpert:R.malus):0}
 function europeAutour(f,ci){const W=S?.worldMode,R=ROTATION_EUROPE;if(!W?.fixtures||!f||R.competitions.includes(f.competitionId))return false;return W.fixtures.some(x=>R.competitions.includes(x.competitionId)&&(x.homeId===ci||x.awayId===ci)&&Math.abs(x.week-f.week)<=R.semaines)}
 function semaineEuropeenne(l,ci){const W=S?.worldMode;if(!W?.fixtures)return false;return europeAutour(W.fixtures.find(x=>x.homeId===l.pair[0]&&x.awayId===l.pair[1]&&x.week===S.round),ci)}
-function initializeManagers(l,automated=false){l.aiLevel=S.difficulty||'classique';l.balanceVersion=2;l.managerMemory=[{lastSub:-10,lastReview:0,lastCardDiff:0,cardBase:null},{lastSub:-10,lastReview:0,lastCardDiff:0,cardBase:null}];l.numericalAiVersion=1;l.iaDecisionsVersion=1;l.penaltyPolicies=['auto','auto'];for(let side=0;side<2;side++){if(side===l.userSide||l.pair[side]===S.club)continue;let c=S.clubs[l.pair[side]],other=S.clubs[l.pair[1-side]],europe=semaineEuropeenne(l,l.pair[side]),sheet=managerSheet(c,other,l.weather,l.aiLevel,europe,{...styleContext(l,side),europe});if(europe)l.rotationEurope=[...(l.rotationEurope||[]),side];l.sheets[side]={...l.sheets[side],on:sheet.lineup,initial:[...sheet.lineup],bench:sheet.bench,used:sheet.lineup.filter(Boolean)}}for(let side=0;side<2;side++){if(side===l.userSide||l.pair[side]===S.club)continue;const c=S.clubs[l.pair[side]];l.tactics[side]=chooseManagerStyle(c,l.sheets[side].on,l.weather,l.aiLevel,styleContext(l,side))}}
+function initializeManagers(l,automated=false){l.aiLevel=S.difficulty||'classique';l.balanceVersion=2;l.managerMemory=[{lastSub:-10,lastReview:0,lastCardDiff:0,cardBase:null},{lastSub:-10,lastReview:0,lastCardDiff:0,cardBase:null}];l.numericalAiVersion=1;l.iaDecisionsVersion=1;l.remplacantsVersion=1;l.penaltyPolicies=['auto','auto'];for(let side=0;side<2;side++){if(side===l.userSide||l.pair[side]===S.club)continue;let c=S.clubs[l.pair[side]],other=S.clubs[l.pair[1-side]],europe=semaineEuropeenne(l,l.pair[side]),sheet=managerSheet(c,other,l.weather,l.aiLevel,europe,{...styleContext(l,side),europe});if(europe)l.rotationEurope=[...(l.rotationEurope||[]),side];l.sheets[side]={...l.sheets[side],on:sheet.lineup,initial:[...sheet.lineup],bench:sheet.bench,used:sheet.lineup.filter(Boolean)}}for(let side=0;side<2;side++){if(side===l.userSide||l.pair[side]===S.club)continue;const c=S.clubs[l.pair[side]];l.tactics[side]=chooseManagerStyle(c,l.sheets[side].on,l.weather,l.aiLevel,styleContext(l,side))}}
 // V20: an optional saved model: old in-progress fixtures keep their original AI.
 // These are coaching choices in the simulation, not disciplinary regulations.
 function adaptNumericalManager(l,side){
@@ -128,6 +128,11 @@ const BANC_IA=Object.freeze({
  parMinute:3,gainVague:-2,gainCrame:2,
  buteur:Object.freeze({perte:5})
 });
+// Remplacement au poste (lot K3, rencontres `remplacantsVersion`) : rang 0 même famille, 1 même ligne (première ligne,
+// deuxième et troisième lignes, charnière, trois-quarts), 2 hors de sa ligne. Seul le meilleur rang présent sur le banc
+// est retenu ; un joueur hors de sa ligne (demi de mêlée à l'aile) n'entre que pour un joueur à bout, faute de mieux.
+const LIGNE_POSTE=[0,0,1,1,2,2,3,3,3];
+function rangPoste(p,slot){const f=FAMILIES[slot];return !p?3:p.fam===f?0:LIGNE_POSTE[p.fam]===LIGNE_POSTE[f]?1:2}
 function vagueBanc(l,side,groupe){const W=BANC_IA.vagues[groupe];let h=2166136261;for(const v of [l.pair[0],l.pair[1],side,groupe.length*7+groupe.charCodeAt(0),S.season|0,S.round|0]){h^=Number(v)|0;h=Math.imul(h,16777619)>>>0}return W[0]+h%(W[1]-W[0]+1)}
 function remplacementsIA(l,side){
  const B=BANC_IA,level=difficultyLevel(l),m=typeof matchMinute==='function'?matchMinute(l):l.minute;
@@ -143,9 +148,10 @@ function remplacementsIA(l,side){
   for(let slot=0;slot<15;slot++){
    const out=matchPlayer(l,side,sh.on[slot]);if(!out||!sh.initial.includes(out.id)||sh.cards.some(c=>c.id===out.id&&c.until>l.minute))continue;
    const g=B.groupes[slot],crame=out.condition<(m>B.fin?B.horsLimite:B.crame),vague=m<=B.fin&&ouverte(g);if(!vague&&!crame)continue;
-   let outFit;
+   let outFit,rangMin=0;
+   if(l.remplacantsVersion===1){rangMin=3;for(const id of sh.bench){if(sh.used.includes(id))continue;const p=matchPlayer(l,side,id);if(p&&!p.injury&&legalChange(l,side,slot,id))rangMin=Math.min(rangMin,rangPoste(p,slot))}if(rangMin===3||rangMin===2&&!crame)continue}
    for(const id of sh.bench){
-    if(sh.used.includes(id))continue;const p=matchPlayer(l,side,id);if(!p||p.injury)continue;
+    if(sh.used.includes(id))continue;const p=matchPlayer(l,side,id);if(!p||p.injury)continue;if(l.remplacantsVersion===1&&rangPoste(p,slot)>rangMin)continue;
     let gain=fit(p,FAMILIES[slot])-(outFit??=fit(out,FAMILIES[slot]));
     if(kicker?.id===out.id&&skill(p,'goal',fitA)<skill(out,'goal',fitA)-B.buteur.perte&&out.condition>=B.horsLimite)continue;
     if(gain<=(vague?B.gainVague:B.gainCrame))continue;
