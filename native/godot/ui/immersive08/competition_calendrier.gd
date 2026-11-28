@@ -23,6 +23,7 @@ func _calendar() -> void:
 			_page_state("CalendarPagination").page = 0
 			app._render(false), "CalendarFilter_" + str(spec[2]))
 		x += int(spec[0]) + 12
+	_selections_du_club(panel, x + 20.0)
 	var visible := fixtures.filter(func(fixture: Dictionary): return selected == "all" or bool(fixture.get("played", false)) == (selected == "played"))
 	D.text(panel, LEFT - 24, 88, P.plural(visible.size(), "rencontre", "rencontres"), 20, C.MUTED, 500, 240, HORIZONTAL_ALIGNMENT_RIGHT)
 	var period := "DATE / PHASE" if international else "JOURNÉE / PHASE"
@@ -37,6 +38,26 @@ func _calendar() -> void:
 		_calendar_row(panel, visible[i], 148 + 48 * i, LEFT, false)
 	if visible.is_empty(): D.text(panel, 23, 219, "Aucune rencontre", 24, C.MUTED, 500, LEFT - 47, HORIZONTAL_ALIGNMENT_LEFT, true)
 	_result_legend(panel, 24, panel_h - 48)
+
+## Joueurs du club retenus en sélection, dans le bandeau des filtres : chiffre, date de retour et lien, tous menant
+## aux disponibilités internationales (Sélections). Rendu au Calendrier après le retrait de l'ancienne grille du mois (#1177).
+func _selections_du_club(panel: Control, x: float) -> void:
+	var dispo := preload("res://ui/international_availability.gd")
+	var etat: Dictionary = dispo.data(app.model)
+	var absents := int(etat.get("absentCount", 0))
+	if not bool(etat.get("clubManaged", false)) and absents <= 0: return
+	var ouvrir := func(): dispo.open(app)
+	x += Pieces.pastille(panel, x, 65, "%d en sélection" % absents if absents > 0 else "0 absent", "flag" if absents > 0 else "check",
+		"InternationalAvailabilityChip", "", Charte.PERTE if absents > 0 else Charte.GAIN, Charte.PANNEAU_3, ouvrir) + 10
+	var tuile := panel.find_child("InternationalAvailabilityChipLien", true, false)
+	if tuile != null: tuile.name = "InternationalAvailabilityTile"
+	if absents > 0:
+		var retour := dispo._date(etat.get("nextReturn"))
+		x += Pieces.pastille(panel, x, 65, "Retour " + retour, "hourglass", "InternationalAvailabilityReturn", "Convocations confirmées · retour prévu à partir du " + retour,
+			Charte.REPOS, Charte.PANNEAU_3, ouvrir) + 10
+		var detail := panel.find_child("InternationalAvailabilityReturnLien", true, false)
+		if detail != null: detail.name = "InternationalAvailabilityDetail"
+	_lien(panel, Rect2(x, 62, 300, 40), "Préparer les absences →" if absents > 0 else "Fenêtres internationales →", ouvrir, "InternationalAvailabilityOpen", 20)
 
 ## Date courte « 21/11 » d'une rencontre (vide sans date ISO).
 func _short_date(fixture: Dictionary) -> String:
